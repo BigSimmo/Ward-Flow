@@ -62,11 +62,47 @@ function LastPatientGender() {
   return <span data-testid="last-patient-gender">{last && "gender" in last ? (last.gender ?? "none") : "none"}</span>;
 }
 
+/** RF7: Sex has Female and Male too, so a gender choice is found inside the Gender group. */
+function genderRadio(name: string) {
+  return within(screen.getByRole("radiogroup", { name: "Gender" })).getByRole("radio", { name });
+}
+
+/** RF7: the Aboriginal or Torres Strait Islander answer is a kit choice row, not a browser list. */
+function indigenousRadio(name: string) {
+  return within(screen.getByRole("radiogroup", { name: "Aboriginal or Torres Strait Islander" })).getByRole("radio", {
+    name,
+  });
+}
+
+function expectNoIndigenousAnswer() {
+  for (const radio of within(
+    screen.getByRole("radiogroup", { name: "Aboriginal or Torres Strait Islander" }),
+  ).getAllByRole("radio")) {
+    expect(radio).toHaveAttribute("aria-checked", "false");
+  }
+}
+
 /** Echoes the most-recently-added patient's Aboriginal or Torres Strait Islander status (finding 51). */
 function LastPatientIndigenousStatus() {
   const { patients } = useWardFlow();
   const last = patients[patients.length - 1];
   return <span data-testid="last-patient-indigenous">{last?.aboriginalOrTorresStraitIslanderStatus ?? "none"}</span>;
+}
+
+/** RF7: echoes the most-recently-added patient's optional typed details, in a fixed key order. */
+function LastPatientExtras() {
+  const { patients } = useWardFlow();
+  const last = patients[patients.length - 1];
+  const keys = [
+    "suburb",
+    "preferredName",
+    "address",
+    "generalPractitioner",
+    "catchmentCommunityTeam",
+    "interpreterLanguage",
+  ] as const;
+  const shown = Object.fromEntries(keys.filter((key) => last && key in last).map((key) => [key, last?.[key]]));
+  return <span data-testid="last-patient-extras">{JSON.stringify(shown)}</span>;
 }
 
 /** Echoes the live referral count — the "stays two acts" catcher: `ADD_PATIENT` must never create
@@ -83,6 +119,7 @@ function renderForm() {
       <PatientCount />
       <LastPatientGender />
       <LastPatientIndigenousStatus />
+      <LastPatientExtras />
       <ReferralCount />
     </WardFlowProvider>,
   );
@@ -154,7 +191,7 @@ describe("AddPatientForm", () => {
     expect(decodeRecordAddress(target.split("/").at(-1)!)).toMatch(/^PT-A\d+$/);
   });
 
-  it("treats Enter in a field as Add patient, never as Register & start referral", async () => {
+  it("treats Enter in a field as Add patient, never as Add and start referral", async () => {
     router.push.mockClear();
     const user = userEvent.setup();
     renderForm();
@@ -619,7 +656,11 @@ describe("AddPatientForm — Q004 registration workspace", () => {
       `Checks all ${count} patient records`,
     );
     expect(screen.getByTestId("ward-add-patient-duplicate-unchecked")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Back to patient search" })).toHaveAttribute("href", "/ward-flow/search");
+    // RF3 (Josh, 3 Nov 2026): a plain Cancel in the head goes back to Patient search.
+    expect(screen.getByRole("link", { name: "Cancel and go back to patient search" })).toHaveAttribute(
+      "href",
+      "/ward-flow/search",
+    );
     expect(screen.queryByTestId("ward-add-patient-board-list")).not.toBeInTheDocument();
   });
 });
@@ -647,7 +688,7 @@ describe("AddPatientForm — third-edition upgrade, the Gender control", () => {
   it("dispatches 'Female' when chosen", async () => {
     renderForm();
     fillDraft();
-    fireEvent.click(screen.getByRole("radio", { name: "Female" }));
+    fireEvent.click(genderRadio("Female"));
     fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
 
     await waitFor(() => {
@@ -658,7 +699,7 @@ describe("AddPatientForm — third-edition upgrade, the Gender control", () => {
   it("dispatches 'Male' when chosen", async () => {
     renderForm();
     fillDraft();
-    fireEvent.click(screen.getByRole("radio", { name: "Male" }));
+    fireEvent.click(genderRadio("Male"));
     fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
 
     await waitFor(() => {
@@ -684,7 +725,7 @@ describe("AddPatientForm — ADD_PATIENT never creates a referral", () => {
     const referralsBefore = Number(screen.getByTestId("referral-count").textContent);
 
     fillDraft();
-    fireEvent.click(screen.getByRole("radio", { name: "Female" }));
+    fireEvent.click(genderRadio("Female"));
     fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
 
     await waitFor(() => {
@@ -756,10 +797,9 @@ describe("AddPatientForm safety regressions", () => {
   it("clears every identity field after confirming reset", () => {
     renderForm();
     fillDraft();
-    fireEvent.click(screen.getByRole("radio", { name: "Female" }));
-    fireEvent.change(screen.getByLabelText("Aboriginal or Torres Strait Islander"), {
-      target: { value: "Aboriginal, not Torres Strait Islander" },
-    });
+    fireEvent.click(genderRadio("Female"));
+    fireEvent.click(indigenousRadio("Aboriginal, not Torres Strait Islander"));
+    fireEvent.change(screen.getByLabelText("Street address"), { target: { value: "1 Example Street" } });
     fireEvent.click(screen.getByTestId("ward-add-patient-reset"));
     expect(screen.getByRole("dialog", { name: "Reset patient form?" })).toBeInTheDocument();
     fireEvent.click(screen.getByTestId("ward-add-patient-reset-confirm"));
@@ -767,32 +807,63 @@ describe("AddPatientForm safety regressions", () => {
     for (const label of [/Record number|UMRN/i, "Given name", "Family name", "Date of birth"]) {
       expect(screen.getByLabelText(label)).toHaveValue("");
     }
-    expect(screen.getByRole("radio", { name: "Not recorded" })).toHaveAttribute("aria-checked", "false");
-    expect(screen.getByRole("radio", { name: "Female" })).toHaveAttribute("aria-checked", "false");
-    expect(screen.getByLabelText("Aboriginal or Torres Strait Islander")).toHaveValue("");
+    expect(genderRadio("Not recorded")).toHaveAttribute("aria-checked", "false");
+    expect(genderRadio("Female")).toHaveAttribute("aria-checked", "false");
+    expectNoIndigenousAnswer();
+    expect(screen.getByLabelText("Street address")).toHaveValue("");
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
-  // D-77 change 6: address, facility and intake belong to the referral or the movement, not the person.
-  it("asks identity only, with Aboriginal status still optional", () => {
+  // D-77 change 6: facility, intake and legal status belong to the referral or the movement, not the
+  // person. RF7 (Josh, 3 Nov 2026): the person's own suburb and street address may now be added,
+  // optional, beside the other details the patient page shows.
+  it("asks the person's details only, with every optional detail never required", () => {
     renderForm();
-    for (const gone of [/^Address/, /^Suburb/, "Presenting facility", "Health service", "Clinical intake notes"]) {
+    for (const gone of ["Presenting facility", "Health service", "Clinical intake notes", /^Legal status/]) {
       expect(screen.queryByLabelText(gone)).toBeNull();
     }
     expect(screen.queryByRole("heading", { name: "Clinical intake" })).toBeNull();
     expect(screen.queryByText(/Synthetic records only/)).toBeNull();
-    expect(screen.getByLabelText("Aboriginal or Torres Strait Islander")).not.toBeRequired();
+    for (const optional of [
+      "Suburb",
+      "Preferred name",
+      "Street address",
+      "GP",
+      "Catchment community team",
+      "Interpreter / preferred language",
+    ]) {
+      expect(screen.getByLabelText(optional)).not.toBeRequired();
+      expect(screen.getByLabelText(optional)).not.toHaveAttribute("aria-required");
+    }
+    expectNoIndigenousAnswer();
+  });
+
+  // RF7 (Josh, 3 Nov 2026): the folded details reach the record; blanks are left unrecorded.
+  it("saves the folded details on the record and leaves blank ones out", async () => {
+    renderForm();
+    const before = Number(screen.getByTestId("patient-count").textContent);
+    fillDraft();
+    fireEvent.change(screen.getByLabelText("Suburb"), { target: { value: " Fictionvale " } });
+    fireEvent.change(screen.getByLabelText("Preferred name"), { target: { value: "Ari" } });
+    fireEvent.change(screen.getByLabelText("GP"), { target: { value: "Dr Sample" } });
+    expect(screen.getByTestId("ward-add-patient-fold-contact-summary")).toHaveTextContent("Added: preferred name");
+    expect(screen.getByTestId("ward-add-patient-fold-care-summary")).toHaveTextContent("Added: GP");
+    expect(screen.getByTestId("ward-add-patient-fold-culture-summary")).toHaveTextContent("Optional");
+    fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
+    await waitFor(() => expect(Number(screen.getByTestId("patient-count").textContent)).toBe(before + 1));
+    expect(screen.getByTestId("last-patient-extras")).toHaveTextContent(
+      JSON.stringify({ suburb: "Fictionvale", preferredName: "Ari", generalPractitioner: "Dr Sample" }),
+    );
   });
 
   // Finding 51 (Josh, 27 Oct 2026): the answer is saved, the list opens blank, and blank never blocks.
   it("saves the Aboriginal or Torres Strait Islander answer on the record, and saves none when left blank", async () => {
     renderForm();
-    const field = screen.getByLabelText("Aboriginal or Torres Strait Islander");
-    expect(field).toHaveValue("");
+    expectNoIndigenousAnswer();
     expect(screen.queryByText("not saved")).toBeNull();
     const before = Number(screen.getByTestId("patient-count").textContent);
     fillDraft();
-    fireEvent.change(field, { target: { value: "Torres Strait Islander, not Aboriginal" } });
+    fireEvent.click(indigenousRadio("Torres Strait Islander, not Aboriginal"));
     fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
     await waitFor(() => expect(Number(screen.getByTestId("patient-count").textContent)).toBe(before + 1));
     expect(screen.getByTestId("last-patient-indigenous")).toHaveTextContent("Torres Strait Islander, not Aboriginal");
@@ -817,11 +888,8 @@ describe("AddPatientForm safety regressions", () => {
   it.each(["Indigenous status", "Gender"])("asks before discarding a change only to %s", (field) => {
     renderForm();
     // v6 (AddPatient.png): the field is labelled "Aboriginal or Torres Strait Islander".
-    if (field === "Indigenous status")
-      fireEvent.change(screen.getByLabelText("Aboriginal or Torres Strait Islander"), {
-        target: { value: "Aboriginal, not Torres Strait Islander" },
-      });
-    if (field === "Gender") fireEvent.click(screen.getByRole("radio", { name: "Female" }));
+    if (field === "Indigenous status") fireEvent.click(indigenousRadio("Aboriginal, not Torres Strait Islander"));
+    if (field === "Gender") fireEvent.click(genderRadio("Female"));
     fireEvent.click(screen.getByTestId("ward-add-patient-reset"));
     expect(screen.getByRole("dialog", { name: "Reset patient form?" })).toBeInTheDocument();
   });
@@ -835,8 +903,9 @@ describe("AddPatientForm — errors mark and move to the field at fault (DA-12)"
 
     const umrn = screen.getByTestId("ward-add-patient-umrn");
     expect(umrn).not.toHaveAttribute("aria-invalid");
+    // RF7: surname first, so the family name is the first blank field.
+    expect(screen.getByTestId("ward-add-patient-family-name")).toHaveFocus();
     const dateOfBirth = screen.getByTestId("ward-add-patient-date-of-birth");
-    expect(dateOfBirth).toHaveFocus();
     for (const [testId, message] of [
       ["ward-add-patient-date-of-birth", "Enter the date of birth."],
       ["ward-add-patient-given-name", "Enter the given name."],

@@ -56,7 +56,7 @@ describe("handover labels describe the records the desk can access", () => {
   it("names a one-ward desk's own ward on screen, in copy and on the print sheet, with no scope picker", async () => {
     const label = "Mabu Liyan / Broome Mental Health Unit";
     const writeText = renderAtDesk({ role: "ward", scope: { kind: "ward", unitIds: ["brm-adult-secure"] } });
-    expect(screen.queryByRole("combobox", { name: "Filter the sheet" })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Show:/ })).toBeNull();
     expect(screen.getByTestId("ward-handover-page")).toHaveTextContent(label);
     copySummary();
     await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
@@ -74,8 +74,7 @@ describe("handover labels describe the records the desk can access", () => {
     "uses the same all-records label on screen, in copy and on the print sheet for %j",
     async (access, label) => {
       const writeText = renderAtDesk(access);
-      const select = screen.getByRole("combobox", { name: "Filter the sheet" }) as HTMLSelectElement;
-      expect(select.selectedOptions[0]?.textContent).toBe(label);
+      expect(screen.getByRole("button", { name: `Show: ${label}` })).toBeInTheDocument();
       expect(screen.getByTestId("ward-handover-page")).toHaveTextContent(label);
       copySummary();
       await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
@@ -89,10 +88,11 @@ describe("handover labels describe the records the desk can access", () => {
 
   it("keeps the explicit ward and service selection labels", async () => {
     const writeText = renderAtDesk(TWO_WARD_DESK);
-    const select = screen.getByRole("combobox", { name: "Filter the sheet" });
     for (const optionName of ["Mabu Liyan / Broome Mental Health Unit", "WACHS"]) {
-      const option = within(select).getByRole("option", { name: optionName }) as HTMLOptionElement;
-      fireEvent.change(select, { target: { value: option.value } });
+      fireEvent.click(screen.getByRole("button", { name: /^Show:/ }));
+      fireEvent.click(
+        within(screen.getByRole("menu", { name: "Show" })).getByRole("menuitemradio", { name: optionName }),
+      );
       copySummary();
       await waitFor(() => expect(writeText.mock.calls.at(-1)?.[0]).toContain(optionName));
     }

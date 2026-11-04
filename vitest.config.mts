@@ -2,6 +2,7 @@ import { vitestCacheDirectory } from "./scripts/test-cache-path.mjs";
 import { COVERAGE_INCLUDE_GLOBS, COVERAGE_EXCLUDE_GLOBS } from "./scripts/coverage-contract.mjs";
 import { NODE_UNIT_TEST_GLOBS, DOM_UNIT_TEST_GLOBS, LIVE_UNIT_TEST_GLOBS } from "./scripts/unit-test-population.mjs";
 import { UnitDurationSequencer } from "./scripts/ward-flow/unit-durations.mjs";
+import { readWhatsNewEntries } from "./scripts/ward-flow/whats-new-list.mjs";
 
 const liveProviderTests = process.env.ALLOW_PROVIDER_TESTS === "true";
 
@@ -11,6 +12,9 @@ const liveProviderTests = process.env.ALLOW_PROVIDER_TESTS === "true";
 const gateExcludedFiles = (process.env.WARD_GATE_EXCLUDE_FILES ?? "").split("\n").filter(Boolean);
 
 const config = {
+  // What's new, combined from its entry files as the build does (next.config.ts). Vite writes the
+  // value as code, so it is the JSON text of a string.
+  define: { __WARD_WHATS_NEW__: JSON.stringify(JSON.stringify(readWhatsNewEntries(process.cwd()))) },
   // Codex worktrees commonly share node_modules through a junction. Keep Vite's
   // transform cache outside that shared dependency tree and unique per worktree.
   cacheDir: vitestCacheDirectory(process.cwd()),
