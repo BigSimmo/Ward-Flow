@@ -178,13 +178,13 @@ function ExecutiveWardsIndex() {
 }
 function OperationalWardsIndex() {
   const live = useStatisticsLive();
-  const { units, admissions, bedReleases, leaveBeds } = live.state;
+  const { units, admissions, bedReleases, leaveBeds, referrals, movements } = live.state;
   const now = live.now;
   const rows = useMemo(
     () =>
       units.map((unit) => {
         const site = siteByCode(unit.siteCode);
-        const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+        const states = bedStates(unit, admissions, bedReleases, leaveBeds, [...referrals, ...movements]);
         const current = admissions.filter(
           (admission) => admission.unitId === unit.id && admissionStagePosition(admission) !== "ended",
         );
@@ -201,8 +201,13 @@ function OperationalWardsIndex() {
           beds: unit.beds,
           occupied: states.occupied,
           // L1: the rate is the one occupancy count, Occupied + Pulled (`ward-occupancy.ts`).
-          inUse: wardBedsInUse(unit, admissions, bedReleases),
-          rate: unit.beds > 0 ? Math.round((wardBedsInUse(unit, admissions, bedReleases) / unit.beds) * 100) : 0,
+          inUse: wardBedsInUse(unit, admissions, bedReleases, [...referrals, ...movements]),
+          rate:
+            unit.beds > 0
+              ? Math.round(
+                  (wardBedsInUse(unit, admissions, bedReleases, [...referrals, ...movements]) / unit.beds) * 100,
+                )
+              : 0,
           ready: states.ready,
           pending: bedsPendingPreparation(unit.id, bedReleases),
           pulled: states.pulled,
@@ -212,7 +217,7 @@ function OperationalWardsIndex() {
           mean: stays.length > 0 ? stays.reduce((total, days) => total + days, 0) / stays.length : null,
         };
       }),
-    [units, admissions, bedReleases, leaveBeds, now],
+    [units, admissions, bedReleases, leaveBeds, now, referrals, movements],
   );
 
   return <WardsIndexView rows={rows} now={now} paused={live.paused} togglePause={live.togglePause} />;

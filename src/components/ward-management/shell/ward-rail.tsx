@@ -288,7 +288,8 @@ const NO_BED_ALERTS: ServiceBedAlertsSummary = {
 export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   const network = useWardNetwork();
   const pathname = usePathname() ?? "";
-  const { units, bedReleases, movements, configuration, admissions } = useWardFlowSelect(
+  const { units, bedReleases, movements, configuration, admissions, referrals } = useWardFlowSelect(
+    "referrals",
     "units",
     "bedReleases",
     "movements",
@@ -301,7 +302,10 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   // A phone never draws the rail (below), so it skips the bed alert figures too.
   const bedAlerts = phone
     ? NO_BED_ALERTS
-    : deriveServiceBedAlerts(units, bedReleases, network.sites, movements, now, accessTargetMinutes, admissions);
+    : deriveServiceBedAlerts(units, bedReleases, network.sites, movements, now, accessTargetMinutes, admissions, [
+        ...referrals,
+        ...movements,
+      ]);
   // Nav order follows the signed-in person, not the route (device audit item 6).
   const { counts, shellRole: role } = useWardNavCounts();
   const { open, appearance: storedAppearance, glare } = useWardDocumentPreferences();
@@ -366,7 +370,10 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
   // The new sidebar (Josh, 30-31 Oct 2026): whose figures these are, the bed alert rows for the
   // desk's own place, and the pages pinned under the role's menu.
   const countNote = countScopeNote(deskAccess, service);
-  const capacityRows = deskCapacityRows(deskAccess, units, admissions ?? [], bedReleases, bedAlerts);
+  const capacityRows = deskCapacityRows(deskAccess, units, admissions ?? [], bedReleases, bedAlerts, [
+    ...referrals,
+    ...movements,
+  ]);
   const overLine = overLineLabel(capacityRows);
   const firstRow = capacityRows[0];
   const capacityRowsLabel = capacityRowsSpoken(capacityRows);

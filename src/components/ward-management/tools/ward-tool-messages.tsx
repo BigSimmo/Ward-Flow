@@ -95,7 +95,7 @@ const listByService = (counts: ReadonlyMap<HealthService, number>) =>
 
 /** The figures `bedSummaryText` counts, from the same derivations, plus occupancy and the longest wait. */
 function operationalFigures(input: BedSummaryInput) {
-  const { units, admissions, movements, bedReleases, leaveBeds, now, thresholds, network } = input;
+  const { units, admissions, movements, bedReleases, leaveBeds, now, thresholds, network, referrals = [] } = input;
   const ready = new Map<HealthService, number>(HEALTH_SERVICES.map((service) => [service, 0]));
   let readyTotal = 0;
   let pending = 0;
@@ -104,7 +104,7 @@ function operationalFigures(input: BedSummaryInput) {
   let heldUp = 0;
   for (const unit of units) {
     const capacity = capacityBreakdown(unit, bedReleases, leaveBeds, now);
-    const readyHere = readyBedsNow(unit, admissions, bedReleases);
+    const readyHere = readyBedsNow(unit, admissions, bedReleases, [...referrals, ...movements]);
     const service = unitHealthService(unit);
     readyTotal += readyHere;
     if (service) ready.set(service, (ready.get(service) ?? 0) + readyHere);
@@ -114,7 +114,7 @@ function operationalFigures(input: BedSummaryInput) {
     heldUp += capacity.blockedToday;
   }
   // Occupancy is Occupied + Pulled, the one figure every other page prints (L1, 12 Oct 2026).
-  const occupied = occupiedBeds(units, admissions, bedReleases, leaveBeds);
+  const occupied = occupiedBeds(units, admissions, bedReleases, leaveBeds, [...referrals, ...movements]);
   const waiting = openEdJourneys(movements, now);
   // The longest open wait, as All figures counts it (no record id or name in the text).
   const oldest = movements
@@ -370,7 +370,8 @@ function MessagesView({
 }
 
 function OperationalMessages() {
-  const { units, admissions, movements, bedReleases, leaveBeds } = useWardFlowSelect(
+  const { units, admissions, movements, bedReleases, leaveBeds, referrals } = useWardFlowSelect(
+    "referrals",
     "units",
     "admissions",
     "movements",
@@ -381,7 +382,17 @@ function OperationalMessages() {
   const thresholds = useDueSoonThresholds();
   const network = useWardNetwork();
   const [choice, setChoice] = useState<MessageId>("summary");
-  const input: BedSummaryInput = { units, admissions, movements, bedReleases, leaveBeds, now, thresholds, network };
+  const input: BedSummaryInput = {
+    units,
+    admissions,
+    movements,
+    bedReleases,
+    leaveBeds,
+    now,
+    thresholds,
+    network,
+    referrals,
+  };
   const message = choice === "summary" ? summaryMessage(bedSummaryText(input)) : operationalMessage(choice, input);
   return <MessagesView message={message} choice={choice} onChoice={setChoice} />;
 }

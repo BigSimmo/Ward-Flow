@@ -189,8 +189,17 @@ export function HubScreen() {
 
   const wardNetwork = useWardNetwork();
   const entries = useMemo(
-    () => hubEntries({ units, bedReleases, admissions, leaveBeds, now, sites: wardNetwork.sites }),
-    [units, bedReleases, admissions, leaveBeds, now, wardNetwork.sites],
+    () =>
+      hubEntries({
+        units,
+        bedReleases,
+        admissions,
+        leaveBeds,
+        now,
+        sites: wardNetwork.sites,
+        referrals: [...referrals, ...movements],
+      }),
+    [units, bedReleases, admissions, leaveBeds, now, wardNetwork.sites, referrals, movements],
   );
   const results = useMemo(() => {
     const base = searchHub(entries, "", kind);

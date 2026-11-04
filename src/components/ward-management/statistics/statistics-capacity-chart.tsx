@@ -59,6 +59,7 @@ type CapacityInput = CapacityOptions &
         bedReleases?: never;
         admissions?: never;
         leaveBeds?: never;
+        referrals?: never;
       }
     | {
         aggregate?: undefined;
@@ -66,6 +67,7 @@ type CapacityInput = CapacityOptions &
         bedReleases: BedRelease[];
         admissions?: readonly Admission[];
         leaveBeds?: readonly LeaveBed[];
+        referrals?: readonly import("@/components/ward-management/ward-bed-states").ReservationReferral[];
       }
   );
 
@@ -143,9 +145,9 @@ export function StatisticsCapacityChart(props: CapacityInput) {
           hospital: siteByCode(unit.siteCode)?.name ?? unit.siteCode,
           service: siteByCode(unit.siteCode)?.service ?? "Service not recorded",
           beds: unit.beds,
-          states: bedStates(unit, props.admissions ?? [], props.bedReleases!, props.leaveBeds ?? []),
+          states: bedStates(unit, props.admissions ?? [], props.bedReleases!, props.leaveBeds ?? [], props.referrals),
           pending: bedsPendingPreparation(unit.id, props.bedReleases!),
-          available: readyBedsNow(unit, props.admissions ?? [], props.bedReleases!),
+          available: readyBedsNow(unit, props.admissions ?? [], props.bedReleases!, props.referrals),
         }));
   return (
     <CapacityChartView

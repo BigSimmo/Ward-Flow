@@ -51,7 +51,8 @@ function App({ account }: { account: Account }) {
 const flush = () => act(() => new Promise((resolve) => setTimeout(resolve, 0)));
 
 function forecastKey(actorId: string) {
-  return `${FORECAST_LAST_LOOK_STORAGE_KEY}:${encodeURIComponent(actorId)}`;
+  const prefix = `${FORECAST_LAST_LOOK_STORAGE_KEY}:${encodeURIComponent(actorId)}:desk-`;
+  return Object.keys(window.sessionStorage).find((key) => key.startsWith(prefix)) ?? `${prefix}missing`;
 }
 
 describe("leave-saves after a sign-out (Audit 4 A4-07)", () => {

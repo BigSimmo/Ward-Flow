@@ -14,6 +14,7 @@ import { type Admission } from "@/components/ward-management/ward-admissions";
 import { dayOf, MINUTES_PER_DAY, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
+import type { ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import type { BedRelease, Movement, Unit } from "@/components/ward-management/ward-model";
 import { bedKindOfBed, bedKindOfNeed, isWaitingForBed } from "./forecast-by-kind";
 import { forecastReleaseAt } from "./forecast-release-date";
@@ -64,11 +65,12 @@ export function edAccessRisk(
   now: Instant,
   targetMinutes: number,
   horizonMinutes = MINUTES_PER_DAY,
+  referrals: readonly ReservationReferral[] = [],
 ): EdAccessRisk {
   const open = new Map(units.filter((unit) => !unit.isClosed).map((unit) => [unit.id, unit]));
   const admissionById = new Map(admissions.map((admission) => [admission.id, admission]));
   const expectedAt = (release: BedRelease) => forecastReleaseAt(release, admissionById.get(release.admissionId));
-  const gaps = bedKindGaps([...movements], [...units], now, admissions);
+  const gaps = bedKindGaps([...movements], [...units], now, admissions, [...referrals, ...movements]);
   const pending = releases
     .filter(
       (release) =>

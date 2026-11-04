@@ -86,7 +86,9 @@ function WardSwitchPanel({
   const titleId = useId();
   const panel = useRef<HTMLDivElement>(null);
   const network = useWardNetwork();
-  const { units, bedReleases, admissions, leaveBeds, now } = useWardFlowSelect(
+  const { units, bedReleases, admissions, leaveBeds, now, wardReferralInbox, movements } = useWardFlowSelect(
+    "wardReferralInbox",
+    "movements",
     "units",
     "bedReleases",
     "admissions",
@@ -97,11 +99,19 @@ function WardSwitchPanel({
   const figures = useMemo(
     () =>
       new Map(
-        hubEntries({ units, bedReleases, admissions, leaveBeds, now, sites: network.sites })
+        hubEntries({
+          units,
+          bedReleases,
+          admissions,
+          leaveBeds,
+          now,
+          sites: network.sites,
+          referrals: [...units.flatMap((unit) => wardReferralInbox(unit.id)), ...movements],
+        })
           .filter((entry) => entry.kind === "ward")
           .map((entry) => [entry.id, entry]),
       ),
-    [units, bedReleases, admissions, leaveBeds, now, network],
+    [units, bedReleases, admissions, leaveBeds, now, network, wardReferralInbox, movements],
   );
 
   // Desktop: the popover opens under the chip, kept on screen.

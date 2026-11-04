@@ -32,6 +32,7 @@ import {
   type SinceRecordLink,
 } from "./since-last-look-links";
 
+import { readWardAccessSnapshot, useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
 import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
 import { useOptionalWardFlowSelect, useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 /**
@@ -133,6 +134,8 @@ export function useSinceLastLook(
   const thresholds = useDueSoonThresholds();
   const generation = useOptionalWardFlowSelect("worldGeneration")?.worldGeneration ?? world.worldGeneration ?? 0;
   const account = useContext(SharedAccessContext);
+  const { previewOf } = useWardAccessSnapshot();
+  const canReview = previewOf === null;
   const userId = account?.actorId ?? "local-demo";
   noteWardSessionAccount(account);
   const storageKey = scopeKey
@@ -159,13 +162,14 @@ export function useSinceLastLook(
     const timer = pendingLeaveSaves.get(storageKey);
     if (timer !== undefined) window.clearTimeout(timer);
     pendingLeaveSaves.delete(storageKey);
-    if (scopeKey || explicit) return;
+    if (scopeKey || explicit || !canReview) return;
     const ticket = wardLeaveSaveTicket(account);
     const saveOnLeave = () => {
       // A cleanup from another account/world must never write that world's picture, and none may
       // write after its session ended, even one scheduled by a signed-out re-render (A4-07).
       const snapshot = latest.current;
       if (
+        readWardAccessSnapshot().previewOf === null &&
         wardLeaveSaveAllowed(ticket) &&
         snapshot.userId === userId &&
         snapshot.worldGeneration === generation &&
@@ -184,7 +188,7 @@ export function useSinceLastLook(
         }, 0),
       );
     };
-  }, [storageKey, userId, generation, scopeKey, account, explicit]);
+  }, [storageKey, userId, generation, scopeKey, account, explicit, canReview]);
 
   // Before any look this session, count what the record says happened since the shift started, so
   // "N new since 07:00" is true rather than a 0 (L1, site review, 12 Oct 2026).
@@ -196,18 +200,26 @@ export function useSinceLastLook(
           changesSinceInstant(world, currentShiftStartInstant(now), now)),
     [previous, current, world, now, scopeKey, windowMinutes],
   );
-  const markSeen = useCallback(() => writeSnapshot(latest.current, storageKey), [storageKey]);
+  const markSeen = useCallback(() => {
+    if (!canReview || readWardAccessSnapshot().previewOf !== null) return;
+    writeSnapshot(latest.current, storageKey);
+  }, [storageKey, canReview]);
   /** Explicit review: save a given picture (the one taken when Activity opened), or clear it. */
   const saveReview = useCallback(
     (snapshot: LastLookSnapshot | undefined) => {
       // A press from a screen whose session has ended (A4-07) writes nothing.
-      if (!wardLeaveSaveAllowed(wardLeaveSaveTicket(account))) return;
+      if (
+        !canReview ||
+        readWardAccessSnapshot().previewOf !== null ||
+        !wardLeaveSaveAllowed(wardLeaveSaveTicket(account))
+      )
+        return;
       if (snapshot) writeSnapshot(snapshot, storageKey);
       else clearSnapshot(storageKey);
     },
-    [storageKey, account],
+    [storageKey, account, canReview],
   );
-  return { changes, markSeen, previous, current, saveReview };
+  return { changes, markSeen, previous, current, saveReview, canReview };
 }
 
 /** One group row of the phone sheet: a glyph, a bold count line, and a quiet detail line. */

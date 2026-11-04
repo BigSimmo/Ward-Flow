@@ -100,7 +100,7 @@ export function projectExecutiveNetworkStatistics(
   // this executive's wards, rather than counting global beds beside service-scoped admissions.
   const units = scoped.units.filter((unit) => unitInScope(access.scope, unit.id, places));
   const wards = units.map((unit) => {
-    const states = bedStates(unit, scoped.admissions, scoped.bedReleases, scoped.leaveBeds);
+    const states = bedStates(unit, scoped.admissions, scoped.bedReleases, scoped.leaveBeds, scoped.referrals);
     return {
       id: unit.id,
       name: unit.name,
@@ -112,7 +112,7 @@ export function projectExecutiveNetworkStatistics(
         pulled: states.pulled,
         closed: states.closed,
         occupied: states.occupied,
-        inUse: wardBedsInUse(unit, scoped.admissions, scoped.bedReleases),
+        inUse: wardBedsInUse(unit, scoped.admissions, scoped.bedReleases, [...scoped.referrals, ...scoped.movements]),
         beingMadeReady: states.beingMadeReady,
         onLeave: states.onLeave,
       },
@@ -746,7 +746,10 @@ export function projectExecutiveReportingFoundation(
     },
     settings: { pullHoldMinutes: input.pullHoldMinutes, parallelReferralCap: state.configuration.parallelReferralCap },
     capacity: {
-      ready: units.reduce((sum, unit) => sum + readyBedsNow(unit, input.admissions, input.bedReleases), 0),
+      ready: units.reduce(
+        (sum, unit) => sum + readyBedsNow(unit, input.admissions, input.bedReleases, input.referrals),
+        0,
+      ),
       empty: units.reduce((sum, unit) => sum + unit.empty.value, 0),
       allocatable: units.reduce((sum, unit) => sum + unit.allocatable.value, 0),
       openNow: units.reduce((sum, unit) => sum + openBedsNow(unit, input.bedReleases), 0),

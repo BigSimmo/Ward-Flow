@@ -216,6 +216,8 @@ export const WAIT_THRESHOLD_LABELS = ["All", "8h+", "12h+", "24h+"] as const;
 type WaitThreshold = 0 | 1 | 2 | 3;
 
 export type BoardFilters = {
+  /** Exact ED deep link; unlike desk authority this excludes journeys accepted here from another ED. */
+  edId?: string | null;
   owner: DelayOwnerId | null;
   origin: CatchmentOrigin | null;
   cause: DelayCause | null;
@@ -233,6 +235,7 @@ export type BoardFilters = {
 };
 
 export const NO_FILTERS: BoardFilters = {
+  edId: null,
   owner: null,
   origin: null,
   cause: null,
@@ -249,6 +252,7 @@ export const NO_FILTERS: BoardFilters = {
 
 export function hasFilters(filters: BoardFilters): boolean {
   return (
+    filters.edId != null ||
     filters.owner !== null ||
     filters.origin !== null ||
     filters.cause !== null ||
@@ -300,6 +304,7 @@ function rowMatchesFilters(
   const binIds = filters.bin === null ? null : (bins[filters.bin]?.ids ?? new Set<string>());
   const needle = filters.search.trim().toLowerCase();
   return (
+    (filters.edId == null || (row.movement.originEdId === filters.edId && isWaitingInEd(row.movement))) &&
     (filters.owner === null || row.owner === filters.owner) &&
     (filters.origin === null || row.origin === filters.origin) &&
     (filters.cause === null || row.cause === filters.cause) &&

@@ -133,6 +133,7 @@ export function WardBoard({
   // derivation beneath reads unchanged.
   const network = useWardNetwork();
   const {
+    wardReferralInbox,
     units: liveUnits,
     admissions,
     leaveBeds,
@@ -148,6 +149,7 @@ export function WardBoard({
     dayZero,
     dispatch,
   } = useWardFlowSelect(
+    "wardReferralInbox",
     "units",
     "admissions",
     "leaveBeds",
@@ -460,7 +462,10 @@ export function WardBoard({
    */
   const bedReleases = derivedBedReleases([...admissions], now);
 
-  const available = headlineAvailable(unit, admissions, bedReleases, [...leaveBeds], now);
+  const available = headlineAvailable(unit, admissions, bedReleases, [...leaveBeds], now, [
+    ...wardReferralInbox(unit.id),
+    ...movements,
+  ]);
   // 🔴 THE FIGURE ABOVE IS CORRECT AND MUST NOT CHANGE. `availableNow` deliberately subtracts
   // nothing for a preparation note: asked in September whether a bed being cleaned should drop the
   // ward's number or merely refuse the pull, the owner chose the refusal, because the ward has not
@@ -472,8 +477,11 @@ export function WardBoard({
   // Walkthrough D7 (25 Sept 2026): read the LIVE releases, because a preparation note is recorded
   // on a release in state; the rebuilt list above never carries one, so "being cleaned" never showed.
   const pendingPreparation = bedsPendingPreparation(unit.id, [...(liveBedReleases ?? [])]);
-  const constraint = constraintSentence(unit, admissions, bedReleases, [...leaveBeds], now);
-  const tiles = buildTiles(unit, admissions, bedReleases, now);
+  const constraint = constraintSentence(unit, admissions, bedReleases, [...leaveBeds], now, [
+    ...wardReferralInbox(unit.id),
+    ...movements,
+  ]);
+  const tiles = buildTiles(unit, admissions, bedReleases, now, [...wardReferralInbox(unit.id), ...movements]);
   // Read straight back out, purely to say how many closed tiles are on screen in the footnote below
   // — never re-derived. `buildTiles` already clamped this into the physically-empty pool; the
   // footnote must describe exactly what got drawn, not a second, unclamped copy of the figure.
@@ -539,7 +547,13 @@ export function WardBoard({
   const breakdown = capacityBreakdown(unit, [...bedReleases], [...leaveBeds], now);
   // The ruled Closed figure (`ward-bed-states.ts`), the same call `buildTiles` draws its closed
   // tiles from. `breakdown.held` is NOT this figure: it still counts a live pull's empty bed.
-  const states = bedStates(unit, admissions, [...bedReleases], [...leaveBeds]);
+  const states = bedStates(
+    unit,
+    admissions,
+    [...bedReleases],
+    [...leaveBeds],
+    [...wardReferralInbox(unit.id), ...movements],
+  );
   const incoming = buildIncoming(unit, admissions, movements, now);
   const outgoing = outgoingToday(unit, bedReleases, outgoingBasis, now);
   /*

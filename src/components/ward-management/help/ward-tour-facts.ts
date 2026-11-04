@@ -121,9 +121,15 @@ export function useTourFacts(role: TourRole): {
         const site = siteByCode(unit.siteCode);
         facts.placeName = unit.name;
         facts.place = site ? `${unit.name} at ${site.name}` : unit.name;
-        const entry = hubEntries({ units, sites: network.sites, bedReleases, admissions, leaveBeds, now }).find(
-          (candidate) => candidate.id === unit.id,
-        );
+        const entry = hubEntries({
+          units,
+          sites: network.sites,
+          bedReleases,
+          admissions,
+          leaveBeds,
+          now,
+          referrals: [...referrals, ...movements],
+        }).find((candidate) => candidate.id === unit.id);
         if (entry?.beds !== undefined) {
           facts.ward = {
             beds: entry.beds,

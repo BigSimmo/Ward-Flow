@@ -1191,7 +1191,7 @@ export function BedMeetingTvScreen({
   const view = useMemo(() => {
     // Full names, as on every other screen (Josh, 26 Oct 2026), surname first (D-83, core pages redesign).
     const nameOf = (movement: Parameters<typeof patientOf>[0]) => patientOf(movement).formalName;
-    const inputs = { units, movements, bedReleases, admissions, leaveBeds, now: shownNow, nameOf };
+    const inputs = { units, movements, bedReleases, admissions, leaveBeds, now: shownNow, nameOf, referrals };
     const records = { movements, referrals, patients, plannedAdmissions };
     if (ward !== undefined) {
       if (!unit) return { kind: "missing" as const, what: "ward" };

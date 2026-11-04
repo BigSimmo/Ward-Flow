@@ -95,6 +95,7 @@ export type DowntimePackInput = {
   /** The wards whose beds the pack counts (issue #628). Required: no silent fallback to every ward. */
   bedUnits: readonly Unit[];
   admissions: readonly Admission[];
+  referrals?: readonly import("@/components/ward-management/ward-bed-states").ReservationReferral[];
   bedReleases: BedRelease[];
   leaveBeds: readonly LeaveBed[];
   movements: Movement[];
@@ -114,13 +115,13 @@ function finiteOrNull(value: Instant | undefined): Instant | null {
 }
 
 export function downtimePack(input: DowntimePackInput): DowntimePack {
-  const { units, bedUnits, admissions, bedReleases, leaveBeds, movements, now, identify } = input;
+  const { units, bedUnits, admissions, bedReleases, leaveBeds, movements, now, identify, referrals = [] } = input;
   if (!Array.isArray(bedUnits)) throw new Error("downtimePack needs an explicit bedUnits ward list");
   const unitName = (id: string | undefined) => (id ? (units.find((unit) => unit.id === id)?.name ?? id) : "");
 
   const wards = bedUnits
     .map((unit) => {
-      const counts = bedStates(unit, admissions, bedReleases, leaveBeds);
+      const counts = bedStates(unit, admissions, bedReleases, leaveBeds, referrals);
       return {
         unitId: unit.id,
         name: unit.name,

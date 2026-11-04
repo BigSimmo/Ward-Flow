@@ -196,7 +196,7 @@ export function executiveWardSummary(ward: PublicWard, input: ExecutivePrivateIn
   const pulledWaits = currentRows
     .filter((row) => row.state === "pulled" && row.pulledAt !== null && row.pulledAt <= now)
     .map((row) => now - row.pulledAt!);
-  const finderReady = readyBedsNow(unit, input.admissions, input.bedReleases);
+  const finderReady = readyBedsNow(unit, input.admissions, input.bedReleases, input.referrals);
   return {
     ...ward,
     cohort: unit.cohort,
@@ -209,7 +209,7 @@ export function executiveWardSummary(ward: PublicWard, input: ExecutivePrivateIn
     lockedReady: Math.min(lockedBedsFree(unit), finderReady),
     openReady: Math.min(openBedsFree(unit), finderReady),
     openNow: openBedsNow(unit, input.bedReleases),
-    capacityReady: readyBedsNow(unit, input.admissions, input.bedReleases),
+    capacityReady: readyBedsNow(unit, input.admissions, input.bedReleases, input.referrals),
     empty: unit.empty.value,
     allocatable: unit.allocatable.value,
     pendingPreparation: bedsPendingPreparation(unit.id, input.bedReleases),

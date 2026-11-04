@@ -47,6 +47,7 @@ export function wardTomorrowOutlook(
   accepted: readonly Movement[],
   plannedAdmissions: readonly PlannedAdmission[],
   now: Instant,
+  reservations: NonNullable<Parameters<typeof bedsForecast>[6]> = [],
 ): WardTomorrowOutlook | null {
   if (unit.isClosed) return null;
   const ownAdmissions = admissions.filter((admission) => admission.unitId === unit.id);
@@ -57,6 +58,7 @@ export function wardTomorrowOutlook(
     [...accepted],
     now,
     plannedAdmissions.filter((booking) => booking.unitId === unit.id),
+    [...reservations, ...accepted],
   ).horizons[0]!;
   const admissionsById = new Map(ownAdmissions.map((admission) => [admission.id, admission]));
   const flaggedTodayPlannedLater = wardDischargesDueToday(openBedReleases(releases, unit.id), now).filter(
@@ -120,6 +122,11 @@ export function useWardTomorrowOutlook(
     bedReleases,
     admissions = [],
     plannedAdmissions = [],
-  } = useWardFlowSelect("bedReleases", "admissions", "plannedAdmissions");
-  return wardTomorrowOutlook(unit, bedReleases ?? [], admissions, accepted, plannedAdmissions, now);
+    wardReferralInbox,
+    movements = [],
+  } = useWardFlowSelect("bedReleases", "admissions", "plannedAdmissions", "wardReferralInbox", "movements");
+  return wardTomorrowOutlook(unit, bedReleases ?? [], admissions, accepted, plannedAdmissions, now, [
+    ...wardReferralInbox(unit.id),
+    ...movements,
+  ]);
 }

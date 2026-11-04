@@ -79,8 +79,13 @@ export const GLOSSARY_LINK_TEXT = "Help glossary";
  */
 export const ROAD_DISTANCE_SHORT_CAVEAT = "Road distance only, not a clinical travel time.";
 
-export function capacityLine(unit: Unit, bedReleases: BedRelease[], admissions: readonly Admission[]) {
-  const states = bedStates(unit, admissions, bedReleases, []);
+export function capacityLine(
+  unit: Unit,
+  bedReleases: BedRelease[],
+  admissions: readonly Admission[],
+  reservations: NonNullable<Parameters<typeof bedStates>[4]> = [],
+) {
+  const states = bedStates(unit, admissions, bedReleases, [], reservations);
   const pendingPreparation = states.beingMadeReady;
   /*
    * 🔴 THE READY FIGURE IS CORRECT AND MUST NOT CHANGE. Nothing is subtracted from it for a

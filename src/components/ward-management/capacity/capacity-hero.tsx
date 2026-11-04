@@ -95,7 +95,7 @@ export function CapacityHero({
                 <FigureLink
                   value={edWaiting.waiting}
                   label={`waiting in ${edWaiting.short}`}
-                  owner={PAGE_OWNERS.waiting}
+                  owner={{ ...PAGE_OWNERS.waiting, route: edWaiting.href ?? PAGE_OWNERS.waiting.route }}
                   onHero
                   canOpen={canOpen(PAGE_OWNERS.waiting.route)}
                   data-testid="capacity-hero-ed-waiting-link"

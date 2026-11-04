@@ -14,6 +14,10 @@ import { deriveCommandActivity } from "@/components/ward-management/shell/ward-c
 import { useActivityFromAudit } from "@/components/ward-management/shell/ward-desk-audit";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { edHref } from "@/components/ward-management/shell/ward-facade";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { edInScope } from "@/components/ward-management/ward-role-access";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
+import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
 import type { ActivityPanelTab } from "@/components/ward-management/shell/ward-activity-panel-store";
 import type { WardReconciliationCheck } from "@/components/ward-management/shell/ward-shell-types";
 import { noticeIsForWardChrome } from "@/components/ward-management/ward-chrome-role";
@@ -125,6 +129,7 @@ function OpenActivityPanel({
   }, [open, initialTab, live.length, capture]);
   const isPhone = useIsPhone();
   const network = useWardNetwork();
+  const access = useEffectiveWardAccess();
   const thresholds = useDueSoonThresholds();
   const {
     movements,
@@ -230,7 +235,7 @@ function OpenActivityPanel({
       id={id}
       open={open}
       onClose={onClose}
-      title="Activity · Statewide"
+      title={`Activity · ${accessPlaceLabel(access, units)}`}
       testId={testId}
       returnFocusRef={returnFocusRef}
       bodyTabIndex={bodyTabIndex}
@@ -258,7 +263,14 @@ function OpenActivityPanel({
         <NoticesBody notices={noticeViews} now={now} onMarkRead={markRead} />
       </TabPanel>
       {/* The live tally closes every tab; drawn once, under whichever tab shows. */}
-      <LiveTally activity={activity} now={now} links={links} />
+      <LiveTally
+        activity={{
+          ...activity,
+          departments: activity.departments.filter((row) => edInScope(access.scope, row.ed.id, wardPlaceLookup(units))),
+        }}
+        now={now}
+        links={links}
+      />
       <FigureChecks checks={figureChecks} />
     </Drawer>
   );
@@ -453,9 +465,10 @@ function ReviewFoot({ review, now }: { review: Review; now: Instant }) {
       ) : null}
       {count > 0 ? (
         <>
-          <Button variant="pri" onClick={review.markReviewed}>
+          <Button variant="pri" onClick={review.markReviewed} disabled={!review.canReview}>
             Mark these {count} reviewed
           </Button>
+          {!review.canReview ? <p className={styles.reviewNote}>Review is unavailable in Preview.</p> : null}
           <p className={styles.reviewNote}>
             <button type="button" className={styles.textButton} onClick={copyHandover}>
               Copy as handover text

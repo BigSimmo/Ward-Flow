@@ -1,3 +1,7 @@
+import {
+  meetingActionOfInboxId,
+  BED_MEETING_AGENDA_HREF,
+} from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { INBOX_CATEGORIES } from "@/components/ward-management/ward-flow-reducer";
 import {
   alertGroupOfId,
@@ -34,7 +38,8 @@ export type AlertKind =
   | "notify"
   | "target"
   | "running"
-  | "duplicate";
+  | "duplicate"
+  | "meeting";
 
 /** The queue's three groups: act now (red), waiting (amber, counted) and running targets (listed, never counted). */
 export type { AlertGroup };
@@ -69,6 +74,7 @@ const KIND_PREFIXES: [AlertKind, string][] = [
 ];
 
 export function alertKindOf(id: string): AlertKind | undefined {
+  if (meetingActionOfInboxId(id)) return "meeting";
   return KIND_PREFIXES.find(([, prefix]) => id.startsWith(prefix))?.[0];
 }
 
@@ -118,7 +124,7 @@ export function escalationAppliesTo(
   );
 }
 
-/** Only the categories this screen has always shown; anything else in the inbox stays elsewhere. */
+/** Every supported outstanding task, including the meeting actions counted by the bell. */
 export function isQueueItem(item: InboxItem): boolean {
   return alertKindOf(item.id) !== undefined;
 }
@@ -131,6 +137,8 @@ export function alertGroupOf(item: InboxItem): AlertGroup {
 /** The movement an inbox id names, for the categories whose remainder is a movement id. */
 /** The stay a discharge notification or absence row names, read from its id. */
 export function admissionIdOfInboxId(id: string): string | undefined {
+  const meeting = meetingActionOfInboxId(id);
+  if (meeting?.subject.kind === "admission") return meeting.subject.id;
   for (const prefix of [
     INBOX_CATEGORIES.support_notification_discharge.idPrefix,
     INBOX_CATEGORIES.absent_without_leave.idPrefix,
@@ -146,6 +154,8 @@ export function personIdOfInboxId(id: string): string | undefined {
 }
 
 export function movementIdOfInboxId(id: string): string | undefined {
+  const meeting = meetingActionOfInboxId(id);
+  if (meeting) return meeting.subject.kind === "movement" ? meeting.subject.id : undefined;
   const match = KIND_PREFIXES.find(([, candidate]) => id.startsWith(candidate));
   // A planned arrival row names a booking, never a movement; a discharge notification row names a stay.
   if (!match || match[0] === "planned") return undefined;
@@ -170,7 +180,7 @@ export function bookingOfInboxId(
 const ALERT_KIND_LABELS: Record<AlertKind, string> = {
   awol: "Absent without leave on an order",
   legal: "Form due time passed",
-  declines: "Every ward asked declined",
+  declines: "Multiple destinations declined",
   unsuitable: "Destination unsuitable",
   nobed: "No eligible bed",
   hold: "Pull expired",
@@ -180,6 +190,7 @@ const ALERT_KIND_LABELS: Record<AlertKind, string> = {
   target: "Decision target overdue",
   running: "Decision target running",
   duplicate: "More than one active bed request",
+  meeting: "Bed meeting action",
 };
 
 /**
@@ -292,6 +303,8 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
   if (isAcceptedPullRow(item.id))
     return { kind: "link", label: "Pull the bed", href: item.href ?? "/ward-flow/alerts" };
   switch (alertKindOf(item.id)) {
+    case "meeting":
+      return { kind: "link", label: "Open action", href: item.href ?? BED_MEETING_AGENDA_HREF };
     case "awol":
       return { kind: "link", label: "Open patient", href: item.href ?? patientHref };
     case "legal":

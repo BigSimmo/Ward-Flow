@@ -6,6 +6,7 @@ import { ChevronRight } from "lucide-react";
 import { Button, Card, CardHead, Segmented } from "@/components/wf";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
+import { useForecastChange } from "@/components/ward-management/forecast/use-forecast-model";
 import { BEDS_FORECAST_LIMITS } from "./beds-forecast";
 import type { ForecastLever } from "@/components/ward-management/forecast/forecast-levers";
 import type { HorizonDay } from "@/components/ward-management/forecast/forecast-horizon";
@@ -57,6 +58,7 @@ export function BedForecast({
   const [view, setView] = useState<"network" | "ward">("network");
   const [openItem, setOpenItem] = useState<HelpItem | null>(null);
   const { forecast, gapTotals, days, week, forecastModel, sourceSummary, now, networkRows } = model;
+  useForecastChange(forecastModel, now, { remember: true });
   const [tomorrow, twoDays] = forecast.horizons;
   const bars: DayBar[] = days.map((day, index) => ({
     key: day.offset,

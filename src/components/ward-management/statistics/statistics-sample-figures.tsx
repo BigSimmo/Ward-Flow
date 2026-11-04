@@ -62,7 +62,15 @@ export function StatisticsSampleFigures() {
 }
 
 function OperationalSampleFigures({ mode, id }: { mode: string | undefined; id: string | undefined }) {
-  const state = useWardFlowSelect("units", "admissions", "bedReleases", "leaveBeds", "scenario");
+  const state = useWardFlowSelect(
+    "units",
+    "admissions",
+    "bedReleases",
+    "leaveBeds",
+    "scenario",
+    "referrals",
+    "movements",
+  );
   const now = useWardFlowClock();
   const ward = mode === "ward" ? state.units.find((unit) => unit.id === id) : undefined;
   const ed = mode === "ed" && id ? edById(id) : undefined;
@@ -80,7 +88,10 @@ function OperationalSampleFigures({ mode, id }: { mode: string | undefined; id: 
   )
     return null;
   const scope = ward?.name ?? ed?.name ?? team?.name ?? (mode === "service" ? id : "Whole network");
-  const capacity = occupiedBeds(scopedUnits, state.admissions, state.bedReleases, state.leaveBeds);
+  const capacity = occupiedBeds(scopedUnits, state.admissions, state.bedReleases, state.leaveBeds, [
+    ...state.referrals,
+    ...state.movements,
+  ]);
   return (
     <SampleFiguresView
       mode={mode}

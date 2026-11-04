@@ -323,6 +323,7 @@ export function bedsReadySummary(
   admissions: readonly Admission[],
   bedReleases: BedRelease[],
   now: Instant,
+  referrals: readonly Referral[] = [],
 ): BedsReadySummary {
   const totals = { Adult: 0, "Older adult": 0, Youth: 0, Locked: 0 };
   let total = 0;
@@ -331,7 +332,7 @@ export function bedsReadySummary(
   for (const unit of units) {
     // Every unit counts: a unit without authorisation still takes voluntary admissions. The shared
     // per-unit ready figure, so the cohort cells add up to the same total every other page shows.
-    const ready = readyBedsNow(unit, admissions, bedReleases);
+    const ready = readyBedsNow(unit, admissions, bedReleases, referrals);
     total += ready;
     totals[unit.cohort] += ready;
     // Locked is the ready locked portion of any ward, mixed wards included.

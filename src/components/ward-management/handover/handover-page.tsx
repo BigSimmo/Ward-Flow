@@ -314,8 +314,8 @@ export function HandoverPage() {
   );
   const deskPlaces = useMemo(() => wardPlaceLookup(units), [units]);
   const allWards = useMemo(
-    () => units.map((unit) => toHandoverWard(unit, admissions, now, bedReleases)),
-    [units, admissions, now, bedReleases],
+    () => units.map((unit) => toHandoverWard(unit, admissions, now, bedReleases, [...referrals, ...movements])),
+    [units, admissions, now, bedReleases, referrals, movements],
   );
   const wards = useMemo(
     () =>

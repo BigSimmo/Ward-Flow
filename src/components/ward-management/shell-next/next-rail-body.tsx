@@ -307,7 +307,8 @@ const NO_BED_ALERTS: ServiceBedAlertsSummary = {
 export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const network = useWardNetwork();
   const pathname = usePathname() ?? "";
-  const { units, bedReleases, movements, configuration, admissions } = useWardFlowSelect(
+  const { units, bedReleases, movements, configuration, admissions, referrals } = useWardFlowSelect(
+    "referrals",
     "units",
     "bedReleases",
     "movements",
@@ -320,7 +321,10 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   // A phone never draws the rail (below), so it skips the bed alert figures too.
   const bedAlerts = phone
     ? NO_BED_ALERTS
-    : deriveServiceBedAlerts(units, bedReleases, network.sites, movements, now, accessTargetMinutes, admissions);
+    : deriveServiceBedAlerts(units, bedReleases, network.sites, movements, now, accessTargetMinutes, admissions, [
+        ...referrals,
+        ...movements,
+      ]);
   // Nav order follows the signed-in person, not the route (device audit item 6).
   // ROLE BRANCH (bed_manager): Capacity counts the desk's own site's ready beds (`preview-nav-counts.ts`).
   const { counts, shellRole: role } = useNextNavCounts();
@@ -382,7 +386,10 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const viewing = viewingDeskLine(pathname, personaRole, units, currentPersona.role);
   // shell-next: whose figures these are, the bed alert rows for the desk's own place, and pins.
   const countNote = countScopeNote(deskAccess, service);
-  const capacityRows = deskCapacityRows(deskAccess, units, admissions ?? [], bedReleases, bedAlerts);
+  const capacityRows = deskCapacityRows(deskAccess, units, admissions ?? [], bedReleases, bedAlerts, [
+    ...referrals,
+    ...movements,
+  ]);
   const overLine = overLineLabel(capacityRows);
   const firstRow = capacityRows[0];
   const capacityRowsLabel = capacityRowsSpoken(capacityRows);

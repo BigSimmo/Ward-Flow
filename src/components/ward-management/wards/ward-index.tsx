@@ -234,12 +234,13 @@ type WardRow = {
 
 export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
   const {
+    referrals,
     units: liveUnits,
     bedReleases,
     movements,
     admissions,
     leaveBeds,
-  } = useWardFlowSelect("units", "bedReleases", "movements", "admissions", "leaveBeds");
+  } = useWardFlowSelect("referrals", "units", "bedReleases", "movements", "admissions", "leaveBeds");
   const units = unitsOverride ?? liveUnits;
   // Site bed manager (D-80): a site bed manager's hero, checks and first cards are its own
   // site's wards. Every other site stays on the page as bed counts only: no Enter, no stays link,
@@ -297,7 +298,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
     () =>
       units.map((unit) => {
         const site = siteByCode(unit.siteCode);
-        const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+        const states = bedStates(unit, admissions, bedReleases, leaveBeds, [...referrals, ...movements]);
         const breakdown = capacityBreakdown(unit, bedReleases, leaveBeds, now);
         const incoming = movements.filter(
           (movement) =>
@@ -311,7 +312,8 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           siteShort: site ? siteShortName(site.name) : unit.siteCode,
           states,
           // Occupied or Pulled: the one occupancy count (`ward-occupancy.ts`).
-          occupancy: unit.beds > 0 ? wardBedsInUse(unit, admissions, bedReleases) / unit.beds : 0,
+          occupancy:
+            unit.beds > 0 ? wardBedsInUse(unit, admissions, bedReleases, [...referrals, ...movements]) / unit.beds : 0,
           ready: states.ready,
           pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
           out: breakdown.confirmedToday + breakdown.expectedToday,
@@ -321,7 +323,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           specialling: Math.max(0, unit.speciallingCapacity - remainingSpeciallingCapacity(unit, admissions)),
         };
       }),
-    [units, admissions, bedReleases, leaveBeds, movements, now],
+    [units, admissions, bedReleases, leaveBeds, movements, now, referrals],
   );
 
   const services = useMemo(

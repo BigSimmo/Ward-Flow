@@ -11,6 +11,8 @@ import { edLongestWaitTone, edPressure } from "@/components/ward-management/ward
 import { edHealthService, healthServiceAcronym } from "@/components/ward-management/ward-service-scope";
 import { edShortName, siteByCode } from "@/components/ward-management/ward-sites";
 
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
+
 import styles from "./home.module.css";
 
 /**
@@ -97,8 +99,9 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
             (movement) => movement.legalForm !== undefined || isDetainedUnderTheAct(movement.legalStatus),
           ).length;
           const deadlines = open
-            .filter((movement) => movement.legalForm?.dueAt !== undefined)
-            .map((movement) => clockState(movement.legalForm!.dueAt!, now, thresholds));
+            .map(currentLegalDueAt)
+            .filter((dueAt): dueAt is Instant => dueAt !== undefined)
+            .map((dueAt) => clockState(dueAt, now, thresholds));
           const critical = deadlines.filter((state) => state === "critical").length;
           const due = deadlines.filter((state) => state === "due").length;
           const forms = (count: number) => `${count} form${count === 1 ? "" : "s"}`;

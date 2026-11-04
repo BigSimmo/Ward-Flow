@@ -466,7 +466,8 @@ function WardPreview({
   href: string;
   onOpen: PreviewProps["onOpen"];
 }) {
-  const ready = unitReadyBedCount(unit);
+  const flow = useOptionalWardFlow();
+  const ready = unitReadyBedCount(unit, flow?.admissions, [...(flow?.referrals ?? []), ...movements]);
   const incoming = movements.filter((movement) => isOpen(movement) && movement.acceptedUnitId === unit.id);
   const referred = movements.filter(
     (movement) => isOpen(movement) && !movement.acceptedUnitId && movement.referredUnitIds.includes(unit.id),

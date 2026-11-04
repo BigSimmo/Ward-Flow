@@ -182,10 +182,11 @@ export function headlineAvailable(
   bedReleases: readonly BedRelease[],
   leaveBeds: readonly LeaveBed[],
   now: Instant,
+  referrals: NonNullable<Parameters<typeof readyBedsNow>[3]> = [],
 ): number {
   void leaveBeds;
   void now;
-  const ready = readyBedsNow(unit, admissions, bedReleases);
+  const ready = readyBedsNow(unit, admissions, bedReleases, referrals);
   if (!Number.isFinite(ready) || ready <= 0) return 0;
   return Math.floor(ready);
 }
@@ -227,8 +228,9 @@ export function acceptingBedCounts(
   bedReleases: readonly BedRelease[],
   leaveBeds: readonly LeaveBed[],
   now: Instant,
+  referrals: NonNullable<Parameters<typeof readyBedsNow>[3]> = [],
 ): AcceptingBedCounts {
-  const free = headlineAvailable(unit, admissions, bedReleases, leaveBeds, now);
+  const free = headlineAvailable(unit, admissions, bedReleases, leaveBeds, now, referrals);
   const staffable = remainingSpeciallingCapacity(unit, admissions);
 
   return {
@@ -271,11 +273,12 @@ export function constraintSentence(
   bedReleases: readonly BedRelease[],
   leaveBeds: readonly LeaveBed[],
   now: Instant,
+  referrals: NonNullable<Parameters<typeof readyBedsNow>[3]> = [],
 ): string | null {
-  const free = headlineAvailable(unit, admissions, bedReleases, leaveBeds, now);
+  const free = headlineAvailable(unit, admissions, bedReleases, leaveBeds, now, referrals);
   if (free <= 0) return null;
 
-  const counts = acceptingBedCounts(unit, admissions, bedReleases, leaveBeds, now);
+  const counts = acceptingBedCounts(unit, admissions, bedReleases, leaveBeds, now, referrals);
   const clauses: string[] = [];
 
   if (counts.forFemale < free) clauses.push(`${countPhrase(counts.forFemale)} will take a woman.`);

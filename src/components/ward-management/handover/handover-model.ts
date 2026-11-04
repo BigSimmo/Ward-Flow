@@ -724,6 +724,7 @@ export function toHandoverWard(
   admissions: Admission[],
   now: Instant,
   bedReleases: BedRelease[] = [],
+  referrals: readonly import("@/components/ward-management/ward-bed-states").ReservationReferral[] = [],
 ): HandoverWard {
   const here = admissions.filter((admission) => admission.unitId === unit.id && bedIsOccupied(admission));
   const dayEnd = now - minuteOfDay(now) + MINUTES_PER_DAY;
@@ -736,12 +737,12 @@ export function toHandoverWard(
     occupied: here.length,
     empty: unit.empty.value,
     // Audit 6 (Josh, 20 Oct 2026): the one ready figure, leaving out beds pulled for an incoming patient.
-    ready: readyBedsNow(unit, admissions, bedReleases),
+    ready: readyBedsNow(unit, admissions, bedReleases, referrals),
     pendingPreparation: bedsPendingPreparation(unit.id, bedReleases),
     confirmedAt: unit.empty.confirmedAt,
     staleAfter: unit.empty.staleAfterMinutes,
     // Audit 24-4 NA2-03: the Pulled box Capacity and Home print, never closed beds.
-    held: bedStates(unit, admissions, bedReleases, []).pulled,
+    held: bedStates(unit, admissions, bedReleases, [], referrals).pulled,
     longStays: here.filter((admission) => (daysInBed(admission, now) ?? 0) >= CLINICAL_VALUES.longStayPrompt.value)
       .length,
     pastEdd: here.filter((admission) => admission.expectedDischargeAt !== null && admission.expectedDischargeAt < now)

@@ -69,10 +69,10 @@ function countInCategory(category: keyof typeof INBOX_CATEGORIES): number {
 /** Every condition this screen claims to watch, by its name in the hero's Checking list. */
 const CONDITIONS = [
   "Legal due time passed",
-  "Every ward declined",
+  "Multiple destinations declined",
   "Unsuitable destination",
   "Pull expired",
-  "Transport not left",
+  "Transport awaiting departure or arrival",
   "Target overdue",
   "Triage waiting",
   "ED over a day",
@@ -160,7 +160,7 @@ describe("the Alerts screen reports on every condition it watches, firing or not
     ).toBeGreaterThan(0);
 
     renderScreen();
-    const section = within(checkingList()).getByRole("listitem", { name: "Transport not left" });
+    const section = within(checkingList()).getByRole("listitem", { name: "Transport awaiting departure or arrival" });
 
     expect(
       within(section).getByText(/Watches accepted transport legs/u),

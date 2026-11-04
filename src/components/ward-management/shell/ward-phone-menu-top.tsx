@@ -23,7 +23,8 @@ export function PhoneMenuTop({
   onGo: () => void;
 }) {
   const network = useWardNetwork();
-  const { units, bedReleases, movements, configuration, admissions } = useWardFlowSelect(
+  const { units, bedReleases, movements, configuration, admissions, referrals } = useWardFlowSelect(
+    "referrals",
     "units",
     "bedReleases",
     "movements",
@@ -43,8 +44,9 @@ export function PhoneMenuTop({
     now,
     configuration.edAccessTargetMinutes,
     admissions,
+    [...referrals, ...movements],
   );
-  const rows = deskCapacityRows(access, units, admissions ?? [], bedReleases, bedAlerts);
+  const rows = deskCapacityRows(access, units, admissions ?? [], bedReleases, bedAlerts, [...referrals, ...movements]);
   const overLine = overLineLabel(rows);
   const readyBeds = counts.capacity?.value ?? bedAlerts.totalFreeBeds;
   const note = cardScopeNote(rows, access, service);

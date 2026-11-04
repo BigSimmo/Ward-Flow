@@ -21,16 +21,22 @@ import { broadcastKind, type BroadcastAlert, type BroadcastTargetScope } from ".
 import type { LiveBedCall } from "./broadcast-composer";
 
 export function useBroadcastAudience(
-  state: Pick<WardFlowState, "units" | "admissions" | "bedReleases">,
+  state: Pick<WardFlowState, "units" | "admissions" | "bedReleases"> &
+    Partial<Pick<WardFlowState, "referrals" | "movements">>,
   initial: { templateId: string; scope: BroadcastTargetScope },
   wardsOnly = false,
 ) {
-  const { units, admissions, bedReleases } = state;
+  const { units, admissions, bedReleases, referrals, movements } = state;
   const groups = useMemo(() => audienceGroups(units), [units]);
   // The wards Capacity shows with a bed ready now.
   const wardsWithBedNow = useMemo(
-    () => units.filter((unit) => readyBedsNow(unit, admissions, bedReleases ?? []) > 0).map((unit) => unit.id),
-    [units, admissions, bedReleases],
+    () =>
+      units
+        .filter(
+          (unit) => readyBedsNow(unit, admissions, bedReleases ?? [], [...(referrals ?? []), ...(movements ?? [])]) > 0,
+        )
+        .map((unit) => unit.id),
+    [units, admissions, bedReleases, referrals, movements],
   );
   const [audience, setAudience] = useState<BroadcastAudience>(() =>
     templateAudience(initial.templateId, initial.scope, audienceGroups(units)),

@@ -34,7 +34,7 @@ import {
   type Instant,
   MINUTES_PER_DAY,
 } from "@/components/ward-management/ward-clock";
-import { isOpen } from "@/components/ward-management/ward-derivations";
+import { acceptedReferralAwaitingMovement, isOpen } from "@/components/ward-management/ward-derivations";
 import type { LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { foldPatientSearchText, patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
@@ -206,7 +206,11 @@ function plural(n: number, word: string): string {
 }
 
 function daysText(minutes: number): string {
-  return `${Math.max(1, Math.floor(minutes / MINUTES_PER_DAY))}d`;
+  return minutes < 60
+    ? `${Math.floor(minutes)}m`
+    : minutes < MINUTES_PER_DAY
+      ? durMinutes(minutes)
+      : `${Math.floor(minutes / MINUTES_PER_DAY)}d`;
 }
 
 export function buildCensus(state: {
@@ -344,13 +348,6 @@ export function buildCensus(state: {
     });
   }
 
-  // Everyone who has held a ward record, discharged included.
-  const admitted = new Set<string>();
-  for (const admission of admissions) {
-    const occupant = resolve(admission).patient;
-    if (occupant) admitted.add(occupant.id);
-  }
-
   for (const referral of referrals) {
     const outcome = referralState(referral);
     // Withdrawn arms are settled, so only arms still awaiting an answer keep a referral open. An
@@ -358,11 +355,11 @@ export function buildCensus(state: {
     const awaiting = referral.destinations.filter(isAwaitingAnswer);
     const accepted = outcome === "accepted" ? referral.destinations.find((arm) => arm.state === "accepted") : undefined;
     if (accepted === undefined && (outcome !== "queued" || awaiting.length === 0)) continue;
+    // Settle the referral episode and destination before deduplicating people. An unrelated old
+    // stay cannot complete this acceptance, and team acceptances do not wait for a ward move.
+    if (accepted && !acceptedReferralAwaitingMovement(referral, movements, admissions)) continue;
     const linked = resolve(referral).patient;
     if (linked && busy.has(linked.id)) continue;
-    // An accepted referral is finished once its person has held a ward record; only a known person
-    // with none is still waiting for the move.
-    if (accepted && (!linked || admitted.has(linked.id))) continue;
     const who = person(referral);
     const community = isCommunityReferral(referral);
     const where = community ? `${referral.originSiteCode} Community` : `${referral.originSiteCode} ED`;
@@ -492,9 +489,11 @@ export function buildCensus(state: {
       to:
         edd === null
           ? "No date set"
-          : edd < now
-            ? `Expected ${daysText(now - edd)} ago`
-            : `Expected in ${daysText(edd - now)}`,
+          : edd === now
+            ? "Expected now"
+            : edd < now
+              ? `Expected ${daysText(now - edd)} ago`
+              : `Expected in ${daysText(edd - now)}`,
       toSub: "Expected discharge",
       next,
       nextWho: glyph === "done" ? "" : "Ward",

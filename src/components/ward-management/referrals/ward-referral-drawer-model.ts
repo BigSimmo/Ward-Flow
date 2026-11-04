@@ -373,11 +373,12 @@ export function useWardCapacity(): WardCapacityRecord[] {
   const bedReleases = flow?.bedReleases;
   const admissions = flow?.admissions;
   const leaveBeds = flow?.leaveBeds;
+  const referrals = flow?.referrals;
   return useMemo(() => {
     if (!units || !bedReleases) return [];
     return units.map((unit) => {
       // The ruled bed boxes (`ward-bed-states.ts`): Ready · Pulled · Closed · Occupied.
-      const states = bedStates(unit, admissions ?? [], bedReleases, leaveBeds ?? []);
+      const states = bedStates(unit, admissions ?? [], bedReleases, leaveBeds ?? [], referrals);
       return {
         unitId: unit.id,
         siteCode: unit.siteCode,
@@ -392,7 +393,7 @@ export function useWardCapacity(): WardCapacityRecord[] {
         pendingPreparation: bedsPendingPreparation(unit.id, [...bedReleases]),
       };
     });
-  }, [units, bedReleases, admissions, leaveBeds]);
+  }, [units, bedReleases, admissions, leaveBeds, referrals]);
 }
 
 export type DrawerCategory = "community" | "ed" | "ward";

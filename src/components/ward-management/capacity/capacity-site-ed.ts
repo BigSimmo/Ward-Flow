@@ -1,5 +1,7 @@
 "use client";
 
+import { waitingEdHref } from "@/components/ward-management/delays/waiting-href";
+
 // The site bed manager's Capacity (Josh, 30 Oct 2026): the site's own ED as counts only, because
 // Places does not list the ED for this desk. Read with the same derivation the All EDs page uses
 // (`edHomeSummaries`), so the figures agree with it; never a name.
@@ -14,7 +16,7 @@ import type { Site } from "@/components/ward-management/ward-model";
 type WithEd = Pick<Site, "emergencyDepartment">;
 
 /** `short` is the road-time list's own form ("RPH ED"), so the hero names which ED it counts. */
-export type SiteEdWaiting = { short: string; waiting: number; pastTarget: number };
+export type SiteEdWaiting = { href?: string; short: string; waiting: number; pastTarget: number };
 
 /** The desk site's ED: people waiting there for an inpatient bed, and how many are past target. */
 export function useSiteEdWaiting(site: WithEd | undefined, now: Instant): SiteEdWaiting | null {
@@ -27,6 +29,7 @@ export function useSiteEdWaiting(site: WithEd | undefined, now: Instant): SiteEd
     );
     return summary
       ? {
+          href: waitingEdHref(summary.ed.id),
           short: `${summary.ed.siteCode} ED`,
           waiting: summary.waiting,
           pastTarget: summary.pastAccessTarget,

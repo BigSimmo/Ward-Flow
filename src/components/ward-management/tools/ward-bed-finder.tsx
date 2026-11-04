@@ -60,6 +60,7 @@ export function findBeds(
   admissions: readonly Admission[],
   releases: BedRelease[],
   filters: BedFinderFilters,
+  referrals: readonly import("@/components/ward-management/ward-bed-states").ReservationReferral[] = [],
 ): BedFinderRow[] {
   if (!filters.legalStatus) return [];
   const involuntary = filters.legalStatus === "involuntary";
@@ -75,7 +76,7 @@ export function findBeds(
         // pulled for an incoming patient; the older min(allocatable, empty) still offered it. The
         // data does not say which beds are empty, so each kind is capped on its own rather than
         // giving the cap to locked beds first.
-        const ready = readyBedsNow(unit, admissions, releases);
+        const ready = readyBedsNow(unit, admissions, releases, referrals);
         const free =
           filters.bed === "locked"
             ? Math.min(lockedBedsFree(unit), ready)
@@ -272,12 +273,18 @@ function BedFinderRowText({ row, now }: { row: BedFinderRow; now: Instant }) {
   );
 }
 function OperationalBedFinder({ onNavigate }: { onNavigate: () => void }) {
-  const { units, admissions, bedReleases, now } = useWardFlowSelect("units", "admissions", "bedReleases", "now");
+  const { units, admissions, bedReleases, now, referrals } = useWardFlowSelect(
+    "units",
+    "admissions",
+    "bedReleases",
+    "now",
+    "referrals",
+  );
   // Access audit (31 Oct 2026): a ward links to its page only for a desk that may open that page,
   // by the same role table the menu reads. Another desk still reads the row, as plain text.
   const canOpen = useCanOpenHref();
   const [filters, setFilters] = useState<BedFinderFilters>(DEFAULT_BED_FINDER_FILTERS);
-  const rows = findBeds(units, admissions, bedReleases, filters);
+  const rows = findBeds(units, admissions, bedReleases, filters, referrals);
   const set =
     <K extends keyof BedFinderFilters>(key: K) =>
     (value: BedFinderFilters[K]) =>

@@ -178,6 +178,7 @@ export function buildTiles(
   admissions: readonly Admission[],
   bedReleases: readonly BedRelease[],
   now: Instant,
+  reservations: NonNullable<Parameters<typeof bedStates>[4]> = [],
 ): Tile[] {
   const occupants = admissionsForUnit(admissions, unit.id).filter(bedIsOccupied);
 
@@ -219,7 +220,7 @@ export function buildTiles(
   // are passed empty: they only feed the On leave marker, never a tile count.
   const closedCount = Math.max(
     0,
-    Math.min(Math.floor(bedStates(unit, admissions, [...bedReleases], []).closed), emptyPoolCount),
+    Math.min(Math.floor(bedStates(unit, admissions, [...bedReleases], [], reservations).closed), emptyPoolCount),
   );
   for (let index = 0; index < closedCount; index += 1) {
     tiles.push({ kind: "closed", key: `closed-${index}` });

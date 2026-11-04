@@ -102,11 +102,12 @@ export function bedsForecast(
   movements: Movement[],
   now: Instant,
   plannedAdmissions: readonly PlannedAdmission[] = [],
+  referrals: readonly import("@/components/ward-management/ward-bed-states").ReservationReferral[] = [],
 ): BedsForecast {
   // Clinical owner ruling, 14 Oct 2026: main's capacity rule stands, and a closed unit counts as
   // zero capacity, now or projected.
   const openUnits = units.filter((unit) => !unit.isClosed);
-  const readyNow = openUnits.reduce((sum, unit) => sum + bedStates(unit, admissions, [], []).ready, 0);
+  const readyNow = openUnits.reduce((sum, unit) => sum + bedStates(unit, admissions, [], [], referrals).ready, 0);
   const openUnitIds = new Set(openUnits.map((unit) => unit.id));
   const unitIds = new Set(units.map((unit) => unit.id));
   const admissionsById = new Map(admissions.map((admission) => [admission.id, admission]));

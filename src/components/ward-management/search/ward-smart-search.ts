@@ -29,11 +29,11 @@ import {
   isOpen,
   searchMovements,
   stageCopy,
-  unitCapacity,
   type InboxItem,
   type MovementSearchQuery,
 } from "@/components/ward-management/ward-derivations";
 import { SELECTABLE_LEGAL_FORMS, legalFormName } from "@/components/ward-management/ward-legal-forms";
+import { readyBedsNow, type ReservationReferral } from "../ward-bed-states";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { EmergencyDepartment, LegalForm, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { createPatientResolver, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -195,11 +195,15 @@ type TaskSearchResult = {
  * Calculates ready bed count for a unit per Standard §8.6.
  * Ready beds = min(allocatable, empty). With either figure missing the count is not recorded
  * (null): until 25 Sept 2026 it fell back to `unit.beds`, calling every bed on the ward ready.
- * Calls `unitCapacity` (ruling R-B-09) — never a fifth inline copy of the Ready expression.
+ * Calls the canonical reservation-aware Ready selector (ruling R-B-09) — never a fifth inline copy of the Ready expression.
  */
-export function unitReadyBedCount(unit: Unit): number | null {
+export function unitReadyBedCount(
+  unit: Unit,
+  admissions: readonly Admission[] = [],
+  referrals: readonly ReservationReferral[] = [],
+): number | null {
   if (unit.allocatable && unit.empty) {
-    return unitCapacity(unit, []).available;
+    return readyBedsNow(unit, admissions, [], referrals);
   }
   return null;
 }
@@ -232,7 +236,13 @@ function withNearSpellings<T>(
 /**
  * Matches wards by name, siteCode, unit id, or site name.
  */
-function searchWards(query: string, units?: Unit[], nearly = false): WardSearchResult[] {
+function searchWards(
+  query: string,
+  units?: Unit[],
+  nearly = false,
+  admissions: readonly Admission[] = [],
+  referrals: readonly ReservationReferral[] = [],
+): WardSearchResult[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return [];
 
@@ -243,7 +253,7 @@ function searchWards(query: string, units?: Unit[], nearly = false): WardSearchR
 
   const wardFields = (unit: Unit) => [unit.name, unit.siteCode, unit.id, siteByCode(unit.siteCode)?.name ?? ""];
   const exact = candidateUnits.filter((unit) => {
-    if (readyOnly) return (unitReadyBedCount(unit) ?? 0) > 0;
+    if (readyOnly) return (unitReadyBedCount(unit, admissions, referrals) ?? 0) > 0;
     if (isWardKeyword) return true;
     return matchesSearchWords(query, wardFields(unit), ["ward", "wards"]);
   });
@@ -253,7 +263,7 @@ function searchWards(query: string, units?: Unit[], nearly = false): WardSearchR
   return matched.map((unit) => {
     const site = siteByCode(unit.siteCode);
     const siteName = site?.name ?? unit.siteCode;
-    const readyBeds = unitReadyBedCount(unit);
+    const readyBeds = unitReadyBedCount(unit, admissions, referrals);
     return {
       unit,
       readyBeds,
@@ -722,7 +732,7 @@ export type SmartSearchInput = {
   limitPerGroup?: number;
   plannedAdmissions?: readonly import("@/components/ward-management/ward-admissions").PlannedAdmission[];
   /** Ward admissions, so an accepted referral already admitted is not offered as still waiting. */
-  admissions?: readonly Pick<Admission, "referralId">[];
+  admissions?: readonly Admission[];
   precomputedTasks?: readonly InboxItem[];
 };
 
@@ -904,12 +914,12 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
   const allBeds = searchBeds(typed, input.units);
   if (allBeds.length > limit) truncatedGroups.push("beds");
   const beds = allBeds.slice(0, limit);
-  const wards = rankGroup("wards", searchWards(typed, input.units, nearly), typed, (ward) => [
-    ward.unit.name,
-    ward.unit.siteCode,
-    ward.unit.id,
-    ward.siteName,
-  ]);
+  const wards = rankGroup(
+    "wards",
+    searchWards(typed, input.units, nearly, input.admissions, [...(input.referrals ?? []), ...input.movements]),
+    typed,
+    (ward) => [ward.unit.name, ward.unit.siteCode, ward.unit.id, ward.siteName],
+  );
   const emergencyDepartments = rankGroup(
     "eds",
     searchEmergencyDepartments(typed, undefined, nearly),

@@ -122,6 +122,7 @@ function declineReasonLabel(reason: DeclineReason): string {
 export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProps) {
   const [, startTransition] = useTransition();
   const {
+    wardReferralInbox,
     movements,
     units,
     bedReleases,
@@ -132,6 +133,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     resolvePatientIdentity,
     configuration,
   } = useWardFlowSelect(
+    "wardReferralInbox",
     "movements",
     "units",
     "bedReleases",
@@ -322,12 +324,10 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const site = siteByCode(currentUnit.siteCode);
   const capacity = unitCapacity(currentUnit, bedReleases);
   const breakdown = capacityBreakdown(currentUnit, bedReleases, leaveBeds, now);
-  // The ruled four boxes for the census grid below; "Held" is kept for a leave bed only.
-  const states = bedStates(currentUnit, admissions, bedReleases, leaveBeds);
-  // The one occupancy figure (Occupied + Pulled, `ward-occupancy.ts`), the same as the Ward page.
-  const occupancy = wardOccupancy([currentUnit], admissions, bedReleases);
-  // Owner ruling 2026-09-05: "ready" does not subtract a bed being made ready, so this sentence (the
-  // reducer's own `bedsPendingPreparation`) keeps a coordinator from pulling into a bed not yet made.
+  const reservations = [...wardReferralInbox(currentUnit.id), ...movements];
+  const states = bedStates(currentUnit, admissions, bedReleases, leaveBeds, reservations);
+  const occupancy = wardOccupancy([currentUnit], admissions, bedReleases, reservations);
+  // Ready includes preparing beds (owner, 5 Sept 2026); their separate marker warns before a pull.
   const pendingPreparation = bedsPendingPreparation(currentUnit.id, bedReleases);
   const heldIndex = incoming.findIndex((movement) => movement.id === answerSelection.id);
   const activeAnswerIndex =

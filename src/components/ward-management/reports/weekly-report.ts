@@ -307,7 +307,7 @@ export function weeklyOperationsReport(input: WeeklyReportInput, week: ReportWee
       occupiedBedDays: days(occupiedMinutes),
       averagePercent:
         beds > 0 && countedMinutes > 0 ? Math.round((occupiedMinutes / (beds * countedMinutes)) * 100) : null,
-      now: occupiedBeds(units, admissions, input.bedReleases, input.leaveBeds),
+      now: occupiedBeds(units, admissions, input.bedReleases, input.leaveBeds, [...referrals, ...movements]),
     },
   };
 }

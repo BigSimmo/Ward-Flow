@@ -160,7 +160,10 @@ export function takeLastLookSnapshot(
   const open = world.movements.filter(isOpen);
   const readyByUnit: Record<string, number> = {};
   for (const unit of world.units) {
-    readyByUnit[unit.id] = readyBedsNow(unit, world.admissions ?? [], world.bedReleases);
+    readyByUnit[unit.id] = readyBedsNow(unit, world.admissions ?? [], world.bedReleases, [
+      ...world.referrals,
+      ...world.movements,
+    ]);
   }
   const delayKeys: string[] = [];
   for (const group of delayGroups(open, [...world.units], now, thresholds)) {

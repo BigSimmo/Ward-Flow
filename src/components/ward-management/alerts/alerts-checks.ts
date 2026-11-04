@@ -39,9 +39,9 @@ export function alertChecks({
     {
       key: "declines",
       kind: "declines",
-      label: "Every ward declined",
+      label: "Multiple destinations declined",
       n: countKind("declines"),
-      scope: `Watches movements where every ward approached has refused and none has accepted. ${countKind("declines")} of ${declineCandidates} declined by every ward asked.`,
+      scope: `Watches open movements with multiple declined destinations and no accepted destination. ${countKind("declines")} of ${declineCandidates} movements with recorded declines meet the alert threshold.`,
     },
     {
       key: "unsuitable",
@@ -68,9 +68,10 @@ export function alertChecks({
     {
       key: "transport",
       kind: "transport",
-      label: "Transport not left",
+      label: "Transport awaiting departure or arrival",
       n: countKind("transport"),
-      scope: "Watches accepted transport legs that have not departed.",
+      scope:
+        "Watches accepted transport legs awaiting departure and booked transport whose arrival estimate has passed without arrival. A job can have both conditions.",
     },
     {
       key: "planned",

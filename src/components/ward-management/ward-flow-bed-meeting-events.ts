@@ -3,6 +3,7 @@ import {
   BED_MEETING_ACTION_KIND_IDS,
   BED_MEETING_ACTION_OWNERS,
   openMeetingAction,
+  meetingActionInboxId,
   type BedMeetingAction,
 } from "./bed-meeting/bed-meeting-actions";
 import type { WardFlowEvent } from "./ward-flow-events";
@@ -95,10 +96,36 @@ export function reduceBedMeetingEvent(
 
   decision.outcome = "accepted";
   decision.reasonCode = "none";
-  return subject.kind === "movement"
-    ? helpers.replaceMovement(state, subject.id, { ...helpers.findMovement(state, subject.id)!, meetingActions: next })
-    : helpers.replaceAdmission(state, subject.id, {
-        ...helpers.findAdmission(state, subject.id)!,
-        meetingActions: next,
-      });
+  const updated =
+    subject.kind === "movement"
+      ? helpers.replaceMovement(state, subject.id, {
+          ...helpers.findMovement(state, subject.id)!,
+          meetingActions: next,
+        })
+      : helpers.replaceAdmission(state, subject.id, {
+          ...helpers.findAdmission(state, subject.id)!,
+          meetingActions: next,
+        });
+  if (event.type === "RECORD_BED_MEETING_ACTION") {
+    // This is a new occurrence, even if completion and re-recording share one minute. Retire
+    // mutable metadata by appending to its history, as transport cancellation does. Completion
+    // leaves metadata alone, so Undo can restore that same occurrence with its snooze/owner.
+    const row = meetingActionInboxId(subject, event.action);
+    const by = WARD_FLOW_ROLE_LABELS[event.role];
+    const snoozes = updated.inboxSnoozes[row];
+    if (snoozes?.at(-1)?.kind === "snoozed") {
+      updated.inboxSnoozes = {
+        ...updated.inboxSnoozes,
+        [row]: [...snoozes, { at: event.now, by, kind: "returned" }],
+      };
+    }
+    const ownership = updated.inboxOwnership[row];
+    if (ownership?.length && ownership.at(-1)?.kind !== "released") {
+      updated.inboxOwnership = {
+        ...updated.inboxOwnership,
+        [row]: [...ownership, { at: event.now, by, kind: "released" }],
+      };
+    }
+  }
+  return updated;
 }

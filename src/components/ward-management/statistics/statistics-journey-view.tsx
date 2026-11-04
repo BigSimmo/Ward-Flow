@@ -84,12 +84,14 @@ export function journeyStages({
   bedReleases,
   leaveBeds,
   movements,
+  referrals = [],
   now,
 }: {
   units: readonly Unit[];
   admissions: readonly Admission[];
   bedReleases: BedRelease[];
   leaveBeds: readonly LeaveBed[];
+  referrals?: readonly import("@/components/ward-management/ward-bed-states").ReservationReferral[];
   movements: readonly Movement[];
   now: Instant;
 }): JourneyStage[] {
@@ -102,7 +104,7 @@ export function journeyStages({
 
   const beds = units.reduce(
     (sum, unit) => {
-      const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+      const states = bedStates(unit, admissions, bedReleases, leaveBeds, [...referrals, ...movements]);
       return {
         beds: sum.beds + unit.beds,
         occupied: sum.occupied + states.occupied,
@@ -367,20 +369,20 @@ function OperationalJourneyView({
 }) {
   const ownLive = useStatisticsLive();
   const live = liveProp ?? ownLive;
-  const { units, admissions, bedReleases, leaveBeds, movements } = live.state;
+  const { units, admissions, bedReleases, leaveBeds, movements, referrals } = live.state;
   const now = live.now;
   // An ED links to its page only where this desk may open it (access audit, 31 Oct 2026).
   const canOpen = useCanOpenHref();
 
   const stages = useMemo(
-    () => journeyStages({ units, admissions, bedReleases, leaveBeds, movements, now }),
-    [units, admissions, bedReleases, leaveBeds, movements, now],
+    () => journeyStages({ units, admissions, bedReleases, leaveBeds, movements, now, referrals }),
+    [units, admissions, bedReleases, leaveBeds, movements, now, referrals],
   );
 
   const hospitals = useMemo(() => {
     const bySite = new Map<string, HospitalRow>();
     for (const unit of units) {
-      const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+      const states = bedStates(unit, admissions, bedReleases, leaveBeds, [...referrals, ...movements]);
       const row = bySite.get(unit.siteCode) ?? {
         code: unit.siteCode,
         name: shortSiteName(siteByCode(unit.siteCode)?.name ?? unit.siteCode),
@@ -402,7 +404,7 @@ function OperationalJourneyView({
     return [...bySite.values()]
       .filter((row) => row.ready > 0)
       .sort((a, b) => b.ready - a.ready || a.name.localeCompare(b.name));
-  }, [units, admissions, bedReleases, leaveBeds]);
+  }, [units, admissions, bedReleases, leaveBeds, referrals, movements]);
 
   const waitingRows = useMemo<EdSwarmRow[]>(
     () =>

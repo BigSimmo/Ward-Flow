@@ -1,8 +1,9 @@
+import type { WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { pulledBedAvailability } from "@/components/ward-management/ward-ready-beds";
-import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 
 /**
  * The ward's bed states, as ruled (R-B-05, 2026-09-04, "option 2"; R-B-09 "Ready, everywhere";
@@ -37,11 +38,91 @@ export type BedStateCounts = {
   onLeave: number;
 };
 
+export type ReservationReferral = Referral | WardReferralInboxEntry | Movement;
+
+/** Named referral holds have not yet reduced the ward's offered observation. Ignore a
+ * converted episode and deduplicate physical beds, including admissions already using them. */
+function namedReservationCount(
+  unit: Unit,
+  admissions: readonly Admission[],
+  referrals: readonly ReservationReferral[],
+): number {
+  const converted = new Set(
+    admissions
+      .filter(
+        (admission) => admission.unitId === unit.id && ["pulled", "occupied", "departed"].includes(admission.state),
+      )
+      .map((admission) => admission.referralId)
+      .filter(Boolean),
+  );
+  const used = new Set(
+    admissions
+      .filter(
+        (admission) => admission.unitId === unit.id && (admission.state === "pulled" || admission.state === "occupied"),
+      )
+      .map((admission) => admission.bedNumber),
+  );
+  const held = new Set<number>();
+  const episodes = new Set<string>();
+  // A movement's current numbered hold supersedes its referral arm on conversion.
+  const ordered = [...referrals.filter((row) => "stage" in row), ...referrals.filter((row) => !("stage" in row))];
+  for (const referral of ordered) {
+    if ("stage" in referral) {
+      const episode = referral.referralId ?? referral.id;
+      if (episodes.has(episode)) continue;
+      const bed = referral.heldBedNumber;
+      if (
+        referral.closure !== undefined ||
+        referral.stage === "arrived" ||
+        referral.acceptedUnitId !== unit.id ||
+        bed === undefined ||
+        !Number.isInteger(bed) ||
+        bed < 1 ||
+        bed > unit.beds ||
+        used.has(bed) ||
+        admissions.some(
+          (admission) =>
+            admission.unitId === unit.id &&
+            ["pulled", "occupied", "departed"].includes(admission.state) &&
+            (admission.movementId === referral.id ||
+              admission.id === referral.admissionId ||
+              (referral.referralId !== undefined && admission.referralId === referral.referralId)),
+        )
+      )
+        continue;
+      held.add(bed);
+      episodes.add(episode);
+      continue;
+    }
+    if (converted.has(referral.id) || episodes.has(referral.id)) continue;
+    for (const arm of "destinations" in referral ? referral.destinations : [referral]) {
+      const bed = arm.heldBedNumber;
+      if (
+        arm.state !== "accepted" ||
+        arm.withdrawnAt !== undefined ||
+        arm.destination.kind !== "psychiatric_ward" ||
+        (("acceptedUnitId" in arm ? arm.acceptedUnitId : undefined) ?? arm.destination.unitId) !== unit.id ||
+        bed === undefined ||
+        !Number.isInteger(bed) ||
+        bed < 1 ||
+        bed > unit.beds ||
+        used.has(bed)
+      )
+        continue;
+      held.add(bed);
+      episodes.add(referral.id);
+      break;
+    }
+  }
+  return held.size;
+}
+
 export function bedStates(
   unit: Unit,
   admissions: readonly Admission[],
   bedReleases: BedRelease[],
   leaveBeds: readonly LeaveBed[],
+  referrals: readonly ReservationReferral[] = [],
 ): BedStateCounts {
   const capacity = unitCapacity(unit, bedReleases);
   let livePulled = 0;
@@ -54,12 +135,15 @@ export function bedStates(
   // Clamped to the box each one sits in, so a malformed fixture can never push a box negative or
   // the four past the ward's beds.
   const { ready, pulledFromEmpty, pulledFromAvailable } = pulledBedAvailability(unit, livePulled);
+  const named = namedReservationCount(unit, admissions, referrals);
+  const namedFromReady = Math.min(named, ready);
+  const namedFromClosed = Math.min(named - namedFromReady, capacity.held - pulledFromEmpty);
   const pulledFromOccupied = Math.min(seededPulled, capacity.occupied);
   const occupied = capacity.occupied - pulledFromOccupied;
   return {
-    ready,
-    pulled: pulledFromEmpty + pulledFromAvailable + pulledFromOccupied,
-    closed: capacity.held - pulledFromEmpty + capacity.blocked,
+    ready: ready - namedFromReady,
+    pulled: pulledFromEmpty + pulledFromAvailable + pulledFromOccupied + namedFromReady + namedFromClosed,
+    closed: capacity.held - pulledFromEmpty - namedFromClosed + capacity.blocked,
     occupied,
     beingMadeReady: bedsPendingPreparation(unit.id, bedReleases),
     onLeave: Math.min(leaveBeds.filter((bed) => bed.unitId === unit.id).length, occupied),
@@ -73,8 +157,13 @@ export function bedStates(
  * box through `bedStates`. New pulls use the same reservation partition through
  * `pulledBedAvailability`; physical arrivals keep their separate recording rules.
  */
-export function readyBedsNow(unit: Unit, admissions: readonly Admission[], bedReleases: readonly BedRelease[]): number {
-  return bedStates(unit, admissions, [...bedReleases], []).ready;
+export function readyBedsNow(
+  unit: Unit,
+  admissions: readonly Admission[],
+  bedReleases: readonly BedRelease[],
+  referrals: readonly ReservationReferral[] = [],
+): number {
+  return bedStates(unit, admissions, [...bedReleases], [], referrals).ready;
 }
 
 /** `readyBedsNow` summed over a set of wards. */
@@ -82,8 +171,9 @@ export function totalReadyBedsNow(
   units: readonly Unit[],
   admissions: readonly Admission[],
   bedReleases: readonly BedRelease[],
+  referrals: readonly ReservationReferral[] = [],
 ): number {
-  return units.reduce((sum, unit) => sum + readyBedsNow(unit, admissions, bedReleases), 0);
+  return units.reduce((sum, unit) => sum + readyBedsNow(unit, admissions, bedReleases, referrals), 0);
 }
 
 /** The ruled words, spelled once. */

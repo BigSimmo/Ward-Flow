@@ -108,7 +108,7 @@ export function StatisticsOverviewScreen() {
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'overview' section");
 
   const live = useStatisticsLive();
-  const { admissions, movements, bedReleases, leaveBeds, units } = live.state;
+  const { admissions, movements, bedReleases, leaveBeds, units, referrals } = live.state;
   const now = live.now;
   const service = useServiceScope();
   const [serviceFilter, setServiceFilter] = useState<string | null>(null);
@@ -125,27 +125,30 @@ export function StatisticsOverviewScreen() {
     [units, bedReleases],
   );
   const refused = useMemo(() => refusedAndNothingPending(movements, units, now), [movements, units, now]);
-  const capacity = useMemo(() => networkCapacity(units, bedReleases, admissions), [units, bedReleases, admissions]);
+  const capacity = useMemo(
+    () => networkCapacity(units, bedReleases, admissions, [...referrals, ...movements]),
+    [units, bedReleases, admissions, referrals, movements],
+  );
   // Executive: the stage and decline parts add up to a total on the same card, so they hide together.
   const stagesShown = parts(stageTallies.map((stage) => stage.count));
   const declinesShown = declinesReadout.ok ? parts(declinesReadout.value.tallies.map((tally) => tally.count)) : [];
   const declinesTotal = declinesReadout.ok ? small(declinesReadout.value.totalCount) : 0;
 
   const occupancy = useMemo(
-    () => occupiedBeds(units, admissions, bedReleases, leaveBeds),
-    [units, admissions, bedReleases, leaveBeds],
+    () => occupiedBeds(units, admissions, bedReleases, leaveBeds, [...referrals, ...movements]),
+    [units, admissions, bedReleases, leaveBeds, referrals, movements],
   );
   const totalBeds = useMemo(() => units.reduce((sum, unit) => sum + unit.beds, 0), [units]);
   // L1 (site review, 12 Oct 2026): the one statewide occupancy figure Home's ring prints
   // (`wardOccupancy`, Occupied + Pulled), so this page reads 85.2% where it read 79.6%.
   const occupiedShare = useMemo(
-    () => wardOccupancy(units, admissions, bedReleases).percent ?? 0,
-    [units, admissions, bedReleases],
+    () => wardOccupancy(units, admissions, bedReleases, [...referrals, ...movements]).percent ?? 0,
+    [units, admissions, bedReleases, referrals, movements],
   );
 
   const unitRows = useMemo(
-    () => networkUnitRows(units, admissions, bedReleases, leaveBeds),
-    [units, admissions, bedReleases, leaveBeds],
+    () => networkUnitRows(units, admissions, bedReleases, leaveBeds, [...referrals, ...movements]),
+    [units, admissions, bedReleases, leaveBeds, referrals, movements],
   );
   const wardsOverLine = useMemo(
     () => unitRows.filter((row) => row.rate >= BED_ALERT_THRESHOLD_PERCENT).length,
@@ -277,6 +280,7 @@ export function StatisticsOverviewScreen() {
                 bedReleases={bedReleases}
                 admissions={admissions}
                 leaveBeds={leaveBeds}
+                referrals={[...referrals, ...movements]}
                 service={serviceFilter}
               />
             </Follow>

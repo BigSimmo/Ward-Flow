@@ -66,12 +66,14 @@ export function HospitalCapacityMatrix({
   bedReleases,
   admissions = [],
   leaveBeds = [],
+  referrals = [],
   service = null,
 }: {
   units: Unit[];
   bedReleases: BedRelease[];
   admissions?: readonly Admission[];
   leaveBeds?: readonly LeaveBed[];
+  referrals?: readonly import("@/components/ward-management/ward-bed-states").ReservationReferral[];
   service?: string | null;
 }) {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -81,7 +83,7 @@ export function HospitalCapacityMatrix({
   const rows: UnitCapacityRow[] = useMemo(() => {
     return units.map((u) => {
       const site = siteByCode(u.siteCode);
-      const states = bedStates(u, admissions, bedReleases, leaveBeds);
+      const states = bedStates(u, admissions, bedReleases, leaveBeds, referrals);
       // W-12 (fresh audit 26 Oct 2026): the one occupancy rule, Occupied + Pulled, as every page prints it.
       const occRate = occupancyPercent({ beds: u.beds, inUse: states.occupied + states.pulled });
       const status: StatusKey = states.ready <= 0 ? "none" : occRate >= BED_ALERT_THRESHOLD_PERCENT ? "near" : "has";
@@ -102,7 +104,7 @@ export function HospitalCapacityMatrix({
         status,
       };
     });
-  }, [units, bedReleases, admissions, leaveBeds]);
+  }, [units, bedReleases, admissions, leaveBeds, referrals]);
 
   const inService = (r: UnitCapacityRow) => !service || r.service === service;
   const counts = {

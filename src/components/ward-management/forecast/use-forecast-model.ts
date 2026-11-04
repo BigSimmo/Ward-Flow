@@ -8,6 +8,7 @@
 // writes a record.
 import { useCallback, useContext, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
 import {
   noteWardSessionAccount,
@@ -35,6 +36,7 @@ import {
 } from "./forecast-last-look";
 import {
   FORECAST_HISTORY_STORAGE_KEY,
+  forecastBrowserKey,
   forecastTrackRecord,
   historyEntry,
   parseForecastHistory,
@@ -66,6 +68,7 @@ export function forecastEdName(edId: string): string {
  */
 const FORECAST_CACHE_SIZE = 4;
 const NO_PLANNED: NonNullable<Parameters<typeof forecastByKind>[6]> = [];
+const NO_REFERRALS: NonNullable<Parameters<typeof forecastByKind>[7]> = [];
 const NO_REPATRIATIONS: Parameters<typeof notYetCounted>[2] = [];
 const forecastCache: { readonly inputs: readonly unknown[]; readonly parts: ForecastParts }[] = [];
 
@@ -80,15 +83,18 @@ function computeForecastParts(
   now: Instant,
   dayZero: Date,
   edAccessTargetMinutes: Parameters<typeof edAccessRisk>[5],
+  referrals: NonNullable<Parameters<typeof forecastByKind>[7]>,
 ) {
   const horizons = forecastHorizonDays(now, dayZero);
   return {
     horizons,
-    byDays: horizons.map((days) => forecastByKind(units, bedReleases, admissions, movements, now, days, planned)),
+    byDays: horizons.map((days) =>
+      forecastByKind(units, bedReleases, admissions, movements, now, days, planned, referrals),
+    ),
     levers: forecastLevers(units, bedReleases, admissions, now),
     blockers: blockerGroups(units, admissions),
     notCounted: notYetCounted(units, leaveBeds, repatriations, admissions),
-    risk: edAccessRisk(movements, units, bedReleases, admissions, now, edAccessTargetMinutes),
+    risk: edAccessRisk(movements, units, bedReleases, admissions, now, edAccessTargetMinutes, undefined, referrals),
   };
 }
 
@@ -113,6 +119,7 @@ export function useForecastModel(now: Instant) {
     plannedAdmissions,
     leaveBeds,
     repatriations,
+    referrals,
     configuration,
     dayZero: recordedDayZero,
   } = useWardFlowSelect(
@@ -123,6 +130,7 @@ export function useForecastModel(now: Instant) {
     "plannedAdmissions",
     "leaveBeds",
     "repatriations",
+    "referrals",
     "configuration",
     "dayZero",
   );
@@ -142,6 +150,7 @@ export function useForecastModel(now: Instant) {
         now,
         dayZero,
         configuration.edAccessTargetMinutes,
+        referrals ?? NO_REFERRALS,
       ),
     [
       units,
@@ -154,6 +163,7 @@ export function useForecastModel(now: Instant) {
       now,
       dayZero,
       configuration.edAccessTargetMinutes,
+      referrals,
     ],
   );
   const thresholds: ForecastAlertThresholds = useMemo(
@@ -214,16 +224,18 @@ export function useForecastChange(model: ForecastModel, now: Instant, { remember
   const { scenario, worldGeneration } = useWardFlowSelect("scenario", "worldGeneration");
   const account = useContext(SharedAccessContext);
   const userId = account?.actorId ?? "local-demo";
-  const key = `${FORECAST_LAST_LOOK_STORAGE_KEY}:${encodeURIComponent(userId)}`;
+  const access = useEffectiveWardAccess();
+  const key = forecastBrowserKey(FORECAST_LAST_LOOK_STORAGE_KEY, userId, access, scenario, worldGeneration);
   noteWardSessionAccount(account);
   const current = useMemo(
     () => takeForecastLook({ scenario, worldGeneration, userId }, model.tomorrow, now),
     [scenario, worldGeneration, userId, model.tomorrow, now],
   );
-  const latest = useRef(current);
+  // Each effect retains only its own desk/world's latest picture, including during a desk switch.
+  const latestByKey = useRef(new Map<string, typeof current>());
   useEffect(() => {
-    latest.current = current;
-  }, [current]);
+    latestByKey.current.set(key, current);
+  }, [key, current]);
   const stored = useSyncExternalStore(subscribe, () => readStored(key), serverLook);
   const previous = useMemo(() => parseForecastLook(stored), [stored]);
 
@@ -236,8 +248,9 @@ export function useForecastChange(model: ForecastModel, now: Instant, { remember
     const save = () => {
       // Audit 4 A4-07: never write after the session that owned this picture ended, including a
       // save scheduled by the signed-out re-render just before the screen closes.
-      if (!wardLeaveSaveAllowed(ticket) || latest.current.userId !== userId) return;
-      writeForecastLook(latest.current, key);
+      const snapshot = latestByKey.current.get(key);
+      if (!wardLeaveSaveAllowed(ticket) || snapshot?.userId !== userId) return;
+      writeForecastLook(snapshot, key);
       window.dispatchEvent(new Event(CHANGE_EVENT));
     };
     window.addEventListener("pagehide", save);
@@ -287,17 +300,21 @@ function readLocal(key: string): string | null {
 
 /**
  * P-5 (fresh audit 26 Oct 2026): each reseed or scenario switch starts a new key, so the keys this
- * person wrote for earlier worlds are removed when the current one is written. Otherwise the local
- * demo, which no sign-out ever sweeps, collected one set per reset with no bound. Another person's
- * keys on a shared device are left alone.
+ * person and desk wrote for earlier worlds are removed when the current one is written. Otherwise
+ * the local demo, which no sign-out ever sweeps, collected one set per reset with no bound. Other
+ * desks and other people's keys on a shared device are left alone.
  */
 function dropEarlierWorlds(key: string) {
-  const person = key.slice(0, key.indexOf(":", key.indexOf(":") + 1) + 1);
+  const personEnd = key.indexOf(":", key.indexOf(":") + 1) + 1;
+  const person = key.slice(0, personEnd);
+  const desk = key.slice(0, key.indexOf(":", personEnd) + 1);
   try {
     const stale: string[] = [];
     for (let index = 0; index < window.localStorage.length; index += 1) {
       const candidate = window.localStorage.key(index);
-      if (candidate !== null && candidate !== key && candidate.startsWith(person)) stale.push(candidate);
+      if (candidate === null || candidate === key || !candidate.startsWith(person)) continue;
+      // Retire earlier worlds for this desk and legacy unscoped copies, but keep other desks.
+      if (candidate.startsWith(desk) || !candidate.slice(personEnd).startsWith("desk-")) stale.push(candidate);
     }
     for (const candidate of stale) window.localStorage.removeItem(candidate);
   } catch {
@@ -307,15 +324,22 @@ function dropEarlierWorlds(key: string) {
 
 /**
  * The daily forecast snapshots behind the track record. Every forecast view records today's entry
- * once (a second view the same demo day changes nothing). Kept per scenario, reseed and person in
- * this browser, and, once the server has migration 16, shared by the desk (proposal 013): then the
+ * once (a second view the same demo day changes nothing). Kept per actor, desk, scenario and reseed
+ * in this browser, and, once the server has migration 16, shared by the desk (proposal 013): then the
  * desk's shared history is the one shown, and the browser's copy is only the fallback.
  */
 export function useForecastHistory(model: ForecastModel, now: Instant) {
   const { scenario, worldGeneration } = useWardFlowSelect("scenario", "worldGeneration");
   const account = useContext(SharedAccessContext);
   // A reseed restarts the demo days, so it starts a fresh history rather than comparing two worlds.
-  const key = `${FORECAST_HISTORY_STORAGE_KEY}:${encodeURIComponent(account?.actorId ?? "local-demo")}:${scenario}:${worldGeneration}`;
+  const access = useEffectiveWardAccess();
+  const key = forecastBrowserKey(
+    FORECAST_HISTORY_STORAGE_KEY,
+    account?.actorId ?? "local-demo",
+    access,
+    scenario,
+    worldGeneration,
+  );
   const stored = useSyncExternalStore(subscribeHistory, () => readLocal(key), serverLook);
   const history = useMemo(() => parseForecastHistory(stored), [stored]);
   const entry = useMemo(() => historyEntry(now, model.tomorrow.total.now, model.tomorrow.total), [now, model.tomorrow]);
@@ -326,11 +350,11 @@ export function useForecastHistory(model: ForecastModel, now: Instant) {
   // One try a demo day: a refused or failed send is not repeated with every clock tick.
   const sentDay = useRef<string | null>(null);
   useEffect(() => {
-    const attempt = `${worldGeneration}:${entry.day}`;
+    const attempt = `${key}:${entry.day}`;
     if (sharedHasToday || sentDay.current === attempt) return;
     sentDay.current = attempt;
     void send({ snapshot: entry });
-  }, [sharedHasToday, send, entry, worldGeneration]);
+  }, [sharedHasToday, send, entry, key]);
   useEffect(() => {
     const before = parseForecastHistory(readLocal(key));
     if (before.some((existing) => existing.day === entry.day)) return;
@@ -361,14 +385,21 @@ function subscribeMissReasons(onChange: () => void) {
 
 /**
  * The reasons recorded against the track record's missed days, kept under the same person,
- * scenario and reseed as the snapshots they explain, and shared by the desk with them once the
+ * desk, scenario and reseed as the snapshots they explain, and shared by the desk with them once the
  * server has migration 16. Only `record` writes, and only when a person chooses a reason; nothing
  * here assigns one.
  */
 export function useForecastMissReasons() {
   const { scenario, worldGeneration } = useWardFlowSelect("scenario", "worldGeneration");
   const account = useContext(SharedAccessContext);
-  const key = `${FORECAST_MISS_REASONS_STORAGE_KEY}:${encodeURIComponent(account?.actorId ?? "local-demo")}:${scenario}:${worldGeneration}`;
+  const access = useEffectiveWardAccess();
+  const key = forecastBrowserKey(
+    FORECAST_MISS_REASONS_STORAGE_KEY,
+    account?.actorId ?? "local-demo",
+    access,
+    scenario,
+    worldGeneration,
+  );
   const stored = useSyncExternalStore(subscribeMissReasons, () => readLocal(key), serverLook);
   const local = useMemo(() => parseForecastMissReasons(stored), [stored]);
   const { state: shared, sendReason, refresh } = useSharedForecastHistory(worldGeneration);

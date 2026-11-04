@@ -75,9 +75,10 @@ export function networkUnitRows(
   admissions: Admission[],
   bedReleases: BedRelease[],
   leaveBeds: LeaveBed[],
+  referrals: readonly import("@/components/ward-management/ward-bed-states").ReservationReferral[] = [],
 ): UnitRow[] {
   return units.map((unit) => {
-    const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+    const states = bedStates(unit, admissions, bedReleases, leaveBeds, referrals);
     const rate = unit.beds > 0 ? Math.round(((states.occupied + states.pulled) / unit.beds) * 100) : 0;
     return { unit, states, rate, service: siteByCode(unit.siteCode)?.service ?? "Other" };
   });
@@ -159,12 +160,13 @@ export function networkCapacity(
   units: Unit[],
   bedReleases: BedRelease[],
   admissions: readonly Admission[],
+  referrals: readonly import("@/components/ward-management/ward-bed-states").ReservationReferral[] = [],
 ): { ready: number; empty: number; allocatable: number } {
   let ready = 0;
   let empty = 0;
   let allocatable = 0;
   for (const unit of units) {
-    ready += readyBedsNow(unit, admissions, bedReleases);
+    ready += readyBedsNow(unit, admissions, bedReleases, referrals);
     empty += unit.empty.value;
     allocatable += unit.allocatable.value;
   }
@@ -522,19 +524,24 @@ export function NetworkOverviewCards({
   admissions,
   bedReleases,
   leaveBeds,
+  referrals = [],
 }: {
   part: NetworkOverviewPart;
   units: Unit[];
   admissions: Admission[];
   bedReleases: BedRelease[];
   leaveBeds: LeaveBed[];
+  referrals?: readonly import("@/components/ward-management/ward-bed-states").ReservationReferral[];
 }) {
   const unitRows = useMemo(
-    () => networkUnitRows(units, admissions, bedReleases, leaveBeds),
-    [units, admissions, bedReleases, leaveBeds],
+    () => networkUnitRows(units, admissions, bedReleases, leaveBeds, referrals),
+    [units, admissions, bedReleases, leaveBeds, referrals],
   );
   const services = useMemo(() => networkServiceRows(unitRows), [unitRows]);
-  const capacity = useMemo(() => networkCapacity(units, bedReleases, admissions), [units, bedReleases, admissions]);
+  const capacity = useMemo(
+    () => networkCapacity(units, bedReleases, admissions, referrals),
+    [units, bedReleases, admissions, referrals],
+  );
   const openNow = useMemo(
     () => units.reduce((sum, unit) => sum + openBedsNow(unit, bedReleases), 0),
     [units, bedReleases],
@@ -575,16 +582,18 @@ export function SiteOverviewCards({
   admissions,
   bedReleases,
   leaveBeds,
+  referrals = [],
 }: {
   part: NetworkOverviewPart;
   units: Unit[];
   admissions: Admission[];
   bedReleases: BedRelease[];
   leaveBeds: LeaveBed[];
+  referrals?: readonly import("@/components/ward-management/ward-bed-states").ReservationReferral[];
 }) {
   const services = useMemo(
-    () => networkServiceRows(networkUnitRows(units, admissions, bedReleases, leaveBeds)),
-    [units, admissions, bedReleases, leaveBeds],
+    () => networkServiceRows(networkUnitRows(units, admissions, bedReleases, leaveBeds, referrals)),
+    [units, admissions, bedReleases, leaveBeds, referrals],
   );
   return part === "occupancy" ? (
     <div data-testid="ward-statistics-network-cards">

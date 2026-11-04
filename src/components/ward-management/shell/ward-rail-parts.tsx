@@ -46,6 +46,7 @@ export function deskCapacityRows(
   admissions: readonly Admission[],
   bedReleases: readonly BedRelease[],
   bedAlerts: ServiceBedAlertsSummary,
+  reservations: NonNullable<Parameters<typeof wardOccupancy>[3]> = [],
 ): CapacityRow[] {
   const byOccupancy = bedAlerts.services.toSorted((a, b) => b.occupancyPercent - a.occupancyPercent);
   const metro: CapacityRow = {
@@ -85,7 +86,7 @@ export function deskCapacityRows(
     key: "own",
     name: ownName,
     counts: scope.kind === "site" ? `${scope.siteCode}'s wards` : `${ownName}'s beds`,
-    percent: wardOccupancy(own, admissions, bedReleases).percent,
+    percent: wardOccupancy(own, admissions, bedReleases, reservations).percent,
   };
   if (scope.kind === "service") return [ownRow, metro];
   return service

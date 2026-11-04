@@ -154,12 +154,13 @@ export function hubEntries(input: {
   admissions?: readonly Admission[];
   leaveBeds?: readonly LeaveBed[];
   now: Instant;
+  referrals?: readonly import("@/components/ward-management/ward-bed-states").ReservationReferral[];
 }): HubEntry[] {
-  const { units, sites, bedReleases, admissions = [], leaveBeds = [], now } = input;
+  const { units, sites, bedReleases, admissions = [], leaveBeds = [], now, referrals = [] } = input;
 
   const wardEntries: HubEntry[] = units.map((unit) => {
     const site = siteByCode(unit.siteCode);
-    const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+    const states = bedStates(unit, admissions, bedReleases, leaveBeds, referrals);
     return {
       id: unit.id,
       kind: "ward",

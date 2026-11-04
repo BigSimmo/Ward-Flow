@@ -16,6 +16,7 @@ import { bedIsOccupied, type Admission, type PlannedAdmission } from "@/componen
 import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { numberedBedKind, unitHasOpenBeds } from "@/components/ward-management/ward-bed-designation";
 import { isOpen } from "@/components/ward-management/ward-derivations";
+import type { ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import type { BedRelease, Movement, Unit } from "@/components/ward-management/ward-model";
 import { forecastReleaseAt } from "./forecast-release-date";
 
@@ -108,9 +109,10 @@ export function forecastByKind(
   now: Instant,
   days: number,
   plannedAdmissions: readonly PlannedAdmission[] = [],
+  referrals: readonly ReservationReferral[] = [],
 ): ForecastByKind {
   const until = now + days * MINUTES_PER_DAY;
-  const gaps = bedKindGaps([...movements], [...units], now, admissions);
+  const gaps = bedKindGaps([...movements], [...units], now, admissions, [...referrals, ...movements]);
   const openUnits = new Map(units.filter((unit) => !unit.isClosed).map((unit) => [unit.id, unit]));
   const admissionById = new Map(admissions.map((admission) => [admission.id, admission]));
   const expectedAt = (release: BedRelease) => forecastReleaseAt(release, admissionById.get(release.admissionId));

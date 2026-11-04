@@ -319,14 +319,20 @@ function OperationalStatisticsScreen({
   const blocked = blockedDischargesByReason(sourceAdmissions);
 
   const totalBeds = siteUnits.reduce((sum, u) => sum + u.beds, 0);
-  const occupancy = occupiedBeds(siteUnits, sourceAdmissions, sourceBedReleases, leaveBeds);
+  const occupancy = occupiedBeds(siteUnits, sourceAdmissions, sourceBedReleases, leaveBeds, [
+    ...sourceReferrals,
+    ...sourceMovements,
+  ]);
   const occupiedCount = occupancy.occupied;
   // L1: the percentage and the count beside it are the one occupancy figure, Occupied + Pulled.
   const inUseCount = occupancy.inUse;
   // One decimal place, the precision Home, Overview and Wards print (audit stats-20: 85.2%, not 85%).
   const occupiedPct = occupancy.beds > 0 ? Math.round((occupancy.inUse / occupancy.beds) * 1000) / 10 : 0;
   // Audit 6 (Josh, 20 Oct 2026): the one ready figure, leaving out beds pulled for an incoming patient.
-  const availableNow = totalReadyBedsNow(siteUnits, sourceAdmissions, sourceBedReleases);
+  const availableNow = totalReadyBedsNow(siteUnits, sourceAdmissions, sourceBedReleases, [
+    ...sourceReferrals,
+    ...sourceMovements,
+  ]);
   // Ready beds still being cleaned count as ready (the owner's ruling); the label says how many.
   const pendingPreparation = siteUnits.reduce((sum, u) => sum + bedsPendingPreparation(u.id, sourceBedReleases), 0);
   // Open ED-origin journeys retain accountability through transit; Still open also includes other origins.
@@ -371,20 +377,23 @@ function OperationalStatisticsScreen({
   const allPressureWards = useMemo(() => {
     return siteUnits.map((u) => {
       const occupancyRate =
-        u.beds > 0 ? occupiedBeds([u], sourceAdmissions, sourceBedReleases, leaveBeds).inUse / u.beds : 0;
+        u.beds > 0
+          ? occupiedBeds([u], sourceAdmissions, sourceBedReleases, leaveBeds, [...sourceReferrals, ...sourceMovements])
+              .inUse / u.beds
+          : 0;
       return {
         id: u.id,
         name: u.name,
         site: u.siteCode,
         hospital: siteByCode(u.siteCode)?.name ?? u.siteCode,
         beds: u.beds,
-        ready: readyBedsNow(u, sourceAdmissions, sourceBedReleases),
+        ready: readyBedsNow(u, sourceAdmissions, sourceBedReleases, [...sourceReferrals, ...sourceMovements]),
         pendingPreparation: bedsPendingPreparation(u.id, sourceBedReleases),
         occupancyRate,
         referred: wardReferralTally(sourceMovements, u.id).askedAndWaiting,
       };
     });
-  }, [siteUnits, sourceAdmissions, sourceBedReleases, leaveBeds, sourceMovements]);
+  }, [siteUnits, sourceAdmissions, sourceBedReleases, leaveBeds, sourceMovements, sourceReferrals]);
 
   // A referral can have multiple destinations; count the referral once using its derived outcome.
   const todayBedReferrals = sourceReferrals.filter(
@@ -481,6 +490,7 @@ function OperationalStatisticsScreen({
             bedReleases={sourceBedReleases}
             admissions={sourceAdmissions}
             leaveBeds={leaveBeds}
+            referrals={[...sourceReferrals, ...sourceMovements]}
           />
         ),
         occupancy: (
@@ -490,6 +500,7 @@ function OperationalStatisticsScreen({
             admissions={sourceAdmissions}
             bedReleases={sourceBedReleases}
             leaveBeds={leaveBeds}
+            referrals={[...sourceReferrals, ...sourceMovements]}
           />
         ),
         flow: (
@@ -499,6 +510,7 @@ function OperationalStatisticsScreen({
             admissions={sourceAdmissions}
             bedReleases={sourceBedReleases}
             leaveBeds={leaveBeds}
+            referrals={[...sourceReferrals, ...sourceMovements]}
           />
         ),
         journey: (onShowBoard) => <StatisticsJourneyView onShowBoard={onShowBoard} live={{ state: live.state, now }} />,

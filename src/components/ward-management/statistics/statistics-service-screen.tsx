@@ -295,16 +295,19 @@ function OperationalServiceScreen({ serviceId }: { serviceId: string }) {
     () =>
       serviceUnits.map((unit) => ({
         unit,
-        capacity: { ...unitCapacity(unit, bedReleases), available: readyBedsNow(unit, admissions, bedReleases) },
+        capacity: {
+          ...unitCapacity(unit, bedReleases),
+          available: readyBedsNow(unit, admissions, bedReleases, [...referrals, ...movements]),
+        },
       })),
-    [serviceUnits, admissions, bedReleases],
+    [serviceUnits, admissions, bedReleases, referrals, movements],
   );
   const totalReady = useMemo(() => readyRows.reduce((sum, row) => sum + row.capacity.available, 0), [readyRows]);
   const totalBedBase = useMemo(() => serviceUnits.reduce((sum, unit) => sum + unit.beds, 0), [serviceUnits]);
   // L1: the one occupancy figure, Occupied + Pulled (`ward-occupancy.ts`), as every page prints it.
   const serviceOccupancy = useMemo(
-    () => occupiedBeds(serviceUnits, admissions, bedReleases, leaveBeds),
-    [serviceUnits, admissions, bedReleases, leaveBeds],
+    () => occupiedBeds(serviceUnits, admissions, bedReleases, leaveBeds, [...referrals, ...movements]),
+    [serviceUnits, admissions, bedReleases, leaveBeds, referrals, movements],
   );
   const occupancyPct = useMemo(() => occupancyPercent(serviceOccupancy), [serviceOccupancy]);
   const zeroReadyWards = useMemo(() => readyRows.filter((row) => row.capacity.available === 0).length, [readyRows]);
@@ -448,7 +451,10 @@ function OperationalServiceScreen({ serviceId }: { serviceId: string }) {
       slots={{
         phone: (
           <ServicePhone
-            states={serviceUnits.map((unit) => ({ unit, states: bedStates(unit, admissions, bedReleases, leaveBeds) }))}
+            states={serviceUnits.map((unit) => ({
+              unit,
+              states: bedStates(unit, admissions, bedReleases, leaveBeds, [...referrals, ...movements]),
+            }))}
             pendingPreparation={pendingPreparation}
             eds={serviceEds.map((department) => ({
               id: department.id,

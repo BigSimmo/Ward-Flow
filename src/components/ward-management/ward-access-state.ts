@@ -114,8 +114,18 @@ const inboxRows =
       ? ({} as WardFlowState[K])
       : (Object.fromEntries(
           Object.entries(context.state[key]).filter(([rowId]) => {
-            const category = Object.values(INBOX_CATEGORIES).find(({ idPrefix }) => rowId.startsWith(idPrefix));
-            return category !== undefined && context.inboxSubjectIds.has(rowId.slice(category.idPrefix.length));
+            // Commands and snapshots must resolve composite subjects in the same way. A meeting
+            // row contains its action kind and record kind before the actual record id.
+            const reference = inboxRecordReference(rowId);
+            if (!reference || reference.collection === "invalid") return false;
+            if (reference.collection === "admissions") return context.admissionIds.has(reference.id);
+            if (reference.collection === "movements") {
+              return context.scoped.movements.some((movement) => movement.id === reference.id);
+            }
+            if (reference.collection === "patients") {
+              return context.scoped.patients.some((patient) => patient.id === reference.id);
+            }
+            return reference.collection === "plannedAdmissions" && context.inboxSubjectIds.has(reference.id);
           }),
         ) as WardFlowState[K]);
 

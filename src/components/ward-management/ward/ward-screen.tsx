@@ -935,10 +935,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // The ruled four boxes — Ready · Pulled · Closed · Occupied — for every bed-state figure this
   // screen shows. `capacity.held` is NOT Closed (it still counts a live pull's empty bed), and
   // "Held" is reserved for a bed kept for a patient on leave.
-  const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+  const states = bedStates(unit, admissions, bedReleases, leaveBeds, [...wardReferralInbox(unit.id), ...movements]);
   // The one occupancy figure (Occupied + Pulled, `ward-occupancy.ts`): the same percentage this
   // ward shows on Ward answer, the rail and Capacity.
-  const occupancy = wardOccupancy([unit], admissions, bedReleases);
+  const occupancy = wardOccupancy([unit], admissions, bedReleases, [...wardReferralInbox(unit.id), ...movements]);
   // Visual-fix pass: the capacity board (`CapacityView` in `ward-management-modes.tsx`) was just
   // corrected to source Confirmed/Expected from `capacityBreakdown()` rather than `unitCapacity()`'s
   // raw, state-and-timing-blind `potential` count — this screen used to be the one place still

@@ -100,7 +100,9 @@ describe("Alerts — all-clear KPI captions state a count (F3.2)", () => {
     }
     if (declined.length === 0) {
       expect(
-        screen.getByText(new RegExp(`0 of ${declineCandidates} declined by every ward asked`)),
+        screen.getByText(
+          new RegExp(`0 of ${declineCandidates} movements with recorded declines meet the alert threshold`),
+        ),
       ).toBeInTheDocument();
     }
   });

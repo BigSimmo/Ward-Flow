@@ -199,8 +199,13 @@ function FilterRow({ label, children }: { label: string; children: ReactNode }) 
 }
 
 function OperationalResults({ filters, onNavigate }: { filters: Filters; onNavigate: () => void }) {
-  const { units, admissions, bedReleases } = useWardFlowSelect("units", "admissions", "bedReleases");
-  const rows: FoundRow[] = findBeds(units, admissions, bedReleases, { ...filters, home: "any" })
+  const { units, admissions, bedReleases, referrals } = useWardFlowSelect(
+    "units",
+    "admissions",
+    "bedReleases",
+    "referrals",
+  );
+  const rows: FoundRow[] = findBeds(units, admissions, bedReleases, { ...filters, home: "any" }, referrals)
     .filter((row) => row.free > 0)
     .map((row) => ({
       id: row.unit.id,

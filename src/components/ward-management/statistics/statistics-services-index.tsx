@@ -155,9 +155,9 @@ function OperationalServicesIndex() {
     const siteCodes = new Set(siteDirectory.filter((site) => site.service === service).map((site) => site.code));
     const serviceUnits = units.filter((unit) => siteCodes.has(unit.siteCode));
     const rows = serviceUnits.map((unit) => {
-      const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+      const states = bedStates(unit, admissions, bedReleases, leaveBeds, [...referrals, ...movements]);
       // The one occupancy count (Occupied + Pulled, ward-occupancy.ts), as Overview and Wards read it.
-      const inUse = wardBedsInUse(unit, admissions, bedReleases);
+      const inUse = wardBedsInUse(unit, admissions, bedReleases, [...referrals, ...movements]);
       return { unit, states, inUse, rate: unit.beds > 0 ? Math.round((inUse / unit.beds) * 100) : 0 };
     });
     const sum = (pick: (row: (typeof rows)[number]) => number) => rows.reduce((total, row) => total + pick(row), 0);

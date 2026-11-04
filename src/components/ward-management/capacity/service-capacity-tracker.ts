@@ -342,6 +342,7 @@ export function trackServiceBedCapacity(
   accessTargetMinutes?: number,
   /** Admissions, so a live pull counts as a bed in use (`ward-occupancy.ts`). */
   admissions: readonly Admission[] = [],
+  referrals: readonly import("@/components/ward-management/ward-bed-states").ReservationReferral[] = [],
 ): StatewideCapacityReport {
   const releases = [...bedReleases];
   const serviceTrackings: ServiceCapacityTracking[] = [];
@@ -376,13 +377,13 @@ export function trackServiceBedCapacity(
       for (const u of siteUnits) {
         // Audit 24-4 NA2-08: the one ready figure every screen prints (`readyBedsNow`), not the
         // pull gate `openBedsNow`, which also drops beds still being made ready.
-        siteFree += readyBedsNow(u, admissions, releases);
+        siteFree += readyBedsNow(u, admissions, releases, referrals);
         siteTotal += u.beds;
         // Occupied is the board's own buckets (Josh, 25 Sept 2026: the rail matches the board): the
         // Occupied and Pulled boxes, through the one shared count every screen reads
         // (`ward-occupancy.ts`, device audit 11 Oct 2026). It was once `total - free`, which counted
         // held, blocked and being-cleaned beds as occupied.
-        siteOccupiedBeds += wardBedsInUse(u, admissions, releases);
+        siteOccupiedBeds += wardBedsInUse(u, admissions, releases, referrals);
       }
 
       serviceTotalBeds += siteTotal;

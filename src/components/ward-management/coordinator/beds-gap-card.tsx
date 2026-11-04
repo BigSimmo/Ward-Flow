@@ -29,18 +29,26 @@ function shortNeed(need: string): string {
  * keeps the totals ("23 short now · 14 short tomorrow"); the table opens in place.
  */
 export function BedsGapCard({ now, bedsReady, condensed }: { now: Instant; bedsReady: number; condensed: boolean }) {
-  const { movements, units, admissions, bedReleases, plannedAdmissions } = useWardFlowSelect(
+  const { movements, units, admissions, bedReleases, plannedAdmissions, referrals } = useWardFlowSelect(
+    "referrals",
     "movements",
     "units",
     "admissions",
     "bedReleases",
     "plannedAdmissions",
   );
-  const rows = useMemo(() => bedKindGaps(movements, units, now, admissions), [movements, units, now, admissions]);
+  const rows = useMemo(
+    () => bedKindGaps(movements, units, now, admissions, [...referrals, ...movements]),
+    [movements, units, now, admissions, referrals],
+  );
   const totals = useMemo(() => bedKindTotals(rows), [rows]);
   const tomorrow = useMemo(
-    () => forecastByKind(units, bedReleases, admissions, movements, now, 1, plannedAdmissions ?? []),
-    [units, bedReleases, admissions, movements, now, plannedAdmissions],
+    () =>
+      forecastByKind(units, bedReleases, admissions, movements, now, 1, plannedAdmissions ?? [], [
+        ...referrals,
+        ...movements,
+      ]),
+    [units, bedReleases, admissions, movements, now, plannedAdmissions, referrals],
   );
   const tomorrowById = new Map(tomorrow.kinds.map((kind) => [kind.id, kind]));
   const [open, setOpen] = useState(false);

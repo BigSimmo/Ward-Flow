@@ -88,8 +88,9 @@ export function bedMapCells(
   bedReleases: BedRelease[],
   leaveBeds: readonly LeaveBed[],
   now: number,
+  referrals: readonly import("@/components/ward-management/ward-bed-states").ReservationReferral[] = [],
 ): BedMap {
-  const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+  const states = bedStates(unit, admissions, bedReleases, leaveBeds, referrals);
   const here = admissions.filter((admission) => admission.unitId === unit.id && admission.state !== "departed");
   const leaveIds = new Set(leaveBeds.filter((bed) => bed.unitId === unit.id).map((bed) => bed.admissionId));
   const byLongestStay = (a: Admission, b: Admission) => (daysInBed(b, now) ?? -1) - (daysInBed(a, now) ?? -1);

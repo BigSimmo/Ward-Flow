@@ -75,9 +75,10 @@ export function bedMapWards(
   bedReleases: BedRelease[],
   admissions: readonly Admission[] = [],
   leaveBeds: readonly LeaveBed[] = [],
+  referrals: readonly import("@/components/ward-management/ward-bed-states").ReservationReferral[] = [],
 ): BedMapWard[] {
   return units.map((unit) => {
-    const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+    const states = bedStates(unit, admissions, bedReleases, leaveBeds, referrals);
     const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
     return {
       unit,

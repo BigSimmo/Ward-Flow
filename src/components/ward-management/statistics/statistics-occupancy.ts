@@ -19,15 +19,16 @@ export function occupiedBeds(
   admissions: readonly Admission[],
   bedReleases: BedRelease[],
   leaveBeds: readonly LeaveBed[],
+  referrals: readonly import("@/components/ward-management/ward-bed-states").ReservationReferral[] = [],
 ): { beds: number; occupied: number; pulled: number; inUse: number } {
   return units.reduce(
     (sum, unit) => {
-      const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+      const states = bedStates(unit, admissions, bedReleases, leaveBeds, referrals);
       return {
         beds: sum.beds + unit.beds,
         occupied: sum.occupied + states.occupied,
         pulled: sum.pulled + states.pulled,
-        inUse: sum.inUse + wardBedsInUse(unit, admissions, bedReleases),
+        inUse: sum.inUse + wardBedsInUse(unit, admissions, bedReleases, referrals),
       };
     },
     { beds: 0, occupied: 0, pulled: 0, inUse: 0 },

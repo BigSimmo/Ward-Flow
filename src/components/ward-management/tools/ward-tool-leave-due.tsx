@@ -33,8 +33,9 @@ function leaveBedLabels(
   admissions: readonly Admission[],
   bedReleases: BedRelease[],
   leaveBeds: readonly LeaveBed[],
+  reservations: NonNullable<Parameters<typeof bedStates>[4]> = [],
 ): Map<string, string> {
-  const ready = bedStates(unit, admissions, bedReleases, leaveBeds).ready;
+  const ready = bedStates(unit, admissions, bedReleases, leaveBeds, reservations).ready;
   const labels = new Map<string, string>();
   unitLeave.forEach((leave, index) => {
     const recorded = admissions.find((admission) => admission.id === leave.admissionId)?.bedNumber;
@@ -45,7 +46,8 @@ function leaveBedLabels(
 }
 
 function useLeaveDue(): DueWard[] {
-  const { leaveBeds, units, admissions, bedReleases } = useWardFlowSelect(
+  const { leaveBeds, units, admissions, bedReleases, wardReferralInbox } = useWardFlowSelect(
+    "wardReferralInbox",
     "leaveBeds",
     "units",
     "admissions",
@@ -61,7 +63,7 @@ function useLeaveDue(): DueWard[] {
       const unitLeave = leaveBeds.filter((leave) => leave.unitId === unit.id);
       const due = unitLeave.filter((leave) => dueToday(leave, now));
       if (due.length === 0) continue;
-      const labels = leaveBedLabels(unit, unitLeave, admissions, bedReleases, leaveBeds);
+      const labels = leaveBedLabels(unit, unitLeave, admissions, bedReleases, leaveBeds, wardReferralInbox(unit.id));
       wards.push({
         unitId: unit.id,
         name: names.get(unit.id) ?? unit.name,
@@ -77,7 +79,7 @@ function useLeaveDue(): DueWard[] {
     }
     // A ward desk's own ward first, then the rest in network order.
     return wards.sort((left, right) => Number(own.has(right.unitId)) - Number(own.has(left.unitId)));
-  }, [leaveBeds, units, admissions, bedReleases, now, access]);
+  }, [leaveBeds, units, admissions, bedReleases, now, access, wardReferralInbox]);
 }
 
 /** Leave beds due back today, for the Tools row count. */

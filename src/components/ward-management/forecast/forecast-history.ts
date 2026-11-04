@@ -7,9 +7,24 @@
 //
 // 🔒 **COUNTS AND A DEMO DAY ONLY.** Kept in the browser's localStorage per scenario, and shared by
 // the desk once the server has migration 16 (proposal 013, forecast-shared-history.ts).
+import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
 
 export const FORECAST_HISTORY_STORAGE_KEY = "ward-flow-forecast-history";
+/** Browser fallback identity follows the same actor, desk and world as the forecast inputs.
+ * Legacy keys omit the desk and are intentionally never read as a scoped history.
+ */
+export function forecastBrowserKey(
+  root: string,
+  actorId: string,
+  access: WardAccess,
+  scenario: string,
+  worldGeneration: number,
+): string {
+  const desk = encodeURIComponent(JSON.stringify([access.role, access.scope]));
+  return `${root}:${encodeURIComponent(actorId)}:desk-${desk}:${scenario}:${worldGeneration}`;
+}
+
 const HISTORY_LIMIT = 60;
 
 export type ForecastHistoryEntry = {

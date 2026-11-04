@@ -176,7 +176,15 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
   const { statewide, sites, teams } = useMemo(
     () =>
       workstationDesks({
-        hub: hubEntries({ units, bedReleases, admissions, leaveBeds, now, sites: network.sites }),
+        hub: hubEntries({
+          units,
+          bedReleases,
+          admissions,
+          leaveBeds,
+          now,
+          sites: network.sites,
+          referrals: [...scoped.referrals, ...movements],
+        }),
         eds: edHomeSummaries(movements, now, configuration.edAccessTargetMinutes),
         movements,
         ownTeam: currentAccess.scope.kind === "team" ? currentAccess.scope.teamName : undefined,
@@ -191,6 +199,7 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
       configuration.edAccessTargetMinutes,
       network,
       currentAccess.scope,
+      scoped.referrals,
     ],
   );
   const allDesks = useMemo(

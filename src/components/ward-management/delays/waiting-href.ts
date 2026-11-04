@@ -13,3 +13,8 @@ const WAITING_PATH = "/ward-flow/waiting";
 export function waitingHref(view?: WaitingViewId): string {
   return view === undefined ? WAITING_PATH : `${WAITING_PATH}?view=${view}`;
 }
+
+/** The Waiting list restricted to people physically waiting in this ED. */
+export function waitingEdHref(edId: string): string {
+  return `${WAITING_PATH}?ed=${encodeURIComponent(edId)}`;
+}

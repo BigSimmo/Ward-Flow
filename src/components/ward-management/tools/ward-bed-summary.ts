@@ -10,11 +10,12 @@ import type { useWardFlow } from "../ward-flow-provider";
 
 type Flow = ReturnType<typeof useWardFlow>;
 
-export type BedSummaryInput = Pick<Flow, "units" | "admissions" | "movements" | "bedReleases" | "leaveBeds"> & {
-  now: number;
-  thresholds: DueSoonThresholds;
-  network: WardNetwork;
-};
+export type BedSummaryInput = Pick<Flow, "units" | "admissions" | "movements" | "bedReleases" | "leaveBeds"> &
+  Partial<Pick<Flow, "referrals">> & {
+    now: number;
+    thresholds: DueSoonThresholds;
+    network: WardNetwork;
+  };
 
 /**
  * Tools, Copy bed summary (Tools review item 18, 15 Oct 2026): the plain text situation report a
@@ -29,7 +30,7 @@ export type BedSummaryInput = Pick<Flow, "units" | "admissions" | "movements" | 
  * keeps a held-up release and says how many (decision 16), as Capacity does.
  */
 export function bedSummaryText(input: BedSummaryInput): string {
-  const { units, admissions, movements, bedReleases, leaveBeds, now, thresholds, network } = input;
+  const { units, admissions, movements, bedReleases, leaveBeds, now, thresholds, network, referrals = [] } = input;
   const ready = new Map<HealthService, number>(HEALTH_SERVICES.map((service) => [service, 0]));
   let readyTotal = 0;
   let pendingTotal = 0;
@@ -39,7 +40,7 @@ export function bedSummaryText(input: BedSummaryInput): string {
   let heldUp = 0;
   for (const unit of units) {
     const capacity = capacityBreakdown(unit, bedReleases, leaveBeds, now);
-    const readyHere = readyBedsNow(unit, admissions, bedReleases);
+    const readyHere = readyBedsNow(unit, admissions, bedReleases, [...referrals, ...movements]);
     const service = unitHealthService(unit);
     readyTotal += readyHere;
     if (service) ready.set(service, (ready.get(service) ?? 0) + readyHere);

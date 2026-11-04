@@ -66,6 +66,7 @@ export type TvJourneyRow = {
 };
 
 type TvInputs = {
+  referrals?: readonly import("@/components/ward-management/ward-model").Referral[];
   units: Unit[];
   movements: Movement[];
   bedReleases: BedRelease[];
@@ -163,6 +164,7 @@ export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
   const { unit, movements, bedReleases, admissions, leaveBeds, now, thresholds, nameOf } = input;
   const sheet = bedMeetingSheet({
     units: [unit],
+    referrals: input.referrals,
     movements,
     bedReleases,
     admissions,
@@ -265,7 +267,10 @@ export function edTvSheet(input: TvInputs & { edId: string; accessTargetMinutes:
 
   const service = edHealthService(edId);
   const serviceUnits = service === undefined ? [] : units.filter((unit) => unitHealthService(unit) === service);
-  const rows = networkWardRows(serviceUnits, now, bedReleases, admissions, leaveBeds);
+  const rows = networkWardRows(serviceUnits, now, bedReleases, admissions, leaveBeds, [
+    ...(input.referrals ?? []),
+    ...movements,
+  ]);
   const withBeds = rows
     .filter((row) => row.ready > 0)
     .sort((a, b) => b.ready - a.ready || a.unit.name.localeCompare(b.unit.name))
@@ -371,6 +376,7 @@ function serviceWardRows(input: MeetingInputs, scopedUnits: Unit[]): TvWardRow[]
     bedReleases.filter((release) => unitIds.has(release.unitId)),
     admissions,
     leaveBeds,
+    [...(input.referrals ?? []), ...movements],
   );
   const groups = groupDischarges(
     bedReleases.filter((release) => unitIds.has(release.unitId)),
@@ -413,7 +419,10 @@ export function meetingTvExtras(input: MeetingInputs): MeetingTvExtras {
   return {
     services: service === null ? tvHealthServices(units).map((each) => serviceRow(input, each)) : [],
     wards: service === null ? [] : serviceWardRows(input, scopedUnits),
-    gaps: bedKindGaps(scopedMovements, scopedUnits, now, input.admissions),
+    gaps: bedKindGaps(scopedMovements, scopedUnits, now, input.admissions, [
+      ...(input.referrals ?? []),
+      ...scopedMovements,
+    ]),
     pendingPreparation: scopedUnits.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0),
     bedCount: bedCountAge(scopedUnits, now),
   };

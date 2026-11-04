@@ -132,9 +132,19 @@ export function deriveServiceBedAlerts(
   accessTargetMinutes?: number,
   /** Admissions, so a live pull counts as a bed in use (`ward-occupancy.ts`). */
   admissions: readonly Admission[] = [],
+  referrals: readonly import("@/components/ward-management/ward-bed-states").ReservationReferral[] = [],
 ): ServiceBedAlertsSummary {
   // Leverage the comprehensive backend tracker
-  const report = trackServiceBedCapacity(units, bedReleases, movements, now, sites, accessTargetMinutes, admissions);
+  const report = trackServiceBedCapacity(
+    units,
+    bedReleases,
+    movements,
+    now,
+    sites,
+    accessTargetMinutes,
+    admissions,
+    referrals,
+  );
 
   const codePriority: Record<ServiceBedAlertCode, number> = {
     black: 4,

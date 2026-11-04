@@ -27,8 +27,9 @@ export function wardBedsInUse(
   unit: Unit,
   admissions: readonly Admission[],
   bedReleases: readonly BedRelease[],
+  referrals: readonly import("@/components/ward-management/ward-bed-states").ReservationReferral[] = [],
 ): number {
-  const states = bedStates(unit, admissions, [...bedReleases], []);
+  const states = bedStates(unit, admissions, [...bedReleases], [], referrals);
   return states.occupied + states.pulled;
 }
 
@@ -50,11 +51,12 @@ export function wardOccupancy(
   units: readonly Unit[],
   admissions: readonly Admission[],
   bedReleases: readonly BedRelease[],
+  referrals: readonly import("@/components/ward-management/ward-bed-states").ReservationReferral[] = [],
 ): OccupancyFigure {
   let inUse = 0;
   let beds = 0;
   for (const unit of units) {
-    inUse += wardBedsInUse(unit, admissions, bedReleases);
+    inUse += wardBedsInUse(unit, admissions, bedReleases, referrals);
     beds += unit.beds;
   }
   return { inUse, beds, percent: beds > 0 ? roundOneDecimal((inUse / beds) * 100) : null };
