@@ -69,6 +69,7 @@ import {
   wardStatisticsHref,
 } from "@/components/ward-management/shell/ward-facade";
 import { openReferralSheet } from "@/components/ward-management/shell/ward-drawer-bus";
+import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { communityTeamSuburbs, placePeople, type PlacePerson } from "./hub-place-people";
 import { PageLiveChip, usePageLive } from "@/components/ward-management/ward-page-live";
@@ -366,9 +367,8 @@ export function HubScreen() {
             type="button"
             className={buttonClass({ variant: "onHero", size: "sm" })}
             onClick={() => {
-              for (const entry of unasked) {
-                dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId: entry.id });
-              }
+              const raise = wardRaise(dispatch, "coordinator", now);
+              for (const entry of unasked) raise("REQUEST_CAPACITY_REFRESH", { unitId: entry.id });
             }}
           >
             {unasked.length === 1 ? `Ask ${unasked[0].name}` : `Ask all ${unasked.length}`}
