@@ -68,6 +68,12 @@ const REGISTRATION_FIELDS: ReadonlySet<string> = new Set([
   "gender",
   "sex",
   "suburb",
+  // RF7 (3 Nov 2026): the optional details Add patient can now record at registration.
+  "preferredName",
+  "address",
+  "generalPractitioner",
+  "catchmentCommunityTeam",
+  "interpreterLanguage",
   "addedAt",
   "registrationScope",
 ]);
