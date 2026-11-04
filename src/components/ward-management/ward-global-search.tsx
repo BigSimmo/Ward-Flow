@@ -284,7 +284,7 @@ const NEEDS_YOU_LIMIT = 3;
 const PHONE_SEARCH_QUERY = WF_PHONE_QUERY;
 
 /** The phone sheet's top: the open field's bottom edge (the bar's top or the status bar, plus the bar). */
-const PHONE_SHEET_TOP = "calc(max(var(--wgs-bar-top, 0px), env(safe-area-inset-top, 0px)) + 4.5rem)";
+const PHONE_SHEET_TOP = "calc(max(var(--wgs-bar-top, 0px), env(safe-area-inset-top, 0px)) + 4.25rem)";
 
 /*
  * Whether the phone sheet is showing, read from the same query as the stylesheet. The phone sheet
