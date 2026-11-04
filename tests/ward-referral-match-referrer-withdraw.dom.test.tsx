@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { Referral, Unit } from "@/components/ward-management/ward-model";
@@ -266,7 +266,7 @@ describe("withdrawing a whole referral from the match view", () => {
     renderReferral("RF-009");
     const sender = screen.getByTestId("sender").textContent as "ed" | "community";
 
-    fireEvent.change(screen.getByTestId("ward-referral-match-withdraw-recorder"), { target: { value: "sender" } });
+    fireEvent.click(within(screen.getByTestId("ward-referral-match-withdraw-recorder")).getAllByRole("radio")[1]);
     fireEvent.click(screen.getByTestId("ward-referral-match-withdraw"));
     // Nothing is recorded until the confirm step.
     expect(screen.getByTestId("recorded-by").textContent).not.toContain(WARD_FLOW_ROLE_LABELS[sender]);

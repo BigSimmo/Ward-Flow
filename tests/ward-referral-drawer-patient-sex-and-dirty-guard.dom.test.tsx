@@ -102,9 +102,12 @@ describe("Task 2 — Referral drawer patient sex retention, dirty guards, and se
     fireEvent.change(newPatientForm.getByLabelText(/Given name/), { target: { value: "Elena" } });
     fireEvent.change(newPatientForm.getByLabelText(/Date of birth/), { target: { value: "15/05/1991" } });
     fireEvent.change(newPatientForm.getByLabelText(/UMRN/), { target: { value: "UM999002" } });
-    fireEvent.change(newPatientForm.getByLabelText(/Gender/), { target: { value: "Female" } });
+    // RF3 (3 Nov 2026): recorded sex is a kit segmented radio group, not a drop-down.
+    fireEvent.click(
+      within(newPatientForm.getByRole("radiogroup", { name: "Recorded sex" })).getByRole("radio", { name: "Female" }),
+    );
 
-    fireEvent.click(newPatientForm.getByRole("button", { name: "Add patient" }));
+    fireEvent.click(newPatientForm.getByRole("button", { name: "Add and use for this referral" }));
 
     // Age + Sex badge should render "35F" rather than "35, sex not recorded"
     expect(screen.getByText("Rostova, Elena (35F)")).toBeInTheDocument();
