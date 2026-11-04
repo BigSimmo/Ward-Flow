@@ -15,6 +15,8 @@ export type ActivityPanelTab = "changes" | "recent" | "notices";
 export type ActivityPanelRequest = {
   /** The tab it opens on; by default Changes when any wait for review, otherwise Recent activity. */
   tab?: ActivityPanelTab;
+  /** Exact own command to review, in memory only; it never enters a URL or stored draft. */
+  commandId?: string;
   /** Home's paused clock, while Home is paused; otherwise the panel reads the live demo clock. */
   now?: Instant;
   /** Where focus goes back to when the panel closes. */

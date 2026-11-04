@@ -9,7 +9,7 @@ import { shiftEndInstant } from "@/components/ward-management/ward-board-time-fe
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import type { Rejection } from "@/components/ward-management/ward-model";
-import { buttonClass } from "@/components/wf";
+import { PanelBoundary, buttonClass } from "@/components/wf";
 import styles from "./ward.module.css";
 import { WardArrivalsCorridor, WardBedsMatrix, WardDecisionsCockpit, WardDischargesMatrix } from "./ward-screen-lazy";
 import type { Dispatch, ReactElement, RefObject, SetStateAction } from "react";
@@ -136,25 +136,29 @@ export function WardScreenTabSections({
         aria-labelledby="tabBtn-return"
         data-active={activeTab === "return"}
       >
-        <WardDecisionsCockpit
-          unit={unit}
-          rollupOverdue={!isRollupConfirmedToday && morningRollupDeadlinePassed}
-          rollupConfirmed={isRollupConfirmedToday}
-          rollupTimeLabel={morningRollupTimeLabel}
-          plannedDischarges={rollupConfirmation?.expectedDischarges ?? releasesCountedToday.length}
-          onConfirmRollup={handleConfirmMorningRollup}
-          staffingFact={`${unit.allocatable.value} ${unit.allocatable.value === 1 ? "bed" : "beds"} free for a new patient`}
-          intakes={intakeDecisions}
-          departures={departureDecisions}
-          leaves={leaveDecisions}
-          projection={{
-            freeNow: capacity.available,
-            freeBy: capacity.available + readyByShiftEnd,
-            byLabel: formatInstantWithDay(shiftEndInstant(now), now),
-          }}
-        />
+        <PanelBoundary label="Decisions" resetKey={`${unit.id}:${activeTab}`}>
+          <WardDecisionsCockpit
+            unit={unit}
+            rollupOverdue={!isRollupConfirmedToday && morningRollupDeadlinePassed}
+            rollupConfirmed={isRollupConfirmedToday}
+            rollupTimeLabel={morningRollupTimeLabel}
+            plannedDischarges={rollupConfirmation?.expectedDischarges ?? releasesCountedToday.length}
+            onConfirmRollup={handleConfirmMorningRollup}
+            staffingFact={`${unit.allocatable.value} ${unit.allocatable.value === 1 ? "bed" : "beds"} free for a new patient`}
+            intakes={intakeDecisions}
+            departures={departureDecisions}
+            leaves={leaveDecisions}
+            projection={{
+              freeNow: capacity.available,
+              freeBy: capacity.available + readyByShiftEnd,
+              byLabel: formatInstantWithDay(shiftEndInstant(now), now),
+            }}
+          />
+        </PanelBoundary>
         {/* WH9: the coordinator's other jobs follow the decisions due, which come first by urgency. */}
-        {decisionJobs}
+        <PanelBoundary label="Other ward jobs" resetKey={`${unit.id}:${activeTab}`}>
+          {decisionJobs}
+        </PanelBoundary>
         {/* U3: the page's prototype footer below carries this safety line; it is not repeated here. */}
       </section>
 
@@ -190,25 +194,27 @@ export function WardScreenTabSections({
             Open Bed board
           </button>
         </div>
-        <WardArrivalsCorridor
-          unit={unit}
-          onPullPatient={handlePullPatient}
-          accepted={accepted}
-          heldAfterStop={heldAfterStop}
-          now={now}
-          resolvePatientIdentity={resolvePatientIdentity}
-          releaseOpenFor={releaseOpenFor}
-          toggleRelease={toggleRelease}
-          releaseReason={releaseReason}
-          setReleaseReason={setReleaseReason}
-          submitRelease={submitRelease}
-          lastActionRejection={lastActionRejection}
-          dispatch={dispatch}
-          setCheckToken={setCheckToken}
-          priorRejectionCountRef={priorRejectionCountRef}
-          rejections={rejections}
-          overrideReasonForm={overrideReasonForm}
-        />
+        <PanelBoundary label="All arrivals" resetKey={`${unit.id}:${activeTab}`}>
+          <WardArrivalsCorridor
+            unit={unit}
+            onPullPatient={handlePullPatient}
+            accepted={accepted}
+            heldAfterStop={heldAfterStop}
+            now={now}
+            resolvePatientIdentity={resolvePatientIdentity}
+            releaseOpenFor={releaseOpenFor}
+            toggleRelease={toggleRelease}
+            releaseReason={releaseReason}
+            setReleaseReason={setReleaseReason}
+            submitRelease={submitRelease}
+            lastActionRejection={lastActionRejection}
+            dispatch={dispatch}
+            setCheckToken={setCheckToken}
+            priorRejectionCountRef={priorRejectionCountRef}
+            rejections={rejections}
+            overrideReasonForm={overrideReasonForm}
+          />
+        </PanelBoundary>
       </section>
 
       {/* ───────── TAB 3: ON THE WAY OUT ───────── */}
@@ -243,16 +249,18 @@ export function WardScreenTabSections({
             Open Bed board
           </button>
         </div>
-        <WardDischargesMatrix
-          unit={unit}
-          releasesCountedToday={releasesCountedToday}
-          unitLeaveBeds={unitLeaveBeds}
-          blockedReleases={blockedReleases}
-          now={now}
-          confirmBedRelease={confirmBedRelease}
-          clearBedReleaseBlock={clearBedReleaseBlock}
-          endLeaveBed={endLeaveBed}
-        />
+        <PanelBoundary label="All discharges" resetKey={`${unit.id}:${activeTab}`}>
+          <WardDischargesMatrix
+            unit={unit}
+            releasesCountedToday={releasesCountedToday}
+            unitLeaveBeds={unitLeaveBeds}
+            blockedReleases={blockedReleases}
+            now={now}
+            confirmBedRelease={confirmBedRelease}
+            clearBedReleaseBlock={clearBedReleaseBlock}
+            endLeaveBed={endLeaveBed}
+          />
+        </PanelBoundary>
       </section>
 
       {/* ───────── TAB 4: BED BOARD & ROSTER ───────── */}
@@ -287,15 +295,17 @@ export function WardScreenTabSections({
             Open Bed board
           </button>
         </div>
-        <WardBedsMatrix
-          unit={unit}
-          bedsList={bedsList}
-          selectedBed={selectedBed}
-          setSelectedBed={setSelectedBed}
-          selectedPod={selectedPod}
-          setSelectedPod={setSelectedPod}
-          isMixed={isMixed}
-        />
+        <PanelBoundary label="Full bed list" resetKey={`${unit.id}:${activeTab}`}>
+          <WardBedsMatrix
+            unit={unit}
+            bedsList={bedsList}
+            selectedBed={selectedBed}
+            setSelectedBed={setSelectedBed}
+            selectedPod={selectedPod}
+            setSelectedPod={setSelectedPod}
+            isMixed={isMixed}
+          />
+        </PanelBoundary>
       </section>
     </>
   );

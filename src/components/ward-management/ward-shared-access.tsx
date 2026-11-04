@@ -107,7 +107,7 @@ export type WardSharedConnection = SharedView & {
   sessionEndsAt?: number | null;
   /** What the sign-in screen says after a deliberate sign-out, such as the shared computer reminder. */
   farewell?: string | null;
-  retry: () => void;
+  retry: () => void | Promise<void>;
   /** P172: clears the outcome of an uncertain save once read. Not offered while the receipt is being checked. */
   dismissRecovery?: (shown?: string) => void;
   dispatch: WardCommandDispatch;
@@ -212,6 +212,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       breakGlass: async (patientId, reason) => connected().breakGlass(patientId, reason),
       readRecordAccess: async () => connected().readRecordAccess(),
       readActivityAudit: async () => connected().readActivityAudit(),
+      readOwnCommand: async (commandId) => connected().readOwnCommand(commandId),
       forecastHistory: async (body) => connected().forecastHistory(body),
     };
   }, [supabase.client, accountBinding]);
@@ -348,9 +349,13 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   const sharedAccess = useMemo(
     () =>
       connection.enabled
-        ? { api: connected && !connection.recovering && accessApi ? accessApi : unavailableAccessApi, actorId }
+        ? {
+            api: connected && !connection.recovering && accessApi ? accessApi : unavailableAccessApi,
+            actorId,
+            scopeKey: connection.snapshot?.accessContext,
+          }
         : null,
-    [connection.enabled, connection.recovering, connected, accessApi, actorId],
+    [connection.enabled, connection.recovering, connected, accessApi, actorId, connection.snapshot?.accessContext],
   );
   // The header holds the Prototype pill, so the only strip above the app is the account strip
   // (`WardSharedSaveStatus`), which publishes its own height as --wf-data-bar-height.
@@ -669,6 +674,32 @@ function WardSharedWorkspaceContent({
       {/* Always mounted, so focus has somewhere to land when Dismiss removes the outcome it sat beside. */}
       <div ref={recoveryOutcomeRef} tabIndex={-1} data-testid="ward-shared-recovery-outcome">
         {connection.recovery && <span role="alert"> {connection.recovery}</span>}
+        {connection.recoveryStorageUnavailable && connection.unconfirmedSave && (
+          <p role="alert">
+            Reload recovery is unavailable on this browser. Keep this page open until your changes are confirmed.
+          </p>
+        )}
+        {!!connection.recoveryResults?.length && (
+          <ul aria-label="Recovered changes">
+            {connection.recoveryResults.map((result, index) => (
+              <li key={result.commandId}>
+                Change {index + 1}: {result.outcome}.{" "}
+                <button
+                  type="button"
+                  className={styles.dismissRecovery}
+                  onClick={(event) => {
+                    const opener = event.currentTarget;
+                    void import("./shell/ward-activity-panel-store").then(({ openActivityPanel }) =>
+                      openActivityPanel({ tab: "recent", commandId: result.commandId, opener }),
+                    );
+                  }}
+                >
+                  Review change {index + 1}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         {connection.recovery && !connection.recovering && connection.dismissRecovery && (
           <button
             type="button"

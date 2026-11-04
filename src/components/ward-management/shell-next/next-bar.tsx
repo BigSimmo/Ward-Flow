@@ -1206,6 +1206,7 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
           open={activityOpen}
           onClose={() => closePopover("activity")}
           initialTab={activityRequest.tab}
+          initialCommandId={activityRequest.commandId}
           now={activityRequest.now}
           figureChecks={publishedChecks}
           returnFocusRef={activityReturnTarget}

@@ -5,7 +5,7 @@ import { useUndoableStep } from "@/components/ward-management/use-undoable-step"
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { PhoneSheet, useIsPhone, useModalFocus } from "@/components/wf";
+import { PanelBoundary, PhoneSheet, useIsPhone, useModalFocus } from "@/components/wf";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import {
@@ -1015,26 +1015,28 @@ export function WardBoard({
   };
 
   const gridColumn = (
-    <WardBoardGridColumn
-      isPhone={isPhone}
-      bedFilter={bedFilter}
-      bedOrder={bedOrder}
-      chooseFilter={chooseFilter}
-      closeDetail={closeDetail}
-      filterCounts={filterCounts}
-      filteredTiles={filteredTiles}
-      cardNameByKey={cardNameByKey}
-      occupantByKey={occupantByKey}
-      occupants={occupants}
-      orderedTiles={orderedTiles}
-      selectedKey={selectedKey}
-      setBedOrder={setBedOrder}
-      setSelectedKey={setSelectedKey}
-      tileIndexMap={tileIndexMap}
-      tileMatchesFilter={tileMatchesFilter}
-      tiles={tiles}
-      unit={unit}
-    />
+    <PanelBoundary label="Beds" resetKey={unit.id}>
+      <WardBoardGridColumn
+        isPhone={isPhone}
+        bedFilter={bedFilter}
+        bedOrder={bedOrder}
+        chooseFilter={chooseFilter}
+        closeDetail={closeDetail}
+        filterCounts={filterCounts}
+        filteredTiles={filteredTiles}
+        cardNameByKey={cardNameByKey}
+        occupantByKey={occupantByKey}
+        occupants={occupants}
+        orderedTiles={orderedTiles}
+        selectedKey={selectedKey}
+        setBedOrder={setBedOrder}
+        setSelectedKey={setSelectedKey}
+        tileIndexMap={tileIndexMap}
+        tileMatchesFilter={tileMatchesFilter}
+        tiles={tiles}
+        unit={unit}
+      />
+    </PanelBoundary>
   );
 
   /** The phone sheet's title: the card's own line, or what kind of bed it is. */
@@ -1051,38 +1053,40 @@ export function WardBoard({
               : "A bed out of service"));
 
   const detailPanel = (
-    <WardBoardDetailPanel
-      admissions={admissions}
-      blockedTileCount={blockedTileCount}
-      closeDetail={closeDetail}
-      closedTileCount={closedTileCount}
-      constraint={constraint}
-      dateEdit={dateEdit}
-      dayZero={dayZero}
-      dialogTriggerRef={dialogTriggerRef}
-      dispatchAndReport={dispatchAndReport}
-      emptyTileCount={emptyTileCount}
-      leavingDestination={destinationFor(selectedTile?.key)}
-      movements={movements}
-      nameFor={nameFor}
-      now={now}
-      patients={patients}
-      raise={raise}
-      recordDepartureAndReport={recordDepartureAndReport}
-      recordWardDeparture={recordWardDeparture}
-      requireConfirmation={requireConfirmation}
-      resolvePatientIdentity={resolvePatientIdentity}
-      selectedOccupant={selectedOccupant}
-      selectedTile={selectedTile}
-      setBlockerDialogItem={setBlockerDialogItem}
-      setDateEdit={setDateEdit}
-      setLeavingDestination={(destination) =>
-        selectedTile && setLeavingChoice({ admissionId: selectedTile.key, destination })
-      }
-      setPendingConfirm={setPendingConfirm}
-      setSelectedBlocker={setSelectedBlocker}
-      unit={unit}
-    />
+    <PanelBoundary label="Bed record" resetKey={`${unit.id}:${selectedKey ?? ""}`}>
+      <WardBoardDetailPanel
+        admissions={admissions}
+        blockedTileCount={blockedTileCount}
+        closeDetail={closeDetail}
+        closedTileCount={closedTileCount}
+        constraint={constraint}
+        dateEdit={dateEdit}
+        dayZero={dayZero}
+        dialogTriggerRef={dialogTriggerRef}
+        dispatchAndReport={dispatchAndReport}
+        emptyTileCount={emptyTileCount}
+        leavingDestination={destinationFor(selectedTile?.key)}
+        movements={movements}
+        nameFor={nameFor}
+        now={now}
+        patients={patients}
+        raise={raise}
+        recordDepartureAndReport={recordDepartureAndReport}
+        recordWardDeparture={recordWardDeparture}
+        requireConfirmation={requireConfirmation}
+        resolvePatientIdentity={resolvePatientIdentity}
+        selectedOccupant={selectedOccupant}
+        selectedTile={selectedTile}
+        setBlockerDialogItem={setBlockerDialogItem}
+        setDateEdit={setDateEdit}
+        setLeavingDestination={(destination) =>
+          selectedTile && setLeavingChoice({ admissionId: selectedTile.key, destination })
+        }
+        setPendingConfirm={setPendingConfirm}
+        setSelectedBlocker={setSelectedBlocker}
+        unit={unit}
+      />
+    </PanelBoundary>
   );
 
   return (
@@ -1197,18 +1201,20 @@ export function WardBoard({
           className={`${styles.zones}${selectedTile !== null ? ` ${styles.zonesOpen}` : ""} ${panels.zones}`}
           onKeyDown={onZoneKeyDown}
         >
-          <WardBoardFlowColumn
-            flowTab={flowTab}
-            incoming={incoming}
-            movement={movement}
-            now={now}
-            onFlowTabKeyDown={onFlowTabKeyDown}
-            outgoing={outgoing}
-            outgoingBasis={outgoingBasis}
-            setFlowTab={setFlowTab}
-            setOutgoingBasis={setOutgoingBasis}
-            targets={targets}
-          />
+          <PanelBoundary label="Coming in and going out" resetKey={unit.id}>
+            <WardBoardFlowColumn
+              flowTab={flowTab}
+              incoming={incoming}
+              movement={movement}
+              now={now}
+              onFlowTabKeyDown={onFlowTabKeyDown}
+              outgoing={outgoing}
+              outgoingBasis={outgoingBasis}
+              setFlowTab={setFlowTab}
+              setOutgoingBasis={setOutgoingBasis}
+              targets={targets}
+            />
+          </PanelBoundary>
 
           {!isPhone && gridColumn}
 
@@ -1248,29 +1254,34 @@ export function WardBoard({
           ) : (
             detailPanel
           )}
-          <WardBoardWorkBand
-            blockerCloseBtnRef={blockerCloseBtnRef}
-            blockerDialogItem={blockerDialogItem}
-            blockerDialogRef={blockerDialogRef}
-            closeBlockerDialog={closeBlockerDialog}
-            dispatchAndReport={dispatchAndReport}
-            handleShiftAction={handleShiftAction}
-            liveBedReleases={liveBedReleases}
-            nameFor={nameFor}
-            raise={raise}
-            selectedBlocker={selectedBlocker}
-            setSelectedBlocker={setSelectedBlocker}
-            setSelectedKey={setSelectedKey}
-            setShiftExpanded={setShiftExpanded}
-            setToastMessage={setToastMessage}
-            shiftDigest={shiftDigest}
-            shiftExpanded={shiftExpanded}
-            shiftTiles={shiftTiles}
-            unit={unit}
-          />
+          <PanelBoundary label="Before handover" resetKey={unit.id}>
+            <WardBoardWorkBand
+              blockerCloseBtnRef={blockerCloseBtnRef}
+              blockerDialogItem={blockerDialogItem}
+              blockerDialogRef={blockerDialogRef}
+              closeBlockerDialog={closeBlockerDialog}
+              dispatchAndReport={dispatchAndReport}
+              handleShiftAction={handleShiftAction}
+              liveBedReleases={liveBedReleases}
+              nameFor={nameFor}
+              raise={raise}
+              selectedBlocker={selectedBlocker}
+              setSelectedBlocker={setSelectedBlocker}
+              setSelectedKey={setSelectedKey}
+              setShiftExpanded={setShiftExpanded}
+              setToastMessage={setToastMessage}
+              shiftDigest={shiftDigest}
+              shiftExpanded={shiftExpanded}
+              shiftTiles={shiftTiles}
+              unit={unit}
+            />
+          </PanelBoundary>
         </div>
 
         <WardBoardPrintSections
+          admissions={admissions}
+          dayZero={dayZero}
+          nameFor={listNameFor}
           incoming={incoming}
           movement={movement}
           now={now}

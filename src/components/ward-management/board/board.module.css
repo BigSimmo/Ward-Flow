@@ -6451,3 +6451,23 @@
   border-top: 0;
   padding-top: 0;
 }
+
+/* G1: the default paper board is a compact snapshot, with every recorded bed. The detailed
+ * shift brief and plans remain available on screen; printing them as well duplicated the
+ * board across several sheets. Keep this after the historical print rules above. */
+@media print {
+  .screen:has([data-ward-board-print]) > :not(.main),
+  .screen:has([data-ward-board-print]) .main > :not([data-ward-board-print]) {
+    display: none !important;
+  }
+
+  .screen:has([data-ward-board-print]),
+  .screen:has([data-ward-board-print]) .main {
+    display: block;
+    width: auto;
+    max-width: none;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+  }
+}

@@ -5,6 +5,7 @@ import { parse } from "@babel/parser";
 import { describe, expect, it } from "vitest";
 
 import { isRedesignFork } from "./helpers/redesign-design-copies";
+import { UNDO_STEP_TYPES } from "@/components/ward-management/ward-undo";
 
 /**
  * WHAT THIS FILE CHECKS: for every `WardFlowEvent` union member whose body declares an
@@ -471,6 +472,12 @@ const DISPATCH_CALLS_WITHOUT_A_LITERAL_TYPE: Record<string, string> = {
     "useEdRecordSave(): forwards only CHANGE_URGENCY, CHANGE_LEGAL_STATUS or CORRECT_LEGAL_FORM_RECEIPT literals built in this file's three submit handlers",
   "src/components/ward-management/use-undoable-step.ts :: event":
     "useUndoableStep's submit(): dispatches the caller-built step or Undo with a literal type",
+  // Tier B2/E2 (4 Nov 2026): explicit own-command review forwards only an existing reversible
+  // command's inverse. activityUndo binds its receipt to the current record's exact sequence,
+  // role and time window. Its return type excludes every event declaring overrideReason, so a
+  // future override-gated inverse fails compilation rather than silently acquiring this exception.
+  "src/components/ward-management/coordinator/activity-own-command.tsx :: offer.event":
+    "ActivityOwnCommandBody(): forwards only activityUndo's CommandUndoType inverse, narrowed to events without overrideReason; no placement or override step can enter this site",
   // P053 (27 Oct 2026): the referral inbox's three answer buttons share answer(), whose one
   // dispatch(event) forwards the event its caller built as a literal at the call site: ACCEPT_REFERRAL
   // for Accept and DECLINE_REFERRAL for Waiting list and Decline. Those construction sites remain
@@ -704,7 +711,15 @@ describe("ward override-surface guard", () => {
     // 3 -> 4, M2 (24 Oct 2026): the correction controller forwards its three literal-typed events.
     // 4 -> 5, P053 (27 Oct 2026): the referral inbox's answer() forwards its three literal-typed events.
     // 5 -> 6, clinical-safety audit (1 Nov 2026): Home's sendStepsInOrder() forwards its literal-typed steps.
-    expect(nonLiteralDispatchCalls.length).toBe(6);
+    // 6 -> 7, Tier B2/E2 (4 Nov 2026): Activity forwards its exact own-command inverse, with the
+    // named exception above; the bounded inverse set is separately checked below.
+    expect(nonLiteralDispatchCalls.length).toBe(7);
+  });
+
+  it("Activity's supported Undo types contain no override-gated event", () => {
+    const inverseTypes = [...UNDO_STEP_TYPES, "UNDO_REFERRAL_DECISION", "UNDO_PLACE_IN_BED"];
+    expect(inverseTypes.length).toBeGreaterThan(2);
+    expect(inverseTypes.filter((type) => overridableEventTypes.includes(type))).toEqual([]);
   });
 
   /**

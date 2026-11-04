@@ -48,9 +48,9 @@ describe("Alerts as the desk's full log (AL2)", () => {
     fireEvent.click(waiting);
     expect(waiting).toHaveAttribute("aria-pressed", "true");
     expect(all).toHaveAttribute("aria-pressed", "false");
-    expect(screen.queryByRole("region", { name: "Act now" })).not.toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Act now" })).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Waiting" })).toBeInTheDocument();
-    expect(document.querySelectorAll('[data-alert-id][data-act="true"]')).toHaveLength(0);
+    expect(document.querySelectorAll('[data-alert-id][data-act="true"]').length).toBeGreaterThan(0);
 
     // Pressing the chosen chip again shows everything, as All does.
     fireEvent.click(waiting);

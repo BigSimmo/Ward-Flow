@@ -12,8 +12,13 @@ import { OUTGOING_BASIS_LABEL, type Incoming, type Occupant, type OutgoingBasis,
 import type { Dispatch, SetStateAction } from "react";
 import type { ArrowTarget, SinceYesterday } from "@/components/ward-management/ward-board-derivations";
 import { PersonEntry } from "./ward-board-person-entry";
+import type { Admission } from "@/components/ward-management/ward-admissions";
+import { WardBoardCompactPrint } from "./ward-board-compact-print";
 
 export function WardBoardPrintSections({
+  admissions,
+  dayZero,
+  nameFor,
   incoming,
   movement,
   now,
@@ -27,6 +32,9 @@ export function WardBoardPrintSections({
   tiles,
   unit,
 }: {
+  admissions: readonly Admission[];
+  dayZero: Date;
+  nameFor: (admissionId: string | undefined) => string;
   incoming: Incoming[];
   movement: SinceYesterday;
   now: Instant;
@@ -42,6 +50,14 @@ export function WardBoardPrintSections({
 }) {
   return (
     <>
+      <WardBoardCompactPrint
+        unit={unit}
+        tiles={tiles}
+        occupants={occupants}
+        admissions={admissions}
+        nameFor={nameFor}
+        dayZero={dayZero}
+      />
       {/*
        * WHERE THESE BEDS FREE UP TO — from `arrowTargets`, which existed fully tested with zero
        * consumers until this board became its first.

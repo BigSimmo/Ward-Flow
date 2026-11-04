@@ -20,21 +20,15 @@ import { isChunkLoadError, useReloadWhenOnline } from "@/components/ward-managem
  * two copies of the same markup drifting apart. `@/components/ui-primitives` IS on the approved
  * list, so the buttons still come from the repository's own controls.
  *
- * ⚠️ **IT MUST NOT SWALLOW THE ERROR.** A boundary that renders "something went wrong" and logs
- * nothing turns a loud failure into a silent one, which is worse than the blanked page it replaces
- * — and it looks like a fix. Three things therefore always happen: the error object goes to
- * `console.error` (so the stack is in the browser console in every environment), the message is
- * rendered on screen, and the stack is put behind a disclosure in development.
- *
- * ⚠️ **THE MESSAGE IS SHOWN ONLY OUTSIDE PRODUCTION.** Audit 5 PS-05: a guard can quote part of
- * the failing record in its message, and the signed-in shared site is a production build, so there
- * the panel shows a fixed sentence and the digest instead. The full error is still in the console.
+ * The console receives a recognised error class only. A message, stack URL or arbitrary error
+ * name can quote record content, so production shows fixed copy and the digest. Local development
+ * retains its on-screen detail disclosure. Opt-in reporting uses the scrubbed browser relay.
  *
  * ⚠️ **"TRY AGAIN" IS HONEST BUT LIMITED, AND THE COPY SAYS SO.** `retry()` re-renders this
  * segment; it does not re-create `WardFlowProvider`, which lives in the layout ABOVE every boundary
  * here and therefore survives. So a guard that throws deterministically on the current world will
- * throw again immediately. That is why "Reload page" is offered beside it: reloading re-seeds the
- * whole prototype, which is the only control on this panel that can actually change the outcome.
+ * throw again immediately. "Reload page" rebuilds the client provider and reloads its authorised
+ * snapshot in shared mode. The reader must check recent saves before repeating an action.
  */
 export function WardFlowErrorPanel({
   error,
@@ -71,9 +65,16 @@ export function WardFlowErrorPanel({
       : "The connection dropped. This page will reload by itself when the connection returns, unless a save or unfinished work still needs attention. Check recent saves before repeating an action.";
 
   useEffect(() => {
-    // The whole error object, not `error.message`: the console entry is where the stack is
-    // reachable in production as well as development.
-    console.error(logLabel, error);
+    // The recognised class is sufficient for the console; messages may contain record content.
+    console.error(logLabel, {
+      type: ["Error", "TypeError", "RangeError", "ReferenceError", "SyntaxError", "ChunkLoadError"].includes(error.name)
+        ? error.name
+        : "Error",
+    });
+    if (process.env.NEXT_PUBLIC_WARD_CLIENT_ERROR_REPORTING === "true")
+      void import("@/components/ward-management/ward-client-errors")
+        .then(({ reportBrowserError }) => reportBrowserError(error))
+        .catch(() => {});
     headingRef.current?.focus({ preventScroll: true });
   }, [error, logLabel]);
 

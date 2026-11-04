@@ -19,6 +19,7 @@ const rows = [
     committed_at: "2026-10-27T12:00:00.000Z",
     changes: { patients: [{ umrn: "SYN0001" }] },
     actor_id: actor,
+    command_id: "22222222-2222-4222-8222-222222222222",
   },
   {
     sequence: "8",
@@ -122,7 +123,13 @@ test("a ward desk reads the kind and time of changes made inside its own place",
   const body = await response.json();
   assert.deepEqual(body, {
     events: [
-      { sequence: "9", action: "CLOSE_UNIT", outcome: "accepted", committed_at: "2026-10-27T12:00:00.000Z" },
+      {
+        sequence: "9",
+        action: "CLOSE_UNIT",
+        outcome: "accepted",
+        committed_at: "2026-10-27T12:00:00.000Z",
+        ownCommandId: "22222222-2222-4222-8222-222222222222",
+      },
       { sequence: "5", action: "CONFIRM_CAPACITY", outcome: "rejected", committed_at: "2026-10-27T08:00:00.000Z" },
     ],
     complete: true,

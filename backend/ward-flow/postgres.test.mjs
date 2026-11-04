@@ -11,6 +11,7 @@ import { migrate } from "./migrate.mjs";
 import { MAX_DELIVERY_ATTEMPTS, createWorkspaceStore } from "./postgres.mjs";
 import { pushPayload } from "./push.mjs";
 import { RECEIPT_RETENTION_DAYS, pruneReceipts } from "./prune-receipts.mjs";
+
 import { readFile } from "node:fs/promises";
 import { verifyPostgresNamespace } from "./postgres-preflight.mjs";
 import { verifyRuntimeRole } from "./portable-postgres.mjs";
@@ -3048,6 +3049,68 @@ test(
       await pool.end();
       await dropTestDatabase(admin, database);
       await admin.end();
+    }
+  },
+);
+
+test(
+  "real PostgreSQL: own Activity receipt binds actor, workspace, access context and exact Undo",
+  { skip: !url },
+  async () => {
+    const engine = await import("./dist/engine.mjs");
+    const pool = new Pool({ connectionString: url, max: 2 });
+    const at = new Date("2026-11-04T02:42:00Z");
+    const workspaceId = randomUUID();
+    const actorId = randomUUID();
+    const commandId = randomUUID();
+    const store = createWorkspaceStore(pool, { workspaceId, engine, clock: () => at });
+    try {
+      await migrate(pool);
+      const view = await store.viewer(actorId, { bootstrap: true });
+      const snapshot = await store.read(actorId, view);
+      const world = snapshot.payload;
+      let event;
+      for (const unit of world.state.units) {
+        for (let bedNumber = 1; bedNumber <= unit.beds; bedNumber++) {
+          const candidate = {
+            type: "SET_BED_CLOSED",
+            role: "coordinator",
+            now: snapshot.now,
+            unitId: unit.id,
+            actingUnitId: unit.id,
+            bedNumber,
+            closed: true,
+          };
+          if (engine.applyCommand(world, candidate, at).outcome === "accepted") {
+            event = candidate;
+            break;
+          }
+        }
+        if (event) break;
+      }
+      assert.ok(event, "a synthetic vacant bed can be closed");
+      const answer = await store.command(actorId, commandId, snapshot.revision, event, { view });
+      assert.equal(answer.status, 200);
+      assert.ok(answer.body.undoStep);
+      const ownReceipt = await store.receipt(actorId, commandId, view);
+      assert.ok(ownReceipt);
+      assert.deepEqual(ownReceipt.undoStep, answer.body.undoStep);
+      const changedDeskReceipt = await store.receipt(actorId, commandId, { ...view, membershipId: randomUUID() });
+      assert.ok(changedDeskReceipt);
+      assert.equal(changedDeskReceipt.undoStep, undefined);
+      const otherActor = randomUUID();
+      assert.equal(
+        await store.receipt(otherActor, commandId, await store.viewer(otherActor, { bootstrap: true })),
+        null,
+      );
+      const otherWorkspace = createWorkspaceStore(pool, { workspaceId: randomUUID(), engine, clock: () => at });
+      assert.equal(await otherWorkspace.receipt(actorId, commandId, view), null);
+      const own = await store.auditPage(view);
+      assert.equal(own.events.find((row) => row.action === "SET_BED_CLOSED").ownCommandId, commandId);
+      const other = await store.auditPage(await store.viewer(otherActor, { bootstrap: true }));
+      assert.equal(other.events.find((row) => row.action === "SET_BED_CLOSED").ownCommandId, undefined);
+    } finally {
+      await pool.end();
     }
   },
 );

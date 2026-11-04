@@ -35,6 +35,7 @@ import { LruCache, registerPart } from "./reply-cache.mjs";
 import { recordDetailOf, withoutRecordDetail } from "./record-detail.mjs";
 import { forecastHistoryStore } from "./forecast-history.mjs";
 import { deskAuditPage } from "./desk-audit.mjs";
+import { ownCommandReceipt } from "./own-command-receipt.mjs";
 
 /**
  * One run of `task` at a time. A call while one is out joins it and asks for one more pass, so
@@ -1733,13 +1734,19 @@ export function createWorkspaceStore(
     let before = cursor;
     for (let page = 0; page < 10; page++) {
       const { rows } = await pool.query(
-        `SELECT sequence, actor_id, actor_role${scoped}, data_mode, action, outcome, prior_revision, revision, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype'${whole ? "" : " AND action LIKE 'ACCESS\\_%'"}${before === null ? "" : " AND sequence < $2::bigint"} ORDER BY sequence DESC LIMIT 200`,
+        `SELECT sequence, actor_id, command_id, actor_role${scoped}, data_mode, action, outcome, prior_revision, revision, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype'${whole ? "" : " AND action LIKE 'ACCESS\\_%'"}${before === null ? "" : " AND sequence < $2::bigint"} ORDER BY sequence DESC LIMIT 200`,
         before === null ? [workspaceId] : [workspaceId, before],
       );
       for (const row of rows) {
         before = row.sequence;
         const access = statewide ? null : engine.parseAccess(row.changes?.role, row.changes?.scope);
-        if (statewide || (access && engine.scopeWithin(payload, access.scope, view.access.scope))) selected.push(row);
+        if (statewide || (access && engine.scopeWithin(payload, access.scope, view.access.scope))) {
+          const { command_id, ...event } = row;
+          selected.push({
+            ...event,
+            ...(view?.actorId === row.actor_id && typeof command_id === "string" ? { ownCommandId: command_id } : {}),
+          });
+        }
         if (selected.length === 200) return { events: selected, complete: false, nextCursor: String(before) };
       }
       if (rows.length < 200) return { events: selected, complete: true, nextCursor: null };
@@ -2033,19 +2040,19 @@ export function createWorkspaceStore(
     async audit(view, cursor = null) {
       return (await auditPage(view, cursor)).events;
     },
-    /** Receipt lookup reveals only the authenticated actor's outcome, never stored request text. */
-    async receipt(actorId, commandId) {
+    /** Receipt lookup reveals only the authenticated actor's outcome, never stored request text.
+     * @param {string} actorId @param {string} commandId @param {any} [view]
+     */
+    async receipt(actorId, commandId, view = null) {
       const { rows } = await pool.query(
         "SELECT status, result FROM ward_flow.commands WHERE workspace_id=$1 AND actor_id=$2 AND command_id=$3",
         [workspaceId, actorId, commandId],
       );
-      const row = rows[0];
-      return row
-        ? {
-            outcome: row.status === 200 ? (row.result.outcome === "partly" ? "partly" : "accepted") : "refused",
-            commandRevision: row.result.commandRevision,
-          }
-        : null;
+      return ownCommandReceipt(
+        rows[0],
+        view?.access?.role === "executive" ? null : accessContext(clock(), view).accessContext,
+        !!view && view.actorId === actorId,
+      );
     },
     /**
      * Every active or waiting role and cover inside the access admin's own place, with when each

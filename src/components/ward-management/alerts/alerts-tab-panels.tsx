@@ -7,7 +7,7 @@
 import { CheckCheck, Radio } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
-import { EmptyState, StatusGlyph, TabPanel, cx } from "@/components/wf";
+import { EmptyState, PanelBoundary, StatusGlyph, TabPanel, cx } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { useWardRaise } from "@/components/ward-management/ward-flow-raise";
@@ -245,24 +245,26 @@ export function AlertsBroadcastsPanel({
 }) {
   return (
     <TabPanel idPrefix="alerts" id="broadcasts" className={styles.tabBody}>
-      {live}
+      <PanelBoundary label="Live broadcasts">{live}</PanelBoundary>
       {!anyLive && pastBroadcasts.length === 0 ? (
         <EmptyState icon={Radio} title="No broadcasts this session" meta="Nothing is live." />
       ) : null}
       {pastBroadcasts.length === 0 ? null : (
         <div className={tab.tabBody}>
-          <EarlierBroadcasts
-            alerts={pastBroadcasts}
-            units={units}
-            now={now}
-            status={(alert) =>
-              alert.status === "stood_down"
-                ? `stood down${alert.stoodDownAt !== undefined ? ` ${formatInstantWithDay(alert.stoodDownAt, now)}` : ""}`
-                : isAlertLive(alert, movements, now)
-                  ? "still live"
-                  : "ended"
-            }
-          />
+          <PanelBoundary label="Earlier broadcasts">
+            <EarlierBroadcasts
+              alerts={pastBroadcasts}
+              units={units}
+              now={now}
+              status={(alert) =>
+                alert.status === "stood_down"
+                  ? `stood down${alert.stoodDownAt !== undefined ? ` ${formatInstantWithDay(alert.stoodDownAt, now)}` : ""}`
+                  : isAlertLive(alert, movements, now)
+                    ? "still live"
+                    : "ended"
+              }
+            />
+          </PanelBoundary>
         </div>
       )}
     </TabPanel>

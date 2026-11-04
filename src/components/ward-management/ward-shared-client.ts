@@ -1,3 +1,11 @@
+import { recoverCommandReceipts } from "./ward-command-recovery-run";
+import {
+  COMMAND_RECOVERY_KEY,
+  readCommandRecovery,
+  recordCommandRecovery,
+  removeCommandRecovery,
+  type RecoveryEntry,
+} from "./ward-command-recovery";
 import { forecastHistoryFailure } from "./forecast/forecast-history-response";
 import {
   anySignal,
@@ -17,7 +25,7 @@ import type { RecordViewSurface } from "./shell/ward-shared-session-context";
 import { eventLogEntryFor } from "./ward-event-log";
 import { bindReferralDraftAccessContext, clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
 import type { BoundWardPartialView, WardPartialView } from "./ward-partial-view-contract";
-import { boardNotRefreshed, SAVE_PROBLEMS, saveProblem } from "./ward-save-failure";
+import { boardNotRefreshed, saveProblem } from "./ward-save-failure";
 import {
   ARCHIVED_COLLECTIONS,
   foldArchiveReply,
@@ -82,13 +90,19 @@ export type {
 } from "./ward-shared-client-types";
 /** The lists closed records are archived from, older than 30 days (Josh, 25 Oct 2026). */
 type ArchivedRecords = Record<ArchivedCollection, { id: string }[]>;
-export const WARD_COMMAND_RECOVERY_KEY = "wardflow:pending-command-v1";
+export const WARD_COMMAND_RECOVERY_KEY = COMMAND_RECOVERY_KEY;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Matches the provider: keep the newest entries; sequence keeps advancing past dropped ones. */
 const MAX_SHARED_EVENT_LOG_ENTRIES = 1000;
 const NO_ROLE = "No Ward Flow role is assigned to this account";
 /** P056: one audit row as a desk's Activity reads it; nothing in it names a patient or a person. */
-export type SharedActivityAuditEvent = { sequence: string; action: string; outcome: string; committed_at: string };
+export type SharedActivityAuditEvent = {
+  sequence: string;
+  action: string;
+  outcome: string;
+  committed_at: string;
+  ownCommandId?: string;
+};
 /** A member desk reads its part of the workspace in full at least this often (audit F-04). */
 const FULL_READ_EVERY_MS = 60_000;
 
@@ -100,123 +114,59 @@ export class SharedWorkspaceClient {
   private pending: PendingCommand | null = null;
   private accessTimer: ReturnType<typeof setTimeout> | undefined;
   private recoveryPending = false;
-  private recoveryWrite(commandId: string) {
+  private recoveryStorageUnavailable = false;
+  private recoveryWrite(commandId: string, phase: RecoveryEntry["phase"] = "sent") {
     const { receiptScope, accessUntil } = this.view;
-    if (!receiptScope || !Number.isFinite(accessUntil) || accessUntil! <= Date.now()) return;
-    try {
-      this.options.recoveryStorage?.setItem(
-        WARD_COMMAND_RECOVERY_KEY,
-        JSON.stringify({ commandId, receiptScope, expiresAt: accessUntil }),
-      );
-    } catch {
-      /* Storage refusal keeps the unload warning and same-instance retry. */
-    }
-  }
-  private clearRecovery() {
-    this.recoveryPending = false;
-    try {
-      this.options.recoveryStorage?.removeItem(WARD_COMMAND_RECOVERY_KEY);
-    } catch {
-      /* Storage unavailable. */
-    }
-  }
-  private async recoverReceipt() {
-    if (this.pending || !this.options.recoveryStorage) return;
-    const generation = this.viewGeneration;
-    const grantGeneration = this.grantGeneration;
-    const roleSignal = this.roleLifetime.signal;
-    const receiptScope = this.view.receiptScope;
-    const current = () => {
-      if (
-        this.disposed ||
-        roleSignal.aborted ||
-        generation !== this.viewGeneration ||
-        grantGeneration !== this.grantGeneration ||
-        receiptScope !== this.view.receiptScope ||
-        (Number.isFinite(this.view.accessUntil) && this.view.accessUntil! <= Date.now()) ||
-        (held && held.expiresAt <= Date.now())
-      ) {
-        // Role switches can occur in the promise continuation after request() validated its reply.
-        // Its refresh was deferred by this busy recovery, so ensure the current desk is read next.
-        if (!this.disposed && !this.gated()) this.needsRefresh = true;
-        throw new Error("The recovery view changed; reconnect to check the current desk.");
-      }
-    };
-    let held: { commandId: string; receiptScope: string; expiresAt: number } | undefined;
-    try {
-      const raw = this.options.recoveryStorage.getItem(WARD_COMMAND_RECOVERY_KEY);
-      if (!raw) {
-        if (this.recoveryPending) {
-          this.recoveryPending = false;
-          this.publish({ recovery: undefined });
-        }
-        return;
-      }
-      held = JSON.parse(raw);
-    } catch {
-      this.clearRecovery();
-      this.publish({ recovery: undefined });
-      return;
-    }
-    if (
-      !held ||
-      !UUID.test(held.commandId ?? "") ||
-      held.receiptScope !== this.view.receiptScope ||
-      !Number.isFinite(held.expiresAt) ||
-      held.expiresAt <= Date.now()
-    ) {
-      this.clearRecovery();
-      this.publish({
-        recovery: undefined,
-        ...(held &&
-        held.receiptScope === this.view.receiptScope &&
-        Number.isFinite(held.expiresAt) &&
-        held.expiresAt <= Date.now()
-          ? {
-              recovery:
-                "The previous save receipt has expired. Its outcome is unknown. Review the board before repeating any action.",
-            }
-          : {}),
-      });
-      return;
-    }
-    this.recoveryPending = true;
-    this.publish({
-      status: "saving",
-      recovering: true,
-      recovery: "Checking the previous uncertain save. Changes are disabled until its receipt is checked.",
+    if (!this.options.recoveryStorage || !receiptScope || !Number.isFinite(accessUntil) || accessUntil! <= Date.now())
+      return true;
+    const stored = recordCommandRecovery(this.options.recoveryStorage, {
+      commandId,
+      receiptScope,
+      expiresAt: accessUntil!,
+      phase,
     });
-    current();
-    const { response, value } = await this.request(`/v1/workspace/receipt?commandId=${held.commandId}`);
-    current();
-    if (!response.ok) throw new Error("Receipt unavailable");
-    const outcome = value.receipt?.outcome;
-    if (value.receipt !== null && !["accepted", "partly", "refused"].includes(outcome)) throw new Error("Bad receipt");
-    if (
-      (outcome === "accepted" || outcome === "partly") &&
-      Number.isSafeInteger(value.receipt.commandRevision) &&
-      value.receipt.commandRevision > (this.view.snapshot?.revision ?? 0)
-    ) {
-      const latest = await this.request("/v1/workspace");
-      current();
-      if (!latest.response.ok || latest.value.snapshot?.revision < value.receipt.commandRevision)
-        throw new Error("The accepted save is not yet reflected in the board");
-      this.adopt(latest.value.snapshot);
-      current();
-      this.publish({ access: latest.value.access, accessUntil: latest.value.accessUntil });
-    }
-    current();
-    this.clearRecovery();
-    current();
-    this.publish({
-      status: "ready",
-      recovering: false,
-      recovery:
-        outcome === "accepted" || outcome === "partly"
-          ? `The previous uncertain save was ${outcome === "partly" ? "partially applied" : "accepted"}. Review the refreshed board before acting again.`
-          : outcome === "refused"
-            ? `The previous uncertain save was not applied. ${SAVE_PROBLEMS.refused[1]}`
-            : "No retained receipt was found for the previous uncertain save. Its outcome is unknown. Review the board before repeating any action.",
+    this.recoveryStorageUnavailable = !stored.available;
+    return stored.sendSafe;
+  }
+  private clearRecovery(commandId?: string) {
+    if (!commandId) this.recoveryPending = false;
+    if (this.options.recoveryStorage)
+      this.recoveryStorageUnavailable = !removeCommandRecovery(this.options.recoveryStorage, commandId);
+  }
+
+  private async recoverReceipt() {
+    if (this.pending || this.queue.length || !this.options.recoveryStorage) return;
+    const generation = this.viewGeneration,
+      grantGeneration = this.grantGeneration;
+    const roleSignal = this.roleLifetime.signal,
+      receiptScope = this.view.receiptScope;
+    await recoverCommandReceipts({
+      storage: this.options.recoveryStorage,
+      view: () => this.view,
+      publish: (update) => this.publish(update),
+      remove: (id) => this.clearRecovery(id),
+      request: (path) => this.request(path),
+      adopt: (snapshot) => this.adopt(snapshot),
+      pending: (pending) => {
+        this.recoveryPending = pending;
+      },
+      unavailable: () => {
+        this.recoveryStorageUnavailable = true;
+      },
+      current: (held, checkExpiry = true) => {
+        if (
+          this.disposed ||
+          roleSignal.aborted ||
+          generation !== this.viewGeneration ||
+          grantGeneration !== this.grantGeneration ||
+          receiptScope !== this.view.receiptScope ||
+          (this.view.accessUntil ?? Infinity) <= Date.now() ||
+          (checkExpiry && held.expiresAt <= Date.now())
+        ) {
+          if (!this.disposed && !this.gated()) this.needsRefresh = true;
+          throw new Error("The recovery view changed; reconnect to check the current desk.");
+        }
+      },
     });
   }
 
@@ -257,6 +207,7 @@ export class SharedWorkspaceClient {
       undoStep: metadata?.undoStep,
       ...(partly ? { partly } : {}),
     };
+    if (status !== "failed" && !this.disposed) this.clearRecovery(commandId);
     this.completions.get(commandId)?.(outcome);
     this.completions.delete(commandId);
     if (status !== "failed") {
@@ -551,7 +502,13 @@ export class SharedWorkspaceClient {
     if (this.disposed) return;
     if (update.snapshot === null) {
       // A dropped desk has no inherited access deadline. Preserve an explicit replacement.
-      update = { executiveSnapshot: null, accessUntil: undefined, recovery: undefined, ...update };
+      update = {
+        executiveSnapshot: null,
+        accessUntil: undefined,
+        recovery: undefined,
+        recoveryResults: undefined,
+        ...update,
+      };
       this.archive = null;
       this.archiveAsked = null;
       this.rawPayload = null;
@@ -568,6 +525,8 @@ export class SharedWorkspaceClient {
       ...update,
       viewEpoch: (this.view.viewEpoch ?? 0) + (changedLifetime ? 1 : 0),
       recovering: this.recoveryPending,
+      recoveryStorageUnavailable: this.recoveryStorageUnavailable,
+      pendingCount: (this.pending ? 1 : 0) + this.queue.length,
       unconfirmedSave: this.pending !== null || this.queue.length > 0 || this.recoveryPending,
       waiting: this.offlineHold ? (this.pending ? 1 : 0) + this.queue.length : 0,
     };
@@ -738,8 +697,9 @@ export class SharedWorkspaceClient {
       if (path === "/v1/workspace/commands" && body && "commandId" in body) {
         if (Number.isFinite(this.view.accessUntil) && this.view.accessUntil! <= Date.now())
           throw new Error(`Access verification expired. ${saveProblem("notReady")}`);
+        if (!this.recoveryWrite(body.commandId as string))
+          throw new Error("Safe reload recovery could not be recorded.");
         this.sentCommandId = body.commandId as string;
-        this.recoveryWrite(this.sentCommandId);
       }
       if (body && this.options.authenticatedActorId)
         sentBinding =
@@ -946,7 +906,9 @@ export class SharedWorkspaceClient {
       // Gate nested dispatches from changed() before exposing a recovered board as ready.
       try {
         this.recoveryPending =
-          !this.pending && (this.recoveryPending || !!this.options.recoveryStorage?.getItem(WARD_COMMAND_RECOVERY_KEY));
+          !this.pending &&
+          !this.queue.length &&
+          (this.recoveryPending || readCommandRecovery(this.options.recoveryStorage).entries.length > 0);
       } catch {
         /* Storage unavailable. */
       }
@@ -1042,6 +1004,7 @@ export class SharedWorkspaceClient {
       sheets: this.openSheetsNoted(),
     });
     // Made while offline: pinned now, before a resend can adopt a newer board.
+    this.recoveryWrite(commandId, "queued");
     if (this.offlineHold) pinToBoard(this.queue.slice(-1), this.sheetSeen, this.held());
     // #817: a poll in flight is stopped (reads change nothing) so the save goes now, not after it.
     this.pollAbort?.abort();
@@ -1086,7 +1049,7 @@ export class SharedWorkspaceClient {
         if (response.status >= 500) throw new Error("Save not confirmed");
         if (value.responseBindingChanged) {
           this.sentCommandId = null;
-          this.clearRecovery();
+          this.clearRecovery(command.commandId);
           this.pending = null;
           this.settle(command.commandId, response.ok ? "accepted" : "refused");
           this.needsRefresh = true;
@@ -1143,7 +1106,7 @@ export class SharedWorkspaceClient {
         }
         // Keep the uncertain-save marker until the returned board has passed adoption checks.
         this.sentCommandId = null;
-        this.clearRecovery();
+        this.clearRecovery(command.commandId);
         if (response.ok)
           this.ownSaveLanded(
             command.expectedRevision,
@@ -1295,9 +1258,42 @@ export class SharedWorkspaceClient {
   }
   /** P056: the newest audit page this desk may read, for the Activity feed (/v1/workspace/audit). */
   async readActivityAudit(): Promise<SharedActivityAuditEvent[]> {
+    const generation = this.viewGeneration;
+    const context = this.view.snapshot?.accessContext;
     const { response, value } = await this.request("/v1/workspace/audit");
-    if (!response.ok || !Array.isArray(value?.events)) throw new Error("Activity could not be read");
-    return value.events;
+    const { activityAuditEvents } = await import("./ward-own-command-receipt");
+    if (
+      !response.ok ||
+      !Array.isArray(value?.events) ||
+      this.disposed ||
+      generation !== this.viewGeneration ||
+      context !== this.view.snapshot?.accessContext
+    )
+      throw new Error("Activity could not be read");
+    return activityAuditEvents(value.events);
+  }
+  /** An outcome belongs to this actor; Undo attribution additionally belongs to this exact desk. */
+  async readOwnCommand(commandId: string) {
+    if (!UUID.test(commandId) || this.view.status !== "ready" || !this.accessChangeAllowed())
+      throw new Error("The change could not be checked");
+    const generation = this.viewGeneration,
+      grant = this.grantGeneration,
+      actor = this.view.actorId;
+    const context = this.view.snapshot?.accessContext;
+    const { response, value } = await this.request(`/v1/workspace/receipt?commandId=${encodeURIComponent(commandId)}`);
+    const { ownCommandReceipt } = await import("./ward-own-command-receipt");
+    if (
+      !response.ok ||
+      this.disposed ||
+      this.view.status !== "ready" ||
+      !this.accessChangeAllowed() ||
+      generation !== this.viewGeneration ||
+      grant !== this.grantGeneration ||
+      actor !== this.view.actorId ||
+      context !== this.view.snapshot?.accessContext
+    )
+      throw new Error("The workspace or working role changed. Review the current board.");
+    return ownCommandReceipt(value?.receipt);
   }
   /**
    * Readiness review item 8: ends this sign-in on the server, so its token is refused at once

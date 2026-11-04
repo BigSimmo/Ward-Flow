@@ -38,7 +38,7 @@ export async function deskAuditPage({ pool, workspaceId, engine, readPayload, vi
   let before = cursor;
   for (let page = 0; page < 10; page++) {
     const { rows } = await pool.query(
-      `SELECT sequence, actor_role, actor_scope, action, outcome, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype' AND actor_scope IS NOT NULL AND action NOT LIKE 'ACCESS\\_%'${before === null ? "" : " AND sequence < $2::bigint"} ORDER BY sequence DESC LIMIT 200`,
+      `SELECT sequence, actor_id, command_id, actor_role, actor_scope, action, outcome, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype' AND actor_scope IS NOT NULL AND action NOT LIKE 'ACCESS\\_%'${before === null ? "" : " AND sequence < $2::bigint"} ORDER BY sequence DESC LIMIT 200`,
       before === null ? [workspaceId] : [workspaceId, before],
     );
     for (const row of rows) {
@@ -46,7 +46,15 @@ export async function deskAuditPage({ pool, workspaceId, engine, readPayload, vi
       if (typeof row.action !== "string" || WITHHELD_ACTIONS.test(row.action)) continue;
       const sender = engine.parseAccess(row.actor_role, row.actor_scope);
       if (!sender || !senderInside(engine, payload, sender.scope, view.access.scope)) continue;
-      events.push({ sequence: row.sequence, action: row.action, outcome: row.outcome, committed_at: row.committed_at });
+      events.push({
+        sequence: row.sequence,
+        action: row.action,
+        outcome: row.outcome,
+        committed_at: row.committed_at,
+        ...(view.actorId === row.actor_id && typeof row.command_id === "string"
+          ? { ownCommandId: row.command_id }
+          : {}),
+      });
       if (events.length === 200) return { events, complete: false, nextCursor: String(before) };
     }
     if (rows.length < 200) return { events, complete: true, nextCursor: null };

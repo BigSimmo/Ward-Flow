@@ -22,6 +22,10 @@ export type SharedAccessApi = Pick<
   | "breakGlass"
 > &
   /** D-80 item 14: the coordinator's record views and break glass openings. Proposal 013: the desk's forecast history. */
-  Partial<Pick<SharedWorkspaceClient, "readRecordAccess" | "forecastHistory">>;
+  Partial<Pick<SharedWorkspaceClient, "readRecordAccess" | "forecastHistory" | "readOwnCommand">>;
 
-export const SharedAccessContext = createContext<{ api: SharedAccessApi; actorId: string | null } | null>(null);
+export const SharedAccessContext = createContext<{
+  api: SharedAccessApi;
+  actorId: string | null;
+  scopeKey?: string;
+} | null>(null);

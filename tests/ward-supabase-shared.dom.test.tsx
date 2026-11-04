@@ -549,7 +549,7 @@ it("stops polling and signs out the view when the workspace refuses access", asy
         : Response.json({ access_token: "access", refresh_token: "refresh", expires_in: 3600, user }),
   );
   vi.stubGlobal("fetch", fetcher);
-  const interval = vi.spyOn(globalThis, "setInterval");
+  const interval = vi.spyOn(globalThis, "setTimeout");
   const clearAppBadge = stubAppBadge();
   const { result } = renderHook(() => useWardShared(true));
   await waitFor(() => expect(result.current.status).toBe("ready"));
@@ -618,15 +618,15 @@ it("pauses 3-second polling while document is hidden and refreshes immediately w
         : Response.json({ access_token: "access", refresh_token: "refresh", expires_in: 3600, user }),
   );
   vi.stubGlobal("fetch", fetcher);
-  const realSetInterval = globalThis.setInterval;
+  const realSetTimeout = globalThis.setTimeout;
   let pollTick: (() => void) | undefined;
-  vi.spyOn(globalThis, "setInterval").mockImplementation(((fn: TimerHandler, ms?: number) => {
+  vi.spyOn(globalThis, "setTimeout").mockImplementation(((fn: TimerHandler, ms?: number) => {
     if (ms === 3000 && typeof fn === "function") {
       pollTick = fn as () => void;
-      return 0 as unknown as ReturnType<typeof setInterval>;
+      return 0 as unknown as ReturnType<typeof setTimeout>;
     }
-    return realSetInterval(fn, ms);
-  }) as typeof setInterval);
+    return realSetTimeout(fn, ms);
+  }) as typeof setTimeout);
   const { result, unmount } = renderHook(() => useWardShared(true));
   await waitFor(() => expect(result.current.status).toBe("ready"));
   await act(async () => {

@@ -1,0 +1,80 @@
+.output {
+  display: none;
+}
+
+@media print {
+  @page ward-bed-board {
+    size: A4 landscape;
+    margin: 8mm;
+  }
+
+  /* Name the whole printed document, including the shell's attribution footer. Naming only
+   * the board section forces an otherwise blank default-size page before and after it. */
+  :global(body):has(.output),
+  :global(body):has(.output) * {
+    page: ward-bed-board;
+  }
+
+  .output {
+    display: block;
+    color-scheme: light;
+    color: CanvasText;
+    background: Canvas;
+    font: 400 9pt / 1.25 var(--wf-font);
+  }
+
+  .page {
+    page: ward-bed-board;
+    width: 100%;
+  }
+
+  .page + .page {
+    break-before: page;
+  }
+
+  .head {
+    margin-bottom: 3mm;
+    border-bottom: 0.75pt solid CanvasText;
+    padding-bottom: 2mm;
+  }
+
+  .head h2 {
+    margin: 0 0 1mm;
+    font-size: 14pt;
+  }
+
+  .head p,
+  .bed p {
+    margin: 0;
+    color: CanvasText;
+    background: Canvas;
+    font-size: 9pt;
+    line-height: 1.25;
+  }
+
+  .beds {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    align-items: start;
+    gap: 2mm;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .bed {
+    break-inside: avoid;
+    border: 0.5pt solid CanvasText;
+    padding: 1.5mm;
+    overflow-wrap: anywhere;
+  }
+
+  .name {
+    font-weight: 700;
+  }
+
+  .note {
+    margin: 2mm 0 0;
+    font-size: 9pt;
+  }
+}

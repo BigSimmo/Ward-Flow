@@ -114,7 +114,7 @@ function subscribeVisible(listener: () => void) {
  * (a few seconds), not on the minute, so a hung refresh turns Stale on time (Codex review of #504).
  * Off when `active` is false or nothing is published (local mode).
  */
-export function useSharedRefreshLate(active = true): boolean {
+export function useSharedRefreshLate(active = true, thresholdMs?: number, visibilityGrace = true): boolean {
   const refresh = useSyncExternalStore(
     subscribeLiveRefresh,
     () => liveRefresh,
@@ -126,8 +126,11 @@ export function useSharedRefreshLate(active = true): boolean {
     () => 0,
   );
   const deadline =
-    active && shownSince >= 0 && refresh?.receivedAt !== undefined && refresh.staleAfterMs !== undefined
-      ? Math.max(refresh.receivedAt, shownSince) + refresh.staleAfterMs
+    active &&
+    (!visibilityGrace || shownSince >= 0) &&
+    refresh?.receivedAt !== undefined &&
+    (thresholdMs ?? refresh.staleAfterMs) !== undefined
+      ? Math.max(refresh.receivedAt, visibilityGrace ? shownSince : 0) + (thresholdMs ?? refresh.staleAfterMs)!
       : undefined;
   const [lateAt, setLateAt] = useState<number | undefined>(undefined);
   useEffect(() => {

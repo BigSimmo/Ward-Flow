@@ -63,6 +63,9 @@ export type SharedView = {
   receiptScope?: string;
   recovery?: string;
   recovering?: boolean;
+  pendingCount?: number;
+  recoveryStorageUnavailable?: boolean;
+  recoveryResults?: readonly import("./ward-command-recovery").RecoveryResult[];
 };
 /** What a change returns: `null` when done, "step-up" for a fresh sign-in first, or the refusal. */
 export type SharedChangeResult = string | null;
