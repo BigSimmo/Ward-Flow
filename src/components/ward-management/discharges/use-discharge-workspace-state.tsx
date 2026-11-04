@@ -298,7 +298,23 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
   const visibleReleaseGroups = GROUP_ORDER.filter(
     (key) => status === "all" || (key === "discharged-today" ? "departed" : key) === status,
   );
-  const visibleReleaseIds = visibleReleaseGroups.flatMap((key) => releaseGroups[key].map((release) => release.id));
+  const groupedReleaseIds = visibleReleaseGroups.flatMap((key) => releaseGroups[key].map((release) => release.id));
+  // DC5 (3 Nov 2026): a day bar adds that day's people beyond today to Expected on the board, so they
+  // must be selectable too, or their row opens the resting panel (Codex review, #1374).
+  const visibleReleaseIds =
+    highlight?.kind === "day"
+      ? [
+          ...groupedReleaseIds,
+          ...scopedReleases
+            .filter(
+              (release) =>
+                release.state !== "discharged" &&
+                !groupedReleaseIds.includes(release.id) &&
+                matchesHighlight(highlight, release.expectedAt, null, now),
+            )
+            .map((release) => release.id),
+        ]
+      : groupedReleaseIds;
   const opened =
     selected && population === "records" && visibleRecords.some((record) => record.admissionId === selected.admissionId)
       ? readDischargeRecord(

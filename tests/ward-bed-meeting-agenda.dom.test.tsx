@@ -20,6 +20,12 @@ vi.mock("@/components/ward-management/ward-flow-raise", async (original) => {
       return (...args: Parameters<typeof raise>) =>
         args[0] === "RECORD_BED_MEETING_ACTION" && submitted.raise ? submitted.raise() : raise(...args);
     },
+    // The agenda's recorder raises through the plain helper so its Undo can follow the same command.
+    wardRaise: (...helper: Parameters<typeof actual.wardRaise>) => {
+      const raise = actual.wardRaise(...helper);
+      return (...args: Parameters<typeof raise>) =>
+        args[0] === "RECORD_BED_MEETING_ACTION" && submitted.raise ? submitted.raise() : raise(...args);
+    },
   };
 });
 afterEach(() => {
@@ -238,5 +244,37 @@ describe("bed meeting agenda", () => {
     const waits = screen.getByTestId("bed-meeting-agenda-ed-waits");
     const [first] = within(waits).getAllByTestId("bed-meeting-add-action");
     expect(first).toHaveAccessibleName(/^Add an action for /u);
+  });
+});
+
+describe("bed meeting agenda group filter (B1 extended, 4 Nov 2026)", () => {
+  it("narrows every list to a picked group, shows it as a pill, and clears", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <BedMeetingAgendaScreen />
+      </WardFlowProvider>,
+    );
+    const rows = () => screen.getAllByTestId("bed-meeting-add-action").length;
+    const before = rows();
+    fireEvent.click(screen.getByTestId("bed-meeting-agenda-groups"));
+    const panel = screen.getByTestId("bed-meeting-agenda-groups-panel");
+    fireEvent.click(within(panel).getByRole("button", { name: /^Tier 1/u }));
+    fireEvent.click(within(panel).getByRole("button", { name: "Done" }));
+    const applied = screen.getByTestId("bed-meeting-agenda-groups-applied");
+    expect(applied).toHaveTextContent("Tier 1");
+    expect(rows()).toBeLessThan(before);
+    expect(screen.getByTestId("bed-meeting-agenda-groups")).toHaveTextContent("1");
+
+    fireEvent.click(screen.getByTestId("bed-meeting-agenda-groups"));
+    const again = screen.getByTestId("bed-meeting-agenda-groups-panel");
+    fireEvent.click(within(again).getByRole("button", { name: /^Adult/u }));
+    fireEvent.click(within(again).getByRole("button", { name: "Done" }));
+    expect(screen.getByTestId("bed-meeting-agenda-referrals-hidden")).toHaveTextContent("left out");
+
+    fireEvent.click(
+      within(screen.getByTestId("bed-meeting-agenda-groups-applied")).getByRole("button", { name: "Clear" }),
+    );
+    expect(screen.queryByTestId("bed-meeting-agenda-groups-applied")).toBeNull();
+    expect(rows()).toBe(before);
   });
 });
