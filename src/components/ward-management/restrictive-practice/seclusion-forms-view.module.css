@@ -1,0 +1,219 @@
+/* FS3: seclusion and restraint in use now, as a view of Forms (D-72, operational only). Tokens only. */
+.view {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  min-width: 0;
+}
+
+.pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--wf-s-4);
+}
+
+@media (max-width: 1099px) {
+  .pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) auto;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.row:first-child {
+  border-top: 0;
+}
+
+/* Rooms: name, state tag, Change. */
+[data-testid="seclusion-rooms"] .row {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+@media (max-width: 46.4375rem) {
+  .row,
+  [data-testid="seclusion-rooms"] .row {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .row .rowWhat {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
+.rowMain,
+.rowWhat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Names wrap at word breaks, never letter by letter. */
+.name {
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.detail {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  white-space: nowrap;
+}
+
+.note {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+.foot {
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.error {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-danger-ink, var(--wf-ink-1));
+}
+
+.link {
+  margin-top: var(--wf-s-2);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+}
+
+.choice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+.choiceLabel {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  height: var(--wf-h-sm);
+  padding: 0 12px;
+  border-radius: var(--wf-r-ctl);
+  border: 1px solid var(--wf-line-2);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.chip:hover {
+  border-color: var(--wf-line-3);
+  color: var(--wf-ink-1);
+}
+
+.chip:focus-visible {
+  outline: none;
+  box-shadow: var(--wf-focus-ring);
+}
+
+.chip[aria-checked="true"] {
+  background: var(--wf-accent-tint);
+  border-color: color-mix(in srgb, var(--wf-accent) 60%, transparent);
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+}
+
+.timeRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+
+.timeInput {
+  max-width: 8rem;
+}
+
+.picked {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-ctl);
+}
+
+.matches {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-ctl);
+  overflow: hidden;
+}
+
+.match {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  min-height: var(--wf-h-sm);
+  border: 0;
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+  text-align: left;
+  cursor: pointer;
+}
+
+.matches li:first-child .match {
+  border-top: 0;
+}
+
+.match:hover {
+  background: var(--wf-accent-tint);
+}
+
+.match:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: -2px;
+}

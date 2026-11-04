@@ -11,6 +11,7 @@ import {
   type Rejection,
 } from "@/components/ward-management/ward-model";
 import { referralSenderRole } from "@/components/ward-management/ward-referrals";
+import { Segmented } from "@/components/wf";
 import styles from "./referrals.module.css";
 import { MATCH_VIEW_DECISION_EVENTS } from "./referral-match-model";
 import { useSenderPresentation } from "../ward-sender-presentation";
@@ -219,9 +220,9 @@ export function useReferralMatchState({
         <summary className={styles.moreActionsSummary}>Record referrer cancellation</summary>
         <div className={styles.declineControls} data-testid="ward-referral-match-withdraw-controls">
           {!scopedRecorder ? (
-            <label className={styles.fieldLegend} htmlFor="ward-referral-match-withdraw-recorder">
+            <p className={styles.fieldLegend} aria-hidden="true">
               Referrer cancelled this referral — recorded by
-            </label>
+            </p>
           ) : (
             <p className={styles.fieldLegend}>
               Referrer cancelled this referral — recorded by {WARD_FLOW_ROLE_LABELS[routeRole]}
@@ -229,16 +230,18 @@ export function useReferralMatchState({
           )}
           <div className={styles.selectWithActionRow}>
             {!scopedRecorder ? (
-              <select
-                id="ward-referral-match-withdraw-recorder"
-                data-testid="ward-referral-match-withdraw-recorder"
-                className={styles.select}
-                value={withdrawRecorder}
-                onChange={(event) => setWithdrawRecorder(event.target.value === "sender" ? "sender" : "coordinator")}
-              >
-                <option value="coordinator">{WARD_FLOW_ROLE_LABELS.coordinator}</option>
-                <option value="sender">{senderLabel}</option>
-              </select>
+              // Stress test (3 Nov 2026): the kit's two-way choice, not a native drop-down.
+              <div data-testid="ward-referral-match-withdraw-recorder">
+                <Segmented
+                  label="Referrer cancelled this referral, recorded by"
+                  value={withdrawRecorder}
+                  onChange={(next) => setWithdrawRecorder(next === "sender" ? "sender" : "coordinator")}
+                  items={[
+                    { id: "coordinator", label: WARD_FLOW_ROLE_LABELS.coordinator },
+                    { id: "sender", label: senderLabel },
+                  ]}
+                />
+              </div>
             ) : null}
             {!withdrawConfirmOpen ? (
               <button

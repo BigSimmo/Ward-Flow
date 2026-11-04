@@ -1,9 +1,9 @@
 "use client";
 
-import { useId, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { CalendarDays, Printer } from "lucide-react";
 
-import { Button, HeroStat, SrOnly, buttonClass, cx, useIsPhone } from "@/components/wf";
+import { Button, HeroStat, Menu, SrOnly, buttonClass, useIsPhone } from "@/components/wf";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { formatSheetMoment, splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import { originName } from "@/components/ward-management/ward-movement-origin";
@@ -237,7 +237,6 @@ function WeeklyReportView({
   admissionLabel?: (movementId: string) => string;
   scopeLabel?: string;
 }) {
-  const pickerId = useId();
   const isPhone = useIsPhone();
   const figures = usePilotFigures(pilot);
   const rows = report.edWaits.rows;
@@ -291,28 +290,33 @@ function WeeklyReportView({
     "Weekly operations"
   );
 
+  // The week picker: the kit menu with one radio item per week, not the browser's own select (owner
+  // polish, 3 Nov 2026). The trigger keeps the short range and the `ward-weekly-week` test id.
   const picker = (
-    <label className={cx(buttonClass({ variant: "onHero", size: "sm" }), weekly.weekPick)} data-print-hide>
-      <CalendarDays size={14} aria-hidden="true" />
-      <span aria-hidden="true">{shortRange(week, dayZero)}</span>
-      <span className="sr-only" id={pickerId}>
-        Week
-      </span>
-      <select
-        aria-labelledby={pickerId}
-        value={String(offset)}
-        onChange={(event) => {
-          setOffset(Number(event.target.value));
-        }}
-        data-testid="ward-weekly-week"
-      >
-        {WEEK_OFFSETS.map((candidate) => (
-          <option key={candidate} value={candidate}>
-            {weekLabel(reportWeek(candidate, now, dayZero), dayZero)}
-          </option>
-        ))}
-      </select>
-    </label>
+    <Menu
+      label="Week"
+      className={weekly.weekPick}
+      items={WEEK_OFFSETS.map((candidate) => ({
+        id: String(candidate),
+        label: weekLabel(reportWeek(candidate, now, dayZero), dayZero),
+        checkable: "radio" as const,
+        checked: candidate === offset,
+        onSelect: () => setOffset(candidate),
+      }))}
+      trigger={(props) => (
+        <button
+          {...props}
+          type="button"
+          className={buttonClass({ variant: "onHero", size: "sm" })}
+          aria-label={`Week, ${shortRange(week, dayZero)}`}
+          data-print-hide
+          data-testid="ward-weekly-week"
+        >
+          <CalendarDays size={14} strokeWidth={1.75} aria-hidden="true" />
+          <span>{shortRange(week, dayZero)}</span>
+        </button>
+      )}
+    />
   );
 
   const printLines = (

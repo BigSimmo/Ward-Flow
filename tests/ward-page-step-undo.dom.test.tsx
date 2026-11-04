@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
@@ -33,12 +33,13 @@ describe("Handover sign-off with Undo", () => {
         </WardFlowProvider>
       </ToastProvider>,
     );
-    fireEvent.click(within(screen.getByTestId("ward-handover-sign-bar")).getByRole("button", { name: "Sign off" }));
-    // Approved redesign (31 Oct 2026): on the Patients tab the sign-off bar, not the hero, carries Sign off.
-    expect(screen.getByTestId("ward-handover-sign-bar")).toHaveTextContent("Signed 10:42");
+    // 3 Nov 2026: Sign off lives in the hero on every tab; it opens the checklist drawer.
+    fireEvent.click(screen.getByTestId("ward-handover-hero-sign-off"));
+    fireEvent.click(screen.getByTestId("ward-handover-sign-off-button"));
+    expect(screen.getByTestId("ward-handover-hero-sign-off")).toHaveTextContent("Signed 10:42");
 
     fireEvent.click(screen.getByRole("button", { name: "Undo" }));
-    expect(screen.getByTestId("ward-handover-sign-bar")).not.toHaveTextContent("Signed 10:42");
+    expect(screen.getByTestId("ward-handover-hero-sign-off")).not.toHaveTextContent("Signed 10:42");
     expect(screen.getByText("Sign-off undone.")).toBeInTheDocument();
   });
 });

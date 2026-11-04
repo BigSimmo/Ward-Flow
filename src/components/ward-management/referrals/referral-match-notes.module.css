@@ -1,0 +1,56 @@
+/* Diagnosed issues R2 and R3 (Josh, 3 Nov 2026): the match view's quiet notes. Tokens only. */
+
+/* R3: "Local bed sought" sits at the top of the ward options as one small control. */
+.localBed {
+  display: flex;
+  justify-content: flex-end;
+  margin-block-end: var(--wf-s-2);
+}
+
+.localBedRecord {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+/* R2: one quiet line; the reasons open on a tap. */
+.governance {
+  margin-block-start: var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+.governance > summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.governance > summary::-webkit-details-marker {
+  display: none;
+}
+
+.governance > summary strong {
+  font-weight: 600;
+  color: var(--wf-ink-2);
+}
+
+.governance > summary:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+
+.governance > p {
+  margin: var(--wf-s-1) 0 0;
+}
+
+.travelNote {
+  margin: var(--wf-s-1) 0 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
