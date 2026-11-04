@@ -17,7 +17,7 @@ import {
 } from "@/components/ward-management/help-content/ward-help-tips-off";
 import { digestHref } from "@/components/ward-management/shell/ward-facade";
 import { FeatureFlagsCard } from "@/components/ward-management/settings/feature-flags-card";
-import { Button, Card, CardHead, Kbd, buttonClass } from "@/components/wf";
+import { Button, Card, CardHead, Kbd, SrOnly, Switch, buttonClass } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
 import rx from "./settings-layout.module.css";
@@ -59,11 +59,9 @@ export function SettingsHelpCard() {
       <SettingRow
         setting="help-tips"
         title="Page tips"
-        sub={tipsOff ? "Off on this device" : "A short tip the first time you open each page"}
+        sub="A short tip the first time you open each page, on this device"
       >
-        <Button variant="ghost" onClick={() => setHelpTipsOff(!tipsOff)} data-testid="settings-help-tips">
-          {tipsOff ? "Turn tips on" : "Turn tips off"}
-        </Button>
+        <Switch checked={!tipsOff} onCheckedChange={(on) => setHelpTipsOff(!on)} label={<SrOnly>Page tips</SrOnly>} />
       </SettingRow>
       <ul className={styles.shortcuts} aria-label="Keyboard shortcuts" data-setting="shortcuts">
         {SHORTCUTS.map((shortcut) => (
