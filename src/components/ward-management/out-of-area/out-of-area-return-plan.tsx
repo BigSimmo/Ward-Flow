@@ -3,7 +3,7 @@
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { BedDouble, Car, Check, Clock, House, Plane } from "lucide-react";
+import { BedSingle, Car, Check, Clock, House, Plane } from "lucide-react";
 
 import {
   Button,
@@ -21,6 +21,7 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { TRAVEL_BAND_LABELS } from "@/components/ward-management/ward-distance";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import {
   BOOKABLE_TRANSPORT_PROVIDERS,
   TRANSPORT_LEGAL_STATUSES,
@@ -40,6 +41,7 @@ import {
   type BedOption,
   type RepatDraft,
 } from "./out-of-area-model";
+import { ReturnTracker, returnStepsDone } from "./out-of-area-return-tracker";
 import styles from "./out-of-area-board.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
@@ -228,6 +230,9 @@ export function ReturnPlan({
   const cadProblem = draft.cadNumber.trim() ? cadNumberProblem(draft.cadNumber) : undefined;
   const cadError = cadProblem ? `${cadProblem.charAt(0).toUpperCase()}${cadProblem.slice(1)}.` : undefined;
   const move = whoseMove(draft, record);
+  const returnMovement = useOptionalWardFlowSelect("movements")?.movements.find(
+    (movement) => movement.id === returnMovementId,
+  );
   const isAir = entry.band === "air_transport_only";
   const optionCodes = new Set(options.map((option) => option.siteCode));
   const groups = hospitalGroups();
@@ -236,11 +241,12 @@ export function ReturnPlan({
   return (
     <>
       {header}
-      <p className={styles.whoStrip} data-testid="ward-out-of-area-subject-caveat">
-        <StatusGlyph tone={record?.receivingWardAgreed || draft.homeHospital ? "neutral" : "closed"} size={9} />
-        <b>{move.who}</b>
-        <span>{move.what}</span>
-      </p>
+      <ReturnTracker
+        done={returnStepsDone(draft, record, returnMovement)}
+        who={move.who}
+        what={move.what}
+        testId="ward-out-of-area-subject-caveat"
+      />
       <div data-testid="ward-out-of-area-subject-facts" className={styles.planFacts}>
         <p className={cx(styles.planIdentity, compactIdentity ? undefined : "sr-only")}>
           <b>{patient.displayName}</b>
@@ -279,7 +285,7 @@ export function ReturnPlan({
         </dl>
         <dl className={styles.placeLine}>
           <dt>
-            <Icon icon={BedDouble} size={14} />
+            <Icon icon={BedSingle} size={14} />
             <SrOnly>Current placement</SrOnly>
           </dt>
           <dd className={styles.placeUnit} title={`${entry.unit.name}, ${site?.name ?? "site not recorded"}`}>

@@ -8,7 +8,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { PatientMode } from "./patient-mode";
 
-export type CareStepState = "done" | "now" | "next";
+type CareStepState = "done" | "now" | "next";
 
 export type CareStep = {
   id: "start" | "bed" | "moving" | "ward" | "discharge" | "community";

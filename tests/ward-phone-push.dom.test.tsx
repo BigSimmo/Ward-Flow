@@ -14,7 +14,8 @@ vi.mock("next/link", () => ({
   ),
 }));
 
-import { AlertsPane } from "@/components/ward-management/settings/settings-panes";
+import { AlertsPane, deviceAlertsRow } from "@/components/ward-management/settings/settings-panes";
+import type { NotificationSupport } from "@/components/ward-management/shell/ward-act-now-notifications";
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import {
   PHONE_PUSH_SCOPE,
@@ -49,18 +50,24 @@ const UNAVAILABLE: PhonePushState[] = [
   "busy",
 ];
 
-function alertsPane(state: PhonePushState, onPhonePushChange = vi.fn()) {
+function alertsPane(
+  state: PhonePushState,
+  onAlertsChange = vi.fn(),
+  browser: { notifications?: boolean; permission?: NotificationSupport } = { permission: "unsupported" },
+) {
   render(
     <AlertsPane
+      notifications={browser.notifications}
+      notificationPermission={browser.permission}
       phonePush={state}
-      onPhonePushChange={onPhonePushChange}
+      onAlertsChange={onAlertsChange}
       buzz={false}
       onBuzzChange={vi.fn()}
       onTestBuzz={vi.fn()}
     />,
   );
-  const row = screen.getByTestId("setting-phone-alerts-row");
-  return { row, toggle: within(row).getByRole("switch", { name: "Phone alerts" }), onPhonePushChange };
+  const row = screen.getByTestId("setting-device-alerts-row");
+  return { row, toggle: within(row).getByRole("switch", { name: "Alerts on this device" }), onAlertsChange };
 }
 
 afterEach(() => {
@@ -68,35 +75,67 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe("phone alerts row", () => {
-  it.each(UNAVAILABLE)("%s: greys out with a reason, stays reachable and changes nothing", (state) => {
-    const { row, toggle, onPhonePushChange } = alertsPane(state);
-    expect(row).toHaveTextContent(phonePushRow(state).sub);
-    expect(phonePushRow(state).sub.length).toBeGreaterThan(10);
+describe("the one Alerts switch (S7, 3 Nov 2026)", () => {
+  it.each(UNAVAILABLE)("%s, browser cannot notify: greys out with a reason and changes nothing", (state) => {
+    const { row, toggle, onAlertsChange } = alertsPane(state);
+    const sub = deviceAlertsRow({ notifications: false, permission: "unsupported", phonePush: state }).sub;
+    expect(row).toHaveTextContent(sub);
+    expect(sub.length).toBeGreaterThan(10);
     expect(toggle).toHaveAttribute("aria-disabled", "true");
     expect(toggle).not.toHaveAttribute("disabled");
     expect(toggle).not.toBeChecked();
     fireEvent.click(toggle);
-    expect(onPhonePushChange).not.toHaveBeenCalled();
+    expect(onAlertsChange).not.toHaveBeenCalled();
+  });
+
+  it("an iPhone tab says to add Ward Flow to the Home Screen", () => {
+    const { row } = alertsPane("install");
+    expect(row).toHaveTextContent("Add to Home Screen, then open it there");
+  });
+
+  it("phone unavailable but the browser can notify: available, and pressing asks to turn on", () => {
+    const { row, toggle, onAlertsChange } = alertsPane("local", vi.fn(), { permission: "default" });
+    expect(toggle).not.toHaveAttribute("aria-disabled");
+    expect(toggle).not.toBeChecked();
+    expect(row).toHaveTextContent("New act-now alerts on this device");
+    fireEvent.click(toggle);
+    expect(onAlertsChange).toHaveBeenCalledWith(true);
   });
 
   it("off: available, and pressing asks to turn on", () => {
-    const { row, toggle, onPhonePushChange } = alertsPane("off");
-    expect(toggle).not.toHaveAttribute("aria-disabled");
+    const { toggle, onAlertsChange } = alertsPane("off", vi.fn(), { permission: "default" });
     expect(toggle).not.toBeChecked();
+    fireEvent.click(toggle);
+    expect(onAlertsChange).toHaveBeenCalledWith(true);
+  });
+
+  it("phone on: checked, says it works with Ward Flow closed, and pressing asks to turn off", () => {
+    const { row, toggle, onAlertsChange } = alertsPane("on", vi.fn(), { permission: "granted" });
+    expect(toggle).toBeChecked();
     expect(row).toHaveTextContent("with Ward Flow closed");
     fireEvent.click(toggle);
-    expect(onPhonePushChange).toHaveBeenCalledWith(true);
+    expect(onAlertsChange).toHaveBeenCalledWith(false);
   });
 
-  it("on: checked, and pressing asks to turn off", () => {
-    const { toggle, onPhonePushChange } = alertsPane("on");
+  it("an earlier Browser notifications on keeps alerts on", () => {
+    const { row, toggle } = alertsPane("local", vi.fn(), { notifications: true, permission: "granted" });
     expect(toggle).toBeChecked();
-    fireEvent.click(toggle);
-    expect(onPhonePushChange).toHaveBeenCalledWith(false);
+    expect(row).toHaveTextContent("Act-now alerts while Ward Flow is open");
   });
 
-  it("the local demonstration shows the row disabled with the shared-workspace reason", () => {
+  it("an earlier Phone alerts on keeps alerts on, even with browser notifications off", () => {
+    const { toggle } = alertsPane("on", vi.fn(), { notifications: false, permission: "granted" });
+    expect(toggle).toBeChecked();
+  });
+
+  it("a blocked site says so", () => {
+    const { row, toggle } = alertsPane("denied", vi.fn(), { permission: "denied" });
+    expect(row).toHaveTextContent("Blocked for this site in the browser");
+    expect(toggle).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("the local demonstration shows one Alerts switch and no separate phone or browser switch", () => {
+    vi.stubGlobal("Notification", { permission: "default", requestPermission: vi.fn(async () => "default") });
     render(
       <ToastProvider>
         <WardFlowProvider>
@@ -104,16 +143,29 @@ describe("phone alerts row", () => {
         </WardFlowProvider>
       </ToastProvider>,
     );
-    const row = screen.getByTestId("setting-phone-alerts-row");
-    expect(row).toHaveTextContent("Needs the shared workspace");
-    expect(within(row).getByRole("switch", { name: "Phone alerts" })).toHaveAttribute("aria-disabled", "true");
+    const row = screen.getByTestId("setting-device-alerts-row");
+    expect(row).toHaveTextContent("New act-now alerts on this device");
+    expect(within(row).getByRole("switch", { name: "Alerts on this device" })).not.toHaveAttribute("aria-disabled");
+    expect(screen.queryByRole("switch", { name: "Phone alerts" })).toBeNull();
+    expect(screen.queryByRole("switch", { name: "Browser notifications" })).toBeNull();
   });
 
   it("never shows a Ward Flow id, record number or the word for a patient in any state", () => {
-    for (const state of [...UNAVAILABLE, "off", "on", "limit", "in-use", "error", "error-on"] as PhonePushState[]) {
+    const states = [...UNAVAILABLE, "off", "on", "limit", "in-use", "error", "error-on"] as PhonePushState[];
+    const browsers: { notifications: boolean; permission: NotificationSupport }[] = [
+      { notifications: false, permission: "unsupported" },
+      { notifications: false, permission: "denied" },
+      { notifications: false, permission: "default" },
+      { notifications: true, permission: "granted" },
+    ];
+    for (const state of states) {
       expect(phonePushRow(state).sub).not.toMatch(/WF-|UMRN|patient/i);
-      // One line at 390px wide: the row truncates a longer reason.
-      expect(phonePushRow(state).sub.length).toBeLessThanOrEqual(41);
+      for (const browser of browsers) {
+        const sub = deviceAlertsRow({ ...browser, phonePush: state }).sub;
+        expect(sub).not.toMatch(/WF-|UMRN|patient/i);
+        // One line at 390px wide: the row truncates a longer reason.
+        expect(sub.length).toBeLessThanOrEqual(41);
+      }
     }
   });
 });

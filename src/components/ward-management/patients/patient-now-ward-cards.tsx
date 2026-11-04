@@ -2,7 +2,7 @@
 
 import { History, ListChecks } from "lucide-react";
 import { Button, Card, CardHead, Meter, StatusGlyph } from "@/components/wf";
-import { formatInstant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import type { NextStep, StayProgress } from "./patient-now-ward";
 import { dischargeReadiness, recentStayEvents } from "./patient-now-ward-recent";
@@ -106,7 +106,7 @@ export function PatientDischargeReadiness({
   );
 }
 
-/** Last 24 hours: the newest recorded events for this stay, newest first, with Full history. */
+/** Recent changes since this time yesterday: the newest recorded events for this stay, newest first, with Full history. */
 export function PatientLastDay({
   input,
   onOpenHistory,
@@ -121,7 +121,7 @@ export function PatientLastDay({
         level={2}
         icon={History}
         iconPlain
-        title="Last 24 hours"
+        title="Recent changes"
         action={
           <Button size="sm" variant="ghost" onClick={onOpenHistory} data-testid="ward-patient-last-day-history">
             Full history
@@ -129,16 +129,16 @@ export function PatientLastDay({
         }
       />
       {events.length > 0 ? (
-        <ol className={styles.list} aria-label="Recorded in the last 24 hours">
+        <ol className={styles.list} aria-label="Recorded since this time yesterday">
           {events.map((event) => (
             <li key={event.key} className={styles.event}>
-              <time className={styles.time}>{formatInstant(event.at)}</time>
+              <time className={styles.time}>{formatInstantWithDay(event.at, input.now)}</time>
               <span>{event.text}</span>
             </li>
           ))}
         </ol>
       ) : (
-        <p className={styles.empty}>Nothing recorded in the last 24 hours</p>
+        <p className={styles.empty}>Nothing recorded since this time yesterday</p>
       )}
     </Card>
   );

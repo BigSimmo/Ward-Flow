@@ -19,7 +19,7 @@ import { PatientLastSeenCard, PatientLeaveCard, PatientLegalNowCard, PatientWhyC
 import { type PatientNowRecord, clock } from "./patient-now-records";
 import { PatientJourneyTimeline } from "./patient-journey-timeline";
 import { Button, buttonClass } from "@/components/wf";
-import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
+import { raiseReferralHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { type TabKey } from "./patient-now-screen-helpers";
 import type { Dispatch, SetStateAction } from "react";
@@ -178,7 +178,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
   // absence steps, return from ED). Confirming a discharge date is the ward's, on its discharges list.
   const stay = resolved.liveAdmission;
   const stayMode = mode === "ward" || mode === "leave" || mode === "awol" || mode === "ed";
-  const confirmHref = stay ? `/ward-flow/ward/${encodeURIComponent(stay.unitId)}?tab=out` : undefined;
+  const confirmHref = stay ? `${unitHref(stay.unitId)}?tab=out` : undefined;
   const nextStep = stayMode
     ? patientNextStep(mode, statusContext, {
         voluntary: absenceVoluntary(statusContext.movement, livePatient),
