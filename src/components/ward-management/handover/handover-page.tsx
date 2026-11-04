@@ -13,7 +13,7 @@ import {
   SlidersHorizontal,
   Keyboard,
   MonitorPlay,
-  MoreHorizontal,
+  Ellipsis,
   Printer,
   Timer as TimerIcon,
 } from "lucide-react";
@@ -1054,14 +1054,7 @@ export function HandoverPage() {
         label="More handover actions"
         align="end"
         trigger={(props) => (
-          <Button
-            {...props}
-            variant="sec"
-            size="sm"
-            iconOnly
-            icon={MoreHorizontal}
-            aria-label="More handover actions"
-          />
+          <Button {...props} variant="sec" size="sm" iconOnly icon={Ellipsis} aria-label="More handover actions" />
         )}
       >
         {() => (
