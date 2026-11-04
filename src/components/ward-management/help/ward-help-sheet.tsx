@@ -78,7 +78,7 @@ function usePointer(): { fine: boolean; touchOnly: boolean } {
   return { fine, touchOnly: coarse && !fine };
 }
 
-/** The real list (`whats-new.json`), oldest first. */
+/** The real list (the `whats-new/` entry files), oldest first. */
 const NEWS = WHATS_NEW;
 
 function deskLabel(role: WardTourRole): string {
