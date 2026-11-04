@@ -1391,7 +1391,8 @@ function WardFlowWorld({
     shared,
     children,
   });
-  const screenKey = `${(shared.enabled && container.sharedAccessContext) || (container.sessionRestored ? "restored" : "seed")}/${state.worldGeneration}`;
+  const screenKey =
+    (shared.enabled && container.sharedAccessContext) || (container.sessionRestored ? "restored" : "seed");
   return (
     <WardShellPublicProvider value={shellPublic}>
       <WardFlowOverride value={value}>
@@ -1412,7 +1413,7 @@ function WardFlowWorld({
             >
               <ToastDeviceSaveContext.Provider value={savesOnDevice}>
                 <WardFlowClockContext.Provider value={now}>
-                  {/* New worlds/access contexts retire forms; ordinary shared saves retain edits. */}
+                  {/* Replaced access or restored sessions retire forms; ordinary saves retain edits. */}
                   <WardSharedAccess connection={sharedConnection}>
                     <Fragment key={screenKey}>{previewChildren}</Fragment>
                   </WardSharedAccess>

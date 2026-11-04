@@ -6,6 +6,7 @@ import { runInNewContext } from "node:vm";
 import { describe, expect, it } from "vitest";
 import { keepJourneyFailures } from "../scripts/ward-flow/keep-journey-failures.mjs";
 import { journeyRunVerdict } from "../scripts/ward-flow/journey-run-verdict.mjs";
+import { splitPlaywrightArguments } from "../scripts/ward-flow/browser-run-contract.mjs";
 
 // The unsharded rerun wipes test-results/, so a spec that failed in a shard and passed alone left
 // no trace to diagnose (full-journey:126, 26 September 2026). These copies must survive that wipe.
@@ -150,6 +151,7 @@ describe("Playwright invocation evidence", () => {
     );
     // The closing brace belongs to the sharded branch surrounding the extracted block.
     await runInNewContext(`(async () => { if (true) { ${rerun} })()`, {
+      splitPlaywrightArguments,
       exitCode: 1,
       rerun: ["a.spec.ts"],
       specFailures: ["a.spec.ts"],

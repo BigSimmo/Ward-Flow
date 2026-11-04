@@ -32,7 +32,7 @@ describe("consolidated audit verification boundaries", () => {
       symlinkSync(path.resolve("scripts/verify-pr-local.mjs"), link);
       expect(execFileSync(process.execPath, [link, "--self-test"], { encoding: "utf8" })).toContain("self-test passed");
     } finally {
-      rmSync(directory, { recursive: true, force: true });
+      rmSync(directory, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
   });
 

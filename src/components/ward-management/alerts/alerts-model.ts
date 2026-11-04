@@ -316,7 +316,7 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
       return {
         kind: "link",
         label: "Open bookings",
-        href: item.plannedAdmission
+        href: item.plannedAdmission?.unitId
           ? `${unitHref(item.plannedAdmission.unitId)}?bookings=1`
           : (item.href ?? "/ward-flow/capacity"),
       };

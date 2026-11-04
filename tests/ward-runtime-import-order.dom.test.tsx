@@ -42,27 +42,49 @@ afterEach(() => {
 });
 
 describe("scenario import ownership", () => {
-  it("retires an uncertain command when reset creates a replacement world", async () => {
-    mount();
-    let confirmOld!: (outcome: WardCommandOutcome) => void;
-    const confirmation = new Promise<WardCommandOutcome>((resolve) => {
-      confirmOld = resolve;
-    });
-    const oldSettled = vi.fn();
-    act(() => {
-      complete("departure:ADM-1", () => ({ commandId: "old", status: "failed", confirmation }), oldSettled);
-      current.resetDemoState();
-    });
-    const newRecord = vi.fn(() => new Promise<WardCommandOutcome>(() => {}));
-    const newSettled = vi.fn();
-    act(() => complete("departure:ADM-1", newRecord, newSettled));
-    expect(newRecord).toHaveBeenCalledOnce();
-    await act(async () => confirmOld({ commandId: "old", status: "accepted" }));
-    expect(oldSettled).toHaveBeenCalledTimes(1);
-    const duplicate = vi.fn();
-    act(() => complete("departure:ADM-1", duplicate, newSettled));
-    expect(duplicate).not.toHaveBeenCalled();
-  });
+  it.each(["confirmed", "confirmation-rejected", "completion-rejected"] as const)(
+    "reset retires an old command without releasing the replacement command: %s",
+    async (oldResult) => {
+      mount();
+      let confirmOld!: (outcome: WardCommandOutcome) => void;
+      let rejectOld!: () => void;
+      const oldPromise = new Promise<WardCommandOutcome>((resolve, reject) => {
+        confirmOld = resolve;
+        rejectOld = () => reject(new Error("Old world ended"));
+      });
+      const oldSettled = vi.fn();
+      act(() => {
+        complete(
+          "departure:ADM-1",
+          () =>
+            oldResult === "completion-rejected"
+              ? oldPromise
+              : { commandId: "old", status: "failed", confirmation: oldPromise },
+          oldSettled,
+        );
+        current.resetDemoState();
+      });
+      let confirmNew!: (outcome: WardCommandOutcome) => void;
+      const newPromise = new Promise<WardCommandOutcome>((resolve) => {
+        confirmNew = resolve;
+      });
+      const newRecord = vi.fn(() => newPromise);
+      const newSettled = vi.fn();
+      act(() => complete("departure:ADM-1", newRecord, newSettled));
+      expect(newRecord).toHaveBeenCalledOnce();
+      await act(async () => {
+        if (oldResult === "confirmed") confirmOld({ commandId: "old", status: "accepted" });
+        else rejectOld();
+      });
+      expect(oldSettled).toHaveBeenCalledTimes(oldResult === "completion-rejected" ? 0 : 1);
+      const duplicate = vi.fn();
+      act(() => complete("departure:ADM-1", duplicate, newSettled));
+      expect(duplicate).not.toHaveBeenCalled();
+      const accepted: WardCommandOutcome = { commandId: "new", status: "accepted" };
+      await act(async () => confirmNew(accepted));
+      expect(newSettled).toHaveBeenCalledExactlyOnceWith(accepted);
+    },
+  );
   it("keeps the newer import when the older read finishes last", async () => {
     mount();
     let first!: ReturnType<NonNullable<typeof current.loadScenarioFile>>;

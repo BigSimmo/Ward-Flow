@@ -481,7 +481,11 @@ export function reduceRecordedStayEvent(
       const existing = Array.isArray(state.repatriations) ? state.repatriations : [];
       const retainedRecord = existing.find((record) => record.admissionId === admission.id);
       if (state.movements.some((row) => row.sourceAdmissionId === admission.id && !row.closure)) {
-        return reject(state, event, `admission ${admission.id} already has an open return journey`);
+        return reject(
+          state,
+          event,
+          `admission ${admission.id} already has ${retainedRecord ? "a repatriation record and " : ""}an open return journey`,
+        );
       }
       const previousReturn = retainedRecord
         ? state.movements.findLast((row) => row.sourceAdmissionId === admission.id && row.openedAt >= retainedRecord.at)
