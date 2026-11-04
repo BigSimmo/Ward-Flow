@@ -24,7 +24,7 @@ import { SettingsScreen } from "@/components/ward-management/settings/settings-s
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { ToastProvider } from "@/components/wf";
 import { SETTINGS_SEARCH_ENTRIES } from "@/components/ward-management/settings/settings-search-index";
-import { findRedesignSettings } from "@/components/ward-management/settings/settings-tabs";
+import { findRedesignSettings, sectionForEntry } from "@/components/ward-management/settings/settings-tabs";
 
 /**
  * 🔴 **THE SETTINGS SCREEN, AND ITS ONE RULE: A CONTROL THAT WRITES STATE NOTHING READS IS WORSE
@@ -138,6 +138,24 @@ describe("the settings screen", () => {
     );
   });
 
+  // Codex review on #1392: a desk without Access keeps its cover request under You, so Find still finds it.
+  it("finds the access rows under You on a desk without an Access section", () => {
+    const youDesk = findRedesignSettings("cover", ["rules", "alerts", "display", "you"], 7, true).map((e) => e.id);
+    expect(youDesk).toContain("access");
+    expect(
+      sectionForEntry(
+        { id: "who-can", label: "Who can change what", tab: "access", keywords: "" },
+        { editsRules: true, sections: ["rules", "alerts", "display", "you"] },
+      ),
+    ).toBe("you");
+    expect(
+      sectionForEntry(
+        { id: "access", label: "Access", tab: "access", keywords: "" },
+        { editsRules: false, sections: ["access", "data", "display", "you"] },
+      ),
+    ).toBe("access");
+  });
+
   // Settings by login (31 Oct 2026): a Find a setting result that lands on no row highlights and
   // focuses nothing. Early warning, Final warning and You once did (their rows had other ids).
   it("lands every Find a setting result for this desk on a row on screen", () => {
@@ -152,7 +170,9 @@ describe("the settings screen", () => {
     // Today's names, and the names the rows had before (Find still knows them as keywords or labels).
     const queries = [...SETTINGS_SEARCH_ENTRIES.map((entry) => entry.label), "you", "warning", "rules", "demo"];
     for (const query of queries) {
-      for (const found of findRedesignSettings(query, sections, 99, true)) offered.set(found.id, found.label);
+      // Role access is off here, so the screen leaves out the access rows (they only show with it on).
+      for (const found of findRedesignSettings(query, sections, 99, true))
+        if (found.tab !== "access") offered.set(found.id, found.label);
     }
     for (const id of ["early-warning", "final-warning", "role"]) expect(offered.has(id), id).toBe(true);
     // Try another desk (demo) is an action, not a row: choosing it opens the desk drawer (the case above).

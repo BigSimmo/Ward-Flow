@@ -82,7 +82,8 @@ export function sectionForEntry(
     case "profile":
       return "you";
     case "access":
-      return "access";
+      // A ward, ED or coordinator desk asks for cover from You; only the access admin has Access.
+      return !context.sections.includes("access") && context.sections.includes("you") ? "you" : "access";
     case "data":
       return "data";
   }
