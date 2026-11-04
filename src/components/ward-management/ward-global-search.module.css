@@ -1361,9 +1361,11 @@ a.askChip {
     display: block;
     background: linear-gradient(
       180deg,
-      color-mix(in srgb, var(--wf-surface) 90%, transparent) 0%,
-      color-mix(in srgb, var(--wf-canvas) 92%, transparent) 100%
+      color-mix(in srgb, var(--wf-surface) 96%, transparent) 0%,
+      color-mix(in srgb, var(--wf-canvas) 95%, transparent) 100%
     );
+    /* Thick enough that the page's own light and dark bands (the bar over a dark hero) never show
+       through as patches around the field and close button (Josh, 4 Nov 2026). */
     -webkit-backdrop-filter: blur(44px) saturate(1.7);
     backdrop-filter: blur(44px) saturate(1.7);
   }
