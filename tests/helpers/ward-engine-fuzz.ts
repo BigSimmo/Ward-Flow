@@ -1631,11 +1631,14 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
   [
     1,
     (state, random) => {
-      const record = (state.undoRecords ?? []).findLast(
-        (candidate) => candidate.kind === "step" && candidate.undoType === "UNDO_PATIENT_RECORD",
-      );
-      const patientId = record?.subjectId.startsWith("patient:")
-        ? record.subjectId.slice("patient:".length)
+      const record = (state.undoRecords ?? [])
+        .flatMap((candidate) =>
+          candidate.kind === "step" && candidate.undoType === "UNDO_PATIENT_RECORD" ? [candidate] : [],
+        )
+        .at(-1);
+      const subject = record?.subjectId ?? "";
+      const patientId = subject.startsWith("patient:")
+        ? subject.slice("patient:".length)
         : (pick(random, state.patients)?.id ?? MISSING_ID);
       return { type: "UNDO_PATIENT_RECORD", patientId, ...(record ? { role: record.role } : {}) };
     },
