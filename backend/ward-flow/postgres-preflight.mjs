@@ -120,6 +120,8 @@ const tableColumns = {
     "workspace_id:uuid!,data_mode:text!='prototype',world_generation:bigint!,scope_key:text!,demo_day:integer!,taken_at:integer!,ready_gap_now:integer!,tomorrow_low:integer!,tomorrow_likely:integer!,tomorrow_high:integer!,created_at:timestamp with time zone!=now()",
   forecast_miss_reasons:
     "workspace_id:uuid!,data_mode:text!='prototype',world_generation:bigint!,scope_key:text!,demo_day:integer!,reason:text!,chosen_by:text!,chosen_at:integer!,actor_id:uuid!,updated_at:timestamp with time zone!=now()",
+  account_preferences:
+    "workspace_id:uuid!,data_mode:text!='prototype',actor_id:uuid!,tours_seen:text[]!,tips_seen:text[]!,tips_off:boolean,whats_new_seen:text[]!,updated_at:timestamp with time zone!=now()",
 };
 
 /** Columns later migrations added to an existing table, in the order they were added. */
@@ -146,6 +148,7 @@ const tableSince = {
   archived_records: 14,
   forecast_snapshots: 16,
   forecast_miss_reasons: 16,
+  account_preferences: 17,
 };
 
 const ACCESS_ROLES = "ARRAY['coordinator','bed_manager','ward','ed','community','officer','executive','admin']";
@@ -238,6 +241,12 @@ const checks = {
     "reason = ANY (ARRAY['discharge_postponed','transfer_cancelled','capacity_changed','unexpected_admission','other'])",
     "chosen_by = ANY (ARRAY['coordinator','ward','ed','officer','community','bed_manager','executive'])",
   ],
+  account_preferences: [
+    "data_mode = 'prototype'",
+    "cardinality(tips_seen) <= 200 AND array_to_string(tips_seen, ',') ~ '^([a-z_]{2,20}:[a-z][a-z-]{0,39}(,|$))*$'",
+    "cardinality(tours_seen) <= 16 AND tours_seen <@ ARRAY['coordinator','ward','ed','officer','community','bed_manager','executive','admin']",
+    "cardinality(whats_new_seen) <= 200 AND array_to_string(whats_new_seen, ',') ~ '^([0-9]{4}-[0-9]{2}-[0-9]{2}-[a-z0-9-]{1,80}(,|$))*$'",
+  ],
 };
 
 /** Migration 9 added cover to memberships: a kind, and cover only of a ward or an ED. */
@@ -270,6 +279,7 @@ const primaryKeys = {
   archived_records: ["workspace_id", "world_generation", "collection", "record_id"],
   forecast_snapshots: ["workspace_id", "world_generation", "scope_key", "demo_day"],
   forecast_miss_reasons: ["workspace_id", "world_generation", "scope_key", "demo_day"],
+  account_preferences: ["workspace_id", "actor_id"],
 };
 
 const indexes = [
@@ -323,6 +333,8 @@ const indexes = [
   ],
   [16, "forecast_snapshots_workspace_mode", "forecast_snapshots", "workspace_id, data_mode", false],
   [16, "forecast_miss_reasons_workspace_mode", "forecast_miss_reasons", "workspace_id, data_mode", false],
+  [17, "account_preferences_pkey", "account_preferences", "workspace_id, actor_id", true],
+  [17, "account_preferences_workspace_mode", "account_preferences", "workspace_id, data_mode", false],
 ];
 
 /** Each guard trigger function, the table it guards and the migration that added it. */
@@ -499,6 +511,15 @@ function expectedConstraints(version, tables) {
   if (version >= 14)
     result.push({
       table: "archived_records",
+      type: "f",
+      keys: ["workspace_id", "data_mode"],
+      target: "workspaces",
+      foreign: ["id", "data_mode"],
+      deletion: "a",
+    });
+  if (version >= 17)
+    result.push({
+      table: "account_preferences",
       type: "f",
       keys: ["workspace_id", "data_mode"],
       target: "workspaces",

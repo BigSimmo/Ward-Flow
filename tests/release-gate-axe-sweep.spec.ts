@@ -84,7 +84,8 @@ test.beforeEach(async ({ page }) => {
 
 /** For the tip card tests: undo the device setting above (init scripts run in the order added). */
 async function allowTips(page: Page) {
-  await page.addInitScript((key) => window.localStorage.removeItem(key), HELP_TIPS_OFF_KEY);
+  // Tips start off on the demo site, so turn them on as Settings does.
+  await page.addInitScript((key) => window.localStorage.setItem(key, "no"), HELP_TIPS_OFF_KEY);
 }
 
 for (const [route, screenId, destination = route] of ROUTES) {

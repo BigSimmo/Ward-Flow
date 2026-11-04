@@ -101,14 +101,36 @@ export function unseenWhatsNew(seen: string | null, list: readonly WhatsNewEntry
     .slice(0, WHATS_NEW_CARD_LIMIT);
 }
 
-/** Marks every current change read on this device. */
-export function markWhatsNewSeen(): void {
-  if (WHATS_NEW.length === 0) return;
+/** Fired when changes are marked read, so a signed-in account can remember them too. */
+export const WHATS_NEW_SEEN_EVENT = "ward-flow-whats-new-seen";
+
+/**
+ * Every id a stored value marks read, as a list: a JSON list as it is, and a value older devices
+ * wrote as that id and everything before it in the old order.
+ */
+export function whatsNewSeenIds(seen: string | null, list: readonly WhatsNewEntry[] = WHATS_NEW): string[] {
+  const ids = seenIds(seen);
+  if (ids !== null || seen === null) return [...(ids ?? [])];
+  const legacy = LEGACY_ORDER.indexOf(seen);
+  if (legacy >= 0) return LEGACY_ORDER.slice(0, legacy + 1);
+  const at = list.findIndex((entry) => entry.id === seen);
+  return list.slice(0, at + 1).map((entry) => entry.id);
+}
+
+/** Adds `ids` to the changes read on this device (all current ones when none are named). */
+export function markWhatsNewSeen(
+  ids: readonly string[] = WHATS_NEW.map((entry) => entry.id),
+  fromAccount = false,
+): void {
+  if (ids.length === 0) return;
   try {
-    window.localStorage.setItem(WHATS_NEW_STORAGE_KEY, JSON.stringify(WHATS_NEW.map((entry) => entry.id)));
+    const held = whatsNewSeenIds(window.localStorage.getItem(WHATS_NEW_STORAGE_KEY));
+    window.localStorage.setItem(WHATS_NEW_STORAGE_KEY, JSON.stringify([...new Set([...ids, ...held])].slice(0, 200)));
   } catch {
     // Without storage the note never shows (see `readUnseen`), so there is nothing to record.
+    return;
   }
+  window.dispatchEvent(new CustomEvent(WHATS_NEW_SEEN_EVENT, { detail: { fromAccount } }));
 }
 
 const NONE: readonly WhatsNewEntry[] = [];
@@ -131,7 +153,11 @@ function readUnseen(): readonly WhatsNewEntry[] {
   }
 }
 
-const noSubscribe = () => () => {};
+// Changes read on another of this account's devices close the note here too.
+const subscribeSeen = (onChange: () => void) => {
+  window.addEventListener(WHATS_NEW_SEEN_EVENT, onChange);
+  return () => window.removeEventListener(WHATS_NEW_SEEN_EVENT, onChange);
+};
 const readNone = () => NONE;
 
 /**
@@ -142,11 +168,12 @@ const readNone = () => NONE;
  */
 export function WardWhatsNew() {
   // Read once from the device; the server and hydration read "nothing new".
-  const unseen = useSyncExternalStore(noSubscribe, readUnseen, readNone);
+  const unseen = useSyncExternalStore(subscribeSeen, readUnseen, readNone);
   const [closed, setClosed] = useState(false);
   useEffect(() => {
-    window.addEventListener(TOUR_AUTO_STARTED_EVENT, markWhatsNewSeen);
-    return () => window.removeEventListener(TOUR_AUTO_STARTED_EVENT, markWhatsNewSeen);
+    const markAll = () => markWhatsNewSeen();
+    window.addEventListener(TOUR_AUTO_STARTED_EVENT, markAll);
+    return () => window.removeEventListener(TOUR_AUTO_STARTED_EVENT, markAll);
   }, []);
   const close = () => {
     markWhatsNewSeen();

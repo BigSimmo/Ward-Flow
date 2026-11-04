@@ -1374,10 +1374,12 @@ export class SharedWorkspaceClient {
       throw new Error(typeof value?.error === "string" ? value.error : "The access log could not be read");
     return Array.isArray(value.views) ? value.views : [];
   }
-  /** Proposal 013: this desk's shared forecast history; with a body, records a snapshot or reason first. */
-  async forecastHistory(body?: Record<string, unknown>): Promise<unknown> {
-    const { response, value } = await this.request("/v1/workspace/forecast-history", body);
-    if (!response.ok) throw new Error("Forecast history could not be read");
+  /** Proposal 013: this desk's forecast history. Migration 17: this account's Help memory. A body records first. */
+  forecastHistory = (body?: Record<string, unknown>) => this.readSaved("/v1/workspace/forecast-history", body);
+  preferences = (body?: Record<string, unknown>) => this.readSaved("/v1/workspace/preferences", body);
+  private async readSaved(path: string, body?: Record<string, unknown>): Promise<unknown> {
+    const { response, value } = await this.request(path, body);
+    if (!response.ok) throw new Error("Saved history could not be read");
     return value;
   }
   /** Cover given or held by this account, and, for a coordinator, inside its place. */

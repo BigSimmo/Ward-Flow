@@ -56,11 +56,7 @@ export function SettingsHelpCard() {
           Replay the tour
         </Button>
       </SettingRow>
-      <SettingRow
-        setting="help-tips"
-        title="Page tips"
-        sub="A short tip the first time you open each page, on this device"
-      >
+      <SettingRow setting="help-tips" title="Page tips" sub="A short tip the first time you open each page">
         <Switch checked={!tipsOff} onCheckedChange={(on) => setHelpTipsOff(!on)} label={<SrOnly>Page tips</SrOnly>} />
       </SettingRow>
       <ul className={styles.shortcuts} aria-label="Keyboard shortcuts" data-setting="shortcuts">
