@@ -6,7 +6,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { Check } from "lucide-react";
 import { splitDuration } from "@/components/ward-management/ward-clock";
-import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
+import { LegalFormNextStep, LegalFormSummary } from "@/components/ward-management/legal-forms/legal-form-card";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
 import { JourneyStrip, PhoneSheet } from "@/components/wf";
 import { edJourneyStages } from "./ed-journey";
@@ -192,16 +192,21 @@ export function renderEdPersonSheet(
                 : "No"}
           </dd>
         </div>
-        {movement.legalForm ? (
-          <div>
-            <dt>Form due (as written)</dt>
-            <dd className={movement.legalForm.dueAt === undefined ? undefined : styles.phoneSheetMono}>
-              {/* Legal times only as typed (31 Oct 2026): never "in 3h 20m" or "passed … ago". */}
-              {movement.legalForm.dueAt === undefined ? "Not written" : typedTimeLine(movement.legalForm.dueAt, now)}
-            </dd>
-          </div>
-        ) : null}
       </dl>
+      {movement.legalForm ? (
+        // One form panel (L35, #1386): the form reads as it does on the Forms page, its typed end
+        // time, region, age band, any extension and the caveat, then its one next step. Recording
+        // or extending the expiry stays with the Legal form control below.
+        <section
+          className={styles.phoneSheetSection}
+          aria-label="Legal form"
+          data-testid={`ward-ed-person-legal-form-${movement.id}`}
+        >
+          <h3 className={styles.phoneSheetHeading}>Legal form</h3>
+          <LegalFormSummary movement={movement} now={now} fromLine={department.name} toLine={destinationLabel} />
+          <LegalFormNextStep movement={movement} now={now} />
+        </section>
+      ) : null}
       {subFormOpen ? (
         <div className={styles.phoneSheetForm}>
           <AfterSheetOpens>{subFormContent}</AfterSheetOpens>

@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, render } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { readFileSync } from "node:fs";
 import { describe, expect, it, vi } from "vitest";
@@ -14,7 +14,12 @@ vi.mock("next/link", () => ({
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { EdInboxReferralFixture, openRaiseIntoMovementForm } from "./helpers/ed-raise-into-movement";
+import {
+  EdInboxReferralFixture,
+  openRaiseIntoMovementForm,
+  chooseEdChoice,
+  edChoiceValue,
+} from "./helpers/ed-raise-into-movement";
 
 /**
  * H-1019 (RG-PH-01, phone release gate on WebKit, 26 Oct 2026): Security came back blank when it
@@ -36,16 +41,13 @@ describe("ED Ask for a bed form, answered quickly", () => {
       </WardFlowProvider>,
     );
     openRaiseIntoMovementForm();
-    const cohort = screen.getByTestId("ward-ed-referral-cohort") as HTMLSelectElement;
-    const security = screen.getByTestId("ward-ed-referral-security") as HTMLSelectElement;
-    const cohortValue = [...cohort.options].find((option) => option.value && option.index > 0)!.value;
-    const securityValue = [...security.options].find((option) => option.value && option.index > 0)!.value;
+    // L31: both are kit segmented controls; pick an answer other than the one the referral filled.
     act(() => {
-      fireEvent.change(cohort, { target: { value: cohortValue } });
-      fireEvent.change(security, { target: { value: securityValue } });
+      chooseEdChoice("ward-ed-referral-cohort", "Older adult");
+      chooseEdChoice("ward-ed-referral-security", "Secure");
     });
-    expect(cohort.value).toBe(cohortValue);
-    expect(security.value).toBe(securityValue);
+    expect(edChoiceValue("ward-ed-referral-cohort")).toBe("Older adult");
+    expect(edChoiceValue("ward-ed-referral-security")).toBe("Secure");
   });
 
   it("never reads the event inside a state updater on the ED forms", () => {
