@@ -6,6 +6,7 @@
 import type { CSSProperties } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
+import { preloadWhenIdle } from "../preload-when-idle";
 import { wardRouteUnitId } from "../ward-chrome-role";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { recordIdFromParam } from "../shell/ward-record-address";
@@ -109,6 +110,12 @@ export const WardReferralInbox = dynamic(
     loading: () => <WardReferralInboxPlaceholder />,
   },
 );
+// The capacity confirmation dialog is closed at first paint, so it loads when the browser is idle.
+const loadConfirmBeds = () => import("./ward-confirm-beds-dialog");
+export const WardConfirmBedsDialog = dynamic(() => loadConfirmBeds().then((m) => m.WardConfirmBedsDialog), {
+  ssr: false,
+});
+preloadWhenIdle(loadConfirmBeds);
 // Shown only after a confirmed discharge, so it loads when first needed.
 export const WardDischargeNotices = dynamic(
   () => import("./ward-discharge-notices").then((m) => m.WardDischargeNotices),

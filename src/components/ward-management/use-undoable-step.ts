@@ -269,29 +269,35 @@ export function useUndoableStep({
       };
     }
     const completion = requireConfirmation ? confirmedWardCommand(result) : result;
-    if (completion && "then" in completion) {
-      void completion
-        .then((outcome) => {
-          if (!mountedRef.current) return sayAfterLeaving(pending, outcome);
-          pendingRef.current.push({ ...pending, outcome });
-          setToken((value) => value + 1);
-        })
-        .catch(() => {
-          const outcome: WardCommandOutcome = {
-            commandId: "",
-            status: "failed",
-            message: SAVE_NOT_CONFIRMED,
-          };
-          if (!mountedRef.current) return sayAfterLeaving(pending, outcome);
-          pendingRef.current.push({ ...pending, outcome });
-          setToken((value) => value + 1);
-        });
-    } else if (!mountedRef.current) {
-      sayAfterLeaving(pending, completion ?? undefined);
-    } else {
-      pendingRef.current.push(completion ? { ...pending, outcome: completion } : pending);
+    // After the page has gone, one command says one thing: an unconfirmed save already told the
+    // person to check, so the same command's later receipt does not raise a second toast.
+    let saidAfterLeaving = false;
+    const publish = (outcome: WardCommandOutcome | void) => {
+      if (!mountedRef.current) {
+        if (!saidAfterLeaving) saidAfterLeaving = sayAfterLeaving(pending, outcome || undefined);
+        return;
+      }
+      pendingRef.current.push(outcome ? { ...pending, outcome } : pending);
       setToken((value) => value + 1);
-    }
+    };
+    const receive = (outcome: WardCommandOutcome | void) => {
+      publish(outcome);
+      // Keep immediate unconfirmed feedback, then follow the same command's eventual receipt.
+      // This offers success/Undo only after acceptance, without dispatching the action again.
+      if (outcome?.status === "failed" && outcome.confirmation) {
+        void outcome.confirmation.then(
+          (terminal) => {
+            if (terminal.commandId === outcome.commandId && terminal.status !== "failed") publish(terminal);
+          },
+          () => {
+            /* The existing unconfirmed feedback remains truthful. */
+          },
+        );
+      }
+    };
+    if (completion && "then" in completion) {
+      void completion.then(receive, () => receive({ commandId: "", status: "failed", message: SAVE_NOT_CONFIRMED }));
+    } else receive(completion);
   }
 
   /**
@@ -299,18 +305,19 @@ export function useUndoableStep({
    * Undo's outcome is said through the layout toast instead, which outlives the page. The inline
    * refusal has gone with the page, so a refusal is always said here.
    */
+  /** Says `outcome` through the layout toast; true when a toast was raised. */
   function sayAfterLeaving(pending: Pending, outcome: WardCommandOutcome | undefined) {
     const out = layoutToast ?? sink;
-    if (!pending.sayAfterLeaving || !out) return;
-    if (outcome?.isCurrent && !outcome.isCurrent()) return;
+    if (!pending.sayAfterLeaving || !out) return false;
+    if (outcome?.isCurrent && !outcome.isCurrent()) return false;
     if (!outcome) {
       // A local dispatch with no outcome: its refusal reached only the page that has gone.
       out.push({ tone: "info", title: "Undo sent. Check the board to confirm it." });
-      return;
+      return true;
     }
     if (outcome.status === "accepted") {
       out.push({ tone: "info", title: pending.success });
-      return;
+      return true;
     }
     const reason = outcome.message ?? "The action was refused.";
     out.push({
@@ -320,6 +327,7 @@ export function useUndoableStep({
           ? `Not recorded: ${sayRefusal ? sayRefusal(reason) : reason}`
           : (outcome.message ?? SAVE_NOT_CONFIRMED),
     });
+    return true;
   }
 
   return {

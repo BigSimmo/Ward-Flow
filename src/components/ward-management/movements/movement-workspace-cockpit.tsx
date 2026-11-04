@@ -21,6 +21,7 @@ import { SupportNotificationChecklist } from "./support-notification-checklist";
 import { movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 
 import { useId, useState } from "react";
+import { useWardFormSave } from "../use-ward-form-save";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import {
   ArrowLeft,
@@ -160,6 +161,7 @@ export function MovementWorkspaceCockpit({
   const mastheadUmrn = mastheadInfo?.umrn ?? "UMRN not recorded";
 
   const [blockerDraft, setBlockerDraft] = useState("");
+  const blockerSave = useWardFormSave(`movement-blocker:${movementId}`);
   const [showClosedEligibility, setShowClosedEligibility] = useState(false);
   const [withdrawReason, setWithdrawReason] = useState<StepBackReason | undefined>(undefined);
   const [stepBackTo, setStepBackTo] = useState<MovementStage | undefined>(undefined);
@@ -1366,11 +1368,14 @@ export function MovementWorkspaceCockpit({
                   onSubmit={(submitted) => {
                     submitted.preventDefault();
                     if (blockerDraft.trim().length === 0 || !lock("RECORD_MOVEMENT_BLOCKER").allowed) return;
-                    raise("RECORD_MOVEMENT_BLOCKER", {
-                      movementId: movement.id,
-                      blocker: blockerDraft,
-                    });
-                    setBlockerDraft("");
+                    blockerSave.submit(
+                      () =>
+                        raise("RECORD_MOVEMENT_BLOCKER", {
+                          movementId: movement.id,
+                          blocker: blockerDraft,
+                        }),
+                      () => setBlockerDraft(""),
+                    );
                   }}
                 >
                   <label className="sr-only" htmlFor={`${baseId}-ward-console-blocker`}>
@@ -1382,6 +1387,7 @@ export function MovementWorkspaceCockpit({
                     type="text"
                     className={styles.blockerInput}
                     data-testid="ward-console-blocker-input"
+                    disabled={blockerSave.pending}
                     value={blockerDraft}
                     onChange={(changed) => setBlockerDraft(changed.target.value)}
                     placeholder="Awaiting single-room clean"
@@ -1389,8 +1395,10 @@ export function MovementWorkspaceCockpit({
                   <button
                     type="submit"
                     className={styles.controlButton}
-                    aria-disabled={blockerDraft.trim().length === 0 ? "true" : undefined}
-                    onClick={blockerDraft.trim().length === 0 ? ignoreUnavailableActivation : undefined}
+                    aria-disabled={blockerSave.pending || blockerDraft.trim().length === 0 ? "true" : undefined}
+                    onClick={
+                      blockerSave.pending || blockerDraft.trim().length === 0 ? ignoreUnavailableActivation : undefined
+                    }
                     aria-describedby={
                       blockerDraft.trim().length === 0 ? `${baseId}-ward-console-blocker-blocked` : undefined
                     }
@@ -1401,6 +1409,11 @@ export function MovementWorkspaceCockpit({
                   >
                     Record it
                   </button>
+                  {blockerSave.error ? (
+                    <p className={styles.actionSay} role="alert">
+                      {blockerSave.error}
+                    </p>
+                  ) : null}
                   {lock("RECORD_MOVEMENT_BLOCKER").note}
                   {blockerDraft.trim().length === 0 ? (
                     <span id={`${baseId}-ward-console-blocker-blocked`} className="sr-only">

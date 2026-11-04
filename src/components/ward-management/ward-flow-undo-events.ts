@@ -109,6 +109,16 @@ export function reduceUndoEvent(
           ? null
           : "This referral has changed since the decision, so it cannot be undone");
       if (refusal) return reject(state, event, refusal);
+      // A later journey can consume the acceptance without changing the referral snapshot.
+      // Keep its decision and notices while that journey or a bed still depends on it.
+      if (
+        record.action === "ACCEPT_REFERRAL" &&
+        (state.movements.some(
+          (movement) => movement.referralId === referral.id && movement.closure?.outcome !== "did_not_proceed",
+        ) ||
+          state.admissions.some((admission) => admission.referralId === referral.id && bedIsOccupied(admission)))
+      )
+        return reject(state, event, "This acceptance is already used by a journey or bed, so it cannot be undone");
       const restored = replaceReferral(state, referral.id, structuredClone(record.before));
       const raised = new Set(record.noticeIds);
       decision.outcome = "accepted";

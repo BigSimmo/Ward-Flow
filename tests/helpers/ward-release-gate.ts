@@ -426,8 +426,17 @@ export async function capacityReady(page: Page, unitId: string, unitName: string
   const map = page.locator("#capacity-bed-map");
   await expect(map, `the bed map must show for ${unitId}`).toBeVisible();
   // Services past the first few start folded; open every one so the ward's card is drawn.
-  const folded = map.locator('button[aria-expanded="false"][aria-controls^="capacity-map-"]');
-  while ((await folded.count()) > 0) await folded.first().click();
+  // Each toggle is found by the panel it controls, which stays the same once it opens. Re-counting
+  // folded buttons raced the re-render on a slow phone run: the count still saw the last one folded,
+  // then the click waited the whole test for a button that had already opened (4 Nov 2026).
+  const folded = await map
+    .locator('button[aria-expanded="false"][aria-controls^="capacity-map-"]')
+    .evaluateAll((buttons) => buttons.map((button) => button.getAttribute("aria-controls") ?? ""));
+  for (const panel of folded) {
+    const toggle = map.locator(`button[aria-controls="${panel}"]`);
+    if ((await toggle.getAttribute("aria-expanded")) === "false") await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  }
   // Found by the ward's id, not its text: the card spells out a site code in the name ("BTY
   // (Bentley Health Service) Adult Secure"), so the text does not start with the plain ward name.
   const card = map.locator(`button[aria-haspopup="dialog"][data-unit-id="${unitId}"]`).first();

@@ -39,7 +39,12 @@ function Harness() {
         Book
       </button>
       <output data-testid="cad">{transport?.cadNumber ?? "none"}</output>
-      <TransportCadToFollow movementId={MOVEMENT} role="officer" testId="cad-follow" />
+      <TransportCadToFollow
+        movementId={MOVEMENT}
+        transportId={transport?.id ?? "unbooked"}
+        role="officer"
+        testId="cad-follow"
+      />
     </>
   );
 }

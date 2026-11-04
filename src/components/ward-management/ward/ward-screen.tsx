@@ -126,6 +126,7 @@ import {
 import {
   WardAnswerFromLink,
   WardBedListPrint,
+  WardConfirmBedsDialog,
   WardDailySheetDialog,
   WardDischargeNotices,
   WardReferralInbox,
@@ -134,7 +135,6 @@ import { moveBetweenWardTabs, WardScreenTopBar } from "./ward-screen-top-bar";
 import { wardBedRoster, wardLiveFormAlerts } from "./ward-screen-derivations";
 import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placement";
 import { WardScreenHomeSection } from "./ward-screen-home-section";
-import { WardConfirmBedsDialog } from "./ward-confirm-beds-dialog";
 import { WardAcceptDialog } from "./ward-answer-accept-dialog";
 import type { DecisionReport } from "./ward-decisions-cockpit";
 import { formatDateOfBirth } from "@/components/ward-management/ward-patients";

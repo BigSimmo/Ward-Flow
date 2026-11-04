@@ -1,5 +1,6 @@
 // Alerts redesign (1 Nov 2026), BUILD-SPEC "Broadcast tab": the live card, its answers, its action
 // bar, Earlier today and the empty state, checked against the approved mock-up's bcPanel().
+// AL2 (Josh, 3 Nov 2026): live and past broadcasts sit in the Broadcasts view.
 import "@testing-library/jest-dom/vitest";
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -21,8 +22,8 @@ const mount = () =>
       <AlertsScreen />
     </WardFlowProvider>,
   );
-// Q181 (Josh, 1 Nov 2026): a live broadcast sits at the top of Now; ended ones are in Earlier today.
-describe("Broadcasts in Now and Earlier today", () => {
+// AL2 (Josh, 3 Nov 2026): a live broadcast sits at the top of Broadcasts; ended ones follow it there.
+describe("Broadcasts view: live, then earlier", () => {
   it("shows no live card when nothing is live, and offers Broadcast alert in the hero", () => {
     mount();
     expect(screen.queryByTestId("ward-alerts-live")).not.toBeInTheDocument();
@@ -54,7 +55,8 @@ describe("Broadcasts in Now and Earlier today", () => {
     fireEvent.click(within(card).getByRole("button", { name: "Stand down this alert" }));
     await waitFor(() => expect(screen.queryByTestId("ward-alerts-live")).not.toBeInTheDocument());
     expect(confirm).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByRole("tab", { name: /^Earlier today/ }));
+    // Sending opened the Broadcasts view; the stood-down broadcast is listed there as earlier.
+    expect(screen.getByRole("tab", { name: /^Broadcasts/ })).toHaveAttribute("aria-selected", "true");
     const earlier = screen.getByRole("region", { name: "Earlier broadcasts" });
     expect(within(earlier).getByText(/Warning · Metro adult wards · stood down/)).toBeInTheDocument();
   });
