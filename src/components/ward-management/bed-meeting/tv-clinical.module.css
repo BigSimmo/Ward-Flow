@@ -122,22 +122,6 @@
   border-bottom: 0;
 }
 
-/* Where a person is not on the ward, the row says so at its edge as well as in words. */
-.table tbody tr[data-where="awol"] td:first-child,
-.table tbody tr[data-band="over"] td:first-child {
-  box-shadow: inset 4px 0 0 var(--wf-danger);
-}
-
-.table tbody tr[data-where="leave"] td:first-child,
-.table tbody tr[data-where="ed"] td:first-child,
-.table tbody tr[data-band="eight"] td:first-child {
-  box-shadow: inset 4px 0 0 var(--wf-warning);
-}
-
-.table tbody tr[data-where="incoming"] td:first-child {
-  box-shadow: inset 4px 0 0 var(--wf-accent);
-}
-
 .table tbody tr[data-where="awol"] {
   background: var(--wf-act-tint);
 }
