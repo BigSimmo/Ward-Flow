@@ -2,6 +2,7 @@
 
 // A board row's facts, its on-the-board controls and its expanded cards. Split out of
 // `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
+import { StatusGlyph } from "@/components/wf";
 import Link from "next/link";
 import {
   EXAMINATION_REVOKED_WHILE_BED_HELD_NOTICE,
@@ -87,7 +88,7 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
         movement.arrivalDetails.estimatedArrivalAt !== undefined ? (
           now > movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES ? (
             <span className={styles.transitBadgeOverdue} data-testid={`ward-ed-transit-badge-${movement.id}`}>
-              ⚠ Overdue ETA (+
+              <StatusGlyph tone="danger" size={10} /> Overdue ETA (+
               {Math.floor((now - movement.arrivalDetails.estimatedArrivalAt) / 60)}h) ·{" "}
               {movement.arrivalDetails.modeOfArrival ??
                 (movement.arrivalDetails.mode ? arrivalModeLabel(movement.arrivalDetails.mode) : "Transit")}
@@ -396,7 +397,18 @@ export function renderEdRowExpandedCards(row: EdBoardRowModel, ctx: EdScreenCont
               <li key={index} className={styles.upToRow}>
                 <span className={styles.upToAt}>{formatInstantWithDay(event.min, now)}</span>
                 <span className={styles.upToMark} data-tone={event.tone ?? "quiet"} aria-hidden="true">
-                  {event.tone === "danger" ? "▲" : event.tone === "warn" ? "✕" : event.tone === "good" ? "✓" : "●"}
+                  <StatusGlyph
+                    tone={
+                      event.tone === "danger"
+                        ? "danger"
+                        : event.tone === "warn"
+                          ? "warning"
+                          : event.tone === "good"
+                            ? "success"
+                            : "neutral"
+                    }
+                    size={10}
+                  />
                 </span>
                 <span className={styles.upToWhat}>{event.what}</span>
               </li>

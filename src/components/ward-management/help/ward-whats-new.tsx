@@ -56,7 +56,7 @@ function seenIds(seen: string | null): ReadonlySet<string> | null {
  * Such a value marks that id and every one before it here seen, so moving to sorted entry files
  * neither repeats a closed line nor hides an unread one.
  */
-const LEGACY_ORDER = [
+export const LEGACY_ORDER = [
   "2026-10-31-role-names-hidden-names",
   "2026-11-01-ed-handover-table",
   "2026-11-01-alerts-redesign",

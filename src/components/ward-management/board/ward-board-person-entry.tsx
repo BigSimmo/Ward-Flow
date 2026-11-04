@@ -4,6 +4,7 @@
 
 // PersonEntry: one person's discharge plan, shared by the bed board's slide-out and its printed
 // sheet. Split out of ward-board.tsx to keep that file under the line cap.
+import { StatusGlyph } from "@/components/wf";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
@@ -69,10 +70,7 @@ export function PersonEntry({
           )}
           {occupant.pastDate && (
             <span className={styles.pastMark}>
-              <span aria-hidden="true" className={styles.statusGlyph}>
-                ▲{" "}
-              </span>
-              <span>Past date</span>
+              <StatusGlyph tone="warning" size={10} className={styles.statusGlyph} /> <span>Past date</span>
             </span>
           )}
         </p>
@@ -161,10 +159,7 @@ export function PersonEntry({
             )}
             {occupant.pastDate && (
               <span className={styles.pastMark}>
-                <span aria-hidden="true" className={styles.statusGlyph}>
-                  ▲{" "}
-                </span>
-                <span>Past date</span>
+                <StatusGlyph tone="warning" size={10} className={styles.statusGlyph} /> <span>Past date</span>
               </span>
             )}
           </p>

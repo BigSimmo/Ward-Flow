@@ -9,7 +9,7 @@ import {
   MessageSquare,
   ShieldCheck,
   Stethoscope,
-  Truck,
+  Ambulance,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -462,7 +462,7 @@ export function WardNotificationCenter({
             <NoticeRow
               key={`overdue-${m.id}`}
               tone="danger"
-              icon={Truck}
+              icon={Ambulance}
               title="Late arrival"
               status="Act now"
               meta={<PatientMeta {...who} />}
