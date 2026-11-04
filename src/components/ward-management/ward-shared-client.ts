@@ -1040,6 +1040,8 @@ export class SharedWorkspaceClient {
       worldEpoch: this.worldEpoch,
       sheets: this.openSheetsNoted(),
     });
+    // Made while offline: pinned now, before a resend can adopt a newer board.
+    if (this.offlineHold) pinToBoard(this.queue.slice(-1), this.sheetSeen, this.held());
     // #817: a poll in flight is stopped (reads change nothing) so the save goes now, not after it.
     this.pollAbort?.abort();
     this.publish({});
@@ -1230,8 +1232,10 @@ export class SharedWorkspaceClient {
       if (generation === this.viewGeneration) {
         if (this.pending) this.settle(this.pending.commandId, "failed", saveProblem("connectionLost"));
         // A server that answered waits on Retry, so a fault is not resent on every poll.
-        if (this.saveAnswered || (!this.pending && !this.queue.length)) this.cancelQueued();
-        else this.holdQueued();
+        if (this.saveAnswered || (!this.pending && !this.queue.length)) {
+          this.offlineHold = false;
+          this.cancelQueued();
+        } else this.holdQueued();
       }
       if (generation === this.viewGeneration && !this.disposed && !this.gated() && this.view.status !== "loading")
         this.publish({

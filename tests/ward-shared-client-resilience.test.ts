@@ -131,6 +131,55 @@ describe("shared workspace resilience (audit 4)", () => {
     client.dispose();
   });
 
+  it("pins an action made while a save waits, even when the connection returns before the next read (Tier 1 item 1)", async () => {
+    let online = true;
+    const sent: { expectedRevision: number; event: WardFlowEvent }[] = [];
+    const { client } = setup(({ read }) => {
+      if (!online) throw new TypeError("offline");
+      if (read) return Response.json({ snapshot: snapshot(4) });
+      // Another desk saved meanwhile: the resend lands on revision 7.
+      return Response.json({ outcome: "accepted", commandRevision: 7, snapshot: snapshot(7) });
+    });
+    const capture = client as unknown as { options: { fetch: typeof fetch } };
+    const answer = capture.options.fetch;
+    capture.options.fetch = async (url, options) => {
+      if (options?.body) sent.push(JSON.parse(String(options.body)));
+      return answer(url, options);
+    };
+    await client.refresh();
+    online = false;
+    expect((await client.dispatch(event)).status).toBe("failed");
+    online = true;
+    sent.length = 0;
+    const later = client.dispatch({ ...event, unitId: "ward-other" } as WardFlowEvent);
+    await later;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(sent.map((body) => body.expectedRevision)).toEqual([4, 4]);
+    client.dispose();
+  });
+
+  it("stops sending by itself once the server answers a resend with an error (Tier 1 item 1)", async () => {
+    let online = true;
+    let posts = 0;
+    const { client } = setup(({ read }) => {
+      if (!online) throw new TypeError("offline");
+      if (read) return Response.json({ snapshot: snapshot(3) });
+      posts++;
+      return new Response("busy", { status: 500 });
+    });
+    await client.refresh();
+    online = false;
+    expect((await client.dispatch(event)).status).toBe("failed");
+    online = true;
+    await client.refresh();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(posts).toBe(1);
+    await client.refresh();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(posts).toBe(1);
+    client.dispose();
+  });
+
   it("still refuses a waiting save another desk changed first, and does not resend it (Tier 1 item 1)", async () => {
     let online = true;
     let posts = 0;
