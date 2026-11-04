@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Mock next/link to render anchor tag in jsdom
 vi.mock("next/link", () => ({
@@ -16,6 +16,17 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { referralState } from "@/components/ward-management/ward-referrals";
 import { NOW_ANCHOR, unitById } from "@/components/ward-management/ward-sites";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { REPEAT_TAP_WINDOW_MS } from "@/components/ward-management/ward-repeat-tap-guard";
+
+/** Tier 1 item 2: a repeat inside the double-tap window gets the first tap's answer, so a deliberate repeat steps past it. */
+function passDoubleTapWindow() {
+  const next = Date.now() + REPEAT_TAP_WINDOW_MS + 1;
+  vi.spyOn(Date, "now").mockReturnValue(next);
+}
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 /**
  * Test harness component allowing live interaction with WardFlow state
@@ -192,6 +203,7 @@ describe("Inter-Ward Transfer & Capacity Balancing Integration (#PHASE-2)", () =
     expect(screen.getByTestId(`transfer-state-${cardId}`).textContent).toBe("accepted");
 
     // 3. Attempt duplicate acceptance (FD-22: already accepted elsewhere)
+    passDoubleTapWindow();
     fireEvent.click(screen.getByTestId(`accept-btn-${cardId}`));
     expect(screen.getByTestId("rejection-count").textContent).toBe("2");
     expect(screen.getByTestId(`transfer-state-${cardId}`).textContent).toBe("accepted");

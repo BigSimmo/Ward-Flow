@@ -3,7 +3,8 @@ import type { Instant } from "./ward-clock";
 import type { WardFlowRole } from "./ward-flow-roles";
 
 /**
- * Takes back the newest `COMPLETE_BED_MEETING_ACTION` of this kind on this record (H-0150). It lives
+ * Takes back the newest `COMPLETE_BED_MEETING_ACTION` or `RECORD_BED_MEETING_ACTION` of this kind on
+ * this record (H-0150, and Chase Undo on 3 Nov 2026). It lives
  * beside `ward-flow-events.ts` so the event union stays under its line cap.
  */
 export type UndoBedMeetingActionEvent = {

@@ -40,6 +40,8 @@ export type SharedView = {
   error: string | null;
   /** Payload stays in this tab; only opaque receipt identity may survive a reload. */
   unconfirmedSave?: boolean;
+  /** Saves waiting on this page while the connection is down; they go by themselves when it returns. */
+  waiting?: number;
   /** Audit 24-3 SM-4: `unavailable` only because a save waits on Retry; the board itself is current. */
   boardCurrent?: boolean;
   eventLog?: readonly EventLogEntry[];

@@ -71,7 +71,9 @@ function undoEventFor(event: WardFlowEvent, role: WardFlowRole, now = NOW + 1, a
       ? { plannedAdmissionId: fields.plannedAdmissionId }
       : {}),
     ...(undoType === "UNDO_PATIENT_RECORD" ? { patientId: fields.patientId } : {}),
-    ...(event.type === "COMPLETE_BED_MEETING_ACTION" ? { subject: event.subject, action: event.action } : {}),
+    ...(event.type === "COMPLETE_BED_MEETING_ACTION" || event.type === "RECORD_BED_MEETING_ACTION"
+      ? { subject: event.subject, action: event.action }
+      : {}),
     ...(event.type === "RECORD_SITE_HANDOVER_SIGN_OFF" ? { siteCode: event.siteCode } : {}),
   } as WardFlowEvent;
 }
