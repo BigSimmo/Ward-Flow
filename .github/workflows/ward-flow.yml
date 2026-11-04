@@ -713,7 +713,7 @@ jobs:
     needs: [plan, reuse]
     if: ${{ !cancelled() && needs.plan.outputs.build == 'true' && needs.reuse.outputs.verified != 'true' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -761,9 +761,20 @@ jobs:
       - name: Build for production (Railway build command)
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack
+      # On a PR that is over budget, budget-gate.mjs also measures main alone and fails only routes
+      # this PR grew, so one over-budget merge to main no longer fails every PR (4 Nov 2026).
       - name: Check the phone script budget
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: node scripts/check-script-budget.mjs
+        run: node scripts/ward-ci-public/budget-gate.mjs
+      # ward-flow-budget-heal.yml reads this when main goes over budget and opens a PR raising it.
+      - name: Keep main's phone script measurements for the budget heal
+        if: ${{ !cancelled() && github.event_name == 'push' && steps.install.outcome == 'success' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: script-budget-measured
+          path: ${{ runner.temp }}/script-budget/measured.json
+          if-no-files-found: ignore
+          retention-days: 7
       # H-0295: the scan reads .next/static only when a build has left it, so it runs after the build.
       - name: Scan the built client bundle for secrets
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}

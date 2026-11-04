@@ -370,7 +370,7 @@ function requireWorkflow(source) {
     "node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack",
     installed,
   );
-  exact("build", "Check the phone script budget", "node scripts/check-script-budget.mjs", installed);
+  exact("build", "Check the phone script budget", "node scripts/ward-ci-public/budget-gate.mjs", installed);
   exact(
     "build",
     "Scan the built client bundle for secrets",
@@ -691,7 +691,7 @@ for (let bits = 0; bits < 16; bits++)
 for (const [before, after] of [
   ["run: node scripts/ward-ci-public/plan.mjs", "run: echo omitted"],
   ["run: node scripts/ward-ci-public/verify-plan.mjs", "run: echo omitted"],
-  ["run: node scripts/check-script-budget.mjs", "run: echo omitted"],
+  ["run: node scripts/ward-ci-public/budget-gate.mjs", "run: echo omitted"],
   ["run: node scripts/ward-ci-public/merge-latest-main.mjs", "run: echo omitted"],
   [
     "if: ${{ github.event_name == 'pull_request' }}\n        run: node scripts/ward-ci-public/merge-latest-main.mjs",

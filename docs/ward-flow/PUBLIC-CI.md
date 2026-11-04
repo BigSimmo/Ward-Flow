@@ -167,6 +167,32 @@ video and trace files; failed legs keep their existing full diagnostic artifact.
 reports fail evidence collection. These retained reports do not change accessibility thresholds or
 prove physical-device, hosted-provider or deployment acceptance.
 
+## Phone script budget on a moving main
+
+Main has no merge queue and does not require branches to be up to date, so PRs that each fit the
+phone script budget can land together over it. Before 4 November 2026 that turned every open PR's
+required production build red until someone raised the limit by hand. Three parts now handle it:
+
+- **Prevention.** The build merges the latest main before measuring (`merge-latest-main.mjs`), and
+  `ward-flow-budget-recheck.yml` re-runs that build on armed PRs whenever main moves.
+- **Fair blame.** The budget step is `budget-gate.mjs`. When a PR's merged result is over budget, it
+  builds and measures main alone in a separate worktree and fails only routes the PR pushed over,
+  or grew more than 0.5 KB past an already-over main. Inherited overage is a warning. This second
+  build runs only when the merged result is over.
+- **Automatic heal.** Main's build saves its measurements as the `script-budget-measured` artifact.
+  When a main run fails and those show a route over budget, `ward-flow-budget-heal.yml` opens one PR
+  raising only those routes to the measured size plus 1 KB, with its own
+  `docs/script-budget-history/` entry, and closes any older heal PR. Workflow-token events start no
+  workflows, so it dispatches `Ward Flow CI`, `Ward Flow bot-author policy` and `Ward Flow hold` on
+  the heal branch; those report the required checks on its head. It arms auto-merge only when every
+  raise is within 5 KB (D-82); a bigger raise waits for Josh. The repository setting "Allow GitHub
+  Actions to create and approve pull requests" must be on. A merge made by the workflow token starts
+  no main run, so main is re-measured on the next merge.
+
+`ward-flow-ci-tidy.yml` frees runner slots on PR close, on each PR push and every 15 minutes. It
+cancels runs for merged or closed PRs, and runs for an older head of an open PR while none of their
+jobs is running. Running checks on a current head are never cancelled.
+
 ## Main pushes and nightly runs
 
 The main reuse proof in `main-reuse.mjs` verifies through git and the GitHub API that
