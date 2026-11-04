@@ -6,7 +6,7 @@
 // and Alerts shows only when there is one. Community team, care coordinator and GP are people you
 // call, so they live once, in Who to call, with their numbers. Diagnosis sits in Details. Every
 // value is a recorded fact shown as recorded, never scored or inferred.
-import { CircleAlert, Eye, FileBadge, Flag } from "lucide-react";
+import { CircleAlert, Eye, Flag, Scale } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import type { ReactNode } from "react";
 import { StatusGlyph, type WfTone } from "@/components/wf";
@@ -16,6 +16,7 @@ import { activeCommunityTreatmentOrder, type Patient } from "@/components/ward-m
 import { observationSummary } from "@/components/ward-management/ward-observation";
 import { riskFlagLabel } from "@/components/ward-management/referrals/referral-risk-flags";
 import type { FormTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
+import { formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
 import type { PatientMode } from "./patient-mode";
 import { interpreterRequired } from "./patient-flight-header";
 import styles from "./patient-glance.module.css";
@@ -89,7 +90,7 @@ function legalTile({ patient, movement, formTimeLeft, mode, onOpenForms }: Patie
   const status = movement?.legalStatus ?? patient?.legalStatus;
   const cto = activeCommunityTreatmentOrder(patient);
   const open = (PLACING.includes(mode) || ON_STAY.includes(mode)) && mode !== "idle";
-  const base = { key: "legal", icon: FileBadge, label: "Legal", onOpen: onOpenForms, openLabel: "Open legal forms" };
+  const base = { key: "legal", icon: Scale, label: "Legal", onOpen: onOpenForms, openLabel: "Open legal forms" };
   // Stress test (round 2): with nothing open, a stale "Involuntary inpatient" in the band would read
   // as an order in force. A record with nothing open says what is in force, and the last status
   // follows in quiet words (Q118: last recorded, never current).
@@ -102,6 +103,17 @@ function legalTile({ patient, movement, formTimeLeft, mode, onOpenForms }: Patie
       sub: status ? `last recorded ${status}` : undefined,
     };
   }
+  // Audit S-6: a referral or transport form that ended at arrival or at the examination is never
+  // shown as in force; the band names it as ended and the inpatient order still to record.
+  const progression = formProgression(movement);
+  if (progression)
+    return {
+      ...base,
+      value: status ?? "Not recorded",
+      quiet: status === undefined,
+      sub: `Form ${progression.endedCode} ended ${progression.endedWhen} · Form ${progression.nextCode} to record`,
+      tone: "warning",
+    };
   const form = movement?.legalForm ? `Form ${movement.legalForm.code}` : cto ? `Form ${cto.form}` : undefined;
   return {
     ...base,

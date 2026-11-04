@@ -97,3 +97,10 @@ describe("patient care journey", () => {
     expect(steps.every((step) => step.state === "next")).toBe(true);
   });
 });
+
+describe("patient care journey with no stay on record", () => {
+  it("keeps Community current without ticking a ward stay or discharge that was never recorded", () => {
+    const steps = patientCareJourney({ mode: "cto", stayCurrent: false, ctoInForce: true, day });
+    expect(steps.map((step) => `${step.id}:${step.state}`)).toEqual(["community:now"]);
+  });
+});

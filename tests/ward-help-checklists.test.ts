@@ -46,7 +46,7 @@ describe("guided checklists (Josh, 2 Nov 2026, approved word for word)", () => {
         [
           "On Capacity, read Mismatch: people waiting against beds that fit, for each kind of bed.",
           "Open Bed meeting, or Open on TV for the meeting room screen (read only).",
-          "On Referrals, use the Bed meeting list.",
+          "On Referrals, press Bed meeting to open the agenda at its referrals.",
           "On Out of area, copy the bed meeting summary from the header.",
         ],
       ],

@@ -345,7 +345,7 @@ describe("PhoneDirectory, the inset grouped list", () => {
 });
 
 describe("PhoneSheet, the contact bottom sheet", () => {
-  it("names the contact and its service, and copies the number and email from the tiles", () => {
+  it("names the contact and its service, and opens on who answers now with Copy number and Copy email (OC1)", () => {
     const bfc = entry("nmhs-bfc");
     const number = numberAt(bfc, NOW_ANCHOR)!;
     const actions = makeActions();
@@ -358,18 +358,19 @@ describe("PhoneSheet, the contact bottom sheet", () => {
 
     // D-72: calling only copied the number, so the sheet has no Call button.
     expect(within(sheet).queryByRole("button", { name: `Call ${number}` })).not.toBeInTheDocument();
-    fireEvent.click(within(sheet).getByRole("button", { name: "Copy" }));
+    expect(within(sheet).getByRole("region", { name: "Who answers now" })).toHaveTextContent(number);
+    fireEvent.click(within(sheet).getByRole("button", { name: "Copy number" }));
     expect(actions.onCopy).toHaveBeenCalledWith(number, "Number copied");
-    fireEvent.click(within(sheet).getByRole("button", { name: "Email" }));
+    fireEvent.click(within(sheet).getByRole("button", { name: "Copy email" }));
     expect(actions.onCopy).toHaveBeenCalledWith(bfc.email, "Email copied");
   });
 
-  it("stars and shows Starred when the contact is on My list", () => {
+  it("stars the contact, keeping one name and showing state through aria-pressed", () => {
     const bfc = entry("nmhs-bfc");
     const actions = makeActions();
     const { rerender } = render(<PhoneSheet entry={bfc} actions={actions} notice={null} onClose={vi.fn()} />);
 
-    const star = screen.getByRole("button", { name: "Star" });
+    const star = screen.getByRole("button", { name: `Star ${bfc.name}` });
     expect(star).toHaveAttribute("aria-pressed", "false");
     fireEvent.click(star);
     expect(actions.onToggleFavourite).toHaveBeenCalledWith("nmhs-bfc");
@@ -377,7 +378,7 @@ describe("PhoneSheet, the contact bottom sheet", () => {
     rerender(
       <PhoneSheet entry={bfc} actions={{ ...actions, favourites: ["nmhs-bfc"] }} notice={null} onClose={vi.fn()} />,
     );
-    expect(screen.getByRole("button", { name: "Starred" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: `Star ${bfc.name}` })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("adds the place to the description for a ward and drops Call and Copy for an email-only inbox", () => {
@@ -388,8 +389,8 @@ describe("PhoneSheet, the contact bottom sheet", () => {
     expect(sheet.getAttribute("aria-describedby")).toBeTruthy();
     expect(sheet).toHaveAccessibleDescription(new RegExp(`, Referral inbox, ${inbox.groupTitle}$`, "u"));
     expect(within(sheet).queryByRole("button", { name: /^Call / })).not.toBeInTheDocument();
-    expect(within(sheet).queryByRole("button", { name: "Copy" })).not.toBeInTheDocument();
-    expect(within(sheet).getByRole("button", { name: "Email" })).toBeInTheDocument();
+    expect(within(sheet).queryByRole("button", { name: "Copy number" })).not.toBeInTheDocument();
+    expect(within(sheet).getByRole("button", { name: "Copy referral email" })).toBeInTheDocument();
   });
 
   it("closes on Escape and on the close button", () => {

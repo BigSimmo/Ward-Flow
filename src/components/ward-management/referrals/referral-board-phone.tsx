@@ -1,12 +1,24 @@
 "use client";
 // Referrals redesign (30 October 2026): the figure reads "Decision overdue", as the desktop chip does, and the
-// median names what it covers. 31 October: Next overdue and Bed meeting list are Home's hero pills,
+// median names what it covers. 31 October: Next overdue and Bed meeting are Home's hero pills,
 // side by side.
 
 import { ChevronRight, Clock, ListOrdered, TriangleAlert } from "lucide-react";
 import { useId, useRef, type ReactNode } from "react";
 
-import { Button, cx, phoneRows as rows, LiveChip, StatusGlyph, useWfBandBleed } from "@/components/wf";
+import Link from "next/link";
+
+import {
+  Button,
+  Icon,
+  buttonClass,
+  cx,
+  phoneRows as rows,
+  LiveChip,
+  StatusGlyph,
+  useWfBandBleed,
+} from "@/components/wf";
+import { BED_MEETING_REFERRALS_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 
 import styles from "./referral-board-phone.module.css";
 import { CommunityTeamLink, communityEyebrow, communityQueueTitle, useCommunityDesk } from "./referral-community-desk";
@@ -15,7 +27,7 @@ import type { EdDeskHero } from "./referral-ed-desk";
 
 /**
  * Referrals on the phone (v10 build guide, Referrals > Phone). Its own design at 390 wide: the hero
- * with three figures (Overdue, Tier 1, Beds ready), Next overdue and Bed meeting list, then the
+ * with three figures (Overdue, Tier 1, Beds ready), Next overdue and Bed meeting (the agenda), then the
  * highlight chips scrolling sideways (compact, 48px targets), then the waiting axis one tap away. Desktop never
  * renders any of this.
  */
@@ -36,7 +48,6 @@ export function ReferralPhoneHero({
   onBeds,
   bedsOpen,
   onNextOverdue,
-  onMeeting,
   placeName,
   edHero,
 }: {
@@ -56,7 +67,6 @@ export function ReferralPhoneHero({
   onBeds: () => void;
   bedsOpen: boolean;
   onNextOverdue: () => void;
-  onMeeting: () => void;
   /** ROLE BRANCH (ward): the ward's own name, so the hero reads as the ward's requests. */
   placeName?: string;
   /** ED desk only (the board passes it on that desk alone): what this ED raised. */
@@ -194,9 +204,15 @@ export function ReferralPhoneHero({
           {community ? (
             <CommunityTeamLink desk={community} phone className={rows.heroPill} />
           ) : edHero ? null : (
-            <Button variant="onHero" icon={ListOrdered} className={rows.heroPill} onClick={onMeeting}>
-              Bed meeting list
-            </Button>
+            // R5 fold (Josh, 3 Nov 2026): opens the agenda at its Referrals list.
+            <Link
+              href={BED_MEETING_REFERRALS_HREF}
+              className={cx(buttonClass({ variant: "onHero" }), rows.heroPill)}
+              data-testid="ward-referral-meeting"
+            >
+              <Icon icon={ListOrdered} size={16} />
+              <span>Bed meeting</span>
+            </Link>
           )}
         </div>
       )}

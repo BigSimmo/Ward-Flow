@@ -25,10 +25,11 @@ import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
  */
 
 type Mode = "failed" | "refused" | "accepted";
-const FAILED_SAYS = "Save is not confirmed. Press Retry when you are back online. It will not be saved twice.";
+const FAILED_SAYS =
+  "Save is not confirmed. It sends again by itself when you are back online, or press Retry. It will not be saved twice.";
 const REFUSED_SAYS = "This record changed while you were looking. Your action was not applied.";
 const SAYS: Record<Exclude<Mode, "accepted">, RegExp> = {
-  failed: /Save is not confirmed\. Press Retry when you are back online/u,
+  failed: /Save is not confirmed\. It sends again by itself when you are back online/u,
   refused: /Not recorded: This record changed while you were looking/u,
 };
 // Any team page that answers its own referrals. Not Midland: its page carries the locked mock-up's

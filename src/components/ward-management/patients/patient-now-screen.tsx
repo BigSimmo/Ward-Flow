@@ -1060,6 +1060,10 @@ export function PatientNowScreen({
     ctoInForce: Boolean(ctoInForce),
     day: (at) => dayLabel(at, dayZero).replace(",", ""),
   });
+  // The band's typed expiry for the form in force, for a ward stay as well as a live placement. A form
+  // that ended at arrival or at the examination has no expiry in force (currentLegalDueAt).
+  const bandTimeLeft =
+    glanceMovement && !formProgression(glanceMovement) ? formTimeLeft(glanceMovement, now, thresholds) : undefined;
   const glance = (
     <PatientGlance
       mode={mode}
@@ -1068,7 +1072,7 @@ export function PatientNowScreen({
       admission={stayCurrent ? resolved.liveAdmission : undefined}
       leaveBed={stayLeaveBed}
       stayWithheld={statusContext.stayWithheld}
-      formTimeLeft={movementTimeLeft}
+      formTimeLeft={bandTimeLeft}
       riskFlags={referralSafety.kind === "shown" ? referralSafety.riskFlags : undefined}
       riskFlagsWhen={referralWhen}
       riskNotShared={referralSafety.kind === "not_shared"}

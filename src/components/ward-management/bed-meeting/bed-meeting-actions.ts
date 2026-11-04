@@ -40,6 +40,8 @@ export type BedMeetingActionOwner = (typeof BED_MEETING_ACTION_OWNERS)[number];
 
 /** The agenda page. Not in the access table, so it opens for the coordinator only. */
 export const BED_MEETING_AGENDA_HREF = "/ward-flow/bed-meeting/agenda";
+/** R5 fold (Josh, 3 Nov 2026): the agenda opened at its Referrals list. */
+export const BED_MEETING_REFERRALS_HREF = `${BED_MEETING_AGENDA_HREF}#agenda-referrals`;
 
 /** Due choices, in hours from the meeting. */
 export const BED_MEETING_ACTION_DUE_HOURS = [2, 4, 8, 24] as const;

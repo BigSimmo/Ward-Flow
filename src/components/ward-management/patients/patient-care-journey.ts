@@ -122,5 +122,12 @@ export function patientCareJourney(input: CareJourneyInput): CareStep[] {
   ];
   // With no movement on record the path into the ward is unknown, so its three steps are left out
   // rather than ticked as if they happened.
-  return movement ? steps : steps.filter((step) => step.id !== "start" && step.id !== "bed" && step.id !== "moving");
+  // Community care with no stay on record says nothing about a ward stay or discharge, so those two
+  // steps are left out too rather than ticked.
+  const unknownStay = now === 5 && !stay;
+  return steps.filter(
+    (step) =>
+      (movement || (step.id !== "start" && step.id !== "bed" && step.id !== "moving")) &&
+      !(unknownStay && (step.id === "ward" || step.id === "discharge")),
+  );
 }

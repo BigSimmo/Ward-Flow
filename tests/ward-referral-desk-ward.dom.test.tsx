@@ -98,7 +98,7 @@ describe("Referrals as the nurse in charge", () => {
     renderBoardAs("coordinator");
     expect(within(hero()).getByText(/\d+ awaiting decision/)).toBeInTheDocument();
     expect(screen.getByRole("group", { name: "Highlight referrals" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Bed meeting list/ })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /^Bed meeting/ })).toBeInTheDocument();
     expect(screen.queryByTestId("ward-referral-board-own-ward-empty")).not.toBeInTheDocument();
   });
 
@@ -107,7 +107,7 @@ describe("Referrals as the nurse in charge", () => {
     expect(within(hero()).getByText(`1 for ${WARD.name} to answer`)).toBeInTheDocument();
     expect(screen.queryByTestId(/^ward-referral-highlight-/)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Next overdue/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Bed meeting list/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^Bed meeting/ })).not.toBeInTheDocument();
     // The ward keeps its decision pane, which is not a read-only desk.
     const rows = screen.getAllByTestId(/^ward-referral-board-select-(?!decided)/);
     fireEvent.click(rows[0]!);
@@ -143,7 +143,6 @@ describe("Referrals as the nurse in charge", () => {
       onBeds: () => {},
       bedsOpen: false,
       onNextOverdue: () => {},
-      onMeeting: () => {},
     };
     const view = render(<ReferralPhoneHero {...props} />);
     expect(screen.getByText("Referrals · statewide")).toBeInTheDocument();
@@ -153,7 +152,7 @@ describe("Referrals as the nurse in charge", () => {
     expect(within(phoneHero).getByText("Referrals")).toBeInTheDocument();
     expect(within(phoneHero).getByRole("heading")).toHaveTextContent("2 for Synthetic Ward to answer");
     expect(screen.queryByTestId("ward-referral-phone-beds")).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Bed meeting list/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /^Bed meeting/ })).not.toBeInTheDocument();
     view.rerender(<ReferralPhoneHero {...props} count={0} oldest={undefined} placeName="Synthetic Ward" />);
     expect(within(phoneHero).getByRole("heading")).toHaveTextContent("Nothing for Synthetic Ward to answer");
     expect(screen.queryByText("No referral waiting")).not.toBeInTheDocument();
