@@ -81,8 +81,27 @@ export function reducePatientRegistration(
   if (existingPatient) {
     return reject(state, event, `ADD_PATIENT UMRN collision: ${umrn} already belongs to patient ${existingPatient.id}`);
   }
-  // Optional suburb: blank/whitespace means "not yet recorded" (key absent), never store "".
-  const suburb = typeof event.suburb === "string" && event.suburb.trim().length > 0 ? event.suburb.trim() : undefined;
+  // Optional typed details: blank/whitespace means "not yet recorded" (key absent), never store "".
+  const optional = (value: unknown) =>
+    typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
+  const suburb = optional(event.suburb);
+  // RF7 (Josh, 3 Nov 2026): the rest of the person's details, each optional and never blocking.
+  const typedDetails: Partial<
+    Pick<
+      Patient,
+      "preferredName" | "address" | "generalPractitioner" | "catchmentCommunityTeam" | "interpreterLanguage"
+    >
+  > = {};
+  for (const key of [
+    "preferredName",
+    "address",
+    "generalPractitioner",
+    "catchmentCommunityTeam",
+    "interpreterLanguage",
+  ] as const) {
+    const value = optional(event[key]);
+    if (value !== undefined) typedDetails[key] = value;
+  }
   const patient: Patient = {
     id: `PT-A${String(state.patientSequence + 1).padStart(2, "0")}`,
     umrn,
@@ -94,6 +113,7 @@ export function reducePatientRegistration(
     ...(event.gender === undefined ? {} : { gender: event.gender }),
     ...(event.sex === undefined ? {} : { sex: event.sex }),
     ...(suburb === undefined ? {} : { suburb }),
+    ...typedDetails,
     ...(indigenous === undefined ? {} : { aboriginalOrTorresStraitIslanderStatus: indigenous }),
     // v10 pass 2: when the record was added, so Add patient can count "Added today".
     addedAt: event.now,

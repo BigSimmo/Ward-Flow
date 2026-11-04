@@ -34,6 +34,8 @@ export const MOCKUP_PAGE_SLUGS = [
   "sign-in",
   "statistics-list",
   "statistics-unit",
+  "statistics-network",
+  "ed-department",
   "transport",
 ] as const;
 

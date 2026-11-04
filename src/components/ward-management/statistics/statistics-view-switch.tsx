@@ -12,6 +12,7 @@ import {
   STATISTICS_UNIT_CHOOSER_ID,
 } from "./statistics-sections";
 import type { StatisticsView } from "./statistics-view-bar";
+import { ViewSwitchHost } from "./statistics-view-switch-slot";
 
 import styles from "./statistics-view-switch.module.css";
 
@@ -114,41 +115,48 @@ export function PhoneUnitFinder({ open, onClose, finder }: { open: boolean; onCl
 }
 
 /**
- * Bed board, Journey and Map as one switch, not three large cards across a full row. The one unit
- * finder, when open from the tab row, sits above it.
+ * Bed board, Journey and Map as a compact switch in the head of the first card it changes (owner
+ * polish, 3 Nov 2026), so it reads as that card's view switch, not a third row of tabs. Each view's
+ * first card draws it (`useViewSwitchAction`, statistics-view-switch-slot.tsx). The one unit finder, when open from the tab row, sits
+ * above the views.
  */
 export function StatisticsViewSwitch({
   view,
   onChoose,
   finder,
   finderOpen = false,
+  children,
 }: {
   view: StatisticsView;
   onChoose: (view: StatisticsView) => void;
   /** Left out for a desk that may open no unit from it (the site bed manager). */
   finder?: ReactNode;
   finderOpen?: boolean;
+  children: ReactNode;
 }) {
+  const control = (
+    <div className={styles.switchControl} data-testid="ward-statistics-view-bar">
+      <Segmented
+        label="Summary view"
+        items={[
+          { id: "board" as StatisticsView, label: "Bed board" },
+          { id: "journey" as StatisticsView, label: "Journey" },
+          { id: "map" as StatisticsView, label: "Map" },
+        ]}
+        value={view}
+        onChange={onChoose}
+        size="sm"
+      />
+    </div>
+  );
   return (
-    <div className={styles.switchBlock}>
+    <>
       {finder !== undefined && finderOpen ? (
         <div id={STATISTICS_UNIT_CHOOSER_ID} className={styles.finder} tabIndex={-1}>
           {finder}
         </div>
       ) : null}
-      <div className={styles.switchRow} data-testid="ward-statistics-view-bar">
-        <Segmented
-          label="Summary view"
-          items={[
-            { id: "board" as StatisticsView, label: "Bed board" },
-            { id: "journey" as StatisticsView, label: "Journey" },
-            { id: "map" as StatisticsView, label: "Map" },
-          ]}
-          value={view}
-          onChange={onChoose}
-          size="md"
-        />
-      </div>
-    </div>
+      <ViewSwitchHost.Provider value={control}>{children}</ViewSwitchHost.Provider>
+    </>
   );
 }
