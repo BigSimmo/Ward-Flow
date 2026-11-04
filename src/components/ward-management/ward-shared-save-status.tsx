@@ -2,6 +2,8 @@
 
 import { useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode, type RefObject } from "react";
 import { createPortal } from "react-dom";
+import { clk } from "@/components/wf/format";
+import { useSharedRefreshLate } from "@/components/wf/live";
 import { subscribeToSheetStack, topSheetRoot } from "@/components/wf/sheet-focus";
 import type { WardSharedConnection } from "./ward-shared-access";
 import { useWardSharedSave } from "./shell/ward-shared-save-context";
@@ -88,7 +90,11 @@ export function WardSharedSaveStatus({
   // Josh, 27 Oct 2026 ("it is pointless"): the strip shows only when something needs action, a lost
   // connection or a save not yet confirmed. Otherwise its words stay a screen-reader status, and
   // Sign out lives in the rail and the phone menu (`WardAccountActions`).
-  const problem = connection.status === "unavailable" || !!save?.unconfirmedSave;
+  // Tier 1 item 4 (Josh, 4 Nov 2026): a refresh that is late but not yet failed used to show only on
+  // pages with a Live chip. The strip now says when the board last updated, on every screen.
+  const late =
+    useSharedRefreshLate(connection.enabled && connection.status !== "unavailable") && connection.receivedAt > 0;
+  const problem = connection.status === "unavailable" || !!save?.unconfirmedSave || late;
   const barRef = useRef<HTMLDivElement>(null);
   useBarHeight(barRef, problem);
   // Retry disappears while the save runs. Park focus on the persistent status, still inside the sheet.
@@ -103,7 +109,9 @@ export function WardSharedSaveStatus({
         connection.boardCurrent
         ? ""
         : saveProblem("connectionUnavailable")
-      : `${deskLabel} · shared synthetic workspace`;
+      : late
+        ? `Not updated since ${clk(connection.receivedAt)}. Still checking every few seconds.`
+        : `${deskLabel} · shared synthetic workspace`;
   const detail: ReactNode = (
     <>
       {connection.error && <span> {connection.error}</span>}
@@ -129,7 +137,7 @@ export function WardSharedSaveStatus({
         {save?.unconfirmedSave && <p className={styles.warning}>{RELOAD_WARNING}</p>}
         {problem && (
           <span className={styles.end}>
-            {connection.status === "unavailable" && (
+            {(connection.status === "unavailable" || late) && (
               <button type="button" className={styles.action} onClick={connection.retry}>
                 Retry
               </button>

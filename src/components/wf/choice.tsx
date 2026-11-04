@@ -5,6 +5,7 @@ import Link from "next/link";
 import { X } from "lucide-react";
 import { cx } from "./cx";
 import { Icon } from "./icon";
+import { PanelBoundary } from "./panel-boundary";
 import { Count } from "./primitives";
 import { StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./choice.module.css";
@@ -176,7 +177,8 @@ export function TabPanel({
       hidden={hidden}
       className={className}
     >
-      {children}
+      {/* Tier 1 item 5: a failing tab shows an error line; the tabs and the page keep working. */}
+      <PanelBoundary resetKey={id}>{children}</PanelBoundary>
     </div>
   );
 }

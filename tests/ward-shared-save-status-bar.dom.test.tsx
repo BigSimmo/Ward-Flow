@@ -1,6 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 
+import { clk } from "@/components/wf/format";
+import { publishLiveRefresh } from "@/components/wf/live";
 import { WardAccountActions } from "@/components/ward-management/shell/ward-account-actions";
 import { WardSharedSaveContext } from "@/components/ward-management/shell/ward-shared-save-context";
 import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
@@ -63,4 +65,40 @@ it("puts Sign out and Switch role beside the rail's links on the shared board on
   unmount();
   render(<WardAccountActions className="link" />);
   expect(screen.queryByRole("button")).toBeNull();
+});
+
+// Tier 1 item 4 (Josh, 4 Nov 2026): a late refresh shows on every screen, not only beside a Live chip.
+it("says when the board last updated once the shared refresh is late, with Retry", () => {
+  const receivedAt = Date.now() - 60_000;
+  publishLiveRefresh({ unavailable: false, receivedAt, staleAfterMs: 6_000 });
+  try {
+    render(
+      <WardSharedSaveStatus
+        deskLabel="Coordinator"
+        connection={{ ...connection("ready"), enabled: true, receivedAt } as unknown as WardSharedConnection}
+      />,
+    );
+    const status = screen.getByTestId("ward-shared-status-bar");
+    expect(status).toHaveTextContent(`Not updated since ${clk(receivedAt)}. Still checking every few seconds.`);
+    expect(screen.getByRole("button", { name: "Retry" })).toBeVisible();
+  } finally {
+    publishLiveRefresh(undefined);
+  }
+});
+
+it("stays quiet while the shared refresh is on time", () => {
+  const receivedAt = Date.now();
+  publishLiveRefresh({ unavailable: false, receivedAt, staleAfterMs: 60_000 });
+  try {
+    render(
+      <WardSharedSaveStatus
+        deskLabel="Coordinator"
+        connection={{ ...connection("ready"), enabled: true, receivedAt } as unknown as WardSharedConnection}
+      />,
+    );
+    expect(screen.getByTestId("ward-shared-status-bar")).toHaveTextContent("Coordinator · shared synthetic workspace");
+    expect(screen.queryByRole("button")).toBeNull();
+  } finally {
+    publishLiveRefresh(undefined);
+  }
 });
