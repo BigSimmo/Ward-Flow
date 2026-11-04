@@ -150,13 +150,6 @@
   text-decoration: underline;
 }
 
-.headCount {
-  color: var(--wf-ink-3);
-  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
 .emptyLine {
   display: flex;
   align-items: center;
@@ -457,19 +450,6 @@
 
 .queueCard {
   min-width: 0;
-}
-
-.queueTools {
-  display: flex;
-  /* At 1280px with the rail open the card had no room for the tabs and Form due on one line, so the
-   * tabs shrank and "70" ran over the Patients edge (visual desk, 21 Oct 2026). Form due takes the
-   * next line there instead. The phone keeps one line (below). */
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border-bottom: 1px solid var(--wf-line);
 }
 
 .queueFilter {
@@ -1915,49 +1895,12 @@ button.registerRow:hover {
     color: var(--wf-ink-2);
   }
 
-  /* The queue: no card around the switch, the switch pinned under the header, the rows one card. */
+  /* The queue: no card around it, the rows one card. */
   .queueCard.queueCard {
     border: 0;
     border-radius: 0;
     background: transparent;
     box-shadow: none;
-  }
-
-  .queueHead.queueHead {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    min-height: 0;
-    padding: 0;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-    border: 0;
-  }
-
-  .queueTools {
-    position: sticky;
-    top: var(--wf-header-height, 3.5rem);
-    z-index: 6;
-    flex-wrap: nowrap;
-    margin: 0;
-    padding: var(--wf-s-2) 0;
-    border-bottom: 0;
-    background: var(--wf-canvas);
-    /* The canvas band runs to the screen edges without widening the region grid. */
-    box-shadow:
-      var(--wf-s-4) 0 0 var(--wf-canvas),
-      calc(-1 * var(--wf-s-4)) 0 0 var(--wf-canvas);
-  }
-
-  .queueSeg.queueSeg {
-    flex: 1 1 auto;
-    width: 100%;
-  }
-
-  .queueSeg > * {
-    flex: 1 0 auto;
-    justify-content: center;
   }
 
   .queueFilter {
@@ -2043,11 +1986,6 @@ button.registerRow:hover {
   .queueWordStrong {
     color: var(--wf-ink-3);
     font-weight: 500;
-  }
-
-  /* The switch runs the full width (the Soon chip is not on the phone) with 12px before the rows. */
-  .queueTools {
-    margin-bottom: var(--wf-s-3);
   }
 }
 
@@ -2208,25 +2146,6 @@ button.registerRow:hover {
   gap: 6px;
 }
 
-/* Waiting: the switch never cuts off "Referrals"; Form due wraps under it when space is short. */
-.screen .queueTools {
-  flex-wrap: wrap;
-  row-gap: var(--wf-s-2);
-}
-.screen .queueSeg {
-  flex: none;
-  width: auto;
-  max-width: none;
-  overflow: visible;
-}
-.screen .queueSeg > * {
-  flex: none;
-  height: 30px;
-  min-height: 0;
-  padding-inline: 10px;
-  font-size: var(--wf-fs-13);
-}
-
 /* Each queue row's right side is one line: the wait, then the status glyph. */
 .screen .queueWait {
   display: inline-flex;
@@ -2262,27 +2181,8 @@ button.registerRow:hover {
 }
 
 @media (max-width: 46.4375rem) {
-  /* Q225 (design review, 2 Nov 2026): the list tabs take the kit's 40px phone option on its 48px
-     track (they were 32px on a 40px track), so the house 40px minimum holds here too. */
-  .screen .queueSeg > * {
-    position: relative;
-    height: var(--wf-phone-seg-item-h);
-    padding-inline: 8px;
-    font-weight: 600;
-  }
   .screen .queueMore {
     height: 48px;
-  }
-  /* The Form due chip is 40px, as tall as the tab options beside it, keeping a 48px hit area. */
-  .screen .queueTools > button {
-    position: relative;
-    height: 40px;
-    min-height: 40px;
-  }
-  .screen .queueTools > button::after {
-    content: "";
-    position: absolute;
-    inset: -4px 0;
   }
 
   /* Phone ED chips: 34px pills with a hairline border, the count and longest wait on one line, a

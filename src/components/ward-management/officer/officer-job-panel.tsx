@@ -5,9 +5,12 @@
 // scrolls away.
 
 import { useEffect, type ReactNode } from "react";
-import { X } from "lucide-react";
+import Link from "next/link";
+import { FileText, X } from "lucide-react";
 
-import { Button, Card, CardBody, CardFoot, CardHead, StatusGlyph, cx } from "@/components/wf";
+import { Button, Card, CardBody, CardFoot, CardHead, Icon, StatusGlyph, buttonClass, cx } from "@/components/wf";
+import { movementHref } from "@/components/ward-management/shell/ward-facade";
+import { legalNowText } from "@/components/ward-management/ward-transport-checks";
 import { transportLeg } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
 
@@ -109,23 +112,35 @@ export function OfficerJobPanel({
             ) : (
               <>
                 {umrn ? " · " : null}
-                {/* Redesign: a bare "Not recorded" names no noun. */}
-                {legal === "Not recorded" ? "Legal status not recorded" : legal}
+                {/* TR2 (3 Nov 2026): when the booking has no legal status, show Legal now, not a blank. */}
+                {legal === "Not recorded" ? legalNowText(job) : legal}
                 {transport.escortRequired ? " · Escort" : ""}
               </>
             )}
           </>
         }
         aside={
-          <Button
-            variant="ghost"
-            size="sm"
-            iconOnly
-            icon={X}
-            onClick={onClose}
-            aria-label="Close job panel"
-            data-testid="ward-officer-detail-close"
-          />
+          <>
+            {/* TR2 (3 Nov 2026): the full record, one tap from the job, beside close. */}
+            <Link
+              className={buttonClass({ variant: "ghost", size: "sm", iconOnly: true })}
+              href={movementHref(job.id)}
+              aria-label="Open the movement record"
+              title="Open the movement record"
+              data-testid={`ward-officer-record-${job.id}`}
+            >
+              <Icon icon={FileText} size={16} />
+            </Link>
+            <Button
+              variant="ghost"
+              size="sm"
+              iconOnly
+              icon={X}
+              onClick={onClose}
+              aria-label="Close job panel"
+              data-testid="ward-officer-detail-close"
+            />
+          </>
         }
       />
       <CardBody className={cx(styles.detailBody, styles.detailScroll)}>{renderDetail(job, context)}</CardBody>

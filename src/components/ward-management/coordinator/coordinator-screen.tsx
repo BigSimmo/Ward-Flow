@@ -1102,7 +1102,6 @@ export function CoordinatorScreen() {
                 <PlannedList now={now} rows={plannedRows} title="Later today" />
               ) : shownView === "queue" ? (
                 <PriorityQueue
-                  flow
                   flowStage={flowStage}
                   waitingMarks={waitingMarks}
                   movements={queue}
@@ -1114,14 +1113,8 @@ export function CoordinatorScreen() {
                     setSelectedAlertId(undefined);
                     selectMovement(movementId);
                   }}
-                  selectedReferralId={selectedReferralId}
-                  onSelectReferral={(referralId) => {
-                    setSelectedAlertId(undefined);
-                    selectReferral(referralId);
-                  }}
                   filterEdId={activeEdId}
                   onClearFilter={() => setSelectedEdId(undefined)}
-                  totalMovements={openMovements.length}
                   serviceScope={queueServiceScope}
                   pullHoldMinutes={configuration.pullHoldMinutes}
                   delaysHref={DELAYS_HREF}

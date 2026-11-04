@@ -52,6 +52,34 @@ describe("ARCHIVE_PATIENT", () => {
     expect(world.state.patients.at(-1)!.id).not.toBe(world.patient.id);
   });
 
+  it("archives a record that only holds the optional details Add patient records (RF7)", () => {
+    let state: WardFlowState = seedWardFlowState();
+    state = wardFlowReducer(state, {
+      now,
+      type: "ADD_PATIENT",
+      role: "coordinator",
+      umrn: "SYN-ARCHIVE-003",
+      givenName: "Demo",
+      familyName: "Details",
+      dateOfBirth: "1982-01-01",
+      preferredName: "Dee",
+      address: "1 Example Street",
+      generalPractitioner: "Example Clinic",
+      catchmentCommunityTeam: "Example Team",
+      interpreterLanguage: "Example",
+    } as WardFlowEvent);
+    const added = state.patients.at(-1)!;
+    expect(added.address).toBe("1 Example Street");
+    state = wardFlowReducer(state, {
+      now,
+      type: "ARCHIVE_PATIENT",
+      role: "coordinator",
+      patientId: added.id,
+      reason: "test",
+    } as WardFlowEvent);
+    expect(state.patients.some((patient) => patient.id === added.id)).toBe(false);
+  });
+
   it("refuses every other desk", () => {
     const world = withNewPatient();
     world.send({ type: "ARCHIVE_PATIENT", role: "ward", patientId: world.patient.id, reason: "test" } as never);
