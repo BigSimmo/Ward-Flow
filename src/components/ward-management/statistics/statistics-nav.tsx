@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronLeft } from "lucide-react";
+import { ChevronDown, ChevronLeft } from "lucide-react";
 
-import { HeroTrack, Switch } from "@/components/wf";
+import { HeroTrack, Menu, Switch } from "@/components/wf";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
@@ -104,19 +104,22 @@ function useOptionalPathname(): string {
   }
 }
 
-/** The Samples switch. Invented 30-day charts appear at the foot of the page while it is on. */
+/**
+ * The example history switch (was "Samples"; owner polish, 3 Nov 2026). Invented 30-day charts appear
+ * at the foot of the page while it is on. On by default in the demo, off in production.
+ */
 export function StatisticsSamplesSwitch() {
   const samples = useStatisticsSamples();
   return (
     <span className={styles.samples}>
-      <Switch checked={samples} onCheckedChange={setStatisticsSamples} label="Samples" onHero />
+      <Switch checked={samples} onCheckedChange={setStatisticsSamples} label="Show example history" onHero />
     </span>
   );
 }
 
 /**
  * The statistics section track. It sits on each page's hero band: Network and Compare,
- * then the four unit kinds with their counts. On a phone it becomes one native select.
+ * then the four unit kinds with their counts. On a phone it becomes one kit menu of sections.
  */
 export function StatisticsNav({
   currentSection,
@@ -190,29 +193,38 @@ export function StatisticsNav({
     );
   }
 
+  const currentLabel = items.find((item) => item.id === activeSection)?.label ?? "Statistics";
   return (
     // The landmark wraps both forms of the section list, so it is there at every width: the track
-    // on a desktop and the select on a phone.
+    // on a desktop and the section menu on a phone.
     <nav className={styles.navBar} aria-label="Ward Flow statistics sections" data-testid="ward-statistics-nav">
-      <label className={styles.mobileSelect}>
-        <span>Statistics</span>
-        <select
-          aria-label="Statistics section"
-          value={activeSection}
-          onChange={(event) => {
-            const item = items.find((entry) => entry.id === event.target.value);
-            if (!item) return;
+      {/* The phone's section picker: the kit menu, not the browser's own select (owner polish, 3 Nov 2026). */}
+      <Menu
+        label="Statistics section"
+        className={styles.mobileSelect}
+        items={items.map((item) => ({
+          id: item.id,
+          label: item.label,
+          checked: item.id === activeSection,
+          checkable: "radio" as const,
+          onSelect: () => {
+            if (item.id === activeSection) return;
             if (router) router.push(item.href);
             else window.location.assign(item.href);
-          }}
-        >
-          {items.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.label}
-            </option>
-          ))}
-        </select>
-      </label>
+          },
+        }))}
+        trigger={(props) => (
+          <button
+            {...props}
+            type="button"
+            className={styles.mobileTrigger}
+            aria-label={`Statistics section, ${currentLabel}`}
+          >
+            <span className={styles.mobileTriggerLabel}>{currentLabel}</span>
+            <ChevronDown size={16} strokeWidth={1.75} aria-hidden="true" />
+          </button>
+        )}
+      />
       <HeroTrack className={styles.track} label="Statistics sections" value={activeSection} items={items} />
       {withSamples ? <StatisticsSamplesSwitch /> : null}
     </nav>

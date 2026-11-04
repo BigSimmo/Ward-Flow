@@ -661,6 +661,12 @@ export type WardFlowEvent =
       sex?: string;
       suburb?: string;
       aboriginalOrTorresStraitIslanderStatus?: string; // Finding 51: from the listed answers
+      /** RF7 (Josh, 3 Nov 2026): optional typed details; blank is the key absent, as `suburb`. */
+      preferredName?: string;
+      address?: string;
+      generalPractitioner?: string;
+      catchmentCommunityTeam?: string;
+      interpreterLanguage?: string;
     }
   | {
       type: "FLAG_MOVEMENT_TURNAROUND_PRIORITY";

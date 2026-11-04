@@ -13,6 +13,12 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { installMatchMediaStub } from "./setup/jsdom.setup";
 
+/** The week picker is the kit menu (owner polish, 3 Nov 2026): items run from -1 (this week so far) to 7. */
+function chooseWeek(offset: number) {
+  fireEvent.click(screen.getByTestId("ward-weekly-week"));
+  fireEvent.click(screen.getAllByRole("menuitemradio")[offset + 1]!);
+}
+
 afterEach(() => {
   cleanup();
   installMatchMediaStub(false);
@@ -36,7 +42,7 @@ it("carries complete Perth period boundaries and a dated generation stamp on det
   expect(period).not.toHaveTextContent("Counted to");
   expect(screen.getByTestId("ward-weekly-range")).toHaveTextContent("Generated Fri, 23 Oct 2026, 10:42 AWST");
 
-  fireEvent.change(screen.getByTestId("ward-weekly-week"), { target: { value: "-1" } });
+  chooseWeek(-1);
   expect(period).toHaveTextContent("Mon, 19 Oct 2026, 00:00 AWST (inclusive)");
   expect(period).toHaveTextContent("Mon, 26 Oct 2026, 00:00 AWST (exclusive)");
   expect(period).toHaveTextContent("Counted to Fri, 23 Oct 2026, 10:42 AWST (exclusive)");
@@ -58,7 +64,7 @@ it("keeps a historical selected week and its honest occupied-time label when the
     dispatchEvent: vi.fn(),
   }));
   report();
-  fireEvent.change(screen.getByTestId("ward-weekly-week"), { target: { value: "1" } });
+  chooseWeek(1);
   const historicalPercent = screen.getByTestId("ward-weekly-occupancy").textContent;
   act(() => {
     phone = true;
