@@ -79,6 +79,21 @@ describe("audited patient history facts", () => {
     expect(answers.some((answer) => answer.ward === declined.name && answer.outcome === "Declined")).toBe(true);
     expect(answers.some((answer) => answer.ward === accepted.name && answer.outcome === "Accepted")).toBe(true);
   });
+
+  it("shows a waitlist answer once, as Waitlisted, never as a decline or still awaiting", () => {
+    const [ward] = seed.units;
+    const movement = {
+      ...seed.movements[0],
+      referredUnitIds: [ward.id],
+      waitlistedUnitIds: [ward.id],
+      declines: [{ unitId: ward.id, at: 110, reason: "no_suitable_bed" }],
+      referralAnswerHistory: [{ unitId: ward.id, at: 110, answer: "waitlisted" }],
+      acceptedUnitId: undefined,
+    } as Movement;
+    const rows = record(movement).presentations[0].asked.filter((answer) => answer.ward === ward.name);
+    expect(rows.map((row) => row.outcome)).toEqual(["Waitlisted"]);
+    expect(rows[0].why).toBe("No suitable bed");
+  });
 });
 
 describe("audited discharge date consistency", () => {

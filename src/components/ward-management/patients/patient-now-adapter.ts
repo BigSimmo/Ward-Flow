@@ -206,21 +206,25 @@ function presentationAnswers(
   units: readonly Unit[],
 ): PatientNowRecord["presentations"][number]["asked"] {
   const ward = (id: string) => units.find((unit) => unit.id === id)?.name ?? id;
-  const answers = movement.declines.map((decline) => ({
-    ward: ward(decline.unitId),
-    outcome: "Declined",
-    why: decline.reason ? DECLINE_REASON_LABELS[decline.reason] : "",
-  }));
-  for (const answer of movement.referralAnswerHistory ?? []) {
-    if (
-      answer.answer === "declined" &&
-      movement.declines.some((decline) => decline.unitId === answer.unitId && decline.at === answer.at)
-    )
-      continue;
+  const history = movement.referralAnswerHistory ?? [];
+  const declineFor = (answer: { unitId: string; at: Instant }) =>
+    movement.declines.find((decline) => decline.unitId === answer.unitId && decline.at === answer.at);
+  // A "no suitable bed" or "bed pulled" answer also leaves a decline entry, but it waitlists and keeps
+  // the referral live: it is shown once, as Waitlisted, never as a refusal (Codex review of #1331).
+  const answers = movement.declines
+    .filter((d) => !history.some((a) => a.answer === "waitlisted" && a.unitId === d.unitId && a.at === d.at))
+    .map((decline) => ({
+      ward: ward(decline.unitId),
+      outcome: "Declined",
+      why: decline.reason ? DECLINE_REASON_LABELS[decline.reason] : "",
+    }));
+  for (const answer of history) {
+    const decline = declineFor(answer);
+    if (answer.answer === "declined" && decline) continue;
     answers.push({
       ward: ward(answer.unitId),
       outcome: answer.answer === "waitlisted" ? "Waitlisted" : answer.answer === "declined" ? "Declined" : "Withdrawn",
-      why: "",
+      why: answer.answer === "waitlisted" && decline?.reason ? DECLINE_REASON_LABELS[decline.reason] : "",
     });
   }
   for (const withdrawn of movement.withdrawnReferrals) {
@@ -233,7 +237,7 @@ function presentationAnswers(
   }
   if (movement.acceptedUnitId) answers.push({ ward: ward(movement.acceptedUnitId), outcome: "Accepted", why: "" });
   for (const id of movement.referredUnitIds)
-    if (id !== movement.acceptedUnitId)
+    if (id !== movement.acceptedUnitId && !movement.waitlistedUnitIds?.includes(id))
       answers.push({ ward: ward(id), outcome: "Referred — awaiting response", why: "" });
   return answers;
 }
