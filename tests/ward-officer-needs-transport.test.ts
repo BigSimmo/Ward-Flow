@@ -45,7 +45,6 @@ describe("returnPlanBooking", () => {
   });
 
   it("keeps an unanswered escort unanswered", () => {
-    const { escortRequired: _omit, ...noEscort } = plan;
-    expect(returnPlanBooking(noEscort, NOW).escortRequired).toBeUndefined();
+    expect(returnPlanBooking({ ...plan, escortRequired: undefined }, NOW).escortRequired).toBeUndefined();
   });
 });
