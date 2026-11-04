@@ -93,7 +93,11 @@ function visibleArea(element: HTMLElement) {
  * edge pushed it off the side. It flips above when there is more room there, caps its height to the
  * room it has and scrolls inside, and slides sideways back into view.
  */
-function usePanelFit(open: boolean, anchorRef: RefObject<HTMLElement | null>, panelRef: RefObject<HTMLElement | null>) {
+export function usePanelFit(
+  open: boolean,
+  anchorRef: RefObject<HTMLElement | null>,
+  panelRef: RefObject<HTMLElement | null>,
+) {
   useLayoutEffect(() => {
     const anchor = anchorRef.current;
     const panel = panelRef.current;
@@ -132,7 +136,7 @@ function usePanelFit(open: boolean, anchorRef: RefObject<HTMLElement | null>, pa
 }
 
 /** Closes on a pointer press outside the anchor. */
-function useOutsidePress(open: boolean, anchorRef: RefObject<HTMLElement | null>, onClose: () => void) {
+export function useOutsidePress(open: boolean, anchorRef: RefObject<HTMLElement | null>, onClose: () => void) {
   useEffect(() => {
     if (!open) return;
     function onPointerDown(event: PointerEvent) {
