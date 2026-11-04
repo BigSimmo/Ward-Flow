@@ -148,9 +148,11 @@
   border-bottom: 1px solid var(--wf-line-2);
 }
 
+/* PL1: the A to Z search takes the card's full width on its own row, as on Places, so the
+   placeholder reads whole instead of "Team, s". The filters sit on the row under it. */
 .searchBox {
-  flex: 0 1 8.5rem;
-  min-width: 7rem;
+  flex: 1 1 100%;
+  min-width: 0;
 }
 
 .headNote {

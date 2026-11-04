@@ -44,7 +44,7 @@ describe("P153: way back from Not yet identified", () => {
     expect(screen.queryByTestId("ward-referral-unidentified-description")).toBeNull();
     expect(screen.queryByRole("button", { name: "Find a patient instead" })).toBeNull();
     expect(screen.getByTestId("ward-referral-unidentified")).toBeTruthy();
-    const search = screen.getByRole("searchbox", { name: "Find a patient" });
+    const search = screen.getByRole("combobox", { name: "Find a patient" });
     await vi.waitFor(() => expect(document.activeElement).toBe(search));
   });
 });

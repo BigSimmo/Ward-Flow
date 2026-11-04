@@ -64,7 +64,7 @@ describe("referral refusal points at the field it names (RC-N2)", () => {
         <WardReferralDrawer onClose={vi.fn()} />
       </WardFlowProvider>,
     );
-    const search = await screen.findByRole("searchbox", { name: "Find a patient" });
+    const search = await screen.findByRole("combobox", { name: "Find a patient" });
     expect(search).not.toHaveAttribute("aria-invalid");
     fireEvent.click(screen.getByRole("button", { name: /^Next, referral/ }));
     // Error summary mock-up (24 Oct 2026): the refusal leads with the summary; its link reaches the field.

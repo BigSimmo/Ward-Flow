@@ -103,7 +103,7 @@ export const PAIRS = [
 export const SUPERSEDED = ["patient-search-console.html", "patient-search-working.html"];
 
 /**
- * Complete 55-route roster mapping every commissioned Ward Flow route (53 under
+ * Complete 56-route roster mapping every commissioned Ward Flow route (54 under
  * `/ward-flow/**` plus `/ward-flow-sign-in` and `/mockups/ward-flow-digest`)
  * to its screen folder and current React component file relative to
  * `src/components/ward-management/` (`null` for server redirect stubs and the HTML digest route handler).
@@ -116,7 +116,7 @@ export const ROUTE_COMPONENTS = [
   { route: "/board/[unitId]", folder: "board", react: "board/ward-board.tsx" },
   { route: "/capacity", folder: "capacity", react: "capacity/capacity-screen.tsx" },
   { route: "/command", folder: "coordinator", react: null },
-  { route: "/community", folder: "community", react: "community/community-index.tsx" },
+  { route: "/community", folder: "community", react: null },
   { route: "/community/[teamId]", folder: "community", react: "community/community-screen.tsx" },
   { route: "/constellation", folder: "network", react: null },
   { route: "/delays", folder: "delays", react: null },
@@ -128,6 +128,7 @@ export const ROUTE_COMPONENTS = [
   { route: "/governance", folder: "governance", react: "ward-management-modes.tsx" },
   { route: "/handover", folder: "handover", react: "handover/handover-page.tsx" },
   { route: "/hub", folder: "hub", react: "hub/hub-screen.tsx" },
+  { route: "/hub/catchments", folder: "community", react: "community/community-index.tsx" },
   { route: "/legal-forms", folder: "legal-forms", react: "legal-forms/legal-forms-screen.tsx" },
   { route: "/movements", folder: "movements", react: "movements/movements-screen.tsx" },
   { route: "/movements/[movementId]", folder: "patients", react: "patients/patient-now-screen.tsx" },

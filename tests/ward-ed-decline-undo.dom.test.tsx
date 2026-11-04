@@ -47,9 +47,9 @@ describe("ED page — decline with Undo", () => {
     const button = screen.getAllByTestId(/^ward-ed-inbox-decline-[^p]/u)[0];
     const referralId = button.getAttribute("data-testid")!.replace("ward-ed-inbox-decline-", "");
     fireEvent.click(button);
-    const reason = screen.getByTestId(`ward-ed-inbox-decline-reason-${referralId}`) as HTMLSelectElement;
-    const option = Array.from(reason.options).find((candidate) => candidate.value !== "");
-    fireEvent.change(reason, { target: { value: option!.value } });
+    // L31: the reason is the kit list picker; its first option is a real reason, Clear sits at the foot.
+    fireEvent.click(screen.getByTestId(`ward-ed-inbox-decline-reason-${referralId}`));
+    fireEvent.click(screen.getAllByRole("option")[0]);
     fireEvent.click(screen.getByTestId(`ward-ed-inbox-decline-confirm-${referralId}`));
 
     expect(screen.queryByTestId(`ward-ed-inbox-decline-${referralId}`)).toBeNull();
