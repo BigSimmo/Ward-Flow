@@ -209,10 +209,17 @@ const AROUND: readonly Around[] = [
     keywords: "bed release list",
     steps: [
       {
-        // A phone's hero folds the counts away and keeps the next step row (plan item 2i).
-        target: [id("ward-discharge-kpi-strip"), { sel: "#main-content [data-wf-hero-next]" }],
+        device: "desk",
+        target: id("ward-discharge-kpi-strip"),
         title: "Discharges today",
         body: "Held up, confirmed, expected, and discharged in the last day.",
+      },
+      {
+        // A phone's hero folds the four counts away, so its overview points at the headline counts.
+        device: "phone",
+        target: id("ward-discharge-bed-days-past"),
+        title: "Discharges today",
+        body: "How many to work now, how many are open, and bed days past the ward's date.",
       },
       {
         target: id("ward-discharge-group-blocked"),
@@ -694,7 +701,11 @@ export const MORE_JOBS: readonly HowTo[] = [
     go: "discharges",
     showMe: [
       {
-        target: [{ sel: '[data-testid="ward-discharge-kpi-blocked"]' }, { sel: "#main-content [data-wf-hero-next]" }],
+        // The phone fallback is the next step row only when it names held-up discharges.
+        target: [
+          { sel: '[data-testid="ward-discharge-kpi-blocked"]' },
+          { sel: "#main-content [data-wf-hero-next]", text: "held-up" },
+        ],
         title: "Held up",
         body: "How many discharges have something in the way.",
       },
