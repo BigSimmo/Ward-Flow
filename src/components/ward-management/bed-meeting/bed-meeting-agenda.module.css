@@ -380,3 +380,79 @@
     gap: var(--wf-s-2);
   }
 }
+
+/* B1 extended (Josh, 4 Nov 2026): the list chips and one quiet Filter button share a line. */
+.chipLine {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.chipLine > .chipRow {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.groupFilter {
+  flex: none;
+  margin-inline-start: auto;
+}
+
+.groupPanel {
+  inline-size: min(26rem, calc(100vw - 2rem));
+  max-block-size: min(32rem, calc(100dvh - 12rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.groupBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  padding: var(--wf-s-4);
+}
+
+.groupFacet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+.groupHead {
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--wf-ink-3);
+}
+
+.groupFoot {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--wf-s-2);
+  padding-block-start: var(--wf-s-3);
+  border-block-start: 1px solid var(--wf-line);
+}
+
+.appliedLine {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.appliedLine > .chipRow {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.clearGroups {
+  flex: none;
+}
+
+@media print {
+  .groupFilter,
+  .clearGroups {
+    display: none !important;
+  }
+}

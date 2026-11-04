@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Check, Plus } from "lucide-react";
 
 import {
+  AppliedFilter,
   Button,
   buttonClass,
   Card,
@@ -62,6 +63,19 @@ import {
 } from "./bed-meeting-actions";
 import { bedMeetingAgenda, meetingActionSummary, type AgendaItem, type MeetingActionRow } from "./bed-meeting-agenda";
 import styles from "./bed-meeting-agenda.module.css";
+import { AgendaGroupFilterControl, toggleGroup } from "./bed-meeting-group-filter";
+import {
+  AGENDA_GROUP_FACETS,
+  agendaGroupFilterActive,
+  agendaGroupOptions,
+  agendaGroupValueLabel,
+  agendaGroupFilterWords,
+  agendaGroupHidesReferrals,
+  inAgendaGroups,
+  movementInAgendaGroups,
+  referralInAgendaGroups,
+  type AgendaGroupFilter,
+} from "./bed-meeting-groups";
 import { useBedMeetingDone, type MarkBedMeetingActionDone } from "./use-bed-meeting-done";
 
 /**
@@ -126,6 +140,9 @@ function BedMeetingAgenda() {
   const service = useServiceScope();
   const [chips, setChips] = useState<ReadonlySet<ListChip>>(new Set());
   const [query, setQuery] = useState("");
+  // B1 extended (Josh, 4 Nov 2026): narrow every list to any group (ward, tier, legal status, age).
+  const [groups, setGroups] = useState<AgendaGroupFilter>({});
+  const grouped = agendaGroupFilterActive(groups);
 
   const scopedMovements = useMemo(
     () =>
@@ -137,13 +154,17 @@ function BedMeetingAgenda() {
     const inService = new Set(units.filter((unit) => unitHealthService(unit) === service).map((unit) => unit.id));
     return admissions.filter((admission) => inService.has(admission.unitId));
   }, [admissions, service, units]);
-  const queue = useMemo(
+  const serviceQueue = useMemo(
     () =>
       referralQueueOrder([...referrals]).filter(
         (referral) => service === null || siteByCode(referral.originSiteCode)?.service === service,
       ),
     [referrals, service],
   );
+  // A referral has a tier but no ward, legal status or age group recorded yet, so only the tier
+  // filter keeps it; any other group filter leaves the referral list out.
+  const queue = grouped ? serviceQueue.filter((referral) => referralInAgendaGroups(referral, groups)) : serviceQueue;
+  const referralsHidden = grouped && agendaGroupHidesReferrals(groups);
 
   // The same printed sheet Capacity opens, built only while it is open, for the chosen service.
   const buildSheet = () =>
@@ -159,14 +180,39 @@ function BedMeetingAgenda() {
       nameOf: (movement) => patientOf(movement).formalName,
       referrals,
       referralLimitMinutes: configuration.referralDecisionTargetMinutes,
+      // B1 extended (Josh, 4 Nov 2026): the printout matches the room. Bed figures stay whole.
+      ...(grouped
+        ? {
+            movements: movements.filter((movement) => movementInAgendaGroups(movement, groups, groupContext)),
+            referrals: referrals.filter((referral) => referralInAgendaGroups(referral, groups)),
+            peopleFilter: agendaGroupFilterWords(groups, units),
+          }
+        : {}),
     });
 
-  const sections = bedMeetingAgenda(
+  const allSections = bedMeetingAgenda(
     { movements: scopedMovements, admissions: scopedAdmissions, bedReleases, units },
     now,
     Number.POSITIVE_INFINITY,
   );
-  const summary = meetingActionSummary(scopedMovements, scopedAdmissions, now);
+  const groupContext = { units, movements: scopedMovements };
+  const groupOptions = agendaGroupOptions(
+    allSections.flatMap((section) => section.items),
+    groupContext,
+  );
+  const inGroups = (item: AgendaItem) => inAgendaGroups(item, groups, groupContext);
+  const sections = grouped
+    ? allSections.map((section) => ({ ...section, items: section.items.filter(inGroups) }))
+    : allSections;
+  const fullSummary = meetingActionSummary(scopedMovements, scopedAdmissions, now);
+  const actionInGroups = (row: MeetingActionRow) => inGroups({ subject: row.subject, record: row.record, detail: "" });
+  const summary = grouped
+    ? {
+        ...fullSummary,
+        overdue: fullSummary.overdue.filter(actionInGroups),
+        open: fullSummary.open.filter(actionInGroups),
+      }
+    : fullSummary;
   const unitName = (unitId: string | undefined) => units.find((unit) => unit.id === unitId)?.name;
   // A double click must close one action only. The list shifts up as an action closes, so a second
   // click lands on the next row, often another person's (Audit 7 NB-02). One Done per short pause.
@@ -249,6 +295,7 @@ function BedMeetingAgenda() {
             })),
         ]
           .filter((item) => {
+            if (!inGroups(item)) return false;
             const who = patientOf(item.record);
             return who.formalName.toLowerCase().includes(needle) || who.umrn.toLowerCase().includes(needle);
           })
@@ -334,15 +381,48 @@ function BedMeetingAgenda() {
             data-testid="bed-meeting-agenda-search"
           />
         </div>
-        <ChipGroup label="Lists" className={styles.chipRow}>
-          {LIST_CHIPS.map(([id, label]) =>
-            listCount(id) === 0 && !chips.has(id) ? null : (
-              <FilterChip key={id} pressed={chips.has(id)} count={listCount(id)} onPressedChange={() => toggleChip(id)}>
-                {label}
-              </FilterChip>
-            ),
-          )}
-        </ChipGroup>
+        <div className={styles.chipLine}>
+          <ChipGroup label="Lists" className={styles.chipRow}>
+            {LIST_CHIPS.map(([id, label]) =>
+              listCount(id) === 0 && !chips.has(id) ? null : (
+                <FilterChip
+                  key={id}
+                  pressed={chips.has(id)}
+                  count={listCount(id)}
+                  onPressedChange={() => toggleChip(id)}
+                >
+                  {label}
+                </FilterChip>
+              ),
+            )}
+          </ChipGroup>
+          <AgendaGroupFilterControl options={groupOptions} value={groups} onChange={setGroups} />
+        </div>
+        {grouped ? (
+          <div className={styles.appliedLine} data-testid="bed-meeting-agenda-groups-applied">
+            <ChipGroup label="Showing only" className={styles.chipRow}>
+              {AGENDA_GROUP_FACETS.flatMap((facet) =>
+                [...(groups[facet] ?? [])].map((value) => (
+                  <AppliedFilter
+                    key={`${facet}-${value}`}
+                    onRemove={() => setGroups((current) => toggleGroup(current, facet, value))}
+                  >
+                    {agendaGroupValueLabel(facet, value, units)}
+                  </AppliedFilter>
+                )),
+              )}
+            </ChipGroup>
+            <Button size="sm" variant="ghost" className={styles.clearGroups} onClick={() => setGroups({})}>
+              Clear
+            </Button>
+          </div>
+        ) : null}
+        {referralsHidden && serviceQueue.length > 0 ? (
+          <p className={styles.note} data-testid="bed-meeting-agenda-referrals-hidden">
+            {serviceQueue.length === 1 ? "1 referral is" : `${serviceQueue.length} referrals are`} left out. A referral
+            has a tier, but no ward, legal status or age group yet.
+          </p>
+        ) : null}
       </div>
 
       {needle.length >= SEARCH_MIN ? (
