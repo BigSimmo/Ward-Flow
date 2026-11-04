@@ -136,7 +136,7 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
     "/ward-flow/bed-meeting/agenda",
     { concrete: "/ward-flow/bed-meeting/agenda", render: () => <BedMeetingAgendaScreen /> },
   ],
-  ["/ward-flow/community", { concrete: "/ward-flow/community", render: () => <CommunityIndex /> }],
+  ["/ward-flow/hub/catchments", { concrete: "/ward-flow/hub/catchments", render: () => <CommunityIndex inPlaces /> }],
   [
     "/ward-flow/community/[teamId]",
     { concrete: `/ward-flow/community/${team.id}`, render: () => <CommunityScreen teamId={team.id} /> },

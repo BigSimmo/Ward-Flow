@@ -26,6 +26,7 @@ export function subjectId(event: WardFlowEvent): string {
       return event.admissionId;
     // v10 pass 3: a step undo is filed against the subject it names; a handover sign-off has none.
     case "UNDO_REPATRIATION":
+    case "UNDO_FLAG_RETURN_EARLY":
     case "UNDO_DEPARTURE":
     case "UNDO_ABSENT_WITHOUT_LEAVE":
     case "UNDO_ED_STEP":
@@ -145,6 +146,7 @@ export function subjectId(event: WardFlowEvent): string {
     case "RECORD_WARD_DIAGNOSIS":
     // Closing-the-loop (package E).
     case "RECORD_HOME_SERVICE_RETURN":
+    case "FLAG_RETURN_EARLY":
     case "SET_DISCHARGE_BARRIER":
     case "SET_DISCHARGE_CRITERIA":
       return event.admissionId;
