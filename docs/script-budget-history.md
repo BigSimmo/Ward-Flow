@@ -1,5 +1,7 @@
 # Script budget history
 
+New entries from 4 November 2026 go in their own files in [`script-budget-history/`](script-budget-history/README.md), one per PR, so parallel PRs stop conflicting here. This file keeps the history up to then.
+
 Raise and lowering history for `script-budget.json`, moved out of its `$comment` field on 26 October 2026 (audit item 6). Text is verbatim; budget values were not changed by the move.
 
 Phone first-load script budgets in KB gzipped, checked by scripts/check-script-budget.mjs after the production build. Set on 16 October 2026 at the measured size plus about 10 KB, and lowered the same day after the rail and search left a phone's first load. Lower a budget when a route shrinks. Raise one only with a reason in the PR.

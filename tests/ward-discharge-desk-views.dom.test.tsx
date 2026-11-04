@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -43,6 +43,9 @@ function renderBoard() {
   );
 }
 
+/** Each filter is a kit menu; its trigger reads "<filter>: <current choice>". */
+const filterPick = (label: string) => screen.queryByRole("button", { name: new RegExp(`^${label}: `) });
+
 const worklistButtons = () =>
   within(screen.getByRole("region", { name: "Discharge worklist" }))
     .queryAllByRole("button")
@@ -60,10 +63,17 @@ describe("Discharges as each desk reads it", () => {
   it("the coordinator keeps the statewide wording, every filter and Confirm date", () => {
     renderBoard();
     expect(screen.getByText("Discharges · all services")).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Service" })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Ward" })).toBeInTheDocument();
+    for (const label of ["Service", "Ward", "Held up by", "Sort"]) {
+      expect(filterPick(label)).toBeInTheDocument();
+    }
+    // A filter opens as a radio menu, not a browser drop-down.
+    fireEvent.click(filterPick("Service")!);
+    const serviceMenu = screen.getByRole("menu", { name: "Service" });
+    expect(within(serviceMenu).getByRole("menuitemradio", { name: "All" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByRole("columnheader", { name: "Person" })).toBeInTheDocument();
     expect(worklistButtons()).toContain("Confirm date");
+    // The coordinator's one-tap chase of overdue dates.
+    expect(screen.getByTestId("ward-discharge-chase")).toBeInTheDocument();
   });
 
   it("the nurse in charge reads its own ward, without the Service and Ward filters or the ward line", () => {
@@ -71,8 +81,8 @@ describe("Discharges as each desk reads it", () => {
     renderBoard();
     expect(screen.getByText(`Discharges · ${WARD.name}`)).toBeInTheDocument();
     expect(screen.queryByText("Discharges · all services")).not.toBeInTheDocument();
-    expect(screen.queryByRole("combobox", { name: "Service" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("combobox", { name: "Ward" })).not.toBeInTheDocument();
+    expect(filterPick("Service")).not.toBeInTheDocument();
+    expect(filterPick("Ward")).not.toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: "Person" })).toBeInTheDocument();
     const worklist = screen.getByRole("region", { name: "Discharge worklist" });
     expect(within(worklist).queryByText(new RegExp(`^${WARD.name} · `))).not.toBeInTheDocument();
@@ -82,8 +92,10 @@ describe("Discharges as each desk reads it", () => {
     deskAs({ role: "bed_manager", scope: { kind: "site", siteCode: WARD.siteCode } });
     renderBoard();
     expect(screen.getByText(`Discharges · ${SITE.name}`)).toBeInTheDocument();
-    expect(screen.queryByRole("combobox", { name: "Service" })).not.toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Ward" })).toBeInTheDocument();
+    expect(filterPick("Service")).not.toBeInTheDocument();
+    expect(filterPick("Ward")).toBeInTheDocument();
+    // The chase strip is the coordinator's alone.
+    expect(screen.queryByTestId("ward-discharge-chase")).not.toBeInTheDocument();
     // Only the ward or the coordinator can change an expected date (Josh, 30 Oct).
     expect(worklistButtons()).not.toContain("Confirm date");
     expect(worklistButtons()).toContain("Open");

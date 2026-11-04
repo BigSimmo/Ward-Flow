@@ -77,8 +77,8 @@ function evidence(overrides: Record<string, unknown> = {}) {
 describe("main-push reuse decision", () => {
   it("reads the shard and group counts the workflow declares", () => {
     expect(counts).toEqual({
-      "unit shard": 8,
-      "legal-figure sweep": 8,
+      "unit shard": 6,
+      "legal-figure sweep": 6,
       "browser group": 3,
       coverage: 1,
       "production build": 1,
@@ -232,7 +232,7 @@ describe("main-push reuse decision", () => {
         greenJobs().filter((job) => job.name !== "Ward Flow unit shard 3"),
         counts,
       ),
-    ).toMatch(/7 of 8 unit shard/u);
+    ).toMatch(/5 of 6 unit shard/u);
     expect(
       runEvidenceGap(
         greenJobs().filter((job) => job.name !== "Ward Flow browser journeys 2"),

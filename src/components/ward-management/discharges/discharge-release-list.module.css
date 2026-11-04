@@ -2,6 +2,11 @@
 .actionHead {
   width: 1%;
 }
+.rowAction.rowAction,
+.rowAction.rowAction * {
+  white-space: nowrap;
+  max-width: none;
+}
 .actionCell {
   width: 1%;
   white-space: nowrap;
@@ -18,7 +23,7 @@
   min-width: 0;
 }
 @media (min-width: 80rem) {
-  .workspace.workspace:not([data-detail-open]) {
+  .workspace.workspace:not([data-detail-open]):not([data-recorded]) {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(20rem, 26rem);
     gap: var(--wf-s-4);
@@ -115,4 +120,99 @@
   white-space: normal;
   text-overflow: clip;
   overflow-wrap: break-word;
+}
+
+/* Filter picks (Q12, 3 Nov 2026): kit menus in the look of the old filter pills. */
+.pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: var(--wf-h-sm);
+  padding: 0 10px 0 12px;
+  box-sizing: border-box;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
+}
+.pick:hover {
+  border-color: var(--wf-line-3);
+}
+.pick:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.pickValue {
+  max-width: 13rem;
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  text-overflow: ellipsis;
+}
+.pickChevron {
+  color: var(--wf-ink-3);
+}
+.pickOn.pickOn {
+  background: var(--wf-accent-tint);
+  border-color: color-mix(in srgb, var(--wf-accent) 60%, transparent);
+}
+.pickOn .pickLabel,
+.pickOn .pickValue,
+.pickOn .pickChevron {
+  color: var(--wf-accent-ink);
+}
+.sortPick {
+  margin-left: auto;
+}
+.sortPick .pick {
+  border-color: transparent;
+  background: transparent;
+}
+
+/* Recorded (DC4): the 7 day follow-up word, with its mark. */
+.followUp {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  white-space: nowrap;
+}
+.followUp[data-warning] {
+  color: var(--wf-ink-1);
+}
+
+/* DC1 round 2 (3 Nov 2026): the coordinator's one-tap chase, a quiet line under the hero. */
+.chase {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  border: 1px solid var(--wf-line);
+  font-size: 0.875rem;
+  color: var(--wf-ink-2);
+}
+
+.chaseText {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--wf-warning-ink);
+}
+
+.chaseText strong {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+}
+.chase :global(button) {
+  flex: none;
+  white-space: nowrap;
 }

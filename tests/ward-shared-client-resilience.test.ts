@@ -78,14 +78,129 @@ describe("shared workspace resilience (audit 4)", () => {
     online = false;
     expect((await client.dispatch(event)).status).toBe("failed");
     expect(view()?.error).toBe(
-      "Your change may not have been saved. Press Retry when you are back online. It will not be saved twice.",
+      "Your change may not have been saved. It sends again by itself when you are back online, or press Retry. It will not be saved twice.",
     );
     online = true;
     await client.refresh();
-    expect(view()?.snapshot?.revision).toBe(2);
+    // Tier 1 item 1: once the board reads again, the waiting save goes by itself with the same ID.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(view()?.snapshot?.revision).toBe(9);
+    expect(view()?.status).toBe("ready");
+    expect(view()?.unconfirmedSave).toBe(false);
+    client.dispose();
+  });
+
+  it("keeps saves made while offline and sends them in order, each on the board it was made on (Tier 1 item 1)", async () => {
+    let online = true;
+    const sent: { commandId: string; expectedRevision: number; event: WardFlowEvent }[] = [];
+    let revision = 4;
+    const { client, view } = setup(({ read }) => {
+      if (!online) throw new TypeError("offline");
+      if (read) return Response.json({ snapshot: snapshot(revision) });
+      return Response.json({ outcome: "accepted", commandRevision: ++revision, snapshot: snapshot(revision) });
+    });
+    const capture = client as unknown as { options: { fetch: typeof fetch } };
+    const answer = capture.options.fetch;
+    capture.options.fetch = async (url, options) => {
+      if (options?.body) sent.push(JSON.parse(String(options.body)));
+      return answer(url, options);
+    };
+    await client.refresh();
+    online = false;
+    const first = await client.dispatch(event);
+    expect(first.status).toBe("failed");
+    const second = { ...event, unitId: "ward-other" } as WardFlowEvent;
+    const held = await client.dispatch(second);
+    expect(held.status).toBe("failed");
+    expect(held.message).toContain("waiting on this page");
     expect(view()?.status).toBe("unavailable");
-    expect(view()?.error).toBe("Your last change was not confirmed. The board is up to date. Press Retry to send it.");
-    expect(view()?.boardCurrent).toBe(true);
+    expect(view()?.waiting).toBe(2);
+    // Another desk saves meanwhile: the board moves on to revision 6 before this tab reconnects.
+    revision = 6;
+    online = true;
+    sent.length = 0;
+    await client.refresh();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(sent.map((body) => (body.event as { unitId?: string }).unitId)).toEqual(["ward-test", "ward-other"]);
+    // Both were made on revision 4, so the server checks them against 4, not the newer board.
+    expect(sent.map((body) => body.expectedRevision)).toEqual([4, 4]);
+    expect(view()?.waiting).toBe(0);
+    expect(view()?.status).toBe("ready");
+    expect((await first.confirmation)?.status).toBe("accepted");
+    client.dispose();
+  });
+
+  it("pins an action made while a save waits, even when the connection returns before the next read (Tier 1 item 1)", async () => {
+    let online = true;
+    const sent: { expectedRevision: number; event: WardFlowEvent }[] = [];
+    const { client } = setup(({ read }) => {
+      if (!online) throw new TypeError("offline");
+      if (read) return Response.json({ snapshot: snapshot(4) });
+      // Another desk saved meanwhile: the resend lands on revision 7.
+      return Response.json({ outcome: "accepted", commandRevision: 7, snapshot: snapshot(7) });
+    });
+    const capture = client as unknown as { options: { fetch: typeof fetch } };
+    const answer = capture.options.fetch;
+    capture.options.fetch = async (url, options) => {
+      if (options?.body) sent.push(JSON.parse(String(options.body)));
+      return answer(url, options);
+    };
+    await client.refresh();
+    online = false;
+    expect((await client.dispatch(event)).status).toBe("failed");
+    online = true;
+    sent.length = 0;
+    const later = client.dispatch({ ...event, unitId: "ward-other" } as WardFlowEvent);
+    await later;
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(sent.map((body) => body.expectedRevision)).toEqual([4, 4]);
+    client.dispose();
+  });
+
+  it("stops sending by itself once the server answers a resend with an error (Tier 1 item 1)", async () => {
+    let online = true;
+    let posts = 0;
+    const { client } = setup(({ read }) => {
+      if (!online) throw new TypeError("offline");
+      if (read) return Response.json({ snapshot: snapshot(3) });
+      posts++;
+      return new Response("busy", { status: 500 });
+    });
+    await client.refresh();
+    online = false;
+    expect((await client.dispatch(event)).status).toBe("failed");
+    online = true;
+    await client.refresh();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(posts).toBe(1);
+    await client.refresh();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(posts).toBe(1);
+    client.dispose();
+  });
+
+  it("still refuses a waiting save another desk changed first, and does not resend it (Tier 1 item 1)", async () => {
+    let online = true;
+    let posts = 0;
+    const { client, view } = setup(({ read }) => {
+      if (!online) throw new TypeError("offline");
+      if (read) return Response.json({ snapshot: snapshot(3) });
+      posts++;
+      return Response.json({ error: "stale", code: "stale", snapshot: snapshot(3) }, { status: 409 });
+    });
+    await client.refresh();
+    online = false;
+    const first = await client.dispatch(event);
+    expect(first.status).toBe("failed");
+    online = true;
+    await client.refresh();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect((await first.confirmation)?.status).toBe("refused");
+    expect(view()?.waiting).toBe(0);
+    await client.refresh();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(posts).toBe(1);
     client.dispose();
   });
 

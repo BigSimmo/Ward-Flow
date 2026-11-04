@@ -99,19 +99,21 @@ describe("the discharge board's KPI captions no longer assert what the count doe
     expect(within(screen.getByTestId("ward-discharge-kpi-departed")).getByText("Discharged · 24h")).toBeInTheDocument();
   });
 
-  it("retitles the KPI cards to the records population once the population switch is used", () => {
+  it("hides the KPI cards in Recorded, so no releases caption describes recorded discharges", () => {
     renderBoard();
+    expect(screen.getByTestId("ward-discharge-kpi-strip")).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /^History/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Recorded/ }));
 
-    // Before this fix these two cards still read "Blocked releases" / "Discharged · 24h"
-    // while counting admission records, not releases.
-    expect(within(screen.getByTestId("ward-discharge-kpi-blocked")).getByText("Held up")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-discharge-kpi-blocked")).toHaveAccessibleName(/^\d+ Held up \(Records held up\)$/);
-    expect(within(screen.getByTestId("ward-discharge-kpi-blocked")).queryByText("Blocked releases")).toBeNull();
-    expect(within(screen.getByTestId("ward-discharge-kpi-departed")).getByText("Discharged")).toBeInTheDocument();
-    expect(within(screen.getByTestId("ward-discharge-kpi-departed")).queryByText("Discharged · 24h")).toBeNull();
-    expect(within(screen.getByTestId("ward-discharge-kpi-confirmed")).getByText("Confirmed")).toBeInTheDocument();
-    expect(within(screen.getByTestId("ward-discharge-kpi-expected")).getByText("Expected")).toBeInTheDocument();
+    // DC4 (Josh, 3 Nov 2026): Recorded lists only the last 7 days of discharges, so the pipeline
+    // KPI strip is hidden there. Before the original fix these cards read "Blocked releases" /
+    // "Discharged · 24h" while counting admission records; now no such caption can show at all.
+    expect(screen.queryByTestId("ward-discharge-kpi-strip")).toBeNull();
+    for (const key of ["blocked", "confirmed", "expected", "departed"]) {
+      expect(screen.queryByTestId(`ward-discharge-kpi-${key}`)).toBeNull();
+    }
+    expect(screen.queryByText("Blocked releases")).toBeNull();
+    expect(screen.queryByText("Discharged · 24h")).toBeNull();
+    expect(screen.getByText(/^\d+ discharges? recorded$/)).toBeInTheDocument();
   });
 });
