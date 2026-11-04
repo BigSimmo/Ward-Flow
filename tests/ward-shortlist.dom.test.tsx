@@ -127,7 +127,7 @@ describe("ShortlistPanel escalation contact", () => {
     // "did this really happen" assertion in this panel already holds to (`overrideSucceeded`,
     // the referral badges) — never a captured local flag.
     const record = screen.getByTestId("ward-shortlist-escalation-record");
-    expect(record.textContent).toContain(`contact: "${chosen}"`);
+    expect(record.textContent).toContain(`Contact: ${chosen}.`);
     // The submit button re-opens as "Update escalation" once a record exists — proof the
     // dispatch actually reached the reducer and stuck, not merely that the form closed.
     expect(screen.getByTestId("ward-shortlist-escalation-toggle").textContent).toBe("Update escalation");
@@ -151,7 +151,7 @@ describe("ShortlistPanel escalation contact", () => {
     expect(submit).not.toHaveAttribute("aria-disabled");
     fireEvent.click(submit);
     expect(screen.getByTestId("ward-shortlist-escalation-record").textContent).toContain(
-      `contact: "${ESCALATION_CONTACTS[0]}"`,
+      `Contact: ${ESCALATION_CONTACTS[0]}.`,
     );
   });
 });

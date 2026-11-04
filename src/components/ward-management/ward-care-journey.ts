@@ -94,7 +94,7 @@ export type CareChange =
       leastRestrictiveReviewed: boolean;
       regionalServiceConfirmed: boolean;
     }
-  | { kind: "transfer"; receivingUnitId: string; step: "accepted" | "handover" | "arrived" }
+  | { kind: "transfer"; receivingUnitId: string; step: "accepted" | "handover" | "arrived" | "cancelled" }
   | { kind: "legal"; authority: "revocation" | "5A" | "5B"; writtenAt: Instant; paperChecked: true };
 export type CareJourney = {
   followUp?: Extract<CareChange, { kind: "follow_up" }> & Stamp & { appointmentVersion: number };
@@ -176,7 +176,7 @@ export function validCareChange(value: unknown): value is CareChange {
         exact(v, ["kind", "receivingUnitId", "step"]) &&
         typeof v.receivingUnitId === "string" &&
         !!v.receivingUnitId &&
-        member(["accepted", "handover", "arrived"], v.step)
+        member(["accepted", "handover", "arrived", "cancelled"], v.step)
       );
     case "legal":
       return (
@@ -352,10 +352,18 @@ export function careChangeRefusal(admission: Admission, change: CareChange, now:
   if (change.kind === "transfer") {
     if (change.receivingUnitId === admission.unitId) return "Choose a different receiving ward.";
     const previous = care.transfer;
+    if (change.step === "cancelled")
+      return previous &&
+        previous.receivingUnitId === change.receivingUnitId &&
+        (previous.step === "accepted" || previous.step === "handover")
+        ? null
+        : "Only the current uncompleted transfer can be cancelled.";
     if (change.step === "accepted") {
       // Older saves copied the completed incoming transfer onto the receiving stay.
       const incomingCompleted = previous?.step === "arrived" && previous.receivingUnitId === admission.unitId;
-      return previous && !incomingCompleted ? "A transfer acceptance is already recorded." : null;
+      return previous && previous.step !== "cancelled" && !incomingCompleted
+        ? "A transfer acceptance is already recorded."
+        : null;
     }
     if (
       !previous ||
