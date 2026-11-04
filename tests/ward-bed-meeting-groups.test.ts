@@ -50,6 +50,29 @@ describe("bed meeting agenda groups", () => {
     expect(both.length).toBeLessThanOrEqual(tier1.length);
   });
 
+  it("reads a stay's tier through Movement.admissionId when the stay holds no movementId", () => {
+    const journey = seed.movements[0]!;
+    const unitId = journey.acceptedUnitId ?? seed.units[0]!.id;
+    const stay = { ...seed.admissions[0]!, id: "adm-link-test", unitId, movementId: null };
+    const linked = { ...journey, admissionId: stay.id };
+    const item = { subject: { kind: "admission" as const, id: stay.id }, record: stay, unitId, detail: "" };
+    const groups = agendaGroupsOf(item, { units: seed.units, movements: [linked] });
+    expect(groups.tier).toBe(String(journey.urgency));
+    expect(groups.legal).toBe(journey.legalStatus);
+    // Two movements naming the same stay are a conflict: nothing is guessed.
+    const twice = agendaGroupsOf(item, {
+      units: seed.units,
+      movements: [linked, { ...linked, id: "WF-dup" as const }],
+    });
+    expect(twice.tier).toBeUndefined();
+  });
+
+  it("offers a tier held only by a waiting referral", () => {
+    const referral = { ...seed.referrals[0]!, id: "ref-only-tier", urgency: 1 as const };
+    const options = agendaGroupOptions([], context, [referral]);
+    expect(options.tier).toEqual([expect.objectContaining({ value: "1", count: 1 })]);
+  });
+
   it("leaves out a person with nothing recorded for a filtered facet, and filters nothing when empty", () => {
     const stay = items.find(
       (item) => item.subject.kind === "admission" && agendaGroupsOf(item, context).tier === undefined,

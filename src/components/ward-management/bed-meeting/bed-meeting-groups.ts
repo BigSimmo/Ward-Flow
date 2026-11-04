@@ -43,6 +43,19 @@ const AGE_ORDER: readonly Cohort[] = ["Youth", "Adult", "Older adult"];
 
 type Context = { units: readonly Unit[]; movements: readonly Movement[] };
 
+/**
+ * The journey that brought a stay, by either explicit link: the stay's own movementId, or (seeded
+ * stays) the one movement whose admissionId names it. Conflicting or several links answer nothing.
+ */
+function journeyOf(admission: Admission, movements: readonly Movement[]): Movement | undefined {
+  if (admission.movementId !== null) {
+    const journey = movements.find((movement) => movement.id === admission.movementId);
+    return journey && (journey.admissionId === undefined || journey.admissionId === admission.id) ? journey : undefined;
+  }
+  const linked = movements.filter((movement) => movement.admissionId === admission.id);
+  return linked.length === 1 ? linked[0] : undefined;
+}
+
 /** What each facet reads from one agenda person, or nothing where it is not recorded. */
 export function agendaGroupsOf(item: AgendaItem, context: Context): Partial<Record<AgendaGroupFacet, string>> {
   if (item.subject.kind === "movement") {
@@ -57,8 +70,7 @@ export function agendaGroupsOf(item: AgendaItem, context: Context): Partial<Reco
   }
   const admission = item.record as Admission;
   // A stay reads its tier and legal status from the journey that brought it, when there was one.
-  const journey =
-    admission.movementId === null ? undefined : context.movements.find((m) => m.id === admission.movementId);
+  const journey = journeyOf(admission, context.movements);
   const cohort = context.units.find((unit) => unit.id === admission.unitId)?.cohort;
   return {
     ward: admission.unitId,
@@ -98,6 +110,8 @@ export function agendaGroupValueLabel(facet: AgendaGroupFacet, value: string, un
 export function agendaGroupOptions(
   items: readonly AgendaItem[],
   context: Context,
+  // Waiting referrals are filtered by tier too, so a tier held only by a referral is offered.
+  referrals: readonly Referral[] = [],
 ): Record<AgendaGroupFacet, AgendaGroupOption[]> {
   const seen = new Set<string>();
   const counts: Record<AgendaGroupFacet, Map<string, number>> = {
@@ -114,6 +128,12 @@ export function agendaGroupOptions(
       const value = groups[facet];
       if (value !== undefined) counts[facet].set(value, (counts[facet].get(value) ?? 0) + 1);
     }
+  }
+  for (const referral of referrals) {
+    if (seen.has(referral.id)) continue;
+    seen.add(referral.id);
+    const tier = String(referral.urgency);
+    counts.tier.set(tier, (counts.tier.get(tier) ?? 0) + 1);
   }
   const order: Record<AgendaGroupFacet, (a: string, b: string) => number> = {
     // The busiest wards first, then by name.
