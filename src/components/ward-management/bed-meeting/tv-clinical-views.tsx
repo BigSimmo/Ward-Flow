@@ -85,7 +85,7 @@ export function Fact({ fact, empty = "" }: { fact: ClinicalFact | null; empty?: 
   );
 }
 
-export function Risks({ risks }: { risks: string[] }) {
+function Risks({ risks }: { risks: string[] }) {
   if (risks.length === 0) return <span className={styles.quiet}>None recorded</span>;
   return (
     <span className={styles.risks}>

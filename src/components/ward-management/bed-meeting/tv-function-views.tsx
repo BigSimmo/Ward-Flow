@@ -172,7 +172,7 @@ export function WardLegalTvView({ rows, footer }: { rows: WardClinicalRow[]; foo
     },
     {
       id: "soon",
-      title: "Ending within 24 hours",
+      title: "Ending soon",
       hint: "End time as typed on the form",
       tone: "warning",
       cards: here.filter((row) => row.legal?.tone === "warning").map((row) => wardCard(row, row.legal)),
@@ -195,7 +195,7 @@ export function WardLegalTvView({ rows, footer }: { rows: WardClinicalRow[]; foo
       <Summary
         items={[
           { label: "act now", value: lanes[0].cards.length, tone: "danger" },
-          { label: "ending in 24 hours", value: lanes[1].cards.length, tone: "warning" },
+          { label: "ending soon", value: lanes[1].cards.length, tone: "warning" },
           { label: "status recorded", value: lanes[2].cards.length },
           { label: "nothing recorded", value: lanes[3].cards.length },
         ]}
