@@ -6,6 +6,7 @@ import {
   memo,
   useDeferredValue,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type KeyboardEvent as ReactKeyboardEvent,
@@ -201,7 +202,11 @@ export function FlowChip({ closed, onOpen }: { closed: readonly ClosedTodayRow[]
 
 /* ───────────────────────── the census table ───────────────────────── */
 
+export type CensusScrollPosition = { identity: string; top: number; left: number };
 export type CensusTableProps = {
+  readScrollPosition?: () => CensusScrollPosition;
+  recordScrollPosition?: (position: CensusScrollPosition) => void;
+  scrollIdentity?: string;
   rows: readonly CensusRow[];
   /** PS1: a register state is chosen, so empty groups hide and the rest open, as in a search. */
   narrowed?: boolean;
@@ -257,6 +262,29 @@ export function CensusTable(props: CensusTableProps) {
   // needs, so it goes below 75rem; the side card still shows where the person is heading.
   const showTo = !useMediaQuery("(max-width: 75rem)");
   const cols = showTo ? 7 : 6;
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const { readScrollPosition, recordScrollPosition } = props;
+  useLayoutEffect(() => {
+    const element = scrollRef.current;
+    let held = readScrollPosition?.();
+    if (!held || !recordScrollPosition) return;
+    if (held.identity !== props.scrollIdentity) {
+      held = { identity: props.scrollIdentity ?? "", top: 0, left: 0 };
+      recordScrollPosition(held);
+    }
+    if (!element) return;
+    element.scrollTop = held.top;
+    element.scrollLeft = held.left;
+    return () => {
+      // Capture synchronously before responsive unmount, even if its final scroll event is queued.
+      if (readScrollPosition?.().identity === (props.scrollIdentity ?? ""))
+        recordScrollPosition({
+          identity: props.scrollIdentity ?? "",
+          top: element.scrollTop,
+          left: element.scrollLeft,
+        });
+    };
+  }, [readScrollPosition, recordScrollPosition, props.scrollIdentity, rows.length, tab]);
 
   return (
     <section
@@ -334,7 +362,20 @@ export function CensusTable(props: CensusTableProps) {
       ) : rows.length === 0 ? (
         props.empty
       ) : (
-        <div className={styles.scroll} role="region" aria-label="Patient census rows" tabIndex={0}>
+        <div
+          ref={scrollRef}
+          className={styles.scroll}
+          role="region"
+          aria-label="Patient census rows"
+          tabIndex={0}
+          onScroll={(event) => {
+            recordScrollPosition?.({
+              identity: props.scrollIdentity ?? "",
+              top: event.currentTarget.scrollTop,
+              left: event.currentTarget.scrollLeft,
+            });
+          }}
+        >
           <table className={cx(tableClasses.table, styles.censusTable)} aria-label="Patients by where they are now">
             <colgroup>
               <col className={styles.colTier} />

@@ -3,7 +3,15 @@
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
 import { UserPlus } from "lucide-react";
 
 import {
@@ -88,6 +96,7 @@ import {
   CensusEmpty,
   CensusHistory,
   CensusTable,
+  type CensusScrollPosition,
   FlowChip,
   PhoneCensus,
   DobField,
@@ -123,6 +132,7 @@ const PATIENTS_ROUTE = "/ward-flow/search";
  * groups. The typed search text and the date of birth are never kept.
  */
 type PatientsPlace = {
+  censusScroll?: { top: number; left: number };
   stage: MovementStage | "";
   edId: string;
   presenceFilter: PresenceFilter;
@@ -257,26 +267,62 @@ export function PatientSearchPage() {
   const [showAllWard, setShowAllWard] = useState(returned?.showAllWard ?? false);
   const [flashKey, setFlashKey] = useState<string | null>(null);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
-  useReturnToPlace<PatientsPlace>(
-    PATIENTS_ROUTE,
-    {
-      stage,
-      edId,
-      presenceFilter,
-      activeKpiFacet,
-      serviceFilter,
-      settingFilter,
-      legalFilter,
-      waitFilter,
-      tierFilter,
-      highlight,
-      censusSort,
-      tab,
-      openGroups,
-      showAllWard,
-    },
-    censusRow,
-  );
+  // Identity remains in this mounted component only; return memory holds numeric offsets.
+  const censusScrollIdentity = JSON.stringify([
+    text,
+    dobOn,
+    dob,
+    stage,
+    edId,
+    presenceFilter,
+    activeKpiFacet,
+    serviceFilter,
+    settingFilter,
+    legalFilter,
+    waitFilter,
+    tierFilter,
+    highlight,
+    censusSort,
+    tab,
+    patientState,
+  ]);
+  const censusScroll = useRef<CensusScrollPosition>({
+    identity: censusScrollIdentity,
+    top: returned?.censusScroll?.top ?? 0,
+    left: returned?.censusScroll?.left ?? 0,
+  });
+  const readCensusScroll = useCallback(() => censusScroll.current, []);
+  const recordCensusScroll = useCallback((position: CensusScrollPosition) => {
+    censusScroll.current = position;
+  }, []);
+  useLayoutEffect(() => {
+    // The table is absent on a phone, but changes to its view must still retire old offsets.
+    if (censusScroll.current.identity !== censusScrollIdentity)
+      censusScroll.current = { identity: censusScrollIdentity, top: 0, left: 0 };
+  }, [censusScrollIdentity]);
+  const currentPlace: PatientsPlace = {
+    stage,
+    edId,
+    presenceFilter,
+    activeKpiFacet,
+    serviceFilter,
+    settingFilter,
+    legalFilter,
+    waitFilter,
+    tierFilter,
+    highlight,
+    censusSort,
+    tab,
+    openGroups,
+    showAllWard,
+  };
+  useReturnToPlace<PatientsPlace>(PATIENTS_ROUTE, currentPlace, censusRow, () => ({
+    ...currentPlace,
+    censusScroll:
+      text.trim() === "" && !dobOn && patientState === "all" && censusScroll.current.identity === censusScrollIdentity
+        ? { top: censusScroll.current.top, left: censusScroll.current.left }
+        : { top: 0, left: 0 },
+  }));
 
   const showToast = (msg: string) => setCopyNote(msg);
 
@@ -1324,6 +1370,9 @@ export function PatientSearchPage() {
         {isPhone ? null : (
           <div className={cs.layout}>
             <CensusTable
+              readScrollPosition={readCensusScroll}
+              recordScrollPosition={recordCensusScroll}
+              scrollIdentity={censusScrollIdentity}
               rows={refusal ? [] : stateRows}
               narrowed={patientState !== "all"}
               totalPeople={census.rows.length}
