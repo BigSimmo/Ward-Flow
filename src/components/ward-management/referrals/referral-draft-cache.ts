@@ -157,7 +157,7 @@ export function discardReferralDraft(ownerVersion: number | null = referralDraft
  * deleting it, so it stays in the Profile drafts list and reopens from there. Memory lets go; the
  * session copy stays under its own person's key.
  */
-export function setAsideReferralDraft(ownerVersion: number | null = referralDraftMemory.sessionVersion): boolean {
+function setAsideReferralDraft(ownerVersion: number | null = referralDraftMemory.sessionVersion): boolean {
   if (ownerVersion === null || ownerVersion !== referralDraftMemory.sessionVersion) return false;
   referralDraftMemory.keptStorageKey = undefined;
   referralDraftMemory.recoveryStorageKey = undefined;

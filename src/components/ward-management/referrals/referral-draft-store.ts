@@ -7,7 +7,6 @@ export {
   readKeptReferralDraft,
   readKeptReferralDraftAt,
   discardReferralDraft,
-  setAsideReferralDraft,
   restartReferralDraft,
   rememberReferrerContact,
   readLastReferrerContact,
