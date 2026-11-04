@@ -86,8 +86,9 @@ describe("what's new note", () => {
   });
 
   it("reads an id stored before entry files against the old list order", () => {
-    // Only the lines from before entry files, so a newer entry file never changes this answer.
-    const before = WHATS_NEW.filter((entry) => LEGACY_ORDER.includes(entry.id));
+    // A fixed list of the lines from before entry files, sorted as entry files are, so neither a newer
+    // entry file nor the newest-20 cap dropping old lines changes this answer.
+    const before: WhatsNewEntry[] = LEGACY_ORDER.toSorted().map((id) => ({ id, date: id.slice(0, 10), line: id }));
     const ids = (seen: string) => unseenWhatsNew(seen, before).map((entry) => entry.id);
     // Under the old order only the referral line came after this id, though it no longer sorts last.
     expect(ids("2026-11-03-one-alerts-switch")).toEqual(["2026-11-03-simpler-new-referral"]);

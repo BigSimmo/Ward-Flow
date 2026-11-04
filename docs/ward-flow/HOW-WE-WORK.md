@@ -242,6 +242,9 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
      per PR (see its README), not to the shared `docs/script-budget-history.md` or the `$comment`
      in `script-budget.json`.
   5. Lower a limit again when a page shrinks.
+  6. If main itself goes over (PRs that each fitted landed together), you do nothing. Your PR's build
+     fails only routes your PR grew, and the budget heal bot opens one PR raising main's limits
+     (`ward-flow-budget-heal.yml`; [PUBLIC-CI](PUBLIC-CI.md#phone-script-budget-on-a-moving-main)).
 
 ## 7. Model tiers for helpers and reviews
 

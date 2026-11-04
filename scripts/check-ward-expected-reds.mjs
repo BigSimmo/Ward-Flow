@@ -71,9 +71,8 @@ const MIN_FILE_SECONDS = 0.1;
 // H-0914 (26 Oct 2026): raised from 200 and 2500, which had fallen to an eighth of the suite (about
 // 1,530 files and 16,600 tests). The test floor stays lower than the file floor because a shard's
 // floors scale by its share of files, and shards differ in tests per file.
-// 4 Nov 2026: files raised to 1100 when the population passed 2,000 (folding #1326 into #1331), so
-// the floor stays at least half the suite with room for it to grow to about 2,200 files.
-const FLOOR_FILES = 1100;
+// 4 Nov 2026: raised from 1000 when the population passed 2,000 files and 1000 fell below half of it.
+const FLOOR_FILES = 1200;
 const FLOOR_TESTS = 6000;
 
 /**
