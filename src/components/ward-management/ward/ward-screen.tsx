@@ -123,7 +123,12 @@ import {
   WARD_BED_DRAWER_ENTRY,
   wardHandoverHref,
 } from "./ward-screen-helpers";
-import { WardAnswerFromLink, WardConfirmBedsDialog, WardDailySheetDialog, WardDischargeNotices } from "./ward-screen-lazy";
+import {
+  WardAnswerFromLink,
+  WardConfirmBedsDialog,
+  WardDailySheetDialog,
+  WardDischargeNotices,
+} from "./ward-screen-lazy";
 import { WardScreenReferralsTab } from "./ward-screen-referrals-tab";
 import { moveBetweenWardTabs, WardScreenTopBar } from "./ward-screen-top-bar";
 import { wardBedRoster, wardLiveFormAlerts } from "./ward-screen-derivations";
