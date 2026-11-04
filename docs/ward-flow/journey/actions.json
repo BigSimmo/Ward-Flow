@@ -2217,8 +2217,8 @@
         },
         {
           "path": "src/components/ward-management/community/use-community-screen-overlays.ts",
-          "line": 123,
-          "sha256": "ce7d107067a80f2597a2533194ac9f679d06d6c2e2ae06ef5963645fdc185fb9"
+          "line": 122,
+          "sha256": "647d6312cc81bb2edcb34ac5b2f6214fccfcd4bec1eb3e2f5742fe286eafbb23"
         },
         {
           "path": "src/components/ward-management/ed/ed-screen-actions.ts",
@@ -2708,8 +2708,8 @@
         },
         {
           "path": "src/components/ward-management/community/use-community-screen-overlays.ts",
-          "line": 141,
-          "sha256": "ce7d107067a80f2597a2533194ac9f679d06d6c2e2ae06ef5963645fdc185fb9"
+          "line": 140,
+          "sha256": "647d6312cc81bb2edcb34ac5b2f6214fccfcd4bec1eb3e2f5742fe286eafbb23"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
