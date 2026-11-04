@@ -25,7 +25,7 @@ const ROUTES = [
   ["/bed-meeting/agenda", "bed-meeting-agenda"],
   ["/board/rph-adult-secure", "ward-board"],
   ["/capacity", "ward-capacity-screen"],
-  ["/community", "community-index"],
+  ["/hub/catchments", "community-index"],
   ["/community/midland", "ward-community-screen"],
   ["/waiting", "ward-delays-page"],
   ["/discharges", "ward-discharge-board"],
