@@ -574,18 +574,35 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
   release-gate:
-    name: Ward Flow release gate ${{ matrix.project }} ${{ matrix.part }}
+    name: Ward Flow release gate ${{ matrix.pair }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    # Desktop Chromium and phone WebKit each run as three parallel jobs: the journeys and referrals
-    # parts must pass their required journeys on their own project (six in all), the checks part
-    # runs the accessibility sweep, and Ward Flow required needs all six jobs. The parts split the
-    # release-gate files without overlap (scripts/ward-flow/browser-run-contract.mjs).
+    # Desktop Chromium and phone WebKit each split the release gate into three parts (journeys,
+    # referrals, checks) that partition the release-gate files without overlap
+    # (scripts/ward-flow/browser-run-contract.mjs). The six suites run as three jobs of two, paired
+    # from measured medians so each job takes about the same time (Josh, 4 November 2026): every
+    # job runs its first suite, then its second on the same installed browsers, whatever the first
+    # did. Each suite keeps its own project, part, evidence and report artifact names, and Ward
+    # Flow required needs all three jobs.
     strategy:
       fail-fast: false
       matrix:
-        project: [release-gate-desktop, release-gate-phone]
-        part: [journeys, referrals, checks]
+        include:
+          - pair: phone checks, desktop journeys
+            project: release-gate-phone
+            part: checks
+            second_project: release-gate-desktop
+            second_part: journeys
+          - pair: phone referrals, desktop referrals
+            project: release-gate-phone
+            part: referrals
+            second_project: release-gate-desktop
+            second_part: referrals
+          - pair: phone journeys, desktop checks
+            project: release-gate-phone
+            part: journeys
+            second_project: release-gate-desktop
+            second_part: checks
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -675,6 +692,36 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: ward-release-gate-reports-${{ github.run_id }}-${{ matrix.project }}-${{ matrix.part }}
+          path: test-results/**/*.json
+          if-no-files-found: error
+          retention-days: 3
+      # The first suite's results are already uploaded; set them aside so the second suite's
+      # evidence and reports hold only its own files.
+      - name: Set aside the first suite's results
+        if: ${{ !cancelled() && steps.gate.outcome != 'skipped' }}
+        run: if [ -d test-results ]; then mv test-results "$RUNNER_TEMP/ward-release-gate-first-results"; fi
+      - name: Run the second release-gate suite
+        id: gate-second
+        if: ${{ !cancelled() && steps.browsers.outcome == 'success' }}
+        env:
+          WARD_GATE_BUILD: "1"
+          WARD_RELEASE_GATE_PROJECT: ${{ matrix.second_project }}
+          WARD_RELEASE_GATE_PART: ${{ matrix.second_part }}
+          WARD_BROWSER_ARTIFACT_DIR: ${{ needs.browser-build.result == 'success' && format('{0}/ward-browser-build', runner.temp) || '' }}
+        run: npm run test:e2e:release-gate
+      - name: Upload failed second-suite evidence
+        if: ${{ !cancelled() && steps.gate-second.outcome == 'failure' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: ward-release-gate-failures-${{ github.run_id }}-${{ matrix.second_project }}-${{ matrix.second_part }}
+          path: test-results/
+          if-no-files-found: warn
+          retention-days: 3
+      - name: Upload successful second-suite reports
+        if: ${{ !cancelled() && steps.gate-second.outcome == 'success' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: ward-release-gate-reports-${{ github.run_id }}-${{ matrix.second_project }}-${{ matrix.second_part }}
           path: test-results/**/*.json
           if-no-files-found: error
           retention-days: 3
