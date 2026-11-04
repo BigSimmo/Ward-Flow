@@ -41,13 +41,16 @@ export function NextWardAfterRefusal({
       aria-label="Wards not yet asked that pass every check"
       data-testid="ward-next-ward-after-refusal"
     >
-      <h4 className={styles.heading}>Wards not yet asked that pass every check</h4>
+      {/* Appraisal, 3 Nov 2026: with none left, one sentence says so instead of a heading over "None." */}
+      <h4 className={styles.heading}>
+        {next.candidates.length === 0
+          ? "Every ward that passes every check has been asked"
+          : "Wards not yet asked that pass every check"}
+      </h4>
       <p className={styles.note}>
         Last refusal: {declinedUnit ? declinedUnit.name : "Unresolved unit"}, {reason.toLowerCase()}.
       </p>
-      {next.candidates.length === 0 ? (
-        <p className={styles.note}>None.</p>
-      ) : (
+      {next.candidates.length === 0 ? null : (
         <>
           <ul className={styles.list}>
             {next.candidates.map((candidate) => {
