@@ -32,21 +32,26 @@ const beds: WardScreenBed[] = [
   bed({ bedNumber: 3, status: "closed", statusText: "Closed" }),
 ];
 
+/** A fixed synthetic calendar day for instant 0, so printed dates are stable. */
+const DAY_ZERO = new Date("2026-11-02T00:00:00+08:00");
+
 describe("printed bed list", () => {
   it("lists every bed with who is in it, the legal status and the form's end time as typed", () => {
-    render(<WardBedListPrint unit={unit} beds={beds} now={NOW_ANCHOR} />);
+    render(<WardBedListPrint unit={unit} beds={beds} now={NOW_ANCHOR} dayZero={DAY_ZERO} />);
     expect(screen.getByRole("heading", { name: `${unit.name} bed list` })).toBeInTheDocument();
     const first = within(screen.getByTestId("ward-bed-list-print-1"));
     expect(first.getByText("Testwood, Ada")).toBeInTheDocument();
     expect(first.getByText("UM900001")).toBeInTheDocument();
     expect(first.getByText("Held up, Awaiting accommodation")).toBeInTheDocument();
     expect(first.getByText("Form 6A Involuntary inpatient")).toBeInTheDocument();
-    expect(first.getByText(/^Ends 12:42 as typed$/u)).toBeInTheDocument();
+    // Dated, never "tomorrow": the sheet outlives the day it was printed (review: Codex).
+    expect(first.getByText(/^Ends Mon, 2 Nov, 12:42 as typed$/u)).toBeInTheDocument();
+    expect(screen.getByText(/^As at Mon, 2 Nov 2026, \d{2}:\d{2} AWST\./u)).toBeInTheDocument();
     expect(first.getByText("General, hourly")).toBeInTheDocument();
   });
 
   it("names nobody on a free or closed bed", () => {
-    render(<WardBedListPrint unit={unit} beds={beds} now={NOW_ANCHOR} />);
+    render(<WardBedListPrint unit={unit} beds={beds} now={NOW_ANCHOR} dayZero={DAY_ZERO} />);
     const ready = screen.getByTestId("ward-bed-list-print-2");
     expect(ready).toHaveTextContent("Ready");
     expect(ready).not.toHaveTextContent("Old, Name");
@@ -62,7 +67,7 @@ describe("printed bed list", () => {
       legalStatusLabel: "Form 3A not recorded (Form 1A ended 09:00)",
       legalForm: { code: "1A", dueAt: NOW_ANCHOR - 60 },
     });
-    render(<WardBedListPrint unit={unit} beds={[moved]} now={NOW_ANCHOR} />);
+    render(<WardBedListPrint unit={unit} beds={[moved]} now={NOW_ANCHOR} dayZero={DAY_ZERO} />);
     expect(screen.getByTestId("ward-bed-list-print-4")).not.toHaveTextContent("as typed");
   });
 });

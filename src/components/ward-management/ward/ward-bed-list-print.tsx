@@ -1,10 +1,9 @@
 "use client";
 
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
-import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
+import { formatSheetMoment, type Instant, isClockBreached } from "@/components/ward-management/ward-clock";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { observationSummary } from "@/components/ward-management/ward-observation";
-import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 
 import type { WardScreenBed } from "./ward-screen-derivations";
 import styles from "./ward-bed-list-print.module.css";
@@ -23,7 +22,18 @@ import styles from "./ward-bed-list-print.module.css";
  * Legal times are only as typed (Josh, 31 Oct 2026): "Ends 15:42 as typed", never a running
  * figure. Names are shown in full (D-83). Synthetic data only.
  */
-export function WardBedListPrint({ unit, beds, now }: { unit: Unit; beds: readonly WardScreenBed[]; now: Instant }) {
+export function WardBedListPrint({
+  unit,
+  beds,
+  now,
+  dayZero,
+}: {
+  unit: Unit;
+  beds: readonly WardScreenBed[];
+  now: Instant;
+  /** Anchors every time on the sheet to a calendar date: a printout outlives the day it was taken. */
+  dayZero: Date;
+}) {
   if (beds.length === 0) return null;
   return (
     <section
@@ -34,8 +44,8 @@ export function WardBedListPrint({ unit, beds, now }: { unit: Unit; beds: readon
       <div className={styles.head}>
         <h2 className={styles.title}>{unit.name} bed list</h2>
         <p className={styles.meta}>
-          As at {formatInstantWithDay(now, now)}. {beds.length} beds. Legal times are as typed from the form, not
-          legally checked. Synthetic data.
+          As at {formatSheetMoment(now, dayZero, { includeYearAndZone: true })}. {beds.length} beds. Legal times are as
+          typed from the form, not legally checked. Synthetic data.
         </p>
       </div>
       <table className={styles.table}>
@@ -65,7 +75,7 @@ export function WardBedListPrint({ unit, beds, now }: { unit: Unit; beds: readon
               </td>
               <td className={styles.num}>{typeof bed.stayDays === "number" ? bed.stayDays : ""}</td>
               <td>{bedHasPerson(bed) ? (bed.legalStatusLabel ?? "Not recorded") : ""}</td>
-              <td>{formEnd(bed, now)}</td>
+              <td>{formEnd(bed, now, dayZero)}</td>
               <td>{bed.observation && bedHasPerson(bed) ? observationSummary(bed.observation) : ""}</td>
               <td>
                 {bedHasPerson(bed) && bed.status !== "incoming" ? (bed.expectedDischargeLabel ?? "Not recorded") : ""}
@@ -110,10 +120,11 @@ function bedNote(bed: WardScreenBed): string | undefined {
 }
 
 /** The current form's end time as typed. A form the stay has moved on from shows nothing here. */
-function formEnd(bed: WardScreenBed, now: Instant): string {
+function formEnd(bed: WardScreenBed, now: Instant, dayZero: Date): string {
   const form = bed.legalForm as { code?: string; dueAt?: Instant } | undefined;
   if (!bedHasPerson(bed) || !form?.code || typeof form.dueAt !== "number") return "";
   // The label names the form to record next when this one has ended, so its old time is history.
   if (!bed.legalStatusLabel?.startsWith(`Form ${form.code}`)) return "";
-  return typedTimeLine(form.dueAt, now);
+  // A dated time, never "tomorrow": the paper copy may be read days later.
+  return `${isClockBreached(form.dueAt, now) ? "Ended" : "Ends"} ${formatSheetMoment(form.dueAt, dayZero)} as typed`;
 }
