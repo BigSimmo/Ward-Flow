@@ -38,15 +38,17 @@ export function withRecordDetail<P extends { state: WardFlowState }>(
 /**
  * The detail one desk has been sent, for the access view it was sent under. The server's access
  * context names the account, desk, place and openings, so another desk starts empty, and a reply
- * that arrives after the view changed is not kept.
+ * that arrives after the access view or world changed is not kept.
  */
 export class RecordDetailHold {
   private details = new Map<string, RecordDetail>();
   private context: string | undefined;
   /** The board with the held detail put back, once the view it was sent under is checked. */
   apply<P extends { state: WardFlowState }>(payload: P, context: string | undefined): P {
-    if (context !== this.context) this.details = new Map();
-    this.context = context;
+    // IDs may be reused after replacement, even for the same desk and access grant.
+    const identity = JSON.stringify([context, payload.state.worldGeneration]);
+    if (identity !== this.context) this.details = new Map();
+    this.context = identity;
     return withRecordDetail(payload, this.details);
   }
   /** Keeps a logged opening's detail. True when it was kept, so the board should be drawn again. */

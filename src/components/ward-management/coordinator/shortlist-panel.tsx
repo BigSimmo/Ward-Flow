@@ -357,7 +357,7 @@ export function ShortlistPanel({
   const isPhone = useIsPhone();
   // S-8: "Accept for this ward" offers Undo on the toast, like the ward's own acceptance. Read
   // through the context, not `useWardFlow()`, so a direct render without a provider still works.
-  const flowContext = useOptionalWardFlowSelect("rejections", "setFocusMovementId");
+  const flowContext = useOptionalWardFlowSelect("rejections", "setFocusMovementId", "worldGeneration");
   const flowRejections = flowContext?.rejections ?? NO_REJECTIONS;
   const flowSetFocusMovementId = flowContext?.setFocusMovementId;
   const [outcomeMessage, setOutcomeMessage] = useState<string | null>(null);
@@ -493,8 +493,9 @@ export function ShortlistPanel({
   const genderSave = useWardFormSave(`shortlist-gender:${targetScope}`);
   const overrideSave = useWardFormSave(`shortlist-override:${targetScope}`);
   const withdrawSave = useWardFormSave(`shortlist-withdraw:${JSON.stringify([movement?.id, withdrawUnitId])}`);
-  const actionPending = genderSave.pending || overrideSave.pending || withdrawSave.pending;
-  const actionError = genderSave.error ?? overrideSave.error ?? withdrawSave.error;
+  const escalationSave = useWardFormSave(`shortlist-escalation:${movement?.id}:${flowContext?.worldGeneration}`);
+  const actionPending = genderSave.pending || overrideSave.pending || withdrawSave.pending || escalationSave.pending;
+  const actionError = genderSave.error ?? overrideSave.error ?? withdrawSave.error ?? escalationSave.error;
   const forgetOverride = overrideSave.forget;
   const handleRestoreOverride = useCallback(
     (cached: string) => {
@@ -912,40 +913,32 @@ export function ShortlistPanel({
     );
   }
 
-  /**
-   * Whole-branch review I2 (spec §11). `RECORD_ESCALATION`'s own reducer branch
-   * (`ward-flow-reducer.ts`) carries no precondition beyond the role check — it stamps
-   * `escalation` on any movement that resolves — so unlike Refer/Override this control never
-   * needs a `*BlockedReason` guard: nothing here can be refused. `triedUnitIds` is never typed by
-   * a human — it is `movement.declines`, the units genuinely referred to and declined, exactly
-   * what the "Declines" section immediately above already renders (each with its own real reason
-   * — the shortlist's own "what was tried, why each failed"). Deliberately NOT the panel's
-   * `shortlist` candidate list: that is capped at `PARALLEL_REFERRAL_CAP` and is a theoretical
-   * eligibility scan, not a record of what was actually attempted — using it would let a
-   * genuinely untried unit (never referred, only eligibility-checked) be named as "tried".
-   * WF-009's own pre-authored fixture escalation (`ward-movements.ts`) uses exactly this shape:
-   * its five `triedUnitIds` are its five `declines`, unit for unit. `contact` (a role or service,
-   * never a person) is Task 6's fixed `ESCALATION_CONTACTS` picker, not typed text — see the
-   * comment above `ward-change-reasons.ts`'s `ESCALATION_CONTACTS`.
+  /** Records only genuinely declined wards, preserving the chosen contact until acceptance.
+   * The theoretical shortlist includes untried wards and must never stand in for that history.
    */
   function submitEscalation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     // Task 6: `escalationContact` is one of `ESCALATION_CONTACTS` once chosen. Finding 110: it
     // opens blank, so an unchosen contact records nothing.
-    if (escalationContact === "") return;
-    runStep(
-      {
-        type: "RECORD_ESCALATION",
-        role: "coordinator",
-        now,
-        movementId,
-        triedUnitIds: declinedUnitIds,
-        contact: escalationContact,
+    if (escalationContact === "" || escalationSave.pending) return;
+    escalationSave.submit(
+      () => {
+        const completion = dispatch({
+          type: "RECORD_ESCALATION",
+          role: "coordinator",
+          now,
+          movementId,
+          triedUnitIds: declinedUnitIds,
+          contact: escalationContact,
+        });
+        offerUndo({ success: "Escalation recorded." }, { completion });
+        return completion;
       },
-      { success: "Escalation recorded." },
+      () => {
+        setEscalationOpen(false);
+        setEscalationContact("");
+      },
     );
-    setEscalationOpen(false);
-    setEscalationContact("");
   }
 
   /**
@@ -2770,6 +2763,7 @@ export function ShortlistPanel({
               <button
                 type="button"
                 data-testid="ward-shortlist-escalation-toggle"
+                disabled={escalationSave.pending}
                 aria-expanded={escalationOpen}
                 className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
                 onClick={() => setEscalationOpen((open) => !open)}
@@ -2784,6 +2778,7 @@ export function ShortlistPanel({
                   </label>
                   <select
                     id="ward-shortlist-escalation-contact"
+                    disabled={escalationSave.pending}
                     required
                     data-testid="ward-shortlist-escalation-contact"
                     className={styles.shortlistOverrideSelect}
@@ -2801,9 +2796,11 @@ export function ShortlistPanel({
                     type="submit"
                     data-testid="ward-shortlist-escalation-submit"
                     className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
-                    aria-disabled={escalationContact === "" ? "true" : undefined}
+                    aria-disabled={escalationContact === "" || escalationSave.pending ? "true" : undefined}
                     aria-describedby={escalationContact === "" ? "ward-shortlist-escalation-submit-words" : undefined}
-                    onClick={escalationContact === "" ? ignoreUnavailableActivation : undefined}
+                    onClick={
+                      escalationContact === "" || escalationSave.pending ? ignoreUnavailableActivation : undefined
+                    }
                   >
                     Record escalation
                   </button>

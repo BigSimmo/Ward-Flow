@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
 import { createRef } from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
@@ -10,6 +10,7 @@ import { WardBedDossierDrawer } from "@/components/ward-management/ward/ward-bed
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
 import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 import { seedWardFlowState, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { communitySentView } from "@/components/ward-management/ward-referral-visibility";
@@ -123,6 +124,46 @@ describe("the sending ward's own journey (D-80)", () => {
       expect.objectContaining({ type: "CHANGE_URGENCY", role: "ward", movementId: "WF-D80-BACK", urgency: 1 }),
     );
     expect(context.dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ reason: expect.anything() }));
+  });
+
+  it("keeps an uncertain urgency draft until that command confirms", async () => {
+    let confirm!: (outcome: WardCommandOutcome) => void;
+    const confirmation = new Promise<WardCommandOutcome>((resolve) => {
+      confirm = resolve;
+    });
+    context.dispatch.mockReturnValueOnce({ commandId: "journey-save", status: "failed", confirmation });
+    setState([journey("WF-D80-BACK", { sourceAdmissionId: stay.id, patientId: stay.patientId })]);
+    renderDossier();
+    const controls = screen.getByTestId("sent-journey-changes");
+    fireEvent.click(within(controls).getByRole("button", { name: "Change urgency" }));
+    const tier = within(controls).getByLabelText("Urgency tier for Synthetic person");
+    fireEvent.change(tier, { target: { value: "1" } });
+    fireEvent.click(within(controls).getByRole("button", { name: "Record urgency change" }));
+    expect(tier).toHaveValue("1");
+    expect(tier).toBeDisabled();
+    expect(screen.getByTestId("sent-journey-urgency")).toBeInTheDocument();
+    fireEvent.click(within(controls).getByRole("button", { name: "Record urgency change" }));
+    expect(context.dispatch).toHaveBeenCalledTimes(1);
+    await act(async () => confirm({ commandId: "journey-save", status: "accepted" }));
+    expect(screen.queryByTestId("sent-journey-urgency")).not.toBeInTheDocument();
+  });
+
+  it("preserves a refused urgency selection through close and reopen", () => {
+    context.dispatch.mockReturnValueOnce({
+      commandId: "journey-refused",
+      status: "refused",
+      message: "Review journey.",
+    });
+    setState([journey("WF-D80-BACK", { sourceAdmissionId: stay.id, patientId: stay.patientId })]);
+    renderDossier();
+    const controls = screen.getByTestId("sent-journey-changes");
+    const toggle = within(controls).getByRole("button", { name: "Change urgency" });
+    fireEvent.click(toggle);
+    fireEvent.change(within(controls).getByLabelText("Urgency tier for Synthetic person"), { target: { value: "1" } });
+    fireEvent.click(within(controls).getByRole("button", { name: "Record urgency change" }));
+    fireEvent.click(toggle);
+    fireEvent.click(toggle);
+    expect(within(controls).getByLabelText("Urgency tier for Synthetic person")).toHaveValue("1");
   });
 
   it("offers nothing on a journey an ED sent for the same person", () => {

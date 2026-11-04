@@ -330,7 +330,9 @@ export function RecordFormSheet({
         <div className={styles.recordFoot}>
           <Button
             variant="ghost"
+            disabledReason={saving ? "Saving" : undefined}
             onClick={() => {
+              if (saving) return;
               submissionVersion.current += 1;
               setSaving(false);
               clearDraft();
