@@ -8,6 +8,7 @@ import { type ReactNode, useId, useMemo, useState } from "react";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { CalendarPlus, Ellipsis } from "lucide-react";
 
+import { useUndoableStep } from "../use-undoable-step";
 import { Button, buttonClass, Field, Menu, Select, Sheet, StatusGlyph, TextInput } from "@/components/wf";
 import {
   PLANNED_ADMISSION_CANCEL_REASONS,
@@ -165,7 +166,17 @@ export function PlannedAdmissionsPanel({
     dayZero,
     dispatch,
     plannedAdmissions: plannedFromContext,
-  } = useWardFlowSelect("units", "patients", "admissions", "movements", "dayZero", "dispatch", "plannedAdmissions");
+    rejections,
+  } = useWardFlowSelect(
+    "units",
+    "patients",
+    "admissions",
+    "movements",
+    "dayZero",
+    "dispatch",
+    "plannedAdmissions",
+    "rejections",
+  );
   const plannedAdmissions = useMemo(() => plannedFromContext ?? [], [plannedFromContext]);
   // Josh, 27 Oct 2026: a desk sees the bookings for its own wards, and offers only the steps its role
   // may take. The executive reads them as counts, with nobody named.
@@ -185,6 +196,8 @@ export function PlannedAdmissionsPanel({
   // arrival does (WT-11). Cancel leaves the booking as it was.
   const [arrivalCheck, setArrivalCheck] = useState<PlannedAdmission | null>(null);
   const save = useWardFormSave(`planned-admission:${JSON.stringify(form)}`);
+  // Tier 1 item 6 (Josh, 4 Nov 2026): a booking cancelled by mistake comes back from its toast.
+  const { offer: offerUndo } = useUndoableStep({ dispatch, rejections, now, routeRole: "coordinator" });
 
   useDirtyStateGuard(form !== null);
 
@@ -384,17 +397,34 @@ export function PlannedAdmissionsPanel({
 
   function submitCancel() {
     if (!form || form.mode !== "cancel" || !cancelling || cancelReason === "") return;
+    const cancelled = { id: cancelling.id, label: whoText(cancelling) };
+    let completion: ReturnType<typeof dispatch> | undefined;
     save.submit(
       () =>
-        dispatch({
+        (completion = dispatch({
           type: "CANCEL_PLANNED_ADMISSION",
           role: "coordinator",
           now,
           plannedAdmissionId: cancelling.id,
           unitId: cancelling.unitId,
           reason: cancelReason,
-        }),
-      closeForm,
+        })),
+      () => {
+        closeForm();
+        offerUndo(
+          {
+            success: `Planned admission cancelled for ${cancelled.label}.`,
+            undo: (at) => ({
+              type: "UNDO_RELEASE_STEP",
+              role: "coordinator",
+              now: at,
+              plannedAdmissionId: cancelled.id,
+            }),
+            undone: "Undone. The booking is back.",
+          },
+          { completion },
+        );
+      },
     );
   }
 
@@ -916,7 +946,7 @@ export function PlannedAdmissionsPanel({
         testId="ward-planned-cancel"
         footer={
           <div className={styles.sheetFoot}>
-            <Button onClick={closeForm}>Keep booking</Button>
+            <Button onClick={closeForm}>Keep as is</Button>
             <Button
               variant="danger"
               onClick={submitCancel}

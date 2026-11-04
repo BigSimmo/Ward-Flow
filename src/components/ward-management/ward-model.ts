@@ -849,6 +849,8 @@ export type Movement = MovementBase & {
    * recorded is never simply lost. A second `RECORD_LEGAL_FORM_RECEIVED` may then succeed, exactly
    * as if this field had never been set. */
   legalFormReceivedAt?: Instant;
+  /** Gap list item 1: true when `legalFormReceivedAt` was typed from the paper rather than marked now. */
+  legalFormReceivedTyped?: true;
   /**
    * Earlier receipt records this movement has outgrown, oldest first. T4 (2026-09-17):
    * `CORRECT_LEGAL_FORM_RECEIPT` is a correction, not a silent overwrite — the ORIGINAL

@@ -176,6 +176,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // D-72: ids, a choice from a fixed list and a typed time already read to an `Instant`. No typed text.
   "RECORD_RESTRICTIVE_PRACTICE_START",
   "RECORD_RESTRICTIVE_PRACTICE_END",
+  // Gap list item 9: a fixed task id and a done flag. No typed text.
+  "RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP",
   "RECORD_WARD_INCIDENT",
   "SET_SECLUSION_ROOM_STATUS",
   // Closing the loop, package D (24 Oct 2026): record ids, choices from fixed lists and instants
@@ -323,6 +325,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "RECORD_LEGAL_FORM_CODE",
   // Q103: presentations come from a fixed list; the reducer refuses anything off it. No typed text.
   "RECORD_ED_PRESENTATION",
+  // Gap list items 3 to 7: fixed choices and a typed date only. No typed text.
+  "RECORD_LEGAL_FORM_DETAILS",
   "RECORD_COUNTRY_EXTENSION",
   "RECORD_LEGAL_FORM_CONTINUATION",
   "EVALUATE_ARRIVAL_LATENESS",
@@ -371,6 +375,9 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "UNDO_DEPARTURE",
   "UNDO_ABSENT_WITHOUT_LEAVE",
   "UNDO_BED_MEETING_ACTION",
+  "UNDO_BED_STEP",
+  "UNDO_RELEASE_STEP",
+  "UNDO_PATIENT_RECORD",
 ] as const satisfies readonly WardFlowEvent["type"][];
 
 /** Runtime form of the tuple above — an O(1)-lookup `Set`, used by the reducer wrapper and by the

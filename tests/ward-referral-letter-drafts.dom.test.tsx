@@ -99,8 +99,9 @@ describe("Profile drafts list", () => {
   }
 
   it("lists kept drafts newest first, by key and save time only", () => {
-    keep("p-1", { reason: "typed synthetic words" }, "2026-11-04T01:00:00Z");
-    keep("p-2", { reason: "more typed words" }, "2026-11-04T02:00:00Z");
+    // Relative times: fixed dates age past the session limit and the drafts expire.
+    keep("p-1", { reason: "typed synthetic words" }, new Date(Date.now() - 2 * 60_000).toISOString());
+    keep("p-2", { reason: "more typed words" }, new Date(Date.now() - 60_000).toISOString());
     const drafts = listSessionDrafts();
     expect(drafts.map((draft) => [draft.kind, draft.subject])).toEqual([
       ["referral", "p-2"],

@@ -7,7 +7,11 @@ import {
   wardFlowReducer,
   type WardFlowState,
 } from "../src/components/ward-management/ward-flow-reducer";
-import { CONTINUATION_LEGAL_FORMS, SELECTABLE_LEGAL_FORMS } from "../src/components/ward-management/ward-legal-forms";
+import {
+  CONTINUATION_LEGAL_FORMS,
+  RECORDABLE_LEGAL_FORMS,
+  SELECTABLE_LEGAL_FORMS,
+} from "../src/components/ward-management/ward-legal-forms";
 import { type LegalForm, type LegalStatus } from "../src/components/ward-management/ward-model";
 import { wardMovements } from "../src/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
@@ -570,6 +574,28 @@ function collectLegalForms(): { source: string; movementId: string; form: LegalF
       });
   }
 
+  // Gap list item 2 (Josh, 4 Nov 2026): the Forms page's Record a form sheet offers
+  // `RECORDABLE_LEGAL_FORMS` and saves each through RECORD_LEGAL_FORM_WRITTEN. Every code it
+  // offers is driven here with a written time and no typed expiry, so a `dueAt` that appears is
+  // one the list or the reducer invented.
+  for (const recordable of RECORDABLE_LEGAL_FORMS) {
+    for (const movement of seeded.movements) {
+      const recorded = wardFlowReducer(seeded, {
+        type: "RECORD_LEGAL_FORM_WRITTEN",
+        role: "coordinator",
+        now: NOW_ANCHOR,
+        movementId: movement.id,
+        formCode: recordable.code,
+        writtenAt: NOW_ANCHOR - 60_000,
+      });
+      const form = recorded.movements.find((candidate) => candidate.id === movement.id)?.legalForm;
+      if (recorded.rejections.length === seeded.rejections.length && form?.code === recordable.code) {
+        collected.push({ source: "RECORD_LEGAL_FORM_WRITTEN", movementId: movement.id, form });
+        break;
+      }
+    }
+  }
+
   return collected;
 }
 
@@ -591,7 +617,13 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
     // or if one of the four sources silently stopped producing a form. Asserting only a total
     // would let a reducer path that returned `undefined` forever pass unnoticed.
     expect(collected.length).toBeGreaterThan(0);
-    for (const source of ["fixture", "seeded state", "RAISE_REFERRAL", "after RECORD_EXAMINATION"]) {
+    for (const source of [
+      "fixture",
+      "seeded state",
+      "RAISE_REFERRAL",
+      "after RECORD_EXAMINATION",
+      "RECORD_LEGAL_FORM_WRITTEN",
+    ]) {
       expect(
         collected.filter((entry) => entry.source === source).length,
         `no legal form was collected from ${source}`,
@@ -931,7 +963,19 @@ describe("Mental Health Act figures cannot return to the ward model", () => {
     }
 
     // 2. The declared list, in source order. Adding a code fails here until Part 1 drives it.
-    expect(authoredCodesIn(formsSource)).toEqual(["1A", "3A", "3B", "3D", "4A", "4C", "5A", "6A", "5B"]);
+    // The intake picker, then the Record a form sheet's list (gap list item 2), then 5B.
+    expect(authoredCodesIn(formsSource)).toEqual([
+      ...["1A", "3A", "3B", "3D", "4A", "4C", "5A", "6A"],
+      ...["1A", "3A", "3C", "3D", "3E", "5A", "6A", "6B", "6C", "6D"],
+      "5B",
+    ]);
+    // Every code the Record a form sheet offers is driven through RECORD_LEGAL_FORM_WRITTEN above.
+    const driven = new Set(
+      collectLegalForms()
+        .filter((entry) => entry.source === "RECORD_LEGAL_FORM_WRITTEN")
+        .map((entry) => entry.form.code),
+    );
+    expect(RECORDABLE_LEGAL_FORMS.filter((form) => !driven.has(form.code)).map((form) => form.code)).toEqual([]);
     // 5B is continuation-only. Its paper expiry behaviour is independently pinned in
     // ward-legal-form-5b-continues-5a.test.ts; the vocabulary itself may carry no expiry.
     expect(CONTINUATION_LEGAL_FORMS.map((form) => form.code)).toEqual([
