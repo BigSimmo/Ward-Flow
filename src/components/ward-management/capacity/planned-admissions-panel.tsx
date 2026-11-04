@@ -191,6 +191,7 @@ export function PlannedAdmissionsPanel({
   // Josh, 27 Oct 2026: a desk sees the bookings for its own wards, and offers only the steps its role
   // may take. The executive reads them as counts, with nobody named.
   const role = useRouteRole();
+  const wardActor = (actingUnitId: string) => (role === "ward" ? { actingUnitId } : {});
   const selectedIdentityId = useId();
   const canBook = dispatchPermission(role, "BOOK_PLANNED_ADMISSION").allowed;
   const canChange = dispatchPermission(role, "CHANGE_PLANNED_ADMISSION").allowed;
@@ -367,6 +368,7 @@ export function PlannedAdmissionsPanel({
           dispatch({
             type: "BOOK_PLANNED_ADMISSION",
             role,
+            ...wardActor(draft.unitId),
             now,
             ...(draft.who === "patient"
               ? { patientId: draft.patientId as PatientId }
@@ -389,6 +391,7 @@ export function PlannedAdmissionsPanel({
           dispatch({
             type: "CHANGE_PLANNED_ADMISSION",
             role,
+            ...wardActor(changing?.unitId ?? draft.unitId),
             now,
             plannedAdmissionId: form.id,
             ...(draft.who === "initials" && draft.gender !== undefined ? { gender: draft.gender } : {}),
@@ -407,13 +410,14 @@ export function PlannedAdmissionsPanel({
 
   function submitCancel() {
     if (!form || form.mode !== "cancel" || !cancelling || cancelReason === "") return;
-    const cancelled = { id: cancelling.id, label: whoText(cancelling) };
+    const cancelled = { id: cancelling.id, unitId: cancelling.unitId, label: whoText(cancelling) };
     let completion: ReturnType<typeof dispatch> | undefined;
     save.submit(
       () =>
         (completion = dispatch({
           type: "CANCEL_PLANNED_ADMISSION",
           role,
+          ...wardActor(cancelling.unitId),
           now,
           plannedAdmissionId: cancelling.id,
           unitId: cancelling.unitId,
@@ -427,6 +431,7 @@ export function PlannedAdmissionsPanel({
             undo: (at) => ({
               type: "UNDO_RELEASE_STEP",
               role,
+              ...wardActor(cancelled.unitId),
               now: at,
               plannedAdmissionId: cancelled.id,
             }),
@@ -444,6 +449,7 @@ export function PlannedAdmissionsPanel({
         dispatch({
           type: "CONVERT_PLANNED_ADMISSION",
           role,
+          ...wardActor(planned.unitId),
           now,
           plannedAdmissionId: planned.id,
           unitId: planned.unitId,
