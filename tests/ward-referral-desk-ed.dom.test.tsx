@@ -103,10 +103,10 @@ describe("Referrals, ED desk", () => {
     // Josh, 31 Oct 2026 (answer 35).
     renderBoard(oneQueued);
     fireEvent.keyDown(window, { key: "m" });
-    expect(screen.queryByRole("dialog", { name: "Bed meeting list" })).toBeNull();
+    expect(screen.queryByTestId("ward-referral-meeting")).toBeNull();
     fireEvent.keyDown(window, { key: "?" });
     const keys = screen.getByRole("dialog", { name: "Keyboard shortcuts" });
-    expect(within(keys).queryByText("Bed meeting list")).toBeNull();
+    expect(within(keys).queryByText(/^Bed meeting/)).toBeNull();
   });
 
   it("says its own department on the phone, with where its journeys stand and no bed meeting list", () => {
@@ -118,7 +118,7 @@ describe("Referrals, ED desk", () => {
     expect(within(hero).getByText("Accepted")).toBeTruthy();
     const noWard = peelOpen.filter((movement) => movement.acceptedUnitId === undefined).length;
     expect(within(screen.getByTestId("ward-referral-phone-ed-no-ward")).getByText(String(noWard))).toBeTruthy();
-    expect(within(hero).queryByRole("button", { name: "Bed meeting list" })).toBeNull();
+    expect(within(hero).queryByRole("link", { name: /^Bed meeting/ })).toBeNull();
     expect(within(hero).queryByRole("button", { name: /Next overdue/ })).toBeNull();
     expect(screen.getByTestId("ward-referral-ed-raised")).toBeTruthy();
   });
@@ -131,9 +131,13 @@ describe("Referrals, coordinator desk is unchanged by the ED branches", () => {
     const hero = screen.getByTestId("ward-referral-kpis");
     expect(within(hero).getByText("Referrals")).toBeTruthy();
     expect(within(hero).getByText("1 awaiting decision")).toBeTruthy();
-    expect(screen.getByTestId("ward-referral-meeting")).toBeTruthy();
+    const meeting = screen.getByTestId("ward-referral-meeting");
+    expect(meeting.getAttribute("href")).toBe("/ward-flow/bed-meeting/agenda#agenda-referrals");
     expect(screen.queryByTestId("ward-referral-ed-raised")).toBeNull();
+    // R5 fold (Josh, 3 Nov 2026): M opens the agenda at its referrals, through the same link.
+    const opened = vi.fn((event: Event) => event.preventDefault());
+    meeting.addEventListener("click", opened);
     fireEvent.keyDown(window, { key: "m" });
-    expect(screen.getByRole("dialog", { name: "Bed meeting list" })).toBeTruthy();
+    expect(opened).toHaveBeenCalledTimes(1);
   });
 });

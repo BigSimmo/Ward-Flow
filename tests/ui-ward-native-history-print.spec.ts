@@ -9,10 +9,16 @@ async function settled(page: Page) {
 }
 
 async function navigate(page: Page, route: string) {
-  const link = page.locator(`a[href="${HOME}${route}"]:visible`).first();
-  // B1 (19 Oct 2026): the rail lists the desk's own pages; the rest are under More.
-  if ((await link.count()) === 0) await page.getByTestId("ward-rail-more").click();
-  await link.click();
+  if (route === "/settings") {
+    // DK1 (3 Nov 2026): Settings lives in the account menu on the person card, not as a rail link.
+    await page.getByTestId("ward-rail-persona-trigger").click();
+    await page.getByRole("menuitem", { name: "Settings" }).click();
+  } else {
+    const link = page.locator(`a[href="${HOME}${route}"]:visible`).first();
+    // B1 (19 Oct 2026): the rail lists the desk's own pages; the rest are under More.
+    if ((await link.count()) === 0) await page.getByTestId("ward-rail-more").click();
+    await link.click();
+  }
   await expect(page).toHaveURL(new RegExp(`${HOME}${route}$`));
   await settled(page);
 }
@@ -97,8 +103,8 @@ test.describe("native history and handover print @mockup", () => {
     await referral.getByRole("button", { name: "Close step", exact: true }).click();
     await page.keyboard.press("Escape");
     await page
-      .getByRole("alertdialog", { name: "Close without sending?" })
-      .getByRole("button", { name: "Keep draft", exact: true })
+      .getByRole("alertdialog", { name: "Keep this referral as a draft?" })
+      .getByRole("button", { name: "Keep draft and close", exact: true })
       .click();
     await expect(referral).toHaveCount(0);
     await expect.poll(() => page.evaluate(() => window.history.state.__wfHistoryIndex)).toBe(originalIndex);

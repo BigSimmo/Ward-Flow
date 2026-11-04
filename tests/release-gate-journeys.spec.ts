@@ -20,6 +20,7 @@ import {
 } from "./helpers/ward-release-gate";
 import { clearToasts } from "./helpers/clear-toasts";
 import { escapeForRegExp } from "./helpers/ward-place-names";
+import { chooseEdKitChoice, expectEdKitChoice } from "./helpers/ed-kit-choices";
 import { openEdLists } from "./helpers/ward-ed-lists";
 import { homeFlowCard, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
@@ -98,12 +99,13 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
     ["ward-ed-referral-urgency", "3"],
     ["ward-ed-referral-observation", "general"],
   ] as const;
+  // L31: the answers are kit choices now, so each is picked and read through the kit helpers.
   for (const [testId, value] of raiseAnswers) {
-    await page.getByTestId(testId).selectOption(value);
-    await expect(page.getByTestId(testId)).toHaveValue(value);
+    await chooseEdKitChoice(page, testId, value);
+    await expectEdKitChoice(page, testId, value);
   }
   await page.getByTestId("ward-ed-referral-high-acuity-not-required").click();
-  for (const [testId, value] of raiseAnswers) await expect(page.getByTestId(testId)).toHaveValue(value);
+  for (const [testId, value] of raiseAnswers) await expectEdKitChoice(page, testId, value);
   await expect(page.getByTestId("ward-ed-referral-submit")).toBeEnabled();
   await expectAccessible(page, testInfo, "ED raise form, filled");
   await page.getByTestId("ward-ed-referral-submit").click();
@@ -161,12 +163,10 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
   await shortlist.getByRole("button", { name: "Record override" }).click();
   await expect(shortlist).toContainText("Parallel referral:");
   await expectNoReloadSince(page, "offering the ward");
-  // On a phone Placement is a bottom sheet over the page and its header; close it, as a
-  // coordinator would, before going to the ward.
-  if (isPhoneLayout(page)) {
-    await page.getByRole("button", { name: "Close shortlist and clear selection" }).click();
-    await expect(shortlist).toHaveCount(0);
-  }
+  // Placement is the patient drawer over the page on every screen size (H7, Josh 3 Nov 2026);
+  // close it, as a coordinator would, before going to the ward.
+  await page.getByRole("button", { name: "Close placement and clear selection" }).click();
+  await expect(shortlist).toHaveCount(0);
 
   // The ward accepts and pulls the patient into a bed.
   const unitName = unitById(unitId)?.name;

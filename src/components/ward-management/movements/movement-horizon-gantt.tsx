@@ -1,7 +1,17 @@
 "use client";
 
 import { useId, useMemo, useRef, useState, type CSSProperties, type MouseEvent } from "react";
-import { AlarmClock, ArrowRight, BedSingle, ChartNoAxesGantt, ChevronLeft, ChevronRight, Truck, X } from "lucide-react";
+import {
+  AlarmClock,
+  ArrowRight,
+  BedSingle,
+  ChartNoAxesGantt,
+  ChevronLeft,
+  ChevronRight,
+  Ambulance,
+  Users,
+  X,
+} from "lucide-react";
 import { IconTile, buttonClass } from "@/components/wf";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 
@@ -35,6 +45,8 @@ export interface MovementHorizonGanttProps {
   now: Instant;
   selectedMovementId?: string | null;
   onSelectMovement?: (id: string) => void;
+  /** M2 (3 Nov 2026): opens the patients on a route, or declined at a ward today, in a list. */
+  onShowCorridor?: (corridor: { kind: "accepted" | "declined"; unitId: string; originEdId?: string }) => void;
 }
 
 type ZoomHours = 12 | 24 | 48;
@@ -128,7 +140,7 @@ const PHASES: { id: CorridorPhase; label: string }[] = [
   { id: "arriving", label: "Bed pulled, arriving" },
   { id: "road", label: "On the road" },
 ];
-const EVENT_ICON = { admit: BedSingle, transit: Truck, delay: AlarmClock } as const;
+const EVENT_ICON = { admit: BedSingle, transit: Ambulance, delay: AlarmClock } as const;
 
 /** "02:42 tomorrow" as its clock face and day words, so the two can clip differently. */
 function splitClockAndDay(label: string): { clock: string; day: string } {
@@ -144,6 +156,7 @@ export function MovementHorizonGantt({
   now,
   selectedMovementId,
   onSelectMovement,
+  onShowCorridor,
 }: MovementHorizonGanttProps) {
   const [zoom, setZoom] = useState<ZoomHours>(48);
   const [scrub, setScrub] = useState<number>(0);
@@ -459,7 +472,7 @@ export function MovementHorizonGantt({
               </li>
               <li className={styles.ganttLegendItem}>
                 <span className={`${styles.ganttSwatch} ${styles.swatchTransit}`} aria-hidden="true">
-                  <Truck size={10} aria-hidden="true" />
+                  <Ambulance size={10} aria-hidden="true" />
                 </span>
                 On the road
               </li>
@@ -772,7 +785,7 @@ export function MovementHorizonGantt({
                                   for (let i = 0; i < n; i += 1) dots.push(ph.id);
                                 }
                                 return (
-                                  <li key={route.acceptedUnitId}>
+                                  <li key={route.acceptedUnitId} className={styles.routeItem}>
                                     <button
                                       type="button"
                                       className={styles.routePick}
@@ -799,6 +812,25 @@ export function MovementHorizonGantt({
                                         {`, ${route.stages.map((row) => `${stageCopy[row.stage].label} ${row.count}`).join(", ")}`}
                                       </span>
                                     </button>
+                                    {onShowCorridor ? (
+                                      <button
+                                        type="button"
+                                        className={styles.routePeople}
+                                        aria-label={`Patients from ${ed ? `${ed.siteCode} ED` : group.originEdId} to ${to}`}
+                                        title="See these patients"
+                                        onClick={() =>
+                                          onShowCorridor({
+                                            kind: "accepted",
+                                            unitId: route.acceptedUnitId,
+                                            originEdId: route.originEdId,
+                                          })
+                                        }
+                                      >
+                                        <Users size={12} aria-hidden="true" />
+                                        <span aria-hidden="true">{dots.length}</span>
+                                        <ChevronRight size={12} aria-hidden="true" className={styles.routePeopleChev} />
+                                      </button>
+                                    ) : null}
                                   </li>
                                 );
                               })}
@@ -823,15 +855,26 @@ export function MovementHorizonGantt({
                 <>
                   <p className={styles.railSummary}>
                     <b>{refusedCorridors.reduce((total, row) => total + row.count, 0)}</b> declines today across{" "}
-                    <b>{declinesByWard.length}</b> wards.
+                    <b>{declinesByWard.length}</b> wards.{onShowCorridor ? " Choose one to see who and ask again." : ""}
                   </p>
                   <ol className={styles.edGroups} aria-label="Declines today by ward, most first">
                     {declinesByWard.map((group) => {
                       const unit = units.find((candidate) => candidate.id === group.unitId);
                       return (
                         <li key={group.unitId} className={styles.declineRow}>
+                          {onShowCorridor ? (
+                            <button
+                              type="button"
+                              className={styles.declineOpen}
+                              onClick={() => onShowCorridor({ kind: "declined", unitId: group.unitId })}
+                              aria-label={`See the patients ${wardLabel(group.unitId, unit?.name)} declined today`}
+                            />
+                          ) : null}
                           <span className={styles.declineWard}>{wardLabel(group.unitId, unit?.name)}</span>
-                          <strong>{group.total}</strong>
+                          <strong className={styles.declineCount}>{group.total}</strong>
+                          {onShowCorridor ? (
+                            <ChevronRight size={14} aria-hidden="true" className={styles.declineChev} />
+                          ) : null}
                           <span className={styles.declineFrom}>
                             from{" "}
                             {group.from

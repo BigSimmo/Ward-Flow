@@ -3,6 +3,8 @@ name: Ward Flow CI
 on:
   pull_request:
     branches: [main]
+    # ready_for_review starts the full run when a draft is marked ready (draft fast lane below).
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
   merge_group: null
@@ -11,9 +13,10 @@ on:
     - cron: 0 18 * * *
 permissions:
   contents: read
-# A newer PR push cancels its older run. Main pushes share one queue: the running main check
-# finishes, and a newer merge replaces any main run still waiting, so a burst of merges checks
-# the newest main once instead of every commit (daily-release takes the newest CI-passed main).
+# Each PR and main have one queue. A newer push to a PR cancels that PR's older run, even mid-run,
+# because a superseded head's result is never used and it held the PR's new run behind it while
+# filling the 40 shared job slots (Josh, 4 Nov 08:20Z). Main runs always finish, and a newer main
+# push replaces any main run still waiting. Daily-release takes the newest CI-passed main.
 concurrency:
   group: ward-flow-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.event_name == 'push' && 'main' || format('{0}-{1}', github.event_name, github.run_id) }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -36,6 +39,7 @@ jobs:
       organisation: ${{ steps.plan.outputs.organisation }}
       doc_contracts: ${{ steps.plan.outputs.doc_contracts }}
       legal_sweep: ${{ steps.plan.outputs.legal_sweep }}
+      secret_scan: ${{ steps.secret-scan.outcome }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -73,6 +77,29 @@ jobs:
       - name: Record the tested tree
         if: ${{ github.event_name == 'pull_request' }}
         run: echo "::notice title=Ward tested tree::$(git rev-parse 'HEAD^{tree}')"
+      # The full-history secret scan (formerly its own job, about 20 seconds of work on a fresh
+      # runner). A failed scan fails this job, so every later job is skipped and Ward Flow required
+      # fails; its outcome also reaches Ward Flow required as needs.plan.outputs.secret_scan.
+      - name: Install checksum-verified gitleaks
+        env:
+          GITLEAKS_VERSION: 8.28.0
+          GITLEAKS_SHA256: a65b5253807a68ac0cafa4414031fd740aeb55f54fb7e55f386acb52e6a840eb
+        run: |
+          archive="$RUNNER_TEMP/gitleaks.tar.gz"
+          curl -fsSL --retry 3 -o "$archive" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          echo "${GITLEAKS_SHA256}  ${archive}" | sha256sum -c -
+          tar -xzf "$archive" -C "$RUNNER_TEMP" gitleaks
+          "$RUNNER_TEMP/gitleaks" version
+      - name: Scan git history for secrets
+        id: secret-scan
+        run: |
+          "$RUNNER_TEMP/gitleaks" git . --redact --no-banner --exit-code 1 --gitleaks-ignore-path .gitleaksignore --log-opts="--full-history HEAD"
+      # Last, because it moves HEAD: a pull request that conflicts with the current main fails here,
+      # in the cheap plan job, before any other job starts. The production build still merges main
+      # again before measuring the script budget.
+      - name: Fail early when this pull request conflicts with main
+        if: ${{ github.event_name == 'pull_request' }}
+        run: node scripts/ward-ci-public/merge-latest-main.mjs
   reuse:
     name: Ward Flow main reuse check
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
@@ -85,6 +112,7 @@ jobs:
       checks: read
     outputs:
       verified: ${{ steps.check.outputs.verified }}
+      backend_verified: ${{ steps.check.outputs.backend_verified }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -153,9 +181,18 @@ jobs:
       - name: Review dependency changes
         if: ${{ github.event_name == 'pull_request' && needs.plan.outputs.dependency_review == 'true' }}
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294
+      - name: Restore installed packages
+        id: node-modules
+        if: ${{ !cancelled() && needs.plan.outputs.full == 'true' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}
       - name: Install locked dependencies
         id: install
         if: ${{ !cancelled() && needs.plan.outputs.full == 'true' }}
+        env:
+          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
         run: node scripts/install-locked-dependencies.mjs
       - name: Check generated site map
         if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.doc_contracts == 'true' }}
@@ -214,8 +251,8 @@ jobs:
           retention-days: 3
   backend:
     name: Ward Flow backend and shared production proof
-    needs: plan
-    if: ${{ !cancelled() && needs.plan.outputs.backend == 'true' }}
+    needs: [plan, reuse]
+    if: ${{ !cancelled() && needs.plan.outputs.backend == 'true' && needs.reuse.outputs.backend_verified != 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     services:
@@ -237,8 +274,16 @@ jobs:
           cache: npm
       - name: Install and record the pinned npm toolchain
         run: npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require('./package.json').packageManager")" && node --version && npm --version
+      - name: Restore installed packages
+        id: node-modules
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}
       - name: Install locked dependencies
         id: install
+        env:
+          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
         run: node scripts/install-locked-dependencies.mjs
       - name: Install locked Ward backend dependencies
         id: backend-install
@@ -296,7 +341,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6, 7, 8]
+        shard: [1, 2, 3, 4, 5, 6]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -308,8 +353,16 @@ jobs:
           cache: npm
       - name: Install and record the pinned npm toolchain
         run: npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require('./package.json').packageManager")" && node --version && npm --version
+      - name: Restore installed packages
+        id: node-modules
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}
       - name: Install locked dependencies
         id: install
+        env:
+          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
         run: node scripts/install-locked-dependencies.mjs
       - name: Select reproducible nightly fuzz window
         if: ${{ github.event_name == 'schedule' && steps.install.outcome == 'success' }}
@@ -338,7 +391,7 @@ jobs:
         id: shard
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         env:
-          WARD_GATE_SHARD: ${{ matrix.shard }}/8
+          WARD_GATE_SHARD: ${{ matrix.shard }}/6
           # A pull request that changes nothing the legal-figure sweep runs leaves it out (Josh,
           # 27 October 2026); only an explicit "false" from the plan does, so main always runs it.
           WARD_GATE_SKIP_LEGAL_SWEEP: ${{ needs.plan.outputs.legal_sweep == 'false' && '1' || '0' }}
@@ -380,10 +433,12 @@ jobs:
           if-no-files-found: warn
           overwrite: true
           retention-days: 3
+  # Draft fast lane: a draft pull request skips the browser build, browser journeys and release gate,
+  # and Ward Flow required fails on a draft, so only the full run after ready_for_review can merge.
   browser-build:
     name: Ward Flow prepared browser build
     needs: [plan, reuse]
-    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.verified != 'true' }}
+    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.verified != 'true' && github.event.pull_request.draft != true }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -397,8 +452,16 @@ jobs:
           cache: npm
       - name: Install and record the pinned npm toolchain
         run: npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require('./package.json').packageManager")" && node --version && npm --version
+      - name: Restore installed packages
+        id: node-modules
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}
       - name: Install locked dependencies
         id: install
+        env:
+          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
         run: node scripts/install-locked-dependencies.mjs
       - name: Restore Next build cache
         id: next-cache
@@ -434,7 +497,7 @@ jobs:
   browser:
     name: Ward Flow browser journeys ${{ matrix.group }}
     needs: [plan, reuse, browser-build]
-    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.verified != 'true' && needs.browser-build.result == 'success' }}
+    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.verified != 'true' && github.event.pull_request.draft != true && needs.browser-build.result == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
@@ -452,8 +515,16 @@ jobs:
           cache: npm
       - name: Install and record the pinned npm toolchain
         run: npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require('./package.json').packageManager")" && node --version && npm --version
+      - name: Restore installed packages
+        id: node-modules
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}
       - name: Install locked dependencies
         id: install
+        env:
+          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
         run: node scripts/install-locked-dependencies.mjs
       - name: Download the verified browser build
         if: ${{ !cancelled() && needs.browser-build.result == 'success' && steps.install.outcome == 'success' }}
@@ -528,18 +599,35 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
   release-gate:
-    name: Ward Flow release gate ${{ matrix.project }} ${{ matrix.part }}
+    name: Ward Flow release gate ${{ matrix.pair }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    # Desktop Chromium and phone WebKit each run as three parallel jobs: the journeys and referrals
-    # parts must pass their required journeys on their own project (six in all), the checks part
-    # runs the accessibility sweep, and Ward Flow required needs all six jobs. The parts split the
-    # release-gate files without overlap (scripts/ward-flow/browser-run-contract.mjs).
+    # Desktop Chromium and phone WebKit each split the release gate into three parts (journeys,
+    # referrals, checks) that partition the release-gate files without overlap
+    # (scripts/ward-flow/browser-run-contract.mjs). The six suites run as three jobs of two, paired
+    # from measured medians so each job takes about the same time (Josh, 4 November 2026): every
+    # job runs its first suite, then its second on the same installed browsers, whatever the first
+    # did. Each suite keeps its own project, part, evidence and report artifact names, and Ward
+    # Flow required needs all three jobs.
     strategy:
       fail-fast: false
       matrix:
-        project: [release-gate-desktop, release-gate-phone]
-        part: [journeys, referrals, checks]
+        include:
+          - pair: phone checks, desktop journeys
+            project: release-gate-phone
+            part: checks
+            second_project: release-gate-desktop
+            second_part: journeys
+          - pair: phone referrals, desktop referrals
+            project: release-gate-phone
+            part: referrals
+            second_project: release-gate-desktop
+            second_part: referrals
+          - pair: phone journeys, desktop checks
+            project: release-gate-phone
+            part: journeys
+            second_project: release-gate-desktop
+            second_part: checks
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -551,8 +639,16 @@ jobs:
           cache: npm
       - name: Install and record the pinned npm toolchain
         run: npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require('./package.json').packageManager")" && node --version && npm --version
+      - name: Restore installed packages
+        id: node-modules
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}
       - name: Install locked dependencies
         id: install
+        env:
+          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
         run: node scripts/install-locked-dependencies.mjs
       - name: Download the verified browser build
         if: ${{ !cancelled() && needs.browser-build.result == 'success' && steps.install.outcome == 'success' }}
@@ -624,6 +720,36 @@ jobs:
           path: test-results/**/*.json
           if-no-files-found: error
           retention-days: 3
+      # The first suite's results are already uploaded; set them aside so the second suite's
+      # evidence and reports hold only its own files.
+      - name: Set aside the first suite's results
+        if: ${{ !cancelled() && steps.gate.outcome != 'skipped' }}
+        run: if [ -d test-results ]; then mv test-results "$RUNNER_TEMP/ward-release-gate-first-results"; fi
+      - name: Run the second release-gate suite
+        id: gate-second
+        if: ${{ !cancelled() && steps.browsers.outcome == 'success' }}
+        env:
+          WARD_GATE_BUILD: "1"
+          WARD_RELEASE_GATE_PROJECT: ${{ matrix.second_project }}
+          WARD_RELEASE_GATE_PART: ${{ matrix.second_part }}
+          WARD_BROWSER_ARTIFACT_DIR: ${{ needs.browser-build.result == 'success' && format('{0}/ward-browser-build', runner.temp) || '' }}
+        run: npm run test:e2e:release-gate
+      - name: Upload failed second-suite evidence
+        if: ${{ !cancelled() && steps.gate-second.outcome == 'failure' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: ward-release-gate-failures-${{ github.run_id }}-${{ matrix.second_project }}-${{ matrix.second_part }}
+          path: test-results/
+          if-no-files-found: warn
+          retention-days: 3
+      - name: Upload successful second-suite reports
+        if: ${{ !cancelled() && steps.gate-second.outcome == 'success' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: ward-release-gate-reports-${{ github.run_id }}-${{ matrix.second_project }}-${{ matrix.second_part }}
+          path: test-results/**/*.json
+          if-no-files-found: error
+          retention-days: 3
       - name: Save release browsers on main
         if: ${{ !cancelled() && steps.browsers.outcome == 'success' && steps.release-cache.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
@@ -631,35 +757,13 @@ jobs:
           path: ~/.cache/ms-playwright
           key: ward-release-browsers-${{ runner.os }}-chromium-webkit-${{ steps.release-version.outputs.version }}
     needs: [plan, browser-build]
-    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' }}
-  secret-scan:
-    name: Ward Flow secret scan
-    runs-on: ubuntu-24.04
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-      - name: Install checksum-verified gitleaks
-        env:
-          GITLEAKS_VERSION: 8.28.0
-          GITLEAKS_SHA256: a65b5253807a68ac0cafa4414031fd740aeb55f54fb7e55f386acb52e6a840eb
-        run: |
-          archive="$RUNNER_TEMP/gitleaks.tar.gz"
-          curl -fsSL --retry 3 -o "$archive" "https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
-          echo "${GITLEAKS_SHA256}  ${archive}" | sha256sum -c -
-          tar -xzf "$archive" -C "$RUNNER_TEMP" gitleaks
-          "$RUNNER_TEMP/gitleaks" version
-      - name: Scan git history for secrets
-        run: |
-          "$RUNNER_TEMP/gitleaks" git . --redact --no-banner --exit-code 1 --gitleaks-ignore-path .gitleaksignore --log-opts="--full-history HEAD"
+    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && github.event.pull_request.draft != true && needs.browser-build.result != 'skipped' }}
   build:
     name: Ward Flow production build
     needs: [plan, reuse]
     if: ${{ !cancelled() && needs.plan.outputs.build == 'true' && needs.reuse.outputs.verified != 'true' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -670,15 +774,36 @@ jobs:
       - name: Merge the latest main before measuring
         if: ${{ github.event_name == 'pull_request' }}
         run: node scripts/ward-ci-public/merge-latest-main.mjs
+      # Evidence for the main reuse check: the tree this build measured, after merging main.
+      - name: Record the built tree
+        if: ${{ github.event_name == 'pull_request' }}
+        run: echo "::notice title=Ward built tree::$(git rev-parse 'HEAD^{tree}')"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version-file: .nvmrc
           cache: npm
       - name: Install and record the pinned npm toolchain
         run: npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require('./package.json').packageManager")" && node --version && npm --version
+      - name: Restore installed packages
+        id: node-modules
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}
       - name: Install locked dependencies
         id: install
+        env:
+          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
         run: node scripts/install-locked-dependencies.mjs
+      # The clean tree is saved straight after its attested install, from main only, before any step
+      # writes into node_modules; pull requests restore it and install-locked-dependencies.mjs reuses
+      # it only when its post-install stamp still matches the lock and the files.
+      - name: Save installed packages on main
+        if: ${{ !cancelled() && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' && steps.install.outcome == 'success' && steps.node-modules.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ${{ steps.node-modules.outputs.cache-primary-key }}
       - name: Restore Next build cache
         id: production-cache
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
@@ -690,9 +815,20 @@ jobs:
       - name: Build for production (Railway build command)
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack
+      # On a PR that is over budget, budget-gate.mjs also measures main alone and fails only routes
+      # this PR grew, so one over-budget merge to main no longer fails every PR (4 Nov 2026).
       - name: Check the phone script budget
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: node scripts/check-script-budget.mjs
+        run: node scripts/ward-ci-public/budget-gate.mjs
+      # ward-flow-budget-heal.yml reads this when main goes over budget and opens a PR raising it.
+      - name: Keep main's phone script measurements for the budget heal
+        if: ${{ !cancelled() && github.event_name == 'push' && steps.install.outcome == 'success' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: script-budget-measured
+          path: ${{ runner.temp }}/script-budget/measured.json
+          if-no-files-found: ignore
+          retention-days: 7
       # H-0295: the scan reads .next/static only when a build has left it, so it runs after the build.
       - name: Scan the built client bundle for secrets
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
@@ -720,8 +856,16 @@ jobs:
           cache: npm
       - name: Install and record the pinned npm toolchain
         run: npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require('./package.json').packageManager")" && node --version && npm --version
+      - name: Restore installed packages
+        id: node-modules
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}
       - name: Install locked dependencies
         id: install
+        env:
+          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
         run: node scripts/install-locked-dependencies.mjs
       - name: Download shard coverage blobs
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
@@ -734,7 +878,7 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         env:
           WARD_SHARD_BLOBS: ${{ runner.temp }}/ward-shard-blobs
-          WARD_SHARD_COUNT: "8"
+          WARD_SHARD_COUNT: "6"
         run: |
           for shard in $(seq 1 "$WARD_SHARD_COUNT"); do
             ls "$WARD_SHARD_BLOBS"/blob-shard-"$shard"-of-"$WARD_SHARD_COUNT"-batch-*.json
@@ -761,17 +905,18 @@ jobs:
   required:
     name: Ward Flow required
     if: always()
-    needs: [plan, reuse, static, backend, unit, browser-build, browser, release-gate, secret-scan, build, coverage]
+    needs: [plan, reuse, static, backend, unit, browser-build, browser, release-gate, build, coverage]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Require every Ward Flow job to succeed
         env:
           REUSE_VERIFIED: ${{ needs.reuse.outputs.verified }}
+          BACKEND_REUSED: ${{ needs.reuse.outputs.backend_verified }}
           STATIC_RESULT: ${{ needs.static.result }}
           UNIT_RESULT: ${{ needs.unit.result }}
           BROWSER_RESULT: ${{ needs.browser.result }}
-          SECRET_SCAN_RESULT: ${{ needs.secret-scan.result }}
+          SECRET_SCAN_RESULT: ${{ needs.plan.outputs.secret_scan }}
           BUILD_RESULT: ${{ needs.build.result }}
           COVERAGE_RESULT: ${{ needs.coverage.result }}
           RELEASE_GATE_RESULT: ${{ needs.release-gate.result }}
@@ -783,6 +928,7 @@ jobs:
           BROWSER_SCOPE: ${{ needs.plan.outputs.browser }}
           BUILD_SCOPE: ${{ needs.plan.outputs.build }}
           BROWSER_BUILD_RESULT: ${{ needs.browser-build.result }}
+          DRAFT: ${{ github.event.pull_request.draft == true }}
         run: |
           set -euo pipefail
           require_scope() {
@@ -793,8 +939,18 @@ jobs:
           test "$PLAN_RESULT" = success
           test "$STATIC_RESULT" = success
           test "$SECRET_SCAN_RESULT" = success
-          require_scope "$BACKEND_SCOPE" "$BACKEND_RESULT"
-          require_scope "$BROWSER_SCOPE" "$RELEASE_GATE_RESULT"
+          if [ "$DRAFT" = true ]; then
+            require_scope "$BACKEND_SCOPE" "$BACKEND_RESULT"
+            test "$GITHUB_EVENT_NAME" = pull_request
+            require_scope "$UNIT_SCOPE" "$UNIT_RESULT"
+            require_scope "$UNIT_SCOPE" "$COVERAGE_RESULT"
+            require_scope "$BUILD_SCOPE" "$BUILD_RESULT"
+            test "$BROWSER_BUILD_RESULT" = skipped
+            test "$BROWSER_RESULT" = skipped
+            test "$RELEASE_GATE_RESULT" = skipped
+            echo "::error title=Draft fast lane::Quick checks passed. Browser, phone and accessibility checks run when this pull request is marked ready; only that run can pass this check."
+            exit 1
+          fi
           if [ "$REUSE_VERIFIED" = true ]; then
             test "$GITHUB_EVENT_NAME" = push
             test "$GITHUB_REF" = refs/heads/main
@@ -804,7 +960,13 @@ jobs:
             test "$BROWSER_RESULT" = skipped
             test "$BUILD_RESULT" = skipped
             test "$COVERAGE_RESULT" = skipped
+            test "$RELEASE_GATE_RESULT" = skipped
+            if [ "$BACKEND_REUSED" = true ]; then test "$BACKEND_RESULT" = skipped;
+            else require_scope "$BACKEND_SCOPE" "$BACKEND_RESULT"; fi
           else
+            test "$BACKEND_REUSED" != true
+            require_scope "$BACKEND_SCOPE" "$BACKEND_RESULT"
+            require_scope "$BROWSER_SCOPE" "$RELEASE_GATE_RESULT"
             require_scope "$UNIT_SCOPE" "$UNIT_RESULT"
             require_scope "$UNIT_SCOPE" "$COVERAGE_RESULT"
             require_scope "$BROWSER_SCOPE" "$BROWSER_BUILD_RESULT"

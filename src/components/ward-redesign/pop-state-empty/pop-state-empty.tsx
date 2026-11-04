@@ -41,6 +41,7 @@ export function PopStateEmpty({ page }: { page: ReactNode }) {
       supportNotifications: NONE,
       homeServiceReturns: NONE,
       directoryChecks: NONE,
+      returnEarlyFlags: NONE,
       focusMovementId: undefined,
     }),
     [world],

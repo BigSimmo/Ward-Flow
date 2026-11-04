@@ -250,3 +250,66 @@
 .wrapRows.wrapRows [data-overdue="true"]::before {
   display: none;
 }
+
+/* R4 (Josh, 3 Nov 2026): each offer has its own actions. Polish: the whole row opens the movement
+   (its name link is stretched over it), so Chase is the row's one button and a chevron says "open". */
+.offersTable tbody tr {
+  position: relative;
+  cursor: pointer;
+}
+.offersTable .offerLink::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+.offersTable .offerActions {
+  position: relative;
+  z-index: 1;
+}
+.offerChevron {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+.offersTable .offerActionsHead {
+  width: 1%;
+}
+.offersTable .offerActions {
+  white-space: nowrap;
+  text-align: end;
+}
+.offerActionRow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+}
+/* Doubled to beat the queue's wrapping rule above, so "6h 40m" and the answer stay on one line. */
+.offersTable.offersTable .offerWait.offerWait,
+.offersTable.offersTable .offerAnswer.offerAnswer,
+.offersTable.offersTable .offerAnswer.offerAnswer * {
+  white-space: nowrap;
+}
+.offerChased {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+.offersTable tbody tr:hover {
+  background: var(--wf-hover);
+}
+
+@media (max-width: 46.4375rem) {
+  .offersTable tr {
+    grid-template-areas:
+      "name wait"
+      "wards actions";
+    row-gap: var(--wf-s-1);
+  }
+  .offersTable .offerActions {
+    position: relative;
+    z-index: 1;
+    grid-area: actions;
+    display: flex;
+    justify-content: flex-end;
+    align-self: center;
+    gap: var(--wf-s-2);
+  }
+}

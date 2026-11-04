@@ -11,12 +11,13 @@ export const metadata: Metadata = {
 type Param = string | string[] | undefined;
 const one = (value: Param) => (typeof value === "string" ? value : undefined);
 
-/** `?service=` (a health service, or `all`), `?ward=` (a unit id) or `?ed=` (an ED id) picks the screen. */
+/** `?service=` (a health service, or `all`), `?ward=` (a unit id) or `?ed=` (an ED id) picks the screen;
+ * `?board=` picks a ward or ED screen's board (clinical, handover, obs, legal, today, or beds on an ED). */
 export default async function WardBedMeetingTvPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ service?: Param; ward?: Param; ed?: Param }>;
+  searchParams?: Promise<{ service?: Param; ward?: Param; ed?: Param; board?: Param }>;
 }) {
-  const { service, ward, ed } = (await searchParams) ?? {};
-  return <BedMeetingTvScreen service={one(service)} ward={one(ward)} ed={one(ed)} />;
+  const { service, ward, ed, board } = (await searchParams) ?? {};
+  return <BedMeetingTvScreen service={one(service)} ward={one(ward)} ed={one(ed)} board={one(board)} />;
 }

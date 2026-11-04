@@ -661,6 +661,12 @@ export type WardFlowEvent =
       sex?: string;
       suburb?: string;
       aboriginalOrTorresStraitIslanderStatus?: string; // Finding 51: from the listed answers
+      /** RF7 (Josh, 3 Nov 2026): optional typed details; blank is the key absent, as `suburb`. */
+      preferredName?: string;
+      address?: string;
+      generalPractitioner?: string;
+      catchmentCommunityTeam?: string;
+      interpreterLanguage?: string;
     }
   | {
       type: "FLAG_MOVEMENT_TURNAROUND_PRIORITY";
@@ -2495,6 +2501,8 @@ export type WardFlowEvent =
   | import("./on-call/on-call-checks").DirectoryCheckEvent
   // Q61 (Josh, 31 Oct 2026): the site bed manager's site handover sign-off, and its Undo.
   | import("./site-sign-off/site-handover-sign-off").SiteHandoverSignOffEvent
+  // Out of area "Flag early" (Josh, 3 Nov 2026), and its Undo.
+  | import("./out-of-area/return-early").ReturnEarlyEvent
   /*
    * v10 pass 2 (Josh, 10 Oct 2026): the build guide's "Toast with Undo". Each undo is a proper,
    * role-gated, audited event that restores the state its decision changed EXACTLY, and only within

@@ -1017,8 +1017,9 @@
 }
 
 .railGlyph {
-  width: 1rem;
-  height: 1rem;
+  /* 18px (icon audit, 3 Nov 2026), the size the closed icon rail already used, so the open rail matches. */
+  width: 1.125rem;
+  height: 1.125rem;
   flex-shrink: 0;
   color: color-mix(in srgb, var(--wf-accent-ink) 70%, var(--wf-ink-3));
 }

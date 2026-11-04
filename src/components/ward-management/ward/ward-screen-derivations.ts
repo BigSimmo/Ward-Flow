@@ -37,6 +37,7 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
 import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
 import type { PatientResolutionSubject, ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
+import { NAME_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import type { WardReferralInboxEntry } from "@/components/ward-management/referrals/referral-inbox";
 import type { DueSoonThresholds } from "@/components/ward-management/ward-clock";
@@ -499,3 +500,12 @@ export function wardLiveFormAlerts({
 
 /** One bed on the ward screen's roster. */
 export type WardScreenBed = ReturnType<typeof wardBedRoster>["bedsList"][number];
+
+/** Bug B1 (4 Nov 2026): the Ward answer note under the facts, only for what this movement does not
+ *  record. No linked person means no name and no age; a linked person without a date of birth has no
+ *  age. Nothing when both are held. */
+export function identityAbsenceNote(identity: ResolvedPatientInfo): string | undefined {
+  if (identity.formalName === NAME_NOT_RECORDED) return "Patient name and age are not recorded for this movement.";
+  if (identity.patient && !identity.patient.dateOfBirth) return "Age is not recorded for this movement.";
+  return undefined;
+}

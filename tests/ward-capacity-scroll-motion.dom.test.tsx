@@ -1,0 +1,89 @@
+import "@testing-library/jest-dom/vitest";
+import { act, cleanup, configure, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
+import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+
+configure({ getElementError: () => new Error("Capacity motion query failed; record-bearing diagnostics suppressed.") });
+
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  vi.useRealTimers();
+  document.documentElement.removeAttribute("data-reduced-motion");
+  act(() => {
+    setWardFeatureFlagOnDevice("role-access", null);
+    resetWardAccessStoreForTests();
+  });
+});
+
+describe("Capacity bed map reveal motion", () => {
+  it.each(["app", "system", "ordinary"] as const)(
+    "honours the %s motion preference when a hero figure highlights beds",
+    (mode) => {
+      vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+        matches: mode === "system" && query === "(prefers-reduced-motion: reduce)",
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(() => true),
+      }));
+      if (mode === "app") document.documentElement.setAttribute("data-reduced-motion", "");
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <CapacityScreen />
+        </WardFlowProvider>,
+      );
+      const scroll = vi.mocked(Element.prototype.scrollIntoView);
+      scroll.mockClear();
+      fireEvent.click(
+        within(screen.getByRole("group", { name: "Network beds" })).getByRole("button", { name: /Locked ready/u }),
+      );
+      expect(scroll).toHaveBeenCalledWith({ block: "start", behavior: mode === "ordinary" ? "smooth" : "instant" });
+    },
+  );
+
+  it.each(["app", "system", "ordinary"] as const)(
+    "honours the %s preference when a site desk reveals another site's ready bed",
+    (mode) => {
+      vi.useFakeTimers();
+      vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
+        matches: mode === "system" && query === "(prefers-reduced-motion: reduce)",
+        media: query,
+        onchange: null,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        addListener: vi.fn(),
+        removeListener: vi.fn(),
+        dispatchEvent: vi.fn(() => true),
+      }));
+      if (mode === "app") document.documentElement.setAttribute("data-reduced-motion", "");
+      act(() => {
+        setWardFeatureFlagOnDevice("role-access", true);
+        setWardAccess({ role: "bed_manager", scope: { kind: "site", siteCode: "ARM" } });
+      });
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <CapacityScreen />
+        </WardFlowProvider>,
+      );
+      const otherUnits = allUnits().filter((unit) => unit.siteCode !== "ARM");
+      const choices = within(screen.getByTestId("capacity-road-time")).getAllByRole("button");
+      const choice = choices.find((button) => otherUnits.some((unit) => button.textContent?.includes(unit.name)));
+      expect(choice).toBeDefined();
+      const scroll = vi.mocked(Element.prototype.scrollIntoView);
+      scroll.mockClear();
+      fireEvent.click(choice!);
+      act(() => {
+        vi.advanceTimersByTime(50);
+      });
+      expect(scroll).toHaveBeenCalledWith({ block: "center", behavior: mode === "ordinary" ? "smooth" : "instant" });
+    },
+  );
+});

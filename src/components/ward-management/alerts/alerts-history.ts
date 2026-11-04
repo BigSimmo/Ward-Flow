@@ -1,5 +1,7 @@
 // The Alerts screen's History tab: what this session recorded, newest first. Moved out of
 // `alerts-screen.tsx` to keep it under the line cap.
+import { useMemo } from "react";
+
 import type { WfTone } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { snoozeReasonLabel } from "@/components/ward-management/ward-inbox-snooze";
@@ -27,7 +29,7 @@ export type HistoryEntry = {
   action: boolean;
 };
 
-export function alertsHistory({
+function alertsHistory({
   inboxAcknowledgements,
   inboxOwnership,
   inboxSnoozes,
@@ -150,4 +152,50 @@ export function alertsHistory({
     }
   }
   return entries.sort((a, b) => b.at - a.at);
+}
+
+/** `alertsHistory`, read again only when one of its inputs changes. Kept here so the screen stays under its line cap. */
+export function useAlertsHistory(input: Parameters<typeof alertsHistory>[0]): HistoryEntry[] {
+  const {
+    inboxAcknowledgements,
+    inboxOwnership,
+    inboxSnoozes,
+    eventLog,
+    broadcastAlerts,
+    movements,
+    umrnLookup,
+    units,
+    plannedAdmissions,
+    admissions,
+    now,
+  } = input;
+  return useMemo(
+    () =>
+      alertsHistory({
+        inboxAcknowledgements,
+        inboxOwnership,
+        inboxSnoozes,
+        eventLog,
+        broadcastAlerts,
+        movements,
+        umrnLookup,
+        units,
+        plannedAdmissions,
+        admissions,
+        now,
+      }),
+    [
+      inboxAcknowledgements,
+      inboxOwnership,
+      inboxSnoozes,
+      eventLog,
+      broadcastAlerts,
+      movements,
+      umrnLookup,
+      units,
+      plannedAdmissions,
+      admissions,
+      now,
+    ],
+  );
 }

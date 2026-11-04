@@ -1,10 +1,11 @@
 "use client";
 
-// The Alerts screen's parts beside the queue (Q181, Josh 1 Nov 2026): the live broadcast and the
-// notices sit in Now, and what this session recorded sits in Earlier today. Moved out of
-// `alerts-screen.tsx` to keep it under the line cap; the screen keeps the state and the acts they call.
-import { Clock } from "lucide-react";
-import { useState } from "react";
+// The Alerts screen's parts beside the queue. AL2 (Josh, 3 Nov 2026): the notices sit in Open, what
+// this desk acted on and the notices already read sit in Cleared, and the live and past broadcasts
+// sit in Broadcasts. Moved out of `alerts-screen.tsx` to keep it under the line cap; the screen keeps
+// the state and the acts they call.
+import { CheckCheck, Radio } from "lucide-react";
+import { useState, type ReactNode } from "react";
 
 import { EmptyState, StatusGlyph, TabPanel, cx } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -25,7 +26,7 @@ import { BroadcastLiveCard, EarlierBroadcasts } from "./broadcast-live-card";
 import styles from "./alerts.module.css";
 import tab from "./broadcast-tab.module.css";
 
-/** Now, at the top: Pull now and the live broadcast with its action bar; nothing when none is live. */
+/** Broadcasts, at the top: Pull now and the live broadcast with its action bar; nothing when none is live. */
 export function AlertsLiveBroadcasts({
   livePullNows,
   handleStandDown,
@@ -140,22 +141,26 @@ function NoticeRows({
 }
 
 /**
- * Now, after Act now and Waiting: the person's due reminders from Tools, then the unread notices
- * (Q181). Nothing when there are neither.
+ * Open, after Act now and Waiting: the person's due reminders from Tools, then the unread notices
+ * (Q181). Nothing when there are neither, or when the Open filter leaves them out.
  */
 export function AlertsNoticesGroup({
   notices,
   now,
   umrnLookup,
+  showReminders = true,
+  showNotices = true,
 }: {
   notices: WardFlowState["notices"];
   now: Instant;
   umrnLookup: Parameters<typeof withUmrnInPlaceOfMovementIds>[1];
+  showReminders?: boolean;
+  showNotices?: boolean;
 }) {
   return (
     <>
-      <AlertsRemindersGroup now={now} />
-      {notices.length === 0 ? null : (
+      {showReminders ? <AlertsRemindersGroup now={now} /> : null}
+      {notices.length === 0 || !showNotices ? null : (
         <section className={styles.group} aria-label="Notices" data-testid="ward-alerts-notices">
           <GroupHead tone="info" label="Notices" count={notices.length} aside="for information" />
           <NoticeRows notices={notices} now={now} umrnLookup={umrnLookup} />
@@ -166,35 +171,36 @@ export function AlertsNoticesGroup({
 }
 
 /**
- * Earlier today (Q181): what this session recorded, the notices already read and the broadcasts
- * that have ended.
+ * Cleared (AL2): what this desk acted on this session (acknowledged, taken, released, snoozed,
+ * returned, beds released), newest first, then the notices already read. Broadcasts have their own
+ * view. Each line reads as recorded; nothing here counts down.
  */
-export function AlertsEarlierPanel({
+export function AlertsClearedPanel({
   history,
   readNotices,
-  pastBroadcasts,
-  units,
-  movements,
   now,
   umrnLookup,
 }: {
   history: HistoryEntry[];
   readNotices: WardFlowState["notices"];
-  pastBroadcasts: BroadcastAlert[];
-  units: WardFlowState["units"];
-  movements: WardFlowState["movements"];
   now: Instant;
   umrnLookup: Parameters<typeof withUmrnInPlaceOfMovementIds>[1];
 }) {
-  const nothing = history.length === 0 && readNotices.length === 0 && pastBroadcasts.length === 0;
+  const acted = history.filter((entry) => entry.action);
   return (
     <TabPanel idPrefix="alerts" id="earlier" className={styles.tabBody}>
-      {nothing ? <EmptyState icon={Clock} title="Nothing recorded this session" /> : null}
-      {history.length > 0 ? (
-        <section className={styles.group} aria-label="Recorded this session">
-          <GroupHead label="Recorded this session" count={history.length} />
-          <ul className={styles.historyList} aria-label="Recorded this session">
-            {history.map((entry) => (
+      {acted.length === 0 && readNotices.length === 0 ? (
+        <EmptyState
+          icon={CheckCheck}
+          title="Nothing cleared this session"
+          meta="Alerts you acknowledge, take, release or snooze are listed here, newest first."
+        />
+      ) : null}
+      {acted.length > 0 ? (
+        <section className={styles.group} aria-label="Acted on">
+          <GroupHead label="Acted on" count={acted.length} aside="this session, newest first" />
+          <ul className={styles.historyList} aria-label="Acted on this session">
+            {acted.map((entry) => (
               <li key={entry.id}>
                 <span className={styles.mono}>{formatInstantWithDay(entry.at, now)}</span>
                 <StatusGlyph tone={entry.tone} size={9} />
@@ -214,18 +220,51 @@ export function AlertsEarlierPanel({
           <NoticeRows notices={readNotices} now={now} umrnLookup={umrnLookup} />
         </section>
       ) : null}
-      <EarlierBroadcasts
-        alerts={pastBroadcasts}
-        units={units}
-        now={now}
-        status={(alert) =>
-          alert.status === "stood_down"
-            ? `stood down${alert.stoodDownAt !== undefined ? ` ${formatInstantWithDay(alert.stoodDownAt, now)}` : ""}`
-            : isAlertLive(alert, movements, now)
-              ? "still live"
-              : "ended"
-        }
-      />
+    </TabPanel>
+  );
+}
+
+/**
+ * Broadcasts (AL2): the live Pull now and broadcast cards, with their actions, then the broadcasts
+ * that have ended or been stood down.
+ */
+export function AlertsBroadcastsPanel({
+  live,
+  anyLive,
+  pastBroadcasts,
+  units,
+  movements,
+  now,
+}: {
+  live: ReactNode;
+  anyLive: boolean;
+  pastBroadcasts: BroadcastAlert[];
+  units: WardFlowState["units"];
+  movements: WardFlowState["movements"];
+  now: Instant;
+}) {
+  return (
+    <TabPanel idPrefix="alerts" id="broadcasts" className={styles.tabBody}>
+      {live}
+      {!anyLive && pastBroadcasts.length === 0 ? (
+        <EmptyState icon={Radio} title="No broadcasts this session" meta="Nothing is live." />
+      ) : null}
+      {pastBroadcasts.length === 0 ? null : (
+        <div className={tab.tabBody}>
+          <EarlierBroadcasts
+            alerts={pastBroadcasts}
+            units={units}
+            now={now}
+            status={(alert) =>
+              alert.status === "stood_down"
+                ? `stood down${alert.stoodDownAt !== undefined ? ` ${formatInstantWithDay(alert.stoodDownAt, now)}` : ""}`
+                : isAlertLive(alert, movements, now)
+                  ? "still live"
+                  : "ended"
+            }
+          />
+        </div>
+      )}
     </TabPanel>
   );
 }

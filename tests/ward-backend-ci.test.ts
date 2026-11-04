@@ -54,8 +54,11 @@ describe("Ward backend CI", () => {
     );
     const backendJob = jobAt(backendTest.start);
     expect(backendJob?.name).toBe("backend");
-    expect(backendJob?.text).toMatch(/^\s*needs: plan\s*$/mu);
-    expect(backendJob?.text).toContain("needs.plan.outputs.backend == 'true'");
+    // reuse: a main push skips it only when that PR run really ran it (main-reuse.mjs backend_verified).
+    expect(backendJob?.text).toMatch(/^\s*needs: \[plan, reuse\]\s*$/mu);
+    expect(backendJob?.text).toContain(
+      "needs.plan.outputs.backend == 'true' && needs.reuse.outputs.backend_verified != 'true'",
+    );
     expect(backendJob?.text).toMatch(/^\s*run: node scripts\/install-locked-dependencies\.mjs\s*$/mu);
     expect(backendJob?.text).toMatch(/^\s*image:\s*postgres:16@sha256:[0-9a-f]{64}\s*$/mu);
     expect(backendJob?.text).toMatch(/^\s*POSTGRES_DB:\s*wardflow_test\s*$/mu);

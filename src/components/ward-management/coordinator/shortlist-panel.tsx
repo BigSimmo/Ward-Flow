@@ -5,10 +5,10 @@ import { currentLegalDueAt, formProgression } from "@/components/ward-management
 
 import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp, Info } from "lucide-react";
 import Link from "next/link";
-import { flushSync } from "react-dom";
+import { createPortal, flushSync } from "react-dom";
 import { movementHref, patientHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { holdOpenForm } from "@/components/wf/sheet-focus";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { Button, DisabledReason, SrOnly, StatusGlyph, buttonClass, durMinutes, useIsPhone } from "@/components/wf";
@@ -93,19 +93,18 @@ import {
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { sendStepsInOrder } from "@/components/ward-management/coordinator/send-steps-in-order";
+import { useWardFormSave } from "../use-ward-form-save";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { urgencyTierLabel, waitFactors } from "@/components/ward-management/ward-priority";
-import {
-  REFERENCE_DISTANCE_CAVEAT,
-  referenceDistance,
-} from "@/components/ward-management/reference/ward-reference-distances";
+import { referenceDistance } from "@/components/ward-management/reference/ward-reference-distances";
 import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { openWardHelp } from "@/components/ward-management/help/ward-help-events";
 
 import styles from "./coordinator.module.css";
+import drawer from "@/components/ward-management/movements/movement-drawer.module.css";
 import shortlistStyles from "./shortlist-panel.module.css";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { FIT_LABEL, fitGroups, type FitKind } from "./home-fit";
@@ -121,6 +120,9 @@ import {
   InlineFact,
   LEGAL_STATUS_OPTIONS,
   PULLED_EXPLANATION,
+  ROAD_DISTANCE_SHORT_CAVEAT,
+  referralAsked,
+  referralFrom,
   URGENCY_OPTIONS,
 } from "./shortlist-panel-parts";
 
@@ -135,6 +137,9 @@ const LEGAL_STATUS_REASON_UNCHOSEN =
   "Choose where this entry came from before recording the change. None is chosen for you: a reason nobody picked would be filed as the treating team's own report.";
 
 type ShortlistPanelProps = {
+  /** Mock-up only (Home placement drawer, H7, D-91): "drawer" sends the actions to `footerSlot`. */
+  variant?: "column" | "drawer";
+  footerSlot?: HTMLElement | null;
   movement: Movement | undefined;
   now: Instant;
   units: Unit[];
@@ -256,66 +261,58 @@ function legalFormLine(movement: Movement, now: Instant) {
  * Deliberately minimal: the decision itself lives on the Referrals board, so this preview builds
  * no second copy of it. Its Decide link opens that board on this referral (WS-04, 26 Oct 2026).
  */
-export function ReferralPlacementPanel({ referral, now }: { referral: Referral; now: Instant }) {
-  // Elapsed since the referral was raised — the same `formatElapsed` helper every elapsed-time
-  // line on this screen already uses, applied directly since a referral carries no movement to
-  // derive it through.
+export function ReferralPlacementPanel({
+  referral,
+  now,
+  footerSlot,
+}: {
+  referral: Referral;
+  now: Instant;
+  /** The placement drawer's pinned foot (H9, Josh 3 Nov 2026): Decide sits there, never scrolled away. */
+  footerSlot?: HTMLElement | null;
+}) {
+  // Elapsed since the referral was raised, by the same `formatElapsed` every elapsed line here uses.
   const waitingLabel = formatElapsed(Math.max(now - referral.raisedAt, 0));
-  // The patient's name through the same resolver the Referral board uses, never the raw record id
-  // (live walkthrough, 25 Sept 2026: this panel showed "PT-RD06" where the board showed a name).
-  // A referral with no single linked patient says so plainly.
-  const { patients, referrals, movements } = useWardFlowSelect("patients", "referrals", "movements");
+  // The patient's name through the same resolver the Referral board uses, never the raw record id.
+  const { patients, referrals, movements, units } = useWardFlowSelect("patients", "referrals", "movements", "units");
   const patientInfo = resolveSubjectPatient(referral, { patients, referrals, movements });
   const patientLabel = patientInfo.patient ? patientInfo.formalName : "Not recorded";
-
-  return (
-    <div
-      className={`${styles.shortlistBody} ${shortlistStyles.body}`}
-      data-testid={`ward-referral-placement-${referral.id}`}
+  // WS-04: Decide opens the referral on the Referrals board, where Accept and Decline live.
+  const decide = (
+    <Link
+      href={referralBoardHref(referral.id)}
+      className={buttonClass({ variant: "pri", className: drawer.wide })}
+      aria-label={`Decide referral for ${patientLabel}`}
+      data-testid="ward-referral-placement-decide"
     >
-      <header className={`${styles.shortlistHeader} ${shortlistStyles.subjectHeader}`}>
-        <div className={styles.shortlistHeaderTop}>
-          <h3 className={`${styles.shortlistMovementId} ${shortlistStyles.subjectId}`}>
-            <small>Referral</small>
-            {patientInfo.umrn}
-          </h3>
-          <span className={`${styles.shortlistTierBadge} ${shortlistStyles.tierBadge}`} data-tier={referral.urgency}>
-            {urgencyTierLabel(referral.urgency)}
-          </span>
-        </div>
-        <dl className={shortlistStyles.factGrid}>
-          <Fact label="Patient" value={patientLabel} testId="ward-referral-placement-patient" />
-          <Fact label="Profile" value={`${referral.ageBand} · ${referral.homeRegion}`} />
-          {/* Owner ruling, 2026-09-02: a coordinator may see a referred patient's suburb — a suburb
-            is a service area, never an address (`PD-3`). Same wording every other reader of a
-            referral uses (`referralSuburbLabel`), never a second copy written here. Catchment is
-            information, never a filter (Q-2): this states it and never hides or reorders a row by
-            it. */}
-          <Fact label="Suburb" value={referralSuburbLabel(referral.suburb)} testId="ward-referral-placement-suburb" />
-          <Fact label="Waiting" value={waitingLabel} />
-        </dl>
-        {/* WS-04 (workflow speed audit, 26 Oct 2026): this preview was a dead end with no decision.
-            Decide opens the referral on the Referrals board, where Accept and Decline live. Home
-            redesign (31 Oct 2026): the kit's shared primary button at the kit's own size (40px
-            with a 48px tap cover on a phone), in place of the old `--accent` confirm button. */}
-        <div className={styles.shortlistActionRow}>
-          <Link
-            href={referralBoardHref(referral.id)}
-            className={buttonClass({ variant: "pri", className: shortlistStyles.decide })}
-            aria-label={`Decide referral for ${patientLabel}`}
-            data-testid="ward-referral-placement-decide"
-          >
-            Decide
-          </Link>
-        </div>
-      </header>
-      <details className={shortlistStyles.infoDisclosure}>
-        <summary>About this referral</summary>
-        <p className={styles.placeholder}>
-          This is a request for a bed, not yet a movement — no ward is pointed at it, and it carries no stage and no
-          legal clock of its own.
+      Decide on this referral
+    </Link>
+  );
+  return (
+    <div data-testid={`ward-referral-placement-${referral.id}`}>
+      <div className={drawer.status}>
+        <p className={drawer.statusLine}>
+          <StatusGlyph tone="info" size={9} />
+          <strong>Awaiting a decision</strong>
+          <span className={drawer.spacer} />
+          <span className={drawer.waitValue}>{waitingLabel}</span>
         </p>
-      </details>
+        <span className={drawer.ticks}>
+          <span>{urgencyTierLabel(referral.urgency)}</span>
+        </span>
+      </div>
+      <div className={drawer.facts}>
+        <dl className={drawer.grid}>
+          <Fact label="Ward asked" value={referralAsked(referral, units)} />
+          <Fact label="Referred from" value={referralFrom(referral)} />
+          <Fact label="Profile" value={`${referral.ageBand} · ${referral.homeRegion}`} />
+          {/* Owner ruling, 2026-09-02: a coordinator may see a referred patient's suburb, a service
+              area and never an address (PD-3), in the wording every reader uses. Never a filter (Q-2). */}
+          <Fact label="Suburb" value={referralSuburbLabel(referral.suburb)} testId="ward-referral-placement-suburb" />
+        </dl>
+        <p className={shortlistStyles.listNote}>A request for a bed. Accept or decline it on the Referrals board.</p>
+      </div>
+      {footerSlot ? createPortal(decide, footerSlot) : <div className={drawer.actions}>{decide}</div>}
     </div>
   );
 }
@@ -347,7 +344,10 @@ export function ShortlistPanel({
   parallelReferralCap,
   pullHoldMinutes = defaultWardConfiguration().pullHoldMinutes,
   onRefer,
+  variant = "column",
+  footerSlot,
 }: ShortlistPanelProps) {
+  const toFoot = (node: ReactNode) => (variant === "drawer" && footerSlot ? createPortal(node, footerSlot) : node);
   // Owner, 26 Sept 2026: the patient's name, not the WF journey number. Called unconditionally,
   // ahead of the `if (!movement)` early return below, so the hook order stays fixed.
   const thresholds = useDueSoonThresholds();
@@ -469,19 +469,6 @@ export function ShortlistPanel({
   const [overrideOpen, setOverrideOpen] = useState(false);
   const [overrideReason, setOverrideReason] = useState("");
 
-  const isOverrideDirty = overrideReason.trim().length > 0;
-  const handleRestoreOverride = useCallback((cached: string) => {
-    setOverrideReason(cached);
-    setOverrideOpen(true);
-  }, []);
-
-  const { clearDraft: clearOverrideDraft } = useDirtyStateGuard({
-    key: movement?.id ? `shortlist-override-${movement.id}` : undefined,
-    isDirty: isOverrideDirty,
-    value: overrideReason,
-    onRestore: handleRestoreOverride,
-    confirmMessage: "You have an unsaved clinical override reason. Are you sure you want to leave?",
-  });
   /**
    * T12 (item 9, owner answer 9, 17 September 2026): the coordinator's own "checked with the
    * ward" pair for a `Non-binary` placement — two separate facts, neither standing in for the
@@ -491,25 +478,38 @@ export function ShortlistPanel({
   const [genderPlacementReason, setGenderPlacementReason] = useState("");
   const [genderPlacementChecked, setGenderPlacementChecked] = useState(false);
   const [confirmationMovementId, setConfirmationMovementId] = useState(movement?.id);
-  // Task 5: which candidate wards a human has explicitly picked to refer to, capped at
-  // `PARALLEL_REFERRAL_CAP`. This is a separate, multi-select truth from `selectedUnitId` (which
-  // stays single-valued and shared with the diagram, driving only which candidate's gates are
-  // shown) — a coordinator can refer to up to three wards at once, but the diagram and the gate
-  // list can only ever explain one at a time.
-  //
-  // ⚠️ RA1 (item 18): HOLDS ONLY NEWLY-PICKED, NOT-YET-LIVE WARDS. A ward already carrying a live
-  // referral (`movement.referredUnitIds`) is shown pre-selected and locked without ever entering
-  // this state — see `toggleReferTarget` and the candidate list below. `REFER_TO_UNITS` now unions
-  // whatever this dispatches with the movement's own live list, so re-referring can only ever ADD.
+  // Task 5/RA1: new referral picks are separate from selectedUnitId (the inspected ward); live requests stay
+  // locked and REFER_TO_UNITS adds to them. Finding 188: the parallel cap warns but does not block.
   const [referTargets, setReferTargets] = useState<string[]>([]);
-  // RA1 (item 18): which live ward's "Withdraw this request" form is open, and the reason chosen
-  // in it. Mirrors `releasePullOpen`/`releasePullReason` above — the form only ever renders for a
-  // ward that is genuinely live, so it can never advertise an action the reducer would refuse.
+  // RA1: the withdrawal opening and reason belong to one genuinely live ward request.
   const [withdrawUnitId, setWithdrawUnitId] = useState<string | undefined>(undefined);
   // L3: after an acceptance the next step leads; the bed list stays one tap away ("Find another bed"),
   // so the coordinator can still change the destination or override. Keyed by movement.
   const [otherBedsFor, setOtherBedsFor] = useState<string | undefined>(undefined);
   const [withdrawReason, setWithdrawReason] = useState<WardRequestWithdrawalReason | "">("");
+  const targetScope = JSON.stringify([movement?.id, [...referTargets].sort()]);
+  const genderSave = useWardFormSave(`shortlist-gender:${targetScope}`);
+  const overrideSave = useWardFormSave(`shortlist-override:${targetScope}`);
+  const withdrawSave = useWardFormSave(`shortlist-withdraw:${JSON.stringify([movement?.id, withdrawUnitId])}`);
+  const actionPending = genderSave.pending || overrideSave.pending || withdrawSave.pending;
+  const actionError = genderSave.error ?? overrideSave.error ?? withdrawSave.error;
+  const forgetOverride = overrideSave.forget;
+  const handleRestoreOverride = useCallback(
+    (cached: string) => {
+      forgetOverride();
+      setOverrideReason(cached);
+      setOverrideOpen(true);
+    },
+    [forgetOverride],
+  );
+
+  const { clearDraft: clearOverrideDraft } = useDirtyStateGuard({
+    key: movement?.id ? `shortlist-override-${movement.id}` : undefined,
+    isDirty: overrideReason.trim().length > 0,
+    value: overrideReason,
+    onRestore: handleRestoreOverride,
+    confirmMessage: "You have an unsaved clinical override reason. Are you sure you want to leave?",
+  });
   // Whole-branch review I2 (spec §11): the escalation form's own open/typed-contact state — never
   // the recorded fact itself, which lives on `movement.escalation` and is read fresh on every
   // render, the same discipline `overrideSucceeded` already holds to for the override record.
@@ -825,11 +825,13 @@ export function ShortlistPanel({
   function handleRefer() {
     if (onRefer) {
       onRefer([...referTargets], referTargetNames);
+      overrideSave.forget();
       setOverrideOpen(false);
       return;
     }
     if (!canRefer) return;
     dispatch({ type: "REFER_TO_UNITS", role: "coordinator", now, movementId, unitIds: [...referTargets] });
+    overrideSave.forget();
     setOverrideOpen(false);
   }
 
@@ -837,55 +839,51 @@ export function ShortlistPanel({
     handleRefer();
   }
 
-  /**
-   * T12 (item 9): dispatches the SAME `REFER_TO_UNITS` event `handleRefer` does, plus the two
-   * fields the reducer requires for a `Non-binary` placement it has not already cleared for these
-   * units. Guarded on both fields being present here too, not only by the submit button's own
-   * `disabled` — the same double-guard `submitWithdrawWardRequest` above holds to — so a form
-   * submitted by Enter with the button not yet reachable still cannot dispatch a half-answered
-   * event.
-   */
+  // A non-binary placement needs its explicit reason and confirmation, including Enter submission.
   function submitGenderPlacement(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!needsGenderPlacement) return;
     const reason = genderPlacementReason.trim();
     if (reason.length === 0 || !genderPlacementChecked) return;
-    // Membership-checked here as well as in the reducer, the same discipline `handleOverrideSubmit`
-    // holds to for `OVERRIDE_REASONS` — the reducer's check is the one that matters; this one keeps
-    // a malformed value from being reported on screen as recorded.
+    // Keep the UI and reducer on the same closed reason list.
     if (!GENDER_PLACEMENT_REASONS.includes(reason as GenderPlacementReason)) return;
-    dispatch({
-      type: "REFER_TO_UNITS",
-      role: "coordinator",
-      now,
-      movementId,
-      unitIds: [...referTargets],
-      genderPlacementReason: reason as GenderPlacementReason,
-      genderPlacementChecked: true,
-    });
-    setGenderPlacementReason("");
-    setGenderPlacementChecked(false);
+    genderSave.submit(
+      () =>
+        dispatch({
+          type: "REFER_TO_UNITS",
+          role: "coordinator",
+          now,
+          movementId,
+          unitIds: [...referTargets],
+          genderPlacementReason: reason as GenderPlacementReason,
+          genderPlacementChecked: true,
+        }),
+      () => {
+        setGenderPlacementReason("");
+        setGenderPlacementChecked(false);
+      },
+    );
   }
 
-  /**
-   * RA1 (item 18): withdraws exactly ONE live ward's request — never `WITHDRAW_REFERRAL`, which
-   * takes back every live referral at once and closes the movement. Only reachable once a reason is
-   * chosen from `WARD_REQUEST_WITHDRAWAL_REASONS` — the submit button below stays `aria-disabled`
-   * until then, the same discipline `submitUrgencyChange`'s own reason picker holds to.
-   */
+  // Withdraw one ward request, preserving the movement and other live ward requests.
   function submitWithdrawWardRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (withdrawUnitId === undefined || withdrawReason === "") return;
-    dispatch({
-      type: "WITHDRAW_WARD_REQUEST",
-      role: "coordinator",
-      now,
-      movementId,
-      unitId: withdrawUnitId,
-      reason: withdrawReason,
-    });
-    setWithdrawUnitId(undefined);
-    setWithdrawReason("");
+    withdrawSave.submit(
+      () =>
+        dispatch({
+          type: "WITHDRAW_WARD_REQUEST",
+          role: "coordinator",
+          now,
+          movementId,
+          unitId: withdrawUnitId,
+          reason: withdrawReason,
+        }),
+      () => {
+        setWithdrawUnitId(undefined);
+        setWithdrawReason("");
+      },
+    );
   }
 
   function handleOverrideSubmit(event: FormEvent<HTMLFormElement>) {
@@ -895,25 +893,26 @@ export function ShortlistPanel({
     if (reason.length === 0) return;
     // D-86 (findings 111 and 113, Josh, 27 Oct 2026): no second approvers. The reason is the only
     // thing an override needs, the same standard as the Referrals board and the patient page.
-    // Membership-checked here as well as in the reducer. The reducer's check is the one that
-    // matters; this one keeps a malformed value from being reported on screen as recorded.
+    // Validate the same closed reason list as the reducer.
     if (!OVERRIDE_REASONS.includes(reason as OverrideReason)) return;
-    // OD-3: the reason travels WITH the event now. It used to go only into `overrideRecord`
-    // below -- this component's own state, cleared on the next patient selection -- while the
-    // governance page said override reasons were recorded. The reducer keeps it on
-    // `Movement.overrides`; `overrideRecord` is now only the on-screen confirmation.
-    dispatch({
-      type: "REFER_TO_UNITS",
-      role: "coordinator",
-      now,
-      movementId,
-      unitIds: [...referTargets],
-      overrideReason: reason as OverrideReason,
-    });
-    setOverrideRecord({ unitIds: [...referTargets], at: now, reason });
-    setOverrideOpen(false);
-    setOverrideReason("");
-    clearOverrideDraft();
+    // OD-3: the reducer records the reason; the local record is only accepted-save feedback.
+    overrideSave.submit(
+      () =>
+        dispatch({
+          type: "REFER_TO_UNITS",
+          role: "coordinator",
+          now,
+          movementId,
+          unitIds: [...referTargets],
+          overrideReason: reason as OverrideReason,
+        }),
+      () => {
+        setOverrideRecord({ unitIds: [...referTargets], at: now, reason });
+        setOverrideOpen(false);
+        setOverrideReason("");
+        clearOverrideDraft();
+      },
+    );
   }
 
   /**
@@ -1338,6 +1337,8 @@ export function ShortlistPanel({
 
   return (
     <div className={`${styles.shortlistBody} ${shortlistStyles.body}`} data-testid={`ward-shortlist-${movement.id}`}>
+      {actionPending ? <p role="status">Saving. Waiting for confirmation.</p> : null}
+      {actionError ? <p role="alert">{actionError}</p> : null}
       {outcomeMessage ? <p role="status">{outcomeMessage}</p> : null}
       <header className={`${styles.shortlistHeader} ${shortlistStyles.subjectHeader}`}>
         {/* PlacementPanel (v10 Home): the patient as "Given Surname" with UMRN and where they are,
@@ -1378,7 +1379,7 @@ export function ShortlistPanel({
             ) : null}
           </div>
         </div>
-        {nextStepSection}
+        {toFoot(nextStepSection)}
         {/* Two fact lines on every size, as the desktop's (Josh, 19 Oct 2026; Home redesign 30 Oct
             2026): the phone's four-box grid said the same facts in twice the height. Each fact keeps
             its label for assistive technology; overdue is a glyph and the word, never colour alone. */}
@@ -1495,6 +1496,7 @@ export function ShortlistPanel({
                   className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
                   aria-expanded={withdrawUnitId === id}
                   onClick={() => {
+                    withdrawSave.forget();
                     setWithdrawUnitId((current) => (current === id ? undefined : id));
                     setWithdrawReason("");
                   }}
@@ -1561,6 +1563,7 @@ export function ShortlistPanel({
                       className={styles.shortlistOverrideSelect}
                       data-testid={`ward-shortlist-withdraw-reason-${id}`}
                       value={withdrawReason}
+                      disabled={actionPending}
                       onChange={(event) => setWithdrawReason(event.target.value as WardRequestWithdrawalReason | "")}
                     >
                       <option value="">Choose a reason</option>
@@ -1772,7 +1775,7 @@ export function ShortlistPanel({
                 data-testid="ward-shortlist-pulled-note"
               >
                 {originEd?.referenceEdId !== undefined ? (
-                  <span data-testid="ward-shortlist-route-caveat">{REFERENCE_DISTANCE_CAVEAT} </span>
+                  <span data-testid="ward-shortlist-route-caveat">{ROAD_DISTANCE_SHORT_CAVEAT} </span>
                 ) : null}
                 {PULLED_EXPLANATION}{" "}
                 <button type="button" className={shortlistStyles.inlineLink} onClick={() => openWardHelp("glossary")}>
@@ -1782,128 +1785,132 @@ export function ShortlistPanel({
             </div>
           </section>
 
-          <footer className={`${styles.shortlistActions} ${shortlistStyles.actionToolbar}`}>
-            {referTargetNames.length === 0 ? null : (
-              <p className={`${styles.shortlistAutoAllocationNote} ${shortlistStyles.tabularNum}`}>
-                <span className={shortlistStyles.toWard} data-testid="ward-shortlist-to">
-                  To <strong>{referTargetNames.join(", ")}</strong>
-                </span>
-                <span className={shortlistStyles.toMeta}>
-                  {referTargets.length} selected · {movement.referredUnitIds.length} of {parallelReferralCap} parallel
-                  referrals in use.
-                </span>
-                {overParallelCap ? (
-                  <span role="status" className={shortlistStyles.toMeta} data-testid="ward-shortlist-over-cap">
-                    This asks more wards than the usual limit of {parallelReferralCap}. You can still ask.
+          {toFoot(
+            <footer className={`${styles.shortlistActions} ${shortlistStyles.actionToolbar}`}>
+              {referTargetNames.length === 0 ? null : (
+                <p className={`${styles.shortlistAutoAllocationNote} ${shortlistStyles.tabularNum}`}>
+                  <span className={shortlistStyles.toWard} data-testid="ward-shortlist-to">
+                    To <strong>{referTargetNames.join(", ")}</strong>
                   </span>
-                ) : null}
-              </p>
-            )}
+                  <span className={shortlistStyles.toMeta}>
+                    {referTargets.length} selected · {movement.referredUnitIds.length} of {parallelReferralCap} parallel
+                    referrals in use.
+                  </span>
+                  {overParallelCap ? (
+                    <span role="status" className={shortlistStyles.toMeta} data-testid="ward-shortlist-over-cap">
+                      This asks more wards than the usual limit of {parallelReferralCap}. You can still ask.
+                    </span>
+                  ) : null}
+                </p>
+              )}
 
-            {/* Task 5 fix round 1: rendered only when `overrideSucceeded` — a real check against
+              {/* Task 5 fix round 1: rendered only when `overrideSucceeded` — a real check against
             `movement.referredUnitIds`, not the mere existence of `overrideRecord`. A refused
             override leaves this silent here; the refusal is visible on the Exceptions drawer
             instead (`rejections`), never claimed as a success on this footer. */}
-            {overrideRecord && overrideSucceeded ? (
-              <p
-                className={`${styles.shortlistConfirmationRecord} ${shortlistStyles.tabularNum}`}
-                data-testid="ward-shortlist-confirmation-record"
-              >
-                {`Overridden by a human coordinator — referred to ${overrideRecordUnits.join(", ")} at ${formatInstantWithDay(overrideRecord.at, now)} — reason: "${overrideRecord.reason}". No bed was allocated automatically.`}
-              </p>
-            ) : null}
+              {overrideRecord && overrideSucceeded ? (
+                <p
+                  className={`${styles.shortlistConfirmationRecord} ${shortlistStyles.tabularNum}`}
+                  data-testid="ward-shortlist-confirmation-record"
+                >
+                  {`Overridden by a human coordinator — referred to ${overrideRecordUnits.join(", ")} at ${formatInstantWithDay(overrideRecord.at, now)} — reason: "${overrideRecord.reason}". No bed was allocated automatically.`}
+                </p>
+              ) : null}
 
-            <div className={`${styles.shortlistActionRow} ${shortlistStyles.actions}`}>
-              {/* Phone (v10): with no ward picked yet, Refer is never shown greyed. It reads "Choose a
+              <div className={`${styles.shortlistActionRow} ${shortlistStyles.actions}`}>
+                {/* Phone (v10): with no ward picked yet, Refer is never shown greyed. It reads "Choose a
               ward to refer" and takes the person to the fits list; nothing is referred against a
               default (Critical 2), so the choice stays a human tap on a ward. */}
-              {isPhone && !onRefer && !hasReferSelection && referralBlocked === undefined ? (
+                {isPhone && !onRefer && !hasReferSelection && referralBlocked === undefined ? (
+                  <button
+                    type="button"
+                    data-testid="ward-shortlist-refer"
+                    data-phone-choose="true"
+                    className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
+                    onClick={(event) => chooseWard(event.currentTarget)}
+                  >
+                    Choose a ward to refer
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    data-testid="ward-shortlist-refer"
+                    aria-disabled={canRefer || onRefer ? undefined : "true"}
+                    aria-describedby={canRefer || onRefer ? undefined : "ward-shortlist-refer-unavailable"}
+                    title={canRefer || onRefer ? undefined : referUnavailableReason}
+                    className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
+                    onClick={canRefer || onRefer ? handleRefer : ignoreUnavailableActivation}
+                  >
+                    {referTargetNames.length === 1 ? `Refer to ${referTargetNames[0]}` : "Refer"}
+                  </button>
+                )}
+                {onRefer && canRefer ? (
+                  <button
+                    type="button"
+                    data-testid="ward-shortlist-quick-send"
+                    className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
+                    onClick={handleQuickSend}
+                  >
+                    {/* The ward is named on Refer and the To line, so this stays short enough to share a row. */}
+                    Quick send
+                  </button>
+                ) : null}
                 <button
                   type="button"
-                  data-testid="ward-shortlist-refer"
-                  data-phone-choose="true"
-                  className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
-                  onClick={(event) => chooseWard(event.currentTarget)}
-                >
-                  Choose a ward to refer
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  data-testid="ward-shortlist-refer"
-                  aria-disabled={canRefer || onRefer ? undefined : "true"}
-                  aria-describedby={canRefer || onRefer ? undefined : "ward-shortlist-refer-unavailable"}
-                  title={canRefer || onRefer ? undefined : referUnavailableReason}
-                  className={`${styles.shortlistConfirmButton} ${shortlistStyles.allocationButtonTouch}`}
-                  onClick={canRefer || onRefer ? handleRefer : ignoreUnavailableActivation}
-                >
-                  {referTargetNames.length === 1 ? `Refer to ${referTargetNames[0]}` : "Refer"}
-                </button>
-              )}
-              {onRefer && canRefer ? (
-                <button
-                  type="button"
-                  data-testid="ward-shortlist-quick-send"
+                  data-testid="ward-shortlist-override-toggle"
+                  aria-disabled={canOverride || isPhone || variant === "drawer" ? undefined : "true"}
+                  aria-describedby={canOverride ? undefined : "ward-shortlist-override-unavailable"}
+                  title={canOverride ? undefined : overrideUnavailableReason}
+                  aria-expanded={overrideOpen}
                   className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
-                  onClick={handleQuickSend}
+                  onClick={
+                    canOverride
+                      ? () => {
+                          overrideSave.forget();
+                          setOverrideOpen((open) => !open);
+                        }
+                      : isPhone || variant === "drawer"
+                        ? // Phone and Home's drawer: never greyed; with no ward picked it goes to the list.
+                          (event) => chooseWard(event.currentTarget)
+                        : ignoreUnavailableActivation
+                  }
                 >
-                  {/* The ward is named on Refer and the To line, so this stays short enough to share a row. */}
-                  Quick send
+                  Override
                 </button>
-              ) : null}
-              <button
-                type="button"
-                data-testid="ward-shortlist-override-toggle"
-                aria-disabled={canOverride || isPhone ? undefined : "true"}
-                aria-describedby={canOverride ? undefined : "ward-shortlist-override-unavailable"}
-                title={canOverride ? undefined : overrideUnavailableReason}
-                aria-expanded={overrideOpen}
-                className={`${styles.shortlistOverrideButton} ${shortlistStyles.allocationButtonTouch}`}
-                onClick={
-                  canOverride
-                    ? () => setOverrideOpen((open) => !open)
-                    : isPhone
-                      ? // Phone: never greyed; with no ward picked it takes the person to the list.
-                        (event) => chooseWard(event.currentTarget)
-                      : ignoreUnavailableActivation
-                }
-              >
-                Override
-              </button>
-            </div>
-            {!canRefer ? (
-              <span id="ward-shortlist-refer-unavailable" className="sr-only">
-                {referUnavailableReason}
-              </span>
-            ) : null}
-            {!canOverride ? (
-              <span id="ward-shortlist-override-unavailable" className="sr-only">
-                {overrideUnavailableReason}
-              </span>
-            ) : null}
-            {!canOverride && !isPhone ? (
-              // Usability review, Josh approved 24 Oct 2026: a greyed action names its blocker in short
-              // visible words, with the one fix beside it when the fix is on this screen. Screen readers
-              // keep the full sentence above (the button's description); the short words are visual.
-              // The fix is the same jump to the ward list the phone's Override already makes.
-              <span className={shortlistStyles.unavailableLine} data-testid="ward-placement-override-why">
-                <span aria-hidden="true">
-                  <DisabledReason id="ward-placement-override-words">Override needs a ward chosen first</DisabledReason>
+              </div>
+              {!canRefer ? (
+                <span id="ward-shortlist-refer-unavailable" className="sr-only">
+                  {referUnavailableReason}
                 </span>
-                <button
-                  type="button"
-                  className={buttonClass({ variant: "ghost", size: "sm" })}
-                  data-testid="ward-placement-override-fix"
-                  onClick={(event) => chooseWard(event.currentTarget)}
-                >
-                  Choose a ward
-                </button>
-              </span>
-            ) : null}
+              ) : null}
+              {!canOverride ? (
+                <span id="ward-shortlist-override-unavailable" className="sr-only">
+                  {overrideUnavailableReason}
+                </span>
+              ) : null}
+              {!canOverride && !isPhone && variant !== "drawer" ? (
+                // Usability review (Josh, 24 Oct 2026): short visible blocker words plus the on-screen fix (the
+                // ward-list jump phone Override makes); screen readers keep the full description above.
+                <span className={shortlistStyles.unavailableLine} data-testid="ward-placement-override-why">
+                  <span aria-hidden="true">
+                    <DisabledReason id="ward-placement-override-words">
+                      Override needs a ward chosen first
+                    </DisabledReason>
+                  </span>
+                  <button
+                    type="button"
+                    className={buttonClass({ variant: "ghost", size: "sm" })}
+                    data-testid="ward-placement-override-fix"
+                    onClick={(event) => chooseWard(event.currentTarget)}
+                  >
+                    Choose a ward
+                  </button>
+                </span>
+              ) : null}
 
-            {overrideOpen && canOverride ? (
-              <form className={styles.shortlistOverrideForm} onSubmit={handleOverrideSubmit}>
-                {/*
+              {overrideOpen && canOverride ? (
+                <form className={styles.shortlistOverrideForm} onSubmit={handleOverrideSubmit}>
+                  {/*
               ⚠️ WHAT THE BED FAILED ON, IN THE FORM, AT THE MOMENT OF OVERRIDING.
               Derivation by Ward Verifier; the sentence already existed, computed and in scope, one
               line from being rendered — `firstIneligibleSelected` at :404 and `candidateReason` at
@@ -1919,7 +1926,7 @@ export function ShortlistPanel({
               does not touch `canOverride`. It states the reason and leaves the decision where the
               owner put it.
             */}
-                {/*
+                  {/*
               TWO BLOCKERS, NOT ONE — and the first version of this block rendered for only one of
               them. Refer can be unavailable because a selected ward is ineligible OR because the
               movement's own stage is not referable, and `canOverride` deliberately carries neither
@@ -1939,34 +1946,34 @@ export function ShortlistPanel({
 
               ⚠️ STILL NOT A GATE. Neither line touches `canOverride`.
             */}
-                {referralBlocked || firstIneligibleSelected ? (
-                  /* ⚠️ THE WRAPPER TAKES A NEW ID AND THE OLD ONE GOES BACK WHERE IT MEANT SOMETHING.
+                  {referralBlocked || firstIneligibleSelected ? (
+                    /* ⚠️ THE WRAPPER TAKES A NEW ID AND THE OLD ONE GOES BACK WHERE IT MEANT SOMETHING.
                  `ward-shortlist-override-failing-gate` used to name THE INELIGIBILITY SENTENCE. When
                  this became two lines I put it on the wrapper, whose `textContent` is now BOTH
                  sentences concatenated — so a future assertion written against that id would pass
                  for the wrong reason, which is structurally the same defect this block exists to
                  fix. Found by Ward Verifier, which checked the whole tree first and confirmed no
                  test references it today, so nothing breaks. */
-                  <div data-testid="ward-shortlist-override-reasons">
-                    {referralBlocked ? (
-                      <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-override-stage-block">
-                        {referralBlocked}
-                      </p>
-                    ) : null}
-                    {firstIneligibleSelected ? (
-                      <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-override-failing-gate">
-                        <strong>{firstIneligibleSelected.unit.name}</strong>
-                        {" — Not eligible: "}
-                        {candidateReason(firstIneligibleSelected.verdict)}
-                      </p>
-                    ) : null}
-                  </div>
-                ) : null}
-                <label className={styles.shortlistOverrideLabel} htmlFor="ward-shortlist-override-reason">
-                  Reason for overriding the shortlist for{" "}
-                  {referredCandidates.map((c) => c?.unit.name ?? "an unresolved unit").join(", ")}
-                </label>
-                {/*
+                    <div data-testid="ward-shortlist-override-reasons">
+                      {referralBlocked ? (
+                        <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-override-stage-block">
+                          {referralBlocked}
+                        </p>
+                      ) : null}
+                      {firstIneligibleSelected ? (
+                        <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-override-failing-gate">
+                          <strong>{firstIneligibleSelected.unit.name}</strong>
+                          {" — Not eligible: "}
+                          {candidateReason(firstIneligibleSelected.verdict)}
+                        </p>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  <label className={styles.shortlistOverrideLabel} htmlFor="ward-shortlist-override-reason">
+                    Reason for overriding the shortlist for{" "}
+                    {referredCandidates.map((c) => c?.unit.name ?? "an unresolved unit").join(", ")}
+                  </label>
+                  {/*
               Owner decision OD-3: the free-text box is gone and these five replace it. Derived
               from `OVERRIDE_REASONS` rather than written out here — a second copy of an
               owner-approved list is how two screens come to offer different words for one thing.
@@ -1975,36 +1982,37 @@ export function ShortlistPanel({
               text returns after being removed from the front, and it would undo the decision this
               control implements.
             */}
-                <select
-                  id="ward-shortlist-override-reason"
-                  required
-                  className={styles.shortlistOverrideSelect}
-                  value={overrideReason}
-                  onChange={(event) => setOverrideReason(event.target.value)}
-                >
-                  <option value="">Choose a reason</option>
-                  {OVERRIDE_REASONS.map((reason) => (
-                    <option key={reason} value={reason}>
-                      {reason}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="submit"
-                  className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
-                  aria-disabled={overrideReason === "" ? "true" : undefined}
-                  aria-describedby={overrideReason === "" ? "ward-shortlist-override-submit-words" : undefined}
-                  onClick={overrideReason === "" ? ignoreUnavailableActivation : undefined}
-                >
-                  Record override
-                </button>
-                {overrideReason === "" ? (
-                  <DisabledReason id="ward-shortlist-override-submit-words">Choose a reason first</DisabledReason>
-                ) : null}
-              </form>
-            ) : null}
+                  <select
+                    id="ward-shortlist-override-reason"
+                    required
+                    className={styles.shortlistOverrideSelect}
+                    value={overrideReason}
+                    disabled={actionPending}
+                    onChange={(event) => setOverrideReason(event.target.value)}
+                  >
+                    <option value="">Choose a reason</option>
+                    {OVERRIDE_REASONS.map((reason) => (
+                      <option key={reason} value={reason}>
+                        {reason}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="submit"
+                    className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
+                    aria-disabled={overrideReason === "" ? "true" : undefined}
+                    aria-describedby={overrideReason === "" ? "ward-shortlist-override-submit-words" : undefined}
+                    onClick={overrideReason === "" ? ignoreUnavailableActivation : undefined}
+                  >
+                    Record override
+                  </button>
+                  {overrideReason === "" ? (
+                    <DisabledReason id="ward-shortlist-override-submit-words">Choose a reason first</DisabledReason>
+                  ) : null}
+                </form>
+              ) : null}
 
-            {/*
+              {/*
           T12 (item 9, owner answer 9, 17 September 2026): "Non-binary patient: coordinator
           places with a recorded reason after checking with the ward, preferring a single room."
           Build plan §2's exact wording — legend, guidance, tick and submit label are quoted, not
@@ -2016,81 +2024,84 @@ export function ShortlistPanel({
           would repeat the exact defect this file's own history records for the override reason
           (a failing gate reaching a sighted mouse user only as a button tooltip).
         */}
-            {needsGenderPlacement ? (
-              <form
-                className={styles.shortlistOverrideForm}
-                onSubmit={submitGenderPlacement}
-                data-testid="ward-shortlist-gender-placement-form"
-              >
-                <fieldset>
-                  <legend className={styles.shortlistOverrideLabel}>Place a non-binary patient</legend>
-                  <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-gender-placement-guidance">
-                    Check with the ward first. A single room is preferred.
-                  </p>
-                  <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-gender-placement-refusal">
-                    {GENDER_PLACEMENT_REFUSAL}
-                  </p>
-                  <label className={styles.shortlistOverrideLabel} htmlFor="ward-shortlist-gender-placement-reason">
-                    Reason
-                  </label>
-                  <select
-                    id="ward-shortlist-gender-placement-reason"
-                    required
-                    className={styles.shortlistOverrideSelect}
-                    data-testid="ward-shortlist-gender-placement-reason"
-                    value={genderPlacementReason}
-                    onChange={(event) => setGenderPlacementReason(event.target.value)}
-                  >
-                    <option value="">Choose a reason</option>
-                    {GENDER_PLACEMENT_REASONS.map((reason) => (
-                      <option key={reason} value={reason}>
-                        {reason}
-                      </option>
-                    ))}
-                  </select>
-                  <label className={styles.shortlistOverrideCheckOption}>
-                    <input
-                      type="checkbox"
-                      checked={genderPlacementChecked}
-                      onChange={(event) => setGenderPlacementChecked(event.target.checked)}
-                      data-testid="ward-shortlist-gender-placement-checked"
-                    />
-                    I have checked this placement with the ward
-                  </label>
-                  {(() => {
-                    // Finding 114: aria-disabled with the reason shown, like every other form here.
-                    const genderPlacementBlocked =
-                      genderPlacementReason.trim().length === 0
-                        ? "Choose a reason"
-                        : !genderPlacementChecked
-                          ? "Tick that you checked with the ward"
-                          : null;
-                    return (
-                      <>
-                        <button
-                          type="submit"
-                          className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
-                          aria-disabled={genderPlacementBlocked ? "true" : undefined}
-                          aria-describedby={
-                            genderPlacementBlocked ? "ward-shortlist-gender-placement-words" : undefined
-                          }
-                          onClick={genderPlacementBlocked ? ignoreUnavailableActivation : undefined}
-                          data-testid="ward-shortlist-gender-placement-submit"
-                        >
-                          Record reason and place
-                        </button>
-                        {genderPlacementBlocked ? (
-                          <DisabledReason id="ward-shortlist-gender-placement-words">
-                            {genderPlacementBlocked}
-                          </DisabledReason>
-                        ) : null}
-                      </>
-                    );
-                  })()}
-                </fieldset>
-              </form>
-            ) : null}
-          </footer>
+              {needsGenderPlacement ? (
+                <form
+                  className={styles.shortlistOverrideForm}
+                  onSubmit={submitGenderPlacement}
+                  data-testid="ward-shortlist-gender-placement-form"
+                >
+                  <fieldset>
+                    <legend className={styles.shortlistOverrideLabel}>Place a non-binary patient</legend>
+                    <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-gender-placement-guidance">
+                      Check with the ward first. A single room is preferred.
+                    </p>
+                    <p className={styles.shortlistOverrideLabel} data-testid="ward-shortlist-gender-placement-refusal">
+                      {GENDER_PLACEMENT_REFUSAL}
+                    </p>
+                    <label className={styles.shortlistOverrideLabel} htmlFor="ward-shortlist-gender-placement-reason">
+                      Reason
+                    </label>
+                    <select
+                      id="ward-shortlist-gender-placement-reason"
+                      required
+                      className={styles.shortlistOverrideSelect}
+                      data-testid="ward-shortlist-gender-placement-reason"
+                      value={genderPlacementReason}
+                      disabled={actionPending}
+                      onChange={(event) => setGenderPlacementReason(event.target.value)}
+                    >
+                      <option value="">Choose a reason</option>
+                      {GENDER_PLACEMENT_REASONS.map((reason) => (
+                        <option key={reason} value={reason}>
+                          {reason}
+                        </option>
+                      ))}
+                    </select>
+                    <label className={styles.shortlistOverrideCheckOption}>
+                      <input
+                        type="checkbox"
+                        checked={genderPlacementChecked}
+                        disabled={actionPending}
+                        onChange={(event) => setGenderPlacementChecked(event.target.checked)}
+                        data-testid="ward-shortlist-gender-placement-checked"
+                      />
+                      I have checked this placement with the ward
+                    </label>
+                    {(() => {
+                      // Finding 114: aria-disabled with the reason shown, like every other form here.
+                      const genderPlacementBlocked =
+                        genderPlacementReason.trim().length === 0
+                          ? "Choose a reason"
+                          : !genderPlacementChecked
+                            ? "Tick that you checked with the ward"
+                            : null;
+                      return (
+                        <>
+                          <button
+                            type="submit"
+                            className={`${styles.shortlistOverrideSubmit} ${shortlistStyles.allocationButtonTouch}`}
+                            aria-disabled={genderPlacementBlocked ? "true" : undefined}
+                            aria-describedby={
+                              genderPlacementBlocked ? "ward-shortlist-gender-placement-words" : undefined
+                            }
+                            onClick={genderPlacementBlocked ? ignoreUnavailableActivation : undefined}
+                            data-testid="ward-shortlist-gender-placement-submit"
+                          >
+                            Record reason and place
+                          </button>
+                          {genderPlacementBlocked ? (
+                            <DisabledReason id="ward-shortlist-gender-placement-words">
+                              {genderPlacementBlocked}
+                            </DisabledReason>
+                          ) : null}
+                        </>
+                      );
+                    })()}
+                  </fieldset>
+                </form>
+              ) : null}
+            </footer>,
+          )}
         </>
       ) : null}
 
@@ -2746,7 +2757,8 @@ export function ShortlistPanel({
               className={`${styles.shortlistEscalationRecord} ${shortlistStyles.tabularNum}`}
               data-testid="ward-shortlist-escalation-record"
             >
-              {`Escalated at ${formatInstantWithDay(movement.escalation.at, now)} — tried ${movement.escalation.triedUnitIds.length} unit${movement.escalation.triedUnitIds.length === 1 ? "" : "s"} — contact: "${movement.escalation.contact}".`}
+              {/* Appraisal, 3 Nov 2026: plain sentences, no dashes or quotes. */}
+              {`Escalated at ${formatInstantWithDay(movement.escalation.at, now)}, tried ${movement.escalation.triedUnitIds.length} unit${movement.escalation.triedUnitIds.length === 1 ? "" : "s"}. Contact: ${movement.escalation.contact}.`}
             </p>
           ) : null}
           {!hasEligible && !movement.acceptedUnitId ? (

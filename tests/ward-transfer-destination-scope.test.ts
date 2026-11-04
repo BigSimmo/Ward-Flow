@@ -30,6 +30,26 @@ function transfer(world: SharedWorld, receivingUnitId: string, step: (typeof ste
   };
 }
 
+/** Acceptance and handover need the stay's linked placement record (the arrival it came in on). */
+function withLinkedPlacement(source: SharedWorld): SharedWorld {
+  const world = structuredClone(source);
+  const admission = world.state.admissions.find((row) => row.id === "AD-RPHS-01")!;
+  const cohort = world.state.units.find((unit) => unit.id === admission.unitId)?.cohort;
+  const placement = structuredClone(world.state.movements.find((movement) => movement.cohort === cohort)!);
+  placement.id = "WF-SCOPE-PLACEMENT";
+  delete placement.referralId;
+  delete placement.sourceAdmissionId;
+  delete placement.referralSourceAdmissionId;
+  placement.patientId = admission.patientId!;
+  placement.admissionId = admission.id;
+  placement.stage = "arrived";
+  placement.acceptedUnitId = admission.unitId;
+  placement.closure = { at: admission.arrivedAt!, outcome: "arrived", reason: "Synthetic fixture arrival" };
+  admission.movementId = placement.id;
+  world.state.movements.push(placement);
+  return world;
+}
+
 describe("transfer destination authority", () => {
   // These are admission checks. Handover and arrival still need their workflow prerequisites.
   it.each(steps)("refuses a service coordinator's cross-service %s target", (step) => {
@@ -54,7 +74,8 @@ describe("transfer destination authority", () => {
   });
 
   it("allows the sending ward to hand over a transfer already approved statewide", () => {
-    const world = seedWorld(at);
+    const world = withLinkedPlacement(seedWorld(at));
+    expect(validWorld(world)).toBe(true);
     const accepted = applyCommand(world, transfer(world, "scgh-adult-open", "accepted"), at);
     expect(accepted.outcome).toBe("accepted");
     expect(validWorld(accepted.world)).toBe(true);

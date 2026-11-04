@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { WardFlowEvent } from "./ward-flow-events";
 import { reducerSlicesLoaded } from "./ward-flow-reducer-slice-registry";
+import { createRepeatTapGuard } from "./ward-repeat-tap-guard";
 import type { WardCommandDispatch, WardCommandOutcome } from "./ward-shared-client";
 
 let loading: Promise<void> | null = null;
@@ -43,42 +44,45 @@ export function useSliceGatedDispatch(
     localRef.current = dispatchLocal;
   }, [dispatchLocal]);
   const queueRef = useRef<Promise<WardCommandOutcome> | null>(null);
+  // Tier 1 item 2: a double tap records once, in local and shared mode alike.
+  const [repeatGuard] = useState(createRepeatTapGuard);
   useEffect(() => {
     void loadReducerSlices().catch(() => undefined);
   }, []);
   return useCallback<WardCommandDispatch>(
-    (event: WardFlowEvent) => {
-      if (shared) return shared(event);
-      if (reducerSlicesLoaded() && !queueRef.current) return dispatchLocal(event);
-      const isCurrent = captureLifetime?.();
-      const queued: Promise<WardCommandOutcome> = (queueRef.current ?? Promise.resolve())
-        .catch(() => undefined)
-        .then(() => loadReducerSlices())
-        .then(
-          () =>
-            isCurrent && !isCurrent()
-              ? {
-                  commandId: `local-${++commands.current.sequence}`,
-                  status: "cancelled",
-                  message:
-                    "The workspace changed before this action finished loading. Check the board before trying again.",
-                }
-              : localRef.current(event),
-          (): WardCommandOutcome => ({
-            commandId: `local-${++commands.current.sequence}`,
-            status: "failed",
-            message:
-              "Ward Flow could not finish loading, so this was not recorded. Check the connection and try again.",
-          }),
-        );
-      queueRef.current = queued;
-      void queued
-        .finally(() => {
-          if (queueRef.current === queued) queueRef.current = null;
-        })
-        .catch(() => undefined);
-      return queued;
-    },
-    [shared, dispatchLocal, commands, captureLifetime],
+    (event: WardFlowEvent) =>
+      repeatGuard(event, (event) => {
+        if (shared) return shared(event);
+        if (reducerSlicesLoaded() && !queueRef.current) return dispatchLocal(event);
+        const isCurrent = captureLifetime?.();
+        const queued: Promise<WardCommandOutcome> = (queueRef.current ?? Promise.resolve())
+          .catch(() => undefined)
+          .then(() => loadReducerSlices())
+          .then(
+            () =>
+              isCurrent && !isCurrent()
+                ? {
+                    commandId: `local-${++commands.current.sequence}`,
+                    status: "cancelled",
+                    message:
+                      "The workspace changed before this action finished loading. Check the board before trying again.",
+                  }
+                : localRef.current(event),
+            (): WardCommandOutcome => ({
+              commandId: `local-${++commands.current.sequence}`,
+              status: "failed",
+              message:
+                "Ward Flow could not finish loading, so this was not recorded. Check the connection and try again.",
+            }),
+          );
+        queueRef.current = queued;
+        void queued
+          .finally(() => {
+            if (queueRef.current === queued) queueRef.current = null;
+          })
+          .catch(() => undefined);
+        return queued;
+      }),
+    [shared, dispatchLocal, commands, captureLifetime, repeatGuard],
   );
 }

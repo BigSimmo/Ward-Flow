@@ -28,11 +28,19 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 const NOW = NOW_ANCHOR;
 
 function renderMovementsScreen() {
-  return render(
+  const view = render(
     <WardFlowProvider initialNow={NOW}>
       <MovementsScreen />
     </WardFlowProvider>,
   );
+  showTimeline();
+  return view;
+}
+
+/** M3 (3 Nov 2026): the timeline sits behind a switch on a tablet or laptop, so turn it on. */
+function showTimeline() {
+  const timelineSwitch = screen.getByRole("switch", { name: "Show timeline" });
+  if (timelineSwitch.getAttribute("aria-checked") !== "true") fireEvent.click(timelineSwitch);
 }
 
 describe("48-Hour Bed Movement Horizon (Gantt Chart)", () => {

@@ -401,15 +401,15 @@ describe("human turnaround preference control", () => {
 });
 
 describe("live turnaround queue badges", () => {
-  it("shows the CLD source for both movement and unlinked-referral queue rows", () => {
+  // Q376: the Flow card is the queue's one layout. It lists no referral rows (they are decided under
+  // Needs you), so only the movement row's badge is read here.
+  it("shows the CLD source on a movement queue row", () => {
     const f = fixture();
     const preference = { unitId: f.unitId, source: "cld" as const, flaggedAt: now };
     f.movement.turnaroundPriority = preference;
     f.referral.turnaroundPriority = preference;
     renderFixture(f, { queue: true });
     expect(within(screen.getByTestId(`ward-queue-row-${f.movement.id}`)).getByText(cldBadge)).toBeVisible();
-    fireEvent.click(screen.getByRole("radio", { name: /Referrals/ }));
-    expect(within(screen.getByTestId(`ward-referral-row-${f.referral.id}`)).getByText(cldBadge)).toBeVisible();
   });
 
   it("labels a confirmed departure truthfully", () => {
@@ -445,7 +445,8 @@ describe("live turnaround queue badges", () => {
     f.referral.turnaroundPriority = { unitId: f.unitId, source: "cld", flaggedAt: now };
     f.movement.referralId = f.referral.id;
     renderFixture(f, { queue: true });
-    fireEvent.click(screen.getByRole("radio", { name: /Referrals/ }));
+    // The linked movement's row does not inherit the referral's superseded preference.
+    expect(screen.getByTestId(`ward-queue-row-${f.movement.id}`)).toBeInTheDocument();
     expect(screen.queryByText(cldBadge)).not.toBeInTheDocument();
   });
 });

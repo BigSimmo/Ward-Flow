@@ -39,6 +39,12 @@ import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/w
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { perthMidnight } from "@/components/ward-management/ward-clock";
 
+/** The week picker is the kit menu (owner polish, 3 Nov 2026): items run from -1 (this week so far) to 7. */
+function chooseWeek(offset: number) {
+  fireEvent.click(screen.getByTestId("ward-weekly-week"));
+  fireEvent.click(screen.getAllByRole("menuitemradio")[offset + 1]!);
+}
+
 // The ward layout wraps every route in the shared wf ToastProvider; the screens rely on it.
 function InitialPack({ pack, generation = null }: { pack: DowntimePack; generation?: number | null }) {
   const owner = useDowntimePackOwner();
@@ -332,7 +338,8 @@ describe("read-only report screens", () => {
     inProvider(<PatientChronologyScreen />);
     // The start list shows 6, then one Show more, then points to the search (Josh, 31 Oct 2026).
     expect(screen.getAllByTestId("ward-chronology-start-patient")).toHaveLength(6);
-    fireEvent.click(screen.getByRole("button", { name: /^Show \d+ more of \d+$/u }));
+    expect(screen.getByTestId("ward-chronology-start-count")).toHaveTextContent(/^\d+ patients, A to Z$/u);
+    fireEvent.click(screen.getByRole("button", { name: /^Show \d+ more$/u }));
     const people = screen.getAllByTestId("ward-chronology-start-patient").map((row) => ({
       name: row.children[0]!.textContent!,
       umrn: row.children[1]!.textContent!,
@@ -376,7 +383,7 @@ describe("read-only report screens", () => {
     expect(screen.getByTestId("ward-weekly-range").textContent).toMatch(/^Week: Last full week/u);
     const nav = within(screen.getByRole("navigation", { name: "Ward Flow statistics sections" }));
     expect(nav.getByRole("link", { name: "Weekly" })).toHaveAttribute("aria-current", "page");
-    fireEvent.change(screen.getByTestId("ward-weekly-week"), { target: { value: "-1" } });
+    chooseWeek(-1);
     expect(screen.getByTestId("ward-weekly-range").textContent).toMatch(/^Week: This week so far/u);
   });
 

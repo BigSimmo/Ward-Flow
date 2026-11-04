@@ -336,7 +336,13 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
   const [referralRequest, setReferralRequest] = useState<ReferralOpenRequest>({ id: 0, category: "ward" });
   // The slide-out fills this with its guarded close, which asks before discarding a draft.
   const referralCloseRef = useRef<(() => void) | null>(null);
-  const tasksDismissalGuardRef = useRef<(() => boolean) | null>(null);
+  const tasksDismissalGuardRef = useRef<((retry?: () => void) => boolean) | null>(null);
+  // The drawer's discard question is the kit's styled confirm, answered after this step returns; on
+  // Discard it runs the step again through these (as the app bar does).
+  const popoverStepsRef = useRef<{
+    close: (id: WardBarPopoverId, announce?: boolean) => void;
+    open: (id: WardBarPopoverId) => void;
+  } | null>(null);
   // `ward-service-store.ts` — a `sessionStorage`-backed module store, not component-local state, so
   // the choice survives a remount (a route change unmounts and remounts this bar) and stays in sync
   // with any other reader (`WardRail`, a future scoped screen) in the same tab. See that file's own
@@ -484,7 +490,11 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
     (id: WardBarPopoverId, announce = true) => {
       // Do not issue another Back while the first one is still waiting for popstate.
       if (closingViaHistoryRef.current !== null) return;
-      if (id === "tasks" && tasksDismissalGuardRef.current?.() === false) return;
+      if (
+        id === "tasks" &&
+        tasksDismissalGuardRef.current?.(() => popoverStepsRef.current?.close(id, announce)) === false
+      )
+        return;
       if (typeof window === "undefined" || !window.history) {
         setOpenPanel((current) => (current === id ? null : current));
         if (announce) announceToWardShell("Closed.");
@@ -540,7 +550,12 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
       // A replacement open must wait for the pending Back; otherwise its popstate would
       // be indistinguishable from the drawer that initiated the close.
       if (closingViaHistoryRef.current !== null) return;
-      if (openPanel === "tasks" && id !== "tasks" && tasksDismissalGuardRef.current?.() === false) return;
+      if (
+        openPanel === "tasks" &&
+        id !== "tasks" &&
+        tasksDismissalGuardRef.current?.(() => popoverStepsRef.current?.open(id)) === false
+      )
+        return;
       setOpenPanel(id);
       if (typeof window !== "undefined" && window.history && isDrawerPanel(id)) {
         if (window.history.state?.wardDrawer) {
@@ -582,6 +597,9 @@ function WardBar({ activity, primaryAction: pagePrimaryAction, onServiceChange }
       tasksActiveCount,
     ],
   );
+  useEffect(() => {
+    popoverStepsRef.current = { close: closePopover, open: openPopover };
+  }, [closePopover, openPopover]);
   const activitySheet = usePhoneActivitySheet(isPhone, phoneReturnTarget, activityTriggerRef, openPopover);
   /**
    * Opens the referral slide-out with `request`. Every open gets a new id, so the slide-out mounts

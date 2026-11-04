@@ -41,6 +41,7 @@ import {
   type CommunityTeam,
 } from "@/components/ward-management/community/community-derivations";
 import { communityTeamHref } from "@/components/ward-management/shell/ward-facade";
+import { PlacesTrack } from "@/components/ward-management/hub/places-track";
 import {
   communityNameCollisions,
   communityNamesInCollisions,
@@ -198,7 +199,17 @@ export function communityTeamSearchFields(
   );
 }
 
-export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: readonly CommunityTeam[] }) {
+export function CommunityIndex({
+  teams = COMMUNITY_TEAM_PAGES,
+  inPlaces = false,
+}: {
+  teams?: readonly CommunityTeam[];
+  /**
+   * PL1 (Josh, 3 Nov 2026): rendered as the Catchments tab of Places. The band then carries the
+   * Places switch, and the recently opened teams move to its right-hand side.
+   */
+  inPlaces?: boolean;
+}) {
   // Sorted here rather than trusted from upstream: this page makes the alphabetical claim in its own
   // copy, so it holds the sort itself. The id tie-break keeps the order total.
   const allTeams = useMemo(
@@ -478,17 +489,42 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
     count: option.value === "all" ? allTeams.length : (serviceCounts.get(option.value)?.teams ?? 0),
   }));
 
+  const recentStrip =
+    recentNames.length > 0 ? (
+      <section className={styles.recentStrip} aria-label="Recently opened">
+        <span className={styles.recentLabel}>
+          <Icon icon={History} size={14} />
+          Recently opened
+        </span>
+        {recentNames.map((name) => {
+          const team = teamRef(name);
+          return (
+            <Link
+              key={team.id}
+              className={buttonClass({ variant: "onHero", size: "sm" })}
+              href={communityTeamHref(team)}
+              data-testid="community-gateway-recent-link"
+              onClick={() => recordVisit(name)}
+            >
+              {name}
+            </Link>
+          );
+        })}
+      </section>
+    ) : null;
+
   return (
     <div className={styles.screen} data-testid="community-index">
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
           // Core pages review (approved 31 Oct 2026): one eyebrow on every device, as on Places.
-          eyebrow="Community · Statewide"
+          eyebrow={inPlaces ? "Places · Catchments · Statewide" : "Community · Statewide"}
           // Device audit 11 Oct 2026: one title on every device; Read alike is its own figure below.
           title={
             <>
-              <SrOnly>Community:</SrOnly> <b className={styles.heroFigure}>{allTeams.length}</b> community teams
+              <SrOnly>{inPlaces ? "Catchments:" : "Community:"}</SrOnly>{" "}
+              <b className={styles.heroFigure}>{allTeams.length}</b> community teams
             </>
           }
           // Core pages review (approved 31 Oct 2026): one short line on where the names come from, on every device.
@@ -564,43 +600,29 @@ export function CommunityIndex({ teams = COMMUNITY_TEAM_PAGES }: { teams?: reado
                 >
                   {isPhone ? "Guide" : "Catchment guide"}
                 </Button>
-                {/* Core pages review: no Referrals link here; the menu opens the board. */}
-                <Link
-                  href="/ward-flow/referrals/new"
-                  className={`${buttonClass({ variant: "light" })} ${phoneRows.heroPill}`}
-                  data-testid="community-action-raise-referral"
-                >
-                  <Icon icon={Plus} size={16} />
-                  New referral
-                </Link>
+                {/* Core pages review: no Referrals link here; the menu opens the board. PL1: inside Places
+                    the header's own New referral is the one way in, so the hero keeps only the guide. */}
+                {inPlaces ? null : (
+                  <Link
+                    href="/ward-flow/referrals/new"
+                    className={`${buttonClass({ variant: "light" })} ${phoneRows.heroPill}`}
+                    data-testid="community-action-raise-referral"
+                  >
+                    <Icon icon={Plus} size={16} />
+                    New referral
+                  </Link>
+                )}
               </div>
             </>
           }
-          bar={
-            recentNames.length > 0 ? (
-              <section className={styles.recentStrip} aria-label="Recently opened">
-                <span className={styles.recentLabel}>
-                  <Icon icon={History} size={14} />
-                  Recently opened
-                </span>
-                {recentNames.map((name) => {
-                  const team = teamRef(name);
-                  return (
-                    <Link
-                      key={team.id}
-                      className={buttonClass({ variant: "onHero", size: "sm" })}
-                      href={communityTeamHref(team)}
-                      data-testid="community-gateway-recent-link"
-                      onClick={() => recordVisit(name)}
-                    >
-                      {name}
-                    </Link>
-                  );
-                })}
-              </section>
+          bar={inPlaces ? <PlacesTrack value="catchments" /> : recentStrip}
+          barAside={
+            inPlaces ? (
+              recentStrip
+            ) : recentNames.length > 0 ? (
+              <span className={styles.heroNote}>Recorded names</span>
             ) : undefined
           }
-          barAside={recentNames.length > 0 ? <span className={styles.heroNote}>Recorded names</span> : undefined}
         />
 
         {isPhone ? (

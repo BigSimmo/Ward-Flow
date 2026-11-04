@@ -259,8 +259,10 @@ describe("Command narrows to a chosen service (item 44, task B1)", () => {
     for (const movement of OPEN) {
       expect(screen.getByTestId(`ward-queue-row-${movement.id}`)).toBeInTheDocument();
     }
+    // Appraisal (Josh Q8, 3 Nov 2026): an ED with nobody waiting is named in the one "EDs clear" tile.
+    const folded = (screen.queryByTestId("ward-home-ed-clear")?.dataset.edIds ?? "").split(" ");
     for (const ed of ALL_EDS) {
-      expect(screen.getByTestId(`ward-ed-${ed.id}`)).toBeInTheDocument();
+      expect(screen.queryByTestId(`ward-ed-${ed.id}`) !== null || folded.includes(ed.id), ed.id).toBe(true);
     }
   });
 });

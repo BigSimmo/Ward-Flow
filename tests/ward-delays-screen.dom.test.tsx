@@ -402,7 +402,7 @@ describe("the Delays screen", () => {
    */
   it("states its two absences in words rather than rendering an empty panel", () => {
     renderScreen();
-    fireEvent.click(screen.getByRole("tab", { name: /System$/u }));
+    // W3 (3 Nov 2026): the old System tab is a note always shown, so no tap is needed.
     const noPerson = screen.getByRole("region", { name: /Delays with no named person/u });
     expect(noPerson).toHaveTextContent(/Only delays on a movement are counted/u);
     expect(noPerson).toHaveTextContent(/ward closures and transport outages are not/u);
@@ -412,7 +412,7 @@ describe("the Delays screen", () => {
      * "Escalations and resolved" (renamed from "Registers", task D1), alongside "Escalations",
      * and its absence sentence only renders once that tab is the active pane.
      */
-    fireEvent.click(screen.getByRole("tab", { name: /Resolved$/u }));
+    fireEvent.click(screen.getByRole("tab", { name: /Done today$/u }));
     const resolved = within(screen.getByRole("region", { name: "Escalations and resolved" })).getByRole("tabpanel");
     expect(resolved).toHaveTextContent(/Kept until midnight for handover/u);
   });
@@ -429,7 +429,7 @@ describe("the Delays screen", () => {
    */
   it("does not present a computed zero in the 'no named person' panel's count slot", () => {
     renderScreen();
-    fireEvent.click(screen.getByRole("tab", { name: /System$/u }));
+    // W3 (3 Nov 2026): the old System tab is a note always shown, so no tap is needed.
     const noPerson = screen.getByRole("region", { name: /Delays with no named person/u });
     expect(noPerson.querySelector("[data-ward-panel-count]")).toBeNull();
   });

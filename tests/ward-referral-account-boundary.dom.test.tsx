@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, renderHook, screen, waitFor, within } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { WardAccessScope } from "@/components/ward-management/shell/ward-access";
@@ -168,7 +168,10 @@ describe("referral memory belongs to the signed-in person", () => {
     typeStory();
     fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
     fireEvent.click(screen.getByRole("button", { name: /^Discard$/ }));
-    fireEvent.click(screen.getByRole("button", { name: "Patient" }));
+    // Rail rows still to answer are buttons too, so the step is found in the stepper.
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", { name: "Patient" }),
+    );
     act(() => vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS));
     expect(Boolean(readKeptReferralDraft())).toBe(false);
     view.unmount();
@@ -304,7 +307,7 @@ describe("referral memory belongs to the signed-in person", () => {
     });
     typeStory();
     fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
-    fireEvent.click(screen.getByRole("button", { name: "Keep draft" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep draft and close" }));
     await signInAsNextPerson();
     expect(readKeptReferralDraft()).toBeNull();
     expect(readLastReferrerContact()).toBeNull();
@@ -330,7 +333,7 @@ describe("referral memory belongs to the signed-in person", () => {
     await openSharedComposer();
     typeStory();
     fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
-    fireEvent.click(screen.getByRole("button", { name: "Keep draft" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep draft and close" }));
     fireEvent.click(screen.getByRole("button", { name: "New referral probe" }));
     expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("Synthetic account A unsent story");
     expect(identity.signedOut).toBe(0);
