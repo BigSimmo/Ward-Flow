@@ -32,7 +32,6 @@ const LEGACY_FILES = new Set<string>([
   "src/components/ward-management/movements/movement-horizon-gantt.tsx",
   "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
   "src/components/ward-management/movements/movements-screen.tsx",
-  "src/components/ward-management/out-of-area/out-of-area-return-plan.tsx",
   "src/components/ward-management/patients/patient-history-tab.tsx",
   "src/components/ward-management/patients/patient-now-panel.tsx",
   "src/components/ward-management/patients/patient-status-card.tsx",
