@@ -1,6 +1,5 @@
 /**
- * Runs from `.github/workflows/ward-flow-ci-tidy.yml` when a pull request closes or gets a new push,
- * and every 15 minutes. It frees shared runner slots held by runs nobody will use:
+ * Runs from `.github/workflows/ward-flow-ci-tidy.yml` when a pull request closes, and hourly. It frees shared runner slots held by runs nobody will use:
  *
  * - any pull-request run whose branch no longer has an open pull request (merged or closed), and
  * - a run for an older head of an open pull request, but only while none of its jobs is running.
