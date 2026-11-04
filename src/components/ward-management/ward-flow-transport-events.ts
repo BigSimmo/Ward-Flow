@@ -29,7 +29,7 @@ import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { transportExceptionRecord } from "@/components/ward-management/ward-transport-checks";
 import { movementBedReservation } from "./ward-movement-bed-hold";
 import { openRestrictivePracticeRefusal } from "./restrictive-practice/ward-restrictive-practice";
-import { sameObservation, type ObservationChange } from "./ward-observation";
+import { sameObservation, observationChangeOrder } from "./ward-observation";
 import type { TransportEventHelpers, WardFlowState } from "./ward-flow-reducer";
 
 /**
@@ -576,12 +576,11 @@ export function reduceTransportEvent(
         void _previousNumber;
         // Audit S-2: the journey and the held bed record one observation level. If they still
         // differ here (a record from before the two were joined), the later recorded change wins and
-        // the stay keeps the change in its history, so neither level is dropped silently.
-        const lastChangeAt = (changes: readonly ObservationChange[] | undefined) =>
-          changes?.at(-1)?.at ?? Number.NEGATIVE_INFINITY;
+        // the stay keeps the change in its history. Unknown historical order retains the ward's
+        // current fact and is shown as a conflict in the observation control for explicit resolution.
         const journeyLevelWins =
           !sameObservation(movement.observation, pulledAdmission.observation) &&
-          lastChangeAt(movement.observationChanges) >= lastChangeAt(pulledAdmission.observationChanges);
+          observationChangeOrder(movement.observationChanges, pulledAdmission.observationChanges) > 0;
         withPerson = replaceAdmission(withUnit, pulledAdmission.id, {
           ...withoutBedNumber,
           ...(journeyLevelWins
@@ -589,7 +588,12 @@ export function reduceTransportEvent(
                 observation: movement.observation,
                 observationChanges: [
                   ...(pulledAdmission.observationChanges ?? []),
-                  { at: event.now, from: pulledAdmission.observation, to: movement.observation },
+                  {
+                    at: event.now,
+                    from: pulledAdmission.observation,
+                    to: movement.observation,
+                    sequence: movement.observationChanges?.at(-1)?.sequence,
+                  },
                 ],
               }
             : {}),

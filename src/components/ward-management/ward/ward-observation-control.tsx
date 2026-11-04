@@ -64,8 +64,11 @@ export function WardObservationControl({
   editingToken,
   onSave,
   showCurrent = true,
+  conflictingObservation,
 }: {
   observation: Observation;
+  /** Historical arrival disagreement; a person must confirm the current level. */
+  conflictingObservation?: Observation;
   now: Instant;
   /** The record's `observationEditingToken` now; the one seen on opening goes with the save. */
   editingToken?: string;
@@ -112,10 +115,16 @@ export function WardObservationControl({
 
   // In the bed drawer the row above already states the level and its review time, so a desk that
   // may not change it sees nothing more here.
-  if (!onSave && !showCurrent) return null;
+  if (!onSave && !showCurrent && !conflictingObservation) return null;
 
   return (
     <div className={styles.cardInner} data-testid="ward-observation-control">
+      {conflictingObservation ? (
+        <p role="alert" data-testid="ward-observation-conflict">
+          Observation records disagree. The journey records {observationSummary(conflictingObservation)}. Confirm the
+          current level with the ward, then save the observation level to resolve this conflict.
+        </p>
+      ) : null}
       {showCurrent ? (
         <p className={styles.meta} data-testid="ward-observation-current">
           {observationWithReview(observation, now)}

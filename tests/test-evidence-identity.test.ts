@@ -116,6 +116,46 @@ describe("test outcome input identity", () => {
     }
     expect(fullGateInputIdentity(options)).toBe(reduced);
   });
+  it("invalidates sampled storage checkpoints before an explicitly exhaustive run", () => {
+    const root = mkdtempSync(path.join(os.tmpdir(), "ward-storage-checkpoint-"));
+    roots.push(root);
+    const population = ["tests/ward-storage-verdicts.test.ts"];
+    const fingerprint = (env = {}) =>
+      fullGateInputIdentity({ root, env, population, args: ["run"], dependencyIdentity: "fixed" });
+    let executions = 0;
+    const options = {
+      root,
+      population,
+      commit: "a".repeat(40),
+      skippedTooling: false,
+      stateDir: path.join(root, "checkpoint"),
+      runBatch: ({ reportPath }: { reportPath: string }) => {
+        executions++;
+        writeFileSync(
+          reportPath,
+          JSON.stringify({
+            numTotalTests: 1,
+            testResults: [
+              { name: path.join(root, population[0]!), status: "passed", assertionResults: [{ status: "passed" }] },
+            ],
+          }),
+        );
+        return { status: 0 };
+      },
+    };
+    runFullGateBatches({ ...options, environmentFingerprint: fingerprint() });
+    runFullGateBatches({ ...options, environmentFingerprint: fingerprint() });
+    expect(executions).toBe(1);
+    const full = fingerprint({ WARD_STORAGE_VERDICTS_FULL: "1" });
+    expect(full).not.toBe(fingerprint());
+    expect(() => runFullGateBatches({ ...options, environmentFingerprint: full })).toThrow(
+      /different commit, checkout or population/,
+    );
+    const fullOptions = { ...options, stateDir: path.join(root, "full-checkpoint"), environmentFingerprint: full };
+    runFullGateBatches(fullOptions);
+    runFullGateBatches(fullOptions);
+    expect(executions).toBe(2);
+  });
   it("resumes the same checkpoint after Vite creates its generated configuration directory", () => {
     const root = mkdtempSync(path.join(os.tmpdir(), "ward-vite-checkpoint-"));
     roots.push(root);

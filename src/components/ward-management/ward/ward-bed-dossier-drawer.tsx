@@ -52,6 +52,7 @@ import {
   type WfTone,
 } from "@/components/wf";
 import {
+  observationConflict,
   observationLevelName,
   observationRatio,
   type Observation,
@@ -258,6 +259,12 @@ export function WardBedDossierDrawer({
   const isAwayAtEd = bedItem?.awayAtEdHours !== null && bedItem?.awayAtEdHours !== undefined;
   const admission = bedItem?.admissionId ? admissions.find((a) => a.id === bedItem.admissionId) : undefined;
   // Both layouts send the same token, so a colleague's level change made while the form is open is refused.
+  const arrivedJourney =
+    admission && movements.find((row) => row.admissionId === admission.id && row.closure?.outcome === "arrived");
+  const conflictingObservation =
+    admission && arrivedJourney && observationConflict(admission, arrivedJourney)
+      ? arrivedJourney.observation
+      : undefined;
   const observationChanges = admission?.observationChanges?.length ?? 0;
   const observationToken =
     admission && observationEditingToken("admission", admission.id, admission.observation, observationChanges);
@@ -736,6 +743,7 @@ export function WardBedDossierDrawer({
           blockerSave={blockerSave}
           onSetObservation={onSetObservation}
           observationToken={observationToken}
+          conflictingObservation={conflictingObservation}
           onMarkAtEd={onMarkAtEd ? () => setConfirmStep("ed") : undefined}
           onMarkBack={onMarkBack}
           onMove={onMove}
@@ -1024,6 +1032,7 @@ export function WardBedDossierDrawer({
                   </dl>
                   {bedItem?.observation && bedItem.admissionId ? (
                     <WardObservationControl
+                      conflictingObservation={conflictingObservation}
                       key={bedItem.admissionId}
                       observation={bedItem.observation}
                       now={now}

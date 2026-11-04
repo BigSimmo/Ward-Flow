@@ -1,4 +1,5 @@
 import { validDischargeRequestNamespace } from "./ward-discharge-records";
+import { storedPlacementInvariants, observationRule, observationChangeRule } from "./ward-flow-storage-invariants";
 import {
   RESTRICTIVE_PRACTICE_IDS,
   SECLUSION_ROOM_STATUS_IDS,
@@ -80,7 +81,6 @@ import { UNDO_STEP_ACTIONS } from "./ward-undo";
 import { BED_RELEASE_BLOCKERS } from "./ward-change-reasons";
 import { dischargeLogisticsFields } from "./discharges/discharge-dependency-validation";
 import { numberedBedKind } from "./ward-bed-designation";
-import { isObservation, type Observation } from "./ward-observation";
 import { upgradeLegacyDeclineReasons } from "./ward-decline-legacy";
 import { upgradeLegacyObservationRows } from "./ward-observation-legacy";
 import { isTentativeDiagnosisBlock } from "./ward-diagnosis";
@@ -496,11 +496,6 @@ const meetingAction = z
   })
   .check(z.refine((action) => (action.owner === "ward") === (action.ownerUnitId !== undefined)))
   .check(z.refine((action) => (action.doneAt === undefined) === (action.doneBy === undefined)));
-
-// Fix plan item 10: a level from the fixed list, an Intermittent interval from the fixed list, and a
-// review time as a number. `isObservation` is the same check `RECORD_OBSERVATION_LEVEL` makes.
-const observationRule = z.custom<Observation>(isObservation);
-const observationChangeRule = z.strictObject({ at: finite, from: observationRule, to: observationRule });
 
 const movement = z
   .looseObject({
@@ -1424,7 +1419,12 @@ function consistent(state: StoredState, value: RecordValue): boolean {
 export function isValidStoredWardFlowState(value: unknown): value is WardFlowState {
   if (!object(value) || !nested(value)) return false;
   const parsed = storedState.safeParse(value);
-  return parsed.success && consistent(parsed.data, value) && typedRecordsResolve(value as unknown as WardFlowState);
+  return (
+    parsed.success &&
+    consistent(parsed.data, value) &&
+    typedRecordsResolve(value as unknown as WardFlowState) &&
+    storedPlacementInvariants(value as unknown as WardFlowState)
+  );
 }
 
 /**

@@ -5,7 +5,12 @@ import type { RecordedFactEventHelpers } from "@/components/ward-management/ward
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { bedIsOccupied, liveMovementForAdmission } from "@/components/ward-management/ward-admissions";
-import { isObservation, sameObservation, type Observation } from "@/components/ward-management/ward-observation";
+import {
+  isObservation,
+  sameObservation,
+  observationConflict,
+  type Observation,
+} from "@/components/ward-management/ward-observation";
 
 /** Re-exported so `ward-flow-events.ts` takes both observation types from one line (line cap). */
 export type { Observation };
@@ -149,12 +154,27 @@ export function reduceObservationLevelEvent(
   ) {
     return reject(state, event, "Observation changed. Reopen it.");
   }
-  if (current && sameObservation(current, level)) return reject(state, event, "this is the level already recorded");
+  const arrivedSource =
+    admission && state.movements.find((row) => row.admissionId === admission.id && row.closure?.outcome === "arrived");
+  const resolvingConflict = admission && arrivedSource && observationConflict(admission, arrivedSource);
+  if (current && sameObservation(current, level) && !resolvingConflict)
+    return reject(state, event, "this is the level already recorded");
 
+  // Shared ordering survives persistence and links created after an edit. A single accepted
+  // command gives both copies the same sequence, while display timestamps remain unchanged.
+  let sequence = 0;
+  for (const row of [...state.movements, ...state.admissions]) {
+    for (const change of row.observationChanges ?? []) sequence = Math.max(sequence, change.sequence ?? 0);
+  }
+  sequence += 1;
+  if (!Number.isSafeInteger(sequence)) return reject(state, event, "Observation order is exhausted.");
   const changed = <T extends Movement | Admission>(row: T): T => ({
     ...row,
     observation: level,
-    observationChanges: [...(row.observationChanges ?? []), { at: event.now, from: row.observation, to: level }],
+    observationChanges: [
+      ...(row.observationChanges ?? []),
+      { at: event.now, from: row.observation, to: level, sequence },
+    ],
   });
   let next = state;
   if (movement) next = replaceMovement(next, movement.id, changed(movement));

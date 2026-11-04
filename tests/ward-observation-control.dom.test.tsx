@@ -51,4 +51,23 @@ describe("changing the observation level in the bed drawer", () => {
     fireEvent.click(screen.getByTestId("ward-observation-save"));
     expect(onSave).toHaveBeenCalledWith({ level: "intermittent", intervalMinutes: 30, reviewAt: null }, undefined);
   });
+  it("shows a historical conflict and permits a deliberate confirmation of the current level", () => {
+    const observation = observationAt("two_staff");
+    const onSave = vi.fn();
+    const view = render(
+      <WardObservationControl
+        observation={observation}
+        now={NOW}
+        editingToken="current"
+        conflictingObservation={observationAt("arms_length")}
+        onSave={onSave}
+      />,
+    );
+    expect(screen.getByRole("alert")).toHaveTextContent("Observation records disagree");
+    fireEvent.click(screen.getByTestId("ward-observation-change"));
+    fireEvent.click(screen.getByTestId("ward-observation-save"));
+    expect(onSave).toHaveBeenCalledWith(observation, "current");
+    view.rerender(<WardObservationControl observation={observation} now={NOW} onSave={onSave} />);
+    expect(screen.queryByTestId("ward-observation-conflict")).toBeNull();
+  });
 });

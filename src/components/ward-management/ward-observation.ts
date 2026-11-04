@@ -34,7 +34,26 @@ export type Observation = {
 };
 
 /** One entry per change after intake, oldest first. Written only by `RECORD_OBSERVATION_LEVEL`. */
-export type ObservationChange = { at: Instant; from: Observation; to: Observation };
+export type ObservationChange = {
+  at: Instant;
+  from: Observation;
+  to: Observation;
+  /** Reducer acceptance order, independent of the displayed minute. Absent in older records. */
+  sequence?: number;
+};
+
+/** Compare accepted writes; a historical equal-minute disagreement has no recoverable order. */
+export function observationChangeOrder(
+  a: readonly ObservationChange[] | undefined,
+  b: readonly ObservationChange[] | undefined,
+): number {
+  const left = a?.at(-1);
+  const right = b?.at(-1);
+  if (left?.sequence !== undefined || right?.sequence !== undefined) {
+    return (left?.sequence ?? 0) - (right?.sequence ?? 0);
+  }
+  return (left?.at ?? Number.NEGATIVE_INFINITY) - (right?.at ?? Number.NEGATIVE_INFINITY);
+}
 
 /** The ordinary state: General, with no review time recorded. */
 export const GENERAL_OBSERVATION: Observation = Object.freeze({
@@ -108,4 +127,13 @@ export function isObservation(value: unknown): value is Observation {
 /** Two records say the same thing. */
 export function sameObservation(a: Observation, b: Observation): boolean {
   return a.level === b.level && a.intervalMinutes === b.intervalMinutes && a.reviewAt === b.reviewAt;
+}
+
+/** Disagreeing legacy records need a person to confirm the current fact when order is unknown. */
+export function observationConflict(
+  a: { observation: Observation; observationChanges?: ObservationChange[] },
+  b: { observation: Observation; observationChanges?: ObservationChange[] },
+): boolean {
+  const order = observationChangeOrder(a.observationChanges, b.observationChanges);
+  return !sameObservation(a.observation, b.observation) && (Number.isNaN(order) || order === 0);
 }

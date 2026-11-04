@@ -73,6 +73,7 @@ interface PhoneBedSheetProps {
     expected?: string,
   ) => ReturnType<WardCommandDispatch>;
   /** The observation editing token, the same one the desktop drawer sends. */
+  conflictingObservation?: Observation;
   observationToken?: string;
   onMarkAtEd?: (bedNumber: number) => void;
   onMarkBack?: (bedNumber: number) => void;
@@ -136,6 +137,7 @@ export function PhoneBedSheet({
   blockerSave,
   onSetObservation,
   observationToken,
+  conflictingObservation,
   onOpenBoard,
   onMarkReady,
   roleLockNote,
@@ -249,6 +251,7 @@ export function PhoneBedSheet({
               </dl>
               {bedItem?.observation && admissionId ? (
                 <WardObservationControl
+                  conflictingObservation={conflictingObservation}
                   key={`observation-${admissionId}`}
                   observation={bedItem.observation}
                   now={now}

@@ -2,7 +2,8 @@
 //
 // Fresh audit S-2 (26 Oct 2026): a seeded stay joined to its journey only by
 // `movement.admissionId` still changes level with it, in both directions, and arrival never drops
-// the level the journey recorded.
+// either history. Historical disagreements without an accepted operation order retain the ward's
+// current fact until a person resolves them.
 import { describe, expect, it } from "vitest";
 
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -72,7 +73,7 @@ describe("audit S-2: the journey and its held bed record one observation level",
     expect(levelOf(next, "movements", movement.id)).toBe("arms_length");
   });
 
-  it("arrival carries the journey's level onto the stay when the two still differ", () => {
+  it("arrival preserves the ward level when historical order is unknown", () => {
     const seeded = seedWardFlowState();
     const { movement, admission } = joinedOnlyByMovement(seeded, "WF-011");
     expect(movement.observation.level).not.toBe(admission.observation.level);
@@ -91,10 +92,7 @@ describe("audit S-2: the journey and its held bed record one observation level",
     const stay = arrived.admissions.find((row) => row.id === admission.id)!;
     expect(arrived.rejections.at(-1)?.reason ?? "").toBe(state.rejections.at(-1)?.reason ?? "");
     expect(stay.state).toBe("occupied");
-    expect(stay.observation.level).toBe(movement.observation.level);
-    expect(stay.observationChanges?.at(-1)).toMatchObject({
-      from: admission.observation,
-      to: movement.observation,
-    });
+    expect(stay.observation).toEqual(admission.observation);
+    expect(stay.observationChanges).toEqual(admission.observationChanges);
   });
 });

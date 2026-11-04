@@ -1329,7 +1329,7 @@ export function reduceReferralAnswerEvent(
       if (holdsBed && bedReleased === state) {
         return reject(state, event, `movement ${movement.id}'s pulled bed matches no releasable reservation`);
       }
-      const released = holdsBed ? withoutReferralBedHold(bedReleased, movement) : state;
+      const released = withoutReferralBedHold(bedReleased, movement);
       const withdrawnStage = steppedBackHoldingBed ? movement.stage : "destination_review";
       const updatedMovement: Movement = {
         ...movement,
