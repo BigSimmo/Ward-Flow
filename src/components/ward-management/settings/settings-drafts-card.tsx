@@ -44,7 +44,7 @@ export function SettingsDraftsCard() {
     // Q6 (Josh, 4 Nov 2026): referral drafts only, as only they reopen from here.
     const read = () =>
       setDrafts(
-        listSessionDrafts(40)
+        listSessionDrafts(Number.POSITIVE_INFINITY)
           .filter((draft) => draft.kind === "referral")
           .slice(0, 20),
       );

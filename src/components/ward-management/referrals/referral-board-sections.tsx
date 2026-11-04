@@ -10,7 +10,7 @@ import { openInformationNeeds } from "./referral-information-needs";
 import { personLine } from "./referral-panel-parts";
 import { referralFollowUpLine } from "./referral-owner-and-calls-model";
 import { ReferralNoReplyFlag } from "./referral-no-reply-flag";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import { referralPresentation } from "@/components/ward-management/ward-partial-view-presenters";
@@ -593,7 +593,12 @@ export function DecidedSection({
   const declinedCount = decided.filter((referral) =>
     referral.destinations.every((line) => line.state === "declined" || line.withdrawnAt !== undefined),
   ).length;
-  const [only, setOnly] = useState<"all" | "pull" | "declined">("all");
+  const [chosenOnly, setOnly] = useState<"all" | "pull" | "declined">("all");
+  // A filter with no rows left (last bed pulled, last decline undone) falls back to All.
+  const only =
+    (chosenOnly === "pull" && pullIds.size === 0) || (chosenOnly === "declined" && declinedCount === 0)
+      ? "all"
+      : chosenOnly;
   const shownDecided =
     only === "pull"
       ? displayDecided.filter((referral) => pullIds.has(referral.id))
@@ -856,6 +861,9 @@ function DecidedRowActions({
   undoRole?: WardFlowRole;
   actingUnitId?: string;
 }) {
+  // The Undo confirmation can stay open while the clock moves; dispatch the time it resolves at.
+  const nowRef = useRef(now);
+  nowRef.current = now;
   // Optional: a board drawn outside the provider (a test or the redesign preview) offers no Undo.
   const flow = useOptionalWardFlowSelect("undoRecords", "dispatch");
   const undoRecords = flow?.undoRecords;
@@ -895,7 +903,7 @@ function DecidedRowActions({
               wardRaise(
                 flow.dispatch,
                 undoRole,
-                now,
+                nowRef.current,
               )("UNDO_REFERRAL_DECISION", {
                 recordSeq: record.seq,
                 referralId: referral.id,

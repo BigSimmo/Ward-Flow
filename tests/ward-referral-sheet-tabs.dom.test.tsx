@@ -73,6 +73,9 @@ describe("Referral sheet tabs (RQ9)", () => {
   it("finds a person's latest referral and nothing for an unlinked person", () => {
     expect(latestReferralForPerson(undefined, state.referrals)).toBeUndefined();
     expect(latestReferralForPerson("PT-none", state.referrals)).toBeUndefined();
+    const linked = state.referrals.find((candidate) => candidate.patientId !== undefined)!;
+    const newer = { ...linked, id: "RF-newer", raisedAt: linked.raisedAt + 10 };
+    expect(latestReferralForPerson(linked.patientId, [linked, newer])?.id).toBe("RF-newer");
   });
 
   it("opens the named referral from the shared Referral button, on the tab asked for, and draws nothing for an unknown one", () => {

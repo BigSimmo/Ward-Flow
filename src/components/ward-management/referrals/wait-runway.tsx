@@ -131,7 +131,9 @@ export function WaitRunway({
   useEffect(() => {
     if (pinned === null) return;
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setPinned(null);
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setPinned(null);
     };
     const onPress = (event: PointerEvent) => {
       const target = event.target as Node;
@@ -150,7 +152,7 @@ export function WaitRunway({
     return { referral, minutes, x: runwayMarkerPercent(runwayPercent(minutes), trackPx, compact) };
   });
   const groups = runwayGroups(entries, runwayGapPercent(trackPx, compact));
-  const shownKey = pinned ?? peek;
+  const shownKey = pinned !== null && groups.some((group) => group.key === pinned) ? pinned : peek;
   const shown = groups.find((group) => group.key === shownKey);
   const ticks = [
     { at: 0, label: "0", tier: "" },
