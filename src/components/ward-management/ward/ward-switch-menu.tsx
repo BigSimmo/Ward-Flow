@@ -48,7 +48,7 @@ export function WardSwitchMenu({
         onClick={() => setOpen((was) => !was)}
       >
         <span>Switch ward</span>
-        <ChevronDown size={14} aria-hidden="true" />
+        <ChevronDown strokeWidth={1.75} size={14} aria-hidden="true" />
       </button>
       {open ? (
         <WardSwitchPanel

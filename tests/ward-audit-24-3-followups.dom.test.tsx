@@ -33,6 +33,7 @@ import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { useWardFlow, WardFlowOverride, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { pickObservationInterval, pickObservationLevel } from "./helpers/ward-choice-chips";
 
 /*
  * Audit 24-3 follow-ups (24 Oct 2026): SV-5 controls say a refusal at the control, and SV-7 a Retry that saves replaces the bed drawer's
@@ -265,8 +266,8 @@ describe("SV-5 confirm bed release and SV-7 Retry on the ward screen", () => {
     )!;
     fireEvent.click(occupied);
     fireEvent.click(await screen.findByTestId("ward-observation-change"));
-    fireEvent.change(screen.getByTestId("ward-observation-level"), { target: { value: "intermittent" } });
-    fireEvent.change(screen.getByTestId("ward-observation-interval"), { target: { value: "30" } });
+    pickObservationLevel("intermittent");
+    pickObservationInterval(30);
     await press(screen.getByTestId("ward-observation-save"));
     expect(calls).toHaveLength(1);
     expect(wardSays()).toBe(FAILED_SAYS);

@@ -10,7 +10,7 @@ import { openInformationNeeds } from "./referral-information-needs";
 import { personLine } from "./referral-panel-parts";
 import { referralFollowUpLine } from "./referral-owner-and-calls-model";
 import { ReferralNoReplyFlag } from "./referral-no-reply-flag";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import { referralPresentation } from "@/components/ward-management/ward-partial-view-presenters";
@@ -30,7 +30,28 @@ import {
   acceptedAddressing,
   SEX_NOT_HELD,
 } from "@/components/ward-management/ward-referrals";
-import { Button, CardHead, Count, cx, EmptyState, ShowMoreRow, StatusGlyph, TierTile, Timer } from "@/components/wf";
+import {
+  Button,
+  CardHead,
+  Count,
+  cx,
+  EmptyState,
+  Segmented,
+  ShowMoreRow,
+  StatusGlyph,
+  TierTile,
+  Timer,
+  buttonClass,
+  requestConfirm,
+} from "@/components/wf";
+import Link from "next/link";
+import { BedSingle, Undo2 } from "lucide-react";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
+import { referralDecisionUndoFor, undoRoleRefusal, undoWindowRefusal } from "@/components/ward-management/ward-undo";
+import { movementHref, unitHref } from "@/components/ward-management/shell/ward-facade";
+import { wardRaise } from "@/components/ward-management/ward-flow-raise";
+import { acceptedReferralsAwaitingPull, acceptedWardOf, type AcceptedAwaitingPull } from "./accepted-awaiting-pull";
 import { getReferralPriority, referralPriorityLabel } from "./referral-priority";
 import { referralWaitLine } from "./referral-wait";
 import {
@@ -513,11 +534,19 @@ export function DecidedSection({
   selectedId,
   onSelect,
   onResetFilters,
+  undoRole,
+  actingUnitId,
+  onPull,
 }: {
   decided: Referral[];
   displayDecided?: Referral[];
   decidedTotal: number;
   units: Unit[];
+  /** RQ7: the desk that may take a recent decision back from its row. Left out, no Undo shows. */
+  undoRole?: WardFlowRole;
+  actingUnitId?: string;
+  /** RQ7: pulls the bed for an accepted ward referral from its row. Left out, no Pull bed shows. */
+  onPull?: (item: AcceptedAwaitingPull) => void;
   movements?: Movement[];
   patients?: Patient[];
   now: Instant;
@@ -538,8 +567,61 @@ export function DecidedSection({
   // on its first rows, then Show more (owner rule).
   const communityDesk = useEffectiveWardAccess().role === "community";
   const [showAll, setShowAll] = useState(false);
-  const hiddenRows = communityDesk && !showAll ? Math.max(0, displayDecided.length - FIRST_DECIDED) : 0;
-  const listed = hiddenRows > 0 ? displayDecided.slice(0, FIRST_DECIDED) : displayDecided;
+  // RQ7 (Josh, 3 Nov 2026): History is where a decision's next step is taken, not just read.
+  // Each row carries its own next step: Pull bed (an accepted ward bed with none pulled yet), Open
+  // movement (once a journey exists) and Undo (in the undo window, for the desk allowed to).
+  const toPull = useMemo(() => {
+    const items = onPull ? acceptedReferralsAwaitingPull(decided, units, movements) : [];
+    return new Map(items.map((item) => [item.referral.id, item]));
+  }, [onPull, decided, units, movements]);
+  // Every accepted ward bed still to pull: the coordinator's pull sheet items, plus any other
+  // accepted ward arm with no bed held and no journey raised.
+  const pullIds = useMemo(() => {
+    if (!onPull) return new Set<string>();
+    return new Set(
+      decided
+        .filter((referral) => {
+          if (toPull.has(referral.id)) return true;
+          const accepted = acceptedAddressing(referral);
+          if (!accepted || accepted.heldBedNumber !== undefined || accepted.withdrawnAt !== undefined) return false;
+          if (movements.some((movement) => movement.referralId === referral.id)) return false;
+          return acceptedWardOf(referral, units) !== undefined;
+        })
+        .map((referral) => referral.id),
+    );
+  }, [onPull, decided, toPull, movements, units]);
+  const declinedCount = decided.filter((referral) =>
+    referral.destinations.every((line) => line.state === "declined" || line.withdrawnAt !== undefined),
+  ).length;
+  const [chosenOnly, setOnly] = useState<"all" | "pull" | "declined">("all");
+  // A filter with no rows left (last bed pulled, last decline undone) falls back to All.
+  const only =
+    (chosenOnly === "pull" && pullIds.size === 0) || (chosenOnly === "declined" && declinedCount === 0)
+      ? "all"
+      : chosenOnly;
+  const shownDecided =
+    only === "pull"
+      ? displayDecided.filter((referral) => pullIds.has(referral.id))
+      : only === "declined"
+        ? displayDecided.filter((referral) =>
+            referral.destinations.every((line) => line.state === "declined" || line.withdrawnAt !== undefined),
+          )
+        : displayDecided;
+  const hiddenRows = communityDesk && !showAll ? Math.max(0, shownDecided.length - FIRST_DECIDED) : 0;
+  const listed = hiddenRows > 0 ? shownDecided.slice(0, FIRST_DECIDED) : shownDecided;
+  const rowActions = (referral: Referral, suffix = "") => (
+    <DecidedRowActions
+      referral={referral}
+      now={now}
+      suffix={suffix}
+      units={units}
+      movements={movements}
+      toPull={toPull.get(referral.id)}
+      onPull={onPull}
+      undoRole={undoRole}
+      actingUnitId={actingUnitId}
+    />
+  );
   return (
     <section className={cx(styles.v6Section, styles.v6Decided)} data-testid="ward-referral-board-decided">
       <CardHead
@@ -561,6 +643,20 @@ export function DecidedSection({
           Acceptance records the decision only. No bed is pulled, no patient is moved and no transport is arranged.
         </p>
       )}
+      {pullIds.size > 0 || declinedCount > 0 ? (
+        <div className={a.decidedFilter}>
+          <Segmented
+            label="Show decided referrals"
+            value={only}
+            onChange={setOnly}
+            items={[
+              { id: "all", label: "All", count: displayDecided.length },
+              ...(pullIds.size > 0 ? [{ id: "pull" as const, label: "Bed to pull", count: pullIds.size }] : []),
+              ...(declinedCount > 0 ? [{ id: "declined" as const, label: "Declined", count: declinedCount }] : []),
+            ]}
+          />
+        </div>
+      ) : null}
       {decided.length === 0 ? (
         <p className={styles.v6Empty} data-testid="ward-referral-board-decided-empty">
           None decided yet.
@@ -591,10 +687,13 @@ export function DecidedSection({
                 <th scope="col">Detail</th>
                 <th scope="col">Waited</th>
                 <th scope="col">Decided</th>
+                <th scope="col">
+                  <span className="sr-only">Next step</span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {displayDecided.map((referral) => {
+              {shownDecided.map((referral) => {
                 const patientInfo = resolveSubjectPatient(referral, decidedResolverState);
                 return (
                   <tr
@@ -633,6 +732,7 @@ export function DecidedSection({
                         ? formatInstantWithDay(presentationDecidedAt(referral, sender.referralFor(referral))!, now)
                         : "Not recorded"}
                     </td>
+                    <td className={a.decidedActionsCell}>{rowActions(referral)}</td>
                   </tr>
                 );
               })}
@@ -653,7 +753,7 @@ export function DecidedSection({
               return (
                 <li
                   key={referral.id}
-                  className={cx(styles.v6Item, selected && styles.v6ItemOn)}
+                  className={cx(styles.v6Item, a.decidedItem, selected && styles.v6ItemOn)}
                   data-testid={`ward-referral-board-decided-card-${referral.id}`}
                 >
                   <button
@@ -710,11 +810,12 @@ export function DecidedSection({
                       )}
                     </span>
                   </button>
+                  {rowActions(referral, "-card")}
                 </li>
               );
             })}
           </ul>
-          {communityDesk && displayDecided.length > FIRST_DECIDED ? (
+          {communityDesk && shownDecided.length > FIRST_DECIDED ? (
             <ShowMoreRow expanded={showAll} onClick={() => setShowAll((value) => !value)}>
               {showAll ? "Show fewer" : `Show ${hiddenRows} more`}
             </ShowMoreRow>
@@ -731,4 +832,120 @@ const FIRST_DECIDED = 8;
 /** "10:42, 30 days ago" read as "30 days ago": the clock time of a decision weeks ago is noise on a row. */
 function dayOnly(when: string): string {
   return when.replace(/^\d{1,2}:\d{2}, /, "");
+}
+
+/**
+ * RQ7: a decided row's next step. Open movement once a journey exists, Pull bed for an accepted
+ * ward bed with none pulled, and Undo while the decision is inside the undo window for a desk that
+ * may take it back. Nothing shows when there is no next step.
+ */
+function DecidedRowActions({
+  referral,
+  units,
+  movements,
+  toPull,
+  onPull,
+  undoRole,
+  actingUnitId,
+  now,
+  suffix = "",
+}: {
+  referral: Referral;
+  now: Instant;
+  /** Test id suffix, as the table and the card list draw the same row. */
+  suffix?: string;
+  units: readonly Unit[];
+  movements: readonly Movement[];
+  toPull: AcceptedAwaitingPull | undefined;
+  onPull?: (item: AcceptedAwaitingPull) => void;
+  undoRole?: WardFlowRole;
+  actingUnitId?: string;
+}) {
+  // The Undo confirmation can stay open while the clock moves; dispatch the time it resolves at.
+  const nowRef = useRef(now);
+  useEffect(() => {
+    nowRef.current = now;
+  }, [now]);
+  // Optional: a board drawn outside the provider (a test or the redesign preview) offers no Undo.
+  const flow = useOptionalWardFlowSelect("undoRecords", "dispatch");
+  const undoRecords = flow?.undoRecords;
+  const record = undoRole ? referralDecisionUndoFor(undoRecords, referral.id) : undefined;
+  const canUndo =
+    record !== undefined &&
+    undoRole !== undefined &&
+    undoWindowRefusal(record.at, now) === null &&
+    undoRoleRefusal(record, undoRole, actingUnitId) === null;
+  const movement =
+    movements.find((item) => item.referralId === referral.id && item.closure === undefined) ??
+    // A journey that did not proceed is no next step; the referral is back on the pull list instead.
+    movements.find((item) => item.referralId === referral.id && item.closure?.outcome !== "did_not_proceed");
+  // Any other accepted ward bed with no bed held yet: the same link the decide panel gives, to the
+  // accepting ward's bed board, where the bed is held.
+  const accepted = acceptedAddressing(referral);
+  const wardToHold =
+    !movement && !toPull && onPull && accepted && accepted.heldBedNumber === undefined && !accepted.withdrawnAt
+      ? acceptedWardOf(referral, units)
+      : undefined;
+  if (!canUndo && !movement && !toPull && !wardToHold) return null;
+  return (
+    <span className={a.decidedActions} data-testid={`ward-referral-board-decided-actions-${referral.id}${suffix}`}>
+      {canUndo ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={Undo2}
+          data-testid={`ward-referral-board-decided-undo-${referral.id}${suffix}`}
+          onClick={() => {
+            void requestConfirm({
+              title: "Undo this decision?",
+              message: "The referral goes back to the queue as it was before the decision.",
+              confirmLabel: "Undo decision",
+            }).then((confirmed) => {
+              if (!confirmed || !undoRole || !flow) return;
+              wardRaise(
+                flow.dispatch,
+                undoRole,
+                nowRef.current,
+              )("UNDO_REFERRAL_DECISION", {
+                recordSeq: record.seq,
+                referralId: referral.id,
+                actingUnitId,
+              });
+            });
+          }}
+        >
+          Undo
+        </Button>
+      ) : null}
+      {movement ? (
+        <Link
+          href={movementHref(movement.id)}
+          className={buttonClass({ variant: "ghost", size: "sm" })}
+          data-testid={`ward-referral-board-decided-movement-${referral.id}${suffix}`}
+        >
+          Open movement
+        </Link>
+      ) : toPull && onPull ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          icon={BedSingle}
+          data-testid={`ward-referral-board-decided-pull-${referral.id}${suffix}`}
+          onClick={() => onPull(toPull)}
+        >
+          Pull bed
+        </Button>
+      ) : wardToHold ? (
+        <Link
+          href={`${unitHref(wardToHold.unitId)}?tab=board`}
+          className={buttonClass({ variant: "ghost", size: "sm" })}
+          title={`Open ${wardToHold.unitName} bed board`}
+          data-testid={`ward-referral-board-decided-hold-${referral.id}${suffix}`}
+        >
+          <BedSingle size={14} strokeWidth={1.75} aria-hidden="true" />
+          Pull bed
+        </Link>
+      ) : null}
+    </span>
+  );
 }

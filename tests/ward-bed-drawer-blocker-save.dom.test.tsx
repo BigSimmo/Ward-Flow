@@ -29,6 +29,7 @@ import { allUnits, NOW_ANCHOR, unitById } from "@/components/ward-management/war
 import { WardBedDossierDrawer } from "@/components/ward-management/ward/ward-bed-dossier-drawer";
 import type { BedItem } from "@/components/ward-management/ward/ward-bed-tone";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
+import { chooseChip, chosenChip } from "./helpers/ward-choice-chips";
 import { getBedStep, queryBedStep } from "./helpers/ward-bed-steps";
 
 /*
@@ -85,7 +86,7 @@ function asPhone() {
 }
 
 function openEditor() {
-  const tab = screen.queryByRole("tab", { name: "Plan to leave" });
+  const tab = screen.queryByRole("tab", { name: "Leaving" });
   if (tab) fireEvent.click(tab);
   fireEvent.click(getBedStep(/^(Record|Update) hold-up$/));
 }
@@ -109,7 +110,7 @@ describe.each([
     expect(queryBedStep(/^(Record|Update) hold-up$/)).toBeNull();
     cleanup();
     render(drawer(bed("Awaiting clean")));
-    const tab = screen.queryByRole("tab", { name: "Plan to leave" });
+    const tab = screen.queryByRole("tab", { name: "Leaving" });
     if (tab) fireEvent.click(tab);
     expect(queryBedStep(/^(Record|Update) hold-up$/)).toBeNull();
     expect(screen.queryByRole("button", { name: "Clear hold-up" })).toBeNull();
@@ -121,7 +122,7 @@ describe.each([
     const onUpdateBlocker = vi.fn(() => Promise.resolve<WardCommandOutcome>({ commandId: "c-0", status: "accepted" }));
     render(drawer(bed(), onUpdateBlocker));
     openEditor();
-    expect(screen.getByRole("combobox", { name: "Held up by" })).toHaveValue("");
+    expect(chosenChip("Held up by")).toBe("");
     const save = screen.getByRole("button", { name: "Save hold-up" });
     expect(save).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText("Choose what is holding them up first.")).toBeVisible();
@@ -135,9 +136,7 @@ describe.each([
     const onUpdateBlocker = vi.fn(() => new Promise<WardCommandOutcome>((resolve) => (finish = resolve)));
     render(drawer(bed(), onUpdateBlocker));
     openEditor();
-    fireEvent.change(screen.getByRole("combobox", { name: "Held up by" }), {
-      target: { value: "Awaiting accommodation" },
-    });
+    chooseChip("Held up by", "Awaiting accommodation");
     fireEvent.click(screen.getByRole("button", { name: "Save hold-up" }));
     expect(onUpdateBlocker).toHaveBeenCalledWith("adm-blocker", "Awaiting accommodation");
     // Not answered yet: still open, saying so.
@@ -155,14 +154,12 @@ describe.each([
     );
     render(drawer(bed(), onUpdateBlocker));
     openEditor();
-    fireEvent.change(screen.getByRole("combobox", { name: "Held up by" }), {
-      target: { value: "Awaiting clean" },
-    });
+    chooseChip("Held up by", "Awaiting clean");
     fireEvent.click(screen.getByRole("button", { name: "Save hold-up" }));
     await act(async () => {});
     expect(onUpdateBlocker).toHaveBeenCalledWith("adm-blocker", "Awaiting clean");
     expect(screen.getByRole("button", { name: "Save hold-up" })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: "Held up by" })).toHaveValue("Awaiting clean");
+    expect(chosenChip("Held up by")).toBe("Awaiting clean");
     expect(screen.getByTestId("ward-blocker-error")).not.toBeEmptyDOMElement();
   });
 });
@@ -213,11 +210,9 @@ async function recordBlockerOnScreen(control: ReturnType<typeof commands>) {
   expect(occupied.length).toBeGreaterThan(0);
   fireEvent.click(occupied.at(-1)!);
   const drawerEl = await screen.findByTestId("bed-telemetry-drawer");
-  fireEvent.click(within(drawerEl).getByRole("tab", { name: "Plan to leave" }));
+  fireEvent.click(within(drawerEl).getByRole("tab", { name: "Leaving" }));
   fireEvent.click(getBedStep("Record hold-up", drawerEl));
-  fireEvent.change(within(drawerEl).getByRole("combobox", { name: "Held up by" }), {
-    target: { value: "Awaiting clean" },
-  });
+  chooseChip("Held up by", "Awaiting clean", drawerEl);
   fireEvent.click(within(drawerEl).getByRole("button", { name: "Save hold-up" }));
   expect(control.record).toHaveBeenCalledTimes(1);
   const sent = control.record.mock.calls[0]![0];

@@ -3,16 +3,35 @@
 import Link from "next/link";
 import { useId, useState, type ReactNode } from "react";
 
-import { Badge, buttonClass, Card, CardHead, FilterChip, foldHidden, foldLimit, ShowMoreRow } from "@/components/wf";
+import {
+  Badge,
+  Button,
+  buttonClass,
+  Card,
+  CardHead,
+  FilterChip,
+  foldHidden,
+  foldLimit,
+  Segmented,
+  ShowMoreRow,
+} from "@/components/wf";
 
 import { useEffectiveWardAccess } from "./shell/ward-access-store";
 import { wardPlaceLookup } from "./ward-access-places";
 import { dayOf, formatInstantWithDay, perthDayLabel, type Instant } from "./ward-clock";
 import { useWardFlowSelect } from "./ward-flow-provider";
+import type { WardFlowRole } from "./ward-flow-events";
+import { useWardRaise } from "./ward-flow-raise";
 import type { Unit } from "./ward-model";
 import { usePatientOf } from "./ward-patient-name";
 import { unitInScope } from "./ward-role-access";
+import { canDispatch } from "./ward-role-permissions";
 import { restrictivePracticeLabel, wardIncidentLabel } from "./restrictive-practice/restrictive-practice-view";
+import {
+  RESTRICTIVE_PRACTICE_FOLLOW_UP_TASKS,
+  type RestrictivePracticeEpisode,
+  type RestrictivePracticeFollowUpTask,
+} from "./restrictive-practice/ward-restrictive-practice";
 import styles from "./governance-restrictive-register.module.css";
 
 /** FS3: where seclusion and restraint in use now is recorded. */
@@ -86,6 +105,71 @@ function DayGroups<T>({
 }
 
 /**
+ * Gap list item 9 (Josh, 4 Nov 2026): the follow-up the OCP standard asks for after an episode
+ * ends, as Done or Not yet marks a person sets. Folded to one line until opened, so the register
+ * stays readable. No due time is worked out or shown.
+ */
+function FollowUp({
+  episode,
+  mayMark,
+  onMark,
+}: {
+  episode: RestrictivePracticeEpisode;
+  mayMark: boolean;
+  onMark: (task: RestrictivePracticeFollowUpTask, done: boolean) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const listId = useId();
+  const done = RESTRICTIVE_PRACTICE_FOLLOW_UP_TASKS.filter((task) => episode.followUp?.[task.id]).length;
+  const total = RESTRICTIVE_PRACTICE_FOLLOW_UP_TASKS.length;
+  return (
+    <div className={styles.followUp} data-testid={`governance-follow-up-${episode.id}`}>
+      <div className={styles.followUpHead}>
+        <span className={styles.detail}>
+          Follow-up {done} of {total} marked done
+        </span>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+          aria-controls={listId}
+          data-testid={`governance-follow-up-open-${episode.id}`}
+        >
+          {open ? "Close" : mayMark ? "Mark follow-up" : "Show follow-up"}
+        </Button>
+      </div>
+      {open ? (
+        <ul id={listId} className={styles.followUpList}>
+          {RESTRICTIVE_PRACTICE_FOLLOW_UP_TASKS.map((task) => {
+            const marked = episode.followUp?.[task.id] === true;
+            return (
+              <li key={task.id} className={styles.followUpRow}>
+                <span className={styles.followUpLabel}>{task.label}</span>
+                <Segmented
+                  label={task.label}
+                  size="sm"
+                  unavailable={!mayMark}
+                  value={marked ? "done" : "not_yet"}
+                  onChange={(value) => {
+                    if (!mayMark || (value === "done") === marked) return;
+                    onMark(task.id, value === "done");
+                  }}
+                  items={[
+                    { id: "not_yet", label: "Not yet" },
+                    { id: "done", label: "Done" },
+                  ]}
+                />
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+    </div>
+  );
+}
+
+/**
  * GV1 (Josh, 3 Nov 2026, Q29): Governance is the after-the-fact record. This register lists every
  * FINISHED seclusion and restraint episode and every ward incident in this desk's view, newest first,
  * grouped by the day it ended or happened. Live episodes stay in Forms. Times are shown exactly as
@@ -102,6 +186,13 @@ export function GovernanceRestrictiveRegister({ units, now }: { units: readonly 
   const [filter, setFilter] = useState<Filter>("all");
   const [allEpisodes, setAllEpisodes] = useState(false);
   const [allIncidents, setAllIncidents] = useState(false);
+  // Only the desks the event allows mark follow-up. Every other desk that can open Governance
+  // (bed manager, executive, officer, the access admin) reads only, never as a borrowed role.
+  const role: WardFlowRole = access.role === "ward" ? "ward" : "coordinator";
+  const raise = useWardRaise(role);
+  const mayMark =
+    (access.role === "ward" || access.role === "coordinator") &&
+    canDispatch(role, "RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP");
   const places = wardPlaceLookup([...units]);
   const visible = units.filter((unit) => unitInScope(access.scope, unit.id, places));
 
@@ -197,6 +288,19 @@ export function GovernanceRestrictiveRegister({ units, now }: { units: readonly 
                     <span className={styles.timeLabel}>Ended</span> {formatInstantWithDay(row.endedAt, now)}
                   </span>
                 </span>
+                <FollowUp
+                  episode={row.episode}
+                  mayMark={mayMark}
+                  onMark={(task, done) =>
+                    raise("RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP", {
+                      unitId: row.unit.id,
+                      ...(role === "ward" ? { actingUnitId: row.unit.id } : {}),
+                      episodeId: row.episode.id,
+                      task,
+                      done,
+                    })
+                  }
+                />
               </>
             )}
           />

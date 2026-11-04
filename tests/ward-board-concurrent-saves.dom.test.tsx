@@ -50,6 +50,8 @@ function move(from: HTMLElement, to: HTMLElement) {
   fireEvent.click(from);
   fireEvent.click(getBedStep("Move to another bed"));
   fireEvent.click(to);
+  // WH8: a lit bed asks one confirm before the move is sent.
+  fireEvent.click(screen.getByTestId("ward-board-confirm-send"));
 }
 
 afterEach(() => {

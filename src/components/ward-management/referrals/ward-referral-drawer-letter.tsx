@@ -1,6 +1,6 @@
 "use client";
 
-import { CircleCheck, Copy, Eye, FileText, Info, ListChecks, Phone, Send, Users } from "lucide-react";
+import { CircleCheck, Copy, FileText, Info, ListChecks, Phone, Printer, Send, Users } from "lucide-react";
 import Link from "next/link";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
@@ -10,37 +10,54 @@ import { ContactFields, UseMyDetailsButton, ReferralDocumentLinks } from "./refe
 import { chartsCountText } from "./referral-document-links";
 import { formatReferralIntakeTime } from "../ward-referral-seed-time";
 import { referralIsbarText, referralLetterText } from "./referral-letter";
+import { ReferralLetterDocument } from "./referral-letter-document";
 import { StatusGlyph } from "@/components/wf";
 import { countOf, DESTINATION_LABELS } from "./ward-referral-drawer-model";
 import { referralCatchmentWords, referrerContactWords, transportLabel } from "./referral-submission";
 import { CardHead } from "./ward-referral-drawer-fields";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
-/** The read-only letter, as it will be sent. */
-export function ReferralLetterPreview({ s }: { s: WardReferralDrawerState }) {
-  const { now, totalNeeded, letterInput, copyText } = s;
+/** The read-only letter, as it will be sent: styled paper, its copy text and its PDF (RF2). */
+export function ReferralLetterPreview({
+  s,
+  stamp,
+  hint = "This is the letter the receiving team reads.",
+}: {
+  s: WardReferralDrawerState;
+  /** Overrides the draft stamp, for the letter as sent. */
+  stamp?: string;
+  hint?: string;
+}) {
+  const { now, letterInput, copyText } = s;
+  const draftedAt = formatInstant(now);
   return (
-    <section className={styles.refCard} data-testid="ward-referral-letter-preview">
-      <CardHead icon={Eye} title="Letter preview">
+    <section className={styles.letterSection} data-testid="ward-referral-letter-preview">
+      <div className={styles.letterActions}>
+        <p className={styles.letterHint}>{hint}</p>
         <button
           type="button"
           className={styles.btn}
           data-testid="ward-referral-copy-letter"
-          onClick={() => copyText(referralLetterText(letterInput, formatInstant(now)), "Letter copied")}
+          onClick={() => {
+            const text = referralLetterText(letterInput, draftedAt);
+            // A sent letter copies with its referral ID and sent time, as it reads on screen.
+            copyText(stamp ? text.replace(`Draft ${draftedAt} AWST`, stamp) : text, "Letter copied");
+          }}
         >
           <Copy aria-hidden="true" />
-          Copy as text
+          Copy text
         </button>
-      </CardHead>
-      <div className={styles.cardBody}>
-        {totalNeeded ? (
-          <p className={styles.bodyMeta}>
-            <StatusGlyph tone="warning" size={9} />
-            {totalNeeded} {totalNeeded === 1 ? "answer" : "answers"} still needed. Sent as written.
-          </p>
-        ) : null}
-        <pre className={styles.letterText}>{referralLetterText(letterInput, formatInstant(now))}</pre>
+        <button
+          type="button"
+          className={styles.btn}
+          data-testid="ward-referral-print-letter"
+          onClick={() => window.print()}
+        >
+          <Printer aria-hidden="true" />
+          Print or save PDF
+        </button>
       </div>
+      <ReferralLetterDocument input={letterInput} stamp={stamp ?? `Draft ${draftedAt} AWST`} />
     </section>
   );
 }
@@ -123,6 +140,12 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
               </div>
             </div>
           </section>
+          {/* RF2 (Josh, 4 Nov 2026): the letter as sent, to copy, print or save as a PDF. */}
+          <ReferralLetterPreview
+            s={s}
+            stamp={`${sentReferralId} · sent ${sentAt === null ? formatInstant(now) : formatInstantWithDay(sentAt, now)} AWST`}
+            hint="The letter as sent."
+          />
           <section className={styles.refCard} data-testid="ward-referral-isbar">
             <CardHead icon={ListChecks} title="Copy to notes">
               <span className={styles.asideText}>ISBAR</span>

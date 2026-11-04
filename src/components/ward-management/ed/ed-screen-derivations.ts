@@ -2,6 +2,7 @@
 // the counts, the Needs you items and the hero chips. Split out of `ed-screen.tsx` unchanged (fix
 // list 2.5 and 9.6, 15 Oct 2026). A plain function, not a hook: `EdScreen` calls it after its early
 // return, exactly where this code used to run.
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { isEdOriginJourney, isWaitingInEd } from "@/components/ward-management/ward-ed-presence";
 import { stageCopy, deriveNextWardsAfterRefusal } from "@/components/ward-management/ward-derivations";
@@ -380,7 +381,8 @@ export function deriveEdScreen({
   };
   for (const m of patients) {
     const flagPatientInfo = resolveSubjectPatient(m, resolveState);
-    if (m.legalForm?.dueAt !== undefined && m.legalForm.dueAt < now) {
+    const formDueAt = currentLegalDueAt(m);
+    if (formDueAt !== undefined && formDueAt < now) {
       priorityFlags.push({
         tone: "danger",
         kind: "Form expiry passed",
@@ -388,8 +390,8 @@ export function deriveEdScreen({
         personName: flagPatientInfo.formalName,
         meta: `${m.cohort} · ${m.sex}`,
         // Legal times only as typed (31 Oct 2026): the typed time in words, never "passed 1h 05m ago".
-        why: `Form ${m.legalForm.code} ${typedTimePhrase(m.legalForm.dueAt, now)}. The movement stands at ${stageCopy[m.stage].label.toLowerCase()}.`,
-        when: typedTimePhrase(m.legalForm.dueAt, now),
+        why: `Form ${m.legalForm?.code} ${typedTimePhrase(formDueAt, now)}. The movement stands at ${stageCopy[m.stage].label.toLowerCase()}.`,
+        when: typedTimePhrase(formDueAt, now),
         actionLabel: "Renew or discharge the form",
         onAction: () => setSelectedPatientId(m.id),
       });

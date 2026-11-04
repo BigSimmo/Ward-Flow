@@ -37,7 +37,7 @@ import { typedTimeLine } from "./legal-time-as-typed";
  */
 
 /** Form codes this page may mark written or received. Other catalogue entries stay read-only. */
-const OWNED_LEGAL_FORM_CODES = ["1A", "3A", "3C", "3D", "6A", "6B", "6C", "5A", "5B"] as const;
+const OWNED_LEGAL_FORM_CODES = ["1A", "3A", "3C", "3D", "3E", "6A", "6B", "6C", "6D", "5A", "5B"] as const;
 export type OwnedLegalFormCode = (typeof OWNED_LEGAL_FORM_CODES)[number];
 
 export function isOwnedLegalFormCode(code: string | undefined): code is OwnedLegalFormCode {
@@ -73,6 +73,7 @@ export const CATALOGUE: CatalogueEntry[] = [
   { id: "3B", code: "3B", codes: ["3B"], title: formTitleForCode("3B") ?? "Form 3B", tip: catalogFormLabel("3B") },
   { id: "3C", code: "3C", codes: ["3C"], title: formTitleForCode("3C") ?? "Form 3C", tip: catalogFormLabel("3C") },
   { id: "3D", code: "3D", codes: ["3D"], title: formTitleForCode("3D") ?? "Form 3D", tip: catalogFormLabel("3D") },
+  { id: "3E", code: "3E", codes: ["3E"], title: formTitleForCode("3E") ?? "Form 3E", tip: catalogFormLabel("3E") },
   { id: "4A", code: "4A", codes: ["4A"], title: formTitleForCode("4A") ?? "Form 4A", tip: catalogFormLabel("4A") },
   { id: "4C", code: "4C", codes: ["4C"], title: formTitleForCode("4C") ?? "Form 4C", tip: catalogFormLabel("4C") },
   { id: "5A", code: "5A", codes: ["5A"], title: formTitleForCode("5A") ?? "Form 5A", tip: catalogFormLabel("5A") },
@@ -80,6 +81,7 @@ export const CATALOGUE: CatalogueEntry[] = [
   { id: "6A", code: "6A", codes: ["6A"], title: formTitleForCode("6A") ?? "Form 6A", tip: catalogFormLabel("6A") },
   { id: "6B", code: "6B", codes: ["6B"], title: formTitleForCode("6B") ?? "Form 6B", tip: catalogFormLabel("6B") },
   { id: "6C", code: "6C", codes: ["6C"], title: formTitleForCode("6C") ?? "Form 6C", tip: catalogFormLabel("6C") },
+  { id: "6D", code: "6D", codes: ["6D"], title: formTitleForCode("6D") ?? "Form 6D", tip: catalogFormLabel("6D") },
 ];
 
 export function formTitle(code: string): string {

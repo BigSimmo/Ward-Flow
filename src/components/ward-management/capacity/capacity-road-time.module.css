@@ -2,7 +2,8 @@
 
 .card {
   min-width: 0;
-  overflow: hidden;
+  /* Not clipped: the From menu opens over the card's edge. */
+  overflow: visible;
 }
 
 .from {
@@ -14,72 +15,57 @@
   color: var(--wf-ink-2);
 }
 
-/* The "From" picker. Desktop shows the shared select as it is; the copied value is phone only. */
+/* The "From" picker: the kit menu's trigger, styled as the desktop card's pill, 40px tall on the
+   phone so it is a full tap target. */
 .picker {
-  position: relative;
   display: inline-flex;
   align-items: center;
-  min-width: 0;
+  gap: var(--wf-s-1);
+  min-height: 40px;
+  padding: 0 var(--wf-s-2) 0 var(--wf-s-3);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  white-space: nowrap;
+  cursor: pointer;
 }
 
-.pickerValue {
-  display: none;
+.picker:hover {
+  background: var(--wf-hover);
 }
 
-/* Phone: the shared select is 44px tall with 16px text, larger than every other line in the card.
-   It keeps that size as the invisible tap target, and a 32px, 13px semibold copy of its value shows
-   instead, the same size and weight as the ward names. */
+.picker[aria-expanded="true"] {
+  border-color: var(--wf-accent);
+  background: var(--wf-selected);
+}
+
+.picker:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.picker > svg {
+  color: var(--wf-ink-3);
+}
+
+.pickerFrom {
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+
 @media (max-width: 46.4375rem) {
   .from {
     min-height: 44px;
     padding-block: 0;
   }
-
-  .picker {
-    min-height: 44px;
-  }
-
-  .picker .pickerBox {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    height: auto;
-    opacity: 0;
-  }
-
-  .pickerValue {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--wf-s-1);
-    height: 32px;
-    padding: 0 var(--wf-s-2);
-    border: 1px solid var(--wf-line-ctl);
-    border-radius: var(--wf-r-md);
-    background: var(--wf-surface);
-    color: var(--wf-ink-1);
-    font-size: var(--wf-fs-13);
-    font-weight: 600;
-    white-space: nowrap;
-  }
-
-  .pickerValue > svg {
-    color: var(--wf-ink-3);
-  }
-
-  .picker:focus-within .pickerValue {
-    border-color: var(--wf-accent);
-    outline: 2px solid var(--wf-focus-ring);
-    outline-offset: 2px;
-  }
 }
 
-@media (max-width: 46.4375rem) and (forced-colors: active) {
-  .pickerValue {
+@media (forced-colors: active) {
+  .picker {
     border-color: CanvasText;
-  }
-
-  .picker:focus-within .pickerValue {
-    outline-color: CanvasText;
   }
 }
 

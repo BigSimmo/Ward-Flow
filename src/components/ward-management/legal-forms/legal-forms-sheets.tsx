@@ -23,7 +23,7 @@ import {
 } from "@/components/wf";
 import { formatInstantWithDay, minuteOfDayFromClockText, type Instant } from "@/components/ward-management/ward-clock";
 import { movementRefuses3C } from "@/components/ward-management/ward-legal-clock";
-import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
+import { legalFormName, RECORDABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { SupportNotificationChecklist } from "@/components/ward-management/movements/support-notification-checklist";
 import {
@@ -450,7 +450,7 @@ export function RecordFormSheet({
           >
             {/* MHA forms are never prefilled: the form type is chosen from the paper every time. */}
             <option value="">Choose a form type</option>
-            {SELECTABLE_LEGAL_FORMS.map((form) => (
+            {RECORDABLE_LEGAL_FORMS.map((form) => (
               <option key={form.code} value={form.code}>
                 {legalFormName(form)}
               </option>

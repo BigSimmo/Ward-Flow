@@ -149,6 +149,31 @@ const eslintConfig = defineConfig([
       "jsx-a11y/tabindex-no-positive": "error",
     },
   },
+  // PT1 H10 (Josh, 3 Nov 2026): on the patient page, only `patient-referral-safety.ts` reads a
+  // referral's risk flags or working diagnosis. It reads the one referral the movement names, only
+  // when the desk's scoped workspace holds it, and always returns the referral's date.
+  {
+    files: ["src/components/ward-management/patients/**/*.{ts,tsx}"],
+    ignores: ["src/components/ward-management/patients/patient-referral-safety.ts"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "MemberExpression[property.name='riskFlags'][object.property.name='intake'], MemberExpression[property.name='riskFlags'][object.name='intake']",
+          message: "H10: read referral risk flags only through referralSafetyFacts (patient-referral-safety.ts).",
+        },
+        {
+          selector: "MemberExpression[property.name='workingDiagnosis']",
+          message: "H10: read the referral diagnosis only through referralSafetyFacts (patient-referral-safety.ts).",
+        },
+        {
+          selector: "CallExpression[callee.name='seededReferralDossier'], Identifier[name='collectionRiskFlags']",
+          message: "H10: read referral risk only through referralSafetyFacts (patient-referral-safety.ts).",
+        },
+      ],
+    },
+  },
   // File size ratchet. New source files stay under MAX_LINES_DEFAULT lines, and the files that
   // were already larger cannot grow much past their baseline (eslint-rules/max-lines-baseline.mjs).
   {

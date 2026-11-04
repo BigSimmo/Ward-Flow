@@ -5,10 +5,11 @@ import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell
 import { setServiceScope, useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronRight, Info, LayoutGrid, List, Lock, Search, SlidersHorizontal } from "lucide-react";
+import { ChevronRight, LayoutGrid, List, Lock, Search, SlidersHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import {
+  AppliedFilter,
   Button,
   Card,
   CheckingFoot,
@@ -21,10 +22,8 @@ import {
   Kbd,
   OccupancyRing,
   PhoneSheet,
-  Popover,
   ScrollRow,
   Segmented,
-  Select,
   SrOnly,
   StatusGlyph,
   TextInput,
@@ -63,6 +62,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 
 import styles from "./ward-index.module.css";
+import { WardIndexDrawer } from "./ward-index-drawer";
 import { OtherSitesMore, SiteHead, otherSitesFolded } from "./ward-index-site-desk";
 
 /**
@@ -73,9 +73,10 @@ import { OtherSitesMore, SiteHead, otherSitesFolded } from "./ward-index-site-de
  * is read from the provider: bed states from `bedStates`, discharges from `capacityBreakdown`,
  * confirmation age from the ward's own allocatable figure.
  *
- * Redesign (approved by Josh, 31 Oct 2026): Status, Cohort and Order are menus on the one filter
- * row (the phone keeps its Filters rows), card text and ward names wrap, and bed strips sit at each
- * card's foot. A site bed manager's desk (D-80) sees its own site's wards in full, then every other
+ * Redesign (approved by Josh, 3 Nov 2026, WS1 and WS2): one tidy filter row (service, search,
+ * Filters, Cards or Table); Status, Cohort and Order sit behind Filters as kit choices, never
+ * browser menus. A ward card opens the ward's side panel (`ward-index-drawer.tsx`, Capacity's own
+ * ward panel), with Open ward at the card's foot. Card text and ward names wrap. A site bed manager's desk (D-80) sees its own site's wards in full, then every other
  * site as bed counts only (`ward-index-site-desk.tsx`).
  */
 
@@ -161,6 +162,19 @@ type ServiceFilter = "all" | HealthService;
 type StatusFilter = "all" | "has-ready" | "full" | "stale";
 type CohortFilter = "all" | "adult" | "older-adult" | "youth" | "perinatal";
 type OrderBy = "service" | "most-ready" | "fullest";
+
+const STATUS_LABELS: Record<Exclude<StatusFilter, "all">, string> = {
+  "has-ready": "Has a ready bed",
+  full: "Full",
+  stale: "Stale count",
+};
+
+const COHORT_LABELS: Record<Exclude<CohortFilter, "all">, string> = {
+  adult: "Adult",
+  "older-adult": "Older adult",
+  youth: "Youth",
+  perinatal: "Perinatal",
+};
 type ViewMode = "cards" | "table";
 
 /** "Fiona Stanley Hospital" -> "Fiona Stanley". Display only; the full name stays in the profile. */
@@ -188,7 +202,7 @@ function cohortLabel(unit: Unit): string {
 function SecurityLabel({ unit }: { unit: Unit }) {
   const category = wardCategory(unit);
   return (
-    <span className={styles.acuityBadge} title={designationSummary(unit)}>
+    <span className={styles.acuityBadge} data-category={category} title={designationSummary(unit)}>
       {category !== "Open" ? <Icon icon={Lock} size={14} /> : null}
       {category}
     </span>
@@ -254,6 +268,8 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
     else setPickedService(next);
   };
   const [phoneWardId, setPhoneWardId] = useState<string | null>(null);
+  // WS1: the ward whose side panel is open (desktop and tablet; the phone keeps its sheet).
+  const [drawerWardId, setDrawerWardId] = useState<string | null>(null);
   const [phoneRailOpen, setPhoneRailOpen] = useState(false);
 
   useEffect(() => {
@@ -410,8 +426,11 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
     mostReady !== undefined &&
     mostReady.ready > 0 &&
     (deskSite === undefined || (runnerUp?.ready ?? -1) < mostReady.ready);
+  const drawerRow = drawerWardId === null ? undefined : rows.find((row) => row.unit.id === drawerWardId);
   const statewidePercent = totalBeds > 0 ? (totalOccupied / totalBeds) * 100 : null;
   const [filtersOpen, setFiltersOpen] = useState(false);
+  // Filters counts the filters it holds that are set. Order is not a filter, so it never counts.
+  const moreFilterCount = (status !== "all" ? 1 : 0) + (cohort !== "all" ? 1 : 0);
   // Site bed manager: its own site first, then the rest as counts, folded after a few cards.
   const [otherOpen, setOtherOpen] = useState(false);
   const ownOrdered = ordered.filter((row) => isOwn(row.unit));
@@ -464,7 +483,9 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           <span className={styles.serviceMeta}>past each ward&apos;s limit</span>
         </div>
         {staleRows.length === 0 ? (
-          <p className={styles.railNote}>None.</p>
+          <p className={styles.railNote}>
+            <b className={styles.num}>0</b> counts past their limit.
+          </p>
         ) : (
           <ul className={styles.checkList}>
             {staleRows.map((row) => (
@@ -635,47 +656,18 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
         />
 
         <section className={styles.filters} aria-label="Ward filters">
+          {/* WS2 (Josh, 3 Nov 2026): one tidy row. Service and search lead, Filters holds the
+              rarely used choices, and the view switch ends the row. No browser menus. */}
           <div className={styles.filterRow}>
             {isPhone ? null : (
-              <Segmented label="Health service" items={serviceItems} value={service} onChange={setService} size="md" />
-            )}
-            {/* Status, Cohort and Order are three menus on this one row; the phone keeps its Filters rows. */}
-            {isPhone ? null : (
-              <>
-                <Select
-                  aria-label="Status"
-                  value={status}
-                  onChange={(event) => setStatus(event.target.value as StatusFilter)}
-                  boxClassName={styles.menu}
-                >
-                  <option value="all">Any status</option>
-                  <option value="has-ready">Has a ready bed</option>
-                  <option value="full">Full</option>
-                  <option value="stale">Stale count</option>
-                </Select>
-                <Select
-                  aria-label="Cohort"
-                  value={cohort}
-                  onChange={(event) => setCohort(event.target.value as CohortFilter)}
-                  boxClassName={styles.menu}
-                >
-                  <option value="all">Any cohort</option>
-                  <option value="adult">Adult</option>
-                  <option value="older-adult">Older adult</option>
-                  <option value="youth">Youth</option>
-                  <option value="perinatal">Perinatal</option>
-                </Select>
-                <Select
-                  aria-label="Order"
-                  value={order}
-                  onChange={(event) => setOrder(event.target.value as OrderBy)}
-                  boxClassName={styles.menu}
-                >
-                  <option value="service">{deskSite ? "By site" : "By service"}</option>
-                  <option value="most-ready">Most ready first</option>
-                  <option value="fullest">Fullest first</option>
-                </Select>
-              </>
+              <Segmented
+                className={styles.serviceChoice}
+                label="Health service"
+                items={serviceItems}
+                value={service}
+                onChange={setService}
+                size="md"
+              />
             )}
             <TextInput
               ref={searchRef}
@@ -692,8 +684,21 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
               spellCheck={false}
               boxClassName={styles.search}
             />
+            <button
+              type="button"
+              className={styles.filtersToggle}
+              aria-expanded={filtersOpen}
+              aria-controls="ward-index-more-filters"
+              data-active={moreFilterCount > 0 ? "true" : undefined}
+              onClick={() => setFiltersOpen((open) => !open)}
+            >
+              <Icon icon={SlidersHorizontal} size={16} />
+              Filters
+              {moreFilterCount > 0 ? <CountCircle n={moreFilterCount} /> : null}
+            </button>
             {isPhone ? null : (
               <Segmented
+                className={styles.viewChoice}
                 label="View"
                 items={[
                   { id: "cards" as ViewMode, label: <ViewLabel icon={LayoutGrid} text="Cards" /> },
@@ -704,29 +709,10 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                 size="md"
               />
             )}
-            <button
-              type="button"
-              className={styles.filtersToggle}
-              aria-expanded={filtersOpen}
-              aria-controls="ward-index-more-filters"
-              onClick={() => setFiltersOpen((open) => !open)}
-            >
-              <Icon icon={SlidersHorizontal} size={16} />
-              Filters
-              {status !== "all" || cohort !== "all" ? (
-                <CountCircle n={(status !== "all" ? 1 : 0) + (cohort !== "all" ? 1 : 0)} />
-              ) : null}
-            </button>
           </div>
-          <div
-            className={cx(styles.filterRow, styles.phoneOnly)}
-            id="ward-index-more-filters"
-            data-open={filtersOpen ? "true" : undefined}
-          >
+          <div className={styles.moreFilters} id="ward-index-more-filters" data-open={filtersOpen ? "true" : undefined}>
             <div className={styles.filterGroup}>
-              <span className={styles.filterLabel} id="ward-status-label">
-                Status
-              </span>
+              <span className={styles.filterLabel}>Status</span>
               <ScrollRow className={styles.phoneFilterScroll} role="group" aria-label="Status choices">
                 <Segmented
                   className={styles.phoneFilterChoices}
@@ -796,7 +782,21 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                       <b className={styles.num}>{lit.length}</b> of <b className={styles.num}>{placed.length}</b> wards
                       highlighted<SrOnly>. All wards stay.</SrOnly>
                     </span>
-                    {lit.length === 0 ? <span>No match.</span> : null}
+                    {/* Second pass: what is set behind Filters shows here, each with its own remove. */}
+                    {filtersOpen ? null : (
+                      <>
+                        {status !== "all" ? (
+                          <AppliedFilter onRemove={() => setStatus("all")} removeLabel="Remove the status filter">
+                            {STATUS_LABELS[status]}
+                          </AppliedFilter>
+                        ) : null}
+                        {cohort !== "all" ? (
+                          <AppliedFilter onRemove={() => setCohort("all")} removeLabel="Remove the cohort filter">
+                            {COHORT_LABELS[cohort]}
+                          </AppliedFilter>
+                        ) : null}
+                      </>
+                    )}
                     {/* On a phone the service is the header's own choice, so Reset never offers to undo it. */}
                     {isPhone && status === "all" && cohort === "all" && query === "" ? null : (
                       <Button variant="ghost" size="sm" onClick={resetFilters}>
@@ -866,7 +866,14 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                 <SiteHead title={deskSite.name} meta={`${ownOrdered.length} wards, ${totalBeds} beds`} />
                 <section className={styles.cardGrid} aria-label={`${deskSite.name} ward cards`}>
                   {ownOrdered.map((row) => (
-                    <WardCard key={row.unit.id} row={row} now={now} dim={isFiltered && !isLit(row)} headingLevel={3} />
+                    <WardCard
+                      key={row.unit.id}
+                      row={row}
+                      now={now}
+                      dim={isFiltered && !isLit(row)}
+                      headingLevel={3}
+                      onOpen={() => setDrawerWardId(row.unit.id)}
+                    />
                   ))}
                 </section>
                 <SiteHead
@@ -882,6 +889,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                       dim={isFiltered && !isLit(row)}
                       countsOnly
                       headingLevel={3}
+                      onOpen={() => setDrawerWardId(row.unit.id)}
                     />
                   ))}
                 </section>
@@ -890,7 +898,13 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
             ) : view === "cards" ? (
               <section className={styles.cardGrid} aria-label="Ward cards">
                 {ordered.map((row) => (
-                  <WardCard key={row.unit.id} row={row} now={now} dim={isFiltered && !isLit(row)} />
+                  <WardCard
+                    key={row.unit.id}
+                    row={row}
+                    now={now}
+                    dim={isFiltered && !isLit(row)}
+                    onOpen={() => setDrawerWardId(row.unit.id)}
+                  />
                 ))}
               </section>
             ) : (
@@ -899,6 +913,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                 now={now}
                 isDim={(row) => isFiltered && !isLit(row)}
                 countsOnly={(row) => !isOwn(row.unit)}
+                onOpen={(row) => setDrawerWardId(row.unit.id)}
               />
             )}
           </div>
@@ -914,7 +929,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                 <b>Occupancy by service</b>
                 <span>Bars against the {SERVICE_LINE * 100}% line, with ready beds</span>
               </span>
-              <ChevronRight size={16} aria-hidden="true" />
+              <ChevronRight strokeWidth={1.75} size={16} aria-hidden="true" />
             </button>
           ) : null}
           {isPhone ? (
@@ -963,6 +978,17 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           />
         ) : null}
 
+        {isPhone ? null : (
+          <WardIndexDrawer
+            unit={drawerRow?.unit}
+            place={drawerRow ? `${drawerRow.siteName} · ${drawerRow.service ?? "Service not recorded"}` : ""}
+            now={now}
+            countsOnly={drawerRow !== undefined && !isOwn(drawerRow.unit)}
+            onClose={() => setDrawerWardId(null)}
+            profile={drawerRow ? <WardProfileFacts row={drawerRow} /> : null}
+          />
+        )}
+
         <WardPrototypeFooter
           testId="ward-index-governance"
           note="Synthetic prototype. Invented figures under real WA hospital names. Lists update once a minute."
@@ -990,11 +1016,12 @@ function ViewLabel({ icon, text }: { icon: typeof List; text: string }) {
   );
 }
 
-function OccupancyFigure({ row }: { row: WardRow }) {
+/** The card's occupancy as a soft pill, amber from the surge band (95%). */
+function OccupancyPill({ row }: { row: WardRow }) {
   const pct = Math.round(row.occupancy * 100);
   const nearFull = row.occupancy >= NEAR_FULL;
   return (
-    <span className={styles.figure}>
+    <span className={styles.sharePill} data-tone={nearFull ? "warning" : undefined}>
       {nearFull ? <StatusGlyph tone="warning" size={8} /> : null}
       <b className={styles.num}>{pct}%</b> {nearFull ? "near full" : "in use"}
     </span>
@@ -1019,12 +1046,15 @@ function Confirmed({ row, now, countsOnly = false }: { row: WardRow; now: Instan
 function WardCard({
   row,
   now,
+  onOpen,
   dim = false,
   countsOnly = false,
   headingLevel = 2,
 }: {
   row: WardRow;
   now: Instant;
+  /** WS1: the card opens the ward's side panel. */
+  onOpen: () => void;
   dim?: boolean;
   /** A7 (accessibility check, 2 Nov 2026): h2 under the page title, h3 under a site bed manager's site heading. */
   headingLevel?: 2 | 3;
@@ -1044,48 +1074,60 @@ function WardCard({
     >
       <div className={styles.cardHead}>
         <WardTitle className={cx(styles.wardTitle, styles.wrapLine)} title={unit.name}>
-          {shortWardName(unit)}
+          {/* The name is the card's one target: it stretches over the card and opens the side panel. */}
+          <button type="button" className={styles.cardOpen} aria-haspopup="dialog" onClick={onOpen}>
+            {shortWardName(unit)}
+          </button>
         </WardTitle>
         <SecurityLabel unit={unit} />
       </div>
       <p className={styles.meta} title={`${row.service ?? ""} · ${row.siteName} · ${unit.cohort}`}>
-        {row.service} · {row.siteShort} · {cohortLabel(unit)}
+        {row.service ? serviceShortName(row.service) : "Not placed"} · {row.siteShort} · {cohortLabel(unit)}
       </p>
-      {/* The strip and all below it sit at the card's foot, so strips line up across a row. */}
+      {/* One large figure, then the strip and the quiet lines at the card's foot, so they line up across a row. */}
+      <div className={cx(styles.readyLine, styles.stripFoot)}>
+        <span className={styles.readyFigure}>{row.ready}</span>
+        <span className={styles.readyWords}>
+          ready of <b className={styles.num}>{unit.beds}</b>
+        </span>
+        <OccupancyPill row={row} />
+      </div>
       <BedStrip
         counts={{ ...row.states, pendingPreparation: row.pendingPreparation }}
         wardName={unit.name}
-        className={cx(styles.strip, styles.stripFoot)}
+        className={styles.strip}
       />
-      <div className={styles.figures}>
-        <OccupancyFigure row={row} />
+      {/* Second pass (3 Nov 2026): the confirmation age shows on a card only when it is past the
+          ward's limit, the one time anyone acts on it. A fresh age is in the side panel. */}
+      {row.stale ? (
+        <p className={styles.staleLine}>
+          <Confirmed row={row} now={now} countsOnly={countsOnly} />
+        </p>
+      ) : null}
+      <div className={styles.cardFoot}>
         {/* Site bed manager: out and in are read from people records a site desk is not
-            given for other sites, so they would read 0. Its counts-only cards show beds alone. */}
+            given for other sites, so they would read 0. Its counts-only cards leave them out. */}
         {countsOnly ? (
           <span className={styles.flow}>
-            <b className={styles.num}>{row.ready}</b> ready <span aria-hidden="true">·</span>{" "}
-            <b className={styles.num}>{row.unit.beds}</b> beds
+            <b className={styles.num}>{unit.beds}</b> beds
           </span>
         ) : (
           <span className={styles.flow}>
-            <b className={styles.num}>{row.ready}</b> ready <span aria-hidden="true">·</span>{" "}
             <b className={styles.num}>{row.out}</b> out <span aria-hidden="true">·</span>{" "}
-            <b className={styles.num}>{row.incoming}</b> in
+            <b className={styles.num}>{row.incoming}</b> in today
           </span>
         )}
-      </div>
-      <div className={styles.cardFoot}>
-        <Confirmed row={row} now={now} countsOnly={countsOnly} />
-        <WardProfile row={row} countsOnly={countsOnly} />
-        {/* Audit 11 Oct 2026: the whole card is the Enter target, so 22 repeated buttons go. */}
-        {countsOnly ? null : (
+        {countsOnly ? (
+          <span className={styles.countsOnly}>Bed counts only</span>
+        ) : (
           <Link
             className={styles.cardLink}
             href={`/ward-flow/ward/${unit.id}`}
             data-testid={`ward-index-link-${unit.id}`}
-            aria-label={`Enter ${unit.name}`}
+            aria-label={`Open ${unit.name}`}
           >
-            <ChevronRight size={16} aria-hidden="true" />
+            Open ward
+            <ChevronRight strokeWidth={1.75} size={14} aria-hidden="true" />
           </Link>
         )}
       </div>
@@ -1093,112 +1135,54 @@ function WardCard({
   );
 }
 
-function WardProfile({ row, countsOnly = false }: { row: WardRow; countsOnly?: boolean }) {
-  const { unit } = row;
-  return (
-    <Popover
-      label={`${unit.name} profile`}
-      align="end"
-      panelClassName={styles.profile}
-      trigger={(props) => (
-        <button {...props} type="button" className={styles.iconButton} aria-label={`${unit.name} profile`}>
-          <Icon icon={Info} size={16} />
-        </button>
-      )}
-    >
-      {(close) => <WardProfileBody row={row} close={close} inSheet={countsOnly} />}
-    </Popover>
-  );
-}
-
-function WardProfileBody({
+/** The ward's profile: who it admits, its security and the forms it holds. Side panel and phone sheet. */
+function WardProfileFacts({
   row,
-  close,
-  inSheet = false,
+  showStaff = false,
 }: {
   row: WardRow;
-  close?: (options?: { restoreFocus?: boolean }) => void;
-  /** In the phone sheet, whose footer already holds Enter ward. */
-  inSheet?: boolean;
+  /** Phone sheet only: the side panel already says specialling free under Today. */
+  showStaff?: boolean;
 }) {
   const { unit } = row;
   const admits = WARD_ADMITS[unit.id];
   const forms = wardFormsHeld(unit);
   return (
-    <div className={styles.profileBody}>
-      <div className={styles.profileHead}>
-        <span className={styles.eyebrow}>{row.service ?? "Unplaced"} · Profile</span>
-        <span className={styles.profileTitle}>{unit.name}</span>
-        <span className={styles.meta}>{row.siteName}</span>
-      </div>
-      <dl className={styles.profileStats}>
-        <div>
-          <dt>Beds</dt>
-          <dd>{unit.beds}</dd>
-        </div>
-        <div>
-          <dt>Ready</dt>
-          <dd>{row.ready}</dd>
-        </div>
-        <div>
-          <dt>Locked beds</dt>
-          <dd>{unit.lockedBeds}</dd>
-        </div>
-        <div>
+    <dl className={styles.profileFacts}>
+      <dt>Cohort</dt>
+      <dd>{cohortLabel(unit)}</dd>
+      <dt>Security</dt>
+      <dd>
+        {designationSummary(unit)}
+        {unitHasLockedBeds(unit) ? `, ${lockedBedsFree(unit)} locked free` : ""}
+      </dd>
+      {row.pendingPreparation > 0 ? (
+        <>
+          <dt>Being made ready</dt>
+          <dd>{row.pendingPreparation} of the ready beds</dd>
+        </>
+      ) : null}
+      {showStaff ? (
+        <>
           <dt>Observation staff in use</dt>
           <dd>{row.specialling}</dd>
-        </div>
-      </dl>
-      <dl className={styles.profileFacts}>
-        <dt>Cohort</dt>
-        <dd>{cohortLabel(unit)}</dd>
-        <dt>Security</dt>
-        <dd>
-          {designationSummary(unit)}
-          {unitHasLockedBeds(unit) ? `, ${lockedBedsFree(unit)} locked free` : ""}
-        </dd>
-        {row.pendingPreparation > 0 ? (
-          <>
-            <dt>Being made ready</dt>
-            <dd>{row.pendingPreparation} of the ready beds</dd>
-          </>
-        ) : null}
-        {admits ? (
-          <>
-            <dt>Admits</dt>
-            <dd>{admits}</dd>
-          </>
-        ) : null}
-        <dt>Forms held</dt>
-        <dd className={styles.formChips}>
-          {forms.map((form) => (
-            <span key={form} className={styles.formChip}>
-              {form}
-            </span>
-          ))}
-        </dd>
-        <dt>Catchment</dt>
-        <dd>{row.service ?? "Not placed"}</dd>
-      </dl>
-      {inSheet ? null : (
-        <div className={styles.profileFoot}>
-          <Link
-            className={buttonClass({ variant: "sec", size: "sm" })}
-            href={`/ward-flow/board/${unit.id}`}
-            onClick={() => close?.({ restoreFocus: false })}
-          >
-            Bed board
-          </Link>
-          <Link
-            className={buttonClass({ variant: "pri", size: "sm" })}
-            href={`/ward-flow/ward/${unit.id}`}
-            onClick={() => close?.({ restoreFocus: false })}
-          >
-            Enter ward
-          </Link>
-        </div>
-      )}
-    </div>
+        </>
+      ) : null}
+      {admits ? (
+        <>
+          <dt>Admits</dt>
+          <dd>{admits}</dd>
+        </>
+      ) : null}
+      <dt>Forms held</dt>
+      <dd className={styles.formChips}>
+        {forms.map((form) => (
+          <span key={form} className={styles.formChip}>
+            {form}
+          </span>
+        ))}
+      </dd>
+    </dl>
   );
 }
 
@@ -1310,7 +1294,7 @@ function WardPhoneList({
   );
 }
 
-/** Phone: the ward's card as a bottom sheet, with Enter ward in the footer. */
+/** Phone: the ward as a bottom sheet, with Open ward and Bed board in the footer. */
 function WardPhoneSheet({
   row,
   now,
@@ -1337,7 +1321,7 @@ function WardPhoneSheet({
         countsOnly ? undefined : { label: "Bed board", onAction: () => router.push(`/ward-flow/board/${row.unit.id}`) }
       }
       primary={
-        countsOnly ? undefined : { label: "Enter ward", onAction: () => router.push(`/ward-flow/ward/${row.unit.id}`) }
+        countsOnly ? undefined : { label: "Open ward", onAction: () => router.push(`/ward-flow/ward/${row.unit.id}`) }
       }
       className={styles.phoneSheet}
       data-testid="ward-index-phone-sheet"
@@ -1377,7 +1361,7 @@ function WardPhoneSheet({
       <p className={styles.phoneSheetConfirmed}>
         <Confirmed row={row} now={now} countsOnly={countsOnly} />
       </p>
-      <WardProfileBody row={row} inSheet />
+      <WardProfileFacts row={row} showStaff />
     </PhoneSheet>
   );
 }
@@ -1389,12 +1373,15 @@ function WardTable({
   now,
   isDim,
   countsOnly,
+  onOpen,
 }: {
   rows: WardRow[];
   now: Instant;
   isDim: (row: WardRow) => boolean;
   /** Site bed manager: rows for another site's ward, with no Enter. */
   countsOnly: (row: WardRow) => boolean;
+  /** WS1: the ward's name opens its side panel. */
+  onOpen: (row: WardRow) => void;
 }) {
   return (
     <Card className={styles.tableCard} as="section" aria-label="Ward table">
@@ -1428,7 +1415,14 @@ function WardTable({
               data-dim={isDim(row) ? "true" : undefined}
             >
               <span role="cell" className={styles.wardCell}>
-                <span className={styles.wardTitle}>{shortWardName(row.unit)}</span>
+                <button
+                  type="button"
+                  className={cx(styles.wardTitle, styles.tableOpen)}
+                  aria-haspopup="dialog"
+                  onClick={() => onOpen(row)}
+                >
+                  {shortWardName(row.unit)}
+                </button>
                 <span className={styles.meta}>
                   {row.siteShort} · {cohortLabel(row.unit)}
                 </span>

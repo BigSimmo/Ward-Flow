@@ -5,7 +5,7 @@ import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import styles from "./capacity-page.module.css";
 
-export function PlannedCounts({ now }: { now: Instant }) {
+export function PlannedCounts({ now, networkWide = false }: { now: Instant; networkWide?: boolean }) {
   const { plannedAdmissions } = useWardFlowSelect("plannedAdmissions");
   const booked = (plannedAdmissions ?? []).filter((booking) => booking.state === "booked");
   const overdue = booked.filter((booking) => booking.expectedArrivalAt < now).length;
@@ -18,7 +18,7 @@ export function PlannedCounts({ now }: { now: Instant }) {
       <CardHead
         id="as-executive-planned-title"
         title="Planned admissions"
-        meta={`${booked.length} booked · counts only`}
+        meta={`${booked.length} booked · counts only${networkWide ? " · Network-wide" : ""}`}
       />
       <div className={styles.sideBody}>
         {booked.length === 0 ? (

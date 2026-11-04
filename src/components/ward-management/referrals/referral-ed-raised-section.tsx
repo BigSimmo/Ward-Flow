@@ -16,6 +16,7 @@ import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { Button, Card, ShowMoreRow, StatusGlyph, TierTile, buttonClass, durMinutes } from "@/components/wf";
 
 import type { EdDeskView } from "./referral-ed-desk";
+import { ReferralRecordButton } from "./referral-sheet-button";
 import styles from "./referral-ed-raised-section.module.css";
 
 /** Rows shown before "Show more" (owner rule: long lists open on the first rows). */
@@ -135,6 +136,14 @@ export function ReferralEdRaisedSection({ view, now }: { view: EdDeskView; now: 
                         Movement
                         <span className="sr-only">, {nameFor(who.formalName, who.umrn)}</span>
                       </Link>
+                      {/* RQ9: the ED sent this referral, so its sheet opens on where it was sent. */}
+                      {wardReferral ? (
+                        <ReferralRecordButton
+                          referralId={wardReferral.referral.id}
+                          tab="sent"
+                          className={styles.openLink}
+                        />
+                      ) : null}
                     </td>
                   </tr>
                 );

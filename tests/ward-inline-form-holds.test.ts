@@ -53,6 +53,10 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "ed/use-ed-screen-state.ts": { cover: "held" },
   "forecast/forecast-miss-reason-control.tsx": { cover: "held" },
   "governance-registers.tsx": { cover: "popup" },
+  "governance-restrictive-register.tsx": {
+    cover: "no form",
+    why: "Seclusion follow-up: each Done or Not yet tap saves at once, with no fields held open.",
+  },
   "handover/handover-page.tsx": { cover: "popup" },
   "hub/hub-screen.tsx": { cover: "popup" },
   "legal-forms/legal-forms-screen.tsx": { cover: "popup", why: "Record a form opens in a sheet." },

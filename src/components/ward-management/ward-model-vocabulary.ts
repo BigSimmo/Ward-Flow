@@ -435,7 +435,41 @@ export type LegalFormExpiryMetadata = {
  * a form code, or an assistant's recollection of the Mental Health Act. A typed value traced to
  * the clinician who typed it (`legalFormExpiryHistory`, below) is the only legitimate source.
  */
-export type LegalForm = {
+/** Gap list item 3 (Josh, 4 Nov 2026): who made the form, as a role only. Never a name. */
+export const LEGAL_FORM_MAKER_ROLES = [
+  "medical_practitioner",
+  "amhp",
+  "psychiatrist",
+  "mental_health_practitioner",
+  "person_in_charge",
+] as const;
+export type LegalFormMakerRole = (typeof LEGAL_FORM_MAKER_ROLES)[number];
+/** Gap list item 4: whether the person was given a copy of the form. */
+export const LEGAL_FORM_COPY_STATES = ["yes", "declined", "not_yet"] as const;
+export type LegalFormCopyState = (typeof LEGAL_FORM_COPY_STATES)[number];
+/** Gap list item 5: how the form ended, as a person recorded it. Never inferred. */
+export const LEGAL_FORM_ENDINGS = ["revoked", "form_3e", "replaced", "ended_as_typed"] as const;
+export type LegalFormEnding = (typeof LEGAL_FORM_ENDINGS)[number];
+/** Gap list item 6: the Chief Psychiatrist's consent before a Form 6B. */
+export const LEGAL_FORM_CONSENT_STATES = ["yes", "not_yet"] as const;
+export type LegalFormConsentState = (typeof LEGAL_FORM_CONSENT_STATES)[number];
+
+/**
+ * Gap list items 3 to 7 (Josh, 4 Nov 2026): details copied from the paper. Each is optional and
+ * recorded only by a person. None of them is checked against the Act, and nothing is worked out
+ * from them (D-72, D-93).
+ */
+export type LegalFormDetails = {
+  madeBy?: LegalFormMakerRole;
+  copyGiven?: LegalFormCopyState;
+  endedBy?: LegalFormEnding;
+  /** Form 6B only. */
+  consent?: LegalFormConsentState;
+  /** Gap list item 7: a review by date typed from the paper. Never calculated. */
+  reviewBy?: Instant;
+};
+
+export type LegalForm = LegalFormDetails & {
   code: string;
   /** Setting recorded from the current paper, never inferred from geography. */
   region?: "metro" | "country";

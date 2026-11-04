@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/wf";
+import { Button, Segmented } from "@/components/wf";
 import { dayOf, formatInstantWithDay, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
@@ -17,6 +17,17 @@ import {
 } from "@/components/ward-management/ward-observation";
 import styles from "./ward-bed-dossier-drawer.module.css";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
+import { ChoiceChips } from "./ward-bed-dossier-bits";
+
+const LEVEL_CHOICES = OBSERVATION_LEVELS.map((level) => ({ id: level, label: levelOptionLabel(level) }));
+const INTERVAL_CHOICES = INTERMITTENT_INTERVAL_MINUTES.map((minutes) => ({
+  id: String(minutes),
+  label: `${minutes} minutes`,
+}));
+const REVIEW_DAYS = [
+  { id: "today" as const, label: "Today" },
+  { id: "tomorrow" as const, label: "Tomorrow" },
+];
 
 /** "Constant within sight (1:1)" for the picker; General and Intermittent show their name alone. */
 function levelOptionLabel(level: ObservationLevel): string {
@@ -132,37 +143,27 @@ export function WardObservationControl({
         </Button>
       ) : (
         <>
-          <label className={styles.field}>
+          {/* WH1 (Josh, 3 Nov 2026): kit chips and segments in place of browser drop-downs. */}
+          <div className={styles.field}>
             <span className={styles.fieldLabel}>Observation level</span>
-            <select
-              className={styles.select}
-              data-testid="ward-observation-level"
+            <ChoiceChips
+              label="Observation level"
+              items={LEVEL_CHOICES}
               value={level}
-              onChange={(event) => setLevel(event.target.value as ObservationLevel)}
-            >
-              {OBSERVATION_LEVELS.map((option) => (
-                <option key={option} value={option}>
-                  {levelOptionLabel(option)}
-                </option>
-              ))}
-            </select>
-          </label>
+              onChange={setLevel}
+              testId="ward-observation-level"
+            />
+          </div>
           {level === "intermittent" ? (
-            <label className={styles.field}>
+            <div className={styles.field} data-testid="ward-observation-interval" data-value={String(interval)}>
               <span className={styles.fieldLabel}>Check every</span>
-              <select
-                className={styles.select}
-                data-testid="ward-observation-interval"
-                value={interval}
-                onChange={(event) => setIntervalMinutes(Number(event.target.value))}
-              >
-                {INTERMITTENT_INTERVAL_MINUTES.map((minutes) => (
-                  <option key={minutes} value={minutes}>
-                    {minutes} minutes
-                  </option>
-                ))}
-              </select>
-            </label>
+              <Segmented
+                label="Check every"
+                items={INTERVAL_CHOICES}
+                value={String(interval)}
+                onChange={(minutes) => setIntervalMinutes(Number(minutes))}
+              />
+            </div>
           ) : null}
           <div className={styles.fieldRow}>
             <label className={styles.field}>
@@ -179,20 +180,18 @@ export function WardObservationControl({
                 }}
               />
             </label>
-            <label className={styles.field}>
+            <div className={styles.field}>
               <span className={styles.fieldLabel}>Day</span>
-              <select
-                className={styles.select}
+              <Segmented
+                label="Review day"
+                items={REVIEW_DAYS}
                 value={reviewDay}
-                onChange={(event) => {
-                  setReviewDay(event.target.value as "today" | "tomorrow");
+                onChange={(day) => {
+                  setReviewDay(day);
                   setReviewEdited(true);
                 }}
-              >
-                <option value="today">Today</option>
-                <option value="tomorrow">Tomorrow</option>
-              </select>
-            </label>
+              />
+            </div>
           </div>
           {error || recording.error ? (
             <p className={styles.meta} role="alert" data-testid="ward-observation-error">

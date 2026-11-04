@@ -91,6 +91,7 @@ export type RecordedFactEvent = Extract<
       | "RECORD_LEGAL_FORM_WRITTEN"
       | "RECORD_LEGAL_FORM_CODE"
       | "RECORD_ED_PRESENTATION"
+      | "RECORD_LEGAL_FORM_DETAILS"
       | "RECORD_COUNTRY_EXTENSION"
       | "RECORD_LEGAL_FORM_CONTINUATION"
       | "RECORD_HANDOVER_SIGN_OFF"
@@ -485,12 +486,18 @@ export function reduceRecordedFactEvent(
           `movement ${movement.id} does not carry a receivable legal form (legal form ${movement.legalForm?.code ?? "none"}), so a legal form receipt cannot be recorded against it`,
         );
       }
+      // Gap list item 1: a typed receipt time is kept as typed. It can't be after now.
+      if (event.receivedAt !== undefined && (!Number.isFinite(event.receivedAt) || event.receivedAt > event.now)) {
+        return reject(state, event, "The time received can't be later than now. Check the time on the form.");
+      }
       // No statutory deadline is computed here: a clinician's typed expiry
       // (`RECORD_LEGAL_FORM_EXPIRY`) is the only source of a `dueAt`.
       const updated: Movement = {
         ...movement,
-        legalFormReceivedAt: event.now,
+        legalFormReceivedAt: event.receivedAt ?? event.now,
+        ...(event.receivedAt === undefined ? {} : { legalFormReceivedTyped: true as const }),
       };
+      if (event.receivedAt === undefined) delete updated.legalFormReceivedTyped;
       return replaceMovement(state, movement.id, updated);
     }
 
@@ -1402,6 +1409,7 @@ export function reduceRecordedFactEvent(
     case "RECORD_LEGAL_FORM_WRITTEN":
     case "RECORD_LEGAL_FORM_CODE":
     case "RECORD_ED_PRESENTATION":
+    case "RECORD_LEGAL_FORM_DETAILS":
     case "RECORD_COUNTRY_EXTENSION":
     case "RECORD_LEGAL_FORM_CONTINUATION":
       return reduceRecordedLegalEvent(state, event, decision, helpers);

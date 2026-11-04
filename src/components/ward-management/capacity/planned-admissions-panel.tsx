@@ -6,8 +6,9 @@
 // holds only the open form's draft, never in browser storage.
 import { type ReactNode, useId, useMemo, useState } from "react";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
-import { CalendarPlus, MoreHorizontal } from "lucide-react";
+import { CalendarPlus, Ellipsis } from "lucide-react";
 
+import { useUndoableStep } from "../use-undoable-step";
 import { Button, buttonClass, Field, Menu, Select, Sheet, StatusGlyph, TextInput } from "@/components/wf";
 import {
   PLANNED_ADMISSION_CANCEL_REASONS,
@@ -127,16 +128,35 @@ function recordedSexOf(sex: string | undefined): RecordedSex {
  * Device audit option A (Josh, 11 Oct 2026): the bookings as a short list, without the 14-day
  * grid, and Book as a secondary button so the page keeps one primary.
  */
+/**
+ * What a caller's own list of bookings may use (Capacity issue 6, Josh 3 Nov 2026): the agenda, the
+ * names as this desk may see them, and the panel's own forms. Every write still goes through them.
+ */
+export type PlannedListApi = {
+  agenda: readonly PlannedAdmission[];
+  whoText: (planned: PlannedAdmission) => string;
+  unitName: (unitId: string) => string;
+  arrived?: (planned: PlannedAdmission) => void;
+  change?: (planned: PlannedAdmission) => void;
+  cancel?: (planned: PlannedAdmission) => void;
+};
+
 export function PlannedAdmissionsPanel({
   now,
   titleSlot,
   compactActions = false,
+  title = "Planned admissions",
+  listSlot,
 }: {
   now: Instant;
   /** Replaces the panel title and count, such as the Capacity page's Planned / Step down switch. */
   titleSlot?: ReactNode;
   /** Arrived stays a button; Change and Cancel move into a More menu, so each booking is two lines. */
   compactActions?: boolean;
+  /** The section's name, read by assistive technology when `titleSlot` replaces the visible title. */
+  title?: string;
+  /** Draws the bookings in place of the panel's own list; the forms and dialogs stay the panel's. */
+  listSlot?: (api: PlannedListApi) => ReactNode;
 }) {
   const {
     units,
@@ -146,7 +166,17 @@ export function PlannedAdmissionsPanel({
     dayZero,
     dispatch,
     plannedAdmissions: plannedFromContext,
-  } = useWardFlowSelect("units", "patients", "admissions", "movements", "dayZero", "dispatch", "plannedAdmissions");
+    rejections,
+  } = useWardFlowSelect(
+    "units",
+    "patients",
+    "admissions",
+    "movements",
+    "dayZero",
+    "dispatch",
+    "plannedAdmissions",
+    "rejections",
+  );
   const plannedAdmissions = useMemo(() => plannedFromContext ?? [], [plannedFromContext]);
   // Josh, 27 Oct 2026: a desk sees the bookings for its own wards, and offers only the steps its role
   // may take. The executive reads them as counts, with nobody named.
@@ -166,6 +196,8 @@ export function PlannedAdmissionsPanel({
   // arrival does (WT-11). Cancel leaves the booking as it was.
   const [arrivalCheck, setArrivalCheck] = useState<PlannedAdmission | null>(null);
   const save = useWardFormSave(`planned-admission:${JSON.stringify(form)}`);
+  // Tier 1 item 6 (Josh, 4 Nov 2026): a booking cancelled by mistake comes back from its toast.
+  const { offer: offerUndo } = useUndoableStep({ dispatch, rejections, now, routeRole: "coordinator" });
 
   useDirtyStateGuard(form !== null);
 
@@ -365,17 +397,34 @@ export function PlannedAdmissionsPanel({
 
   function submitCancel() {
     if (!form || form.mode !== "cancel" || !cancelling || cancelReason === "") return;
+    const cancelled = { id: cancelling.id, label: whoText(cancelling) };
+    let completion: ReturnType<typeof dispatch> | undefined;
     save.submit(
       () =>
-        dispatch({
+        (completion = dispatch({
           type: "CANCEL_PLANNED_ADMISSION",
           role: "coordinator",
           now,
           plannedAdmissionId: cancelling.id,
           unitId: cancelling.unitId,
           reason: cancelReason,
-        }),
-      closeForm,
+        })),
+      () => {
+        closeForm();
+        offerUndo(
+          {
+            success: `Planned admission cancelled for ${cancelled.label}.`,
+            undo: (at) => ({
+              type: "UNDO_RELEASE_STEP",
+              role: "coordinator",
+              now: at,
+              plannedAdmissionId: cancelled.id,
+            }),
+            undone: "Undone. The booking is back.",
+          },
+          { completion },
+        );
+      },
     );
   }
 
@@ -463,7 +512,7 @@ export function PlannedAdmissionsPanel({
 
   return (
     <CapacityPanel
-      title="Planned admissions"
+      title={title}
       titleSlot={titleSlot}
       count={titleSlot ? undefined : `${booked} booked`}
       testId="ward-capacity-planned-admissions"
@@ -476,8 +525,17 @@ export function PlannedAdmissionsPanel({
         ) : undefined
       }
     >
-      <div className={styles.body}>
-        {agenda.length === 0 ? (
+      <div className={listSlot ? undefined : styles.body}>
+        {listSlot ? (
+          listSlot({
+            agenda,
+            whoText,
+            unitName,
+            arrived: canConvert ? (planned) => setArrivalCheck(planned) : undefined,
+            change: canChange ? openChange : undefined,
+            cancel: canCancel ? openCancel : undefined,
+          })
+        ) : agenda.length === 0 ? (
           <p className={styles.empty}>No planned admissions booked.</p>
         ) : (
           <ul className={styles.agenda} aria-label="Booked planned admissions">
@@ -556,7 +614,7 @@ export function PlannedAdmissionsPanel({
                               aria-label={`More for ${whoText(planned)}`}
                               className={buttonClass({ variant: "ghost", size: "sm" })}
                             >
-                              <MoreHorizontal size={15} aria-hidden="true" />
+                              <Ellipsis size={14} strokeWidth={1.75} aria-hidden="true" />
                             </button>
                           )}
                         />
@@ -888,7 +946,7 @@ export function PlannedAdmissionsPanel({
         testId="ward-planned-cancel"
         footer={
           <div className={styles.sheetFoot}>
-            <Button onClick={closeForm}>Keep booking</Button>
+            <Button onClick={closeForm}>Keep as is</Button>
             <Button
               variant="danger"
               onClick={submitCancel}

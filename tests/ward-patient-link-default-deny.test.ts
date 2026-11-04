@@ -195,6 +195,14 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
       "led to, never a referral history. Its own header comment discusses FD-23 directly and states " +
       "the scoping. Not opened by this task; recorded as it already shipped.",
   },
+  // RQ9 (Josh, 3 Nov 2026): a Referral button on every patient panel opens the full referral.
+  {
+    file: "referrals/referral-sheet-latest.ts",
+    reason:
+      "RQ9: the patient panel's Referral button finds that one person's own latest referral in the " +
+      "desk's already-scoped referrals. One referral, never a list or a history across several, the " +
+      "same granularity as record-preview.tsx.",
+  },
   {
     file: "shell/ward-facade.ts",
     reason:
@@ -465,7 +473,7 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 48 → 49 on 2026-10-22: the reducer's protected record path moved to its own slice file, unchanged.
     // 49 → 51 on 2026-10-24: Josh as Ward Lead allowed two synthetic seed builders (PR #657).
     // 51 → 52 on 2026-10-26: F-17 moved the seeded referrals out of ward-movements.ts unchanged. No new reader.
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(52);
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(53);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);

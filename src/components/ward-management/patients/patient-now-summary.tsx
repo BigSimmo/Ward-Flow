@@ -26,24 +26,15 @@ import { type Patient } from "@/components/ward-management/ward-patients";
 import { dayLabel, type PatientStatusContext } from "./patient-status-card";
 import { type PatientNowRecord, STAGES, clock, dur } from "./patient-now-records";
 import styles from "./patient-now.module.css";
-import {
-  Badge,
-  Button,
-  Card,
-  CardHead,
-  JourneyStrip,
-  LiveChip,
-  type JourneyStage,
-  StatusGlyph,
-  buttonClass,
-  phoneRows,
-} from "@/components/wf";
+import { Badge, Button, Card, CardHead, LiveChip, StatusGlyph, buttonClass, phoneRows } from "@/components/wf";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { PhoneClearFact, getStageBedflowDetail } from "./patient-now-screen-helpers";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { CommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
-import type { Dispatch, JSX, RefObject, SetStateAction } from "react";
+import { useState, type Dispatch, type JSX, type RefObject, type SetStateAction } from "react";
+import type { CareStep } from "./patient-care-journey";
+import { PatientCareJourneyStrip, journeyToggleClass } from "./patient-care-journey-strip";
 import type { FormTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
 import type { LeaveBed, Movement } from "@/components/ward-management/ward-model";
 import type { PatientMode } from "./patient-mode";
@@ -85,7 +76,6 @@ export type PatientNowSummaryProps = {
   now: number;
   openOperations: () => void;
   phoneMovement: boolean;
-  phoneStayStages: JourneyStage[] | undefined;
   preferredName: string | undefined;
   record: PatientNowRecord;
   recordTabs: JSX.Element;
@@ -102,6 +92,15 @@ export type PatientNowSummaryProps = {
   voluntaryNow: boolean;
   waitedStr: string;
   where: string | undefined;
+  /** PT1: the band's first-screen facts (legal, observation, risk, community, GP, alerts). */
+  glance?: JSX.Element;
+  /** PT1: one of the five state tags, with the glyph tone. */
+  stateTag?: { tag: string; tone: WfTone };
+  /** PT1 round 2: Record CTO beside New referral on a record with nothing open. */
+  recordCto?: { onClick: () => void; reason?: string };
+  /** PT1 round 3: the patient's journey, six steps from ED to community care. */
+  careSteps: CareStep[];
+  onOpenHistory?: () => void;
 };
 
 export function PatientNowSummary(props: PatientNowSummaryProps) {
@@ -135,7 +134,6 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
     now,
     openOperations,
     phoneMovement,
-    phoneStayStages,
     preferredName,
     record,
     recordTabs,
@@ -152,7 +150,95 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
     voluntaryNow,
     waitedStr,
     where,
+    glance,
+    stateTag,
+    recordCto,
+    careSteps,
+    onOpenHistory,
   } = props;
+  // The placement's seven stages stay one tap away behind the journey (Josh chose the slim band).
+  const [stagesOpen, setStagesOpen] = useState(false);
+  // PT1: the state tag leads ("Inpatient"); the mode's own words follow when they say more
+  // ("Inpatient · On leave"). One dark band for every state, Not active included.
+  const tagText = stateTag
+    ? stateTag.tag === "Inpatient" && modeMeta.pill !== "On ward"
+      ? `${stateTag.tag} · ${modeMeta.pill}`
+      : stateTag.tag
+    : modeMeta.pill;
+  const tagTone = stateTag?.tone ?? modeMeta.tone;
+  const STEPPER = isLiveBedflow ? (
+    <ol
+      className={styles.v6Steps}
+      aria-label={`The seven stages. Stage ${currentStageIndex + 1} of ${STAGES.length}, ${STAGES[currentStageIndex].label}, is current`}
+    >
+      {STAGES.map((s, i) => {
+        const recordedTransition = liveMovement?.stageChanges.find((change) => change.to === s.id);
+        const stateAttr = liveMovement?.stage === s.id ? "now" : recordedTransition ? "recorded" : "todo";
+        const isExpanded = expandedStageIndex === i;
+        const detail = getStageBedflowDetail(s.id, liveMovement);
+        const firstTime = detail.milestones.find((m) => m.time)?.time;
+        const whenText =
+          stateAttr === "recorded"
+            ? `Recorded ${firstTime ?? ""}`.trim()
+            : stateAttr === "now"
+              ? `${waitedStr} since opened`
+              : // An earlier stage is never marked complete without a recorded change.
+                i < currentStageIndex
+                ? "Before the current stage, no time recorded"
+                : "Not reached yet";
+        return (
+          <li key={s.id} className={styles.v6Step} data-s={stateAttr}>
+            <button
+              type="button"
+              id={`stage-header-${s.id}`}
+              ref={(el) => {
+                stageButtonRefs.current[i] = el;
+              }}
+              tabIndex={focusedStageIndex === i ? 0 : -1}
+              aria-current={stateAttr === "now" ? "step" : undefined}
+              className={styles.v6StepBtn}
+              aria-expanded={isExpanded}
+              aria-controls={`stage-panel-${s.id}`}
+              data-testid={`ward-patient-stage-btn-${s.id}`}
+              onClick={() => {
+                setFocusedStageIndex(i);
+                setExpandedStageIndex(isExpanded ? null : i);
+              }}
+              onKeyDown={(e) => {
+                let nextIndex: number | null = null;
+                if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+                  e.preventDefault();
+                  nextIndex = (i + 1) % STAGES.length;
+                } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+                  e.preventDefault();
+                  nextIndex = (i - 1 + STAGES.length) % STAGES.length;
+                } else if (e.key === "Home") {
+                  e.preventDefault();
+                  nextIndex = 0;
+                } else if (e.key === "End") {
+                  e.preventDefault();
+                  nextIndex = STAGES.length - 1;
+                } else if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setExpandedStageIndex(isExpanded ? null : i);
+                }
+                if (nextIndex !== null) {
+                  setFocusedStageIndex(nextIndex);
+                  stageButtonRefs.current[nextIndex]?.focus();
+                }
+              }}
+            >
+              <span className={styles.v6StepMark} aria-hidden="true">
+                {stateAttr === "recorded" ? <Check size={11} strokeWidth={3} aria-hidden="true" /> : i + 1}
+              </span>
+              <span className={styles.v6StepLabel}>{s.label}</span>
+              <span className="sr-only">, {whenText}</span>
+            </button>
+          </li>
+        );
+      })}
+    </ol>
+  ) : null;
   const newReferralHref = livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new";
   return (
     <section className={styles.v6Summary} id="pnSubject" aria-label="Patient summary">
@@ -162,11 +248,11 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
         patient={livePatient}
         displayToday={displayToday}
         isLiveBedflow={isLiveBedflow}
-        quiet={modeMeta.quiet && !isPhone}
+        glance={glance}
         statePill={
           <span className={styles.gbPill} data-testid="ward-patient-mode-pill">
-            <StatusGlyph tone={modeMeta.tone} size={10} />
-            {modeMeta.pill}
+            <StatusGlyph tone={tagTone} size={10} />
+            {tagText}
           </span>
         }
         phoneEyebrow={
@@ -182,8 +268,8 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
             </span>
           ) : (
             <span className={styles.phEyebrow}>
-              <StatusGlyph tone={modeMeta.tone} size={10} />
-              {modeMeta.pill}
+              <StatusGlyph tone={tagTone} size={10} />
+              {tagText}
             </span>
           )
         }
@@ -223,12 +309,6 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
               <span className={styles.v6HeroFact}>
                 <strong className={styles.v6HeroWait}>{waitedStr}</strong>
                 <span>Since opened</span>
-              </span>
-              <span className={styles.v6HeroFact}>
-                <strong className={styles.v6HeroWait}>
-                  {currentStageIndex + 1} of {STAGES.length}
-                </strong>
-                <span>Stage</span>
               </span>
               <PhoneClearFact mode={mode} context={statusContext} />
               {movementTimeLeft ? (
@@ -367,7 +447,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
               </span>
               {isConstantObservation(liveMovement.observation) ? (
                 <span className={styles.v6HeroFact}>
-                  <Eye size={14} aria-hidden="true" />
+                  <Eye size={14} strokeWidth={1.75} aria-hidden="true" />
                   {observationSummary(liveMovement.observation)}
                 </span>
               ) : null}
@@ -396,7 +476,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
               )}
               {mode === "awol" && stayLeaveBed?.absentWithoutLeave ? (
                 <span className={styles.v6HeroFact}>
-                  <Clock size={14} aria-hidden="true" />
+                  <Clock size={14} strokeWidth={1.75} aria-hidden="true" />
                   <strong className={styles.v6HeroWait}>
                     {dur(Math.max(0, now - stayLeaveBed.absentWithoutLeave.since))}
                   </strong>
@@ -427,112 +507,27 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
             </span>
           )
         }
-        journey={
-          phoneStayStages ? (
-            <JourneyStrip
-              surface="hero"
-              label="This record's last stay"
-              stages={phoneStayStages}
-              formatDuration={(minutes) =>
-                minutes >= 1440 ? `${Math.floor(minutes / 1440)}d ${Math.floor((minutes % 1440) / 60)}h` : dur(minutes)
-              }
-              note={false}
-              className={`${styles.v6Journey} ${styles.phStayStrip}`}
-            />
-          ) : undefined
-        }
         steps={
-          phoneMovement ? (
-            <div className={styles.phDots}>
-              <span className={styles.phDotRow} aria-hidden="true">
-                {STAGES.map((stage, i) => (
-                  <span
-                    key={stage.id}
-                    className={styles.phDot}
-                    data-s={i < currentStageIndex ? "done" : i === currentStageIndex ? "now" : "next"}
-                  />
-                ))}
-              </span>
-              <span>
-                <span className="sr-only">
-                  Stage {currentStageIndex + 1} of {STAGES.length}:{" "}
-                </span>
-                {STAGES[currentStageIndex].label}
-              </span>
-            </div>
-          ) : isLiveBedflow ? (
-            <ol
-              className={styles.v6Steps}
-              aria-label={`The seven stages. Stage ${currentStageIndex + 1} of ${STAGES.length}, ${STAGES[currentStageIndex].label}, is current`}
-            >
-              {STAGES.map((s, i) => {
-                const recordedTransition = liveMovement?.stageChanges.find((change) => change.to === s.id);
-                const stateAttr = liveMovement?.stage === s.id ? "now" : recordedTransition ? "recorded" : "todo";
-                const isExpanded = expandedStageIndex === i;
-                const detail = getStageBedflowDetail(s.id, liveMovement);
-                const firstTime = detail.milestones.find((m) => m.time)?.time;
-                const whenText =
-                  stateAttr === "recorded"
-                    ? `Recorded ${firstTime ?? ""}`.trim()
-                    : stateAttr === "now"
-                      ? `${waitedStr} since opened`
-                      : // An earlier stage is never marked complete without a recorded change.
-                        i < currentStageIndex
-                        ? "Before the current stage, no time recorded"
-                        : "Not reached yet";
-                return (
-                  <li key={s.id} className={styles.v6Step} data-s={stateAttr}>
-                    <button
-                      type="button"
-                      id={`stage-header-${s.id}`}
-                      ref={(el) => {
-                        stageButtonRefs.current[i] = el;
-                      }}
-                      tabIndex={focusedStageIndex === i ? 0 : -1}
-                      aria-current={stateAttr === "now" ? "step" : undefined}
-                      className={styles.v6StepBtn}
-                      aria-expanded={isExpanded}
-                      aria-controls={`stage-panel-${s.id}`}
-                      data-testid={`ward-patient-stage-btn-${s.id}`}
-                      onClick={() => {
-                        setFocusedStageIndex(i);
-                        setExpandedStageIndex(isExpanded ? null : i);
-                      }}
-                      onKeyDown={(e) => {
-                        let nextIndex: number | null = null;
-                        if (e.key === "ArrowDown" || e.key === "ArrowRight") {
-                          e.preventDefault();
-                          nextIndex = (i + 1) % STAGES.length;
-                        } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
-                          e.preventDefault();
-                          nextIndex = (i - 1 + STAGES.length) % STAGES.length;
-                        } else if (e.key === "Home") {
-                          e.preventDefault();
-                          nextIndex = 0;
-                        } else if (e.key === "End") {
-                          e.preventDefault();
-                          nextIndex = STAGES.length - 1;
-                        } else if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          setExpandedStageIndex(isExpanded ? null : i);
-                        }
-                        if (nextIndex !== null) {
-                          setFocusedStageIndex(nextIndex);
-                          stageButtonRefs.current[nextIndex]?.focus();
-                        }
-                      }}
-                    >
-                      <span className={styles.v6StepMark} aria-hidden="true">
-                        {stateAttr === "recorded" ? <Check size={11} strokeWidth={3} aria-hidden="true" /> : i + 1}
-                      </span>
-                      <span className={styles.v6StepLabel}>{s.label}</span>
-                      <span className="sr-only">, {whenText}</span>
-                    </button>
-                  </li>
-                );
-              })}
-            </ol>
-          ) : null
+          <>
+            <PatientCareJourneyStrip
+              steps={careSteps}
+              onOpenHistory={onOpenHistory}
+              extra={
+                isLiveBedflow && !isPhone ? (
+                  <button
+                    type="button"
+                    className={journeyToggleClass}
+                    aria-expanded={stagesOpen}
+                    onClick={() => setStagesOpen((open) => !open)}
+                    data-testid="ward-patient-stages-toggle"
+                  >
+                    {stagesOpen ? "Hide stages" : "All 7 stages"}
+                  </button>
+                ) : undefined
+              }
+            />
+            {isLiveBedflow && !isPhone && stagesOpen ? STEPPER : null}
+          </>
         }
         tabs={recordTabs}
         actions={
@@ -555,12 +550,25 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
             {(mode === "idle" || mode === "cto") && !isPhone && canOpenHref(newReferralHref) ? (
               <Link
                 href={newReferralHref}
-                className={buttonClass({ variant: modeMeta.quiet ? "pri" : "light", size: "sm" })}
+                className={buttonClass({ variant: "light", size: "sm" })}
                 data-testid="ward-person-refer-outpatient"
               >
-                <FileText size={14} aria-hidden="true" />
+                <FileText size={14} strokeWidth={1.75} aria-hidden="true" />
                 New referral
               </Link>
+            ) : null}
+            {mode === "idle" && recordCto ? (
+              <Button
+                variant="onHero"
+                size="sm"
+                icon={Scale}
+                onClick={recordCto.onClick}
+                disabledReason={recordCto.reason}
+                reasonDisplay="tooltip"
+                data-testid="ward-person-record-cto"
+              >
+                Record CTO
+              </Button>
             ) : null}
           </>
         }

@@ -21,7 +21,7 @@ import type { DepartureDecision, IntakeDecision } from "./ward-decisions-cockpit
 
 /** The Decisions, Coming in, On the way out and Beds tab sections, drawn from the ward screen's state. */
 type WardScreenTabSectionsProps = {
-  activeTab: "attn" | "board" | "coming" | "out" | "beds" | "return";
+  activeTab: "attn" | "board" | "coming" | "out" | "beds" | "referrals" | "return";
   unit: Unit;
   isRollupConfirmedToday: boolean;
   morningRollupDeadlinePassed: boolean;
@@ -35,7 +35,7 @@ type WardScreenTabSectionsProps = {
   capacity: ReturnType<typeof unitCapacity>;
   readyByShiftEnd: number;
   now: number;
-  setActiveTab: Dispatch<SetStateAction<"attn" | "board" | "coming" | "out" | "beds" | "return">>;
+  setActiveTab: Dispatch<SetStateAction<"attn" | "board" | "coming" | "out" | "beds" | "referrals" | "return">>;
   handlePullPatient: (movementId: string, unitId: string) => void;
   accepted: Movement[];
   heldAfterStop: Movement[];
@@ -75,6 +75,8 @@ type WardScreenTabSectionsProps = {
   selectedPod: string;
   setSelectedPod: Dispatch<SetStateAction<string>>;
   isMixed: boolean;
+  /** WH9: the ward coordinator's other jobs and Ward handover, above the decisions. */
+  decisionJobs?: ReactElement;
 };
 
 export function WardScreenTabSections({
@@ -119,6 +121,7 @@ export function WardScreenTabSections({
   selectedPod,
   setSelectedPod,
   isMixed,
+  decisionJobs,
 }: WardScreenTabSectionsProps) {
   // Opted out of the React Compiler: before the 18 Oct 2026 file split this code ran unmemoised
   // inside WardScreen, which the compiler skips. Memoising it changed nothing visible but added
@@ -150,6 +153,8 @@ export function WardScreenTabSections({
             byLabel: formatInstantWithDay(shiftEndInstant(now), now),
           }}
         />
+        {/* WH9: the coordinator's other jobs follow the decisions due, which come first by urgency. */}
+        {decisionJobs}
         {/* U3: the page's prototype footer below carries this safety line; it is not repeated here. */}
       </section>
 
@@ -170,7 +175,7 @@ export function WardScreenTabSections({
               setActiveTab("attn");
             }}
           >
-            <ChevronLeft size={16} aria-hidden="true" />
+            <ChevronLeft strokeWidth={1.75} size={16} aria-hidden="true" />
             Back to Ward home
           </button>
           <h2 className={styles.subViewTitle}>All arrivals</h2>
@@ -182,7 +187,7 @@ export function WardScreenTabSections({
               setActiveTab("board");
             }}
           >
-            Open Bed board →
+            Open Bed board
           </button>
         </div>
         <WardArrivalsCorridor
@@ -223,7 +228,7 @@ export function WardScreenTabSections({
               setActiveTab("attn");
             }}
           >
-            <ChevronLeft size={16} aria-hidden="true" />
+            <ChevronLeft strokeWidth={1.75} size={16} aria-hidden="true" />
             Back to Ward home
           </button>
           <h2 className={styles.subViewTitle}>All discharges</h2>
@@ -235,7 +240,7 @@ export function WardScreenTabSections({
               setActiveTab("board");
             }}
           >
-            Open Bed board →
+            Open Bed board
           </button>
         </div>
         <WardDischargesMatrix
@@ -267,7 +272,7 @@ export function WardScreenTabSections({
               setActiveTab("attn");
             }}
           >
-            <ChevronLeft size={16} aria-hidden="true" />
+            <ChevronLeft strokeWidth={1.75} size={16} aria-hidden="true" />
             Back to Ward home
           </button>
           <h2 className={styles.subViewTitle}>Full bed list</h2>
@@ -279,7 +284,7 @@ export function WardScreenTabSections({
               setActiveTab("board");
             }}
           >
-            Open Bed board →
+            Open Bed board
           </button>
         </div>
         <WardBedsMatrix

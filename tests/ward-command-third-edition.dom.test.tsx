@@ -242,16 +242,16 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     }
   });
 
-  it("draws every live inpatient unit on State Bedflow (Wave 4 item 32 / R2-16)", async () => {
-    const { allUnits } = await import("@/components/ward-management/ward-sites");
-    // Home v7 (Josh, 22 Oct 2026): State bedflow sits at the foot of Capacity, unchanged.
+  it("no longer draws State Bedflow on Capacity; every ward is on the bed map instead", () => {
+    // Capacity issue 7 (Josh, 3 Nov 2026): State bedflow repeated the bed map, so it left Capacity.
+    // Its one extra figure, beds freeing today, now sits on each bed map card.
     render(
       <WardFlowProvider initialNow={NOW}>
         <CapacityScreen />
       </WardFlowProvider>,
     );
-    const unitNodes = screen.getAllByTestId(/^ward-diagram-unit-/);
-    expect(unitNodes.length).toBe(allUnits().length);
+    expect(screen.queryAllByTestId(/^ward-diagram-unit-/)).toHaveLength(0);
+    expect(screen.getByRole("heading", { name: "Bed map" })).toBeInTheDocument();
   });
 });
 

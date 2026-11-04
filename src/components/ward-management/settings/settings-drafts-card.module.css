@@ -1,0 +1,53 @@
+.scope {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: var(--wf-s-3);
+  align-items: center;
+  min-height: var(--wf-row-touch);
+  padding: var(--wf-s-2) 0;
+}
+
+.row + .row {
+  border-top: 1px solid var(--wf-line);
+}
+
+.what {
+  display: grid;
+  min-width: 0;
+}
+
+.what strong {
+  overflow: hidden;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  line-height: var(--wf-lh-14);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.what span {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.time {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

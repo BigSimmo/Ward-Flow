@@ -9,9 +9,15 @@ import { form3CRefusedAfter3D, isLegalClockFormCode } from "@/components/ward-ma
 import { countryExtensionEligible } from "@/components/ward-management/ward-legal-forms";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-events";
-import type { LegalForm, Movement } from "@/components/ward-management/ward-model";
+import type { LegalForm, LegalFormDetails, Movement } from "@/components/ward-management/ward-model";
 import { admittedStayForArrival } from "@/components/ward-management/ward-admissions";
-import { PAPER_EXPIRY_CORRECTION_REASONS } from "./ward-model-vocabulary";
+import {
+  LEGAL_FORM_CONSENT_STATES,
+  LEGAL_FORM_COPY_STATES,
+  LEGAL_FORM_ENDINGS,
+  LEGAL_FORM_MAKER_ROLES,
+  PAPER_EXPIRY_CORRECTION_REASONS,
+} from "./ward-model-vocabulary";
 import { ED_PRESENTATION_CHOICES, isEdPresentation } from "./ed/ed-presentation";
 
 type RecordedLegalEvent = Extract<
@@ -23,6 +29,7 @@ type RecordedLegalEvent = Extract<
       | "RECORD_LEGAL_FORM_WRITTEN"
       | "RECORD_LEGAL_FORM_CODE"
       | "RECORD_ED_PRESENTATION"
+      | "RECORD_LEGAL_FORM_DETAILS"
       | "RECORD_COUNTRY_EXTENSION"
       | "RECORD_LEGAL_FORM_CONTINUATION";
   }
@@ -205,6 +212,58 @@ export function reduceRecordedLegalEvent(
       return replaceMovement(state, movement.id, next);
     }
 
+    case "RECORD_LEGAL_FORM_DETAILS": {
+      const movement = findMovement(state, event.movementId);
+      if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
+      const admitted = admittedStayForArrival(movement, state.admissions) !== undefined;
+      if (event.role === "ward" && !admitted) {
+        return reject(state, event, "A ward records form details only for a person admitted to its own bed.");
+      }
+      if (movement.closure && !(admitted && event.role !== "ed")) {
+        return reject(state, event, "Form details can't be recorded for a closed movement.");
+      }
+      const form = movement.legalForm;
+      if (!form || form.code !== event.formCode) {
+        return reject(state, event, "The form changed. Check the current form before recording its details.");
+      }
+      const offList = <T extends string>(value: T | null | undefined, allowed: readonly T[]) =>
+        value != null && !allowed.includes(value);
+      if (
+        offList(event.madeBy, LEGAL_FORM_MAKER_ROLES) ||
+        offList(event.copyGiven, LEGAL_FORM_COPY_STATES) ||
+        offList(event.endedBy, LEGAL_FORM_ENDINGS) ||
+        offList(event.consent, LEGAL_FORM_CONSENT_STATES) ||
+        (event.reviewBy != null && !Number.isFinite(event.reviewBy))
+      ) {
+        return reject(state, event, "Choose each detail from the list.");
+      }
+      if (event.consent != null && form.code !== "6B") {
+        return reject(state, event, "Chief Psychiatrist consent is recorded only for a Form 6B.");
+      }
+      // Omitted keeps the recorded value; null clears it.
+      // A function, not a generic arrow, so the TSX import walks in the tests can parse this file.
+      function pick<V>(value: V | null | undefined, kept: V | undefined): V | undefined {
+        return value === undefined ? kept : (value ?? undefined);
+      }
+      const details: LegalFormDetails = {
+        madeBy: pick(event.madeBy, form.madeBy),
+        copyGiven: pick(event.copyGiven, form.copyGiven),
+        endedBy: pick(event.endedBy, form.endedBy),
+        consent: pick(event.consent, form.consent),
+        reviewBy: pick(event.reviewBy, form.reviewBy),
+      };
+      const next: LegalForm = { ...form };
+      delete next.madeBy;
+      delete next.copyGiven;
+      delete next.endedBy;
+      delete next.consent;
+      delete next.reviewBy;
+      return replaceMovement(state, movement.id, {
+        ...movement,
+        legalForm: { ...next, ...legalFormDetailsOf(details) },
+      });
+    }
+
     case "RECORD_LEGAL_FORM_CODE":
     case "RECORD_LEGAL_FORM_WRITTEN": {
       // Q124 (Josh, 1 Nov 2026): the form-only record carries no written time. The time stays blank
@@ -292,10 +351,13 @@ export function reduceRecordedLegalEvent(
               ? { ageBand: movement.legalForm.ageBand }
               : {}),
           ...(dueAt === undefined ? {} : { dueAt }),
+          // Gap list items 3 to 7: a same-form time edit keeps the details typed from that paper.
+          ...(sameFormTimeEdit && movement.legalForm ? legalFormDetailsOf(movement.legalForm) : {}),
           ...formHistoryAfter(movement, sameFormTimeEdit, event),
         },
         legalClock: undefined,
         legalFormReceivedAt: sameFormTimeEdit ? movement.legalFormReceivedAt : undefined,
+        legalFormReceivedTyped: sameFormTimeEdit ? movement.legalFormReceivedTyped : undefined,
         legalFormExpiryHistory:
           paperExpiresAt === undefined
             ? movement.legalFormExpiryHistory
@@ -414,6 +476,7 @@ export function reduceRecordedLegalEvent(
         },
         legalClock: undefined,
         legalFormReceivedAt: undefined,
+        legalFormReceivedTyped: undefined,
         legalFormExpiryHistory: expiryHistory,
       };
       decision.outcome = "accepted";
@@ -448,5 +511,17 @@ function formHistoryAfter(
         by: event.role,
       },
     ],
+  };
+}
+
+/** The paper details recorded on a form (gap list items 3 to 7), and nothing else. */
+function legalFormDetailsOf(form: LegalFormDetails): LegalFormDetails {
+  const { madeBy, copyGiven, endedBy, consent, reviewBy } = form;
+  return {
+    ...(madeBy ? { madeBy } : {}),
+    ...(copyGiven ? { copyGiven } : {}),
+    ...(endedBy ? { endedBy } : {}),
+    ...(consent ? { consent } : {}),
+    ...(reviewBy === undefined ? {} : { reviewBy }),
   };
 }

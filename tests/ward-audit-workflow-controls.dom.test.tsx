@@ -109,7 +109,8 @@ describe("ready-bed dossier tells the truth", () => {
         />
       </WardFlowProvider>,
     );
-    expect(screen.getByText("None recorded.")).toBeInTheDocument();
+    // WH1: the ready bed's hero says the candidate in a fact, without a full stop.
+    expect(screen.getByText("None recorded")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Review current referrals/ })).toHaveAttribute(
       "href",
       "/ward-flow/referrals",

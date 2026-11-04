@@ -800,6 +800,7 @@ export function commandScopeRefusal(
     access.role === "ward" &&
     (command.type === "RECORD_LEGAL_FORM_WRITTEN" ||
       command.type === "RECORD_LEGAL_FORM_CODE" ||
+      command.type === "RECORD_LEGAL_FORM_DETAILS" ||
       command.type === "RECORD_LEGAL_FORM_EXPIRY")
   ) {
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);

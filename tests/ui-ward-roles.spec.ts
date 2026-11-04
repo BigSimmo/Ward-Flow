@@ -178,9 +178,10 @@ test.describe("@mockup Ward screen", () => {
     await expect(wardScreen.locator('[data-testid^="ward-unit-card-"]')).toHaveCount(1);
 
     // Its beds reconcile on screen.
+    // Integration QA (3 Nov 2026): Ready and Occupied sit once, in the hero; the grid has the rest.
     const beds = wardScreen.getByTestId("ward-unit-beds");
-    await expect(beds).toContainText("Ready");
-    await expect(beds).toContainText("Occupied");
+    await expect(beds).toContainText("Pulled");
+    await expect(beds).toContainText("Closed");
 
     // A decline requires a reason from the fixed list, and "Belongs to another service" is offered
     // (the old out of catchment, D-78).
@@ -1569,7 +1570,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     const wardScreen = await gotoWard(page, "rph-adult-secure");
 
     const bedGrid = wardScreen.getByTestId("ward-unit-beds");
-    await expect(bedGrid).toContainText("Ready 1");
+    await expect(wardScreen.getByTestId("ward-hero-ready")).toHaveText("1");
     await expect(bedGrid).toContainText("Closed 1");
 
     // ⚠️ The testid below is the PULL one, not the older spelling. The merge with main took
@@ -1597,7 +1598,8 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     // --- Step 3: the ward's own screen must move. This is the exact proof the reviewer
     // performed and found failing: "typing 0 into Confirm allocatable beds ... beds: Ready 2
     // ... Currently confirmed 2" — the screen that raised the event never moved. ---
-    await expect(bedGrid).toContainText("Ready 0");
+    // Ready sits once, in the hero (#1360); the strip keeps Pulled and Closed.
+    await expect(wardScreen.getByTestId("ward-hero-ready").first()).toHaveText("0");
     await expect(bedGrid).toContainText("Closed 2"); // the physically-empty pool is unchanged; it is now not offered rather than ready
     await expect(confirmDialog.getByText(/Currently confirmed 0 at/)).toBeVisible();
     await confirmDialog.getByRole("button", { name: "Close capacity confirmation" }).click();
@@ -1617,19 +1619,18 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     await expect(page.getByTestId("ward-coordinator")).toBeVisible({ timeout: 15_000 });
     await page.waitForLoadState("networkidle");
 
-    // --- Step 6: the reviewer's Proof 3. Home v7 (Josh, 22 Oct 2026): State bedflow sits at the
-    // foot of Capacity, so the coordinator opens Capacity from the menu and reads Dabakarn's own
-    // node there. The node reads the unit's live capacity directly (Critical 1 also named
-    // `flow-diagram.tsx`'s `serviceGroups`/`unplacedUnits`, which used to be grouped from the
-    // frozen `allUnits()` rather than the live `units` this card receives as a prop). ---
+    // --- Step 6: the reviewer's Proof 3. The coordinator opens Capacity from the menu and reads
+    // Dabakarn's own card on the bed map, which reads the unit's live capacity rather than the
+    // frozen `allUnits()` list (Critical 1). ---
     await page
       .getByRole("navigation", { name: "Ward Flow views" })
       .getByRole("link", { name: /^Capacity\b/u })
       .click();
     await expect(page.getByTestId("ward-capacity-screen")).toBeVisible({ timeout: 15_000 });
-    const diagram = page.getByRole("region", { name: "State Bedflow", exact: true });
-    const rphNode = diagram.getByTestId("ward-diagram-unit-rph-adult-secure");
-    await expect(rphNode).toContainText("Ready 0");
+    // Capacity issue 7 (Josh, 3 Nov 2026): State bedflow is gone, and each ward's card on the bed
+    // map carries its live ready count instead.
+    const rphCard = page.getByTestId("capacity-map-ward-rph-adult-secure");
+    await expect(rphCard).toContainText(/\b0 ready\b/u);
 
     // Back on Home, a patient whose Placement explains Dabakarn: WF-003, already accepted there,
     // so its eligibility checks are Dabakarn's own.
