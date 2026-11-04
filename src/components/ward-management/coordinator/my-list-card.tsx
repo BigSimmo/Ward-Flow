@@ -283,6 +283,15 @@ export function MyListCard({
             line={[from, profile, marker].filter(Boolean).join(" · ")}
             age={age}
             owner={undefined}
+            action={
+              <Link
+                href={decideHref(referral.id)}
+                className={buttonClass({ size: "sm" })}
+                aria-label={`Decide referral for ${name}`}
+              >
+                Decide
+              </Link>
+            }
           />
         ) : (
           <HomeRow

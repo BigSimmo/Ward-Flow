@@ -117,6 +117,7 @@ function PhoneRow({
   age,
   note,
   owner,
+  action,
 }: {
   data: Record<string, string | undefined>;
   tone: "danger" | "warning" | "info" | "neutral";
@@ -134,6 +135,8 @@ function PhoneRow({
   /** A line of its own for a passed legal form's typed time, too long for the age column. */
   note?: string;
   owner: string | undefined;
+  /** Phone-first proposal: the row's one next step, the same button the desktop row shows. */
+  action?: ReactNode;
 }) {
   const linkRef = useRef<HTMLAnchorElement>(null);
   return (
@@ -185,6 +188,7 @@ function PhoneRow({
       </span>
       <span className={`${alertStyles.phoneRowEnd} ${styles.compactEnd}`}>
         <span className={alertStyles.phoneRowAge}>{age ?? ""}</span>
+        {action ? <span className={styles.phoneRowAction}>{action}</span> : null}
       </span>
     </li>
   );

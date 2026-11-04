@@ -836,3 +836,90 @@
     white-space: normal;
   }
 }
+
+/* Phone-first proposal (4 Nov 2026, local mock-up only). The hero is a title and one line of
+ * figures, so the first work row sits in the top half of a 390 x 844 screen. Every page reads the
+ * eyebrow aloud but never draws it, the figures are one 40px strip with the value beside its label,
+ * and a "line" foot (sources, timestamps) is left to desktop and tablet. */
+@media (max-width: 46.4375rem) {
+  .hero {
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-3) var(--wf-s-4);
+  }
+  .hero .eyebrow {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    min-height: 0;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .hero:has([data-wf-live]) .titleBlock {
+    padding-top: 0;
+  }
+  .hero:has([data-wf-live]) .title {
+    padding-right: 120px;
+  }
+  .hero:has([data-wf-live] > button) .title {
+    padding-right: 140px;
+  }
+  .hero [data-wf-live] {
+    top: calc(var(--wf-s-3) + 1px);
+  }
+  .titleBlock {
+    gap: var(--wf-s-2);
+  }
+  .stats,
+  .statsEnd {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0;
+    margin: 0 -6px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .stat,
+  .stats .statToggle {
+    flex: 0 1 auto;
+    flex-direction: row;
+    align-items: baseline;
+    gap: 5px;
+    min-height: 40px;
+    padding: 0 10px;
+  }
+  .stat:first-child {
+    padding-left: 6px;
+  }
+  .stat:has(> .statToggle) {
+    padding: 0;
+  }
+  .stats .statToggle {
+    align-items: center;
+  }
+  .stat + .stat::before {
+    top: 12px;
+    bottom: 12px;
+  }
+  /* The strip scrolls sideways rather than cut a label. */
+  .stat .label {
+    display: inline;
+    -webkit-line-clamp: unset;
+    line-clamp: none;
+    white-space: nowrap;
+    overflow: visible;
+  }
+  .stat,
+  .stats .statToggle {
+    flex-shrink: 0;
+  }
+  .stat,
+  .stats .statToggle {
+    align-items: center;
+  }
+  .hero .foot:not([data-foot="actions"]) {
+    display: none;
+  }
+}

@@ -920,3 +920,56 @@
     padding-block: 8px;
   }
 }
+
+/* Phone-first proposal (4 Nov 2026, local mock-up only): the phone hero matches the shared Hero.
+ * The eyebrow is read but not drawn, the chip sits at the title's right on its first line, and
+ * the figures are one 40px strip with the value beside its label, scrolling rather than cutting. */
+.hero {
+  position: relative;
+  gap: var(--wf-s-2);
+}
+.heroEyebrow {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.heroEyebrowRow {
+  position: absolute;
+  z-index: 1;
+  top: var(--wf-s-3);
+  right: var(--wf-s-3);
+  min-height: 28px;
+}
+.heroTitleBlock:has(> .heroEyebrowRow) > .heroTitle {
+  padding-right: 128px;
+}
+.heroFigures {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.heroFigure {
+  flex: none;
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+  min-height: 40px;
+  padding: 0 10px;
+}
+.heroFigureButton {
+  flex-direction: row;
+  align-items: center;
+  gap: 5px;
+  min-height: 40px;
+}
+.heroLabelText {
+  display: inline;
+  -webkit-line-clamp: unset;
+  line-clamp: none;
+  white-space: nowrap;
+}

@@ -682,3 +682,27 @@
 .calmEmpty > svg {
   flex: none;
 }
+
+/* Phone-first proposal (4 Nov 2026, local mock-up): a row with a next step shows its button in the
+ * end column, under the age, so the coordinator acts from the list without opening the record. */
+.compactEnd.compactEnd:has(.phoneRowAction) {
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+}
+.compactEnd.compactEnd:has(.phoneRowAction)::after {
+  display: none;
+}
+.phoneRowAction {
+  display: flex;
+}
+.phoneRowAction > :is(a, button) {
+  position: relative;
+  min-height: 40px;
+  white-space: nowrap;
+}
+.phoneRowAction > :is(a, button)::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
+}
