@@ -45,6 +45,7 @@ import { askingForShort, waitWords } from "../referrals/referral-board-parts";
 import { WardPrototypeFooter } from "../shell/ward-prototype-footer";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { useDueSoonThresholds, useWardFlowSelect } from "../ward-flow-provider";
+import { useWardFormSave, type WardFormSave } from "../use-ward-form-save";
 import { WARD_FLOW_ROLE_LABELS } from "../ward-flow-roles";
 import { bedMeetingTvHref } from "../ward-nav";
 import { DONE_PAUSE_MS, LONG_WAIT_MINUTES, LONG_WAIT_TEXT } from "../ward-operational-defaults";
@@ -328,11 +329,7 @@ function BedMeetingAgenda() {
         stats={
           <>
             {sections.map((section) => (
-              <HeroStat
-                key={section.id}
-                value={section.items.length}
-                label={SHORT_TITLES[section.id] ?? section.title}
-              />
+              <HeroStat key={section.id} value={section.total} label={SHORT_TITLES[section.id] ?? section.title} />
             ))}
             <HeroStat value={queue.length} label="Referrals" />
             <HeroStat
@@ -715,6 +712,7 @@ function AgendaRow({
 }) {
   const [adding, setAdding] = useState(false);
   const formId = useId();
+  const save = useWardFormSave(formId);
   const toggle = useRef<HTMLButtonElement>(null);
   const openActions = (item.record.meetingActions ?? []).filter((action) => action.doneAt === undefined);
   const urgent = urgencyOf(sectionId, item, now) !== null;
@@ -757,7 +755,10 @@ function AgendaRow({
             aria-controls={formId}
             icon={Plus}
             aria-label={adding ? `Cancel the action for ${name}` : `Add an action for ${name}`}
-            onClick={() => setAdding((value) => !value)}
+            onClick={() => {
+              save.forget();
+              setAdding((value) => !value);
+            }}
             data-testid="bed-meeting-add-action"
           >
             {adding ? "Close" : "Action"}
@@ -768,6 +769,7 @@ function AgendaRow({
         <ActionForm
           id={formId}
           sectionId={sectionId}
+          save={save}
           item={item}
           now={now}
           wardName={wardName}
@@ -824,6 +826,7 @@ const WARD_OWNED_KINDS: ReadonlySet<BedMeetingActionKind> = new Set([
 function ActionForm({
   id,
   sectionId,
+  save,
   item,
   now,
   wardName,
@@ -832,6 +835,7 @@ function ActionForm({
 }: {
   id: string;
   sectionId: string;
+  save: WardFormSave;
   item: AgendaItem;
   now: Instant;
   wardName: string | undefined;
@@ -854,7 +858,14 @@ function ActionForm({
     if (next !== "") setOwner(item.unitId !== undefined && WARD_OWNED_KINDS.has(next) ? "ward" : "coordinator");
   };
   const chip = (entry: (typeof BED_MEETING_ACTION_KINDS)[number]) => (
-    <FilterChip key={entry.id} pressed={kind === entry.id} onPressedChange={(on) => pick(on ? entry.id : "")}>
+    <FilterChip
+      key={entry.id}
+      pressed={kind === entry.id}
+      unavailable={save.pending}
+      onPressedChange={(on) => {
+        if (!save.pending) pick(on ? entry.id : "");
+      }}
+    >
       {entry.label}
     </FilterChip>
   );
@@ -894,7 +905,14 @@ function ActionForm({
             clips the owners on phone. One is always chosen. */}
         <ChipGroup label="Owner" className={styles.formKinds}>
           {owners.map((candidate) => (
-            <FilterChip key={candidate} pressed={owner === candidate} onPressedChange={() => setOwner(candidate)}>
+            <FilterChip
+              key={candidate}
+              pressed={owner === candidate}
+              unavailable={save.pending}
+              onPressedChange={() => {
+                if (!save.pending) setOwner(candidate);
+              }}
+            >
               {candidate === "ward" ? (wardName ?? WARD_FLOW_ROLE_LABELS.ward) : WARD_FLOW_ROLE_LABELS[candidate]}
             </FilterChip>
           ))}
@@ -907,31 +925,45 @@ function ActionForm({
         <Segmented
           label="Due in"
           value={dueHours}
-          onChange={(next) => setDueHours(next)}
+          unavailable={save.pending}
+          onChange={(next) => {
+            if (!save.pending) setDueHours(next);
+          }}
           items={BED_MEETING_ACTION_DUE_HOURS.map((hours) => ({ id: String(hours), label: `${hours}h` }))}
         />
       </div>
       <Button
         size="sm"
         variant="pri"
-        aria-disabled={kind === "" ? "true" : undefined}
+        loading={save.pending}
+        aria-disabled={kind === "" || save.pending ? "true" : undefined}
         aria-describedby={kind === "" ? `${id}-reason` : undefined}
         onClick={() => {
-          if (kind === "") return;
-          onRecord({
-            subject: item.subject,
-            action: kind,
-            owner,
-            ...(owner === "ward" && item.unitId !== undefined ? { unitId: item.unitId } : {}),
-            dueAt,
-          });
-          onDone();
+          if (kind === "" || save.pending) return;
+          // The form stays open with its choices until this command is accepted; Undo follows on the toast.
+          save.submit(
+            () =>
+              onRecord({
+                subject: item.subject,
+                action: kind,
+                owner,
+                ...(owner === "ward" && item.unitId !== undefined ? { unitId: item.unitId } : {}),
+                dueAt,
+              }),
+            onDone,
+          );
         }}
         data-testid="bed-meeting-action-record"
       >
         {kind === "" ? "Record action" : `Record · due ${formatInstantWithDay(dueAt, now)}`}
       </Button>
+      {save.error ? <p role="status">{save.error}</p> : null}
       {kind === "" ? <DisabledReason id={`${id}-reason`}>Choose an action first.</DisabledReason> : null}
+      {save.error ? (
+        <p className={styles.note} role="alert">
+          {save.error}
+        </p>
+      ) : null}
     </div>
   );
 }

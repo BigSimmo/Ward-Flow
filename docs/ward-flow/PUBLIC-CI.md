@@ -15,10 +15,12 @@ unit or browser matrices can be allocated. Static checks and scoped backend work
 The main reuse proof runs separately. Missing history, unknown files, deletions and renames select
 all executable work. `Ward Flow required` rejects missing plans, unexpected skips and failed jobs.
 
-Each pull request, and main, has one queue. The run in progress always finishes, and a newer push
-replaces any run still waiting, so a burst of pushes or merges is checked once, on the newest
-commit. On 4 Nov 2026, cancelling running PR checks threw away 47 to 66% of PR runner time, so
-running PR checks are no longer cancelled. The daily release takes the newest CI-passed main.
+Each pull request, and main, has one queue. A newer push to a pull request cancels that PR's older
+run, even mid-run: a superseded head's result is never used, and letting it finish held the PR's new
+run behind it while Ward Flow filled the account's 40 concurrent job slots (Josh, 4 Nov 2026
+08:20Z, reversing that morning's never-cancel rule; "push less" keeps the churn down). Main runs
+always finish, and a newer main push replaces any main run still waiting. The daily release takes
+the newest CI-passed main.
 Unit shards run four Vitest workers, one per hosted-runner vCPU.
 
 | Job                                             | Work                                                                                                                                                                                                                                                                                                                                                                                      |
@@ -166,6 +168,33 @@ three days, including nonblocking moderate/minor findings. This success artifact
 video and trace files; failed legs keep their existing full diagnostic artifact. Missing success
 reports fail evidence collection. These retained reports do not change accessibility thresholds or
 prove physical-device, hosted-provider or deployment acceptance.
+
+## Phone script budget on a moving main
+
+Main has no merge queue and does not require branches to be up to date, so PRs that each fit the
+phone script budget can land together over it. Before 4 November 2026 that turned every open PR's
+required production build red until someone raised the limit by hand. Three parts now handle it:
+
+- **Prevention.** The build merges the latest main before measuring (`merge-latest-main.mjs`), and
+  `ward-flow-budget-recheck.yml` re-runs that build on armed PRs whenever main moves.
+- **Fair blame.** The budget step is `budget-gate.mjs`. When a PR's merged result is over budget, it
+  builds and measures main alone in a separate worktree and fails only routes the PR pushed over,
+  or grew more than 1.5 KB (build noise) past an already-over main. Inherited overage is a warning. This second
+  build runs only when the merged result is over.
+- **Automatic heal.** Main's build saves its measurements as the `script-budget-measured` artifact.
+  When a main run fails and those show a route over budget, `ward-flow-budget-heal.yml` opens one PR
+  raising only those routes to the measured size plus 1 KB, with its own
+  `docs/script-budget-history/` entry, and closes any older heal PR. Workflow-token events start no
+  workflows, so it dispatches `Ward Flow CI`, `Ward Flow bot-author policy` and `Ward Flow hold` on
+  the heal branch; those report the required checks on its head. It arms auto-merge only when every
+  raise is within 5 KB (D-82); a bigger raise waits for Josh. The repository setting "Allow GitHub
+  Actions to create and approve pull requests" must be on. A merge made by the workflow token starts
+  no main run, so main is re-measured on the next merge.
+
+`ward-flow-ci-tidy.yml` frees runner slots on PR close, on each PR push and every 15 minutes. It
+cancels runs for merged or closed PRs, and other workflows' runs for an older head of an open PR
+while none of their jobs is running. Ward Flow CI's own superseded PR runs are cancelled by its
+concurrency group. Running checks on a current head are never cancelled.
 
 ## Main pushes and nightly runs
 

@@ -23,14 +23,14 @@ describe("forecast reason contract across browser, API and database", () => {
     expect([...databaseReasons].sort()).toEqual([...FORECAST_MISS_REASONS].sort());
     for (const code of databaseReasons) {
       const reason = { day: 2, reason: code, by: "coordinator", at: 3000 };
-      expect(forecastHistoryInput({ generation: 0, reason })?.reason).toEqual(reason);
+      expect(forecastHistoryInput({ generation: 0, reason, expectedVersion: null })?.reason).toEqual(reason);
       expect(parseForecastMissReasons(JSON.stringify([reason]))).toEqual([reason]);
     }
   });
 
   it("refuses an unlisted reason at both runtime input boundaries", () => {
     const reason = { day: 2, reason: "synthetic_unlisted_reason", by: "coordinator", at: 3000 };
-    expect(forecastHistoryInput({ generation: 0, reason })).toBeNull();
+    expect(forecastHistoryInput({ generation: 0, reason, expectedVersion: null })).toBeNull();
     expect(parseForecastMissReasons(JSON.stringify([reason]))).toEqual([]);
   });
 });
