@@ -7,7 +7,7 @@ import {
   type WardNavItem,
   type WardViewItem,
 } from "@/components/ward-management/ward-nav";
-import { BedDouble, type LucideIcon } from "lucide-react";
+import { BedSingle, type LucideIcon } from "lucide-react";
 
 import { wardTasksAreActionableForRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { WARD_NAV_ICONS, WARD_VIEW_ICONS } from "@/components/ward-management/ward-nav-icons";
@@ -269,7 +269,7 @@ function deskRoleMenu(entries: readonly RailEntry[], role: WardChromeRole): Role
   const { main: mainItems, moreFirst } = ROLE_MENU_DEFINITIONS[role];
   const byId = new Map(entries.map((entry) => [entry.id, entry]));
   const main: RoleMenuItemEntry[] = mainItems.flatMap(([id, label]): RoleMenuItemEntry[] => {
-    if (id === BED_FINDER_MENU_ID) return [{ kind: "bed-finder", id: BED_FINDER_MENU_ID, label, icon: BedDouble }];
+    if (id === BED_FINDER_MENU_ID) return [{ kind: "bed-finder", id: BED_FINDER_MENU_ID, label, icon: BedSingle }];
     const entry = byId.get(id);
     return entry ? [{ ...entry, label }] : [];
   });
