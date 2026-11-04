@@ -95,8 +95,8 @@
     "line": "Cancel and reroute unfinished care transfers; clearer reload, partial-save and sign-in recovery."
   },
   {
-    "id": "2026-11-03-triangle-only-act-now",
+    "id": "2026-11-03-one-alerts-switch",
     "date": "2026-11-03",
-    "line": "The red triangle now marks only something that needs a person now, never a tab, chip or filter."
+    "line": "Settings has one Alerts on this device switch, and Test alert shows a sample alert here in Ward Flow."
   }
 ]

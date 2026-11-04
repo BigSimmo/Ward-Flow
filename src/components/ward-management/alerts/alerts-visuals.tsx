@@ -268,6 +268,39 @@ export function DeclineLadder({ steps, now }: { steps: LadderStep[]; now: Instan
 
 export type TrackPoint = { at: Instant; label: string; shape: MarkShape };
 
+/** About a 12px label's width, from its length. Only used to keep labels apart and on the card. */
+const labelWidth = (label: string) => Math.ceil(label.length * 7) + 4;
+
+type PlacedLabel = { x: number; y: number; anchor: "start" | "middle" | "end" };
+
+/**
+ * Place each label on its mark without running off the card or over its neighbour. A mark near the
+ * left edge reads from the mark rightwards, one near the right edge ends at its mark, and a label that
+ * would collide with the one before drops below the line.
+ */
+export function placeTrackLabels(marks: { x: number; label: string }[], width: number): PlacedLabel[] {
+  const edge = 6;
+  const above = 10;
+  const below = 46;
+  const lastRightByRow = new Map<number, number>();
+  return marks.map(({ x, label }) => {
+    const w = labelWidth(label);
+    let anchor: PlacedLabel["anchor"] = "middle";
+    let left = x - w / 2;
+    if (left < edge) {
+      anchor = "start";
+      left = Math.max(edge, x - 6);
+    } else if (x + w / 2 > width - edge) {
+      anchor = "end";
+      left = Math.min(width - edge, x + 6) - w;
+    }
+    const y = left < (lastRightByRow.get(above) ?? -Infinity) + 8 ? below : above;
+    lastRightByRow.set(y, left + w);
+    const ax = anchor === "start" ? left : anchor === "end" ? left + w : x;
+    return { x: ax, y, anchor };
+  });
+}
+
 /** One line from the first recorded time to now, with what happened on it. */
 export function WaitTrack({ points, now }: { points: TrackPoint[]; now: Instant }) {
   const [frameRef, width] = useFrameWidth(366);
@@ -276,6 +309,10 @@ export function WaitTrack({ points, now }: { points: TrackPoint[]; now: Instant 
   const start = sorted[0]?.at ?? now;
   const from = Math.floor((Math.min(start, now) - 10) / 30) * 30;
   const { x, grid, nowLine } = timeAxis(from, Math.max(now, sorted.at(-1)?.at ?? now) + 15, width, height, 8, now);
+  const placed = placeTrackLabels(
+    sorted.map((point) => ({ x: x(point.at), label: point.label })),
+    width,
+  );
   return (
     <div ref={frameRef} className={styles.chartFrame}>
       <svg
@@ -288,7 +325,7 @@ export function WaitTrack({ points, now }: { points: TrackPoint[]; now: Instant 
       >
         {grid}
         <line x1={x(start)} x2={x(now)} y1={24} y2={24} className={styles.spanLine} />
-        {sorted.map((point) => (
+        {sorted.map((point, index) => (
           <g key={`${point.label}-${point.at}`}>
             <Mark
               shape={point.shape}
@@ -297,10 +334,11 @@ export function WaitTrack({ points, now }: { points: TrackPoint[]; now: Instant 
               title={`${point.label}, ${formatInstantWithDay(point.at, now)}`}
             />
             <text
-              x={Math.min(width - 60, Math.max(36, x(point.at)))}
-              y={10}
+              // AL1: labels read away from the card edge and drop below the line when they would meet.
+              x={placed[index].x}
+              y={placed[index].y}
               className={styles.pointLabel}
-              textAnchor="middle"
+              textAnchor={placed[index].anchor}
             >
               {point.label}
             </text>
