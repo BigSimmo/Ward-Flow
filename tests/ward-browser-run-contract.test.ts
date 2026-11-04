@@ -5,6 +5,7 @@ import {
   RELEASE_GATE_PARTS,
   RELEASE_GATE_PROJECTS,
   releaseGateCases,
+  releaseGateCheckCases,
   releaseGatePartArgsProblem,
   releaseGatePartFor,
   releaseGateProjectFor,
@@ -14,7 +15,7 @@ import {
 describe("complete release gate and shared-build browser selection", () => {
   it("requires all seven operational journeys on both device projects only for the full preset", () => {
     expect(releaseGateCases(false)).toEqual([]);
-    const cases = releaseGateCases(true);
+    const cases = releaseGateCases(true).filter((entry) => entry.file !== "release-gate-axe-sweep.spec.ts");
     expect(cases).toHaveLength(14);
     for (const project of ["release-gate-desktop", "release-gate-phone"]) {
       expect(cases.filter((entry) => entry.project === project).map((entry) => entry.title.split(":")[0])).toEqual([
@@ -41,7 +42,7 @@ describe("complete release gate and shared-build browser selection", () => {
     expect(RELEASE_GATE_PROJECTS).toEqual(["release-gate-desktop", "release-gate-phone"]);
     for (const project of RELEASE_GATE_PROJECTS) {
       const leg = releaseGateCases(true, project);
-      expect(leg).toHaveLength(7);
+      expect(leg.filter((entry) => entry.file !== "release-gate-axe-sweep.spec.ts")).toHaveLength(7);
       expect(new Set(leg.map((entry) => entry.project))).toEqual(new Set([project]));
       expect(leg).toEqual(releaseGateCases(true).filter((entry) => entry.project === project));
     }
@@ -72,8 +73,10 @@ describe("complete release gate and shared-build browser selection", () => {
         "Legal form",
       ]);
       // Together the parts still require all seven journeys on each device, each exactly once.
-      expect([...journeys, ...referrals]).toEqual(releaseGateCases(true, project));
-      expect(releaseGateCases(true, project, "checks")).toEqual([]);
+      expect([...journeys, ...referrals, ...releaseGateCases(true, project, "checks")]).toEqual(
+        releaseGateCases(true, project),
+      );
+      expect(releaseGateCases(true, project, "checks")).toEqual(releaseGateCheckCases(project));
     }
     expect(() => releaseGateCases(true, "release-gate-phone", "smoke")).toThrow(/WARD_RELEASE_GATE_PART/);
   });

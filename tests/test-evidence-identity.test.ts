@@ -23,6 +23,8 @@ describe("test outcome input identity", () => {
       "TZ",
       "VITEST_MAX_WORKERS",
       "CI",
+      "WARD_STORAGE_VERDICTS_FULL",
+      "WARD_STORAGE_VERDICTS_RECORD",
     ]) {
       expect(testEnvironmentIdentity({ [name]: "different" }), name).not.toBe(baseline);
     }
