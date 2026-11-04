@@ -174,6 +174,8 @@ export function selectWardAuthProvider(): string {
 }
 
 export function useWardShared(enabled: boolean): WardSharedConnection {
+  // The API bindings below already use explicit memoisation. Compiler wrapper caches add phone download weight.
+  "use no memo";
   const supabaseMode = selectWardAuthProvider() === "supabase";
   const supabase = useWardSupabaseShared(enabled && supabaseMode);
   // An account without a role still needs its own access-request API. Include the account in
@@ -274,6 +276,8 @@ function useDisplaySessionLifetime(until: number | null | undefined): boolean {
 }
 
 export function WardSharedAccess({ connection, children }: { connection: WardSharedConnection; children: ReactNode }) {
+  // Keep the explicit context memoisation; automatic JSX caches inflate every route's initial script.
+  "use no memo";
   const hasSnapshot = !!(connection.snapshot || connection.executiveSnapshot);
   const [showLiveInfo, setShowLiveInfo] = useState(false);
   const [slot, setSlot] = useState<DataModeSlot | null>(null);
