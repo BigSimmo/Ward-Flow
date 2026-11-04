@@ -44,6 +44,16 @@ function asTimeline(items: ReturnType<typeof formEvents>, now: Instant): Timelin
  * record, the form's facts and its history. Desktop has this one detail surface (owner, 9 Oct
  * 2026); there is no drawer.
  */
+/**
+ * Gap list item 1: an optional typed receipt time. Blank means now. A time that will not read, or
+ * reads later than now, is a problem and nothing is sent.
+ */
+export function typedReceipt(text: string, now: Instant): { at: Instant | null; problem?: string } {
+  if (text.trim() === "") return { at: null };
+  const at = parseWrittenInstant(text, now);
+  return at === null ? { at, problem: "Type the time received as HH:MM, not later than now" } : { at };
+}
+
 export function FocusPanel({
   movement,
   name,
@@ -58,6 +68,8 @@ export function FocusPanel({
   onSaveWritten,
   recordUnavailable,
   onMarkReceived,
+  receivedText,
+  onReceivedTextChange,
   markReceivedUnavailable,
   onExtend,
   extendUnavailable,
@@ -85,6 +97,9 @@ export function FocusPanel({
   recordUnavailable?: string;
   /** Gap list item 1: the time typed from the paper, or undefined to mark it received now. */
   onMarkReceived: (receivedAt?: Instant) => void;
+  /** Gap list item 1: the typed receipt time draft, held by the screen. */
+  receivedText: string;
+  onReceivedTextChange: (text: string) => void;
   /** Feature 11: why this route's role may not mark a form received ("ED only"), if it may not. */
   markReceivedUnavailable?: string;
   onExtend: () => void;
@@ -135,12 +150,8 @@ export function FocusPanel({
 
   const step = nextStep(movement, now);
   // Gap list item 1: an optional typed receipt time. Blank means now; a time later than now is refused.
-  const [receivedText, setReceivedText] = useState("");
-  const receivedAt = receivedText.trim() === "" ? null : parseWrittenInstant(receivedText, now);
-  const receivedProblem =
-    receivedText.trim() !== "" && receivedAt === null
-      ? "Type the time received as HH:MM, not later than now"
-      : undefined;
+  // The draft lives on the screen, so the phone's pinned Mark received sends the same typed time.
+  const { at: receivedAt, problem: receivedProblem } = typedReceipt(receivedText, now);
 
   return (
     <section className={cx(styles.panel, p.panel)} aria-label={`Form for ${name}`} data-testid="ward-legal-selected">
@@ -313,7 +324,7 @@ export function FocusPanel({
                           className={p.receivedTime}
                           data-testid={`ward-legal-forms-received-time-${movement.id}`}
                           value={receivedText}
-                          onChange={(event) => setReceivedText(event.target.value)}
+                          onChange={(event) => onReceivedTextChange(event.target.value)}
                         />
                         <Button
                           ref={receivedRef}
@@ -348,6 +359,8 @@ export function FocusPanel({
         </>
 
         <LegalFormDetailsSection
+          // A new form on the paper starts a fresh section, so no draft carries across forms.
+          key={`${movement.legalForm?.code ?? "none"}-${movement.legalForm?.earlierForms?.length ?? 0}`}
           movement={movement}
           dayZero={dayZero}
           unavailable={detailsUnavailable}

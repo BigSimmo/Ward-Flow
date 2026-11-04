@@ -195,3 +195,36 @@ describe("item 9, follow-up after a finished seclusion", () => {
     expect(episodeOf(undone.next, unitId, episodeId).followUp?.patient_debrief).toBeUndefined();
   });
 });
+
+describe("review fixes on #1398", () => {
+  it("drops the current expiry of a form a person recorded as ended", async () => {
+    const { currentLegalDueAt } = await import("@/components/ward-management/legal-forms/legal-form-progression");
+    const { state, id } = onForm();
+    const typed = run(state, {
+      type: "RECORD_LEGAL_FORM_EXPIRY",
+      role: "ed",
+      now,
+      movementId: id,
+      dueAt: now + 600,
+    } as WardFlowEvent);
+    expect(currentLegalDueAt(movementOf(typed.next, id))).toBe(now + 600);
+    const ended = run(typed.next, {
+      type: "RECORD_LEGAL_FORM_DETAILS",
+      role: "ed",
+      now,
+      movementId: id,
+      formCode: "1A",
+      endedBy: "revoked",
+    } as WardFlowEvent);
+    expect(ended.refused).toEqual([]);
+    expect(currentLegalDueAt(movementOf(ended.next, id))).toBeUndefined();
+    // The typed expiry stays on the record as history.
+    expect(movementOf(ended.next, id).legalForm?.dueAt).toBe(now + 600);
+  });
+
+  it("reads a typed receipt time the same way for the panel and the phone's pinned action", async () => {
+    const { typedReceipt } = await import("@/components/ward-management/legal-forms/legal-forms-panel");
+    expect(typedReceipt("", now)).toEqual({ at: null });
+    expect(typedReceipt("nonsense", now).problem).toBeDefined();
+  });
+});

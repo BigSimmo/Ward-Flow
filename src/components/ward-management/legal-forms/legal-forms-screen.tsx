@@ -70,7 +70,7 @@ import {
   isLegalDeadlineBreached,
 } from "./legal-forms-derivations";
 import { admittedOnAForm, LegalFormsAdmitted, WARD_RECORDS_ADMITTED } from "./legal-forms-admitted";
-import { FocusPanel } from "./legal-forms-panel";
+import { FocusPanel, typedReceipt } from "./legal-forms-panel";
 import { AddTimeDialog } from "./legal-forms-add-time";
 import { ChecklistView, FormRow, GAP_LABEL, PhoneFormRow, ROW_COLUMNS } from "./legal-form-rows";
 import type { WrittenSave } from "./legal-forms-written-time";
@@ -205,6 +205,8 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   // Governance links a gap here with ?movement=, so that patient opens selected.
   const [selectedId, setSelectedId] = useState<string | null>(initialMovementId ?? null);
   const [focusGap, setFocusGap] = useState<{ gap: RecordGap; nonce: number } | null>(null);
+  // Gap list item 1: the typed receipt time, shared by the panel and the phone's pinned action.
+  const [receivedDraft, setReceivedDraft] = useState<{ id: string; text: string } | null>(null);
   const [requirementsCode, setRequirementsCode] = useState<string | null>(null);
   const [recordOpen, setRecordOpen] = useState(
     () => recordOnOpen && initialMovementId !== undefined && gate("RECORD_LEGAL_FORM_WRITTEN", "record-a-form").allowed,
@@ -335,6 +337,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const recordGate = routeRole === "ward" ? { allowed: false, reason: WARD_RECORDS_ADMITTED } : writtenGate;
   const sheetReason = routeRole === "ward" && admitted.length === 0 ? WARD_RECORDS_ADMITTED : writtenGate.reason;
   const extendGate = gate("RECORD_LEGAL_FORM_EXPIRY");
+  const receivedTextOf = (movementId: string) => (receivedDraft?.id === movementId ? receivedDraft.text : "");
   const markReceived = (movement: Movement, receivedAt?: Instant) => {
     if (receivedUnavailable(movement) !== undefined) return;
     if (!receiptEventAccepts(movement.legalForm?.code) || movement.legalFormReceivedAt !== undefined) return;
@@ -564,6 +567,8 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       onSaveWritten={(written, onAccepted) => saveWritten(selected, written, onAccepted)}
       recordUnavailable={recordGate.reason}
       onMarkReceived={(receivedAt) => markReceived(selected, receivedAt)}
+      receivedText={receivedTextOf(selected.id)}
+      onReceivedTextChange={(text) => setReceivedDraft({ id: selected.id, text })}
       markReceivedUnavailable={receivedUnavailable(selected)}
       onExtend={() => setExtendId(selected.id)}
       extendUnavailable={extendGate.reason}
@@ -592,13 +597,15 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
           label: GAP_ACTION[nextGap],
           disabledReason:
             nextGap === "received"
-              ? receivedUnavailable(selected)
+              ? (receivedUnavailable(selected) ?? typedReceipt(receivedTextOf(selected.id), now).problem)
               : nextGap === "written"
                 ? recordGate.reason
                 : undefined,
           onAction: () => {
-            if (nextGap === "received") markReceived(selected);
-            else setFocusGap((previous) => ({ gap: nextGap, nonce: (previous?.nonce ?? 0) + 1 }));
+            if (nextGap === "received") {
+              const receipt = typedReceipt(receivedTextOf(selected.id), now);
+              if (receipt.problem === undefined) markReceived(selected, receipt.at ?? undefined);
+            } else setFocusGap((previous) => ({ gap: nextGap, nonce: (previous?.nonce ?? 0) + 1 }));
           },
         }
       : undefined;

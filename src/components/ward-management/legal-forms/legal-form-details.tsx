@@ -130,7 +130,17 @@ export function LegalFormDetailsSection({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setEditing((value) => !value)}
+          onClick={() => {
+            // Start each edit from the record as it stands now, never an earlier form's draft.
+            if (!editing) {
+              setMadeBy(form.madeBy ?? null);
+              setCopyGiven(form.copyGiven ?? "not_recorded");
+              setEndedBy(form.endedBy ?? null);
+              setConsent(form.consent ?? "not_recorded");
+              setReview(isoDay(form.reviewBy, dayZero));
+            }
+            setEditing((value) => !value);
+          }}
           disabledReason={editing ? undefined : unavailable}
           reasonDisplay="tooltip"
           data-testid="ward-legal-form-details-edit"

@@ -86,7 +86,7 @@ export function LegalFormSummary({
           ) : (
             <>
               <span className={p.clockBig}>
-                {formProgression(movement)
+                {formProgression(movement) || legalForm?.endedBy !== undefined
                   ? "Ended"
                   : movement.formedAt !== undefined
                     ? "No expiry typed"
