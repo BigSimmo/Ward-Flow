@@ -23,6 +23,7 @@ import {
   type RecordGap,
 } from "./legal-forms-view";
 import { typedClock } from "./legal-time-as-typed";
+import { extensionsOfCurrentForm } from "./legal-form-ledger";
 import styles from "./legal-forms.module.css";
 
 /**
@@ -100,6 +101,8 @@ export function FormRow({
   const progression = formProgression(movement);
   const dueAt = currentLegalDueAt(movement);
   const hasDue = dueAt !== undefined;
+  // H13: a typed extension is named in words on the row; the panel says how many and warns.
+  const extended = extensionsOfCurrentForm(movement) > 0;
 
   return (
     <DataRow
@@ -153,7 +156,9 @@ export function FormRow({
               <strong className={styles.leftValue}>{typedClock(dueAt!, now)}</strong>
               <span className={styles.sub}>{standingWord(standing, thresholds)}</span>
             </span>
-            <span className={styles.sub}>{standing === "passed" ? "Ended" : "Ends"}, as typed</span>
+            <span className={styles.sub}>
+              {standing === "passed" ? "Ended" : "Ends"}, as typed{extended ? ", extended" : ""}
+            </span>
           </>
         ) : (
           <>
