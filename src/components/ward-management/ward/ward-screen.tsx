@@ -2,6 +2,7 @@
 
 import { Bell, Clock, FileText, MoreHorizontal, Printer, Send } from "lucide-react";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
+import { WardBedListPrint } from "./ward-bed-list-print";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import Link from "next/link";
@@ -2103,6 +2104,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     >
       <main id="main-content" className={styles.main}>
         <h1 className={styles.screenName}>{presentation === "answer" ? "Ward answer" : "Ward"}</h1>
+        {/* Tier 1 item 9: the one-page bed list, on paper only. */}
+        {presentation === "answer" ? null : <WardBedListPrint unit={unit} beds={bedsList} now={now} />}
 
         {/* Item 44, build plan task F3, §3 "Ward": this page is about ONE named place (§2 "Never
          *  hidden", S4) and is never itself narrowed by the chosen service — this states how the
