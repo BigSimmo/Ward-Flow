@@ -4,7 +4,6 @@ import { fieldsMatchEveryWord } from "@/components/ward-management/search/search
 import {
   bedsPendingPreparation,
   openBedReleases,
-  releaseBand,
   stalePreparingReleases,
 } from "@/components/ward-management/ward-bed-availability";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -73,6 +72,7 @@ import {
   declineReasonText,
   referralAnswerBlocked,
   WARD_ACTION_REJECTION_LABELS,
+  wardDischargesDueToday,
   wardFlowReleaseGroup,
   type WardFlowTab,
   type WardShiftView,
@@ -1135,6 +1135,7 @@ export function WardHomeTab({
   const heldRows = outRows.filter((row) => row.group === "held");
   const pastRows = outRows.filter((row) => row.group === "past");
   const todayRows = outRows.filter((row) => row.group === "today");
+  const dueToday = wardDischargesDueToday(pendingBedReleases, now);
   const laterRows = outRows.filter((row) => row.group === "later");
   const answered = recentAnswers.slice(0, 6);
   const declineLeftNote = declineTargetLeftNote(declineOpenFor, incoming, recentAnswers, (id) =>
@@ -2007,14 +2008,9 @@ export function WardHomeTab({
               setShiftView("todo");
               setShiftSheetOpen(true);
             }}
-            dischargesToday={pastRows.length + todayRows.length /* past date is still due now */}
+            dischargesToday={dueToday.length}
             heldUp={outRows.filter((row) => row.group === "held").length}
-            confirmedToday={
-              pendingBedReleases.filter(
-                (release) =>
-                  release.state === "confirmed" && release.blocker === null && releaseBand(release, now) !== "tomorrow",
-              ).length
-            }
+            confirmedToday={dueToday.filter((release) => release.state === "confirmed").length}
             arrivals={expectedRows.length}
             backFromLeave={leaveRows.length}
             nextEta={

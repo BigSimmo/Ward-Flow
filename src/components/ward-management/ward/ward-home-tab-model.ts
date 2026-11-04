@@ -99,3 +99,15 @@ export function wardFlowReleaseGroup(release: BedRelease, now: Instant): "held" 
   if (dayOf(release.expectedAt) < dayOf(now)) return "past";
   return releaseBand(release, now) !== "beyond-today" ? "today" : "later";
 }
+
+/**
+ * The discharges the "Discharges today" summary counts: unblocked releases past their date or due
+ * today, never tomorrow. Its total and its confirmed count both come from this one list (Codex
+ * review on #1383), so a confirmed discharge later in the week cannot hide one still to confirm.
+ */
+export function wardDischargesDueToday(releases: readonly BedRelease[], now: Instant): BedRelease[] {
+  return releases.filter((release) => {
+    const group = wardFlowReleaseGroup(release, now);
+    return group === "past" || (group === "today" && releaseBand(release, now) !== "tomorrow");
+  });
+}
