@@ -12,7 +12,7 @@ import {
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
 } from "react";
-import { CalendarDays, ChevronDown, Clock, Copy, Search, SearchX, UserPlus, X } from "lucide-react";
+import { CalendarDays, ChevronDown, ChevronLeft, Clock, Copy, Search, SearchX, UserPlus, X } from "lucide-react";
 
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import {
@@ -21,14 +21,11 @@ import {
   DateField,
   FactGrid,
   FilterChip,
-  HeroStat,
   Icon,
   PhoneSheet,
-  PillTabs,
   Segmented,
   ShowMoreRow,
   StatusGlyph,
-  Tabs,
   Timeline,
   buttonClass,
   tableClasses,
@@ -57,6 +54,7 @@ import {
   type ClosedTodayRow,
 } from "./patient-census";
 
+import { censusSections } from "./patient-states";
 import styles from "./census.module.css";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
@@ -201,55 +199,12 @@ export function FlowChip({ closed, onOpen }: { closed: readonly ClosedTodayRow[]
   );
 }
 
-/**
- * The five group counts on the hero. While a search runs each becomes a match map, "8 of 47", and
- * a group with nothing found dims. Pressing one opens that group and scrolls to it.
- */
-export function CensusMapPills({
-  totals,
-  matched,
-  searching,
-  onJump,
-}: {
-  totals: Record<CensusGroup, number>;
-  matched: Record<CensusGroup, number>;
-  searching: boolean;
-  onJump: (group: CensusGroup) => void;
-}) {
-  return (
-    <div className={styles.mapPills} role="group" aria-label="Where patients are now">
-      {CENSUS_GROUPS.map((group) => {
-        const shown = searching ? matched[group.id] : totals[group.id];
-        return (
-          <HeroStat
-            key={group.id}
-            inline
-            command
-            onToggle={() => onJump(group.id)}
-            className={cx(styles.mapPill, searching && shown === 0 && styles.mapPillZero)}
-            value={
-              <>
-                {shown}
-                {searching ? <span className={styles.of}>of {totals[group.id]}</span> : null}
-              </>
-            }
-            label={
-              <span className={styles.mapLabel}>
-                <CensusGlyphMark glyph={group.glyph} size={9} />
-                {group.short}
-              </span>
-            }
-          />
-        );
-      })}
-    </div>
-  );
-}
-
 /* ───────────────────────── the census table ───────────────────────── */
 
 export type CensusTableProps = {
   rows: readonly CensusRow[];
+  /** PS1: a register state is chosen, so empty groups hide and the rest open, as in a search. */
+  narrowed?: boolean;
   totalPeople: number;
   searching: boolean;
   needle: string;
@@ -293,7 +248,7 @@ export function CensusTable(props: CensusTableProps) {
   const deferredNeedle = useDeferredValue(props.needle);
   const effectiveNeedle = props.needle === "" ? "" : deferredNeedle;
   const lifting = highlight !== null;
-  const groups = CENSUS_GROUPS.map((group) => ({ group, rows: rows.filter((row) => row.group === group.id) }));
+  const groups = censusSections(rows);
   const groupsFound = groups.filter((entry) => entry.rows.length > 0).length;
   // Device audit 11 Oct 2026: 51 Waiting and 41 Bed found fully open made the page 4,630px; each
   // open group shows its first ten with "Show all N" (On a ward keeps its own wider cap).
@@ -313,15 +268,18 @@ export function CensusTable(props: CensusTableProps) {
         Patients
       </h2>
       <div className={styles.toolbar}>
-        <Tabs
-          label="Now or history"
-          items={[
-            { id: "now", label: "Now", count: props.liveCount },
-            { id: "history", label: "History", count: props.historyCount },
-          ]}
-          value={tab}
-          onChange={props.onTab}
-        />
+        {/* PS1 (3 Nov 2026): the state switch on the band picks who is listed, so the table says how
+            many it lists instead of a second Now or History switch. History opens from the hero's
+            Today chip, and comes back here. */}
+        {tab === "now" ? (
+          <p className={styles.registerCount}>
+            <b>{rows.length}</b> {rows.length === 1 ? "person" : "people"}
+          </p>
+        ) : (
+          <Button variant="ghost" size="sm" icon={ChevronLeft} onClick={() => props.onTab("now")}>
+            Back to the register
+          </Button>
+        )}
         <span className={styles.spacer} />
         {tab === "now" ? (
           <>
@@ -403,10 +361,10 @@ export function CensusTable(props: CensusTableProps) {
                 </th>
               </tr>
             </thead>
-            {groups.map(({ group, rows: groupRows }) => {
-              if (searching && groupRows.length === 0) return null;
+            {groups.map(({ key: sectionKey, group, label: sectionLabel, rows: groupRows }) => {
+              if ((searching || props.narrowed) && groupRows.length === 0) return null;
               const litCount = lifting ? groupRows.filter(lifted).length : 0;
-              const open = searching || openGroups[group.id] || litCount > 0;
+              const open = searching || props.narrowed || openGroups[group.id] || litCount > 0;
               const cap =
                 searching || lifting
                   ? groupRows.length
@@ -418,7 +376,7 @@ export function CensusTable(props: CensusTableProps) {
                       ? groupRows.length
                       : GROUP_CAP;
               return (
-                <tbody key={group.id} id={`ward-patient-search-group-${group.id}`} className={styles.group}>
+                <tbody key={sectionKey} id={`ward-patient-search-group-${sectionKey}`} className={styles.group}>
                   <tr className={cx(styles.groupRow, group.id === "off" && styles.groupQuiet)}>
                     <th colSpan={cols} scope="rowgroup">
                       <button
@@ -429,14 +387,16 @@ export function CensusTable(props: CensusTableProps) {
                       >
                         <ChevronDown className={styles.chev} size={14} aria-hidden="true" />
                         <CensusGlyphMark glyph={group.glyph} />
-                        <span className={styles.groupLabel}>{group.label}</span>
+                        <span className={styles.groupLabel}>{sectionLabel}</span>
                         <span className={styles.groupCount}>{groupRows.length}</span>
                         {litCount > 0 ? <span className={styles.groupHint}>{litCount} highlighted</span> : null}
                         <span className={styles.spacer} />
                         {!open ? (
                           <span className={styles.groupHint}>Show {groupRows.length}</span>
-                        ) : group.id === "off" && !searching ? (
+                        ) : sectionKey === "off" && !searching ? (
                           <span className={styles.groupHint}>Records with nothing open</span>
+                        ) : sectionKey === "team" && !searching ? (
+                          <span className={styles.groupHint}>Nothing open, followed by a team</span>
                         ) : null}
                       </button>
                     </th>
@@ -1050,6 +1010,8 @@ export function CensusEmpty({
 /* ───────────────────────── phone ───────────────────────── */
 
 export type PhoneCensusProps = {
+  /** PS1: the register's state switch, drawn under the hero. */
+  stateSwitch?: ReactNode;
   rows: readonly CensusRow[];
   totals: Record<CensusGroup, number>;
   matched: Record<CensusGroup, number>;
@@ -1099,39 +1061,18 @@ export function PhoneCensus(props: PhoneCensusProps) {
   const { rows, searching, highlight } = props;
   const open = props.expandedKey === null ? null : (rows.find((row) => row.key === props.expandedKey) ?? null);
   const [offShown, setOffShown] = useState(false);
-  const offCount = rows.filter((row) => row.group === "off").length;
+  // PS1: people followed by a community team list as their own section; only those with no team wait.
+  const offCount = rows.filter((row) => row.group === "off" && row.communityTeam === null).length;
   // Not active records wait behind one button under the list unless a search is running.
-  const offInList = searching || offShown;
-  const groups = CENSUS_GROUPS.map((entry) => ({
-    ...entry,
-    rows: rows.filter((row) => row.group === entry.id),
-  })).filter((entry) => entry.rows.length > 0 && (entry.id !== "off" || offInList));
-  // The five jump actions move the list to their group; current marks the last explicit jump.
-  const [jumped, setJumped] = useState<CensusGroup | null>(null);
+  // A state switch that leaves only Not active rows shows them straight away.
+  const offInList = searching || offShown || (offCount > 0 && offCount === rows.length);
+  const groups = censusSections(rows)
+    .map((section) => ({ ...section.group, key: section.key, label: section.label, rows: section.rows }))
+    .filter((entry) => entry.rows.length > 0 && (entry.key !== "off" || offInList));
   return (
     <section className={styles.phone} data-testid="ward-patient-search-results-console" aria-label="Patients">
-      <div className={styles.phoneGroups} role="group" aria-label="Where patients are now">
-        {CENSUS_GROUPS.map((entry) => {
-          const n = searching ? props.matched[entry.id] : props.totals[entry.id];
-          return (
-            <button
-              key={entry.id}
-              type="button"
-              aria-current={props.tab === "now" && jumped === entry.id ? "true" : undefined}
-              className={cx(styles.phoneGroup, searching && n === 0 && styles.phoneGroupZero)}
-              onClick={() => {
-                props.onTab("now");
-                if (entry.id === "off") setOffShown(true);
-                setJumped(entry.id);
-                props.onJump(entry.id);
-              }}
-            >
-              <b>{n}</b>
-              <span>{entry.short}</span>
-            </button>
-          );
-        })}
-      </div>
+      {/* PS1 (3 Nov 2026): the state switch replaces the six group jump buttons. */}
+      <div className={styles.phoneStates}>{props.stateSwitch}</div>
       <div className={cx(styles.phoneChips, phoneRows.chipRow)} role="group" aria-label="Highlight">
         {CENSUS_HIGHLIGHTS.map((chip) => (
           <FilterChip
@@ -1150,18 +1091,15 @@ export function PhoneCensus(props: PhoneCensusProps) {
           </FilterChip>
         ))}
       </div>
-      <div className={styles.phoneSeg}>
-        <PillTabs<"now" | "history">
-          label="Patients now or history"
-          value={props.tab}
-          onChange={props.onTab}
-          fill
-          items={[
-            { id: "now", label: "Now", count: searching ? rows.length : undefined },
-            { id: "history", label: "History", count: props.historyCount || undefined },
-          ]}
-        />
-      </div>
+      {/* PS1 (3 Nov 2026): no Now or History switch under the state switch. History is one link at
+          the foot of the list, and a Back button here while it is open. */}
+      {props.tab === "history" ? (
+        <div className={styles.phoneSeg}>
+          <Button variant="ghost" size="sm" icon={ChevronLeft} onClick={() => props.onTab("now")}>
+            Back to the register
+          </Button>
+        </div>
+      ) : null}
       {props.tab === "history" ? (
         props.history
       ) : rows.length === 0 ? (
@@ -1173,8 +1111,8 @@ export function PhoneCensus(props: PhoneCensusProps) {
             const shown = full ? group.rows : group.rows.slice(0, PHONE_GROUP_ROWS);
             return (
               <section
-                key={group.id}
-                id={`ward-patient-search-group-${group.id}`}
+                key={group.key}
+                id={`ward-patient-search-group-${group.key}`}
                 className={styles.phoneGroupBlock}
                 aria-label={group.label}
               >
@@ -1248,6 +1186,9 @@ export function PhoneCensus(props: PhoneCensusProps) {
           {/* Redesign: the same plain link as each group's "Show all", at the foot of the list. */}
           {offCount > 0 && !offInList ? (
             <ShowMoreRow onClick={() => setOffShown(true)}>Show {offCount} not active records</ShowMoreRow>
+          ) : null}
+          {props.historyCount ? (
+            <ShowMoreRow onClick={() => props.onTab("history")}>Closed today, {props.historyCount}</ShowMoreRow>
           ) : null}
         </div>
       )}

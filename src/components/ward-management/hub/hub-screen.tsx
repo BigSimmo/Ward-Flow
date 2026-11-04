@@ -79,6 +79,7 @@ import { useWardFormSave } from "../use-ward-form-save";
 import styles from "./hub.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { HubPlaceRow } from "./hub-place-row";
+import { PlacesTrack } from "./places-track";
 import { useHubDesk } from "./hub-desk";
 import { capacityRequestIsOpen } from "@/components/ward-management/ward/ward-buzz-keys";
 import { WARD_CAPACITY_HREF } from "@/components/ward-management/ward-nav";
@@ -673,7 +674,7 @@ export function HubScreen() {
       boxClassName={isPhone ? styles.phoneSearchBox : styles.heroSearch}
       aria-label="Search wards, EDs and community teams"
       aria-describedby={isPhone ? undefined : "hub-search-hint"}
-      placeholder={isPhone ? "Search places" : "Search a ward, hospital, ED, team or health service"}
+      placeholder={isPhone ? "Search places" : "Search a ward, hospital, ED, team or service"}
       value={query}
       onChange={(event) => setQuery(event.target.value)}
       onKeyDown={onSearchKeyDown}
@@ -708,8 +709,10 @@ export function HubScreen() {
             </>
           }
           aside={<PageLiveChip paused={paused} onTogglePause={togglePause} />}
-          // Search first, in the header. The bed chips are gone (review point 21).
-          bar={isPhone ? undefined : searchBox}
+          // PL1 (Josh, 3 Nov 2026): the band holds the Places and Catchments switch; this page's own
+          // search moved into the list card, so the band no longer holds a second search box beside
+          // the header's global search.
+          bar={<PlacesTrack value="places" />}
           foot={
             isPhone ? undefined : (
               <CheckingFoot
@@ -782,6 +785,7 @@ export function HubScreen() {
               </div>
             ) : (
               <div className={styles.controls}>
+                <div className={styles.listSearchRow}>{searchBox}</div>
                 <div className={styles.controlsRow}>
                   <Segmented label="Show" items={kindItems} value={kind} onChange={chooseKind} />
                   <span className={styles.controlLabel}>Order</span>
