@@ -125,9 +125,8 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { MeetingActionsDue } from "@/components/ward-management/bed-meeting/meeting-actions-due";
 import { useCanOpenHref, useIsDatesOnlyStay } from "@/components/ward-management/shell/ward-access";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { Dialog, type JourneyStage, PhoneSheet, useIsPhone } from "@/components/wf";
+import { Dialog, PhoneSheet, useIsPhone } from "@/components/wf";
 import { PatientClearanceDialog, type ClearanceDraft } from "./patient-clearance-dialog";
-import { patientJourneyStages } from "./patient-journey";
 import { isOnOrder } from "../ward-stay-legal";
 import { legalStatusTextIsInvoluntary } from "../ward-support-notifications";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
@@ -608,7 +607,6 @@ export function PatientNowScreen({
       : undefined;
   const heroStay = stayCurrent ? resolved.liveAdmission : lastStay;
   const heroStayMovement = heroStay?.movementId ? movements.find((m) => m.id === heroStay.movementId) : undefined;
-  const heroStayUnitName = heroStay ? (units.find((u) => u.id === heroStay.unitId)?.name ?? "the ward") : undefined;
   const awaySince =
     mode === "leave"
       ? stayLeaveBed?.confirmedAt
@@ -617,33 +615,6 @@ export function PatientNowScreen({
         : mode === "ed"
           ? (resolved.liveAdmission?.awayAtEmergencyDepartmentSince ?? undefined)
           : undefined;
-  const phoneStayStages: JourneyStage[] | undefined = (() => {
-    if (!isPhone || isLiveBedflow || !heroStay || heroStay.arrivedAt === null) return undefined;
-    // Audit A3-12: a missing person is not "On ward"; the absence card and figures carry the story.
-    if (mode === "awol") return undefined;
-    const arrivedAt = heroStay.arrivedAt;
-    const before = heroStayMovement
-      ? patientJourneyStages(heroStayMovement, arrivedAt).map((stage) => ({ ...stage, now: undefined }))
-      : [];
-    const stayEnd = heroStay.leftAt ?? awaySince ?? now;
-    const stages: JourneyStage[] = [
-      ...before,
-      {
-        id: "stay",
-        label: `On ward, ${heroStayUnitName}`,
-        minutes: Math.max(0, stayEnd - arrivedAt),
-        now: heroStay.leftAt === null && awaySince === undefined ? true : undefined,
-      },
-    ];
-    if (heroStay.leftAt === null && awaySince !== undefined)
-      stages.push({
-        id: "away",
-        label: mode === "leave" ? "On leave" : "At ED",
-        minutes: Math.max(0, now - awaySince),
-        now: true,
-      });
-    return stages;
-  })();
   const formMovement = movementInForce ? liveMovement : stayCurrent ? heroStayMovement : undefined;
   const ctoInForce = activeCommunityTreatmentOrder(livePatient);
   const movementTimeLeft =
@@ -1193,7 +1164,6 @@ export function PatientNowScreen({
           now={now}
           openOperations={openOperations}
           phoneMovement={phoneMovement}
-          phoneStayStages={phoneStayStages}
           preferredName={preferredName}
           record={record}
           recordTabs={recordTabs}

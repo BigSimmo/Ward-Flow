@@ -26,18 +26,7 @@ import { type Patient } from "@/components/ward-management/ward-patients";
 import { dayLabel, type PatientStatusContext } from "./patient-status-card";
 import { type PatientNowRecord, STAGES, clock, dur } from "./patient-now-records";
 import styles from "./patient-now.module.css";
-import {
-  Badge,
-  Button,
-  Card,
-  CardHead,
-  JourneyStrip,
-  LiveChip,
-  type JourneyStage,
-  StatusGlyph,
-  buttonClass,
-  phoneRows,
-} from "@/components/wf";
+import { Badge, Button, Card, CardHead, LiveChip, StatusGlyph, buttonClass, phoneRows } from "@/components/wf";
 import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { PhoneClearFact, getStageBedflowDetail } from "./patient-now-screen-helpers";
@@ -87,7 +76,6 @@ export type PatientNowSummaryProps = {
   now: number;
   openOperations: () => void;
   phoneMovement: boolean;
-  phoneStayStages: JourneyStage[] | undefined;
   preferredName: string | undefined;
   record: PatientNowRecord;
   recordTabs: JSX.Element;
@@ -111,7 +99,7 @@ export type PatientNowSummaryProps = {
   /** PT1 round 2: Record CTO beside New referral on a record with nothing open. */
   recordCto?: { onClick: () => void; reason?: string };
   /** PT1 round 3: the patient's journey, six steps from ED to community care. */
-  careSteps?: CareStep[];
+  careSteps: CareStep[];
   onOpenHistory?: () => void;
 };
 
@@ -146,7 +134,6 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
     now,
     openOperations,
     phoneMovement,
-    phoneStayStages,
     preferredName,
     record,
     recordTabs,
@@ -179,25 +166,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
       : stateTag.tag
     : modeMeta.pill;
   const tagTone = stateTag?.tone ?? modeMeta.tone;
-  const STEPPER = phoneMovement ? (
-    <div className={styles.phDots}>
-      <span className={styles.phDotRow} aria-hidden="true">
-        {STAGES.map((stage, i) => (
-          <span
-            key={stage.id}
-            className={styles.phDot}
-            data-s={i < currentStageIndex ? "done" : i === currentStageIndex ? "now" : "next"}
-          />
-        ))}
-      </span>
-      <span>
-        <span className="sr-only">
-          Stage {currentStageIndex + 1} of {STAGES.length}:{" "}
-        </span>
-        {STAGES[currentStageIndex].label}
-      </span>
-    </div>
-  ) : isLiveBedflow ? (
+  const STEPPER = isLiveBedflow ? (
     <ol
       className={styles.v6Steps}
       aria-label={`The seven stages. Stage ${currentStageIndex + 1} of ${STAGES.length}, ${STAGES[currentStageIndex].label}, is current`}
@@ -538,45 +507,27 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
             </span>
           )
         }
-        journey={
-          phoneStayStages && !careSteps ? (
-            <JourneyStrip
-              surface="hero"
-              label="This record's last stay"
-              stages={phoneStayStages}
-              formatDuration={(minutes) =>
-                minutes >= 1440 ? `${Math.floor(minutes / 1440)}d ${Math.floor((minutes % 1440) / 60)}h` : dur(minutes)
-              }
-              note={false}
-              className={`${styles.v6Journey} ${styles.phStayStrip}`}
-            />
-          ) : undefined
-        }
         steps={
-          careSteps ? (
-            <>
-              <PatientCareJourneyStrip
-                steps={careSteps}
-                onOpenHistory={onOpenHistory}
-                extra={
-                  isLiveBedflow && !isPhone ? (
-                    <button
-                      type="button"
-                      className={journeyToggleClass}
-                      aria-expanded={stagesOpen}
-                      onClick={() => setStagesOpen((open) => !open)}
-                      data-testid="ward-patient-stages-toggle"
-                    >
-                      {stagesOpen ? "Hide stages" : "All 7 stages"}
-                    </button>
-                  ) : undefined
-                }
-              />
-              {isLiveBedflow && !isPhone && stagesOpen ? STEPPER : null}
-            </>
-          ) : (
-            STEPPER
-          )
+          <>
+            <PatientCareJourneyStrip
+              steps={careSteps}
+              onOpenHistory={onOpenHistory}
+              extra={
+                isLiveBedflow && !isPhone ? (
+                  <button
+                    type="button"
+                    className={journeyToggleClass}
+                    aria-expanded={stagesOpen}
+                    onClick={() => setStagesOpen((open) => !open)}
+                    data-testid="ward-patient-stages-toggle"
+                  >
+                    {stagesOpen ? "Hide stages" : "All 7 stages"}
+                  </button>
+                ) : undefined
+              }
+            />
+            {isLiveBedflow && !isPhone && stagesOpen ? STEPPER : null}
+          </>
         }
         tabs={recordTabs}
         actions={
