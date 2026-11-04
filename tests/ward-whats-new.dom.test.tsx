@@ -15,6 +15,7 @@ import {
   WHATS_NEW,
   WHATS_NEW_CARD_LIMIT,
   WHATS_NEW_STORAGE_KEY,
+  LEGACY_ORDER,
   WardWhatsNew,
   TOUR_AUTO_STARTED_EVENT,
   markWhatsNewSeen,
@@ -85,10 +86,9 @@ describe("what's new note", () => {
   });
 
   it("reads an id stored before entry files against the old list order", () => {
-    // Only lines from the old single list (up to 3 Nov) are in question; a line added later is new
-    // to every device and rightly shows as well.
-    const oldList = WHATS_NEW.filter((entry) => entry.date <= "2026-11-03");
-    const ids = (seen: string) => unseenWhatsNew(seen, oldList).map((entry) => entry.id);
+    // Only the lines from before entry files, so a newer entry file never changes this answer.
+    const before = WHATS_NEW.filter((entry) => LEGACY_ORDER.includes(entry.id));
+    const ids = (seen: string) => unseenWhatsNew(seen, before).map((entry) => entry.id);
     // Under the old order only the referral line came after this id, though it no longer sorts last.
     expect(ids("2026-11-03-one-alerts-switch")).toEqual(["2026-11-03-simpler-new-referral"]);
     // This id now sorts last, yet four lines came after it in the old order (the card shows four).
