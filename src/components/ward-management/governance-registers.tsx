@@ -792,7 +792,11 @@ function GovernanceSession({
                   !reviewGate.allowed ? reviewGate.reason : selected === null ? "Choose an event first" : undefined
                 }
                 reasonDisplay="tooltip"
-                onClick={() => setEndorseOpen(true)}
+                onClick={() => {
+                  // Starting a review makes the event the user's own, so a rotation cannot close it.
+                  setAutoOpened(false);
+                  setEndorseOpen(true);
+                }}
               >
                 Record review
               </Button>
