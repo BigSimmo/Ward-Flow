@@ -1244,7 +1244,13 @@
     height: 32px;
   }
 
+  /* Site review (12 Oct 2026): the title opens the row, so it is a 44px target. Its 12px block
+     padding is taken back by a negative margin, so the row keeps its layout. */
   .rowTitle {
+    justify-self: stretch;
+    min-height: 3rem;
+    margin-block: -12px;
+    padding-block: 12px;
     font-size: var(--wf-fs-14);
     line-height: var(--wf-lh-14);
   }
