@@ -45,23 +45,38 @@ export function ReferralLetterDocument({
       </section>
 
       <dl className={styles.keyStrip}>
-        {model.key.map((item) => (
-          <LetterRow key={item.label} item={item} />
-        ))}
+        {model.key
+          .filter((item) => !item.missing)
+          .map((item) => (
+            <LetterRow key={item.label} item={item} />
+          ))}
       </dl>
 
       <dl className={styles.details}>
-        {model.details.map((item) => (
-          <LetterRow key={item.label} item={item} />
-        ))}
+        {model.details
+          .filter((item) => !item.missing)
+          .map((item) => (
+            <LetterRow key={item.label} item={item} />
+          ))}
       </dl>
 
-      <section className={styles.prose}>
-        <h4>Reason for referral</h4>
-        <p className={model.reason ? undefined : styles.missing}>{model.reason || "Not recorded"}</p>
-        <h4>History</h4>
-        <p className={model.history ? undefined : styles.missing}>{model.history || "Not recorded"}</p>
-      </section>
+      {/* Answered fields only, the same rule as the copied text. */}
+      {model.reason || model.history ? (
+        <section className={styles.prose}>
+          {model.reason ? (
+            <>
+              <h4>Reason for referral</h4>
+              <p>{model.reason}</p>
+            </>
+          ) : null}
+          {model.history ? (
+            <>
+              <h4>History</h4>
+              <p>{model.history}</p>
+            </>
+          ) : null}
+        </section>
+      ) : null}
 
       <footer className={styles.signoff}>
         <p className={styles.eyebrow}>Referred by</p>

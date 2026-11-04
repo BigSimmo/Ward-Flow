@@ -38,7 +38,11 @@ export function ReferralLetterPreview({
           type="button"
           className={styles.btn}
           data-testid="ward-referral-copy-letter"
-          onClick={() => copyText(referralLetterText(letterInput, draftedAt), "Letter copied")}
+          onClick={() => {
+            const text = referralLetterText(letterInput, draftedAt);
+            // A sent letter copies with its referral ID and sent time, as it reads on screen.
+            copyText(stamp ? text.replace(`Draft ${draftedAt} AWST`, stamp) : text, "Letter copied");
+          }}
         >
           <Copy aria-hidden="true" />
           Copy text

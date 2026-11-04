@@ -98,6 +98,8 @@ export function WaitRunway({
   const [pinned, setPinned] = useState<string | null>(null);
   const cardId = useId();
   const cardRef = useRef<HTMLDivElement>(null);
+  // The marker that pinned the card, so Escape can hand focus back to it.
+  const pinnedMarkerRef = useRef<HTMLElement | null>(null);
   const leaveTimer = useRef<number | undefined>(undefined);
   // The card is portalled above the page (the dark band clips anything that leaves it), so it is
   // placed from the marker's own box and kept up for a moment while the pointer crosses to it.
@@ -134,6 +136,7 @@ export function WaitRunway({
       if (event.key !== "Escape") return;
       event.preventDefault();
       setPinned(null);
+      if (!compact) pinnedMarkerRef.current?.focus();
     };
     const onPress = (event: PointerEvent) => {
       const target = event.target as Node;
@@ -146,7 +149,12 @@ export function WaitRunway({
       document.removeEventListener("keydown", onKey);
       document.removeEventListener("pointerdown", onPress);
     };
-  }, [pinned]);
+  }, [pinned, compact]);
+  // On the desktop the card is portalled outside the runway, so focus moves into it when pinned.
+  useEffect(() => {
+    if (pinned === null || compact) return;
+    cardRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+  }, [pinned, compact]);
   const entries: RunwayEntry[] = queued.map((referral) => {
     const minutes = referralClocks(referral, now).sinceReferral;
     return { referral, minutes, x: runwayMarkerPercent(runwayPercent(minutes), trackPx, compact) };
@@ -302,6 +310,7 @@ export function WaitRunway({
               onClick={(event) => {
                 if (many) {
                   show(group.key, event.currentTarget);
+                  pinnedMarkerRef.current = event.currentTarget;
                   setPinned((key) => (key === group.key ? null : group.key));
                 } else onSelect(first.referral.id);
               }}

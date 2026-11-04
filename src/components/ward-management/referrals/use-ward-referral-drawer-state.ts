@@ -1122,6 +1122,11 @@ export function useWardReferralDrawerState({
     umrn: patientRecord ? currentPatient.umrn : "",
     ageSex: patientRecord ? ageSexLabel(currentPatient) : "",
     suburb: catchmentSuburb,
+    catchment: catchmentNotKnown
+      ? "Catchment not known"
+      : catchmentConfirmed && catchmentTeam.trim()
+        ? catchmentTeam.trim()
+        : undefined,
     from: originLabel,
     recipients: recipientLabels,
     urgency: tier === undefined ? "" : tierLabel,
