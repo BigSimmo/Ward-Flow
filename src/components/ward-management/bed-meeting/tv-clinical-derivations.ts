@@ -279,6 +279,8 @@ export type EdClinicalRow = {
   checks: ClinicalFact[];
   referral: ClinicalFact;
   next: ClinicalFact;
+  /** Where the journey is on the way to a bed, for the Bed search board. */
+  step: "review" | "bed" | "book" | "transport";
 };
 
 export type EdClinicalInputs = RecordInputs & {
@@ -346,6 +348,14 @@ export function edClinicalRows(input: EdClinicalInputs): EdClinicalRow[] | undef
         checks,
         referral,
         next,
+        step:
+          accepted === undefined
+            ? movement.examination
+              ? "bed"
+              : "review"
+            : movement.transport && movement.transport.cancelledAt === undefined
+              ? "transport"
+              : "book",
       };
     })
     .sort((left, right) => right.waitMinutes - left.waitMinutes || left.id.localeCompare(right.id));

@@ -2,6 +2,7 @@
 
 .switch {
   display: inline-flex;
+  flex-wrap: wrap;
   padding: 3px;
   border: 1px solid var(--wf-line);
   border-radius: 999px;

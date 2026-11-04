@@ -12,7 +12,7 @@ type Param = string | string[] | undefined;
 const one = (value: Param) => (typeof value === "string" ? value : undefined);
 
 /** `?service=` (a health service, or `all`), `?ward=` (a unit id) or `?ed=` (an ED id) picks the screen;
- * `?board=clinical` or `?board=handover` picks a ward or ED screen's clinical board. */
+ * `?board=` picks a ward or ED screen's board (clinical, handover, obs, legal, today, or beds on an ED). */
 export default async function WardBedMeetingTvPage({
   searchParams,
 }: {

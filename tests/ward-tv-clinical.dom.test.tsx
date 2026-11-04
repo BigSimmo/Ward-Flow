@@ -60,6 +60,12 @@ describe("TV board links", () => {
     expect(tvBoardOf("clinical", "ward")).toBe("clinical");
     expect(tvBoardOf("handover", "ward")).toBe("handover");
     expect(tvBoardOf("handover", "ed")).toBe("flow");
+    for (const board of ["obs", "legal", "today"] as const) {
+      expect(tvBoardOf(board, "ward")).toBe(board);
+      expect(tvBoardOf(board, "ed")).toBe("flow");
+    }
+    expect(tvBoardOf("beds", "ed")).toBe("beds");
+    expect(tvBoardOf("beds", "ward")).toBe("flow");
     expect(tvBoardOf("clinical", "meeting")).toBe("flow");
     expect(tvBoardOf("anything", "ward")).toBe("flow");
     expect(tvBoardOf(undefined, "ed")).toBe("flow");
@@ -188,5 +194,65 @@ describe("clinical TV screens", () => {
     unmount();
     renderTv({ ed: ed.id });
     expect(screen.getByTestId("bed-meeting-tv")).toHaveAttribute("data-view", "ed");
+  });
+
+  it("adds the task boards beside the others and keeps every bed on one of their lanes", () => {
+    const unit = wardWithLeave();
+    for (const [board, testId] of [
+      ["obs", "ward-obs-board"],
+      ["legal", "ward-legal-board"],
+      ["today", "ward-today-board"],
+    ] as const) {
+      const { unmount } = renderTv({ ward: unit.id, board });
+      expect(screen.getByTestId("bed-meeting-tv")).toHaveAttribute("data-board", board);
+      expect(screen.getByTestId(testId)).toBeInTheDocument();
+      expect(screen.getAllByTestId("tv-lane")).toHaveLength(4);
+      const switcher = screen.getByTestId("tv-board-switch");
+      for (const name of ["Clinical", "Handover", "Obs and leave", "Legal", "Today", "Bed flow"])
+        expect(within(switcher).getByRole("link", { name })).toBeInTheDocument();
+      unmount();
+    }
+    // Obs and leave and Legal place every person this ward holds a bed for exactly once.
+    renderTv({ ward: unit.id, board: "obs" });
+    const { state, records } = seed();
+    const rows = wardClinicalRows({
+      ...records,
+      unit,
+      admissions: state.admissions,
+      leaveBeds: state.leaveBeds,
+      bedReleases: state.bedReleases,
+      now: NOW_ANCHOR,
+      nameOf: (subject) => subject.id,
+    });
+    expect(screen.getByTestId("ward-obs-board").querySelectorAll("h2 span")).toHaveLength(4);
+    const counted = [...screen.getByTestId("ward-obs-board").querySelectorAll("h2 span")].reduce(
+      (sum, badge) => sum + Number(badge.textContent),
+      0,
+    );
+    expect(counted).toBe(rows.length);
+  });
+
+  it("shows the ED bed search board with each person in one step", () => {
+    const { state, records } = seed();
+    const accessTargetMinutes = state.configuration.edAccessTargetMinutes;
+    const rowsFor = (edId: string) =>
+      edClinicalRows({
+        ...records,
+        edId,
+        units: state.units,
+        now: NOW_ANCHOR,
+        accessTargetMinutes,
+        nameOf: (m) => m.id,
+      }) ?? [];
+    const ed = [...allEmergencyDepartments()].sort((a, b) => rowsFor(b.id).length - rowsFor(a.id).length)[0];
+    renderTv({ ed: ed.id, board: "beds" });
+    expect(screen.getByTestId("bed-meeting-tv")).toHaveAttribute("data-board", "beds");
+    const board = screen.getByTestId("ed-beds-board");
+    const counted = [...board.querySelectorAll("h2 span")].reduce((sum, badge) => sum + Number(badge.textContent), 0);
+    expect(counted).toBe(rowsFor(ed.id).length);
+    expect(within(screen.getByTestId("tv-board-switch")).getByRole("link", { name: "Bed search" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
   });
 });

@@ -61,7 +61,8 @@ import { TvFooterText, TvLeaveLink } from "./tv-leave-link";
 import { bedCountText } from "./tv-bed-count-text";
 import { edClinicalRows, wardClinicalRows } from "./tv-clinical-derivations";
 import { EdClinicalTvView, WardClinicalTvView, WardHandoverTvView } from "./tv-clinical-views";
-import { BoardSwitch, LivePulse, tvBoardOf, type TvBoard } from "./tv-board-switch";
+import { BoardSwitch, LivePulse, tvBoardOf, tvBoardTitle, type TvBoard } from "./tv-board-switch";
+import { EdBedSearchTvView, WardLegalTvView, WardObsLeaveTvView, WardTodayTvView } from "./tv-function-views";
 import styles from "./bed-meeting-tv.module.css";
 
 const TREND_SPAN_HOURS = ED_TREND_SPAN_MINUTES / 60;
@@ -1110,7 +1111,7 @@ export type BedMeetingTvScreenProps = {
   ward?: string;
   /** `?ed=` an emergency department id: that department's screen. */
   ed?: string;
-  /** `?board=` on a ward or ED screen: `clinical` or `handover` (ward only). Bed flow without it. */
+  /** `?board=` on a ward or ED screen: one of the boards in `tv-board-switch.tsx`. Bed flow without it. */
   board?: string;
 };
 
@@ -1299,15 +1300,9 @@ export function BedMeetingTvScreen({
               : "Screen not found";
   const eyebrow =
     view.kind === "ward" || view.kind === "ward-clinical"
-      ? board === "handover"
-        ? "Ward handover"
-        : board === "clinical"
-          ? "Ward clinical"
-          : "Ward"
+      ? (tvBoardTitle(board, "ward") ?? "Ward")
       : view.kind === "ed" || view.kind === "ed-clinical"
-        ? board === "clinical"
-          ? "ED clinical"
-          : "Emergency department"
+        ? (tvBoardTitle(board, "ed") ?? "Emergency department")
         : view.kind === "network"
           ? view.sheet.service === null
             ? "State"
@@ -1405,17 +1400,20 @@ export function BedMeetingTvScreen({
       ) : view.kind === "ward" ? (
         <WardTvView sheet={view.sheet} now={shownNow} scenario={scenarioLabel} nameOfStay={nameOfStay} />
       ) : view.kind === "ward-clinical" ? (
-        board === "handover" ? (
-          <WardHandoverTvView
-            rows={view.rows}
-            footer={<Footer scope={view.unit.name} scenario={scenarioLabel} now={shownNow} />}
-          />
-        ) : (
-          <WardClinicalTvView
-            rows={view.rows}
-            footer={<Footer scope={view.unit.name} scenario={scenarioLabel} now={shownNow} />}
-          />
-        )
+        (() => {
+          const footer = <Footer scope={view.unit.name} scenario={scenarioLabel} now={shownNow} />;
+          if (board === "handover") return <WardHandoverTvView rows={view.rows} footer={footer} />;
+          if (board === "obs") return <WardObsLeaveTvView rows={view.rows} footer={footer} />;
+          if (board === "legal") return <WardLegalTvView rows={view.rows} footer={footer} />;
+          if (board === "today") return <WardTodayTvView rows={view.rows} footer={footer} />;
+          return <WardClinicalTvView rows={view.rows} footer={footer} />;
+        })()
+      ) : view.kind === "ed-clinical" && board === "beds" ? (
+        <EdBedSearchTvView
+          rows={view.rows}
+          accessTargetMinutes={accessTarget}
+          footer={<Footer scope={view.department.name} scenario={scenarioLabel} now={shownNow} />}
+        />
       ) : view.kind === "ed-clinical" ? (
         <EdClinicalTvView
           rows={view.rows}

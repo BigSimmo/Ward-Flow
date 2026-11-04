@@ -75,7 +75,7 @@ function PageMark({ page, pages, noun }: { page: number; pages: number; noun: st
   );
 }
 
-function Fact({ fact, empty = "" }: { fact: ClinicalFact | null; empty?: string }) {
+export function Fact({ fact, empty = "" }: { fact: ClinicalFact | null; empty?: string }) {
   if (!fact) return <span className={styles.quiet}>{empty}</span>;
   return (
     <span className={styles.fact} data-tone={fact.tone}>
@@ -85,7 +85,7 @@ function Fact({ fact, empty = "" }: { fact: ClinicalFact | null; empty?: string 
   );
 }
 
-function Risks({ risks }: { risks: string[] }) {
+export function Risks({ risks }: { risks: string[] }) {
   if (risks.length === 0) return <span className={styles.quiet}>None recorded</span>;
   return (
     <span className={styles.risks}>
@@ -98,7 +98,7 @@ function Risks({ risks }: { risks: string[] }) {
   );
 }
 
-function Summary({ items }: { items: { label: string; value: number; tone?: "danger" | "warning" }[] }) {
+export function Summary({ items }: { items: { label: string; value: number; tone?: "danger" | "warning" }[] }) {
   return (
     <ul className={styles.summary} aria-label="At a glance">
       {items.map((item) => (

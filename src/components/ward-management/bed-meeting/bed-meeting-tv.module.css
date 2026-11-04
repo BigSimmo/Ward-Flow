@@ -25,7 +25,7 @@
 
 /* The clinical and handover boards (4 Nov 2026) are exactly one screen tall. Their lists page
  * themselves (`tv-clinical-views.tsx`), so nothing ever scrolls or runs off the bottom. */
-.tv:is([data-board="clinical"], [data-board="handover"]) {
+.tv:not([data-board="flow"]) {
   height: 100dvh;
   overflow: hidden;
 }

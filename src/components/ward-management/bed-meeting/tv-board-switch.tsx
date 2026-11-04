@@ -9,26 +9,39 @@ import styles from "./tv-board-switch.module.css";
  * clinical board for staff, or (ward only) the handover board. The choice is in the link, so a
  * locked TV comes back to the same board after a reload.
  */
-export type TvBoard = "flow" | "clinical" | "handover";
+export type TvBoard = "flow" | "clinical" | "handover" | "obs" | "legal" | "today" | "beds";
 
-export function tvBoardOf(value: string | undefined, kind: "ward" | "ed" | "meeting"): TvBoard {
-  if (kind === "meeting") return "flow";
-  if (value === "clinical") return "clinical";
-  if (value === "handover" && kind === "ward") return "handover";
-  return "flow";
-}
-
+/**
+ * One board per job (Josh, 4 Nov 2026: "add different types/versions based on the function
+ * required"). Bed flow stays the default and keeps every existing link as it was.
+ */
 const BOARDS: Record<"ward" | "ed", { id: TvBoard; label: string }[]> = {
   ward: [
     { id: "clinical", label: "Clinical" },
     { id: "handover", label: "Handover" },
+    { id: "obs", label: "Obs and leave" },
+    { id: "legal", label: "Legal" },
+    { id: "today", label: "Today" },
     { id: "flow", label: "Bed flow" },
   ],
   ed: [
     { id: "clinical", label: "Clinical" },
+    { id: "beds", label: "Bed search" },
     { id: "flow", label: "Bed flow" },
   ],
 };
+
+export function tvBoardOf(value: string | undefined, kind: "ward" | "ed" | "meeting"): TvBoard {
+  if (kind === "meeting") return "flow";
+  return BOARDS[kind].find((board) => board.id === value)?.id ?? "flow";
+}
+
+/** The board's name for the TV's eyebrow, such as "Ward obs and leave". */
+export function tvBoardTitle(board: TvBoard, kind: "ward" | "ed"): string | undefined {
+  if (board === "flow") return undefined;
+  const label = BOARDS[kind].find((candidate) => candidate.id === board)?.label;
+  return label === undefined ? undefined : `${kind === "ward" ? "Ward" : "ED"} ${label.toLowerCase()}`;
+}
 
 export function BoardSwitch({
   current,
