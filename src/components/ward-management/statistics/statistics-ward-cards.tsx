@@ -2,7 +2,7 @@
 // Two of one ward's statistics cards, split out of statistics-ward-screen.tsx to keep it under the
 // line cap. The coordinator and the ward desk lay them out differently (statistics-ward-screen.tsx).
 
-import { BedDouble, Users } from "lucide-react";
+import { BedSingle, Users } from "lucide-react";
 
 import { CardBody, SrOnly, StatusGlyph, cx, durMinutes } from "@/components/wf";
 import { splitDuration } from "@/components/ward-management/ward-clock";
@@ -137,7 +137,7 @@ export function BedsNowCard({
   const { unit, emptyBeds, allocatableBeds, openBeds, pendingPreparation, oldestPulled } = model;
   return (
     <StatCard
-      icon={BedDouble}
+      icon={BedSingle}
       title="Beds now"
       aside={`${unit.beds} beds`}
       id="ward-beds"

@@ -1,6 +1,6 @@
 "use client";
 
-import { BedDouble, ChevronDown, ChevronRight, Clock, Hourglass, Lock, Sparkles } from "lucide-react";
+import { BedSingle, ChevronDown, ChevronRight, Clock, Hourglass, Lock, Sparkles } from "lucide-react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { Button, Icon, Menu, StatusGlyph, durMinutes, type WfTone } from "@/components/wf";
@@ -53,7 +53,7 @@ export function HandoverGlance({
       {beds ? (
         <span className={styles.gl}>
           <Icon
-            icon={BedDouble}
+            icon={BedSingle}
             size={14}
             className={styles.glIcon}
             data-tone={beds.ready >= beds.needed ? "success" : "warning"}

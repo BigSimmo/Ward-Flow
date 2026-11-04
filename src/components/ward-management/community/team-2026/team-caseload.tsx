@@ -8,7 +8,7 @@
  */
 
 import { useMemo, useState } from "react";
-import { BedDouble, ChevronDown, House, Users } from "lucide-react";
+import { BedSingle, ChevronDown, House, Users } from "lucide-react";
 import { Button, Card, CardHead, Segmented, SrOnly, StatusGlyph } from "@/components/wf";
 import home from "@/components/ward-management/ward/ward-home-tab.module.css";
 import { CLIENTS, DEMO_FIGURES, DISCHARGED, INPATIENTS, IN_BED, STAFF, shortName } from "./midland-demo";
@@ -122,7 +122,7 @@ export function TeamCaseload({
                 <td>
                   {c.w === "h" ? (
                     <span className={t.where}>
-                      <BedDouble size={14} aria-hidden="true" />
+                      <BedSingle size={14} aria-hidden="true" />
                       <span>{c.where}</span>
                     </span>
                   ) : (
@@ -165,7 +165,7 @@ export function TeamHospital() {
     <>
       <Card className={home.v6Card}>
         <CardHead
-          icon={BedDouble}
+          icon={BedSingle}
           title="In hospital now"
           aside={
             <span className={t.meta}>

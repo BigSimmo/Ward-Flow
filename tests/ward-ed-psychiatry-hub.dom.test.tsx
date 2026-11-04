@@ -40,6 +40,7 @@ import { splitDuration } from "@/components/ward-management/ward-clock";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 import { atDesktopWidth, atPhoneWidthForEachTest, showPhoneLists } from "./helpers/ed-phone-lists";
+import { chooseEdChoice, edChoiceValue } from "./helpers/ed-raise-into-movement";
 import { REPEAT_TAP_WINDOW_MS } from "@/components/ward-management/ward-repeat-tap-guard";
 
 /** Tier 1 item 2: a repeat inside the double-tap window gets the first tap's answer, so a deliberate repeat steps past it. */
@@ -914,9 +915,12 @@ describe("the inbox's decline control", () => {
     const { id } = probeParts();
     fireEvent.click(screen.getByTestId(`ward-ed-inbox-decline-${id}`));
 
-    const options = Array.from(screen.getByTestId(`ward-ed-inbox-decline-reason-${id}`).querySelectorAll("option")).map(
-      (option) => ({ value: option.getAttribute("value"), label: option.textContent }),
-    );
+    // L31: the reason is the kit list picker, so its options are read while it is open.
+    fireEvent.click(screen.getByTestId(`ward-ed-inbox-decline-reason-${id}`));
+    const options = screen
+      .getAllByRole("option")
+      .filter((option) => option.hasAttribute("data-value"))
+      .map((option) => ({ value: option.getAttribute("data-value"), label: option.textContent?.trim() ?? "" }));
 
     expect(options.map((option) => option.value)).toContain("belongs_to_another_service");
     expect(options.map((option) => option.value)).toContain("referred_elsewhere");
@@ -956,8 +960,7 @@ describe("the inbox's decline control", () => {
     const { id } = probeParts();
     fireEvent.click(screen.getByTestId(`ward-ed-inbox-decline-${id}`));
 
-    const select = screen.getByTestId(`ward-ed-inbox-decline-reason-${id}`) as HTMLSelectElement;
-    expect(select.value, "a reason nobody chose was pre-selected").toBe("");
+    expect(edChoiceValue(`ward-ed-inbox-decline-reason-${id}`), "a reason nobody chose was pre-selected").toBe("");
 
     const confirm = screen.getByTestId(`ward-ed-inbox-decline-confirm-${id}`);
     expect(confirm).toHaveAttribute("aria-disabled", "true");
@@ -990,9 +993,7 @@ describe("the inbox's decline control", () => {
     expect(declineParts().state, "the row was not queued before the decline").toBe("queued");
 
     fireEvent.click(screen.getByTestId(`ward-ed-inbox-decline-${id}`));
-    fireEvent.change(screen.getByTestId(`ward-ed-inbox-decline-reason-${id}`), {
-      target: { value: "belongs_to_another_service" },
-    });
+    chooseEdChoice(`ward-ed-inbox-decline-reason-${id}`, "belongs_to_another_service");
     fireEvent.click(screen.getByTestId(`ward-ed-inbox-decline-confirm-${id}`));
 
     const after = declineParts();
@@ -1039,9 +1040,7 @@ describe("the inbox's decline control", () => {
     // A real decline first, because the screen deliberately surfaces nothing until it has itself
     // dispatched — a rejection already in state belongs to somebody else. This is the token.
     fireEvent.click(screen.getByTestId(`ward-ed-inbox-decline-${declined}`));
-    fireEvent.change(screen.getByTestId(`ward-ed-inbox-decline-reason-${declined}`), {
-      target: { value: "referred_elsewhere" },
-    });
+    chooseEdChoice(`ward-ed-inbox-decline-reason-${declined}`, "referred_elsewhere");
     fireEvent.click(screen.getByTestId(`ward-ed-inbox-decline-confirm-${declined}`));
     expect(screen.queryByTestId(`ward-ed-inbox-row-${declined}`)).not.toBeInTheDocument();
 
@@ -1334,9 +1333,7 @@ describe("the recently answered section", () => {
     const { id } = probeParts();
 
     fireEvent.click(screen.getByTestId(`ward-ed-inbox-decline-${id}`));
-    fireEvent.change(screen.getByTestId(`ward-ed-inbox-decline-reason-${id}`), {
-      target: { value: "belongs_to_another_service" },
-    });
+    chooseEdChoice(`ward-ed-inbox-decline-reason-${id}`, "belongs_to_another_service");
     fireEvent.click(screen.getByTestId(`ward-ed-inbox-decline-confirm-${id}`));
 
     // Gone from the worklist — `edReferralsFor`'s own contract, unchanged by this task.
@@ -1409,9 +1406,7 @@ describe("the recently answered section", () => {
     const { id } = probeParts();
 
     fireEvent.click(screen.getByTestId(`ward-ed-inbox-decline-${id}`));
-    fireEvent.change(screen.getByTestId(`ward-ed-inbox-decline-reason-${id}`), {
-      target: { value: "belongs_to_another_service" },
-    });
+    chooseEdChoice(`ward-ed-inbox-decline-reason-${id}`, "belongs_to_another_service");
     fireEvent.click(screen.getByTestId(`ward-ed-inbox-decline-confirm-${id}`));
 
     // Non-vacuity: the answered section really is populated, or the guard below passes on an

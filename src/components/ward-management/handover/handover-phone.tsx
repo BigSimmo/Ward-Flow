@@ -7,7 +7,7 @@
  */
 import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
-import { Check, ChevronDown, ChevronRight, ClipboardCopy, Clock, Eye, MoreHorizontal } from "lucide-react";
+import { Check, ChevronDown, ChevronRight, ClipboardCopy, Clock, Eye, Ellipsis } from "lucide-react";
 import {
   Button,
   Drawer,
@@ -576,7 +576,7 @@ export function HandoverPhone({
                   variant="onHero"
                   className={phoneRows.heroPill}
                   iconOnly={!meetingOn}
-                  icon={MoreHorizontal}
+                  icon={Ellipsis}
                   aria-label={meetingOn ? "More handover actions, timer on" : "More handover actions"}
                   data-testid="ward-handover-phone-more"
                   data-meeting-on={meetingOn || undefined}
