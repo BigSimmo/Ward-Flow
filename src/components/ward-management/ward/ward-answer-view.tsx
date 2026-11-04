@@ -531,7 +531,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
               of this ward&rsquo;s own gates pass
             </span>
           </span>
-          <RowChevron size={16} aria-hidden="true" className={styles.phoneFoldChevron} />
+          <RowChevron strokeWidth={1.75} size={16} aria-hidden="true" className={styles.phoneFoldChevron} />
         </button>
         <PhoneSheet
           open={phoneSheet === "gates"}
@@ -575,7 +575,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
             <span className={styles.phoneFoldLine}>{line}</span>
           </span>
           <span className={styles.phoneFoldCount}>{count}</span>
-          <RowChevron size={16} aria-hidden="true" className={styles.phoneFoldChevron} />
+          <RowChevron strokeWidth={1.75} size={16} aria-hidden="true" className={styles.phoneFoldChevron} />
         </button>
         <PhoneSheet
           open={phoneSheet === id}
@@ -674,7 +674,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                       selectAnswer(activeAnswerIndex - 1);
                     }}
                   >
-                    <ChevronLeft size={14} aria-hidden="true" />
+                    <ChevronLeft strokeWidth={1.75} size={14} aria-hidden="true" />
                     Previous
                   </button>
                   {activeAnswerIndex === 0 ? (
@@ -700,7 +700,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                     }}
                   >
                     Next
-                    <ChevronRight size={14} aria-hidden="true" />
+                    <ChevronRight strokeWidth={1.75} size={14} aria-hidden="true" />
                   </button>
                   {activeAnswerIndex >= incoming.length - 1 ? (
                     <span id="ward-answer-next-reason" className="sr-only">
@@ -865,7 +865,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                           /* Phone (v10): "This patient" with the person tile; the facts below carry cohort and sex. */
                           <div className={styles.phonePatientHead}>
                             <span className={styles.phonePatientTile} aria-hidden="true">
-                              <UserRound size={18} aria-hidden="true" />
+                              <UserRound strokeWidth={1.75} size={18} aria-hidden="true" />
                             </span>
                             <span className={styles.phoneFoldText}>
                               {/* Josh, 22 Oct 2026: a ward sees who is coming before it answers. */}
@@ -881,7 +881,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                         {isPhone ? (
                           <div className={styles.phonePatientChips}>
                             <span className={styles.phonePatientChip}>
-                              <ShieldCheck size={14} aria-hidden="true" />
+                              <ShieldCheck strokeWidth={1.75} size={14} aria-hidden="true" />
                               {activeMovement.legalStatus}
                             </span>
                             {isConstantObservation(activeMovement.observation) ? (

@@ -42,17 +42,22 @@ export function DayBars({
   summary,
   secondLabel = "in",
   compact = false,
+  mini = false,
 }: {
   days: readonly DayBar[];
   summary: string;
   secondLabel?: string;
   /** A shorter chart (Capacity issue 3, Josh, 3 Nov 2026). */
   compact?: boolean;
+  /** The smallest chart, for a ward panel (C3, Josh, 4 Nov 2026). */
+  mini?: boolean;
 }) {
   const [hover, setHover] = useState<number | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const [measured, setMeasured] = useState<number | undefined>();
-  const hatchId = `wf-day-bars-hatch-${useId().replace(/:/g, "")}`;
+  const baseId = `wf-day-bars-${useId().replace(/:/g, "")}`;
+  const hatchId = `${baseId}-hatch`;
+  const pointer = useRef<string | null>(null);
 
   useEffect(() => {
     const wrap = wrapRef.current;
@@ -72,11 +77,13 @@ export function DayBars({
   const step = (W - LEFT - RIGHT - 12) / Math.max(1, days.length);
   const narrow = step < NARROW_STEP;
   const TOP = narrow ? 20 : 24;
-  const BASE = narrow ? 128 : compact ? 118 : 150;
+  const BASE = mini ? 84 : narrow ? 128 : compact ? 118 : 150;
   const BAR = Math.round(Math.min(30, Math.max(14, step * 0.5)));
   const secondY = narrow ? BASE + 26 : BASE + 12;
   const dayY = narrow ? BASE + 46 : BASE + 34;
-  const H = narrow ? BASE + 56 : BASE + 64;
+  /** Below this a day's "Thu 29" no longer fits on one line. */
+  const tight = step < 50;
+  const H = narrow ? BASE + 56 + (tight ? 14 : 0) : BASE + 64;
 
   const max = Math.max(5, ...days.map((day) => day.value));
   const top = niceTop(max);
@@ -148,7 +155,17 @@ export function DayBars({
                 </>
               ) : null}
               <text x={cx} y={dayY} textAnchor="middle" className={`${styles.day} ${day.firm ? styles.dayFirm : ""}`}>
-                {day.label}
+                {tight ? (
+                  // Too narrow for "Thu 29" on one line (a ward panel on a phone): weekday over date.
+                  <>
+                    <tspan x={cx}>{day.label.split(" ")[0]}</tspan>
+                    <tspan x={cx} dy={14}>
+                      {day.label.split(" ").slice(1).join(" ")}
+                    </tspan>
+                  </>
+                ) : (
+                  day.label
+                )}
               </text>
               {narrow ? null : (
                 <text x={cx} y={BASE + 51} textAnchor="middle" className={styles.daySub}>
@@ -161,21 +178,56 @@ export function DayBars({
         <line x1={LEFT + 6} x2={W - RIGHT} y1={BASE} y2={BASE} className={styles.base} />
       </svg>
       {/* Capacity issue 3 (Josh, 3 Nov 2026): pointing at a day shows a small card with what is
-          behind its bar. Pointer only and decorative; the chart's summary says every figure. */}
+          behind its bar. C3 (Josh, 4 Nov 2026): each day is also a button, so the card opens on
+          keyboard focus and on a tap, and Escape closes it. The card is the open button's
+          description, read once; the chart's summary still says every figure. */}
       {measured !== undefined
         ? days.map((day, index) => {
             const left = LEFT + 12 + step * index;
+            const open = hover === index;
+            const tipId = `${baseId}-tip-${index}`;
             return (
-              <div
-                key={day.key}
-                className={styles.hit}
-                style={{ left, width: step, height: H }}
-                aria-hidden="true"
-                onPointerEnter={() => setHover(index)}
-                onPointerLeave={() => setHover((current) => (current === index ? null : current))}
-              >
-                {hover === index ? (
-                  <span className={`${styles.tipCard} ${index > days.length / 2 ? styles.tipLeft : ""}`}>
+              <div key={day.key} className={styles.hit} style={{ left, width: step, height: H }}>
+                <button
+                  type="button"
+                  className={styles.hitButton}
+                  aria-label={`${day.label}, ${day.sub}`}
+                  aria-expanded={open}
+                  aria-describedby={open ? tipId : undefined}
+                  onPointerDown={(event) => {
+                    pointer.current = event.pointerType;
+                  }}
+                  onPointerEnter={(event) => {
+                    if (event.pointerType === "mouse") setHover(index);
+                  }}
+                  onPointerLeave={(event) => {
+                    if (event.pointerType === "mouse") setHover((current) => (current === index ? null : current));
+                  }}
+                  onFocus={(event) => {
+                    // A keyboard focus opens the card; a tap opens it through the click below.
+                    if (focusIsVisible(event.currentTarget)) setHover(index);
+                  }}
+                  onBlur={() => setHover((current) => (current === index ? null : current))}
+                  onClick={() => {
+                    // A mouse is already showing the card on hover, so its click keeps it open.
+                    const mouse = pointer.current === "mouse";
+                    pointer.current = null;
+                    setHover((current) => (current === index && !mouse ? null : index));
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape" && hover === index) {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      setHover(null);
+                    }
+                  }}
+                />
+                {open ? (
+                  <span
+                    id={tipId}
+                    aria-hidden="true"
+                    className={`${styles.tipCard} ${index > days.length / 2 ? styles.tipLeft : ""}`}
+                  >
                     <b className={styles.tipHead}>
                       {day.label} · {day.sub}
                     </b>
@@ -205,6 +257,15 @@ export function DayBars({
       ) : null}
     </div>
   );
+}
+
+/** True for a keyboard focus. A browser without `:focus-visible` (or a test DOM) counts every focus. */
+function focusIsVisible(element: Element): boolean {
+  try {
+    return element.matches(":focus-visible");
+  } catch {
+    return true;
+  }
 }
 
 function niceTop(max: number): number {

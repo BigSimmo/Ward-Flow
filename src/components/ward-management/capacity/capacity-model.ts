@@ -191,6 +191,8 @@ export function useCapacityModel() {
     oldestCount,
     roadTimeFromEdId,
     mapGroups,
+    /** Every bed release, for the bed map's squares by discharge state (C4, Josh, 4 Nov 2026). */
+    bedReleases,
     forecastModel,
     days,
     week,

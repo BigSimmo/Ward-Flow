@@ -11,6 +11,7 @@ import { CapacityWardSidebar } from "@/components/ward-management/capacity/capac
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { BED_RELEASE_BLOCKED_LABEL } from "@/components/ward-management/ward-derivations";
 import { bedMapCards, bedMapGroup, bedMapRegion, bedSquares, bedSquaresOf } from "./helpers/capacity-ward-table";
 
 /**
@@ -80,7 +81,8 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
   /**
    * The map must draw exactly as many squares of each kind as the derivations report, per ward —
    * walked over every real unit, not one hand-picked example. Pulled beds share the occupied
-   * square ("Occupied or pulled") since the redesign.
+   * square ("In use") since the redesign, and a square coloured by its discharge state (C4) is still
+   * an in-use square.
    */
   it("draws exactly as many squares of each kind as bedStates reports, for every ward", () => {
     expect(
@@ -152,10 +154,14 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
     renderScreen();
     const legend = within(bedMapRegion()).getByLabelText("Bed map key");
     expect(within(legend).getByText(/^Ready$/u)).toBeInTheDocument();
-    expect(within(legend).getByText(/^Occupied or pulled$/u)).toBeInTheDocument();
+    expect(within(legend).getByText(/^In use$/u)).toBeInTheDocument();
     expect(within(legend).getByText(/^Closed$/u)).toBeInTheDocument();
-    // "Held" means only a bed kept for a patient on leave, which is never a square of its own.
-    expect(within(legend).queryByText(/Held|Blocked/u)).toBeNull();
+    // C4 (Josh, 4 Nov 2026): in-use beds by discharge state, with the release flag's own label.
+    expect(within(legend).getByText(/^Confirmed out$/u)).toBeInTheDocument();
+    expect(within(legend).getByText(/^Expected out$/u)).toBeInTheDocument();
+    expect(within(legend).getByText(new RegExp(`^${BED_RELEASE_BLOCKED_LABEL}$`, "u"))).toBeInTheDocument();
+    // "Held" alone means only a bed kept for a patient on leave, which is never a square of its own.
+    expect(within(legend).queryByText(/\bHeld\b(?! up)|Blocked/u)).toBeNull();
   });
 
   it("hides the decorative squares from assistive technology and states each ward's beds in words", () => {

@@ -65,9 +65,7 @@ describe("capacity labels say what each figure counts", () => {
     const all = chips.getAllByRole("button");
     expect(all.length).toBeGreaterThan(2);
     for (const chip of all) expect(chip.textContent).toMatch(/ · \d+ wards?$/u);
-    expect(
-      within(screen.getByRole("list", { name: "Bed map key" })).getByText("Occupied or pulled"),
-    ).toBeInTheDocument();
+    expect(within(screen.getByRole("list", { name: "Bed map key" })).getByText("In use")).toBeInTheDocument();
   });
 
   it("Capacity phone hero says occupancy includes pulled beds", () => {

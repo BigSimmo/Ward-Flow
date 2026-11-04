@@ -57,7 +57,7 @@ export function WardScreenReferralsTab({
                 onClick={onOpenBedRequests}
                 data-testid="ward-referrals-open-bed-requests"
               >
-                <ArrowLeftRight size={14} aria-hidden="true" />
+                <ArrowLeftRight strokeWidth={1.75} size={14} aria-hidden="true" />
                 Answer in Ward flow
               </button>
             </div>

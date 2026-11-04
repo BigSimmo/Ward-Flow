@@ -6,13 +6,20 @@
 // lists. The band above already shows Ready now and Ready by shift end, so these do not repeat it.
 
 import Link from "next/link";
-import { ListChecks } from "lucide-react";
+import { CalendarClock, ChevronRight, ListChecks } from "lucide-react";
 import { buttonClass } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import type { WardFlowTab } from "./ward-home-tab-model";
 import { nameParts } from "./ward-bed-board";
+import {
+  outlookHeadline,
+  outlookOpenWork,
+  outlookPlannedLaterNote,
+  outlookSentence,
+  type WardTomorrowOutlook,
+} from "./ward-home-outlook";
 import styles from "./ward-home-tab.module.css";
 
 type WardHomeTodayStripProps = {
@@ -34,6 +41,8 @@ type WardHomeTodayStripProps = {
   arrivals: number;
   backFromLeave: number;
   nextEta: Instant | undefined;
+  /** WH3: this ward's own outlook for tomorrow, or null for a closed ward. */
+  outlook: WardTomorrowOutlook | null;
   onOpenFlow: (tab: WardFlowTab) => void;
 };
 
@@ -55,6 +64,7 @@ export function WardHomeTodayStrip({
   arrivals,
   backFromLeave,
   nextEta,
+  outlook,
   onOpenFlow,
 }: WardHomeTodayStripProps) {
   return (
@@ -67,7 +77,7 @@ export function WardHomeTodayStrip({
     >
       <div className={styles.todayCard}>
         <span className={styles.todayCaps}>
-          <ListChecks size={14} aria-hidden="true" />
+          <ListChecks strokeWidth={1.75} size={14} aria-hidden="true" />
           This shift
         </span>
         <p className={styles.todayFigure}>
@@ -161,7 +171,72 @@ export function WardHomeTodayStrip({
           </span>
         ) : null}
       </div>
+      {outlook ? <WardHomeTomorrowCard outlook={outlook} now={now} onOpenFlow={onOpenFlow} /> : null}
     </section>
+  );
+}
+
+/** "2 short", "0 free" or "3 free": one end of the range, the zero said as the digit. */
+function rangeEnd(value: number): string {
+  return value < 0 ? `${-value} short` : `${value} free`;
+}
+
+/**
+ * WH3 (Josh, 4 Nov 2026): Tomorrow, the Capacity forecast for this ward alone. One figure, the
+ * frees against the people booked in, and the one action that firms the figure up. The hero and
+ * the cards beside it already show today, so every figure here is tomorrow's.
+ */
+function WardHomeTomorrowCard({
+  outlook,
+  now,
+  onOpenFlow,
+}: {
+  outlook: WardTomorrowOutlook;
+  now: Instant;
+  onOpenFlow: (tab: WardFlowTab) => void;
+}) {
+  const head = outlookHeadline(outlook.likely);
+  const open = outlookOpenWork(outlook);
+  const plannedLater = outlookPlannedLaterNote(outlook);
+  return (
+    <div className={styles.todayCard} data-testid="ward-tomorrow-card">
+      <span className={styles.todayCaps}>
+        Tomorrow
+        <span className="sr-only">, by {formatInstantWithDay(outlook.until, now)}</span>
+      </span>
+      <p className={styles.todayFigure} data-tone={outlook.likely < 0 ? "short" : undefined}>
+        {head.lead ? <span>{head.lead}</span> : null}
+        <b>{head.figure}</b> {head.tail}
+      </p>
+      <p className={styles.todayLine}>
+        {outlook.likelyOut} likely out, {outlook.bookedIn} booked in
+      </p>
+      <p className={styles.todayMeta} data-testid="ward-tomorrow-line">
+        {open ?? `Could be ${rangeEnd(outlook.low)} to ${rangeEnd(outlook.high)}`}
+      </p>
+      {plannedLater ? (
+        <p className={styles.todayMeta} data-testid="ward-tomorrow-planned-later">
+          {plannedLater}
+        </p>
+      ) : null}
+      <span className={styles.todayFoot}>
+        {open !== null ? (
+          <button
+            type="button"
+            className={buttonClass({ variant: "sec", size: "sm" })}
+            aria-label={`Confirm dates. ${outlookSentence(outlook)}`}
+            onClick={() => onOpenFlow("discharges")}
+          >
+            Confirm dates
+          </button>
+        ) : (
+          <button type="button" className={styles.quietLink} onClick={() => onOpenFlow("discharges")}>
+            Ward flow
+          </button>
+        )}
+        <span className={styles.todayEstimate}>Estimate only</span>
+      </span>
+    </div>
   );
 }
 
@@ -196,5 +271,42 @@ export function WardHomeTileText({
         <span className={styles.bedTileNote}>{stateLine}</span>
       </span>
     </>
+  );
+}
+
+/**
+ * WH3 (Josh, 4 Nov 2026), phone: tomorrow for this ward as one row of My list, in one plain line. It
+ * opens the ward's discharges, where the dates are confirmed.
+ */
+export function WardPhoneTomorrowRow({
+  outlook,
+  onTab,
+  onSheet,
+}: {
+  outlook: WardTomorrowOutlook | null;
+  onTab: (tab: WardFlowTab) => void;
+  onSheet?: (panel: "flow") => void;
+}) {
+  if (outlook === null) return null;
+  return (
+    <button
+      type="button"
+      className={styles.needsRow}
+      aria-haspopup="dialog"
+      onClick={() => {
+        onTab("discharges");
+        onSheet?.("flow");
+      }}
+      data-testid="ward-phone-row-tomorrow"
+    >
+      <span className={styles.needsIcon} data-tone={outlook.likely < 0 ? "warning" : undefined} aria-hidden="true">
+        <CalendarClock size={18} strokeWidth={1.75} aria-hidden="true" />
+      </span>
+      <span className={styles.needsText}>
+        <b>Tomorrow</b>
+        <span>{outlookSentence(outlook)}</span>
+      </span>
+      <ChevronRight size={18} aria-hidden="true" className={styles.needsChevron} />
+    </button>
   );
 }

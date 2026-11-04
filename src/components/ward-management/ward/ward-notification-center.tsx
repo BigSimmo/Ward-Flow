@@ -9,7 +9,7 @@ import {
   MessageSquare,
   ShieldCheck,
   Stethoscope,
-  Truck,
+  Ambulance,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -462,7 +462,7 @@ export function WardNotificationCenter({
             <NoticeRow
               key={`overdue-${m.id}`}
               tone="danger"
-              icon={Truck}
+              icon={Ambulance}
               title="Late arrival"
               status="Act now"
               meta={<PatientMeta {...who} />}
@@ -698,7 +698,7 @@ export function WardNotificationCenter({
       {inSheet ? null : (
         <div className={drawer.header}>
           <span className={drawer.headerIcon} aria-hidden="true">
-            <Bell aria-hidden="true" />
+            <Bell strokeWidth={1.75} aria-hidden="true" />
           </span>
           <div className={drawer.headerText}>
             <h2 className={drawer.heading}>Notices</h2>
@@ -720,7 +720,7 @@ export function WardNotificationCenter({
               title="Close notices"
               data-testid="ward-notification-close-btn"
             >
-              <X aria-hidden="true" />
+              <X strokeWidth={1.75} aria-hidden="true" />
             </button>
           ) : null}
         </div>
@@ -754,7 +754,7 @@ export function WardNotificationCenter({
           attentionShown > 0 ? (
             <section className={drawer.section} aria-labelledby={`${baseId}-heading-attention`}>
               <div className={drawer.sectionHead}>
-                <ShieldCheck aria-hidden="true" />
+                <ShieldCheck strokeWidth={1.75} aria-hidden="true" />
                 <h3 id={`${baseId}-heading-attention`} className={drawer.sectionTitle}>
                   Needs attention
                 </h3>
@@ -782,7 +782,7 @@ export function WardNotificationCenter({
           ) : (
             <section className={drawer.section} aria-labelledby={`${baseId}-heading-coordinator`}>
               <div className={drawer.sectionHead}>
-                <Bell aria-hidden="true" />
+                <Bell strokeWidth={1.75} aria-hidden="true" />
                 <h3 id={`${baseId}-heading-coordinator`} className={drawer.sectionTitle}>
                   From the coordinator
                 </h3>
@@ -808,7 +808,11 @@ export function WardNotificationCenter({
           aria-pressed={soundEnabled}
           onClick={() => setSoundEnabled(!soundEnabled)}
         >
-          {soundEnabled ? <Bell aria-hidden="true" /> : <BellOff aria-hidden="true" />}
+          {soundEnabled ? (
+            <Bell strokeWidth={1.75} aria-hidden="true" />
+          ) : (
+            <BellOff strokeWidth={1.75} aria-hidden="true" />
+          )}
           {soundEnabled ? "Buzz sound on" : "Buzz sound off"}
         </button>
         <span id={`${baseId}-sound-note`} className="sr-only">

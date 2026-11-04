@@ -577,7 +577,7 @@ describe("a discharge held up for days keeps counting, and shows since when (WLQ
    *  states as "HH:MM, 2 days ago". The seed already carries some, so the cases below diff them. */
   function staleReleaseEntries(unitId: string): HTMLElement[] {
     const drawer = openWardDrawer(unitId);
-    fireEvent.click(within(drawer).getByRole("radio", { name: /^Discharges/u }));
+    fireEvent.click(within(drawer).getByRole("tab", { name: /^Discharges/u }));
     const heading = within(drawer).queryByRole("heading", { name: "Bed releases without a name" });
     const list = heading?.nextElementSibling as HTMLElement | null | undefined;
     if (!list) return [];

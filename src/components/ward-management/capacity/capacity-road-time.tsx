@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, MapPin } from "lucide-react";
+import { ChevronDown, Route } from "lucide-react";
 import { SpelledCodes, codeName } from "@/components/ward-management/ward-abbreviations";
 import Link from "next/link";
 import { useId, useState } from "react";
@@ -60,7 +60,7 @@ export function ReadyByRoadTime({
 
   return (
     <Card as="section" className={styles.card} aria-labelledby={`${baseId}-heading`} data-testid="capacity-road-time">
-      <CardHead icon={MapPin} id={`${baseId}-heading`} level={3} title="Nearest ready beds" />
+      <CardHead icon={Route} id={`${baseId}-heading`} level={3} title="Nearest ready beds" />
       <div className={styles.from}>
         {/* Capacity stress test (3 Nov 2026): the kit menu the desktop card uses, in place of the
             browser drop-down, so no native select is left on the page. */}
@@ -78,7 +78,7 @@ export function ReadyByRoadTime({
             <button type="button" {...props} className={styles.picker}>
               <span className={styles.pickerFrom}>From</span>
               {ed === undefined ? "Choose ED" : <SpelledCodes text={`${ed.siteCode} ED`} />}
-              <ChevronDown size={14} aria-hidden="true" />
+              <ChevronDown strokeWidth={1.75} size={14} aria-hidden="true" />
             </button>
           )}
         />

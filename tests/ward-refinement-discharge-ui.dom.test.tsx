@@ -93,7 +93,7 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     expect(card, `the bed map must draw ${ward.name}`).toBeDefined();
     fireEvent.click(card!);
     const drawer = within(screen.getByTestId("ward-capacity-ward-drawer"));
-    fireEvent.click(drawer.getByRole("radio", { name: /^Discharges/u }));
+    fireEvent.click(drawer.getByRole("tab", { name: /^Discharges/u }));
 
     const opener = drawer.getByRole("button", { name: /Marrowby, Ines/u });
     fireEvent.click(opener);

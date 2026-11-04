@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
-import { Button, Dialog, DisabledReason, Field, Select, StatusGlyph } from "@/components/wf";
+import { Button, ChipGroup, Dialog, DisabledReason, FilterChip, StatusGlyph } from "@/components/wf";
 
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
@@ -199,34 +199,24 @@ function WardClosureControls({
       >
         {/* Audit 1 (WP-10, Josh 20 Oct): the panel names its ward, so a close is never for the wrong one. */}
         <h3 className={styles.heading}>Close {unit.name} to admissions</h3>
-        <Field label="Reason">
-          <Select
-            value={reason}
-            onChange={(event) => setReason(event.target.value as WardClosureReason | "")}
-            data-testid="ward-closure-reason"
-          >
-            <option value="">Choose a reason</option>
-            {WARD_CLOSURE_REASONS.map((entry) => (
-              <option key={entry.id} value={entry.id}>
-                {entry.label}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="Expected to reopen">
-          <Select
-            value={reopenAfter}
-            onChange={(event) => setReopenAfter(event.target.value)}
-            data-testid="ward-closure-reopen-after"
-          >
-            <option value="">Not known</option>
-            {WARD_REOPEN_AFTER_HOURS.map((hours) => (
-              <option key={hours} value={String(hours)}>
-                In {hours} hours
-              </option>
-            ))}
-          </Select>
-        </Field>
+        {/* Kit choices, not browser drop-downs: both lists are short. A pressed reason pressed again is put back. */}
+        <ClosureChoice
+          label="Reason"
+          testId="ward-closure-reason"
+          value={reason}
+          items={WARD_CLOSURE_REASONS.map((entry) => ({ id: entry.id, label: entry.label }))}
+          onChange={(next) => setReason(next as WardClosureReason | "")}
+        />
+        <ClosureChoice
+          label="Expected to reopen"
+          testId="ward-closure-reopen-after"
+          value={reopenAfter}
+          items={[
+            { id: "", label: "Not known" },
+            ...WARD_REOPEN_AFTER_HOURS.map((hours) => ({ id: String(hours), label: `In ${hours} hours` })),
+          ]}
+          onChange={setReopenAfter}
+        />
         {onFootAction ? null : (
           <>
             <Button
@@ -386,6 +376,40 @@ function ClosureAlert({
       >
         {CLOSE_CONFLICT_DRAFT_WORDING.tryAgain}
       </Button>
+    </div>
+  );
+}
+
+/** One closure choice as kit chips; the chosen id rides on `data-value` for the page and its tests. */
+function ClosureChoice({
+  label,
+  testId,
+  value,
+  items,
+  onChange,
+}: {
+  label: string;
+  testId: string;
+  value: string;
+  items: { id: string; label: string }[];
+  onChange: (next: string) => void;
+}) {
+  return (
+    <div className={styles.choice} data-testid={testId} data-value={value}>
+      <p className={styles.subheading} aria-hidden="true">
+        {label}
+      </p>
+      <ChipGroup label={label} className={styles.chips}>
+        {items.map((item) => (
+          <FilterChip
+            key={item.id}
+            pressed={item.id === value}
+            onPressedChange={(pressed) => onChange(pressed ? item.id : "")}
+          >
+            {item.label}
+          </FilterChip>
+        ))}
+      </ChipGroup>
     </div>
   );
 }

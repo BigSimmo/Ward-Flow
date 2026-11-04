@@ -929,7 +929,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                 <b>Occupancy by service</b>
                 <span>Bars against the {SERVICE_LINE * 100}% line, with ready beds</span>
               </span>
-              <ChevronRight size={16} aria-hidden="true" />
+              <ChevronRight strokeWidth={1.75} size={16} aria-hidden="true" />
             </button>
           ) : null}
           {isPhone ? (
@@ -1127,7 +1127,7 @@ function WardCard({
             aria-label={`Open ${unit.name}`}
           >
             Open ward
-            <ChevronRight size={14} aria-hidden="true" />
+            <ChevronRight strokeWidth={1.75} size={14} aria-hidden="true" />
           </Link>
         )}
       </div>

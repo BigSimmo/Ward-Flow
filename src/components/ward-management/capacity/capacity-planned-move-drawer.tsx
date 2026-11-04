@@ -3,7 +3,17 @@
 import Link from "next/link";
 import { BedSingle, CalendarCheck, FileText, Pencil, X } from "lucide-react";
 
-import { Button, Drawer, StatusGlyph, buttonClass, cx, durMinutes } from "@/components/wf";
+import {
+  Button,
+  DrawerFacts,
+  DrawerFootRow,
+  PanelDrawer,
+  StatusGlyph,
+  StatusPill,
+  buttonClass,
+  cx,
+  durMinutes,
+} from "@/components/wf";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import {
   PLANNED_ADMISSION_REASON_LABELS,
@@ -83,15 +93,16 @@ export function PlannedMoveDrawer({
           : null;
 
   return (
-    <Drawer
+    <PanelDrawer
       open
       onClose={onClose}
+      eyebrow="Planned admission"
       title={api.whoText(planned)}
-      description={`Planned admission · ${PLANNED_ADMISSION_REASON_LABELS[planned.reason]} · ${planned.ageBand}`}
-      titleAccessory={<span className={styles.pmKind}>Planned</span>}
+      subtitle={`${PLANNED_ADMISSION_REASON_LABELS[planned.reason]} · ${planned.ageBand}`}
+      tag={<StatusPill>Planned</StatusPill>}
       testId="capacity-planned-detail"
-      footer={
-        <div className={styles.pmFoot}>
+      foot={
+        <>
           {arrived && dueToday ? (
             <Button variant="pri" className={styles.pmFootWide} icon={CalendarCheck} onClick={arrived}>
               Record arrival on {ward}
@@ -104,16 +115,16 @@ export function PlannedMoveDrawer({
               </span>
             </p>
           )}
-          <div className={styles.pmFootRow}>
+          <DrawerFootRow>
             {recordHref && canOpen(recordHref) ? (
               <Link href={recordHref} className={buttonClass({ variant: lead === "record" ? "pri" : "sec" })}>
-                <FileText size={14} aria-hidden="true" />
+                <FileText strokeWidth={1.75} size={14} aria-hidden="true" />
                 Patient record
               </Link>
             ) : null}
             {canOpen(boardHref) ? (
               <Link href={boardHref} className={buttonClass({ variant: lead === "board" ? "pri" : "sec" })}>
-                <BedSingle size={14} aria-hidden="true" />
+                <BedSingle strokeWidth={1.75} size={14} aria-hidden="true" />
                 Ward board
               </Link>
             ) : null}
@@ -127,8 +138,8 @@ export function PlannedMoveDrawer({
                 Cancel booking
               </Button>
             ) : null}
-          </div>
-        </div>
+          </DrawerFootRow>
+        </>
       }
     >
       <div className={styles.pmDrawer}>
@@ -196,38 +207,24 @@ export function PlannedMoveDrawer({
         ) : null}
 
         <h3 className={styles.pmSectionHead}>Booking</h3>
-        <dl className={styles.pmFacts}>
-          <div>
-            <dt>Legal status</dt>
-            <dd>{planned.legalStatus}</dd>
-          </div>
-          <div>
-            <dt>Expected stay</dt>
-            <dd>{planned.expectedStayDays} days</dd>
-          </div>
-          <div>
-            <dt>Age group</dt>
-            <dd>{planned.ageBand}</dd>
-          </div>
-          <div>
-            <dt>Recorded sex</dt>
-            <dd>{planned.sex}</dd>
-          </div>
-          <div>
-            <dt>Changes</dt>
-            <dd>
-              {planned.changeCount === 0
-                ? "Not changed"
-                : `${planned.changeCount} ${planned.changeCount === 1 ? "change" : "changes"}`}
-            </dd>
-          </div>
-          <div>
-            <dt>Service</dt>
-            <dd>{site?.service ?? "Not recorded"}</dd>
-          </div>
-        </dl>
       </div>
-    </Drawer>
+      <DrawerFacts
+        items={[
+          { label: "Legal status", value: planned.legalStatus },
+          { label: "Expected stay", value: `${planned.expectedStayDays} days` },
+          { label: "Age group", value: planned.ageBand },
+          { label: "Recorded sex", value: planned.sex },
+          {
+            label: "Changes",
+            value:
+              planned.changeCount === 0
+                ? "Not changed"
+                : `${planned.changeCount} ${planned.changeCount === 1 ? "change" : "changes"}`,
+          },
+          { label: "Service", value: site?.service ?? "Not recorded" },
+        ]}
+      />
+    </PanelDrawer>
   );
 }
 
@@ -263,15 +260,15 @@ export function StepDownDrawer({
   const site = siteByCode(row.fromUnit.siteCode);
 
   return (
-    <Drawer
+    <PanelDrawer
       open
       onClose={onClose}
       title={who.formalName}
-      description={`${who.umrn} · marked for step down`}
-      titleAccessory={<span className={styles.pmKind}>Step down</span>}
+      subtitle={`${who.umrn} · marked for step down`}
+      tag={<StatusPill>Step down</StatusPill>}
       testId="capacity-step-down-detail"
-      footer={
-        <div className={styles.pmFoot}>
+      foot={
+        <>
           <p className={styles.pmFootNext}>
             <StatusGlyph tone="neutral" size={9} />
             <span>
@@ -287,10 +284,10 @@ export function StepDownDrawer({
               )}
             </span>
           </p>
-          <div className={styles.pmFootRow}>
+          <DrawerFootRow>
             {recordHref && canOpen(recordHref) ? (
               <Link href={recordHref} className={buttonClass({ variant: "pri" })}>
-                <FileText size={14} aria-hidden="true" />
+                <FileText strokeWidth={1.75} size={14} aria-hidden="true" />
                 Patient record
               </Link>
             ) : null}
@@ -299,12 +296,12 @@ export function StepDownDrawer({
                 href={boardHref}
                 className={buttonClass({ variant: recordHref && canOpen(recordHref) ? "sec" : "pri" })}
               >
-                <BedSingle size={14} aria-hidden="true" />
+                <BedSingle strokeWidth={1.75} size={14} aria-hidden="true" />
                 Ward board
               </Link>
             ) : null}
-          </div>
-        </div>
+          </DrawerFootRow>
+        </>
       }
     >
       <div className={styles.pmDrawer}>
@@ -339,7 +336,7 @@ export function StepDownDrawer({
           <StepDownRowDetail row={row} kit={kit} hideWho />
         </section>
       </div>
-    </Drawer>
+    </PanelDrawer>
   );
 }
 

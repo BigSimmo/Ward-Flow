@@ -391,8 +391,10 @@ describe("the Capacity screen", () => {
       const site = siteByCode(row.unit.siteCode);
       expect(site, `${row.unit.id}'s site code resolves to no site`).toBeDefined();
       const drawer = openWardDrawer(row.unit);
-      expect(drawer).toHaveAccessibleDescription(new RegExp(` · ${escapeRegExp(site!.service)}$`, "u"));
-      expect(drawer).not.toHaveAccessibleDescription(/No site matches|Service not recorded/u);
+      // The kit drawer (PanelDrawer) shows the place as the quiet line under the ward's name.
+      const place = drawer.querySelector("[data-drawer-head] h2 + p");
+      expect(place).toHaveTextContent(new RegExp(` · ${escapeRegExp(site!.service)}$`, "u"));
+      expect(place).not.toHaveTextContent(/No site matches|Service not recorded/u);
     }
   });
 

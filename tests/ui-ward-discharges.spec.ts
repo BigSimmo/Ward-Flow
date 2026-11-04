@@ -190,7 +190,7 @@ async function boardReleaseStatus(page: Page, admissionId: string): Promise<stri
   await page.locator(`#capacity-bed-map button[aria-haspopup="dialog"][data-unit-id="${UNIT_ID}"]`).first().click();
   const panel = page.getByTestId("ward-capacity-ward-drawer");
   await expect(panel).toBeVisible();
-  await panel.getByRole("radio", { name: /^Discharges/u }).click();
+  await panel.getByRole("tab", { name: /^Discharges/u }).click();
   await panel.locator(`[id="capacity-discharge-discharge-${admissionId}"]`).click();
   const status = panel.locator("dt", { hasText: /^Status$/u }).locator("xpath=following-sibling::dd[1]");
   await expect(status).toBeVisible();

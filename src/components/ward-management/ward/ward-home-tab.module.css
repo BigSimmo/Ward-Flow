@@ -1874,7 +1874,8 @@ label.todoMain:has(.todoTick:focus-visible) {
  * day's discharges and arrivals. Soft raised cards on a tinted strip, as on Capacity. */
 .todayStrip {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  /* WH3: Tomorrow joins as the fourth card; two by two where four would cramp. */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--wf-s-3);
   padding: var(--wf-s-3);
   border-radius: var(--wf-r-md);
@@ -2010,6 +2011,22 @@ label.todoMain:has(.todoTick:focus-visible) {
 
 .shiftSheetBody .shiftFoot {
   padding-inline: 0;
+}
+
+/* WH3: tomorrow's shortfall reads in the warning ink; the words still say "short". */
+.todayFigure[data-tone="short"] b {
+  color: var(--wf-warning-ink);
+}
+
+.todayEstimate {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+@media (max-width: 75rem) {
+  .todayStrip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 40rem) {

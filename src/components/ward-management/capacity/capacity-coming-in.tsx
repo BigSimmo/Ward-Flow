@@ -280,7 +280,7 @@ function PlannedMovesBody({
                           data-testid={`capacity-step-down-${row.admission.id}`}
                         >
                           <span className={cx(styles.pmWhen, styles.pmWhenStep)} aria-hidden="true">
-                            <ArrowDownRight size={16} aria-hidden="true" />
+                            <ArrowDownRight strokeWidth={1.75} size={16} aria-hidden="true" />
                           </span>
                           <span className={styles.pmWho}>
                             <span className={styles.pmName}>{who.formalName}</span>
@@ -290,7 +290,7 @@ function PlannedMovesBody({
                           </span>
                           <span className={styles.pmRoute}>
                             <span className={styles.pmWard}>
-                              <BedSingle size={14} aria-hidden="true" />
+                              <BedSingle strokeWidth={1.75} size={14} aria-hidden="true" />
                               <SpelledCodes text={row.fromUnit.name} />
                             </span>
                             <span className={styles.pmSub}>
@@ -302,7 +302,7 @@ function PlannedMovesBody({
                           <span className={styles.pmPill} data-tone={state.tone}>
                             {state.words}
                           </span>
-                          <ChevronRight size={16} aria-hidden="true" className={styles.pmChevron} />
+                          <ChevronRight strokeWidth={1.75} size={16} aria-hidden="true" className={styles.pmChevron} />
                         </button>
                       </li>
                     );
@@ -346,7 +346,7 @@ function PlannedMovesBody({
                         </span>
                         <span className={styles.pmRoute}>
                           <span className={styles.pmWard}>
-                            <BedSingle size={14} aria-hidden="true" />
+                            <BedSingle strokeWidth={1.75} size={14} aria-hidden="true" />
                             <SpelledCodes text={api.unitName(planned.unitId)} />
                           </span>
                           <span className={styles.pmSub}>
@@ -357,7 +357,7 @@ function PlannedMovesBody({
                         <span className={styles.pmPill} data-tone={state.tone}>
                           {state.words}
                         </span>
-                        <ChevronRight size={16} aria-hidden="true" className={styles.pmChevron} />
+                        <ChevronRight strokeWidth={1.75} size={16} aria-hidden="true" className={styles.pmChevron} />
                       </button>
                     </li>
                   );

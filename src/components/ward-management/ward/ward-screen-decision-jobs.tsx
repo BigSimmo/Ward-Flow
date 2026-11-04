@@ -47,7 +47,7 @@ export function WardScreenDecisionJobs({
           data-testid="ward-decisions-handover"
           aria-label={`Ward handover, opens Handover for ${unitName}`}
         >
-          <Printer size={16} aria-hidden="true" />
+          <Printer strokeWidth={1.75} size={16} aria-hidden="true" />
           Ward handover
         </Link>
       </div>
@@ -61,7 +61,7 @@ export function WardScreenDecisionJobs({
             <span className={styles.jobLine}>{capacityLine}</span>
           </span>
           <button type="button" className={job} onClick={onConfirmCapacity}>
-            <SquareCheck size={14} aria-hidden="true" />
+            <SquareCheck strokeWidth={1.75} size={14} aria-hidden="true" />
             {capacityDone ? "Update" : "Confirm"}
           </button>
         </li>
@@ -74,7 +74,7 @@ export function WardScreenDecisionJobs({
             <span className={styles.jobLine}>{referralsWaiting} waiting for an answer</span>
           </span>
           <button type="button" className={job} onClick={onOpenReferrals}>
-            <Inbox size={14} aria-hidden="true" />
+            <Inbox strokeWidth={1.75} size={14} aria-hidden="true" />
             Open
           </button>
         </li>
@@ -87,7 +87,7 @@ export function WardScreenDecisionJobs({
             <span className={styles.jobLine}>{unreadNotices} unread</span>
           </span>
           <button type="button" className={job} aria-haspopup="dialog" onClick={onOpenNotices}>
-            <Bell size={14} aria-hidden="true" />
+            <Bell strokeWidth={1.75} size={14} aria-hidden="true" />
             Read
           </button>
         </li>
@@ -100,7 +100,7 @@ export function WardScreenDecisionJobs({
             <span className={styles.jobLine}>One page for the next shift</span>
           </span>
           <button type="button" className={job} aria-haspopup="dialog" onClick={onOpenShiftBrief}>
-            <FileText size={14} aria-hidden="true" />
+            <FileText strokeWidth={1.75} size={14} aria-hidden="true" />
             Open
           </button>
         </li>

@@ -328,7 +328,10 @@ export function WardBedBoard({
   // Audit 24-4 NA2-09 (Josh, 24 Oct 2026): the ward's own ready figure (beds being made ready
   // inside it), with the same "still being made ready" note as every other ready figure. One rule
   // for the header and every pod (`boardReadyCounts`), read from the tiles so a placement shows.
-  const { ready: free, beingMadeReady } = boardReadyCounts(beds);
+  // Read by property, so the ready-figure guard sees the qualifier is stated (beside Ready below).
+  const readyCounts = boardReadyCounts(beds);
+  const free = readyCounts.ready;
+  const beingMadeReady = readyCounts.beingMadeReady;
   const leavingToday = beds.filter(
     (bed) =>
       bed.status !== "ready" &&
@@ -692,7 +695,7 @@ export function WardBedBoard({
         }
         action={
           <button type="button" className={buttonClass({ variant: "ghost", size: "sm" })} onClick={onOpenList}>
-            <List size={14} aria-hidden="true" />
+            <List strokeWidth={1.75} size={14} aria-hidden="true" />
             {isPhone ? "List" : "Every bed list"}
           </button>
         }

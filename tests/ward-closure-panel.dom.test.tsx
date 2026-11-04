@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -44,8 +44,10 @@ describe("ward closure panel", () => {
     fireEvent.click(closeButton);
     expect(screen.getByRole("heading", { name: `Close ${UNIT.name} to admissions` })).toBeInTheDocument();
 
-    fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "staffing" } });
-    fireEvent.change(screen.getByTestId("ward-closure-reopen-after"), { target: { value: "8" } });
+    fireEvent.click(within(screen.getByTestId("ward-closure-reason")).getByRole("button", { name: "Staffing" }));
+    fireEvent.click(
+      within(screen.getByTestId("ward-closure-reopen-after")).getByRole("button", { name: "In 8 hours" }),
+    );
     fireEvent.click(screen.getByTestId("ward-closure-close"));
     // DR-07: the close asks once before it is recorded.
     expect(screen.getByRole("dialog", { name: `Close ${UNIT.name} to admissions?` })).toBeInTheDocument();
@@ -70,7 +72,7 @@ describe("ward closure panel", () => {
         </WardFlowProvider>
       </ToastProvider>,
     );
-    fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "staffing" } });
+    fireEvent.click(within(screen.getByTestId("ward-closure-reason")).getByRole("button", { name: "Staffing" }));
     fireEvent.click(screen.getByTestId("ward-closure-close"));
     expect(screen.getByRole("dialog", { name: `Close ${UNIT.name} to admissions?` })).toHaveTextContent(
       "Reason: Staffing.",
@@ -85,7 +87,7 @@ describe("ward closure panel", () => {
 
   it("asks before closing, and Cancel leaves the ward open (DR-07)", () => {
     renderPanel({ role: "coordinator" });
-    fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "staffing" } });
+    fireEvent.click(within(screen.getByTestId("ward-closure-reason")).getByRole("button", { name: "Staffing" }));
     fireEvent.click(screen.getByTestId("ward-closure-close"));
     expect(screen.getByRole("dialog", { name: `Close ${UNIT.name} to admissions?` })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
@@ -95,7 +97,7 @@ describe("ward closure panel", () => {
 
   it("lets a ward close only itself", () => {
     renderPanel({ role: "ward", actingUnitId: "some-other-ward" });
-    fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "staffing" } });
+    fireEvent.click(within(screen.getByTestId("ward-closure-reason")).getByRole("button", { name: "Staffing" }));
     const closeButton = screen.getByTestId("ward-closure-close");
     expect(closeButton).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(closeButton);

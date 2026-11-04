@@ -127,3 +127,30 @@
   border-top: 1px solid var(--wf-line);
   color: var(--wf-ink-3);
 }
+
+/* C3 (Josh, 4 Nov 2026): each day is a button the size of its column, so the card opens on keyboard
+   focus and on a tap as well as on hover. */
+.hitButton {
+  display: block;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.hitButton:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: -2px;
+}
+.hitButton[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--wf-data-1) 5%, transparent);
+}
+@media (forced-colors: active) {
+  .hitButton:focus-visible {
+    outline-color: Highlight;
+  }
+}

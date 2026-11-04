@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
-import { Drawer, buttonClass, durMinutes } from "@/components/wf";
+import { DrawerFootRow, PanelDrawer, buttonClass, durMinutes } from "@/components/wf";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -56,25 +56,26 @@ export function MismatchPopup({
   );
   const short = (row?.gap ?? 0) < 0;
   return (
-    <Drawer
+    <PanelDrawer
       open={row !== null}
       onClose={onClose}
+      eyebrow="Mismatch"
       title={`${title} beds`}
-      description={row?.who}
-      ariaLabel={`${title} beds, mismatch detail`}
       testId="capacity-mismatch-popup"
-      footer={
+      bodyClassName={styles.drawerPad}
+      foot={
         canOpen(WAITING_HREF) ? (
-          <div className={styles.popFoot}>
+          <DrawerFootRow>
             <Link href={WAITING_HREF} className={buttonClass({ variant: "pri" })}>
               Open Waiting
             </Link>
-          </div>
+          </DrawerFootRow>
         ) : undefined
       }
     >
       {row && detail ? (
         <div className={styles.popBody}>
+          <p className={styles.popLead}>{row.who}</p>
           <dl className={styles.popFigs}>
             <div>
               <dt>Now</dt>
@@ -129,7 +130,12 @@ export function MismatchPopup({
                       {onWard ? (
                         <button type="button" className={styles.popRow} onClick={() => onWard(unit.id)}>
                           {inner}
-                          <ChevronRight size={14} aria-hidden="true" className={styles.helpChevron} />
+                          <ChevronRight
+                            strokeWidth={1.75}
+                            size={14}
+                            aria-hidden="true"
+                            className={styles.helpChevron}
+                          />
                         </button>
                       ) : (
                         <span className={styles.popRow}>{inner}</span>
@@ -169,7 +175,12 @@ export function MismatchPopup({
                       {href && canOpen(href) ? (
                         <Link href={href} className={styles.popRow}>
                           {inner}
-                          <ChevronRight size={14} aria-hidden="true" className={styles.helpChevron} />
+                          <ChevronRight
+                            strokeWidth={1.75}
+                            size={14}
+                            aria-hidden="true"
+                            className={styles.helpChevron}
+                          />
                         </Link>
                       ) : (
                         <span className={styles.popRow}>{inner}</span>
@@ -182,6 +193,6 @@ export function MismatchPopup({
           </section>
         </div>
       ) : null}
-    </Drawer>
+    </PanelDrawer>
   );
 }

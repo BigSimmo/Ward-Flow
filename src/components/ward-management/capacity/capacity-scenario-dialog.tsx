@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 
-import { Button, Checkbox, Dialog, Field, Select, Stepper } from "@/components/wf";
+import { Button, Checkbox, Dialog, Field, ListPicker, Stepper } from "@/components/wf";
 import { BED_KIND_LABEL } from "@/components/ward-management/forecast/forecast-by-kind";
 import {
   applyScenario,
@@ -119,16 +119,14 @@ export function ScenarioDialog({
       <fieldset className={styles.scenarioSet}>
         <legend className={styles.kickerInline}>A ward opens or closes beds</legend>
         <div className={styles.scenarioRow}>
-          <Field label="Ward">
-            <Select value={unitId} onChange={(event) => setUnitId(event.target.value)}>
-              <option value="">Choose a ward</option>
-              {openUnits.map((unit) => (
-                <option key={unit.id} value={unit.id}>
-                  {unit.name}
-                </option>
-              ))}
-            </Select>
-          </Field>
+          {/* A long list (every open ward), so the kit's searchable picker, not a browser drop-down. */}
+          <ListPicker
+            label="Ward"
+            value={unitId === "" ? null : unitId}
+            onChange={(next) => setUnitId(next ?? "")}
+            options={openUnits.map((unit) => ({ value: unit.id, label: unit.name }))}
+            placeholder="Choose a ward"
+          />
           <Field label="Beds">
             <Stepper
               value={delta}

@@ -2,7 +2,7 @@
 
 import { startTransition, useEffect, useMemo, useState } from "react";
 
-import { Drawer, Segmented, StatusGlyph, useIsPhone, useOptionalToast } from "@/components/wf";
+import { Drawer, PanelDrawer, Segmented, StatusPill, useIsPhone, useOptionalToast } from "@/components/wf";
 import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -34,7 +34,7 @@ import { ShiftChecks } from "./capacity-shift-checks";
 import { useSiteEdWaiting } from "./capacity-site-ed";
 import { heldUpReleases } from "./capacity-held-up";
 import { shiftConfirmations, unchangedConfirmations } from "./shift-confirmations";
-import { CapacityWardFoot, CapacityWardSidebar } from "./capacity-ward-drawer";
+import { CapacityWardFoot, CapacityWardSidebar, useCapacityWardTabs } from "./capacity-ward-drawer";
 import styles from "./capacity-page.module.css";
 
 type Popup = { kind: "scenario" } | { kind: "sheet" } | { kind: "ward"; unitId: string } | { kind: "forecast" } | null;
@@ -155,6 +155,7 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
   );
   const selectedRow =
     popup?.kind === "ward" ? model.networkRows.find((row) => row.unit.id === popup.unitId) : undefined;
+  const wardTabs = useCapacityWardTabs(selectedRow?.unit.id);
 
   // Asking a ward to confirm its beds is the coordinator's step (REQUEST_CAPACITY_REFRESH), as in the
   // ward drawer. A site bed manager confirms on the ward's own page instead, and every other desk,
@@ -303,34 +304,39 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
         networkWide={networkWide}
       />
       {sheet ? <BedMeetingSheetDialog open onClose={() => setPopup(null)} sheet={sheet} now={now} /> : null}
-      <Drawer
+      <PanelDrawer
         open={selectedRow !== undefined}
         onClose={() => setPopup(null)}
         title={selectedRow?.unit.name ?? "Ward capacity"}
-        ariaLabel={selectedRow ? `${selectedRow.unit.name}, ward capacity` : "Ward capacity"}
-        description={selectedRow ? wardPlace(selectedRow.unit.siteCode) : undefined}
-        titleAccessory={
+        subtitle={selectedRow ? wardPlace(selectedRow.unit.siteCode) : undefined}
+        tag={
           selectedRow ? (
-            <span className={styles.wdHeadTag}>
-              <StatusGlyph tone={selectedRow.ready > 0 ? "success" : "warning"} size={8} />
-              {selectedRow.ready} ready
-            </span>
+            <StatusPill tone={selectedRow.ready > 0 ? "success" : "warning"}>{selectedRow.ready} ready</StatusPill>
           ) : undefined
         }
+        tabs={wardTabs.tabs}
+        tab={wardTabs.tab}
+        onTabChange={wardTabs.onTabChange}
+        tabsLabel="Ward panel view"
         testId="ward-capacity-ward-drawer"
-        footerClassName={styles.wdDrawerFoot}
-        footer={selectedRow ? <CapacityWardFoot row={selectedRow} now={now} /> : undefined}
+        foot={selectedRow ? <CapacityWardFoot row={selectedRow} now={now} /> : undefined}
       >
         {selectedRow ? (
           <CapacityWardSidebar
             row={selectedRow}
             onBack={() => setPopup(null)}
             now={now}
+            tab={wardTabs.tab}
             showPlace={false}
             footInDrawer
+            // C3 (Josh, 4 Nov 2026): the ward's own row of the forecast's days, the "By ward" view's row.
+            week={{
+              days: model.days,
+              row: model.week.rows.find((weekRow) => weekRow.unitId === selectedRow.unit.id),
+            }}
           />
         ) : null}
-      </Drawer>
+      </PanelDrawer>
       <Drawer
         open={popup?.kind === "forecast"}
         onClose={() => setPopup(null)}

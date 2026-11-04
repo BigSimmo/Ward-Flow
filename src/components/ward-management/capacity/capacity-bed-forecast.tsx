@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
 import { ChevronRight } from "lucide-react";
 
 import { Button, Card, CardHead, Segmented } from "@/components/wf";
@@ -187,7 +187,7 @@ export function BedForecast({
                   >
                     <span className={styles.helpTitle}>{item.title}</span>
                     <span className={`${styles.tag} ${tagTone(item) ? styles.tagGood : ""}`}>{tagText(item)}</span>
-                    <ChevronRight size={14} aria-hidden="true" className={styles.helpChevron} />
+                    <ChevronRight strokeWidth={1.75} size={14} aria-hidden="true" className={styles.helpChevron} />
                   </button>
                 </li>
               ))}
@@ -278,6 +278,28 @@ function Kpi({
   );
 }
 
+/**
+ * One ward's next days as day bars: the same row the "By ward" view draws (C3, Josh, 4 Nov 2026),
+ * for the ward panel. A ward with nothing recorded draws zeros.
+ */
+export function wardDayBars(
+  days: readonly HorizonDay[],
+  row: { out: readonly number[]; arriving: readonly number[] } | undefined,
+): { bars: DayBar[]; summary: string } {
+  const bars = days.map((day, index) => ({
+    key: day.offset,
+    label: day.label,
+    sub: daySub(day),
+    value: row?.out[index] ?? 0,
+    firm: day.offset < 2,
+    second: row?.arriving[index] ?? 0,
+  }));
+  const summary = `This ward's recorded discharges by day for the next ${bars.length} days: ${bars
+    .map((bar) => `${bar.label} ${bar.value}${bar.second ? `, ${bar.second} planned in` : ""}`)
+    .join(", ")}. Days after tomorrow may move.`;
+  return { bars, summary };
+}
+
 function daySub(day: HorizonDay): string {
   if (day.offset === 0) return "Today";
   if (day.offset === 1) return "Tomorrow";
@@ -353,6 +375,29 @@ function tagTone(item: HelpItem): boolean {
   return item.uplift > 0;
 }
 
+/**
+ * Roving focus along one heat map row (Josh, 4 Nov 2026): the row's first cell is its only Tab stop,
+ * and Left, Right, Home and End move focus between that row's cells, so the cell's tip shows.
+ */
+function moveAlongRow(event: KeyboardEvent<HTMLTableRowElement>) {
+  const cells = Array.from(event.currentTarget.querySelectorAll<HTMLElement>("[data-hm-cell]"));
+  const at = event.target instanceof HTMLElement ? cells.indexOf(event.target) : -1;
+  const last = cells.length - 1;
+  const next =
+    event.key === "ArrowRight"
+      ? Math.min(at + 1, last)
+      : event.key === "ArrowLeft"
+        ? Math.max(at - 1, 0)
+        : event.key === "Home"
+          ? 0
+          : event.key === "End"
+            ? last
+            : null;
+  if (next === null || at < 0) return;
+  event.preventDefault();
+  cells[next]?.focus();
+}
+
 function WardDays({
   days,
   rows,
@@ -399,7 +444,7 @@ function WardDays({
           {shown.map((row) => {
             const total = row.out.reduce((sum, value) => sum + value, 0);
             return (
-              <tr key={row.unitId}>
+              <tr key={row.unitId} onKeyDown={moveAlongRow}>
                 <th scope="row" className={styles.hmWard}>
                   <SpelledCodes text={row.name} />
                 </th>
@@ -408,7 +453,12 @@ function WardDays({
                   const arriving = row.arriving[index] ?? 0;
                   return (
                     <td key={day.offset} className={styles.hmCellWrap}>
+                      {/* C3 (Josh, 4 Nov 2026): each cell takes focus, so its tip opens on a keyboard
+                          focus and on a tap as well as on hover. The cell's own words are read. Each
+                          ward row is one Tab stop: the arrows, Home and End move along it. */}
                       <span
+                        tabIndex={index === 0 ? 0 : -1}
+                        data-hm-cell=""
                         className={`${styles.hmCell} ${styles[`hm${Math.min(out, 3)}`] ?? ""}${
                           day.offset > 1 && out > 0 ? ` ${styles.hmLater}` : ""
                         }`}
@@ -421,7 +471,7 @@ function WardDays({
                         ) : (
                           <>
                             <span className={styles.hmNone} aria-hidden="true" />
-                            <span className={styles.srOnly}>none</span>
+                            <span className={styles.srOnly}>0 out</span>
                           </>
                         )}
                         {arriving ? (
@@ -430,7 +480,7 @@ function WardDays({
                             <span className={styles.srOnly}> in</span>
                           </span>
                         ) : null}
-                        {/* Capacity issue 3: pointing at a cell names its ward, day and figures. */}
+                        {/* Capacity issue 3: pointing at or focusing a cell names its ward, day and figures. */}
                         <span className={styles.hmTip} aria-hidden="true">
                           <b>{row.name}</b>
                           <span>{day.label}</span>

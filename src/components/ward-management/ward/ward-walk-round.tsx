@@ -13,11 +13,14 @@
  */
 
 import React, { useEffect, useRef, useState, type Dispatch, type SetStateAction } from "react";
-import { Check, X } from "lucide-react";
-import { Button, buttonClass, StatusGlyph, type WfTone } from "@/components/wf";
+import { Check, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Button, buttonClass, Segmented, StatusGlyph, type WfTone } from "@/components/wf";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { announceToWardShell } from "../shell/ward-live-region";
 import type { BedItem } from "./ward-beds-matrix";
+import type { BedRelease } from "@/components/ward-management/ward-model";
+import { observationSummary } from "@/components/ward-management/ward-observation";
+import { ownHistoryState } from "./ward-screen-helpers";
 import styles from "./ward-walk-round.module.css";
 
 export type WalkRoundBed = {
@@ -37,6 +40,19 @@ export type WalkRoundBed = {
   glyph: WfTone | null;
   days: string;
   accessibleName: string;
+  /**
+   * WH4 (Josh, 4 Nov 2026): someone is in the bed (in it, on leave or pulled). The round walks
+   * only these by default and skips empty beds. Absent counts as occupied.
+   */
+  occupied?: boolean;
+  /** The recorded observation level as one line, such as "General, hourly". */
+  observation?: string | null;
+  /** The one flag a round needs, such as "Held up, Awaiting clean", or null. */
+  flag?: string | null;
+  /** The planned discharge date, already worded for this moment. */
+  dueOut?: string | null;
+  /** An expected discharge the ward can confirm from the card, without opening the bed. */
+  confirmReleaseId?: string;
 };
 
 /**
@@ -62,6 +78,67 @@ export function bedStripWord(
   return BED_STATE_LABELS.occupied;
 }
 
+/** The parts of a Ward home bed row the round reads (`bedRows` in ward-home-tab.tsx). */
+type WalkRoundSourceRow = {
+  bed: BedItem;
+  free: boolean;
+  number: string;
+  name: string;
+  note: string;
+  stateWord: string;
+  stripWord: string;
+  glyph: WfTone | null;
+  days: string;
+  accessibleName: string;
+};
+
+/**
+ * The round's beds from Ward home's bed rows. WH4 (Josh, 4 Nov 2026): each card also carries what a
+ * round needs, the observation level, the one flag, the date due out, and an expected discharge the
+ * ward can confirm there and then. Nothing new is derived: each is a field the bed board already draws.
+ */
+export function walkRoundBeds(rows: readonly WalkRoundSourceRow[], releases: readonly BedRelease[]): WalkRoundBed[] {
+  return rows.map((row) => ({
+    bedNumber: Number(row.bed.bedNumber),
+    number: row.number,
+    name: row.name,
+    note: row.note,
+    stateWord: row.stripWord,
+    changeKey: [
+      row.bed.status,
+      row.bed.statusText,
+      row.bed.admissionId,
+      row.bed.blockReason,
+      row.bed.dischargeBarrier,
+      row.bed.dischargeConfirmed,
+      row.bed.pastDate,
+      row.bed.dischargeDateMoves,
+      row.bed.awayAtEdHours != null,
+      row.bed.isSpecialling,
+      row.bed.observation?.level,
+      row.bed.preparing,
+    ].join("|"),
+    glyph: row.glyph,
+    days: row.days,
+    accessibleName: row.accessibleName,
+    occupied: !row.free && row.bed.status !== "ready" && row.bed.status !== "closed",
+    observation: row.bed.observation ? observationSummary(row.bed.observation) : null,
+    flag:
+      row.note !== row.stateWord && row.note !== row.name && !row.bed.isSpecialling
+        ? row.note
+        : (row.bed.criteriaLedChip?.label ?? null),
+    dueOut: row.free ? null : (row.bed.expectedDischargeLabel ?? null),
+    // Only a discharge due by tomorrow is offered on the card; later ones stay in the bed's panel.
+    confirmReleaseId:
+      (row.bed.expectedDays ?? Infinity) > 1
+        ? undefined
+        : releases.find(
+            (release) =>
+              release.admissionId === row.bed.admissionId && release.state === "expected" && release.blocker === null,
+          )?.id,
+  }));
+}
+
 export type WalkRoundMark = { reviewed: boolean; changed: boolean };
 
 export type WalkRoundState = {
@@ -71,16 +148,25 @@ export type WalkRoundState = {
   walking: number | null;
   /** Each bed's change key when the round started. */
   startKeys: ReadonlyMap<number, string>;
+  /** WH4: the round skips empty beds unless All beds is chosen. */
+  peopleOnly: boolean;
 };
 
-function freshRound(scope: string, beds: readonly WalkRoundBed[]): WalkRoundState {
+function freshRound(scope: string, beds: readonly WalkRoundBed[], peopleOnly = true): WalkRoundState {
   return {
     scope,
     reviewed: new Set(),
     walking: null,
     startKeys: new Map(beds.map((bed) => [bed.bedNumber, bed.changeKey])),
+    peopleOnly,
   };
 }
+
+/** The round's own entry in the browser history, so Back closes the card before it leaves the ward. */
+const WALK_ROUND_ENTRY = "wardWalkRound";
+
+/** A horizontal swipe this long, and mostly sideways, moves to the next or previous bed. */
+const SWIPE_MIN_PX = 56;
 
 /** The round's state, held above the phone and desktop branch so a layout change keeps it. */
 export function useWalkRound(
@@ -102,15 +188,28 @@ type Props = {
   setRound: Dispatch<SetStateAction<WalkRoundState>>;
   /** Opens the bed's existing panel, where its status is updated. */
   onOpenBed: (bedNumber: number) => void;
+  /** WH4: confirms a bed's expected discharge from the card (the ward's `CONFIRM_BED_RELEASE`). */
+  onConfirmRelease?: (releaseId: string) => void;
   /** Records the control that opened the panel, so focus returns to it when the panel closes. */
   registerTrigger?: (bedNumber: number, element: HTMLButtonElement | null) => void;
   /** The list of beds. It gets each bed's marks and a way to start walking from that bed. */
   renderList: (mark: (bedNumber: number) => WalkRoundMark, walkFrom: (bedNumber: number) => void) => React.ReactNode;
 };
 
-export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigger, renderList }: Props) {
-  const ordered = [...beds].sort((left, right) => left.bedNumber - right.bedNumber);
-  const { reviewed, walking, startKeys } = round;
+export function WardWalkRound({
+  beds,
+  round,
+  setRound,
+  onOpenBed,
+  onConfirmRelease,
+  registerTrigger,
+  renderList,
+}: Props) {
+  const { reviewed, walking, startKeys, peopleOnly } = round;
+  const sorted = [...beds].sort((left, right) => left.bedNumber - right.bedNumber);
+  const peopleCount = sorted.filter((bed) => bed.occupied !== false).length;
+  // WH4: People only skips the empty beds. A bed tapped in the list still opens, whatever it holds.
+  const ordered = peopleOnly ? sorted.filter((bed) => bed.occupied !== false || bed.bedNumber === walking) : sorted;
   const setWalking = (bedNumber: number | null) => {
     setRound((previous) => ({ ...previous, walking: bedNumber }));
   };
@@ -159,7 +258,7 @@ export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigge
       } else {
         announceToWardShell("Back to the round.");
       }
-      if (was !== undefined) headRef.current?.querySelector("button")?.focus();
+      if (was !== undefined) headRef.current?.querySelector<HTMLButtonElement>("[data-walk-start]")?.focus();
     }
     // Only a change of bed speaks; `allReviewed` is read as it is at that moment.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -184,6 +283,31 @@ export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigge
     return () => document.removeEventListener("keydown", onKey);
   }, [walkingOpen, setRound]);
 
+  // WH4: the card is a screen of its own, so the phone's Back closes it and comes back to the
+  // round, as the bed panel's own entry does (`WARD_BED_DRAWER_ENTRY`). Opening pushes one marked
+  // entry; closing from the card steps back over it, so Back never reopens a closed card.
+  useEffect(() => {
+    if (!walkingOpen || typeof window === "undefined") return;
+    const ownState = () => ownHistoryState(window.history.state);
+    if (!ownState()[WALK_ROUND_ENTRY]) {
+      window.history.pushState({ ...ownState(), [WALK_ROUND_ENTRY]: true }, "", window.location.href);
+    }
+    const onPopState = () => {
+      if (!ownState()[WALK_ROUND_ENTRY]) setRound((previous) => ({ ...previous, walking: null }));
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => {
+      window.removeEventListener("popstate", onPopState);
+      if (ownState()[WALK_ROUND_ENTRY]) window.history.back();
+    };
+  }, [walkingOpen, setRound]);
+
+  const swipeFrom = useRef<{ x: number; y: number } | null>(null);
+  const goTo = (offset: number) => {
+    const target = ordered[index + offset];
+    if (target) setWalking(target.bedNumber);
+  };
+
   const reviewAndNext = () => {
     if (!current) return;
     const next = ordered[index + 1];
@@ -196,7 +320,7 @@ export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigge
   const startOrCarryOn = () => {
     // A finished round starts again from nothing: no reviewed marks and a new change baseline.
     if (allReviewed) {
-      setRound({ ...freshRound(round.scope, beds), walking: ordered[0]?.bedNumber ?? null });
+      setRound({ ...freshRound(round.scope, beds, peopleOnly), walking: ordered[0]?.bedNumber ?? null });
       return;
     }
     if (firstUnreviewed) setWalking(firstUnreviewed.bedNumber);
@@ -215,11 +339,33 @@ export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigge
   if (current) {
     const isChanged = changed(current);
     const isReviewed = reviewed.has(current.bedNumber);
+    const last = index === ordered.length - 1;
+    // WH4: the facts a round needs, always in the same three rows so nothing jumps between beds.
+    const facts: [string, string | null | undefined, string][] = [
+      ["Observation", current.observation, "Not recorded"],
+      ["Flag", current.flag, "Nothing flagged"],
+      ["Due out", current.dueOut, "No date recorded"],
+    ];
     return (
       <section
         className={styles.card}
         aria-label={`Bed ${current.number}, ${index + 1} of ${ordered.length}`}
         data-testid="ward-walk-round"
+        onTouchStart={(event) => {
+          const touch = event.touches[0];
+          swipeFrom.current = touch ? { x: touch.clientX, y: touch.clientY } : null;
+        }}
+        onTouchEnd={(event) => {
+          const from = swipeFrom.current;
+          const touch = event.changedTouches[0];
+          swipeFrom.current = null;
+          if (!from || !touch) return;
+          const dx = touch.clientX - from.x;
+          const dy = touch.clientY - from.y;
+          // Mostly sideways and long enough: a scroll or a tap never moves the round.
+          if (Math.abs(dx) < SWIPE_MIN_PX || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+          goTo(dx < 0 ? 1 : -1);
+        }}
       >
         {/* Close, not a back arrow: the header's Back (shell/ward-back.ts) leaves the ward page on a
             drill-down, so an arrow here would put two arrows on screen that go different places.
@@ -227,8 +373,9 @@ export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigge
         <div className={styles.cardTop}>
           <span className={styles.cardTitle}>
             <b>Bed {current.number}</b>
-            <span className={styles.position}>
+            <span className={styles.position} data-testid="walk-round-position">
               {index + 1} of {ordered.length}
+              {peopleOnly ? " people" : " beds"}
             </span>
           </span>
           <button
@@ -240,46 +387,57 @@ export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigge
               setWalking(null);
             }}
           >
-            <X size={22} aria-hidden="true" />
+            <X strokeWidth={1.75} size={18} aria-hidden="true" />
           </button>
         </div>
         {progress}
-        <h3 className={styles.cardName}>{current.name}</h3>
-        <p className={styles.cardNote}>
-          {current.glyph ? <StatusGlyph tone={current.glyph} size={9} /> : null}
-          <span>{current.note}</span>
-          {current.days ? <span className={styles.cardDays}>{current.days} stay</span> : null}
-        </p>
-        <p className={styles.marks}>
-          <span className={isChanged ? styles.changed : styles.same}>
-            {isChanged ? "Changed this round" : "No change since the round started"}
-          </span>
-          {isReviewed ? <span className={styles.done}>Reviewed</span> : null}
-        </p>
-        <button
-          type="button"
-          className={buttonClass({ variant: "sec", size: "md", iconOnly: false })}
-          aria-haspopup="dialog"
-          ref={(element) => registerTrigger?.(current.bedNumber, element)}
-          onClick={() => {
-            onOpenBed(current.bedNumber);
-          }}
-        >
-          Update this bed
-        </button>
+        <div className={styles.sheet}>
+          <h3 className={styles.cardName}>{current.name}</h3>
+          <p className={styles.cardNote}>
+            {current.glyph ? <StatusGlyph tone={current.glyph} size={9} /> : null}
+            <span>{current.stateWord}</span>
+            {current.days ? <span className={styles.cardDays}>{current.days} stay</span> : null}
+          </p>
+          <dl className={styles.facts}>
+            {facts.map(([label, value, empty]) => (
+              <div key={label} className={styles.fact}>
+                <dt>{label}</dt>
+                <dd data-empty={value ? undefined : "true"}>{value || empty}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className={styles.marks}>
+            <span className={isChanged ? styles.changed : styles.same}>
+              {isChanged ? "Changed this round" : "No change since the round started"}
+            </span>
+            {isReviewed ? <span className={styles.done}>Reviewed</span> : null}
+          </p>
+          {/* WH4: the one quick action stays on the card; anything else is in the bed's panel. */}
+          <div className={styles.actions}>
+            {current.confirmReleaseId && onConfirmRelease ? (
+              <Button variant="sec" onClick={() => onConfirmRelease(current.confirmReleaseId!)}>
+                Confirm discharge
+              </Button>
+            ) : null}
+            <button
+              type="button"
+              className={buttonClass({ variant: "ghost", size: "md", iconOnly: false })}
+              aria-haspopup="dialog"
+              ref={(element) => registerTrigger?.(current.bedNumber, element)}
+              onClick={() => {
+                onOpenBed(current.bedNumber);
+              }}
+            >
+              Update this bed
+            </button>
+          </div>
+        </div>
         <div className={styles.cardFoot}>
-          <Button
-            variant="sec"
-            disabled={index === 0}
-            onClick={() => {
-              const previous = ordered[index - 1];
-              if (previous) setWalking(previous.bedNumber);
-            }}
-          >
+          <Button variant="sec" icon={ChevronLeft} disabled={index === 0} onClick={() => goTo(-1)}>
             Previous
           </Button>
-          <Button variant="pri" onClick={reviewAndNext}>
-            {index === ordered.length - 1 ? "Reviewed, finish" : "Reviewed, next bed"}
+          <Button variant="pri" iconEnd={last ? undefined : ChevronRight} onClick={reviewAndNext}>
+            {last ? "Reviewed, finish" : "Reviewed, next bed"}
           </Button>
         </div>
       </section>
@@ -289,8 +447,17 @@ export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigge
   return (
     <div className={styles.walk} data-testid="ward-walk-round">
       <div ref={headRef} className={styles.head}>
+        <Segmented
+          label="Beds in the round"
+          items={[
+            { id: "people" as const, label: "People only", count: peopleCount },
+            { id: "all" as const, label: "All beds", count: sorted.length },
+          ]}
+          value={peopleOnly ? "people" : "all"}
+          onChange={(id) => setRound((previous) => ({ ...previous, peopleOnly: id === "people" }))}
+        />
         {progress}
-        <Button variant="pri" onClick={startOrCarryOn}>
+        <Button variant="pri" data-walk-start="true" onClick={startOrCarryOn}>
           {reviewedCount === 0
             ? "Start the round"
             : allReviewed
@@ -315,5 +482,5 @@ export function WalkRoundRowMarks({ mark }: { mark: WalkRoundMark }) {
 
 /** A reviewed bed's tick at the end of its round row. The row's own name says "reviewed". */
 export function WalkRoundTick({ mark }: { mark: WalkRoundMark }) {
-  return mark.reviewed ? <Check size={18} className={styles.tick} aria-hidden="true" /> : null;
+  return mark.reviewed ? <Check strokeWidth={1.75} size={18} className={styles.tick} aria-hidden="true" /> : null;
 }

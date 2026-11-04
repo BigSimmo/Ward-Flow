@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
-import { Button, Drawer, buttonClass, durMinutes } from "@/components/wf";
+import { Button, DrawerFootRow, PanelDrawer, buttonClass, durMinutes } from "@/components/wf";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -56,24 +56,26 @@ export function LeverPopup({
   const pageHref = item?.kind === "clear_held_up" ? HELD_UP_HREF : DISCHARGES_HREF;
   const wardLevel = item?.kind === "stale_counts" || item?.kind === "being_made_ready";
   return (
-    <Drawer
+    <PanelDrawer
       open={item !== null}
       onClose={onClose}
+      eyebrow="What would help tomorrow"
       title={item?.title ?? "What would help tomorrow"}
-      description={item ? describe(item) : undefined}
       testId="capacity-lever-popup"
-      footer={
+      bodyClassName={styles.drawerPad}
+      foot={
         !wardLevel && canOpen(pageHref) ? (
-          <div className={styles.popFoot}>
+          <DrawerFootRow>
             <Link href={pageHref} className={buttonClass({ variant: "pri" })}>
               Open Discharges
             </Link>
-          </div>
+          </DrawerFootRow>
         ) : undefined
       }
     >
       {item ? (
         <div className={styles.popBody}>
+          <p className={styles.popLead}>{describe(item)}</p>
           {wardLevel ? (
             <ul className={styles.popList}>
               {item.rows.map((row) => (
@@ -89,7 +91,7 @@ export function LeverPopup({
                           : `${row.pendingPreparation ?? 0} being made ready · ${row.ready} ready now`}
                       </span>
                     </span>
-                    <ChevronRight size={14} aria-hidden="true" className={styles.helpChevron} />
+                    <ChevronRight strokeWidth={1.75} size={14} aria-hidden="true" className={styles.helpChevron} />
                   </button>
                   {item.kind === "stale_counts" && onAskWard ? (
                     <Button size="sm" variant="sec" onClick={() => onAskWard(row.unit.id)}>
@@ -128,7 +130,7 @@ export function LeverPopup({
                     {href && canOpen(href) ? (
                       <Link href={href} className={styles.popRow}>
                         {inner}
-                        <ChevronRight size={14} aria-hidden="true" className={styles.helpChevron} />
+                        <ChevronRight strokeWidth={1.75} size={14} aria-hidden="true" className={styles.helpChevron} />
                       </Link>
                     ) : (
                       <span className={styles.popRow}>{inner}</span>
@@ -140,7 +142,7 @@ export function LeverPopup({
           )}
         </div>
       ) : null}
-    </Drawer>
+    </PanelDrawer>
   );
 }
 

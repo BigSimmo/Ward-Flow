@@ -175,7 +175,7 @@ export function WardScreenTabSections({
               setActiveTab("attn");
             }}
           >
-            <ChevronLeft size={16} aria-hidden="true" />
+            <ChevronLeft strokeWidth={1.75} size={16} aria-hidden="true" />
             Back to Ward home
           </button>
           <h2 className={styles.subViewTitle}>All arrivals</h2>
@@ -228,7 +228,7 @@ export function WardScreenTabSections({
               setActiveTab("attn");
             }}
           >
-            <ChevronLeft size={16} aria-hidden="true" />
+            <ChevronLeft strokeWidth={1.75} size={16} aria-hidden="true" />
             Back to Ward home
           </button>
           <h2 className={styles.subViewTitle}>All discharges</h2>
@@ -272,7 +272,7 @@ export function WardScreenTabSections({
               setActiveTab("attn");
             }}
           >
-            <ChevronLeft size={16} aria-hidden="true" />
+            <ChevronLeft strokeWidth={1.75} size={16} aria-hidden="true" />
             Back to Ward home
           </button>
           <h2 className={styles.subViewTitle}>Full bed list</h2>

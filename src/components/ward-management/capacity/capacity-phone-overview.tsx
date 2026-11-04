@@ -73,7 +73,7 @@ export function PhoneOverview({
                   </div>
                   <span className={`${styles.small} ${row.gap < 0 ? styles.warnInk : styles.okInk}`}>
                     <StatusGlyph tone={row.gap < 0 ? "warning" : "success"} size={9} /> {gapWords(row.gap)}
-                    <ChevronRight size={14} aria-hidden="true" />
+                    <ChevronRight strokeWidth={1.75} size={14} aria-hidden="true" />
                   </span>
                 </button>
               </li>

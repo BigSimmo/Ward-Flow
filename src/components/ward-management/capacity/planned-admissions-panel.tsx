@@ -6,7 +6,7 @@
 // holds only the open form's draft, never in browser storage.
 import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
-import { CalendarPlus, MoreHorizontal } from "lucide-react";
+import { CalendarPlus, Ellipsis } from "lucide-react";
 
 import { Button, buttonClass, Field, Menu, Select, Sheet, StatusGlyph, TextInput } from "@/components/wf";
 import {
@@ -611,7 +611,7 @@ export function PlannedAdmissionsPanel({
                               aria-label={`More for ${whoText(planned)}`}
                               className={buttonClass({ variant: "ghost", size: "sm" })}
                             >
-                              <MoreHorizontal size={15} aria-hidden="true" />
+                              <Ellipsis size={14} strokeWidth={1.75} aria-hidden="true" />
                             </button>
                           )}
                         />

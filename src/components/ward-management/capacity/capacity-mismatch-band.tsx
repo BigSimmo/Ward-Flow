@@ -177,7 +177,7 @@ function MismatchTile({
       ) : null}
       <button type="button" className={styles.mmTileOpen} aria-haspopup="dialog" onClick={onOpen}>
         Who is waiting and where<span className={styles.srOnly}>, {title}</span>
-        <ChevronRight size={14} aria-hidden="true" />
+        <ChevronRight strokeWidth={1.75} size={14} aria-hidden="true" />
       </button>
     </li>
   );

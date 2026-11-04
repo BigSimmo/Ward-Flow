@@ -122,6 +122,8 @@ type WardScreenHomeSectionProps = {
   states: BedStateCounts;
   blockedReleases: BedRelease[];
   pendingPreparation: number;
+  /** WH4: the ward's own confirm, for the phone round's Confirm discharge. */
+  confirmBedRelease: (releaseId: string) => void;
 };
 
 /** The control that opened or closed placing hides with it, so focus follows to its partner. */
@@ -211,6 +213,7 @@ export function WardScreenHomeSection({
   states,
   blockedReleases,
   pendingPreparation,
+  confirmBedRelease,
 }: WardScreenHomeSectionProps) {
   // Opted out of the React Compiler: before the 18 Oct 2026 file split this code ran unmemoised
   // inside WardScreen, which the compiler skips. Memoising it changed nothing visible but added
@@ -311,6 +314,7 @@ export function WardScreenHomeSection({
         onOpenArrival={openArrival}
         onPullPatient={handlePullPatient}
         onOpenDischarges={openDischargesTab}
+        onConfirmRelease={(releaseId) => confirmBedRelease(releaseId)}
         bedsList={bedsList}
         onSelectBed={(bedNumber) => {
           setSelectedBed(bedNumber);

@@ -37,9 +37,10 @@ import { WardAcceptDialog } from "./ward-answer-accept-dialog";
 import { OverrideRegister } from "@/components/ward-management/override-register";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
-import { ArrowLeftRight, BedDouble, ChevronRight, LayoutGrid, List, ListChecks } from "lucide-react";
+import { ArrowLeftRight, BedSingle, ChevronRight, LayoutGrid, List, ListChecks } from "lucide-react";
 import { WardPlaceOrMove } from "./ward-place-or-move";
-import { WardHomeTileText, WardHomeTodayStrip } from "./ward-home-tab-today";
+import { WardHomeTileText, WardHomeTodayStrip, WardPhoneTomorrowRow } from "./ward-home-tab-today";
+import { useWardTomorrowOutlook } from "./ward-home-outlook";
 import {
   Button,
   buttonClass,
@@ -59,7 +60,7 @@ import { bedGlyphTone, type BedItem } from "./ward-bed-tone";
 import { CriteriaLedTag } from "./ward-criteria-led-tag";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { pullBlockedReason } from "./ward-pull-blocked";
-import { useWalkRound, WardWalkRound, bedStripWord, type WalkRoundBed, type WalkRoundMark } from "./ward-walk-round";
+import { useWalkRound, WardWalkRound, bedStripWord, walkRoundBeds, type WalkRoundMark } from "./ward-walk-round";
 import type { WardBedFilter } from "./ward-telemetry-ribbon";
 import { observationRatio, observationSummary } from "@/components/ward-management/ward-observation";
 import { originName } from "@/components/ward-management/ward-movement-origin";
@@ -143,6 +144,7 @@ interface WardHomeTabProps {
   /** Pull a bed for an accepted patient from the Ward flow Admissions list (A1-6). */
   onPullPatient?: (movementId: string, unitId: string) => void;
   onOpenDischarges?: () => void;
+  onConfirmRelease?: (releaseId: string) => void; // WH4: the phone round's Confirm discharge
   /** The ward's beds, as the bed board draws them. Drives Every bed. */
   bedsList?: BedItem[];
   /** Audit A3-1: this ward's absences on an order, from `absentOnOrder` (one Act now row each). */
@@ -262,6 +264,7 @@ export function WardHomeTab({
   onWalkingChange,
   onOpenBoard,
   boardWaitingCount = 0,
+  onConfirmRelease,
 }: WardHomeTabProps) {
   const [, startTransition] = useTransition();
   const phoneSheets = phonePanel !== undefined;
@@ -271,6 +274,7 @@ export function WardHomeTab({
     admissions = [],
     configuration,
   } = useWardFlowSelect("bedReleases", "leaveBeds", "admissions", "configuration");
+  const outlook = useWardTomorrowOutlook(unit, accepted, now); // WH3: tomorrow for this ward alone
   const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
   const [localChecks, setLocalChecks] = useState<Record<string, Instant | null>>({
     drugs: null,
@@ -581,30 +585,7 @@ export function WardHomeTab({
   // Bed board is the map. The round's list is plain bed order, never grouped or re-sorted.
   // Item 23: the walk round's state sits here, above the phone and desktop branch, so turning the
   // phone to landscape and back keeps the round.
-  const walkBeds: WalkRoundBed[] = bedRows.map((row) => ({
-    bedNumber: Number(row.bed.bedNumber),
-    number: row.number,
-    name: row.name,
-    note: row.note,
-    stateWord: row.stripWord,
-    changeKey: [
-      row.bed.status,
-      row.bed.statusText,
-      row.bed.admissionId,
-      row.bed.blockReason,
-      row.bed.dischargeBarrier,
-      row.bed.dischargeConfirmed,
-      row.bed.pastDate,
-      row.bed.dischargeDateMoves,
-      row.bed.awayAtEdHours != null,
-      row.bed.isSpecialling,
-      row.bed.observation?.level,
-      row.bed.preparing,
-    ].join("|"),
-    glyph: row.glyph,
-    days: row.days,
-    accessibleName: row.accessibleName,
-  }));
+  const walkBeds = walkRoundBeds(bedRows, pendingBedReleases);
   const [walkRound, setWalkRound] = useWalkRound(unit.id, walkBeds);
   const walkRowLabel = (name: string, marks: WalkRoundMark) =>
     [
@@ -1688,7 +1669,7 @@ export function WardHomeTab({
               data-testid="ward-phone-row-shift"
             >
               <span className={styles.needsIcon} data-tone="warning" aria-hidden="true">
-                <ListChecks size={18} aria-hidden="true" />
+                <ListChecks strokeWidth={1.75} size={18} aria-hidden="true" />
               </span>
               <span className={styles.needsText}>
                 <b>This shift</b>
@@ -1696,7 +1677,7 @@ export function WardHomeTab({
                   {todoOpen} to do{actNow.length > 0 ? ` · ${actNow.length} due now` : ""}
                 </span>
               </span>
-              <ChevronRight size={18} aria-hidden="true" className={styles.needsChevron} />
+              <ChevronRight strokeWidth={1.75} size={18} aria-hidden="true" className={styles.needsChevron} />
             </button>
             <button
               type="button"
@@ -1708,7 +1689,7 @@ export function WardHomeTab({
               data-testid="ward-phone-row-flow"
             >
               <span className={styles.needsIcon} data-tone="info" aria-hidden="true">
-                <ArrowLeftRight size={18} aria-hidden="true" />
+                <ArrowLeftRight strokeWidth={1.75} size={18} aria-hidden="true" />
               </span>
               <span className={styles.needsText}>
                 <b>Ward flow</b>
@@ -1719,8 +1700,9 @@ export function WardHomeTab({
                   {outRows.length === 1 ? "discharge" : "discharges"}
                 </span>
               </span>
-              <ChevronRight size={18} aria-hidden="true" className={styles.needsChevron} />
+              <ChevronRight strokeWidth={1.75} size={18} aria-hidden="true" className={styles.needsChevron} />
             </button>
+            <WardPhoneTomorrowRow outlook={outlook} onTab={setFlowTab} onSheet={onPhonePanelChange} />
           </div>
         </section>
       ) : null}
@@ -1749,7 +1731,7 @@ export function WardHomeTab({
             <CardHead
               id="ward-home-every-bed"
               className={styles.bedsHead}
-              icon={BedDouble}
+              icon={BedSingle}
               title="Every bed"
               meta={liveMark}
               action={
@@ -1789,7 +1771,7 @@ export function WardHomeTab({
                         setBoardView("board");
                       }}
                     >
-                      <LayoutGrid size={16} aria-hidden="true" />
+                      <LayoutGrid strokeWidth={1.75} size={16} aria-hidden="true" />
                     </button>
                     <button
                       type="button"
@@ -1800,7 +1782,7 @@ export function WardHomeTab({
                         setBoardView("list");
                       }}
                     >
-                      <List size={16} aria-hidden="true" />
+                      <List strokeWidth={1.75} size={16} aria-hidden="true" />
                     </button>
                   </span>
                 </span>
@@ -1842,6 +1824,7 @@ export function WardHomeTab({
               setRound={setWalkRound}
               registerTrigger={registerBedTrigger}
               onOpenBed={(bedNumber) => onSelectBed?.(bedNumber)}
+              onConfirmRelease={onConfirmRelease}
               renderList={phoneRoundList}
             />
           ) : boardView === "board" ? (
@@ -2019,6 +2002,7 @@ export function WardHomeTab({
                 .filter((eta): eta is number => eta !== undefined && eta >= now)
                 .sort((left, right) => left - right)[0]
             }
+            outlook={outlook}
             onOpenFlow={openFlow}
           />
           <Drawer

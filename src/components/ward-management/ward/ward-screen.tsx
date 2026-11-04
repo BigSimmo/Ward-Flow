@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Clock, FileText, MoreHorizontal, Printer, Send } from "lucide-react";
+import { Bell, Clock, FileText, Ellipsis, Printer, Send } from "lucide-react";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
@@ -1896,7 +1896,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const wardHeroFoot = (
     <span className={styles.heroFootStack}>
       <span className={styles.heroMeta}>
-        <Clock size={14} aria-hidden="true" className={styles.heroMetaIcon} />
+        <Clock strokeWidth={1.75} size={14} aria-hidden="true" className={styles.heroMetaIcon} />
         <span>{shiftLine(now)}</span>
         {" · "}
         <Link
@@ -2014,7 +2014,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           aria-label="More ward actions"
           data-testid={tablet ? "ward-tools-more" : "ward-phone-chip-more"}
         >
-          <MoreHorizontal size={tablet ? 16 : 20} aria-hidden="true" />
+          <Ellipsis strokeWidth={1.75} size={tablet ? 16 : 20} aria-hidden="true" />
           {tablet ? "More" : null}
         </button>
       )}
@@ -2320,6 +2320,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           states={states}
           blockedReleases={blockedReleases}
           pendingPreparation={pendingPreparation}
+          confirmBedRelease={confirmBedRelease}
         />
 
         {/* ───────── REFERRALS: the ward's own referral inbox (WH7, WH9) ───────── */}

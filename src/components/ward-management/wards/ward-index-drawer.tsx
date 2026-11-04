@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { useMemo, type ReactNode } from "react";
 
-import { Drawer, StatusGlyph, buttonClass } from "@/components/wf";
-import { CapacityWardSidebar } from "@/components/ward-management/capacity/capacity-ward-drawer";
+import { DrawerFootRow, PanelDrawer, StatusPill, buttonClass } from "@/components/wf";
+import { CapacityWardSidebar, useCapacityWardTabs } from "@/components/ward-management/capacity/capacity-ward-drawer";
 import { networkWardRows } from "@/components/ward-management/capacity/capacity-derivations";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -47,24 +47,22 @@ export function WardIndexDrawer({
   const boardHref = unit ? `/ward-flow/board/${unit.id}` : "";
   const showWard = !countsOnly && unit !== undefined && canOpen(wardHref);
   const showBoard = !countsOnly && unit !== undefined && canOpen(boardHref);
+  const wardTabs = useCapacityWardTabs(row ? unit?.id : undefined);
   return (
-    <Drawer
+    <PanelDrawer
       open={row !== undefined}
       onClose={onClose}
       title={unit?.name ?? "Ward"}
-      description={place}
-      titleAccessory={
-        row ? (
-          <span className={styles.drawerTag}>
-            <StatusGlyph tone={row.ready > 0 ? "success" : "warning"} size={8} />
-            {row.ready} ready
-          </span>
-        ) : undefined
-      }
+      subtitle={place}
+      tag={row ? <StatusPill tone={row.ready > 0 ? "success" : "warning"}>{row.ready} ready</StatusPill> : undefined}
+      tabs={wardTabs.tabs}
+      tab={wardTabs.tab}
+      onTabChange={wardTabs.onTabChange}
+      tabsLabel="Ward panel view"
       testId="ward-index-ward-drawer"
-      footer={
+      foot={
         showWard || showBoard ? (
-          <div className={styles.drawerFoot}>
+          <DrawerFootRow>
             {showWard ? (
               <Link href={wardHref} className={buttonClass({ variant: "pri", size: "sm" })}>
                 Open ward
@@ -75,19 +73,21 @@ export function WardIndexDrawer({
                 Bed board
               </Link>
             ) : null}
-          </div>
+          </DrawerFootRow>
         ) : undefined
       }
     >
       {row ? (
         <>
-          <CapacityWardSidebar row={row} onBack={onClose} now={now} showPlace={false} footInDrawer />
-          <section className={styles.drawerProfile} aria-label="Ward profile">
-            <h3 className={styles.drawerProfileTitle}>Ward profile</h3>
-            {profile}
-          </section>
+          <CapacityWardSidebar row={row} onBack={onClose} now={now} tab={wardTabs.tab} showPlace={false} footInDrawer />
+          {wardTabs.tab === "ward" ? (
+            <section className={styles.drawerProfile} aria-label="Ward profile">
+              <h3 className={styles.drawerProfileTitle}>Ward profile</h3>
+              {profile}
+            </section>
+          ) : null}
         </>
       ) : null}
-    </Drawer>
+    </PanelDrawer>
   );
 }

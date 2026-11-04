@@ -12,6 +12,8 @@ import type { BedMapWard } from "./bed-map";
 
 import { Legend } from "./capacity-how-worked-out";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { openBedReleases } from "@/components/ward-management/ward-bed-availability";
+import type { BedRelease } from "@/components/ward-management/ward-model";
 import type { CapacityModel } from "./capacity-model";
 import styles from "./capacity-page.module.css";
 
@@ -51,6 +53,8 @@ export function BedMapCards({
 }) {
   const { mapGroups, networkRows, now } = model;
   const canOpen = useCanOpenHref();
+  // A model built without releases (a test's slice of it) draws plain in-use squares.
+  const bedReleases: readonly BedRelease[] = model.bedReleases ?? [];
   const [layout, setLayout] = useState<"grid" | "rows">("grid");
   const rowOf = new Map(networkRows.map((row) => [row.unit.id, row]));
   const lit = (unitId: string, id: Highlight | null) => {
@@ -150,9 +154,9 @@ export function BedMapCards({
                   onClick={() => toggleGroup(group.service)}
                 >
                   {isOpen ? (
-                    <ChevronDown size={14} aria-hidden="true" />
+                    <ChevronDown strokeWidth={1.75} size={14} aria-hidden="true" />
                   ) : (
-                    <ChevronRight size={14} aria-hidden="true" />
+                    <ChevronRight strokeWidth={1.75} size={14} aria-hidden="true" />
                   )}
                   <span className={styles.mapGroupName}>
                     <SpelledCodes text={group.service} />
@@ -173,6 +177,7 @@ export function BedMapCards({
                       row={row}
                       now={now}
                       layout={layout}
+                      parts={releaseParts(bedReleases, ward.unit.id)}
                       dimmed={!matches(ward.unit.id)}
                       selected={ward.unit.id === selectedUnitId}
                       onSelect={() => onSelectWard(ward.unit.id)}
@@ -189,7 +194,11 @@ export function BedMapCards({
           label="Bed map key"
           items={[
             { label: "Ready", swatchClassName: styles.cellReady },
-            { label: "Occupied or pulled", swatchClassName: styles.cellUsed },
+            // C4 (Josh, 4 Nov 2026): in-use beds by discharge state, each named here.
+            { label: "Confirmed out", swatchClassName: styles.cellConfirmed },
+            { label: "Expected out", swatchClassName: styles.cellExpected },
+            { label: "Held up", swatchClassName: styles.cellHeldUp },
+            { label: "In use", swatchClassName: styles.cellUsed },
             { label: "Closed", swatchClassName: styles.cellClosed },
           ]}
         />
@@ -209,11 +218,13 @@ function WardCard({
   row,
   now,
   layout,
+  parts,
   dimmed,
   selected,
   onSelect,
 }: {
   ward: BedMapWard;
+  parts: ReleaseParts;
   row: NetworkWardRow | undefined;
   now: number;
   layout: "grid" | "rows";
@@ -258,7 +269,7 @@ function WardCard({
       <span className={styles.wardOccupied}>
         {ward.occupied} of {ward.unit.beds} occupied
       </span>
-      <BedCells beds={ward.unit.beds} ready={ward.ready} used={inUse} />
+      <BedCells beds={ward.unit.beds} ready={ward.ready} used={inUse} parts={parts} />
       {stale || notes.length || freeing > 0 ? (
         <span className={styles.wardNote}>
           {freeing > 0 ? (
@@ -279,12 +290,54 @@ function WardCard({
   );
 }
 
+/** In-use beds by discharge state (C4, Josh, 4 Nov 2026). The rest of the in-use beds are plain "in use". */
+type ReleaseParts = { heldUp: number; expected: number; confirmed: number };
+
 /**
- * One square per bed: ready, then occupied or pulled, then closed. The squares share one line at
- * any bed count (a grid of equal columns), so a large ward never wraps. Decorative; the card says
- * it in words.
+ * One ward's open bed releases (`openBedReleases`, the ward page's own window) grouped by state and
+ * blocker: a held-up release counts as held up whatever its stage.
  */
-export function BedCells({ beds, ready, used }: { beds: number; ready: number; used: number }) {
+export function releaseParts(releases: readonly BedRelease[], unitId: string): ReleaseParts {
+  const parts: ReleaseParts = { heldUp: 0, expected: 0, confirmed: 0 };
+  for (const release of openBedReleases(releases, unitId)) {
+    if (release.blocker !== null) parts.heldUp += 1;
+    else if (release.state === "confirmed") parts.confirmed += 1;
+    else parts.expected += 1;
+  }
+  return parts;
+}
+
+/**
+ * One square per bed: ready, then the in-use beds by how sure their discharge is (confirmed,
+ * expected, held up), then the rest in use, then closed. The squares share one line at any bed
+ * count (a grid of equal columns), so a large ward never wraps. Decorative; the card says it in
+ * words and the bed map key names each colour.
+ */
+export function BedCells({
+  beds,
+  ready,
+  used,
+  parts,
+}: {
+  beds: number;
+  ready: number;
+  used: number;
+  parts?: ReleaseParts;
+}) {
+  // A release can never colour more squares than are in use.
+  const confirmed = Math.min(parts?.confirmed ?? 0, used);
+  const expected = Math.min(parts?.expected ?? 0, used - confirmed);
+  const heldUp = Math.min(parts?.heldUp ?? 0, used - confirmed - expected);
+  const cellClass = (index: number): string | undefined => {
+    if (index < ready) return styles.cellReady;
+    const inUse = index - ready;
+    if (inUse >= used) return styles.cellClosed;
+    // Each coloured square stays an in-use square too, so it counts as one.
+    if (inUse < confirmed) return `${styles.cellUsed} ${styles.cellConfirmed}`;
+    if (inUse < confirmed + expected) return `${styles.cellUsed} ${styles.cellExpected}`;
+    if (inUse < confirmed + expected + heldUp) return `${styles.cellUsed} ${styles.cellHeldUp}`;
+    return styles.cellUsed;
+  };
   return (
     <span
       className={styles.cells}
@@ -292,10 +345,7 @@ export function BedCells({ beds, ready, used }: { beds: number; ready: number; u
       style={{ gridTemplateColumns: `repeat(${beds}, minmax(0, var(--cell-max, 10px)))` }}
     >
       {Array.from({ length: beds }, (_, index) => (
-        <i
-          key={index}
-          className={index < ready ? styles.cellReady : index < ready + used ? styles.cellUsed : styles.cellClosed}
-        />
+        <i key={index} className={cellClass(index)} />
       ))}
     </span>
   );

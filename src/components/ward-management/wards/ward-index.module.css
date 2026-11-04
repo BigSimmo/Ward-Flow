@@ -1274,32 +1274,12 @@
   border-radius: 4px;
 }
 
-/* WS1: the ward side panel's head tag, foot and profile. */
-.drawerTag {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  margin-inline-start: var(--wf-s-2);
-  padding: 2px 9px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--wf-ink-3) 10%, transparent);
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  color: var(--wf-ink-2);
-  white-space: nowrap;
-}
-
-.drawerFoot {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wf-s-2);
-}
-
+/* WS1: the ward side panel's profile, under the panel in the kit drawer's unpadded scroll area. */
 .drawerProfile {
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-2);
-  padding-block: var(--wf-s-3) var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
   border-top: 1px solid var(--wf-line);
 }
 
