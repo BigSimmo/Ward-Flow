@@ -243,6 +243,37 @@ const eslintConfig = defineConfig([
       ],
     },
   },
+  // G1 guard (plan 2h, Josh, 3 Nov 2026; an ESLint rule from 4 Nov 2026): no new browser date, date
+  // and time, or time box; use the kit's DateField. The files below still had one when the guard
+  // landed; each page group swaps its own and then removes its line, so the list only shrinks.
+  // Browser confirm boxes are covered by the dialog block above.
+  {
+    files: ["src/**/*.{jsx,tsx}"],
+    ignores: [
+      "src/components/ward-management/board/ward-board-detail-panel.tsx",
+      "src/components/ward-management/capacity/planned-admissions-panel.tsx",
+      "src/components/ward-management/discharges/discharge-dependencies-panel.tsx",
+      "src/components/ward-management/discharges/discharge-detail-panes.tsx",
+      "src/components/ward-management/ed/ed-screen-row-forms.tsx",
+      "src/components/ward-management/patients/patient-ward-change-card.tsx",
+      "src/components/ward-management/referrals/ward-referral-drawer-referral-step.tsx",
+      "src/components/ward-management/tools/ward-tool-form-times.tsx",
+      "src/components/ward-management/ward/ward-drawer-discharge-date.tsx",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        ...[
+          "JSXAttribute[name.name='type'] > Literal[value=/^(?:date|datetime-local|time)$/]",
+          "JSXAttribute[name.name='type'] > JSXExpressionContainer > Literal[value=/^(?:date|datetime-local|time)$/]",
+          "JSXAttribute[name.name='type'] > JSXExpressionContainer > TemplateLiteral[expressions.length=0] > TemplateElement[value.raw=/^(?:date|datetime-local|time)$/]",
+        ].map((selector) => ({
+          selector,
+          message: "Use the kit's DateField, never the browser's own date or time box (Josh, 3 Nov 2026).",
+        })),
+      ],
+    },
+  },
   // Import boundary: production source must not import design-scratch mockup
   // modules. Every legitimate mockup import lives under `src/app/mockups/**` (all
   // 404 in production) or inside the `*-mockups` component sources themselves;
