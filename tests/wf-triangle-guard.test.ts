@@ -73,16 +73,17 @@ const KNOWN: readonly Known[] = [
     reason: "Discharge detail: the Barriers pill tab asks for danger while a blocker is recorded",
   },
   {
-    file: "src/components/ward-management/handover/handover-phone.tsx",
-    kind: "raw",
-    sites: ["className={parts.chipGlyph}"],
-    reason: "handover phone: the escalation filter chip draws a triangle child",
-  },
-  {
     file: "src/components/ward-management/referrals/referral-board-hero.tsx",
     kind: "raw",
     sites: ['key === "overdue"'],
     reason: "referrals hero: the Overdue highlight pill draws a TriangleAlert on a count",
+  },
+  {
+    file: "src/components/ward-management/restrictive-practice/seclusion-forms-view.tsx",
+    kind: "raw",
+    sites: ['<StatusGlyph tone="danger" size={8} />'],
+    reason:
+      "Seclusion register: the live episode's practice tag carries the triangle (came with main's seclusion view, cda9f1995)",
   },
 ];
 
