@@ -54,19 +54,28 @@ export function movementInHandoverScope(
   scope: HandoverScope,
   units: Unit[],
   referrals: Referral[],
+  admissions: readonly Admission[] = [],
 ): boolean {
   switch (scope.kind) {
     case "network":
       return true;
     case "ed":
       return movement.originEdId === scope.id;
-    case "ward":
-      return movementTouchesUnit(movement, scope.id);
+    case "ward": {
+      const referral = referralForMovement(movement, referrals);
+      const source = admissions.find(
+        (stay) => stay.id === movement.sourceAdmissionId || stay.id === movement.referralSourceAdmissionId,
+      );
+      return (
+        movementTouchesUnit(movement, scope.id) || referral?.originUnitId === scope.id || source?.unitId === scope.id
+      );
+    }
     case "service":
       return movementBelongsToService(movement, scope.id, units);
     case "team": {
       const team = communityTeamById(scope.id);
       if (team === null) return false;
+      if (movement.originCommunity?.teamName && namesTeam(movement.originCommunity.teamName, team)) return true;
       const referral = referralForMovement(movement, referrals);
       if (referral === undefined) return false;
       return referral.destinations.some(

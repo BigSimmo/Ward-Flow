@@ -29,7 +29,7 @@ import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { transportExceptionRecord } from "@/components/ward-management/ward-transport-checks";
 import { movementBedReservation } from "./ward-movement-bed-hold";
 import { openRestrictivePracticeRefusal } from "./restrictive-practice/ward-restrictive-practice";
-import { sameObservation, type ObservationChange } from "./ward-observation";
+import { sameObservation } from "./ward-observation";
 import type { TransportEventHelpers, WardFlowState } from "./ward-flow-reducer";
 
 /**
@@ -577,11 +577,16 @@ export function reduceTransportEvent(
         // Audit S-2: the journey and the held bed record one observation level. If they still
         // differ here (a record from before the two were joined), the later recorded change wins and
         // the stay keeps the change in its history, so neither level is dropped silently.
-        const lastChangeAt = (changes: readonly ObservationChange[] | undefined) =>
-          changes?.at(-1)?.at ?? Number.NEGATIVE_INFINITY;
-        const journeyLevelWins =
-          !sameObservation(movement.observation, pulledAdmission.observation) &&
-          lastChangeAt(movement.observationChanges) >= lastChangeAt(pulledAdmission.observationChanges);
+        const journeyChange = movement.observationChanges?.at(-1);
+        const wardChange = pulledAdmission.observationChanges?.at(-1);
+        // Accepted edits carry the reducer's actual command order, including within one minute.
+        // Older saves have no sequence: retain the existing timestamp fallback for legacy ties.
+        const journeyIsLater =
+          journeyChange?.sequence !== undefined || wardChange?.sequence !== undefined
+            ? (journeyChange?.sequence ?? Number.NEGATIVE_INFINITY) >=
+              (wardChange?.sequence ?? Number.NEGATIVE_INFINITY)
+            : (journeyChange?.at ?? Number.NEGATIVE_INFINITY) >= (wardChange?.at ?? Number.NEGATIVE_INFINITY);
+        const journeyLevelWins = !sameObservation(movement.observation, pulledAdmission.observation) && journeyIsLater;
         withPerson = replaceAdmission(withUnit, pulledAdmission.id, {
           ...withoutBedNumber,
           ...(journeyLevelWins

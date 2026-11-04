@@ -305,12 +305,12 @@ export function HandoverPage() {
     [movements, units, patients, referrals, actNowMovementIds],
   );
   const rows = useMemo(
-    () => allRows.filter((row) => movementInHandoverScope(row.movement, scope, units, referrals)),
-    [allRows, scope, units, referrals],
+    () => allRows.filter((row) => movementInHandoverScope(row.movement, scope, units, referrals, admissions)),
+    [allRows, scope, units, referrals, admissions],
   );
   const outside = useMemo(
-    () => allRows.filter((row) => !movementInHandoverScope(row.movement, scope, units, referrals)),
-    [allRows, scope, units, referrals],
+    () => allRows.filter((row) => !movementInHandoverScope(row.movement, scope, units, referrals, admissions)),
+    [allRows, scope, units, referrals, admissions],
   );
   const deskPlaces = useMemo(() => wardPlaceLookup(units), [units]);
   const allWards = useMemo(

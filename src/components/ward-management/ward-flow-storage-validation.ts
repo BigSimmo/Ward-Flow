@@ -21,7 +21,6 @@ import {
 import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/referral-submission";
 import { REFERRAL_INFORMATION_NEED_IDS } from "./referrals/referral-information-needs";
 import { REFERRAL_CONTACT_OUTCOME_IDS, REFERRAL_OWNER_DESKS } from "./referrals/referral-owner-and-calls";
-// Closing-the-loop package A (24 Oct 2026): response commitments.
 import { REFERRAL_COMMITMENT_STEP_IDS } from "./referrals/referral-commitments";
 import {
   MOVEMENT_STAGES,
@@ -39,7 +38,6 @@ import {
 import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
 import { WARD_CLOSURE_REASONS, type WardClosureReason } from "./capacity/ward-closure";
-// Closing the loop, package D (24 Oct 2026).
 import {
   ACCEPTANCE_CONDITION_AGREED_WITH,
   ACCEPTANCE_CONDITION_KINDS,
@@ -86,11 +84,7 @@ import { upgradeLegacyObservationRows } from "./ward-observation-legacy";
 import { isTentativeDiagnosisBlock } from "./ward-diagnosis";
 import { isCommunityReferralPurpose } from "./ward-model-referral-parts";
 
-/**
- * The device copy's stand-in for the `n`th typed patient specific criterion (1 based). Numbered from
- * the second, because each criterion on a list must be distinct to be ticked (21 Oct 2026, the
- * typed-text device copy, D-72).
- */
+// D-72: numbered device-copy stand-ins keep typed criteria distinct.
 export function typedCriterionNotKept(n: number): string {
   return n === 1 ? TYPED_TEXT_NOT_KEPT : `${TYPED_TEXT_NOT_KEPT} (${n})`;
 }
@@ -99,11 +93,7 @@ const CRITERION_STAND_INS: ReadonlySet<string> = new Set(
   Array.from({ length: PATIENT_SPECIFIC_CRITERIA_MAX }, (_, index) => typedCriterionNotKept(index + 1)),
 );
 
-/**
- * A record browser storage may hold since 21 Oct 2026 (D-72): fixed-list criteria, and patient
- * specific criteria only as the device copy's stand-ins. The typed words themselves are still
- * refused on restore (D-18, D-65).
- */
+// D-18/D-65/D-72: restore fixed criteria and typed-text stand-ins only.
 function isDeviceCopyDischargeCriteriaRecord(value: unknown): value is DischargeCriteriaRecord {
   return (
     isDischargeCriteriaRecord(value) &&
@@ -111,15 +101,9 @@ function isDeviceCopyDischargeCriteriaRecord(value: unknown): value is Discharge
   );
 }
 
-// The stored-state fence runs in three passes, each only on what the previous one accepted:
-//  1. `nested` walks every value: finite numbers only, no prototype keys, and the fixed shape of
-//     each known history or record key wherever it appears.
-//  2. `storedState` (zod) checks each collection's row shape, its fixed lists, and the facts one
-//     row holds about itself.
-//  3. `consistent` checks the links between rows and the counts they must agree with.
-// `nested` refuses an `undefined` value under any key, so `.optional()` below means "absent".
-// Objects are loose (unknown keys pass) except where a refusal of extra keys is noted: a CTO, an
-// absence and a patient's identity fields, which must never carry restored free text.
+// Restore validates nested values, collection shapes, then cross-row consistency in order.
+// `nested` refuses undefined, so optional fields must be absent. Strict identity/care records
+// refuse unknown keys to prevent restoring free text.
 
 type RecordValue = Record<string, unknown>;
 const object = (v: unknown): v is RecordValue => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -500,7 +484,12 @@ const meetingAction = z
 // Fix plan item 10: a level from the fixed list, an Intermittent interval from the fixed list, and a
 // review time as a number. `isObservation` is the same check `RECORD_OBSERVATION_LEVEL` makes.
 const observationRule = z.custom<Observation>(isObservation);
-const observationChangeRule = z.strictObject({ at: finite, from: observationRule, to: observationRule });
+const observationChangeRule = z.strictObject({
+  at: finite,
+  from: observationRule,
+  to: observationRule,
+  sequence: z.optional(counter),
+});
 
 const movement = z
   .looseObject({
@@ -937,35 +926,40 @@ const undoRecord = z.discriminatedUnion("kind", [
 
 const notice = z.looseObject({ id, raisedAt: finite, to: record, about: record, kind: text, sentence: text });
 
-// Since 21 Oct 2026 (D-72) the device copy of a session that holds typed text keeps repatriations and
-// carer, PSP and MHAS notifications, with every typed value as the placeholder. These closed shapes
-// mirror `isValidSharedWardFlowState`, but a typed field must hold the placeholder: the typed words
-// themselves are still refused (D-18).
+// D-18/D-72: closed record shapes mirror shared validation, with typed values replaced.
 const notKept = z.literal(TYPED_TEXT_NOT_KEPT);
 const role = z.enum(Object.keys(WARD_FLOW_ROLE_LABELS) as [string, ...string[]]);
+const repatriationFields = {
+  admissionId: id,
+  at: finite,
+  estimatedAt: finite,
+  by: role,
+  homeHospital: text,
+  cadNumber: notKept,
+  receivingWardAgreed: bool,
+  mode: z.enum(REPATRIATION_MODES),
+  provider: z.enum(TRANSPORT_PROVIDERS),
+  transportLegalStatus: z.enum(TRANSPORT_LEGAL_STATUSES),
+  agreedAt: z.optional(finite),
+  agreedBy: z.optional(role),
+  form4CReceived: z.optional(bool),
+  escortRequired: z.optional(bool),
+};
+const agreementPair = (row: { agreedAt?: number; agreedBy?: string }) =>
+  (row.agreedAt === undefined) === (row.agreedBy === undefined);
+const priorRepatriation = z.strictObject(repatriationFields).check(z.refine(agreementPair));
 const repatriation = z
   .strictObject({
-    admissionId: id,
-    at: finite,
-    estimatedAt: finite,
-    by: role,
-    // Membership is checked against the saved scenario below; other text is still refused.
-    homeHospital: text,
-    cadNumber: notKept,
-    receivingWardAgreed: bool,
-    mode: z.enum(REPATRIATION_MODES),
-    provider: z.enum(TRANSPORT_PROVIDERS),
-    transportLegalStatus: z.enum(TRANSPORT_LEGAL_STATUSES),
-    // A plan agreed after it was first logged also carries both of these.
-    agreedAt: z.optional(finite),
-    agreedBy: z.optional(role),
-    // #177 (Josh, 27 Oct 2026): an involuntary return's Form 4C and escort answers, when given.
-    form4CReceived: z.optional(bool),
-    escortRequired: z.optional(bool),
+    ...repatriationFields,
+    earlier: z.optional(z.array(priorRepatriation)),
   })
-  .check(z.refine((row) => (row.agreedAt === undefined) === (row.agreedBy === undefined)));
-// Closing-the-loop (package E): return requested vs home service agreed. Closed lists, roles and
-// instants only; one record per stay, on a stay that exists.
+  .check(
+    z.refine(agreementPair),
+    z.refine((row) =>
+      (row.earlier ?? []).every((prior) => prior.admissionId === row.admissionId && prior.at <= row.at),
+    ),
+  );
+// Package E: one closed-list home-service return record per existing stay.
 const homeServiceReturn = z.strictObject({
   admissionId: id,
   // Membership is checked against the saved scenario below, as a repatriation's is.
@@ -1031,7 +1025,16 @@ const storedState = z.looseObject({
   leaveBeds: z.array(leaveBed).check(z.refine(distinctIds)),
   refreshRequests: z.array(refreshRequest).check(z.refine(distinctRefreshRequestIds)),
   referrals: z.array(referral).check(z.refine(distinctIds)),
-  patients: z.array(patient).check(z.refine(distinctIds)),
+  patients: z.array(patient).check(
+    z.refine(distinctIds),
+    z.refine((rows) => {
+      // Redacted device placeholders do not identify a person; retained UMRNs do.
+      const retained = rows
+        .map((row) => row.umrn.trim().toLowerCase())
+        .filter((umrn) => umrn !== "" && umrn !== TYPED_TEXT_NOT_KEPT.toLowerCase());
+      return new Set(retained).size === retained.length;
+    }),
+  ),
   admissions: z.array(admission).check(z.refine(distinctIds)),
   notices: z.array(notice).check(z.refine(distinctIds)),
   // One record per admission, as the reducer keeps it.
@@ -1126,7 +1129,9 @@ function identitiesMatchScenario(state: StoredState): boolean {
         ({ destination }) => destination.kind !== "emergency_department" || edIds.has(destination.edId),
       ),
     ) &&
-    state.repatriations.every((row) => siteCodes.has(row.homeHospital)) &&
+    state.repatriations.every((row) =>
+      [row, ...(row.earlier ?? [])].every((plan) => siteCodes.has(plan.homeHospital)),
+    ) &&
     (state.homeServiceReturns ?? []).every((row) => siteCodes.has(row.homeHospital)) &&
     (state.returnEarlyFlags ?? []).every((row) => siteCodes.has(row.homeHospital)) &&
     (state.returnEarlyNotices ?? []).every((row) => siteCodes.has(row.homeHospital)) &&

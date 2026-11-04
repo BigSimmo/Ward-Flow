@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { CircleAlert, Clock, ShieldCheck, X } from "lucide-react";
 import {
   ARRIVAL_MODES,
@@ -19,8 +19,11 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
-import { TimePresets } from "@/components/wf";
+import { requestConfirm, TimePresets } from "@/components/wf";
 import styles from "./arrival-time-modal.module.css";
+import { useDirtyStateGuard } from "../use-dirty-state-guard";
+import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 
 /**
@@ -75,6 +78,7 @@ export function ArrivalTimeModal(props: ArrivalTimeModalProps) {
 
 function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinator" }: ArrivalTimeModalProps) {
   const { dispatch, configuration } = useWardFlowSelect("dispatch", "configuration");
+  const identity = patientIdentityLine(usePatientOf()(movement));
   const now = useWardFlowClock();
   const baseId = useId();
   // Feature 11: the route's role must be one that may set arrival details (`ward-role-permissions.ts`).
@@ -111,8 +115,25 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
       mounted.current = false;
     };
   }, []);
+  const [initialDraft] = useState(() => JSON.stringify([arrivalMode, trackingNumber, etaText, etaDay]));
+  const draft = JSON.stringify([arrivalMode, trackingNumber, etaText, etaDay]);
+  const currentDraft = useRef(draft);
+  useLayoutEffect(() => {
+    currentDraft.current = draft;
+  }, [draft]);
+  const dirty = draft !== initialDraft;
+  useDirtyStateGuard({ isDirty: dirty || saving, value: draft });
   const dismiss = () => {
-    if (!pending.current) onClose();
+    if (pending.current) return;
+    if (!dirty) return onClose();
+    void requestConfirm({
+      title: "Discard arrival details?",
+      message: "The arrival details have not been recorded. Keep editing to finish them.",
+      confirmLabel: "Discard details",
+      cancelLabel: "Keep editing",
+    }).then((discard) => {
+      if (discard && mounted.current && !pending.current && currentDraft.current === draft) onClose();
+    });
   };
 
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -188,6 +209,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
         role="dialog"
         aria-modal="true"
         aria-labelledby={`${baseId}-arrival-modal-title`}
+        aria-describedby={`${baseId}-arrival-patient`}
         tabIndex={-1}
         className={styles.dialog}
       >
@@ -210,6 +232,9 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
+          <p id={`${baseId}-arrival-patient`} className={styles.note}>
+            {identity}
+          </p>
           <div className={styles.note}>
             <ShieldCheck size={18} className={styles.noteIcon} aria-hidden="true" />
             <span>

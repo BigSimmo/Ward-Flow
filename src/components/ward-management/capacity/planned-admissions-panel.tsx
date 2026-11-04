@@ -145,10 +145,13 @@ export function PlannedAdmissionsPanel({
   now,
   titleSlot,
   compactActions = false,
+  unitId,
   title = "Planned admissions",
   listSlot,
 }: {
   now: Instant;
+  /** Optional ward destination: restrict the list and offered ward choices to this ward. */
+  unitId?: string;
   /** Replaces the panel title and count, such as the Capacity page's Planned / Step down switch. */
   titleSlot?: ReactNode;
   /** Arrived stays a button; Change and Cancel move into a More menu, so each booking is two lines. */
@@ -159,7 +162,7 @@ export function PlannedAdmissionsPanel({
   listSlot?: (api: PlannedListApi) => ReactNode;
 }) {
   const {
-    units,
+    units: availableUnits,
     patients,
     admissions,
     movements,
@@ -177,7 +180,14 @@ export function PlannedAdmissionsPanel({
     "plannedAdmissions",
     "rejections",
   );
-  const plannedAdmissions = useMemo(() => plannedFromContext ?? [], [plannedFromContext]);
+  const units = useMemo(
+    () => (unitId ? availableUnits.filter((unit) => unit.id === unitId) : availableUnits),
+    [availableUnits, unitId],
+  );
+  const plannedAdmissions = useMemo(
+    () => (plannedFromContext ?? []).filter((booking) => !unitId || booking.unitId === unitId),
+    [plannedFromContext, unitId],
+  );
   // Josh, 27 Oct 2026: a desk sees the bookings for its own wards, and offers only the steps its role
   // may take. The executive reads them as counts, with nobody named.
   const role = useRouteRole();
@@ -197,7 +207,7 @@ export function PlannedAdmissionsPanel({
   const [arrivalCheck, setArrivalCheck] = useState<PlannedAdmission | null>(null);
   const save = useWardFormSave(`planned-admission:${JSON.stringify(form)}`);
   // Tier 1 item 6 (Josh, 4 Nov 2026): a booking cancelled by mistake comes back from its toast.
-  const { offer: offerUndo } = useUndoableStep({ dispatch, rejections, now, routeRole: "coordinator" });
+  const { offer: offerUndo } = useUndoableStep({ dispatch, rejections, now, routeRole: role });
 
   useDirtyStateGuard(form !== null);
 
@@ -206,7 +216,7 @@ export function PlannedAdmissionsPanel({
 
   // Patients free to book: no live stay, no open movement and no booking already waiting. The
   // reducer refuses the same people, so this list only spares a coordinator a refusal.
-  const getBookablePatients = () => bookablePatientsFor(patients, admissions, movements, plannedAdmissions);
+  const getBookablePatients = () => bookablePatientsFor(patients, admissions, movements, plannedFromContext ?? []);
 
   const displayedRefusal = refusal ?? save.error ?? null;
 
@@ -356,7 +366,7 @@ export function PlannedAdmissionsPanel({
         () =>
           dispatch({
             type: "BOOK_PLANNED_ADMISSION",
-            role: "coordinator",
+            role,
             now,
             ...(draft.who === "patient"
               ? { patientId: draft.patientId as PatientId }
@@ -378,7 +388,7 @@ export function PlannedAdmissionsPanel({
         () =>
           dispatch({
             type: "CHANGE_PLANNED_ADMISSION",
-            role: "coordinator",
+            role,
             now,
             plannedAdmissionId: form.id,
             ...(draft.who === "initials" && draft.gender !== undefined ? { gender: draft.gender } : {}),
@@ -403,7 +413,7 @@ export function PlannedAdmissionsPanel({
       () =>
         (completion = dispatch({
           type: "CANCEL_PLANNED_ADMISSION",
-          role: "coordinator",
+          role,
           now,
           plannedAdmissionId: cancelling.id,
           unitId: cancelling.unitId,
@@ -416,7 +426,7 @@ export function PlannedAdmissionsPanel({
             success: `Planned admission cancelled for ${cancelled.label}.`,
             undo: (at) => ({
               type: "UNDO_RELEASE_STEP",
-              role: "coordinator",
+              role,
               now: at,
               plannedAdmissionId: cancelled.id,
             }),
@@ -433,7 +443,7 @@ export function PlannedAdmissionsPanel({
       () =>
         dispatch({
           type: "CONVERT_PLANNED_ADMISSION",
-          role: "coordinator",
+          role,
           now,
           plannedAdmissionId: planned.id,
           unitId: planned.unitId,

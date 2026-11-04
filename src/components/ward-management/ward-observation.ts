@@ -34,7 +34,7 @@ export type Observation = {
 };
 
 /** One entry per change after intake, oldest first. Written only by `RECORD_OBSERVATION_LEVEL`. */
-export type ObservationChange = { at: Instant; from: Observation; to: Observation };
+export type ObservationChange = { at: Instant; from: Observation; to: Observation; sequence?: number };
 
 /** The ordinary state: General, with no review time recorded. */
 export const GENERAL_OBSERVATION: Observation = Object.freeze({

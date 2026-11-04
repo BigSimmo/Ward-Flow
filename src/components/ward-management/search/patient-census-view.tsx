@@ -334,7 +334,7 @@ export function CensusTable(props: CensusTableProps) {
       ) : rows.length === 0 ? (
         props.empty
       ) : (
-        <div className={styles.scroll}>
+        <div className={styles.scroll} role="region" aria-label="Patient census rows" tabIndex={0}>
           <table className={cx(tableClasses.table, styles.censusTable)} aria-label="Patients by where they are now">
             <colgroup>
               <col className={styles.colTier} />

@@ -134,3 +134,8 @@ export function WardAnswerFromLink({ unitId }: { unitId: string }) {
   const named = recordIdFromParam(useOptionalSearchParams()?.get("movement"));
   return <WardAnswerView unitId={unitId} initialMovementId={named ?? undefined} />;
 }
+
+export const WardPlannedAdmissionsPanel = dynamic(
+  () => import("../capacity/planned-admissions-panel").then((m) => m.PlannedAdmissionsPanel),
+  { loading: () => <p role="status">Loading planned admissions…</p> },
+);

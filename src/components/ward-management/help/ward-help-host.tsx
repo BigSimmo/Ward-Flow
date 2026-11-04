@@ -58,7 +58,11 @@ export function WardHelpHost() {
   const showMe = useCallback((id: string) => setOpen({ showMe: id }), []);
   if (open && "showMe" in open) {
     const id = open.showMe;
-    return askOn ? <WardShowMe id={id} onClose={close} onBack={() => setOpen({ view: "tasks", task: id })} /> : null;
+    return askOn ? (
+      <WardShowMe id={id} onClose={close} onBack={() => setOpen({ view: "tasks", task: id })} />
+    ) : (
+      <WardHelpSheet view="tasks" task={id} onView={setView} onClose={close} onTour={startTour} onShowMe={showMe} />
+    );
   }
   if (open?.view === "tour") return <WardTour onClose={close} />;
   if (open)
@@ -66,7 +70,7 @@ export function WardHelpHost() {
       <WardHelpSheet
         view={open.view}
         task={open.task}
-        ask={askOn ? (open.ask ?? "") : undefined}
+        ask={open.ask ?? ""}
         showMeOn={askOn}
         onView={setView}
         onClose={close}

@@ -115,7 +115,10 @@ const inboxRows =
       : (Object.fromEntries(
           Object.entries(context.state[key]).filter(([rowId]) => {
             const category = Object.values(INBOX_CATEGORIES).find(({ idPrefix }) => rowId.startsWith(idPrefix));
-            return category !== undefined && context.inboxSubjectIds.has(rowId.slice(category.idPrefix.length));
+            const subjectId =
+              meetingActionOfInboxId(rowId)?.subject.id ??
+              (category ? rowId.slice(category.idPrefix.length) : undefined);
+            return subjectId !== undefined && context.inboxSubjectIds.has(subjectId);
           }),
         ) as WardFlowState[K]);
 
@@ -671,7 +674,10 @@ export function commandScopeRefusal(
   )
     return "A ward's handover sign-off names its ward.";
   // Q67 (Josh, 31 Oct 2026): only a whole-network desk (returned above) signs off the whole network.
-  if (command.type === "RECORD_HANDOVER_SIGN_OFF" && command.network !== undefined)
+  if (
+    (command.type === "RECORD_HANDOVER_SIGN_OFF" && command.network !== undefined) ||
+    (command.type === "UNDO_HANDOVER_SIGN_OFF" && typeof command.unitId !== "string")
+  )
     return "Only the statewide coordinator signs off the whole network.";
   // Q61 (Josh, 31 Oct 2026): a site bed manager signs off, or takes back, its own site's handover only.
   // Every other desk short of the whole network (returned above) is refused, a service coordinator too.
@@ -746,6 +752,20 @@ export function commandScopeRefusal(
     const referral = state.referrals.find((candidate) => candidate.id === command.referralId);
     if (referral && !referralSentByDesk(referral, access, places)) return outside;
   }
+  // Outbound visibility does not grant authority to answer the receiving ED or team.
+  if (command.type === "ACCEPT_REFERRAL" || command.type === "DECLINE_REFERRAL") {
+    const referral = state.referrals.find((candidate) => candidate.id === command.referralId);
+    const destination = referral?.destinations.find(
+      (arm) => arm.destination.kind === command.destinationKind,
+    )?.destination;
+    if (destination?.kind === "emergency_department" && !edInScope(scope, destination.edId, places)) return outside;
+    if (destination?.kind === "community_team") {
+      const permitted =
+        teamIsOwn(access, destination.teamName, places) ||
+        (scope.kind === "service" && places.teamService?.(places.teamSlug(destination.teamName)) === scope.service);
+      if (!permitted) return outside;
+    }
+  }
   // Booking, and adding a CAD number that was to follow, follow the same sender rule as recording
   // the need (audit 26 Oct).
   if (
@@ -806,6 +826,17 @@ export function commandScopeRefusal(
     const movement = state.movements.find((candidate) => candidate.id === command.movementId);
     const stay = movement ? admittedStayForArrival(movement, state.admissions) : undefined;
     if (!stay || !unitInScope(scope, stay.unitId, places)) return outside;
+  }
+  // The legal-form caller intentionally carries no acting ward. Compare the authenticated
+  // desk with the ward captured when the original fact was recorded, not today's eligibility.
+  if (command.type === "UNDO_LEGAL_FORM_RECORD" && access.role === "ward") {
+    const record = state.undoRecords?.find(
+      (candidate) =>
+        candidate.kind === "step" &&
+        candidate.undoType === "UNDO_LEGAL_FORM_RECORD" &&
+        candidate.subjectId === command.movementId,
+    );
+    if (!record || record.unitId === null || !unitInScope(scope, record.unitId, places)) return outside;
   }
   // Every desk names its own place when it adds a patient, so the record it adds stays in its own
   // view (review on PR #606). Only a whole-network desk, returned above, adds one with no place.
@@ -912,6 +943,10 @@ export function commandScopeRefusal(
   // accepting ward does not get past the ED check because it accepted (owner, 19 Oct 2026).
   for (const from of [command.actingPlaceId, command.edId])
     if (typeof from === "string" && !actsFrom(from)) return outside;
+  // Older withdrawal callers used placeId; it is an authority claim too, even when a
+  // canonical acting-place field is also present.
+  if (command.type === "WITHDRAW_REFERRAL" && typeof command.placeId === "string" && !actsFrom(command.placeId))
+    return outside;
   if (typeof command.actingTeamId === "string" && !teamIsOwn(access, command.actingTeamId, places)) return outside;
   return null;
 }

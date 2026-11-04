@@ -3,7 +3,7 @@
 // quick look with a way to the Alerts screen, a phone goes straight to that screen, and on the
 // Alerts screen the button does not open a second copy of the list.
 import "@testing-library/jest-dom/vitest";
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within, renderHook } from "@testing-library/react";
 import { createRef, type ComponentProps, type ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -23,6 +23,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
+import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { WardBar } from "@/components/ward-management/shell/ward-bar";
 import { openWardMenu } from "@/components/ward-management/shell/ward-drawer-bus";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
@@ -316,6 +317,18 @@ describe("the bar's Alerts button", () => {
     fireEvent.click(trigger);
     expect(screen.queryByRole("dialog", { name: "Alerts" })).toBeNull();
     expect(mockRouterPush).not.toHaveBeenCalled();
+  });
+
+  it("retains unsaved work when the phone Alerts navigation is cancelled", () => {
+    installMatchMediaStub(true);
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const guard = renderHook(() => useDirtyStateGuard({ isDirty: true, value: "synthetic unfinished form" }));
+    const trigger = renderBar();
+    fireEvent.click(trigger);
+    expect(confirm).toHaveBeenCalledOnce();
+    expect(mockRouterPush).not.toHaveBeenCalled();
+    guard.unmount();
+    confirm.mockRestore();
   });
 
   it("opens the Alerts screen on a phone instead of a drawer", () => {

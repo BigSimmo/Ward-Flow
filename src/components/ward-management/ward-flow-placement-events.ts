@@ -548,7 +548,7 @@ export function reducePlacementEvent(
           event.now,
           state.notices.length,
           "bed_pull_released",
-          referrerOf(movement),
+          referrerOf(state, movement, movementSourceAdmission),
           { movementId: movement.id, unitId: unit.id },
           `${unit.name} released the bed it had pulled for ${movement.id} (${event.reason.replace(/_/g, " ")}).`,
         ),
@@ -828,7 +828,7 @@ export function reducePlacementEvent(
           event.now,
           state.notices.length,
           heldBed ? "bed_pull_released" : "acceptance_withdrawn_referrer",
-          referrerOf(movement),
+          referrerOf(state, movement, movementSourceAdmission),
           { movementId: movement.id, unitId: releasedUnitId },
           heldBed
             ? `Bed released and search reopened for ${movement.id} (${reasonText}).`
@@ -867,7 +867,14 @@ function pullHoldMinutesFor(state: WardFlowState, movement: Movement, unitId: st
 }
 
 /** D-76: the referrer told about a released bed is the origin ED, or the referring community team. */
-function referrerOf(movement: Movement) {
+function referrerOf(
+  state: WardFlowState,
+  movement: Movement,
+  sourceAdmission: PlacementEventHelpers["movementSourceAdmission"],
+) {
+  if (movement.sourceAdmissionId !== undefined) {
+    return { role: "ward" as const, placeId: sourceAdmission(state, movement)?.unitId };
+  }
   const team = movement.originCommunity?.teamName;
   return team === undefined
     ? { role: "ed" as const, placeId: movement.originEdId }

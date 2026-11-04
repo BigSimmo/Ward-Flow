@@ -370,7 +370,9 @@
 }
 
 .scroll {
-  overflow-x: auto;
+  /* Both axes share this bounded owner so the sticky headings follow row scrolling. */
+  max-block-size: 65dvh;
+  overflow: auto;
 }
 
 /* Device sweep (24 Oct 2026): at 1024 px the census sits beside the "This shift" panel and scrolls

@@ -156,6 +156,7 @@ import {
   lacksObservationStaff,
   remainingHighAcuityCapacity,
   bedIsOccupied,
+  admittedStayForArrival,
   type Admission,
   type PlannedAdmission,
 } from "@/components/ward-management/ward-admissions";
@@ -443,6 +444,8 @@ export type WardFlowState = WardAuditState & {
 
 /** Phone-log of a repatriation arranged off-system. Never a booked transport job. */
 export type RepatriationRecord = {
+  /** Earlier agreed-return attempts, retained when a withdrawn attempt is replanned. */
+  earlier?: Omit<RepatriationRecord, "earlier">[];
   admissionId: string;
   at: Instant;
   by: WardFlowRole;
@@ -1512,7 +1515,20 @@ function withStepUndo(state: WardFlowState, next: WardFlowState, event: WardFlow
   const changes = diffForStepUndo(state, next);
   if (changes.length === 0) return next;
   const acting = "actingUnitId" in event && typeof event.actingUnitId === "string" ? event.actingUnitId : undefined;
-  const unitId = event.role !== "ward" ? null : event.type === "ACCEPT_IN_PRINCIPLE" ? event.unitId : (acting ?? null);
+  const legalMovement =
+    undoType === "UNDO_LEGAL_FORM_RECORD" && "movementId" in event
+      ? state.movements.find((movement) => movement.id === event.movementId)
+      : undefined;
+  const legalWard = legalMovement
+    ? event.type === "RECORD_LEGAL_FORM_RECEIVED"
+      ? (movementSourceAdmission(state, legalMovement)?.unitId ??
+        state.referrals.find(
+          (referral) => referral.id === legalMovement.referralId && referral.source === "psychiatric_ward",
+        )?.originUnitId)
+      : admittedStayForArrival(legalMovement, state.admissions)?.unitId
+    : undefined;
+  const unitId =
+    event.role !== "ward" ? null : event.type === "ACCEPT_IN_PRINCIPLE" ? event.unitId : (acting ?? legalWard ?? null);
   return {
     ...next,
     undoRecords: withUndoRecord(next.undoRecords, {

@@ -104,7 +104,6 @@ import { scenarioWardNetwork, type WardScenario } from "@/components/ward-manage
 import type { EventLogEntry } from "@/components/ward-management/ward-event-log";
 import {
   WARD_FLOW_TEXT_SAFE_EVENT_TYPES,
-  eventCarriesTypedTextPayload,
   WARD_FLOW_TYPED_TEXT_EVENT_TYPES,
   findWardFlowEventTypeCoverageGaps,
   type AssertNever,
@@ -654,16 +653,10 @@ function WardFlowWorld({
    * two components deriving it separately would disagree across midnight, which is the
    * two-clocks-on-one-card failure a layer down.
    *
-   * Audit finding ISSUE-P1-83, defect 3b: the session restore needs today's `dayZero` to decide
-   * whether a saved session still describes today's world. Since 3 Oct 2026 that restore runs in
-   * the adoption effect below rather than in the reducer's initialiser, which reads it from here.
+   * ISSUE-P1-83 defect 3b: the adoption effect uses today's `dayZero` to validate a saved day.
    *
-   * `useState`'s lazy initialiser (not a `useRef` guarded by its own `.current` check, which this
-   * was until `react-hooks/refs` — 2026-09-17 — pointed out that reading `.current` here, and in
-   * everything downstream that closes over it (the reducer's own initialiser, and the context
-   * `value` this component returns), is a read of a ref's value during render) gives the exact
-   * same "computed exactly once per mount, then stable for the life of the mount" guarantee,
-   * without ever touching a ref.
+   * A lazy `useState` initialiser captures the date once per mount without reading refs
+   * during render (`react-hooks/refs`, 2026-09-17).
    */
   // The server's calendar is used through hydration; the client opening day is adopted once
   // afterwards, alongside mountedAtAbsolute, before any local restore/save is allowed.
@@ -721,10 +714,7 @@ function WardFlowWorld({
   const ownsLocalDayRef = useRef(false);
   // Design audit DA-01: true while this tab is on the untouched seed day (`useOpenTabsDay`).
   const freshSeedRef = useRef(true);
-  // Codex P1 (PR #267): whether an action recorded now is really kept on this device, for the
-  // offline toast note ("Saved on this device"). A ref read through a stable getter at push time:
-  // the committed value is copied in after each render (below), and `dispatch` clears it at once
-  // for a typed-text event, before the toast that follows that dispatch is pushed.
+  // Local commands complete before persistence; the stable getter reports actual device durability.
   const commandsRef = useRef<LocalCommandState>({ world: state, sequence: 0, early: new Map(), active: true });
   useLocalCommandCompletion(commandsRef, state, container.earlyOutcomes, Boolean(container.sessionAdopted));
   const accessLifetime = useRef({ context: container.sharedAccessContext, epoch: 0 });
@@ -742,14 +732,14 @@ function WardFlowWorld({
       accessLifetime.current.epoch === accessEpoch;
   }, []);
   const savesOnDeviceRef = useRef(false);
+  const localReplacementSequence = useRef(0);
   const savesOnDevice = useCallback(() => savesOnDeviceRef.current, []);
   // Screens dispatch only `WardFlowEvent`s; the file-load action stays internal to this provider.
   const dispatchLocal = useCallback(
     (event: WardFlowEvent): WardCommandOutcome | Promise<WardCommandOutcome> => {
-      // A typed-text event stops saving on this device (the persistence effect below). Say so at once,
-      // so a toast pushed straight after this dispatch does not claim the action was saved.
-      if (!WARD_FLOW_TEXT_SAFE_EVENT_TYPES.has(event.type) || eventCarriesTypedTextPayload(event))
-        savesOnDeviceRef.current = false;
+      // Acceptance precedes durability: only an actual device write may mark this command saved.
+      savesOnDeviceRef.current = false;
+      if (event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO") localReplacementSequence.current += 1;
       ownsLocalDayRef.current = true;
       freshSeedRef.current = false;
       const commandId = `local-${++commandsRef.current.sequence}`;
@@ -991,20 +981,20 @@ function WardFlowWorld({
   useOpenTabsDay(savingOnDevice && container.sessionAdopted === true, freshSeedRef, broadcastInstanceIdRef);
   const demoControlsAvailable = !shared.enabled || shared.snapshot?.demoControls !== false;
   useEffect(() => {
-    savesOnDeviceRef.current = savingOnDevice;
+    if (!savingOnDevice) savesOnDeviceRef.current = false;
   }, [savingOnDevice, state]);
 
-  // Item #17: when typed text is held and nothing is saving on this device (a refused copy or failed
-  // storage), warn before a refresh loses the day.
+  // Protect accepted local work until its device write, including safe-copy loading or failure.
   useEffect(() => {
-    if (shared.enabled || savingOnDevice || !container.typedTextSeen) return;
+    if (shared.enabled || initialNow !== undefined) return;
     const warn = (event: BeforeUnloadEvent) => {
+      if (!ownsLocalDayRef.current || savesOnDeviceRef.current) return;
       event.preventDefault();
       event.returnValue = "";
     };
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
-  }, [shared.enabled, savingOnDevice, container.typedTextSeen]);
+  }, [shared.enabled, initialNow]);
 
   /**
    * Restores a saved same-day session once the mount effect in `WardFlowProvider` has supplied
@@ -1104,11 +1094,13 @@ function WardFlowWorld({
     lastDeviceSaveRef.current = undefined;
     if (deviceSaveUnchanged(previousSave, saveInputs)) {
       lastDeviceSaveRef.current = previousSave;
+      savesOnDeviceRef.current = commandsRef.current.world === state;
       return;
     }
     // D-18, option A (Josh, 21 Oct 2026): once typed text is DISPATCHED, accepted or refused, only a
     // copy with every typed value replaced is written, or nothing until a reseed when no safe copy can
     // be made (`deviceCopyOf`). Read from the COMMITTED container on every run, exactly as `state` is.
+    savesOnDeviceRef.current = false;
     const deviceCopy = deviceCopyOf(state, container, typedTextLocked, fixtureWorlds);
     if (deviceCopy === undefined) {
       void loadTypedTextScrub().then(
@@ -1136,6 +1128,7 @@ function WardFlowWorld({
       setStorageUnavailable(true);
     } else {
       lastDeviceSaveRef.current = saveInputs;
+      savesOnDeviceRef.current = commandsRef.current.world === state;
     }
   }, [
     state,
@@ -1168,7 +1161,15 @@ function WardFlowWorld({
           reason:
             "Scenario file replacement is available only in the local demonstration. Shared changes must use audited commands.",
         };
+      const request = ++localReplacementSequence.current;
+      const generationBeforeRead = commandsRef.current.world.worldGeneration;
       const read = await readScenarioFileLater(text);
+      if (
+        !commandsRef.current.active ||
+        request !== localReplacementSequence.current ||
+        commandsRef.current.world.worldGeneration !== generationBeforeRead
+      )
+        return { ok: false, reason: "A newer import or reset replaced this request, so nothing was loaded." };
       if (!read.ok) return read;
       if (read.now < NOW_ANCHOR + read.state.clockOffsetMinutes)
         return { ok: false, reason: "This scenario file is damaged or incomplete, so nothing was loaded." };
@@ -1190,6 +1191,7 @@ function WardFlowWorld({
       openRequestSequence.current = Math.max(openRequestSequence.current, nextOpenRequestSequence(world.auditEvents));
       clearReferralDraftSession();
       ownsLocalDayRef.current = true;
+      savesOnDeviceRef.current = false;
       commandsRef.current.world = world;
       dispatchContainer({
         type: "LOAD_SCENARIO_FILE_INTERNAL",
@@ -1389,8 +1391,7 @@ function WardFlowWorld({
     shared,
     children,
   });
-  const screenKey =
-    (shared.enabled && container.sharedAccessContext) || (container.sessionRestored ? "restored" : "seed");
+  const screenKey = `${(shared.enabled && container.sharedAccessContext) || (container.sessionRestored ? "restored" : "seed")}/${state.worldGeneration}`;
   return (
     <WardShellPublicProvider value={shellPublic}>
       <WardFlowOverride value={value}>

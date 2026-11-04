@@ -204,7 +204,10 @@ function BedMeetingAgenda() {
   const groupContext = { units, movements: scopedMovements };
   const inGroups = (item: AgendaItem) => inAgendaGroups(item, groups, groupContext);
   const sections = grouped
-    ? allSections.map((section) => ({ ...section, items: section.items.filter(inGroups) }))
+    ? allSections.map((section) => {
+        const items = section.items.filter(inGroups);
+        return { ...section, items, total: items.length };
+      })
     : allSections;
   const fullSummary = meetingActionSummary(scopedMovements, scopedAdmissions, now);
   // Offer every group the control can filter: the agenda lists, the actions from earlier meetings

@@ -1452,8 +1452,8 @@ export function createWorkspaceStore(
       const { rows } = await connection
         .query(
           covers
-            ? `SELECT id, role, scope, kind, last_used_at, expires_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $4) ORDER BY granted_at, id LIMIT 20`
-            : `SELECT id, role, scope, expires_at, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} ORDER BY granted_at, id LIMIT 20`,
+            ? `SELECT id, role, scope, kind, last_used_at, expires_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $4) ORDER BY granted_at, id`
+            : `SELECT id, role, scope, expires_at, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} ORDER BY granted_at, id`,
           covers ? [workspaceId, actorId, at, unusedBefore(at)] : [workspaceId, actorId, at],
         )
         .catch((error) => {
@@ -1541,7 +1541,7 @@ export function createWorkspaceStore(
         });
     if (chosen.membershipId) {
       const { rows } = await connection.query(
-        `SELECT patient_id, opened_at, until FROM ward_flow.break_glass WHERE workspace_id=$1 AND actor_id=$2 AND membership_id=$3 AND until > $4 ORDER BY until DESC LIMIT ${GRANT_LIST_LIMIT}`,
+        `SELECT patient_id, opened_at, until FROM ward_flow.break_glass b WHERE workspace_id=$1 AND actor_id=$2 AND membership_id=$3 AND until > $4 AND EXISTS (SELECT 1 FROM ward_flow.audit a JOIN ward_flow.workspaces w ON w.id=a.workspace_id AND w.data_mode='prototype' WHERE a.workspace_id=b.workspace_id AND a.actor_id=b.actor_id AND a.action='BREAK_GLASS' AND a.outcome='accepted' AND a.changes->>'membershipId'=b.membership_id::text AND a.changes->>'patientId'=b.patient_id AND a.changes->>'reason'=b.reason AND a.changes->>'until'=to_char(b.until AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AND coalesce(a.changes->'worldGeneration', '0'::jsonb)=w.payload->'state'->'worldGeneration') ORDER BY until DESC LIMIT ${GRANT_LIST_LIMIT}`,
         [workspaceId, actorId, chosen.membershipId, new Date(at.getTime() - GRANT_SETTLE_MS)],
       );
       const nowMs = at.getTime();
@@ -1683,6 +1683,22 @@ export function createWorkspaceStore(
   }
   /** Inside the workspace lock: a new role for a person until a set time, audited. */
   async function insertGrant(client, row, view, { actorId, access, expiresAt, kind = "role" }, at, action) {
+    if (kind === "role") {
+      const { rows: existing } = await client.query(
+        `SELECT * FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND role=$3 AND scope=$4::jsonb AND granted_by=$5 AND expires_at=$6 AND revoked_at IS NULL${view.version >= ACCESS_COVER_MIGRATION ? " AND kind='role'" : ""} AND granted_at > $7::timestamptz - ${MAX_TERM}${view.version >= ACCESS_COVER_MIGRATION ? " AND coalesce(last_used_at, granted_at) > $8" : ""} ORDER BY granted_at, id LIMIT 1`,
+        [
+          workspaceId,
+          actorId,
+          access.role,
+          JSON.stringify(access.scope),
+          view.actorId,
+          expiresAt,
+          at,
+          ...(view.version >= ACCESS_COVER_MIGRATION ? [unusedBefore(at)] : []),
+        ],
+      );
+      if (existing.length) return existing[0];
+    }
     const id = randomUUID();
     const { rows } = await client.query(
       kind === "cover"
@@ -1746,7 +1762,7 @@ export function createWorkspaceStore(
     }
     return { events: selected, complete: false, nextCursor: String(before) };
   }
-  return {
+  const store = {
     pushEnabled: !!push,
     async ready() {
       const { rows } = await pool.query("SELECT max(version) AS version FROM ward_flow.migrations");
@@ -2031,7 +2047,7 @@ export function createWorkspaceStore(
       }),
     // Legacy callers keep their array result; HTTP uses auditPage's explicit continuation.
     async audit(view, cursor = null) {
-      return (await auditPage(view, cursor)).events;
+      return (await store.auditPage(view, cursor)).events;
     },
     /** Receipt lookup reveals only the authenticated actor's outcome, never stored request text. */
     async receipt(actorId, commandId) {
@@ -2376,7 +2392,16 @@ export function createWorkspaceStore(
           const patient = state.patients.find((candidate) => candidate.id === opened);
           const sent = (logged) => ({
             status: 200,
-            body: { logged, ...(patient ? { opened: patient.id, detail: recordDetailOf(patient) } : {}) },
+            body: {
+              logged,
+              ...(patient
+                ? {
+                    opened: patient.id,
+                    detail: recordDetailOf(patient),
+                    generation: stored.payload.state.worldGeneration,
+                  }
+                : {}),
+            },
           });
           if (lockedRecent[0]?.repeated) return sent(false);
           const { rowCount } = await client
@@ -2606,7 +2631,15 @@ export function createWorkspaceStore(
           outcome: "accepted",
           priorRevision: revision,
           revision,
-          changes: { patientId, reason, until: until.toISOString(), membershipId: view.membershipId, pattern },
+          changes: {
+            patientId,
+            reason,
+            until: until.toISOString(),
+            membershipId: view.membershipId,
+            pattern,
+            worldGeneration: row.payload.state.worldGeneration,
+            openedAt: at.toISOString(),
+          },
         });
         const opened = { ...view, grants: [...view.grants, { patientId, until }] };
         await prepareReviewAuthority(client, row, opened);
@@ -2993,4 +3026,28 @@ export function createWorkspaceStore(
       return response;
     },
   };
+  // These readers project against the initial request's authority. Recheck before returning
+  // their result, under the same workspace SHARE boundary used by detail and archive reads.
+  // Keep the potentially pooled reads outside that lock: initialization may need an UPDATE.
+  for (const name of [
+    "auditPage",
+    "deskAuditPage",
+    "listAccess",
+    "listCovers",
+    "recordViews",
+    "breakGlassOpenings",
+    "forecastHistory",
+  ]) {
+    const readProtected = store[name].bind(store);
+    store[name] = async (view, ...args) => {
+      const originalScope = JSON.stringify(view?.access);
+      const result = await readProtected(view, ...args);
+      if (!view?.membershipId) return result;
+      return currentRecordRead(view, async (_client, _at, current) => {
+        if (JSON.stringify(current.access) !== originalScope) throw new Error("role-ended");
+        return result;
+      });
+    };
+  }
+  return store;
 }

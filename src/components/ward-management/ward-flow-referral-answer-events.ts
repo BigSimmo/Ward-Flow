@@ -51,8 +51,7 @@ import {
   referralSuburbIsAnswered,
   wardTransferNeedsCoordinator,
 } from "@/components/ward-management/ward-referrals";
-import { siteByCode } from "@/components/ward-management/ward-sites";
-import { scenarioEmergencyDepartments } from "@/components/ward-management/ward-scenarios";
+import { scenarioEmergencyDepartments, scenarioSite } from "@/components/ward-management/ward-scenarios";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import type { ReferralAnswerEventHelpers, WardFlowState } from "./ward-flow-reducer";
 
@@ -529,7 +528,7 @@ export function reduceReferralAnswerEvent(
       }
       // A synthetic site code, never an address — resolved against the real network rather than
       // merely checked for non-emptiness, so "12 Wellington St, Perth" cannot pass as a code.
-      const originSite = siteByCode(event.originSiteCode);
+      const originSite = scenarioSite(state.scenario, event.originSiteCode);
       if (!originSite) {
         return reject(state, event, `RECEIVE_REFERRAL originSiteCode must resolve to a real site`);
       }
@@ -1414,7 +1413,12 @@ export function reduceReferralAnswerEvent(
             event.now,
             state.notices.length + 1,
             "bed_pull_released",
-            { role: "ed", placeId: movement.originEdId },
+            movement.sourceAdmissionId !== undefined
+              ? {
+                  role: "ward",
+                  placeId: state.admissions.find((stay) => stay.id === movement.sourceAdmissionId)?.unitId,
+                }
+              : { role: "ed", placeId: movement.originEdId },
             { movementId: movement.id, unitId: withdrawnUnitId },
             `The coordinator withdrew ${withdrawnUnitId === undefined ? "the ward" : unitName(state, withdrawnUnitId)}'s acceptance of ${movement.id} and released the bed pulled for them (${reasonText}).`,
           ),

@@ -13,7 +13,10 @@ import { Sheet } from "@/components/wf/sheet";
 import { canRestoreFocusTo, hasOpenSheet, isTopmostSheet, popSheet, pushSheet } from "@/components/wf/sheet-focus";
 import { publishLiveClock, useIsPhone, useWfBandActive, cycleTabWithin, focusIsLost } from "@/components/wf";
 import { formatInstant } from "@/components/ward-management/ward-clock";
-import { WARD_HISTORY_TRAVERSAL_CANCELLED } from "@/components/ward-management/use-dirty-state-guard";
+import {
+  WARD_HISTORY_TRAVERSAL_CANCELLED,
+  navigateWithDirtyGuard,
+} from "@/components/ward-management/use-dirty-state-guard";
 import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search-lazy";
@@ -507,13 +510,14 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
       if (id === "tasks" && oneAlertsQueue && (isPhone || onAlertsScreen)) {
         if (onAlertsScreen) focusAlertsQueue(tasksActiveCount);
         else {
-          // The referral sheet can persist across routes; close it through the normal lifecycle
-          // before sending the person to Alerts.
-          if (openPanel !== null) {
-            navigationPendingRef.current = true;
-            closePopover(openPanel, false);
-          }
-          router.push(WARD_ALERTS_HREF);
+          navigateWithDirtyGuard(() => {
+            // Close the existing sheet only after every unsaved-work guard permits navigation.
+            if (openPanel !== null) {
+              navigationPendingRef.current = true;
+              closePopover(openPanel, false);
+            }
+            router.push(WARD_ALERTS_HREF);
+          });
         }
         return;
       }

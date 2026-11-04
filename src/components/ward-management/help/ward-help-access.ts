@@ -6,7 +6,12 @@
  */
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
-import { ROLE_SCREENS, WARD_ACCESS_ROLES, type WardScreenId } from "@/components/ward-management/ward-role-access";
+import {
+  ROLE_SCREENS,
+  WARD_ACCESS_ROLES,
+  type WardScreenId,
+  type WardAccessScope,
+} from "@/components/ward-management/ward-role-access";
 
 import { howToHref } from "./ward-help-href";
 import type { HowTo } from "./ward-help-howto";
@@ -35,7 +40,8 @@ export const EVERY_LOGIN: readonly WardTourRole[] = WARD_ACCESS_ROLES;
  * and it opens every screen the task needs or sends it to. Anything else is another desk's job, which
  * Help still answers when searched for, but with no Show me or Go there.
  */
-export function howToFor(howTo: HowTo, role: WardTourRole): boolean {
+export function howToFor(howTo: HowTo, role: WardTourRole, scope?: WardAccessScope): boolean {
+  if (howTo.acts?.includes("SET_CONFIGURATION") && scope && scope.kind !== "statewide") return false;
   if (howTo.desks !== "all" && !howTo.desks.includes(role)) return false;
   if (howTo.acts && !deskMayAct(role, howTo.acts)) return false;
   if (howTo.needs && !deskOpens(role, howTo.needs)) return false;

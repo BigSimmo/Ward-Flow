@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ComponentType } from "react";
+import { useSyncExternalStore, type ComponentType } from "react";
 
 import { Button, StatusGlyph } from "@/components/wf";
 
@@ -21,10 +21,26 @@ export function withLoadRetry<P extends object>(
   title: string,
 ): () => Promise<ComponentType<P>> {
   let loaded: ComponentType<P> | undefined;
-  const loadOnce = () => load().then((panel) => (loaded = panel));
+  const listeners = new Set<() => void>();
+  const subscribe = (listener: () => void) => {
+    listeners.add(listener);
+    return () => {
+      listeners.delete(listener);
+    };
+  };
+  const loadOnce = () =>
+    load().then((panel) => {
+      loaded = panel;
+      for (const listener of listeners) listener();
+      return panel;
+    });
 
   function LoadRetry(props: P) {
-    const [Panel, setPanel] = useState(() => loaded);
+    const Panel = useSyncExternalStore(
+      subscribe,
+      () => loaded,
+      () => undefined,
+    );
     if (Panel) return <Panel {...props} />;
     // A drawer that draws its own header (Referrals, Tasks) has no other close control on a phone.
     const { onClose } = props as { onClose?: () => void };
@@ -39,7 +55,7 @@ export function withLoadRetry<P extends object>(
           size="lg"
           onClick={() =>
             loadOnce().then(
-              (panel) => setPanel(() => panel),
+              () => {},
               () => {},
             )
           }

@@ -3,6 +3,7 @@
 import { BookOpen, CircleHelp, Keyboard, Library, Search, Sparkles, UserRound, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
+import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
 
 import { TabPanel, Tabs, useIsPhone } from "@/components/wf";
 import { Sheet } from "@/components/wf/sheet";
@@ -17,7 +18,8 @@ import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statis
 import { ADMIN_SETTINGS_HELP, glossaryForSites, screenHelpFor, type GlossaryTerm } from "./ward-help-content";
 import type { HelpView } from "./ward-help-events";
 import { findInHelp, foundRows, HelpFindResults, HelpTryAsking } from "./ward-help-find";
-import { howToLogins } from "./ward-help-access";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { howToFor } from "./ward-help-access";
 import { HOW_TO_IDS, HOW_TOS } from "./ward-help-howto";
 import { aroundId } from "./ward-help-screen-tours";
 import { helpSuggestionId, GhostCompletion, HelpSuggestList } from "./ward-help-suggest-list";
@@ -170,6 +172,7 @@ function WardHelpSheetView({
   const router = useRouter();
   const pathname = usePathname() ?? "";
   const role = useTourRole();
+  const access = useEffectiveWardAccess();
   const { home, deskHome } = useTourFacts(role);
   const deskHref = deskHome ?? home;
   const phone = useIsPhone();
@@ -197,6 +200,16 @@ function WardHelpSheetView({
   const [focused, setFocused] = useState(false);
   const [active, setActive] = useState(0);
   const [task, setTask] = useState(openTask);
+  const [previousOpenTask, setPreviousOpenTask] = useState(openTask);
+  if (previousOpenTask !== openTask) {
+    setPreviousOpenTask(openTask);
+    if (openTask !== undefined) setTask(openTask);
+  }
+  const [previousAsk, setPreviousAsk] = useState(ask);
+  if (previousAsk !== ask) {
+    setPreviousAsk(ask);
+    if (ask !== undefined) setQuery(ask);
+  }
   const [checklist, setChecklist] = useState<string>();
   const [unread, setUnread] = useState(readUnread);
   const field = useRef<HTMLInputElement>(null);
@@ -225,13 +238,15 @@ function WardHelpSheetView({
   const completion = showList ? suggested.completion : undefined;
   const canShow = (id: string) => {
     const each = HOW_TOS.find((howTo) => howTo.id === id);
-    return Boolean(each && canShowTask(each, role, deskHref, phone, showMeOn, pathname));
+    return Boolean(
+      each && howToFor(each, role, access.scope) && canShowTask(each, role, deskHref, phone, showMeOn, pathname),
+    );
   };
 
   // Questions to try (2 Nov 2026): the desk's jobs most used on this device (else its first two),
   // this screen's walk round and its own questions, then a word people mix up. At most five.
   const examples = useMemo(() => {
-    const desk = tasksForDesk(role);
+    const desk = tasksForDesk(role, access.scope);
     const mostUsed = used.flatMap((entry) => desk.filter((task) => task.id === entry.id));
     const jobs = [...mostUsed, ...desk]
       .filter((task, index, all) => all.indexOf(task) === index)
@@ -242,7 +257,7 @@ function WardHelpSheetView({
     return [
       ...new Set([...jobs, ...(around ? [around] : []), ...asked, "What does Held up mean?", "Is my change saved?"]),
     ].slice(0, 5);
-  }, [role, screen, used]);
+  }, [role, screen, used, access.scope]);
 
   const tab = tabFor(view);
   const QuestionsIcon = QUESTIONS_ICON;
@@ -308,7 +323,9 @@ function WardHelpSheetView({
   const choose = (result: HelpSearchResult) => {
     // Accepting a result ends suggestion mode so the chosen answer shows straight away.
     setFocused(false);
-    const mine = !result.desks || result.desks.includes(role);
+    const foundTask = HOW_TOS.find((entry) => entry.id === result.howToId);
+    const mine =
+      (!result.desks || result.desks.includes(role)) && (!foundTask || howToFor(foundTask, role, access.scope));
     if (result.key.startsWith("howto:") && mine) {
       setQuery("");
       setTask(result.key.slice("howto:".length));
@@ -332,12 +349,14 @@ function WardHelpSheetView({
     }
     const href = mine ? howToHref(result.go, role, deskHref) : undefined;
     if (href) {
-      onClose();
-      const [path, tab] = href.split("#");
-      // A tab on this screen goes by native fragment navigation, which Settings listens for.
-      if (tab && path === pathname) {
-        if (window.location.hash !== `#${tab}`) window.location.hash = tab;
-      } else router.push(href);
+      navigateWithDirtyGuard(() => {
+        onClose();
+        const [path, tab] = href.split("#");
+        // A tab on this screen goes by native fragment navigation, which Settings listens for.
+        if (tab && path === pathname) {
+          if (window.location.hash !== `#${tab}`) window.location.hash = tab;
+        } else router.push(href);
+      });
     }
   };
 
@@ -358,7 +377,7 @@ function WardHelpSheetView({
     }
     // A walk round that cannot play here falls through to its answer in search (How to never
     // lists walk rounds, so it could not show it there).
-    if (id && howTo && suggestion.kind !== "walk" && howToLogins(howTo).includes(role)) {
+    if (id && howTo && suggestion.kind !== "walk" && howToFor(howTo, role, access.scope)) {
       setFocused(false);
       setQuery("");
       setTask(id);

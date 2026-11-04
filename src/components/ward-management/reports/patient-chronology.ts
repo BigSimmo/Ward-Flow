@@ -784,19 +784,41 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
     });
   }
 
+  // Identity follows the recorded event, so inserting an unrelated row cannot retarget an open
+  // detail. Identical repeated entries retain separate keys without depending on other rows.
+  const occurrences = new Map<string, number>();
   const rows = drafts
-    .map(({ draft, source }, index) => ({
-      key: `${source}-${index}`,
-      occurredAt: draft.occurredAt ?? draft.recordedAt,
-      recordedAt: draft.recordedAt,
-      who: draft.who,
-      action: draft.action,
-      record: draft.record.split(" ")[0] ?? draft.record,
-      before: draft.before ?? "",
-      after: draft.after ?? "",
-      reason: draft.reason ?? "",
-      source,
-    }))
+    .map(({ draft, source }) => {
+      const identity = JSON.stringify([
+        source,
+        draft.record,
+        draft.occurredAt,
+        draft.recordedAt,
+        draft.who,
+        draft.action,
+        draft.before,
+        draft.after,
+        draft.reason,
+      ]);
+      const occurrence = occurrences.get(identity) ?? 0;
+      occurrences.set(identity, occurrence + 1);
+      // Keep internal record identifiers and free text out of the rendered row key.
+      let hash = 14695981039346656037n;
+      for (let index = 0; index < identity.length; index += 1)
+        hash = BigInt.asUintN(64, (hash ^ BigInt(identity.charCodeAt(index))) * 1099511628211n);
+      return {
+        key: `${source}-${hash.toString(16)}-${occurrence}`,
+        occurredAt: draft.occurredAt ?? draft.recordedAt,
+        recordedAt: draft.recordedAt,
+        who: draft.who,
+        action: draft.action,
+        record: draft.record.split(" ")[0] ?? draft.record,
+        before: draft.before ?? "",
+        after: draft.after ?? "",
+        reason: draft.reason ?? "",
+        source,
+      };
+    })
     .map((row, index) => ({ row, index }))
     .sort((a, b) => sortInstant(a.row) - sortInstant(b.row) || a.index - b.index)
     .map(({ row }) => row);

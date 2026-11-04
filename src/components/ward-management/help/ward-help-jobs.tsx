@@ -38,6 +38,8 @@ import { HOW_TO_IDS, HOW_TO_TOPICS, HOW_TOS, showMeSteps, type HowTo } from "./w
 import { aroundId, SCREEN_TOURS, walkPlaysHere } from "./ward-help-screen-tours";
 import { checklistsForDesk } from "./ward-help-checklists";
 import { WardHelpPracticeCard } from "./ward-help-practice-card";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { howToFor } from "./ward-help-access";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { showMeAvailable, tasksForDesk } from "./ward-help-task-list";
 import { helpLinkHref } from "./ward-help-events";
@@ -191,13 +193,14 @@ function TaskRow({
   showMeOn: boolean;
 }) {
   const id = useId();
+  const access = useEffectiveWardAccess();
   const phone = useIsPhone();
-  const href = howToHref(task.go, role, home);
+  const href = howToFor(task, role, access.scope) ? howToHref(task.go, role, home) : undefined;
   // Another Settings tab is still somewhere to go, even while Help is open on Settings.
   const goThere = href && (href.includes("#") || href !== pathname) ? href : undefined;
-  const showMe = canShowTask(task, role, home, phone, showMeOn, pathname);
+  const showMe = howToFor(task, role, access.scope) && canShowTask(task, role, home, phone, showMeOn, pathname);
   const computerOnly = phone && task.computerOnly;
-  const steps = showMeSteps(task, phone ? "phone" : "desk");
+  const steps = showMeSteps(task, phone ? "phone" : "desk", role);
   return (
     <li className={s.task} data-testid={`ward-help-task-answer-${task.id}`}>
       <button
@@ -382,21 +385,22 @@ export function HelpTasks({
   onOpenChecklist?: (id: string) => void;
 }) {
   const phone = useIsPhone();
+  const access = useEffectiveWardAccess();
   const checklists = useMemo(() => checklistsForDesk(role), [role]);
   const [open, setOpen] = useState<string | undefined>(openTask);
   const [topic, setTopic] = useState<Topic | "all">("all");
   const [all, setAll] = useState(Boolean(openTask));
   const { here, mine } = useMemo(() => {
-    const desk = tasksForDesk(role);
+    const desk = tasksForDesk(role, access.scope);
     const isHere = (task: HowTo) => howToHref(task.go, role, home)?.split("#")[0] === pathname;
     return { here: desk.filter(isHere), mine: desk };
-  }, [home, pathname, role]);
+  }, [home, pathname, role, access.scope]);
   // This screen's walk round (`ward-help-screen-tours.ts`), when Show me can play it here.
   const around = useMemo(() => {
     const walk = screen ? HOW_TOS.find((each) => each.id === aroundId(screen.id)) : undefined;
     return walk && canShowTask(walk, role, home, phone, showMeOn, pathname) ? walk : undefined;
   }, [home, pathname, phone, role, screen, showMeOn]);
-  const aroundSteps = around ? showMeSteps(around, phone ? "phone" : "desk").length : 0;
+  const aroundSteps = around ? showMeSteps(around, phone ? "phone" : "desk", role).length : 0;
   const hereTiles = here.slice(0, 4);
 
   const counts = HOW_TO_TOPICS.map((name) => ({ name, n: mine.filter((task) => task.topic === name).length })).filter(

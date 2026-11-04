@@ -151,10 +151,22 @@ export function reduceObservationLevelEvent(
   }
   if (current && sameObservation(current, level)) return reject(state, event, "this is the level already recorded");
 
+  // Observation edits are not all audit-captured events. Order them against retained observation
+  // history as well, rather than assuming the audit counter advances for every accepted edit.
+  let sequence = state.auditSequence;
+  for (const row of [...state.movements, ...state.admissions]) {
+    for (const change of row.observationChanges ?? []) sequence = Math.max(sequence, change.sequence ?? 0);
+  }
+  if (!Number.isSafeInteger(sequence) || sequence >= Number.MAX_SAFE_INTEGER) {
+    return reject(state, event, "Observation change sequence is exhausted");
+  }
   const changed = <T extends Movement | Admission>(row: T): T => ({
     ...row,
     observation: level,
-    observationChanges: [...(row.observationChanges ?? []), { at: event.now, from: row.observation, to: level }],
+    observationChanges: [
+      ...(row.observationChanges ?? []),
+      { at: event.now, from: row.observation, to: level, sequence: sequence + 1 },
+    ],
   });
   let next = state;
   if (movement) next = replaceMovement(next, movement.id, changed(movement));
