@@ -208,7 +208,8 @@ const AROUND: readonly Around[] = [
     keywords: "bed release list",
     steps: [
       {
-        target: id("ward-discharge-kpi-strip"),
+        // A phone's hero folds the counts away and keeps the next step row (plan item 2i).
+        target: [id("ward-discharge-kpi-strip"), { sel: "#main-content [data-wf-hero-next]" }],
         title: "Discharges today",
         body: "Held up, confirmed, expected, and discharged in the last day.",
       },
@@ -692,7 +693,7 @@ export const MORE_JOBS: readonly HowTo[] = [
     go: "discharges",
     showMe: [
       {
-        target: { sel: '[data-testid="ward-discharge-kpi-blocked"]' },
+        target: [{ sel: '[data-testid="ward-discharge-kpi-blocked"]' }, { sel: "#main-content [data-wf-hero-next]" }],
         title: "Held up",
         body: "How many discharges have something in the way.",
       },
