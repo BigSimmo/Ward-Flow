@@ -351,7 +351,12 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
           title="Patients on this demo night"
           // Round 2: a short label instead of the sentence. Ward Flow keeps no list of who you opened,
           // so this lists people with at least one record, by surname.
-          aside={<span className={styles.headMeta}>With records, A to Z</span>}
+          // The total sits here once, so the Show more row below only says how many it adds.
+          aside={
+            <span className={styles.headMeta} data-testid="ward-chronology-start-count">
+              {people.length} {people.length === 1 ? "patient" : "patients"}, A to Z
+            </span>
+          }
         />
         <ul className={start.people} aria-label="Patients on this demo night">
           {people.slice(0, shownPeople).map((patient) => (
@@ -372,9 +377,9 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
         {/* Round 2: one Show more, then the search finds anyone else, rather than about 30 presses. */}
         {shownPeople < people.length ? (
           shownPeople === START_ROWS ? (
-            // Final check: the shared Show more row (one size everywhere), with the count once.
+            // Final check: the shared Show more row (one size everywhere); the total is in the card head.
             <ShowMoreRow onClick={() => setShownPeople(START_ROWS * 3)} expanded={false}>
-              Show {Math.min(START_ROWS * 2, people.length - START_ROWS)} more of {people.length}
+              Show {Math.min(START_ROWS * 2, people.length - START_ROWS)} more
             </ShowMoreRow>
           ) : (
             <div className={start.more}>

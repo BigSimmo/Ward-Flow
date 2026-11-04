@@ -73,6 +73,7 @@ import { WardAcceptDialog } from "./ward-answer-accept-dialog";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { identityAbsenceNote } from "./ward-screen-derivations";
 
 const ANSWER_ALERT_LINE = CLINICAL_VALUES.bedAlertLine.value; // the hero ring's signed alert line
 
@@ -498,6 +499,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const oldestWaiting = [...incoming].sort((left, right) => left.openedAt - right.openedAt)[0];
 
   const phoneGatesVerdict = activeMovement ? eligibility(activeMovement, unit, now) : undefined;
+  const identityNote = activeMovement && identityAbsenceNote(resolvePatientIdentity(activeMovement));
   const phoneGates = phoneGatesVerdict
     ? {
         pass: checkedGates(phoneGatesVerdict.gates).filter((gate) => gate.pass).length,
@@ -997,9 +999,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                           </details>
                         ) : null}
 
-                        <p className={styles.answerIdentityAbsence}>
-                          Patient name and age are not recorded for this movement.
-                        </p>
+                        {identityNote ? <p className={styles.answerIdentityAbsence}>{identityNote}</p> : null}
                       </div>
                     </div>
 

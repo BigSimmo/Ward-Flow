@@ -27,21 +27,68 @@ function RowSwitch({
 
 /* Alerts ------------------------------------------------------------------------------------ */
 
+/** Phone states whose own words say what went wrong, so the row shows them as they are. */
+const PHONE_NOTES: readonly PhonePushState[] = ["limit", "in-use", "error", "error-on"];
+
 /**
- * Phone alerts for this device. Always shown: when unavailable it greys out and says why (local
- * demonstration, not signed in, browser or server not set up, or notifications blocked).
+ * S7 notifications (Josh, 3 Nov 2026): one Alerts switch for this device. On means act-now
+ * alerts as browser notifications while Ward Flow is open, and phone alerts too where the shared
+ * workspace offers them. Either stored switch still counts, so a person who turned on Browser
+ * notifications or Phone alerts before keeps alerts on. Each line fits one row at 390px wide.
  */
-function PhonePushRow({ state, onChange }: { state: PhonePushState; onChange: (next: boolean) => void }) {
-  const row = phonePushRow(state);
+export function deviceAlertsRow({
+  notifications,
+  permission,
+  phonePush,
+}: {
+  notifications: boolean;
+  permission: NotificationSupport;
+  phonePush: PhonePushState;
+}): { checked: boolean; unavailable: boolean; phoneReady: boolean; sub: string } {
+  const phone = phonePushRow(phonePush);
+  const browserOn = notifications && permission === "granted";
+  const browserReady = permission !== "unsupported" && permission !== "denied";
+  const checked = browserOn || phone.checked;
+  const unavailable = !checked && !browserReady && phone.unavailable;
+  const sub =
+    !checked && permission === "denied"
+      ? "Blocked for this site in the browser"
+      : PHONE_NOTES.includes(phonePush)
+        ? phone.sub
+        : unavailable
+          ? phonePush === "install"
+            ? phone.sub
+            : "Not available in this browser"
+          : phone.checked
+            ? phone.sub
+            : browserOn
+              ? "Act-now alerts while Ward Flow is open"
+              : "New act-now alerts on this device";
+  return { checked, unavailable, phoneReady: !phone.unavailable, sub };
+}
+
+/** The one Alerts switch. Greyed with a reason only when neither the browser nor the phone can alert. */
+export function DeviceAlertsRow({
+  notifications,
+  permission,
+  phonePush,
+  onChange,
+}: {
+  notifications: boolean;
+  permission: NotificationSupport;
+  phonePush: PhonePushState;
+  onChange: (next: boolean) => void;
+}) {
+  const row = deviceAlertsRow({ notifications, permission, phonePush });
   return (
-    <SettingRow setting="phone-alerts" title="Phone alerts" sub={row.sub} testId="setting-phone-alerts-row">
+    <SettingRow setting="device-alerts" title="Alerts on this device" sub={row.sub} testId="setting-device-alerts-row">
       <Switch
         checked={row.checked}
         unavailable={row.unavailable}
         onCheckedChange={(next) => {
           if (!row.unavailable) onChange(next);
         }}
-        label={<SrOnly>Phone alerts</SrOnly>}
+        label={<SrOnly>Alerts on this device</SrOnly>}
       />
     </SettingRow>
   );
@@ -50,9 +97,8 @@ function PhonePushRow({ state, onChange }: { state: PhonePushState; onChange: (n
 export function AlertsPane({
   notifications = false,
   notificationPermission = "default",
-  onNotificationsChange = () => {},
   phonePush = "local",
-  onPhonePushChange = () => {},
+  onAlertsChange = () => {},
   buzz,
   onBuzzChange,
   onTestBuzz,
@@ -60,10 +106,10 @@ export function AlertsPane({
   /** Stream A, 9 Oct 2026: opt-in browser notifications for new act-now alerts in this tab. */
   notifications?: boolean;
   notificationPermission?: NotificationSupport;
-  onNotificationsChange?: (next: boolean) => void;
   /** Feature 4, 10 Oct 2026: phone alerts through the shared workspace backend, per device. */
   phonePush?: PhonePushState;
-  onPhonePushChange?: (next: boolean) => void;
+  /** The one Alerts switch (S7, 3 Nov 2026): turns browser and phone alerts on or off together. */
+  onAlertsChange?: (next: boolean) => void;
   buzz: boolean;
   onBuzzChange: (next: boolean) => void;
   onTestBuzz: () => void;
@@ -75,25 +121,12 @@ export function AlertsPane({
         <div className={styles.column}>
           <Card aria-labelledby="alerts-title">
             <CardHead iconPlain id="alerts-title" icon={BellRing} title="Alerts" />
-            <SettingRow
-              setting="browser-notifications"
-              title="Browser notifications"
-              sub={
-                notificationPermission === "unsupported"
-                  ? "Not available in this browser"
-                  : notificationPermission === "denied"
-                    ? "Blocked for this site in the browser"
-                    : "New act-now alerts, while this tab is open"
-              }
-              testId="setting-browser-notifications-row"
-            >
-              <Switch
-                checked={notifications && notificationPermission === "granted"}
-                onCheckedChange={onNotificationsChange}
-                label={<SrOnly>Browser notifications</SrOnly>}
-              />
-            </SettingRow>
-            <PhonePushRow state={phonePush} onChange={onPhonePushChange} />
+            <DeviceAlertsRow
+              notifications={notifications}
+              permission={notificationPermission}
+              phonePush={phonePush}
+              onChange={onAlertsChange}
+            />
             <SettingsInstallHint />
             <SettingRow setting="buzz" title="Buzz sound" sub="Chime on an urgent buzz" testId="setting-buzz-alert-row">
               <button

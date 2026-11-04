@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { CircleAlert } from "lucide-react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
@@ -8,6 +8,8 @@ import { NOW_ANCHOR, activeWardNetwork } from "@/components/ward-management/ward
 import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 import { Sheet } from "@/components/wf/sheet";
 import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { AlertsDrawer } from "@/components/ward-redesign/pop-alerts/alerts-drawer";
+import { ConfirmHost } from "@/components/wf";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/ward-flow",
@@ -58,6 +60,10 @@ const items: InboxItem[] = movements.map((movement, index) => ({
 
 afterEach(() => vi.restoreAllMocks());
 
+/** Bug B2 (4 Nov 2026): the discard question goes through the kit's confirm, which answers after the
+ *  step returns (here through its no-host fallback, the browser box this file spies on). */
+const settleConfirm = () => act(async () => {});
+
 function renderDrawer(withBackdrop = false, inSheet = false) {
   const onClose = vi.fn();
   const dispatch = vi.fn();
@@ -100,7 +106,7 @@ function editDraft() {
 describe("unsaved escalation dismissal", () => {
   it.each(["Escape", "Cancel", "Escalate", "Close", "backdrop"])(
     "keeps the changed draft when %s is cancelled, then discards only after confirmation",
-    (route) => {
+    async (route) => {
       const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
       const { onClose, trigger } = renderDrawer(route === "backdrop");
       const input = editDraft();
@@ -118,6 +124,7 @@ describe("unsaved escalation dismissal", () => {
       expect(onClose).not.toHaveBeenCalled();
       confirm.mockReturnValue(true);
       dismiss();
+      await settleConfirm();
       expect(confirm).toHaveBeenCalledTimes(2);
       expect(screen.queryByPlaceholderText("Contact name or service")).toBeNull();
       if (route === "Close" || route === "backdrop") expect(onClose).toHaveBeenCalledTimes(1);
@@ -155,7 +162,7 @@ describe("unsaved escalation dismissal", () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
-  it("handles escalation Escape inside the real outer Sheet before that Sheet can close", () => {
+  it("handles escalation Escape inside the real outer Sheet before that Sheet can close", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     const { onClose, trigger } = renderDrawer(false, true);
     const input = editDraft();
@@ -165,12 +172,13 @@ describe("unsaved escalation dismissal", () => {
     expect(onClose).not.toHaveBeenCalled();
     confirm.mockReturnValue(true);
     fireEvent.keyDown(input, { key: "Escape" });
+    await settleConfirm();
     expect(screen.queryByPlaceholderText("Contact name or service")).toBeNull();
     expect(trigger()).toHaveFocus();
     expect(onClose).not.toHaveBeenCalled();
   });
 
-  it("confirms a subject switch and opens the next subject with its own contact", () => {
+  it("confirms a subject switch and opens the next subject with its own contact", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     const { trigger } = renderDrawer();
     const input = editDraft();
@@ -181,6 +189,7 @@ describe("unsaved escalation dismissal", () => {
     expect(trigger(1)).toHaveAttribute("aria-expanded", "false");
     confirm.mockReturnValue(true);
     fireEvent.click(trigger(1));
+    await settleConfirm();
     expect(screen.getByPlaceholderText("Contact name or service")).toHaveValue("");
     fireEvent.keyDown(screen.getByPlaceholderText("Contact name or service"), { key: "Escape" });
     expect(confirm).toHaveBeenCalledTimes(2);
@@ -260,7 +269,7 @@ describe("unsaved escalation dismissal", () => {
     expect(unload.defaultPrevented).toBe(true);
   });
 
-  it("protects the draft before snoozing its row out of the active list", () => {
+  it("protects the draft before snoozing its row out of the active list", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     const { card, dispatch } = renderDrawer();
     const input = editDraft();
@@ -275,6 +284,7 @@ describe("unsaved escalation dismissal", () => {
     expect(input).toHaveValue("State bed desk");
     confirm.mockReturnValue(true);
     chooseReason();
+    await settleConfirm();
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "SNOOZE_INBOX_ITEM", inboxItemId: items[0].id }),
     );
@@ -293,7 +303,7 @@ describe("unsaved escalation dismissal", () => {
     expect(screen.getByPlaceholderText("Contact name or service")).toHaveValue("State bed desk");
   });
 
-  it("guards footer navigation once and keeps the drawer when navigation is cancelled", () => {
+  it("guards footer navigation once and keeps the drawer when navigation is cancelled", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     const { onClose } = renderDrawer();
     const input = editDraft();
@@ -305,6 +315,7 @@ describe("unsaved escalation dismissal", () => {
     expect(input).toHaveValue("State bed desk");
     confirm.mockReturnValue(true);
     fireEvent.click(link);
+    await settleConfirm();
     expect(confirm).toHaveBeenCalledTimes(2);
     expect(onClose).toHaveBeenCalledOnce();
   });
@@ -373,5 +384,51 @@ describe("task draft protection through the real shell Sheet", () => {
     await waitFor(() => expect(screen.queryByTestId("ward-bar-tasks-sheet")).toBeNull());
     expect(back).toHaveBeenCalledOnce();
     expect(confirm).toHaveBeenCalledOnce();
+  });
+});
+
+describe("unsaved escalation asks in the kit's styled confirm (bug B2)", () => {
+  it.each([
+    ["Tasks drawer", WardTasksDrawer],
+    ["Alerts drawer", AlertsDrawer],
+  ] as const)("%s: closing waits for Discard, and Keep editing keeps the draft", async (_name, Drawer) => {
+    const confirm = vi.spyOn(window, "confirm");
+    const onClose = vi.fn();
+    render(
+      <>
+        <ConfirmHost />
+        <Drawer
+          alertsScreenOpen={false}
+          items={items}
+          acknowledgements={{}}
+          completions={{}}
+          role="coordinator"
+          now={NOW_ANCHOR}
+          dispatch={vi.fn()}
+          onClose={onClose}
+          onSelectMovement={vi.fn()}
+          records={{ ...seed, movements }}
+        />
+      </>,
+    );
+    const card = screen.getByTestId(`ward-task-${items[0].id}`).closest("li")!;
+    fireEvent.click(within(card).getByRole("button", { name: "Escalate" }));
+    const input = editDraft();
+    const close = () => fireEvent.click(screen.getByRole("button", { name: /^Close .+ panel$/ }));
+
+    close();
+    const dialog = await screen.findByRole("alertdialog", { name: "Discard the escalation contact?" });
+    expect(dialog).toHaveTextContent("You have an unsaved escalation contact. Discard it?");
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.click(within(dialog).getByRole("button", { name: "Keep editing" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+    expect(input).toHaveValue("State bed desk");
+    expect(onClose).not.toHaveBeenCalled();
+
+    close();
+    fireEvent.click(await screen.findByRole("button", { name: "Discard" }));
+    await waitFor(() => expect(onClose).toHaveBeenCalledOnce());
+    expect(screen.queryByPlaceholderText("Contact name or service")).toBeNull();
+    expect(confirm).not.toHaveBeenCalled();
   });
 });

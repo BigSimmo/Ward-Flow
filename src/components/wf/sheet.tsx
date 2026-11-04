@@ -629,6 +629,11 @@ export function Sheet({
  * v6 drawer: the shared `Sheet` (thick glass over a scrim, focus trap, Escape closes the top-most
  * sheet first) docked to the right on desktop and rising from the bottom on a phone. Same API as
  * `Sheet`; only the placement default differs.
+ *
+ * @deprecated For a page's detail panel use `PanelDrawer` (./drawer.tsx): fixed head, one scroll
+ * body, pinned light foot. Its six callers (activity panel, Community hero, ward referral detail and
+ * awaiting referral, the bar's lazy panels, Capacity) move by 31 December 2026, then this export is
+ * removed (L38, Josh 3 Nov 2026).
  */
 export function Drawer({ placement = "responsive-right", ...props }: SheetProps) {
   return <Sheet placement={placement} {...(props as SheetProps)} />;
