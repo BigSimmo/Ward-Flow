@@ -114,6 +114,7 @@ describe("what changed since you last looked", () => {
         "dischargeMovesByAdmission",
         "escalatedMovementIds",
         "movementIds",
+        "readyBasis",
         "readyByUnit",
         "referralIds",
         "scenario",
