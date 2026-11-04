@@ -53,6 +53,7 @@ import {
 } from "@/components/ward-management/ward-role-access";
 import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 import { siteByCode } from "./ward-sites";
+import { returnEarlyNoticesFor } from "./out-of-area/return-early";
 import { journeySentByDesk, referralSentByDesk } from "./ward-referral-sender";
 import { isBreakGlassReviewId } from "./ward-break-glass-review-id";
 
@@ -318,6 +319,14 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   // stay this desk is already sent in full, so the flag never tells a desk about a person it cannot see.
   returnEarlyFlags: (context) =>
     (context.state.returnEarlyFlags ?? []).filter((record) => wholeStay(context, record.admissionId)),
+  // Shared mode (Josh, 4 Nov 2026, "Show it without the name"): the home hospital's wards, community and
+  // Transport hear a flag on a stay they cannot see as a nameless notice: a site and a time, no stay id.
+  returnEarlyNotices: (context) =>
+    returnEarlyNoticesFor(context.state.returnEarlyFlags, context.state.admissions, {
+      role: context.access.role,
+      seesSite: (siteCode) => context.state.units.some((unit) => unit.siteCode === siteCode && context.unitIn(unit.id)),
+      seesStay: (admissionId) => wholeStay(context, admissionId),
+    }),
   repatriations: (context) =>
     context.coordinator
       ? context.state.repatriations.filter((record) => context.admissionIds.has(record.admissionId))
@@ -408,6 +417,7 @@ export function scopeWardFlowState(
   if (state.undoRecords === undefined) delete next.undoRecords;
   if (state.siteHandoverSignOffs === undefined) delete next.siteHandoverSignOffs;
   if (state.returnEarlyFlags === undefined) delete next.returnEarlyFlags;
+  if ((next.returnEarlyNotices as unknown[]).length === 0) delete next.returnEarlyNotices;
   return {
     state: closeReferences(next as WardFlowState, scoped.datesOnlyAdmissionIds, state, access.role !== "executive"),
     breakGlassPatientIds: scoped.breakGlassPatientIds,

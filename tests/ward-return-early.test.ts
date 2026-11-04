@@ -11,6 +11,10 @@ import { EVENT_ROLE } from "@/components/ward-management/ward-flow-events";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { scopeWardFlowState } from "@/components/ward-management/ward-access-state";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
+import type { WardAccess } from "@/components/ward-management/ward-role-access";
+import { isValidSharedWardFlowState } from "@/components/ward-management/ward-shared-state-validation";
 import { NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
 
 const ADMISSION = "AD-RPHS-18";
@@ -140,5 +144,47 @@ describe("Flag early alerts — who sees them", () => {
     const [alert] = returnEarlyAlerts(state, { role: "officer" }, NOW_ANCHOR);
     expect(alert!.sentence).not.toContain(ADMISSION);
     expect(alert!.sentence).toMatch(/^Out of area return flagged early: .+ may be ready to come home to .+\.$/);
+  });
+});
+
+describe("Flag early in shared mode — a desk that cannot see the stay hears it without the name", () => {
+  const state = flagged();
+  const admission = state.admissions.find((candidate) => candidate.id === ADMISSION)!;
+  const name = resolveSubjectPatient(admission, state).formalName;
+  const places = wardPlaceLookup(state.units);
+  const bunWard = state.units.find((unit) => unit.siteCode === "BUN" && unit.id !== admission.unitId)!;
+
+  it.each<[string, WardAccess, ReturnEarlyDesk]>([
+    ["Transport", { role: "officer", scope: { kind: "jobs" } }, { role: "officer" }],
+    [
+      "a ward at the home hospital",
+      { role: "ward", scope: { kind: "ward", unitIds: [bunWard.id] } },
+      { role: "ward", siteCode: "BUN" },
+    ],
+  ])("sends %s a site and a time only, and the alert names nobody", (_label, access, desk) => {
+    const scoped = scopeWardFlowState(state, access, { now: NOW_ANCHOR, places }).state;
+    expect(scoped.admissions.some((row) => row.id === ADMISSION)).toBe(false);
+    expect(scoped.returnEarlyFlags ?? []).toEqual([]);
+    expect(scoped.returnEarlyNotices).toHaveLength(1);
+    expect(JSON.stringify(scoped.returnEarlyNotices)).not.toContain(ADMISSION);
+    expect(isValidSharedWardFlowState(JSON.parse(JSON.stringify(scoped)))).toBe(true);
+    const [alert] = returnEarlyAlerts(scoped, desk, NOW_ANCHOR);
+    expect(alert!.admissionId).toBeUndefined();
+    expect(alert!.sentence).not.toContain(name);
+    expect(alert!.sentence).toBe(
+      `Out of area return flagged early: a person may be ready to come home to ${siteByCode("BUN")!.name}. Ask the bed coordinator for details.`,
+    );
+  });
+
+  it("sends nothing to a ward at another hospital, an ED desk or the coordinator", () => {
+    const rphWard = state.units.find((unit) => unit.siteCode !== "BUN")!;
+    for (const access of [
+      { role: "ward", scope: { kind: "ward", unitIds: [rphWard.id] } },
+      { role: "ed", scope: { kind: "ed", edId: "fsh-ed" } },
+      { role: "coordinator", scope: { kind: "network" } },
+    ] as WardAccess[]) {
+      const scoped = scopeWardFlowState(state, access, { now: NOW_ANCHOR, places }).state;
+      expect(scoped.returnEarlyNotices).toBeUndefined();
+    }
   });
 });

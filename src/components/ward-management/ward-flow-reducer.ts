@@ -26,7 +26,7 @@ export {
 };
 // Closing-the-loop (package E): return requested vs home service agreed.
 import { reduceHomeServiceReturn, type HomeServiceReturnRecord } from "./out-of-area/home-service-return";
-import { reduceFlagReturnEarly, type ReturnEarlyFlagRecord } from "./out-of-area/return-early";
+import { reduceFlagReturnEarly, type ReturnEarlyFlagRecord, type ReturnEarlyNotice } from "./out-of-area/return-early";
 import { withDischargeMoveDemo } from "./coordinator/since-last-look-seed";
 import { reduceDirectoryCheck, type DirectoryCheckRecord } from "./on-call/on-call-checks";
 import type { SiteHandoverSignOffRecord } from "./site-sign-off/site-handover-sign-off";
@@ -404,6 +404,11 @@ export type WardFlowState = WardAuditState & {
    * and role only. Optional: absent in older saves, read as none.
    */
   returnEarlyFlags?: ReturnEarlyFlagRecord[];
+  /**
+   * Shared mode only (Josh, 4 Nov 2026): nameless early-return notices for a desk that should hear a
+   * flag but cannot see the stay. Worked out when the desk's copy is scoped; never written by the reducer.
+   */
+  returnEarlyNotices?: ReturnEarlyNotice[];
   /** Handover sign-offs — role and time only. `RECORD_HANDOVER_SIGN_OFF` appends here. */
   handoverSignOffs: HandoverSignOffRecord[];
   /**

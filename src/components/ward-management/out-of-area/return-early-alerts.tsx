@@ -16,7 +16,14 @@ import styles from "./return-early-alerts.module.css";
  */
 export function ReturnEarlyAlerts({ desk, now }: { desk: ReturnEarlyDesk; now: Instant }) {
   const headingId = useId();
-  const source = useOptionalWardFlowSelect("admissions", "patients", "referrals", "movements", "returnEarlyFlags");
+  const source = useOptionalWardFlowSelect(
+    "admissions",
+    "patients",
+    "referrals",
+    "movements",
+    "returnEarlyFlags",
+    "returnEarlyNotices",
+  );
   if (!source) return null;
   const alerts = returnEarlyAlerts(source, desk, now);
   if (alerts.length === 0) return null;

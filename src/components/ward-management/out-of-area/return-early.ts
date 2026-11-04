@@ -47,6 +47,18 @@ export type ReturnEarlyEvent =
       admissionId: string;
     };
 
+/**
+ * Shared mode (Josh, 4 Nov 2026, "Show it without the name"): what a desk that should hear a flag,
+ * but cannot see the stay, is sent instead. A site, a time and an opaque key only; no stay id and no
+ * name. Never written by the reducer: worked out from `returnEarlyFlags` when a desk's copy is scoped.
+ */
+export type ReturnEarlyNotice = {
+  /** Opaque per-flag key for list identity; it names no stay. */
+  key: string;
+  homeHospital: string;
+  at: Instant;
+};
+
 /** The current flag on a stay, or undefined. */
 export function returnEarlyFlagOf(
   records: readonly ReturnEarlyFlagRecord[] | undefined,
@@ -84,7 +96,8 @@ export type ReturnEarlyDesk = { role: "ward"; siteCode: string } | { role: "comm
 
 export type ReturnEarlyAlert = {
   id: string;
-  admissionId: string;
+  /** Absent on a nameless notice, which names no stay. */
+  admissionId?: string;
   at: Instant;
   homeHospital: string;
   sentence: string;
@@ -92,6 +105,7 @@ export type ReturnEarlyAlert = {
 
 type AlertSource = Pick<WardFlowState, "admissions"> & {
   returnEarlyFlags?: readonly ReturnEarlyFlagRecord[];
+  returnEarlyNotices?: readonly ReturnEarlyNotice[];
   patients?: WardFlowState["patients"];
   referrals?: WardFlowState["referrals"];
   movements?: WardFlowState["movements"];
@@ -120,5 +134,42 @@ export function returnEarlyAlerts(source: AlertSource, desk: ReturnEarlyDesk, no
       sentence: `Out of area return flagged early: ${name} may be ready to come home to ${hospital}.`,
     });
   }
+  for (const notice of source.returnEarlyNotices ?? []) {
+    if (notice.at > now) continue;
+    if (desk.role === "ward" && notice.homeHospital !== desk.siteCode) continue;
+    const hospital = siteByCode(notice.homeHospital)?.name ?? "their home hospital";
+    alerts.push({
+      id: `return-early-notice:${notice.key}`,
+      at: notice.at,
+      homeHospital: notice.homeHospital,
+      sentence: `Out of area return flagged early: a person may be ready to come home to ${hospital}. Ask the bed coordinator for details.`,
+    });
+  }
   return alerts.sort((a, b) => b.at - a.at);
+}
+
+/** The desks that hear a flag, as the scoping layer sees them: wards at the home hospital, community, Transport. */
+export function returnEarlyNoticesFor(
+  flags: readonly ReturnEarlyFlagRecord[] | undefined,
+  admissions: WardFlowState["admissions"],
+  desk: { role: string; seesSite: (siteCode: string) => boolean; seesStay: (admissionId: string) => boolean },
+): ReturnEarlyNotice[] {
+  if (desk.role !== "ward" && desk.role !== "community" && desk.role !== "officer") return [];
+  const latest = new Map<string, ReturnEarlyFlagRecord>();
+  for (const record of flags ?? []) latest.set(record.admissionId, record);
+  const notices: ReturnEarlyNotice[] = [];
+  let index = 0;
+  for (const record of latest.values()) {
+    if (desk.seesStay(record.admissionId)) continue;
+    const admission = admissions.find((candidate) => candidate.id === record.admissionId);
+    if (!admission || admission.state === "departed") continue;
+    if (desk.role === "ward" && !desk.seesSite(record.homeHospital)) continue;
+    index += 1;
+    notices.push({
+      key: `${record.homeHospital}:${record.at}:${index}`,
+      homeHospital: record.homeHospital,
+      at: record.at,
+    });
+  }
+  return notices;
 }

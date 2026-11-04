@@ -1,6 +1,6 @@
 import type { DirectoryCheckRecord } from "./on-call/on-call-checks";
 import type { HomeServiceReturnRecord } from "./out-of-area/home-service-return";
-import type { ReturnEarlyFlagRecord } from "./out-of-area/return-early";
+import type { ReturnEarlyFlagRecord, ReturnEarlyNotice } from "./out-of-area/return-early";
 import type { SiteHandoverSignOffRecord } from "./site-sign-off/site-handover-sign-off";
 import type { WardFlowState } from "./ward-flow-reducer";
 
@@ -21,6 +21,8 @@ export type ClosingLoopContext = {
   siteHandoverSignOffs?: SiteHandoverSignOffRecord[];
   /** Out of area "Flag early" (`FLAG_RETURN_EARLY`, Josh, 3 Nov 2026): read by the plan and three desks' alerts. */
   returnEarlyFlags?: ReturnEarlyFlagRecord[];
+  /** Shared mode nameless notices for a desk that cannot see the flagged stay (Josh, 4 Nov 2026). */
+  returnEarlyNotices?: ReturnEarlyNotice[];
 };
 
 export const CLOSING_LOOP_CONTEXT_KEYS = {
@@ -28,6 +30,7 @@ export const CLOSING_LOOP_CONTEXT_KEYS = {
   directoryChecks: true,
   siteHandoverSignOffs: true,
   returnEarlyFlags: true,
+  returnEarlyNotices: true,
 } as const;
 
 const NONE: never[] = [];
@@ -38,5 +41,6 @@ export function closingLoopContext(state: WardFlowState): Required<ClosingLoopCo
     directoryChecks: Array.isArray(state.directoryChecks) ? state.directoryChecks : NONE,
     siteHandoverSignOffs: Array.isArray(state.siteHandoverSignOffs) ? state.siteHandoverSignOffs : NONE,
     returnEarlyFlags: Array.isArray(state.returnEarlyFlags) ? state.returnEarlyFlags : NONE,
+    returnEarlyNotices: Array.isArray(state.returnEarlyNotices) ? state.returnEarlyNotices : NONE,
   };
 }
