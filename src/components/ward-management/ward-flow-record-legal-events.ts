@@ -241,8 +241,10 @@ export function reduceRecordedLegalEvent(
         return reject(state, event, "Chief Psychiatrist consent is recorded only for a Form 6B.");
       }
       // Omitted keeps the recorded value; null clears it.
-      const pick = <V>(value: V | null | undefined, kept: V | undefined): V | undefined =>
-        value === undefined ? kept : (value ?? undefined);
+      // A function, not a generic arrow, so the TSX import walks in the tests can parse this file.
+      function pick<V>(value: V | null | undefined, kept: V | undefined): V | undefined {
+        return value === undefined ? kept : (value ?? undefined);
+      }
       const details: LegalFormDetails = {
         madeBy: pick(event.madeBy, form.madeBy),
         copyGiven: pick(event.copyGiven, form.copyGiven),
