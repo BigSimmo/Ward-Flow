@@ -124,6 +124,7 @@
     "tests/ward-mode-workspace-reachability.test.ts",
     "tests/ward-movement-horizon-truth.test.ts",
     "tests/ward-movement-stage-changes.test.ts",
+    "tests/ward-native-dropdown-ratchet.test.ts",
     "tests/ward-nav.test.ts",
     "tests/ward-never-build-behaviour-guard.test.ts",
     "tests/ward-never-build-drift-guard.test.ts",
