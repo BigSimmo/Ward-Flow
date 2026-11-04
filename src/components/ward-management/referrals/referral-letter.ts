@@ -59,37 +59,107 @@ function chartStatusText(input: ReferralTextInput): string {
   ].join("; ");
 }
 
-/** The letter, headed by the time it was drafted (AWST clock face). */
-export function referralLetterText(input: ReferralTextInput, draftedAt: string): string {
-  const referrer = [input.referrer.name, input.referrer.role, input.referrer.phone].map((part) => part.trim());
+/** One labelled line of the letter. `missing` lines are left out of the copy and listed once instead. */
+export type ReferralLetterRow = { readonly label: string; readonly value: string; readonly missing?: boolean };
+
+/**
+ * RF2 (Current Issues, 4 Nov 2026): one model for the styled letter, its PDF and its copy text, so
+ * the three never disagree. Answered fields are written out; unanswered ones are gathered into one
+ * "Still to confirm" list at the top instead of a "Not recorded" on every line.
+ */
+export type ReferralLetterModel = {
+  readonly title: string;
+  readonly toConfirm: readonly string[];
+  readonly patient: { readonly name: string; readonly umrn: string; readonly ageSex: string; readonly suburb: string };
+  readonly key: readonly ReferralLetterRow[];
+  readonly details: readonly ReferralLetterRow[];
+  readonly reason: string;
+  readonly history: string;
+  readonly referrer: { readonly name: string; readonly role: string; readonly phone: string };
+};
+
+function row(label: string, text: string | undefined, missingWord = NOT_RECORDED): ReferralLetterRow {
+  const trimmed = (text ?? "").trim();
+  return trimmed && trimmed !== NOT_RECORDED ? { label, value: trimmed } : { label, value: missingWord, missing: true };
+}
+
+export function referralLetterModel(input: ReferralTextInput): ReferralLetterModel {
   const charts = chartStatusText(input);
+  const key = [
+    row("Urgency", input.urgency),
+    row("Legal status", input.legalStatus),
+    row("Medical clearance", input.clearance === "Not answered" ? "" : input.clearance, "Not answered"),
+    { label: "Risks", value: input.risks.length ? input.risks.join(", ") : "None selected" },
+  ];
+  const details = [
+    row("Refer to", input.recipients.join(", "), "None chosen yet"),
+    row("From", input.from),
+    ...(input.catchment?.trim() ? [row("Catchment", input.catchment)] : []),
+    ...(input.clearanceChecklist?.trim() ? [row("Clearance checklist", input.clearanceChecklist)] : []),
+    ...(input.needs?.length ? [row("Needs", input.needs.join(", "))] : []),
+    ...(charts ? [row("Documents", charts)] : []),
+  ];
+  const reason = input.reason.trim();
+  const history = input.history.trim();
+  const referrer = {
+    name: input.referrer.name.trim(),
+    role: input.referrer.role.trim(),
+    phone: input.referrer.phone.trim(),
+  };
+  const toConfirm = [
+    ...[...key, ...details].filter((item) => item.missing).map((item) => item.label),
+    ...(reason ? [] : ["Reason"]),
+    ...(history ? [] : ["History"]),
+    ...(referrer.name && referrer.phone ? [] : ["Referrer contact"]),
+  ];
+  return {
+    title: `Mental health referral to ${input.destinationPhrase}`,
+    toConfirm,
+    patient: {
+      name: value(input.patientName),
+      umrn: value(input.umrn),
+      ageSex: value(input.ageSex),
+      suburb: input.suburb.trim(),
+    },
+    key,
+    details,
+    reason,
+    history,
+    referrer,
+  };
+}
+
+function sentenceList(labels: readonly string[]): string {
+  const lower = labels.map((label, index) => (index === 0 ? label : label.charAt(0).toLowerCase() + label.slice(1)));
+  return lower.length > 1 ? `${lower.slice(0, -1).join(", ")} and ${lower.at(-1)}` : (lower[0] ?? "");
+}
+
+/** The copy text: answered fields only, missing ones named once at the top. */
+export function referralLetterText(input: ReferralTextInput, draftedAt: string): string {
+  const model = referralLetterModel(input);
+  const answered = (rows: readonly ReferralLetterRow[]) =>
+    rows.filter((item) => !item.missing).map((item) => `${item.label}: ${item.value}`);
+  // " · " separators, so the clipboard's UMRN strip leaves a clean line.
+  const person = [model.patient.name, `UMRN ${model.patient.umrn}`, model.patient.ageSex, model.patient.suburb]
+    .filter(Boolean)
+    .join(" · ");
+  const referrer = [model.referrer.name, model.referrer.role, model.referrer.phone].filter(Boolean).join(", ");
   return [
     `${SYNTHETIC_COPY_LINE} Draft ${draftedAt} AWST.`,
-    `Mental health referral to ${input.destinationPhrase}`,
+    model.title.toUpperCase(),
+    ...(model.toConfirm.length ? [`Still to confirm: ${sentenceList(model.toConfirm)}.`] : []),
     "",
-    "PERSON",
-    `Name: ${value(input.patientName)}`,
-    `UMRN: ${value(input.umrn)}`,
-    `Age and sex: ${value(input.ageSex)}`,
-    `Suburb: ${value(input.suburb)}`,
-    ...(input.catchment?.trim() ? [`Catchment: ${input.catchment.trim()}`] : []),
-    `From: ${value(input.from)}`,
+    "PATIENT",
+    person,
     "",
     "REQUEST",
-    `Refer to: ${input.recipients.length ? input.recipients.join(", ") : "None chosen yet"}`,
-    `Urgency: ${value(input.urgency)}`,
-    `Legal status: ${value(input.legalStatus)}`,
-    `Reason: ${value(input.reason)}`,
-    `Risks: ${input.risks.length ? input.risks.join(", ") : "None selected"}`,
-    `Medical clearance: ${value(input.clearance)}`,
-    ...(input.clearanceChecklist?.trim() ? [`Clearance checklist: ${input.clearanceChecklist.trim()}`] : []),
-    ...(input.needs?.length ? [`Needs: ${input.needs.join(", ")}`] : []),
-    ...(charts ? [`Documents: ${charts}`] : []),
+    ...answered(model.key),
+    ...answered(model.details),
+    ...(model.reason ? ["", "REASON", model.reason] : []),
+    ...(model.history ? ["", "HISTORY", model.history] : []),
     "",
-    "HISTORY",
-    value(input.history),
-    "",
-    `Referrer: ${referrer.filter(Boolean).join(", ") || NOT_RECORDED}`,
+    "REFERRER",
+    referrer || NOT_RECORDED,
   ].join("\n");
 }
 
