@@ -205,20 +205,30 @@ describe("the real layout's authenticated executive branch", () => {
     };
     const view = await openLayout();
     const rail = screen.getByTestId("ward-rail");
-    expect(within(rail).getByRole("button", { name: "Sign out synthetic-executive@example.invalid" })).toHaveAttribute(
-      "title",
-      "Signed in as synthetic-executive@example.invalid. Sign out",
-    );
-    fireEvent.click(within(rail).getByTestId("ward-account-switch-role"));
+    // DK1 (3 Nov 2026): Switch desk and Sign out live in the person's account menu, not rows of their own.
+    expect(within(rail).queryByTestId("ward-account-sign-out")).toBeNull();
+    expect(within(rail).queryByTestId("ward-account-switch-role")).toBeNull();
+    const person = within(rail).getByTestId("ward-rail-persona-trigger");
+    expect(person).toHaveAttribute("aria-haspopup", "menu");
+    expect(person.getAttribute("aria-label")).toMatch(/^Executive, Statewide\. Account menu$/u);
+    const openAccount = () => {
+      fireEvent.click(within(rail).getByTestId("ward-rail-persona-trigger"));
+      return within(rail).getByRole("menu", { name: "Account" });
+    };
+    let account = openAccount();
+    expect(account).toHaveTextContent("synthetic-executive@example.invalid");
+    expect(within(account).queryByRole("menuitem", { name: /Go to a desk|Try another desk/u })).toBeNull();
+    fireEvent.click(within(account).getByRole("menuitem", { name: "Switch desk" }));
     expect((guard.connection as WardSharedConnection).switchRole).toHaveBeenCalledTimes(1);
-    fireEvent.click(within(rail).getByTestId("ward-account-sign-out"));
+    fireEvent.click(within(openAccount()).getByRole("menuitem", { name: "Sign out" }));
     expect((guard.connection as WardSharedConnection).signOut).toHaveBeenCalledTimes(1);
     guard.connection = { ...(guard.connection as WardSharedConnection), canSwitch: false };
     await act(async () => {
       view.rerender(await Layout({ children: <Probe /> }));
     });
-    expect(within(rail).queryByTestId("ward-account-switch-role")).toBeNull();
-    expect(within(rail).getByTestId("ward-account-sign-out")).toBeInTheDocument();
+    account = openAccount();
+    expect(within(account).queryByRole("menuitem", { name: "Switch desk" })).toBeNull();
+    expect(within(account).getByRole("menuitem", { name: "Sign out" })).toBeInTheDocument();
     expect(guard.raw).not.toHaveBeenCalled();
     expect(guard.seed).not.toHaveBeenCalled();
   });

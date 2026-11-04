@@ -5,6 +5,8 @@ import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { isOfficerJob, officerCancellationNotices } from "./officer-jobs";
+import { useOfficerDiversionSave } from "./use-officer-diversion-save";
+import { ReturnEarlyAlerts } from "@/components/ward-management/out-of-area/return-early-alerts";
 import { useTransportCommandFeedback } from "./use-transport-command-feedback";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, Clock, Copy, ListChecks, Lock, MapPin, Plus, Search, ShieldCheck, X } from "lucide-react";
@@ -51,11 +53,7 @@ import { TRANSPORT_PROVIDERS, type Movement, type Unit } from "@/components/ward
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { movementOriginLabel, originSiteCode } from "@/components/ward-management/ward-movement-origin";
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
-import {
-  changeReasonLabels,
-  type DiversionReason,
-  type TransportWhereabouts,
-} from "@/components/ward-management/ward-change-reasons";
+import { changeReasonLabels } from "@/components/ward-management/ward-change-reasons";
 
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 
@@ -109,7 +107,8 @@ import {
   withCrewLimit,
 } from "./officer-needs-transport";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
-import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
+import { hasOpenSheet } from "@/components/wf/sheet-focus";
+import { useWardShellPublic } from "@/components/ward-management/shell/ward-shell-public-context";
 import { replaceSearchParams, useLocationSearch } from "@/components/ward-management/ward-url-state";
 export {
   acceptedBlockedReason,
@@ -181,6 +180,9 @@ export function OfficerScreen() {
   const [collectCheckId, setCollectCheckId] = useState<string | null>(null);
   // #236 (Josh, 27 Oct): jobs whose crew tapped "Identity checked with the sending team". Sent with Collected; no gate.
   const [identityCheckedIds, setIdentityCheckedIds] = useState<ReadonlySet<string>>(() => new Set());
+  const accessLifetime = useWardShellPublic()?.accessLifetime;
+  const identityCheckKey = (movement: Movement) =>
+    JSON.stringify([accessLifetime, movement.id, movement.transport?.id]);
   const identityFor = (movement: Movement) => {
     const info = resolveSubjectPatient(movement, { patients, referrals, movements });
     return {
@@ -192,8 +194,9 @@ export function OfficerScreen() {
   const toggleIdentityChecked = (movement: Movement) =>
     setIdentityCheckedIds((current) => {
       const next = new Set(current);
-      if (next.has(movement.id)) next.delete(movement.id);
-      else next.add(movement.id);
+      const key = identityCheckKey(movement);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
       return next;
     });
   const jobs = movements.filter(isOfficerJob);
@@ -331,10 +334,9 @@ export function OfficerScreen() {
   const [formModalJob, setFormModalJob] = useState<Movement | null>(null);
   const { toastMessage, setToastMessage, reportOutcome } = useTransportCommandFeedback();
   const [verifiedChecks, setVerifiedChecks] = useState<Record<string, boolean[]>>({});
-  const [diversionOpen, setDiversionOpen] = useState(false);
-  useHoldOpenForm(diversionOpen); // Audit CS3-01: the diversion form is held from opening.
-  const [diversionReason, setDiversionReason] = useState<DiversionReason | undefined>(undefined);
-  const [diversionPlace, setDiversionPlace] = useState<TransportWhereabouts | undefined>(undefined);
+  const diversion = useOfficerDiversionSave(selectedJob, raise, (movement) =>
+    setToastMessage({ message: `Diversion recorded for ${officerPatientName(movement)}.` }),
+  );
   const toggleCheck = (movementId: string, index: number) => {
     setVerifiedChecks((prev) => {
       const currentList = prev[movementId] ?? [false, false, false, false];
@@ -346,35 +348,30 @@ export function OfficerScreen() {
   const lastTriggerRef = useRef<HTMLElement | null>(null);
   const formModalRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
-  const resetDiversion = () => {
-    setDiversionOpen(false);
-    setDiversionReason(undefined);
-    setDiversionPlace(undefined);
-  };
   // The job panel's tab (Details for each new job) and the pulled bed whose booking is being logged.
   const [detailTab, setDetailTab] = useState<OfficerDetailTab>("details");
   const [bookingId, setBookingId] = useState<string | undefined>(undefined);
   const selectJob = (id: string) => {
-    resetDiversion();
+    diversion.cancelDiversion();
     setDetailTab("details");
     setBookingId(undefined);
     setSelectedId(selectedId === id ? undefined : id);
   };
   const openJob = (id: string) => {
     if (id !== selectedId) {
-      resetDiversion();
+      diversion.cancelDiversion();
       setDetailTab("details");
     }
     setBookingId(undefined);
     setSelectedId(id);
   };
   const closeJob = () => {
-    resetDiversion();
+    diversion.cancelDiversion();
     setSelectedId(undefined);
     setBookingId(undefined);
   };
   const openBooking = (id: string) => {
-    resetDiversion();
+    diversion.cancelDiversion();
     setSelectedId(undefined);
     setBookingId((current) => (current === id ? undefined : id));
   };
@@ -450,6 +447,7 @@ export function OfficerScreen() {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Escape") {
+        if (e.defaultPrevented || hasOpenSheet()) return;
         if (formModalJob) {
           setFormModalJob(null);
           lastTriggerRef.current?.focus();
@@ -519,7 +517,7 @@ export function OfficerScreen() {
         raise("PATIENT_COLLECTED", {
           movementId: movement.id,
           ...(exception ? { exception } : {}),
-          ...(identityCheckedIds.has(movement.id) ? { identityChecked: true as const } : {}),
+          ...(identityCheckedIds.has(identityCheckKey(movement)) ? { identityChecked: true as const } : {}),
         }),
       `Patient collected for ${officerPatientName(movement)}. In transit.`,
       "Collection",
@@ -681,9 +679,10 @@ export function OfficerScreen() {
             variant="sec"
             size="sm"
             icon={MapPin}
-            aria-expanded={diversionOpen}
+            aria-expanded={diversion.diversionOpen}
             data-testid={`ward-officer-divert-${job.id}`}
-            onClick={() => setDiversionOpen((open) => !open)}
+            disabledReason={diversion.diversionPending ? "Saving" : undefined}
+            onClick={diversion.toggleDiversion}
           >
             Divert
           </Button>
@@ -699,10 +698,8 @@ export function OfficerScreen() {
     detailTab,
     setDetailTab,
     originShortFor,
-    diversionOpen,
-    diversionPlace,
-    diversionReason,
-    identityChecked: (movement: Movement) => identityCheckedIds.has(movement.id),
+    ...diversion,
+    identityChecked: (movement: Movement) => identityCheckedIds.has(identityCheckKey(movement)),
     identityFor,
     isPhone,
     now,
@@ -714,9 +711,6 @@ export function OfficerScreen() {
     runCollected,
     runDelivered,
     runEnRoute,
-    setDiversionOpen,
-    setDiversionPlace,
-    setDiversionReason,
     showToast,
     toggleIdentityChecked,
     unitFor,
@@ -938,6 +932,7 @@ export function OfficerScreen() {
             </CardBody>
           </Card>
         ) : null}
+        <ReturnEarlyAlerts desk={{ role: "officer" }} now={now} />
 
         {isPhone ? needCard : null}
 

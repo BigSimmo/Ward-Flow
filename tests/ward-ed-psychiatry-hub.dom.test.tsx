@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { fireEvent, render as rtlRender, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { expectSays } from "./helpers/ward-caption";
 
 // Same reason as the sibling dom suites (ward-ed-screen.dom.test.tsx, ward-screen.dom.test.tsx):
@@ -41,6 +41,17 @@ import { splitDuration } from "@/components/ward-management/ward-clock";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 import { atDesktopWidth, atPhoneWidthForEachTest, showPhoneLists } from "./helpers/ed-phone-lists";
 import { chooseEdChoice, edChoiceValue } from "./helpers/ed-raise-into-movement";
+import { REPEAT_TAP_WINDOW_MS } from "@/components/ward-management/ward-repeat-tap-guard";
+
+/** Tier 1 item 2: a repeat inside the double-tap window gets the first tap's answer, so a deliberate repeat steps past it. */
+function passDoubleTapWindow() {
+  const next = Date.now() + REPEAT_TAP_WINDOW_MS + 1;
+  vi.spyOn(Date, "now").mockReturnValue(next);
+}
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 // Handover build (Josh, 1 Nov 2026): these lists stay on the phone's Lists pane (see the helper).
 atPhoneWidthForEachTest();
@@ -1015,7 +1026,9 @@ describe("the inbox's decline control", () => {
   it("⚠️ shows a reducer refusal on the row it belongs to, and on no other row", () => {
     renderHubWithDeclineHarness("jhc-ed");
     fireEvent.click(screen.getByTestId("harness-raise-review"));
+    passDoubleTapWindow();
     fireEvent.click(screen.getByTestId("harness-raise-review"));
+    passDoubleTapWindow();
     fireEvent.click(screen.getByTestId("harness-raise-review"));
 
     const ids = screen
@@ -1091,6 +1104,7 @@ describe("an inbox row, once one exists", () => {
   it("counts the inbox with the array it renders", () => {
     renderHubWithHarness("jhc-ed");
     fireEvent.click(screen.getByTestId("harness-raise-review"));
+    passDoubleTapWindow();
     fireEvent.click(screen.getByTestId("harness-raise-review"));
 
     const inbox = screen.getByTestId("ward-ed-inbox");

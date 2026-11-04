@@ -240,6 +240,13 @@
   align-items: start;
 }
 
+/* Demo tools (ST1, 3 Nov 2026): its cards and the feature switches, one column of blocks. */
+.demoStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
 .column {
   display: flex;
   flex-direction: column;

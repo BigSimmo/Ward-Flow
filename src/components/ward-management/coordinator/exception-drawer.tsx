@@ -1,7 +1,7 @@
 "use client";
 
 import { isPlaceholderName } from "@/components/ward-management/ward-patient-resolver";
-import { ChevronDown, ChevronUp } from "lucide-react";
+import { ChevronDown, ChevronUp, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useState } from "react";
 
@@ -48,6 +48,8 @@ type ExceptionDrawerProps = {
   /** Phone only: whether the collapsible bar is open. Above 48rem the panel always shows. */
   open: boolean;
   onToggle: () => void;
+  /** The band's own Close button (H6). Without it, Close falls back to `onToggle`. */
+  onClose?: () => void;
   onSelectMovement: (movementId: string) => void;
   /**
    * Discharge notification rows carry `admissionId` and link to that stay on the discharges board,
@@ -93,6 +95,7 @@ export function ExceptionDrawer({
   now,
   open,
   onToggle,
+  onClose,
   onSelectMovement,
   onSelectDischarge,
   placement = "column",
@@ -180,6 +183,29 @@ export function ExceptionDrawer({
           </span>
         </span>
       </button>
+      {placement === "band" ? (
+        // H6 (Josh, 3 Nov 2026): the strip says what it is and closes with its own button.
+        <div className={styles.registersHead}>
+          <div className={styles.registersHeadText}>
+            <h2 className={styles.registersHeading} id={`${baseId}-band-title`}>
+              Today&rsquo;s registers
+            </h2>
+            <p className={styles.registersAbout}>
+              Today&rsquo;s record of what needs a second look: things overdue or at risk, wards that said no, rules
+              someone went past, and actions the app stopped.
+            </p>
+          </div>
+          <button
+            type="button"
+            className={styles.registersClose}
+            onClick={onClose ?? onToggle}
+            aria-label="Close registers"
+            data-testid="ward-registers-close"
+          >
+            <X aria-hidden="true" size={16} strokeWidth={1.75} />
+          </button>
+        </div>
+      ) : null}
       <div
         id={`${baseId}-registers-panel`}
         className={styles.registersPanel}

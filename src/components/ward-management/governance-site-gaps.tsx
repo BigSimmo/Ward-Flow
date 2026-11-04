@@ -35,7 +35,7 @@ type GapCell = { done: number; total: number };
 export type SiteGap = {
   id: string;
   name: string;
-  kind: "ed" | "ward";
+  kind: "ed" | "ward" | "community";
   cells: Record<GapKey, GapCell>;
   gaps: number;
   people: { key: string; name: string; umrn: string; detail: string; missing: string[]; href: string }[];
@@ -73,7 +73,11 @@ export function siteGaps(flow: WardFlowContextValue | null, now: Instant): SiteG
     // D-76: a journey from a community team has the form facts of a start site, under the team's row.
     const entry =
       movement.originEdId === undefined
-        ? site(`community-${movement.originCommunity?.siteCode}`, communityOriginLabel(movement.originCommunity), "ed")
+        ? site(
+            `community-${movement.originCommunity?.siteCode}`,
+            communityOriginLabel(movement.originCommunity),
+            "community",
+          )
         : site(`ed-${movement.originEdId}`, ed ? edShortName(ed) : movement.originEdId, "ed");
     const missing: string[] = [];
     for (const fact of recordedFacts(movement)) {

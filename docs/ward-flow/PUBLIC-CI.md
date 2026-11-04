@@ -15,25 +15,27 @@ unit or browser matrices can be allocated. Static checks and scoped backend work
 The main reuse proof runs separately. Missing history, unknown files, deletions and renames select
 all executable work. `Ward Flow required` rejects missing plans, unexpected skips and failed jobs.
 
-A newer push to a pull request cancels that PR's older run. Main pushes share one queue: the main
-run in progress always finishes, and a newer merge replaces any main run still waiting, so a burst
-of merges is checked once, on the newest main. The daily release takes the newest CI-passed main.
+Each pull request, and main, has one queue. A newer push to a pull request cancels that PR's older
+run, even mid-run: a superseded head's result is never used, and letting it finish held the PR's new
+run behind it while Ward Flow filled the account's 40 concurrent job slots (Josh, 4 Nov 2026
+08:20Z, reversing that morning's never-cancel rule; "push less" keeps the churn down). Main runs
+always finish, and a newer main push replaces any main run still waiting. The daily release takes
+the newest CI-passed main.
 Unit shards run four Vitest workers, one per hosted-runner vCPU.
 
-| Job                                             | Work                                                                                                                                                                                                                                                                                                                                                                                      |
-| ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Ward Flow scope plan`                          | Computes and verifies install, policy, frontend static, backend, unit, browser and production-build flags.                                                                                                                                                                                                                                                                                |
-| `Ward Flow main reuse check`                    | On main pushes, proves the exact tree already passed the required heavy PR jobs.                                                                                                                                                                                                                                                                                                          |
-| `Ward Flow static checks`                       | CI contracts, source safety, document links/commands/facts and reference-pack integrity; scoped installs, changed-file checks, cached lint, route/source typecheck and policy/reference contracts.                                                                                                                                                                                        |
-| `Ward Flow backend and shared production proof` | Discovered backend tests, backend typecheck and LCOV against disposable PostgreSQL; authenticated shared-mode production browser proof.                                                                                                                                                                                                                                                   |
-| `Ward Flow unit shard 1` to `8`                 | Eight disjoint duration-balanced slices of the reconciled offline unit population, with coverage blobs.                                                                                                                                                                                                                                                                                   |
-| `Ward Flow prepared browser build`              | One isolated offline production browser build, exported with input and payload verification. No browser tests run here.                                                                                                                                                                                                                                                                   |
-| `Ward Flow browser journeys 1` to `3`           | Three groups on separate servers and runners, consuming the prepared build. Group 1 also runs the disjoint Chromium CSRF project on that server.                                                                                                                                                                                                                                          |
-| `Ward Flow release gate <project> <part>`       | Six required journeys with accessibility checks, as six parallel jobs: desktop Chromium and phone WebKit, each split into a journeys part (the four core bed-flow journeys), a referrals part (inpatient transfer and community referral) and a checks part (the accessibility sweep); twelve required cases in all. Consumes the prepared build, or builds fresh on verified main reuse. |
-| `Ward Flow secret scan`                         | Full-history gitleaks scan with a pinned, checksum-verified binary.                                                                                                                                                                                                                                                                                                                       |
-| `Ward Flow production build`                    | Separate full Next webpack build with normal typechecking and the phone script budget.                                                                                                                                                                                                                                                                                                    |
-| `Ward Flow coverage`                            | Merges all eight unit coverage populations, enforces unchanged thresholds and checks the executable-file inventory.                                                                                                                                                                                                                                                                       |
-| `Ward Flow required`                            | Checks every selected result, every allowed scoped skip and the separate main-reuse path.                                                                                                                                                                                                                                                                                                 |
+| Job                                             | Work                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Ward Flow scope plan`                          | Computes and verifies the scope flags, runs the full-history gitleaks secret scan (pinned, checksum-verified) and fails a PR that conflicts with main.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `Ward Flow main reuse check`                    | On main pushes, proves the exact tree already passed the required heavy PR jobs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `Ward Flow static checks`                       | CI contracts, source safety, document links/commands/facts and reference-pack integrity; scoped installs, changed-file checks, cached lint, route/source typecheck and policy/reference contracts.                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| `Ward Flow backend and shared production proof` | Discovered backend tests, backend typecheck and LCOV against disposable PostgreSQL; authenticated shared-mode production browser proof.                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `Ward Flow unit shard 1` to `6`                 | Six disjoint duration-balanced slices of the reconciled offline unit population, with coverage blobs.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `Ward Flow prepared browser build`              | One isolated offline production browser build, exported with input and payload verification. No browser tests run here.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| `Ward Flow browser journeys 1` to `3`           | Three groups on separate servers and runners, consuming the prepared build. Group 1 also runs the disjoint Chromium CSRF project on that server.                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `Ward Flow release gate <pair>`                 | Six required journeys with accessibility checks: desktop Chromium and phone WebKit, each split into a journeys part (the four core bed-flow journeys), a referrals part (inpatient transfer and community referral) and a checks part (the accessibility sweep); twelve required cases in all. The six suites run as three jobs of two, one after the other on the same browsers (phone checks + desktop journeys, phone referrals + desktop referrals, phone journeys + desktop checks), each suite with its own evidence and report artifacts. Consumes the prepared build, or builds fresh on verified main reuse. |
+| `Ward Flow production build`                    | Separate full Next webpack build with normal typechecking and the phone script budget.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| `Ward Flow coverage`                            | Merges all six unit coverage populations, enforces unchanged thresholds and checks the executable-file inventory.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| `Ward Flow required`                            | Checks every selected result, every allowed scoped skip and the separate main-reuse path.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 Every dependency install uses `scripts/install-locked-dependencies.mjs`, including the backend root.
 The wrapper performs the locked install and verifies the installed runtime dependency inventory;
@@ -74,7 +76,7 @@ Open pull requests as drafts while iterating and mark them ready when the work i
 
 ## Unit selection, coverage and measured costs
 
-The discovery floor applies before the eight-way split. Files are dealt longest first onto the
+The discovery floor applies before the six-way split. Files are dealt longest first onto the
 lightest shard using `scripts/ward-flow/unit-durations.json`; unknown files use the median, with a
 deterministic fallback when measurements are absent. Real durations are not capped to make the
 balance look better. All runners compute the same disjoint population. Expected-red entries are
@@ -166,6 +168,33 @@ video and trace files; failed legs keep their existing full diagnostic artifact.
 reports fail evidence collection. These retained reports do not change accessibility thresholds or
 prove physical-device, hosted-provider or deployment acceptance.
 
+## Phone script budget on a moving main
+
+Main has no merge queue and does not require branches to be up to date, so PRs that each fit the
+phone script budget can land together over it. Before 4 November 2026 that turned every open PR's
+required production build red until someone raised the limit by hand. Three parts now handle it:
+
+- **Prevention.** The build merges the latest main before measuring (`merge-latest-main.mjs`), and
+  `ward-flow-budget-recheck.yml` re-runs that build on armed PRs whenever main moves.
+- **Fair blame.** The budget step is `budget-gate.mjs`. When a PR's merged result is over budget, it
+  builds and measures main alone in a separate worktree and fails only routes the PR pushed over,
+  or grew more than 1.5 KB (build noise) past an already-over main. Inherited overage is a warning. This second
+  build runs only when the merged result is over.
+- **Automatic heal.** Main's build saves its measurements as the `script-budget-measured` artifact.
+  When a main run fails and those show a route over budget, `ward-flow-budget-heal.yml` opens one PR
+  raising only those routes to the measured size plus 1 KB, with its own
+  `docs/script-budget-history/` entry, and closes any older heal PR. Workflow-token events start no
+  workflows, so it dispatches `Ward Flow CI`, `Ward Flow bot-author policy` and `Ward Flow hold` on
+  the heal branch; those report the required checks on its head. It arms auto-merge only when every
+  raise is within 5 KB (D-82); a bigger raise waits for Josh. The repository setting "Allow GitHub
+  Actions to create and approve pull requests" must be on. A merge made by the workflow token starts
+  no main run, so main is re-measured on the next merge.
+
+`ward-flow-ci-tidy.yml` frees runner slots on PR close, on each PR push and every 15 minutes. It
+cancels runs for merged or closed PRs, and other workflows' runs for an older head of an open PR
+while none of their jobs is running. Ward Flow CI's own superseded PR runs are cancelled by its
+concurrency group. Running checks on a current head are never cancelled.
+
 ## Main pushes and nightly runs
 
 The main reuse proof in `main-reuse.mjs` verifies through git and the GitHub API that
@@ -175,10 +204,20 @@ produced it actually tested, and that the run ran every required unit shard
 fresh checks. The tested tree comes from the "Ward tested tree" notice the scope plan job writes on
 every pull request run (the tree of the merge ref it checked out). A head that contained the previous
 main is also accepted, because its merge ref was its own tree. So a pull request that was behind main
-reuses its run when main did not move between that run and the merge. On verified reuse the unit, coverage, browser-build, journey-group and production-build
-jobs must be skipped, rather than failed or cancelled. Static checks, backend/shared proof and secret
-scanning still execute. The release gate executes afresh, building locally because no prepared
-browser artifact is produced on that path. A failed release gate fails `Ward Flow required`.
+reuses its run when main did not move between that run and the merge. Every attempt of the run counts
+(a budget recheck re-runs it, and the re-run plan job can carry no notice), and the production build,
+which merges the then-current main first, must have recorded the same tree ("Ward built tree"). On
+verified reuse the unit, coverage, browser-build, journey-group, production-build and release-gate
+jobs must be skipped, rather than failed or cancelled; the release gate needed the run's every leg
+to pass. The backend/shared proof is skipped too only when that run really ran it
+(`backend_verified`); otherwise it executes. Static checks and the secret scan (in the scope plan
+job) still execute. The nightly schedule and manual runs never take the reuse path.
+
+On pull requests the scope plan job merges the current main as its last step
+(`merge-latest-main.mjs`), so a conflicted PR fails there, before any other job starts, and
+`Ward Flow required` fails with it. The production build merges main again before it measures the
+phone script budget. `ward-flow-budget-recheck.yml` re-runs armed PRs' production builds only after
+a main push that touched what the build or its budget reads (not after docs-only merges).
 
 The scheduled full main run starts at 18:00 UTC (02:00 AWST). It selects a reproducible UTC-day engine
 fuzz window: 16 sequences of 100 steps, with the exact first/last seeds and event budget written to
@@ -193,7 +232,7 @@ not the safety invariants. Ordinary runs retain their deterministic default seed
 - `npm run test:focused -- --files <comma-separated source paths>` shows or runs mapped tests; add `--dry-run` to inspect selection. Unsafe or empty mappings refuse and direct you to the full gate.
 - `npm run test:related` selects against `origin/main`, retaining declared source-reading guards.
 - `npm run verify:pr-local -- --dry-run --files <comma-separated paths>` shows selected aliases. Source or unknown scope includes backend typecheck/tests and the production `build`; narrow scopes follow their flags. A failure before backend completion explicitly leaves integration unproved.
-- `WARD_GATE_SHARD=2/8 npm run check:ward-expected-reds` reproduces one unit shard.
+- `WARD_GATE_SHARD=2/6 npm run check:ward-expected-reds` reproduces one unit shard.
 - `WARD_JOURNEY_GROUP=1/3 npm run test:e2e:ward-journeys` reproduces one browser group.
 - `node scripts/ward-ci-public/changed-checks.mjs --base origin/main` runs the CI changed-file checks.
 

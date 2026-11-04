@@ -1,11 +1,36 @@
 import "@testing-library/jest-dom/vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 
 import { BedMeetingAgendaScreen } from "@/components/ward-management/bed-meeting/bed-meeting-agenda-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+
+const submitted = vi.hoisted(() => ({
+  raise: null as null | (() => WardCommandOutcome | Promise<WardCommandOutcome>),
+}));
+vi.mock("@/components/ward-management/ward-flow-raise", async (original) => {
+  const actual = await original<typeof import("@/components/ward-management/ward-flow-raise")>();
+  return {
+    ...actual,
+    useWardRaise: (role: Parameters<typeof actual.useWardRaise>[0]) => {
+      const raise = actual.useWardRaise(role);
+      return (...args: Parameters<typeof raise>) =>
+        args[0] === "RECORD_BED_MEETING_ACTION" && submitted.raise ? submitted.raise() : raise(...args);
+    },
+    // The agenda's recorder raises through the plain helper so its Undo can follow the same command.
+    wardRaise: (...helper: Parameters<typeof actual.wardRaise>) => {
+      const raise = actual.wardRaise(...helper);
+      return (...args: Parameters<typeof raise>) =>
+        args[0] === "RECORD_BED_MEETING_ACTION" && submitted.raise ? submitted.raise() : raise(...args);
+    },
+  };
+});
+afterEach(() => {
+  submitted.raise = null;
+});
 
 /** Smart features idea 5 on screen: record an action from the agenda, then mark it done. */
 vi.mock("next/link", () => ({
@@ -30,6 +55,66 @@ vi.mock("@/components/ward-management/shell/ward-access-store", async (importOri
 });
 
 describe("bed meeting agenda", () => {
+  it("retains a refused action draft and closes only after the retry is accepted", async () => {
+    let finish!: (outcome: WardCommandOutcome) => void;
+    const send = vi.fn(
+      () =>
+        new Promise<WardCommandOutcome>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    submitted.raise = send;
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <BedMeetingAgendaScreen />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(
+      within(screen.getByTestId("bed-meeting-agenda-ed-waits")).getAllByTestId("bed-meeting-add-action")[0]!,
+    );
+    fireEvent.click(
+      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Book transport" }),
+    );
+    fireEvent.click(screen.getByTestId("bed-meeting-action-record"));
+    expect(screen.getByTestId("bed-meeting-action-form")).toBeInTheDocument();
+    fireEvent.click(screen.getByTestId("bed-meeting-action-record"));
+    expect(send).toHaveBeenCalledTimes(1);
+    await act(async () => finish({ commandId: "agenda", status: "refused", message: "This action already exists." }));
+    expect(
+      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Book transport" }),
+    ).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("alert")).toHaveTextContent("This action already exists.");
+    fireEvent.click(screen.getByTestId("bed-meeting-action-record"));
+    await act(async () => finish({ commandId: "agenda-retry", status: "accepted" }));
+    expect(screen.queryByTestId("bed-meeting-action-form")).toBeNull();
+  });
+
+  it("holds an uncertain action for its matching late confirmation", async () => {
+    let finish!: (outcome: WardCommandOutcome) => void;
+    const confirmation = new Promise<WardCommandOutcome>((resolve) => {
+      finish = resolve;
+    });
+    const send = vi.fn((): WardCommandOutcome => ({ commandId: "agenda", status: "failed", confirmation }));
+    submitted.raise = send;
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <BedMeetingAgendaScreen />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(
+      within(screen.getByTestId("bed-meeting-agenda-ed-waits")).getAllByTestId("bed-meeting-add-action")[0]!,
+    );
+    fireEvent.click(
+      within(screen.getByTestId("bed-meeting-action-kind")).getByRole("button", { name: "Book transport" }),
+    );
+    await act(async () => fireEvent.click(screen.getByTestId("bed-meeting-action-record")));
+    expect(screen.getByTestId("bed-meeting-action-record")).toHaveAttribute("aria-busy", "true");
+    fireEvent.click(screen.getByTestId("bed-meeting-action-record"));
+    expect(send).toHaveBeenCalledTimes(1);
+    await act(async () => finish({ commandId: "agenda", status: "accepted" }));
+    expect(screen.queryByTestId("bed-meeting-action-form")).toBeNull();
+  });
+
   it("offers a site bed manager no Action or Done, only the agenda to read (decision 46)", () => {
     desk.readOnly = true;
     try {
@@ -159,5 +244,37 @@ describe("bed meeting agenda", () => {
     const waits = screen.getByTestId("bed-meeting-agenda-ed-waits");
     const [first] = within(waits).getAllByTestId("bed-meeting-add-action");
     expect(first).toHaveAccessibleName(/^Add an action for /u);
+  });
+});
+
+describe("bed meeting agenda group filter (B1 extended, 4 Nov 2026)", () => {
+  it("narrows every list to a picked group, shows it as a pill, and clears", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <BedMeetingAgendaScreen />
+      </WardFlowProvider>,
+    );
+    const rows = () => screen.getAllByTestId("bed-meeting-add-action").length;
+    const before = rows();
+    fireEvent.click(screen.getByTestId("bed-meeting-agenda-groups"));
+    const panel = screen.getByTestId("bed-meeting-agenda-groups-panel");
+    fireEvent.click(within(panel).getByRole("button", { name: /^Tier 1/u }));
+    fireEvent.click(within(panel).getByRole("button", { name: "Done" }));
+    const applied = screen.getByTestId("bed-meeting-agenda-groups-applied");
+    expect(applied).toHaveTextContent("Tier 1");
+    expect(rows()).toBeLessThan(before);
+    expect(screen.getByTestId("bed-meeting-agenda-groups")).toHaveTextContent("1");
+
+    fireEvent.click(screen.getByTestId("bed-meeting-agenda-groups"));
+    const again = screen.getByTestId("bed-meeting-agenda-groups-panel");
+    fireEvent.click(within(again).getByRole("button", { name: /^Adult/u }));
+    fireEvent.click(within(again).getByRole("button", { name: "Done" }));
+    expect(screen.getByTestId("bed-meeting-agenda-referrals-hidden")).toHaveTextContent("left out");
+
+    fireEvent.click(
+      within(screen.getByTestId("bed-meeting-agenda-groups-applied")).getByRole("button", { name: "Clear" }),
+    );
+    expect(screen.queryByTestId("bed-meeting-agenda-groups-applied")).toBeNull();
+    expect(rows()).toBe(before);
   });
 });
