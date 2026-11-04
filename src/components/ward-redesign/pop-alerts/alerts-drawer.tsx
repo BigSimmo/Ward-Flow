@@ -22,7 +22,7 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useId, useRef, useState, type Dispatch, type MouseEvent, type RefObject } from "react";
+import { useEffect, useId, useRef, useState, type Dispatch, type MouseEvent, type RefObject } from "react";
 import { WARD_ALERTS_HREF, WARD_HOME_HREF, WARD_NAV, WARD_VIEWS } from "@/components/ward-management/ward-nav";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -59,6 +59,7 @@ import {
 } from "@/components/ward-management/ward-inbox-snooze";
 import { InboxRowStatus, InboxSnoozeControl, snoozedLine } from "@/components/ward-management/inbox-snooze-control";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
+import { DISCARD_ESCALATION, useEscalationDiscard } from "@/components/ward-management/use-escalation-discard";
 import { AcknowledgeVisibleButton } from "@/components/ward-management/tasks-acknowledge-visible";
 
 import styles from "@/components/ward-redesign/pop-alerts/alerts-drawer.module.css";
@@ -80,7 +81,7 @@ type AlertsDrawerProps = {
   dispatch: Dispatch<WardFlowEvent>;
   onClose: () => void;
   /** The shell consults this drawer's own draft decision before closing its outer Sheet. */
-  dismissalGuardRef?: RefObject<(() => boolean) | null>;
+  dismissalGuardRef?: RefObject<((retry?: () => void) => boolean) | null>;
   /** `href` is a row's own destination when it is not about a movement (a planned admission). */
   onSelectMovement: (movementId: string, action?: "refer" | "contact", href?: string) => void;
   /** Opens a discharged stay on the discharges board, for rows that carry `admissionId`. */
@@ -130,7 +131,6 @@ function ackFilterLabels(words: DrawerWords): Record<AckFilter, string> {
 
 /** Quick picks only fill the box; the person still records the escalation themselves. */
 const ESCALATION_PICKS = ["Duty consultant", "State bed desk", "Executive on call"] as const;
-const DISCARD_ESCALATION = "You have an unsaved escalation contact. Discard it?";
 // These links dismiss the drawer as well as navigating, including a link to the current page.
 const isTasksDrawerLink = (anchor: HTMLAnchorElement) => anchor.closest("[data-ward-tasks-drawer]") !== null;
 
@@ -352,49 +352,35 @@ export function AlertsDrawer({
   const savedContact =
     records?.movements.find((movement) => movement.id === escalatingItem?.movementId)?.escalation?.contact ?? "";
   const hasUnsavedEscalation = escalating !== null && contact !== savedContact;
-  const dirtyEscalationRef = useRef(hasUnsavedEscalation);
-  useEffect(() => {
-    dirtyEscalationRef.current = hasUnsavedEscalation;
-  }, [hasUnsavedEscalation]);
   const { approveNextHistoryNavigation } = useDirtyStateGuard({
     isDirty: hasUnsavedEscalation,
     value: JSON.stringify([escalating, contact]),
     confirmMessage: DISCARD_ESCALATION,
     skipAnchor: isTasksDrawerLink,
   });
+  const { discardEscalation, confirmDrawerDismissal } = useEscalationDiscard({
+    hasUnsavedEscalation,
+    setEscalating,
+    setContact,
+    approveNextHistoryNavigation,
+    dismissalGuardRef,
+  });
 
-  const discardEscalation = useCallback(() => {
-    if (dirtyEscalationRef.current && !window.confirm(DISCARD_ESCALATION)) return false;
-    // The shell can recheck within this event, before React commits the cleared draft below.
-    dirtyEscalationRef.current = false;
-    setEscalating(null);
-    setContact("");
-    return true;
-  }, []);
-
-  const confirmDrawerDismissal = useCallback(() => {
-    if (!discardEscalation()) return false;
-    approveNextHistoryNavigation();
-    return true;
-  }, [discardEscalation, approveNextHistoryNavigation]);
-
-  useEffect(() => {
-    if (!dismissalGuardRef) return;
-    dismissalGuardRef.current = confirmDrawerDismissal;
-    return () => {
-      if (dismissalGuardRef.current === confirmDrawerDismissal) dismissalGuardRef.current = null;
-    };
-  }, [dismissalGuardRef, confirmDrawerDismissal]);
-
-  function closeDrawer() {
-    if (!confirmDrawerDismissal()) return false;
+  function closeDrawer(): boolean {
+    if (!confirmDrawerDismissal(closeDrawer)) return false;
     // The shell may close through browser Back. The local decision owns this one traversal.
     onClose();
     return true;
   }
 
   function closeFromLink(event: MouseEvent<HTMLAnchorElement>) {
-    if (!closeDrawer()) event.preventDefault();
+    const link = event.currentTarget;
+    // On Discard the same link is pressed again, now with nothing unsaved.
+    if (!confirmDrawerDismissal(() => link.click())) {
+      event.preventDefault();
+      return;
+    }
+    onClose();
   }
 
   const openerRef = useRef<HTMLElement | null>(null);
@@ -418,7 +404,7 @@ export function AlertsDrawer({
       const trigger = drawerRef.current?.querySelector<HTMLButtonElement>(
         'button[data-escalate][aria-expanded="true"]',
       );
-      if (discardEscalation()) trigger?.focus();
+      if (discardEscalation(() => trigger?.focus())) trigger?.focus();
       return;
     }
     const opener = !withBackdrop
@@ -695,7 +681,8 @@ export function AlertsDrawer({
             data-escalate
             aria-expanded={escalating === item.id}
             onClick={(event) => {
-              if (!discardEscalation()) return;
+              const button = event.currentTarget;
+              if (!discardEscalation(() => button.click())) return;
               if (escalating === item.id) {
                 event.currentTarget.focus();
                 return;
@@ -801,8 +788,9 @@ export function AlertsDrawer({
             type="button"
             className={`${styles.btn} ${styles.btnGhost}`}
             onClick={(event) => {
-              if (!discardEscalation()) return;
-              focusTrigger(event.currentTarget);
+              const button = event.currentTarget;
+              if (!discardEscalation(() => focusTrigger(button))) return;
+              focusTrigger(button);
             }}
           >
             Cancel
@@ -1088,8 +1076,10 @@ export function AlertsDrawer({
                   actNow={inboxItemIsActNow(item.id)}
                   now={now}
                   onSnooze={(until, reason) => {
-                    if (escalating === item.id && !discardEscalation()) return;
-                    dispatch({ type: "SNOOZE_INBOX_ITEM", role, now, inboxItemId: item.id, until, reason });
+                    const snooze = () =>
+                      dispatch({ type: "SNOOZE_INBOX_ITEM", role, now, inboxItemId: item.id, until, reason });
+                    if (escalating === item.id && !discardEscalation(snooze)) return;
+                    snooze();
                   }}
                 />
               ) : null}
