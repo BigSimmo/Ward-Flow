@@ -261,7 +261,7 @@ const AROUND: readonly Around[] = [
       {
         target: id("ward-on-call-hud-island"),
         title: "Who to call now",
-        body: "The main state and service lines, with who answers each one now.",
+        body: "The state lines, then bed flow for each service, then your starred lines. Copy a number straight from its card.",
       },
       {
         target: [id("ward-on-call-directory"), { sel: '#main-content [role="tablist"]' }],

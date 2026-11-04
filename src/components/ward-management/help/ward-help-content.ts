@@ -247,8 +247,8 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     purpose: "Who answers each on-call line now, for hospitals, teams and state lines.",
     actions: [
       "Search by role, hospital, ward, team or number.",
-      "Use Cover at to see who answers at a later time.",
-      "Star a line to keep it under Mine.",
+      "Pick a service in the header, or use Show, to narrow the list.",
+      "Star a line to keep it under Mine and at the top of the page.",
     ],
   },
 };

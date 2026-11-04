@@ -196,14 +196,85 @@
   text-overflow: ellipsis;
 }
 
-/* Key lines: seven compact tiles, narrowed on request (owner, 9 October 2026). */
+/* OC3 mock-up (4 Nov 2026): key lines grouped by job, each group labelled, each card with a copy
+   button so a number never needs the card opened. */
 .keys {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: var(--wf-s-1);
+  display: flex;
+  gap: var(--wf-s-3);
   flex: 1 1 auto;
   min-width: 0;
   white-space: normal;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.keyGroup {
+  display: flex;
+  flex: 1 0 auto;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.keyGroup + .keyGroup {
+  padding-left: var(--wf-s-3);
+  border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+}
+
+.keyGroupLabel {
+  font-size: var(--wf-fs-11, 11px);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-hero-ink-3);
+}
+
+.keyRow {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(8rem, 1fr);
+  gap: var(--wf-s-1);
+}
+
+.keyCard {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+.keyCard > .key {
+  flex: 1 1 auto;
+}
+
+.keyCard > .key .keyLabel {
+  padding-right: 22px;
+}
+
+.keyCopy {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: transparent;
+  color: var(--wf-hero-ink-2);
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.keyCopy:hover,
+.keyCopy:focus-visible {
+  opacity: 1;
+  background: color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
+  color: var(--wf-hero-ink);
+}
+
+.keyCopy:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: -2px;
 }
 
 .key {
@@ -211,7 +282,6 @@
   flex-direction: column;
   gap: 1px;
   min-width: 0;
-  /* Redesign: each service line is two lines (line, number), so the strip is compact. */
   padding: var(--wf-s-1) var(--wf-s-2);
   box-sizing: border-box;
   border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
@@ -236,20 +306,10 @@
   outline-offset: -2px;
 }
 
-.key[aria-pressed="true"]:focus-visible {
-  outline-color: var(--wf-hero-2);
-}
-
 .key[aria-pressed="true"] {
-  --wf-hero-ink-2: var(--wf-hero-2);
-  --wf-hero-ink-3: var(--wf-hero-2);
   border-color: var(--wf-hero-ink);
-  background: var(--wf-hero-ink);
-  color: var(--wf-hero-2);
-}
-
-.key[aria-pressed="true"] .svc {
-  color: var(--wf-hero-2);
+  background: color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
+  box-shadow: inset 0 0 0 1px var(--wf-hero-ink);
 }
 
 .keyLabel {
@@ -276,7 +336,7 @@
 /* Redesign: "Until 20:00" repeated on every card shows only on the chosen line; the directory rows
    already give every line's time. */
 .keyUntil {
-  display: none;
+  display: flex;
   align-items: center;
   gap: 5px;
   min-width: 0;
@@ -284,10 +344,6 @@
   line-height: var(--wf-lh-12);
   color: var(--wf-hero-ink-2);
   white-space: nowrap;
-}
-
-.key[aria-pressed="true"] .keyUntil {
-  display: flex;
 }
 
 /* ---------- layout ---------- */
@@ -1968,15 +2024,6 @@
 /* ---------- responsive ---------- */
 /* Redesign: on a laptop or tablet the strip scrolls sideways rather than squeezing seven cards
    (it replaces the four-column wrap below 1001px). */
-@media (max-width: 80rem) {
-  .keys {
-    grid-template-columns: none;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(9.5rem, 1fr);
-    overflow-x: auto;
-    scrollbar-width: thin;
-  }
-}
 
 @media (max-width: 62.5625rem) {
   .grid {
