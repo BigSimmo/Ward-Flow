@@ -846,13 +846,14 @@ export function DelaysBoard({
   const portraitRail =
     portrait && !wardDesk ? (
       <PortraitRail
-        title="Registers"
-        summary={`Escalated ${escalated.length} · Attention ${attention.length}`}
-        description="Escalations, attention, resolved today and the longest quiet"
+        title="Today's follow-up"
+        summary={`Attention ${attention.length} · Escalated ${escalated.length}`}
+        description="Who needs acting on, who is escalated, what was done today and the longest quiet"
         open={railOpen}
         onOpenChange={setRailOpen}
       >
         <Registers
+          titled={false}
           escalated={escalated}
           attention={attention}
           closedToday={closedToday}
@@ -1262,9 +1263,9 @@ export function DelaysBoard({
               <button type="button" className={styles.phCard} onClick={() => setPhoneSheet("registers")}>
                 <Flag size={16} aria-hidden="true" className={styles.phCardIcon} />
                 <span className={styles.phCardText}>
-                  <span className={styles.phCardTitle}>Registers</span>
+                  <span className={styles.phCardTitle}>Today&apos;s follow-up</span>
                   <span className={styles.phCardMeta}>
-                    Escalated <b>{escalated.length}</b> · Attention <b>{attention.length}</b> · Resolved{" "}
+                    Attention <b>{attention.length}</b> · Escalated <b>{escalated.length}</b> · Done today{" "}
                     <b>{closedToday.length}</b>
                   </span>
                 </span>
@@ -1296,15 +1297,16 @@ export function DelaysBoard({
               <PhoneSheet
                 open={phoneSheet === "registers" || phoneSheet === "quiet"}
                 onClose={() => setPhoneSheet(null)}
-                title={phoneSheet === "quiet" ? "Longest quiet" : "Registers"}
+                title={phoneSheet === "quiet" ? "Longest quiet" : "Today's follow-up"}
                 description={
                   phoneSheet === "quiet"
                     ? "Who has gone longest with nothing recorded"
-                    : "Escalations, attention and resolved today"
+                    : "Who needs acting on, who is escalated and what was done today"
                 }
                 height="tall"
               >
                 <Registers
+                  titled={false}
                   escalated={escalated}
                   attention={attention}
                   closedToday={closedToday}
