@@ -129,6 +129,47 @@ Build with `src/components/wf`. Never copy a primitive into a screen, and never 
 | Live changes          | `LiveAnnouncer`, `live`                  | One polite region per page, batched, act-now changes only.                                                                                                                                        |
 | Formatting            | `format.ts` (`clk`, `dur`, `durMinutes`) | Never re-implement a formatter.                                                                                                                                                                   |
 
+### Icons and status marks
+
+Josh, 3 Nov 2026 (icon audit, PR #1357): icons are subtle, crisp and timeless. They help someone find a place or act, and never decorate.
+
+**Line icons.** Lucide (`lucide-react`) only, at `strokeWidth={1.75}`, coloured by the text beside them (`currentColor`), accent only when the item is active. No custom drawings, two-tone fills, emoji or icon fonts.
+
+| Where                                 | Size |
+| ------------------------------------- | ---- |
+| Inside a chip, tag or small button    | 14px |
+| Inline with body text, buttons, menus | 16px |
+| Sidebar, icon rail and More panel     | 18px |
+| Phone dock                            | 21px |
+
+**One icon, one meaning.** Use the same icon for the same thing everywhere, and never reuse a menu destination's icon for something else. The menu map is `ward-nav-icons.ts`; `tests/ward-nav-icons-audit.test.ts` keeps every destination unique.
+
+| Thing           | Icon           | Thing            | Icon             |
+| --------------- | -------------- | ---------------- | ---------------- |
+| Home            | `House`        | Bed, Capacity    | `BedSingle`      |
+| Waiting         | `Hourglass`    | Movements        | `ArrowLeftRight` |
+| Transport       | `Ambulance`    | All EDs          | `Siren`          |
+| Alerts          | `Bell`         | Escalation       | `TriangleAlert`  |
+| Patients        | `BookUser`     | Places           | `MapPin`         |
+| Referrals inbox | `Inbox`        | New referral     | `FilePlusCorner` |
+| Discharges      | `DoorOpen`     | Seclusion        | `DoorClosed`     |
+| Legal forms     | `FileBadge`    | Out of area      | `Signpost`       |
+| Bed meeting TV  | `Presentation` | Statistics       | `ChartColumn`    |
+| Sign out        | `LogOut`       | Search           | `Search`         |
+| Close, dismiss  | `X`            | More actions     | `Ellipsis`       |
+| Loading         | `LoaderCircle` | More information | `Info`           |
+
+Use Lucide's current names, never the old aliases: `TriangleAlert` not `AlertTriangle`, `CircleAlert` not `AlertCircle`, `CircleCheck` not `CheckCircle2`, `ChartColumn` not `BarChart3`, `LoaderCircle` not `Loader2`, `Ellipsis` not `MoreHorizontal`, `BedSingle` not `BedDouble`, `Ambulance` not `Truck`.
+
+**Status marks.** Use the kit's `StatusGlyph` (or `Dot`), never a typed ▲ ◆ ■ ● ○ ✓ ✕ ⚠, which render as font or emoji glyphs and differ by device. One shape per tone: triangle act now (`danger`), filled circle at risk (`warning`), tick done (`success`), capsule moving (`info`), ring waiting (`neutral`), cross declined or closed (`closed`). From 12px the triangle carries its exclamation mark. Sit a mark on the surface, never on a dot of its own colour.
+
+**Action led.** A mark earns its place only when it changes what someone does next.
+
+- At most one act-now triangle per row, on the row that needs a person now. Do not repeat it on every tab, chip or column head.
+- Do not add a mark beside words that already say the state, such as "No due time recorded" or "No wait".
+- An icon sits beside its label, not instead of it. The icon rail and phone dock are the only icon-first places, and each item still has its name for screen readers and on hover.
+- Icons and marks are `aria-hidden`; the button's words or `aria-label` carry the meaning.
+
 ## 5. Layout and patterns
 
 **Page anatomy.** Every page has the band hero, a focal part that answers the page's question and gets the most space, and a part of its own (the page's signature, see section 8). Restructure, don't restyle: each fact lives in one right place.
@@ -230,6 +271,7 @@ Each page may take **one signature part**: a bespoke visual that shows its own d
 - [ ] Shell copied from the master's newest screens, compared side by side with the master's Home and Ward.
 - [ ] Checked at 390, 744, 768, 820, 1180, 1280 and 1440, light and dark, and at 200% text on phone.
 - [ ] Tokens only; kit parts only; no one-off pills.
+- [ ] Icons from the table in section 4 at 1.75 stroke; status marks from `StatusGlyph`, no typed symbols, and only where they change the next action.
 - [ ] No coloured side edges; no text under 12px; phone controls 40px; desktop tabs 30px.
 - [ ] One on-hero action, one filled button per panel, eight rows then Show more.
 - [ ] Words from section 6; patient names surname first, staff names as written, both in full; times as typed.

@@ -15,7 +15,7 @@ import {
   canSetArrivalPlan,
   isArrivalLate,
 } from "@/components/ward-management/referrals/arrival-time-modal";
-import { JourneyStrip } from "@/components/wf";
+import { JourneyStrip, StatusGlyph } from "@/components/wf";
 import { edJourneyStages } from "./ed-journey";
 import { EdObservationControl } from "./ed-observation-control";
 import type { EdScreenContext } from "./ed-screen-context";
@@ -259,7 +259,18 @@ export function EdPatientDialog({ ctx, selectedPatient }: { ctx: EdScreenContext
                     <span className={styles.tlMark} aria-hidden="true">
                       <span className={styles.tick} data-tone={e.tone ?? "quiet"}>
                         <span className={styles.tickGlyph}>
-                          {e.tone === "danger" ? "▲" : e.tone === "warn" ? "■" : e.tone === "good" ? "✓" : "●"}
+                          <StatusGlyph
+                            tone={
+                              e.tone === "danger"
+                                ? "danger"
+                                : e.tone === "warn"
+                                  ? "warning"
+                                  : e.tone === "good"
+                                    ? "success"
+                                    : "neutral"
+                            }
+                            size={10}
+                          />
                         </span>
                       </span>
                     </span>

@@ -4,7 +4,7 @@ import { useId, useRef, useState } from "react";
 import Link from "next/link";
 import { movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 import { useRouter } from "next/navigation";
-import { BedSingle, ChevronRight, FileText, Flag, Lock, Truck, X } from "lucide-react";
+import { BedSingle, ChevronRight, FileText, Flag, Lock, Ambulance, X } from "lucide-react";
 
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { Sheet } from "@/components/wf/sheet";
@@ -592,7 +592,7 @@ export function MovementDrawer({
         <span className={d.time}>{formatInstantWithDay(movement.openedAt, now)}</span>
         <span className={d.line} aria-hidden="true" />
         <span className={d.via}>
-          <Truck size={14} aria-hidden="true" />
+          <Ambulance size={14} aria-hidden="true" />
           <span className={d.trunc}>{via}</span>
         </span>
         <StatusGlyph tone={accepted ? "info" : "closed"} size={9} />
