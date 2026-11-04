@@ -54,3 +54,11 @@
     display: inline-flex;
   }
 }
+
+/* Tools polish (3 Nov 2026): the "/" search hint in the Tools footer, desktop and tablet only. */
+.footHint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-ink-3);
+}

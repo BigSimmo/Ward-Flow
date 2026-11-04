@@ -110,6 +110,13 @@ function requireWorkflow(source) {
   }
   assert.match(jobs.get("static"), /^ {4}needs: plan$/mu);
   assert.match(jobs.get("static"), /^ {4}if: \$\{\{ !cancelled\(\) && needs.plan.result == 'success' \}\}$/mu);
+  // Cheap first (Josh, 4 Nov 2026): the expensive jobs wait for static checks and the production
+  // build; a build skipped by scope (not by failure) still lets them run.
+  const cheapFirst = new Set(["unit", "browser", "release-gate"]);
+  const cheapGate =
+    " && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && needs.plan.outputs.build != 'true'))";
+  for (const job of cheapFirst)
+    assert.match(jobs.get(job), /^ {4}needs: \[[^\n]*\bstatic, build\]$/mu, `${job}: waits for cheap checks`);
   for (const [job, scope, reusable] of [
     ["unit", "unit", true],
     ["browser-build", "browser", true],
@@ -120,7 +127,7 @@ function requireWorkflow(source) {
     ["release-gate", "browser", false],
   ]) {
     const route = expression(
-      `!cancelled() && needs.plan.outputs.${scope} == 'true'${reusable ? " && needs.reuse.outputs.verified != 'true'" : ""}${job === "backend" ? " && needs.reuse.outputs.backend_verified != 'true'" : ""}${scope === "browser" ? " && github.event.pull_request.draft != true" : ""}${job === "browser" ? " && needs.browser-build.result == 'success'" : ""}${job === "release-gate" ? " && needs.browser-build.result != 'skipped'" : ""}`,
+      `!cancelled() && needs.plan.outputs.${scope} == 'true'${reusable ? " && needs.reuse.outputs.verified != 'true'" : ""}${job === "backend" ? " && needs.reuse.outputs.backend_verified != 'true'" : ""}${scope === "browser" ? " && github.event.pull_request.draft != true" : ""}${job === "browser" ? " && needs.browser-build.result == 'success'" : ""}${job === "release-gate" ? " && needs.browser-build.result != 'skipped'" : ""}${job === "coverage" ? " && needs.unit.result == 'success'" : ""}${cheapFirst.has(job) ? cheapGate : ""}`,
     );
     assert.ok(jobs.get(job)?.includes(`    if: ${route}\n`), `${job} job scope`);
     assert.match(jobs.get(job), /^ {4}needs: (?:plan|\[[^\n]*\bplan\b[^\n]*\])$/mu);
@@ -334,8 +341,14 @@ function requireWorkflow(source) {
     "npm run test:e2e:release-gate",
     expression("!cancelled() && steps.browsers.outcome == 'success'"),
   );
+  exact(
+    "release-gate",
+    "Run the third release-gate suite",
+    "npm run test:e2e:release-gate",
+    expression("!cancelled() && steps.browsers.outcome == 'success'"),
+  );
   // Desktop and phone each split the gate into three parts (which partition the release-gate files),
-  // run as three jobs of two suites: together exactly both device projects times all three parts,
+  // run as two jobs of three suites: together exactly both device projects times all three parts,
   // each suite once, none dropped by fail-fast, and each suite's runner narrowed only through
   // WARD_RELEASE_GATE_PROJECT and WARD_RELEASE_GATE_PART.
   const gateMatrix = jobs
@@ -351,15 +364,24 @@ function requireWorkflow(source) {
       const fields = Object.fromEntries(
         [...`  ${entry}`.matchAll(/^ {2,12}([a-z_]+): ([^\n]*)$/gmu)].map((match) => [match[1], match[2]]),
       );
-      assert.deepEqual(Object.keys(fields).sort(), ["pair", "part", "project", "second_part", "second_project"]);
+      assert.deepEqual(Object.keys(fields).sort(), [
+        "pair",
+        "part",
+        "project",
+        "second_part",
+        "second_project",
+        "third_part",
+        "third_project",
+      ]);
       return fields;
     });
-  assert.equal(gateEntries.length, 3, "release-gate: three paired jobs");
-  assert.equal(new Set(gateEntries.map(({ pair }) => pair)).size, 3, "release-gate: distinct job names");
+  assert.equal(gateEntries.length, 2, "release-gate: two jobs of three suites");
+  assert.equal(new Set(gateEntries.map(({ pair }) => pair)).size, 2, "release-gate: distinct job names");
   const gateSuites = gateEntries
-    .flatMap(({ project, part, second_project, second_part }) => [
+    .flatMap(({ project, part, second_project, second_part, third_project, third_part }) => [
       `${project}/${part}`,
       `${second_project}/${second_part}`,
+      `${third_project}/${third_part}`,
     ])
     .sort();
   assert.deepEqual(
@@ -381,6 +403,26 @@ function requireWorkflow(source) {
     ),
   );
   assert.equal(step("release-gate", "Run the second release-gate suite").fields.get("id"), "gate-second");
+  assert.ok(
+    step("release-gate", "Run the third release-gate suite").text.includes(
+      `          WARD_RELEASE_GATE_PROJECT: ${expression("matrix.third_project")}\n          WARD_RELEASE_GATE_PART: ${expression("matrix.third_part")}\n`,
+    ),
+  );
+  assert.equal(step("release-gate", "Run the third release-gate suite").fields.get("id"), "gate-third");
+  for (const [stepId, label] of [["gate-third", "third-suite"]]) {
+    const reports = step("release-gate", `Upload successful ${label} reports`);
+    assert.equal(reports.fields.get("if"), expression(`!cancelled() && steps.${stepId}.outcome == 'success'`));
+    assert.match(reports.text, /^ {10}path: test-results\/\*\*\/\*\.json$/mu);
+    assert.match(reports.text, /^ {10}if-no-files-found: error$/mu);
+    assert.ok(
+      reports.text.includes(
+        `ward-release-gate-reports-${expression("github.run_id")}-${expression("matrix.third_project")}-${expression("matrix.third_part")}`,
+      ),
+    );
+    const evidence = step("release-gate", `Upload failed ${label} evidence`);
+    assert.equal(evidence.fields.get("if"), expression(`!cancelled() && steps.${stepId}.outcome == 'failure'`));
+    assert.match(evidence.text, /^ {10}path: test-results\/$/mu);
+  }
   assert.ok(
     jobs
       .get("release-gate")
@@ -414,6 +456,13 @@ function requireWorkflow(source) {
         names.indexOf("Upload failed release-gate evidence") < aside &&
         aside < names.indexOf("Run the second release-gate suite"),
       "release-gate: upload the first suite before setting it aside and running the second",
+    );
+    const asideSecond = names.indexOf("Set aside the second suite's results");
+    assert.ok(
+      names.indexOf("Upload successful second-suite reports") < asideSecond &&
+        names.indexOf("Upload failed second-suite evidence") < asideSecond &&
+        asideSecond < names.indexOf("Run the third release-gate suite"),
+      "release-gate: upload the second suite before setting it aside and running the third",
     );
   }
   const successfulReports = step("release-gate", "Upload successful release-gate reports");
@@ -472,12 +521,12 @@ function requireWorkflow(source) {
     jobs.get("coverage"),
     /node node_modules\/vitest\/vitest.mjs run --merge-reports="\$WARD_SHARD_BLOBS" --coverage\n/u,
   );
-  assert.match(jobs.get("coverage"), /WARD_SHARD_COUNT: "6"/u);
+  assert.match(jobs.get("coverage"), /WARD_SHARD_COUNT: "4"/u);
   assert.match(jobs.get("unit"), /WARD_COVERAGE_BLOB_DIR: \$\{\{ runner.temp \}\}\/ward-coverage-blobs/u);
   assert.match(jobs.get("unit"), /if-no-files-found: error/u);
   for (const [job, key, variable, count] of [
-    ["unit", "shard", "WARD_GATE_SHARD", 6],
-    ["browser", "group", "WARD_JOURNEY_GROUP", 3],
+    ["unit", "shard", "WARD_GATE_SHARD", 4],
+    ["browser", "group", "WARD_JOURNEY_GROUP", 2],
   ]) {
     assert.match(jobs.get(job), /fail-fast: false/u);
     const values = new RegExp(`${key}: \\[([\\d, ]+)\\]`).exec(jobs.get(job))?.[1].split(",").map(Number);
@@ -492,7 +541,7 @@ function requireWorkflow(source) {
   for (const name of ["static", "release-gate"]) assert.doesNotMatch(jobs.get(name), /needs.reuse/u);
   assert.ok(!jobs.has("secret-scan"), "the secret scan runs inside the scope plan job");
   assert.match(jobs.get("backend"), /^ {4}needs: \[plan, reuse\]$/mu);
-  assert.match(jobs.get("release-gate"), /^ {4}needs: \[plan, browser-build\]$/mu);
+  assert.match(jobs.get("release-gate"), /^ {4}needs: \[plan, browser-build, static, build\]$/mu);
   assert.match(
     jobs.get("reuse"),
     /^ {4}if: \$\{\{ github.event_name == 'push' && github.ref == 'refs\/heads\/main' \}\}$/mu,
@@ -854,10 +903,13 @@ for (const [before, after] of [
     "needs.reuse.outputs.verified != 'true' && github.event.pull_request.draft != true }}",
     "needs.reuse.outputs.verified != 'true' }}",
   ],
-  ["shard: [1, 2, 3, 4, 5, 6]", "shard: [1, 2, 3, 4, 5]"],
-  ["group: [1, 2, 3]", "group: [1, 2]"],
+  ["shard: [1, 2, 3, 4]", "shard: [1, 2, 3]"],
+  ["group: [1, 2]", "group: [1]"],
   ["            second_part: referrals\n", "            second_part: journeys\n"],
-  ["          - pair: phone journeys, desktop checks\n", "          - pair: phone referrals, desktop referrals\n"],
+  [
+    "          - pair: desktop journeys, referrals and checks\n",
+    "          - pair: phone journeys, referrals and checks\n",
+  ],
   [
     "          WARD_RELEASE_GATE_PART: ${{ matrix.second_part }}",
     "          WARD_RELEASE_GATE_PART: ${{ matrix.part }}",
@@ -885,7 +937,24 @@ for (const [before, after] of [
     "if: ${{ github.event_name == 'pull_request' }}\n        run: node scripts/ward-ci-public/merge-latest-main.mjs\n  reuse:",
     "if: ${{ false }}\n        run: node scripts/ward-ci-public/merge-latest-main.mjs\n  reuse:",
   ],
-  ["&& needs.browser-build.result != 'skipped' }}", "}}"],
+  ["&& needs.browser-build.result != 'skipped' && ", "&& "],
+  ["    needs: [plan, reuse, static, build]\n", "    needs: [plan, reuse]\n"],
+  ["    needs: [plan, browser-build, static, build]\n", "    needs: [plan, browser-build]\n"],
+  [" && needs.static.result == 'success' && (needs.build.result == 'success'", " && (needs.build.result == 'success'"],
+  ["(needs.build.result == 'skipped' && needs.plan.outputs.build != 'true')", "needs.build.result == 'skipped'"],
+  [" && needs.unit.result == 'success' }}", " }}"],
+  [
+    "          - pair: desktop journeys, referrals and checks\n            project: release-gate-desktop\n            part: journeys\n            second_project: release-gate-desktop\n            second_part: referrals\n            third_project: release-gate-desktop\n            third_part: checks\n",
+    "",
+  ],
+  [
+    "          WARD_RELEASE_GATE_PART: ${{ matrix.third_part }}",
+    "          WARD_RELEASE_GATE_PART: ${{ matrix.second_part }}",
+  ],
+  [
+    "name: Upload successful third-suite reports\n        if: ${{ !cancelled() && steps.gate-third.outcome == 'success' }}",
+    "name: Upload successful third-suite reports\n        if: ${{ false }}",
+  ],
   ["needs.reuse.outputs.backend_verified != 'true' }}", "true }}"],
   ["branches: [main]", "branches: [other]"],
   ["--max-warnings 0 --no-error-on-unmatched-pattern", "--max-warnings 0 --no-error-on-unmatched-pattern || true"],

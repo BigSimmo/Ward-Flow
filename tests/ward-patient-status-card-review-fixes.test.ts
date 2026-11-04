@@ -183,19 +183,25 @@ describe("gate board status card review fixes", () => {
     expect(legalOnLeave("did_not_proceed")).toBe("Voluntary patient");
   });
 
-  it("still offers Record CTO after an ended Form 5A, which a new order keeps as Closed (D-40)", () => {
-    const legalAction = (patient: PatientStatusContext["patient"]) =>
-      buildPatientStatus("idle", ctx(base, { patient })).cells.find((cell) => cell.key === "legal")?.action;
-    expect(legalAction({} as PatientStatusContext["patient"])?.kind).toBe("button");
-    const ended = legalAction({
+  // PT1 round 2 (Josh, 3 Nov 2026): Record CTO moved to the band beside New referral, and the band's
+  // Legal tile says no order is in force, so the idle card carries no legal cell or CTO action. The
+  // band button stays available after an ended Form 5A (D-40), covered in the dossier DOM tests.
+  it("keeps the idle card free of a legal cell and Record CTO, with or without an ended Form 5A (D-40)", () => {
+    const idle = (patient: PatientStatusContext["patient"]) => buildPatientStatus("idle", ctx(base, { patient }));
+    const ended = {
       communityTreatmentOrder: {
         form: "5A",
         recordedAt: NOW_ANCHOR - 120,
         recordedBy: "Community",
         endedAt: NOW_ANCHOR - 60,
       },
-    } as PatientStatusContext["patient"]);
-    expect(ended).toMatchObject({ kind: "button", label: "Record CTO" });
+    } as PatientStatusContext["patient"];
+    for (const patient of [{} as PatientStatusContext["patient"], ended]) {
+      const status = idle(patient);
+      expect(status.verdict).toBe("Not currently active");
+      expect(status.cells.find((cell) => cell.key === "legal")).toBeUndefined();
+      expect(status.cells.some((cell) => cell.action?.label === "Record CTO")).toBe(false);
+    }
   });
 
   it("keeps an active CTO and its Record ended beside an accepted referral (Qodo, 13 Oct 2026)", () => {

@@ -338,16 +338,20 @@ jobs:
             coverage/backend/
           if-no-files-found: warn
           retention-days: 7
+  # Cheap first (Josh, 4 Nov 2026): the unit shards, browser journeys, release gate and coverage
+  # wait for the scope plan, static checks and production build, so a failing build, budget or
+  # lint stops the run before about a dozen expensive runners start. A job skipped because one of
+  # those failed is never a pass: Ward Flow required needs success for every in-scope job.
   unit:
     name: Ward Flow unit shard ${{ matrix.shard }}
-    needs: [plan, reuse]
-    if: ${{ !cancelled() && needs.plan.outputs.unit == 'true' && needs.reuse.outputs.verified != 'true' }}
+    needs: [plan, reuse, static, build]
+    if: ${{ !cancelled() && needs.plan.outputs.unit == 'true' && needs.reuse.outputs.verified != 'true' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && needs.plan.outputs.build != 'true')) }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        shard: [1, 2, 3, 4, 5, 6]
+        shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -397,7 +401,7 @@ jobs:
         id: shard
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         env:
-          WARD_GATE_SHARD: ${{ matrix.shard }}/6
+          WARD_GATE_SHARD: ${{ matrix.shard }}/4
           # A pull request that changes nothing the legal-figure sweep runs leaves it out (Josh,
           # 27 October 2026); only an explicit "false" from the plan does, so main always runs it.
           WARD_GATE_SKIP_LEGAL_SWEEP: ${{ needs.plan.outputs.legal_sweep == 'false' && '1' || '0' }}
@@ -502,14 +506,14 @@ jobs:
           key: ${{ steps.next-cache.outputs.cache-primary-key }}
   browser:
     name: Ward Flow browser journeys ${{ matrix.group }}
-    needs: [plan, reuse, browser-build]
-    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.verified != 'true' && github.event.pull_request.draft != true && needs.browser-build.result == 'success' }}
+    needs: [plan, reuse, browser-build, static, build]
+    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.verified != 'true' && github.event.pull_request.draft != true && needs.browser-build.result == 'success' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && needs.plan.outputs.build != 'true')) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        group: [1, 2, 3]
+        group: [1, 2]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -578,7 +582,7 @@ jobs:
         id: journeys
         if: ${{ !cancelled() && steps.chromium.outcome == 'success' }}
         env:
-          WARD_JOURNEY_GROUP: ${{ matrix.group }}/3
+          WARD_JOURNEY_GROUP: ${{ matrix.group }}/2
           WARD_GATE_BUILD: "1"
           WARD_BROWSER_ARTIFACT_DIR: ${{ needs.browser-build.result == 'success' && format('{0}/ward-browser-build', runner.temp) || '' }}
         run: npm run test:e2e:ward-journeys
@@ -610,30 +614,29 @@ jobs:
     timeout-minutes: 25
     # Desktop Chromium and phone WebKit each split the release gate into three parts (journeys,
     # referrals, checks) that partition the release-gate files without overlap
-    # (scripts/ward-flow/browser-run-contract.mjs). The six suites run as three jobs of two, paired
-    # from measured medians so each job takes about the same time (Josh, 4 November 2026): every
-    # job runs its first suite, then its second on the same installed browsers, whatever the first
-    # did. Each suite keeps its own project, part, evidence and report artifact names, and Ward
-    # Flow required needs all three jobs.
+    # (scripts/ward-flow/browser-run-contract.mjs). The six suites run as two jobs of three, one
+    # per device (Josh, 4 November 2026: fewer jobs): every job runs its first suite, then its
+    # second and third on the same installed browsers, whatever the earlier ones did. Each suite
+    # keeps its own project, part, evidence and report artifact names, and Ward Flow required
+    # needs both jobs.
     strategy:
       fail-fast: false
       matrix:
         include:
-          - pair: phone checks, desktop journeys
-            project: release-gate-phone
-            part: checks
-            second_project: release-gate-desktop
-            second_part: journeys
-          - pair: phone referrals, desktop referrals
-            project: release-gate-phone
-            part: referrals
-            second_project: release-gate-desktop
-            second_part: referrals
-          - pair: phone journeys, desktop checks
+          - pair: phone journeys, referrals and checks
             project: release-gate-phone
             part: journeys
+            second_project: release-gate-phone
+            second_part: referrals
+            third_project: release-gate-phone
+            third_part: checks
+          - pair: desktop journeys, referrals and checks
+            project: release-gate-desktop
+            part: journeys
             second_project: release-gate-desktop
-            second_part: checks
+            second_part: referrals
+            third_project: release-gate-desktop
+            third_part: checks
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -756,14 +759,42 @@ jobs:
           path: test-results/**/*.json
           if-no-files-found: error
           retention-days: 3
+      - name: Set aside the second suite's results
+        if: ${{ !cancelled() && steps.gate-second.outcome != 'skipped' }}
+        run: if [ -d test-results ]; then mv test-results "$RUNNER_TEMP/ward-release-gate-second-results"; fi
+      - name: Run the third release-gate suite
+        id: gate-third
+        if: ${{ !cancelled() && steps.browsers.outcome == 'success' }}
+        env:
+          WARD_GATE_BUILD: "1"
+          WARD_RELEASE_GATE_PROJECT: ${{ matrix.third_project }}
+          WARD_RELEASE_GATE_PART: ${{ matrix.third_part }}
+          WARD_BROWSER_ARTIFACT_DIR: ${{ needs.browser-build.result == 'success' && format('{0}/ward-browser-build', runner.temp) || '' }}
+        run: npm run test:e2e:release-gate
+      - name: Upload failed third-suite evidence
+        if: ${{ !cancelled() && steps.gate-third.outcome == 'failure' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: ward-release-gate-failures-${{ github.run_id }}-${{ matrix.third_project }}-${{ matrix.third_part }}
+          path: test-results/
+          if-no-files-found: warn
+          retention-days: 3
+      - name: Upload successful third-suite reports
+        if: ${{ !cancelled() && steps.gate-third.outcome == 'success' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: ward-release-gate-reports-${{ github.run_id }}-${{ matrix.third_project }}-${{ matrix.third_part }}
+          path: test-results/**/*.json
+          if-no-files-found: error
+          retention-days: 3
       - name: Save release browsers on main
         if: ${{ !cancelled() && steps.browsers.outcome == 'success' && steps.release-cache.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ~/.cache/ms-playwright
           key: ward-release-browsers-${{ runner.os }}-chromium-webkit-${{ steps.release-version.outputs.version }}
-    needs: [plan, browser-build]
-    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && github.event.pull_request.draft != true && needs.browser-build.result != 'skipped' }}
+    needs: [plan, browser-build, static, build]
+    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && github.event.pull_request.draft != true && needs.browser-build.result != 'skipped' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && needs.plan.outputs.build != 'true')) }}
   build:
     name: Ward Flow production build
     needs: [plan, reuse]
@@ -847,8 +878,9 @@ jobs:
           key: ${{ steps.production-cache.outputs.cache-primary-key }}
   coverage:
     name: Ward Flow coverage
+    # Merges only a complete set of passing shards: a failed shard already fails Ward Flow required.
     needs: [plan, reuse, unit]
-    if: ${{ !cancelled() && needs.plan.outputs.unit == 'true' && needs.reuse.outputs.verified != 'true' }}
+    if: ${{ !cancelled() && needs.plan.outputs.unit == 'true' && needs.reuse.outputs.verified != 'true' && needs.unit.result == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -884,7 +916,7 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         env:
           WARD_SHARD_BLOBS: ${{ runner.temp }}/ward-shard-blobs
-          WARD_SHARD_COUNT: "6"
+          WARD_SHARD_COUNT: "4"
         run: |
           for shard in $(seq 1 "$WARD_SHARD_COUNT"); do
             ls "$WARD_SHARD_BLOBS"/blob-shard-"$shard"-of-"$WARD_SHARD_COUNT"-batch-*.json
