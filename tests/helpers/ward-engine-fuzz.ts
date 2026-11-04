@@ -108,7 +108,7 @@ import { SNOOZE_REASON_IDS } from "@/components/ward-management/ward-inbox-snooz
 import { LEGAL_CLOCK_FORM_CODES } from "@/components/ward-management/ward-legal-clock";
 import { countryExtensionEligible } from "@/components/ward-management/ward-legal-forms";
 import { GENDERS } from "@/components/ward-management/ward-patients";
-import { UNDO_STEP_TYPES } from "@/components/ward-management/ward-undo";
+import { UNDO_STEP_TYPES, UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-undo";
 import { OBSERVATION_LEVELS, observationAt } from "@/components/ward-management/ward-observation";
 import {
   RESTRICTIVE_PRACTICE_IDS,
@@ -2290,6 +2290,22 @@ export function nextEvent(
       now: currentNow,
       ...undoSubjectField(state, justTold.subjectId),
       ...(justTold.unitId ? { actingUnitId: justTold.unitId } : {}),
+    } as unknown as WardFlowEvent;
+  }
+  // The same for a site's handover sign-off (Q61): its Undo is only within the undo window, so
+  // sometimes take it back at once, as the bed manager who signed it.
+  if (
+    justTold?.kind === "step" &&
+    justTold.undoType === "UNDO_SITE_HANDOVER_SIGN_OFF" &&
+    currentNow - justTold.at <= UNDO_WINDOW_MINUTES &&
+    chance(random, 0.5)
+  ) {
+    FUZZED_EVENT_TYPES.add("UNDO_SITE_HANDOVER_SIGN_OFF");
+    return {
+      type: "UNDO_SITE_HANDOVER_SIGN_OFF",
+      role: justTold.role,
+      now: currentNow,
+      siteCode: justTold.subjectId.replace(/^site-handover:/, ""),
     } as unknown as WardFlowEvent;
   }
   for (let attempt = 0; ; attempt += 1) {
