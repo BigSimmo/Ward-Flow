@@ -104,6 +104,32 @@ describe("Audit 24-7 undo toasts", () => {
     expect(screen.getByTestId("toast")).toHaveTextContent(said);
   });
 
+  it("says one thing after the page has gone when an unconfirmed Undo is later confirmed (PR #1331 review)", async () => {
+    const undo = deferred();
+    const later = deferred();
+    const dispatch = vi
+      .fn<(event: WardFlowEvent) => Promise<WardCommandOutcome>>()
+      .mockResolvedValueOnce({ commandId: "step", status: "accepted", undoRecords: [record] })
+      .mockReturnValueOnce(undo.promise);
+    render(<Layout dispatch={dispatch} />);
+    await act(async () => {
+      fireEvent.click(screen.getByText("Record"));
+    });
+    fireEvent.click(within(screen.getByTestId("toast")).getByRole("button", { name: "Undo" }));
+    fireEvent.click(screen.getByText("Leave"));
+    expect(screen.queryByTestId("toast")).toBeNull();
+    await act(async () => {
+      undo.finish({ commandId: "undo", status: "failed", confirmation: later.promise });
+      await undo.promise;
+    });
+    expect(screen.getAllByTestId("toast")).toHaveLength(1);
+    await act(async () => {
+      later.finish({ commandId: "undo", status: "accepted" });
+      await later.promise;
+    });
+    expect(screen.getAllByTestId("toast")).toHaveLength(1);
+  });
+
   it("keeps a warning or danger toast until dismissed, but not an info one (CT-09)", () => {
     vi.useFakeTimers();
     function Pusher() {

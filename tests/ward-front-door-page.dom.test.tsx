@@ -164,6 +164,46 @@ describe("the account door", () => {
     await act(async () => resolve(auth));
     expect(auth.dispose).toHaveBeenCalled();
   });
+
+  it.each([false, true])(
+    "returns to the usable form when token acquisition rejects (restored=%s)",
+    async (restored) => {
+      const auth = adapter({
+        userId: restored ? "synthetic-user" : null,
+        token: vi.fn().mockRejectedValue(new Error("Synthetic token failure")),
+      });
+      createWardAuth.mockResolvedValue(auth);
+      render(<FrontDoorPage next="/ward-flow" mode="account" tv={false} />);
+      if (!restored) {
+        fireEvent.change(await screen.findByLabelText("Email"), { target: { value: "synthetic@example.test" } });
+        fireEvent.change(screen.getByLabelText("Password"), { target: { value: "synthetic-password" } });
+        fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+      }
+      expect(await screen.findByText("The sign-in service is busy.")).toBeVisible();
+      expect(screen.getByRole("button", { name: "Try again" })).not.toBeDisabled();
+      expect(screen.queryByText("Opening Ward Flow.")).not.toBeInTheDocument();
+      expect(replace).not.toHaveBeenCalled();
+    },
+  );
+
+  it("never opens a page after the opening sign-in was unmounted", async () => {
+    let token!: (value: string) => void;
+    createWardAuth.mockResolvedValue(
+      adapter({
+        userId: "synthetic-user",
+        token: () =>
+          new Promise<string>((resolve) => {
+            token = resolve;
+          }),
+      }),
+    );
+    const { unmount } = render(<FrontDoorPage next="/ward-flow" mode="account" tv={false} />);
+    await waitFor(() => expect(token).toBeTypeOf("function"));
+    unmount();
+    await act(async () => token("synthetic-token"));
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(replace).not.toHaveBeenCalled();
+  });
 });
 
 describe("the pass from inside the app", () => {

@@ -25,9 +25,11 @@ type Inbox = {
   /** The simulated messages, fixed at the first one received, so closing Tools cannot reshuffle them. */
   script: readonly string[] | null;
   items: readonly FeedItem[];
+  /** Original item identities whose command still needs a final answer, across Tools openings. */
+  pending: readonly FeedItem[];
 };
 
-const EMPTY: Inbox = { generation: null, received: 0, script: null, items: [] };
+const EMPTY: Inbox = { generation: null, received: 0, script: null, items: [], pending: [] };
 let inbox: Inbox = EMPTY;
 const listeners = new Set<() => void>();
 
@@ -76,14 +78,30 @@ export function receiveFeedMessage(raw: string): FeedItem {
   return item;
 }
 
-/** Records what a person did with a waiting message. */
-export function settleFeedItem(seq: number, status: "confirmed" | "rejected", note?: string): void {
+/** A reused sequence or control ID after reset is a different message. */
+export function isCurrentFeedItem(item: FeedItem): boolean {
+  return inbox.items.includes(item);
+}
+
+export function beginFeedConfirmation(item: FeedItem): boolean {
+  if (!isCurrentFeedItem(item) || item.status !== "waiting" || inbox.pending.includes(item)) return false;
+  set({ ...inbox, pending: [...inbox.pending, item] });
+  return true;
+}
+
+export function endFeedConfirmation(item: FeedItem): void {
+  if (inbox.pending.includes(item)) set({ ...inbox, pending: inbox.pending.filter((pending) => pending !== item) });
+}
+
+/** Records the original waiting message only, never a replacement with the same sequence. */
+export function settleFeedItem(expected: FeedItem, status: "confirmed" | "rejected", note?: string): boolean {
+  if (!isCurrentFeedItem(expected) || expected.status !== "waiting") return false;
   set({
     ...inbox,
-    items: inbox.items.map((item) =>
-      item.seq === seq && item.status === "waiting" ? { ...item, status, ...(note ? { note } : {}) } : item,
-    ),
+    pending: inbox.pending.filter((item) => item !== expected),
+    items: inbox.items.map((item) => (item === expected ? { ...item, status, ...(note ? { note } : {}) } : item)),
   });
+  return true;
 }
 
 /** Test-only reset. */

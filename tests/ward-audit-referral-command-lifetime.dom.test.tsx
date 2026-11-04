@@ -167,6 +167,27 @@ it("still selects an unchanged registration after its own accepted record arrive
   expect(h.host().activePatientKey).toBe("patient:PT-991");
 });
 
+it("shows that registration is pending and restores Add and use for this referral after its refusal", async () => {
+  const h = hostHarness();
+  fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
+  act(() => h.host().setNewPatient(draft));
+  fireEvent.click(
+    within(screen.getByTestId("ward-referral-new-patient")).getByRole("button", {
+      name: /^Add and use for this referral$/,
+    }),
+  );
+  expect(screen.getByRole("button", { name: "Adding patient…" })).toBeDisabled();
+  await act(async () =>
+    h.completion.resolve({ commandId: "synthetic-registration", status: "refused", message: "Synthetic refusal" }),
+  );
+  expect(
+    within(screen.getByTestId("ward-referral-new-patient")).getByRole("button", {
+      name: /^Add and use for this referral$/,
+    }),
+  ).not.toBeDisabled();
+  expect(h.host().newPatient).toEqual(draft);
+});
+
 it("an old registration cannot consume a newer pending registration after Back to search and reopen", async () => {
   const h = hostHarness();
   fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));

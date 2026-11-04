@@ -137,6 +137,8 @@ function PublicSearchPalette({
           ref={input}
           className={styles.input}
           type="text"
+          role="combobox"
+          aria-expanded={open && rows.length > 0}
           autoComplete="off"
           autoCorrect="off"
           autoCapitalize="none"

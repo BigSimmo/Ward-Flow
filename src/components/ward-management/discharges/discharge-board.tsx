@@ -895,8 +895,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                 data-selected={releaseId === release.id}
                                 data-highlighted={releaseLit(release) || undefined}
                                 data-dim={dimmed(releaseLit(release))}
-                                // The first act-now row only takes the page's one danger tint (device
-                                // audit, 11 Oct 2026; no side edge since the 31 Oct 2026 owner ruling).
+                                // The first held-up row only takes the page's one tint, amber since the 4 Nov 2026
+                                // audit (device audit, 11 Oct 2026; no side edge since the 31 Oct 2026 owner ruling).
                                 data-act={(key === "blocked" && index === 0) || undefined}
                                 onClick={(e) => openReleaseOn(release.id, e.currentTarget, "milestones")}
                                 onKeyDown={(e) => {

@@ -17,7 +17,7 @@ describe("bot-author policy workflow (pull_request_target safety)", () => {
 
   it("checks out only the base commit and never PR code", () => {
     const refs = [...code.matchAll(/^\s+ref:\s*(.+)$/gm)].map((match) => match[1].trim());
-    expect(refs).toEqual(["${{ github.event.pull_request.base.sha || github.event.merge_group.base_ref }}"]);
+    expect(refs).toEqual(["${{ github.event.pull_request.base.sha || github.event.merge_group.base_ref || 'main' }}"]);
     expect(code).not.toMatch(/pull_request\.head|github\.head_ref|refs\/pull\/|merge_commit_sha/);
     expect(code).toMatch(/persist-credentials: false/);
     expect(code).not.toMatch(/npm (?:ci|install)|npx |pnpm|yarn/);

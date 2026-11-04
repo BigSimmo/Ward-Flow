@@ -13,13 +13,13 @@ on:
     - cron: 0 18 * * *
 permissions:
   contents: read
-# Each PR and main have one queue: a running check always finishes, and a newer push replaces any
-# run still waiting, so a burst of pushes checks the newest commit once. Cancelling running PR
-# checks threw away 47 to 66% of PR runner time (4 Nov audit, docs/ward-flow/PUBLIC-CI.md).
-# Daily-release takes the newest CI-passed main.
+# Each PR and main have one queue. A newer push to a PR cancels that PR's older run, even mid-run,
+# because a superseded head's result is never used and it held the PR's new run behind it while
+# filling the 40 shared job slots (Josh, 4 Nov 08:20Z). Main runs always finish, and a newer main
+# push replaces any main run still waiting. Daily-release takes the newest CI-passed main.
 concurrency:
   group: ward-flow-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.event_name == 'push' && 'main' || format('{0}-{1}', github.event_name, github.run_id) }}
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   plan:
     name: Ward Flow scope plan
@@ -574,18 +574,35 @@ jobs:
           if-no-files-found: warn
           retention-days: 7
   release-gate:
-    name: Ward Flow release gate ${{ matrix.project }} ${{ matrix.part }}
+    name: Ward Flow release gate ${{ matrix.pair }}
     runs-on: ubuntu-24.04
     timeout-minutes: 25
-    # Desktop Chromium and phone WebKit each run as three parallel jobs: the journeys and referrals
-    # parts must pass their required journeys on their own project (six in all), the checks part
-    # runs the accessibility sweep, and Ward Flow required needs all six jobs. The parts split the
-    # release-gate files without overlap (scripts/ward-flow/browser-run-contract.mjs).
+    # Desktop Chromium and phone WebKit each split the release gate into three parts (journeys,
+    # referrals, checks) that partition the release-gate files without overlap
+    # (scripts/ward-flow/browser-run-contract.mjs). The six suites run as three jobs of two, paired
+    # from measured medians so each job takes about the same time (Josh, 4 November 2026): every
+    # job runs its first suite, then its second on the same installed browsers, whatever the first
+    # did. Each suite keeps its own project, part, evidence and report artifact names, and Ward
+    # Flow required needs all three jobs.
     strategy:
       fail-fast: false
       matrix:
-        project: [release-gate-desktop, release-gate-phone]
-        part: [journeys, referrals, checks]
+        include:
+          - pair: phone checks, desktop journeys
+            project: release-gate-phone
+            part: checks
+            second_project: release-gate-desktop
+            second_part: journeys
+          - pair: phone referrals, desktop referrals
+            project: release-gate-phone
+            part: referrals
+            second_project: release-gate-desktop
+            second_part: referrals
+          - pair: phone journeys, desktop checks
+            project: release-gate-phone
+            part: journeys
+            second_project: release-gate-desktop
+            second_part: checks
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -678,6 +695,36 @@ jobs:
           path: test-results/**/*.json
           if-no-files-found: error
           retention-days: 3
+      # The first suite's results are already uploaded; set them aside so the second suite's
+      # evidence and reports hold only its own files.
+      - name: Set aside the first suite's results
+        if: ${{ !cancelled() && steps.gate.outcome != 'skipped' }}
+        run: if [ -d test-results ]; then mv test-results "$RUNNER_TEMP/ward-release-gate-first-results"; fi
+      - name: Run the second release-gate suite
+        id: gate-second
+        if: ${{ !cancelled() && steps.browsers.outcome == 'success' }}
+        env:
+          WARD_GATE_BUILD: "1"
+          WARD_RELEASE_GATE_PROJECT: ${{ matrix.second_project }}
+          WARD_RELEASE_GATE_PART: ${{ matrix.second_part }}
+          WARD_BROWSER_ARTIFACT_DIR: ${{ needs.browser-build.result == 'success' && format('{0}/ward-browser-build', runner.temp) || '' }}
+        run: npm run test:e2e:release-gate
+      - name: Upload failed second-suite evidence
+        if: ${{ !cancelled() && steps.gate-second.outcome == 'failure' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: ward-release-gate-failures-${{ github.run_id }}-${{ matrix.second_project }}-${{ matrix.second_part }}
+          path: test-results/
+          if-no-files-found: warn
+          retention-days: 3
+      - name: Upload successful second-suite reports
+        if: ${{ !cancelled() && steps.gate-second.outcome == 'success' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: ward-release-gate-reports-${{ github.run_id }}-${{ matrix.second_project }}-${{ matrix.second_part }}
+          path: test-results/**/*.json
+          if-no-files-found: error
+          retention-days: 3
       - name: Save release browsers on main
         if: ${{ !cancelled() && steps.browsers.outcome == 'success' && steps.release-cache.outputs.cache-hit != 'true' && github.ref == 'refs/heads/main' && github.event_name != 'pull_request' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
@@ -713,7 +760,7 @@ jobs:
     needs: [plan, reuse]
     if: ${{ !cancelled() && needs.plan.outputs.build == 'true' && needs.reuse.outputs.verified != 'true' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 25
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -761,9 +808,20 @@ jobs:
       - name: Build for production (Railway build command)
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack
+      # On a PR that is over budget, budget-gate.mjs also measures main alone and fails only routes
+      # this PR grew, so one over-budget merge to main no longer fails every PR (4 Nov 2026).
       - name: Check the phone script budget
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: node scripts/check-script-budget.mjs
+        run: node scripts/ward-ci-public/budget-gate.mjs
+      # ward-flow-budget-heal.yml reads this when main goes over budget and opens a PR raising it.
+      - name: Keep main's phone script measurements for the budget heal
+        if: ${{ !cancelled() && github.event_name == 'push' && steps.install.outcome == 'success' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: script-budget-measured
+          path: ${{ runner.temp }}/script-budget/measured.json
+          if-no-files-found: ignore
+          retention-days: 7
       # H-0295: the scan reads .next/static only when a build has left it, so it runs after the build.
       - name: Scan the built client bundle for secrets
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}

@@ -10,7 +10,6 @@ const at = new Date("2026-11-01T12:00:00Z");
 const world = engine.seedWorld(at);
 const access = { role: "ward", scope: { kind: "ward", unitIds: ["fre-adult-open"] } };
 const actorId = "11111111-1111-4111-8111-111111111111";
-const membershipId = "22222222-2222-4222-8222-222222222222";
 const workspaceId = "33333333-3333-4333-8333-333333333333";
 const emptySum = "000000000000";
 
@@ -53,23 +52,30 @@ async function readArchive(
       (a.id < b.id ? -1 : a.id > b.id ? 1 : 0),
   );
   assert.equal(records.length, Math.min(count, ARCHIVE_READ_LIMIT), "SQL LIMIT returns the retained population");
+  // The archive read runs inside the record-read authority transaction (`currentRecordRead`):
+  // the workspace row is share-locked first, then the archive is read on that same connection.
+  let transactionOpen = false;
   const query = async (sql, values = []) => {
     if (sql.startsWith("SELECT max(version)")) return { rows: [{ version: 14 }] };
-    if (sql.includes("FROM ward_flow.workspaces w")) {
+    if (sql === "BEGIN") {
+      assert.equal(transactionOpen, false, "one archive transaction at a time in this fixture");
+      transactionOpen = true;
+      return { rows: [] };
+    }
+    assert.equal(transactionOpen, true, `Archive SQL must use its owned transaction: ${sql.slice(0, 80)}`);
+    if (sql === "COMMIT" || sql === "ROLLBACK") {
+      transactionOpen = false;
+      return { rows: [] };
+    }
+    if (sql.includes("FROM ward_flow.workspaces WHERE")) {
+      assert.match(sql, /FOR SHARE$/, "the workspace authority boundary is locked before archive reads");
       assert.equal(values[0], workspaceId);
       return {
-        rows: [
-          {
-            data_mode: "prototype",
-            revision: through,
-            payload: structuredClone(world),
-            cache_revision: through,
-            cache_updated_at: at,
-            records: [],
-          },
-        ],
+        rows: [{ data_mode: "prototype", revision: through, payload: structuredClone(world), cache_updated_at: at }],
       };
     }
+    // The floor reads its records from the stored payload; no separate record rows are needed.
+    if (sql.includes("FROM ward_flow.workspace_records WHERE")) return { rows: [] };
     if (sql.startsWith("SELECT collection, record_id, closed_at, body, archived_revision,")) {
       assert.equal(values[0], workspaceId);
       assert.equal(values[1], world.state.worldGeneration);
@@ -89,15 +95,36 @@ async function readArchive(
     }
     assert.fail(`Unexpected SQL in archive floor fixture: ${sql.slice(0, 90)}`);
   };
-  const store = createWorkspaceStore(
-    { query },
-    { workspaceId, engine, clock: () => new Date(at), log: () => assert.fail("No diagnostic expected") },
-  );
+  const pool = {
+    query: async (sql, values) => {
+      assert.ok(
+        sql.startsWith("SELECT max(version)"),
+        `Archive SQL must use its owned transaction: ${sql.slice(0, 80)}`,
+      );
+      return query(sql, values);
+    },
+    async connect() {
+      return {
+        query,
+        release() {
+          assert.equal(transactionOpen, false, "archive connection is released after commit or rollback");
+        },
+      };
+    },
+  };
+  const store = createWorkspaceStore(pool, {
+    workspaceId,
+    engine,
+    clock: () => new Date(at),
+    log: () => assert.fail("No diagnostic expected"),
+  });
   return store.archive(
     {
       version: 14,
       actorId,
-      membershipId,
+      // No membership to resolve again inside the transaction: this fixture covers the floor only
+      // (role re-resolution is covered by record-access-authority.test.mjs).
+      membershipId: null,
       access: roleAccess,
       accessUntil: at.getTime() + 60_000,
       grants: [],

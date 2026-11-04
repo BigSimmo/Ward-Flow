@@ -250,6 +250,7 @@ export function useReferralPatientRegistration({
 }) {
   const [newPatientError, setNewPatientError] = useState<string | null>(null);
   const pendingNewPatient = useRef<PendingPatientRegistration | null>(null);
+  const [newPatientPending, setNewPatientPending] = useState(false);
   const [completion, setCompletion] = useState(0);
   const currentGeneration = useRef(generation);
   const context = JSON.stringify([role, registrationScope]);
@@ -272,6 +273,7 @@ export function useReferralPatientRegistration({
     if (!pending) return;
     if (pending.intentVersion !== intentVersion || pending.context !== context) {
       pendingNewPatient.current = null;
+      setNewPatientPending(false);
       return;
     }
     if (
@@ -280,6 +282,7 @@ export function useReferralPatientRegistration({
       pending.outcome?.isCurrent?.() === false
     ) {
       pendingNewPatient.current = null;
+      setNewPatientPending(false);
       setNewPatientError("The workspace changed. Review the patient before trying again.");
       return;
     }
@@ -289,6 +292,7 @@ export function useReferralPatientRegistration({
     );
     if (!added) return;
     pendingNewPatient.current = null;
+    setNewPatientPending(false);
     onSelect(added.id);
   }, [patients, completion, generation, onSelect, context, intentVersion]);
   function addNewPatient(event: React.FormEvent) {
@@ -314,6 +318,7 @@ export function useReferralPatientRegistration({
       context,
     };
     pendingNewPatient.current = pending;
+    setNewPatientPending(true);
     const settle = (outcome?: WardCommandOutcome) => {
       if (!mounted.current || pendingNewPatient.current !== pending) return;
       if (
@@ -321,6 +326,7 @@ export function useReferralPatientRegistration({
         pending.context !== currentContext.current
       ) {
         pendingNewPatient.current = null;
+        setNewPatientPending(false);
         return;
       }
       if (
@@ -329,6 +335,7 @@ export function useReferralPatientRegistration({
         outcome?.isCurrent?.() === false
       ) {
         pendingNewPatient.current = null;
+        setNewPatientPending(false);
         setNewPatientError("The workspace changed. Review the patient before trying again.");
       } else if (outcome?.status === "accepted") {
         pending.accepted = true;
@@ -336,6 +343,7 @@ export function useReferralPatientRegistration({
         setCompletion((value) => value + 1);
       } else {
         pendingNewPatient.current = null;
+        setNewPatientPending(false);
         setNewPatientError(outcome?.message ?? "Patient could not be added. Check the record before trying again.");
       }
     };
@@ -360,5 +368,5 @@ export function useReferralPatientRegistration({
       settle();
     }
   }
-  return { newPatientError, setNewPatientError, pendingNewPatient, addNewPatient };
+  return { newPatientError, setNewPatientError, pendingNewPatient, newPatientPending, addNewPatient };
 }

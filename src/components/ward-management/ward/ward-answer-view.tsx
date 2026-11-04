@@ -146,8 +146,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const raise = useWardRaise("ward");
   const unit = units.find((candidate) => candidate.id === unitId);
 
-  // Audit 1, Josh 20 Oct (CS-08): held by journey id, never list position; `index` is where to land after answering.
-  // Notices option A (22 Oct 2026): a Notices row names its request, so the view opens on that patient.
+  // CS-08 / Notices option A: hold by journey id, not list position; a Notices link opens its named request.
   const [answerSelection, setAnswerSelection] = useState<{ id?: string; index: number; name?: string }>({
     id: initialMovementId,
     index: 0,
@@ -339,16 +338,20 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const leftName = answerSelection.name ?? (linked && resolvePatientIdentity(linked).formalName);
   const selectionLeft = heldIndex < 0 && leftName !== undefined && !answeredHere && incoming.length > 0;
   const activeMovement = selectionLeft ? undefined : incoming[activeAnswerIndex];
-  const pick = (index: number, movement = incoming[index]) =>
+  const pick = (index: number, movement = incoming[index]) => {
+    if (movement?.id !== answerSelection.id) {
+      setOverrideReason(undefined);
+      setNumConsulted(false);
+    }
     setAnswerSelection({ id: movement?.id, index, name: movement && resolvePatientIdentity(movement).formalName });
+  };
   if (activeMovement && answerSelection.id !== activeMovement.id) pick(activeAnswerIndex, activeMovement);
   const selectAnswer = (index: number) => {
     setAnsweredHereId(undefined);
     pick(index);
     setHoldChoice(undefined);
   };
-  // CS-08: the request an accept dialog or sheet was opened for has left (answered or withdrawn
-  // elsewhere), so it closes rather than confirm whoever now sits in its place.
+  // CS-08: close when the original request has left; never confirm the next person in its place.
   const phoneAcceptLeft = phoneSheet === "accept" && answerSelection.id !== undefined && heldIndex < 0;
   if ((acceptModalFor !== undefined && !acceptModalOpen) || phoneAcceptLeft) {
     setAcceptModalFor(undefined);
@@ -455,12 +458,10 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     if (!overrideReason || !lastActionRejection) return;
     const attempted = lastActionRejection.attempted;
     if (attempted !== "ACCEPT_IN_PRINCIPLE" && attempted !== "PULL_PATIENT") return;
-
     const isAcuityRefusal = lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL);
     if (!canSubmitOverride(overrideReason, isAcuityRefusal, numConsulted)) return;
     setPriorRejectionCount(rejections.length);
     setAnsweredHereId(movementId);
-
     if (attempted === "ACCEPT_IN_PRINCIPLE") {
       raise("ACCEPT_IN_PRINCIPLE", {
         movementId,
@@ -481,7 +482,6 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     setOverrideReason(undefined);
     setNumConsulted(false);
   }
-
   function submitCapacity(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const parsed = Number(capacityValue);
