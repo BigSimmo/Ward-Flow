@@ -191,11 +191,6 @@ Back to [the code map index](README.md).
   other component here imports it alongside its own smaller module.
 - **`exception-drawer.tsx`** (457 lines) — `ExceptionDrawer`, the coordinator's declines/overrides
   side panel. Wraps the root-level `DeclineRegister` and `OverrideRegister` components.
-- **`home-bedflow.tsx`** — `HomeBedflow`, the State bedflow card drawn at the foot of Capacity: every
-  ward by health service with its bed states. Its patient mode (Offer, Fits first and the
-  patient strip) and the hub status line it read from `flow-status.ts` were removed on 23 Oct 2026
-  (Josh's yes), since no screen passed it a patient after Home v7. The flow diagram
-  (`flow-diagram.tsx`) and the old pressure strip (`pressure-strip.tsx`) were deleted on 20 Oct 2026.
 - **`priority-queue.tsx`** (436 lines) — `PriorityQueue`, the movement list in wait order
   (`ward-priority.ts`'s `queueOrder`; flags highlight, never move a row, D-71).
 - **`shortlist-panel.module.css`** (684 lines) — styles for `shortlist-panel.tsx` and reused by

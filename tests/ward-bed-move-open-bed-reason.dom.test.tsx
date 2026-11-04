@@ -74,6 +74,7 @@ describe("Bed board move to an open bed (audit CS3-12)", () => {
     fireEvent.click(screen.getByTestId(`ward-board-bed-${lockedStayBed}`));
     fireEvent.click(getBedStep("Move to another bed"));
     fireEvent.click(screen.getByTestId(`ward-board-bed-${freeOpenBed}`));
+    fireEvent.click(screen.getByTestId("ward-board-confirm-send"));
 
     expect(screen.getByTestId("ward-board-say")).toHaveTextContent(/Not recorded: .*is an open bed/);
     const form = screen.getByTestId("ward-bed-move-reason");
@@ -102,6 +103,7 @@ describe("Bed board move to an open bed (audit CS3-12)", () => {
     fireEvent.click(screen.getByTestId(`ward-board-bed-${lockedStayBed}`));
     fireEvent.click(getBedStep("Move to another bed"));
     fireEvent.click(screen.getByTestId(`ward-board-bed-${freeOpenBed}`));
+    fireEvent.click(screen.getByTestId("ward-board-confirm-send"));
     fireEvent.click(within(screen.getByTestId("ward-bed-move-reason")).getByRole("button", { name: "Cancel" }));
     expect(screen.queryByTestId("ward-bed-move-reason")).not.toBeInTheDocument();
     expect(screen.getByTestId(`ward-board-bed-${lockedStayBed}`).getAttribute("aria-label")).toBe(before);

@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 
-import { Button, Dialog, DisabledReason, Field, Select, StatusGlyph } from "@/components/wf";
+import { Button, ChipGroup, Dialog, DisabledReason, FilterChip, StatusGlyph } from "@/components/wf";
 
 import { useWardFeatureFlag } from "../shell/ward-feature-flag-store";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
@@ -47,18 +47,45 @@ const CLOSE_CONFLICT_DRAFT_WORDING = {
  * listed reason, see what still points at it, and reopen it. Reopening is always a person's tap;
  * the expected time only prompts. Behind the `ward-closure-mode` switch.
  */
-export function WardClosurePanel({ unit, now, actor }: { unit: Unit; now: Instant; actor: WardRecordActor }) {
+export function WardClosurePanel({
+  unit,
+  now,
+  actor,
+  onFootAction,
+}: {
+  unit: Unit;
+  now: Instant;
+  actor: WardRecordActor;
+  /**
+   * Hands the "Close <ward> to admissions" step to a host dialog, which shows it as its one primary
+   * action in the foot (Capacity stress test, 3 Nov 2026). Without it the button stays inline.
+   */
+  onFootAction?: (action: FootAction | null) => void;
+}) {
   const enabled = useWardFeatureFlag("ward-closure-mode");
   if (!enabled) return null;
   return (
     <>
-      <WardClosureControls unit={unit} now={now} actor={actor} />
+      <WardClosureControls unit={unit} now={now} actor={actor} onFootAction={onFootAction} />
       <WardRestrictionReviews unit={unit} now={now} actor={actor} />
     </>
   );
 }
 
-function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; actor: WardRecordActor }) {
+/** The close step as a host dialog's primary action (the shape of the kit Dialog's `primary`). */
+export type FootAction = { label: string; onAction: () => void; disabledReason?: string };
+
+function WardClosureControls({
+  unit,
+  now,
+  actor,
+  onFootAction,
+}: {
+  unit: Unit;
+  now: Instant;
+  actor: WardRecordActor;
+  onFootAction?: (action: FootAction | null) => void;
+}) {
   const [reason, setReason] = useState<WardClosureReason | "">("");
   const [reopenAfter, setReopenAfter] = useState("");
   // DR-07 (design re-score, 24 Oct 2026): closing a ward asks once before it is recorded.
@@ -144,8 +171,26 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
     }
   }, [hasChoices, clearDraft]);
 
+  const closeRefusal = refusal ?? (reason === "" ? "Choose a reason first." : undefined);
+  // The host dialog's foot shows the close step while the ward is open, and nothing once it is closed.
+  useEffect(() => {
+    if (!onFootAction) return;
+    if (unit.isClosed) {
+      onFootAction(null);
+      return;
+    }
+    onFootAction({
+      label: `Close ${unit.name} to admissions`,
+      disabledReason: closeRefusal,
+      onAction: () => {
+        if (closeRefusal || reason === "") return;
+        setConfirming(true);
+      },
+    });
+  }, [onFootAction, unit.isClosed, unit.name, closeRefusal, reason]);
+  useEffect(() => () => onFootAction?.(null), [onFootAction]);
+
   if (!unit.isClosed) {
-    const closeRefusal = refusal ?? (reason === "" ? "Choose a reason first." : undefined);
     return (
       <section
         className={styles.panel}
@@ -154,49 +199,43 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
       >
         {/* Audit 1 (WP-10, Josh 20 Oct): the panel names its ward, so a close is never for the wrong one. */}
         <h3 className={styles.heading}>Close {unit.name} to admissions</h3>
-        <Field label="Reason">
-          <Select
-            value={reason}
-            onChange={(event) => setReason(event.target.value as WardClosureReason | "")}
-            data-testid="ward-closure-reason"
-          >
-            <option value="">Choose a reason</option>
-            {WARD_CLOSURE_REASONS.map((entry) => (
-              <option key={entry.id} value={entry.id}>
-                {entry.label}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="Expected to reopen">
-          <Select
-            value={reopenAfter}
-            onChange={(event) => setReopenAfter(event.target.value)}
-            data-testid="ward-closure-reopen-after"
-          >
-            <option value="">Not known</option>
-            {WARD_REOPEN_AFTER_HOURS.map((hours) => (
-              <option key={hours} value={String(hours)}>
-                In {hours} hours
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Button
-          size="sm"
-          variant="sec"
-          aria-disabled={closeRefusal !== undefined ? "true" : undefined}
-          aria-describedby={closeRefusal ? `${reasonId}-close` : undefined}
-          onClick={() => {
-            if (closeRefusal || reason === "") return;
-            setConfirming(true);
-          }}
-          data-testid="ward-closure-close"
-        >
-          Close {unit.name} to admissions
-        </Button>
-        {/* Beneath the button, not beside it: the ward panel is too narrow for both on one line. */}
-        {closeRefusal ? <DisabledReason id={`${reasonId}-close`}>{closeRefusal}</DisabledReason> : null}
+        {/* Kit choices, not browser drop-downs: both lists are short. A pressed reason pressed again is put back. */}
+        <ClosureChoice
+          label="Reason"
+          testId="ward-closure-reason"
+          value={reason}
+          items={WARD_CLOSURE_REASONS.map((entry) => ({ id: entry.id, label: entry.label }))}
+          onChange={(next) => setReason(next as WardClosureReason | "")}
+        />
+        <ClosureChoice
+          label="Expected to reopen"
+          testId="ward-closure-reopen-after"
+          value={reopenAfter}
+          items={[
+            { id: "", label: "Not known" },
+            ...WARD_REOPEN_AFTER_HOURS.map((hours) => ({ id: String(hours), label: `In ${hours} hours` })),
+          ]}
+          onChange={setReopenAfter}
+        />
+        {onFootAction ? null : (
+          <>
+            <Button
+              size="sm"
+              variant="sec"
+              aria-disabled={closeRefusal !== undefined ? "true" : undefined}
+              aria-describedby={closeRefusal ? `${reasonId}-close` : undefined}
+              onClick={() => {
+                if (closeRefusal || reason === "") return;
+                setConfirming(true);
+              }}
+              data-testid="ward-closure-close"
+            >
+              Close {unit.name} to admissions
+            </Button>
+            {/* Beneath the button, not beside it: the ward panel is too narrow for both on one line. */}
+            {closeRefusal ? <DisabledReason id={`${reasonId}-close`}>{closeRefusal}</DisabledReason> : null}
+          </>
+        )}
         {refusedWords !== null ? (
           <ClosureAlert
             words={CLOSE_CONFLICT_DRAFT_WORDING.refused(refusedWords)}
@@ -337,6 +376,40 @@ function ClosureAlert({
       >
         {CLOSE_CONFLICT_DRAFT_WORDING.tryAgain}
       </Button>
+    </div>
+  );
+}
+
+/** One closure choice as kit chips; the chosen id rides on `data-value` for the page and its tests. */
+function ClosureChoice({
+  label,
+  testId,
+  value,
+  items,
+  onChange,
+}: {
+  label: string;
+  testId: string;
+  value: string;
+  items: { id: string; label: string }[];
+  onChange: (next: string) => void;
+}) {
+  return (
+    <div className={styles.choice} data-testid={testId} data-value={value}>
+      <p className={styles.subheading} aria-hidden="true">
+        {label}
+      </p>
+      <ChipGroup label={label} className={styles.chips}>
+        {items.map((item) => (
+          <FilterChip
+            key={item.id}
+            pressed={item.id === value}
+            onPressedChange={(pressed) => onChange(pressed ? item.id : "")}
+          >
+            {item.label}
+          </FilterChip>
+        ))}
+      </ChipGroup>
     </div>
   );
 }

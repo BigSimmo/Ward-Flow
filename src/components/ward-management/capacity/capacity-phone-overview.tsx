@@ -1,68 +1,103 @@
 "use client";
 
+import { useState } from "react";
 import { ChevronRight } from "lucide-react";
 
-import { Button, Card, CardHead, StatusGlyph, durMinutes } from "@/components/wf";
+import { Button, Card, CardHead, StatusGlyph, cx, durMinutes } from "@/components/wf";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 
+import type { BedKindGap } from "./capacity-derivations";
 import { isConfirmationFresh } from "./capacity-gap-words";
 import type { CapacityModel } from "./capacity-model";
 import { shortNeed } from "./capacity-mismatch-band";
+import { MismatchPopup } from "./capacity-mismatch-popup";
 import { gapWords } from "./capacity-range-line";
 import { ReadyByRoadTime } from "./capacity-road-time";
+import { ShiftChecks } from "./capacity-shift-checks";
 import styles from "./capacity-page.module.css";
 
 /**
  * The phone's first tab: the mismatch as rows, the forecast in three figures, then wards to check.
  * The network total is the hero's line, so the mismatch lists the four bed types only and the
- * forecast starts at tomorrow (Josh, 30 Oct 2026).
+ * forecast starts at tomorrow (Josh, 30 Oct 2026). Stress test (3 Nov 2026): each mismatch row opens
+ * the same pop-up as the desktop card, and This shift sits here as it does under the desktop bed map.
  */
 export function PhoneOverview({
   model,
   executive,
   onForecast,
   onWard,
+  onAskWard,
+  networkWide = false,
 }: {
   model: CapacityModel;
   /** The executive desk opens no ward page, so Ready beds by road time lists without links. */
   executive: boolean;
   onForecast: () => void;
   onWard: (unitId: string) => void;
+  /** The coordinator's "Ask" on This shift; absent for a desk that may not ask a ward. */
+  onAskWard?: (unitId: string) => void;
+  /** A service is chosen: the mismatch and forecast still count the whole network, and say so. */
+  networkWide?: boolean;
 }) {
+  const [openKind, setOpenKind] = useState<BedKindGap["id"] | null>(null);
   const { gapRows, tomorrowByKind, forecast, week, wardsToCheck, networkRows, roadTimeFromEdId, now } = model;
   const canOpen = useCanOpenHref();
   const byId = new Map(tomorrowByKind.kinds.map((kind) => [kind.id, kind]));
   const [tomorrow, twoDays] = forecast.horizons;
   const weekOut = week.total.out.reduce((sum, value) => sum + value, 0);
+  const openRow = gapRows.find((row) => row.id === openKind) ?? null;
   return (
     <>
       <Card aria-labelledby="phone-mismatch" data-testid="capacity-mismatch">
-        <CardHead id="phone-mismatch" title="Mismatch" />
+        <CardHead id="phone-mismatch" title="Mismatch" meta={networkWide ? "Network-wide" : undefined} />
         <ul className={styles.phoneRows}>
           {gapRows.map((row) => {
             const likely = byId.get(row.id)?.likely;
+            const title = shortNeed(row.need);
             return (
-              <li key={row.id} className={styles.phoneRow}>
-                <div>
-                  <b className={styles.small}>{shortNeed(row.need)}</b>
-                  <span className={styles.mutedXs}>
-                    {row.waiting} waiting · {row.bedsThatFit} fit
-                    {likely !== undefined ? ` · tomorrow ${gapWords(likely)}` : ""}
+              <li key={row.id} className={styles.phoneRowItem}>
+                <button
+                  type="button"
+                  className={cx(styles.phoneRow, styles.phoneRowButton)}
+                  aria-haspopup="dialog"
+                  onClick={() => setOpenKind(row.id)}
+                >
+                  <div>
+                    <b className={styles.small}>{title}</b>
+                    <span className={styles.mutedXs}>
+                      {row.waiting} waiting · {row.bedsThatFit} fit
+                      {likely !== undefined ? ` · tomorrow ${gapWords(likely)}` : ""}
+                    </span>
+                  </div>
+                  <span className={`${styles.small} ${row.gap < 0 ? styles.warnInk : styles.okInk}`}>
+                    <StatusGlyph tone={row.gap < 0 ? "warning" : "success"} size={9} /> {gapWords(row.gap)}
+                    <ChevronRight strokeWidth={1.75} size={14} aria-hidden="true" />
                   </span>
-                </div>
-                <span className={`${styles.small} ${row.gap < 0 ? styles.warnInk : styles.okInk}`}>
-                  <StatusGlyph tone={row.gap < 0 ? "warning" : "success"} size={9} /> {gapWords(row.gap)}
-                </span>
+                </button>
               </li>
             );
           })}
         </ul>
+        <MismatchPopup
+          row={openRow}
+          title={shortNeed(openRow?.need ?? "")}
+          tomorrow={openKind ? byId.get(openKind) : undefined}
+          now={now}
+          onClose={() => setOpenKind(null)}
+          units={model.gapUnits}
+          onWard={(unitId) => {
+            setOpenKind(null);
+            onWard(unitId);
+          }}
+        />
       </Card>
       <Card aria-labelledby="phone-forecast">
         <CardHead
           id="phone-forecast"
           title="Bed forecast"
+          meta={networkWide ? "Network-wide" : undefined}
           action={
             <Button size="sm" variant="ghost" iconEnd={ChevronRight} onClick={onForecast} aria-haspopup="dialog">
               Open
@@ -132,6 +167,7 @@ export function PhoneOverview({
           </ul>
         )}
       </Card>
+      <ShiftChecks model={model} onAskWard={onAskWard} siteName={model.site?.name} />
       {model.site ? (
         // Site bed manager: every site's ready beds by road time, opened in the ward drawer or the
         // Other sites counts, because another site's ward page is not this desk's to open.

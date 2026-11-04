@@ -101,9 +101,8 @@
   font: 600 var(--wf-fs-16) / 22px var(--wf-font);
   letter-spacing: -0.005em;
   color: var(--wf-ink-1);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* D-83: names in full. A long name wraps to a second line rather than being cut. */
+  overflow-wrap: anywhere;
 }
 
 .drawerKicker {
@@ -121,21 +120,7 @@
   border-radius: var(--wf-r-tag);
 }
 
-/* Fact tiles */
-/* Redesign: four equal facts whose values wrap rather than cut off ("Day 1…", "Past d…").
-   Polish (1 Nov 2026): one card split by hairlines, as Home's stat row, rather than four boxes. */
-.facts {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin: var(--wf-s-3) var(--wf-s-4) 0;
-  overflow: hidden;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
-  box-shadow: var(--wf-e1);
-  flex-shrink: 0;
-}
-
+/* Fact tiles: the phone sheet's four facts (`.phoneFacts`). The desktop drawer shows them in its hero. */
 .fact {
   flex: 1 1 auto;
   display: flex;
@@ -210,13 +195,23 @@
   }
 }
 
-/* Pill tabs */
+/* Pill tabs. WH1: Now and Leaving, with History as a quiet button beside them. The row stays in view
+   while the panel scrolls under it. */
 .tabsWrap {
-  padding: var(--wf-s-3) var(--wf-s-4) 0;
+  position: sticky;
+  top: calc(-1 * var(--wf-s-3));
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0 calc(-1 * var(--wf-s-4));
+  padding: var(--wf-s-2) var(--wf-s-4);
+  background: var(--wf-glass-thick);
   flex-shrink: 0;
 }
 
 .tabs {
+  flex: 1 1 auto;
   display: flex;
   gap: 2px;
   padding: var(--wf-s-1);
@@ -259,6 +254,286 @@
     inset 0 1px 0 var(--wf-hl),
     0 1px 2px color-mix(in srgb, var(--wf-ink-1) 12%, transparent),
     0 0 0 1px var(--wf-line-ctl);
+}
+
+.historyButton {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--wf-r-ctl);
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  cursor: pointer;
+}
+
+.historyButton:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+.historyButton[aria-expanded="true"] {
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.historyButton:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.historyCount {
+  min-width: 18px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--wf-surface-2);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+}
+
+/* WH1 (Josh, 3 Nov 2026): the hero head, in the Capacity drawer's style. One large figure, a soft
+   pill for where the stay is, the reason they have not left, three facts and the step track. */
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: linear-gradient(180deg, var(--wf-surface-2), var(--wf-surface));
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 5%, transparent);
+  flex-shrink: 0;
+}
+
+.heroTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+}
+
+.heroWhen {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.heroFigure {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-28);
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.heroSub {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.heroPill {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--wf-surface-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
+  white-space: nowrap;
+}
+
+.heroPill::before {
+  content: "";
+  flex: none;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.heroPill[data-tone="danger"] {
+  background: color-mix(in srgb, var(--wf-danger) 13%, transparent);
+  color: var(--wf-danger-ink);
+}
+
+.heroPill[data-tone="warning"] {
+  background: color-mix(in srgb, var(--wf-warning) 15%, transparent);
+  color: var(--wf-warning-ink);
+}
+
+.heroPill[data-tone="success"] {
+  background: color-mix(in srgb, var(--wf-success) 13%, transparent);
+  color: var(--wf-success-ink);
+}
+
+.heroPill[data-tone="info"] {
+  background: color-mix(in srgb, var(--wf-info) 13%, transparent);
+  color: var(--wf-info-ink);
+}
+
+.heroWhy {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+  color: var(--wf-ink-1);
+}
+
+.heroWhy :global(svg) {
+  flex: none;
+  margin-top: 3px;
+}
+
+.heroFacts {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  margin: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+.heroFacts > div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.heroFacts > div + div {
+  border-left: 1px solid var(--wf-line);
+}
+
+.heroFacts dt {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.heroFacts dd {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  min-width: 0;
+  font-size: var(--wf-fs-14);
+  line-height: var(--wf-lh-14);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.heroFacts dd :global(svg) {
+  flex: none;
+  margin-top: 3px;
+}
+
+/* The step track, as the Capacity drawer draws a planned move's steps. */
+.steps {
+  display: grid;
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
+  margin: 0;
+  padding: var(--wf-s-1) 0 0;
+  list-style: none;
+}
+
+.steps > li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--wf-s-1);
+}
+
+.steps > li + li::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  right: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--wf-line-2);
+}
+
+.steps > li[data-state="done"] + li::before,
+.steps > li[data-state="now"]::before,
+.steps > li[data-state="done"]::before {
+  background: var(--wf-accent);
+}
+
+.stepDot {
+  position: relative;
+  z-index: 1;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 2px solid var(--wf-line-2);
+  border-radius: 50%;
+  background: var(--wf-surface);
+}
+
+.steps > li[data-state="done"] .stepDot {
+  border-color: var(--wf-accent);
+  background: var(--wf-accent);
+}
+
+.steps > li[data-state="now"] .stepDot {
+  border-color: var(--wf-accent);
+  box-shadow:
+    inset 0 0 0 3px var(--wf-surface),
+    inset 0 0 0 8px var(--wf-accent);
+}
+
+.stepLabel {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  text-align: center;
+}
+
+.steps > li[data-state="now"] .stepLabel {
+  font-weight: 650;
+  color: var(--wf-ink-1);
+}
+
+/* WH1: kit chips in place of browser drop-downs, with a visible label where they stand alone. */
+.choice {
+  min-width: 0;
+}
+
+.choiceField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.choiceLabel {
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
 }
 
 /* Body: scrolls between the fixed head and foot. */
@@ -404,6 +679,17 @@
   flex: 1 1 auto;
 }
 
+/* The hold-up chips, with Save under them. */
+.editorStack {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.editorStack > :global(button),
+.editorStack > :last-child {
+  align-self: flex-start;
+}
+
 /* The observation level editor: its rows line up with the full-width selects above them. */
 .editorFlush {
   padding-inline: 0;
@@ -503,10 +789,6 @@
   flex-shrink: 0;
 }
 
-.footSpacer {
-  flex: 1 1 0;
-}
-
 /* Phone: a bottom sheet about 90vh tall with rounded top corners. */
 @media (max-width: 700px) {
   .drawer {
@@ -537,25 +819,8 @@
     background: var(--wf-line-3);
   }
 
-  .facts {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .fact:nth-child(3) {
-    border-left: 0;
-  }
-
-  .fact:nth-child(n + 3) {
-    border-top: 1px solid var(--wf-line);
-  }
-
   .drawerFoot > :global(*) {
     flex: 1 1 auto;
-  }
-
-  .footSpacer {
-    display: none;
   }
 }
 
@@ -668,23 +933,7 @@
     overflow: hidden;
     color: var(--wf-ink-1);
     font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .phoneChip {
-    display: inline-flex;
-    align-self: flex-start;
-    align-items: center;
-    gap: 6px;
-    height: 24px;
-    margin-top: var(--wf-s-1);
-    padding: 0 10px;
-    border: 1px solid var(--wf-line-2);
-    border-radius: var(--wf-r-ctl);
-    background: var(--wf-surface);
-    font: 600 var(--wf-fs-12) / 1 var(--wf-font);
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
 
   .phoneBody {
@@ -731,9 +980,15 @@
   .phoneSec {
     margin: var(--wf-s-4) 0 var(--wf-s-2);
     color: var(--wf-ink-3);
-    font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
-    letter-spacing: 0.06em;
+    font: 650 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    letter-spacing: var(--wf-tr-caps);
     text-transform: uppercase;
+  }
+
+  /* WH4 polish: the status pill sits under the name with a little air. */
+  .phonePill {
+    align-self: flex-start;
+    margin-top: var(--wf-s-1);
   }
 
   .phoneKv {
@@ -942,5 +1197,134 @@
     flex: 1 0 auto;
     min-height: auto;
     overflow: visible;
+  }
+}
+
+/* WH1 (Josh, 3 Nov 2026): the footer is the Capacity drawer's dark band, with one filled step full
+   width and the plain steps under it. Text inside reads in the band's own inks; the More list's
+   pop-up keeps the page's inks. */
+.drawer {
+  --band-ink-2: var(--wf-ink-2);
+  --band-ink-3: var(--wf-ink-3);
+}
+
+.footBand.footBand {
+  border-top: 0;
+  background: linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
+  color: var(--wf-hero-ink);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  --wf-ink-2: var(--wf-hero-ink-2);
+  --wf-ink-3: var(--wf-hero-ink-3);
+}
+
+.footBand :global([role="menu"]) {
+  --wf-ink-2: var(--band-ink-2);
+  --wf-ink-3: var(--band-ink-3);
+}
+
+.footBand :is(a, button):focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+.footBand .footDestination {
+  color: var(--wf-hero-ink-2);
+}
+
+.footBand .footDestination strong {
+  color: var(--wf-hero-ink);
+}
+
+.footBand .footChange {
+  color: var(--wf-hero-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.footBand .footChange:hover {
+  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+}
+
+.footBand .footCriteria {
+  color: var(--wf-hero-ink-2);
+}
+
+.footBand [data-testid="ward-drawer-close-bed"] {
+  border-color: color-mix(in srgb, var(--wf-hero-ink) 20%, transparent);
+  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
+  color: var(--wf-hero-ink);
+  box-shadow: none;
+}
+
+.bandActions {
+  flex: 1 1 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.bandActions > :global(*) {
+  min-width: 0;
+}
+
+.bandMain.bandMain {
+  width: 100%;
+  min-height: 40px;
+  justify-content: center;
+}
+
+.bandRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.bandRow > :global(*) {
+  flex: 1 1 0;
+  min-width: max-content;
+  justify-content: center;
+}
+
+/* A quiet text button that opens a folded choice. */
+.quiet.quiet {
+  align-self: flex-start;
+}
+
+/* A pick one list wraps on every width. The kit's phone chips scroll sideways as a filter row,
+   which would hide most of the places a person can go. */
+.choice :global([role="group"]) {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.choice :global([role="group"] > button) {
+  max-width: 100%;
+  height: auto;
+  min-height: var(--wf-h-sm);
+  padding-block: 6px;
+  white-space: normal;
+  text-align: left;
+  line-height: var(--wf-lh-12);
+}
+
+/* The plain steps on the band share its width evenly, More included. */
+.bandRow :global(button) {
+  width: 100%;
+}
+
+/* Phone facts read as the desktop hero's small caps labels. */
+.phoneFacts .factLabel {
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+}
+
+@media (max-width: 46.4375rem) {
+  .choice :global([role="group"] > button) {
+    min-height: 40px;
   }
 }

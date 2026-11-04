@@ -228,7 +228,7 @@ describe("the Capacity screen", () => {
     renderScreen();
     const now = forecastFigure("Now");
     expect(now.value).toBe(gapWords(gapTotals.gap));
-    expect(now.sub).toBe(`${gapTotals.waiting} waiting · ${gapTotals.bedsThatFit} fit`);
+    expect(now.sub).toBe(`${gapTotals.waiting} waiting for ${gapTotals.bedsThatFit} beds that fit`);
   });
 
   it("draws every network ward exactly once on the bed map, with an honest ward count in the hero", () => {
@@ -271,20 +271,17 @@ describe("the Capacity screen", () => {
 
     for (const row of networkRows) {
       const [card] = cardsOf(row.unit);
-      // The card spells a known zero as a word too (its own capital, as it leads the line).
+      // Capacity issue 5 (Josh, 3 Nov 2026): the bed map card shows a known zero as the digit 0,
+      // replacing the 6 Sep ruling that spelt it "None". The drawer below keeps its word.
       const cardFigure = card?.querySelector("b")?.textContent?.trim() ?? "";
-      expect(cardFigure.toLowerCase(), `${row.unit.id}'s card does not show its ready count`).toBe(
-        countCellText(row.ready).toLowerCase(),
-      );
-      if (row.ready === 0) expect(cardFigure).not.toMatch(/0/u);
+      expect(cardFigure, `${row.unit.id}'s card does not show its ready count`).toBe(String(row.ready));
 
       const { figure } = bedsNow(openWardDrawer(row.unit));
       expect(figure, `${row.unit.id} has ${row.ready} ready bed(s) and its drawer does not say so`).toBe(
-        row.ready === 0 ? "none" : String(row.ready),
+        String(row.ready),
       );
-      // Both directions on the absence: the digit must not survive beside the word, or a figure
-      // reading "0 none" would pass while still making the claim the rule forbids.
-      if (row.ready === 0) expect(figure).not.toMatch(/0/u);
+      // Capacity issue 5 (Josh, 3 Nov 2026): a zero is the digit alone, never the word beside it.
+      if (row.ready === 0) expect(figure).not.toMatch(/none/iu);
     }
     /*
      * RETIRED 31 Oct 2026 with the network ward table: the per-ward locked-ready column. No single
@@ -355,8 +352,8 @@ describe("the Capacity screen", () => {
          * saying none; `undefined` is nobody having said. The branch above holds that half.
          */
         const text = cell.textContent?.trim() ?? "";
-        expect(text, `${row.unit.id} reports zero freeing and must say so in a word`).toBe("none");
-        expect(text, `${row.unit.id} kept the digit beside the word`).not.toMatch(/0/u);
+        expect(text, `${row.unit.id} reports zero freeing and must say 0 (Josh, 3 Nov 2026)`).toBe("0");
+        expect(text, `${row.unit.id} kept the old word beside the digit`).not.toMatch(/none/iu);
       } else {
         expect(cell, `${row.unit.id} should show its real figure ${row.freeing}`).toHaveTextContent(
           String(row.freeing),
@@ -394,8 +391,10 @@ describe("the Capacity screen", () => {
       const site = siteByCode(row.unit.siteCode);
       expect(site, `${row.unit.id}'s site code resolves to no site`).toBeDefined();
       const drawer = openWardDrawer(row.unit);
-      expect(drawer).toHaveAccessibleDescription(new RegExp(` · ${escapeRegExp(site!.service)}$`, "u"));
-      expect(drawer).not.toHaveAccessibleDescription(/No site matches|Service not recorded/u);
+      // The kit drawer (PanelDrawer) shows the place as the quiet line under the ward's name.
+      const place = drawer.querySelector("[data-drawer-head] h2 + p");
+      expect(place).toHaveTextContent(new RegExp(` · ${escapeRegExp(site!.service)}$`, "u"));
+      expect(place).not.toHaveTextContent(/No site matches|Service not recorded/u);
     }
   });
 
@@ -757,12 +756,13 @@ describe("tomorrow's beds forecast", () => {
     renderScreen();
     expect(forecastFigure("Tomorrow")).toEqual({
       value: gapWords(tomorrow!.likely),
-      sub: `${gapWords(tomorrow!.low)} to ${gapWords(tomorrow!.high)}`,
+      sub: `Could be ${gapWords(tomorrow!.low)} to ${gapWords(tomorrow!.high)}`,
     });
-    // 48 hours rests on softer dates, so it leads with the range and gives the likely figure under it.
+    // Capacity issue 3 (Josh, 3 Nov 2026): 48 hours leads with the likely figure, drawn softer, and
+    // gives the range under it.
     expect(forecastFigure("In 2 days")).toEqual({
-      value: `${gapWords(twoDays!.low)} to ${gapWords(twoDays!.high)}`,
-      sub: `Likely ${gapWords(twoDays!.likely)}`,
+      value: `Likely ${gapWords(twoDays!.likely)}`,
+      sub: `${gapWords(twoDays!.low)} to ${gapWords(twoDays!.high)}`,
     });
     // PR #423 prototype disclosure: the forecast states its limits. Since the redesign they sit in
     // its "How this is worked out" fold, under the visible "Estimate only".

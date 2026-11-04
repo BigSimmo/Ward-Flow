@@ -44,7 +44,7 @@ type WardScreenBedDrawerProps = {
   bedDrawerRef: RefObject<HTMLElement | null>;
   handleBedDrawerKeyDown: (event: KeyboardEvent<HTMLElement>) => void;
   moveStayOnBoard: (bedNumber: number) => void;
-  setActiveTab: Dispatch<SetStateAction<"attn" | "board" | "coming" | "out" | "beds" | "return">>;
+  setActiveTab: Dispatch<SetStateAction<"attn" | "board" | "coming" | "out" | "beds" | "referrals" | "return">>;
   raiseReferralGate: RoleGate;
   handleRaiseWardReferral: (bedOverride?: unknown) => void;
   fullWardReferralHref: (patientId?: string | undefined) => string;

@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WardClosurePanel } from "@/components/ward-management/capacity/ward-closure-panel";
@@ -46,7 +46,7 @@ const renderPanel = (unit: Unit) => {
 };
 
 function chooseStaffingAndClose() {
-  fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "staffing" } });
+  fireEvent.click(within(screen.getByTestId("ward-closure-reason")).getByRole("button", { name: "Staffing" }));
   fireEvent.click(screen.getByTestId("ward-closure-close"));
   fireEvent.click(screen.getByRole("button", { name: `Close ${UNIT.name}` }));
 }
@@ -65,19 +65,19 @@ describe("ward closure panel, two-tab conflict (P010)", () => {
     chooseStaffingAndClose();
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent(`Not recorded. ${UNIT.name} is already closed to admissions. Nothing was changed.`);
-    expect(screen.getByTestId("ward-closure-reason")).toHaveValue("staffing");
+    expect(screen.getByTestId("ward-closure-reason")).toHaveAttribute("data-value", "staffing");
     expect(refusal.dispatch).toHaveBeenCalledTimes(1);
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(retry).toHaveBeenCalledTimes(1);
     // It reads the board again; it does not send the close a second time.
     expect(refusal.dispatch).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
-    expect(screen.getByTestId("ward-closure-reason")).toHaveValue("staffing");
+    expect(screen.getByTestId("ward-closure-reason")).toHaveAttribute("data-value", "staffing");
   });
 
   it("names the reason already recorded when the board shows the other close", () => {
     const view = renderPanel(UNIT);
-    fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "staffing" } });
+    fireEvent.click(within(screen.getByTestId("ward-closure-reason")).getByRole("button", { name: "Staffing" }));
     act(() => view.rerender(CLOSED_BY_OTHER));
     const alert = screen.getByRole("alert");
     expect(alert).toHaveTextContent(`Not recorded. ${UNIT.name} was closed first: Infection outbreak, by Coordinator.`);
@@ -87,12 +87,14 @@ describe("ward closure panel, two-tab conflict (P010)", () => {
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     // Reopened later, the form comes back with the reason they chose.
     act(() => view.rerender(UNIT));
-    expect(screen.getByTestId("ward-closure-reason")).toHaveValue("staffing");
+    expect(screen.getByTestId("ward-closure-reason")).toHaveAttribute("data-value", "staffing");
   });
 
   it("stays quiet when the other close used the same reason", () => {
     const view = renderPanel(UNIT);
-    fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "infection_outbreak" } });
+    fireEvent.click(
+      within(screen.getByTestId("ward-closure-reason")).getByRole("button", { name: "Infection outbreak" }),
+    );
     act(() => view.rerender(CLOSED_BY_OTHER));
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
   });

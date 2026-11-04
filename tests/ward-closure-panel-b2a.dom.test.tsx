@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WardClosurePanel } from "@/components/ward-management/capacity/ward-closure-panel";
@@ -38,8 +38,8 @@ const renderPanel = () =>
   );
 
 function chooseAndConfirmClose() {
-  fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "staffing" } });
-  fireEvent.change(screen.getByTestId("ward-closure-reopen-after"), { target: { value: "8" } });
+  fireEvent.click(within(screen.getByTestId("ward-closure-reason")).getByRole("button", { name: "Staffing" }));
+  fireEvent.click(within(screen.getByTestId("ward-closure-reopen-after")).getByRole("button", { name: "In 8 hours" }));
   fireEvent.click(screen.getByTestId("ward-closure-close"));
   fireEvent.click(screen.getByRole("button", { name: `Close ${UNIT.name}` }));
 }
@@ -55,8 +55,8 @@ describe("ward closure panel B2a", () => {
     renderPanel();
     chooseAndConfirmClose();
     expect(screen.getByRole("heading", { name: `Close ${UNIT.name} to admissions` })).toBeInTheDocument();
-    expect(screen.getByTestId("ward-closure-reason")).toHaveValue("staffing");
-    expect(screen.getByTestId("ward-closure-reopen-after")).toHaveValue("8");
+    expect(screen.getByTestId("ward-closure-reason")).toHaveAttribute("data-value", "staffing");
+    expect(screen.getByTestId("ward-closure-reopen-after")).toHaveAttribute("data-value", "8");
   });
 
   it("clears the inputs once the ward has closed (P001)", () => {
@@ -64,8 +64,8 @@ describe("ward closure panel B2a", () => {
     chooseAndConfirmClose();
     fireEvent.click(screen.getByTestId("ward-closure-reopen"));
     fireEvent.click(screen.getByRole("button", { name: `Reopen ${UNIT.name}` }));
-    expect(screen.getByTestId("ward-closure-reason")).toHaveValue("");
-    expect(screen.getByTestId("ward-closure-reopen-after")).toHaveValue("");
+    expect(screen.getByTestId("ward-closure-reason")).toHaveAttribute("data-value", "");
+    expect(screen.getByTestId("ward-closure-reopen-after")).toHaveAttribute("data-value", "");
   });
 
   it("asks before reopening, and Cancel leaves the ward closed (P021)", () => {
@@ -79,26 +79,28 @@ describe("ward closure panel B2a", () => {
 
   it("keeps the chosen reason after the panel is left and opened again (P086)", async () => {
     const first = renderPanel();
-    fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "staffing" } });
-    fireEvent.change(screen.getByTestId("ward-closure-reopen-after"), { target: { value: "12" } });
+    fireEvent.click(within(screen.getByTestId("ward-closure-reason")).getByRole("button", { name: "Staffing" }));
+    fireEvent.click(
+      within(screen.getByTestId("ward-closure-reopen-after")).getByRole("button", { name: "In 12 hours" }),
+    );
     // The draft store saves after 500 ms of no change.
     await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
     first.unmount();
     renderPanel();
-    expect(screen.getByTestId("ward-closure-reason")).toHaveValue("staffing");
-    expect(screen.getByTestId("ward-closure-reopen-after")).toHaveValue("12");
+    expect(screen.getByTestId("ward-closure-reason")).toHaveAttribute("data-value", "staffing");
+    expect(screen.getByTestId("ward-closure-reopen-after")).toHaveAttribute("data-value", "12");
   });
 
   it("forgets the saved draft when both choices are put back (P086)", async () => {
     const first = renderPanel();
-    fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "staffing" } });
+    fireEvent.click(within(screen.getByTestId("ward-closure-reason")).getByRole("button", { name: "Staffing" }));
     await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
-    fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "" } });
+    fireEvent.click(within(screen.getByTestId("ward-closure-reason")).getByRole("button", { pressed: true }));
     await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
     first.unmount();
     renderPanel();
-    expect(screen.getByTestId("ward-closure-reason")).toHaveValue("");
-    expect(screen.getByTestId("ward-closure-reopen-after")).toHaveValue("");
+    expect(screen.getByTestId("ward-closure-reason")).toHaveAttribute("data-value", "");
+    expect(screen.getByTestId("ward-closure-reopen-after")).toHaveAttribute("data-value", "");
   });
 
   it("saves the same choices again after a close and a reopen (P086)", async () => {
@@ -106,12 +108,14 @@ describe("ward closure panel B2a", () => {
     chooseAndConfirmClose();
     fireEvent.click(screen.getByTestId("ward-closure-reopen"));
     fireEvent.click(screen.getByRole("button", { name: `Reopen ${UNIT.name}` }));
-    fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "staffing" } });
-    fireEvent.change(screen.getByTestId("ward-closure-reopen-after"), { target: { value: "8" } });
+    fireEvent.click(within(screen.getByTestId("ward-closure-reason")).getByRole("button", { name: "Staffing" }));
+    fireEvent.click(
+      within(screen.getByTestId("ward-closure-reopen-after")).getByRole("button", { name: "In 8 hours" }),
+    );
     await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
     first.unmount();
     renderPanel();
-    expect(screen.getByTestId("ward-closure-reason")).toHaveValue("staffing");
-    expect(screen.getByTestId("ward-closure-reopen-after")).toHaveValue("8");
+    expect(screen.getByTestId("ward-closure-reason")).toHaveAttribute("data-value", "staffing");
+    expect(screen.getByTestId("ward-closure-reopen-after")).toHaveAttribute("data-value", "8");
   });
 });

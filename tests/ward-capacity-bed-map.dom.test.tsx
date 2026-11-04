@@ -11,6 +11,7 @@ import { CapacityWardSidebar } from "@/components/ward-management/capacity/capac
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { BED_RELEASE_BLOCKED_LABEL } from "@/components/ward-management/ward-derivations";
 import { bedMapCards, bedMapGroup, bedMapRegion, bedSquares, bedSquaresOf } from "./helpers/capacity-ward-table";
 
 /**
@@ -80,7 +81,8 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
   /**
    * The map must draw exactly as many squares of each kind as the derivations report, per ward —
    * walked over every real unit, not one hand-picked example. Pulled beds share the occupied
-   * square ("Occupied or pulled") since the redesign.
+   * square ("In use") since the redesign, and a square coloured by its discharge state (C4) is still
+   * an in-use square.
    */
   it("draws exactly as many squares of each kind as bedStates reports, for every ward", () => {
     expect(
@@ -152,10 +154,14 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
     renderScreen();
     const legend = within(bedMapRegion()).getByLabelText("Bed map key");
     expect(within(legend).getByText(/^Ready$/u)).toBeInTheDocument();
-    expect(within(legend).getByText(/^Occupied or pulled$/u)).toBeInTheDocument();
+    expect(within(legend).getByText(/^In use$/u)).toBeInTheDocument();
     expect(within(legend).getByText(/^Closed$/u)).toBeInTheDocument();
-    // "Held" means only a bed kept for a patient on leave, which is never a square of its own.
-    expect(within(legend).queryByText(/Held|Blocked/u)).toBeNull();
+    // C4 (Josh, 4 Nov 2026): in-use beds by discharge state, with the release flag's own label.
+    expect(within(legend).getByText(/^Confirmed out$/u)).toBeInTheDocument();
+    expect(within(legend).getByText(/^Expected out$/u)).toBeInTheDocument();
+    expect(within(legend).getByText(new RegExp(`^${BED_RELEASE_BLOCKED_LABEL}$`, "u"))).toBeInTheDocument();
+    // "Held" alone means only a bed kept for a patient on leave, which is never a square of its own.
+    expect(within(legend).queryByText(/\bHeld\b(?! up)|Blocked/u)).toBeNull();
   });
 
   it("hides the decorative squares from assistive technology and states each ward's beds in words", () => {
@@ -163,7 +169,7 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
     for (const { ward, card } of cardsByWard()) {
       const strip = card.querySelector("i")?.parentElement;
       expect(strip, ward.unit.id).toHaveAttribute("aria-hidden", "true");
-      expect(card.textContent ?? "", ward.unit.id).toMatch(new RegExp(`${ward.ready || "None"}\\s*ready`, "u"));
+      expect(card.textContent ?? "", ward.unit.id).toMatch(new RegExp(`${ward.ready}\\s*ready`, "u"));
       expect(card, ward.unit.id).toHaveTextContent(`${ward.occupied} of ${ward.unit.beds} occupied`);
     }
   });
@@ -185,21 +191,18 @@ describe("Capacity bed map — the network's whole bed supply, one square per be
   });
 
   /**
-   * ⚠️ ZERO READS "none", NEVER "0" — the rule this whole screen applies to Ready and Locked
-   * (`ward-capacity-zero-spelling.dom.test.tsx`, census §8). Floored on a real ward actually having
-   * a zero ready count so the word branch is exercised against real data.
-   *
-   * 🔴 Fails on the redesign as first built: `WardCard` in `capacity-bed-map-cards.tsx` draws the
-   * bare figure (`<b>{ward.ready}</b> ready`). Left failing for the owner to rule on, not retired.
+   * Capacity issue 5 (Josh, 3 Nov 2026): the bed map shows a zero ready count as the digit 0, the
+   * same way it shows every other count. This replaces the 6 Sep 2026 ruling that spelt it "None".
+   * Floored on a real ward actually having a zero ready count so the zero branch is exercised.
    */
-  it("states a ward's zero ready count as 'none', never a bare '0'", () => {
+  it("states a ward's zero ready count as the digit 0, never the word 'none'", () => {
     const zeroReady = seededWards.filter((ward) => ward.ready === 0);
     expect(zeroReady.length, "no ward has a zero ready count — this guard proves nothing").toBeGreaterThan(0);
     renderScreen();
     for (const { ward, card } of cardsByWard()) {
       if (ward.ready !== 0) continue;
-      expect(card, ward.unit.id).toHaveTextContent(/none ready/iu);
-      expect(card.textContent ?? "", `${ward.unit.id} kept a bare 0 beside "ready"`).not.toMatch(/\b0\s*ready/u);
+      expect(card, ward.unit.id).toHaveTextContent(/\b0\s*ready/u);
+      expect(card.textContent ?? "", `${ward.unit.id} still spells zero as a word`).not.toMatch(/none ready/iu);
     }
   });
 

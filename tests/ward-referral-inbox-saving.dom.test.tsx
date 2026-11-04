@@ -82,7 +82,10 @@ describe("referral inbox answers while saving (P053)", () => {
     const inbox = within(screen.getByRole("region", { name: "Ward referral inbox" }));
     const accept = inbox.getByRole("button", { name: "Accept referral" });
     const waitlist = inbox.getByRole("button", { name: "Waiting list" });
-    fireEvent.change(inbox.getByLabelText("Decline reason"), { target: { value: "no_suitable_bed" } });
+    // WH10 (3 Nov 2026): the decline reason is a kit choice, not a browser drop-down.
+    fireEvent.click(
+      within(inbox.getByRole("group", { name: "Decline reason" })).getByRole("button", { name: "No suitable bed" }),
+    );
     const decline = inbox.getByRole("button", { name: "Decline referral" });
     expect(accept).not.toHaveAttribute("aria-disabled");
 
