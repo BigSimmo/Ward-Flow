@@ -39,7 +39,7 @@ export function PatientFlightHeader({
   patient?: Patient & { confidential?: boolean };
   displayToday: Date;
   isLiveBedflow: boolean;
-  /** Not active records use a light hero: no stepper, no timers and no red. */
+  /** Not active records: the same band hero, with no stepper, no timers and no red. */
   quiet?: boolean;
   /** The mode, as a glyph and words beside the name. */
   statePill?: ReactNode;
@@ -114,7 +114,9 @@ export function PatientFlightHeader({
     <div className={styles.v6HeroWrap} data-testid="ward-person-identity" data-quiet={quiet}>
       <Hero
         level={1}
-        className={quiet ? `${styles.v6Hero} ${styles.v6HeroQuiet}` : styles.v6Hero}
+        // Bug pass (4 Nov 2026): a not active record keeps the same dark band and title as an active
+        // one, as it already did on a phone; `quiet` still drops the stepper and timers.
+        className={styles.v6Hero}
         // The phone eyebrow carries the mode or the movement's tier, bed type and observation chip,
         // none of which the header says, so it stays drawn (Q153).
         phoneEyebrow="show"

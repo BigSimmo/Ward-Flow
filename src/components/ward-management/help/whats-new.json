@@ -95,8 +95,8 @@
     "line": "Cancel and reroute unfinished care transfers; clearer reload, partial-save and sign-in recovery."
   },
   {
-    "id": "2026-11-03-referrals-history-sheet",
+    "id": "2026-11-03-one-alerts-switch",
     "date": "2026-11-03",
-    "line": "Referrals: wait-chart dots group with a hover card, History rows have next steps, and one Referral sheet has tabs."
+    "line": "Settings has one Alerts on this device switch, and Test alert shows a sample alert here in Ward Flow."
   }
 ]
