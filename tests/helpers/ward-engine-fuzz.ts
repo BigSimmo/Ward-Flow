@@ -1476,7 +1476,9 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     }),
   ],
   [
-    0.5,
+    // Raised from 0.5 on 4 Nov 2026: the gap list and Tier 1 undo builders thinned the draw so far
+    // that 1000 seeds no longer reached an accepted handover sign-off undo.
+    1.5,
     (state) => {
       const record = (state.undoRecords ?? []).findLast(
         (candidate) => candidate.kind === "step" && candidate.undoType === "UNDO_SITE_HANDOVER_SIGN_OFF",
