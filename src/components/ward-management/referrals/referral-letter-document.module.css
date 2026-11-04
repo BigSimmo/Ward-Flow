@@ -1,10 +1,11 @@
-/* RF2 (4 Nov 2026): the referral letter as paper. White in both themes so the preview matches the PDF. */
+/* RF2 (4 Nov 2026): the referral letter as paper. Shell tokens follow the theme on screen and are
+ * forced light in print (ward-flow-shell-tokens.module.css), so the PDF is always ink on white. */
 .paper {
-  --letter-ink: #14181f;
-  --letter-ink-2: #4a5160;
-  --letter-ink-3: #6b7280;
-  --letter-line: #e3e6eb;
-  --letter-tint: #f5f6f8;
+  --letter-ink: var(--ink);
+  --letter-ink-2: var(--ink-soft);
+  --letter-ink-3: var(--muted);
+  --letter-line: var(--line);
+  --letter-tint: var(--surface-2);
   display: grid;
   gap: var(--wf-s-4);
   max-width: 46rem;
@@ -12,7 +13,7 @@
   padding: var(--wf-s-6);
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-lg);
-  background: #fff;
+  background: var(--surface);
   box-shadow: var(--wf-e1);
   color: var(--letter-ink);
   font-family: var(--wf-font);
@@ -59,9 +60,9 @@
 .toConfirm {
   margin: 0;
   padding: var(--wf-s-2) var(--wf-s-3);
-  border: 1px solid color-mix(in srgb, var(--wf-warning) 40%, #fff);
+  border: 1px solid var(--warn-border);
   border-radius: var(--wf-r-sm);
-  background: color-mix(in srgb, var(--wf-warning) 10%, #fff);
+  background: var(--warn-soft);
   color: var(--letter-ink);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
