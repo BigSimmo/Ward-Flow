@@ -47,6 +47,7 @@ import {
   movementBelongsToService,
   noRecordedServiceMovementCount,
   referralBelongsToService,
+  unitHealthService,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
 import { homeChipFigures, openEdJourneys } from "@/components/ward-management/ward-shared-figures";
@@ -592,10 +593,18 @@ export function CoordinatorScreen() {
   // Plan item 2i (proposal): every hero figure follows the chosen service. With a service chosen the
   // hero's Act now is the alerts on that service's movements plus its accepted referrals awaiting a
   // pull (`toPull`, already scoped); All services keeps the shared Act now figure (Q260).
-  const heroActNow = isInServiceScope
-    ? actEntries.filter((entry) => entry.movement !== undefined && isInServiceScope(entry.movement)).length +
-      toPull.length
-    : actNowCount;
+  // An alert with no movement (an absence on a stay with no movement, Codex #1380) is scoped by its
+  // stay's ward; one with neither a movement nor a stay stays in, as the Home lists show it (#1361).
+  const actEntryInScope = (entry: QueueEntry): boolean => {
+    if (!isInServiceScope || service === null) return true;
+    if (entry.movement) return isInServiceScope(entry.movement);
+    const stayId = admissionIdOfInboxId(entry.item.id);
+    const stay = stayId !== undefined ? admissions.find((candidate) => candidate.id === stayId) : undefined;
+    const ward = stay ? units.find((unit) => unit.id === stay.unitId) : undefined;
+    const wardService = ward ? unitHealthService(ward) : undefined;
+    return wardService === undefined || wardService === service;
+  };
+  const heroActNow = isInServiceScope ? actEntries.filter(actEntryInScope).length + toPull.length : actNowCount;
   const chosenAlert = selectedAlertId ? alertEntries.find((entry) => entry.item.id === selectedAlertId) : undefined;
   const releaseAlert = releaseAlertId ? alertEntries.find((entry) => entry.item.id === releaseAlertId) : undefined;
   const waitEntries = alertEntries.filter((entry) => entry.group === "wait");
