@@ -435,7 +435,12 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     const strip = page.getByRole("region", { name: "Emergency department pressure" });
     const cards = strip.locator('[data-testid^="ward-ed-"]');
-    await expect(cards).toHaveCount(10);
+    // Josh, 3 Nov 2026 (appraisal 8): EDs that need nothing fold into one "no wait" line, so every
+    // ED is still on the strip, as a tile or named in the folded line.
+    const folded = strip.getByTestId("ward-home-ed-clear");
+    const foldedIds = (await folded.count()) ? ((await folded.getAttribute("data-ed-ids")) ?? "").split(" ") : [];
+    expect((await cards.count()) + foldedIds.filter(Boolean).length).toBe(10);
+    expect(await cards.count()).toBeGreaterThan(0);
 
     // The worst department leads, and says why it is worst.
     const worst = cards.first();
