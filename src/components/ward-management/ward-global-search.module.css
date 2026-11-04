@@ -1449,3 +1449,9 @@ a.askChip {
   display: none;
   stroke-width: 1.75;
 }
+
+/* The arrow keys' choice stays visible on the Top hit card and the Go to tiles. */
+.popup.popup .groupItem[data-goto] .option[data-active] {
+  background: color-mix(in srgb, var(--wf-accent) 14%, transparent);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--wf-accent) 45%, transparent);
+}

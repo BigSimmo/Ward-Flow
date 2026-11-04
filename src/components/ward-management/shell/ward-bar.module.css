@@ -4194,7 +4194,7 @@
     color: var(--wf-ink-3);
   }
 
-  /* Clear: a small grey circle with a cross, inside the capsule, with a 40px tap cover. */
+  /* Clear: a small grey circle with a cross, inside the capsule, with a 48px tap cover. */
   .bar.bar.bar.bar
     .searchWrap
     :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-clear"]) {
@@ -4217,7 +4217,7 @@
     :global([data-testid="ward-global-search"][data-open] [data-testid="ward-global-search-clear"])::after {
     content: "";
     position: absolute;
-    inset: -9px;
+    inset: -13px;
   }
 
   .bar.bar.bar.bar
