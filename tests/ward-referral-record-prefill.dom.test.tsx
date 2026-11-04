@@ -154,7 +154,9 @@ describe("the referral slide-out", () => {
     const notice = screen.getByTestId("ward-referral-open-journey");
     expect(notice).toHaveTextContent(`Already on an open ED journey at ${journeyEd.name}`);
     expect(notice).toHaveTextContent("starts a second journey");
-    expect(screen.getByTestId("ward-referral-summary-rail")).toHaveTextContent("Already openYes");
+    expect(screen.getByTestId("ward-referral-summary-rail")).toHaveTextContent(
+      `Already openOpen ED movement at ${journeyEd.name}`,
+    );
     fireEvent.click(screen.getByRole("button", { name: `Refer from ${journeyEd.name}` }));
     expect(screen.queryByTestId("ward-referral-open-journey")).not.toBeInTheDocument();
   });
