@@ -107,13 +107,16 @@ const CLAIMS = [
     //
     // 2026-10-27: twenty-one. P093 (Capacity bed-map squares link to their ward's bed board) adds
     // tests/ward-capacity-bed-map-links.dom.test.tsx; require that named addition too.
+    //
     // 2026-11-02: twenty-three. The audited Capacity refresh receipt and reduced-motion
     // regression tests add two files; retain exact count and require both named additions.
-    // 2026-11-04: twenty-five. Capacity C1 to C7 adds tests/ward-capacity-day-bars-focus.dom.test.tsx
-    // and tests/ward-capacity-heat-map-roving.dom.test.tsx; require both named additions too.
+    //
+    // 2026-11-04: twenty-five. Capacity C3 (#1360) adds tests/ward-capacity-day-bars-focus.dom.test.tsx
+    // and tests/ward-capacity-heat-map-roving.dom.test.tsx for keyboard and tap forecast detail;
+    // require both named additions too.
     claim:
       "tests/ward-capacity-* was FOURTEEN files when the plan claimed fifteen; twenty-five now for unrelated " +
-      "reasons (D9 added one on 2026-09-12, the WF-27 controls test one on 2026-09-16, C1 service-scope on 2026-09-17, Ward capacity-confirmation form on 2026-10-01, capacity review on 2026-10-06, v10 Capacity table view on 2026-10-10, one CSS-text pin retired on 2026-10-18, scroll-performance regression on 2026-10-24, bed-map links on 2026-10-27, refresh receipt and scroll-motion regressions on 2026-11-02, Capacity day-bars focus and heat-map roving on 2026-11-04), which does not make the plan's figure right",
+      "reasons (D9 added one on 2026-09-12, the WF-27 controls test one on 2026-09-16, C1 service-scope on 2026-09-17, Ward capacity-confirmation form on 2026-10-01, capacity review on 2026-10-06, v10 Capacity table view on 2026-10-10, one CSS-text pin retired on 2026-10-18, scroll-performance regression on 2026-10-24, bed-map links on 2026-10-27, refresh receipt and scroll-motion regressions on 2026-11-02, two forecast-detail tests on 2026-11-04), which does not make the plan's figure right",
     check: () => {
       const n = existsSync(p("tests"))
         ? readdirSync(p("tests")).filter((f) => f.startsWith("ward-capacity")).length

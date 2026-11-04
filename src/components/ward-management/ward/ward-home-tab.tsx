@@ -33,8 +33,7 @@ import {
 import { eligibility } from "@/components/ward-management/ward-eligibility";
 import { referralFit, wardStateLine } from "./ward-referral-fit";
 import { AwaitingFitLines, AwaitingIdentity, WardReferralDetailDrawer } from "./ward-awaiting-referral";
-import { WardAcceptDialog } from "./ward-answer-accept-dialog";
-import { OverrideRegister } from "@/components/ward-management/override-register";
+import { OverrideRegister, WardAcceptDialog } from "./ward-on-demand";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { ArrowLeftRight, BedSingle, ChevronRight, LayoutGrid, List, ListChecks } from "lucide-react";

@@ -130,12 +130,11 @@ import {
   WardDischargeNotices,
 } from "./ward-screen-lazy";
 import { WardScreenReferralsTab } from "./ward-screen-referrals-tab";
-import { WardScreenDecisionJobs } from "./ward-screen-decision-jobs";
 import { moveBetweenWardTabs, WardScreenTopBar } from "./ward-screen-top-bar";
 import { wardBedRoster, wardLiveFormAlerts } from "./ward-screen-derivations";
 import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placement";
 import { WardScreenHomeSection } from "./ward-screen-home-section";
-import { WardAcceptDialog } from "./ward-answer-accept-dialog";
+import { WardAcceptDialog, WardScreenDecisionJobs } from "./ward-on-demand";
 import type { DecisionReport } from "./ward-decisions-cockpit";
 import { formatDateOfBirth } from "@/components/ward-management/ward-patients";
 import { WardScreenBedDrawer } from "./ward-screen-overlays";
