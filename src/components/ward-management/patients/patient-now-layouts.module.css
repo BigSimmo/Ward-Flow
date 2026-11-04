@@ -190,3 +190,23 @@
   flex: none;
   color: var(--wf-ink-3);
 }
+
+/* Tap to call (Josh, 3 Nov 2026): the number is the link, in accent ink, with the Copy beside it. */
+.tel {
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+  text-decoration: none;
+  min-height: 24px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.tel:hover {
+  text-decoration: underline;
+}
+
+.tel:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}

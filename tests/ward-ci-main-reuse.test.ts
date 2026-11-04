@@ -83,9 +83,9 @@ function evidence(overrides: Record<string, unknown> = {}) {
 describe("main-push reuse decision", () => {
   it("reads the shard and group counts the workflow declares", () => {
     expect(counts).toEqual({
-      "unit shard": 6,
-      "legal-figure sweep": 6,
-      "browser group": 3,
+      "unit shard": 4,
+      "legal-figure sweep": 4,
+      "browser group": 2,
       coverage: 1,
       "production build": 1,
       "release gate": "at least one",
@@ -287,13 +287,25 @@ describe("main-push reuse decision", () => {
         greenJobs().filter((job) => job.name !== "Ward Flow unit shard 3"),
         counts,
       ),
-    ).toMatch(/5 of 6 unit shard/u);
+    ).toMatch(/3 of 4 unit shard/u);
     expect(
       runEvidenceGap(
         greenJobs().filter((job) => job.name !== "Ward Flow browser journeys 2"),
         counts,
       ),
-    ).toMatch(/2 of 3 browser group/u);
+    ).toMatch(/1 of 2 browser group/u);
+    // A run recorded under the old six-shard, three-group layout proves a different split: run fresh.
+    const oldLayout = [
+      ...greenJobs(),
+      ...[5, 6].map((shard) =>
+        passedJob(
+          `Ward Flow unit shard ${shard}`,
+          "Run reconciled unit suite shard",
+          "Confirm the legal-figure sweep ran",
+        ),
+      ),
+    ];
+    expect(runEvidenceGap(oldLayout, counts)).toMatch(/6 of 4 unit shard/u);
     const jobs = greenJobs().map((job) =>
       job.name === "Ward Flow required" ? { ...job, conclusion: "failure" } : job,
     );

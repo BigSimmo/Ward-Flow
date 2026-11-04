@@ -201,9 +201,10 @@ describe("patient record save identity and confirmation", () => {
     fireEvent.change(screen.getByLabelText("Expected back time"), { target: { value: "23:59" } });
     fireEvent.click(screen.getByRole("button", { name: "Record leave" }));
     expect(control.calls).toHaveLength(1);
-    const statusDischarge = screen.queryByRole("button", { name: /^(Set|Change) discharge date$/ });
-    expect(statusDischarge).not.toBeNull();
-    fireEvent.click(statusDischarge!);
+    // PT1 round 3: the discharge date opens from the ward's action row or the Next step button.
+    const dischargeControls = screen.queryAllByRole("button", { name: /^((Set|Change|Update) )?discharge date$/i });
+    expect(dischargeControls.length).toBeGreaterThan(0);
+    for (const control of dischargeControls) fireEvent.click(control);
     expect(screen.getByLabelText("Expected back time")).toHaveValue("23:59");
     expect(screen.queryByLabelText("Expected discharge time")).toBeNull();
     await act(async () => control.finish!({ commandId: "synthetic-accepted", status: "accepted" }));

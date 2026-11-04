@@ -630,6 +630,23 @@ const JOBS: readonly HowTo[] = [
     ],
   },
   {
+    id: "patient-safety-facts",
+    topic: "Finding your way",
+    title: "Check a patient's legal status and risk",
+    keywords: "legal form observation obs risk flags alert interpreter diagnosis patient page band",
+    answer:
+      "Open the patient. The dark band at the top shows Legal, Observation and Risk flags, and Alerts when there is one. Risk flags come from the referral, with its date. The working diagnosis is under Details.",
+    desks: CLINICAL_DESKS,
+    needs: "search",
+    showMe: [
+      {
+        target: { sel: '[data-testid="ward-patient-glance"]' },
+        title: "Safety at a glance",
+        body: "Legal opens the forms. A health alert opens Details.",
+      },
+    ],
+  },
+  {
     id: "pin-ward",
     topic: "Finding your way",
     title: "Pin a ward to my menu",
