@@ -23,7 +23,10 @@ import {
   type BedsReadySummary,
   type MeetingRow,
 } from "./referral-board-parts";
-import { Button, Segmented, Sheet, TierTile, cx } from "@/components/wf";
+import { Button, Segmented, Sheet, TierTile, buttonClass, cx } from "@/components/wf";
+import Link from "next/link";
+import { BED_MEETING_AGENDA_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import styles from "./referral-board.module.css";
 
 import s from "./bed-meeting-sheet.module.css";
@@ -100,6 +103,8 @@ export function BedMeetingSheet({
   now: Instant;
   summary: BedsReadySummary;
 }) {
+  // The agenda opens for the bed coordinator (Decision 46), so only that desk is offered the link.
+  const agendaOpen = useEffectiveWardAccess().role === "coordinator";
   const filtered = highlightedIds ? rows.filter((row) => highlightedIds.has(row.referral.id)) : rows;
   const [chosen, setChosen] = useState<"filtered" | "all">("filtered");
   const showing = highlightedIds && chosen === "filtered" ? "filtered" : "all";
@@ -118,14 +123,24 @@ export function BedMeetingSheet({
         setChosen("filtered");
         onClose();
       }}
-      title="Bed meeting list"
-      description={`${scopeLabel} · longest wait first, tier breaks ties`}
+      title="Referrals for the bed meeting"
+      description={`${scopeLabel} · waiting a decision, longest wait first`}
       contentClassName={styles.meetingSheet}
       footer={
         <div className={styles.sheetFoot}>
           <Button variant="ghost" size="sm" onClick={onClose}>
             Close
           </Button>
+          {/* R5 (Josh, 3 Nov 2026): one meeting list. This is its referrals part; the agenda holds all of it. */}
+          {agendaOpen ? (
+            <Link
+              href={BED_MEETING_AGENDA_HREF}
+              className={buttonClass({ variant: "sec", size: "sm" })}
+              data-testid="ward-referral-meeting-open-agenda"
+            >
+              Open full agenda
+            </Link>
+          ) : null}
           <CopyButton text={meetingText(shown, now, heading)} label={`Copy ${shown.length}`} />
         </div>
       }
@@ -156,6 +171,10 @@ export function BedMeetingSheet({
           </span>
         ))}
       </div>
+      <p className={s.note} data-testid="ward-referral-meeting-part-of-agenda">
+        The referrals part of the bed meeting. The agenda adds ED waits, pulled beds, stranded stays and out of area,
+        with an owner for each action. Handover is the shift-change list of every patient.
+      </p>
       {withheld > 0 ? (
         <p className={s.note}>
           <Lock size={12} aria-hidden="true" /> {withheld} {withheld === 1 ? "row hides" : "rows hide"} where the person
@@ -194,7 +213,7 @@ export function BedMeetingSheet({
             {shown.map((row, index) => (
               <tr key={row.referral.id} data-overdue={isOverdue(row.referral, now) ? "true" : undefined}>
                 <td className={cx(styles.mono, styles.deskOnly)}>{index + 1}</td>
-                <td>
+                <td className={s.tier}>
                   <TierTile tier={row.referral.urgency} />
                 </td>
                 <td>

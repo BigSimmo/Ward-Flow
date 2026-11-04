@@ -2,8 +2,10 @@
 // Settings round 3 (mock-up, 30 Oct 2026): the Alerts tab. A copy of AlertsPane
 // (src/components/ward-management/settings/settings-panes.tsx) with a short readiness card in the
 // empty right-hand column. The card does not repeat the switches: it counts how many of the four ways
-// an alert reaches this browser are ready, gives the one next step, and sends a real test
-// notification. "Applies now" is plain words, as on the other tabs. Nothing here is stored.
+// an alert reaches this browser are ready, gives the one next step, and sends a test alert. S7
+// notifications (Josh, 3 Nov 2026): Browser notifications and Phone alerts are one switch,
+// "Alerts on this device", and the test shows here in Ward Flow, plus a browser notification when
+// the browser allows one. "Applies now" is plain words, as on the other tabs. Nothing here is stored.
 
 import { useEffect, useState } from "react";
 import { Bell, Play, Radar } from "lucide-react";
@@ -11,6 +13,7 @@ import { Bell, Play, Radar } from "lucide-react";
 import type { NotificationSupport } from "@/components/ward-management/shell/ward-act-now-notifications";
 import { phonePushRow, standaloneApp, type PhonePushState } from "@/components/ward-management/shell/ward-phone-push";
 import { SettingsInstallHint } from "@/components/ward-management/settings/settings-install-hint";
+import { DeviceAlertsRow } from "@/components/ward-management/settings/settings-panes";
 import { Button, Card, CardHead, SrOnly, StatusGlyph, Switch, buttonClass } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
@@ -20,9 +23,8 @@ import { SettingRow } from "./settings-rows";
 export function SettingsAlertsPane({
   notifications,
   permission,
-  onNotificationsChange,
   phonePush,
-  onPhonePushChange,
+  onAlertsChange,
   buzz,
   onBuzzChange,
   onTestBuzz,
@@ -31,9 +33,9 @@ export function SettingsAlertsPane({
 }: {
   notifications: boolean;
   permission: NotificationSupport;
-  onNotificationsChange: (next: boolean) => void;
   phonePush: PhonePushState;
-  onPhonePushChange: (next: boolean) => void;
+  /** The one Alerts switch: turns browser and phone alerts on or off together. */
+  onAlertsChange: (next: boolean) => void;
   buzz: boolean;
   onBuzzChange: (next: boolean) => void;
   onTestBuzz: () => void;
@@ -57,56 +59,35 @@ export function SettingsAlertsPane({
       ? "Allow notifications for this site in the browser's settings, then turn them on here."
       : permission === "unsupported"
         ? "This browser cannot show notifications. The buzz sound still plays while Ward Flow is open."
-        : "Turn on Browser notifications."
+        : "Turn on Alerts on this device."
     : !buzz
       ? "Turn on Buzz sound."
       : "Act-now alerts will reach you while Ward Flow is open here.";
 
+  // Always shows in Ward Flow; also as a browser notification when the browser allows one.
   const sendTest = () => {
-    if (!browserOn || typeof Notification === "undefined") {
-      showToast("Turn on Browser notifications first.", "warning");
-      return;
+    let shown = false;
+    if (permission === "granted" && typeof Notification !== "undefined") {
+      try {
+        new Notification("Ward Flow test alert", { body: "Synthetic test. Nothing needs doing." });
+        shown = true;
+      } catch {
+        // The in-app test still shows.
+      }
     }
-    try {
-      new Notification("Ward Flow test alert", { body: "Synthetic test. Nothing needs doing." });
-      showToast("Test alert sent to this browser.");
-    } catch {
-      showToast("This browser did not show the test alert.", "warning");
-    }
+    showToast(shown ? "Test alert shown here and in the browser." : "Test alert shown here. Nothing needs doing.");
   };
 
   return (
     <>
       <Card aria-labelledby="alerts-title">
         <CardHead iconPlain id="alerts-title" icon={Bell} title="Alerts" />
-        <SettingRow
-          setting="browser-notifications"
-          title="Browser notifications"
-          sub={
-            permission === "unsupported"
-              ? "Not available in this browser"
-              : permission === "denied"
-                ? "Blocked for this site in the browser"
-                : "New act-now alerts, while this tab is open"
-          }
-          testId="setting-browser-notifications-row"
-        >
-          <Switch
-            checked={browserOn}
-            onCheckedChange={onNotificationsChange}
-            label={<SrOnly>Browser notifications</SrOnly>}
-          />
-        </SettingRow>
-        <SettingRow setting="phone-alerts" title="Phone alerts" sub={phoneRow.sub} testId="setting-phone-alerts-row">
-          <Switch
-            checked={phoneRow.checked}
-            unavailable={phoneRow.unavailable}
-            onCheckedChange={(on) => {
-              if (!phoneRow.unavailable) onPhonePushChange(on);
-            }}
-            label={<SrOnly>Phone alerts</SrOnly>}
-          />
-        </SettingRow>
+        <DeviceAlertsRow
+          notifications={notifications}
+          permission={permission}
+          phonePush={phonePush}
+          onChange={onAlertsChange}
+        />
         <SettingsInstallHint />
         {phoneQuick ? null : (
           <SettingRow setting="buzz" title="Buzz sound" sub="Chime on an urgent buzz" testId="setting-buzz-alert-row">

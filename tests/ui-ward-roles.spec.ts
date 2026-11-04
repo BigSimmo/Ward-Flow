@@ -730,8 +730,9 @@ test.describe("@mockup Emergency department screen", () => {
     const formExpiryLines = page.locator('[data-testid^="ward-ed-form-expiry-"]');
     expect(await formExpiryLines.count()).toBeGreaterThan(0);
 
-    // A department can raise a referral.
-    await expect(page.getByTestId("ward-ed-raise-referral-toggle")).toBeVisible();
+    // A department can raise a referral: off the phone from the app bar's New referral (deep audit, 4 Nov 2026).
+    await expect(page.getByTestId("ward-bar-primary-action")).toBeVisible();
+    await expect(page.getByTestId("ward-ed-raise-referral-toggle")).toHaveCount(0);
   });
 
   /**
@@ -972,8 +973,9 @@ test.describe("@mockup Emergency department screen", () => {
     await page.waitForLoadState("networkidle");
     await expect(page.getByTestId("ward-ed-governance")).toBeVisible();
     // Audit round 2 (option B, 13 Oct 2026): Raise referral opens the one shared referral slide-out
-    // rather than an inline ED form, so raising a referral is that slide-out here.
-    await page.getByTestId("ward-ed-raise-referral-toggle").click();
+    // rather than an inline ED form, so raising a referral is that slide-out here. Off the phone the
+    // app bar's New referral is the one button for it (deep audit, 4 Nov 2026).
+    await page.getByTestId("ward-bar-primary-action").click();
     const referralSheet = page.getByTestId("ward-bar-referral-sheet");
     await expect(referralSheet).toBeVisible();
     await expect(page.getByRole("region", { name: "This department's patients" })).toBeVisible();

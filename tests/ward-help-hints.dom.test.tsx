@@ -7,6 +7,23 @@ vi.mock("../src/components/ward-management/help/ward-help-store", async (origina
   useTourRole: () => route.role,
   useTourSeen: () => route.toured,
 }));
+const deskHomes = vi.hoisted(() => ({
+  coordinator: "/ward-flow",
+  ward: "/ward-flow/ward/synthetic-ward",
+  ed: "/ward-flow/ed/synthetic-ed",
+  community: "/ward-flow/community/synthetic-team",
+  officer: "/ward-flow/transport/officer",
+  bed_manager: "/ward-flow/capacity",
+  executive: "/ward-flow/statistics",
+  admin: "/ward-flow/settings",
+}));
+vi.mock("../src/components/ward-management/help/ward-tour-facts", () => ({
+  useTourFacts: () => ({
+    facts: {},
+    home: route.role === "admin" ? "/ward-flow/governance" : deskHomes[route.role as keyof typeof deskHomes],
+    deskHome: deskHomes[route.role as keyof typeof deskHomes],
+  }),
+}));
 import {
   HELP_HINTS_KEY,
   markHelpHint,
@@ -36,6 +53,24 @@ async function settle() {
   });
 }
 describe("quiet first-visit Help hints", () => {
+  it.each(Object.entries(deskHomes))(
+    "keeps %s home quiet after Not now, while allowing later-screen guidance",
+    async (role, home) => {
+      route.role = role;
+      route.path = home;
+      route.toured = false;
+      localStorage.setItem("ward_flow_choice_tour_auto_done", role);
+      const ui = render(<WardHelpHints />);
+      await settle();
+      expect(screen.queryByTestId("ward-help-hint")).toBeNull();
+      expect(localStorage.getItem(HELP_HINTS_KEY)).toBeNull();
+      route.path = role === "admin" ? "/ward-flow/governance" : "/ward-flow/settings";
+      ui.rerender(<WardHelpHints />);
+      await settle();
+      // Every desk, the access admin included, gets help on a screen that is not its landing screen.
+      expect(screen.getByTestId("ward-help-hint")).toBeTruthy();
+    },
+  );
   it("stores only known role and topic ids and refuses raw paths or text", () => {
     expect(
       parseHelpHints(
@@ -92,17 +127,19 @@ describe("quiet first-visit Help hints", () => {
     expect(screen.getByTestId("ward-help-hint").textContent).toContain("Open Settings, then Display.");
     expect(screen.getByTestId("ward-help-hint").textContent).not.toContain("Change a rule");
   });
+  // The access admin lands on Settings, so its later screen is Governance.
   it.each(["coordinator", "ward", "ed", "community", "officer", "bed_manager", "executive", "admin"])(
     "a tour offered to any desk on this device permits later-screen guidance (G3, role=%s)",
     async (role) => {
-      route.path = "/ward-flow/settings";
+      const later = role === "admin" ? "governance" : "settings";
+      route.path = `/ward-flow/${later}`;
       route.role = role;
       route.toured = false;
       localStorage.setItem("ward_flow_choice_tour_auto_done", "yes");
       render(<WardHelpHints />);
       await settle();
       expect(screen.getByTestId("ward-help-hint")).toBeTruthy();
-      expect(localStorage.getItem(HELP_HINTS_KEY)).toBe(`${role}:settings`);
+      expect(localStorage.getItem(HELP_HINTS_KEY)).toBe(`${role}:${later}`);
     },
   );
   it("shows a page's tip once per device, whichever desk saw it (G3)", async () => {

@@ -92,6 +92,22 @@ describe("bedMeetingSheet agrees with the screens it summarises", () => {
     expect(sheet.delays.total).toBe(groups.reduce((sum, group) => sum + group.movements.length, 0));
   });
 
+  it("lists the waiting people once, longest first, across ED waits and delays", () => {
+    const { people, morePeople } = sheet.waitingLongest;
+    const ids = people.map((person) => person.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(people.length).toBeLessThanOrEqual(BED_MEETING_ROW_LIMIT);
+    const waits = people.map((person) => person.waitMinutes);
+    expect(waits).toEqual([...waits].sort((a, b) => b - a));
+    const everyone = new Set([
+      ...edOpenSummaries(wardMovements, NOW_ANCHOR).flatMap((summary) => summary.open.map((movement) => movement.id)),
+      ...delayGroups(wardMovements.filter(isOpen), units, NOW_ANCHOR, DEFAULT_DUE_SOON_THRESHOLDS).flatMap((group) =>
+        group.movements.map((movement) => movement.id),
+      ),
+    ]);
+    expect(people.length + morePeople).toBe(everyone.size);
+  });
+
   it("a chosen service narrows capacity to that service's wards", () => {
     const service = unitHealthService(units[0]);
     expect(service).toBeDefined();

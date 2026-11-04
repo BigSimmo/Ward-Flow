@@ -1,0 +1,43 @@
+import "@testing-library/jest-dom/vitest";
+import { render, screen } from "@testing-library/react";
+import { describe, expect, it } from "vitest";
+
+import { placeTrackLabels, WaitTrack } from "@/components/ward-management/alerts/alerts-visuals";
+
+/**
+ * AL1 (bug pass, 4 Nov 2026): on a long transport wait the "Transport accepted" mark sits near the
+ * track's start, and the label centred on it ran off the card's left edge. Labels now read away
+ * from the nearest edge and drop below the line when they would meet the one before. jsdom has no
+ * layout, so the track uses its 366px fallback width.
+ */
+describe("Recorded times track labels", () => {
+  it("reads from the mark rightwards when the mark is near the start", () => {
+    render(<WaitTrack points={[{ at: 600, label: "Transport accepted", shape: "wait" }]} now={1200} />);
+    const label = screen.getByText("Transport accepted");
+    expect(label).toHaveAttribute("text-anchor", "start");
+    expect(Number(label.getAttribute("x"))).toBeGreaterThanOrEqual(6);
+  });
+
+  it("ends at the mark when the mark is near the end", () => {
+    const [placed] = placeTrackLabels([{ x: 360, label: "Transport accepted" }], 366);
+    expect(placed.anchor).toBe("end");
+    expect(placed.x).toBeLessThanOrEqual(360);
+  });
+
+  it("centres a label with room either side", () => {
+    const [placed] = placeTrackLabels([{ x: 183, label: "Booked" }], 366);
+    expect(placed).toEqual({ x: 183, y: 10, anchor: "middle" });
+  });
+
+  it("drops a label below the line when it would meet the one before", () => {
+    const [first, second] = placeTrackLabels(
+      [
+        { x: 150, label: "Transport booked" },
+        { x: 170, label: "Transport accepted" },
+      ],
+      366,
+    );
+    expect(first.y).toBe(10);
+    expect(second.y).toBe(46);
+  });
+});

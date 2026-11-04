@@ -1,21 +1,9 @@
 /*
- * The Home placement drawer (H7 to H10, approved by Josh 3 Nov 2026). Built on the patient
- * pop-up's own styles (`movements/movement-drawer.module.css`); these add the eyebrow, the chosen
- * alert line (H8), the task body that holds the real placement panel, and the pinned foot slot.
+ * The Home placement drawer (H7 to H10, approved by Josh 3 Nov 2026). The frame, head, eyebrow,
+ * fact grid and light foot band are the kit's `PanelDrawer` (`wf/drawer.module.css`); these add the
+ * chosen alert line (H8), the task body that holds the real placement panel, and the foot slot.
  * Neutral borders only, tone in the glyph and a light tint, no side stripes (D-94).
  */
-
-.panel {
-  /* The same width as the patient pop-up on tablet and desktop. */
-  width: min(100%, 30rem);
-}
-
-.eyebrow {
-  margin: 0 0 2px;
-  font-size: var(--wf-fs-12);
-  font-weight: 600;
-  color: var(--wf-ink-3);
-}
 
 /* H8: the chosen alert, one tinted block under the head, never a card of its own. */
 .alert {
@@ -67,7 +55,6 @@
 }
 
 .alertMeta {
-  font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
 }
 
@@ -102,17 +89,8 @@
 /* The foot: the panel's next step or Refer arrives in `.slot`. Polish (Josh, 3 Nov 2026): a light
    surface band instead of the navy one, so the drawer ends quietly. One filled primary, its partner
    as a plain secondary beside it, and the record links as small text links under them. */
-.foot.foot {
-  position: sticky;
-  bottom: 0;
-  z-index: 1;
-  margin-top: auto;
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-3) var(--wf-s-4) max(var(--wf-s-3), env(safe-area-inset-bottom, 0px));
-  border-top: 1px solid var(--wf-line);
-  background: var(--wf-surface);
-  box-shadow: 0 -10px 24px -18px color-mix(in srgb, var(--wf-ink-1) 40%, transparent);
-  color: var(--wf-ink-1);
+.foot.foot .wide {
+  min-height: 40px;
 }
 
 .foot.foot .slot:empty {
@@ -233,12 +211,6 @@
   opacity: 0.55;
 }
 
-.foot.foot :is(a, button, select):focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-  box-shadow: none;
-}
-
 /* The record links: small text links under the actions, never a second row of buttons. */
 .foot.foot .links.links {
   justify-content: center;
@@ -269,17 +241,59 @@
   display: none;
 }
 
-/* The drawer body's named region (tests and journeys find Placement by it). It fills the body so
-   the foot band can sit at the bottom when the content is short. */
-.region {
-  display: flex;
-  flex: 1 0 auto;
-  flex-direction: column;
-}
-
 /* A service is chosen, but the shortlist still weighs every ward in the network. */
 .networkNote {
   margin: var(--wf-s-2) var(--wf-s-4) 0;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
+}
+
+/* Appraisal, 3 Nov 2026: the six-dot stepper becomes a slim stage meter in the wait block, so the
+   decision (the ward list) starts higher. Six segments, done and current filled, and the stage named. */
+.stage {
+  display: grid;
+  gap: var(--wf-s-1);
+  margin: var(--wf-s-2) 0 0;
+}
+
+.stageBars {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stageBars li {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--wf-line-2);
+}
+
+.stageBars li[data-state="done"] {
+  background: color-mix(in srgb, var(--wf-accent) 55%, var(--wf-line-2));
+}
+
+.stageBars li[data-state="current"] {
+  background: var(--wf-accent);
+}
+
+.stageLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.stageLine strong {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+/* In the drawer the destination line only restated the alert and the ward groups below it. */
+.task.task :global([data-testid="ward-shortlist-no-destination"]) {
+  display: none;
 }

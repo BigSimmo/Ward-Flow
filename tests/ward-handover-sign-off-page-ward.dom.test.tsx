@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { useEffect } from "react";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
@@ -44,10 +44,10 @@ function renderAtDesk(access: WardAccess, search = "") {
     </WardFlowProvider>,
   );
   // 10:00, so the 15:00 handover is the one open for sign-off. 1 Nov 2026 redesign: the handover
-  // is chosen from one menu, and the sign-off checklist opens from the bar at the foot of the sheet.
+  // is chosen from one menu; 3 Nov 2026: the sign-off checklist opens from the hero's Sign off.
   fireEvent.click(screen.getByTestId("ward-handover-shift"));
   fireEvent.click(screen.getByRole("menuitemradio", { name: /15:00/ }));
-  fireEvent.click(within(screen.getByTestId("ward-handover-sign-bar")).getByRole("button", { name: "Open checklist" }));
+  fireEvent.click(screen.getByTestId("ward-handover-hero-sign-off"));
 }
 
 // Decision 41 (Josh, 31 Oct 2026): the Handover page names the ward whose sheet it signs off.

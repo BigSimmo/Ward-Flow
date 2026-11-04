@@ -74,14 +74,14 @@ describe("settings screen: every Preview control says it is not wired", () => {
   // Site review (12 Oct 2026): the coordinator is never shown a greyed or refused control. A Preview
   // control works like any other (D-16): it is not aria-disabled, and pressing it says
   // "<name> is not wired in this prototype." The only aria-disabled controls left are a wired
-  // stepper at its bound and Phone alerts, whose row says why (tests/ward-phone-push.dom.test.tsx).
+  // stepper at its bound and Alerts on this device, whose row says why (tests/ward-phone-push.dom.test.tsx).
   it.each(SECTIONS.map((name) => ({ name })))("$name: no Preview control is greyed", ({ name }) => {
     renderSettings();
     const pane = sectionPane(name);
     const greyed = Array.from(pane.querySelectorAll<HTMLElement>('[aria-disabled="true"], [disabled]')).filter(
       (control) =>
         !/^(Increase|Decrease) /.test(control.getAttribute("aria-label") ?? "") &&
-        !control.closest("[data-setting='phone-alerts']") &&
+        !control.closest("[data-setting='device-alerts']") &&
         // A form's own submit waits for its field, and says so beside it.
         control.getAttribute("type") !== "submit",
     );

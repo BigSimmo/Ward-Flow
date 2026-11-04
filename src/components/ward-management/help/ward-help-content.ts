@@ -112,6 +112,22 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       "Record the legal status and the tentative diagnosis block, if known.",
       "Send it. Each destination answers on its own.",
     ],
+    questions: [
+      {
+        question: "How do I use the suggested catchment?",
+        answer:
+          "Choose Use this catchment to accept the team, region and service area from the suburb, or Change to pick another.",
+      },
+      {
+        question: "How do I keep or discard a referral I have not sent?",
+        answer: "Close it and choose Keep draft and close or Discard. A kept draft reopens in this tab.",
+      },
+      {
+        question: "How do I add a new patient while making a referral?",
+        answer:
+          "In the Patient step choose Add patient, fill in the four starred fields, then Add and use for this referral.",
+      },
+    ],
   },
   handover: {
     title: "Handover",
@@ -211,7 +227,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     purpose: "Every open movement with a legal form, and the expiry time a person typed from that form.",
     actions: [
       "Times are as typed from the paper form. Ward Flow does not work out legal periods, and the times are not legally checked.",
-      "Switch between Clocks, Checklist and History. Choose a patient to see their form.",
+      "Switch between On a form, Checklist and History. Each row names its next step. Choose a patient to see their form.",
       "Use Record next form when a new form is written. Record and tell lists who to let know.",
     ],
   },
@@ -303,11 +319,11 @@ const PAGE_HELP: readonly PageHelp[] = [
     id: "add-patient",
     path: /^\/ward-flow\/people\/new$/u,
     title: "Add patient",
-    purpose: "Adds a new invented patient record with identity only. The referral or movement holds the rest.",
+    purpose: "Adds a new invented patient record. Only the core details are needed.",
     actions: [
-      "Fill in UMRN, date of birth, given name and family name.",
+      "Fill in family name, given name, date of birth and UMRN. Everything else is optional.",
       "Read the Duplicate check first, so one person does not get two records.",
-      "Choose Add patient to open the new record, or Register & start referral to go straight to a referral.",
+      "Choose Add patient to open the new record, or Add and start referral to go straight to a referral.",
     ],
   },
   {
@@ -528,6 +544,13 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
       "An ED performance target set in Settings, counted from when the patient's wait began. It is not a legal deadline.",
   },
   { term: "Fit to travel", meaning: "The ED doctor's recorded medical clearance. It is needed before transport." },
+  {
+    // The full road-distance caveat (ward-reference-distances.ts). The shortlist shows a short line
+    // and links here (Josh, 3 Nov 2026). A test keeps the two in step.
+    term: "Road distance",
+    meaning:
+      "Indicative road distance measured on public map data. Not live traffic, and not a clinical travel time. Ward lists are never sorted by it.",
+  },
 
   {
     term: "Catchment",

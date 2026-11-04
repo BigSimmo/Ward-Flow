@@ -1,0 +1,157 @@
+/* The kit's long-list picker (list-picker.tsx). The field box is the kit's form box (form.module.css);
+   the panel is popover glass (overlay.module.css). Tokens only. */
+
+.root {
+  position: relative;
+  min-width: 0;
+}
+
+/* The field button inside the kit box: the chosen label, or the placeholder in the quiet ink. */
+.trigger {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.trigger:disabled {
+  cursor: not-allowed;
+}
+
+.triggerText {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.placeholder {
+  color: var(--wf-ink-3);
+}
+
+.disabled {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+}
+
+/* Desktop and tablet popover: at least as wide as the field, scrolling inside its own list. */
+.panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: var(--z-popover, 95);
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  width: max(100%, min(280px, calc(100vw - 16px)));
+  max-width: min(420px, calc(100vw - 16px));
+  box-sizing: border-box;
+  padding: var(--wf-s-1);
+  border-radius: var(--wf-r-lg);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.search {
+  padding: var(--wf-s-1) var(--wf-s-1) 0;
+}
+
+.list {
+  max-height: 320px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  outline: none;
+}
+
+.list:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.phoneList {
+  max-height: none;
+  overflow: visible;
+}
+
+.sheetSearch {
+  padding: 0 var(--wf-s-4);
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-h-md);
+  padding: var(--wf-s-1) var(--wf-s-2);
+  box-sizing: border-box;
+  border-radius: var(--wf-r-sm);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  cursor: pointer;
+}
+
+/* The keyboard or pointer row: the kit hover fill with the focus ring drawn inside it. */
+.active {
+  background: var(--wf-hover);
+  box-shadow:
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
+}
+
+.option[aria-selected="true"] {
+  font-weight: 600;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 16px;
+  width: 16px;
+  color: var(--wf-ink-1);
+}
+
+/* Names wrap in full, never cut. */
+.optionLabel {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow-wrap: anywhere;
+}
+
+.optionHint {
+  flex: 0 0 auto;
+  max-width: 45%;
+  margin-left: auto;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  text-align: right;
+}
+
+.clearRow {
+  margin-top: var(--wf-s-1);
+  border-top: 1px solid var(--wf-line);
+  border-radius: 0 0 var(--wf-r-sm) var(--wf-r-sm);
+  color: var(--wf-ink-2);
+}
+
+.empty {
+  margin: 0;
+  padding: var(--wf-s-2);
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+/* Phone: rows reach the kit's 44px phone field height. */
+@media (max-width: 46.4375rem) {
+  .option {
+    min-height: 2.75rem;
+  }
+}
+
+@media (forced-colors: active) {
+  .active {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+  }
+}

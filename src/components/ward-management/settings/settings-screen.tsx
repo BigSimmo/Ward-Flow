@@ -54,7 +54,9 @@ import {
   useActNowNotificationPreference,
   type NotificationSupport,
 } from "@/components/ward-management/shell/ward-act-now-notifications";
+import { phonePushRow } from "@/components/ward-management/shell/ward-phone-push";
 import { usePhonePush } from "@/components/ward-management/shell/ward-phone-push-switch";
+import { changeDeviceAlerts } from "@/components/ward-management/settings/settings-device-alerts";
 import {
   Avatar,
   Badge,
@@ -239,6 +241,8 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   const [actNowNotifications] = useActNowNotificationPreference();
   const [notificationPermission, setNotificationPermission] = useState<NotificationSupport>("default");
   const [phonePush, setPhonePush] = usePhonePush();
+  // The latest on or off asked of the one Alerts switch (`changeDeviceAlerts`).
+  const alertsWanted = useRef<boolean | null>(null);
   useEffect(() => {
     const refresh = () => {
       setNotificationPermission(notificationSupport());
@@ -897,39 +901,16 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       phoneQuick={phoneQuick}
       notifications={actNowNotifications}
       permission={notificationPermission}
-      onNotificationsChange={(next) => {
-        if (!next) {
-          setActNowNotificationPreference(false);
-          showToast("Browser notifications off.");
-          return;
-        }
-        void enableActNowNotifications().then((answer) => {
-          setNotificationPermission(answer);
-          showToast(
-            answer === "granted"
-              ? "Browser notifications on for act-now alerts."
-              : answer === "unsupported"
-                ? "This browser cannot show notifications."
-                : "Notifications are blocked for this site in the browser.",
-          );
-        });
-      }}
       phonePush={phonePush}
-      onPhonePushChange={(next) => {
-        void setPhonePush(next).then((answer) => {
-          showToast(
-            answer === "on"
-              ? "Phone alerts on for this device."
-              : answer === "off"
-                ? "Phone alerts off for this device."
-                : answer === "denied"
-                  ? "Notifications are blocked for this site in the browser."
-                  : answer === "server-off"
-                    ? "Phone alerts are not set up on the server yet."
-                    : answer === "role"
-                      ? "Phone alerts are not part of your role."
-                      : "Phone alerts could not be changed. Try again.",
-          );
+      onAlertsChange={(next) => {
+        void changeDeviceAlerts(next, {
+          phone: phonePushRow(phonePush),
+          wanted: alertsWanted,
+          setBrowserPreference: setActNowNotificationPreference,
+          enableBrowser: enableActNowNotifications,
+          onPermission: setNotificationPermission,
+          setPhone: setPhonePush,
+          toast: showToast,
         });
       }}
       buzz={audioBuzz}
@@ -1102,8 +1083,8 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   if (isPhone) {
     const areaSummary: Record<SettingsSection, string> = {
       rules: readOnlyWords === null ? "ED and placement, form warnings, reply targets" : "Read only",
-      alerts: `Browser notifications ${actNowNotifications ? "on" : "off"} · buzz ${audioBuzz ? "on" : "off"}`,
-      display: `Sidebar, motion ${reducedMotion ? "reduced" : "on"}, contrast ${highContrast ? "high" : "standard"}`,
+      alerts: `Alerts on this device ${actNowNotifications || phonePushRow(phonePush).checked ? "on" : "off"} · buzz ${audioBuzz ? "on" : "off"}`,
+      display: `Theme, density, motion ${reducedMotion ? "reduced" : "on"}, contrast ${highContrast ? "high" : "standard"}`,
       access: "Roles, approvals and requests",
       data: "Rules file, bug report copy, reference tables",
       you: `${deskProfile.role} · ${deskProfile.location}`,
@@ -1272,7 +1253,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
                 : sheetTab === "access"
                   ? "Each change asks for your password again"
                   : sheetTab === "display" || sheetTab === "alerts"
-                    ? "Saves at once · this browser only"
+                    ? "Saves at once · this device only"
                     : undefined
             }
             primary={

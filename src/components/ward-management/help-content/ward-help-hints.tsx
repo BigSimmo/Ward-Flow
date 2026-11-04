@@ -8,6 +8,7 @@ import { ROLE_SCREENS, screenForPath } from "../ward-role-access";
 import { WARD_HOME_HREF } from "../ward-nav";
 import { ADMIN_SETTINGS_HELP, screenHelpFor } from "../help/ward-help-content";
 import { openWardHelp } from "../help/ward-help-events";
+import { useTourFacts } from "../help/ward-tour-facts";
 import { useCornerCardEscape } from "../help/use-corner-card-escape";
 import { parseTourAutoDone, TOUR_AUTO_DONE_STORAGE_KEY } from "../help/ward-tour-auto-start";
 import { parseTourSeen, useTourRole, useTourSeen } from "../help/ward-help-store";
@@ -65,12 +66,12 @@ export function markHelpHint(role: WardTourRole, topic: string): boolean {
     return false;
   }
 }
-function hintsAllowed(toured: boolean, topic: string | undefined) {
+function hintsAllowed(toured: boolean, topic: string | undefined, onHome: boolean) {
   if (helpTipsOff()) return false;
   if (toured) return true;
   // A declined tour still permits hints on later screens, never another prompt on its home. The tour
   // is offered once per device (G3), so any desk's offer counts.
-  if (!topic || topic === "command") return false;
+  if (!topic || topic === "command" || onHome) return false;
   try {
     return parseTourAutoDone(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY) ?? "").length > 0;
   } catch {
@@ -99,6 +100,10 @@ export function WardHelpHints() {
 
 function WardHelpHintForView({ pathname, role }: { pathname: string; role: WardTourRole }) {
   const toured = useTourSeen(role);
+  const { home, deskHome } = useTourFacts(role);
+  // The access admin's tour walks Governance but the desk lands on Settings: only the landing screen
+  // stays quiet, so a declined tour still leaves tips on its other screen (Josh, 3 Nov 2026).
+  const onHome = role === "admin" ? pathname === deskHome : pathname === home || pathname === deskHome;
   const phone = useIsPhone();
   const [blocked, setBlocked] = useState(true);
   const [offered, setOffered] = useState<string | null>(null);
@@ -129,13 +134,13 @@ function WardHelpHintForView({ pathname, role }: { pathname: string; role: WardT
     };
   }, []);
   useEffect(() => {
-    if (blocked || !topic || !screen || !ROLE_SCREENS[role][screen] || !hintsAllowed(toured, topic)) return;
+    if (blocked || !topic || !screen || !ROLE_SCREENS[role][screen] || !hintsAllowed(toured, topic, onHome)) return;
     const timer = window.setTimeout(() => {
       if (!obstructed() && markHelpHint(role, topic)) setOffered(key);
     }, 1500);
     return () => window.clearTimeout(timer);
-  }, [toured, blocked, topic, screen, role, key]);
-  const showing = Boolean(help && !blocked && offered === key && hintsAllowed(toured, topic));
+  }, [toured, blocked, topic, screen, role, key, onHome]);
+  const showing = Boolean(help && !blocked && offered === key && hintsAllowed(toured, topic, onHome));
   // Escape is "Got it".
   useCornerCardEscape(showing, () => setOffered(null));
   if (!help || !showing) return null;
