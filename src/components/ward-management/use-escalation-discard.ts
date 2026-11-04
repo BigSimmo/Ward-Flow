@@ -23,12 +23,15 @@ export function useEscalationDiscard({
   setContact,
   approveNextHistoryNavigation,
   dismissalGuardRef,
+  pending = false,
 }: {
   hasUnsavedEscalation: boolean;
   setEscalating: Dispatch<SetStateAction<string | null>>;
   setContact: Dispatch<SetStateAction<string>>;
   approveNextHistoryNavigation: () => void;
   dismissalGuardRef?: RefObject<DismissalGuard | null>;
+  /** A save in flight keeps the form open: nothing is discarded or closed until it settles. */
+  pending?: boolean;
 }) {
   const dirtyEscalationRef = useRef(hasUnsavedEscalation);
   useEffect(() => {
@@ -37,6 +40,7 @@ export function useEscalationDiscard({
 
   const discardEscalation = useCallback<DismissalGuard>(
     (retry) => {
+      if (pending) return false;
       const clear = () => {
         // The shell can recheck within this event, before React commits the cleared draft below.
         dirtyEscalationRef.current = false;
@@ -59,7 +63,7 @@ export function useEscalationDiscard({
       clear();
       return true;
     },
-    [setEscalating, setContact],
+    [pending, setEscalating, setContact],
   );
 
   const confirmDrawerDismissal = useCallback<DismissalGuard>(

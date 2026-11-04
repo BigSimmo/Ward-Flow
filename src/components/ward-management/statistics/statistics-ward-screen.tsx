@@ -57,6 +57,7 @@ import { STAY_BANDS, daysInBed, stayBand, type Admission } from "@/components/wa
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { MINUTES_PER_DAY, dayOf, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { SMALL_NUMBER_NOT_SHOWN } from "@/components/ward-management/ward-access-scope";
+import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
@@ -258,7 +259,11 @@ function OperationalWardScreen({
 
   const site = useMemo(() => (unit ? siteByCode(unit.siteCode) : undefined), [unit]);
   const statistics = useMemo(() => (unit ? wardStatistics(unit.id, admissions, now) : null), [unit, admissions, now]);
-  const capacity = useMemo(() => (unit ? unitCapacity(unit, bedReleases) : null), [unit, bedReleases]);
+  const capacity = useMemo(
+    () =>
+      unit ? { ...unitCapacity(unit, bedReleases), available: readyBedsNow(unit, admissions, bedReleases) } : null,
+    [unit, admissions, bedReleases],
+  );
   const pendingPreparation = useMemo(
     () => (unit ? bedsPendingPreparation(unit.id, bedReleases) : 0),
     [unit, bedReleases],

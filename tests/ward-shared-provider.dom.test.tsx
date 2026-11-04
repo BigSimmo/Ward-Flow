@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, configure, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   WardDataModeSlot,
@@ -14,6 +14,7 @@ import { WardAccountActions } from "../src/components/ward-management/shell/ward
 import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow-reducer";
 import { AlertsScreen } from "../src/components/ward-management/alerts/alerts-screen";
 import { eventLogEntryFor } from "../src/components/ward-management/ward-event-log";
+import type { WardCommandOutcome } from "../src/components/ward-management/ward-shared-client";
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import {
   giveCover,
@@ -31,6 +32,8 @@ import {
   EMPTY_DOCUMENTATION,
   ReferralDocumentLinks,
 } from "../src/components/ward-management/referrals/referral-flow-panels";
+
+configure({ getElementError: (message) => new Error(message?.split("\n")[0] ?? "Query failed") });
 
 /** A stand-in for the menu a header passes the pill (the executive chrome's Demo sheet). */
 function StubDemoMenu() {
@@ -307,7 +310,12 @@ describe("shared provider boundary", () => {
     expect(draft).toHaveValue("keep this draft");
     resetWardAccessStoreForTests();
   });
-  it.each([true, false])("shows the confirmed shared broadcast outcome (accepted: %s)", (accepted) => {
+  it.each([true, false])("shows the confirmed shared broadcast outcome (accepted: %s)", async (accepted) => {
+    let finish!: (outcome: WardCommandOutcome) => void;
+    const completion = new Promise<WardCommandOutcome>((resolve) => {
+      finish = resolve;
+    });
+    vi.mocked(fake.connection!.dispatch).mockReturnValueOnce(completion);
     const tree = () => (
       <WardFlowProvider>
         <AlertsScreen />
@@ -334,6 +342,19 @@ describe("shared provider boundary", () => {
     fake.connection = { ...fake.connection!, eventLog: [eventLogEntryFor(dispatched, accepted)] };
     rerender(tree());
     expect(fake.connection.snapshot!.revision).toBe(revision);
+    // An event-log entry alone cannot acknowledge this command.
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-alerts-broadcast-confirm")).toHaveAttribute("aria-disabled", "true");
+    expect(screen.queryByRole("status", { name: "Broadcast feedback" })).toBeNull();
+    expect(screen.queryByRole("alert", { name: "Broadcast feedback" })).toBeNull();
+    await act(async () => {
+      finish({
+        commandId: "shared-broadcast-command",
+        status: accepted ? "accepted" : "refused",
+        isCurrent: () => true,
+      });
+      await completion;
+    });
     if (accepted) {
       expect(screen.queryByRole("dialog")).toBeNull();
       expect(screen.getByRole("status", { name: "Broadcast feedback" })).toHaveTextContent(

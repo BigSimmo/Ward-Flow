@@ -7,11 +7,11 @@ import {
   type Admission,
 } from "@/components/ward-management/ward-admissions";
 import { observationSummary } from "@/components/ward-management/ward-observation";
-import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
+import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree, openBedsFree, numberedBedKind } from "@/components/ward-management/ward-bed-designation";
 import { OVERRIDE_REASONS, RELEASE_PULL_REASONS } from "@/components/ward-management/ward-change-reasons";
 import { heldUnitAuthorisationRefusal } from "@/components/ward-management/ward-held-legal-check";
-import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
+import { pulledBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import {
   EXTRA_TRAVEL_HOLD_MINUTES,
@@ -195,10 +195,13 @@ export function reducePlacementEvent(
       if (unit.isClosed) {
         return reject(state, event, `${unit.name} is closed; a new bed cannot be reserved there`);
       }
-      const pullReady = boundedBedAvailability(unit).available;
+      const livePulled = state.admissions.filter(
+        (admission) => admission.unitId === unit.id && admission.state === "pulled" && admission.movementId !== null,
+      ).length;
+      const pullReady = pulledBedAvailability(unit, livePulled).ready;
       if (pullReady <= 0) {
         /**
-         * Audit 2 E-08 (Josh, 20 Oct 2026): a pull needs a Ready bed, `min(allocatable, empty)`,
+         * Audit A01: a new pull needs the same reservation-aware Ready figure as the ward,
          * the same figure the ward shows, so it cannot reserve a bed when the ward shows 0 Ready.
          * Reports only the two figures it read, never a cause: `CONFIRM_CAPACITY` sets allocatable
          * from a ward's self-report and `allocatable.source` cannot tell a pull from a correction.
@@ -221,7 +224,7 @@ export function reducePlacementEvent(
        * not hijack the no-free-bed case.
        */
       const pending = bedsPendingPreparation(unit.id, state.bedReleases);
-      if (pending > 0 && openBedsNow(unit, state.bedReleases) <= 0) {
+      if (pending > 0 && pullReady <= pending) {
         return reject(
           state,
           event,

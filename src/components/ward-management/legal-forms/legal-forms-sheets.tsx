@@ -206,8 +206,8 @@ export function RecordFormSheet({
   );
   const { clearDraft, draftRestored, draftSaved } = useDirtyStateGuard({
     storageKey: world && !world.sessionAdopted ? undefined : storageKey,
-    isDirty: !!timeOnForm || !!dateOnForm || dateUnread || !!draft.movement,
-    value: JSON.stringify({ ...draft, timeOnForm, dateOnForm }),
+    isDirty: !!timeOnForm || !!dateOnForm || dateUnread || !!draft.movement || !!region,
+    value: JSON.stringify({ ...draft, timeOnForm, dateOnForm, region }),
     onRestore: (raw) => {
       try {
         const restored: unknown = JSON.parse(raw);
@@ -229,6 +229,13 @@ export function RecordFormSheet({
         setTimeOnForm(restored.timeOnForm);
         // A draft saved before the date field existed has no date: blank means today.
         setDateOnForm("dateOnForm" in restored && typeof restored.dateOnForm === "string" ? restored.dateOnForm : "");
+        setRegion(
+          restored.form === "1A" &&
+            "region" in restored &&
+            (restored.region === "metro" || restored.region === "country")
+            ? restored.region
+            : "",
+        );
         return true;
       } catch {
         return false; /* A damaged form draft never becomes a legal record. */

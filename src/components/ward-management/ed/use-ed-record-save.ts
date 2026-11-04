@@ -123,7 +123,10 @@ export function useEdRecordSave({
         setMessageFor({ kind, movementId: event.movementId });
         setMessage(undefined);
         const outcome = dispatch(event);
-        if (!outcome || !("then" in outcome)) return outcome;
+        if (!outcome || !("then" in outcome)) {
+          if (outcome?.isCurrent && !outcome.isCurrent()) finish();
+          return outcome;
+        }
         return outcome.then((answer) => {
           if (current.current === started && answer.isCurrent && !answer.isCurrent()) finish();
           return answer;
@@ -214,5 +217,10 @@ export function useEdRecordSave({
           : undefined,
     };
   }
-  return { submitUrgencyChange, submitLegalStatusChange, submitReceiptCorrection, recordSaveState };
+  return {
+    submitUrgencyChange,
+    submitLegalStatusChange,
+    submitReceiptCorrection,
+    recordSaveState,
+  };
 }

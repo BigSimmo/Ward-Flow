@@ -493,7 +493,7 @@ export function useDischargeWorkspaceState({ initialAdmissionId }: { initialAdmi
     ? stageTone(recordStatus(activeRecord))
     : detailRelease
       ? detailRelease.blocker
-        ? "danger"
+        ? "warning"
         : detailRelease.state === "expected"
           ? "neutral"
           : "success"

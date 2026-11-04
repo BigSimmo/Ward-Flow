@@ -1,5 +1,7 @@
 "use client";
 
+import { wardScrollBehavior } from "../ward-scroll";
+
 import { useId, useRef, useState } from "react";
 
 import {
@@ -165,7 +167,9 @@ export function SeclusionScreen() {
     setChosen(id);
     // On a phone or narrow tablet the record sits under the table, so bring it into view.
     if (typeof window !== "undefined" && window.matchMedia?.("(max-width: 1099px)").matches)
-      requestAnimationFrame(() => recordRef.current?.scrollIntoView({ block: "start", behavior: "smooth" }));
+      requestAnimationFrame(() =>
+        recordRef.current?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() }),
+      );
   };
   const asAt = formatInstantWithDay(now, now);
   const available = plural(counts.available, "room", "rooms");

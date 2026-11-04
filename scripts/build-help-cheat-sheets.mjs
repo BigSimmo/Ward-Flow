@@ -3,14 +3,14 @@
 import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 /** Load the app's typed content with the project's existing build tool, without a browser or provider. */
 export async function readCheatSheets() {
   const { tsImport } = await import("tsx/esm/api");
   const contentModule = await tsImport(
-    path.join(root, "src/components/ward-management/help-content/ward-help-print.ts"),
+    pathToFileURL(path.join(root, "src/components/ward-management/help-content/ward-help-print.ts")).href,
     {
       parentURL: import.meta.url,
       tsconfig: path.join(root, "tsconfig.json"),

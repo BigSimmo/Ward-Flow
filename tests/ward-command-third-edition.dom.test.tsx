@@ -95,7 +95,7 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     // Home and Activity (Josh, 31 Oct 2026): "in transit" as the phone says it, and the demo
     // coverage disclosure lives in the app bar and the footer, so the hero keeps only its facts.
     expect(screen.getByTestId("ward-home-ed-population")).toHaveTextContent(
-      /^\d+ still in ED · \d+ in transit( · \d+\.\d% beds in use)?$/u,
+      /^\d+ still in ED · \d+ in transit( · (At risk )?\d+\.\d%( beds in use)?)?$/u,
     );
     // Home flow (Josh, 3 Nov 2026): the queue is the Flow card, a named region with one section per
     // stage and no heading of its own; Later today sits at the foot of the right column on desktop.
