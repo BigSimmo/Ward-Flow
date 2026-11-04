@@ -619,7 +619,7 @@ test.describe("@mockup phone navigation follows the stable header", () => {
       }
       if (collar) await expect(strip).not.toHaveCSS("box-shadow", "none");
       if (route === "/search") {
-        await expect(page.getByRole("tablist", { name: "Patients now or history" })).toBeVisible();
+        await expect(page.getByRole("radiogroup", { name: "Where people are now" })).toBeVisible();
         const bounds = await strip.boundingBox();
         const header = await bar.boundingBox();
         expect(bounds!.y).toBe(header!.y + header!.height);

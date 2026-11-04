@@ -1376,11 +1376,17 @@ tr:has(+ .moreRow) > td {
 }
 
 /* PS1: the phone state switch scrolls sideways rather than wrapping to two lines. */
+/* PS1: the state switch pins under the header, as the old Now and History tabs did, so a
+   coordinator deep in the list can still change state. */
 .phoneStates {
+  position: sticky;
+  top: var(--wf-header-height, 3.5rem);
+  z-index: 3;
   overflow-x: auto;
   scrollbar-width: none;
-  margin-inline: calc(var(--wf-s-1) * -1);
-  padding-inline: var(--wf-s-1);
+  margin: 0 calc(-1 * var(--wf-s-3));
+  padding: var(--wf-s-2) var(--wf-s-3);
+  background: var(--wf-canvas);
 }
 
 .phoneStates::-webkit-scrollbar {
