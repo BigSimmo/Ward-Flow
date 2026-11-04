@@ -113,3 +113,7 @@ export {
   parseTypedTime,
   type DateFieldProps,
 } from "./date-field";
+// Plan item 2j (Josh, 3 Nov 2026): a figure borrowed from its owning page links there, and one
+// that ignores the chosen service says "Network-wide" (scope from ward-figure-scope.ts, owners from ward-page-owners.ts).
+export { FigureLink, figureLinkName, wfNumClass, type FigureOwner } from "./figure-link";
+export { NETWORK_WIDE, ScopeNote } from "./figure-scope";

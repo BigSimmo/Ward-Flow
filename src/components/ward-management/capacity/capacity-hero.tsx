@@ -3,7 +3,18 @@
 import Link from "next/link";
 import { ChevronDown, Monitor, Printer } from "lucide-react";
 
-import { buttonClass, durMinutes, Hero, HeroChip, HeroStat, Menu, OccupancyRing, SrOnly } from "@/components/wf";
+import {
+  buttonClass,
+  durMinutes,
+  FigureLink,
+  Hero,
+  HeroChip,
+  HeroStat,
+  Menu,
+  OccupancyRing,
+  SrOnly,
+  wfNumClass,
+} from "@/components/wf";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { formatWardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { PageLiveChip } from "@/components/ward-management/ward-page-live";
@@ -11,9 +22,7 @@ import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { BED_MEETING_AGENDA_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
-import { FigureLink } from "@/components/wf/figure-link";
-import { PAGE_OWNERS } from "@/components/wf/page-owners";
-import figure from "@/components/wf/figure.module.css";
+import { PAGE_OWNERS } from "@/components/ward-management/shell/ward-page-owners";
 
 import type { Highlight } from "./capacity-bed-map-cards";
 import { isConfirmationFresh } from "./capacity-gap-words";
@@ -78,7 +87,7 @@ export function CapacityHero({
       titleMeta={
         isPhone ? (
           <>
-            {gapWords(gapTotals.gap)} for <span className={figure.wfNum}>{gapTotals.waiting}</span> needing a bed
+            {gapWords(gapTotals.gap)} for <span className={wfNumClass}>{gapTotals.waiting}</span> needing a bed
             {/* Kit rule a (Josh, 3 Nov 2026): Waiting owns the ED count, so it links there. */}
             {edWaiting ? (
               <>
@@ -86,7 +95,7 @@ export function CapacityHero({
                 <FigureLink
                   value={edWaiting.waiting}
                   label={`waiting in ${edWaiting.short}`}
-                  owner="waiting"
+                  owner={PAGE_OWNERS.waiting}
                   onHero
                   canOpen={canOpen(PAGE_OWNERS.waiting.route)}
                   data-testid="capacity-hero-ed-waiting-link"

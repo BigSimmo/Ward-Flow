@@ -1,14 +1,12 @@
+import type { FigureOwner } from "@/components/wf";
+
 /**
  * THE PAGES THAT OWN FIGURES (Josh, 3 Nov 2026, kit rule a). Each figure has one home page, named by
  * the job that page does. Any other page may repeat the figure at most twice, as the same live number
- * linking here (`FigureLink`), never reworded. `job` is the page's question, kept beside the route so
+ * linking here (the kit's `FigureLink`, passed `PAGE_OWNERS.<page>`), never reworded. `job` is the page's question, kept beside the route so
  * a new caller can check it has picked the right owner.
  */
-export type PageOwner = {
-  /** The route under `src/app/ward-flow` that owns the figure. */
-  route: string;
-  /** The page's name as the menu shows it, used in "open <name>". */
-  name: string;
+export type PageOwner = FigureOwner & {
   /** The one job the page does. */
   job: string;
 };
@@ -24,5 +22,3 @@ export const PAGE_OWNERS = {
   // `/ward-flow/transport` only redirects here (shell-19), so the owner is the officer's page itself.
   transport: { route: "/ward-flow/transport/officer", name: "Transport", job: "Get a booking for every pulled bed" },
 } as const satisfies Record<string, PageOwner>;
-
-export type PageOwnerKey = keyof typeof PAGE_OWNERS;

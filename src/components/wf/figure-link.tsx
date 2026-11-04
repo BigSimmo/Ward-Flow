@@ -2,16 +2,26 @@ import Link from "next/link";
 
 import { Badge } from "./badge";
 import { cx } from "./cx";
-import { PAGE_OWNERS, type PageOwnerKey } from "./page-owners";
 import styles from "./figure.module.css";
+
+/** Kit rule (Josh, 3 Nov 2026): Geist Mono, tabular, for a figure in a column, strip or time. */
+export const wfNumClass = styles.wfNum;
+
+/** The page that owns a figure. Ward Flow's list is `PAGE_OWNERS` in `ward-management/shell/ward-page-owners.ts`. */
+export type FigureOwner = {
+  /** The owning page's route. */
+  route: string;
+  /** The page's name as the menu shows it, used in "open <name>". */
+  name: string;
+};
 
 export type FigureLinkProps = {
   /** The live figure, exactly as its owning page computes it. Never a reworded copy. */
   value: number | string;
   /** The words after the figure, as the owning page says them: "waiting", "held-up releases". */
   label: string;
-  /** The page that owns this figure (`PAGE_OWNERS`). */
-  owner: PageOwnerKey;
+  /** The page that owns this figure: `PAGE_OWNERS.waiting`. */
+  owner: FigureOwner;
   /** What the figure covers when that differs from the page around it: "Network-wide", "FSH ED". */
   scope?: string;
   /** On the hero band: the link keeps the band's ink. */
@@ -33,7 +43,7 @@ export function figureLinkName({
   owner,
   scope,
 }: Pick<FigureLinkProps, "value" | "label" | "owner" | "scope">) {
-  return [`${value} ${label}`, scope, `open ${PAGE_OWNERS[owner].name}`].filter(Boolean).join(", ");
+  return [`${value} ${label}`, scope, `open ${owner.name}`].filter(Boolean).join(", ");
 }
 
 /**
@@ -51,7 +61,6 @@ export function FigureLink({
   className,
   "data-testid": testId,
 }: FigureLinkProps) {
-  const page = PAGE_OWNERS[owner];
   const text = (
     <>
       <span className={styles.wfNum}>{value}</span> {label}
@@ -73,10 +82,10 @@ export function FigureLink({
   return (
     <>
       <Link
-        href={page.route}
+        href={owner.route}
         className={cx(styles.link, onHero && styles.onHero, className)}
         aria-label={figureLinkName({ value, label, owner, scope })}
-        data-owner={owner}
+        data-owner={owner.name}
         data-testid={testId}
       >
         {text}
