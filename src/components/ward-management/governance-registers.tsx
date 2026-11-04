@@ -326,7 +326,7 @@ function GovernanceSession({
   // unasked. Once the layout is known to be phone or portrait tablet, an auto-opened event closes.
   if (autoOpened && (isPhone || isTabletPortrait)) {
     setAutoOpened(false);
-    setSelection(null);
+    setSelection(undefined);
   }
   const history = selected ? historyFor(selected) : [];
   const reviewAttempt = pending

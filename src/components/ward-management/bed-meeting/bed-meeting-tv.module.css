@@ -721,6 +721,14 @@
   vertical-align: 0.05em;
 }
 
+/* Forced colours would repaint the drawn triangle as Canvas and hide it. */
+@media (forced-colors: active) {
+  .table tr[data-long] td[data-wait]::before {
+    background: CanvasText;
+    forced-color-adjust: none;
+  }
+}
+
 .list .wait {
   display: inline-flex;
   align-items: center;
