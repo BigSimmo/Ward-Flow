@@ -49,7 +49,8 @@ import { BedSingle, Undo2 } from "lucide-react";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { referralDecisionUndoFor, undoRoleRefusal, undoWindowRefusal } from "@/components/ward-management/ward-undo";
-import { movementHref } from "@/components/ward-management/shell/ward-facade";
+import { movementHref, unitHref } from "@/components/ward-management/shell/ward-facade";
+import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import { acceptedReferralsAwaitingPull, acceptedWardOf, type AcceptedAwaitingPull } from "./accepted-awaiting-pull";
 import { getReferralPriority, referralPriorityLabel } from "./referral-priority";
 import { referralWaitLine } from "./referral-wait";
@@ -891,10 +892,11 @@ function DecidedRowActions({
               confirmLabel: "Undo decision",
             }).then((confirmed) => {
               if (!confirmed || !undoRole || !flow) return;
-              flow.dispatch({
-                type: "UNDO_REFERRAL_DECISION",
-                role: undoRole,
+              wardRaise(
+                flow.dispatch,
+                undoRole,
                 now,
+              )("UNDO_REFERRAL_DECISION", {
                 recordSeq: record.seq,
                 referralId: referral.id,
                 actingUnitId,
@@ -925,7 +927,7 @@ function DecidedRowActions({
         </Button>
       ) : wardToHold ? (
         <Link
-          href={`/ward-flow/ward/${wardToHold.unitId}?tab=board`}
+          href={`${unitHref(wardToHold.unitId)}?tab=board`}
           className={buttonClass({ variant: "ghost", size: "sm" })}
           title={`Open ${wardToHold.unitName} bed board`}
           data-testid={`ward-referral-board-decided-hold-${referral.id}${suffix}`}
