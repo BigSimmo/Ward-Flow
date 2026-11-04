@@ -222,6 +222,9 @@ jobs:
         with:
           path: ${{ runner.temp }}/ward-eslint-cache
           key: ${{ steps.lint-cache.outputs.cache-primary-key }}
+      - name: Inventory production dependency licences (advisory)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.frontend_static == 'true' }}
+        run: npm run check:licences
       - name: Check for new unused code
         if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.frontend_static == 'true' }}
         env:
@@ -310,12 +313,13 @@ jobs:
       - name: Seed release system packages
         if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
         run: node scripts/ward-ci-public/apt-archive-cache.mjs seed "$HOME/.cache/ward-release-apt"
-      - name: Install Chromium for the shared-mode journey
+      - name: Install Chromium and WebKit for the shared-mode journeys
         id: shared-chromium
         timeout-minutes: 10
         if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
         run: |
           node scripts/ward-ci-public/install-chromium.mjs
+          node node_modules/playwright/cli.js install --with-deps webkit
       - name: Run the shared-mode browser journey
         timeout-minutes: 20
         if: ${{ !cancelled() && steps.shared-chromium.outcome == 'success' }}

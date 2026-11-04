@@ -7,7 +7,12 @@ import requireButtonWiring from "./eslint-rules/require-button-wiring.mjs";
 import requireZIndexLadder from "./eslint-rules/require-z-index-ladder.mjs";
 import restrictSuppressHydrationWarning from "./eslint-rules/restrict-suppress-hydration-warning.mjs";
 import noHardcodedHex from "./eslint-rules/no-hardcoded-hex.mjs";
-import { MAX_LINES_BASELINE, MAX_LINES_DEFAULT } from "./eslint-rules/max-lines-baseline.mjs";
+import {
+  MAX_LINES_BASELINE,
+  MAX_LINES_DEFAULT,
+  MAX_SCRIPT_LINES_DEFAULT,
+  MAX_SCRIPT_LINES_BASELINE,
+} from "./eslint-rules/max-lines-baseline.mjs";
 
 // Shared `local` plugin object. ESLint flat config requires every config block
 // that references a plugin namespace to point at the *same* object, and the five
@@ -182,6 +187,11 @@ const eslintConfig = defineConfig([
       "max-lines": ["error", { max: MAX_LINES_DEFAULT }],
     },
   },
+  { files: ["scripts/**/*.{mjs,cjs,ts}"], rules: { "max-lines": ["error", { max: MAX_SCRIPT_LINES_DEFAULT }] } },
+  ...Object.entries(MAX_SCRIPT_LINES_BASELINE).map(([file, max]) => ({
+    files: [file],
+    rules: { "max-lines": ["error", { max }] },
+  })),
   ...Object.entries(MAX_LINES_BASELINE).map(([file, max]) => ({
     files: [file],
     rules: {

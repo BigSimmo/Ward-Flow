@@ -1,4 +1,9 @@
-import { expect, test, type Page } from "playwright/test";
+import { expect, test, type Page, type TestInfo } from "playwright/test";
+import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
+import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
+import { demoDayZero, PERTH_UTC_OFFSET_MS } from "@/components/ward-management/ward-clock";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { WARD_FLOW_STORED_STATE_VERSION } from "@/components/ward-management/ward-flow-demo-storage-constants";
 
 const HOME = "/ward-flow";
 
@@ -36,6 +41,70 @@ async function answerLeave(page: Page, choice: "Keep editing" | "Leave without s
   await expect(ask).toBeHidden();
 }
 
+async function exerciseBoardPrint(page: Page, testInfo: TestInfo, bedCount: number, expectedPages: number) {
+  const fixedTime = new Date("2026-11-04T04:42:00.000Z");
+  const now = 12 * 60 + 42;
+  // Validate the actual JSON value the restore reads. In-memory seeds contain optional keys
+  // with undefined values; those keys do not exist in a stored JSON document.
+  const state = JSON.parse(JSON.stringify(seedWardFlowStateAt(now - NOW_ANCHOR))) as ReturnType<
+    typeof seedWardFlowStateAt
+  >;
+  const unit = state.units.find((candidate) => candidate.id === "rph-adult-secure")!;
+  const addedBeds = bedCount - unit.beds;
+  unit.beds = bedCount;
+  unit.empty.value += addedBeds;
+  unit.allocatable.value += addedBeds;
+  // A real saved-state fixture, admitted by the same validation used on reload. Extra synthetic
+  // Ready beds exercise pagination without inventing records or editing printed DOM.
+  expect(isValidStoredWardFlowState(state)).toBe(true);
+  const payload = JSON.stringify({
+    version: WARD_FLOW_STORED_STATE_VERSION,
+    dayZero: demoDayZero(fixedTime).getTime(),
+    worldGeneration: state.worldGeneration,
+    now,
+    savedAtAbsolute: Math.floor((fixedTime.getTime() + PERTH_UTC_OFFSET_MS) / 60_000),
+    state,
+  });
+  await page.clock.install({ time: fixedTime });
+  await page.addInitScript((saved) => sessionStorage.setItem("ward-flow-demo-state-v1", saved), payload);
+  await page.goto(`${HOME}/board/rph-adult-secure`);
+  await settled(page);
+  const output = page.locator("[data-ward-board-print]");
+  await expect(output.getByTestId("ward-board-print-bed")).toHaveCount(bedCount);
+  await expect(output.getByTestId("ward-board-print-page")).toHaveCount(expectedPages);
+  await expect(output).toBeHidden();
+  await page.setViewportSize({ width: 1062, height: 733 });
+  await page.emulateMedia({ media: "print" });
+  await expect(output).toBeVisible();
+  await expect(output.getByTestId("ward-board-print-time")).toHaveText(
+    Array.from({ length: expectedPages }, () => "Wed, 4 Nov 2026, 12:42 AWST"),
+  );
+  expect(
+    await output.locator("li").evaluateAll((beds) =>
+      beds.every((bed) => {
+        const style = getComputedStyle(bed);
+        return (
+          Number.parseFloat(style.fontSize) >= 12 &&
+          bed.scrollWidth <= bed.clientWidth &&
+          bed.scrollHeight <= bed.clientHeight + 1
+        );
+      }),
+    ),
+  ).toBe(true);
+  const pdf = await page.pdf({
+    path: testInfo.outputPath(`bed-board-${bedCount}.pdf`),
+    preferCSSPageSize: true,
+    printBackground: false,
+    displayHeaderFooter: false,
+  });
+  await testInfo.attach(`${bedCount}-bed A4 landscape board`, { body: pdf, contentType: "application/pdf" });
+  await testInfo.attach(`${bedCount}-bed board print preview`, {
+    body: await output.screenshot({ path: testInfo.outputPath(`bed-board-${bedCount}.png`) }),
+    contentType: "image/png",
+  });
+  expect(pdf.toString("latin1").match(/\/Type\s*\/Page(?:\s|\/|>)/g)).toHaveLength(expectedPages);
+}
+
 test.use({ viewport: { width: 1440, height: 900 }, serviceWorkers: "block", screenshot: "off", trace: "off" });
 
 test.describe("native history and handover print @mockup", () => {
@@ -48,6 +117,16 @@ test.describe("native history and handover print @mockup", () => {
 
   test.afterEach(async ({ page }) => {
     await page.close(); // Keep automatic failure context free of synthetic patient rows.
+  });
+
+  test("30-bed board prints one readable A4 landscape sheet with actual Perth provenance", async ({
+    page,
+  }, testInfo) => {
+    await exerciseBoardPrint(page, testInfo, 30, 1);
+  });
+
+  test("31-bed board prints every bed across two readable A4 landscape sheets", async ({ page }, testInfo) => {
+    await exerciseBoardPrint(page, testInfo, 31, 2);
   });
 
   test("pre-hydration scripts preserve rail preference and client navigation without script errors", async ({
