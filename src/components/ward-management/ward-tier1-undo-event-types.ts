@@ -11,7 +11,7 @@ import type { PatientId } from "./ward-patients";
  */
 
 /** Takes back a bed closed or reopened (`SET_BED_CLOSED`) or a return from leave (`END_LEAVE_BED`). */
-export type UndoBedStepEvent = {
+type UndoBedStepEvent = {
   type: "UNDO_BED_STEP";
   role: WardFlowRole;
   now: Instant;
@@ -30,7 +30,7 @@ export type UndoBedStepEvent = {
  * Takes back a pulled or held bed released, a transport cancelled, a ward request withdrawn
  * (each on its movement) or a planned admission cancelled (on its booking).
  */
-export type UndoReleaseStepEvent = {
+type UndoReleaseStepEvent = {
   type: "UNDO_RELEASE_STEP";
   role: WardFlowRole;
   now: Instant;
@@ -43,7 +43,7 @@ export type UndoReleaseStepEvent = {
 };
 
 /** Takes back a community treatment order recorded or ended, or a record archived in error. */
-export type UndoPatientRecordEvent = {
+type UndoPatientRecordEvent = {
   type: "UNDO_PATIENT_RECORD";
   role: WardFlowRole;
   now: Instant;
