@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import { ChevronDown, Copy, Mail, Search, Star } from "lucide-react";
+import { ChevronDown, Copy, Mail, Search } from "lucide-react";
 import { Button, Icon, RadioGroup, Sheet, SrOnly, StatusGlyph, cx } from "@/components/wf";
 import {
   SERVICE_META,
@@ -329,7 +329,7 @@ export function PhoneDirectory({
   );
 }
 
-/** The contact card as a bottom sheet: Copy, Email and Star tiles, the call pinned in the foot (v10). */
+/** The contact card as a bottom sheet: who answers now with Copy number, Copy email and Star, then folds (OC1). */
 export function PhoneSheet({
   entry,
   actions,
@@ -341,8 +341,6 @@ export function PhoneSheet({
   notice: ReactNode;
   onClose: () => void;
 }) {
-  const number = numberAt(entry, actions.minute);
-  const starred = actions.favourites.includes(entry.id);
   return (
     <Sheet
       open
@@ -360,41 +358,8 @@ export function PhoneSheet({
       testId="ward-on-call-sheet"
     >
       <div className={styles.sheetBody}>
-        <div className={styles.actionTiles}>
-          {number ? (
-            <>
-              <button
-                type="button"
-                className={styles.actionTile}
-                onClick={() => actions.onCopy(number, "Number copied")}
-              >
-                <Icon icon={Copy} size={20} />
-                Copy
-              </button>
-            </>
-          ) : null}
-          {entry.email ? (
-            <button
-              type="button"
-              className={styles.actionTile}
-              onClick={() => actions.onCopy(entry.email!, "Email copied")}
-            >
-              <Icon icon={Mail} size={20} />
-              Email
-            </button>
-          ) : null}
-          <button
-            type="button"
-            className={styles.actionTile}
-            aria-pressed={starred}
-            onClick={() => actions.onToggleFavourite(entry.id)}
-          >
-            <Icon icon={Star} size={20} />
-            {starred ? "Starred" : "Star"}
-          </button>
-        </div>
         {notice}
-        <ContactCard entry={entry} actions={actions} showHead={false} showCall={false} />
+        <ContactCard entry={entry} actions={actions} showHead={false} showStar />
       </div>
     </Sheet>
   );

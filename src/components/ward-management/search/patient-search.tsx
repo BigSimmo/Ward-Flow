@@ -10,7 +10,9 @@ import {
   Card,
   Drawer,
   Hero,
+  HeroTrack,
   Icon,
+  Segmented,
   LiveChip,
   SearchField,
   buttonClass,
@@ -85,7 +87,6 @@ import {
   CensusDetail,
   CensusEmpty,
   CensusHistory,
-  CensusMapPills,
   CensusTable,
   FlowChip,
   PhoneCensus,
@@ -97,6 +98,7 @@ import {
 import styles from "./search.module.css";
 import cs from "./census.module.css";
 import { isCommunityReferral } from "./community-referral";
+import { countPatientStates, PATIENT_STATES, patientStateOf, type PatientStateFilter } from "./patient-states";
 import {
   LONG_WAIT_HOURS,
   SHORT_WAIT_HOURS,
@@ -240,6 +242,8 @@ export function PatientSearchPage() {
   const [highlight, setHighlight] = useState<CensusHighlight | null>(returned?.highlight ?? null);
   const [censusSort, setCensusSort] = useState<CensusSort>(returned?.censusSort ?? "wait");
   const [tab, setTab] = useState<"now" | "history">(returned?.tab ?? "now");
+  // PS1 (Josh, 3 Nov 2026): the register opens on everyone; a state narrows it.
+  const [patientState, setPatientState] = useState<PatientStateFilter>("all");
   const [openGroups, setOpenGroups] = useState<Record<CensusGroup, boolean>>(
     returned?.openGroups ?? {
       ask: true,
@@ -326,14 +330,24 @@ export function PatientSearchPage() {
     return words;
   }, [patients, referrals, movements]);
 
+  const census = useMemo(
+    () =>
+      buildCensus({ movements, referrals, units, patients, admissions, plannedAdmissions, now, thresholds, dayZero }),
+    [movements, referrals, units, patients, admissions, plannedAdmissions, now, dayZero, thresholds],
+  );
+
   const baseResults = useMemo(() => {
     const needle = foldPatientSearchText(text);
     if (isChip || needle === "") return searchPatients(movements, referrals, units, { ...query, text: "" });
     const byRecord = new Set(searchPatients(movements, referrals, units, query).map(resultId));
     return searchPatients(movements, referrals, units, { ...query, text: "" }).filter(
-      (result) => byRecord.has(resultId(result)) || (subjectWords.get(resultId(result)) ?? "").includes(needle),
+      (result) =>
+        byRecord.has(resultId(result)) ||
+        (subjectWords.get(resultId(result)) ?? "").includes(needle) ||
+        (needle.length >= 2 &&
+          census.rows.some((row) => row.key === resultId(result) && row.placeText.includes(needle))),
     );
-  }, [movements, referrals, units, query, isChip, text, subjectWords]);
+  }, [movements, referrals, units, query, isChip, text, subjectWords, census]);
 
   const results = useMemo(() => {
     return baseResults.filter((result) => {
@@ -606,6 +620,7 @@ export function PatientSearchPage() {
     setActiveKpiFacet("all");
     setDob("");
     setDobOn(false);
+    setPatientState("all");
   };
 
   // The counts beside each stage and department match the same way the table does, name included.
@@ -636,11 +651,6 @@ export function PatientSearchPage() {
   // Every person the app holds, grouped by where they are now. The movement and referral rows are
   // the same records as `unifiedCaseload` above, so every search and filter that narrows that list
   // narrows these rows the same way; the bed and record rows answer the typed name or UMRN.
-  const census = useMemo(
-    () =>
-      buildCensus({ movements, referrals, units, patients, admissions, plannedAdmissions, now, thresholds, dayZero }),
-    [movements, referrals, units, patients, admissions, plannedAdmissions, now, dayZero, thresholds],
-  );
   const isPhone = usePhoneLayout();
   const needle = isChip ? "" : foldPatientSearchText(text);
   const dobIso = dobOn ? parseDob(dob) : null;
@@ -670,7 +680,7 @@ export function PatientSearchPage() {
         const foundReferral = row.kind === "referral" && row.group === "found" && !caseIds.has(row.key);
         if ((row.kind === "movement" || row.kind === "referral") && !foundReferral) {
           // A place shown in the census also finds the case, not only the legacy record search.
-          if (!caseIds.has(row.key) && !(needle.length >= 2 && row.placeText.includes(needle))) return false;
+          if (!caseIds.has(row.key)) return false;
         } else {
           if (legacyNarrowing) return false;
           const onWard = row.kind === "admission" && row.group === "ward";
@@ -705,6 +715,36 @@ export function PatientSearchPage() {
     censusSort,
     highlight,
   ]);
+
+  const stateCounts = countPatientStates(visibleRows);
+  const stateRows =
+    patientState === "all" ? visibleRows : visibleRows.filter((row) => patientStateOf(row) === patientState);
+  const stateItems = [
+    { id: "all" as const, label: "Everyone", count: stateCounts.all },
+    ...PATIENT_STATES.map((state) => ({ id: state.id, label: state.label, count: stateCounts[state.id] })),
+  ];
+  const chooseState = (next: PatientStateFilter) => {
+    setTab("now");
+    setPatientState(next);
+  };
+  // On the band the switch is the dark track; on a phone it sits on the page, under the hero.
+  const stateTrack = (
+    <HeroTrack<PatientStateFilter>
+      label="Where people are now"
+      value={patientState}
+      onChange={chooseState}
+      items={stateItems}
+    />
+  );
+  const phoneStateSwitch = (
+    <Segmented<PatientStateFilter>
+      label="Where people are now"
+      size="md"
+      value={patientState}
+      onChange={chooseState}
+      items={stateItems}
+    />
+  );
 
   const groupTotals = countGroups(census.rows);
   const groupMatches = countGroups(visibleRows);
@@ -817,9 +857,13 @@ export function PatientSearchPage() {
   const copyRow = (row: CensusRow) => copyText(`${censusLine(row)} (synthetic)`, "Summary copied");
   const copyList = () => {
     const chip = CENSUS_HIGHLIGHTS.find((entry) => entry.id === highlight);
+    // PS1: copy what the state switch shows. Everyone keeps the old open-flow list (no ward or
+    // Not active rows); a chosen state copies its own rows.
     const list = chip
-      ? visibleRows.filter(chip.test)
-      : visibleRows.filter((row) => row.group !== "ward" && row.group !== "off");
+      ? stateRows.filter(chip.test)
+      : patientState === "all"
+        ? stateRows.filter((row) => row.group !== "ward" && row.group !== "off")
+        : stateRows;
     copyText(
       [`Patients at ${formatInstant(now)} (synthetic)`, ...list.map((row) => `- ${censusLine(row)}`)].join("\n"),
       `${list.length} ${list.length === 1 ? "row" : "rows"} copied`,
@@ -970,8 +1014,8 @@ export function PatientSearchPage() {
         <div data-testid="ward-patient-search-cockpit" className={styles.v6HeroWrap}>
           <Hero
             className={cx(cs.censusHero, isPhone && cs.heroPhone)}
-            eyebrow="Statewide census"
-            title={`${liveCount} patients now`}
+            eyebrow="Patient register · Statewide"
+            title={`${census.rows.length} people`}
             titleMeta={isPhone ? flowLine : undefined}
             aside={
               <>
@@ -994,14 +1038,7 @@ export function PatientSearchPage() {
             bar={
               <div className={cs.heroBar}>
                 {searchForm}
-                {isPhone ? null : (
-                  <CensusMapPills
-                    totals={groupTotals}
-                    matched={groupMatches}
-                    searching={searching}
-                    onJump={jumpToGroup}
-                  />
-                )}
+                {isPhone ? null : <div className={cs.stateTrack}>{stateTrack}</div>}
               </div>
             }
             footKind={isPhone && canAddPatient ? "actions" : "line"}
@@ -1262,7 +1299,8 @@ export function PatientSearchPage() {
 
         {isPhone ? (
           <PhoneCensus
-            rows={visibleRows}
+            rows={stateRows}
+            stateSwitch={phoneStateSwitch}
             totals={groupTotals}
             matched={groupMatches}
             searching={searching}
@@ -1286,7 +1324,8 @@ export function PatientSearchPage() {
         {isPhone ? null : (
           <div className={cs.layout}>
             <CensusTable
-              rows={refusal ? [] : visibleRows}
+              rows={refusal ? [] : stateRows}
+              narrowed={patientState !== "all"}
               totalPeople={census.rows.length}
               searching={searching}
               needle={needle}
@@ -1305,7 +1344,7 @@ export function PatientSearchPage() {
               onSelect={selectRow}
               tab={tab}
               onTab={setTab}
-              liveCount={liveCount}
+              liveCount={patientState === "all" ? liveCount : stateRows.length}
               historyCount={historyCount}
               history={history}
               onCopyList={copyList}

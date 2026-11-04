@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { BedDouble, Check, ChevronDown, ChevronUp } from "lucide-react";
+import { BedSingle, Check, ChevronDown, ChevronUp } from "lucide-react";
 
 import { Icon, Segmented, StatusGlyph, rowDim, tableClasses } from "@/components/wf";
 import { siteByCode } from "@/components/ward-management/ward-sites";
@@ -166,7 +166,7 @@ export function HospitalCapacityMatrix({
 
   return (
     <StatCard
-      icon={BedDouble}
+      icon={BedSingle}
       title="Beds by ward"
       aside={
         <span className={styles.muted}>

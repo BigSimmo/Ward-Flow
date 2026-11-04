@@ -5,7 +5,7 @@
 import { useState } from "react";
 
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
-import { Dialog } from "@/components/wf";
+import { Dialog, StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
 import type { ReferralGender } from "@/components/ward-management/ward-model";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -19,7 +19,7 @@ import {
   isArrivalLate,
 } from "@/components/ward-management/referrals/arrival-time-modal";
 import type { EdScreenContext } from "./ed-screen-context";
-import { ANSWERED_VISIBLE_CAP, answeredAddressingLabel, GENDER_OPTIONS, urgencyGlyph } from "./ed-screen-model";
+import { ANSWERED_VISIBLE_CAP, answeredAddressingLabel, GENDER_OPTIONS, urgencyTone } from "./ed-screen-model";
 import { edStageLabel } from "./ed-referral-status";
 import styles from "./ed.module.css";
 
@@ -126,7 +126,7 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
                       data-urgency={movement.urgency}
                     >
                       <span className={styles.urgencyGlyph} aria-hidden="true">
-                        {urgencyGlyph(movement.urgency)}
+                        <StatusGlyph tone={urgencyTone(movement.urgency)} size={10} />
                       </span>{" "}
                       {urgencyTierLabel(movement.urgency)}
                     </span>

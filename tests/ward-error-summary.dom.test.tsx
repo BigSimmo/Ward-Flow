@@ -1,6 +1,9 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { configure, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+configure({
+  getElementError: () => new Error("Referral compatibility query failed; record-bearing diagnostics suppressed."),
+});
 
 import { Button, ErrorSummary, Field, TextInput } from "@/components/wf";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
@@ -146,7 +149,7 @@ describe("Referral patient step: error summary", () => {
         <WardReferralDrawer onClose={vi.fn()} />
       </WardFlowProvider>,
     );
-    await screen.findByRole("searchbox", { name: "Find a patient" });
+    await screen.findByRole("combobox", { name: "Find a patient" });
     fireEvent.click(screen.getByTestId("ward-referral-unidentified"));
     fireEvent.click(screen.getByRole("button", { name: /^Next, referral/u }));
     const summary = await screen.findByRole("group", { name: /things? to fix before the next step/u });
@@ -184,7 +187,7 @@ describe("Referral later steps: error summary", () => {
         <WardReferralDrawer onClose={vi.fn()} />
       </WardFlowProvider>,
     );
-    await screen.findByRole("searchbox", { name: "Find a patient" });
+    await screen.findByRole("combobox", { name: "Find a patient" });
     chooseSampleReferralPerson();
     fireEvent.click(screen.getByRole("button", { name: "Change" }));
     fireEvent.change(screen.getByLabelText("Patient suburb"), { target: { value: "Perth" } });

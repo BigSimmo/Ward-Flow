@@ -58,22 +58,29 @@ export type DateFieldProps = Omit<TextInputProps, "value" | "defaultValue" | "on
   value: string;
   /** Called with YYYY-MM-DD when the typed text is a real day, otherwise with "". */
   onValueChange: (iso: string) => void;
+  /** Optional memory-only draft text, including incomplete or invalid typing. */
+  rawText?: string;
+  /** Pair with rawText when the form must retain unfinished typing across hiding/unmounting. */
+  onRawTextChange?: (text: string) => void;
 };
 
 export function DateField({
   value,
   onValueChange,
+  rawText,
+  onRawTextChange,
   invalid,
   placeholder = "DD/MM/YYYY",
   ...inputProps
 }: DateFieldProps) {
-  const [typed, setTyped] = useState(() => isoDateAsTyped(value));
+  const [localTyped, setTyped] = useState(() => isoDateAsTyped(value));
+  const typed = rawText ?? localTyped;
   // A new value from the caller (a reset, or a record loaded) replaces the typed text; the person's
   // own unfinished typing (value "") is left alone.
   const [lastValue, setLastValue] = useState(value);
   if (value !== lastValue) {
     setLastValue(value);
-    if (value !== (parseTypedDate(typed) ?? "")) setTyped(isoDateAsTyped(value));
+    if (rawText === undefined && value !== (parseTypedDate(typed) ?? "")) setTyped(isoDateAsTyped(value));
   }
   const wrong = looksFinished(typed) && parseTypedDate(typed) === null;
   return (
@@ -89,6 +96,7 @@ export function DateField({
       onChange={(event) => {
         const text = event.target.value;
         setTyped(text);
+        onRawTextChange?.(text);
         onValueChange(parseTypedDate(text) ?? "");
       }}
     />

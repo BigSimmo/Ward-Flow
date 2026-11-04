@@ -77,7 +77,8 @@ describe("Places as the site bed manager (D-80)", () => {
     renderAs(BED_MANAGER);
 
     const title = await screen.findByRole("heading", { level: 1 });
-    expect(title).toHaveTextContent(`${OWN_WARDS.length} wards at your site`);
+    // PL1 follow-up (Josh, 4 Nov 2026): the band's title is the site's bed-check task.
+    expect(title).toHaveTextContent(/at your site needs? a bed check|Your site's bed counts are current/u);
     const own = screen.getByRole("region", { name: /^Your site, /u });
     expect(within(own).getAllByRole("listitem")).toHaveLength(OWN_WARDS.length);
     for (const unit of OWN_WARDS) expect(within(own).getByText(unit.name)).toBeInTheDocument();
@@ -114,7 +115,7 @@ describe("Places as the site bed manager (D-80)", () => {
     expect(preview().queryByRole("link", { name: /^open /iu })).not.toBeInTheDocument();
     expect(preview().queryByRole("link", { name: /confirm beds/iu })).not.toBeInTheDocument();
     expect(preview().queryByRole("button", { name: /^ask to confirm$/iu })).not.toBeInTheDocument();
-    const greyed = preview().getByRole("button", { name: new RegExp(`^Open ${OTHER_WARD.name}`, "u") });
+    const greyed = preview().getByRole("button", { name: new RegExp(`^Open ward, ${OTHER_WARD.name}`, "u") });
     expect(greyed).toHaveAttribute("aria-disabled", "true");
     // Shown in full as its own line (QA 31 Oct), and read out with the greyed button.
     const sentence = "This screen is not part of the Site bed manager desk.";
@@ -129,6 +130,8 @@ describe("Places as the site bed manager (D-80)", () => {
   it("leaves the statewide coordinator's Places without a Your site group", () => {
     renderAs(null);
     expect(screen.queryByRole("region", { name: /^Your site, /u })).not.toBeInTheDocument();
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/\d+ places/u);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+      /needs? a bed check|bed count is current|asked to confirm/u,
+    );
   });
 });

@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { configure, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -23,6 +23,10 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { ToastProvider, WF_PHONE_QUERY } from "@/components/wf";
+
+configure({
+  getElementError: () => new Error("Community referral query failed; record-bearing diagnostics suppressed."),
+});
 
 /**
  * A2-12 and A2-10 (audit 13 Oct 2026): the community intake sent a Tier 1 referral as "Unknown
@@ -103,7 +107,7 @@ describe("community intake names its person", () => {
     vi.unstubAllGlobals();
     const person = seedWardFlowState().patients.find((patient) => patient.umrn !== "")!;
     renderIntake();
-    fireEvent.change(screen.getByRole("searchbox", { name: "Find a patient" }), { target: { value: person.umrn } });
+    fireEvent.change(screen.getByRole("combobox", { name: "Find a patient" }), { target: { value: person.umrn } });
     fireEvent.click(within(screen.getByRole("listbox", { name: "Matching patients" })).getAllByRole("option")[0]!);
     expect(screen.queryByTestId("ward-referral-no-patient")).not.toBeInTheDocument();
     expect(patientRow()).toHaveTextContent(person.familyName);

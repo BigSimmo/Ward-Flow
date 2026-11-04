@@ -34,6 +34,7 @@ import {
 import { FormsPack, PACK_SLOTS, packCount, packRequired } from "./officer-forms-pack";
 import { HowWorkedOut } from "@/components/ward-management/capacity/capacity-how-worked-out";
 import { OfficerOnly } from "./officer-crew-only";
+import { ProviderNumber } from "./officer-booking-contacts";
 import styles from "./officer.module.css";
 import {
   holdEndsBeforeEta,
@@ -72,6 +73,10 @@ export type OfficerJobDetailContext = {
   diversionOpen: boolean;
   diversionPlace: TransportWhereabouts | undefined;
   diversionReason: DiversionReason | undefined;
+  diversionPending: boolean;
+  diversionError?: string;
+  recordDiversion: (movement: Movement) => void;
+  cancelDiversion: () => void;
   /** #236: whether the crew has tapped the identity check for this job, sent with Collected. */
   identityChecked: (movement: Movement) => boolean;
   /** The name, UMRN and date of birth the crew checks with the sending team. */
@@ -170,16 +175,17 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
     diversionOpen,
     diversionPlace,
     diversionReason,
+    diversionPending,
+    diversionError,
+    recordDiversion,
+    cancelDiversion,
     identityChecked,
     identityFor,
     now,
     officerPatientName,
     originLabelFor,
-    raise,
-    setDiversionOpen,
     setDiversionPlace,
     setDiversionReason,
-    showToast,
     toggleIdentityChecked,
     unitFor,
   } = ctx;
@@ -367,6 +373,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
               id={`ward-officer-diversion-reason-${movement.id}`}
               data-testid={`ward-officer-diversion-reason-${movement.id}`}
               value={diversionReason ?? ""}
+              disabled={diversionPending}
               onChange={(chosen) => {
                 const value = chosen.target.value;
                 setDiversionReason(
@@ -386,6 +393,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
               id={`ward-officer-diversion-place-${movement.id}`}
               data-testid={`ward-officer-diversion-place-${movement.id}`}
               value={diversionPlace ?? ""}
+              disabled={diversionPending}
               onChange={(chosen) => {
                 const value = chosen.target.value;
                 setDiversionPlace(
@@ -403,36 +411,32 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
               ))}
             </Select>
             <span className={styles.divertActions}>
-              <Button variant="ghost" size="sm" onClick={() => setDiversionOpen(false)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                disabledReason={diversionPending ? "Saving" : undefined}
+                onClick={cancelDiversion}
+              >
                 Cancel
               </Button>
               <Button
                 variant="pri"
                 size="sm"
                 data-testid={`ward-officer-record-diversion-${movement.id}`}
+                disabledReason={diversionPending ? "Saving" : undefined}
                 aria-disabled={diversionReady ? undefined : "true"}
                 aria-describedby={diversionReady ? undefined : `ward-officer-diversion-blocked-${movement.id}`}
                 title={diversionReady ? undefined : "Choose a reason and where the patient is first."}
-                onClick={
-                  diversionReady
-                    ? () => {
-                        raise("RECORD_DIVERSION", {
-                          movementId: movement.id,
-                          reason: diversionReason,
-                          place: diversionPlace,
-                        });
-                        setDiversionReason(undefined);
-                        setDiversionPlace(undefined);
-                        setDiversionOpen(false);
-                        // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-                        showToast(`Diversion recorded for ${officerPatientName(movement)}.`);
-                      }
-                    : ignoreUnavailableActivation
-                }
+                onClick={diversionReady ? () => recordDiversion(movement) : ignoreUnavailableActivation}
               >
                 Record diversion
               </Button>
             </span>
+            {diversionError ? (
+              <p className={styles.muted} role="alert">
+                {diversionError}
+              </p>
+            ) : null}
             {diversionReady ? null : (
               <span id={`ward-officer-diversion-blocked-${movement.id}`} className="sr-only">
                 Choose a reason and where the patient is first.
@@ -472,7 +476,11 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
           <dl className={styles.factList}>
             <div>
               <dt>Provider</dt>
-              <dd>{transport.provider}</dd>
+              <dd>
+                {transport.provider}
+                {/* TR2 (3 Nov 2026): the number sits with the provider, one tap to copy. */}
+                <ProviderNumber provider={transport.provider} />
+              </dd>
             </div>
             <div data-testid={`ward-officer-cad-number-${movement.id}`}>
               <dt>CAD number</dt>
@@ -567,6 +575,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
             <OfficerOnly>
               <TransportCadToFollow
                 movementId={movement.id}
+                transportId={transport.id}
                 role="officer"
                 testId={`ward-officer-cad-to-follow-${movement.id}`}
               />

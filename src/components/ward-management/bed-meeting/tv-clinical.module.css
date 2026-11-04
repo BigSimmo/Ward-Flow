@@ -1,0 +1,378 @@
+/* The clinical TV boards (`tv-clinical-views.tsx`). They sit inside the TV screen (`.tv` in
+ * bed-meeting-tv.module.css) and use its type scale, so a 1080p and a 4K TV read the same from
+ * across a room. Tokens only. */
+
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--tv-small);
+}
+
+.summary li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4em;
+  padding: 0.35em 0.8em;
+  border: 1px solid var(--wf-line);
+  border-radius: 999px;
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+}
+
+.summary b {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-weight: 700;
+}
+
+.summary li[data-tone="warning"] {
+  border-color: var(--wf-warning);
+  background: var(--wf-hold-tint);
+}
+
+.summary li[data-tone="danger"] {
+  border-color: var(--wf-danger);
+  background: var(--wf-act-tint);
+}
+
+.board {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--tv-row);
+  line-height: 1.25;
+  table-layout: fixed;
+}
+
+.table thead th {
+  padding: 0.7em 0.9em 0.55em;
+  border-bottom: 1px solid var(--wf-line);
+  color: var(--wf-ink-3);
+  font-size: var(--tv-least);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+/* Column widths for the ward board: bed, patient, obs, risk, legal, where and plan. */
+.table:not([data-kind]) th:nth-child(1) {
+  width: 5.5%;
+}
+.table:not([data-kind]) th:nth-child(2) {
+  width: 24%;
+}
+.table:not([data-kind]) th:nth-child(3) {
+  width: 16%;
+}
+.table:not([data-kind]) th:nth-child(4) {
+  width: 15%;
+}
+.table:not([data-kind]) th:nth-child(5) {
+  width: 20%;
+}
+
+/* ED board: patient, in ED, bay, legal, obs and risk, checks, referral and next. */
+.table[data-kind="ed"] th:nth-child(1) {
+  width: 18%;
+}
+.table[data-kind="ed"] th:nth-child(2) {
+  width: 8.5%;
+}
+.table[data-kind="ed"] th:nth-child(3) {
+  width: 5.5%;
+}
+.table[data-kind="ed"] th:nth-child(4) {
+  width: 19%;
+}
+.table[data-kind="ed"] th:nth-child(5) {
+  width: 17%;
+}
+.table[data-kind="ed"] th:nth-child(6) {
+  width: 13%;
+}
+
+/* ED checks read small and quiet: two short lines that never take the row's height. */
+.table[data-kind="ed"] td:nth-child(6) {
+  color: var(--wf-ink-2);
+  font-size: var(--tv-least);
+}
+
+.table tbody td {
+  padding: 0.5em 0.9em;
+  border-bottom: 1px solid var(--wf-line);
+  vertical-align: top;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.table tbody tr[data-where="awol"] {
+  background: var(--wf-act-tint);
+}
+
+.band th {
+  padding: 0.5em 0.9em;
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font-size: var(--tv-small);
+  font-weight: 600;
+  text-align: left;
+}
+
+.band th > svg {
+  margin-right: 0.4em;
+}
+
+.bed,
+.wait {
+  font-family: var(--wf-mono);
+  font-weight: 600;
+}
+
+.wait {
+  white-space: nowrap;
+}
+
+.name {
+  display: block;
+  font-weight: 700;
+}
+
+/* On the ward board the day sits after the name on the same line, so ten beds fit a 1080p page. */
+.table:not([data-kind]) .name {
+  display: inline;
+}
+
+.day {
+  color: var(--wf-ink-3);
+  font-size: var(--tv-least);
+  white-space: nowrap;
+}
+
+.meta {
+  display: block;
+  color: var(--wf-ink-3);
+  font-size: var(--tv-least);
+}
+
+.fact {
+  display: inline;
+}
+
+.fact > svg {
+  margin-right: 0.35em;
+  vertical-align: 0.05em;
+}
+
+.fact[data-tone="danger"] {
+  color: var(--wf-danger-ink);
+  font-weight: 700;
+}
+
+.fact[data-tone="warning"] {
+  color: var(--wf-warning-ink);
+  font-weight: 600;
+}
+
+.quiet {
+  color: var(--wf-ink-3);
+}
+
+.plan,
+.line,
+.next {
+  display: block;
+}
+
+.plan,
+.next {
+  margin-top: 0.15em;
+  font-size: var(--tv-least);
+}
+
+.risks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3em;
+}
+
+.risk {
+  padding: 0.05em 0.5em;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-tag);
+  background: var(--wf-surface-2);
+  font-size: var(--tv-least);
+  font-weight: 600;
+}
+
+.empty {
+  margin: 0;
+  padding: var(--wf-s-6);
+  color: var(--wf-ink-2);
+}
+
+.pageMark {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  margin: auto 0 0;
+  padding: 0.5em 0.9em;
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-2);
+  font-size: var(--tv-least);
+}
+
+.dots {
+  display: inline-flex;
+  gap: 0.4em;
+}
+
+.dots i {
+  width: 0.55em;
+  height: 0.55em;
+  border-radius: 50%;
+  background: var(--wf-line-2);
+}
+
+.dots i[data-on] {
+  background: var(--wf-accent);
+}
+
+/* Handover: what needs the next shift on the left, every bed in short on the right. */
+.handover {
+  display: grid;
+  flex: 1;
+  grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr);
+  gap: var(--tv-gap);
+  min-height: 0;
+}
+
+.attention,
+.everyBed {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding: var(--wf-s-4) var(--wf-s-6);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+
+.paneTitle {
+  margin: 0 0 var(--wf-s-3);
+  font-size: var(--tv-body);
+  font-weight: 700;
+}
+
+.groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--wf-s-4) var(--wf-s-6);
+  align-content: start;
+}
+
+.group h3 {
+  margin: 0 0 0.3em;
+  color: var(--wf-ink-2);
+  font-size: var(--tv-small);
+  font-weight: 700;
+}
+
+.groupCount {
+  margin-left: 0.3em;
+  padding: 0 0.45em;
+  border-radius: 999px;
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  font-size: 0.85em;
+}
+
+.group ol,
+.compact {
+  display: grid;
+  gap: 0.25em;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--tv-row);
+}
+
+.group li,
+.compact li {
+  display: grid;
+  grid-template-columns: 2.6em minmax(0, 1fr);
+  column-gap: 0.5em;
+  align-items: baseline;
+  padding-bottom: 0.25em;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.group li:last-child {
+  border-bottom: 0;
+}
+
+.compact li {
+  grid-template-columns: 2.6em minmax(0, 1.4fr) minmax(0, 1fr);
+}
+
+.groupBed {
+  color: var(--wf-ink-3);
+  font-family: var(--wf-mono);
+  font-weight: 600;
+}
+
+.groupWho {
+  overflow: hidden;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.groupWhat {
+  grid-column: 2;
+  font-size: var(--tv-least);
+}
+
+.compactNote {
+  overflow: hidden;
+  color: var(--wf-ink-2);
+  font-size: var(--tv-least);
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compact li[data-where="awol"] .compactNote {
+  color: var(--wf-danger-ink);
+  font-weight: 700;
+}
+
+.more {
+  margin: 0.2em 0 0;
+  color: var(--wf-ink-3);
+  font-size: var(--tv-least);
+}
+
+.everyBed .pageMark {
+  margin: auto calc(var(--wf-s-6) * -1) calc(var(--wf-s-4) * -1);
+}

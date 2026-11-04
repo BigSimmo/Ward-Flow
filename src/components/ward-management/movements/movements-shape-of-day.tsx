@@ -3,7 +3,7 @@
 // The Movements screen's Shape of the day panel and its transport and movement rows. Split out of
 // movements-screen.tsx to keep that file under the line cap.
 import { dayOf, minuteOfDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
-import { ChartColumn, CircleCheck, Grid3x3 } from "lucide-react";
+import { ChartColumn, ChevronRight, CircleCheck, Grid3x3 } from "lucide-react";
 import { StatusGlyph } from "@/components/wf";
 import { WAIT_BANDS, waitBand } from "@/components/ward-management/delays/delays-board-model";
 import sh from "./movements-shape-of-day.module.css";
@@ -21,6 +21,7 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { type JourneyStage, type TransportLegRow } from "./movements-derivations";
 import styles from "./movements.module.css";
+import type { MovementPeopleList } from "./movement-people-sheet";
 
 /**
  * Shape of the day, redesigned (1 Nov 2026). Three graph tabs in Waiting's style: where the open
@@ -36,6 +37,7 @@ export function ShapeOfTheDay({
   isInServiceScope,
   jumpToMovement,
   now,
+  onShowPeople,
   openDetail,
   openMovements,
   openStages,
@@ -53,6 +55,8 @@ export function ShapeOfTheDay({
   legs: TransportLegRow[];
   noTransportRecord: Movement[];
   now: Instant;
+  /** M3 (3 Nov 2026): a square opens its patients in the list pop-up. */
+  onShowPeople?: (list: MovementPeopleList) => void;
   openDetail: (id: string) => void;
   openMovements: Movement[];
   openStages: JourneyStage[];
@@ -82,6 +86,17 @@ export function ShapeOfTheDay({
       return { stage, cells };
     });
   const cellMax = Math.max(1, ...grid.flatMap((row) => row.cells.map((cell) => cell.length)));
+  // M3: the long waits as actions, longest band first, each opening its patients.
+  const needsLook = [3, 2].flatMap((band) =>
+    grid.filter((row) => row.cells[band].length > 0).map((row) => ({ stage: row.stage, band, list: row.cells[band] })),
+  );
+  const showCell = (stageLabel: string, band: number, list: Movement[]) =>
+    onShowPeople?.({
+      title: `${stageLabel}, ${WAIT_BANDS[band].toLowerCase()}`,
+      caption: `Open movements at this stage that have waited ${WAIT_BANDS[band].toLowerCase()}.`,
+      tone: band === 3 ? "danger" : band === 2 ? "warning" : undefined,
+      movements: list,
+    });
   const bandTotals = [0, 1, 2, 3].map((band) => grid.reduce((total, row) => total + row.cells[band].length, 0));
 
   // Flow today: opened and resolved in each hour since midnight.
@@ -158,13 +173,51 @@ export function ShapeOfTheDay({
 
       {tab === "stage" ? (
         <div className={sh.panel} role="tabpanel" id={panelId("stage")} aria-label="Where they wait">
+          {/* Act first: the long waits as a sentence and one chip each, above the grid. */}
+          {needsLook.length > 0 && onShowPeople ? (
+            <section className={sh.act} aria-label="Longest waits to act on">
+              <p className={sh.actHead}>
+                {bandTotals[3] > 0 ? (
+                  <>
+                    <b data-tone="danger">{bandTotals[3]}</b> waited {WAIT_BANDS[3].toLowerCase()}
+                  </>
+                ) : null}
+                {bandTotals[3] > 0 && bandTotals[2] > 0 ? ", " : null}
+                {bandTotals[2] > 0 ? (
+                  <>
+                    <b data-tone="warning">{bandTotals[2]}</b> {bandTotals[3] > 0 ? "more" : "have waited"}{" "}
+                    {WAIT_BANDS[2]}
+                  </>
+                ) : null}
+                <span className={sh.actSub}>Start with these. Each opens its patients.</span>
+              </p>
+              <div className={sh.actList}>
+                {needsLook.map(({ stage, band, list }) => (
+                  <button
+                    key={`${stage.id}-${band}`}
+                    type="button"
+                    className={sh.actChip}
+                    data-band={band}
+                    onClick={() => showCell(stage.label, band, list)}
+                  >
+                    <b>{list.length}</b>
+                    <span>
+                      {stage.label}
+                      <small>{WAIT_BANDS[band].toLowerCase()}</small>
+                    </span>
+                    <ChevronRight size={14} aria-hidden="true" />
+                  </button>
+                ))}
+              </div>
+            </section>
+          ) : null}
           <table className={sh.heat}>
             <caption className="sr-only">Open movements by stage and how long they have waited</caption>
             <thead>
               <tr>
                 <th scope="col">Stage</th>
-                {WAIT_BANDS.map((band) => (
-                  <th key={band} scope="col">
+                {WAIT_BANDS.map((band, index) => (
+                  <th key={band} scope="col" data-band={index}>
                     {band}
                   </th>
                 ))}
@@ -181,6 +234,8 @@ export function ShapeOfTheDay({
                       type="button"
                       className={sh.rowLink}
                       disabled={stage.movements.length === 0}
+                      // The stage name finds its first patient in the worklist; the squares open lists.
+                      title="Find in the worklist"
                       onClick={() => {
                         const first = pick(stage.movements);
                         if (first) jumpToMovement(first.id, true);
@@ -196,16 +251,41 @@ export function ShapeOfTheDay({
                         className={sh.cell}
                         data-band={band}
                         data-empty={cell.length === 0 ? "true" : undefined}
+                        data-strong={band < 2 && cell.length / cellMax >= 0.75 ? "true" : undefined}
                         style={{ "--heat": (cell.length / cellMax).toFixed(2) } as CSSProperties}
                         disabled={cell.length === 0}
                         title={`${stage.label}, ${WAIT_BANDS[band].toLowerCase()}: ${cell.length}`}
                         onClick={() => {
+                          if (onShowPeople) {
+                            showCell(stage.label, band, cell);
+                            return;
+                          }
                           const first = pick(cell);
                           if (first) jumpToMovement(first.id, true);
                         }}
                       >
-                        {cell.length === 0 ? <span aria-label="none">·</span> : cell.length}
+                        {cell.length === 0 ? <span className="sr-only">none</span> : cell.length}
                       </button>
+                      {/* Desktop: hovering a square shows who is in it, so nobody has to click away. */}
+                      {cell.length > 0 ? (
+                        <span className={sh.peek} aria-hidden="true">
+                          <span className={sh.peekHead}>
+                            {stage.label} · {WAIT_BANDS[band].toLowerCase()}
+                          </span>
+                          {[...cell]
+                            .sort((a, b) => a.openedAt - b.openedAt)
+                            .slice(0, 5)
+                            .map((movement) => (
+                              <span key={movement.id} className={sh.peekRow}>
+                                <span>{name(movement)}</span>
+                                <b>{splitDuration(Math.max(now - movement.openedAt, 0))}</b>
+                              </span>
+                            ))}
+                          <span className={sh.peekFoot}>
+                            {cell.length > 5 ? `${cell.length - 5} more. ` : ""}Choose the square to open them.
+                          </span>
+                        </span>
+                      ) : null}
                     </td>
                   ))}
                   <td className={sh.total}>{stage.movements.length}</td>
@@ -228,8 +308,11 @@ export function ShapeOfTheDay({
               <i style={{ "--heat": 0.45 } as CSSProperties} />
               <i style={{ "--heat": 0.75 } as CSSProperties} />
               <i style={{ "--heat": 1 } as CSSProperties} />
+              <i data-band="2" />
+              <i data-band="3" />
             </span>
-            Fewer to more. Choose a square to find those patients in the worklist.
+            Fewer to more in the first two columns. Amber is {WAIT_BANDS[2]}, red {WAIT_BANDS[3].toLowerCase()}. Choose
+            a square to see who is in it.
           </p>
         </div>
       ) : null}

@@ -3,7 +3,7 @@
 > 🔴 **GENERATED. DO NOT EDIT BY HAND.** `node scripts/ward-flow/screen-map.mjs`; `--check` fails
 > on a stale map or an unmapped item.
 
-**70 mockups · 55 routes · 40 screen folders.**
+**70 mockups · 56 routes · 40 screen folders.**
 
 ⚠️ The PAIRING is hand-authored — no rule derives that `command-third-edition.html` is route `/`.
 **COMPLETENESS is not**: everything is discovered from disk, so a new or renamed file shows up as
@@ -94,7 +94,7 @@ UNMAPPED rather than disappearing.
 
 ## What the checks found
 
-### ⚠️ ROUTE WITH NO MOCKUP — undrawn, or needs an entry — 20
+### ⚠️ ROUTE WITH NO MOCKUP — undrawn, or needs an entry — 21
 
 - `/bed-meeting`
 - `/bed-meeting/agenda`
@@ -105,6 +105,7 @@ UNMAPPED rather than disappearing.
 - `/ed`
 - `/escalation`
 - `/exceptions`
+- `/hub/catchments`
 - `/movements/[movementId]`
 - `/queue`
 - `/reports/chronology`

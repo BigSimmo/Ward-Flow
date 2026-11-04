@@ -583,10 +583,10 @@ test.describe("@mockup Ward scroll geometry", () => {
 test.describe("@mockup phone navigation follows the stable header", () => {
   test.use({ viewport: { width: 390, height: 844 }, colorScheme: "light" });
   const strips = [
-    ["Patients", "/search", "census_phoneSeg__", 0],
+    ["Patients", "/search", "census_phoneStates__", 0],
     ["Capacity", "/capacity", "capacity-page_phoneTabs__", 0],
     ["Home", "", "home-flow_nav__", 0],
-    ["Community", "/community", "community_phonePanes__", 0],
+    ["Catchments", "/hub/catchments", "community_phonePanes__", 0],
     ["ED", "/ed/rph-ed", "ed_phonePanes__", 0],
     ["Ward statistics", "/statistics/ward/rph-adult-secure", "statistics-phone-body_stickySeg__", 0],
     ["Out-of-area", "/out-of-area", "out-of-area-board_phoneTabs__", 0],
@@ -619,7 +619,7 @@ test.describe("@mockup phone navigation follows the stable header", () => {
       }
       if (collar) await expect(strip).not.toHaveCSS("box-shadow", "none");
       if (route === "/search") {
-        await expect(page.getByRole("tablist", { name: "Patients now or history" })).toBeVisible();
+        await expect(page.getByRole("radiogroup", { name: "Where people are now" })).toBeVisible();
         const bounds = await strip.boundingBox();
         const header = await bar.boundingBox();
         expect(bounds!.y).toBe(header!.y + header!.height);
@@ -639,7 +639,15 @@ test.describe("@mockup Movements timeline fits its rows on a ward desktop monito
     test.setTimeout(120_000);
     await page.setViewportSize({ width: 1920, height: 1080 });
     await page.goto("/ward-flow/movements", { waitUntil: "networkidle" });
+    // M3 (Josh, 3 Nov 2026): the worklist leads and the timeline sits behind a switch, off by default.
+    const timelineSwitch = page.getByRole("switch", { name: "Show timeline" });
+    // A click before hydration is lost, so retry until the switch reports on and the chart has drawn.
     const filter = page.getByRole("combobox", { name: "Filter movement horizon by health service" });
+    await expect(async () => {
+      if ((await timelineSwitch.getAttribute("aria-checked")) !== "true") await timelineSwitch.click();
+      await expect(timelineSwitch).toHaveAttribute("aria-checked", "true", { timeout: 2_000 });
+      await expect(filter).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 30_000 });
     const options = await filter.locator("option").evaluateAll((nodes) =>
       nodes.map((node) => ({
         value: (node as HTMLOptionElement).value,

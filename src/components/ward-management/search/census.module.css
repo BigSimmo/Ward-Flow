@@ -193,63 +193,18 @@
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
 }
 
-/* Match map: five pill counts. While a search runs each reads "8 of 47"; an empty group dims. */
-.mapPills {
+/* PS1: the register's state switch beside the search. It scrolls sideways rather than wrap. */
+.stateTrack {
   display: flex;
   flex: 0 1 auto;
-  align-items: center;
-  gap: 6px;
   min-width: 0;
   margin-left: auto;
   overflow-x: auto;
   scrollbar-width: none;
 }
 
-.mapPills > * {
-  flex: none;
-}
-
-.mapPill.mapPill {
-  padding: 0;
-  border-left: 0;
-}
-
-.mapPill button {
-  display: inline-flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
-  border-radius: var(--wf-r-ctl);
-  background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
-  cursor: pointer;
-}
-
-.mapPill button:hover {
-  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
-}
-
-.mapPill button > span:first-child > span {
-  font-size: var(--wf-fs-14);
-  line-height: 1;
-}
-
-.mapPillZero {
-  color: var(--wf-hero-ink-3);
-}
-
-.of {
-  margin-left: 4px;
-  color: var(--wf-hero-ink-3);
-  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
-}
-
-.mapLabel {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+.stateTrack::-webkit-scrollbar {
+  display: none;
 }
 
 /* ───── glyphs and tier ───── */
@@ -307,32 +262,14 @@
   min-width: 0;
 }
 
-/* Under 75rem the match map drops its "of 47" so the five counts still sit beside the search. */
-@container patient-search (max-width: 74.99rem) {
-  .of {
-    display: none;
-  }
-}
-
-/* Narrower pages keep every group on one line: the glyphs go, the words stay. */
-@container patient-search (max-width: 62rem) {
-  .mapLabel > :first-child {
-    display: none;
-  }
-
-  .mapPill button {
-    padding: 0 10px;
-  }
-}
-
-/* Tablet portrait: five pills beside the search ran off the right edge ("20 No..."), so they take
-   their own row under it (device audit 11 Oct 2026). */
+/* Tablet portrait: the state switch takes its own row under the search, as the five pills did
+   (device audit 11 Oct 2026). */
 @container patient-search (max-width: 56rem) {
   .heroBar {
     flex-wrap: wrap;
   }
 
-  .mapPills {
+  .stateTrack {
     flex: 1 1 100%;
     margin-left: 0;
   }
@@ -371,6 +308,19 @@
   border-radius: var(--wf-r-lg);
   background: var(--wf-surface);
   box-shadow: var(--wf-e1);
+}
+
+/* PS1: how many people the chosen state lists, where the Now and History switch was. */
+.registerCount {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
+.registerCount b {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .toolbar {
@@ -1423,4 +1373,22 @@ tr:has(+ .moreRow) > td {
   margin: 0;
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
+}
+
+/* PS1: the phone state switch scrolls sideways rather than wrapping to two lines. */
+/* PS1: the state switch pins under the header, as the old Now and History tabs did, so a
+   coordinator deep in the list can still change state. */
+.phoneStates {
+  position: sticky;
+  top: var(--wf-header-height, 3.5rem);
+  z-index: 3;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0 calc(-1 * var(--wf-s-3));
+  padding: var(--wf-s-2) var(--wf-s-3);
+  background: var(--wf-canvas);
+}
+
+.phoneStates::-webkit-scrollbar {
+  display: none;
 }

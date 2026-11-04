@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { readWhatsNewEntries } from "./scripts/ward-flow/whats-new-list.mjs";
 import { buildSecurityHeaders, resolveRuntimeFlags } from "./src/lib/security-headers";
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
@@ -56,6 +57,11 @@ const nextConfig: NextConfig = {
   // warnings and the scenario's wards as inputs (`useDueSoonThresholds()`, `useWardNetwork()`), and
   // tests/ward-compiler-inputs.test.ts stops anything reading them from module-wide values again.
   reactCompiler: true,
+  // What's new: one file per change, combined here (scripts/ward-flow/whats-new-list.mjs) and read as
+  // `__WARD_WHATS_NEW__` by ward-whats-new.tsx. Next writes each value as a string literal.
+  compiler: {
+    define: { __WARD_WHATS_NEW__: JSON.stringify(readWhatsNewEntries(projectRoot)) },
+  },
   // Narrow the shell's server imports without changing the design-system API or other chunks.
   modularizeImports: {
     "@/components/wf": {

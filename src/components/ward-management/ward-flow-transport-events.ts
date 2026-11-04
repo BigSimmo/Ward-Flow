@@ -1,3 +1,5 @@
+import { INBOX_CATEGORIES } from "./ward-inbox-reducer";
+import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 import { numberedBedKind } from "./ward-bed-designation";
 import { finiteInstant, type AuditDecision } from "./ward-audit";
 import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
@@ -933,6 +935,28 @@ export function reduceTransportEvent(
         stageChanges: movement.stageChanges,
       };
       const next = replaceMovement(state, movement.id, updatedMovement);
+      // Cancellation ends this job's inbox occurrences. Retire their metadata explicitly:
+      // a replacement can be accepted in the same minute, so timestamps cannot distinguish it.
+      // Append rather than delete, retaining the earlier review/ownership history.
+      for (const category of [
+        INBOX_CATEGORIES.transport_awaiting_departure,
+        INBOX_CATEGORIES.transport_booking_estimate_passed,
+      ]) {
+        const row = `${category.idPrefix}${movement.id}`;
+        const by = WARD_FLOW_ROLE_LABELS[event.role];
+        const snoozes = next.inboxSnoozes[row];
+        if (snoozes?.at(-1)?.kind === "snoozed")
+          next.inboxSnoozes = {
+            ...next.inboxSnoozes,
+            [row]: [...snoozes, { at: event.now, by, kind: "returned" }],
+          };
+        const ownership = next.inboxOwnership[row];
+        if (ownership?.length && ownership.at(-1)?.kind !== "released")
+          next.inboxOwnership = {
+            ...next.inboxOwnership,
+            [row]: [...ownership, { at: event.now, by, kind: "released" }],
+          };
+      }
       /**
        * Addendum §1.3: "CANCEL_TRANSPORT — the officer and the receiving ward — somebody is
        * expecting a person who is no longer coming." Two notices, each its own `NoticeKind`. The

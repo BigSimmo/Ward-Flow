@@ -104,6 +104,68 @@ describe("locked installation without lifecycle scripts", () => {
     ).toThrow(/metadata does not match/i);
     expect(existsSync(path.join(root, "node_modules", installedTreeStampName))).toBe(false);
   });
+  it("reuses a CI-restored tree only when its stamp still matches the lock and the files", async () => {
+    const { installLockedDependencies } = await installer();
+    const { root, packages } = fixture();
+    const stampedInstall = (_command: string, args: string[]) => {
+      if (args.includes("--version")) return { status: 0, stdout: "11.17.0" };
+      populate(root, packages);
+      return { status: 0 };
+    };
+    installLockedDependencies({ root, env: {}, platform: "linux", execute: stampedInstall, log: () => {} });
+    const reusedCalls: string[][] = [];
+    const reused = installLockedDependencies({
+      root,
+      env: { WARD_INSTALL_RESTORED: "true" },
+      platform: "linux",
+      execute: (command: string, args: string[]) => {
+        reusedCalls.push(args);
+        return stampedInstall(command, args);
+      },
+      log: () => {},
+    });
+    expect(reused.reused).toBe(true);
+    expect(reusedCalls).toEqual([["--version"]]);
+
+    // A restored tree that no longer matches its stamp (a file added after the stamp) is reinstalled.
+    writeFileSync(path.join(root, "node_modules", "example", "extra.js"), "export {};");
+    const refusedCalls: string[][] = [];
+    const refused = installLockedDependencies({
+      root,
+      env: { WARD_INSTALL_RESTORED: "true" },
+      platform: "linux",
+      execute: (command: string, args: string[]) => {
+        refusedCalls.push(args);
+        if (args.includes("ci")) removePathSync(path.join(root, "node_modules"), { recursive: true });
+        return stampedInstall(command, args);
+      },
+      log: () => {},
+    });
+    expect(refused.reused).toBeUndefined();
+    expect(refusedCalls).toEqual([["--version"], ["ci", "--ignore-scripts"]]);
+    expect(installedTreeParity(root).ok).toBe(true);
+  });
+  it("never reuses an existing tree unless CI says it restored one", async () => {
+    const { installLockedDependencies } = await installer();
+    const { root, packages } = fixture();
+    const calls: string[][] = [];
+    const run = () =>
+      installLockedDependencies({
+        root,
+        env: { WARD_INSTALL_RESTORED: "false" },
+        platform: "linux",
+        execute: (_command: string, args: string[]) => {
+          calls.push(args);
+          if (args.includes("--version")) return { status: 0, stdout: "11.17.0" };
+          populate(root, packages);
+          return { status: 0 };
+        },
+        log: () => {},
+      });
+    run();
+    run();
+    expect(calls.filter((args) => args.includes("ci"))).toHaveLength(2);
+  });
   it("uses the selected npm CLI directly when launched through npm", async () => {
     const { installLockedDependencies } = await installer();
     const { root, packages } = fixture();

@@ -537,7 +537,8 @@ describe("claim 10 — the community index route is registered, in the mockups p
   // This route page is much shorter than the screens `sourceOf` was calibrated for, so its own
   // floor (rather than `sourceOf`'s 2000-char one) is what stops a renamed or emptied file
   // reporting every absence assertion below as a false green.
-  expect(routePageSource.length, `${routePagePath} is too short to be the real file`).toBeGreaterThan(500);
+  // PL1 (3 Nov 2026): the route is now a short redirect to Places' Catchments tab, so the floor is lower.
+  expect(routePageSource.length, `${routePagePath} is too short to be the real file`).toBeGreaterThan(300);
 
   it("the mockups route page no longer says the route is unregistered or held by a tripwire", () => {
     for (const phrase of [
@@ -553,10 +554,10 @@ describe("claim 10 — the community index route is registered, in the mockups p
     }
   });
 
-  it("the mockups route page states instead that the route is registered and linked", () => {
-    expect(routePageSource).toContain("registered in `ward-nav.ts`");
-    expect(routePageSource).toContain("root rail links it");
-    expect(routePageSource).toContain("started life as an `it.fails` tripwire");
+  it("the route page now sends the index to Places' Catchments tab (PL1, 3 Nov 2026)", () => {
+    expect(routePageSource).toContain('redirect("/ward-flow/hub/catchments")');
+    expect(routePageSource).toContain("Catchments tab");
+    expect(routePageSource).toContain("community/[teamId]");
   });
 
   it("the claims register no longer carries the retired id as an unevidenced absence", () => {

@@ -129,7 +129,9 @@ describe("officer screen omits the retired guard-ledger panel", () => {
     const text = screenEl.textContent ?? "";
     expect(text).not.toContain("Transport Safety Preconditions");
     expect(text).not.toContain("All Stage Gates Validated");
-    expect(text).not.toContain("Form 4A");
+    // The forms column now names "Form 4A before collection" on purpose (deep audit, 4 Nov 2026),
+    // so check the old panel's own precondition wording instead.
+    expect(text).not.toMatch(/Form 4A (?:on file|precondition)/i);
   });
 
   it("no longer renders the destination guard bullet or empty-bed text", () => {

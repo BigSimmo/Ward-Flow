@@ -151,12 +151,14 @@ test("Community referral: a community team refers from its own desk, the ward it
   await newPatient.getByLabel("Date of birth", { exact: true }).fill("02/01/1990");
   await newPatient.getByLabel("UMRN", { exact: true }).fill(PERSON.umrn);
   await newPatient.getByLabel("Suburb", { exact: true }).fill("Albany");
-  await newPatient.getByRole("button", { name: "Add patient" }).click();
+  await newPatient.getByRole("button", { name: "Add and use for this referral" }).click();
   await expect(newPatient).toHaveCount(0);
   await expect(sheet).toContainText(`${PERSON.familyName}, ${PERSON.givenName}`);
   await sheet.getByLabel("Age band", { exact: true }).selectOption("Adult");
+  // RF1 (3 Nov 2026): Albany points to one country team, so no region is suggested and the region
+  // field shows. Once a region is chosen the card offers the whole catchment as one suggestion.
   await sheet.getByLabel("Home region", { exact: true }).selectOption("Perth Metropolitan");
-  await sheet.getByRole("button", { name: "Confirm catchment" }).click();
+  await sheet.getByTestId("ward-referral-use-catchment").click();
 
   // The team's desk opened the slide-out as a community referral naming this team.
   await openReferralStep(sheet, "Referral");

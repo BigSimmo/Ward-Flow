@@ -85,10 +85,11 @@ export function waitLine(minutes: number): string {
   return minutes % 60 === 0 ? `${minutes / 60}h` : splitDuration(minutes);
 }
 
-export function urgencyGlyph(urgency: 1 | 2 | 3): string {
-  if (urgency === 1) return "▲";
-  if (urgency === 2) return "■";
-  return "✓";
+/** The status mark for a referral's urgency, in the kit's one shape language (icon audit, 3 Nov 2026). */
+export function urgencyTone(urgency: 1 | 2 | 3): "danger" | "warning" | "success" {
+  if (urgency === 1) return "danger";
+  if (urgency === 2) return "warning";
+  return "success";
 }
 
 /**
@@ -147,14 +148,14 @@ export function edReferralClockLines(clocks: ReferralClocks): { department: EdCl
  *
  * ⚠️ **THIS LIST IS KNOWN TO BE INCOMPLETE.** The owner has been asked what a psychiatry team
  * actually says when it will not review somebody, and neither survivor may be it. That is precisely
- * why nothing here is pre-selected — see `NO_DECLINE_REASON_VALUE`.
+ * why nothing here is pre-selected — see the unchosen-reason note below.
  */
 
-/**
- * The `<option>` value standing for "no reason chosen yet", for the same reason
- * `NO_LEGAL_FORM_VALUE` exists: a `<select>` option value is always a string.
+/*
+ * The unchosen-reason note. The decline reason is the kit list picker (L31, #1396), which holds
+ * no reason until the person picks one, so its old `<select>` sentinel is gone.
  *
- * ⚠️ **AND IT IS THE SELECTED OPTION ON EVERY OPEN, WHICH IS NOT MERELY A UI PREFERENCE.**
+ * ⚠️ **UNCHOSEN ON EVERY OPEN IS NOT MERELY A UI PREFERENCE.**
  * A pre-selected reason is a reason a clinician who meant something else records by pressing
  * confirm — an invented clinical fact, which this project holds to be worse than a blank.
  *
@@ -169,7 +170,6 @@ export function edReferralClockLines(clocks: ReferralClocks): { department: EdCl
  * example decays when that file changes and nothing local ever fails — which is exactly what
  * happened here, twice, unnoticed.
  */
-export const NO_DECLINE_REASON_VALUE = "";
 
 /**
  * The state of an answered addressing, in plain words — the "recently answered" section's own
@@ -209,7 +209,7 @@ export const SECURITY_OPTIONS: Security[] = ["Open", "Secure"];
 // R7 (25 September 2026): female, male, another term, not recorded.
 export const SEX_OPTIONS: RecordedSex[] = [...RECORDED_SEXES];
 /** T11 (after T10, item 8, owner answer 17 September 2026): the referral-facing gender picker's
- *  real answers — never `NO_GENDER_VALUE` (unanswered) or `GENDER_NOT_RECORDED_VALUE`, which are
+ *  real answers — never unanswered or `GENDER_NOT_RECORDED_VALUE`, which are
  *  both separate, deliberate states this control also offers. See `GENDER_NOT_RECORDED_VALUE`'s
  *  own comment for why "not yet recorded" is a real answer, not a synonym for unanswered. */
 export const GENDER_OPTIONS: ReferralGender[] = [...REFERRAL_GENDERS];
@@ -222,8 +222,8 @@ export const LEGAL_STATUS_OPTIONS: LegalStatus[] = [
 export const URGENCY_OPTIONS = URGENCY_LEVELS;
 
 /**
- * The `<option>` values standing for "not yet answered" on the five raise-referral selects — the
- * same reason `NO_DECLINE_REASON_VALUE` and `NO_LEGAL_FORM_VALUE` exist: a `<select>` option
+ * The `<option>` values standing for "not yet answered" on the raise-referral selects that are
+ * still option values (the rest became kit choices in L31, #1396): a `<select>` option
  * value is always a string, so the `undefined` these fields hold in `ReferralDraftState` needs a
  * DOM-facing sentinel distinct from it. One constant per field, not one shared constant, because
  * a shared empty string reads correctly in the DOM regardless — this split exists purely so a
@@ -231,18 +231,10 @@ export const URGENCY_OPTIONS = URGENCY_LEVELS;
  */
 export const NO_COHORT_VALUE = "";
 export const NO_SECURITY_VALUE = "";
-export const NO_SEX_VALUE = "";
-/**
- * T11 (item 8): the gender picker's "not yet answered" sentinel, distinct from
- * `GENDER_NOT_RECORDED_VALUE` immediately below — the same split the retired intake form's
- * `UNANSWERED_VALUE`/`NOT_RECORDED_VALUE` pair made, restated here in this file's own
- * `undefined`-sentinel convention rather than borrowing that file's string one.
- */
-export const NO_GENDER_VALUE = "";
 /**
  * T11 (item 8): the gender picker's fourth, explicit answer — "the clinician actively said this
- * is not yet recorded", distinct from `NO_GENDER_VALUE` ("nobody has touched this control yet").
- * `NO_GENDER_VALUE` blocks "Raise referral"; choosing this does not — it is a real, deliberate
+ * is not yet recorded", distinct from no answer ("nobody has touched this control yet").
+ * No answer blocks "Raise referral"; choosing this does not — it is a real, deliberate
  * answer that `submitReferral` widens into `gender: undefined` on the dispatched draft
  * (`Movement.gender`'s own "absent means not yet recorded" convention, `ward-model.ts`).
  */
@@ -254,16 +246,15 @@ export const GENDER_NOT_RECORDED_VALUE = "not_recorded";
  * the referrer HAS one, not that every referral must name one.
  */
 export const NO_DIAGNOSIS_VALUE = "none";
-export const NO_LEGAL_STATUS_VALUE = "";
-/**
- * The provenance reason for a legal-status change starts UNCHOSEN, the same way every clinical
+/*
+ * The provenance reason for a legal-status change starts UNCHOSEN (the ED's kit picker holds no
+ * reason until one is picked), the same way every clinical
  * field on the raise-referral form does. `recorded_by_treating_team` used to be pre-selected, so a
  * clinician correcting a mistyped legal status who never touched the control filed the correction
  * as a fresh report FROM the treating team — a team that never made one. The two options describe
  * where the entry came from, not why anyone's status changed, which is why this is an audit-trail
  * defect rather than a clinical one; it is no less wrong for that.
  */
-export const NO_CHANGE_REASON_VALUE = "";
 
 /** One spelling, used by the control, its title and its screen-reader note. */
 export const LEGAL_STATUS_UNCHOSEN =
@@ -271,14 +262,6 @@ export const LEGAL_STATUS_UNCHOSEN =
 
 export const LEGAL_STATUS_REASON_UNCHOSEN =
   "Choose where this entry came from before recording the change. None is chosen for you: a reason nobody picked would be filed as the treating team's own report.";
-export const NO_URGENCY_VALUE = "";
-
-/**
- * The `<option>` value standing for "no form". A `<select>` option value is always a string, so
- * "no form" needs a sentinel; it is converted back to `null` on the way into the draft, where
- * "no form" is a real choice rather than a blank.
- */
-export const NO_LEGAL_FORM_VALUE = "";
 
 /**
  * The local form's own draft shape, distinct from `ReferralDraft` (`ward-flow-events.ts`) — the
@@ -399,7 +382,7 @@ export const DEFAULT_DRAFT: ReferralDraftState = {
   urgency: undefined,
   // Defaults to no form. The clinician picks one; the software never picks one for them. This
   // one was always correct — `null` here has always meant "no form", a real answer the clinician
-  // may deliberately choose, not "unknown". See `NO_LEGAL_FORM_VALUE`'s own comment.
+  // may deliberately choose, not "unknown"; the Legal form picker's "No form" placeholder shows it.
   legalFormCode: null,
   // Blank, like every other field. The software never picks a deadline for the clinician, and
   // never suggests one — see `ReferralDraft.legalFormDueAt` for why the seeded figures must not

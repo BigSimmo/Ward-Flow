@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Clock, FileText, MoreHorizontal, Printer, Send } from "lucide-react";
+import { Bell, Clock, FileText, Ellipsis, Printer, Send } from "lucide-react";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
@@ -123,12 +123,17 @@ import {
   WARD_BED_DRAWER_ENTRY,
   wardHandoverHref,
 } from "./ward-screen-helpers";
-import { WardAnswerFromLink, WardDailySheetDialog, WardDischargeNotices, WardReferralInbox } from "./ward-screen-lazy";
+import {
+  WardAnswerFromLink,
+  WardConfirmBedsDialog,
+  WardDailySheetDialog,
+  WardDischargeNotices,
+  WardReferralInbox,
+} from "./ward-screen-lazy";
 import { moveBetweenWardTabs, WardScreenTopBar } from "./ward-screen-top-bar";
 import { wardBedRoster, wardLiveFormAlerts } from "./ward-screen-derivations";
 import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placement";
 import { WardScreenHomeSection } from "./ward-screen-home-section";
-import { WardConfirmBedsDialog } from "./ward-confirm-beds-dialog";
 import { WardAcceptDialog } from "./ward-answer-accept-dialog";
 import type { DecisionReport } from "./ward-decisions-cockpit";
 import { formatDateOfBirth } from "@/components/ward-management/ward-patients";
@@ -2014,7 +2019,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           aria-label="More ward actions"
           data-testid={tablet ? "ward-tools-more" : "ward-phone-chip-more"}
         >
-          <MoreHorizontal size={tablet ? 16 : 20} aria-hidden="true" />
+          <Ellipsis size={tablet ? 16 : 20} aria-hidden="true" />
           {tablet ? "More" : null}
         </button>
       )}

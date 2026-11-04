@@ -199,7 +199,7 @@ describe("Governance v10 pass (10 Oct 2026)", () => {
     for (const frac of fracs) expect(frac.textContent).toMatch(/^\d+\/\d+\d+ of \d+ .+ recorded$/);
   });
 
-  it("keeps the restrictive practice registers as Preview cards named by record, not a bare form code", () => {
+  it("shows finished seclusion and restraint as the record, named by record, not a bare form code (GV1)", () => {
     const seed = seedWardFlowState();
     render(
       <WardFlowProvider initialNow={NOW}>
@@ -207,8 +207,9 @@ describe("Governance v10 pass (10 Oct 2026)", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByRole("radio", { name: /^Registers/ }));
-    expect(screen.getByRole("region", { name: "Seclusion register" })).toHaveTextContent("Preview");
-    expect(screen.getByRole("region", { name: "Bodily restraint register" })).toHaveTextContent("Preview");
+    // GV1 (Josh, 3 Nov 2026): finished episodes and ward incidents are the record here, live ones are in Forms.
+    expect(screen.getByRole("region", { name: "Seclusion and restraint, finished" })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Ward incidents" })).toBeInTheDocument();
     expect(document.body.textContent).not.toMatch(/Form 1[01]\b/);
   });
 });

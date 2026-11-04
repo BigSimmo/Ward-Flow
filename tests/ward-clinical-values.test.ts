@@ -225,6 +225,16 @@ function typedThresholdsIn(file: string, source: string): string[] {
  */
 const NOT_CLINICAL: ReadonlyArray<{ file: string; name: string; why: string }> = [
   {
+    file: "discharges/discharge-board.tsx",
+    name: "RECORDED_DAYS",
+    why: "how many days of recorded discharges the Recorded list shows (DC4); a view window, never a clinical limit",
+  },
+  {
+    file: "ward-operational-defaults.ts",
+    name: "ASK_WARDS_MINUTES",
+    why: "how long an Ask wards alert stays on a ward's screen, and the window that skips a ward asked twice; an alert time, never a clinical limit",
+  },
+  {
     file: "ward/ward-beds-matrix.tsx",
     name: "STAY_BAR_DAYS",
     why: "the length of stay that fills the Full bed list's stay bar; a drawing scale, never a clinical limit",

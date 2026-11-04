@@ -2,7 +2,7 @@
 
 <!-- Generated from in-app Help; do not edit by hand. -->
 
-Find an open movement or stay by record number, place, stage or owner.
+The register of everyone, found by record number, place, stage or owner.
 
 ## What is on the screen
 

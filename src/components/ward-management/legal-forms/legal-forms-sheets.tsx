@@ -42,6 +42,7 @@ import {
   standingWord,
   type TellSubject,
 } from "./legal-forms-view";
+import { onceOnlyExtensionWarning } from "./legal-form-ledger";
 import styles from "./legal-forms.module.css";
 import asWritten from "./legal-forms-add-time.module.css";
 import { typedTimeLine } from "./legal-time-as-typed";
@@ -205,8 +206,8 @@ export function RecordFormSheet({
   );
   const { clearDraft, draftRestored, draftSaved } = useDirtyStateGuard({
     storageKey: world && !world.sessionAdopted ? undefined : storageKey,
-    isDirty: !!timeOnForm || !!dateOnForm || dateUnread || !!draft.movement,
-    value: JSON.stringify({ ...draft, timeOnForm, dateOnForm }),
+    isDirty: !!timeOnForm || !!dateOnForm || dateUnread || !!draft.movement || !!region,
+    value: JSON.stringify({ ...draft, timeOnForm, dateOnForm, region }),
     onRestore: (raw) => {
       try {
         const restored: unknown = JSON.parse(raw);
@@ -228,6 +229,13 @@ export function RecordFormSheet({
         setTimeOnForm(restored.timeOnForm);
         // A draft saved before the date field existed has no date: blank means today.
         setDateOnForm("dateOnForm" in restored && typeof restored.dateOnForm === "string" ? restored.dateOnForm : "");
+        setRegion(
+          restored.form === "1A" &&
+            "region" in restored &&
+            (restored.region === "metro" || restored.region === "country")
+            ? restored.region
+            : "",
+        );
         return true;
       } catch {
         return false; /* A damaged form draft never becomes a legal record. */
@@ -573,6 +581,7 @@ function ExtendSheetContent({
   const parsedDueAt = target && datedDueAt !== null && datedDueAt > now ? datedDueAt : null;
   // Audit TC2-03: an extension earlier than the expiry already recorded is shown, not refused.
   const currentDueAt = target?.legalForm?.dueAt;
+  const onceOnly = target ? onceOnlyExtensionWarning(target) : undefined;
   const shortens = parsedDueAt !== null && currentDueAt !== undefined && parsedDueAt < currentDueAt;
   const extendBlockReason =
     (saving ? "Saving extension…" : undefined) ??
@@ -645,6 +654,12 @@ function ExtendSheetContent({
               <span className={styles.mono}>{typedTimeLine(target.legalForm.dueAt, now)}</span>
               <span className={styles.meta}>{target.legalForm ? legalFormName(target.legalForm) : ""}</span>
             </div>
+          ) : null}
+          {onceOnly ? (
+            // H13: warns only. The extension can still be confirmed once the paper is checked.
+            <p className={styles.note} role="status" data-testid="ward-legal-forms-renew-once-only">
+              {onceOnly}
+            </p>
           ) : null}
           <Field label="Target movement" id={`${baseId}-legal-forms-renew-movement`}>
             <TextInput locked readOnly value={label} />

@@ -111,10 +111,12 @@ describe("Settings on a phone", () => {
     expect(within(quick).getByRole("radiogroup", { name: "Row density" })).toBeInTheDocument();
     expect(within(quick).getByRole("switch", { name: "Buzz sound" })).toBeInTheDocument();
 
-    // Settings by login (31 Oct 2026): the coordinator's sections, Alerts and Display as This device.
-    for (const area of ["rules", "device", "you", "help", "demo"]) {
-      expect(screen.getByTestId(`ward-settings-phone-area-${area}`)).toBeInTheDocument();
-    }
+    // Settings by role (Josh, 3 Nov 2026, ST1): the coordinator's sections in order, Demo tools last on
+    // the demo site, and no Help row (Help, the tour and shortcuts live in the Help panel).
+    expect(screen.getAllByTestId(/^ward-settings-phone-area-/).map((row) => row.getAttribute("data-testid"))).toEqual(
+      ["rules", "alerts", "display", "you", "demo"].map((area) => `ward-settings-phone-area-${area}`),
+    );
+    expect(screen.queryByTestId("ward-settings-phone-area-help")).toBeNull();
     // The desktop band's tab track is not on the phone.
     expect(within(page).queryByRole("tablist", { name: "Settings areas" })).toBeNull();
   });
@@ -138,11 +140,11 @@ describe("Settings on a phone", () => {
   });
 
   // Audit settings-24: the five-column thresholds table is a desk job; the phone says so.
-  // Settings by login (31 Oct 2026): the Reference card is in Demo tools.
-  it("shows Fixed defaults in the Demo tools sheet and points to a computer for the thresholds table", () => {
+  // Settings by role (Josh, 3 Nov 2026, ST1): the Reference card sits in the coordinator's Rules.
+  it("shows Fixed defaults in the Rules sheet and points to a computer for the thresholds table", () => {
     asPhone();
     renderSettings();
-    fireEvent.click(within(screen.getByTestId("ward-settings-phone-area-demo")).getByRole("button"));
+    fireEvent.click(within(screen.getByTestId("ward-settings-phone-area-rules")).getByRole("button"));
     expect(screen.getByTestId("ward-settings-thresholds-phone")).toHaveTextContent("tablet or computer");
     expect(screen.queryByRole("region", { name: "Published thresholds" })).toBeNull();
     const defaults = document.querySelector('[data-setting="fixed-defaults"]');
@@ -154,7 +156,7 @@ describe("Settings on a phone", () => {
   it("switches the Reference card between Fixed defaults and the clinical values on a phone", () => {
     asPhone();
     renderSettings();
-    fireEvent.click(within(screen.getByTestId("ward-settings-phone-area-demo")).getByRole("button"));
+    fireEvent.click(within(screen.getByTestId("ward-settings-phone-area-rules")).getByRole("button"));
     const list = screen.getByRole("radiogroup", { name: "Reference list" });
     expect(within(list).getByRole("radio", { name: /Fixed defaults/ })).toHaveAttribute("aria-checked", "true");
     expect(screen.queryByTestId("ward-settings-clinical-values-phone")).toBeNull();

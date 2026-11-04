@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 
 import { Card, StatusGlyph, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
-import { edOpenSummaries } from "@/components/ward-management/ed/ed-home-derivations";
+import { edOpenSummaries, isDetainedUnderTheAct } from "@/components/ward-management/ed/ed-home-derivations";
 import { clockState, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService, Movement } from "@/components/ward-management/ward-model";
@@ -62,7 +62,22 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
       })
     : pressure;
   const hiddenByService = pressure.length - scoped.length;
-  const rows = [...scoped].sort((a, b) => b.longestWaitMinutes - a.longestWaitMinutes || b.waiting - a.waiting);
+  const sorted = [...scoped].sort((a, b) => b.longestWaitMinutes - a.longestWaitMinutes || b.waiting - a.waiting);
+  const openFor = (edId: string) => summaries.find((summary) => summary.ed.id === edId)?.open ?? [];
+  // Appraisal (Josh Q8, 3 Nov 2026): only the departments that need something get a tile, worst
+  // first. One with nobody waiting and no one on forms folds into one quiet "KEMH, PCH: no wait" tile,
+  // unless it is the one the queue is filtered to, so the filter can always be turned off.
+  const needsSomething = (row: (typeof sorted)[number]) =>
+    row.waiting > 0 ||
+    row.breaching > 0 ||
+    row.ed.id === selectedEdId ||
+    openFor(row.ed.id).some(
+      (movement) => movement.legalForm !== undefined || isDetainedUnderTheAct(movement.legalStatus),
+    );
+  const rows = sorted.filter(needsSomething);
+  const clear = sorted.filter((row) => !needsSomething(row));
+  const clearCodes = clear.map((row) => row.ed.siteCode).join(", ");
+  const clearNames = clear.map((row) => edShortName(row.ed)).join(", ");
 
   return (
     <Card
@@ -76,37 +91,44 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
           const selected = row.ed.id === selectedEdId;
           const rawService = siteByCode(row.ed.siteCode)?.service ?? edHealthService(row.ed.id);
           const serviceAcronym = healthServiceAcronym(rawService);
-          const deadlines = (summaries.find((summary) => summary.ed.id === row.ed.id)?.open ?? [])
+          const open = openFor(row.ed.id);
+          // H1 (Josh, 3 Nov 2026): the tile counts the people on forms, not a missing due time.
+          const onForms = open.filter(
+            (movement) => movement.legalForm !== undefined || isDetainedUnderTheAct(movement.legalStatus),
+          ).length;
+          const deadlines = open
             .filter((movement) => movement.legalForm?.dueAt !== undefined)
             .map((movement) => clockState(movement.legalForm!.dueAt!, now, thresholds));
           const critical = deadlines.filter((state) => state === "critical").length;
           const due = deadlines.filter((state) => state === "due").length;
           const forms = (count: number) => `${count} form${count === 1 ? "" : "s"}`;
 
+          // With a form due the line drops "on" so it stays on one line in a narrow tile.
+          const onFormsText = `${onForms} on form${onForms === 1 ? "" : "s"}`;
+          // The worst recorded form state tones the line and outlines the tile (never a side stripe).
           const deadline: { tone: WfTone; text: string; spoken: string } =
             row.breaching > 0
-              ? { tone: "danger", text: `${forms(row.breaching)} overdue`, spoken: `${forms(row.breaching)} overdue` }
+              ? {
+                  tone: "danger",
+                  text: `${forms(onForms)}, ${row.breaching}\u00a0overdue`,
+                  spoken: `${onFormsText}, ${forms(row.breaching)} overdue`,
+                }
               : critical > 0
                 ? {
                     tone: "danger",
-                    text: `${forms(critical)} due`,
-                    spoken: `${forms(critical)} due within ${urgentWindow} (your default)`,
+                    text: `${forms(onForms)}, ${critical}\u00a0due`,
+                    spoken: `${onFormsText}, ${forms(critical)} due within ${urgentWindow} (your default)`,
                   }
                 : due > 0
                   ? {
                       tone: "warning",
-                      text: `${forms(due)} due`,
-                      spoken: `${forms(due)} due within ${soonWindow} (your default)`,
+                      text: `${forms(onForms)}, ${due}\u00a0due`,
+                      spoken: `${onFormsText}, ${forms(due)} due within ${soonWindow} (your default)`,
                     }
-                  : deadlines.length > 0
-                    ? {
-                        tone: "success",
-                        text: `${forms(deadlines.length)} on track`,
-                        spoken: `${forms(deadlines.length)} on track`,
-                      }
-                    : row.waiting > 0
-                      ? { tone: "neutral", text: "No due time recorded", spoken: "No form due time recorded" }
-                      : { tone: "neutral", text: "", spoken: "" };
+                  : onForms > 0
+                    ? { tone: "neutral", text: onFormsText, spoken: onFormsText }
+                    : { tone: "neutral", text: "", spoken: "" };
+          const outline = deadline.tone === "danger" || deadline.tone === "warning" ? deadline.tone : undefined;
 
           const longestTone: WfTone | null = edLongestWaitTone(
             row.waiting,
@@ -140,6 +162,7 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
                 data-breaching={row.breaching}
                 data-longest-minutes={row.longestWaitMinutes}
                 data-waiting={row.waiting}
+                data-forms={outline}
                 aria-pressed={selected}
                 aria-label={spoken.join(", ")}
                 title={`${row.ed.name}${rawService ? ` (${rawService})` : ""}`}
@@ -173,7 +196,7 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
                 </span>{" "}
                 {deadline.text ? (
                   <span className={`${styles.edLine} ${styles.edDeadline}`} aria-hidden="true">
-                    <StatusGlyph tone={deadline.tone} size={9} />
+                    {deadline.tone === "neutral" ? null : <StatusGlyph tone={deadline.tone} size={9} />}
                     <span className={styles.edWord}>{deadline.text}</span>
                   </span>
                 ) : null}
@@ -181,6 +204,22 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
             </li>
           );
         })}
+        {clear.length > 0 ? (
+          <li
+            className={`${styles.edCell} ${styles.edClearCell}`}
+            data-testid="ward-home-ed-clear"
+            data-ed-ids={clear.map((row) => row.ed.id).join(" ")}
+          >
+            {/* Josh, 3 Nov 2026: the folded line names the clear EDs, "KEMH, PCH: no wait". */}
+            <p className={styles.edClear} title={clearNames}>
+              <span className={styles.edClearCodes} aria-hidden="true">
+                {clearCodes}:
+              </span>{" "}
+              <span aria-hidden="true">no wait</span>
+              <span className="sr-only">{`${clearNames}: nobody waiting`}</span>
+            </p>
+          </li>
+        ) : null}
       </ul>
       {/* The ED access forecast heads Planned now (Home and Activity design, 31 Oct 2026). */}
       {service ? (

@@ -62,16 +62,17 @@
 .actions .quiet:hover {
   background: var(--wf-hover);
 }
+/* Same fill as the kit primary Button (wf/button.module.css .pri), so dark mode keeps white text readable. */
 .actions .primary {
   margin-inline-start: auto;
   padding-inline: var(--wf-s-4);
-  border-color: var(--wf-accent);
-  background: var(--wf-accent);
+  border-color: var(--wf-pri-edge);
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
   color: var(--wf-on-accent);
   font-weight: 600;
 }
 .actions .primary:hover {
-  background: var(--wf-accent-strong);
+  background: linear-gradient(180deg, var(--wf-pri-1-hover), var(--wf-pri-2-hover));
 }
 .actions button:focus-visible {
   outline: 2px solid var(--wf-ink-1);

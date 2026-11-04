@@ -233,6 +233,7 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
             <div className={styles.transportFact}>
               <TransportCadToFollow
                 movementId={liveMovement.id}
+                transportId={liveMovement.transport!.id}
                 role={routeRole}
                 actingUnitId={transportActingUnitId}
                 unavailable={cadGate.allowed ? undefined : (cadGate.reason ?? "You cannot add the CAD number here.")}

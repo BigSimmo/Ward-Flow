@@ -8,6 +8,8 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import { OverlayPortal, useIsPhone, useModalFocus } from "@/components/wf";
+import { hasOpenSheet, subscribeToSheetStack, topSheetRoot } from "@/components/wf/sheet-focus";
+import { PHONE_QUICK_SETTINGS } from "@/components/ward-management/settings/settings-screen-model";
 
 import { howToHref } from "./ward-help-href";
 import { HOW_TOS, showMeSteps } from "./ward-help-howto";
@@ -46,7 +48,13 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
 
   // Open the screen the job is done on, once, when Show me starts somewhere else. Already on that
   // screen, a different Settings tab is opened through the hash, which Settings listens for.
-  const href = permitted ? howToHref(howTo?.go, role, deskHome ?? home) : undefined;
+  const destination = permitted ? howToHref(howTo?.go, role, deskHome ?? home) : undefined;
+  // Phone quick settings live on the page. Their old desktop section hashes open a device
+  // sheet which deliberately omits these controls, covering the very target we need to light.
+  const href =
+    device === "phone" && howTo && PHONE_QUICK_SETTINGS.has(howTo.id) && destination?.startsWith("/ward-flow/settings#")
+      ? destination.split("#")[0]
+      : destination;
   const went = useRef(false);
   useEffect(() => {
     if (went.current || !href) return;
@@ -62,21 +70,49 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
     () => (target ? (Array.isArray(target) ? target : [target as TourTarget]) : undefined),
     [target],
   );
-  const { box, missing, held } = useSpotlight(targets, `${index}|${pathname}`, device);
-  usePlacedCard(cardRef, spotRef, box, device, step, missing);
+  const [ownsFocus, setOwnsFocus] = useState(false);
+  const { box, missing, held, element } = useSpotlight(targets, `${index}|${pathname}`, device);
+  usePlacedCard(cardRef, spotRef, box, device, ownsFocus ? step : undefined, missing);
+
+  // Navigation can open the first target's PhoneSheet after the guide mounts. Join above that
+  // context once it is ready, then keep this stack position for the whole walk: a dialog opened
+  // by the person afterwards must still take priority. An unrelated dialog also keeps its turn
+  // if it opens while the initial target is being found.
+  useEffect(() => {
+    if (ownsFocus || !howTo || !step) return;
+    function admit() {
+      const top = topSheetRoot();
+      if (element ? !top || top.contains(element) : (!targets?.length || missing) && !top) setOwnsFocus(true);
+    }
+    admit();
+    return subscribeToSheetStack(admit);
+  }, [ownsFocus, howTo, step, element, targets, missing]);
+
+  // The card shows while it waits for its turn above any sheet, so Escape must still close it then.
+  // An open sheet keeps its own Escape; once the card owns focus, useModalFocus handles it.
+  useEffect(() => {
+    if (ownsFocus || !howTo || !step) return;
+    function onKey(event: globalThis.KeyboardEvent) {
+      if (event.key !== "Escape" || event.defaultPrevented || hasOpenSheet()) return;
+      event.preventDefault();
+      onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [ownsFocus, howTo, step, onClose]);
 
   const { rootRef } = useModalFocus({
-    open: true,
+    open: ownsFocus,
     onClose,
     panelRef: cardRef,
     initialFocusRef: nextRef,
-    keyPhase: "capture",
+    interactionRoots: [element],
   });
 
   // A step change can take away the focused button (Back on the first step), so focus goes to Next.
   useEffect(() => {
-    if (document.activeElement === document.body) nextRef.current?.focus();
-  }, [index]);
+    if (ownsFocus && document.activeElement === document.body) nextRef.current?.focus();
+  }, [index, ownsFocus]);
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === "ArrowRight" && !last) {
@@ -111,8 +147,15 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
   if (!howTo || !step) return null;
 
   return (
-    <OverlayPortal layer="modal" name="ward-show-me">
-      <div ref={rootRef} className={styles.layer} data-testid="ward-show-me" data-device={device} data-flow="show-me">
+    <OverlayPortal key={ownsFocus ? "ready" : "waiting"} layer="modal" name="ward-show-me">
+      <div
+        ref={rootRef}
+        className={styles.layer}
+        style={{ pointerEvents: "none" }}
+        data-testid="ward-show-me"
+        data-device={device}
+        data-flow="show-me"
+      >
         {/* Keyed apart, so a new spot is never the dim's box reused and flown in from the corner. */}
         {box ? (
           <div
@@ -136,8 +179,8 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
         <div
           ref={cardRef}
           className={styles.card}
+          style={{ pointerEvents: "auto" }}
           role="dialog"
-          aria-modal="true"
           aria-labelledby="ward-show-me-title"
           aria-describedby="ward-show-me-body"
           onKeyDown={onKeyDown}
