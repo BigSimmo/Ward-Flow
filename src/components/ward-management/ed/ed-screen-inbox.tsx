@@ -15,18 +15,24 @@ import {
 } from "@/components/ward-management/ward-referrals";
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
 import { declineReasonBlockedReason } from "./ed-blocked-reasons";
+import { EdPickerField } from "./ed-referral-choices";
 import type { EdScreenContext } from "./ed-screen-context";
 import {
   COHORT_OPTIONS,
   DEFAULT_DRAFT,
   edReferralClockLines,
-  NO_DECLINE_REASON_VALUE,
   NO_DIAGNOSIS_VALUE,
   referralWardGender,
   SEX_OPTIONS,
   URGENCY_OPTIONS,
 } from "./ed-screen-model";
 import styles from "./ed.module.css";
+
+/** L31: the ED decline reasons as kit list picker options, in the reducer's own order. */
+const DECLINE_REASON_PICKER_OPTIONS = ED_DECLINE_REASONS.map((reason) => ({
+  value: reason,
+  label: DECLINE_REASON_LABELS[reason] ?? reason,
+}));
 
 export function EdInboxReferrals({ ctx }: { ctx: EdScreenContext }) {
   const {
@@ -225,28 +231,15 @@ export function EdInboxDecline({
           </button>
           {declineOpen ? (
             <div className={styles.declineForm} data-testid={`ward-ed-inbox-decline-panel-${referral.id}`}>
-              <label className={styles.referralField} htmlFor={`ward-ed-inbox-decline-reason-${referral.id}`}>
-                Why is this referral being declined?
-                <select
-                  id={`ward-ed-inbox-decline-reason-${referral.id}`}
-                  data-testid={`ward-ed-inbox-decline-reason-${referral.id}`}
-                  value={declineDraft ?? NO_DECLINE_REASON_VALUE}
-                  onChange={(event) =>
-                    setDeclineDraft(
-                      event.target.value === NO_DECLINE_REASON_VALUE
-                        ? undefined
-                        : (event.target.value as ReferralDeclineReason),
-                    )
-                  }
-                >
-                  <option value={NO_DECLINE_REASON_VALUE}>Choose a reason</option>
-                  {ED_DECLINE_REASONS.map((reason) => (
-                    <option key={reason} value={reason}>
-                      {DECLINE_REASON_LABELS[reason] ?? reason}
-                    </option>
-                  ))}
-                </select>
-              </label>
+              <EdPickerField
+                label="Why is this referral being declined?"
+                testId={`ward-ed-inbox-decline-reason-${referral.id}`}
+                name={`ward-ed-inbox-decline-reason-${referral.id}`}
+                options={DECLINE_REASON_PICKER_OPTIONS}
+                placeholder="Choose a reason"
+                value={declineDraft ?? null}
+                onChange={(reason) => setDeclineDraft(reason === null ? undefined : (reason as ReferralDeclineReason))}
+              />
               <button
                 type="button"
                 data-testid={`ward-ed-inbox-decline-confirm-${referral.id}`}

@@ -220,9 +220,11 @@ export const WARD_ED_HREF = "/ward-flow/ed";
 export const WARD_BED_MEETING_TV_HREF = "/ward-flow/bed-meeting";
 
 /** A TV screen: a bed meeting (`?service=` a health service or `all`), one ward (`?ward=`) or one ED (`?ed=`). */
-export function bedMeetingTvHref(view: { ward?: string; ed?: string; service?: string } = {}): string {
-  if (view.ward !== undefined) return `${WARD_BED_MEETING_TV_HREF}?ward=${encodeURIComponent(view.ward)}`;
-  if (view.ed !== undefined) return `${WARD_BED_MEETING_TV_HREF}?ed=${encodeURIComponent(view.ed)}`;
+export function bedMeetingTvHref(view: { ward?: string; ed?: string; service?: string; board?: string } = {}): string {
+  // A ward or ED screen's board (bed flow, clinical or handover) rides in the link, so a locked TV keeps it.
+  const board = view.board === undefined || view.board === "flow" ? "" : `&board=${encodeURIComponent(view.board)}`;
+  if (view.ward !== undefined) return `${WARD_BED_MEETING_TV_HREF}?ward=${encodeURIComponent(view.ward)}${board}`;
+  if (view.ed !== undefined) return `${WARD_BED_MEETING_TV_HREF}?ed=${encodeURIComponent(view.ed)}${board}`;
   if (view.service !== undefined) return `${WARD_BED_MEETING_TV_HREF}?service=${encodeURIComponent(view.service)}`;
   return WARD_BED_MEETING_TV_HREF;
 }
@@ -457,6 +459,10 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
   [
     WARD_ADD_PERSON_HREF,
     "An action taken from the patient search, not a section of the app: the search's empty state carries the 'Add this person' <Link> that is the only way in, and it appears exactly when it is needed — you have searched, nobody came up, and this is the person who does not exist yet. Listing it in the rail would invite adding a person nobody had looked for first, which is how a duplicate record gets made.",
+  ],
+  [
+    "/ward-flow/hub/catchments",
+    "The Catchments tab of Places (PL1, 3 Nov 2026): reached by the Places and Catchments switch on the Places band, and by /ward-flow/community, which redirects here. A second rail item would split one page in two.",
   ],
   [
     "/ward-flow/statistics/overview",
@@ -792,6 +798,8 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   if (isUnder("/ward-flow/ward")) return "Ward";
   if (isUnder("/ward-flow/ed")) return "All EDs";
   if (isUnder("/ward-flow/community")) return "Community";
+  // PL1: Catchments is a tab of Places, so the header keeps the page's name.
+  if (isUnder("/ward-flow/hub")) return "Places";
   if (isUnder("/ward-flow/movements")) return "Movements";
   if (isUnder("/ward-flow/statistics")) return "Statistics";
   if (isUnder("/ward-flow/waiting") || isUnder("/ward-flow/delays") || normalized === "/ward-flow/queue")

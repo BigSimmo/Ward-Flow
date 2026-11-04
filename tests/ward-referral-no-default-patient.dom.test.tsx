@@ -26,7 +26,7 @@ describe("New referral with no named person", () => {
       );
       expect(screen.getByTestId("ward-referral-no-patient")).toHaveTextContent("No patient chosen");
       expect(document.body).not.toHaveTextContent("Rhys Cadwaller");
-      expect(screen.getByRole("searchbox", { name: "Find a patient" })).toBeInTheDocument();
+      expect(screen.getByRole("combobox", { name: "Find a patient" })).toBeInTheDocument();
     });
   }
 

@@ -363,7 +363,8 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
      * every group, three columns wide, blocker folded into the third column instead of broken out
      * on its own.
      */
-    const DISCHARGE_COLUMNS = ["Person", "Expected out", "Stage", "Held up by"];
+    // DC2 (3 Nov 2026): Stage is gone; a held-up row shows its stage under the hold-up.
+    const DISCHARGE_COLUMNS = ["Person", "Expected out", "Held up by"];
     const table = page.getByRole("table");
     await expect(table, "the discharges board renders no table, so its column contract went unchecked").toBeVisible();
     const headers = table.locator("thead th");
@@ -448,20 +449,21 @@ test.describe("@mockup WA disposition pathways", () => {
       await expect(page.locator(`[data-admission-id="${admission.id}"]`)).toHaveCount(0);
       await clickRailLink(page, "/ward-flow/discharges");
       await page.waitForURL((url) => url.pathname === "/ward-flow/discharges");
-      // Settle navigation and the saved workspace before selecting History. A click during the
-      // screen transition must not leave this journey searching the Now view for a History field.
+      // Settle navigation and the saved workspace before selecting Recorded (DC4, which replaced
+      // History). A click during the screen transition must not leave this journey on the Now view.
       await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
       await expect(page.getByTestId("ward-discharge-board")).toBeVisible();
-      await expect(page.getByRole("group", { name: "Now or history", exact: true })).toHaveAttribute(
+      await expect(page.getByRole("group", { name: "Now or recorded", exact: true })).toHaveAttribute(
         "aria-busy",
         "false",
       );
       const history = page.getByTestId("ward-discharge-history");
       await history.click();
       await expect(history).toHaveAttribute("aria-pressed", "true");
-      const destinationFilter = page.locator("#discharges-filter-destination");
-      await destinationFilter.selectOption(destination.id);
-      await expect(destinationFilter).toHaveValue(destination.id);
+      // DC2 (3 Nov 2026): the filters are menus, so Going to is picked from its own list.
+      await page.getByRole("button", { name: /^Going to: / }).click();
+      await page.getByRole("menuitemradio", { name: destination.label, exact: true }).click();
+      await expect(page.getByRole("button", { name: `Going to: ${destination.label}` })).toBeVisible();
       await page.getByRole("button", { name, exact: true }).click();
       const detail = page.getByRole("region", { name: "Selected discharge details" });
       await expect(detail).toContainText(destination.label);
@@ -488,14 +490,11 @@ test.describe("@mockup complete care dossier", () => {
   test("records planning, clinician responsibility and an appointment at phone width", async ({ page }) => {
     const seed = seedWardFlowState();
     const a = seed.admissions.find((a) => a.state === "occupied" && a.expectedDischargeAt !== null && a.patientId)!;
-    const p = seed.patients.find((p) => p.id === a.patientId)!;
-    await page.goto("/ward-flow/discharges");
+    // DC4 (3 Nov 2026): Recorded lists only the last 7 days' discharges, so a current stay's record
+    // opens from its Tasks link, as a ward clinician reaches it.
+    await page.goto(`/ward-flow/discharges?admissionId=${a.id}`);
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("region", { name: "Ward Flow data mode" })).toHaveCount(0);
-    const history = page.getByTestId("ward-discharge-history");
-    await history.click();
-    await expect(history).toHaveAttribute("aria-pressed", "true");
-    await page.getByRole("button", { name: `${p.familyName}, ${p.givenName}`, exact: true }).click();
     const detail = page.getByRole("region", { name: "Selected discharge details" });
     await detail.getByRole("tab", { name: "Record", exact: true }).click();
     const care = detail.getByRole("region", { name: "Care journey" });

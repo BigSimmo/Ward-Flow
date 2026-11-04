@@ -19,7 +19,7 @@ function bedTypeChipText(security: Security | undefined): string {
   return security === undefined ? "Bed type not recorded" : `${securityWord(security)} bed`;
 }
 import Link from "next/link";
-import { BedDouble, Check, Clock, Copy, Eye, FileText, Scale } from "lucide-react";
+import { BedSingle, Check, Clock, Copy, Eye, FileText, Scale } from "lucide-react";
 import { PatientFlightHeader } from "./patient-flight-header";
 import { absenceStepsFor } from "@/components/ward-management/ward-model";
 import { type Patient } from "@/components/ward-management/ward-patients";
@@ -372,7 +372,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                 </span>
               ) : null}
               <span className={styles.v6HeroFact}>
-                <BedDouble size={14} aria-hidden="true" />
+                <BedSingle size={14} aria-hidden="true" />
                 {bedTypeChipText(liveMovement.security)}
               </span>
               {movementTimeLeft ? (
@@ -390,7 +390,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
             <span className={styles.v6HeroFacts}>
               {(mode === "leave" || mode === "awol" || mode === "ed") && (
                 <span className={styles.v6HeroFact}>
-                  <BedDouble size={14} aria-hidden="true" />
+                  <BedSingle size={14} aria-hidden="true" />
                   Bed held
                 </span>
               )}

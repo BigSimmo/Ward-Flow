@@ -51,8 +51,10 @@ function ResetScenario() {
     </button>
   );
 }
+// Recorded (DC4, 3 Nov 2026) lists only discharges of the last 7 days, so these open a recent
+// departed record. A departed stay offers no date update, so its UMRN line is the opened-record evidence.
 function openFirstRecord(worklist?: HTMLElement) {
-  fireEvent.click(screen.getByRole("button", { name: /^History/ }));
+  fireEvent.click(screen.getByRole("button", { name: /^Recorded/ }));
   const rows = within(worklist ?? screen.getByRole("region", { name: "Discharge worklist" })).getAllByRole("row");
   // Only the first record is exercised; later row buttons add no assertion.
   let openers: HTMLElement[] = [];
@@ -119,12 +121,13 @@ describe("DischargeBoard guarded detail access", () => {
     const name = openFirstRecord();
     const detail = screen.getByRole("region", { name: "Selected discharge details" });
     expect(within(detail).getByRole("heading", { name })).toBeInTheDocument();
-    expect(within(detail).getByTestId("ward-discharge-update-date-btn")).toBeInTheDocument();
+    expect(within(detail).getByText(/UMRN/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Reset scenario" }));
     // World-generation changes remount the workspace and clear selection altogether.
     const cleared = screen.getByRole("region", { name: "Selected discharge details" });
     expect(cleared).toHaveTextContent("Select a record to view dates, hold-ups and ward follow-up.");
     expect(within(cleared).queryByRole("heading", { name })).not.toBeInTheDocument();
     expect(within(cleared).queryByTestId("ward-discharge-update-date-btn")).not.toBeInTheDocument();
+    expect(within(cleared).queryByText(/UMRN/)).not.toBeInTheDocument();
   });
 });

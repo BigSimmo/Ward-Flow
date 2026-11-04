@@ -15,6 +15,43 @@ import {
 } from "@/components/wf";
 
 describe("kit typed date box (DD/MM/YYYY)", () => {
+  it("retains controlled unfinished text through hiding and clears it only on explicit reset", () => {
+    function Harness() {
+      const [value, setValue] = useState("");
+      const [rawText, setRawText] = useState("");
+      const [open, setOpen] = useState(true);
+      return (
+        <>
+          {open ? (
+            <DateField
+              aria-label="Unfinished date"
+              value={value}
+              onValueChange={setValue}
+              rawText={rawText}
+              onRawTextChange={setRawText}
+            />
+          ) : null}
+          <button onClick={() => setOpen(!open)}>Toggle date</button>
+          <button
+            onClick={() => {
+              setValue("");
+              setRawText("");
+            }}
+          >
+            Reset date
+          </button>
+        </>
+      );
+    }
+    render(<Harness />);
+    fireEvent.change(screen.getByRole("textbox", { name: "Unfinished date" }), { target: { value: "12/" } });
+    fireEvent.click(screen.getByRole("button", { name: "Toggle date" }));
+    fireEvent.click(screen.getByRole("button", { name: "Toggle date" }));
+    expect(screen.getByRole("textbox", { name: "Unfinished date" })).toHaveValue("12/");
+    fireEvent.click(screen.getByRole("button", { name: "Reset date" }));
+    expect(screen.getByRole("textbox", { name: "Unfinished date" })).toHaveValue("");
+  });
+
   it("reads the day as written in Australia and refuses days that do not exist", () => {
     expect(parseTypedDate("31/10/2026")).toBe("2026-10-31");
     expect(parseTypedDate("1/9/2026")).toBe("2026-09-01");

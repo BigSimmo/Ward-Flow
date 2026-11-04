@@ -32,6 +32,7 @@ import { RecordedDischargeMilestones } from "./discharge-board-parts";
 import { DischargeDependenciesPanel } from "./discharge-logistics-lazy";
 import { HELD_UP, pastWords, type ReleasePanelPart } from "./discharge-release-actions";
 import type { DischargeWorkspaceState } from "./use-discharge-workspace-state";
+import { DischargeMessageWard } from "./discharge-message-ward";
 
 /* The discharge detail panel's three states, moved unchanged from `discharge-board.tsx`. */
 
@@ -675,6 +676,16 @@ export function DischargeReleaseDetail({
                 </span>
                 <span className={pageStyles.secondary}>Recorded discharge blocker</span>
               </div>
+              {/* DC1 (Josh, 3 Nov 2026): the coordinator asks the ward beside the hold-up itself. */}
+              {s.releaseActor.role === "coordinator" && detailRelease.state !== "discharged" ? (
+                <DischargeMessageWard
+                  release={detailRelease}
+                  who={linkedReleaseRecord ? recordName(linkedReleaseRecord) : "this patient"}
+                  wardName={selectedUnit?.name ?? "the ward"}
+                  now={now}
+                  dispatch={s.dispatch}
+                />
+              ) : null}
             </div>
           ) : (
             <div className={pageStyles.barrierBox}>

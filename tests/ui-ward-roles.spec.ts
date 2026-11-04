@@ -2,6 +2,7 @@ import { expect, test, type Locator, type Page } from "playwright/test";
 
 import { edById, unitById } from "@/components/ward-management/ward-sites";
 import { clearToasts } from "./helpers/clear-toasts";
+
 import { openEdLists } from "./helpers/ward-ed-lists";
 import { homeFlowCard, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
@@ -1151,12 +1152,16 @@ test.describe("@mockup Emergency department screen", () => {
     //
     // ⚠️ ADDED BY WARD BUILDER TWO, WHICH CANNOT RUN PLAYWRIGHT. This line is REASONED from the
     // filter and the label, never observed. If the rendered text differs, trust this line least.
-    await expect(reason.locator("option")).toHaveText([
-      "Choose a reason",
+    // L31: the reason is the kit list picker. It reads "Choose a reason" until one is picked, and
+    // its options are read while it is open, then it is closed again.
+    await expect(reason).toHaveText("Choose a reason");
+    await reason.click();
+    await expect(page.locator('[role="option"][data-value]')).toHaveText([
       "Belongs to another service",
       "Referred elsewhere",
       "Another reason — needs follow-up",
     ]);
+    await page.keyboard.press("Escape");
 
     // Pressing it while unavailable must change nothing — the handler is inert, not merely styled.
     //
@@ -1170,7 +1175,8 @@ test.describe("@mockup Emergency department screen", () => {
     await confirm.click({ force: true });
     await expect(page.getByTestId("ward-ed-inbox-row-RF-009")).toBeVisible();
 
-    await reason.selectOption({ label: "Referred elsewhere" });
+    await reason.click();
+    await page.getByRole("option", { name: "Referred elsewhere" }).click();
     await expect(confirm).not.toHaveAttribute("aria-disabled", "true");
 
     await confirm.click();

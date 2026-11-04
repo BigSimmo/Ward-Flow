@@ -77,6 +77,7 @@ export { useModalFocus, type UseModalFocusOptions } from "./use-modal-focus";
 export { cycleTabWithin, focusIsLost } from "./focus-return";
 export { rememberOpener, returnFocusToOpener, type FocusOpener } from "./focus-opener";
 export { StateLine, type StateKind } from "./state";
+export { PanelBoundary } from "./panel-boundary";
 export { ToastDeviceSaveContext, ToastProvider, useOptionalToast, useToast, type ToastInput } from "./toast-provider";
 export { LiveChip, Timer, publishLiveClock, publishLiveRefresh, useSharedRefreshLate } from "./live";
 export {
@@ -122,3 +123,7 @@ export {
   type DateFieldProps,
 } from "./date-field";
 export { ListPicker, type ListPickerOption, type ListPickerProps } from "./list-picker";
+// Plan item 2j (Josh, 3 Nov 2026): a figure borrowed from its owning page links there, and one
+// that ignores the chosen service says "Network-wide" (scope from ward-figure-scope.ts, owners from ward-page-owners.ts).
+export { FigureLink, figureLinkName, wfNumClass, type FigureOwner } from "./figure-link";
+export { NETWORK_WIDE, ScopeNote } from "./figure-scope";

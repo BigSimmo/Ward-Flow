@@ -42,6 +42,7 @@ import {
   standingWord,
   type TellSubject,
 } from "./legal-forms-view";
+import { onceOnlyExtensionWarning } from "./legal-form-ledger";
 import styles from "./legal-forms.module.css";
 import asWritten from "./legal-forms-add-time.module.css";
 import { typedTimeLine } from "./legal-time-as-typed";
@@ -573,6 +574,7 @@ function ExtendSheetContent({
   const parsedDueAt = target && datedDueAt !== null && datedDueAt > now ? datedDueAt : null;
   // Audit TC2-03: an extension earlier than the expiry already recorded is shown, not refused.
   const currentDueAt = target?.legalForm?.dueAt;
+  const onceOnly = target ? onceOnlyExtensionWarning(target) : undefined;
   const shortens = parsedDueAt !== null && currentDueAt !== undefined && parsedDueAt < currentDueAt;
   const extendBlockReason =
     (saving ? "Saving extension…" : undefined) ??
@@ -645,6 +647,12 @@ function ExtendSheetContent({
               <span className={styles.mono}>{typedTimeLine(target.legalForm.dueAt, now)}</span>
               <span className={styles.meta}>{target.legalForm ? legalFormName(target.legalForm) : ""}</span>
             </div>
+          ) : null}
+          {onceOnly ? (
+            // H13: warns only. The extension can still be confirmed once the paper is checked.
+            <p className={styles.note} role="status" data-testid="ward-legal-forms-renew-once-only">
+              {onceOnly}
+            </p>
           ) : null}
           <Field label="Target movement" id={`${baseId}-legal-forms-renew-movement`}>
             <TextInput locked readOnly value={label} />

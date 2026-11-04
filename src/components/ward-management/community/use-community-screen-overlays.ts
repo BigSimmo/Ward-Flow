@@ -7,7 +7,6 @@
  * "this file" or "this screen" in them still means the community team screen as a whole.
  */
 
-import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { useRef, useState } from "react";
 import { useModalFocus } from "@/components/wf";
 import type { CancelTransportReason } from "@/components/ward-management/ward-change-reasons";
@@ -112,8 +111,8 @@ export function useCommunityScreenTransport({ raise, teamId }: { raise: WardRais
 
   const transportBookDialogRef = useRef<HTMLDivElement | null>(null);
   const transportCancelDialogRef = useRef<HTMLDivElement | null>(null);
-  useWardModalFocus(transportBookFor !== undefined, transportBookDialogRef, closeTransportBook);
-  // Cancellation owns its focus lifecycle beside its save state, so Escape cannot hide a pending answer.
+  // The kit dialogs own their focus/close lifecycle beside their draft and save states, so a
+  // second capture-phase Escape handler here cannot bypass an unsaved-answers question.
 
   // Audit 24-3 SV-2: each dialog closes only once its save is accepted. The dialog's own
   // `useWardFormSave` keeps the answers and says why when it is refused or not confirmed.

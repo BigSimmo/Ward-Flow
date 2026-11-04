@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import "@testing-library/jest-dom/vitest";
@@ -11,6 +11,7 @@ import {
   EdInboxReferralFixture,
   markNotYetIdentified,
   openRaiseIntoMovementForm,
+  chooseEdChoice,
 } from "./helpers/ed-raise-into-movement";
 
 vi.mock("next/link", () => ({
@@ -51,12 +52,12 @@ describe("ED raise form marks what is still unanswered", () => {
   it("marks nothing before a raise is tried", () => {
     renderEd();
     expect(screen.queryByTestId("ward-ed-referral-missing")).toBeNull();
-    expect(screen.getByTestId("ward-ed-referral-cohort")).not.toHaveAttribute("aria-invalid");
+    expect(screen.getByTestId("ward-ed-referral-cohort")).not.toHaveAttribute("aria-describedby");
   });
 
   it("on a blocked click marks every unanswered field, lists them and focuses the first", () => {
     renderEd();
-    fireEvent.change(screen.getByTestId("ward-ed-referral-cohort"), { target: { value: "Adult" } });
+    chooseEdChoice("ward-ed-referral-cohort", "Adult");
     const before = screen.getByTestId("movement-count").textContent;
 
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
@@ -67,9 +68,8 @@ describe("ED raise form marks what is still unanswered", () => {
     expect(list).toHaveTextContent(
       "Still to answer: Security, Sex, Gender, Legal status, Observation level, High-acuity nursing.",
     );
-    expect(screen.getByTestId("ward-ed-referral-cohort")).not.toHaveAttribute("aria-invalid");
+    expect(screen.getByTestId("ward-ed-referral-cohort")).not.toHaveAttribute("aria-describedby");
     for (const testId of [
-      "ward-ed-referral-security",
       "ward-ed-referral-sex",
       "ward-ed-referral-gender",
       "ward-ed-referral-legal-status",
@@ -77,26 +77,32 @@ describe("ED raise form marks what is still unanswered", () => {
     ]) {
       expect(screen.getByTestId(testId), testId).toHaveAttribute("aria-invalid", "true");
     }
-    // A radio pair cannot carry aria-invalid; its group is described as not answered instead.
-    for (const name of ["High-acuity nursing"]) {
+    // A radio pair or segmented control cannot carry aria-invalid; its group is described as not
+    // answered instead (L31: Security is a kit segmented control).
+    for (const name of ["Security", "High-acuity nursing"]) {
       expect(screen.getByRole("group", { name }), name).toHaveAccessibleDescription("Not answered");
     }
     // Urgency is filled in from the referral, so six are unanswered.
     expect(screen.getAllByText("Not answered")).toHaveLength(6);
-    expect(screen.getByTestId("ward-ed-referral-security")).toHaveFocus();
+    expect(within(screen.getByTestId("ward-ed-referral-security")).getAllByRole("radio")[0]).toHaveFocus();
   });
 
   it("does the same when Enter submits the form, and clears each mark once answered", () => {
     renderEd();
-    // The referral fills in the cohort; clear it to leave it unanswered.
-    fireEvent.change(screen.getByTestId("ward-ed-referral-cohort"), { target: { value: "" } });
+    // The referral fills in the urgency; clear it to leave it unanswered, and answer the questions
+    // above it so it is the first one still open.
+    chooseEdChoice("ward-ed-referral-security", "Open");
+    chooseEdChoice("ward-ed-referral-sex", "Female");
+    chooseEdChoice("ward-ed-referral-gender", "Female");
+    chooseEdChoice("ward-ed-referral-legal-status", "Voluntary");
+    chooseEdChoice("ward-ed-referral-urgency", "");
     fireEvent.submit(screen.getByTestId("ward-ed-referral-form"));
-    expect(screen.getByTestId("ward-ed-referral-cohort")).toHaveFocus();
-    expect(screen.getByTestId("ward-ed-referral-cohort")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByTestId("ward-ed-referral-urgency")).toHaveFocus();
+    expect(screen.getByTestId("ward-ed-referral-urgency")).toHaveAttribute("aria-invalid", "true");
 
-    fireEvent.change(screen.getByTestId("ward-ed-referral-cohort"), { target: { value: "Adult" } });
-    expect(screen.getByTestId("ward-ed-referral-cohort")).not.toHaveAttribute("aria-invalid");
-    expect(screen.getByTestId("ward-ed-referral-missing")).not.toHaveTextContent("Cohort");
+    chooseEdChoice("ward-ed-referral-urgency", "2");
+    expect(screen.getByTestId("ward-ed-referral-urgency")).not.toHaveAttribute("aria-invalid");
+    expect(screen.getByTestId("ward-ed-referral-missing")).not.toHaveTextContent("Urgency");
   });
 
   it("names the patient first when nobody is chosen", () => {

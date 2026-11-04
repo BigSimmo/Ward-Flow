@@ -23,10 +23,11 @@ vi.mock("next/navigation", () => ({
  */
 
 type Mode = "failed" | "refused" | "accepted";
-const FAILED_SAYS = "Save is not confirmed. Press Retry when you are back online. It will not be saved twice.";
+const FAILED_SAYS =
+  "Save is not confirmed. It sends again by itself when you are back online, or press Retry. It will not be saved twice.";
 const REFUSED_SAYS = "This record changed while you were looking. Your action was not applied.";
 const SAYS: Record<Mode, RegExp | null> = {
-  failed: /Save is not confirmed\. Press Retry when you are back online/u,
+  failed: /Save is not confirmed\. It sends again by itself when you are back online/u,
   refused: /Not recorded: This record changed while you were looking/u,
   accepted: null,
 };
