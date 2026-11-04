@@ -17,29 +17,9 @@ import {
   GROUP_DESCRIPTIONS,
   unitLabel,
   healthServiceLabel,
-  type WorkStatus,
-  WORK_STATUS_LABELS,
-  stageTone,
 } from "./discharge-board-model";
 
 /* The discharge board's small shared parts, moved unchanged from `discharge-board.tsx`. */
-
-/** The stage badge on a list row. */
-export const badge = (stage: WorkStatus) => (
-  <span className={pageStyles.badge} data-status={stage}>
-    <StatusGlyph tone={stageTone(stage)} size={9} />
-    <span className="sr-only">
-      {stage === "blocked"
-        ? "Held up: "
-        : stage === "departed"
-          ? "Discharged: "
-          : stage === "confirmed"
-            ? "Confirmed: "
-            : "Expected: "}
-    </span>
-    <span>{WORK_STATUS_LABELS[stage]}</span>
-  </span>
-);
 
 export function RecordedDischargeMilestones({
   milestones,
