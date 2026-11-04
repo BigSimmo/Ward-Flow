@@ -6,6 +6,7 @@ import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/wa
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { chooseEdChoice, edChoiceOptions, edChoiceValue } from "./helpers/ed-raise-into-movement";
 
 const seed = seedWardFlowState();
 const seededMovement = seed.movements.find((entry) => entry.id === "WF-001");
@@ -36,10 +37,11 @@ function setup(dispatch: WardCommandDispatch) {
     </WardFlowProvider>,
   );
   fireEvent.click(screen.getByTestId(`ed-refer-cmht-${movement.id}`));
-  const team = screen.getByTestId(`ward-ed-cmht-select-${movement.id}`) as HTMLSelectElement;
-  expect(team.options.length).toBeGreaterThan(1);
-  const chosenTeam = team.options[1]!.value;
-  fireEvent.change(team, { target: { value: chosenTeam } });
+  const team = screen.getByTestId(`ward-ed-cmht-select-${movement.id}`);
+  const offered = edChoiceOptions(`ward-ed-cmht-select-${movement.id}`);
+  expect(offered.length).toBeGreaterThan(0);
+  const chosenTeam = offered[0]!.value;
+  chooseEdChoice(`ward-ed-cmht-select-${movement.id}`, chosenTeam);
   fireEvent.click(screen.getByTestId(`ward-ed-cmht-purpose-follow_up-${movement.id}`));
   return { team, chosenTeam, button: screen.getByTestId(`ward-ed-cmht-confirm-${movement.id}`) };
 }
@@ -50,12 +52,12 @@ it("keeps the community referral answers and panel when recording is refused", a
   const h = setup(dispatch);
   fireEvent.click(h.button);
   expect(h.team).toBeInTheDocument();
-  expect(h.team).toHaveValue(h.chosenTeam);
+  expect(edChoiceValue(h.team.getAttribute("data-testid") ?? "")).toBe(h.chosenTeam);
   await act(async () =>
     answer.resolve({ commandId: "synthetic-community", status: "refused", message: "Synthetic refusal" }),
   );
   expect(screen.getByRole("alert")).toHaveTextContent("Synthetic refusal");
-  expect(h.team).toHaveValue(h.chosenTeam);
+  expect(edChoiceValue(h.team.getAttribute("data-testid") ?? "")).toBe(h.chosenTeam);
 });
 
 it("waits for matching late acceptance before clearing the panel and cannot send twice", async () => {

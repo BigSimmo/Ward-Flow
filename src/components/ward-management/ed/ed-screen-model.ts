@@ -246,15 +246,15 @@ export const GENDER_NOT_RECORDED_VALUE = "not_recorded";
  * the referrer HAS one, not that every referral must name one.
  */
 export const NO_DIAGNOSIS_VALUE = "none";
-/**
- * The provenance reason for a legal-status change starts UNCHOSEN, the same way every clinical
+/*
+ * The provenance reason for a legal-status change starts UNCHOSEN (the ED's kit picker holds no
+ * reason until one is picked), the same way every clinical
  * field on the raise-referral form does. `recorded_by_treating_team` used to be pre-selected, so a
  * clinician correcting a mistyped legal status who never touched the control filed the correction
  * as a fresh report FROM the treating team — a team that never made one. The two options describe
  * where the entry came from, not why anyone's status changed, which is why this is an audit-trail
  * defect rather than a clinical one; it is no less wrong for that.
  */
-export const NO_CHANGE_REASON_VALUE = "";
 
 /** One spelling, used by the control, its title and its screen-reader note. */
 export const LEGAL_STATUS_UNCHOSEN =

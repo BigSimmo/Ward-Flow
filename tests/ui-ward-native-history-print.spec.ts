@@ -9,10 +9,16 @@ async function settled(page: Page) {
 }
 
 async function navigate(page: Page, route: string) {
-  const link = page.locator(`a[href="${HOME}${route}"]:visible`).first();
-  // B1 (19 Oct 2026): the rail lists the desk's own pages; the rest are under More.
-  if ((await link.count()) === 0) await page.getByTestId("ward-rail-more").click();
-  await link.click();
+  if (route === "/settings") {
+    // DK1 (3 Nov 2026): Settings lives in the account menu on the person card, not as a rail link.
+    await page.getByTestId("ward-rail-persona-trigger").click();
+    await page.getByRole("menuitem", { name: "Settings" }).click();
+  } else {
+    const link = page.locator(`a[href="${HOME}${route}"]:visible`).first();
+    // B1 (19 Oct 2026): the rail lists the desk's own pages; the rest are under More.
+    if ((await link.count()) === 0) await page.getByTestId("ward-rail-more").click();
+    await link.click();
+  }
   await expect(page).toHaveURL(new RegExp(`${HOME}${route}$`));
   await settled(page);
 }

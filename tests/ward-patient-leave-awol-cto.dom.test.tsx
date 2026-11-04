@@ -118,13 +118,19 @@ describe("leave, absent without leave and CTO modes (D-38)", () => {
 
   it("prompts the return order question for an involuntary patient (S-5)", () => {
     renderPatient(inBedPatientId);
-    fireEvent.click(within(screen.getByTestId("ward-patient-gate-leave")).getByRole("button", { name: "Mark absent" }));
+    // Josh's approved list (3 Nov 2026): Mark absent sits in the On ward card's one action row.
+    fireEvent.click(
+      within(screen.getByTestId("ward-patient-change-card")).getByRole("button", { name: "Mark absent" }),
+    );
     expect(screen.getByTestId("ward-patient-last-seen")).toHaveTextContent("Return order");
   });
 
   it("marks absent straight from the ward, holding the bed", () => {
     const root = renderPatient(inBedPatientId);
-    fireEvent.click(within(screen.getByTestId("ward-patient-gate-leave")).getByRole("button", { name: "Mark absent" }));
+    // Josh's approved list (3 Nov 2026): Mark absent sits in the On ward card's one action row.
+    fireEvent.click(
+      within(screen.getByTestId("ward-patient-change-card")).getByRole("button", { name: "Mark absent" }),
+    );
     expect(root).toHaveAttribute("data-patient-mode", "awol");
     expect(screen.getByTestId("ward-person-identity")).toHaveTextContent("Bed held");
   });
@@ -134,7 +140,8 @@ describe("leave, absent without leave and CTO modes (D-38)", () => {
     expect(root).toHaveAttribute("data-patient-mode", "idle");
     // Not active still names the recorded GP under Who to call.
     expect(within(screen.getByTestId("ward-patient-who-to-call")).getByText("GP")).toBeVisible();
-    fireEvent.click(within(screen.getByTestId("ward-patient-gate-legal")).getByRole("button", { name: "Record CTO" }));
+    // PT1 round 2 (3 Nov 2026): Record CTO sits in the band beside New referral.
+    fireEvent.click(screen.getByTestId("ward-person-record-cto"));
     expect(root).toHaveAttribute("data-patient-mode", "cto");
     expect(screen.getByTestId("ward-patient-status-verdict")).toHaveTextContent("Not currently active, on a CTO");
     const cto = screen.getByTestId("ward-patient-gate-cto");

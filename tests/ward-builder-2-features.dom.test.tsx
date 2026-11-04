@@ -59,6 +59,8 @@ describe("Builder 2 - Patient Journey Accordion A11y (Roving Tabindex)", () => {
         <PatientNowScreen patientId="WF-001" />
       </WardFlowProvider>,
     );
+    // PT1 round 3: the journey line leads the band, and the seven stages open from "All 7 stages".
+    fireEvent.click(screen.getByTestId("ward-patient-stages-toggle"));
 
     const stageBtns = [
       screen.getByTestId("ward-patient-stage-btn-placement_requested"),

@@ -94,6 +94,8 @@ describe("Figures in the Tools sheet", () => {
     const tools = await openTools();
     expect(within(tools).queryByRole("group", { name: "Tools sections" })).toBeNull();
     expect(within(tools).queryByRole("button", { name: "Shift desk" })).toBeNull();
+    // Long groups fold after five rows; open them all so every tool row is on screen.
+    for (const more of within(tools).queryAllByRole("button", { name: /^Show \d+ more$/u })) fireEvent.click(more);
     fireEvent.click(within(tools).getByTestId("ward-tools-toggle-form-times"));
     expect(within(tools).getByTestId("ward-form-times")).toBeVisible();
     fireEvent.click(within(tools).getByTestId("ward-tools-toggle-catchment"));

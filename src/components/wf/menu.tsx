@@ -247,6 +247,8 @@ export function Menu({ label, items, trigger, align = "start", className, onOpen
     } else if (event.key === "Tab") {
       close(false);
     } else if (event.key.length === 1 && /\S/.test(event.key)) {
+      // Typeahead keys stay in the menu so page shortcuts (Shift+T, /, [) do not fire too.
+      event.stopPropagation();
       const char = event.key.toLowerCase();
       for (let step = 1; step <= count; step += 1) {
         const position = (active + step) % count;

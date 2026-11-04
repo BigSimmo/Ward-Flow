@@ -3,9 +3,9 @@
 import {
   AlarmClock,
   ArrowUpRight,
-  BedDouble,
+  BedSingle,
   Bell,
-  CheckCircle2,
+  CircleCheck,
   ChevronDown,
   FileText,
   Filter,
@@ -197,7 +197,7 @@ function isOverdue(item: InboxItem) {
 function rowIcon(item: InboxItem) {
   if (/transport/i.test(item.title)) return item.icon;
   if (/legal/i.test(item.title)) return FileText;
-  if (/bed pull/i.test(item.title)) return BedDouble;
+  if (/bed pull/i.test(item.title)) return BedSingle;
   if (/destination/i.test(item.title)) return TriangleAlert;
   return item.icon;
 }
@@ -1040,7 +1040,7 @@ export function AlertsDrawer({
                     complete(item.id);
                   }}
                 >
-                  <CheckCircle2 aria-hidden="true" />
+                  <CircleCheck aria-hidden="true" />
                   Mark done
                 </button>
               )}

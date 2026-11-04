@@ -544,13 +544,13 @@ const JOBS: readonly HowTo[] = [
     title: "Go to another desk",
     keywords: "switch role desk change view ward ed workstation",
     answer:
-      "Open the person menu at the foot of the side menu (the menu button on a phone) and choose Go to a desk. Each desk shows the screens its role uses.",
+      "Open your account menu. It is your name at the foot of the side menu, or the menu button on a phone. Choose Switch desk if your account has more than one desk. In the demo, choose Try another desk (demo). Each desk shows the screens its role uses.",
     desks: EVERY_DESK,
     showMe: [
       {
         target: DESK_SWITCH,
-        title: "Go to a desk",
-        body: "Opens the list of desks.",
+        title: "Your account menu",
+        body: "Switch desk is here when your account has more than one desk. In the demo, it is Try another desk (demo).",
       },
     ],
   },
@@ -588,6 +588,27 @@ const JOBS: readonly HowTo[] = [
     ],
   },
   {
+    id: "alerts-log",
+    topic: "Finding your way",
+    title: "Find an alert I already cleared",
+    keywords: "alerts log history cleared earlier past broadcast filter acknowledged",
+    answer:
+      "Open the Alerts page. Open is what still needs someone, with chips to show one kind at a time. Cleared lists what was acted on this session, newest first. Broadcasts holds bed calls, live and past.",
+    desks: EVERY_DESK,
+    needs: "alerts",
+    go: "alerts",
+    showMe: [
+      {
+        target: [
+          { sel: '[data-testid="ward-alerts-filters"]' },
+          { sel: '[role="tablist"][aria-label="Alerts views"]' },
+        ],
+        title: "Open, Cleared and Broadcasts",
+        body: "Chips show one kind of open alert at a time. Cleared, beside Open, lists what was acted on this session.",
+      },
+    ],
+  },
+  {
     id: "search-patient",
     topic: "Finding your way",
     title: "Find a patient",
@@ -601,6 +622,23 @@ const JOBS: readonly HowTo[] = [
         target: { sel: '[data-testid="ward-global-search-input"]' },
         title: "Search",
         body: "Names, UMRNs, places and a few common questions.",
+      },
+    ],
+  },
+  {
+    id: "patient-safety-facts",
+    topic: "Finding your way",
+    title: "Check a patient's legal status and risk",
+    keywords: "legal form observation obs risk flags alert interpreter diagnosis patient page band",
+    answer:
+      "Open the patient. The dark band at the top shows Legal, Observation and Risk flags, and Alerts when there is one. Risk flags come from the referral, with its date. The working diagnosis is under Details.",
+    desks: CLINICAL_DESKS,
+    needs: "search",
+    showMe: [
+      {
+        target: { sel: '[data-testid="ward-patient-glance"]' },
+        title: "Safety at a glance",
+        body: "Legal opens the forms. A health alert opens Details.",
       },
     ],
   },

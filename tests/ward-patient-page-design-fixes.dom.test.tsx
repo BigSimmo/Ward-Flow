@@ -51,6 +51,8 @@ describe("patient page design fixes", () => {
 
   it("names an earlier stage without a recorded change honestly and closes its card on another tab", () => {
     renderAt();
+    // PT1 round 3: the seven stages sit one tap away behind the journey line.
+    fireEvent.click(screen.getByTestId("ward-patient-stages-toggle"));
     fireEvent.click(screen.getByTestId("ward-patient-stage-btn-accepted_awaiting_bed"));
     const card = screen.getByTestId("ward-patient-stage-panel-accepted_awaiting_bed");
     expect(card).toHaveTextContent("No time recorded");

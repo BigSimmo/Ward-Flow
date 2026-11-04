@@ -1,13 +1,15 @@
 "use client";
 
-import { ChevronRight, Phone } from "lucide-react";
-import type { ReactNode } from "react";
+import { Check, ChevronRight, Copy, Phone } from "lucide-react";
+import { useState, type ReactNode } from "react";
 
-import { Card, CardHead, useIsPhone, useIsTabletPortrait } from "@/components/wf";
+import { Button, Card, CardHead, useIsPhone, useIsTabletPortrait } from "@/components/wf";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 import type { CallRow } from "./patient-call-list";
 import type { PatientMode } from "./patient-mode";
 import { PatientStatusCard, type PatientStatusContext } from "./patient-status-card";
+import { telHref } from "./patient-now-ward";
 import styles from "./patient-now-layouts.module.css";
 
 /**
@@ -22,7 +24,16 @@ export type PatientNowLayoutParts = {
   mode: PatientMode;
   context: PatientStatusContext;
   /** Status card props the screen already builds (phone bar lead, foot line). */
-  statusCardProps?: Pick<Parameters<typeof PatientStatusCard>[0], "barLead" | "barMain" | "phoneFoot">;
+  statusCardProps?: Pick<
+    Parameters<typeof PatientStatusCard>[0],
+    "barLead" | "barMain" | "phoneFoot" | "quietActions" | "children"
+  >;
+  /** Josh, 3 Nov 2026: the one thing due now leads Now, above the status card, on every device. */
+  nextStep?: ReactNode;
+  /** Discharge readiness (on the ward only). */
+  readiness?: ReactNode;
+  /** Last 24 hours of recorded events for the stay. */
+  recent?: ReactNode;
   legal: ReactNode;
   why: ReactNode;
   /** Record a change, leave and absence cards, and the record overview, in that order. */
@@ -38,6 +49,9 @@ export function PatientNowLayout({
   mode,
   context,
   statusCardProps,
+  nextStep,
+  readiness,
+  recent,
   legal,
   why,
   change,
@@ -52,9 +66,12 @@ export function PatientNowLayout({
   if (isPhone)
     return (
       <div className={styles.stack}>
+        {nextStep}
         {card}
         {sheetRows}
         {legal}
+        {readiness}
+        {recent}
         {callCard}
         {change}
         {phoneMore}
@@ -63,11 +80,18 @@ export function PatientNowLayout({
   if (isPortrait)
     return (
       <div className={styles.stack}>
+        {nextStep}
         {card}
         <div className={styles.twoUp}>
-          {legal}
+          {legal || readiness ? (
+            <div className={styles.col}>
+              {legal}
+              {readiness}
+            </div>
+          ) : null}
           {callCard}
         </div>
+        {recent}
         {sheetRows}
         {change}
         {why}
@@ -75,16 +99,19 @@ export function PatientNowLayout({
     );
   return (
     <div className={styles.stack}>
+      {nextStep}
       {card}
       <div className={styles.cols}>
         <div className={styles.col}>
           {sheetRows}
+          {recent}
           {change}
         </div>
         {/* Not the shared `data-wf-rail`: that caps the column at the window and scrolls it inside
             itself, which cut Who to call off when this column was the longer one (Josh, 19 Oct 2026). */}
         <div className={`${styles.col} ${styles.rail}`}>
           {legal}
+          {readiness}
           {why}
           {callCard}
         </div>
@@ -96,6 +123,22 @@ export function PatientNowLayout({
 /* ---------------- Who to call ---------------- */
 
 function PatientCallCard({ rows, title = "Who to call" }: { rows: CallRow[]; title?: string }) {
+  // Josh, 3 Nov 2026: each number is tap to call (a tel: link) with a small Copy beside it. The
+  // numbers are synthetic, in the unassigned (08) 0000 exchange.
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [failedKey, setFailedKey] = useState<string | null>(null);
+  function copy(row: CallRow, number: string) {
+    copyTextToClipboard(number).then(
+      () => {
+        setFailedKey(null);
+        setCopiedKey(row.key);
+      },
+      () => {
+        setCopiedKey(null);
+        setFailedKey(row.key);
+      },
+    );
+  }
   return (
     <Card data-testid="ward-patient-who-to-call">
       <CardHead level={2} icon={Phone} title={title} meta="Synthetic numbers" />
@@ -109,12 +152,37 @@ function PatientCallCard({ rows, title = "Who to call" }: { rows: CallRow[]; tit
               </span>
               <span className={styles.callNumber}>
                 {row.number ? (
-                  <b className={styles.mono}>{row.number}</b>
+                  <a
+                    className={`${styles.mono} ${styles.tel}`}
+                    href={telHref(row.number)}
+                    aria-label={`Call ${row.name}, ${row.number}`}
+                    data-testid="ward-patient-call-number"
+                  >
+                    {row.number}
+                  </a>
                 ) : (
                   <span className={styles.callRole}>No line held</span>
                 )}
-                {row.hours ? <span className={styles.callRole}>{row.hours}</span> : null}
+                {failedKey === row.key ? (
+                  <span className={styles.callRole} role="status">
+                    Not copied
+                  </span>
+                ) : row.hours ? (
+                  <span className={styles.callRole}>{row.hours}</span>
+                ) : null}
               </span>
+              {row.number ? (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  iconOnly
+                  icon={copiedKey === row.key ? Check : Copy}
+                  aria-label={copiedKey === row.key ? `Copied ${row.name}'s number` : `Copy ${row.name}'s number`}
+                  onClick={() => copy(row, row.number!)}
+                />
+              ) : (
+                <span />
+              )}
             </li>
           ))}
         </ul>

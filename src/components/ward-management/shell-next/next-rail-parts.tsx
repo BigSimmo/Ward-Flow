@@ -219,6 +219,9 @@ export function PinButton({ id, label, pinned }: { id: string; label: string; pi
   );
 }
 
+// DK1: the account menu lives in its own file so the executive chrome can share it without the rest.
+export { RailAccountMenu } from "@/components/ward-management/shell-next/next-account-menu";
+
 /** H2 (Josh, 3 Nov 2026): the bed alerts foot line, Metro as a whole (when the rows above rank
  *  services) and the beds ready now. */
 export function RailReadyLine({ metro, ready }: { metro: number | null; ready: number }) {

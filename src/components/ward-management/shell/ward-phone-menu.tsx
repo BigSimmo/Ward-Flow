@@ -13,7 +13,7 @@ import {
   type ComponentType,
   type RefObject,
 } from "react";
-import { Activity, BedDouble, House, Bell, Clock3, Plus } from "lucide-react";
+import { Activity, BedSingle, House, Bell, Clock3, Plus } from "lucide-react";
 
 import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
 import { SrOnly } from "@/components/wf";
@@ -465,7 +465,7 @@ function PhoneDock({
               announceToWardShell(`${item.label}.`);
             }}
           >
-            <DockFace icon={BedDouble} label={item.label} count={undefined} tail="" />
+            <DockFace icon={BedSingle} label={item.label} count={undefined} tail="" />
           </button>
         );
     }
