@@ -16,7 +16,7 @@ import {
   type MouseEvent,
   type RefObject,
 } from "react";
-import { ChevronDown, X, MoreHorizontal } from "lucide-react";
+import { ChevronDown, X, Ellipsis } from "lucide-react";
 import { Sheet, useIsPhone } from "@/components/wf";
 import styles from "./ed-board-controls.module.css";
 import { EdConfirmedStep, EdUnavailableNote } from "./ed-screen-row-menu";
@@ -579,7 +579,7 @@ export function EdActionsMenu({
         }}
       >
         {compact ? (
-          <MoreHorizontal aria-hidden="true" />
+          <Ellipsis aria-hidden="true" />
         ) : (
           <>
             Actions

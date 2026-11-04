@@ -10,7 +10,7 @@
  * Pure and light (reducer ids only), so the shell can read it without loading the Alerts screen.
  * `alerts-model.ts` groups rows with `alertGroupOfId`, so the screen and the badge cannot disagree.
  */
-import { BedDouble } from "lucide-react";
+import { BedSingle } from "lucide-react";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
@@ -87,7 +87,7 @@ export function acceptedPullTaskRows(toPull: readonly AcceptedAwaitingPull[], no
       id: `${ACCEPTED_PULL_ROW_PREFIX}${referral.id}`,
       kind: "fact",
       tone: "danger",
-      icon: BedDouble,
+      icon: BedSingle,
       title: "Accepted, bed not pulled",
       detail: `${unitName} accepted. Pull the bed from Alerts.`,
       owner: "Bed coordinator",

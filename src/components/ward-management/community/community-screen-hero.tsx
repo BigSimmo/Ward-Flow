@@ -8,7 +8,7 @@
  */
 
 import Link from "next/link";
-import { ChevronDown, ChevronRight, Clock, House, MoreHorizontal, Phone, Plus, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, Clock, House, Ellipsis, Phone, Plus, Search } from "lucide-react";
 import { Button, Hero, HeroStat, Icon, Menu, Drawer, SrOnly, TextInput } from "@/components/wf";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { communityTeamSuburbCounts } from "@/components/ward-management/community/community-vocabulary";
@@ -341,7 +341,7 @@ export function CommunityScreenTabRow({
             { id: "tools", label: "Tools sample", onSelect: () => setActiveDrawer("toolsDrawer") },
           ]}
           trigger={(props) => (
-            <Button {...props} variant="ghost" size="sm" icon={MoreHorizontal}>
+            <Button {...props} variant="ghost" size="sm" icon={Ellipsis}>
               More
             </Button>
           )}
