@@ -3,7 +3,7 @@
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import {
   bedsPendingPreparation,
-  releaseBand,
+  openBedReleases,
   stalePreparingReleases,
 } from "@/components/ward-management/ward-bed-availability";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -39,13 +39,14 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { ArrowLeftRight, BedDouble, ChevronRight, LayoutGrid, List, ListChecks } from "lucide-react";
 import { WardPlaceOrMove } from "./ward-place-or-move";
+import { WardHomeTileText, WardHomeTodayStrip } from "./ward-home-tab-today";
 import {
   Button,
   buttonClass,
   Card,
   CardHead,
-  ColumnChart,
   Count,
+  Drawer,
   durMinutes,
   PhoneSheet,
   Segmented,
@@ -71,6 +72,8 @@ import {
   declineReasonText,
   referralAnswerBlocked,
   WARD_ACTION_REJECTION_LABELS,
+  wardDischargesDueToday,
+  wardFlowReleaseGroup,
   type WardFlowTab,
   type WardShiftView,
 } from "./ward-home-tab-model";
@@ -140,7 +143,7 @@ interface WardHomeTabProps {
   /** Pull a bed for an accepted patient from the Ward flow Admissions list (A1-6). */
   onPullPatient?: (movementId: string, unitId: string) => void;
   onOpenDischarges?: () => void;
-  /** The ward's beds, as the bed board draws them. Drives Every bed and Length of stay. */
+  /** The ward's beds, as the bed board draws them. Drives Every bed. */
   bedsList?: BedItem[];
   /** Audit A3-1: this ward's absences on an order, from `absentOnOrder` (one Act now row each). */
   absencesOnOrder?: ReturnType<typeof absentOnOrder>;
@@ -178,6 +181,9 @@ interface WardHomeTabProps {
    */
   phonePanel?: "shift" | "flow" | null;
   onPhonePanelChange?: (panel: "shift" | "flow" | null) => void;
+  /** Desktop and iPad (WH2, 3 Nov 2026): whether the This shift sheet is open over Ward home. */
+  shiftSheetOpen?: boolean;
+  onShiftSheetOpenChange?: (open: boolean) => void;
   /** Phone: the hero's foot facts (shift, cohort, roster, checking), kept in Ward figures. */
   phoneHeroFoot?: React.ReactNode;
   /** Phone: the one line under Ward figures, right now, while it is closed. */
@@ -247,6 +253,8 @@ export function WardHomeTab({
   bedArea,
   phonePanel,
   onPhonePanelChange,
+  shiftSheetOpen: shiftSheetOpenProp,
+  onShiftSheetOpenChange,
   phoneHeroFoot,
   phoneFiguresSummary,
   phoneFind,
@@ -271,10 +279,7 @@ export function WardHomeTab({
   });
 
   // Derived real ward activity events for overhauled Shift Coordinator Log
-  const pendingBedReleases = useMemo(
-    () => bedReleases.filter((release) => release.unitId === unit.id && release.state !== "discharged"),
-    [bedReleases, unit.id],
-  );
+  const pendingBedReleases = useMemo(() => openBedReleases(bedReleases, unit.id), [bedReleases, unit.id]);
   const dischargedBedReleases = useMemo(
     () => bedReleases.filter((release) => release.unitId === unit.id && release.state === "discharged"),
     [bedReleases, unit.id],
@@ -326,6 +331,9 @@ export function WardHomeTab({
       (onShiftViewChange ?? setInnerShiftView)(next);
     });
   };
+  const [innerShiftSheetOpen, setInnerShiftSheetOpen] = useState(false);
+  const shiftSheetOpen = shiftSheetOpenProp ?? innerShiftSheetOpen;
+  const setShiftSheetOpen = onShiftSheetOpenChange ?? setInnerShiftSheetOpen;
   const [boardView, setBoardView] = useState<"board" | "list">("board");
   const isPhone = useIsPhone();
   // Site bed manager (approved 31 Oct 2026): it looks after the site's beds, not the ward's own round
@@ -512,6 +520,8 @@ export function WardHomeTab({
     return {
       bed,
       free,
+      // Q7 (4 Nov 2026): the Ready chip and hero pill count as the hero and board do (`boardReadyCounts`).
+      readyNow: bed.status === "ready" && bed.heldFor === undefined,
       leaving,
       look,
       readyByShiftEnd,
@@ -539,7 +549,7 @@ export function WardHomeTab({
       case "leaving":
         return row.leaving;
       case "free":
-        return row.free;
+        return row.readyNow;
       case "occupied":
         // The ruled Occupied state, as the hero and the bed figures count it (leave holds inside).
         return row.bed.status === "occupied" || row.bed.status === "leave";
@@ -558,6 +568,7 @@ export function WardHomeTab({
   const highlighting = bedFilter !== "all" || query !== "";
   const isLit = (row: (typeof bedRows)[number]) => matchesFilter(row) && matchesQuery(row);
   const litCount = bedRows.filter(isLit).length;
+  const makingReady = bedRows.filter((row) => row.readyNow && row.bed.preparing === true).length;
   const shownBeds = bedRows;
   // One partition, the ruled four bed states, so this key, the hero and the bed figures agree.
   const bedTally = {
@@ -688,15 +699,13 @@ export function WardHomeTab({
     };
   });
 
-  // Ward flow, Discharges: this ward's open bed releases, held up first, then today, then later.
+  // Ward flow, Discharges: this ward's open bed releases, held up first, then past date, today, later.
   // A release names its bed, never the patient.
   const outRows = [...pendingBedReleases]
     .sort((left, right) => left.expectedAt - right.expectedAt)
     .map((release) => {
       const bed = bedByAdmission(release.admissionId);
-      // The same day bands the bed figures count (`releaseBand`), so "Today and tomorrow" here
-      // holds the unblocked share of Confirmed and Expected there.
-      const group = release.blocker ? "held" : releaseBand(release, now) !== "beyond-today" ? "today" : "later";
+      const group = wardFlowReleaseGroup(release, now);
       const tone: WfTone = release.blocker ? "danger" : release.state === "confirmed" ? "success" : "neutral";
       return {
         key: release.id,
@@ -827,7 +836,7 @@ export function WardHomeTab({
             }
           : onOpenDischarges
             ? {
-                label: "Review today's expected discharges →",
+                label: "Review today's expected discharges",
                 run: () => onOpenDischarges(),
               }
             : undefined,
@@ -857,7 +866,7 @@ export function WardHomeTab({
             }
           : onOpenDischarges
             ? {
-                label: "Review today's expected discharges →",
+                label: "Review today's expected discharges",
                 run: () => onOpenDischarges(),
               }
             : undefined,
@@ -871,7 +880,7 @@ export function WardHomeTab({
       tone: "success",
       secondaryAction: onOpenDischarges
         ? {
-            label: "Review today's expected discharges →",
+            label: "Review today's expected discharges",
             run: () => onOpenDischarges(),
           }
         : undefined,
@@ -891,7 +900,7 @@ export function WardHomeTab({
             }
           : onOpenDischarges
             ? {
-                label: "Review today's expected discharges →",
+                label: "Review today's expected discharges",
                 run: () => onOpenDischarges(),
               }
             : undefined,
@@ -913,7 +922,7 @@ export function WardHomeTab({
       action: { label: "Open", run: () => onOpenDecisions?.() },
       secondaryAction: onOpenDischarges
         ? {
-            label: "Review today's expected discharges →",
+            label: "Review today's expected discharges",
             run: () => onOpenDischarges(),
           }
         : undefined,
@@ -978,34 +987,12 @@ export function WardHomeTab({
   {
     let reviewShown = false;
     for (const row of [...actNow, ...laterToday, ...doneRows]) {
-      if (row.secondaryAction?.label !== "Review today's expected discharges →") continue;
+      if (row.secondaryAction?.label !== "Review today's expected discharges") continue;
       if (reviewShown) row.secondaryAction = undefined;
       reviewShown = true;
     }
   }
   const todoOpen = actNow.length + laterToday.filter((row) => !row.tick).length;
-
-  // Length of stay: people in beds now, grouped by recorded stay in days.
-  const stayDays = bedRows
-    .map((row) => row.bed.stayDays)
-    .filter((days): days is number => typeof days === "number" && Number.isFinite(days))
-    .sort((left, right) => left - right);
-  const stayMedian =
-    stayDays.length === 0
-      ? null
-      : stayDays.length % 2 === 1
-        ? stayDays[(stayDays.length - 1) / 2]
-        : Math.round((stayDays[stayDays.length / 2 - 1] + stayDays[stayDays.length / 2]) / 2);
-  const stayBuckets = [
-    { id: "0", label: "0 to 3", min: 0, max: 3 },
-    { id: "4", label: "4 to 7", min: 4, max: 7 },
-    { id: "8", label: "8 to 14", min: 8, max: 14 },
-    { id: "15", label: "15 to 28", min: 15, max: 28 },
-    { id: "29", label: "29+", min: 29, max: Number.POSITIVE_INFINITY },
-  ].map((bucket) => ({
-    ...bucket,
-    count: stayDays.filter((days) => days >= bucket.min && days <= bucket.max).length,
-  }));
 
   function renderFlowRow(row: FlowRow) {
     return (
@@ -1083,6 +1070,12 @@ export function WardHomeTab({
     );
   }
 
+  // The This shift sheet steps aside when a task opens a bed, a dialog or another view (WH2).
+  function runFromSheet(run: () => void) {
+    if (!phoneSheets) setShiftSheetOpen(false);
+    run();
+  }
+
   function renderTodoList(rows: TodoRow[]) {
     return (
       <ul className={styles.todoList}>
@@ -1114,7 +1107,11 @@ export function WardHomeTab({
               )}
               {row.meta ? <span className={styles.todoMeta}>{row.meta}</span> : null}
               {row.action ? (
-                <button type="button" className={buttonClass({ variant: "sec", size: "sm" })} onClick={row.action.run}>
+                <button
+                  type="button"
+                  className={buttonClass({ variant: "sec", size: "sm" })}
+                  onClick={() => runFromSheet(row.action!.run)}
+                >
                   {row.action.label}
                   <SrOnly> {row.title}</SrOnly>
                 </button>
@@ -1124,7 +1121,7 @@ export function WardHomeTab({
               <button
                 type="button"
                 className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.todoSecondary}`}
-                onClick={row.secondaryAction.run}
+                onClick={() => runFromSheet(row.secondaryAction!.run)}
               >
                 {row.secondaryAction.label}
               </button>
@@ -1136,7 +1133,9 @@ export function WardHomeTab({
   }
 
   const heldRows = outRows.filter((row) => row.group === "held");
+  const pastRows = outRows.filter((row) => row.group === "past");
   const todayRows = outRows.filter((row) => row.group === "today");
+  const dueToday = wardDischargesDueToday(pendingBedReleases, now);
   const laterRows = outRows.filter((row) => row.group === "later");
   const answered = recentAnswers.slice(0, 6);
   const declineLeftNote = declineTargetLeftNote(declineOpenFor, incoming, recentAnswers, (id) =>
@@ -1176,21 +1175,23 @@ export function WardHomeTab({
     </div>
   );
 
+  // WH5 (3 Nov 2026): a quiet, static mark that the figures are current. No pulse.
+  const liveMark = (
+    <span className={styles.liveMark}>
+      <span className={styles.liveDot} aria-hidden="true" />
+      Updated {formatInstantWithDay(now, now)}
+    </span>
+  );
+
   function renderFlowCard() {
     return (
       <Card
         className={`${styles.flowCard} ${styles.v6Card}`}
+        id={phoneSheets ? undefined : "ward-flow"}
         aria-labelledby={phoneSheets ? undefined : "ward-home-flow"}
         aria-label={phoneSheets ? "Ward flow" : undefined}
       >
-        {phoneSheets ? null : (
-          <CardHead
-            id="ward-home-flow"
-            icon={ArrowLeftRight}
-            title="Ward flow"
-            aside={<span className={styles.v6Meta}>{formatInstant(now)}</span>}
-          />
-        )}
+        {phoneSheets ? null : <CardHead id="ward-home-flow" icon={ArrowLeftRight} title="Ward flow" meta={liveMark} />}
         <div className={styles.flowSwitch}>
           <Segmented
             label="Ward flow list"
@@ -1452,6 +1453,7 @@ export function WardHomeTab({
               (
                 [
                   ["held", "Held up", "danger", heldRows],
+                  ["past", "Past date", "warning", pastRows],
                   ["today", "Today and tomorrow", "info", todayRows],
                   ["later", "Later", "neutral", laterRows],
                 ] as const
@@ -1524,32 +1526,24 @@ export function WardHomeTab({
     );
   }
 
+  // WH2 (Josh, 3 Nov 2026): This shift is one summary line that opens a sheet. The sheet holds the
+  // To do list and the shift's history (the old Log). Length of stay moved to Statistics, Wards.
+  const shiftSummary = `${checksDone} of ${shiftChecks.length} checks done, ${todoOpen} to do`;
   const shiftSwitch = (
     <Segmented
       label="This shift view"
       items={[
         { id: "todo", label: "To do", count: todoOpen },
-        { id: "log", label: "Log", count: logRows.length },
-        { id: "stay", label: "Stay" },
+        { id: "log", label: "History", count: logRows.length },
       ]}
       value={shiftView}
       onChange={setShiftView}
     />
   );
-  function renderShiftCard() {
+  function renderShiftBody() {
     return (
-      <Card
-        hidden={bedArea && !phoneSheets ? true : undefined}
-        className={`${styles.shiftCard} ${styles.v6Card}`}
-        id="ward-this-shift"
-        aria-labelledby={phoneSheets ? undefined : "ward-home-shift"}
-        aria-label={phoneSheets ? "This shift" : undefined}
-      >
-        {phoneSheets ? (
-          <div className={styles.phoneShiftSwitch}>{shiftSwitch}</div>
-        ) : (
-          <CardHead id="ward-home-shift" icon={ListChecks} title="This shift" action={shiftSwitch} />
-        )}
+      <div className={styles.shiftBody} id="ward-this-shift-body">
+        <div className={styles.phoneShiftSwitch}>{shiftSwitch}</div>
         <div className={styles.shiftPane} data-active={shiftView === "todo"}>
           <div className={styles.todoGrid}>
             {renderTodoColumn("now", "Act now", "danger", actNow)}
@@ -1558,7 +1552,7 @@ export function WardHomeTab({
           </div>
         </div>
         <div className={styles.shiftPane} data-active={shiftView === "log"}>
-          <h3 className={styles.paneHead}>Shift log</h3>
+          <h3 className={styles.paneHead}>Shift history</h3>
           <div className={styles.logBody}>
             {logRows.length === 0 ? (
               <p className={styles.timelineEmpty}>No shift activity recorded yet.</p>
@@ -1589,30 +1583,6 @@ export function WardHomeTab({
             )}
           </div>
         </div>
-        <div className={styles.shiftPane} data-active={shiftView === "stay"}>
-          <h3 className={styles.paneHead}>
-            Length of stay
-            <span className={styles.v6Meta}>
-              {stayDays.length === 0
-                ? "none recorded"
-                : `${stayDays.length} in beds, days${stayMedian === null ? "" : ` · median ${stayMedian}d`}`}
-            </span>
-          </h3>
-          {stayDays.length === 0 ? null : (
-            <div className={styles.stayChart}>
-              <ColumnChart
-                label={`Length of stay at ${unit.name}, people in beds by days`}
-                height={128}
-                columns={stayBuckets.map((bucket) => ({
-                  id: bucket.id,
-                  label: bucket.label,
-                  value: bucket.count,
-                  fill: bucket.id === "29" ? "data-2" : "data-1",
-                }))}
-              />
-            </div>
-          )}
-        </div>
         <div className={styles.shiftFoot}>
           <span>
             <b>{checksDone}</b> of {shiftChecks.length} checks done
@@ -1624,8 +1594,14 @@ export function WardHomeTab({
             </span>
           ) : null}
         </div>
-      </Card>
+      </div>
     );
+  }
+
+  // WH3 (Josh, 3 Nov 2026): the day's bed flow beside This shift, from the same rows Ward flow lists.
+  function openFlow(tab: WardFlowTab) {
+    setFlowTab(tab);
+    document.getElementById("ward-flow")?.scrollIntoView({ block: "nearest" });
   }
 
   // Phone: the place or move line sits above the round while someone is waiting for a bed.
@@ -1775,6 +1751,7 @@ export function WardHomeTab({
               className={styles.bedsHead}
               icon={BedDouble}
               title="Every bed"
+              meta={liveMark}
               action={
                 <span className={styles.headTools}>
                   <WardPlaceOrMove variant="head" waiting={boardWaitingCount} onOpen={onOpenBoard} />
@@ -1784,7 +1761,7 @@ export function WardHomeTab({
                       { id: "all", label: "All", count: bedRows.length },
                       { id: "look", label: "Needs a look", count: bedRows.filter((row) => row.look).length },
                       { id: "leaving", label: "Discharge due", count: bedRows.filter((row) => row.leaving).length },
-                      { id: "free", label: "Ready", count: bedRows.filter((row) => row.free).length },
+                      { id: "free", label: "Ready", count: bedRows.filter((row) => row.readyNow).length },
                       // The hero's Occupied and Ready by pills set filters this group does not list,
                       // so the active one joins it while on and a radio is always checked.
                       ...(bedFilter === "occupied"
@@ -1836,6 +1813,7 @@ export function WardHomeTab({
                 <b>{litCount}</b> of <b>{bedRows.length}</b> beds highlighted.
               </span>
               {litCount === 0 ? <span>No bed matches this choice.</span> : null}
+              {bedFilter === "free" && makingReady > 0 ? <span>{makingReady} still being made ready.</span> : null}
               {bedFilter === "all" ? null : (
                 <button
                   type="button"
@@ -1891,21 +1869,20 @@ export function WardHomeTab({
                       {row.criteriaTag ? <CriteriaLedTag chip={row.criteriaTag} className={styles.bedTileTag} /> : null}
                       {row.glyph ? <StatusGlyph tone={row.glyph} size={10} /> : null}
                     </span>
-                    <span className={styles.bedTileName} aria-hidden="true">
-                      {row.name}
-                    </span>
-                    <span className={styles.bedTileState} aria-hidden="true">
-                      <span className={styles.bedTileNote}>
-                        {row.free
+                    <WardHomeTileText
+                      name={row.bed.patientAlias ? row.name : null}
+                      label={row.name}
+                      note={
+                        row.free
                           ? row.stateWord === row.name
                             ? ""
                             : row.stateWord
                           : row.note === row.name
                             ? ""
-                            : row.tileNote}
-                      </span>
-                      {row.days ? <span className={styles.bedTileDays}>{row.days}</span> : null}
-                    </span>
+                            : row.tileNote
+                      }
+                      days={row.days}
+                    />
                   </button>
                 </li>
               ))}
@@ -2012,10 +1989,50 @@ export function WardHomeTab({
           className={styles.phoneSheetBody}
           data-testid="ward-phone-shift-sheet"
         >
-          {renderShiftCard()}
+          {renderShiftBody()}
         </PhoneSheet>
       ) : (
-        renderShiftCard()
+        <>
+          <WardHomeTodayStrip
+            hidden={bedArea != null}
+            unitId={unit.id}
+            now={now}
+            todoOpen={todoOpen}
+            actNow={actNow.length}
+            checksDone={checksDone}
+            checksTotal={shiftChecks.length}
+            shiftSummary={shiftSummary}
+            nextTask={(actNow[0] ?? laterToday.find((row) => !row.tick))?.title}
+            shiftSheetOpen={shiftSheetOpen}
+            onOpenShift={() => {
+              setShiftView("todo");
+              setShiftSheetOpen(true);
+            }}
+            dischargesToday={dueToday.length}
+            heldUp={outRows.filter((row) => row.group === "held").length}
+            confirmedToday={dueToday.filter((release) => release.state === "confirmed").length}
+            arrivals={expectedRows.length}
+            backFromLeave={leaveRows.length}
+            nextEta={
+              accepted
+                .map((movement) => movement.arrivalDetails?.estimatedArrivalAt)
+                .filter((eta): eta is number => eta !== undefined && eta >= now)
+                .sort((left, right) => left - right)[0]
+            }
+            onOpenFlow={openFlow}
+          />
+          <Drawer
+            open={shiftSheetOpen}
+            onClose={() => setShiftSheetOpen(false)}
+            title="This shift"
+            description={`${shiftSummary} · legal limits not checked here`}
+            closeLabel="Close This shift"
+            testId="ward-shift-sheet"
+            bodyClassName={styles.shiftSheetBody}
+          >
+            {renderShiftBody()}
+          </Drawer>
+        </>
       )}
 
       {(() => {

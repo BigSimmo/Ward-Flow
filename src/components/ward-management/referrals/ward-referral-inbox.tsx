@@ -2,7 +2,8 @@
 
 import { useId, useState } from "react";
 import { usePathname } from "next/navigation";
-import { DisabledReason } from "@/components/wf";
+import { ChipGroup, DisabledReason, FilterChip } from "@/components/wf";
+import { formatInstantWithDay } from "../ward-clock";
 import { GENDER_PLACEMENT_REASONS, GENDER_PLACEMENT_REFUSAL, type GenderPlacementReason } from "../ward-change-reasons";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { genderReviewNeeded, REFERRAL_DECLINE_REASONS, type ReferralDeclineReason } from "../ward-model";
@@ -20,12 +21,23 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { useWardFormSave } from "../use-ward-form-save";
 import styles from "./ward-referral-drawer.module.css";
 
+/** Who sent a referral, in plain words (WH9: a clear way referrals arrive). */
+const REFERRAL_FROM: Record<string, string> = {
+  community: "a community team",
+  crisis_service: "a crisis service",
+  ambulance: "an ambulance crew",
+  inter_hospital: "another hospital",
+  ed_medical: "ED medical staff",
+  gp: "a general practitioner",
+  psychiatric_ward: "another ward",
+};
+
 /**
  * B1 (site review, 12 Oct 2026): the inbox answers as the route's own role. A ward route answers
  * for its own ward only (`actingUnitId`), and the coordinator answers for any ward, including the
  * D-30 transfers from another hospital and a gender placement that needs a recorded reason.
  */
-export function WardReferralInbox({ unitId }: { unitId: string }) {
+export function WardReferralInbox({ unitId, embedded = false }: { unitId: string; embedded?: boolean }) {
   const { wardReferralInbox, resolvePatientIdentity, dispatch, rejections, units, movements } = useWardFlowSelect(
     "wardReferralInbox",
     "resolvePatientIdentity",
@@ -138,6 +150,14 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
                     ? "Accepted"
                     : `Declined · ${entry.declineReason ? DECLINE_REASON_LABELS[entry.declineReason as ReferralDeclineReason] : "Reason not recorded"}`}
         </p>
+        {/* WH9 (3 Nov 2026): where the referral came from and when, so the way in is plain. */}
+        <p className={styles.refCardSubtitle} data-testid={`ward-referral-inbox-from-${entry.id}`}>
+          {`Sent by ${
+            entry.originUnitId !== undefined
+              ? (units.find((unit) => unit.id === entry.originUnitId)?.name ?? REFERRAL_FROM.psychiatric_ward)
+              : (REFERRAL_FROM[entry.source] ?? entry.source)
+          } · ${formatInstantWithDay(entry.raisedAt, now)}`}
+        </p>
         {/* #836: a blank Patient story is named as that field, and points to the reason when there is one. */}
         <p className={styles.patientStory} data-testid="ward-referral-inbox-story">
           {entry.history.trim() ||
@@ -157,29 +177,20 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
             {isCoordinator && needsGenderPlacement ? (
               <>
                 <p className={styles.refCardSubtitle}>Check with the ward first. A single room is preferred.</p>
-                <label className={styles.flowField}>
-                  Placement reason
-                  <select
-                    className={styles.fieldSelect}
-                    value={genderReason}
-                    onChange={(event) => {
-                      const chosen = event.target.value;
-                      setGenderReasons((current) => ({
-                        ...current,
-                        [entry.id]: GENDER_PLACEMENT_REASONS.includes(chosen as GenderPlacementReason)
-                          ? (chosen as GenderPlacementReason)
-                          : "",
-                      }));
-                    }}
-                  >
-                    <option value="">Choose a reason</option>
-                    {GENDER_PLACEMENT_REASONS.map((reason) => (
-                      <option key={reason} value={reason}>
-                        {reason}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                {/* Kit choices, never a browser drop-down (WH10 sweep, 3 Nov 2026). */}
+                <ChipGroup label="Placement reason" className={styles.flowField}>
+                  {GENDER_PLACEMENT_REASONS.map((reason) => (
+                    <FilterChip
+                      key={reason}
+                      pressed={genderReason === reason}
+                      onPressedChange={(on) =>
+                        setGenderReasons((current) => ({ ...current, [entry.id]: on ? reason : "" }))
+                      }
+                    >
+                      {reason}
+                    </FilterChip>
+                  ))}
+                </ChipGroup>
                 <label className={styles.flowField}>
                   <input
                     type="checkbox"
@@ -255,26 +266,17 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
             >
               Waiting list
             </button>
-            <label className={styles.flowField}>
-              Decline reason
-              <select
-                className={styles.fieldSelect}
-                value={reasons[entry.id] ?? ""}
-                onChange={(event) =>
-                  setReasons((current) => ({
-                    ...current,
-                    [entry.id]: event.target.value as ReferralDeclineReason | "",
-                  }))
-                }
-              >
-                <option value="">Choose a reason</option>
-                {REFERRAL_DECLINE_REASONS.map((reason) => (
-                  <option key={reason} value={reason}>
-                    {DECLINE_REASON_LABELS[reason]}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <ChipGroup label="Decline reason" className={styles.flowField}>
+              {REFERRAL_DECLINE_REASONS.map((reason) => (
+                <FilterChip
+                  key={reason}
+                  pressed={reasons[entry.id] === reason}
+                  onPressedChange={(on) => setReasons((current) => ({ ...current, [entry.id]: on ? reason : "" }))}
+                >
+                  {DECLINE_REASON_LABELS[reason]}
+                </FilterChip>
+              ))}
+            </ChipGroup>
             {(() => {
               const declineRefusal = roleRefusal ?? (!reasons[entry.id] ? "Choose a decline reason" : undefined);
               return (
@@ -317,8 +319,9 @@ export function WardReferralInbox({ unitId }: { unitId: string }) {
     );
   };
   return (
-    <section className={styles.refCard} aria-label="Ward referral inbox">
-      <h2 className={styles.refCardTitle}>Referral inbox · {waiting.length} waiting</h2>
+    // `embedded`: the ward page's Referrals tab (WH7) already gives the card and its heading.
+    <section className={embedded ? undefined : styles.refCard} aria-label="Ward referral inbox">
+      {embedded ? null : <h2 className={styles.refCardTitle}>Referral inbox · {waiting.length} waiting</h2>}
       {waiting.map(renderEntry)}
       {answered.length > 0 && (
         <button

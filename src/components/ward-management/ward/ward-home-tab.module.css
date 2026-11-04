@@ -13,15 +13,15 @@
    line with room around each label; the bed board takes the rest. */
 .homeTop {
   display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(21rem, 2fr);
+  /* WH5: Ward flow's three lists keep one line at 1440 with the side menu open. */
+  grid-template-columns: minmax(0, 5fr) minmax(23.5rem, 2fr);
   gap: var(--wf-s-3);
   align-items: stretch;
   min-width: 0;
 }
 
 .areaBeds,
-.flowWrap,
-.shiftCard {
+.flowWrap {
   min-width: 0;
 }
 
@@ -166,8 +166,8 @@
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-md);
   background: var(--wf-surface);
-  /* A hairline of light along the top edge, as the app's raised controls carry. */
-  box-shadow: inset 0 1px 0 var(--wf-hl);
+  /* WH5 (3 Nov 2026): the raised tile the bed board uses, a very light shadow under a 1px line. */
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 4%, transparent);
   color: var(--wf-ink-1);
   font: inherit;
   text-align: left;
@@ -194,10 +194,6 @@
   border-color: var(--wf-line-ctl);
   background: var(--wf-surface-2);
   box-shadow: none;
-}
-
-.bedTile[data-status="closed"] .bedTileName {
-  color: var(--wf-ink-3);
 }
 
 .bedTile:focus-visible {
@@ -233,7 +229,7 @@
   color: var(--wf-dim);
 }
 
-.bedTile[data-dim="true"] .bedTileDays,
+.bedTile[data-dim="true"] .bedTileGiven,
 .bedTile[data-dim="true"] .bedTileState,
 .bedTile[data-dim="true"] .bedTileNote {
   color: var(--wf-dim);
@@ -248,7 +244,8 @@
 .highlightNote {
   display: flex;
   align-items: center;
-  gap: var(--wf-s-3);
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-3);
   min-width: 0;
   margin: 0;
   padding: var(--wf-s-2) var(--wf-s-4) 0;
@@ -288,33 +285,45 @@
 /* The bed number is the tile's label, a step quieter than the person it holds. */
 .bedTileTop b {
   font-family: var(--wf-mono);
-  font-size: var(--wf-fs-13);
+  font-size: var(--wf-fs-12);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.02em;
   color: var(--wf-ink-2);
 }
 
-/* Redesign: the whole name shows, wrapping to a second line, with the stay length on its own row.
-   Polish (1 Nov 2026): a balanced wrap keeps "Surname," and the given name in even lines. */
-/* Q284 (pre-launch check D6, 2 Nov 2026): at most two lines, ending in an ellipsis, so one very long
-   name no longer stretches every tile in its row. The tile's hover title and the bed drawer carry
-   the whole name. */
-.bedTileName {
-  display: -webkit-box;
+/* WH5 (3 Nov 2026): as the bed board draws a bed. The surname leads on one line, the given name sits
+   under it, a step quieter. The tile's hover title and the bed drawer carry the whole name. */
+/* Names are shown in full (D-83): a long name wraps, and the tile grows to fit it. */
+.bedTileName,
+.bedTileGiven {
   min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.bedTileName {
   margin-top: 4px;
-  overflow: hidden;
+  color: var(--wf-ink-1);
   font-size: var(--wf-fs-14);
   line-height: var(--wf-lh-14);
   font-weight: 600;
   letter-spacing: -0.005em;
+}
+
+/* A bed with no one in it names its state ("Being made ready"), which may take two lines. */
+.bedTileName[data-wrap="true"] {
   white-space: normal;
-  overflow-wrap: anywhere;
   text-wrap: balance;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
+}
+
+.bedTileGiven {
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
+.bedTile[data-status="closed"] .bedTileName,
+.bedTile[data-status="closed"] .bedTileGiven {
+  color: var(--wf-ink-3);
 }
 
 .bedTileState {
@@ -332,22 +341,12 @@
 
 .bedTileNote {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .bedTile[data-look="true"] .bedTileNote {
   color: var(--wf-ink-1);
   font-weight: 500;
-}
-
-.bedTileDays {
-  flex: none;
-  font-family: var(--wf-mono);
-  font-weight: 500;
-  font-variant-numeric: tabular-nums;
-  color: var(--wf-ink-2);
 }
 
 /* List view: one row a bed. */
@@ -860,7 +859,7 @@
   align-self: flex-start;
 }
 
-/* This shift: To do in three columns, the log, or length of stay. */
+/* This shift: To do in three columns, or the shift history. */
 .shiftPane[data-active="false"] {
   display: none;
 }
@@ -1131,11 +1130,6 @@ label.todoMain:has(.todoTick:focus-visible) {
   color: var(--wf-ink-3);
 }
 
-/* Length of stay */
-.stayChart {
-  padding: var(--wf-s-3) var(--wf-s-4);
-}
-
 .statusWord {
   font-size: var(--wf-fs-12);
   font-weight: 600;
@@ -1220,10 +1214,6 @@ label.todoMain:has(.todoTick:focus-visible) {
     padding: 10px;
   }
 
-  .bedTileNote {
-    display: none;
-  }
-
   .bedKey {
     flex-wrap: wrap;
   }
@@ -1243,16 +1233,6 @@ label.todoMain:has(.todoTick:focus-visible) {
 
   .todoCol:first-child {
     border-top: 0;
-  }
-
-  .shiftCard > div:first-child {
-    flex-wrap: wrap;
-    row-gap: var(--wf-s-2);
-  }
-
-  .shiftCard > div:first-child > div:last-child {
-    flex: 1 1 100%;
-    margin-left: 0;
   }
 }
 
@@ -1360,10 +1340,10 @@ label.todoMain:has(.todoTick:focus-visible) {
   min-width: 0;
 }
 
+/* Done check (3 Nov 2026): nothing is cut, so a long note wraps under the bed. */
 .phoneRowNote span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* A person's name wraps in full, never cut short (owner rule, 31 Oct 2026). */
@@ -1480,10 +1460,9 @@ label.todoMain:has(.todoTick:focus-visible) {
 }
 
 .phoneAwaitName,
+/* Done check (3 Nov 2026): nothing is cut, so the meta line wraps. */
 .phoneAwaitMeta {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .phoneAwaitName {
@@ -1750,7 +1729,7 @@ label.todoMain:has(.todoTick:focus-visible) {
 }
 
 /* In a sheet the card loses its own chrome: the sheet is the surface. */
-.phoneSheetBody :is(.flowCard, .shiftCard) {
+.phoneSheetBody .flowCard {
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -1883,3 +1862,169 @@ label.todoMain:has(.todoTick:focus-visible) {
 }
 
 /* No side marker (owner ruling, 31 Oct 2026): the danger glyph on the row or tile carries act now. */
+
+/* WH2 and WH3 (Josh, 3 Nov 2026): This shift condensed to one card that opens a sheet, beside the
+ * day's discharges and arrivals. Soft raised cards on a tinted strip, as on Capacity. */
+.todayStrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.todayStrip[hidden] {
+  display: none;
+}
+
+.todayCard {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 4%, transparent);
+}
+
+.todayCaps {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+}
+
+.todayFigure {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-14);
+}
+
+.todayFigure b {
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-28);
+  font-weight: 650;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.todayPill {
+  align-self: center;
+  padding: 2px var(--wf-s-2);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wf-ink-3) 12%, transparent);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+}
+
+.todayPill[data-tone="danger"] {
+  background: color-mix(in srgb, var(--wf-danger) 12%, transparent);
+  color: var(--wf-danger);
+}
+
+.todayLine {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
+}
+
+.todayMeta {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+/* Done check (3 Nov 2026): the next step wraps rather than cut. */
+.todayLine {
+  overflow-wrap: anywhere;
+  color: var(--wf-ink-2);
+}
+
+.quietLink {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-13);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--wf-ink-3) 40%, transparent);
+  text-underline-offset: 3px;
+}
+
+.quietLink:hover {
+  color: var(--wf-ink-1);
+}
+
+.quietLink:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.todayFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin-top: auto;
+  padding-top: var(--wf-s-2);
+}
+
+/* The sheet body: To do stacks in one column, the sheet being narrower than the page. */
+.shiftBody {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.shiftSheetBody .todoGrid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.shiftSheetBody .todoCol {
+  padding-inline: 0;
+  border-left: 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.shiftSheetBody .todoCol:first-child {
+  border-top: 0;
+}
+
+.shiftSheetBody .shiftFoot {
+  padding-inline: 0;
+}
+
+@media (max-width: 40rem) {
+  .todayStrip {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* WH5: the live mark in the Every bed and Ward flow heads. */
+.liveMark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.liveDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--wf-success);
+}

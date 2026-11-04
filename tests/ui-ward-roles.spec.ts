@@ -184,9 +184,10 @@ test.describe("@mockup Ward screen", () => {
     await expect(wardScreen.locator('[data-testid^="ward-unit-card-"]')).toHaveCount(1);
 
     // Its beds reconcile on screen.
+    // Integration QA (3 Nov 2026): Ready and Occupied sit once, in the hero; the grid has the rest.
     const beds = wardScreen.getByTestId("ward-unit-beds");
-    await expect(beds).toContainText("Ready");
-    await expect(beds).toContainText("Occupied");
+    await expect(beds).toContainText("Pulled");
+    await expect(beds).toContainText("Closed");
 
     // A decline requires a reason from the fixed list, and "Belongs to another service" is offered
     // (the old out of catchment, D-78).
@@ -1543,7 +1544,7 @@ test.describe("@mockup Live capacity — a ward's own action reaches every scree
     const wardScreen = await gotoWard(page, "rph-adult-secure");
 
     const bedGrid = wardScreen.getByTestId("ward-unit-beds");
-    await expect(bedGrid).toContainText("Ready 1");
+    await expect(wardScreen.getByTestId("ward-hero-ready")).toHaveText("1");
     await expect(bedGrid).toContainText("Closed 1");
 
     // ⚠️ The testid below is the PULL one, not the older spelling. The merge with main took

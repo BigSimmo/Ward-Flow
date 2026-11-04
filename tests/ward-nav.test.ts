@@ -723,7 +723,9 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
       "src/components/ward-management/movements/movement-drawer.tsx",
       "src/components/ward-management/movements/movements-stage-row.tsx",
       "src/components/ward-management/shell/ward-facade.ts",
-      // v6 (7 Oct 2026): All wards' profile pop-out links each ward's bed board by template.
+      // WS1 (Josh, 3 Nov 2026): All wards' ward side panel links each ward's bed board by template.
+      "src/components/ward-management/wards/ward-index-drawer.tsx",
+      // The phone sheet on All wards links each ward's bed board by template.
       "src/components/ward-management/wards/ward-index.tsx",
     ]);
     const ward = dynamicRouteScans.get("/ward-flow/ward/[unitId]");
@@ -792,6 +794,8 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
       // Census links select a numbered ward bed through a query.
       "src/components/ward-management/search/patient-census-view.tsx",
       "src/components/ward-management/shell/ward-facade.ts",
+      // WS1 (Josh, 3 Nov 2026): All wards' ward side panel has its own Open ward link.
+      "src/components/ward-management/wards/ward-index-drawer.tsx",
       "src/components/ward-management/wards/ward-index.tsx",
     ]);
 

@@ -60,11 +60,13 @@ const firstBed = (predicate: (label: string) => boolean) =>
 const bedNo = (cell: HTMLElement) => Number(cell.dataset.testid?.replace("ward-board-bed-", ""));
 
 describe("Ward Bed board — pick up and place, with Undo", () => {
-  it("opens inside Ward home, leaves two view tabs and draws one cell per bed", () => {
+  // Josh, 3 Nov 2026 (WH7, reverses CRIT-07): three view tabs, Ward home, Referrals and Decisions.
+  it("opens inside Ward home, leaves three view tabs and draws one cell per bed", () => {
     renderBoard();
     expect(screen.getByRole("heading", { name: "Bed board" })).toBeVisible();
     expect([...document.querySelectorAll('#mainTabList [role="tab"]')].map((tab) => tab.id)).toEqual([
       "tabBtn-attn",
+      "tabBtn-referrals",
       "tabBtn-return",
     ]);
     expect(screen.getByRole("tab", { name: "Ward home (Worth Your Attention)" })).toHaveAttribute(
@@ -99,7 +101,12 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
     fireEvent.click(other);
     expect(screen.getByTestId("ward-board-say")).toHaveTextContent(/does not fit, it is taken\./);
 
+    // WH8 (3 Nov 2026): choosing a lit bed asks one confirm; nothing moves until it is sent.
     fireEvent.click(screen.getByTestId(`ward-board-bed-${to}`));
+    expect(screen.getByTestId("ward-board-confirm")).toHaveTextContent(/^Move .* from bed \d+ to bed \d+\?/);
+    expect(cellText(to)).toMatch(/, ready, fits$/);
+    fireEvent.click(screen.getByTestId("ward-board-confirm-send"));
+    expect(screen.queryByTestId("ward-board-confirm")).not.toBeInTheDocument();
     expect(screen.getByTestId("ward-board-say")).toHaveTextContent(/^Moved .* to bed/);
     // The person now sits in the free bed, and the bed they left is free.
     const occupantName = fromLabel.replace(/^Bed \d+, /, "");
@@ -160,6 +167,8 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
     const free = firstBed((label) => /, ready, fits$/.test(label));
     const to = bedNo(free);
     fireEvent.click(free);
+    expect(screen.getByTestId("ward-board-confirm")).toHaveTextContent(/This accepts the referral\./);
+    fireEvent.click(screen.getByTestId("ward-board-confirm-send"));
 
     expect(screen.getByTestId("ward-board-say")).toHaveTextContent(/Referral accepted\.$/);
     expect(cellText(to)).toMatch(/pulled for/);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Button } from "@/components/wf";
+import { Button, Stepper } from "@/components/wf";
 import { dayOf, formatInstantWithDay, type Instant } from "../ward-clock";
 import { clockInputValue } from "../capacity/planned-admissions-draft";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
@@ -14,7 +14,7 @@ import styles from "./ward-drawer-discharge-date.module.css";
 /**
  * Walk-through WT-16 (26 Oct 2026): the bed drawer showed "No date" for going out with no way to
  * set it, so only the coordinator could. The nurse in charge now sets or changes the expected
- * discharge date here, with the same day list and typed time as the Patient page. The time is the
+ * discharge date here, with the same days and typed time as the Patient page. The time is the
  * one typed; nothing is worked out. Changing a recorded date opens on that date, so a nudge is
  * one change, and Save waits until it is moved.
  */
@@ -88,16 +88,20 @@ export function WardDrawerDischargeDate({
       aria-label="Set discharge date"
       data-testid="ward-drawer-discharge-date"
     >
-      <label>
-        Day
-        <select value={day} onChange={(event) => setDay(Number(event.target.value))}>
-          {DISCHARGE_DAYS.map((option) => (
-            <option key={option} value={option}>
-              {dayOptionLabel(option, now, dayZero)}
-            </option>
-          ))}
-        </select>
-      </label>
+      {/* WH1 (Josh, 3 Nov 2026): the kit stepper in place of a 43 row browser drop-down. */}
+      <div className={styles.day}>
+        <span>Day</span>
+        <Stepper
+          noun="discharge day"
+          value={day}
+          min={0}
+          max={DISCHARGE_DAYS.length - 1}
+          onChange={setDay}
+          display={dayOptionLabel(day, now, dayZero)}
+          valueText={dayOptionLabel(day, now, dayZero)}
+          valueTestId="ward-drawer-discharge-day"
+        />
+      </div>
       <label>
         Expected discharge time
         <input type="time" value={time} onChange={(event) => setTime(event.target.value)} />

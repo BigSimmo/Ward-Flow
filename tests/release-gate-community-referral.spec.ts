@@ -285,6 +285,8 @@ test("Community referral: a community team refers from its own desk, the ward it
   const bedTestId = (await freeBed.getAttribute("data-testid"))!;
   await expectAccessible(page, testInfo, "ward Bed board with the referral picked up");
   await freeBed.click();
+  // WH8: the lit bed asks one confirm before the referral is accepted into it.
+  await page.getByTestId("ward-board-confirm-send").click();
   await expect(page.getByTestId("ward-board-say")).toContainText("Referral accepted.");
   await expect(page.getByTestId(bedTestId)).toHaveAttribute("data-state", "held");
   // H-0893: an answered referral folds behind "Show N answered" below the waiting ones.

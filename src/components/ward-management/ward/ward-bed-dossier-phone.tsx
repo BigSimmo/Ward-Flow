@@ -21,6 +21,7 @@ import { WardObservationControl } from "./ward-observation-control";
 import type { BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import {
   BedActions,
+  ChoiceChips,
   FactTile,
   NotLeftNotice,
   Row,
@@ -31,6 +32,8 @@ import {
 
 // Preview copy of the phone bed sheet from `ward/ward-bed-dossier-drawer.tsx`, split out of the
 // drawer copy to keep both under the line cap.
+
+const LEAVING_CHOICES = LEAVING_DESTINATIONS.map(({ id, label }) => ({ id, label }));
 
 const CHIP_LABEL = new Map<WfTone, string>([
   ["danger", "Act now"],
@@ -57,7 +60,7 @@ interface PhoneBedSheetProps {
   setQuickBlockerOpen: (open: boolean) => void;
   selectedBlocker: BedReleaseBlocker | "";
   setSelectedBlocker: (blocker: BedReleaseBlocker | "") => void;
-  blockerSelectRef: React.RefObject<HTMLSelectElement | null>;
+  blockerSelectRef: React.RefObject<HTMLDivElement | null>;
   drawerLeavingDestination: LeavingDestination;
   setDrawerLeavingDestination: (dest: LeavingDestination) => void;
   onClose: () => void;
@@ -107,7 +110,7 @@ interface PhoneBedSheetProps {
 
 /**
  * Phone (v10 bed sheet): one scrolling sheet, no tabs. Bed and name lead, then four facts, then
- * This person, Plan to leave and Timeline as plain label rows. Move bed and the blocker sit in the
+ * This person, Leaving and History as plain label rows, the words the desktop drawer uses. Move bed and the blocker sit in the
  * footer; every other action the desktop drawer offers stays in the sheet body.
  */
 export function PhoneBedSheet({
@@ -185,9 +188,9 @@ export function PhoneBedSheet({
               {isReady ? (bedItem?.preparing ? BED_STATE_LABELS.beingMadeReady : "Ready bed") : occupantAlias}
             </h2>
             {sub ? <p className={styles.drawerKicker}>{sub}</p> : null}
+            {/* WH4 polish: the same soft pill as the desktop hero, tinted by the bed's tone. */}
             {chip && tone ? (
-              <span className={styles.phoneChip}>
-                <StatusGlyph tone={tone} />
+              <span className={cx(styles.heroPill, styles.phonePill)} data-tone={tone}>
                 {chip}
               </span>
             ) : null}
@@ -229,7 +232,7 @@ export function PhoneBedSheet({
                 {/* Redesign: the same four facts as the desktop drawer. */}
                 <FactTile label="Stay" value={stayDays === null ? "Not recorded" : `Day ${stayDayNumber(stayDays)}`} />
                 <FactTile label="Legal" value={shortLegal(bedItem?.legalStatusLabel)} />
-                <FactTile label="Going out" value={goingOut} tone={bedItem?.pastDate ? "danger" : null} />
+                <FactTile label="Going out" value={goingOut} tone={bedItem?.pastDate ? "warning" : null} />
                 <FactTile label="Observation" value={observationShort} />
               </div>
               <NotLeftNotice bedItem={bedItem} expectedPlan={notLeftPlan} isOccupied={isOccupied} />
@@ -251,28 +254,20 @@ export function PhoneBedSheet({
                   }
                 />
               ) : null}
-              <h3 className={styles.phoneSec}>Plan to leave</h3>
+              <h3 className={styles.phoneSec}>Leaving</h3>
               <dl className={styles.phoneKv}>
                 <Row label="Expected">{expectedPlan}</Row>
                 {planRows}
                 {isOccupied && admissionId ? (
-                  // The longest destinations do not fit beside the label at 390px, so the select takes its own line.
+                  // The longest destinations do not fit beside the label at 390px, so the chips take their own line.
                   <Row label="Going to" wide>
-                    <select
-                      id="drawer-leaving-dest"
-                      aria-label="Where are they going?"
-                      className={styles.select}
+                    <ChoiceChips
+                      label="Where are they going?"
+                      items={LEAVING_CHOICES}
                       value={drawerLeavingDestination}
-                      onChange={(e) => {
-                        setDrawerLeavingDestination(e.target.value as LeavingDestination);
-                      }}
-                    >
-                      {LEAVING_DESTINATIONS.map((destination) => (
-                        <option key={destination.id} value={destination.id}>
-                          {destination.label}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={setDrawerLeavingDestination}
+                      testId="drawer-leaving-dest"
+                    />
                   </Row>
                 ) : null}
               </dl>
@@ -292,7 +287,7 @@ export function PhoneBedSheet({
                   {sentJourney}
                 </>
               ) : null}
-              <h3 className={styles.phoneSec}>Timeline</h3>
+              <h3 className={styles.phoneSec}>History</h3>
               {timeline.length > 0 ? (
                 <ul className={styles.timeline}>
                   {timeline.map((event) => (

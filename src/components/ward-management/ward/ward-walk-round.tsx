@@ -165,6 +165,25 @@ export function WardWalkRound({ beds, round, setRound, onOpenBed, registerTrigge
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentNumber]);
 
+  // Integration QA (3 Nov 2026): Escape closes the card like the close button, and the effect
+  // above hands focus back to the round's button. A bed panel open on top keeps its own Escape.
+  const walkingOpen = current !== undefined;
+  useEffect(() => {
+    if (!walkingOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      const card = backRef.current;
+      const panelOnTop = [...document.querySelectorAll('[role="dialog"], [role="alertdialog"], dialog[open]')].some(
+        (dialog) => !dialog.contains(card) && dialog.getClientRects().length > 0,
+      );
+      if (panelOnTop) return;
+      event.preventDefault();
+      setRound((previous) => ({ ...previous, walking: null }));
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [walkingOpen, setRound]);
+
   const reviewAndNext = () => {
     if (!current) return;
     const next = ordered[index + 1];

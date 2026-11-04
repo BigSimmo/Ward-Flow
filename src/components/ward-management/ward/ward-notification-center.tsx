@@ -814,6 +814,12 @@ export function WardNotificationCenter({
         <span id={`${baseId}-sound-note`} className="sr-only">
           Urgent buzzes from the coordinator play a sound.
         </span>
+        {/* WH10 (3 Nov 2026): a clear way out at the foot as well as the head's close. */}
+        {onClose && !inSheet ? (
+          <button type="button" className={drawer.btn} onClick={onClose} data-testid="ward-notification-done">
+            Done
+          </button>
+        ) : null}
       </div>
     </section>
   );

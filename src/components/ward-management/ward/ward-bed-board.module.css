@@ -30,82 +30,146 @@
   color: var(--wf-ink-1);
 }
 
-/* Waiting: one chip per person the board can place. */
-.waitlist {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  min-width: 0;
-  overflow-x: auto;
-  scrollbar-width: none;
-}
-
-.waitLabel {
+/* WH8 (Josh, 3 Nov 2026): two plain steps. Step labels are small caps with a numbered disc. */
+.stepLabel {
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 6px;
+  gap: var(--wf-s-2);
   font-size: var(--wf-fs-12);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
+  white-space: nowrap;
   color: var(--wf-ink-3);
+}
+
+.stepHint {
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--wf-ink-3);
+}
+
+/* Step 1: the people waiting, as raised cards on a tinted strip (the Capacity look). */
+.waitStrip {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+
+.waitlist {
+  display: flex;
+  align-items: stretch;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  margin: 0;
+  padding: 2px;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
 
 .chipWrap {
   display: inline-flex;
   flex: none;
-  align-items: center;
-  gap: var(--wf-s-2);
+  flex-direction: column;
+  gap: var(--wf-s-1);
 }
 
 .chip {
-  display: inline-flex;
-  flex: none;
-  align-items: center;
-  gap: 8px;
-  height: 36px;
-  padding: 0 12px 0 10px;
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-ctl);
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 12rem;
+  max-width: 18rem;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
   background: var(--wf-surface);
-  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 4%, transparent);
+  font: inherit;
   color: var(--wf-ink-1);
-  white-space: nowrap;
-  cursor: grab;
+  text-align: start;
+  cursor: pointer;
   transition:
-    transform var(--wf-t-micro) var(--wf-ease-out),
-    box-shadow var(--wf-t-micro) var(--wf-ease-out);
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease;
+}
+
+.chip[draggable="true"] {
+  cursor: grab;
 }
 
 .chip:hover {
-  border-color: var(--wf-line-3);
+  border-color: var(--wf-line-2);
+  box-shadow: 0 4px 14px -8px color-mix(in srgb, var(--wf-ink-1) 22%, transparent);
 }
 
 .chip[aria-pressed="true"] {
-  transform: translateY(-2px);
   border-color: var(--wf-accent);
-  box-shadow:
-    0 0 0 1px var(--wf-accent),
-    var(--wf-e2);
+  background: var(--wf-accent-tint);
+  box-shadow: 0 0 0 1px var(--wf-accent);
 }
 
 .chip[aria-disabled="true"] {
   color: var(--wf-dim);
+  box-shadow: none;
   cursor: not-allowed;
 }
 
+.chipTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  min-width: 0;
+}
+
 .chipName {
-  max-width: 14rem;
+  min-width: 0;
   overflow: hidden;
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .chipMeta {
-  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
-  font-variant-numeric: tabular-nums;
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.chipTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wf-info) 14%, transparent);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--wf-info-ink);
 }
 
 .none {
   flex: none;
+  align-self: center;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
   white-space: nowrap;
@@ -140,12 +204,8 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--wf-s-2);
   min-width: 0;
-  padding: 10px;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
 }
 
 .podHead {
@@ -181,7 +241,7 @@
 .cells {
   display: grid;
   grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr));
-  gap: 6px;
+  gap: var(--wf-s-2);
 }
 
 .cell {
@@ -189,14 +249,16 @@
   flex-direction: column;
   justify-content: space-between;
   align-items: flex-start;
+  gap: 4px;
   min-width: 0;
-  height: 56px;
-  padding: 6px 7px;
-  border: 1px solid var(--wf-line-2);
+  min-height: 92px;
+  padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-md);
   background: var(--wf-surface);
-  font: 600 var(--wf-fs-13) / 1 var(--wf-mono);
-  color: var(--wf-ink-2);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 4%, transparent);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-ink-3);
   text-align: left;
   cursor: pointer;
   transition:
@@ -241,8 +303,43 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font: 600 var(--wf-fs-14) / 1.2 var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+/* The quiet line under the name, or while picking, why a lit bed fits. */
+/* An empty bed's word wraps to a second line rather than cut ("Making ready"). */
+.cellWord[data-wrap="true"] {
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* The line under a bed wraps rather than cut ("Not offered yet", "Not yet arrived"). */
+.cellSub,
+.cellReason {
+  max-width: 100%;
+  overflow-wrap: anywhere;
   font: 500 var(--wf-fs-12) / 1.2 var(--wf-font);
   color: var(--wf-ink-3);
+}
+
+.cellReason {
+  font-weight: 600;
+  color: var(--wf-success-ink);
+}
+
+/* The one bed the board suggests first. */
+.bestTag {
+  display: inline-flex;
+  align-items: center;
+  height: 18px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wf-success) 16%, transparent);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-font);
+  white-space: nowrap;
+  color: var(--wf-success-ink);
 }
 
 /* Surname, then the given name (D-83). The surname gives way first; the given name only takes an
@@ -251,7 +348,18 @@
 .cellName {
   display: flex;
   flex: 1 1 auto;
+  flex-direction: column;
+  gap: 1px;
   min-width: 0;
+}
+
+.srComma {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .cellInitial {
@@ -260,21 +368,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font: 500 var(--wf-fs-12) / 1.2 var(--wf-font);
-  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-13) / 1.2 var(--wf-font);
+  color: var(--wf-ink-2);
 }
 
 .cell[data-dim="true"] .cellInitial {
   color: var(--wf-dim);
-}
-
-.swatch {
-  display: inline-block;
-  flex: none;
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-  background: var(--wf-data-rest);
 }
 
 /* A free place is the one tinted fill. */
@@ -299,6 +398,11 @@
 .cell[data-state="closed"] {
   border-style: dashed;
   background: transparent;
+  box-shadow: none;
+  color: var(--wf-ink-3);
+}
+
+.cell[data-state="closed"] .cellWord {
   color: var(--wf-ink-3);
 }
 
@@ -309,10 +413,8 @@
 /* Act now: the faint coral tint, with the rounded coral marker below. */
 .cell[data-act="true"] {
   border-color: var(--wf-line);
-
   background: var(--wf-act-tint);
   position: relative;
-  padding-inline-start: 13px;
 }
 
 .cell[data-dim="true"] {
@@ -322,12 +424,8 @@
   color: var(--wf-dim);
 }
 
-.cell[data-dim="true"] .cellWord {
+.cell[data-dim="true"] :is(.cellWord, .cellSub) {
   color: var(--wf-dim);
-}
-
-.cell[data-dim="true"] .swatch {
-  background: var(--wf-glyph-dim);
 }
 
 /* P087: a bed the held pick cannot go to stops looking choosable (no lift, no press). */
@@ -343,8 +441,17 @@
 
 .plan[data-picking="true"] .cell[data-fits="true"] {
   border-color: var(--wf-fit-edge);
+  background: linear-gradient(var(--wf-fit-tint), var(--wf-fit-tint)), var(--wf-surface);
   box-shadow:
     0 0 0 1px var(--wf-fit-edge),
+    var(--wf-e2);
+}
+
+/* The bed asked about in the confirm. */
+.plan[data-picking="true"] .cell[data-chosen="true"] {
+  border-color: var(--wf-accent);
+  box-shadow:
+    0 0 0 2px var(--wf-accent),
     var(--wf-e2);
 }
 
@@ -382,6 +489,7 @@
 }
 
 @media (forced-colors: active) {
+  .plan[data-picking="true"] .cell[data-chosen="true"],
   .plan[data-picking="true"] .cell[data-fits="true"],
   .chip[aria-pressed="true"],
   .cell[aria-pressed="true"] {
@@ -399,14 +507,6 @@
   scrollbar-width: none;
 }
 
-.soonLabel {
-  flex: none;
-  margin-right: var(--wf-s-1);
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-3);
-  white-space: nowrap;
-}
-
 .soonChip {
   display: inline-flex;
   flex: none;
@@ -414,13 +514,53 @@
   gap: 6px;
   height: 28px;
   padding: 0 10px;
-  border: 1px solid var(--wf-line-2);
-  border-radius: var(--wf-r-ctl);
-  background: var(--wf-surface);
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wf-info) 12%, transparent);
   font-size: var(--wf-fs-12);
-  color: var(--wf-ink-2);
+  color: var(--wf-info-ink);
   white-space: nowrap;
   cursor: pointer;
+}
+
+.soonChip:hover {
+  background: color-mix(in srgb, var(--wf-info) 20%, transparent);
+}
+
+/* The one confirm: the question, why the bed fits, and the button that sends it. */
+.confirm {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-accent);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-accent-tint);
+}
+
+.confirmText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.confirmText b {
+  font-weight: 600;
+}
+
+.confirmText span {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-success-ink);
+}
+
+.confirmActions {
+  display: inline-flex;
+  flex: none;
+  gap: var(--wf-s-2);
 }
 
 .say {
@@ -429,8 +569,12 @@
   gap: var(--wf-s-2);
   min-height: 40px;
   padding: var(--wf-s-2) var(--wf-s-3);
-  border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.say[hidden] {
+  display: none;
 }
 
 .sayText {
@@ -505,16 +649,33 @@
     padding: var(--wf-s-3);
   }
 
-  .waitlist {
-    gap: var(--wf-phone-pill-gap);
-    padding-block: var(--wf-phone-pill-hit);
+  .waitStrip {
+    padding: var(--wf-s-3);
   }
 
-  .chipWrap {
-    gap: var(--wf-phone-pill-gap);
+  .chip {
+    min-width: 11rem;
   }
 
-  .chip,
+  .cell {
+    min-height: 88px;
+    padding: var(--wf-s-2);
+  }
+
+  .bestTag {
+    padding: 0 5px;
+  }
+
+  .confirm {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .confirmActions > * {
+    flex: 1;
+    min-height: 40px;
+  }
+
   .soonChip {
     position: relative;
     gap: var(--wf-phone-pill-gap);
@@ -525,15 +686,10 @@
     font-weight: 600;
   }
 
-  .chip::before,
   .soonChip::before {
     content: "";
     position: absolute;
     inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
-  }
-
-  .chipMeta {
-    font-size: var(--wf-phone-pill-count-fs);
   }
 
   .say {
@@ -594,8 +750,8 @@
 }
 
 @media (max-width: 46.4375rem) {
-  .boardPhone .waitlist {
-    padding-inline: var(--wf-s-1);
+  .boardPhone .waitStrip {
+    border-radius: var(--wf-r-md);
   }
 
   .boardPhone .say {
