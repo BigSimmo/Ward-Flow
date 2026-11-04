@@ -25,7 +25,7 @@ const ROUTES = [
   ["/bed-meeting/agenda", "bed-meeting-agenda"],
   ["/board/rph-adult-secure", "ward-board"],
   ["/capacity", "ward-capacity-screen"],
-  ["/community", "community-index"],
+  ["/hub/catchments", "community-index"],
   ["/community/midland", "ward-community-screen"],
   ["/waiting", "ward-delays-page"],
   ["/discharges", "ward-discharge-board"],
@@ -68,6 +68,24 @@ const ROUTES = [
 ] as const;
 
 test.describe.configure({ timeout: 60_000 });
+
+/**
+ * Settled pages only (flaky phone and dark runs, 3 Nov 2026). Every desk's tour starts out seen, so
+ * each page offers its tip card 1.5s after it settles: sometimes before the scan, sometimes during
+ * it, and on a phone sometimes over the button a test is about to press. Whether it showed was
+ * timing, so the same scan could pass or fail. Tips are turned off for this device here, as Settings
+ * does, and the tip card is scanned on purpose in its own light and dark tests below, once it is
+ * showing. Motion is pinned off here too (the suite default), so nothing is scanned mid-transition.
+ */
+test.use({ reducedMotion: "reduce" });
+test.beforeEach(async ({ page }) => {
+  await page.addInitScript((key) => window.localStorage.setItem(key, "yes"), HELP_TIPS_OFF_KEY);
+});
+
+/** For the tip card tests: undo the device setting above (init scripts run in the order added). */
+async function allowTips(page: Page) {
+  await page.addInitScript((key) => window.localStorage.removeItem(key), HELP_TIPS_OFF_KEY);
+}
 
 for (const [route, screenId, destination = route] of ROUTES) {
   test(`axe: ${route || "/"} has no serious or critical violation`, async ({ page }, testInfo) => {
@@ -167,16 +185,28 @@ test("axe: the ED actions menu when open has no serious or critical violation", 
  * and is scanned with its first tab showing.
  */
 test("axe: a ward's bed drawer when open has no serious or critical violation", async ({ page }, testInfo) => {
-  // The Ward page can offer its page tip 1.5s after it settles. On a phone that corner card can sit
-  // over Place or move, and the click then waits on it until the test times out (main CI, 3 Nov
-  // 2026). Whether it shows depends on timing, so turn tips off for this device as Settings does
-  // (same as the phone referral test, #1358). The sweeps above still scan the tip where it shows.
-  await page.addInitScript((key) => window.localStorage.setItem(key, "yes"), HELP_TIPS_OFF_KEY);
+  // Tips are off for this device (see the top of this file): on a phone the Ward page's tip card
+  // could sit over Place or move and hold the click until the test timed out (main CI, 3 Nov 2026).
   await openShell(page, "/ward/rph-adult-secure", "ward-unit-screen");
   await page.getByTestId("ward-open-bed-board").click();
   await page.getByTestId("ward-board-bed-1").click();
   await expect(page.getByTestId("bed-telemetry-drawer")).toBeVisible();
   await expectAccessible(page, testInfo, "ward bed drawer open");
+});
+
+/**
+ * The page tip card, scanned on purpose now that the sweeps turn tips off. The Ward page offers its
+ * tip 1.5s after it settles; the scan waits until the card is showing.
+ */
+async function openWithTip(page: Page) {
+  await allowTips(page);
+  await openShell(page, "/ward/rph-adult-secure", "ward-unit-screen");
+  await expect(page.getByTestId("ward-help-hint")).toBeVisible({ timeout: 15_000 });
+}
+
+test("axe: the page tip card when showing has no serious or critical violation", async ({ page }, testInfo) => {
+  await openWithTip(page);
+  await expectAccessible(page, testInfo, "page tip card");
 });
 
 /**
@@ -228,6 +258,12 @@ test.describe("dark theme", () => {
     await page.locator('[data-testid^="ward-ed-unfold-"]:visible').first().click();
     await expect(page.getByRole("menu")).toBeVisible();
     await expectAccessible(page, testInfo, "dark ED actions menu open");
+  });
+
+  test("axe dark: the page tip card when showing", async ({ page }, testInfo) => {
+    await openWithTip(page);
+    await expect(page.locator("html.dark"), "the device asks for dark, so the app must draw dark").toHaveCount(1);
+    await expectAccessible(page, testInfo, "dark page tip card");
   });
 
   test("axe dark: the Tools sheet, or the phone Menu sheet, when open", async ({ page }, testInfo) => {

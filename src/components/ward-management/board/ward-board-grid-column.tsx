@@ -27,7 +27,7 @@ import {
 } from "./ward-board-model";
 
 import { useState, type Dispatch, type SetStateAction } from "react";
-import { Segmented, Select, ShowMoreRow } from "@/components/wf";
+import { Segmented, Select, ShowMoreRow, StatusGlyph } from "@/components/wf";
 import redesign from "./ward-board-panels.module.css";
 
 /** Redesign (Josh, 30 Oct): a phone opens on this many beds, then Show more (owner rule: long lists fold). */
@@ -193,7 +193,7 @@ export function WardBoardGridColumn({
         ))}
         <li className={styles.legendItem}>
           <span className={`${styles.legendSwatch} ${styles.legendSwatchPast}`} aria-hidden="true">
-            <span className={styles.legendGlyph}>▲</span>
+            <StatusGlyph tone="warning" size={10} className={styles.legendGlyph} />
           </span>
           <span className="sr-only">Warning: </span>
           Past the ward&apos;s own expected date
@@ -203,7 +203,7 @@ export function WardBoardGridColumn({
                 not the explanation. */}
         <li className={styles.legendItem}>
           <span className={`${styles.legendSwatch} ${styles.legendSwatchBlocked}`} aria-hidden="true">
-            <span className={styles.legendGlyph}>■</span>
+            <StatusGlyph tone="closed" size={10} className={styles.legendGlyph} />
           </span>
           <span className="sr-only">Out of service: </span>
           Out of service — not fillable
@@ -213,7 +213,7 @@ export function WardBoardGridColumn({
                 2026-09-01 ruling that renamed this box Closed; "Held" now means a leave bed only.) */}
         <li className={styles.legendItem}>
           <span className={`${styles.legendSwatch} ${styles.legendSwatchHeld}`} aria-hidden="true">
-            <span className={styles.legendGlyph}>○</span>
+            <StatusGlyph tone="neutral" size={10} className={styles.legendGlyph} />
           </span>
           <span className="sr-only">{BED_STATE_LABELS.closed}: </span>
           Empty, not offered — not fillable
@@ -347,10 +347,7 @@ export function WardBoardGridColumn({
                     <span className="sr-only">{tile.bandLabel}</span>
                     {tile.pastDate && (
                       <span className={styles.pastMark} data-testid={`ward-board-bed-${index + 1}-past`}>
-                        <span aria-hidden="true" className={styles.statusGlyph}>
-                          ▲{" "}
-                        </span>
-                        <span>Past date</span>
+                        <StatusGlyph tone="warning" size={10} className={styles.statusGlyph} /> <span>Past date</span>
                       </span>
                     )}
                     {/* Words, never a fill or a colour — the same rule the past-date badge
@@ -364,10 +361,7 @@ export function WardBoardGridColumn({
                             how a number gets believed: it was consistent with itself. */}
                     {tile.awayAtEd && (
                       <span className={styles.awayMark} data-testid={`ward-board-bed-${index + 1}-away`}>
-                        <span aria-hidden="true" className={styles.statusGlyph}>
-                          ◆{" "}
-                        </span>
-                        <span>At ED</span>
+                        <StatusGlyph tone="info" size={10} className={styles.statusGlyph} /> <span>At ED</span>
                       </span>
                     )}
                   </>

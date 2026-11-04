@@ -2349,6 +2349,13 @@
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
+.needGap {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-warning-ink);
+}
+
 .needTier[data-tier="1"] {
   color: var(--wf-danger-ink);
   font-weight: 600;

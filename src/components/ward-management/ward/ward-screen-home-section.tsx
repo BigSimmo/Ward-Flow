@@ -35,6 +35,7 @@ import type { OverrideEntry } from "@/components/ward-management/ward-derivation
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import type { CapacityBreakdown } from "@/components/ward-management/ward-bed-availability";
 import { wardLiveFormAlerts, type WardScreenBed } from "./ward-screen-derivations";
+import { ReturnEarlyAlerts } from "@/components/ward-management/out-of-area/return-early-alerts";
 
 /** The Home tab section (Worth your attention), drawn from the ward screen's own state. */
 type WardScreenHomeSectionProps = {
@@ -224,6 +225,8 @@ export function WardScreenHomeSection({
       aria-labelledby="tabBtn-attn"
       data-active={activeTab === "attn" || activeTab === "board"}
     >
+      {/* Out of area "Flag early" (3 Nov 2026): this ward's site is the home hospital. In-app only. */}
+      <ReturnEarlyAlerts desk={{ role: "ward", siteCode: unit.siteCode }} now={now} />
       <WardHomeTab
         absencesOnOrder={absencesOnOrder}
         phonePanel={isPhone ? phonePanel : undefined}

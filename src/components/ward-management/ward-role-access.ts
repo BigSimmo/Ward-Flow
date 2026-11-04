@@ -365,6 +365,8 @@ export function screenForPath(pathname: string): ScreenAddress | undefined {
   // only (decision 46, 31 Oct 2026). No other role lists it.
   if (first === "bed-meeting" && second === "agenda")
     return third === undefined ? { screen: "bed-meeting-agenda" } : undefined;
+  // PL1 (3 Nov 2026): Places' Catchments tab is the old community index, so it keeps that access.
+  if (first === "hub" && second === "catchments") return third === undefined ? { screen: "community" } : undefined;
   switch (first) {
     case "network":
     case "capacity":

@@ -332,8 +332,7 @@ test.describe("@mockup Ward patient search", () => {
 
   /**
    * 5. THE 48PX TAP FLOOR AT 375PX. Every control a coordinator taps in the phone composer and the
-   * census header: the search input, DOB, Clear, the six group pills (P027 split No bed yet in two), the highlight chips and the
-   * History tab. The
+   * census header: the search input, DOB, Clear, the six-option state switch (PS1), the highlight chips. The
    * old filter selects are gone from the screen (they sit in a visually hidden block), so the
    * census's own controls are what this now measures. Written against the 9 Oct census, it failed
    * first on a real defect: the phone input was 18px tall and Clear 36px.
@@ -358,17 +357,19 @@ test.describe("@mockup Ward patient search", () => {
       [input, "the search input"],
       [form.getByRole("button", { name: "DOB" }), "the DOB switch"],
       [form.getByRole("button", { name: "Clear" }), "the Clear button"],
-      // v10 phone (11 Oct 2026): the Highlight sheet button became a row of highlight chips and
-      // History became a tab beside Now, so each chip and the History tab are measured instead.
-      [console_.getByRole("tab", { name: /History/ }), "the History tab"],
+      // v10 phone (11 Oct 2026): the Highlight sheet button became a row of highlight chips, so
+      // each chip is measured. PS1 (3 Nov 2026): the History tab left the header; Closed today
+      // opens from a row at the foot of the list.
     ];
     const chips = console_.getByRole("group", { name: "Highlight" }).getByRole("button");
     const chipCount = await chips.count();
     expect(chipCount, "the phone census shows its highlight chips").toBeGreaterThan(0);
     for (let i = 0; i < chipCount; i += 1) controls.push([chips.nth(i), `highlight chip ${i + 1}`]);
-    const groups = console_.getByRole("group", { name: "Where patients are now" }).getByRole("button");
-    await expect(groups, "the phone census shows six group pills").toHaveCount(6);
-    for (let i = 0; i < 6; i += 1) controls.push([groups.nth(i), `group pill ${i + 1}`]);
+    // PS1 (3 Nov 2026): the six group pills became the register's state switch (Everyone and
+    // five states), so each of its options is measured instead.
+    const groups = console_.getByRole("radiogroup", { name: "Where people are now" }).getByRole("radio");
+    await expect(groups, "the phone census shows the six-option state switch").toHaveCount(6);
+    for (let i = 0; i < 6; i += 1) controls.push([groups.nth(i), `state option ${i + 1}`]);
 
     const failures: string[] = [];
     for (const [control, label] of controls) {

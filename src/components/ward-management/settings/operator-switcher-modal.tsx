@@ -15,7 +15,7 @@ import {
   Search,
   BedSingle,
   Siren,
-  Truck,
+  Ambulance,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -91,7 +91,7 @@ const ROLE_ICON: Record<DeskRole, LucideIcon> = {
   ward: BedSingle,
   ed: Siren,
   community: Home,
-  officer: Truck,
+  officer: Ambulance,
 };
 
 const SERVICE_SWATCH: Record<string, string> = {

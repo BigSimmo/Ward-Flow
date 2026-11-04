@@ -14,6 +14,8 @@ import {
   EdInboxReferralFixture,
   markNotYetIdentified,
   openRaiseIntoMovementForm,
+  chooseEdChoice,
+  edChoiceValue,
 } from "./helpers/ed-raise-into-movement";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 
@@ -77,9 +79,9 @@ function answerClinicalFields() {
     ["ward-ed-referral-legal-status", "Voluntary"],
     ["ward-ed-referral-urgency", "3"],
   ] as const) {
-    fireEvent.change(screen.getByTestId(testId), { target: { value } });
+    chooseEdChoice(testId, value);
   }
-  fireEvent.change(screen.getByTestId("ward-ed-referral-observation"), { target: { value: "general" } });
+  chooseEdChoice("ward-ed-referral-observation", "general");
   fireEvent.click(screen.getByTestId("ward-ed-referral-high-acuity-not-required"));
 }
 
@@ -136,9 +138,9 @@ describe("ED Raise referral starts from a person", () => {
     clearNotYetIdentified();
     const field = screen.getByTestId("ward-ed-referral-patient");
     fireEvent.change(field, { target: { value: first.umrn } });
-    expect(screen.getByTestId("ward-ed-referral-sex")).toHaveValue(first.sex);
+    expect(edChoiceValue("ward-ed-referral-sex")).toBe(first.sex);
     fireEvent.change(field, { target: { value: second.umrn } });
-    expect(screen.getByTestId("ward-ed-referral-sex")).toHaveValue(second.sex);
+    expect(edChoiceValue("ward-ed-referral-sex")).toBe(second.sex);
   });
 });
 
@@ -164,7 +166,7 @@ describe("ED Ask for a bed links a record only from a pick or a UMRN", () => {
       target: { value: `${person.givenName} ${person.familyName}` },
     });
     expect(screen.queryByTestId("ward-ed-referral-patient-linked")).not.toBeInTheDocument();
-    expect(screen.getByTestId("ward-ed-referral-sex")).not.toHaveValue(person.sex);
+    expect(edChoiceValue("ward-ed-referral-sex")).not.toBe(person.sex);
     expect(document.getElementById("ward-ed-referral-blocked")).toHaveTextContent("Find the patient by name or UMRN");
   });
 

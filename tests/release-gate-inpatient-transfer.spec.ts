@@ -145,7 +145,10 @@ test("Inpatient transfer: a stay on one ward is referred, accepted and held at a
   await plan.getByTestId("ward-out-of-area-repat-home-hospital").selectOption({ label: "Bunbury Hospital" });
   await plan.getByRole("group", { name: "Ward agreed" }).getByText("Agreed", { exact: true }).click();
   await plan.getByRole("group", { name: "Travel by" }).getByText("Road", { exact: true }).click();
-  await plan.getByTestId("ward-out-of-area-repat-provider").selectOption("Patient transport service");
+  await plan
+    .getByTestId("ward-out-of-area-repat-provider")
+    .getByTestId("ward-officer-contact-Patient transport service")
+    .click();
   await plan.getByRole("group", { name: "Legal status" }).getByText("Voluntary", { exact: true }).click();
   await plan.getByTestId("ward-out-of-area-repat-cad").fill("CAD-GATE-0003");
   await plan.getByTestId("ward-out-of-area-repat-estimated-time").fill("09:00");
