@@ -21,73 +21,74 @@ import { describe, expect, it } from "vitest";
  *   `filters` list;
  * - `wait`: a glyph tone read from `waitTone(...)`, which marks every long wait with a triangle.
  *
- * KNOWN lists today's page offenders, each with its file and a one-line reason. Each owning page's
+ * KNOWN lists today's page offenders by file, kind and site snippet, each with a one-line reason. Each owning page's
  * thread removes its own; the list may only shrink, so delete the entry in the same change. Mock-up
  * copies under ward-redesign are left out, as in tests/wf-no-side-stripes.test.ts.
  */
 type Kind = "control" | "raw" | "wait";
-type Known = { file: string; kind: Kind; count: number; reason: string };
+/** `sites`: one snippet per offender, found in its line (or, for `control`, in the opening tag). */
+type Known = { file: string; kind: Kind; sites: readonly string[]; reason: string };
 
 const KNOWN: readonly Known[] = [
   {
     file: "src/components/ward-management/alerts/alert-detail.tsx",
     kind: "raw",
-    count: 1,
+    sites: ['group === "act" ? "danger"'],
     reason: "phone alert detail head: an 'Act now' chip carries the triangle",
   },
   {
     file: "src/components/ward-management/coordinator/coordinator-screen.tsx",
     kind: "control",
-    count: 2,
+    sites: ['label="Home list"', 'label="Flow stages"'],
     reason: "Home: Needs you segment and the Flow stage pill tabs ask for danger on a count",
   },
   {
     file: "src/components/ward-management/delays/delays-board-panels.tsx",
     kind: "wait",
-    count: 1,
+    sites: ["<Glyph tone={waitTone(row.waited)} />"],
     reason: "Waiting panel clock marks a wait over 24 hours with the triangle",
   },
   {
     file: "src/components/ward-management/delays/delays-board-panels.tsx",
     kind: "raw",
-    count: 1,
+    sites: ["Icon: TriangleAlert"],
     reason: "Waiting register: the Attention tab carries a TriangleAlert icon on its count",
   },
   {
     file: "src/components/ward-management/delays/delays-board.tsx",
     kind: "wait",
-    count: 2,
+    sites: ["<Glyph tone={waitTone(row.waited)} />", "tone: waitTone(row.waited),"],
     reason: "Waiting rows (table and portrait) mark every wait over 24 hours with the triangle",
   },
   {
     file: "src/components/ward-management/discharges/discharge-board.tsx",
     kind: "raw",
-    count: 1,
+    sites: ['<StatusGlyph tone="danger" size={9} />'],
     reason: "Discharges: every held-up row's blocker tag carries the triangle",
   },
   {
     file: "src/components/ward-management/discharges/discharge-detail-panes.tsx",
     kind: "control",
-    count: 1,
+    sites: ['id === "barriers"'],
     reason: "Discharge detail: the Barriers pill tab asks for danger while a blocker is recorded",
   },
   {
     file: "src/components/ward-management/handover/handover-phone.tsx",
     kind: "raw",
-    count: 1,
+    sites: ["className={parts.chipGlyph}"],
     reason: "handover phone: the escalation filter chip draws a triangle child",
   },
   {
     file: "src/components/ward-management/referrals/referral-board-hero.tsx",
     kind: "raw",
-    count: 1,
+    sites: ['key === "overdue"'],
     reason: "referrals hero: the Overdue highlight pill draws a TriangleAlert on a count",
   },
 ];
 
 const CONTROLS = ["FilterChip", "HeroChip", "PillTabs", "Tabs", "Segmented", "HeroTrack"] as const;
 const TRIANGLE =
-  /<StatusGlyph\s+tone="danger"|<StatusGlyph\s+tone=\{[^}]*"danger"|<TriangleAlert\b|<AlertTriangle\b|icon=\{(?:TriangleAlert|AlertTriangle)\}|"▲"(?!\s*:\s*"▼")|⚠ /u;
+  /<StatusGlyph\b[^>]*?\btone=(?:"danger"|'danger'|\{[^}]*["']danger["'])|<TriangleAlert\b|<AlertTriangle\b|icon=\{(?:TriangleAlert|AlertTriangle)\}|"▲"(?!\s*:\s*"▼")|⚠ /u;
 // A class that names a chip-like control. `tabularNum` and `tableFoot` are not tabs.
 const CHIP_CLASS =
   /className=\{?[^}\n]*(?:[Cc]hip|[Pp]ill(?![a-z])|[Ss]eg(?![a-z])|[Ss]egment|[Tt]abs?(?![a-z])|[Ff]ilter|[Tt]ag(?![a-z]))/u;
@@ -143,9 +144,11 @@ function initialiser(source: string, start: number): string {
   return source.slice(start);
 }
 
-export function triangleFindings(file: string, raw: string): { file: string; kind: Kind; line: number }[] {
+type Finding = { file: string; kind: Kind; line: number; site: string };
+
+export function triangleFindings(file: string, raw: string): Finding[] {
   const source = stripComments(raw);
-  const found: { file: string; kind: Kind; line: number }[] = [];
+  const found: Finding[] = [];
   const lineOf = (index: number) => source.slice(0, index).split("\n").length;
   for (const match of source.matchAll(new RegExp(String.raw`<(${CONTROLS.join("|")})\b`, "gu"))) {
     const tag = tagExtent(source, match.index);
@@ -155,24 +158,30 @@ export function triangleFindings(file: string, raw: string): { file: string; kin
       const declared = new RegExp(String.raw`(?:const|let)\s+${named[1]}\b[^=]*=`, "u").exec(source);
       danger = declared ? /["']danger["']/u.test(initialiser(source, declared.index + declared[0].length)) : false;
     }
-    if (danger) found.push({ file, kind: "control", line: lineOf(match.index) });
+    if (danger) found.push({ file, kind: "control", line: lineOf(match.index), site: tag });
   }
   const lines = source.split("\n");
   lines.forEach((line, index) => {
-    if (WAIT_TONE.test(line)) found.push({ file, kind: "wait", line: index + 1 });
+    if (WAIT_TONE.test(line)) found.push({ file, kind: "wait", line: index + 1, site: line });
     if (LIST_ICON.test(line) && CONTROL_LIST.test(lines.slice(Math.max(0, index - 12), index).join("\n")))
-      found.push({ file, kind: "raw", line: index + 1 });
+      found.push({ file, kind: "raw", line: index + 1, site: line });
     if (!TRIANGLE.test(line)) return;
     const context = lines.slice(Math.max(0, index - 4), index + 1).join("\n");
-    if (CHIP_CLASS.test(context)) found.push({ file, kind: "raw", line: index + 1 });
+    if (CHIP_CLASS.test(context)) found.push({ file, kind: "raw", line: index + 1, site: line });
   });
   return found;
 }
 
-function tally(findings: { file: string; kind: Kind }[]): string[] {
-  const counts = new Map<string, number>();
-  for (const { file, kind } of findings) counts.set(`${file} ${kind}`, (counts.get(`${file} ${kind}`) ?? 0) + 1);
-  return [...counts].map(([key, n]) => `${key} x${n}`).sort();
+/** Matches each finding to one unused KNOWN site. Returns the findings no site covers and the sites no finding uses. */
+function matchKnown(findings: Finding[]): { unlisted: string[]; stale: string[] } {
+  const open = KNOWN.flatMap((k) => k.sites.map((site) => ({ ...k, site, used: false })));
+  const unlisted: string[] = [];
+  for (const f of findings) {
+    const hit = open.find((k) => !k.used && k.file === f.file && k.kind === f.kind && f.site.includes(k.site));
+    if (hit) hit.used = true;
+    else unlisted.push(`${f.file}:${f.line} ${f.kind}`);
+  }
+  return { unlisted, stale: open.filter((k) => !k.used).map((k) => `${k.file} ${k.kind} ${k.site}`) };
 }
 
 describe("triangle guard (plan 2k, 3 Nov 2026)", () => {
@@ -182,8 +191,9 @@ describe("triangle guard (plan 2k, 3 Nov 2026)", () => {
       .map((full) => path.relative(root, full).split(path.sep).join("/"))
       .filter((file) => !file.startsWith("src/components/wf/") && !/\/(?:ward-redesign|mockups)\//u.test(file))
       .flatMap((file) => triangleFindings(file, readFileSync(path.join(root, file), "utf8")));
-    const detail = findings.map(({ file, kind, line }) => `${file}:${line} ${kind}`).join("\n");
-    expect(tally(findings), detail).toEqual(tally(KNOWN.flatMap((k) => Array.from({ length: k.count }, () => k))));
+    const { unlisted, stale } = matchKnown(findings);
+    expect(unlisted, "new triangles at sites KNOWN does not list").toEqual([]);
+    expect(stale, "KNOWN sites that are fixed: delete them so the list shrinks").toEqual([]);
   });
 
   it("every known offender carries a reason", () => {
@@ -203,6 +213,9 @@ describe("triangle guard (plan 2k, 3 Nov 2026)", () => {
       scan(`<button className={styles.pill}>\n  <TriangleAlert size={12} aria-hidden="true" />\n</button>`),
     ).toEqual(["raw"]);
     expect(scan(`<span className={s.blockerTag}>\n  <StatusGlyph tone="danger" size={9} />\n</span>`)).toEqual(["raw"]);
+    expect(scan(`<span className={s.chip}>\n  <StatusGlyph size={9} tone="danger" />\n</span>`)).toEqual(["raw"]);
+    expect(scan(`<span className={s.chip}>\n  <StatusGlyph tone={'danger'} size={9} />\n</span>`)).toEqual(["raw"]);
+    expect(scan(`<span className={s.chip}>\n  <StatusGlyph size={9} tone="warning" />\n</span>`)).toEqual([]);
     expect(scan(`<Glyph tone={waitTone(row.waited)} />`)).toEqual(["wait"]);
     expect(scan(`const tabs = [\n  {\n    id: "a",\n    Icon: TriangleAlert,\n  },\n];`)).toEqual(["raw"]);
     expect(scan(`const rows = [\n  {\n    id: "a",\n    Icon: TriangleAlert,\n  },\n];`)).toEqual([]);
