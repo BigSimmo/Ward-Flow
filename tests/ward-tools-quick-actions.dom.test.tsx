@@ -147,8 +147,13 @@ describe("Coordinator Quick actions (Josh, 3 Nov 2026)", () => {
     expect(within(panel).getAllByRole("checkbox").length).toBe(total);
   });
 
-  it("is offered only to the coordinator", () => {
+  it("gives another desk its own tiles, never the coordinator's (Josh, 4 Nov 2026)", () => {
     atDesk({ role: "ed", scope: { kind: "ed", edId: "peel-ed" } });
-    expect(screen.queryByTestId("ward-tools-toggle-quick-actions")).toBeNull();
+    fireEvent.click(screen.getByTestId("ward-tools-toggle-quick-actions"));
+    const grid = screen.getByRole("group", { name: "Quick actions" });
+    for (const name of ["Ward updates", "Chase wards", "Ask wards", "Broadcast"]) {
+      expect(within(grid).queryByText(name)).toBeNull();
+    }
+    expect(within(grid).getByText("New referral")).toBeTruthy();
   });
 });
