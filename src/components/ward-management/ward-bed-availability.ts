@@ -146,6 +146,15 @@ export type CapacityBreakdown = {
 };
 
 /**
+ * One ward's bed releases not yet discharged: the window the ward page's Ward flow "Discharges"
+ * lists and counts, and the count the Capacity and All wards ward panel shows (integration QA,
+ * 3 Nov 2026), so the two cannot drift.
+ */
+export function openBedReleases(releases: readonly BedRelease[], unitId: string): BedRelease[] {
+  return releases.filter((release) => release.unitId === unitId && release.state !== "discharged");
+}
+
+/**
  * Beds at this unit that are physically free but **NOT READY** — discharged, and still being made
  * ready. Owner ruling, 2026-09-01: *"A bed is only marked available once it is ready. Otherwise it is
  * marked pending."*

@@ -119,7 +119,7 @@ export function LeverPopup({
                     {record.blocker ? (
                       <span className={`${styles.tag} ${styles.wdTagWarn}`}>{record.blocker}</span>
                     ) : passed ? (
-                      <span className={`${styles.tag} ${styles.wdTagDanger}`}>Date passed</span>
+                      <span className={`${styles.tag} ${styles.wdTagWarn}`}>Date passed</span>
                     ) : null}
                   </>
                 );
