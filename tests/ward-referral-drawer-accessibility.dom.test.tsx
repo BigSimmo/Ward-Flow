@@ -74,6 +74,9 @@ describe("referral field semantics", () => {
 describe("referral step recovery and keyboard focus", () => {
   it.each(["next", "send"])("returns to an invalid earlier step when %s is pressed", async (action) => {
     await setupDrawer();
+    // RF1 (3 Nov 2026): the catchment is offered as one suggestion, and its Home region field only
+    // shows after Change. Open it so the recovery can reach the field.
+    fireEvent.click(screen.getByRole("button", { name: "Change" }));
     fireEvent.click(section(action === "next" ? "Clearance" : "Wards"));
     fireEvent.click(screen.getByRole("button", { name: action === "next" ? "Next, wards" : "Send referral" }));
     expect(section("Patient")).toHaveAttribute("aria-pressed", "true");

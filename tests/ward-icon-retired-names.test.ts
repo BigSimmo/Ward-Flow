@@ -36,7 +36,6 @@ const LEGACY_FILES = new Set<string>([
   "src/components/ward-management/patients/patient-now-panel.tsx",
   "src/components/ward-management/patients/patient-status-card.tsx",
   "src/components/ward-management/referrals/upload-forms-modal.tsx",
-  "src/components/ward-management/referrals/ward-referral-drawer-patient-step.tsx",
   "src/components/ward-management/reports/patient-chronology-screen.tsx",
   "src/components/ward-management/shell/ward-phone-menu.tsx",
   "src/components/ward-management/statistics/statistics-capacity-chart.tsx",
