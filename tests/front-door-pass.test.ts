@@ -58,6 +58,14 @@ describe("front door switch and secret", () => {
     expect(frontDoorRequired({ WARD_FRONT_DOOR: " required " })).toBe(true);
   });
 
+  it("fails closed on Railway unless the switch says off", () => {
+    expect(frontDoorRequired({ RAILWAY_ENVIRONMENT_NAME: "production" })).toBe(true);
+    expect(frontDoorRequired({ RAILWAY_ENVIRONMENT_NAME: "production", WARD_FRONT_DOOR: "requried" })).toBe(true);
+    expect(frontDoorRequired({ RAILWAY_ENVIRONMENT: "production" })).toBe(true);
+    expect(frontDoorRequired({ RAILWAY_ENVIRONMENT_NAME: "production", WARD_FRONT_DOOR: "off" })).toBe(false);
+    expect(frontDoorRequired({ WARD_FRONT_DOOR: "off" })).toBe(false);
+  });
+
   it("refuses a short signing secret", () => {
     expect(frontDoorSecret({ WARD_PASS_SECRET: "short" })).toBeNull();
     expect(frontDoorSecret({ WARD_PASS_SECRET: SECRET })).toBe(SECRET);
