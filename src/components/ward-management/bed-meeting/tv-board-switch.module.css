@@ -24,7 +24,7 @@
 
 .item[aria-current="page"] {
   background: var(--wf-surface);
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.12);
+  box-shadow: var(--wf-e1);
   color: var(--wf-ink-1);
 }
 

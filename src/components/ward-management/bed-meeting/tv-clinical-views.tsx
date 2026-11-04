@@ -138,7 +138,7 @@ export function WardClinicalTvView({ rows, footer }: { rows: WardClinicalRow[]; 
           { label: "on constant obs", value: count((row) => row.constantObs), tone: "warning" },
           { label: "on leave", value: count((row) => row.where === "leave") },
           { label: "absent without leave", value: count((row) => row.where === "awol"), tone: "danger" },
-          { label: "forms ending in 24 hours", value: count((row) => row.legal?.tone !== undefined), tone: "warning" },
+          { label: "forms ending soon", value: count((row) => row.legal?.tone !== undefined), tone: "warning" },
           { label: "coming in", value: count((row) => row.where === "incoming") },
           { label: "home today", value: count((row) => row.goingToday) },
         ]}
