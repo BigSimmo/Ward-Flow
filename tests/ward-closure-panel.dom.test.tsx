@@ -88,7 +88,7 @@ describe("ward closure panel", () => {
     fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "staffing" } });
     fireEvent.click(screen.getByTestId("ward-closure-close"));
     expect(screen.getByRole("dialog", { name: `Close ${UNIT.name} to admissions?` })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep as is" }));
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: `Close ${UNIT.name} to admissions` })).toBeInTheDocument();
   });

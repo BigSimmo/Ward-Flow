@@ -91,7 +91,7 @@ const identity = () => ({
 });
 
 describe("release a diverted journey's pulled bed asks first (CT-07)", () => {
-  it("on the ward arrivals corridor: names the person and ward, Cancel records nothing", () => {
+  it("on the ward arrivals corridor: names the person and ward, Keep as is records nothing", () => {
     const { movementId, unitId, steps } = journeySteps("diverted");
     const state = reduce(steps);
     const movement = state.movements.find((m) => m.id === movementId)!;
@@ -124,7 +124,7 @@ describe("release a diverted journey's pulled bed asks first (CT-07)", () => {
     expect(screen.getByTestId("ward-release-diverted-identity")).toHaveTextContent(
       "Check: PATIENT, Synthetic · UM000001",
     );
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep as is" }));
     expect(dispatch).not.toHaveBeenCalled();
     fireEvent.click(screen.getByTestId(`ward-release-diverted-bed-${movementId}`));
     fireEvent.click(screen.getByRole("button", { name: "Release pulled bed" }));
@@ -267,12 +267,12 @@ describe("the movement cockpit asks before releasing a pulled bed (CT-07)", () =
     return movementId;
   }
 
-  it("diverted: Cancel records nothing; confirming releases the bed and closes the journey", () => {
+  it("diverted: Keep as is records nothing; confirming releases the bed and closes the journey", () => {
     renderCockpit("diverted");
     fireEvent.click(screen.getByTestId("ward-console-release-diverted-bed"));
     expect(screen.getByTestId("ward-console-release-bed-confirm")).toHaveTextContent("cannot be undone");
     expect(screen.getByTestId("ward-console-release-bed-identity")).toHaveTextContent(/^Check: /);
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep as is" }));
     expect(screen.getByTestId("live-held")).toHaveTextContent("held");
     fireEvent.click(screen.getByTestId("ward-console-release-diverted-bed"));
     fireEvent.click(screen.getByRole("button", { name: "Release pulled bed" }));
@@ -280,11 +280,11 @@ describe("the movement cockpit asks before releasing a pulled bed (CT-07)", () =
     expect(screen.getByTestId("live-closed")).toHaveTextContent("closed");
   });
 
-  it("stopped: Cancel records nothing; confirming releases the held bed", () => {
+  it("stopped: Keep as is records nothing; confirming releases the held bed", () => {
     renderCockpit("stopped");
     fireEvent.click(screen.getByTestId("ward-console-release-held-bed"));
     expect(screen.getByTestId("ward-console-release-bed-confirm")).not.toHaveTextContent("cannot be undone");
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep as is" }));
     expect(screen.getByTestId("live-held")).toHaveTextContent("held");
     fireEvent.click(screen.getByTestId("ward-console-release-held-bed"));
     fireEvent.click(screen.getByRole("button", { name: "Release pulled bed" }));

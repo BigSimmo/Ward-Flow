@@ -1,11 +1,28 @@
 import type { WardFlowEvent } from "./ward-flow-events";
-import { undoStepSubjectId } from "./ward-undo";
+import { PATIENT_RECORD_UNDO_TYPES, undoStepSubjectId } from "./ward-undo";
 
 /*
  * Moved out of ward-flow-reducer.ts unchanged (19 Oct 2026) to keep the reducer under its line cap
  * (eslint-rules/max-lines-baseline.mjs). Every event that is not about one movement names its
  * subject here, so a rejection is filed against the right record.
  */
+
+/**
+ * The subject a step and its Undo are filed against (Tier 1 item 6, 4 Nov 2026). A community
+ * treatment order or an archive is filed against its patient record, read here because this file is
+ * on the D-14 allowlist; every other step keeps `undoStepSubjectId`.
+ */
+export function stepUndoSubjectId(event: object): string {
+  const fields = event as { type?: unknown; patientId?: unknown };
+  if (
+    typeof fields.type === "string" &&
+    PATIENT_RECORD_UNDO_TYPES.has(fields.type) &&
+    typeof fields.patientId === "string" &&
+    fields.patientId.length > 0
+  )
+    return `patient:${fields.patientId}`;
+  return undoStepSubjectId(event);
+}
 
 /** The id a rejection is filed against, for events that are not about one specific movement. */
 export function subjectId(event: WardFlowEvent): string {
@@ -29,9 +46,12 @@ export function subjectId(event: WardFlowEvent): string {
     case "UNDO_FLAG_RETURN_EARLY":
     case "UNDO_DEPARTURE":
     case "UNDO_ABSENT_WITHOUT_LEAVE":
+    case "UNDO_BED_STEP":
+    case "UNDO_RELEASE_STEP":
+    case "UNDO_PATIENT_RECORD":
     case "UNDO_ED_STEP":
     case "UNDO_SUPPORT_NOTIFICATION":
-      return undoStepSubjectId(event);
+      return stepUndoSubjectId(event);
     case "UNDO_HANDOVER_SIGN_OFF":
       return "none";
     // Q61 (31 Oct 2026): a site handover sign-off and its Undo are filed against the site.

@@ -1038,7 +1038,14 @@ const inboxEvent =
   };
 
 /** The field an undo record's subject lives in: movement, referral or stay, else the network. */
-function undoSubjectField(state: WardFlowState, subjectId: string): Record<string, string> {
+function undoSubjectField(state: WardFlowState, subjectId: string): Record<string, string | number> {
+  // Tier 1 item 6 (4 Nov 2026): bed, leave, booking and patient subjects carry a prefix.
+  const [prefix, ...rest] = subjectId.split(":");
+  if (prefix === "leave") return { leaveBedId: rest.join(":") };
+  if (prefix === "planned") return { plannedAdmissionId: rest.join(":") };
+  if (prefix === "patient") return { patientId: rest.join(":") };
+  if (prefix === "bed" && rest.length >= 2)
+    return { unitId: rest.slice(0, -1).join(":"), bedNumber: Number(rest.at(-1)) };
   if (state.movements.some((movement) => movement.id === subjectId)) return { movementId: subjectId };
   if (state.referrals.some((referral) => referral.id === subjectId)) return { referralId: subjectId };
   if (state.admissions.some((stay) => stay.id === subjectId)) return { admissionId: subjectId };
@@ -1619,6 +1626,22 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     (state, random) => {
       const patient = prefer(random, state.patients, (candidate) => candidate.id.startsWith("PT-A"));
       return { type: "ARCHIVE_PATIENT", patientId: patient?.id ?? MISSING_ID, reason: "test" };
+    },
+  ],
+  // Tier 1 item 6 (4 Nov 2026): take back the newest patient record step, so a sweep step always sends it.
+  [
+    1,
+    (state, random) => {
+      const record = (state.undoRecords ?? [])
+        .flatMap((candidate) =>
+          candidate.kind === "step" && candidate.undoType === "UNDO_PATIENT_RECORD" ? [candidate] : [],
+        )
+        .at(-1);
+      const subject = record?.subjectId ?? "";
+      const patientId = subject.startsWith("patient:")
+        ? subject.slice("patient:".length)
+        : (pick(random, state.patients)?.id ?? MISSING_ID);
+      return { type: "UNDO_PATIENT_RECORD", patientId, ...(record ? { role: record.role } : {}) };
     },
   ],
   // Movement facts: arrival details, flags, blockers, escalation, documents.

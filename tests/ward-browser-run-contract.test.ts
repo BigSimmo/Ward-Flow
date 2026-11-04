@@ -12,10 +12,10 @@ import {
 } from "../scripts/ward-flow/browser-run-contract.mjs";
 
 describe("complete release gate and shared-build browser selection", () => {
-  it("requires all six operational journeys on both device projects only for the full preset", () => {
+  it("requires all seven operational journeys on both device projects only for the full preset", () => {
     expect(releaseGateCases(false)).toEqual([]);
     const cases = releaseGateCases(true);
-    expect(cases).toHaveLength(12);
+    expect(cases).toHaveLength(14);
     for (const project of ["release-gate-desktop", "release-gate-phone"]) {
       expect(cases.filter((entry) => entry.project === project).map((entry) => entry.title.split(":")[0])).toEqual([
         "ED referral to bed offer",
@@ -24,6 +24,7 @@ describe("complete release gate and shared-build browser selection", () => {
         "Discharge with bed release",
         "Inpatient transfer",
         "Community referral",
+        "Legal form",
       ]);
     }
     for (const entry of cases) {
@@ -32,7 +33,7 @@ describe("complete release gate and shared-build browser selection", () => {
     }
   });
 
-  it("narrows one CI leg to one device project only by name, still requiring all six journeys there", () => {
+  it("narrows one CI leg to one device project only by name, still requiring all seven journeys there", () => {
     expect(releaseGateProjectFor(undefined)).toBeNull();
     expect(releaseGateProjectFor("")).toBeNull();
     expect(releaseGateProjectFor(" release-gate-phone ")).toBe("release-gate-phone");
@@ -40,7 +41,7 @@ describe("complete release gate and shared-build browser selection", () => {
     expect(RELEASE_GATE_PROJECTS).toEqual(["release-gate-desktop", "release-gate-phone"]);
     for (const project of RELEASE_GATE_PROJECTS) {
       const leg = releaseGateCases(true, project);
-      expect(leg).toHaveLength(6);
+      expect(leg).toHaveLength(7);
       expect(new Set(leg.map((entry) => entry.project))).toEqual(new Set([project]));
       expect(leg).toEqual(releaseGateCases(true).filter((entry) => entry.project === project));
     }
@@ -65,8 +66,12 @@ describe("complete release gate and shared-build browser selection", () => {
         "Transfer with transport",
         "Discharge with bed release",
       ]);
-      expect(referrals.map((entry) => entry.title.split(":")[0])).toEqual(["Inpatient transfer", "Community referral"]);
-      // Together the parts still require all six journeys on each device, each exactly once.
+      expect(referrals.map((entry) => entry.title.split(":")[0])).toEqual([
+        "Inpatient transfer",
+        "Community referral",
+        "Legal form",
+      ]);
+      // Together the parts still require all seven journeys on each device, each exactly once.
       expect([...journeys, ...referrals]).toEqual(releaseGateCases(true, project));
       expect(releaseGateCases(true, project, "checks")).toEqual([]);
     }

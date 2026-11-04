@@ -1221,7 +1221,7 @@ export function MovementWorkspaceCockpit({
           description={`The bed pulled at ${releaseWardName} for ${releaseWho.formalName} is offered again${
             releaseConfirm === "diverted" ? " and the diverted journey is closed. This cannot be undone" : ""
           }.`}
-          secondary={[{ label: "Cancel", onAction: () => setReleaseConfirm(null) }]}
+          secondary={[{ label: "Keep as is", onAction: () => setReleaseConfirm(null) }]}
           primary={{
             label: "Release pulled bed",
             onAction: () => {

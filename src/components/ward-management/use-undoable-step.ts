@@ -1,5 +1,6 @@
 "use client";
 
+import { stepUndoSubjectId } from "./ward-flow-subject-id";
 import { useEffect, useRef, useState } from "react";
 
 import { useToast, type ToastInput } from "@/components/wf";
@@ -15,7 +16,6 @@ import {
   UNDO_STEP_TYPES,
   stepUndoFor,
   undoRecordSeqFor,
-  undoStepSubjectId,
   type UndoStepType,
 } from "@/components/ward-management/ward-undo";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
@@ -189,7 +189,7 @@ export function useUndoableStep({
       // The record this toast is for, so its Undo is refused once a newer step replaces it.
       const watch: RecordWatch = {
         undoType,
-        subjectId: undoStepSubjectId(offered),
+        subjectId: stepUndoSubjectId(offered),
         priorSeq: pending.priorSeq,
       };
       const ownStep = pending.outcome?.undoStep;
@@ -326,13 +326,13 @@ export function useUndoableStep({
     /** Dispatches `event` now, then offers Undo once the engine has accepted it. */
     run(event: WardFlowEvent, step: UndoableStep) {
       const offered = step.undo?.(nowRef.current);
-      const priorSeq = offered ? undoRecordSeqFor(undoRecords, offered.type, undoStepSubjectId(offered)) : undefined;
+      const priorSeq = offered ? undoRecordSeqFor(undoRecords, offered.type, stepUndoSubjectId(offered)) : undefined;
       submit(event, { prior: rejectionCountRef.current, ...step, priorSeq });
     },
     /** Records through a provider helper while keeping the command's completion and Undo guard. */
     runRecorded(record: () => ReturnType<WardCommandDispatch>, step: UndoableStep) {
       const offered = step.undo?.(nowRef.current);
-      const priorSeq = offered ? undoRecordSeqFor(undoRecords, offered.type, undoStepSubjectId(offered)) : undefined;
+      const priorSeq = offered ? undoRecordSeqFor(undoRecords, offered.type, stepUndoSubjectId(offered)) : undefined;
       submit(offered!, { prior: rejectionCountRef.current, ...step, priorSeq }, record);
     },
     /** Offers Undo for a step another component on the page has already recorded. */

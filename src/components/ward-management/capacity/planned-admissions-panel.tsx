@@ -8,6 +8,7 @@ import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from "rea
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { CalendarPlus, MoreHorizontal } from "lucide-react";
 
+import { useUndoableStep } from "../use-undoable-step";
 import { Button, buttonClass, Field, Menu, Select, Sheet, StatusGlyph, TextInput } from "@/components/wf";
 import {
   PLANNED_ADMISSION_CANCEL_REASONS,
@@ -176,7 +177,10 @@ export function PlannedAdmissionsPanel({
   // Finding 185 (27 Oct 2026): Arrived checks who is in front of the ward first, as a movement's
   // arrival does (WT-11). Cancel leaves the booking as it was.
   const [arrivalCheck, setArrivalCheck] = useState<PlannedAdmission | null>(null);
-  const pending = useRef<{ rejections: number } | null>(null);
+  /** `cancelled`: a cancel waiting on its answer, so its Undo is offered once it is accepted. */
+  const pending = useRef<{ rejections: number; cancelled?: { id: string; label: string } } | null>(null);
+  // Tier 1 item 6 (Josh, 4 Nov 2026): a booking cancelled by mistake comes back from its toast.
+  const { offer: offerUndo } = useUndoableStep({ dispatch, rejections, now, routeRole: "coordinator" });
   // Whether the open form has sent a change, so a shared-save error from earlier work is not shown on a
   // form that has not asked for anything yet.
   const [submittedInForm, setSubmittedInForm] = useState(false);
@@ -201,17 +205,29 @@ export function PlannedAdmissionsPanel({
     if (!pending.current) return;
     if (sharedEnabled && sharedStatus === "saving") return;
     const before = pending.current.rejections;
+    const cancelled = pending.current.cancelled;
     pending.current = null;
     if (rejections.length > before) {
       setRefusal(rejections[rejections.length - 1]?.reason ?? "Not recorded");
     } else if (!sharedEnabled || !sharedError) {
+      if (cancelled)
+        offerUndo({
+          success: `Planned admission cancelled for ${cancelled.label}.`,
+          undo: (at) => ({
+            type: "UNDO_RELEASE_STEP",
+            role: "coordinator",
+            now: at,
+            plannedAdmissionId: cancelled.id,
+          }),
+          undone: "Undone. The booking is back.",
+        });
       // eslint-disable-next-line react-hooks/set-state-in-effect -- A dispatch's outcome is only visible once the provider has answered.
       setForm(null);
       setDraft(null);
       setRefusal(null);
       setSubmittedInForm(false);
     }
-  }, [rejections, plannedAdmissions, admissions, sharedEnabled, sharedStatus, sharedError]);
+  }, [rejections, plannedAdmissions, admissions, sharedEnabled, sharedStatus, sharedError, offerUndo]);
 
   const displayedRefusal =
     refusal ?? (form !== null && submittedInForm && sharedEnabled && sharedError ? sharedError : null);
@@ -397,7 +413,10 @@ export function PlannedAdmissionsPanel({
 
   function submitCancel() {
     if (!form || form.mode !== "cancel" || !cancelling || cancelReason === "") return;
-    pending.current = { rejections: rejections.length };
+    pending.current = {
+      rejections: rejections.length,
+      cancelled: { id: cancelling.id, label: whoText(cancelling) },
+    };
     setSubmittedInForm(true);
     dispatch({
       type: "CANCEL_PLANNED_ADMISSION",
@@ -911,7 +930,7 @@ export function PlannedAdmissionsPanel({
         testId="ward-planned-cancel"
         footer={
           <div className={styles.sheetFoot}>
-            <Button onClick={closeForm}>Keep booking</Button>
+            <Button onClick={closeForm}>Keep as is</Button>
             <Button
               variant="danger"
               onClick={submitCancel}

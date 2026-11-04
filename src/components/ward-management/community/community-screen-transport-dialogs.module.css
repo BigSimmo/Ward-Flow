@@ -29,7 +29,7 @@
   color: var(--wf-danger-ink);
 }
 
-/* Keep booking at the left, the one filled button at the right. */
+/* Keep as is at the left, the one filled button at the right. */
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -44,7 +44,7 @@
 }
 
 /* Until a reason is chosen, the kit names why Confirm cancel is unavailable. That sentence is long,
-   so it takes its own line above, at the right, and Keep booking and Confirm cancel share the row
+   so it takes its own line above, at the right, and Keep as is and Confirm cancel share the row
    under it. */
 .actions > span:has(> button) {
   display: contents;

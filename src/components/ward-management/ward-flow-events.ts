@@ -21,6 +21,7 @@ import type {
   UploadedFileType,
 } from "./ward-model-vocabulary";
 import type { UndoBedMeetingActionEvent } from "./ward-bed-meeting-undo-event-type";
+import type { Tier1UndoEvent } from "./ward-tier1-undo-event-types";
 import type { PatientCollectedEvent, RecordTransportCadEvent } from "./ward-transport-collection-events";
 import type { ReferralInformationNeed } from "@/components/ward-management/referrals/referral-information-needs";
 import type {
@@ -2691,6 +2692,7 @@ export type WardFlowEvent =
       actingUnitId?: string;
     }
   | UndoBedMeetingActionEvent
+  | Tier1UndoEvent
   | ArchivePatientEvent;
 
 /** Road or flight — the two repatriation modes this prototype records. Never free text. */

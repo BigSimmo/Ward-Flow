@@ -2143,7 +2143,18 @@ export function undoOf(
 ): { type: WardFlowEvent["type"]; state: WardFlowState } | undefined {
   const undoType = undoStepTypeFor(event.type);
   if (!undoType) return undefined;
-  const fields = event as { movementId?: string; referralId?: string; admissionId?: string; actingUnitId?: string };
+  const fields = event as {
+    movementId?: string;
+    referralId?: string;
+    admissionId?: string;
+    actingUnitId?: string;
+    // Tier 1 item 6 (4 Nov 2026): the bed, leave, booking and patient record step undos.
+    leaveBedId?: string;
+    unitId?: string;
+    bedNumber?: number;
+    plannedAdmissionId?: string;
+    patientId?: string;
+  };
   const actingUnitId =
     event.type === "ACCEPT_IN_PRINCIPLE" && event.role === "ward" ? event.unitId : fields.actingUnitId;
   const undo = {
@@ -2156,6 +2167,15 @@ export function undoOf(
     ...(fields.referralId !== undefined ? { referralId: fields.referralId } : {}),
     ...(fields.admissionId !== undefined ? { admissionId: fields.admissionId } : {}),
     ...(actingUnitId !== undefined ? { actingUnitId } : {}),
+    ...(undoType === "UNDO_BED_STEP"
+      ? fields.leaveBedId !== undefined
+        ? { leaveBedId: fields.leaveBedId }
+        : { unitId: fields.unitId, bedNumber: fields.bedNumber }
+      : {}),
+    ...(undoType === "UNDO_RELEASE_STEP" && fields.plannedAdmissionId !== undefined
+      ? { plannedAdmissionId: fields.plannedAdmissionId }
+      : {}),
+    ...(undoType === "UNDO_PATIENT_RECORD" ? { patientId: fields.patientId } : {}),
     ...(event.type === "COMPLETE_BED_MEETING_ACTION" ? { subject: event.subject, action: event.action } : {}),
     ...(event.type === "RECORD_SITE_HANDOVER_SIGN_OFF" ? { siteCode: event.siteCode } : {}),
   } as WardFlowEvent;
@@ -2974,6 +2994,20 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
     ).toEqual([]);
     accepted.add("RELEASE_HELD_BED");
     offenders.push(...offendingFormsIn(heldBedReleased, `RELEASE_HELD_BED(${code})`));
+    // Tier 1 item 6 (4 Nov 2026): and its Undo, which only this forced chain can reach.
+    const heldBedUndone = undoOf(
+      {
+        type: "RELEASE_HELD_BED",
+        role: EVENT_ROLE.RELEASE_HELD_BED[0],
+        now: NOW_ANCHOR,
+        movementId: forCancel.movementId,
+      },
+      heldBedReleased,
+      NOW_ANCHOR,
+    );
+    expect(heldBedUndone, `UNDO_RELEASE_STEP after RELEASE_HELD_BED refused (${code})`).toBeDefined();
+    accepted.add("UNDO_RELEASE_STEP");
+    offenders.push(...offendingFormsIn(heldBedUndone!.state, `UNDO_RELEASE_STEP(${code})`));
 
     /*
      * 🔴 PATIENT_ARRIVED, NOW ALSO FORCED EXPLICITLY — a regression STOP_TRANSPORT's own
