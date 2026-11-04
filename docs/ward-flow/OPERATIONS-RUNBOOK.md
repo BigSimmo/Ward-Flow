@@ -162,14 +162,14 @@ The daily release changes the app under staff who are using it. Josh agreed on 2
 Start every incident by writing down the time, the service and what users see. Read before you
 change anything. Do not paste tokens, passwords or record contents anywhere.
 
-| What you see                    | First steps                                                                                                                                                                                                                                                                                                                                                     |
-| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **App down**                    | Check `/api/health` (site) or `/healthz` (backend). The signed-in site sleeps, so a slow first load is normal. In Railway, read the latest deployment's state and logs. FAILED or CRASHED: read the failed stage. Use the state table in [RAILWAY-OPERATIONS.md](RAILWAY-OPERATIONS.md#act-on-the-actual-state).                                                |
-| **Sign-in failing**             | Check Supabase Auth status and the backend's `/healthz`. Then check the site's build settings point at the right backend and Supabase project, and the backend's allowed origin names the site. A user with no membership row is refused by design (backend README, roles and places).                                                                          |
-| **Saves failing, Retry banner** | The banner reads "Connection unavailable — changes are disabled." with a Retry button. Ask the user to stay on the page and press Retry, not reload, or the unconfirmed action is lost. Then check backend `/healthz`: `database: unavailable` points at Supabase. HTTP 409 is a normal conflict, not an outage.                                                |
-| **Database at limit**           | In Supabase, check database size and usage against the plan. Prune old command receipts (routine check 5, needs approval). Moving to a bigger plan or compute is billable and needs spending approval. The plan's exact limits are **not recorded in the repo**.                                                                                                |
-| **Board size alert**            | From PR #870 the backend logs `ward_backend_workspace_size_alert` at most once an hour once the live board passes 6 MiB. Past that point, closed records archive after 7 days instead of 30. Check the board size and that archiving is working (the History archive count rises). Then follow **Database at limit**. Saves fail at the 8 MiB limit.            |
-| **Bad migration**               | Stop further migrations. The backend accepts schema versions 5 up to the latest, so the app may keep running. With Josh's yes, run the matching rollback script in one stop-on-error transaction, newest first, from `backend/ward-flow/infra/` (order in [SETUP-SUPABASE.md](../../backend/ward-flow/SETUP-SUPABASE.md)). Then re-run the runtime role grants. |
+| What you see                    | First steps                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **App down**                    | Check `/api/health` (site) or `/healthz` (backend). The signed-in site sleeps, so a slow first load is normal. In Railway, read the latest deployment's state and logs. FAILED or CRASHED: read the failed stage. Use the state table in [RAILWAY-OPERATIONS.md](RAILWAY-OPERATIONS.md#act-on-the-actual-state).                                                                                                                         |
+| **Sign-in failing**             | Check Supabase Auth status and the backend's `/healthz`. Then check the site's build settings point at the right backend and Supabase project, and the backend's allowed origin names the site. A user with no membership row is refused by design (backend README, roles and places).                                                                                                                                                   |
+| **Saves failing, Retry banner** | Read the connection, last-update and waiting-change messages. Keep the page open: waiting changes may send when the connection returns. Retry retains the command identity. Reload checks sent receipts, but cannot restore unsent content. Review every missing, expired, partial or conflicting outcome before repeating an action. Check backend `/healthz` with the applicable authority; a 409 is a normal conflict, not an outage. |
+| **Database at limit**           | In Supabase, check database size and usage against the plan. Prune old command receipts (routine check 5, needs approval). Moving to a bigger plan or compute is billable and needs spending approval. The plan's exact limits are **not recorded in the repo**.                                                                                                                                                                         |
+| **Board size alert**            | From PR #870 the backend logs `ward_backend_workspace_size_alert` at most once an hour once the live board passes 6 MiB. Past that point, closed records archive after 7 days instead of 30. Check the board size and that archiving is working (the History archive count rises). Then follow **Database at limit**. Saves fail at the 8 MiB limit.                                                                                     |
+| **Bad migration**               | Stop further migrations. The backend accepts schema versions 5 up to the latest, so the app may keep running. With Josh's yes, run the matching rollback script in one stop-on-error transaction, newest first, from `backend/ward-flow/infra/` (order in [SETUP-SUPABASE.md](../../backend/ward-flow/SETUP-SUPABASE.md)). Then re-run the runtime role grants.                                                                          |
 
 The backend logs carry only request IDs, route categories, status and timings. They never carry
 tokens, user IDs or payloads ([observability.md](../observability.md)). Sentry error reporting
@@ -177,6 +177,21 @@ was switched on on 26 October 2026 (organisation `clinibase-xz`, US region, synt
 per project notes). It receives error types and stack frames, never messages, URLs or users
 ([operations-readiness.md](operations-readiness.md#server-error-reporting-sentry)). Its settings
 were not re-read for this page and **no event has been seen arriving**.
+
+## Local tier improvements and acceptance
+
+The [tier operations draft](plans/2026-11-04-tier-operations.md) records downtime reconciliation,
+release and reviewed-revert checks, environment meanings and Josh's email alert ownership.
+It is a prototype exercise draft; hospital escalation wording needs local approval.
+
+Browser error reporting is opt-in: build with `NEXT_PUBLIC_WARD_CLIENT_ERROR_REPORTING=true`,
+and configure private `WARD_CLIENT_ERROR_REPORTING=true` plus `SENTRY_DSN` on the app server.
+Keep the DSN private. The same-origin relay accepts only recognised error classes and compiled
+asset coordinates, caps requests at 16 KiB and throttles each class for five minutes on both ends.
+It excludes messages, typed content, user details and page addresses. A 202 response confirms
+acceptance only; verify synthetic delivery and the owner's email rule separately before relying
+on it. The [implementation evidence](evidence/2026-11-04-tier-improvements.md) records local proof
+and remaining acceptance. This document does not activate monitoring or authorise provider use.
 
 ## Backup and restore
 

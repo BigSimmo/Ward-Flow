@@ -177,6 +177,11 @@ The [operations readiness record](ward-flow/operations-readiness.md) records the
 revision, browser acceptance status, rollback candidates and isolated-restore procedure. Use it
 for current verification work; the dated setup observations above remain historical evidence.
 
+The [tier operations draft](ward-flow/plans/2026-11-04-tier-operations.md) clarifies environment names,
+downtime reconciliation and local rollback rehearsal. Optional browser diagnostics require both
+the public build switch and private server switch described in the runbook; a local relay test
+does not verify deployed settings, event delivery or email alerts.
+
 ## Known limits
 
 The record reports hosted compilation and TypeScript checks passed during setup on 27 September 2026. This historical evidence does not verify the current head, behaviour suite, browser journeys or clinical governance.
