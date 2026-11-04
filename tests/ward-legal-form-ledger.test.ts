@@ -56,6 +56,22 @@ describe("typed ledger fields", () => {
     expect(extendedWord(move({}))).toBeUndefined();
   });
 
+  it("keeps a same-minute extension with the form it extended, not the form that replaced it", () => {
+    const at = NOW - 10;
+    const oldExtension = { at, by: "ed" as const, dueAt: NOW + 400, basis: "extension" as const };
+    const replacedSameMinute = move({
+      legalForm: { code: "4A", earlierForms: [{ code: "1A", dueAt: NOW + 400, at, by: "ed" }] },
+      legalFormExpiryHistory: [oldExtension],
+    });
+    expect(extensionsOfCurrentForm(replacedSameMinute)).toBe(0);
+    expect(onceOnlyExtensionWarning(replacedSameMinute)).toBeUndefined();
+    const extendedSameMinute = move({
+      legalForm: { code: "4A", earlierForms: [{ code: "1A", dueAt: NOW + 400, at, by: "ed" }] },
+      legalFormExpiryHistory: [oldExtension, { ...oldExtension, dueAt: NOW + 900 }],
+    });
+    expect(extensionsOfCurrentForm(extendedSameMinute)).toBe(1);
+  });
+
   it("warns, never blocks, when a 1A or 4A already has its once-only extension", () => {
     expect(onceOnlyExtensionWarning(move({}))).toBeUndefined();
     const extended1A = move({ legalFormExpiryHistory: [entry(NOW - 20, "extension")] });

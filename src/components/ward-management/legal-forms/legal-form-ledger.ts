@@ -30,9 +30,15 @@ export function ageBandWord(movement: Movement): string {
  */
 export function extensionsOfCurrentForm(movement: Movement): number {
   const earlier = movement.legalForm?.earlierForms;
-  const since = earlier && earlier.length > 0 ? earlier[earlier.length - 1]!.at : Number.NEGATIVE_INFINITY;
-  return (movement.legalFormExpiryHistory ?? []).filter((entry) => entry.basis === "extension" && entry.at >= since)
-    .length;
+  const replaced = earlier && earlier.length > 0 ? earlier[earlier.length - 1] : undefined;
+  const since = replaced ? replaced.at : Number.NEGATIVE_INFINITY;
+  // The clock moves in whole minutes, so an extension and a replacement can share a minute. An
+  // extension in that same minute belongs to the replaced form when it typed the replaced form's
+  // last expiry, which the replacement kept as history.
+  return (movement.legalFormExpiryHistory ?? []).filter(
+    (entry) =>
+      entry.basis === "extension" && (entry.at > since || (entry.at === since && entry.dueAt !== replaced?.dueAt)),
+  ).length;
 }
 
 /** The paper form that extends a current form, for the two extensions that can be made once only. */
