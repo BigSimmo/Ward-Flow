@@ -51,7 +51,7 @@ describe("status glyph rendering contract", () => {
     expect(output).toMatchInlineSnapshot(`
       [
         {
-          "shape": "<path d="M5 0.8 9.6 9.2H0.4Z" fill="currentColor"></path>",
+          "shape": "<path d="M4.13 1.4a1 1 0 0 1 1.74 0l3.6 6.3a1 1 0 0 1-.87 1.5H1.4a1 1 0 0 1-.87-1.5ZM4.45 4.1a.55.55 0 0 1 1.1 0v1.9a.55.55 0 0 1-1.1 0ZM5 6.75a.62.62 0 1 0 0 1.24.62.62 0 1 0 0-1.24Z" fill="currentColor" fill-rule="evenodd"></path>",
           "tone": "danger",
         },
         {

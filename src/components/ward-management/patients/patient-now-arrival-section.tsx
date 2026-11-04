@@ -2,7 +2,7 @@
 
 // The patient page's arrival-plan section, shown in the Transport sheet while a bed is held or the
 // patient is in transit. Split out of `patient-now-screen.tsx`, which calls it during render.
-import { AlertCircle, Clock, FileText, FileUp } from "lucide-react";
+import { CircleAlert, Clock, FileText, FileUp } from "lucide-react";
 import { ARRIVAL_MODE_LABELS } from "@/components/ward-management/ward-model";
 import {
   LATE_ARRIVAL_GRACE_MINUTES,
@@ -95,7 +95,7 @@ export function renderArrivalSection(ctx: PatientArrivalSectionContext) {
                 data-testid="ward-patient-overdue-alert"
                 title={OPERATIONAL_DEFAULT_LABEL}
               >
-                <AlertCircle size={18} className={styles.overdueIcon} aria-hidden="true" />
+                <CircleAlert size={18} className={styles.overdueIcon} aria-hidden="true" />
                 <div>
                   <strong>Arrival overdue:</strong> Patient is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past
                   estimated arrival time (

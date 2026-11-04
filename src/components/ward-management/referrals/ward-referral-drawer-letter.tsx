@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, Copy, Eye, FileText, Info, ListChecks, Phone, Send, Users } from "lucide-react";
+import { CircleCheck, Copy, Eye, FileText, Info, ListChecks, Phone, Send, Users } from "lucide-react";
 import Link from "next/link";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
@@ -89,7 +89,7 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
             <div className={styles.cardBody}>
               <div className={styles.sentHead}>
                 <span className={styles.sentIcon} aria-hidden="true">
-                  <CheckCircle2 aria-hidden="true" />
+                  <CircleCheck aria-hidden="true" />
                 </span>
                 <div>
                   <h3 ref={confirmationHeadingRef} tabIndex={-1} className={styles.sentTitle}>

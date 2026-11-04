@@ -8,7 +8,7 @@
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useId } from "react";
-import { Check, ClipboardCopy, Clock, Route, Truck, UserRound, X } from "lucide-react";
+import { Check, ClipboardCopy, Clock, Route, Ambulance, UserRound, X } from "lucide-react";
 import { Badge, Button, Card, Count, Icon, SrOnly, StatusGlyph, buttonClass, durMinutes } from "@/components/wf";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { MovementStage } from "@/components/ward-management/ward-model";
@@ -291,7 +291,7 @@ export function HandoverFlowPanel({
 
       <div className={styles.panelFoot}>
         <Link href="/ward-flow/movements" className={buttonClass({ variant: "sec", size: "sm" })}>
-          <Icon icon={Truck} size={14} />
+          <Icon icon={Ambulance} size={14} />
           Movements
         </Link>
         {openPatientHref ? (

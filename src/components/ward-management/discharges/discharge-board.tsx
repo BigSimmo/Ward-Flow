@@ -965,7 +965,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                             {release.waitingOn ? (
                                               <>
                                                 <Ambulance
-                                                  size={14}
+                                                  size={12}
                                                   className={pageStyles.inlineIcon}
                                                   aria-hidden="true"
                                                 />{" "}
@@ -1076,7 +1076,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                             <SrOnly>, </SrOnly>
                                             <span className={pageStyles.secondary}>
                                               <Ambulance
-                                                size={14}
+                                                size={12}
                                                 className={pageStyles.inlineIcon}
                                                 aria-hidden="true"
                                               />{" "}

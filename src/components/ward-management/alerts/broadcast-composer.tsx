@@ -5,7 +5,7 @@
 // action bar along the bottom; one column in a bottom sheet on phone. Built from the approved mock-up
 // (`mockups/alerts/alerts-redesign/mock.js`, `composer()`).
 import type { RefObject } from "react";
-import { BedDouble, Check, ChevronDown, Info, Megaphone, Radio, Send, Sparkles, X } from "lucide-react";
+import { BedSingle, Check, ChevronDown, Info, Megaphone, Radio, Send, Sparkles, X } from "lucide-react";
 
 import { Button, Checkbox, Field, Segmented, StatusGlyph, TextInput, Textarea, cx, useIsPhone } from "@/components/wf";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -131,7 +131,7 @@ export function BroadcastComposer({
       picked: mode === "pick" && audience.mode !== "pick" ? list.map((desk) => desk.id) : audience.picked,
     });
   const toggle = <T extends string>(ids: T[], id: T) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]);
-  const kindCard = (id: "bed_call" | "directive", KindIcon: typeof BedDouble, name: string, sub: string) => (
+  const kindCard = (id: "bed_call" | "directive", KindIcon: typeof BedSingle, name: string, sub: string) => (
     <button type="button" role="radio" aria-checked={kind === id} className={css.kind} onClick={() => onSelectKind(id)}>
       <span className={css.iconTile} data-tone={kind === id ? "accent" : undefined} aria-hidden="true">
         <KindIcon size={18} aria-hidden="true" />
@@ -194,7 +194,7 @@ export function BroadcastComposer({
               <div className={css.kinds} role="radiogroup" aria-label="Broadcast type">
                 {kindCard(
                   "bed_call",
-                  BedDouble,
+                  BedSingle,
                   "Ask wards for beds",
                   "Wards answer: can take, after a discharge, or can't",
                 )}

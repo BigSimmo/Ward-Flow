@@ -710,7 +710,7 @@ export function OnCallScreen() {
                     aria-label="More on-call tools"
                     data-testid="ward-on-call-phone-more"
                   >
-                    <Icon icon={Ellipsis} size={16} />
+                    <Icon icon={Ellipsis} size={20} />
                   </button>
                 )}
               />
