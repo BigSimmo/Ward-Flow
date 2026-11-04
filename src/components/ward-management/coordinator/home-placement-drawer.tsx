@@ -2,10 +2,11 @@
 
 /**
  * Home's Placement (H7 to H10, approved by Josh 3 Nov 2026; mock-up in the redesign viewer). It
- * opens as the same drawer as the Capacity and Movements patient pop-up
- * (`movements/movement-drawer.tsx`, whose styles it reuses) on every screen size: the patient in
+ * opens in the kit's `PanelDrawer` (`wf/drawer.tsx`, promoted from this drawer, plan item 2c) on
+ * every screen size, with the patient pop-up's tier, wait and journey styles
+ * (`movements/movement-drawer.module.css`): the patient in
  * the head, the chosen alert as one tinted block under the name (H8), the wait against its tier
- * target and the journey, then the task for this alert. Every action sits in the navy band pinned
+ * target and the journey, then the task for this alert. Every action sits in the light band pinned
  * to the foot, so none has to be scrolled to.
  *
  * - A patient (from an alert or a list row) keeps the real placement panel for its body; its next
@@ -13,7 +14,7 @@
  * - A referral (H9) shows its facts in the drawer's grid, with Decide pinned.
  * - An alert with no journey (a booking, H10) shows its facts, with its own action pinned.
  */
-import { BedSingle, ChevronRight, FileText, Inbox, X } from "lucide-react";
+import { BedSingle, ChevronRight, FileText, Inbox } from "lucide-react";
 import Link from "next/link";
 import { useId, useState } from "react";
 
@@ -25,7 +26,7 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { edById } from "@/components/ward-management/ward-sites";
-import { buttonClass, Sheet, StatusGlyph } from "@/components/wf";
+import { buttonClass, DrawerFacts, DrawerFootRow, PanelDrawer, StatusGlyph } from "@/components/wf";
 
 import { ChosenAlertCard } from "./chosen-alert-card";
 import p from "./home-placement-drawer.module.css";
@@ -105,8 +106,8 @@ export function HomePlacementDrawer({
     : undefined;
   const title = referral ? "Referral placement" : movement ? "Placement" : "Alert";
 
-  const footer = (
-    <div className={`${d.footBand} ${p.foot}`} data-has-alert={entry ? "" : undefined}>
+  const foot = (
+    <>
       <div ref={setSlot} className={p.slot} data-testid="home-placement-foot" />
       {/* An alert with no patient journey acts on its own page, its one primary in the band. */}
       {entry && !movement && entry.action.kind === "link" ? (
@@ -115,7 +116,7 @@ export function HomePlacementDrawer({
           <ChevronRight size={14} strokeWidth={1.75} aria-hidden="true" />
         </Link>
       ) : null}
-      <div className={`${d.footRow} ${p.links}`}>
+      <DrawerFootRow className={p.links}>
         {recordHref ? (
           <Link className={buttonClass({ variant: "sec", size: "sm" })} href={recordHref}>
             <FileText size={14} strokeWidth={1.75} aria-hidden="true" />
@@ -138,93 +139,72 @@ export function HomePlacementDrawer({
             All referrals
           </Link>
         ) : null}
-      </div>
-    </div>
+      </DrawerFootRow>
+    </>
   );
 
   return (
-    <Sheet
+    <PanelDrawer
       open
       onClose={onClose}
-      labelledBy={titleId}
-      placement="responsive-right"
-      contentClassName={`${d.panel} ${p.panel}`}
-      bodyClassName={d.body}
+      titleId={titleId}
+      eyebrow={title}
+      title={name}
+      subtitle={
+        <>
+          <span className={d.mono}>{umrn}</span>
+          {where ? <span className={d.trunc}> · {where}</span> : null}
+        </>
+      }
+      tag={
+        tier !== undefined ? (
+          <span className={d.tier} data-tier={tier} title={`Urgency tier ${tier}`}>
+            <span className="sr-only">Urgency tier </span>
+            <span aria-hidden="true">T</span>
+            {tier}
+          </span>
+        ) : undefined
+      }
+      closeLabel="Close placement and clear selection"
       testId="home-placement-drawer"
+      // Tests and journeys find Placement by this region and prove which movement it is for.
+      region={{ label: title, testId: "ward-home-placement", "data-subject-movement": movement?.id }}
+      foot={foot}
+      footProps={{ className: p.foot, "data-has-alert": entry ? "" : undefined }}
     >
-      <aside
-        aria-label={title}
-        className={p.region}
-        data-testid="ward-home-placement"
-        // Journeys prove which movement the drawer is for by this attribute.
-        data-subject-movement={movement?.id}
-      >
-        <div className={d.head}>
-          <div className={d.who}>
-            <h2 className={p.eyebrow}>{title}</h2>
-            <p id={titleId} className={d.name}>
-              {name}
-            </p>
-            <p className={d.subline}>
-              <span className={d.mono}>{umrn}</span>
-              {where ? <span className={d.trunc}> · {where}</span> : null}
-            </p>
+      {entry ? <ChosenAlertCard entry={entry} now={now} /> : null}
+      {networkNote ? (
+        <p className={p.networkNote} data-testid="ward-shortlist-not-scoped">
+          {networkNote}
+        </p>
+      ) : null}
+      {referral ? <ReferralPlacementPanel referral={referral} now={now} footerSlot={slot} /> : null}
+      {entry && !movement ? <AlertFacts entry={entry} /> : null}
+      {movement ? (
+        <>
+          <WaitStatus movement={movement} now={now} />
+          <div className={p.task}>
+            <ShortlistPanel
+              variant="drawer"
+              footerSlot={slot}
+              movement={movement}
+              now={now}
+              units={flow.units}
+              bedReleases={flow.bedReleases}
+              leaveBeds={flow.leaveBeds}
+              admissions={flow.admissions}
+              referrals={flow.referrals}
+              selectedUnitId={selectedUnitId}
+              onSelectUnit={onSelectUnit}
+              dispatch={flow.dispatch}
+              parallelReferralCap={flow.configuration.parallelReferralCap}
+              pullHoldMinutes={flow.configuration.pullHoldMinutes}
+              onRefer={(unitIds) => onRefer(movement, unitIds)}
+            />
           </div>
-          {tier !== undefined ? (
-            <span className={d.tier} data-tier={tier} title={`Urgency tier ${tier}`}>
-              <span className="sr-only">Urgency tier </span>
-              <span aria-hidden="true">T</span>
-              {tier}
-            </span>
-          ) : null}
-          <button
-            type="button"
-            className={buttonClass({ variant: "sec", size: "sm", iconOnly: true })}
-            onClick={onClose}
-            aria-label="Close placement and clear selection"
-            data-sheet-autofocus="true"
-          >
-            <X size={14} strokeWidth={1.75} aria-hidden="true" />
-          </button>
-        </div>
-
-        {entry ? <ChosenAlertCard entry={entry} now={now} /> : null}
-        {networkNote ? (
-          <p className={p.networkNote} data-testid="ward-shortlist-not-scoped">
-            {networkNote}
-          </p>
-        ) : null}
-        {referral ? <ReferralPlacementPanel referral={referral} now={now} footerSlot={slot} /> : null}
-        {entry && !movement ? <AlertFacts entry={entry} /> : null}
-        {movement ? (
-          <>
-            <WaitStatus movement={movement} now={now} />
-            <div className={p.task}>
-              <ShortlistPanel
-                variant="drawer"
-                footerSlot={slot}
-                movement={movement}
-                now={now}
-                units={flow.units}
-                bedReleases={flow.bedReleases}
-                leaveBeds={flow.leaveBeds}
-                admissions={flow.admissions}
-                referrals={flow.referrals}
-                selectedUnitId={selectedUnitId}
-                onSelectUnit={onSelectUnit}
-                dispatch={flow.dispatch}
-                parallelReferralCap={flow.configuration.parallelReferralCap}
-                pullHoldMinutes={flow.configuration.pullHoldMinutes}
-                onRefer={(unitIds) => onRefer(movement, unitIds)}
-              />
-            </div>
-          </>
-        ) : null}
-        {/* The foot band sits inside the region and sticks to the drawer's foot, so Placement (and
-            every journey that reads it) holds its actions as well as its body. */}
-        {footer}
-      </aside>
-    </Sheet>
+        </>
+      ) : null}
+    </PanelDrawer>
   );
 }
 
@@ -291,23 +271,12 @@ function Journey({ movement }: { movement: Movement }) {
 function AlertFacts({ entry }: { entry: QueueEntry }) {
   const owner = ownerShort(entry.owner);
   return (
-    <div className={d.facts}>
-      <dl className={d.grid}>
-        <div>
-          <dt>From</dt>
-          <dd>{entry.subject.from}</dd>
-        </div>
-        <div>
-          <dt>To</dt>
-          <dd>{entry.subject.to ?? "No destination yet"}</dd>
-        </div>
-        {owner !== entry.subject.from ? (
-          <div>
-            <dt>Owner</dt>
-            <dd>{owner}</dd>
-          </div>
-        ) : null}
-      </dl>
-    </div>
+    <DrawerFacts
+      items={[
+        { id: "from", label: "From", value: entry.subject.from },
+        { id: "to", label: "To", value: entry.subject.to ?? "No destination yet" },
+        ...(owner !== entry.subject.from ? [{ id: "owner", label: "Owner", value: owner }] : []),
+      ]}
+    />
   );
 }
