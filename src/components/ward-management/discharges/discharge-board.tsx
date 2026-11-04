@@ -12,7 +12,7 @@ import {
   OctagonAlert,
   Printer,
   TrendingUp,
-  Truck,
+  Ambulance,
   X,
 } from "lucide-react";
 import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
@@ -897,7 +897,11 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                           </span>
                                           {release.waitingOn ? (
                                             <span className={pageStyles.personMeta}>
-                                              <Truck size={12} className={pageStyles.inlineIcon} aria-hidden="true" />{" "}
+                                              <Ambulance
+                                                size={12}
+                                                className={pageStyles.inlineIcon}
+                                                aria-hidden="true"
+                                              />{" "}
                                               {release.waitingOn}
                                             </span>
                                           ) : null}
@@ -992,7 +996,11 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                           <>
                                             <SrOnly>, </SrOnly>
                                             <span className={pageStyles.secondary}>
-                                              <Truck size={12} className={pageStyles.inlineIcon} aria-hidden="true" />{" "}
+                                              <Ambulance
+                                                size={12}
+                                                className={pageStyles.inlineIcon}
+                                                aria-hidden="true"
+                                              />{" "}
                                               {release.waitingOn}
                                             </span>
                                           </>

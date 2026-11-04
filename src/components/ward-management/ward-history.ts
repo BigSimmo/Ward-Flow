@@ -67,6 +67,8 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   // Closing-the-loop (package E).
   RECORD_HOME_SERVICE_RETURN: { category: "patient", plainWording: "Return to home service requested or answered" },
   RECORD_DIRECTORY_CHECK: { category: "neither", plainWording: "On-call directory entry checked" },
+  // Out of area "Flag early" (Josh, 3 Nov 2026).
+  FLAG_RETURN_EARLY: { category: "patient", plainWording: "Out of area return flagged early" },
 
   // 2.2 Front-door referrals
   ADD_PATIENT: { category: "patient", plainWording: "Patient registered in system" },
@@ -232,6 +234,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   UNDO_LEGAL_FORM_RECORD: { category: "patient", plainWording: "Legal form record undone" },
   UNDO_SUPPORT_NOTIFICATION: { category: "patient", plainWording: "Carer, PSP or MHAS record undone" },
   UNDO_REPATRIATION: { category: "patient", plainWording: "Repatriation record undone" },
+  UNDO_FLAG_RETURN_EARLY: { category: "patient", plainWording: "Early return flag undone" },
   UNDO_HANDOVER_SIGN_OFF: { category: "neither", plainWording: "Handover sign-off undone" },
   UNDO_SITE_HANDOVER_SIGN_OFF: { category: "neither", plainWording: "Site handover sign-off undone" },
   UNDO_ED_STEP: { category: "patient", plainWording: "Emergency department step undone" },

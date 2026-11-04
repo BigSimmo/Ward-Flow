@@ -1636,6 +1636,11 @@ export function candidateEvents(
       return state.admissions
         .filter((admission) => admission.state !== "departed")
         .map((admission) => ({ type, role, now, admissionId: admission.id, step: "requested", homeHospital: "RPH" }));
+    // Out of area "Flag early" (3 Nov 2026): a record only, against a current stay.
+    case "FLAG_RETURN_EARLY":
+      return state.admissions
+        .filter((admission) => admission.state !== "departed")
+        .map((admission) => ({ type, role, now, admissionId: admission.id, homeHospital: "RPH" }));
     case "RECORD_DIRECTORY_CHECK":
       return buildOnCallDirectory()
         .slice(0, 3)

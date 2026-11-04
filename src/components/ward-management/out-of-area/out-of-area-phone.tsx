@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState, type ReactNode } from "react";
-import { BedDouble, ChevronLeft, ChevronRight, Copy, House, Route } from "lucide-react";
+import { BedSingle, ChevronLeft, ChevronRight, Copy, House, Route } from "lucide-react";
 
 import {
   Button,
@@ -544,7 +544,7 @@ export function OutOfAreaPhone({
               </div>
             </dl>
             <p className={styles.peekLine}>
-              <Icon icon={BedDouble} size={14} />
+              <Icon icon={BedSingle} size={14} />
               <span className={styles.truncate}>
                 <b>{selected.entry.unit.name}</b> · {shortSiteName(selected.entry.unit.siteCode)}
               </span>

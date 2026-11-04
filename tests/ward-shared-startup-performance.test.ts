@@ -10,8 +10,23 @@ function deferred<T>() {
   });
   return { promise, resolve, reject };
 }
-afterEach(() => {
+// The client starts these three imports together, and a test can finish while some are still loading
+// (an auth failure settles refresh first). Vitest resolves a queued doMock or doUnmock on whichever
+// import runs next, and two imports resolving the queue at once can apply this file's unmock after
+// the next test's mock. The next test's schema factory then never runs and its wait hangs until the
+// 30 s timeout (CI flake, 4 Nov 2026). Settling every startup import before unmocking leaves no
+// stray import to resolve the queue.
+const startupImports = [
+  schemaPath,
+  "../src/components/ward-management/ward-partial-view-contract",
+  "../src/components/ward-management/ward-scenario-networks",
+];
+afterEach(async () => {
+  await Promise.allSettled(startupImports.map((path) => import(/* @vite-ignore */ path)));
   vi.doUnmock(schemaPath);
+  vi.resetModules();
+  // A fresh import applies the queued unmock here, while nothing else is importing.
+  await import("../src/components/ward-management/ward-scenario-networks");
   vi.resetModules();
 });
 

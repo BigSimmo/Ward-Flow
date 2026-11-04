@@ -111,10 +111,18 @@ export function referralDraftBlockedReason(draft: ReferralDraftAnswers): string 
   if ((draft.legalFormDueAtDate !== "") !== (draft.legalFormDueAtTime !== "")) {
     return "Enter both the date and the time written on the form, or leave both blank.";
   }
+  if (legalFormDueAtTimeUnreadable(draft)) {
+    return "Type the time written on the form as HH:MM, for example 14:30.";
+  }
   if (observationReviewTimeUnreadable(draft)) {
     return "Type the observation review time as a clock time, for example 14:30, or leave it blank.";
   }
   return undefined;
+}
+
+/** The typed form expiry time box (L31) sends the typing when it is not yet a real HH:MM time. */
+function legalFormDueAtTimeUnreadable(draft: ReferralDraftAnswers): boolean {
+  return draft.legalFormDueAtTime !== "" && !/^([01]\d|2[0-3]):[0-5]\d$/u.test(draft.legalFormDueAtTime);
 }
 
 /** A typed review time that is not a readable 24 hour time. Blank is fine: none recorded. */
@@ -157,6 +165,8 @@ export function referralDraftMissingFields(draft: ReferralDraftAnswers): Referra
   if (draft.highAcuity === undefined) missing.push("highAcuity");
   if ((draft.legalFormDueAtDate !== "") !== (draft.legalFormDueAtTime !== "")) {
     missing.push(draft.legalFormDueAtDate === "" ? "legalFormDueAtDate" : "legalFormDueAtTime");
+  } else if (legalFormDueAtTimeUnreadable(draft)) {
+    missing.push("legalFormDueAtTime");
   }
   if (observationReviewTimeUnreadable(draft)) missing.push("observationReviewTime");
   return missing;
