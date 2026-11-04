@@ -1,7 +1,8 @@
-import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, configure, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { CircleAlert } from "lucide-react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
+import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR, activeWardNetwork } from "@/components/ward-management/ward-sites";
@@ -10,6 +11,8 @@ import { Sheet } from "@/components/wf/sheet";
 import { WardBar } from "@/components/ward-management/shell/ward-bar";
 import { AlertsDrawer } from "@/components/ward-redesign/pop-alerts/alerts-drawer";
 import { ConfirmHost } from "@/components/wf";
+
+configure({ getElementError: (message) => new Error(message?.split("\n")[0] ?? "Query failed") });
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/ward-flow",
@@ -197,15 +200,27 @@ describe("unsaved escalation dismissal", () => {
     expect(screen.getByPlaceholderText("Contact name or service")).toHaveValue("Duty consultant");
   });
 
-  it("records the draft directly and leaves no dirty navigation guard", () => {
+  it("records the draft directly and leaves no dirty navigation guard", async () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     const { dispatch } = renderDrawer();
-    dispatch.mockReturnValue({ commandId: "synthetic-escalation-save", status: "accepted" });
+    let finish!: (outcome: WardCommandOutcome) => void;
+    const completion = new Promise<WardCommandOutcome>((resolve) => {
+      finish = resolve;
+    });
+    dispatch.mockReturnValueOnce(completion);
     editDraft();
     fireEvent.click(screen.getByRole("button", { name: "Record escalation" }));
     expect(dispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "RECORD_ESCALATION", contact: "State bed desk" }),
     );
+    expect(screen.getByPlaceholderText("Contact name or service")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Record escalation" })).toBeDisabled();
+    fireEvent.click(screen.getByRole("button", { name: "Record escalation" }));
+    expect(dispatch).toHaveBeenCalledOnce();
+    await act(async () => {
+      finish({ commandId: "tasks-escalation-command", status: "accepted", isCurrent: () => true });
+      await completion;
+    });
     expect(screen.queryByPlaceholderText("Contact name or service")).toBeNull();
     expect(
       (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean }).__wardFlowConfirmNavigation?.(),

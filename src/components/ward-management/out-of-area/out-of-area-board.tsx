@@ -1,5 +1,7 @@
 "use client";
 
+import { wardRaise } from "../ward-flow-raise";
+
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 
@@ -182,7 +184,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     setRepatNotice("Saving return plan. Waiting for confirmation.");
     repatSave.submit(
       () => {
-        const completion = dispatch(event);
+        // Raised through the named helper, so its literal type stays visible to the override guard (#1326).
+        const completion = wardRaise(dispatch, event.role, event.now)("RECORD_REPATRIATION", event);
         offerStep(step, { completion });
         return completion;
       },
@@ -520,7 +523,10 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       returnMovementId={returnMovementOf(entry.admission.id)}
       options={closerBedOptions(entry, units, now)}
       notice={repatSave.error ?? repatNotice}
-      onDismissNotice={() => setRepatNotice(null)}
+      onDismissNotice={() => {
+        repatSave.clearError();
+        setRepatNotice(null);
+      }}
       onRecord={() => recordReturn(entry)}
       onSendToWard={() => sendPlanToWard(entry)}
       onMarkWardAgreed={() => markWardAgreed(entry)}

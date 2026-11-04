@@ -44,13 +44,13 @@ import { askingForShort, waitWords } from "../referrals/referral-board-parts";
 import { WardPrototypeFooter } from "../shell/ward-prototype-footer";
 import { formatInstantWithDay, type Instant } from "../ward-clock";
 import { useDueSoonThresholds, useWardFlowSelect } from "../ward-flow-provider";
+import { useWardFormSave, type WardFormSave } from "../use-ward-form-save";
 import { useWardRaise } from "../ward-flow-raise";
 import { WARD_FLOW_ROLE_LABELS } from "../ward-flow-roles";
 import { bedMeetingTvHref } from "../ward-nav";
 import { DONE_PAUSE_MS, LONG_WAIT_MINUTES, LONG_WAIT_TEXT } from "../ward-operational-defaults";
 import { usePatientOf } from "../ward-patient-name";
 import { useRefocusAfterRowLeaves } from "../use-refocus-after-row-leaves";
-import { useWardFormSave } from "../use-ward-form-save";
 import {
   BED_MEETING_ACTION_DUE_HOURS,
   BED_MEETING_ACTION_KINDS,
@@ -587,6 +587,7 @@ function AgendaRow({
 }) {
   const [adding, setAdding] = useState(false);
   const formId = useId();
+  const save = useWardFormSave(formId);
   const toggle = useRef<HTMLButtonElement>(null);
   const openActions = (item.record.meetingActions ?? []).filter((action) => action.doneAt === undefined);
   const urgent = urgencyOf(sectionId, item, now) !== null;
@@ -629,7 +630,10 @@ function AgendaRow({
             aria-controls={formId}
             icon={Plus}
             aria-label={adding ? `Cancel the action for ${name}` : `Add an action for ${name}`}
-            onClick={() => setAdding((value) => !value)}
+            onClick={() => {
+              save.forget();
+              setAdding((value) => !value);
+            }}
             data-testid="bed-meeting-add-action"
           >
             {adding ? "Close" : "Action"}
@@ -640,6 +644,7 @@ function AgendaRow({
         <ActionForm
           id={formId}
           sectionId={sectionId}
+          save={save}
           item={item}
           now={now}
           wardName={wardName}
@@ -695,6 +700,7 @@ const WARD_OWNED_KINDS: ReadonlySet<BedMeetingActionKind> = new Set([
 function ActionForm({
   id,
   sectionId,
+  save,
   item,
   now,
   wardName,
@@ -702,13 +708,13 @@ function ActionForm({
 }: {
   id: string;
   sectionId: string;
+  save: WardFormSave;
   item: AgendaItem;
   now: Instant;
   wardName: string | undefined;
   onDone: () => void;
 }) {
   const raise = useWardRaise("coordinator");
-  const save = useWardFormSave(`agenda:${item.subject.kind}:${item.subject.id}`);
   const [kind, setKind] = useState<BedMeetingActionKind | "">("");
   const [owner, setOwner] = useState<BedMeetingActionOwner>("coordinator");
   const [dueHours, setDueHours] = useState<string>(String(BED_MEETING_ACTION_DUE_HOURS[1]));
@@ -803,10 +809,10 @@ function ActionForm({
         size="sm"
         variant="pri"
         loading={save.pending}
-        aria-disabled={kind === "" ? "true" : undefined}
+        aria-disabled={kind === "" || save.pending ? "true" : undefined}
         aria-describedby={kind === "" ? `${id}-reason` : undefined}
         onClick={() => {
-          if (kind === "") return;
+          if (kind === "" || save.pending) return;
           save.submit(
             () =>
               raise("RECORD_BED_MEETING_ACTION", {
@@ -823,6 +829,7 @@ function ActionForm({
       >
         {kind === "" ? "Record action" : `Record · due ${formatInstantWithDay(dueAt, now)}`}
       </Button>
+      {save.error ? <p role="status">{save.error}</p> : null}
       {kind === "" ? <DisabledReason id={`${id}-reason`}>Choose an action first.</DisabledReason> : null}
       {save.error ? (
         <p className={styles.note} role="alert">

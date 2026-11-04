@@ -7,7 +7,10 @@ import type { WardCommandOutcome } from "@/components/ward-management/ward-share
 import type { HomeServiceReturnRecord } from "@/components/ward-management/out-of-area/home-service-return";
 
 const command = vi.hoisted(() => ({ raise: vi.fn() }));
-vi.mock("@/components/ward-management/ward-flow-raise", () => ({ useWardRaise: () => command.raise }));
+vi.mock("@/components/ward-management/ward-flow-raise", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/components/ward-management/ward-flow-raise")>()),
+  useWardRaise: () => command.raise,
+}));
 
 import { CheckFoot } from "@/components/ward-management/on-call/on-call-check-foot";
 import { buildOnCallDirectory } from "@/components/ward-management/on-call/on-call-directory";

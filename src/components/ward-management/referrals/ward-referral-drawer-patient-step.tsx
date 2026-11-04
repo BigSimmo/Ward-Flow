@@ -376,12 +376,12 @@ export function ReferralPatientStep({
               <input
                 ref={searchInputRef}
                 type="search"
-                role="combobox"
-                aria-expanded={showResults}
                 id={searchId}
                 className={styles.patientSearchInput}
                 aria-label="Find a patient"
                 aria-invalid={patientShowErrors && !patientRecord && unidentified === null ? true : undefined}
+                role="combobox"
+                aria-expanded={showResults}
                 aria-haspopup="listbox"
                 aria-autocomplete="list"
                 aria-controls={showResults ? resultsId : undefined}

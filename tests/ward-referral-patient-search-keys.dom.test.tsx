@@ -23,6 +23,19 @@ function open(onClose = vi.fn()) {
 }
 
 describe("referral patient search keys (A-4)", () => {
+  it("exposes the editable listbox control as a combobox with its current expanded state", () => {
+    const search = open();
+    expect(search).toHaveAttribute("role", "combobox");
+    expect(search).toHaveAttribute("aria-expanded", "false");
+    fireEvent.change(search, { target: { value: "UM1000" } });
+    const results = screen.getByRole("listbox", { name: "Matching patients" });
+    expect(search).toHaveAttribute("aria-expanded", "true");
+    expect(search).toHaveAttribute("aria-controls", results.id);
+    fireEvent.keyDown(search, { key: "Escape" });
+    expect(search).toHaveAttribute("aria-expanded", "false");
+    expect(search).not.toHaveAttribute("aria-controls");
+  });
+
   it("moves through the results with the arrow keys and picks with Enter", () => {
     const search = open();
     expect(search).toHaveAttribute("aria-expanded", "false");

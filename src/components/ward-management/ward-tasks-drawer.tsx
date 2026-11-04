@@ -108,11 +108,9 @@ type WardTasksDrawerProps = {
 
 type AckFilter = "all" | "open" | "unacknowledged" | "acknowledged" | "completed";
 
-/**
- * The drawer's words. For the bed coordinator's desk, Tasks and Alerts are one queue (Josh, D-61,
- * 16 Oct 2026), so the drawer uses the Alerts screen's name and groups. Red rows are act now and
- * every other row is waiting, the same split `inboxItemIsActNow` makes for the Alerts screen.
- */
+/** The drawer's words. For the bed coordinator's desk, Tasks and Alerts are one queue (Josh, D-61, 16 Oct 2026), so
+ * the drawer uses the Alerts screen's name and groups. Red rows are act now and every other row is waiting, the same
+ * split `inboxItemIsActNow` makes for the Alerts screen. */
 type DrawerWords = { name: string; plural: string; act: string; wait: string; running?: string };
 // The drawer is called Alerts on every desk, as its button is (Josh, 31 Oct 2026). Desks without the
 // one Alerts queue keep their own filters and row behaviour, which follow these words by identity.
@@ -141,10 +139,8 @@ const ESCALATION_PICKS = ["Duty consultant", "State bed desk", "Executive on cal
 // These links dismiss the drawer as well as navigating, including a link to the current page.
 const isTasksDrawerLink = (anchor: HTMLAnchorElement) => anchor.closest("[data-ward-tasks-drawer]") !== null;
 
-/**
- * Ops-6 (remaining-pages audit, 13 Oct 2026): each escalation pick with the number that answers
- * now, from the On-call directory for the patient's service. Every number is a mock.
- */
+/** Ops-6 (remaining-pages audit, 13 Oct 2026): each escalation pick with the number that answers now, from the
+ * On-call directory for the patient's service. Every number is a mock. */
 function escalationTargets(movement: Movement): CallTarget[] {
   const service = edHealthService(movement.originEdId);
   return [
@@ -160,11 +156,8 @@ function escalationTargets(movement: Movement): CallTarget[] {
   ];
 }
 
-/**
- * Ops-5 (remaining-pages audit, 13 Oct 2026): the numbers a task needs, from the On-call
- * directory: transport when a leg is booked or waiting, the sending ED's liaison and the
- * receiving ward's nurse in charge.
- */
+/** Ops-5 (remaining-pages audit, 13 Oct 2026): the numbers a task needs, from the On-call directory: transport when
+ * a leg is booked or waiting, the sending ED's liaison and the receiving ward's nurse in charge. */
 function contactTargets(item: InboxItem, movement: Movement, units: readonly Unit[] | undefined): CallTarget[] {
   const targets: CallTarget[] = [];
   if (movement.transport || /transport/i.test(item.title)) {
@@ -663,6 +656,7 @@ export function WardTasksDrawer({
                 event.currentTarget.focus();
                 return;
               }
+              escalationSave.forget();
               setEscalating(item.id);
               setContact(movement.escalation?.contact ?? "");
             }}

@@ -641,7 +641,7 @@ function EdCommunityReferralForm({ row, ctx }: { row: EdBoardRowModel; ctx: EdSc
   const save = useWardFormSave(`ed-community-referral:${movement.id}`);
   const cmhtReady = communityTeamChoice !== "" && communityPurposeChoice !== "" && !save.pending;
   const cmhtMissing = save.pending
-    ? "Waiting for save confirmation"
+    ? "Saving change…"
     : !communityTeamChoice
       ? "Choose a community team first."
       : "Choose what the referral is for first.";

@@ -326,14 +326,24 @@ export function PatientSearchPage() {
     return words;
   }, [patients, referrals, movements]);
 
+  const census = useMemo(
+    () =>
+      buildCensus({ movements, referrals, units, patients, admissions, plannedAdmissions, now, thresholds, dayZero }),
+    [movements, referrals, units, patients, admissions, plannedAdmissions, now, dayZero, thresholds],
+  );
+
   const baseResults = useMemo(() => {
     const needle = foldPatientSearchText(text);
     if (isChip || needle === "") return searchPatients(movements, referrals, units, { ...query, text: "" });
     const byRecord = new Set(searchPatients(movements, referrals, units, query).map(resultId));
     return searchPatients(movements, referrals, units, { ...query, text: "" }).filter(
-      (result) => byRecord.has(resultId(result)) || (subjectWords.get(resultId(result)) ?? "").includes(needle),
+      (result) =>
+        byRecord.has(resultId(result)) ||
+        (subjectWords.get(resultId(result)) ?? "").includes(needle) ||
+        (needle.length >= 2 &&
+          census.rows.some((row) => row.key === resultId(result) && row.placeText.includes(needle))),
     );
-  }, [movements, referrals, units, query, isChip, text, subjectWords]);
+  }, [movements, referrals, units, query, isChip, text, subjectWords, census]);
 
   const results = useMemo(() => {
     return baseResults.filter((result) => {
@@ -636,11 +646,6 @@ export function PatientSearchPage() {
   // Every person the app holds, grouped by where they are now. The movement and referral rows are
   // the same records as `unifiedCaseload` above, so every search and filter that narrows that list
   // narrows these rows the same way; the bed and record rows answer the typed name or UMRN.
-  const census = useMemo(
-    () =>
-      buildCensus({ movements, referrals, units, patients, admissions, plannedAdmissions, now, thresholds, dayZero }),
-    [movements, referrals, units, patients, admissions, plannedAdmissions, now, dayZero, thresholds],
-  );
   const isPhone = usePhoneLayout();
   const needle = isChip ? "" : foldPatientSearchText(text);
   const dobIso = dobOn ? parseDob(dob) : null;
@@ -670,7 +675,7 @@ export function PatientSearchPage() {
         const foundReferral = row.kind === "referral" && row.group === "found" && !caseIds.has(row.key);
         if ((row.kind === "movement" || row.kind === "referral") && !foundReferral) {
           // A place shown in the census also finds the case, not only the legacy record search.
-          if (!caseIds.has(row.key) && !(needle.length >= 2 && row.placeText.includes(needle))) return false;
+          if (!caseIds.has(row.key)) return false;
         } else {
           if (legacyNarrowing) return false;
           const onWard = row.kind === "admission" && row.group === "ward";
