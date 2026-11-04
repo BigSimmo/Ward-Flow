@@ -73,6 +73,8 @@ describe("multi-command reload recovery", () => {
       expect(h.view()?.recoveryResults?.map((result) => result.outcome)).toEqual(["accepted", "refused", "unsent"]);
       expect(h.view()?.recovery).toMatch(/not sent|not retained/i);
       expect(readCommandRecovery(h.storage).entries).toEqual([]);
+      h.client.dismissRecovery(h.view()?.recovery);
+      expect(h.view()?.recoveryResults).toBeUndefined();
     } finally {
       h.client.dispose();
     }

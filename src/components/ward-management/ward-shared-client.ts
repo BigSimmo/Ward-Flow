@@ -1478,7 +1478,7 @@ export class SharedWorkspaceClient {
     // A newer outcome than the one the person read stays until they read it.
     if (shown !== undefined && shown !== this.view.recovery) return;
     // Putting a message away is not news about the board, so what the status bar knows stays as it was.
-    this.publish({ recovery: undefined, boardCurrent: this.view.boardCurrent });
+    this.publish({ recovery: undefined, recoveryResults: undefined, boardCurrent: this.view.boardCurrent });
   };
   dispose() {
     this.disposed = true;
