@@ -47,7 +47,7 @@ export function MovementsTimelineSwitch({ summary, children }: { summary: string
   };
   return (
     <>
-      <div className={s.bar} data-open={on ? "true" : undefined}>
+      <div className={s.bar} data-open={on ? "true" : undefined} data-testid="movements-timeline-switch">
         <span className={s.icon}>
           <ChartGantt size={16} strokeWidth={1.75} aria-hidden="true" />
         </span>
