@@ -79,6 +79,8 @@ import {
   capacityRowsSpoken,
   cardScopeNote,
   overLineLabel,
+  RailLiveClock,
+  RailReadyLine,
   usePinnedPages,
 } from "@/components/ward-management/shell-next/next-rail-parts";
 import railParts from "@/components/ward-management/shell-next/next-rail.module.css";
@@ -396,6 +398,14 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   // Every figure below comes from the derivation. Over-the-line words count places, never Alerts (#793).
   const servicesByOccupancy = bedAlerts.services.toSorted((a, b) => b.occupancyPercent - a.occupancyPercent);
   const hottest: ServiceBedAlert | null = servicesByOccupancy[0] ?? null;
+  // H2: with the services ranked above it, the foot line carries Metro as a whole and the ready beds.
+  const metroShown = capacityRows.some((row) => row.key === "metro" || row.key === "own");
+  const readyLine = <RailReadyLine metro={metroShown ? null : bedAlerts.metroOccupancyPercent} ready={readyBeds} />;
+  const metroSpoken =
+    metroShown || bedAlerts.metroOccupancyPercent === null
+      ? ""
+      : ` Metro ${formatOccupancyPercent(bedAlerts.metroOccupancyPercent)} full.`;
+  const capacityCardLabel = `Bed alerts: ${overLine.label}. ${capacityRowsLabel}.${metroSpoken} ${readyBeds} ${readyBeds === 1 ? "bed" : "beds"} ready now, ${cardScopeNote(capacityRows, deskAccess, service)}.`;
   const handoverText = shiftProgress.handoverDue ? null : durMinutes(shiftProgress.remainingMinutes);
 
   const setOpen = useCallback((next: boolean) => {
@@ -822,10 +832,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               {currentPersona.initials}
             </span>
             <span className={styles.shiftMeta}>
-              <span className={styles.shiftTitle}>
-                {shiftProgress.shiftName}
-                <span className={styles.shiftHours}>{shiftProgress.shiftHours}</span>
-              </span>
+              <RailLiveClock clock={boardClock} shift={shiftProgress.shiftName} classes={styles} />
               <span className={`${styles.shiftSub} ${railParts.shiftSubWrap}`}>
                 {personaName} · {currentPersona.role}
               </span>
@@ -881,7 +888,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               className={styles.compactAlertPip}
               data-alert={overLine.over > 0 ? "true" : undefined}
               data-testid="ward-rail-compact-alert-pip"
-              aria-label={`Bed alerts: ${overLine.label}. ${capacityRowsLabel}. ${readyBeds} ${readyBeds === 1 ? "bed" : "beds"} ready now, ${cardScopeNote(capacityRows, deskAccess, service)}.`}
+              aria-label={capacityCardLabel}
               aria-expanded={alertsOpen}
               aria-haspopup="dialog"
               onClick={(event) => {
@@ -908,7 +915,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
             data-open={alertsOpen ? "true" : undefined}
             data-alert={overLine.over > 0 ? "true" : undefined}
             data-testid="ward-rail-capacity-alerts-trigger"
-            aria-label={`Bed alerts: ${overLine.label}. ${capacityRowsLabel}. ${readyBeds} ${readyBeds === 1 ? "bed" : "beds"} ready now, ${cardScopeNote(capacityRows, deskAccess, service)}.`}
+            aria-label={capacityCardLabel}
             aria-expanded={alertsOpen}
             aria-haspopup="dialog"
             onClick={(event) => {
@@ -939,7 +946,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               ))}
             </span>
             <span className={railParts.capacityReady} aria-hidden="true">
-              <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
+              {readyLine}
             </span>
           </button>
 
@@ -1366,9 +1373,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 </span>
               </span>
               {renderBedAlertRows()}
-              <span className={railParts.capacityReady}>
-                <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
-              </span>
+              <span className={railParts.capacityReady}>{readyLine}</span>
             </Link>
           ) : (
             <div className={sheetAlertsClass}>
@@ -1380,9 +1385,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 </span>
               </span>
               {renderBedAlertRows()}
-              <span className={railParts.capacityReady}>
-                <b>{readyBeds}</b> {readyBeds === 1 ? "bed" : "beds"} ready now
-              </span>
+              <span className={railParts.capacityReady}>{readyLine}</span>
             </div>
           )
         ) : null}
