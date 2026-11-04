@@ -1,0 +1,25 @@
+/* TR1 (3 Nov 2026): a delivered row is a link to its record. */
+.row {
+  padding-right: var(--wf-s-2);
+}
+
+.historyLink {
+  display: flex;
+  flex: 1;
+  gap: var(--wf-s-2);
+  align-items: flex-start;
+  justify-content: space-between;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.historyLink:hover strong {
+  color: var(--wf-accent-ink);
+}
+
+.historyLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--wf-r-md);
+}

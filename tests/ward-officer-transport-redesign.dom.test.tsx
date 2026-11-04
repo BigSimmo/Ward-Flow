@@ -9,6 +9,7 @@ import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/w
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { legalNowText } from "@/components/ward-management/ward-transport-checks";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -84,21 +85,24 @@ describe("Transport desk redesign", () => {
     expect(route.textContent).not.toMatch(/ from /);
   });
 
-  it("says one thing in the Forms cell: 'N forms missing' or 'All forms'", () => {
+  // Deep audit (4 Nov 2026): the cell names the gap that blocks the next step, or a quiet count.
+  it("says one thing in the Forms cell: the blocking form, 'N to upload' or 'All forms'", () => {
     renderDesk();
     const list = screen.getByTestId("ward-officer-joblist");
     const text = list.textContent ?? "";
-    expect(text).toMatch(/\d forms? missing|All forms/);
+    expect(text).toMatch(/Form 4A needed|\d to upload|All forms/);
+    expect(text).not.toMatch(/forms? missing/);
     expect(text).not.toMatch(/\d of 3(?! forms recorded)/);
   });
 
-  it("names the legal status in the job panel header and keeps 'Legal status not recorded' visible", () => {
+  it("names Legal now in the job panel header when the booking has no legal status", () => {
     renderDesk();
     const unrecorded = jobs.find((movement) => movement.transport?.transportLegalStatus === undefined);
     if (!unrecorded) throw new Error("the seed has no job with the transport's legal status unrecorded");
     fireEvent.click(screen.getByTestId(`ward-officer-select-${unrecorded.id}`));
     const panel = screen.getByTestId("ward-officer-detail");
-    expect(within(panel).getAllByText(/Legal status not recorded/).length).toBeGreaterThan(0);
+    // TR2 (3 Nov 2026): the header falls back to Legal now rather than a blank.
+    expect(panel).toHaveTextContent(legalNowText(unrecorded));
     // Transport redesign (Josh, 1 Nov 2026): a gap says "Not recorded" in place in the booking facts.
     expect(within(panel).getByTestId(`ward-officer-transport-legal-status-${unrecorded.id}`)).toHaveTextContent(
       /Transport logged as\s*Not recorded/,
@@ -165,5 +169,30 @@ describe("Transport desk, the transport officer's own view (as-officer-home)", (
     const copies = screen.getAllByRole("button", { name: "Copy handover" });
     expect(copies).toHaveLength(1);
     expect(copies[0]!.closest("header, [data-wf-hero]")).toBeNull();
+  });
+});
+
+describe("M3: check in arrives from Movements (Josh, 3 Nov 2026)", () => {
+  afterEach(() => window.history.replaceState(null, "", "/"));
+
+  it("opens the job named in the address, and the first choice on the page clears it", () => {
+    installMatchMediaStub(false);
+    const job = jobs.find((movement) => movement.transport !== undefined)!;
+    window.history.replaceState(null, "", `/ward-flow/transport/officer?job=${job.id}`);
+    renderDesk();
+    const panel = screen.getByTestId("ward-officer-detail");
+    expect(panel).toHaveTextContent(resolveSubjectPatient(job, state).formalName);
+    act(() => {
+      fireEvent.keyDown(window, { key: "Escape" });
+    });
+    expect(screen.queryByTestId("ward-officer-detail")).toBeNull();
+    expect(window.location.search).toBe("");
+  });
+
+  it("ignores a job the desk does not hold", () => {
+    installMatchMediaStub(false);
+    window.history.replaceState(null, "", "/ward-flow/transport/officer?job=not-a-job");
+    renderDesk();
+    expect(screen.queryByTestId("ward-officer-detail")).toBeNull();
   });
 });
