@@ -85,10 +85,7 @@ describe("what's new note", () => {
   });
 
   it("reads an id stored before entry files against the old list order", () => {
-    // Only the lines from before entry files: a newer entry is unseen on every device anyway, and
-    // counting it here would break this test with each new What's new file.
-    const before = WHATS_NEW.filter((entry) => entry.date < "2026-11-04");
-    const ids = (seen: string) => unseenWhatsNew(seen, before).map((entry) => entry.id);
+    const ids = (seen: string) => unseenWhatsNew(seen).map((entry) => entry.id);
     // Under the old order only the referral line came after this id, though it no longer sorts last.
     expect(ids("2026-11-03-one-alerts-switch")).toEqual(["2026-11-03-simpler-new-referral"]);
     // This id now sorts last, yet four lines came after it in the old order (the card shows four).
