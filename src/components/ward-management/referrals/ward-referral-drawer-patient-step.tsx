@@ -248,7 +248,11 @@ export function ReferralPatientStep({
                   type="button"
                   className={styles.newPatientClose}
                   aria-label="Close new patient"
-                  onClick={() => setNewPatientOpen(false)}
+                  onClick={() => {
+                    // Closing gives up the new patient too, like Back to search, so no guard asks later.
+                    resetNewPatient();
+                    setNewPatientOpen(false);
+                  }}
                 >
                   <X aria-hidden="true" />
                 </button>

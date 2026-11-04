@@ -131,24 +131,25 @@ describe("referral work survives patient selection and interrupted registration"
     },
   );
 
-  it("Back to search on Add patient discards its typed details, so closing asks nothing", () => {
-    const onClose = vi.fn();
-    render(
-      <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardReferralDrawer onClose={onClose} />
-      </WardFlowProvider>,
-    );
-    enterUnregisteredIdentity();
-    fireEvent.click(
-      within(screen.getByTestId("ward-referral-new-patient")).getByRole("button", { name: "Back to search" }),
-    );
-    fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
-    expect(within(screen.getByTestId("ward-referral-new-patient")).getByLabelText(/Family name/)).toHaveValue("");
-    fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
-    fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
-    expect(screen.queryByRole("alertdialog", { name: "Keep this referral as a draft?" })).toBeNull();
-    expect(onClose).toHaveBeenCalledTimes(1);
-  });
+  it.each(["Back to search", "Close new patient"])(
+    "%s on Add patient discards its typed details, so closing asks nothing",
+    (button) => {
+      const onClose = vi.fn();
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <WardReferralDrawer onClose={onClose} />
+        </WardFlowProvider>,
+      );
+      enterUnregisteredIdentity();
+      fireEvent.click(within(screen.getByTestId("ward-referral-new-patient")).getByRole("button", { name: button }));
+      fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
+      expect(within(screen.getByTestId("ward-referral-new-patient")).getByLabelText(/Family name/)).toHaveValue("");
+      fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
+      fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
+      expect(screen.queryByRole("alertdialog", { name: "Keep this referral as a draft?" })).toBeNull();
+      expect(onClose).toHaveBeenCalledTimes(1);
+    },
+  );
 
   it("warns on reload and internal navigation with only inline registration work", () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
