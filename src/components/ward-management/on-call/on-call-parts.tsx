@@ -463,17 +463,19 @@ function NowBlock({
   const starred = actions.favourites.includes(entry.id);
   return (
     <section className={styles.nowBlock} aria-label="Who answers now">
-      {number ? (
-        <div className={styles.nowLine}>
-          <span className={styles.nowLabel}>{current?.label ?? "Number"}</span>
-          <span className={styles.nowNumber}>{number}</span>
-        </div>
-      ) : now.kind === "off" && now.next?.number ? (
+      {/* Closed first: numberAt already returns the next line's number while closed, so this
+      branch must win or the "from HH:MM" label and the off styling never show. */}
+      {now.kind === "off" && now.next?.number ? (
         <div className={styles.nowLine}>
           <span className={styles.nowLabel}>
             {now.next.label}, from {hhmm(now.opens)}
           </span>
           <span className={cx(styles.nowNumber, styles.nowNumberOff)}>{now.next.number}</span>
+        </div>
+      ) : number ? (
+        <div className={styles.nowLine}>
+          <span className={styles.nowLabel}>{current?.label ?? "Number"}</span>
+          <span className={styles.nowNumber}>{number}</span>
         </div>
       ) : null}
       <StatusBlock entry={entry} actions={actions} />
@@ -493,7 +495,6 @@ function NowBlock({
             variant={number ? "sec" : "pri"}
             icon={Mail}
             className={number ? undefined : styles.callButton}
-            aria-label="Copy referral email"
             onClick={() => actions.onCopy(entry.email!, "Email copied")}
           >
             {number ? "Copy email" : "Copy referral email"}
@@ -504,7 +505,7 @@ function NowBlock({
             variant="sec"
             icon={Star}
             iconOnly
-            aria-label={starred ? "Starred" : "Star"}
+            aria-label={`Star ${entry.name}`}
             aria-pressed={starred}
             className={cx(starred && styles.starOn)}
             onClick={() => actions.onToggleFavourite(entry.id)}

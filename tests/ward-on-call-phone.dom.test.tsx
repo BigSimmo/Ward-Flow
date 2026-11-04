@@ -361,16 +361,16 @@ describe("PhoneSheet, the contact bottom sheet", () => {
     expect(within(sheet).getByRole("region", { name: "Who answers now" })).toHaveTextContent(number);
     fireEvent.click(within(sheet).getByRole("button", { name: "Copy number" }));
     expect(actions.onCopy).toHaveBeenCalledWith(number, "Number copied");
-    fireEvent.click(within(sheet).getByRole("button", { name: "Copy referral email" }));
+    fireEvent.click(within(sheet).getByRole("button", { name: "Copy email" }));
     expect(actions.onCopy).toHaveBeenCalledWith(bfc.email, "Email copied");
   });
 
-  it("stars and shows Starred when the contact is on My list", () => {
+  it("stars the contact, keeping one name and showing state through aria-pressed", () => {
     const bfc = entry("nmhs-bfc");
     const actions = makeActions();
     const { rerender } = render(<PhoneSheet entry={bfc} actions={actions} notice={null} onClose={vi.fn()} />);
 
-    const star = screen.getByRole("button", { name: "Star" });
+    const star = screen.getByRole("button", { name: `Star ${bfc.name}` });
     expect(star).toHaveAttribute("aria-pressed", "false");
     fireEvent.click(star);
     expect(actions.onToggleFavourite).toHaveBeenCalledWith("nmhs-bfc");
@@ -378,7 +378,7 @@ describe("PhoneSheet, the contact bottom sheet", () => {
     rerender(
       <PhoneSheet entry={bfc} actions={{ ...actions, favourites: ["nmhs-bfc"] }} notice={null} onClose={vi.fn()} />,
     );
-    expect(screen.getByRole("button", { name: "Starred" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: `Star ${bfc.name}` })).toHaveAttribute("aria-pressed", "true");
   });
 
   it("adds the place to the description for a ward and drops Call and Copy for an email-only inbox", () => {
