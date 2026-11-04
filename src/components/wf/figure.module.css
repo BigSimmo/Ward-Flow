@@ -1,0 +1,47 @@
+/* FIGURES IN THE KIT (Josh, 3 Nov 2026, kit rules a to c). Tokens only: no new colours or sizes. */
+
+/* (c) A number inside a running sentence: Geist with tabular figures, so it sits with the words
+   around it. Figures in columns, lists, strips and times stay Geist Mono (`--wf-mono`). */
+.wfNum {
+  font-family: var(--wf-font);
+  font-variant-numeric: tabular-nums;
+}
+
+/* (a) A figure borrowed from the page that owns it: a quiet link, the kit's summary link look. */
+.link {
+  color: var(--wf-accent-ink);
+  font-size: max(1em, var(--wf-fs-12));
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
+  border-radius: var(--wf-r-xs);
+}
+
+.link:hover {
+  text-decoration-thickness: 2px;
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* On the hero band the link keeps the band's own ink, as the kit's onHero button does. */
+.onHero {
+  color: inherit;
+}
+
+.onHero:focus-visible {
+  outline-color: var(--wf-hero-ink);
+}
+
+/* The same figure, unlinked, for a desk that cannot open the owning page. */
+.plain {
+  font-size: max(1em, var(--wf-fs-12));
+}
+
+/* (b) The scope tag sits beside the figure it qualifies. */
+.scope {
+  margin-inline-start: var(--wf-s-1);
+  vertical-align: baseline;
+}

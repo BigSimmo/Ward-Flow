@@ -273,13 +273,13 @@ test("@mockup ward bed figures stay visible and the chart data view preserves re
   const beds = page.getByTestId("ward-statistics-ward-beds-now");
   await expect(beds.locator("details > summary")).toHaveCount(0);
   // v6 (7 Oct 2026): bed figures are tiles in the Beds now card, and the stay chart's exact
-  // counts sit behind a Chart and Data switch.
+  // counts sit behind a Bands, Days and Data switch (owner polish, 3 Nov 2026).
   await expect(beds.getByTestId("ward-stat-capacity-empty")).toBeVisible();
   const chart = page.getByTestId("statistics-ward-stays-chart");
   await chart.getByRole("radio", { name: "Data" }).click();
   await expect(chart.getByRole("table")).toBeVisible();
   await expect(chart.getByRole("rowheader", { name: "Under 2 weeks" })).toBeVisible();
-  await chart.getByRole("radio", { name: "Chart" }).click();
+  await chart.getByRole("radio", { name: "Bands" }).click();
   await expect(chart.getByRole("table")).toHaveCount(0);
   await expectNoPageOverflow(page, "ward disclosure and chart data view");
 });

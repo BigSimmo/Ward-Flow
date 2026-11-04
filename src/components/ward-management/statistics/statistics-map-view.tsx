@@ -56,6 +56,7 @@ import { FlushRow, Follow } from "./statistics-layout";
 import { occupiedBeds } from "./statistics-occupancy";
 import { StatisticsWaMap, type WaMapNode } from "./statistics-wa-map";
 import styles from "./statistics-map-view.module.css";
+import { useViewSwitchAction } from "./statistics-view-switch-slot";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
 import type { ExecutiveReportingFoundation } from "./executive-statistics-contract";
 import {
@@ -589,6 +590,7 @@ function MapPresentation({
 
   const chosen = selected ? sites.find((site) => site.code === selected) : undefined;
   const asAt = formatInstant(now);
+  const viewSwitch = useViewSwitchAction();
 
   return (
     <section id="map" aria-label="Map" data-testid="ward-statistics-map-view" className={styles.view}>
@@ -598,6 +600,7 @@ function MapPresentation({
           icon={MapIcon}
           title="Network map"
           meta="Choose a site for its wards and ED"
+          action={viewSwitch}
           className={styles.mapCard}
           data-testid="ward-statistics-map-canvas"
         >

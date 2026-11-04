@@ -445,6 +445,63 @@ describe("a patient exists before anything happens to them", () => {
     ).toBeUndefined();
   });
 
+  /**
+   * RF7 (Josh, 3 Nov 2026): Add a patient can record the rest of the person's details. Each is
+   * optional: a supplied value is stored trimmed, and a blank one leaves the key absent.
+   */
+  it("stores the optional typed details trimmed and drops blank ones as not yet recorded", () => {
+    const before = seedWardFlowState();
+    const filled = wardFlowReducer(before, {
+      type: "ADD_PATIENT",
+      role: "ed",
+      now: NOW,
+      umrn: "UM900129",
+      givenName: "Aria",
+      familyName: "Testerton",
+      dateOfBirth: "1990-05-20",
+      preferredName: "  Ari ",
+      address: " 12 Example Street ",
+      generalPractitioner: "Dr Sample, Fictional Clinic",
+      catchmentCommunityTeam: " Synthetic Community Team ",
+      interpreterLanguage: "Auslan",
+    });
+    expect(filled.rejections, "optional details must never block a registration").toEqual([]);
+    const added = filled.patients[filled.patients.length - 1];
+    expect(added).toMatchObject({
+      preferredName: "Ari",
+      address: "12 Example Street",
+      generalPractitioner: "Dr Sample, Fictional Clinic",
+      catchmentCommunityTeam: "Synthetic Community Team",
+      interpreterLanguage: "Auslan",
+    });
+
+    const blank = wardFlowReducer(before, {
+      type: "ADD_PATIENT",
+      role: "ed",
+      now: NOW,
+      umrn: "UM900130",
+      givenName: "Bram",
+      familyName: "Placeholder",
+      dateOfBirth: "1990-05-20",
+      preferredName: "",
+      address: "   ",
+      generalPractitioner: "",
+      catchmentCommunityTeam: " ",
+      interpreterLanguage: "",
+    });
+    expect(blank.rejections, "blank optional details must not block a registration").toEqual([]);
+    const addedBlank = blank.patients[blank.patients.length - 1];
+    for (const key of [
+      "preferredName",
+      "address",
+      "generalPractitioner",
+      "catchmentCommunityTeam",
+      "interpreterLanguage",
+    ] as const) {
+      expect(key in addedBlank, `a blank ${key} must leave the key absent, never ""`).toBe(false);
+    }
+  });
+
   it("finds related names rather than only exact ones, which the owner asked for by name", () => {
     const patients = seedWardFlowState().patients;
 

@@ -429,8 +429,9 @@ describe("a new occurrence of a row on the same movement", () => {
     expect(again.since).toBe(NOW + 8);
     expect(inboxOccurrenceSince(movementOf(state), ROW)).toBe(again.since);
 
-    // The old snooze is still in force by its own clock, but it belongs to the earlier occurrence.
-    expect(activeSnooze(state.inboxSnoozes[ROW], later)).toBeDefined();
+    // Cancellation explicitly ends the old snooze while retaining its history.
+    expect(state.inboxSnoozes[ROW]?.[0]?.kind).toBe("snoozed");
+    expect(activeSnooze(state.inboxSnoozes[ROW], later)).toBeUndefined();
     expect(activeSnooze(state.inboxSnoozes[ROW], later, again.since)).toBeUndefined();
     const { active, snoozed } = partitionSnoozed(inbox(state, later), state.inboxSnoozes, later);
     expect(active.map((item) => item.id)).toContain(ROW);
