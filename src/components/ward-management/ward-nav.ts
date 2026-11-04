@@ -459,6 +459,10 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
     "An action taken from the patient search, not a section of the app: the search's empty state carries the 'Add this person' <Link> that is the only way in, and it appears exactly when it is needed — you have searched, nobody came up, and this is the person who does not exist yet. Listing it in the rail would invite adding a person nobody had looked for first, which is how a duplicate record gets made.",
   ],
   [
+    "/ward-flow/hub/catchments",
+    "The Catchments tab of Places (PL1, 3 Nov 2026): reached by the Places and Catchments switch on the Places band, and by /ward-flow/community, which redirects here. A second rail item would split one page in two.",
+  ],
+  [
     "/ward-flow/statistics/overview",
     "Reached by Link from the statistics hub, not from the rail. Three statistics entries in the sidebar would bury the hub the owner actually wants to land on — the same reasoning WARD_REFERRAL_INTAKE_HREF above already sets, where a destination inside a screen is not a section of the app.",
   ],
@@ -792,6 +796,8 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   if (isUnder("/ward-flow/ward")) return "Ward";
   if (isUnder("/ward-flow/ed")) return "All EDs";
   if (isUnder("/ward-flow/community")) return "Community";
+  // PL1: Catchments is a tab of Places, so the header keeps the page's name.
+  if (isUnder("/ward-flow/hub")) return "Places";
   if (isUnder("/ward-flow/movements")) return "Movements";
   if (isUnder("/ward-flow/statistics")) return "Statistics";
   if (isUnder("/ward-flow/waiting") || isUnder("/ward-flow/delays") || normalized === "/ward-flow/queue")

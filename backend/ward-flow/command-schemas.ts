@@ -122,6 +122,8 @@ const SCHEMAS: Partial<Record<WardFlowEvent["type"], z.ZodType>> = {
     form4CReceived: z.boolean().optional(),
     escortRequired: z.boolean().optional(),
   }),
+  // Out of area "Flag early" (Josh, 3 Nov 2026): a stay and a site code; the reducer checks the site.
+  FLAG_RETURN_EARLY: z.looseObject({ admissionId: id, homeHospital: id }),
   RECORD_MEDICAL_CLEARANCE: z.looseObject({ referralId: id, cleared: z.boolean() }),
   REQUEST_CAPACITY_REFRESH: z.looseObject({ unitId: id }),
   // H-0978: one exact bed closed or reopened. The reducer checks the bed and the reason list.

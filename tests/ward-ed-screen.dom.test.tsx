@@ -28,6 +28,9 @@ import { bedReleases, referrals as seededReferrals, wardMovements } from "@/comp
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { formTitleForCode } from "@/lib/form-register";
 import {
+  chooseEdChoice,
+  edChoiceOptions,
+  edChoiceValue,
   EdInboxReferralFixture,
   markNotYetIdentified,
   openRaiseIntoMovementForm,
@@ -119,12 +122,12 @@ function fillRequiredReferralFields() {
   // A2-1: the form starts from a person; these cases raise for one not yet identified.
   markNotYetIdentified();
   for (const field of REQUIRED_REFERRAL_FIELDS) {
-    fireEvent.change(screen.getByTestId(field.testId), { target: { value: field.value } });
+    chooseEdChoice(field.testId, field.value);
   }
   // ⚠️ Answered separately because it is a radio pair, not a <select>. Owner ruling 1 made an
   // unticked checkbox load-bearing — a `false` nobody chose skips the reducer's one-to-one
   // capacity refusal — so "Not required" is now stated rather than assumed.
-  fireEvent.change(screen.getByTestId("ward-ed-referral-observation"), { target: { value: "general" } });
+  chooseEdChoice("ward-ed-referral-observation", "general");
   // Same shape, same reasoning, added 2026-09-10 with the acuity gate: a `false` nobody chose
   // skips the acuity gate entirely, so "Not required" is stated rather than assumed here too.
   fireEvent.click(screen.getByTestId("ward-ed-referral-high-acuity-not-required"));
@@ -142,16 +145,16 @@ function fillRequiredReferralFieldsExcept(skipTestId: string) {
   markNotYetIdentified();
   for (const field of REQUIRED_REFERRAL_FIELDS) {
     if (field.testId === skipTestId) continue;
-    fireEvent.change(screen.getByTestId(field.testId), { target: { value: field.value } });
+    chooseEdChoice(field.testId, field.value);
   }
-  // Cohort and urgency are filled in from the fixture referral's own facts (age band, urgency), so
-  // those two are cleared to stand for a referral that did not hold them. Every other field is
-  // still left exactly as `DEFAULT_DRAFT` seeds it.
-  if (skipTestId === "ward-ed-referral-cohort" || skipTestId === "ward-ed-referral-urgency") {
-    fireEvent.change(screen.getByTestId(skipTestId), { target: { value: "" } });
+  // Urgency is filled in from the fixture referral's own facts, so it is cleared to stand for a
+  // referral that did not hold one. Every other field is still left exactly as `DEFAULT_DRAFT`
+  // seeds it.
+  if (skipTestId === "ward-ed-referral-urgency") {
+    chooseEdChoice(skipTestId, "");
   }
   if (skipTestId !== "ward-ed-referral-observation") {
-    fireEvent.change(screen.getByTestId("ward-ed-referral-observation"), { target: { value: "general" } });
+    chooseEdChoice("ward-ed-referral-observation", "general");
   }
   if (skipTestId !== "ward-ed-referral-high-acuity-not-required") {
     fireEvent.click(screen.getByTestId("ward-ed-referral-high-acuity-not-required"));
@@ -163,7 +166,7 @@ function fillRequiredReferralFieldsExcept(skipTestId: string) {
 function raiseReferralWithForm(code: string) {
   openRaiseIntoMovementForm();
   fillRequiredReferralFields();
-  fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: code } });
+  chooseEdChoice("ward-ed-referral-legal-form", code);
   fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
 }
 
@@ -239,14 +242,14 @@ describe("emergency department intake picker", () => {
   it("offers every declared form, titled from the official register, and defaults to no form", () => {
     renderEd();
     openRaiseIntoMovementForm();
-    const picker = screen.getByTestId("ward-ed-referral-legal-form") as HTMLSelectElement;
+    // L31: the kit list picker. Defaults to no form: the clinician picks one, the software never
+    // picks one for them, and the field reads "No form" until they do.
+    expect(edChoiceValue("ward-ed-referral-legal-form")).toBe("");
+    expect(screen.getByTestId("ward-ed-referral-legal-form")).toHaveTextContent("No form");
+    const options = edChoiceOptions("ward-ed-referral-legal-form");
 
-    // Defaults to no form: the clinician picks one, the software never picks one for them.
-    expect(picker.value).toBe("");
-    expect(picker.options[0]).toHaveTextContent("No form");
-
-    // One option per declared code, in the declared order, plus the "No form" option.
-    const offered = [...picker.options].slice(1).map((option) => option.value);
+    // One option per declared code, in the declared order.
+    const offered = options.map((option) => option.value);
     expect(offered).toEqual(SELECTABLE_LEGAL_FORMS.map((form) => form.code));
 
     // Non-vacuity: there really are several, so an emptied list could not pass the check above.
@@ -255,11 +258,11 @@ describe("emergency department intake picker", () => {
     // The title shown is the register's, not one Ward Flow holds. Asserted against the literal
     // official string rather than against `formTitleForCode`'s own output, so a change to the
     // register's 3D entry has to be seen and acknowledged here rather than tracked silently.
-    const option3D = [...picker.options].find((option) => option.value === "3D")!;
-    expect(option3D).toHaveTextContent(
+    const option3D = options.find((option) => option.value === "3D")!;
+    expect(option3D.label).toBe(
       "Form 3D (Order authorising reception and detention in an authorised hospital for further examination)",
     );
-    expect(option3D.textContent).toBe(`Form 3D (${formTitleForCode("3D")})`);
+    expect(option3D.label).toBe(`Form 3D (${formTitleForCode("3D")})`);
   });
 
   // Fix round B (review finding I3): `COHORT_OPTIONS` used to be hand-listed as
@@ -271,12 +274,8 @@ describe("emergency department intake picker", () => {
   it("offers every cohort in COHORTS, Youth included", () => {
     renderEd();
     openRaiseIntoMovementForm();
-    const picker = screen.getByTestId("ward-ed-referral-cohort") as HTMLSelectElement;
-    // Index 0 is now the "Choose a cohort" placeholder — nothing is chosen for the clinician —
-    // so the real options start at index 1, the same convention the legal-form picker test above
-    // already uses for its own leading placeholder.
-    expect(picker.options[0]).toHaveTextContent("Choose a cohort");
-    const offered = [...picker.options].slice(1).map((option) => option.value);
+    // L31: a kit segmented control, one answer per cohort.
+    const offered = edChoiceOptions("ward-ed-referral-cohort").map((option) => option.value);
     expect(offered).toEqual(COHORTS);
     expect(offered).toContain("Youth");
   });
@@ -426,17 +425,13 @@ describe("emergency department urgency pickers", () => {
 
     // The test-id itself is part of the fix: this picker had none, so no test could address the
     // one urgency control a clinician uses at referral time.
-    const picker = screen.getByTestId("ward-ed-referral-urgency") as HTMLSelectElement;
-
-    // Index 0 is now "Choose an urgency tier" — nothing is chosen for the clinician — so the
-    // three real tiers start at index 1, checked separately below.
-    expect(picker.options[0]).toHaveTextContent("Choose an urgency tier");
-
-    const optionText = [...picker.options].slice(1).map((option) => option.textContent);
+    // L31: the kit list picker. The fixture referral fills in its urgency, so the field shows it.
+    const options = edChoiceOptions("ward-ed-referral-urgency");
+    const optionText = options.map((option) => option.label);
     expect(optionText).toEqual(URGENCY_LEVELS.map((level) => urgencyTierLabel(level)));
 
     // The VALUE stays the bare tier: the model and every value-reading test are unchanged.
-    const optionValues = [...picker.options].slice(1).map((option) => option.value);
+    const optionValues = options.map((option) => option.value);
     expect(optionValues).toEqual(URGENCY_LEVELS.map((level) => String(level)));
 
     // Non-vacuity: the labels really do carry a direction, so a future `urgencyTierLabel`
@@ -647,19 +642,21 @@ describe("emergency department referral form refuses an unanswered submission", 
    * `DEFAULT_DRAFT` regressed to the old fabricated value, because the explicit clear would erase
    * the evidence.
    */
-  it.each(REQUIRED_REFERRAL_FIELDS.map((field) => field.testId))(
-    "still refuses to submit when only %s is left unanswered",
-    (leftUnanswered) => {
-      renderEd();
-      openRaiseIntoMovementForm();
-      fillRequiredReferralFieldsExcept(leftUnanswered);
+  // L31: Cohort is a kit segmented control filled in from the referral's own age band, which always
+  // names a cohort, so a person can change it but not leave it blank on this form. Its unanswered
+  // rule is still proved where the rule lives (`tests/ward-ed-blocked-reasons.test.ts`).
+  it.each(
+    REQUIRED_REFERRAL_FIELDS.map((field) => field.testId).filter((testId) => testId !== "ward-ed-referral-cohort"),
+  )("still refuses to submit when only %s is left unanswered", (leftUnanswered) => {
+    renderEd();
+    openRaiseIntoMovementForm();
+    fillRequiredReferralFieldsExcept(leftUnanswered);
 
-      fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
+    fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
 
-      expect(screen.getByTestId("probe")).not.toHaveTextContent(FIRST_RAISED_ID);
-      expect(screen.queryByTestId(`ward-ed-patient-${FIRST_RAISED_ID}`)).not.toBeInTheDocument();
-    },
-  );
+    expect(screen.getByTestId("probe")).not.toHaveTextContent(FIRST_RAISED_ID);
+    expect(screen.queryByTestId(`ward-ed-patient-${FIRST_RAISED_ID}`)).not.toBeInTheDocument();
+  });
 
   /**
    * T11 (item 8): the decisive case proving `GENDER_NOT_RECORDED_VALUE` is a real, DELIBERATE
@@ -671,7 +668,7 @@ describe("emergency department referral form refuses an unanswered submission", 
     renderEd();
     openRaiseIntoMovementForm();
     fillRequiredReferralFieldsExcept("ward-ed-referral-gender");
-    fireEvent.change(screen.getByTestId("ward-ed-referral-gender"), { target: { value: "not_recorded" } });
+    chooseEdChoice("ward-ed-referral-gender", "not_recorded");
 
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
 
@@ -689,25 +686,23 @@ describe("emergency department referral form refuses an unanswered submission", 
     // A2-1: raised from an inbox referral with no person on it, the form opens as not yet identified.
     openRaiseIntoMovementForm();
     expect(screen.getByTestId("ward-ed-referral-unidentified")).toBeChecked();
-    fireEvent.change(screen.getByTestId("ward-ed-referral-cohort"), { target: { value: "Older adult" } });
-    fireEvent.change(screen.getByTestId("ward-ed-referral-security"), { target: { value: "Secure" } });
-    fireEvent.change(screen.getByTestId("ward-ed-referral-sex"), { target: { value: "Male" } });
+    chooseEdChoice("ward-ed-referral-cohort", "Older adult");
+    chooseEdChoice("ward-ed-referral-security", "Secure");
+    chooseEdChoice("ward-ed-referral-sex", "Male");
     // T11 (item 8): a seventh required field this fix must also be answered for, or the form
     // blocks and this test's own regression subject — "no field's value bleeds into another's" —
     // could never be reached.
-    fireEvent.change(screen.getByTestId("ward-ed-referral-gender"), { target: { value: "Male" } });
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-status"), {
-      target: { value: "Involuntary inpatient" },
-    });
-    fireEvent.change(screen.getByTestId("ward-ed-referral-urgency"), { target: { value: "1" } });
+    chooseEdChoice("ward-ed-referral-gender", "Male");
+    chooseEdChoice("ward-ed-referral-legal-status", "Involuntary inpatient");
+    chooseEdChoice("ward-ed-referral-urgency", "1");
     // Stated, not assumed — see "one-to-one nursing must be stated" below.
-    fireEvent.change(screen.getByTestId("ward-ed-referral-observation"), { target: { value: "within_sight" } });
+    chooseEdChoice("ward-ed-referral-observation", "within_sight");
     // ⚠️ ANSWERED THE OPPOSITE WAY FROM THE OBSERVATION LEVEL DIRECTLY ABOVE, ON PURPOSE. The two are
     // separate clinical questions and this test's whole subject is that no field's value bleeds
     // into another's; answering both "Required" would make a bleed between exactly this pair
     // invisible, which is the pair most likely to be wired together by mistake.
     fireEvent.click(screen.getByTestId("ward-ed-referral-high-acuity-not-required"));
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "3D" } });
+    chooseEdChoice("ward-ed-referral-legal-form", "3D");
 
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
 
@@ -846,11 +841,11 @@ describe("the observation level must be stated, not assumed", () => {
 
     // No level is pre-chosen: the absence is the point, not a cleared value.
     expect(
-      (screen.getByTestId("ward-ed-referral-observation") as HTMLSelectElement).value,
+      edChoiceValue("ward-ed-referral-observation"),
       "a level arrives pre-chosen, which is the old checkbox defect in a new shape",
     ).toBe("");
 
-    fireEvent.change(screen.getByTestId("ward-ed-referral-observation"), { target: { value: "general" } });
+    chooseEdChoice("ward-ed-referral-observation", "general");
     expect(submit.getAttribute("aria-disabled"), "still blocked after the clinician answered").toBeNull();
   });
 });
@@ -1305,9 +1300,7 @@ describe("P3-2 (Ward Lead audit, 2026-09-17): 'Under a form' counts a legal form
     // Left at the picker's own "No form" default — never touched — while legalStatus is set to a
     // real, non-Voluntary clinical status. Before this fix `!!m.legalStatus` alone counted this as
     // "under a form", which it is not: nobody has recorded one.
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-status"), {
-      target: { value: "Referred for psychiatric examination" },
-    });
+    chooseEdChoice("ward-ed-referral-legal-status", "Referred for psychiatric examination");
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
 
     const [id, formCode] = screen.getByTestId("probe").textContent!.split("|");

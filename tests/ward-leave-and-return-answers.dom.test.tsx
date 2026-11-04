@@ -125,9 +125,11 @@ describe("#177 an involuntary return saves its Form 4C and escort answers", () =
     fireEvent.click(screen.getByTestId(`ward-out-of-area-row-${first.admission.id}`));
     fireEvent.change(screen.getByTestId("ward-out-of-area-repat-home-hospital"), { target: { value: "RPH" } });
     fireEvent.click(within(screen.getByTestId("ward-out-of-area-repat-mode")).getByLabelText("Road"));
-    fireEvent.change(screen.getByTestId("ward-out-of-area-repat-provider"), {
-      target: { value: "Ambulance (St John)" },
-    });
+    fireEvent.click(
+      within(screen.getByTestId("ward-out-of-area-repat-provider")).getByTestId(
+        "ward-officer-contact-Ambulance (St John)",
+      ),
+    );
     fireEvent.change(screen.getByTestId("ward-out-of-area-repat-cad"), { target: { value: "CAD-7788" } });
     fireEvent.click(within(screen.getByTestId("ward-out-of-area-repat-legal")).getByLabelText("Involuntary"));
     fireEvent.change(screen.getByTestId("ward-out-of-area-repat-estimated-time"), { target: { value: "14:30" } });

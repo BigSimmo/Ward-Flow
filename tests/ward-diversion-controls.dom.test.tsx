@@ -22,6 +22,7 @@ vi.mock("../src/components/ward-management/ward-flow-provider", () => ({
   useWardFlow: vi.fn(),
   useWardFlowSelect: vi.fn(),
   useWardFlowClock: () => NOW + 10,
+  useOptionalWardFlowSelect: () => undefined,
 }));
 
 import { useWardFlow, useWardFlowSelect } from "../src/components/ward-management/ward-flow-provider";

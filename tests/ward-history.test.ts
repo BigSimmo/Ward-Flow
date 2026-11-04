@@ -55,7 +55,8 @@ describe("Ward Flow Read-Only Plain History", () => {
       // #816 (27 Oct 2026) adds ARCHIVE_PATIENT.
       // Q61 (31 Oct 2026) adds RECORD_SITE_HANDOVER_SIGN_OFF and UNDO_SITE_HANDOVER_SIGN_OFF.
       // Q149 (1 Nov 2026) adds ADD_BROADCAST_ALERT_UNITS.
-      expect(allEventTypes.length).toBe(171);
+      // OA1 Flag early (Josh, 3 Nov 2026) adds FLAG_RETURN_EARLY and UNDO_FLAG_RETURN_EARLY.
+      expect(allEventTypes.length).toBe(173);
 
       for (const eventType of allEventTypes) {
         const config = EVENT_HISTORY_TABLE[eventType];
