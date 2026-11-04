@@ -65,6 +65,13 @@ therefore retain the complete root unit gate as well as backend/shared proof, wh
 demo UI build and journey groups. Package manifests also select dependency review on PRs.
 Deletions and renames fail closed even when their paths would otherwise qualify for a narrow row.
 
+**Draft fast lane.** While a pull request is a draft, its runs skip the browser build, browser
+groups and release gate (the phone and accessibility checks) whatever the scope says. Everything
+else in the table still runs. `Ward Flow required` always fails on a draft, after confirming the
+quick checks passed, so a draft can never merge on the fast lane. Marking the pull request ready
+(`ready_for_review`) starts a full run, and only that run, or a later push, can pass the check.
+Open pull requests as drafts while iterating and mark them ready when the work is done.
+
 ## Unit selection, coverage and measured costs
 
 The discovery floor applies before the eight-way split. Files are dealt longest first onto the

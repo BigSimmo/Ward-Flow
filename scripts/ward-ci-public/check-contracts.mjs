@@ -56,6 +56,11 @@ function requireWorkflow(source) {
   );
   assert.match(source, /^on:\n {2}pull_request:\n {4}branches: \[main\]$/mu);
   assert.match(source, /^ {2}push:\n {4}branches: \[main\]$/mu);
+  // Marking a draft ready must start the full run (draft fast lane).
+  assert.match(
+    source,
+    /^ {2}pull_request:\n {4}branches: \[main\]\n {4}types: \[opened, synchronize, reopened, ready_for_review\]$/mu,
+  );
   assert.match(source, /^permissions:\n {2}contents: read$/mu);
   assert.match(
     source,
@@ -115,7 +120,7 @@ function requireWorkflow(source) {
     ["release-gate", "browser", false],
   ]) {
     const route = expression(
-      `!cancelled() && needs.plan.outputs.${scope} == 'true'${reusable ? " && needs.reuse.outputs.verified != 'true'" : ""}${job === "browser" ? " && needs.browser-build.result == 'success'" : ""}`,
+      `!cancelled() && needs.plan.outputs.${scope} == 'true'${reusable ? " && needs.reuse.outputs.verified != 'true'" : ""}${scope === "browser" ? " && github.event.pull_request.draft != true" : ""}${job === "browser" ? " && needs.browser-build.result == 'success'" : ""}`,
     );
     assert.ok(jobs.get(job)?.includes(`    if: ${route}\n`), `${job} job scope`);
     assert.match(jobs.get(job), /^ {4}needs: (?:plan|\[[^\n]*\bplan\b[^\n]*\])$/mu);
@@ -519,6 +524,7 @@ function requireWorkflow(source) {
     UNIT_SCOPE: "needs.plan.outputs.unit",
     BROWSER_SCOPE: "needs.plan.outputs.browser",
     BUILD_SCOPE: "needs.plan.outputs.build",
+    DRAFT: "github.event.pull_request.draft == true",
   })) {
     assert.deepEqual(
       verdict.text.split("\n").filter((line) => line.startsWith(`          ${key}:`)),
@@ -537,6 +543,17 @@ function requireWorkflow(source) {
           test "$STATIC_RESULT" = success
           test "$SECRET_SCAN_RESULT" = success
           require_scope "$BACKEND_SCOPE" "$BACKEND_RESULT"
+          if [ "$DRAFT" = true ]; then
+            test "$GITHUB_EVENT_NAME" = pull_request
+            require_scope "$UNIT_SCOPE" "$UNIT_RESULT"
+            require_scope "$UNIT_SCOPE" "$COVERAGE_RESULT"
+            require_scope "$BUILD_SCOPE" "$BUILD_RESULT"
+            test "$BROWSER_BUILD_RESULT" = skipped
+            test "$BROWSER_RESULT" = skipped
+            test "$RELEASE_GATE_RESULT" = skipped
+            echo "::error title=Draft fast lane::Quick checks passed. Browser, phone and accessibility checks run when this pull request is marked ready; only that run can pass this check."
+            exit 1
+          fi
           require_scope "$BROWSER_SCOPE" "$RELEASE_GATE_RESULT"
           if [ "$REUSE_VERIFIED" = true ]; then
             test "$GITHUB_EVENT_NAME" = push
@@ -604,6 +621,7 @@ for (let bits = 0; bits < 16; bits++)
       SECRET_SCAN_RESULT: "success",
       REUSE_RESULT: reuse ? "success" : "skipped",
       REUSE_VERIFIED: String(reuse),
+      DRAFT: "false",
       GITHUB_EVENT_NAME: reuse ? "push" : "pull_request",
       GITHUB_REF: reuse ? "refs/heads/main" : "refs/pull/1/merge",
       BACKEND_SCOPE: String(enabled(0)),
@@ -643,6 +661,22 @@ for (let bits = 0; bits < 16; bits++)
       assert.notEqual(runVerdict({ ...values, [key]: "" }), 0);
       verdictCases++;
     }
+    // A draft never passes, whatever its results: only the run after ready_for_review can merge.
+    if (!reuse)
+      for (const browserResult of ["skipped", "success"]) {
+        assert.notEqual(
+          runVerdict({
+            ...values,
+            DRAFT: "true",
+            BROWSER_RESULT: browserResult,
+            BROWSER_BUILD_RESULT: browserResult,
+            RELEASE_GATE_RESULT: browserResult,
+          }),
+          0,
+          "a draft must not pass Ward Flow required",
+        );
+        verdictCases++;
+      }
     if (reuse)
       for (const [key, value] of [
         ["GITHUB_EVENT_NAME", "pull_request"],
@@ -684,6 +718,16 @@ for (const [before, after] of [
   ],
   ["uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294", "run: echo skipped"],
   ["if: always()", "if: success()"],
+  ['          if [ "$DRAFT" = true ]; then', '          if [ "$DRAFT" = never ]; then'],
+  [
+    "            exit 1\n          fi\n          require_scope",
+    "            true\n          fi\n          require_scope",
+  ],
+  ["    types: [opened, synchronize, reopened, ready_for_review]", "    types: [opened, synchronize, reopened]"],
+  [
+    "needs.reuse.outputs.verified != 'true' && github.event.pull_request.draft != true }}",
+    "needs.reuse.outputs.verified != 'true' }}",
+  ],
   ["shard: [1, 2, 3, 4, 5, 6, 7, 8]", "shard: [1, 2, 3, 4, 5, 6, 7]"],
   ["group: [1, 2, 3]", "group: [1, 2]"],
   [
