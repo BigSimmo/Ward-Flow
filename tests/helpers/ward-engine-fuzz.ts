@@ -1038,7 +1038,14 @@ const inboxEvent =
   };
 
 /** The field an undo record's subject lives in: movement, referral or stay, else the network. */
-function undoSubjectField(state: WardFlowState, subjectId: string): Record<string, string> {
+function undoSubjectField(state: WardFlowState, subjectId: string): Record<string, string | number> {
+  // Tier 1 item 6 (4 Nov 2026): bed, leave, booking and patient subjects carry a prefix.
+  const [prefix, ...rest] = subjectId.split(":");
+  if (prefix === "leave") return { leaveBedId: rest.join(":") };
+  if (prefix === "planned") return { plannedAdmissionId: rest.join(":") };
+  if (prefix === "patient") return { patientId: rest.join(":") };
+  if (prefix === "bed" && rest.length >= 2)
+    return { unitId: rest.slice(0, -1).join(":"), bedNumber: Number(rest.at(-1)) };
   if (state.movements.some((movement) => movement.id === subjectId)) return { movementId: subjectId };
   if (state.referrals.some((referral) => referral.id === subjectId)) return { referralId: subjectId };
   if (state.admissions.some((stay) => stay.id === subjectId)) return { admissionId: subjectId };

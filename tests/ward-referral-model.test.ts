@@ -749,6 +749,10 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // H-0150: takes back marking a bed meeting action done; refuses nobody.
     UNDO_BED_MEETING_ACTION: false,
     UNDO_SITE_HANDOVER_SIGN_OFF: false,
+    // Tier 1 item 6 (4 Nov 2026): Undo of a bed, release or record step; refuses nobody.
+    UNDO_BED_STEP: false,
+    UNDO_RELEASE_STEP: false,
+    UNDO_PATIENT_RECORD: false,
   };
 
   /**

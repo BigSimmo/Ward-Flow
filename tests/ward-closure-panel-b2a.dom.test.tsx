@@ -73,7 +73,7 @@ describe("ward closure panel B2a", () => {
     chooseAndConfirmClose();
     fireEvent.click(screen.getByTestId("ward-closure-reopen"));
     expect(screen.getByRole("dialog", { name: `Reopen ${UNIT.name} to admissions?` })).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep as is" }));
     expect(screen.getByRole("heading", { name: `${UNIT.name} closed to admissions` })).toBeInTheDocument();
   });
 

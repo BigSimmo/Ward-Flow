@@ -45,7 +45,7 @@ export function useConfirmBroadcastStandDown(alert: Subject, onStandDown: (() =>
         title: "Stand down this alert?",
         message: `Stand down "${alert.title}" for ${alert.targetScopeLabel}?`,
         confirmLabel: "Stand down",
-        cancelLabel: "Keep active",
+        cancelLabel: "Keep as is",
       });
       const latest = current.current;
       if (confirmed && lifetimeIsCurrent() && latest?.generation === request.generation) latest.action?.();

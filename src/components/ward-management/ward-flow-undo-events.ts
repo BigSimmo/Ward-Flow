@@ -50,7 +50,10 @@ export type UndoEvent = Extract<
       | "UNDO_TRANSPORT_STEP"
       | "UNDO_DEPARTURE"
       | "UNDO_ABSENT_WITHOUT_LEAVE"
-      | "UNDO_BED_MEETING_ACTION";
+      | "UNDO_BED_MEETING_ACTION"
+      | "UNDO_BED_STEP"
+      | "UNDO_RELEASE_STEP"
+      | "UNDO_PATIENT_RECORD";
   }
 >;
 
@@ -254,7 +257,10 @@ export function reduceUndoEvent(
     case "UNDO_TRANSPORT_STEP":
     case "UNDO_DEPARTURE":
     case "UNDO_ABSENT_WITHOUT_LEAVE":
-    case "UNDO_BED_MEETING_ACTION": {
+    case "UNDO_BED_MEETING_ACTION":
+    case "UNDO_BED_STEP":
+    case "UNDO_RELEASE_STEP":
+    case "UNDO_PATIENT_RECORD": {
       // v10 pass 3: takes back the newest step of this kind on this subject, exactly (`ward-undo.ts`).
       const record = stepUndoFor(state.undoRecords, event.type, undoStepSubjectId(event));
       if (!record) return reject(state, event, UNDO_STEP_NOTHING[event.type]);

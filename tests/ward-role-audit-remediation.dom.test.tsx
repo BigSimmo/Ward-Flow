@@ -72,9 +72,9 @@ describe("community cancellation keeps context until its command is answered", (
     const confirm = within(dialog).getByRole("button", { name: "Confirm cancel" });
     expect(within(dialog).getByRole("button", { name: "Close dialog" })).toBeInTheDocument();
     fireEvent.click(confirm);
-    // While saving the kit Dialog takes its close button away, and Keep booking is disabled.
+    // While saving the kit Dialog takes its close button away, and Keep as is is disabled.
     expect(within(dialog).queryByRole("button", { name: "Close dialog" })).toBeNull();
-    const keep = within(dialog).getByRole("button", { name: "Keep booking" });
+    const keep = within(dialog).getByRole("button", { name: "Keep as is" });
     expect(keep).toBeDisabled();
     expect(confirm).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(keep);

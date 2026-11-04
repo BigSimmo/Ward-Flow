@@ -28,6 +28,9 @@ export function subjectId(event: WardFlowEvent): string {
     case "UNDO_REPATRIATION":
     case "UNDO_DEPARTURE":
     case "UNDO_ABSENT_WITHOUT_LEAVE":
+    case "UNDO_BED_STEP":
+    case "UNDO_RELEASE_STEP":
+    case "UNDO_PATIENT_RECORD":
     case "UNDO_ED_STEP":
     case "UNDO_SUPPORT_NOTIFICATION":
       return undoStepSubjectId(event);

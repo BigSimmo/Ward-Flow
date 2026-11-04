@@ -623,4 +623,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   UNDO_ABSENT_WITHOUT_LEAVE: ["ward", "coordinator"],
   // H-0150: whoever may mark a bed meeting action done may take that back.
   UNDO_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community", "bed_manager"],
+  // Tier 1 item 6 (Josh, 4 Nov 2026): whoever may take each listed step may take it back.
+  UNDO_BED_STEP: ["ward", "bed_manager", "coordinator"],
+  UNDO_RELEASE_STEP: ["coordinator", "ward", "ed", "community", "bed_manager"],
+  UNDO_PATIENT_RECORD: ["community", "coordinator"],
 };

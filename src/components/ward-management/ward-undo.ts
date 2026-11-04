@@ -100,6 +100,16 @@ export const UNDO_STEP_ACTIONS = {
   UNDO_ABSENT_WITHOUT_LEAVE: ["RECORD_ABSENT_WITHOUT_LEAVE"],
   // H-0150 (26 Oct 2026): a bed meeting action marked done by mistake comes back from its toast.
   UNDO_BED_MEETING_ACTION: ["COMPLETE_BED_MEETING_ACTION"],
+  // Tier 1 item 6 (Josh, 4 Nov 2026): Undo by default wherever the engine can restore exactly.
+  UNDO_BED_STEP: ["SET_BED_CLOSED", "END_LEAVE_BED"],
+  UNDO_RELEASE_STEP: [
+    "RELEASE_PULL",
+    "RELEASE_HELD_BED",
+    "CANCEL_TRANSPORT",
+    "WITHDRAW_WARD_REQUEST",
+    "CANCEL_PLANNED_ADMISSION",
+  ],
+  UNDO_PATIENT_RECORD: ["RECORD_COMMUNITY_TREATMENT_ORDER", "END_COMMUNITY_TREATMENT_ORDER", "ARCHIVE_PATIENT"],
 } as const;
 export type UndoStepType = keyof typeof UNDO_STEP_ACTIONS;
 export type UndoableStepAction = (typeof UNDO_STEP_ACTIONS)[UndoStepType][number];
@@ -109,6 +119,14 @@ export const UNDO_STEP_TYPES = Object.keys(UNDO_STEP_ACTIONS) as UndoStepType[];
 export function undoStepTypeFor(action: string): UndoStepType | undefined {
   return UNDO_STEP_TYPES.find((type) => (UNDO_STEP_ACTIONS[type] as readonly string[]).includes(action));
 }
+
+const BED_STEP_TYPES: ReadonlySet<string> = new Set(["SET_BED_CLOSED", "END_LEAVE_BED", "UNDO_BED_STEP"]);
+const PATIENT_RECORD_TYPES: ReadonlySet<string> = new Set([
+  "RECORD_COMMUNITY_TREATMENT_ORDER",
+  "END_COMMUNITY_TREATMENT_ORDER",
+  "ARCHIVE_PATIENT",
+  "UNDO_PATIENT_RECORD",
+]);
 
 /** One subject id from an event's own fields: movement, then referral, then stay; a sign-off's ward; else the network. */
 export function undoStepSubjectId(event: object): string {
@@ -121,7 +139,27 @@ export function undoStepSubjectId(event: object): string {
     type?: unknown;
     unitId?: unknown;
     siteCode?: unknown;
+    leaveBedId?: unknown;
+    bedNumber?: unknown;
+    plannedAdmissionId?: unknown;
+    patientId?: unknown;
   };
+  // Tier 1 item 6 (4 Nov 2026): these steps are filed against the bed, leave record, booking or
+  // patient they change, so each one's Undo takes back only its own subject.
+  const type = typeof fields.type === "string" ? fields.type : "";
+  if (BED_STEP_TYPES.has(type)) {
+    if (typeof fields.leaveBedId === "string" && fields.leaveBedId.length > 0) return `leave:${fields.leaveBedId}`;
+    if (typeof fields.unitId === "string" && typeof fields.bedNumber === "number")
+      return `bed:${fields.unitId}:${fields.bedNumber}`;
+  }
+  if (
+    (type === "CANCEL_PLANNED_ADMISSION" || type === "UNDO_RELEASE_STEP") &&
+    typeof fields.plannedAdmissionId === "string" &&
+    fields.plannedAdmissionId.length > 0
+  )
+    return `planned:${fields.plannedAdmissionId}`;
+  if (PATIENT_RECORD_TYPES.has(type) && typeof fields.patientId === "string" && fields.patientId.length > 0)
+    return `patient:${fields.patientId}`;
   // Q61 (31 Oct 2026): a site handover sign-off is filed against its site, so one site's Undo never
   // takes back another site's sign-off, and never a ward's.
   if (

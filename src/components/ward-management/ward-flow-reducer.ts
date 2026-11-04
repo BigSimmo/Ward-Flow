@@ -1485,6 +1485,9 @@ export const UNDO_STEP_NOTHING: Record<UndoStepType, string> = {
   UNDO_DEPARTURE: "There is no recorded departure on this stay to undo",
   UNDO_ABSENT_WITHOUT_LEAVE: "There is no absence on this stay to undo",
   UNDO_BED_MEETING_ACTION: "There is no bed meeting action marked done here to undo",
+  UNDO_BED_STEP: "There is no bed closed, reopened or returned from leave here to undo",
+  UNDO_RELEASE_STEP: "There is no release or cancellation here to undo",
+  UNDO_PATIENT_RECORD: "There is no order or archive on this record to undo",
 };
 
 /**
@@ -1727,6 +1730,9 @@ export function reduceClinicalEvent(
     case "UNDO_DEPARTURE":
     case "UNDO_ABSENT_WITHOUT_LEAVE":
     case "UNDO_BED_MEETING_ACTION":
+    case "UNDO_BED_STEP":
+    case "UNDO_RELEASE_STEP":
+    case "UNDO_PATIENT_RECORD":
       return reducerSlices().reduceUndoEvent(state, event, decision, UNDO_EVENT_HELPERS);
     case "PLACE_IN_BED":
     case "UPDATE_EXPECTED_DISCHARGE":

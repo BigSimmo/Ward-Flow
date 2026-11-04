@@ -210,7 +210,7 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
           size="sm"
           title={`Close ${unit.name} to admissions?`}
           description={`Reason: ${reason === "" ? "none chosen" : wardClosureReasonLabel(reason)}. ${unit.name} stops being offered for new patients until a person reopens it. Beds already pulled here, and patients already accepted here, stay where they are.`}
-          secondary={[{ label: "Cancel", onAction: () => setConfirming(false) }]}
+          secondary={[{ label: "Keep as is", onAction: () => setConfirming(false) }]}
           primary={{
             label: `Close ${unit.name}`,
             onAction: () => {
@@ -293,7 +293,7 @@ function WardClosureControls({ unit, now, actor }: { unit: Unit; now: Instant; a
         size="sm"
         title={`Reopen ${unit.name} to admissions?`}
         description={`${unit.name} is offered for new patients again straight away.`}
-        secondary={[{ label: "Cancel", onAction: () => setConfirmingReopen(false) }]}
+        secondary={[{ label: "Keep as is", onAction: () => setConfirmingReopen(false) }]}
         primary={{
           label: `Reopen ${unit.name}`,
           onAction: () => {

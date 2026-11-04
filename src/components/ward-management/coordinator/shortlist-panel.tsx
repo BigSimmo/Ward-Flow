@@ -92,6 +92,7 @@ import {
 } from "@/components/ward-management/ward-flow-provider";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { releaseUndoStep } from "./shortlist-release-undo";
 import { sendStepsInOrder } from "@/components/ward-management/coordinator/send-steps-in-order";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
@@ -366,6 +367,7 @@ export function ShortlistPanel({
     routeRole: "coordinator",
     onMessage: setOutcomeMessage,
   });
+  const releaseUndo = (success: string, undone: string) => releaseUndoStep(movementId, success, undone);
   const holdLabel = pullHoldMinutes % 60 === 0 ? `${pullHoldMinutes / 60}h` : splitDuration(pullHoldMinutes);
   /**
    * ⚠️ EVERY WARD, NOT A FILTERED THREE. This was `eligibleCandidatesAmong(…, PARALLEL_REFERRAL_CAP)`,
@@ -875,14 +877,20 @@ export function ShortlistPanel({
   function submitWithdrawWardRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (withdrawUnitId === undefined || withdrawReason === "") return;
-    dispatch({
-      type: "WITHDRAW_WARD_REQUEST",
-      role: "coordinator",
-      now,
-      movementId,
-      unitId: withdrawUnitId,
-      reason: withdrawReason,
-    });
+    runStep(
+      {
+        type: "WITHDRAW_WARD_REQUEST",
+        role: "coordinator",
+        now,
+        movementId,
+        unitId: withdrawUnitId,
+        reason: withdrawReason,
+      },
+      releaseUndo(
+        `Ward request withdrawn for ${patientIdentity.formalName}.`,
+        "Undone. The ward request is open again.",
+      ),
+    );
     setWithdrawUnitId(undefined);
     setWithdrawReason("");
   }
@@ -1100,7 +1108,7 @@ export function ShortlistPanel({
     if (releasePullReason === undefined) return;
     runStep(
       { type: "RELEASE_PULL", role: "coordinator", now, movementId, reason: releasePullReason },
-      { success: `Pulled bed released for ${patientIdentity.formalName}.` },
+      releaseUndo(`Pulled bed released for ${patientIdentity.formalName}.`, "Undone. The bed is pulled again."),
     );
     setReleasePullOpen(false);
   }
@@ -1117,7 +1125,7 @@ export function ShortlistPanel({
     if (cancelTransportReason === undefined) return;
     runStep(
       { type: "CANCEL_TRANSPORT", role: "coordinator", now, movementId, reason: cancelTransportReason },
-      { success: `Transport cancelled for ${patientIdentity.formalName}.` },
+      releaseUndo(`Transport cancelled for ${patientIdentity.formalName}.`, "Undone. The transport is booked again."),
     );
     setCancelTransportOpen(false);
   }

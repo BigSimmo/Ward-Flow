@@ -332,7 +332,7 @@ describe("the redesigned pop-ups (states the sample cannot reach)", () => {
     expect(dialog).toHaveTextContent("Choose why the job is being cancelled.");
     fireEvent.click(confirm);
     expect(view.submitCancelTransport).not.toHaveBeenCalled();
-    fireEvent.click(within(dialog).getByRole("button", { name: "Keep booking" }));
+    fireEvent.click(within(dialog).getByRole("button", { name: "Keep as is" }));
     expect(view.closeTransportCancel).toHaveBeenCalled();
   });
 });
