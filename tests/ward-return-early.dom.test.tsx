@@ -13,7 +13,7 @@ vi.mock("next/link", () => ({
 }));
 
 import { OutOfAreaBoard } from "@/components/ward-management/out-of-area/out-of-area-board";
-import { ReturnEarlyAlerts } from "@/components/ward-management/out-of-area/return-early-alerts";
+import { ReturnEarlyAlerts } from "@/components/ward-management/out-of-area/return-early-alerts-card";
 import type { ReturnEarlyDesk } from "@/components/ward-management/out-of-area/return-early";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
