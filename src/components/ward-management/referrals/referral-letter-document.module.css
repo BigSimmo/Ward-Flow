@@ -59,7 +59,7 @@
 .toConfirm {
   margin: 0;
   padding: var(--wf-s-2) var(--wf-s-3);
-  border-left: 3px solid var(--wf-warning);
+  border: 1px solid color-mix(in srgb, var(--wf-warning) 40%, #fff);
   border-radius: var(--wf-r-sm);
   background: color-mix(in srgb, var(--wf-warning) 10%, #fff);
   color: var(--letter-ink);
@@ -224,7 +224,6 @@
 
   .toConfirm {
     border: 1px solid var(--letter-ink);
-    border-left-width: 3px;
     border-radius: 0;
   }
 
