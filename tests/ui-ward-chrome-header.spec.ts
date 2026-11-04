@@ -902,7 +902,8 @@ test("@mockup compact Referrals opens from Tools and retains a draft across sect
   // The typed reason makes this an unsent draft, so Escape asks before discarding it (8 Oct 2026)
   // rather than closing straight away. Discard then closes the slide-out.
   await page.keyboard.press("Escape");
-  const guard = page.getByRole("alertdialog", { name: "Close without sending?" });
+  // RF6 (3 Nov 2026): the close pop-up asks one question.
+  const guard = page.getByRole("alertdialog", { name: "Keep this referral as a draft?" });
   await expect(guard).toBeVisible();
   await expect(referral).toBeVisible();
   await guard.getByRole("button", { name: "Discard", exact: true }).click();

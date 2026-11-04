@@ -4,7 +4,7 @@ import { ChevronDown, Eye, ListChecks, Lock, Send } from "lucide-react";
 import Link from "next/link";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import styles from "./ward-referral-drawer.module.css";
-import { discardReferralDraft, referralDraftAgeText } from "./referral-draft-store";
+import { referralDraftAgeText } from "./referral-draft-store";
 import { DisabledReason, StatusGlyph } from "@/components/wf";
 import { sectionLabel } from "./ward-referral-drawer-model";
 import { drawerRailHeading } from "./referral-drawer-foot-status";
@@ -44,8 +44,6 @@ export function ReferralSummaryRail({
 }) {
   const {
     onClose,
-    onRestart,
-    kept,
     bodyRef,
     sectionId,
     previewOpen,
@@ -55,7 +53,6 @@ export function ReferralSummaryRail({
     sentReferralId,
     draftKeptAt,
     draftNowMs,
-    stopDraftAutosave,
     itemsTotal,
     itemsLeft,
     itemsReady,
@@ -90,19 +87,6 @@ export function ReferralSummaryRail({
           <section className={styles.railCard}>
             <div className={styles.railHead}>
               <h3 className={styles.cardTitle}>{drawerRailHeading(itemsLeft)}</h3>
-              {kept || draftKeptAt !== null ? (
-                <button
-                  type="button"
-                  className={`${styles.btn} ${styles.btnGhost}`}
-                  onClick={() => {
-                    stopDraftAutosave();
-                    discardReferralDraft();
-                    onRestart();
-                  }}
-                >
-                  Discard draft
-                </button>
-              ) : null}
             </div>
             {draftKeptAt !== null ? (
               <p className={styles.draftStatus} data-testid="ward-referral-draft-status">
@@ -122,18 +106,40 @@ export function ReferralSummaryRail({
             </span>
             {/* A long value (a full ED name) wraps rather than ending in "…". */}
             <dl className={`${styles.railRows} ${styles.railWrap}`}>
-              {readyRows.map((row) => (
-                <div key={row.label} data-state={row.state}>
-                  <dt>
-                    <StatusGlyph
-                      tone={row.state === "done" ? "success" : row.state === "follow" ? "warning" : "neutral"}
-                      size={9}
-                    />
-                    {row.label}
-                  </dt>
-                  <dd>{row.value}</dd>
-                </div>
-              ))}
+              {readyRows.map((row) => {
+                // RF1 (Current Issues, 3 Nov 2026): a row still to answer is a shortcut to its step.
+                const step = railRowStep(row.label, destType);
+                const glyph = (
+                  <StatusGlyph
+                    tone={row.state === "done" ? "success" : row.state === "follow" ? "warning" : "neutral"}
+                    size={9}
+                  />
+                );
+                return (
+                  <div key={row.label} data-state={row.state}>
+                    <dt>
+                      {row.state !== "done" && step ? (
+                        <button
+                          type="button"
+                          className={styles.railJump}
+                          // Named for where it goes, so it never shares a name with the step buttons.
+                          aria-label={`Go to ${row.label}`}
+                          onClick={() => (s.isPhone ? s.phOpenStep(step) : s.selectSection(step))}
+                        >
+                          {glyph}
+                          {row.label}
+                        </button>
+                      ) : (
+                        <>
+                          {glyph}
+                          {row.label}
+                        </>
+                      )}
+                    </dt>
+                    <dd>{row.value}</dd>
+                  </div>
+                );
+              })}
             </dl>
           </section>
           {/* Urgency is already a Before you send row, and "Already open: None" was an empty cell, so
@@ -157,8 +163,7 @@ export function ReferralSummaryRail({
               {alreadyOpen ? (
                 <div>
                   <p className={styles.eyebrow}>Already open</p>
-                  <strong>Yes</strong>
-                  <small title="Check before sending">Check before sending</small>
+                  <small>{alreadyOpen}</small>
                 </div>
               ) : null}
             </section>
@@ -181,6 +186,18 @@ export function ReferralSummaryRail({
       )}
     </aside>
   );
+}
+
+/** The step a Before you send row is answered on, so the row can take the referrer there. */
+function railRowStep(
+  label: string,
+  destType: WardReferralDrawerState["destType"],
+): "patient" | "referral" | "documentation" | "placement" | null {
+  if (label === "Patient" || label === "Catchment") return "patient";
+  if (label === "From" || label === "Legal status" || label === "Urgency") return "referral";
+  if (label === "Clearance" || label === "Documents") return destType === "community" ? "referral" : "documentation";
+  if (label === "Wards" || label === "EDs" || label === "Team") return "placement";
+  return null;
 }
 
 /** The foot: the status line and the step, send, draft and close actions for phone and desktop. */
@@ -480,27 +497,34 @@ export function ReferralCloseGuard({ s }: { s: WardReferralDrawerState }) {
         aria-describedby={`${sectionId}-guard-text`}
         data-testid="ward-referral-close-guard"
       >
-        <h3 className={styles.cardTitle} id={`${sectionId}-guard-title`}>
-          Close without sending?
+        {/* RF6 (Current Issues, 3 Nov 2026): one clear question, who it is for, and the three choices
+            with Discard set apart. Keep editing keeps the focus (design system, leaving unsaved work). */}
+        <h3 className={styles.guardTitle} id={`${sectionId}-guard-title`}>
+          Keep this referral as a draft?
         </h3>
+        {patientRecord ? (
+          <p className={styles.guardWho}>
+            <strong>{currentPatient.name}</strong>
+            <small>Not sent</small>
+          </p>
+        ) : null}
         <p className={styles.bodyMeta} id={`${sectionId}-guard-text`}>
-          {patientRecord ? `The referral for ${currentPatient.name} is not sent. ` : "This referral is not sent. "}A
-          kept draft stays until this tab reloads.
+          {patientRecord ? "" : "This referral is not sent. "}A kept draft reopens here the next time you start a
+          referral in this tab.
         </p>
         <div className={styles.guardActions}>
-          <button type="button" className={`${styles.btn} ${styles.btnDanger}`} onClick={discardAndClose}>
-            Discard
-          </button>
-          <button type="button" className={styles.btn} onClick={keepAndClose}>
-            Keep draft
-          </button>
           <button
             type="button"
-            ref={guardKeepRef}
-            className={styles.btnSendReferral}
-            onClick={() => setGuardOpen(false)}
+            className={`${styles.btn} ${styles.btnDanger} ${styles.guardDiscard}`}
+            onClick={discardAndClose}
           >
+            Discard
+          </button>
+          <button type="button" ref={guardKeepRef} className={styles.btn} onClick={() => setGuardOpen(false)}>
             Keep editing
+          </button>
+          <button type="button" className={styles.btnSendReferral} onClick={keepAndClose}>
+            Keep draft and close
           </button>
         </div>
       </div>

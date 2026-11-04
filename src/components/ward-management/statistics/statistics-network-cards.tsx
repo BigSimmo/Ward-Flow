@@ -27,6 +27,7 @@ import {
 } from "./statistics-small-numbers";
 import type { Instant } from "../ward-clock";
 import type { ExecutiveReportingFoundation } from "./executive-statistics-contract";
+import { useViewSwitchAction } from "./statistics-view-switch-slot";
 import styles from "./statistics-v6.module.css";
 import {
   BedStack,
@@ -190,6 +191,8 @@ export function ServiceOccupancyCard({
   preparingCount?: number;
 }) {
   const canOpen = useCanOpenHref();
+  // The Network board's first card: Bed board, Journey and Map in its head (owner polish, 3 Nov 2026).
+  const viewSwitch = useViewSwitchAction();
   const body = (entry: NetworkServiceRow) => (
     <>
       <span className={styles.serviceTop}>
@@ -240,9 +243,12 @@ export function ServiceOccupancyCard({
         title="Occupancy by health service"
         meta={`${beds} beds`}
         aside={
-          <span className={redesign.facts} aria-hidden="true">
-            In use, pulled, closed and ready
-          </span>
+          <>
+            <span className={redesign.facts} aria-hidden="true">
+              In use, pulled, closed and ready
+            </span>
+            {viewSwitch}
+          </>
         }
         foot={
           <Foot
@@ -316,6 +322,7 @@ export function ServiceOccupancyCard({
       title="Occupancy by health service"
       // "85% line" named nothing; each tile already says how many wards are at or over it.
       aside={<span className={styles.muted}>Select one to highlight its wards</span>}
+      action={viewSwitch}
     >
       <div className={styles.serviceGrid} data-testid="ward-statistics-overview-gauges">
         {services.map((entry) => {

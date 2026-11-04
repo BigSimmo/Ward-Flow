@@ -545,8 +545,7 @@ export function useWardReferralDrawerState({
     }
   }, [isSearchOpen, requestClose]);
 
-  // The enclosing Sheet owns focus when embedded. Register another modal only
-  // when this drawer supplies its own backdrop.
+  // The enclosing Sheet owns focus when embedded. Register a modal only when this drawer has its own backdrop.
   useWardModalFocus(withBackdrop, drawerRef, handleDrawerClose);
 
   // A2-3: a sheet opened on nobody puts the cursor in the patient search.
@@ -686,26 +685,25 @@ export function useWardReferralDrawerState({
     return [...matches, ...more];
   }, [searchQuery, sampleProfiles, movements, patients, referrals, dayZero, now]);
 
-  const { newPatientError, setNewPatientError, pendingNewPatient, newPatientPending, addNewPatient } =
-    useReferralPatientRegistration({
-      patients,
-      generation: worldGeneration,
-      dispatch,
-      now,
-      dayZero,
-      role: sendingWard ? "ward" : sourceKind === "ed" ? "ed" : "community",
-      registrationScope: patientRegistrationScope(access.scope, sendingWard?.id),
-      requiresRegistrationScope: access.scope.kind === "ward",
-      allowed: addPatientGate.allowed,
-      reason: addPatientGate.reason,
-      patient: newPatient,
-      onSelect: (id) => handleSelectPatient(`${PATIENT_KEY_PREFIX}${id}`, true),
-      intentVersion: registrationDraft.intentVersion,
-      getIntentVersion: registrationDraft.getIntentVersion,
-    });
+  const registration = useReferralPatientRegistration({
+    patients,
+    generation: worldGeneration,
+    dispatch,
+    now,
+    dayZero,
+    role: sendingWard ? "ward" : sourceKind === "ed" ? "ed" : "community",
+    registrationScope: patientRegistrationScope(access.scope, sendingWard?.id),
+    requiresRegistrationScope: access.scope.kind === "ward",
+    allowed: addPatientGate.allowed,
+    reason: addPatientGate.reason,
+    patient: newPatient,
+    onSelect: (id) => handleSelectPatient(`${PATIENT_KEY_PREFIX}${id}`, true),
+    intentVersion: registrationDraft.intentVersion,
+    getIntentVersion: registrationDraft.getIntentVersion,
+  });
+  const { newPatientError, setNewPatientError, pendingNewPatient, newPatientPending, addNewPatient } = registration;
 
-  // Live capacity for the patient's cohort and the chosen bed security.
-  // Cheap enough to work out on each render, and the cohort can come from the record or the age band.
+  // Live capacity for the patient's cohort (from the record or age band) and chosen bed security.
   const realTimeMatch = (() => {
     const patientCohort = movementCohort ?? ageBand;
     // A ward never refers to itself (Qodo's review), so the sending ward is not offered.
@@ -1087,7 +1085,13 @@ export function useWardReferralDrawerState({
     },
     {
       label: "Catchment",
-      value: catchmentNotKnown ? "Catchment not known" : catchmentConfirmed ? catchmentTeam : "To confirm",
+      value: catchmentNotKnown
+        ? "Catchment not known"
+        : catchmentConfirmed
+          ? catchmentTeam
+          : catchmentTeam.trim()
+            ? `${catchmentTeam.trim()}, suggested`
+            : "To confirm",
       state: catchmentAnswered ? "done" : "needed",
     },
     { label: "From", value: originLabel || "Needed", state: originValid ? "done" : "needed" },

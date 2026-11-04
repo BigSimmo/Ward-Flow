@@ -24,6 +24,7 @@ import { LONG_WAIT_HOURS, edJourneyWaitFigures as edWaitFigures } from "./statis
 import { StatCard, useStatisticsLive } from "./statistics-hero";
 import { FlushRow, Follow } from "./statistics-layout";
 import styles from "./statistics-journey-view.module.css";
+import { useViewSwitchAction } from "./statistics-view-switch-slot";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
 import type { ExecutiveReportingFoundation, ReleasedCount } from "./executive-statistics-contract";
 import {
@@ -491,6 +492,7 @@ function JourneyPresentation({
   totalPreparing: number;
 }) {
   const [selected, setSelected] = useState<JourneyStageId | null>(null);
+  const viewSwitch = useViewSwitchAction();
 
   function select(id: JourneyStageId) {
     const next = selected === id ? null : id;
@@ -505,6 +507,7 @@ function JourneyPresentation({
         icon={Route}
         title="Where people are now"
         aside={<span className={styles.aside}>Choose a stage to see its breakdown</span>}
+        action={viewSwitch}
         data-testid="ward-statistics-journey-ribbon"
       >
         <CardBody className={styles.ribbonBody}>

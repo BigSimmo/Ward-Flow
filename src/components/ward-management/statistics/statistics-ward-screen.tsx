@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
   BedDouble,
@@ -47,12 +47,13 @@ import {
   statisticsSectionById,
   STATISTICS_COMPARE_HREF,
   STATISTICS_WARDS_HREF,
+  WARD_STAY_CARD_ID as STAY_CARD_ID,
 } from "@/components/ward-management/statistics/statistics-sections";
 // D-91: the one unit finder, on the Summary page. It still lives with the Statistics mock-up until
 // that page is built; repoint this import then.
 import { STATISTICS_UNIT_FINDER_HREF } from "./statistics-view-switch";
 import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
-import { STAY_BANDS, stayBand, type Admission } from "@/components/ward-management/ward-admissions";
+import { STAY_BANDS, daysInBed, stayBand, type Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { MINUTES_PER_DAY, dayOf, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { SMALL_NUMBER_NOT_SHOWN } from "@/components/ward-management/ward-access-scope";
@@ -178,6 +179,15 @@ function ExecutiveWardScreen({ unitId }: { unitId: string }) {
     togglePause: control.togglePause,
     countsOnly: true,
   };
+  const stay = (onPhone: boolean) => (
+    <StayCard
+      bands={item.stayBands.map((band) => ({ band: { id: band.id, label: band.label }, count: band.count }))}
+      unrecorded={item.unrecordedStay}
+      averageStay={item.statistics.averageLengthOfStayDays}
+      longStays={item.statistics.longStays}
+      onPhone={onPhone}
+    />
+  );
   return (
     <WardDetailView
       model={model}
@@ -189,6 +199,7 @@ function ExecutiveWardScreen({ unitId }: { unitId: string }) {
               <StatisticsBedMapLegend counts={aggregate.counts} />
             </div>
             <PeopleNotListed testId="ward-statistics-ward-phone-not-listed" />
+            {stay(true)}
           </PhoneBody>
         ),
         bedMap: (
@@ -197,14 +208,7 @@ function ExecutiveWardScreen({ unitId }: { unitId: string }) {
             <StatisticsBedMap aggregate={aggregate} wardName={item.name} />
           </>
         ),
-        stay: (
-          <StayCard
-            bands={item.stayBands.map((band) => ({ band: { id: band.id, label: band.label }, count: band.count }))}
-            unrecorded={item.unrecordedStay}
-            averageStay={item.statistics.averageLengthOfStayDays}
-            longStays={item.statistics.longStays}
-          />
-        ),
+        stay: stay(false),
         roster: <PeopleNotListed testId="ward-statistics-ward-roster-not-listed" />,
       }}
     />
@@ -357,6 +361,22 @@ function OperationalWardScreen({
     );
   }
 
+  const stay = (onPhone: boolean) => (
+    <StayCard
+      bands={STAY_BANDS.map((band) => ({
+        band,
+        count: current.filter((admission) => stayBand(admission, now)?.id === band.id).length,
+      }))}
+      unrecorded={current.filter((admission) => stayBand(admission, now) === null).length}
+      averageStay={statistics.averageLengthOfStayDays}
+      longStays={statistics.longStays}
+      inBedDays={current.flatMap((admission) => {
+        const days = daysInBed(admission, now);
+        return days === null ? [] : [days];
+      })}
+      onPhone={onPhone}
+    />
+  );
   return (
     <WardDetailView
       model={{
@@ -386,22 +406,20 @@ function OperationalWardScreen({
       }}
       slots={{
         phone: (
-          <WardPhone unit={unit} map={bedMap} current={current} now={now} dayZero={dayZero} leaveBeds={leaveBeds} />
+          <WardPhone
+            unit={unit}
+            map={bedMap}
+            current={current}
+            now={now}
+            dayZero={dayZero}
+            leaveBeds={leaveBeds}
+            stay={stay(true)}
+          />
         ),
         // Final round (31 Oct 2026): the compact map carries its own legend, with the swatches of
         // its state fills (statistics-unit-bed-map.tsx), so the app's legend is not drawn above it.
         bedMap: <CompactBedMap map={bedMap} wardName={unit.name} />,
-        stay: (
-          <StayCard
-            bands={STAY_BANDS.map((band) => ({
-              band,
-              count: current.filter((admission) => stayBand(admission, now)?.id === band.id).length,
-            }))}
-            unrecorded={current.filter((admission) => stayBand(admission, now) === null).length}
-            averageStay={statistics.averageLengthOfStayDays}
-            longStays={statistics.longStays}
-          />
-        ),
+        stay: stay(false),
         roster: <Roster unit={unit} current={current} now={now} dayZero={dayZero} leaveBeds={leaveBeds} />,
       }}
     />
@@ -746,51 +764,120 @@ function said(shown: number | string, one?: string, many?: string): string {
   return many ? `${shown} ${shown === 1 ? one : many}` : String(shown);
 }
 
+/** The ward page's day buckets for people in beds now (its "This shift, Stay" chart). */
+const STAY_DAY_BUCKETS = [
+  { id: "0", label: "0 to 3 days", min: 0, max: 3 },
+  { id: "4", label: "4 to 7 days", min: 4, max: 7 },
+  { id: "8", label: "8 to 14 days", min: 8, max: 14 },
+  { id: "15", label: "15 to 28 days", min: 15, max: 28 },
+  { id: "29", label: "29 days or more", min: 29, max: Number.POSITIVE_INFINITY },
+] as const;
+
+/** The middle stay in whole days, as the ward page worked it out (the two middle ones averaged). */
+function medianDays(days: readonly number[]): number | null {
+  const sorted = [...days].sort((left, right) => left - right);
+  if (sorted.length === 0) return null;
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 1 ? sorted[middle]! : Math.round((sorted[middle - 1]! + sorted[middle]!) / 2);
+}
+
+const dayWord = (days: number) => (days === 1 ? "day" : "days");
+
+/**
+ * The ward page's "This shift, Stay" chart (people in beds by days, with the median) moves here
+ * (owner polish, 3 Nov 2026), so this one card says it all: how many are in beds now and their
+ * median stay, the four stay bands and, where each person's days are known, the day buckets. The
+ * average over every stay the ward has had is a different group, so it sits in the Data view, never
+ * beside the median. The ward page links to it at `${wardStatisticsHref(unitId)}#${WARD_STAY_CARD_ID}`
+ * ("#ward-stay"), on a phone too.
+ */
 function StayCard({
   bands,
   unrecorded,
   averageStay,
   longStays,
+  inBedDays,
+  onPhone = false,
 }: {
   bands: { band: { id: string; label: string }; count: StatisticsCount }[];
   unrecorded: StatisticsCount;
   averageStay: number | null;
   longStays: StatisticsCount;
+  /** Each person in a bed now, their whole days so far. Left out where only counts are released. */
+  inBedDays?: readonly number[];
+  /** The phone layout: the view switch takes the card's width at 40px. */
+  onPhone?: boolean;
 }) {
-  const [view, setView] = useState<"chart" | "data">("chart");
+  const [view, setView] = useState<"bands" | "days" | "data">("bands");
   // The bands and the unrecorded add up to the ward's admissions, so they are hidden together.
   const parts = (counts: StatisticsCount[]) => counts.map((count) => statisticsCountText(count));
   const shown = parts([...bands.map((entry) => entry.count), unrecorded]);
   const shownOf = (index: number) => shown[index] ?? statisticsCountText(bands[index]?.count ?? unrecorded);
   const longShown = statisticsCountText(longStays);
+  // In beds now: each person's days where known, else the bands' own total when every band is exact.
+  const bandTotal = bands.every((entry) => exact(entry.count) !== null)
+    ? bands.reduce((sum, entry) => sum + (exact(entry.count) ?? 0), 0)
+    : null;
+  const inBeds = inBedDays ? inBedDays.length : bandTotal;
+  const median = inBedDays ? medianDays(inBedDays) : null;
+  const dayRows =
+    inBedDays && inBedDays.length > 0
+      ? STAY_DAY_BUCKETS.map((bucket) => ({
+          id: bucket.id,
+          label: bucket.label,
+          value: inBedDays.filter((days) => days >= bucket.min && days <= bucket.max).length,
+        }))
+      : null;
+  const choice = view === "days" && !dayRows ? "bands" : view;
+  useEffect(() => {
+    // Arriving from the ward page's link: the page fills in after hydration, so the browser's own
+    // jump to the anchor can land short. Bring the card in once its frame has settled.
+    if (window.location.hash !== `#${STAY_CARD_ID}`) return;
+    const frame = window.requestAnimationFrame(() =>
+      document.getElementById(STAY_CARD_ID)?.scrollIntoView?.({ block: "start" }),
+    );
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
   return (
     <StatCard
       icon={Clock}
       title="Length of stay"
+      meta={inBeds === null ? undefined : <span data-testid="ward-stat-stay-in-beds">{`${inBeds} in beds now`}</span>}
       action={
         <Segmented
           label="Length of stay view"
-          value={view}
+          className={onPhone ? ward.phoneStaySeg : undefined}
+          value={choice}
           onChange={setView}
           items={[
-            { id: "chart", label: "Chart" },
-            { id: "data", label: "Data" },
+            { id: "bands" as const, label: "Bands" },
+            ...(dayRows ? [{ id: "days" as const, label: "Days" }] : []),
+            { id: "data" as const, label: "Data" },
           ]}
         />
       }
-      id="ward-stay"
+      id={STAY_CARD_ID}
       data-testid="statistics-ward-stays-chart"
     >
       <CardBody className={styles.bodyStack}>
-        {averageStay === null ? null : (
+        {median === null ? null : (
           <p className={ward.headFigure}>
-            Average{" "}
-            <b data-testid="ward-stat-length-of-stay">
-              {averageStay} {averageStay === 1 ? "day" : "days"}
+            Median{" "}
+            <b data-testid="ward-stat-stay-median">
+              {median} {dayWord(median)}
             </b>
+            , people in beds now
           </p>
         )}
-        {view === "chart" ? (
+        {choice === "days" && dayRows ? (
+          <BarList
+            label="People in beds now by days so far"
+            axis
+            max={countAxisMax(dayRows.map((row) => row.value))}
+            labelWidth="9rem"
+            rows={dayRows.map((row) => ({ ...row, display: String(row.value) }))}
+          />
+        ) : choice === "bands" ? (
           <BarList
             label="Current admissions by stay band"
             axis
@@ -833,6 +920,14 @@ function StayCard({
             </table>
           </div>
         )}
+        {choice === "data" && averageStay !== null ? (
+          <p className={ward.note}>
+            All stays on this ward, including people who have left: average{" "}
+            <b data-testid="ward-stat-length-of-stay">
+              {averageStay} {dayWord(averageStay)}
+            </b>
+          </p>
+        ) : null}
         <p className={styles.srOnly} data-testid="ward-stat-long-stays">
           {exact(longStays) === 0 ? (
             <>None. No admission on this ward has passed three months.</>

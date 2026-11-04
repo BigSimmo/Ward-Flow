@@ -5,7 +5,17 @@ import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 
-import { BarList, Card, CardBody, ColumnChart, HeroChip, HeroChips, Spinner, useIsPhone } from "@/components/wf";
+import {
+  BarList,
+  Card,
+  CardBody,
+  CardHead,
+  ColumnChart,
+  HeroChip,
+  HeroChips,
+  Spinner,
+  useIsPhone,
+} from "@/components/wf";
 import {
   blockedDischargesByReason,
   bedsBeingPrepared,
@@ -52,6 +62,7 @@ import {
 } from "./redesign/statistics-redesign-parts";
 import { useStatisticsView } from "./statistics-view-bar";
 import { FindUnitTool, PhoneUnitFinder, StatisticsViewSwitch, useUnitFinder } from "./statistics-view-switch";
+import { LeadsViewSwitch, useViewSwitchAction } from "./statistics-view-switch-slot";
 import { StatisticsEdJourneysCard } from "./statistics-ed-journeys-card";
 import { StatisticsReferralsTodayCard } from "./statistics-referrals-today-card";
 import { StatisticsWardsCard, useWardTable } from "./statistics-wards-card";
@@ -60,8 +71,11 @@ import { median, shortSiteName, wardFinderEntry, type EdSortKey } from "./statis
 import { ReasonCounts, SmallNumberNote, noCountReleased } from "./statistics-count-list";
 
 function StatisticsViewLoading({ view }: { view: "journey" | "map" }) {
+  // The loading card stands first in its view, so it carries the view switch until the view arrives.
+  const viewSwitch = useViewSwitchAction();
   return (
     <Card id={view} data-testid={`ward-statistics-${view}-loading`}>
+      {viewSwitch ? <CardHead title={view === "journey" ? "Journey" : "Map"} action={viewSwitch} /> : null}
       <CardBody className={styles.viewLoading}>
         <Spinner />
         <p role="status">Loading {view} view…</p>
@@ -1022,58 +1036,63 @@ function StatisticsSummaryView({
           // opens only its own site's wards, which its wards table below already lists.
           finder={siteName ? undefined : <StatisticsUnitFinder lists={finderLists} />}
           finderOpen={unitFinder.open}
-        />
+        >
+          {/* Each view's anchor exists whichever view shows, so its link always has a target. Each
+              view's first card carries the switch in its head (LeadsViewSwitch). */}
+          {view === "board" ? null : <div id="board" hidden />}
+          {view === "journey" ? (
+            <LeadsViewSwitch>{slots.journey(() => chooseView("board"))}</LeadsViewSwitch>
+          ) : (
+            <div id="journey" hidden />
+          )}
+          {view === "map" ? <LeadsViewSwitch>{slots.map}</LeadsViewSwitch> : <div id="map" hidden />}
+          {view !== "board" ? null : (
+            // The Network board as the redesign draws it (approved 1 Nov 2026, Q135): occupancy across
+            // the top, then where the pressure is, today's referrals and flow, where the time goes, and
+            // what else is recorded. Every figure is the one the board has always shown.
+            <div id="board" className={styles.stack}>
+              {/* Bed manager: its own site's wards and ED lead the board (D-80); the cards below keep
+                  every site as bed counts. */}
+              {siteName ? <LeadsViewSwitch>{siteDetail}</LeadsViewSwitch> : null}
+              {siteName ? slots.occupancy : <LeadsViewSwitch>{slots.occupancy}</LeadsViewSwitch>}
+              {/* Coordinator: the wards and EDs after the occupancy strip. */}
+              {siteName ? null : siteDetail}
 
-        {/* Each view's anchor exists whichever view shows, so its link always has a target. */}
-        {view === "board" ? null : <div id="board" hidden />}
-        {view === "journey" ? slots.journey(() => chooseView("board")) : <div id="journey" hidden />}
-        {view === "map" ? slots.map : <div id="map" hidden />}
-        {view !== "board" ? null : (
-          // The Network board as the redesign draws it (approved 1 Nov 2026, Q135): occupancy across
-          // the top, then where the pressure is, today's referrals and flow, where the time goes, and
-          // what else is recorded. Every figure is the one the board has always shown.
-          <div id="board" className={styles.stack}>
-            {/* Bed manager: its own site's wards and ED lead the board (D-80); the cards below keep
-                every site as bed counts. */}
-            {siteName ? siteDetail : null}
-            {slots.occupancy}
-            {/* Coordinator: the wards and EDs after the occupancy strip. */}
-            {siteName ? null : siteDetail}
-
-            <Grid layout="thirds">
-              {referralsToday}
-              {slots.flow}
-            </Grid>
-
-            {slots.waitingStages ? (
-              <Grid layout="wide">
-                {slots.waitingStages}
-                {declinesCard}
+              <Grid layout="thirds">
+                {referralsToday}
+                {slots.flow}
               </Grid>
-            ) : null}
 
-            <Grid>
-              {slots.waitingStages ? null : declinesCard}
-              {heldUpCard}
-              {slots.questions}
-            </Grid>
+              {slots.waitingStages ? (
+                <Grid layout="wide">
+                  {slots.waitingStages}
+                  {declinesCard}
+                </Grid>
+              ) : null}
 
-            <StatCardR id="also-recorded" title="Also recorded">
-              <Strip label="Also recorded" cols={slots.forecastTiles ? 4 : 2}>
-                {pullToArrivalTile}
-                {slots.forecastTiles}
-                <StatisticsSessionTrendsCard now={now} eventLog={eventLog} hours={4} showTotal={false} tile />
-              </Strip>
-            </StatCardR>
+              <Grid>
+                {slots.waitingStages ? null : declinesCard}
+                {heldUpCard}
+                {slots.questions}
+              </Grid>
 
-            {/* Bed manager: no Where beds are available (hospital-by-hospital beds are for placing). */}
-            {siteName ? null : (
-              <div id="beds" data-testid="ward-statistics-patients">
-                {slots.capacity}
-              </div>
-            )}
-          </div>
-        )}
+              <StatCardR id="also-recorded" title="Also recorded">
+                <Strip label="Also recorded" cols={slots.forecastTiles ? 4 : 2}>
+                  {pullToArrivalTile}
+                  {slots.forecastTiles}
+                  <StatisticsSessionTrendsCard now={now} eventLog={eventLog} hours={4} showTotal={false} tile />
+                </Strip>
+              </StatCardR>
+
+              {/* Bed manager: no Where beds are available (hospital-by-hospital beds are for placing). */}
+              {siteName ? null : (
+                <div id="beds" data-testid="ward-statistics-patients">
+                  {slots.capacity}
+                </div>
+              )}
+            </div>
+          )}
+        </StatisticsViewSwitch>
 
         <WardPrototypeFooter testId="ward-statistics-footer" note="Synthetic prototype. Every figure is invented." />
       </main>

@@ -77,10 +77,10 @@
   width: 52px;
 }
 .handoverTable[data-columns="handover"] col[data-col="Presentation"] {
-  width: 148px;
+  width: 124px;
 }
 .handoverTable[data-columns="handover"] col[data-col="Form"] {
-  width: 108px;
+  width: 132px;
 }
 .handoverTable[data-columns="handover"] col[data-col="Checks"] {
   width: 136px;
@@ -152,12 +152,55 @@
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 .checks {
+  display: block;
+}
+/* The Checks pop-over: each check on one line with its glyph, the record button at the foot. */
+.checksPanel {
+  min-width: 15rem;
+}
+.checksBody {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--wf-s-2);
 }
-.checks > span {
-  font-size: var(--wf-fs-13);
+.checksTitle {
+  margin: 0;
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-3);
+}
+.checksList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.checksList > li {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+}
+.checksList > li > span {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.checksList b {
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+.checksList li[data-level="warning"] b {
+  color: var(--wf-warning-ink);
+}
+.checksList b + span,
+.checksList span span {
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-3);
+}
+.checksAction {
+  align-self: flex-start;
 }
 
 /* Group rows by time in the department (the Waiting page's band rows). */
@@ -212,61 +255,59 @@
   color: var(--wf-ink-1);
 }
 
-/* Presentation and Form: a quiet trigger that reads as text until the row is hovered. */
+/* Presentation, Form and Checks: a small kit button (owner polish, 3 Nov 2026), never a browser-style
+   drop-down. It sizes to its words up to the column, and a long choice wraps to two lines. */
 .pickCell {
   overflow: visible !important;
   white-space: normal !important;
 }
-/* The pick button's own -8px margin and 8px padding line its text up with the column head and the
-   sub-line under it; the menu's wrapper takes no further shift (visual check, 1 Nov 2026). */
+/* The ghost button's own padding is pulled back so its text lines up with the column head. */
 .cellMenu {
   display: block;
 }
-.cellPick {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  width: calc(100% + 8px);
-  max-width: calc(100% + 8px);
-  min-height: 40px;
-  margin-left: -8px;
-  padding: 4px 6px 4px 8px;
-  border: 1px solid transparent;
-  border-radius: var(--wf-r-ctl);
-  background: transparent;
-  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
-  color: var(--wf-ink-1);
+.cellButton {
+  max-width: calc(100% + 10px);
+  justify-content: flex-start;
   text-align: left;
-  cursor: pointer;
 }
-.cellPick[data-empty="true"] {
-  color: var(--wf-ink-3);
-  font-weight: 400;
+.cellButton[data-empty="true"],
+.cellGhost {
+  margin-left: -10px;
+}
+/* The kit label holds a status glyph and the words on one line. */
+.cellButton > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  text-align: left;
 }
 .cellPickValue {
   display: -webkit-box;
   overflow: hidden;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  white-space: normal;
 }
-.cellPickChevron {
-  flex: none;
+/* A form code is short: it never breaks inside the chip. */
+.cellNowrap {
+  white-space: nowrap;
+}
+/* Q120: the form's "time not entered" note, one quiet line tight under the chip. */
+.formNote {
+  display: block;
+  margin-top: 2px;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
   color: var(--wf-ink-3);
-  opacity: 0.5;
 }
-.cellPick:hover,
-.cellPick[aria-expanded="true"] {
-  border-color: var(--wf-line-ctl);
-  background: var(--wf-surface);
-}
-tr:hover .cellPickChevron,
-.cellPick[aria-expanded="true"] .cellPickChevron {
-  opacity: 1;
-}
-.cellPick:focus-visible {
-  outline: 2px solid var(--wf-accent);
-  outline-offset: 1px;
+/* H11: the typed expiry's full wording at the head of the Form menu, in plain sentence case. */
+.formExpiryFull {
+  display: block;
+  max-width: 18rem;
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+  text-transform: none;
+  letter-spacing: normal;
+  white-space: normal;
 }
 .formOption {
   display: flex;
@@ -333,8 +374,8 @@ tr:hover .cellPickChevron,
 .handover[data-enlarged="true"] [class*="a2Name"] {
   font-size: var(--wf-fs-16);
 }
-.handover[data-enlarged="true"] .cellPick,
-.handover[data-enlarged="true"] .checks > span {
+.handover[data-enlarged="true"] .cellButton,
+.handover[data-enlarged="true"] .formNote {
   font-size: var(--wf-fs-15);
 }
 .handover[data-enlarged="true"] .handoverTable[data-columns="handover"] col[data-col="Presentation"] {

@@ -62,6 +62,17 @@
   font-family: var(--wf-mono);
 }
 
+/* Length of stay on a phone: the view switch across the card, 40px (the phone floor). */
+.phoneStaySeg {
+  width: 100%;
+}
+
+.phoneStaySeg button {
+  flex: 1 1 0;
+  justify-content: center;
+  min-height: 40px;
+}
+
 .note {
   margin: 0;
   color: var(--wf-ink-3);
