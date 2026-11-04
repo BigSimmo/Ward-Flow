@@ -95,8 +95,8 @@
     "line": "Cancel and reroute unfinished care transfers; clearer reload, partial-save and sign-in recovery."
   },
   {
-    "id": "2026-11-03-toasts-top-right",
+    "id": "2026-11-03-one-alerts-switch",
     "date": "2026-11-03",
-    "line": "Messages now appear at the top right on tablets and computers, and every message has a close button."
+    "line": "Settings has one Alerts on this device switch, and Test alert shows a sample alert here in Ward Flow."
   }
 ]

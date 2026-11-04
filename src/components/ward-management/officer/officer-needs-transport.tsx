@@ -8,7 +8,7 @@
 import { useState, type RefObject } from "react";
 import { Phone, X } from "lucide-react";
 
-import { Button, Card, CardBody, CardHead, Icon } from "@/components/wf";
+import { Button, Card, CardBody, CardHead, Icon, ShowMoreRow } from "@/components/wf";
 import { bookTransportBlockedReason } from "@/components/ward-management/ed/ed-blocked-reasons";
 import { formatElapsed, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -30,6 +30,8 @@ import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 
 import { crewLimitFor } from "./officer-crew-only";
 import { useOfficerPanelHeight } from "./officer-job-panel";
+import { OfficerBookingContacts } from "./officer-booking-contacts";
+import { Sheet } from "@/components/wf/sheet";
 
 export { crewLimitFor };
 import styles from "./officer.module.css";
@@ -157,7 +159,7 @@ export function NeedsTransportCard({
         }
       />
       <CardBody className={styles.needBody}>
-        <ul className={styles.needList}>
+        <ul id="ward-officer-need-list" className={styles.needList}>
           {shown.map((movement) => {
             const umrn = umrnFor(movement);
             const current = movement.id === bookingId;
@@ -206,13 +208,13 @@ export function NeedsTransportCard({
           })}
         </ul>
         {needing.length > first ? (
-          <div className={styles.needFoot}>
-            <Button variant="ghost" size="sm" onClick={() => setShowAll((open) => !open)}>
-              {showAll
-                ? "Show fewer"
-                : `${isPhone ? "See all" : `Show ${needing.length - first} more`}${isPhone ? ` ${needing.length}` : ""}`}
-            </Button>
-          </div>
+          // TR3 (4 Nov 2026): the kit's one Show more row, so it sits in the card foot under its own
+          // line rather than a pill laid across the list's last rule.
+          <ShowMoreRow onClick={() => setShowAll((open) => !open)} expanded={showAll} controls="ward-officer-need-list">
+            {showAll
+              ? "Show fewer"
+              : `${isPhone ? "See all" : `Show ${needing.length - first} more`}${isPhone ? ` ${needing.length}` : ""}`}
+          </ShowMoreRow>
         ) : null}
       </CardBody>
     </Card>
@@ -253,13 +255,67 @@ export function OfficerBookingPanel({
   // Held from opening, so a change by another desk is reported before this booking is accepted.
   useHoldOpenForm(true, movement.id);
   useOfficerPanelHeight("ward-officer-booking", isPhone, movement.id);
+  const callout = (
+    <p className={styles.bookingCallout}>
+      <Icon icon={Phone} size={16} />
+      Book with the provider by phone, then log what they told you.
+    </p>
+  );
+  const form = (
+    <TransportBookingForm
+      answers={answers}
+      onAnswers={setAnswers}
+      legalReason={legalReason}
+      onLegalReason={setLegalReason}
+      record={movement}
+      patientName={name}
+      now={now}
+      testIds={{ prefix: "ward-officer", suffix: movement.id }}
+      pending={save.pending}
+      error={save.error}
+      onSubmit={(booking) =>
+        save.submit(
+          () => raise("BOOK_TRANSPORT", { movementId: movement.id, ...acting, ...booking }),
+          () => onSaved(name),
+        )
+      }
+      onCancel={onClose}
+    />
+  );
+  // TR4 (3 Nov 2026): on desktop and tablet Log booking is a centred dialog with the providers'
+  // numbers beside the form; a phone keeps its full sheet.
+  if (!isPhone) {
+    return (
+      <Sheet
+        open
+        onClose={onClose}
+        title={`Log booking for ${name}`}
+        description={`${umrn ? `${umrn} · ` : ""}${route}`}
+        closeLabel="Close booking"
+        contentClassName={styles.bookingDialog}
+        bodyClassName={styles.bookingDialogBody}
+        testId="ward-officer-booking"
+      >
+        <div className={styles.bookingGrid}>
+          <div className={styles.bookingMain}>
+            {callout}
+            {form}
+          </div>
+          <OfficerBookingContacts
+            selected={answers.provider}
+            onPick={(provider) => setAnswers((current) => ({ ...current, provider }))}
+          />
+        </div>
+      </Sheet>
+    );
+  }
   return (
     <div ref={sideRef} className={styles.side} data-panel="booking">
       <div className={styles.scrim} aria-hidden="true" onClick={onClose} />
       <Card
         className={`${styles.detail} ${styles.bookingCard}`}
-        role={isPhone ? "dialog" : undefined}
-        aria-modal={isPhone ? true : undefined}
+        role="dialog"
+        aria-modal
         aria-labelledby="ward-officer-booking-heading"
         data-testid="ward-officer-booking"
       >
@@ -285,29 +341,12 @@ export function OfficerBookingPanel({
           aside={<Button variant="ghost" size="sm" iconOnly icon={X} onClick={onClose} aria-label="Close booking" />}
         />
         <div className={cxBody(styles.detailScroll, styles.bookingBody)}>
-          <p className={styles.bookingCallout}>
-            <Icon icon={Phone} size={16} />
-            Book with the provider by phone, then log what they told you.
-          </p>
-          <TransportBookingForm
-            answers={answers}
-            onAnswers={setAnswers}
-            legalReason={legalReason}
-            onLegalReason={setLegalReason}
-            record={movement}
-            patientName={name}
-            now={now}
-            testIds={{ prefix: "ward-officer", suffix: movement.id }}
-            pending={save.pending}
-            error={save.error}
-            onSubmit={(booking) =>
-              save.submit(
-                () => raise("BOOK_TRANSPORT", { movementId: movement.id, ...acting, ...booking }),
-                () => onSaved(name),
-              )
-            }
-            onCancel={onClose}
+          {/* TR4: on a phone the officer calls first, so the numbers (which say what to do) replace the callout. */}
+          <OfficerBookingContacts
+            selected={answers.provider}
+            onPick={(provider) => setAnswers((current) => ({ ...current, provider }))}
           />
+          {form}
         </div>
       </Card>
     </div>
