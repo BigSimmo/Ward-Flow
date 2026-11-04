@@ -55,12 +55,6 @@ const KNOWN: readonly Known[] = [
     reason: "Waiting rows (table and portrait) mark every wait over 24 hours with the triangle",
   },
   {
-    file: "src/components/ward-management/discharges/discharge-detail-panes.tsx",
-    kind: "control",
-    sites: ['id === "barriers"'],
-    reason: "Discharge detail: the Barriers pill tab asks for danger while a blocker is recorded",
-  },
-  {
     file: "src/components/ward-management/referrals/referral-board-hero.tsx",
     kind: "raw",
     sites: ['key === "overdue"'],
