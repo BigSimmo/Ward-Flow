@@ -198,7 +198,7 @@ required production build red until someone raised the limit by hand. Three part
   Actions to create and approve pull requests" must be on. A merge made by the workflow token starts
   no main run, so main is re-measured on the next merge.
 
-`ward-flow-ci-tidy.yml` frees runner slots on PR close, on each PR push and every 15 minutes. It
+`ward-flow-ci-tidy.yml` frees runner slots on PR close and hourly (no longer on each PR push). It
 cancels runs for merged or closed PRs, and other workflows' runs for an older head of an open PR
 while none of their jobs is running. Ward Flow CI's own superseded PR runs are cancelled by its
 concurrency group. Running checks on a current head are never cancelled.
