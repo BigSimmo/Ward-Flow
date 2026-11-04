@@ -3884,8 +3884,15 @@ details.refCard > summary {
  * tap floor. The demo now seeds answered referrals, so a ward's phone shows that toggle. */
 @media (max-width: 46.4375rem) {
   .patientChipBtn {
+    position: relative;
     height: auto;
-    min-height: 40px;
+    min-height: var(--wf-phone-pill-h);
+  }
+  /* An invisible 4px cover above and below, as the kit Button has, makes the tap area 48px. */
+  .patientChipBtn::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
   }
 }
 
