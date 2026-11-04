@@ -186,11 +186,13 @@ export function GovernanceRestrictiveRegister({ units, now }: { units: readonly 
   const [filter, setFilter] = useState<Filter>("all");
   const [allEpisodes, setAllEpisodes] = useState(false);
   const [allIncidents, setAllIncidents] = useState(false);
-  // Ward desks cannot open Governance; a bed manager reads only.
-  const role: WardFlowRole =
-    access.role === "ward" ? "ward" : access.role === "bed_manager" ? "bed_manager" : "coordinator";
+  // Only the desks the event allows mark follow-up. Every other desk that can open Governance
+  // (bed manager, executive, officer, the access admin) reads only, never as a borrowed role.
+  const role: WardFlowRole = access.role === "ward" ? "ward" : "coordinator";
   const raise = useWardRaise(role);
-  const mayMark = canDispatch(role, "RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP");
+  const mayMark =
+    (access.role === "ward" || access.role === "coordinator") &&
+    canDispatch(role, "RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP");
   const places = wardPlaceLookup([...units]);
   const visible = units.filter((unit) => unitInScope(access.scope, unit.id, places));
 

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Button, DateField, Field, ListPicker, Segmented } from "@/components/wf";
+import { Button, DateField, Field, ListPicker, parseTypedDate, Segmented } from "@/components/wf";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type {
   LegalFormConsentState,
@@ -88,13 +88,17 @@ export function LegalFormDetailsSection({
   const [endedBy, setEndedBy] = useState<string | null>(form?.endedBy ?? null);
   const [consent, setConsent] = useState<string>(form?.consent ?? "not_recorded");
   const [review, setReview] = useState(isoDay(form?.reviewBy, dayZero));
+  // Text in the date box that is not yet a real day. It never counts as blank, so a typo cannot clear
+  // a recorded review date.
+  const [reviewUnread, setReviewUnread] = useState(false);
   if (!form) return null;
 
   const is6B = form.code === "6B";
   const reviewTyped = review.trim() !== "";
   // A review by date is a day on the paper. It is held as that day's start, Perth time, as typed.
   const reviewAt = reviewTyped ? (instantFromDateAndTimeInputs(review, "00:00", dayZero) ?? null) : null;
-  const reviewProblem = reviewTyped && reviewAt === null ? "Type the review date as DD/MM/YYYY" : undefined;
+  const reviewProblem =
+    reviewUnread || (reviewTyped && reviewAt === null) ? "Type the review date as DD/MM/YYYY" : undefined;
 
   const rows: Array<{ label: string; value: string }> = [
     { label: "Made by", value: form.madeBy ? MAKER_LABEL[form.madeBy] : NOT_RECORDED },
@@ -138,6 +142,7 @@ export function LegalFormDetailsSection({
               setEndedBy(form.endedBy ?? null);
               setConsent(form.consent ?? "not_recorded");
               setReview(isoDay(form.reviewBy, dayZero));
+              setReviewUnread(false);
             }
             setEditing((value) => !value);
           }}
@@ -199,7 +204,15 @@ export function LegalFormDetailsSection({
             hint="DD/MM/YYYY"
             error={reviewProblem}
           >
-            <DateField value={review} onValueChange={setReview} />
+            <DateField
+              value={review}
+              onValueChange={setReview}
+              onInput={(event) =>
+                setReviewUnread(
+                  parseTypedDate(event.currentTarget.value) === null && event.currentTarget.value.trim() !== "",
+                )
+              }
+            />
           </Field>
           <ListPicker
             label="How it ended"
