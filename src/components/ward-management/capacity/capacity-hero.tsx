@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDown, Monitor, Printer } from "lucide-react";
+import { ChevronDown, Presentation, Printer } from "lucide-react";
 
 import { buttonClass, durMinutes, Hero, HeroChip, HeroStat, Menu, OccupancyRing, SrOnly } from "@/components/wf";
 import { formatInstant } from "@/components/ward-management/ward-clock";
@@ -177,7 +177,8 @@ export function CapacityHero({
                     className={buttonClass({ variant: "onHero" })}
                     data-testid="capacity-bed-meeting"
                   >
-                    <Printer size={15} aria-hidden="true" /> Bed meeting <ChevronDown size={13} aria-hidden="true" />
+                    <Printer size={16} strokeWidth={1.75} aria-hidden="true" /> Bed meeting{" "}
+                    <ChevronDown size={14} strokeWidth={1.75} aria-hidden="true" />
                   </button>
                 )}
               />
@@ -187,7 +188,7 @@ export function CapacityHero({
                   className={buttonClass({ variant: "onHero" })}
                   data-testid="capacity-bed-meeting-tv"
                 >
-                  <Monitor size={15} aria-hidden="true" /> Open on TV
+                  <Presentation size={16} strokeWidth={1.75} aria-hidden="true" /> Open on TV
                 </Link>
               ) : null}
             </>
