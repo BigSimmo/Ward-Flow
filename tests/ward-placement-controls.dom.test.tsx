@@ -136,7 +136,8 @@ describe("canonical placement actions", () => {
     expect(accept).toHaveTextContent("Choose a ward first");
     expect(accept).toHaveAccessibleDescription("Choose a ward first.");
     expect(screen.queryByText(/^Accept at /u)).toBeNull();
-    const radios = screen.getAllByRole("radio");
+    // The ward choices only: the withdraw recorder is a two-way choice of radios too (#1348).
+    const radios = screen.getAllByTestId(/^ward-referral-match-phone-cand-/u);
     expect(radios.length).toBeGreaterThan(0);
     expect(radios.every((radio) => radio.getAttribute("aria-checked") === "false")).toBe(true);
     fireEvent.click(accept);

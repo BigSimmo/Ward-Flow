@@ -73,6 +73,12 @@ export const STATISTICS_TEAMS_HREF = "/ward-flow/statistics/teams";
 export const STATISTICS_UNIT_CHOOSER_ID = "choose-a-unit";
 
 /**
+ * The Length of stay card on one ward's statistics page. The ward page's stay chart moved there
+ * (owner polish, 3 Nov 2026); link to it as `${wardStatisticsHref(unitId)}#${WARD_STAY_CARD_ID}`.
+ */
+export const WARD_STAY_CARD_ID = "ward-stay";
+
+/**
  * The link to the chooser — the statistics home route plus its anchor, which opens the finder.
  *
  * ⚠️ **Every link to the chooser uses this, never a bare `STATISTICS_HOME_HREF`.** Fix round 1

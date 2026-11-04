@@ -187,8 +187,11 @@
   background: var(--wf-accent-tint);
 }
 
+/* FS1: nothing to do reads as a quiet line, not a card competing with the real next steps. */
 .next[data-action="none"] {
-  background: var(--wf-surface-2);
+  padding: var(--wf-s-1) 0;
+  border-color: transparent;
+  background: transparent;
 }
 
 .next[data-action="extend"] {
