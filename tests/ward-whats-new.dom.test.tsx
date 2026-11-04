@@ -15,6 +15,7 @@ import {
   WHATS_NEW,
   WHATS_NEW_CARD_LIMIT,
   WHATS_NEW_STORAGE_KEY,
+  LEGACY_ORDER,
   WardWhatsNew,
   TOUR_AUTO_STARTED_EVENT,
   markWhatsNewSeen,
@@ -85,31 +86,9 @@ describe("what's new note", () => {
   });
 
   it("reads an id stored before entry files against the old list order", () => {
-    // The old list as sorted entry files, fixed here so newer entries and the cap of 20 never move it.
-    const old = [
-      "2026-10-31-role-names-hidden-names",
-      "2026-11-01-alerts-redesign",
-      "2026-11-01-design-audit-tidy",
-      "2026-11-01-ed-handover-table",
-      "2026-11-02-downtime-one-table",
-      "2026-11-02-help-show-me-around",
-      "2026-11-02-one-page-per-clinic",
-      "2026-11-02-prelaunch-wording",
-      "2026-11-03-coordinator-quick-actions",
-      "2026-11-03-dropdowns-tips-dots",
-      "2026-11-03-home-flow",
-      "2026-11-03-integrity-save-confirmation",
-      "2026-11-03-journey-recovery",
-      "2026-11-03-one-alerts-switch",
-      "2026-11-03-one-page-scroll",
-      "2026-11-03-reminders-in-alerts",
-      "2026-11-03-report-data-correctness",
-      "2026-11-03-save-and-safety-fixes",
-      "2026-11-03-simpler-new-referral",
-      "2026-11-03-tools-overhaul",
-      "2026-11-03-waiting-and-all-eds",
-    ].map((id) => ({ id, date: id.slice(0, 10), line: id }));
-    const ids = (seen: string) => unseenWhatsNew(seen, old).map((entry) => entry.id);
+    // Only the lines from before entry files, so a newer entry file never changes this answer.
+    const before = WHATS_NEW.filter((entry) => LEGACY_ORDER.includes(entry.id));
+    const ids = (seen: string) => unseenWhatsNew(seen, before).map((entry) => entry.id);
     // Under the old order only the referral line came after this id, though it no longer sorts last.
     expect(ids("2026-11-03-one-alerts-switch")).toEqual(["2026-11-03-simpler-new-referral"]);
     // This id now sorts last, yet four lines came after it in the old order (the card shows four).
