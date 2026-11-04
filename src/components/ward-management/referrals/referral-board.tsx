@@ -399,6 +399,14 @@ export function ReferralBoard({
 
   const anyHighlight = highlight !== null;
   const isHighlighted = (referral: Referral) => highlight !== null && highlightTest(highlight, referral, now);
+  const runwayProps = {
+    queued,
+    now,
+    selectedId: selectedReferralId,
+    isHighlighted: (referral: Referral) => anyHighlight && isHighlighted(referral),
+    nameOf,
+    umrnOf: (referral: Referral) => resolveSubjectPatient(referral, resolverState).umrn,
+  };
   const highlightedCount = anyHighlight ? queued.filter(isHighlighted).length : 0;
   /*
    * Audit round 2 (A2-14): on the phone a chip FILTERS. Dimming greyed the overdue row's act-now
@@ -626,9 +634,8 @@ export function ReferralBoard({
     const targetWard = targetWardUnitId ? units.find((u) => u.id === targetWardUnitId) : undefined;
     if (!targetWardUnitId) return null;
     if (readOnly && !linkedMovement) return null;
-    // S-9 (audit 13 Oct 2026): an accepted referral was a dead end. It links on to
-    // its movement when one is open, otherwise names the next step, holding the
-    // bed on the accepting ward, and links the patient record.
+    // S-9 (audit 13 Oct 2026): an accepted referral was a dead end. It links on to its movement when one is open,
+    // otherwise names the next step, holding the bed on the accepting ward, and links the patient record.
     return (
       <>
         {linkedMovement ? (
@@ -826,11 +833,7 @@ export function ReferralBoard({
                 {phoneSheet === "axis" ? (
                   <WaitRunway
                     compact
-                    queued={queued}
-                    now={now}
-                    selectedId={selectedReferralId}
-                    isHighlighted={(referral) => anyHighlight && isHighlighted(referral)}
-                    nameOf={nameOf}
+                    {...runwayProps}
                     onSelect={(id) => {
                       setPhoneSheet(null);
                       setView("queue");
@@ -903,11 +906,7 @@ export function ReferralBoard({
                   <div className={cx(a.heroBand, redesign.heroBand, panel.heroBandStack)}>
                     {edQueueEmpty ? null : (
                       <WaitRunway
-                        queued={queued}
-                        now={now}
-                        selectedId={selectedReferralId}
-                        isHighlighted={(referral) => anyHighlight && isHighlighted(referral)}
-                        nameOf={nameOf}
+                        {...runwayProps}
                         onSelect={(id) => {
                           setView("queue");
                           handleSelect(id);
@@ -1046,9 +1045,10 @@ export function ReferralBoard({
                   now={now}
                   selectedId={selectedReferralId}
                   onSelect={handleSelect}
+                  undoRole={readOnly ? undefined : routeRole}
+                  onPull={!readOnly && routeRole === "coordinator" ? setPulling : undefined}
                 />
-                {/* Community desk: no chart of eight empty hours. */}
-                {decisionsByHour.length > 0 && !(community && decidedToday.length === 0) ? (
+                {decisionsByHour.length > 0 && decidedToday.length > 0 ? (
                   <div className={styles.v6Chart}>
                     <h3 className={styles.v6Eyebrow}>Decisions by hour</h3>
                     <ColumnChart

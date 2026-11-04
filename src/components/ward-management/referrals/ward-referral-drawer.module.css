@@ -3888,3 +3888,24 @@ details.refCard > summary {
     min-height: 40px;
   }
 }
+
+/* RF2 (4 Nov 2026): the letter preview is the paper itself, with its two actions above it. */
+.letterSection {
+  display: grid;
+  gap: var(--wf-s-3);
+}
+
+.letterActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  align-items: center;
+}
+
+.letterHint {
+  flex: 1 1 12rem;
+  margin: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
+}
