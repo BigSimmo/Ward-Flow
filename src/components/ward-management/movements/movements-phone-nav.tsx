@@ -15,7 +15,7 @@ import {
   type RefusedCorridorCount,
   type TransportLegRow,
 } from "./movements-derivations";
-import { ArrowRightLeft, ChevronRight, ListFilter, Ambulance } from "lucide-react";
+import { Ambulance, ArrowRightLeft, ChartColumn, ChevronRight, ListFilter } from "lucide-react";
 import { PhoneSheet, buttonClass } from "@/components/wf";
 import { MovementHorizonGantt } from "./movement-horizon-gantt-lazy";
 import type { rankCorridorPairs } from "./movement-corridor-pairs";
@@ -45,6 +45,8 @@ export function MovementsPhoneNav({
   revealMovement,
   setPhoneArrivalsTimeline,
   setPhoneSheet,
+  shapeOfDay,
+  closedTodayCount,
   transportFeed,
   units,
   withoutTransport,
@@ -60,11 +62,14 @@ export function MovementsPhoneNav({
   phoneCorridors: ReturnType<typeof rankCorridorPairs>;
   phoneInbound: Movement[];
   phoneInboundWards: number;
-  phoneSheet: "arrivals" | "corridors" | "transport" | null;
+  phoneSheet: "arrivals" | "corridors" | "transport" | "shape" | null;
   refusedCorridors: RefusedCorridorCount[];
   revealMovement: (id: string, byStage?: boolean) => void;
   setPhoneArrivalsTimeline: Dispatch<SetStateAction<boolean>>;
-  setPhoneSheet: Dispatch<SetStateAction<"arrivals" | "corridors" | "transport" | null>>;
+  setPhoneSheet: Dispatch<SetStateAction<"arrivals" | "corridors" | "transport" | "shape" | null>>;
+  /** Stress test (3 Nov 2026): Shape of the day reaches the phone through its own card and sheet. */
+  shapeOfDay: ReactNode;
+  closedTodayCount: number;
   transportFeed: (onPicked?: () => void) => ReactNode;
   units: Unit[];
   withoutTransport: number;
@@ -110,6 +115,25 @@ export function MovementsPhoneNav({
         </span>
         <ChevronRight size={16} className={flow.phNavChevron} aria-hidden="true" />
       </button>
+      <button type="button" className={flow.phNavCard} onClick={() => startTransition(() => setPhoneSheet("shape"))}>
+        <ChartColumn size={16} className={flow.phNavIcon} aria-hidden="true" />
+        <span className={flow.phNavText}>
+          <strong>Shape of the day</strong>
+          <span>
+            By stage, transport and wait · <b>{closedTodayCount}</b> resolved today
+          </span>
+        </span>
+        <ChevronRight size={16} className={flow.phNavChevron} aria-hidden="true" />
+      </button>
+      <PhoneSheet
+        open={phoneSheet === "shape"}
+        onClose={() => setPhoneSheet(null)}
+        title="Shape of the day"
+        description="Open movements by stage, transport and wait"
+        height="tall"
+      >
+        {shapeOfDay}
+      </PhoneSheet>
       <PhoneSheet
         open={phoneSheet === "arrivals"}
         onClose={() => setPhoneSheet(null)}

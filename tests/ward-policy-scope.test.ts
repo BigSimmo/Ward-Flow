@@ -46,7 +46,7 @@ describe("policy-only coverage contract", () => {
     expect(workflow).toMatch(/needs\.plan\.outputs\.policy == 'true'/u);
     expect(workflow).toContain("node scripts/ward-ci-public/check-policy-contracts.mjs");
     expect(workflow).toContain(
-      "needs: [plan, reuse, static, backend, unit, browser-build, browser, release-gate, secret-scan, build, coverage]",
+      "needs: [plan, reuse, static, backend, unit, browser-build, browser, release-gate, build, coverage]",
     );
   });
 });

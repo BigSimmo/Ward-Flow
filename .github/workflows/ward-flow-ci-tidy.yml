@@ -1,14 +1,17 @@
 name: Ward Flow CI tidy
 
 # Frees shared runner slots (ci-tidy.mjs): cancels runs for merged or closed pull requests, and runs
-# for an older head of an open PR while nothing in them is running. Running checks on a current head
+# for an older head of an open PR while nothing in them is running. It no longer runs on each PR push:
+# the only pull_request workflow is Ward Flow CI, whose concurrency group already cancels a
+# superseded head's run, so that trigger only spent a job slot per push (4 Nov 2026). The hourly
+# schedule is the backstop for a missed close event. Running checks on a current head
 # are never cancelled. pull_request_target runs in the base repository's context, so this checks out
 # only main's script and never runs pull-request code. Free GitHub-hosted runners only.
 on:
   pull_request_target:
-    types: [closed, synchronize]
+    types: [closed]
   schedule:
-    - cron: "*/15 * * * *"
+    - cron: "23 * * * *"
   workflow_dispatch: null
 
 permissions:

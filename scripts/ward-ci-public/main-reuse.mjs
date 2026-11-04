@@ -5,15 +5,19 @@
  * commit arrives through a pull request. The ruleset does not require that PR to be up to date with
  * main, but when it was, the tree that lands is byte-for-byte the tree the PR's own run already
  * passed. This check proves that for one push (check 3 rejects a head that was behind main), and only then lets the workflow skip re-running the unit shards, browser journeys,
- * coverage and production build on main. The static checks (including the whole-tree lint that only
- * non-PR runs do) and the secret scan still run on every main commit.
+ * coverage, production build and release gate on main (and the backend proof when that PR run ran it,
+ * reported separately as backend_verified). The static checks (including the whole-tree lint that
+ * only non-PR runs do) and the secret scan (in the scope plan job) still run on every main commit.
  *
  * It verifies, all of which must hold (anything else, including any API or git error, prints the
  * reason and reports verified=false, so the full suite runs exactly as before):
  *   1. exactly one merged same-repository PR into main has this push's commit as its merge commit;
  *   2-3. the tree that PR run tested is identical to this commit's tree. Either the run recorded
  *      the tree of the merge ref it checked out (the "Ward tested tree" notice from its scope plan
- *      job) and it equals this tree, or the PR head's tree equals this tree and the previous main
+ *      job, read from every attempt of the run: a re-run keeps the run's merge ref, and its re-run
+ *      plan job can carry no annotation) and it equals this tree, and the production build's
+ *      latest attempt built this tree too (the "Ward built tree" notice written after it merged the
+ *      then-current main; every recorded attempt must agree), or the PR head's tree equals this tree and the previous main
  *      commit is an ancestor of the head (the head was up to date, so its merge ref was this tree).
  *      The recorded tree lets a head that was behind main reuse its run when main did not move
  *      between that run and the merge (31 Oct 2026: most heads are behind, so every merge re-ran
@@ -56,7 +60,23 @@ export const EVIDENCE = [
     job: /^Ward Flow production build$/u,
     steps: ["Build for production (Railway build command)"],
   },
+  // Its matrix is not counted from the workflow: the run tested this exact tree, so it ran this
+  // workflow's matrix, and its own Ward Flow required job needed every leg. At least one must have run.
+  {
+    label: "release gate",
+    job: /^Ward Flow release gate (.+)$/u,
+    steps: ["Run the release-gate journeys"],
+  },
 ];
+
+/** The backend proof, reused only when the PR run really ran it (it is scoped separately). */
+export const BACKEND_EVIDENCE = {
+  job: "Ward Flow backend and shared production proof",
+  step: "Run Ward backend tests",
+};
+
+/** The notice title the production build uses to record the tree it built (after merging main). */
+export const BUILT_TREE_TITLE = "Ward built tree";
 
 /** The unit shard and browser group counts declared by the workflow, so a run with fewer is refused. */
 export function workflowCounts(source) {
@@ -69,6 +89,7 @@ export function workflowCounts(source) {
     "browser group": groups,
     coverage: 1,
     "production build": 1,
+    "release gate": "at least one",
   };
 }
 
@@ -86,7 +107,9 @@ export function runEvidenceGap(jobs, counts) {
       if (!step || step.conclusion !== "success") return `${job.name} did not run its checks (scope-skipped)`;
       passed.add(match[1] ?? label);
     }
-    if (passed.size !== counts[label]) return `${passed.size} of ${counts[label]} ${label} job(s) proved`;
+    if (counts[label] === "at least one") {
+      if (passed.size < 1) return `no ${label} job proved`;
+    } else if (passed.size !== counts[label]) return `${passed.size} of ${counts[label]} ${label} job(s) proved`;
   }
   return null;
 }
@@ -133,14 +156,21 @@ export function decideMainReuse({ repo, sha, before, mainTree, pulls, headTree, 
     if (run.conclusion !== "success") return refuse(`newer completed run ${run.id} concluded ${run.conclusion}`);
     const gap =
       runEvidenceGap(run.jobs ?? [], counts) ??
-      (upToDate || run.testedTree === mainTree
+      (upToDate
         ? null
-        : SHA.test(run.testedTree ?? "")
-          ? "it tested a different tree (main moved after it ran)"
-          : "it recorded no tested tree and the head was not up to date with main");
+        : run.testedTree !== mainTree
+          ? SHA.test(run.testedTree ?? "")
+            ? "it tested a different tree (main moved after it ran)"
+            : "it recorded no tested tree and the head was not up to date with main"
+          : run.builtTree !== mainTree
+            ? SHA.test(run.builtTree ?? "")
+              ? "its production build built a different tree (main moved before the build)"
+              : "its production build recorded no single built tree"
+            : null);
     if (!gap)
       return {
         verified: true,
+        backendVerified: backendProved(run.jobs ?? []),
         reason: `PR #${pull.number} run passed this exact tree`,
         pr: pull.number,
         runUrl: run.html_url,
@@ -152,23 +182,50 @@ export function decideMainReuse({ repo, sha, before, mainTree, pulls, headTree, 
   );
 }
 
-/**
- * The tree a pull request run tested, from the notice its scope plan job writes, or null. A job's
- * id is its check run id, so the notice is that check run's annotation.
- * @param {Array<{ name?: string, id?: number }>} jobs @param {(path: string) => Promise<any>} api
- */
-async function testedTreeOf(jobs, api) {
-  const plan = jobs.filter((job) => job.name === "Ward Flow scope plan");
-  if (plan.length !== 1 || !Number.isInteger(plan[0].id)) return null;
-  return testedTreeFromAnnotations(await api(`/check-runs/${plan[0].id}/annotations?per_page=50`));
+/** Did the run's latest backend job really run its tests and pass? */
+export function backendProved(jobs) {
+  const backend = jobs.filter((job) => job.name === BACKEND_EVIDENCE.job);
+  if (backend.length !== 1 || backend[0].conclusion !== "success") return false;
+  const step = (backend[0].steps ?? []).find((candidate) => candidate.name === BACKEND_EVIDENCE.step);
+  return step?.conclusion === "success";
+}
+
+/** The trees recorded under `title` in a check run's annotations (any count, unvalidated). */
+function recordedTrees(annotations, title) {
+  return (Array.isArray(annotations) ? annotations : [])
+    .filter((annotation) => annotation?.title === title && annotation?.annotation_level === "notice")
+    .map((annotation) => String(annotation.message ?? "").trim());
 }
 
 /** The one recorded tested tree among a check run's annotations, or null when absent or ambiguous. */
-export function testedTreeFromAnnotations(annotations) {
-  const trees = (Array.isArray(annotations) ? annotations : [])
-    .filter((annotation) => annotation?.title === TESTED_TREE_TITLE && annotation?.annotation_level === "notice")
-    .map((annotation) => String(annotation.message ?? "").trim());
+export function testedTreeFromAnnotations(annotations, title = TESTED_TREE_TITLE) {
+  const trees = recordedTrees(annotations, title);
   return trees.length === 1 && SHA.test(trees[0]) ? trees[0] : null;
+}
+
+/**
+ * The single tree recorded under `title` across every attempt of one job (one annotation list per
+ * attempt's check run), or null. Attempts that recorded nothing are ignored (a re-run can carry no
+ * annotation for an unchanged notice); any malformed or disagreeing record refuses.
+ * @param {unknown[]} annotationLists
+ */
+export function treeAcrossAttempts(annotationLists, title) {
+  const trees = annotationLists.flatMap((annotations) => recordedTrees(annotations, title));
+  if (trees.length === 0 || trees.some((tree) => !SHA.test(tree))) return null;
+  return new Set(trees).size === 1 ? trees[0] : null;
+}
+
+/**
+ * The tree one job name recorded across every attempt of a run, or null. A job's id is its check
+ * run id, so its notices are that check run's annotations.
+ * @param {Array<{ name?: string, id?: number }>} allJobs @param {(path: string) => Promise<any>} api
+ */
+async function recordedTreeOf(allJobs, name, title, api) {
+  const attempts = allJobs.filter((job) => job.name === name);
+  if (attempts.length === 0 || attempts.some((job) => !Number.isInteger(job.id))) return null;
+  const lists = [];
+  for (const job of attempts) lists.push(await api(`/check-runs/${job.id}/annotations?per_page=50`));
+  return treeAcrossAttempts(lists, title);
 }
 
 async function gatherAndDecide() {
@@ -213,7 +270,13 @@ async function gatherAndDecide() {
   for (const run of completed) {
     if (run.conclusion === "success" && inspectedGreen < 3) {
       const jobs = (await api(`/actions/runs/${run.id}/jobs?filter=latest&per_page=100`))?.jobs ?? [];
-      runs.push({ ...run, jobs, testedTree: await testedTreeOf(jobs, api) });
+      const all = (await api(`/actions/runs/${run.id}/jobs?filter=all&per_page=100`))?.jobs ?? [];
+      runs.push({
+        ...run,
+        jobs,
+        testedTree: await recordedTreeOf(all, "Ward Flow scope plan", TESTED_TREE_TITLE, api),
+        builtTree: await recordedTreeOf(all, "Ward Flow production build", BUILT_TREE_TITLE, api),
+      });
       inspectedGreen++;
     } else runs.push(run);
   }
@@ -228,11 +291,15 @@ if (process.argv[1]?.replaceAll("\\", "/").endsWith("/scripts/ward-ci-public/mai
     decision = { verified: false, reason: `check failed (${error?.message ?? error}); running the full suite` };
   }
   const line = decision.verified
-    ? `Ward main reuse: VERIFIED. ${decision.reason}: ${decision.runUrl}. Unit shards, browser journeys, coverage and the production build are skipped on this commit; static checks and the secret scan still run.`
+    ? `Ward main reuse: VERIFIED. ${decision.reason}: ${decision.runUrl}. Unit shards, browser journeys, coverage, the production build and the release gate${decision.backendVerified ? " and the backend proof" : ""} are skipped on this commit; static checks and the secret scan still run.`
     : `Ward main reuse: not verified (${decision.reason}). Running the full suite.`;
   console.log(line);
   try {
-    if (process.env.GITHUB_OUTPUT) appendFileSync(process.env.GITHUB_OUTPUT, `verified=${decision.verified}\n`);
+    if (process.env.GITHUB_OUTPUT)
+      appendFileSync(
+        process.env.GITHUB_OUTPUT,
+        `verified=${decision.verified}\nbackend_verified=${decision.verified === true && decision.backendVerified === true}\n`,
+      );
     if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${line}\n`);
   } catch (error) {
     console.log(`Could not record the decision (${error?.message ?? error}); the full suite runs.`);

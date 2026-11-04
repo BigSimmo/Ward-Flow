@@ -2,7 +2,6 @@ import "@testing-library/jest-dom/vitest";
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { ConfirmHost } from "@/components/wf";
 
 // Same reason as the sibling dom suites (ward-ed-screen.dom.test.tsx, ward-screen.dom.test.tsx):
@@ -28,6 +27,7 @@ import {
 } from "@/components/ward-management/ward-model";
 import { allEmergencyDepartments, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { GENERAL_OBSERVATION } from "../src/components/ward-management/ward-observation";
+import { chooseEdChoice } from "./helpers/ed-raise-into-movement";
 
 /**
  * THE BOOKING CONTROL ON THE ED SCREEN, AND THE ONE THING IT MUST NEVER DO.
@@ -383,12 +383,8 @@ describe("the no-4A-recorded notice beside the booking control", () => {
 
     fireEvent.click(screen.getByTestId(`ward-change-legal-status-toggle-${movement.id}`));
     const form = within(screen.getByTestId(`ward-change-legal-status-${movement.id}`));
-    fireEvent.change(form.getByLabelText(`Legal status for ${seedPatientName(movement.id)}`), {
-      target: { value: "Voluntary" },
-    });
-    fireEvent.change(form.getByLabelText("Reason"), {
-      target: { value: LEGAL_STATUS_CHANGE_REASONS[0] },
-    });
+    chooseEdChoice(`ward-change-legal-status-value-${movement.id}`, "Voluntary");
+    chooseEdChoice(`ward-change-legal-status-reason-${movement.id}`, LEGAL_STATUS_CHANGE_REASONS[0]);
     fireEvent.click(form.getByRole("button", { name: "Record legal status change" }));
 
     expect(screen.queryByTestId(`ward-ed-transport-legal-form-notice-${movement.id}`)).toBeNull();
@@ -518,12 +514,3 @@ describe("the no-4A-recorded notice beside the booking control", () => {
     expect(screen.queryByTestId(`ward-ed-transport-legal-form-notice-${movementId}`)).toBeNull();
   });
 });
-
-// Owner, 26 Sept 2026: labels name the patient, resolved from the seed register, not the WF number.
-function seedPatientName(movementId: string): string {
-  const seed = seedWardFlowState();
-  return resolveSubjectPatient(
-    seed.movements.find((movement) => movement.id === movementId),
-    seed,
-  ).displayName;
-}
