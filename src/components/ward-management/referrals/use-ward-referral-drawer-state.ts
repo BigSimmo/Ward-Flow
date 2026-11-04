@@ -62,6 +62,8 @@ import {
   readKeptReferralDraftAt,
   readLastReferrerContact,
   rememberReferrerContact,
+  restartReferralDraft,
+  useLiveReferralDraftKey,
   useReferralDraftAutosave,
   useReferralDraftRecovery,
 } from "./referral-draft-store";
@@ -220,6 +222,7 @@ export function useWardReferralDrawerState({
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const noPatientChosen = activePatientKey === NO_PATIENT_KEY;
+  const liveDraftKey = useLiveReferralDraftKey(activePatientKey, draftStorageKey, keepsAnotherPersonsDraft);
   const [addedInFormKey, setAddedInFormKey] = useState<string | null>(null); // WT-28
   const bodyRef = useRef<HTMLDivElement>(null);
   const sectionId = useId();
@@ -445,7 +448,7 @@ export function useWardReferralDrawerState({
     stop: stopDraftAutosave,
   } = useReferralDraftAutosave({
     draft: draftNow,
-    storageKey: draftStorageKey,
+    storageKey: liveDraftKey,
     draftJson,
     contentJson: draftFingerprint({ ...draftNow, activeSection: undefined }),
     enabled: !keepsAnotherPersonsDraft,
@@ -480,7 +483,7 @@ export function useWardReferralDrawerState({
     // An unfinished Add patient form is not kept, so it always counts as unsaved.
     unloadSafe: () =>
       JSON.stringify(newPatient) === JSON.stringify(EMPTY_NEW_PATIENT) &&
-      referralDraftKeptOnScreen(draftStorageKey, draftNow, {
+      referralDraftKeptOnScreen(liveDraftKey, draftNow, {
         destType: initialDestination,
         sourceKind: openerSourceKind,
         originSiteCode: effectiveInitialOriginSiteCode,
@@ -500,10 +503,9 @@ export function useWardReferralDrawerState({
       closeRequestRef.current = null;
     };
   }, [closeRequestRef, requestClose]);
-  // The close guard is a modal over the drawer, on the shared contract: the drawer behind is inert,
-  // focus starts on Keep editing, Tab wraps inside the guard, Escape closes only the guard, and focus
-  // returns to the control that asked to close. Declared before the drawer's own modal hook so it
-  // leaves the stack first when both close together.
+  // The close guard is a modal on the shared contract: the drawer behind is inert, focus starts on Keep
+  // editing, Tab wraps inside, Escape closes only the guard, and focus returns to the control that asked.
+  // Declared before the drawer's own modal hook so it leaves the stack first when both close together.
   const guardBoxRef = useRef<HTMLDivElement | null>(null);
   const { rootRef: guardRootRef } = useModalFocus({
     open: guardOpen,
@@ -529,7 +531,7 @@ export function useWardReferralDrawerState({
     onClose();
   }
   function keepAndClose() {
-    const kept = keepReferralDraft(draftNow, draftOwnerVersion, draftStorageKey);
+    const kept = keepReferralDraft(draftNow, draftOwnerVersion, liveDraftKey);
     setGuardOpen(false);
     approveNextHistoryNavigation();
     onClose();
@@ -664,9 +666,8 @@ export function useWardReferralDrawerState({
     setRiskFlags((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
-  // The sample patients first, then any other registered person whose name or UMRN matches. Matched
-  // as the header search matches people: every word, folded, so "OQuinn" finds O'Quinn and
-  // "UM 100001" the UMRN (search and forms review, 31 Oct 2026). Never near spellings.
+  // Sample patients first, then any registered person matched as the header search matches: every word,
+  // folded, so "OQuinn" finds O'Quinn and "UM 100001" the UMRN (review 31 Oct 2026). Never near spellings.
   const filteredPatients = useMemo(() => {
     // "Family, Given" as lists print it: the comma only separates the two names.
     const q = searchQuery.replace(/,/g, " ").trim();
@@ -843,9 +844,8 @@ export function useWardReferralDrawerState({
     placement: (community ? selectedRecipient : selectedDestinations.length) ? 0 : 1,
   };
   const totalNeeded = needed.patient + needed.referral + needed.documentation + needed.placement;
-  // L1 (review 12 Oct 2026): ONE count. "N of M ready", "Items left" and each step's "N needed"
-  // all count the same items, so the steps add up to the summary and four Complete steps read as
-  // all ready. The checklist rows below are labels for the letter, not a second count.
+  // L1 (review 12 Oct 2026): ONE count. "N of M ready", "Items left" and each step's "N needed" count the
+  // same items, so steps add up and four Complete steps read as all ready. Checklist rows are labels only.
   // A2-9 (audit 13 Oct 2026): the contact details asked at Send are items too, so the hero never
   // reads "0 items left" while Confirm refuses for an empty contact field (`itemsLeft` below).
   const itemsTotal =
@@ -1414,7 +1414,7 @@ export function useWardReferralDrawerState({
     needsChartReattachment: draftNow.needsChartReattachment,
     clearRecoveredDraft: () => {
       stopDraftAutosave();
-      discardReferralDraft(draftDiscardOwner);
+      restartReferralDraft(draftDiscardOwner, draftStorageKey);
       onRestart();
     },
     openingDraft,

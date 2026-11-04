@@ -101,6 +101,7 @@ import { publishedThresholds } from "@/components/ward-management/settings/setti
 
 import styles from "@/components/ward-management/settings/settings.module.css";
 import rx from "./settings-layout.module.css";
+import { SettingsDraftsCard } from "./settings-drafts-card";
 import { SettingsProfileCard } from "./settings-profile-card";
 import { SettingsSaveBar } from "./settings-save-bar";
 import {
@@ -908,7 +909,12 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       <div className={phoneQuick ? rx.accessStack : styles.columns}>{displayContent(phoneQuick)}</div>
     );
 
-  const youContent = <SettingsProfileCard now={now} onSwitchLogin={switchLogin} />;
+  const youContent = (
+    <>
+      <SettingsProfileCard now={now} onSwitchLogin={switchLogin} />
+      {role === "executive" ? null : <SettingsDraftsCard />}
+    </>
+  );
 
   const helpContent = (
     <>

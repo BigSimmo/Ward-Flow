@@ -7,10 +7,12 @@ export {
   readKeptReferralDraft,
   readKeptReferralDraftAt,
   discardReferralDraft,
+  setAsideReferralDraft,
+  restartReferralDraft,
   rememberReferrerContact,
   readLastReferrerContact,
   forgetReferrerContact,
   REFERRAL_DRAFT_AUTOSAVE_MS,
   referralDraftAgeText,
 } from "./referral-draft-cache";
-export { useReferralDraftRecovery, useReferralDraftAutosave } from "./referral-draft-hooks";
+export { useReferralDraftRecovery, useReferralDraftAutosave, useLiveReferralDraftKey } from "./referral-draft-hooks";
