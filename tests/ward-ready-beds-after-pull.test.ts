@@ -23,7 +23,9 @@ describe("beds ready agrees on every screen after a pull", () => {
   it("rail, Handover and the bed-state boxes give one figure", () => {
     let checked = 0;
     let oldFormulaSplit = 0;
-    for (let seed = 0; seed < WARD_SCENARIOS.length * 2; seed += 1) {
+    // Three runs per scenario (4 Nov 2026): each new fuzz builder shifts which actions a seed draws,
+    // and two runs per scenario stopped reaching a pull once Flag early's builders joined.
+    for (let seed = 0; seed < WARD_SCENARIOS.length * 3; seed += 1) {
       const scenario = WARD_SCENARIOS[seed % WARD_SCENARIOS.length]!;
       const sites = scenarioWardNetwork(scenario).sites;
       const random = seededRandom(6000 + seed);

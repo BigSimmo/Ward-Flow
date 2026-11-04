@@ -73,6 +73,7 @@ import {
   type ReturnStatus,
 } from "./out-of-area-model";
 import { OutOfAreaPhone, type PhonePerson } from "./out-of-area-phone";
+import { returnEarlyFlagOf } from "./return-early";
 import { ReturnPlan, TravelIcon, canSendReturnPlan, whoseMove, type PlanPatient } from "./out-of-area-return-plan";
 import { HomeBedsCard, ReadyCard, ShiftCard, type ReadyRow, type ShiftReturnRow } from "./out-of-area-side";
 import styles from "./out-of-area-board.module.css";
@@ -145,6 +146,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     dayZero,
     rejections,
     repatriations: liveRepatriations,
+    returnEarlyFlags,
   } = useWardFlowSelect(
     "units",
     "admissions",
@@ -155,6 +157,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     "dayZero",
     "rejections",
     "repatriations",
+    "returnEarlyFlags",
   );
   const now = useWardFlowClock();
   const isPhone = useIsPhone();
@@ -508,6 +511,28 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     setRepatNotice(agreedNotice);
   }
 
+  // Out of area "Flag early" (Josh, 3 Nov 2026): raised from the tap only, with Undo on the toast.
+  function flagEarly(entry: OutOfAreaEntry, homeHospital: string) {
+    const admissionId = entry.admission.id;
+    const hospital = siteByCode(homeHospital)?.name ?? homeHospital;
+    runStep(
+      { type: "FLAG_RETURN_EARLY", role: "coordinator", now, admissionId, homeHospital },
+      {
+        success: `Flagged early for ${patientOf(entry).formalName}. The receiving ward at ${hospital}, the home team and Transport can see it.`,
+        undo: (at) => ({ type: "UNDO_FLAG_RETURN_EARLY", role: "coordinator", now: at, admissionId }),
+        undone: `Early return flag undone for ${patientOf(entry).formalName}.`,
+      },
+    );
+  }
+
+  function undoFlagEarly(entry: OutOfAreaEntry) {
+    const admissionId = entry.admission.id;
+    runStep(
+      { type: "UNDO_FLAG_RETURN_EARLY", role: "coordinator", now, admissionId },
+      { success: `Early return flag undone for ${patientOf(entry).formalName}.` },
+    );
+  }
+
   // Audit A3-18 (13 Oct 2026): every card and the return sheet carry the legal status or form.
   const legalOf = (entry: OutOfAreaEntry): string | undefined =>
     stayLegalShort(entry.admission, { movements, patients, referrals });
@@ -541,6 +566,9 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       onRecord={() => recordReturn(entry)}
       onSendToWard={() => sendPlanToWard(entry)}
       onMarkWardAgreed={() => markWardAgreed(entry)}
+      earlyFlag={returnEarlyFlagOf(returnEarlyFlags, entry.admission.id)}
+      onFlagEarly={(homeHospital) => flagEarly(entry, homeHospital)}
+      onUndoFlagEarly={() => undoFlagEarly(entry)}
       header={header}
       idPrefix={idPrefix}
     />

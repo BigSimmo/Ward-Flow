@@ -38,3 +38,28 @@ fieldset.missing {
 .saveFields > fieldset {
   flex-wrap: wrap;
 }
+
+/* L31: the kit choices on this form. A segmented question has no box, so its track gets the red
+ * edge; a list picker marks itself through its own `invalid` state. */
+.choice {
+  min-inline-size: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+/* A segmented question takes two columns of the form's grid, so "Older adult" never clips. */
+fieldset.choice {
+  grid-column: span 2;
+}
+
+.choiceLegend {
+  padding: 0;
+  margin-block-end: 4px;
+}
+
+.missingChoice [role="radiogroup"] {
+  border-radius: var(--wf-r-md);
+  outline: 2px solid var(--wf-danger);
+  outline-offset: 2px;
+}

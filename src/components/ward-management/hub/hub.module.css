@@ -1046,15 +1046,14 @@
 }
 
 /* Review point 21 (Josh approved 31 Oct 2026): Places is a directory. Search sits in the header. */
-.heroSearch {
-  flex: 1 1 32rem;
-  max-width: 44rem;
-  min-width: 0;
+/* PL1: the page search sits at the top of the list card it narrows. */
+.listSearchRow {
+  display: flex;
 }
 
-.heroSearch input {
-  min-height: var(--wf-h-lg);
-  font-size: var(--wf-fs-15);
+.heroSearch {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 /* The preview's Beds row points to the two pages that carry beds. */
