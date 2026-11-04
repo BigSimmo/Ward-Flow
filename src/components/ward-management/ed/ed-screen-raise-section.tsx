@@ -340,12 +340,12 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
             placeholder="No form"
             value={draft.legalFormCode ?? null}
             onChange={(code) =>
-              setDraft((current) => ({
-                ...current,
-                legalFormCode: code,
-                legalFormDueAtDate: "",
-                legalFormDueAtTime: "",
-              }))
+              setDraft((current) =>
+                // The kit picker reports a pick of the form already chosen, so keep its expiry then.
+                code === current.legalFormCode
+                  ? current
+                  : { ...current, legalFormCode: code, legalFormDueAtDate: "", legalFormDueAtTime: "" },
+              )
             }
             note={(() => {
               // Finding 6 (Josh, 27 Oct 2026): a form that contradicts the status warns, never blocks.

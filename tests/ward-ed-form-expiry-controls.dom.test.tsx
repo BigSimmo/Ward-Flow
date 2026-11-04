@@ -304,4 +304,20 @@ describe("a stale typed value never lands on the wrong form", () => {
     // 16:00 today is 960 minutes — the fields still work after being cleared, they are not dead.
     expect(lastMovementProbeParts()).toEqual({ id: expect.any(String), code: "1A", dueAt: "960" });
   });
+
+  it("keeps the typed expiry when the form already chosen is picked again", () => {
+    // Codex review of #1396: the kit picker reports a pick of the current form, which used to
+    // clear the expiry silently, so the request went without it.
+    renderEdScreen();
+    openReferralForm();
+    fillRequiredFields();
+    chooseEdChoice("ward-ed-referral-legal-form", "1A");
+    typeDate(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), TODAY);
+    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-time"), { target: { value: "16:00" } });
+
+    chooseEdChoice("ward-ed-referral-legal-form", "1A");
+    expect((screen.getByTestId("ward-ed-referral-legal-form-due-at-time") as HTMLInputElement).value).toBe("16:00");
+    fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
+    expect(lastMovementProbeParts()).toEqual({ id: expect.any(String), code: "1A", dueAt: "960" });
+  });
 });
