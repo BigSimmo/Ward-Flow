@@ -34,7 +34,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import type { ColumnContext } from "./handover-columns";
 import {
   HANDOVER_SHIFTS,
-  STAGE_LABEL,
+  handoverStatusLabel,
   destinationText,
   groupOf,
   handoverAt,
@@ -311,7 +311,7 @@ function IsbarSheet({
       <div className={styles.isbarBody}>
         <div className={styles.isbarPills}>
           <StatusPill tone={step.tone === "act" ? "danger" : step.tone === "due" ? "warning" : undefined} size="sm">
-            {STAGE_LABEL[row.stage]}
+            {handoverStatusLabel(row)}
           </StatusPill>
           <StatusPill size="sm">T{row.tier}</StatusPill>
           <StatusPill size="sm">waiting {durMinutes(ctx.now - row.openedAt)}</StatusPill>

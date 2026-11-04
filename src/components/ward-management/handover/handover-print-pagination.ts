@@ -10,6 +10,8 @@ type ExtraSectionId = "beds" | "holds" | "sigs";
 export type ExtraSection = { id: ExtraSectionId; entries: ExtraEntry[]; continued: boolean };
 
 export type PaperMeasurements = {
+  /** Final DOM invariant catches rendered blocks outside the item planner. */
+  contentOverflows?: boolean;
   mainBudget: number;
   extraBudget: number;
   firstPageCost: number;
@@ -53,7 +55,10 @@ export function paginateHandoverItems(
       need += height(items[next]!);
     }
     const page = pages[pages.length - 1]!;
-    if (item.kind !== "isbar" && used + need > budget && page.length > 0) {
+    // Once a heading has moved with its first patient, do not split them again when that
+    // patient alone is oversized. A later row may move; a heading-only page is never useful.
+    const onlyHeading = item.kind === "row" && page.length === 1 && page[0]?.kind === "group";
+    if (item.kind !== "isbar" && !onlyHeading && used + need > budget && (page.length > 0 || used > 0)) {
       pages.push([]);
       used = 0;
       if (item.kind !== "group" && current !== null) {
@@ -111,4 +116,40 @@ export function paginateHandoverExtras(
   });
   const count = Math.max(...columns.map((pages) => pages.length));
   return Array.from({ length: count }, (_, index) => columns.map((pages) => pages[index] ?? []));
+}
+
+/** Never send a measured block to fixed-size paper if it would be clipped. */
+export function handoverPaperFits(
+  pages: PaperItem[][],
+  extras: ExtraSection[][][],
+  measured: PaperMeasurements,
+): boolean {
+  return (
+    !measured.contentOverflows &&
+    pages.every(
+      (items, index) =>
+        (index === 0 ? measured.firstPageCost : 0) +
+          items.reduce(
+            (sum, item) => sum + (measured.itemHeights[paperItemKey(item)] ?? fallbackItemHeight(item)),
+            0,
+          ) <=
+        measured.mainBudget,
+    ) &&
+    extras.every((columns) =>
+      columns.every(
+        (sections) =>
+          sections.reduce(
+            (sum, section) =>
+              sum +
+              (measured.extraHeads[section.id] ?? (section.id === "sigs" ? 0 : 50)) +
+              section.entries.reduce(
+                (height, entry) =>
+                  height + (measured.extraHeights[extraEntryKey(entry)] ?? (entry.kind === "sigs" ? 105 : 23)),
+                0,
+              ),
+            0,
+          ) <= measured.extraBudget,
+      ),
+    )
+  );
 }

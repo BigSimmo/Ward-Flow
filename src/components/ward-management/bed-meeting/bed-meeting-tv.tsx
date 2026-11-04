@@ -31,7 +31,7 @@ import {
   LONG_WAIT_TEXT,
 } from "@/components/ward-management/ward-operational-defaults";
 import type { HealthService } from "@/components/ward-management/ward-model";
-import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { WARD_BED_MEETING_TV_HREF, WARD_CAPACITY_HREF, bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { currentShift } from "@/components/ward-management/ward-board-time-features";
 import { scenarioLabels } from "@/components/ward-management/ward-scenarios";
@@ -1136,7 +1136,6 @@ export function BedMeetingTvScreen({
   const { scenario, configuration, shared } = useWardFlowSelect("scenario", "configuration", "shared");
   const now = useWardFlowClock();
   const deviceService = useServiceScope();
-  const patientOf = usePatientOf();
   const enabled = useWardFeatureFlag("bed-meeting-tv");
   const deviceCanChange = useWardFeatureFlags()[0]?.deviceCanChange ?? false;
   const root = useRef<HTMLElement>(null);
@@ -1180,6 +1179,12 @@ export function BedMeetingTvScreen({
   const { units, movements, bedReleases, admissions, leaveBeds, referrals, patients, plannedAdmissions } = live
     ? liveRecords
     : lastLiveRecords;
+  // Resolve names against the same selected records as the rows and counts. A supported scenario
+  // change while offline must not pair the previous world's movements with the new world's people.
+  const patientOf = useMemo(
+    () => createPatientResolver({ patients, referrals, movements, plannedAdmissions }),
+    [patients, referrals, movements, plannedAdmissions],
+  );
   const staleMinutes = live ? 0 : Math.max(0, Math.round(now - lastLive));
 
   const unit = ward === undefined ? undefined : units.find((candidate) => candidate.id === ward);

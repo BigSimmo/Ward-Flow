@@ -51,7 +51,10 @@ export function useTakeDowntimePack(): (options?: { shiftChangeAt?: Instant | nu
     const read = `${receivedAt}:${worldGeneration}`;
     if (receivedAt > 0 && notedRead.current !== read) {
       notedRead.current = read;
-      noteDowntimeSync(now, worldGeneration);
+      // `now` advances between reads. Recover the minute of receipt so remounting this hook
+      // cannot stamp a cached answer with the current minute.
+      const elapsed = Math.max(0, Math.floor((Date.now() - receivedAt) / 60_000));
+      noteDowntimeSync(now - elapsed, worldGeneration);
     }
   }, [online, canTake, now, worldGeneration, receivedAt]);
   return useCallback(
