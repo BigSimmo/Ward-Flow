@@ -190,6 +190,15 @@ export class SharedWorkspaceClient {
     const { response, value } = await this.request(`/v1/workspace/receipt?commandId=${held.commandId}`);
     current();
     if (!response.ok) throw new Error("Receipt unavailable");
+    if (value.receipt === null) {
+      this.publish({
+        status: "unavailable",
+        boardCurrent: true,
+        recovery:
+          "The previous save is still unresolved. Saving remains disabled while its receipt is checked. Try checking again.",
+      });
+      return; // Absence cannot prove a request delayed before the write lock will never commit.
+    }
     const outcome = value.receipt?.outcome;
     if (value.receipt !== null && !["accepted", "partly", "refused"].includes(outcome)) throw new Error("Bad receipt");
     if (
@@ -214,9 +223,7 @@ export class SharedWorkspaceClient {
       recovery:
         outcome === "accepted" || outcome === "partly"
           ? `The previous uncertain save was ${outcome === "partly" ? "partially applied" : "accepted"}. Review the refreshed board before acting again.`
-          : outcome === "refused"
-            ? `The previous uncertain save was not applied. ${SAVE_PROBLEMS.refused[1]}`
-            : "No retained receipt was found for the previous uncertain save. Its outcome is unknown. Review the board before repeating any action.",
+          : `The previous uncertain save was not applied. ${SAVE_PROBLEMS.refused[1]}`,
     });
   }
 
@@ -301,11 +308,7 @@ export class SharedWorkspaceClient {
       this.settle(this.pending.commandId, "failed", saveProblem("roleChangedWhileSaving"));
     this.cancelAll(saveProblem("roleChanged"), saveProblem("roleChangedWhileSaving"));
   }
-  /**
-   * A signed-out or denied request ends the session. Only a refusal of the pending command itself is
-   * a definite "refused"; when a different request ended the session while the command was already
-   * sent, the server may have applied it, so say that. An unsent command is cancelled by the caller.
-   */
+  /** Only this command's own refusal is definitive; an unrelated session end leaves a sent save uncertain. */
   private settleForSessionEnd(body: unknown, message: string, answered: boolean) {
     const pending = this.pending;
     if (!pending) return;
@@ -332,11 +335,7 @@ export class SharedWorkspaceClient {
   private workingAsOverride: string | null | undefined;
   /** The revision this tab's own accepted revision-only commands reached, ahead of its snapshot. */
   private headRevision = 0;
-  /**
-   * Audit CS-19: the revision this tab held when each open popup opened. A command asked for from
-   * a popup is checked against that, so the server refuses it when another desk changed the record
-   * while the person was looking, rather than letting an edit made from an older view through.
-   */
+  /** CS-19: saves use the popup's opening revision, so intervening changes are refused. */
   private sheetSeen = new WeakMap<object, SheetSeen>();
   /** The popups the command in flight was asked for from, while it is in flight. */
   private pendingSheets: readonly object[] | undefined;
@@ -623,10 +622,7 @@ export class SharedWorkspaceClient {
         this.archiveAsked = null;
         this.archiveEpoch++;
       }
-      // Scoped polls also return full snapshots when only permissions may have changed. Keep the held
-      // object for every record, list and map whose content is unchanged (audit PS-06), so identical
-      // data stays stable for the provider and its field selectors, draft owners included, and a
-      // change re-renders only what reads the records that changed (`ward-shared-client-reuse.ts`).
+      // PS-06: reuse unchanged records and lists, including on permission-only full polls.
       if (!unchanged) this.rawPayload = reuseUnchangedPayload(this.rawPayload, snapshot.payload);
       const raw = this.rawPayload!;
       const payload = reuseUnchangedPayload(held?.payload, this.withArchive(raw, snapshot.accessContext));
@@ -1014,12 +1010,21 @@ export class SharedWorkspaceClient {
       });
     const roleSignal = this.roleLifetime.signal;
     const generation = this.viewGeneration;
+    const worldEpoch = this.worldEpoch;
+    const worldGeneration = this.view.snapshot.payload.state.worldGeneration;
+    const replacesWorld = event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO";
     const currentOutcome = (outcome: WardCommandOutcome): WardCommandOutcome => {
-      const worldEpoch = this.worldEpoch;
       return {
         ...outcome,
         isCurrent: () =>
-          !this.disposed && !roleSignal.aborted && generation === this.viewGeneration && this.worldEpoch === worldEpoch,
+          !this.disposed &&
+          !roleSignal.aborted &&
+          generation === this.viewGeneration &&
+          (this.worldEpoch === worldEpoch ||
+            (replacesWorld &&
+              outcome.status === "accepted" &&
+              this.worldEpoch === worldEpoch + 1 &&
+              this.view.snapshot?.payload.state.worldGeneration === worldGeneration + 1)),
         canUndo: () => !!this.view.snapshot && ["ready", "saving"].includes(this.view.status),
       };
     };
@@ -1266,10 +1271,7 @@ export class SharedWorkspaceClient {
   pushSubscribe = (subscription: push.PushSubscriptionShape) => push.pushSubscribe(this.ask, subscription);
   pushStatus = (endpoint: string) => push.pushStatus(this.ask, endpoint);
   pushUnsubscribe = (endpoint: string) => push.pushUnsubscribe(this.ask, endpoint);
-  /**
-   * Readiness review item 9: tells the server this desk opened a patient's record (patient, movement or referral page, D-80), for a
-   * log nobody can change. Best effort, and a repeat within a minute is ignored. True once the record's detail (H-0731) is shown.
-   */
+  /** D-80: log the opening (deduplicated within a minute); true once H-0731 detail is shown. */
   async logRecordView(patientId: string, surface: RecordViewSurface): Promise<boolean> {
     if (this.view.executiveSnapshot || !this.view.snapshot) return false;
     const asked = this.recordDetail.view; // H-0731: a logged opening also sends that record's detail.
@@ -1473,10 +1475,7 @@ export class SharedWorkspaceClient {
     if (this.pending) await this.drain();
     else await this.refresh();
   };
-  /**
-   * P172 (Josh, 28 Oct 2026): the person reads the outcome of an uncertain save and dismisses it.
-   * Never while the receipt is still being checked, since that message tells the person the board is locked until the receipt is read.
-   */
+  /** P172: dismiss a read outcome, keeping an unresolved receipt's warning until it settles. */
   dismissRecovery = (shown?: string) => {
     if (this.disposed || this.view.recovering || this.view.recovery === undefined) return;
     // A newer outcome than the one the person read stays until they read it.
