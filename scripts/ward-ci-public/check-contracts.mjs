@@ -64,9 +64,9 @@ function requireWorkflow(source) {
   assert.match(source, /^permissions:\n {2}contents: read$/mu);
   assert.match(
     source,
-    // A PR's newer push cancels its older run; main pushes share one queue whose running check is never
-    // cancelled (a newer merge only replaces a waiting one); scheduled and manual runs stay separate.
-    /^concurrency:\n {2}group: ward-flow-\$\{\{ github.event_name == 'pull_request' && format\('pr-\{0\}', github.event.pull_request.number\) \|\| github.event_name == 'push' && 'main' \|\| format\('\{0\}-\{1\}', github.event_name, github.run_id\) \}\}\n {2}cancel-in-progress: \$\{\{ github.event_name == 'pull_request' \}\}$/mu,
+    // Each PR and main share one queue whose running check is never cancelled (a newer push only
+    // replaces a waiting one); scheduled and manual runs stay separate.
+    /^concurrency:\n {2}group: ward-flow-\$\{\{ github.event_name == 'pull_request' && format\('pr-\{0\}', github.event.pull_request.number\) \|\| github.event_name == 'push' && 'main' \|\| format\('\{0\}-\{1\}', github.event_name, github.run_id\) \}\}\n {2}cancel-in-progress: false$/mu,
   );
   assert.doesNotMatch(source, /^\s*(?:shell|defaults):/mu);
   for (const pattern of [
@@ -730,6 +730,7 @@ for (const [before, after] of [
   ],
   ["shard: [1, 2, 3, 4, 5, 6, 7, 8]", "shard: [1, 2, 3, 4, 5, 6, 7]"],
   ["group: [1, 2, 3]", "group: [1, 2]"],
+  ["  cancel-in-progress: false\n", "  cancel-in-progress: true\n"],
   [
     "          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}",
     "          WARD_INSTALL_RESTORED: true",

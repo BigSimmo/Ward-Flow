@@ -13,12 +13,13 @@ on:
     - cron: 0 18 * * *
 permissions:
   contents: read
-# A newer PR push cancels its older run. Main pushes share one queue: the running main check
-# finishes, and a newer merge replaces any main run still waiting, so a burst of merges checks
-# the newest main once instead of every commit (daily-release takes the newest CI-passed main).
+# Each PR and main have one queue: a running check always finishes, and a newer push replaces any
+# run still waiting, so a burst of pushes checks the newest commit once. Cancelling running PR
+# checks threw away 47 to 66% of PR runner time (4 Nov audit, docs/ward-flow/PUBLIC-CI.md).
+# Daily-release takes the newest CI-passed main.
 concurrency:
   group: ward-flow-${{ github.event_name == 'pull_request' && format('pr-{0}', github.event.pull_request.number) || github.event_name == 'push' && 'main' || format('{0}-{1}', github.event_name, github.run_id) }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: false
 jobs:
   plan:
     name: Ward Flow scope plan

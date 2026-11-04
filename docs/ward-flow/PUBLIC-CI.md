@@ -15,9 +15,10 @@ unit or browser matrices can be allocated. Static checks and scoped backend work
 The main reuse proof runs separately. Missing history, unknown files, deletions and renames select
 all executable work. `Ward Flow required` rejects missing plans, unexpected skips and failed jobs.
 
-A newer push to a pull request cancels that PR's older run. Main pushes share one queue: the main
-run in progress always finishes, and a newer merge replaces any main run still waiting, so a burst
-of merges is checked once, on the newest main. The daily release takes the newest CI-passed main.
+Each pull request, and main, has one queue. The run in progress always finishes, and a newer push
+replaces any run still waiting, so a burst of pushes or merges is checked once, on the newest
+commit. On 4 Nov 2026, cancelling running PR checks threw away 47 to 66% of PR runner time, so
+running PR checks are no longer cancelled. The daily release takes the newest CI-passed main.
 Unit shards run four Vitest workers, one per hosted-runner vCPU.
 
 | Job                                             | Work                                                                                                                                                                                                                                                                                                                                                                                      |
