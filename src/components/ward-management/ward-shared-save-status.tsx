@@ -8,6 +8,11 @@ import { useWardSharedSave } from "./shell/ward-shared-save-context";
 import { saveProblem } from "./ward-save-failure";
 import styles from "./ward-shared-save-status.module.css";
 
+/** Offline with saves waiting on this page (Tier 1 item 1). "Held" is only for a leave bed (D-85). */
+function waitingMessage(waiting: number): string {
+  return `Offline. ${waiting === 1 ? "1 change is" : `${waiting} changes are`} waiting on this page and will send by themselves when the connection returns.`;
+}
+
 const RELOAD_WARNING = "Not confirmed yet. Do not reload: reloading now would lose this action. Press Retry first.";
 
 /** Keep recovery inside the top overlay's focus trap, without reopening or closing any record. */
@@ -96,13 +101,17 @@ export function WardSharedSaveStatus({
     recoveryRef.current?.focus({ preventScroll: true });
     connection.retry();
   };
+  const waiting = connection.waiting ?? 0;
   const message = saving
     ? "Saving shared changes… Keep this page open until the save is confirmed."
     : connection.status === "unavailable"
-      ? // Audit 24-3 SM-4: the connection is fine when only a save waits on Retry; its message says so.
-        connection.boardCurrent
-        ? ""
-        : saveProblem("connectionUnavailable")
+      ? // Tier 1 item 1: saves waiting while offline go by themselves when the connection returns.
+        waiting > 0 && !connection.boardCurrent
+        ? waitingMessage(waiting)
+        : // Audit 24-3 SM-4: the connection is fine when only a save waits on Retry; its message says so.
+          connection.boardCurrent
+          ? ""
+          : saveProblem("connectionUnavailable")
       : `${deskLabel} · shared synthetic workspace`;
   const detail: ReactNode = (
     <>
