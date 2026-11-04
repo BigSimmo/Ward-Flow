@@ -1,5 +1,6 @@
 import type { DirectoryCheckRecord } from "./on-call/on-call-checks";
 import type { HomeServiceReturnRecord } from "./out-of-area/home-service-return";
+import type { ReturnEarlyFlagRecord } from "./out-of-area/return-early";
 import type { SiteHandoverSignOffRecord } from "./site-sign-off/site-handover-sign-off";
 import type { WardFlowState } from "./ward-flow-reducer";
 
@@ -18,12 +19,15 @@ export type ClosingLoopContext = {
    * site bed manager's Handover page and History. A site bed manager is sent only its own site's.
    */
   siteHandoverSignOffs?: SiteHandoverSignOffRecord[];
+  /** Out of area "Flag early" (`FLAG_RETURN_EARLY`, Josh, 3 Nov 2026): read by the plan and three desks' alerts. */
+  returnEarlyFlags?: ReturnEarlyFlagRecord[];
 };
 
 export const CLOSING_LOOP_CONTEXT_KEYS = {
   homeServiceReturns: true,
   directoryChecks: true,
   siteHandoverSignOffs: true,
+  returnEarlyFlags: true,
 } as const;
 
 const NONE: never[] = [];
@@ -33,5 +37,6 @@ export function closingLoopContext(state: WardFlowState): Required<ClosingLoopCo
     homeServiceReturns: Array.isArray(state.homeServiceReturns) ? state.homeServiceReturns : NONE,
     directoryChecks: Array.isArray(state.directoryChecks) ? state.directoryChecks : NONE,
     siteHandoverSignOffs: Array.isArray(state.siteHandoverSignOffs) ? state.siteHandoverSignOffs : NONE,
+    returnEarlyFlags: Array.isArray(state.returnEarlyFlags) ? state.returnEarlyFlags : NONE,
   };
 }

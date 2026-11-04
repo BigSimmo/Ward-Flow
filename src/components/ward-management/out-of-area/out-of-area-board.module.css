@@ -1209,6 +1209,17 @@ fieldset.formRow {
   backdrop-filter: saturate(1.6) blur(14px);
 }
 
+/* Out of area "Flag early" (3 Nov 2026): the recorded flag, beside the foot's actions. */
+.flaggedEarly {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  color: var(--wf-ink-2);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  white-space: nowrap;
+}
+
 .need {
   display: inline-flex;
   flex: 1 1 auto;

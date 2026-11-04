@@ -1000,6 +1000,7 @@ function typedRecordsResolve(
   state: Pick<WardFlowState, "admissions" | "movements" | "repatriations"> & {
     supportNotifications?: WardFlowState["supportNotifications"];
     homeServiceReturns?: WardFlowState["homeServiceReturns"];
+    returnEarlyFlags?: WardFlowState["returnEarlyFlags"];
   },
 ): boolean {
   const admissionIds = new Set(state.admissions.map((admission) => admission.id));
@@ -1007,6 +1008,7 @@ function typedRecordsResolve(
   return (
     state.repatriations.every((row) => admissionIds.has(row.admissionId)) &&
     (state.homeServiceReturns ?? []).every((row) => admissionIds.has(row.admissionId)) &&
+    (state.returnEarlyFlags ?? []).every((row) => admissionIds.has(row.admissionId)) &&
     (state.supportNotifications ?? []).every(
       (row) =>
         (row.occasion === "discharge" ? admissionIds : movementIds).has(row.subjectId) &&
@@ -1048,6 +1050,8 @@ const storedState = z.looseObject({
       .array(homeServiceReturn)
       .check(z.refine((rows) => new Set(rows.map((row) => row.admissionId)).size === rows.length)),
   ),
+  // Out of area "Flag early" (3 Nov 2026): absent in older saves. A stay, a site, a time and a role only.
+  returnEarlyFlags: z.optional(z.array(z.strictObject({ admissionId: id, homeHospital: id, at: finite, by: role }))),
   handoverSignOffs: z.array(stamped),
   // Q61 (31 Oct 2026): site handover sign-offs, absent in older saves. Ids, times and a role only.
   siteHandoverSignOffs: z.optional(
@@ -1122,6 +1126,7 @@ function identitiesMatchScenario(state: StoredState): boolean {
     ) &&
     state.repatriations.every((row) => siteCodes.has(row.homeHospital)) &&
     (state.homeServiceReturns ?? []).every((row) => siteCodes.has(row.homeHospital)) &&
+    (state.returnEarlyFlags ?? []).every((row) => siteCodes.has(row.homeHospital)) &&
     state.patients.every(({ registrationScope }) => {
       if (registrationScope === undefined) return true;
       if (registrationScope.kind === "ed") return edIds.has(registrationScope.placeId);

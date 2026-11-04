@@ -314,6 +314,10 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
     context.coordinator
       ? (context.state.homeServiceReturns ?? []).filter((record) => context.admissionIds.has(record.admissionId))
       : [],
+  // Out of area "Flag early" (Josh, 3 Nov 2026): a stay, a site, a time and a role. Sent only with a
+  // stay this desk is already sent in full, so the flag never tells a desk about a person it cannot see.
+  returnEarlyFlags: (context) =>
+    (context.state.returnEarlyFlags ?? []).filter((record) => wholeStay(context, record.admissionId)),
   repatriations: (context) =>
     context.coordinator
       ? context.state.repatriations.filter((record) => context.admissionIds.has(record.admissionId))
@@ -403,6 +407,7 @@ export function scopeWardFlowState(
   if (state.supportNotifications === undefined) delete next.supportNotifications;
   if (state.undoRecords === undefined) delete next.undoRecords;
   if (state.siteHandoverSignOffs === undefined) delete next.siteHandoverSignOffs;
+  if (state.returnEarlyFlags === undefined) delete next.returnEarlyFlags;
   return {
     state: closeReferences(next as WardFlowState, scoped.datesOnlyAdmissionIds, state, access.role !== "executive"),
     breakGlassPatientIds: scoped.breakGlassPatientIds,

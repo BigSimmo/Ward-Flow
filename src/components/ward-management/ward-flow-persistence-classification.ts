@@ -308,6 +308,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "RECORD_HOME_SERVICE_RETURN",
   // Closing-the-loop (package E): a directory entry id only. No typed text.
   "RECORD_DIRECTORY_CHECK",
+  // Out of area "Flag early" (3 Nov 2026): an admission id and a site code the reducer checks. No typed text.
+  "FLAG_RETURN_EARLY",
   "SET_DISCHARGE_BARRIER",
   // D-60: criteria are a closed list chosen from checkboxes. D-65 adds typed patient specific
   // criteria, so a dispatch naming any criterion off that list locks storage at payload level
@@ -361,6 +363,7 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   "UNDO_LEGAL_FORM_RECORD",
   "UNDO_SUPPORT_NOTIFICATION",
   "UNDO_REPATRIATION",
+  "UNDO_FLAG_RETURN_EARLY",
   "UNDO_HANDOVER_SIGN_OFF",
   "UNDO_SITE_HANDOVER_SIGN_OFF",
   "UNDO_ED_STEP",

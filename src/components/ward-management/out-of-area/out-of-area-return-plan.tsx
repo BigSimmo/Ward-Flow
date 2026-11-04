@@ -3,7 +3,7 @@
 import { legalFormNameLabelFirst } from "@/components/ward-management/ward-legal-forms";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { BedSingle, Car, Check, Clock, House, Plane } from "lucide-react";
+import { BedSingle, Car, Check, Clock, Flag, House, Plane } from "lucide-react";
 
 import {
   Button,
@@ -46,6 +46,8 @@ import styles from "./out-of-area-board.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { HomeServiceReturnPanel } from "./home-service-return-panel-lazy";
+import type { ReturnEarlyFlagRecord } from "./return-early";
+import { UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-undo";
 
 export function returnPlanMissingToSend(draft: RepatDraft, now: Instant = 0): string[] {
   return missingAnswers(draft, now).filter((answer) => answer !== "ward agreement");
@@ -192,6 +194,11 @@ export type ReturnPlanProps = {
   onRecord: () => void;
   onSendToWard?: () => void;
   onMarkWardAgreed?: () => void;
+  /** Out of area "Flag early" (Josh, 3 Nov 2026): this stay's current flag, if any. */
+  earlyFlag?: ReturnEarlyFlagRecord;
+  /** Raises `FLAG_RETURN_EARLY` for the chosen home hospital. Only ever from the tap. */
+  onFlagEarly?: (homeHospital: string) => void;
+  onUndoFlagEarly?: () => void;
   /** The plan's own header (desktop card head, or nothing inside the phone sheet). */
   header?: ReactNode;
   /** Keeps radio group names unique if the plan is ever mounted twice. */
@@ -220,10 +227,16 @@ export function ReturnPlan({
   onRecord,
   onSendToWard,
   onMarkWardAgreed,
+  earlyFlag,
+  onFlagEarly,
+  onUndoFlagEarly,
   header,
   idPrefix,
   compactIdentity = false,
 }: ReturnPlanProps) {
+  const flagEarly = (hospital: string) => (
+    <FlagEarly flag={earlyFlag} hospital={hospital} now={now} onFlag={onFlagEarly} onUndo={onUndoFlagEarly} />
+  );
   const site = siteByCode(entry.unit.siteCode);
   const missing = missingAnswers(draft, now);
   // A typed CAD number the rule refuses is named beside the field; blank stays a plain "missing".
@@ -335,6 +348,7 @@ export function ReturnPlan({
           returnMovementId={returnMovementId}
           now={now}
           onMarkWardAgreed={onMarkWardAgreed}
+          flagEarly={flagEarly(record.homeHospital)}
         />
       ) : (
         <>
@@ -564,6 +578,7 @@ export function ReturnPlan({
                 </>
               )}
             </span>
+            {flagEarly(draft.homeHospital)}
             <Button
               variant="sec"
               size="sm"
@@ -592,16 +607,69 @@ export function ReturnPlan({
   );
 }
 
+/**
+ * Out of area "Flag early" (Josh, 3 Nov 2026): a secondary action in the pinned foot. Once flagged it
+ * says when, with Undo while the engine still allows it (`UNDO_WINDOW_MINUTES`).
+ */
+function FlagEarly({
+  flag,
+  hospital,
+  now,
+  onFlag,
+  onUndo,
+}: {
+  flag: ReturnEarlyFlagRecord | undefined;
+  hospital: string;
+  now: Instant;
+  onFlag?: (homeHospital: string) => void;
+  onUndo?: () => void;
+}) {
+  if (flag) {
+    return (
+      <>
+        <span className={styles.flaggedEarly} data-testid="ward-out-of-area-flagged-early">
+          <Icon icon={Flag} size={16} />
+          Flagged early {formatInstantWithDay(flag.at, now)}
+        </span>
+        {onUndo && now - flag.at < UNDO_WINDOW_MINUTES ? (
+          <Button variant="ghost" size="sm" data-testid="ward-out-of-area-flag-early-undo" onClick={onUndo}>
+            Undo
+          </Button>
+        ) : null}
+      </>
+    );
+  }
+  const chosen = siteByCode(hospital) !== undefined;
+  return (
+    <Button
+      variant="sec"
+      size="sm"
+      icon={Flag}
+      data-testid="ward-out-of-area-flag-early"
+      disabledReason={chosen ? undefined : "Choose the receiving hospital first."}
+      reasonDisplay="tooltip"
+      title="May be ready to come home sooner than planned. Tells the receiving ward, the home team and Transport."
+      onClick={() => {
+        if (chosen) onFlag?.(hospital);
+      }}
+    >
+      Flag early
+    </Button>
+  );
+}
+
 function RecordedReturn({
   record,
   returnMovementId,
   now,
   onMarkWardAgreed,
+  flagEarly,
 }: {
   record: RepatriationRecord;
   returnMovementId: string | undefined;
   now: Instant;
   onMarkWardAgreed?: () => void;
+  flagEarly: ReactNode;
 }) {
   return (
     <div className={styles.doneBox} data-testid="ward-out-of-area-recorded">
@@ -648,6 +716,7 @@ function RecordedReturn({
         <dd className={styles.mono}>{formatInstantWithDay(record.estimatedAt, now)}</dd>
       </dl>
       <div className={styles.planFoot}>
+        {flagEarly}
         {record.receivingWardAgreed ? (
           <>
             <span className={styles.need}>
