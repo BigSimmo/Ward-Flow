@@ -62,3 +62,22 @@ describe("Home next step follows the service scope", () => {
     expect(answer()).toBe(statewide);
   });
 });
+
+describe("Home next step is not repeated by a hero chip (Josh, 4 Nov 2026)", () => {
+  it("leaves out the hero chip that says the step's own figure on tablet and desktop", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <CoordinatorScreen />
+      </WardFlowProvider>,
+    );
+    const step = answer();
+    const chipFor = (label: RegExp) => screen.queryAllByRole("button", { name: label });
+    // The seeded network opens on Act now, so the Act now chip is the one left out.
+    expect(step).toMatch(/need(s)? a person now/u);
+    expect(chipFor(/^\d+\s*To decide/u)).toHaveLength(1);
+    if (/need(s)? a person now/u.test(step)) expect(chipFor(/^\d+\s*Act now/u)).toHaveLength(0);
+    else if (/to decide/u.test(step)) expect(chipFor(/^\d+\s*To decide/u)).toHaveLength(0);
+    // The step's own button still does the toggle the chip did.
+    expect(screen.getByTestId("home-next-action")).toBeInTheDocument();
+  });
+});

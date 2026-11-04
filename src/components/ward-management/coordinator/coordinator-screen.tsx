@@ -819,6 +819,10 @@ export function CoordinatorScreen() {
   // Scope: with a service chosen, the step counts only that service's work, never statewide: the
   // hero's own scoped Act now (`heroActNow`), and the scoped referral queue and flow queue Home shows.
   const nextActCount = heroActNow;
+  // Josh, 4 Nov 2026 (2i question 2): on tablet and desktop the hero chip that repeats the step's own
+  // figure is left out, since the step's button does the same toggle.
+  const nextKind: "act" | "decide" | "overdue" | null =
+    nextActCount > 0 ? "act" : referralQueue.length > 0 ? "decide" : chips.overdueInQueue > 0 ? "overdue" : null;
   const nextScope = service === null ? "" : ` in ${service}`;
   const heroNext: HeroNextStep =
     nextActCount > 0
@@ -852,6 +856,15 @@ export function CoordinatorScreen() {
               },
             }
           : { answer: `Nothing needs you now${nextScope}` };
+  // Josh, 4 Nov 2026 (2i question 5): the phone hero folds its foot away, but keeps the Checking line
+  // under the step whenever a bed count is stale or a ward is not reporting.
+  const phoneChecking =
+    isPhone && staleBedCounts + wardsNotReporting > 0 ? (
+      <span data-testid="home-next-checking">
+        Checking: {staleBedCounts} stale bed {staleBedCounts === 1 ? "count" : "counts"}, {wardsNotReporting}{" "}
+        {wardsNotReporting === 1 ? "ward" : "wards"} not reporting
+      </span>
+    ) : undefined;
 
   return (
     <div className={`${styles.screen} ${activity.glyphScope}`} data-testid="ward-coordinator" data-ward-design="v6">
@@ -869,7 +882,7 @@ export function CoordinatorScreen() {
               isPhone ? `Modelled network · ${shiftWord}` : `Modelled network · mental health beds · ${shiftWord}`
             }
             title={heroTitle}
-            next={heroNext}
+            next={phoneChecking ? { ...heroNext, owner: phoneChecking } : heroNext}
             // Redesign (Josh, 30 Oct 2026): the synthetic disclosure lives in the app bar and the footer, so
             // the hero keeps only its facts; on a phone they fold to one line.
             titleMeta={
@@ -940,36 +953,42 @@ export function CoordinatorScreen() {
                 </div>
               ) : (
                 <div className={styles.heroToggles}>
-                  <HeroStat
-                    inline
-                    value={heroActNow}
-                    label="Act now"
-                    tone={heroActNow > 0 ? "danger" : undefined}
-                    pressed={shownView === "needs" && needsFocus === "act"}
-                    onToggle={() => toggleFocus("act")}
-                  />
-                  <HeroStat
-                    inline
-                    value={referralQueue.length}
-                    label="To decide"
-                    tone={referralQueue.length > 0 ? "info" : undefined}
-                    pressed={shownView === "needs" && needsFocus === "decide"}
-                    onToggle={() => toggleFocus("decide")}
-                  />
-                  <HeroStat
-                    inline
-                    value={chips.overdueInQueue}
-                    label={overdueWord}
-                    tone={chips.overdueInQueue > 0 ? "warning" : undefined}
-                    pressed={shownView === "queue" && highlight === "overdue"}
-                    onToggle={() => {
-                      showView("queue");
-                      // A hero count covers the whole queue, so it clears any chosen stage.
-                      setFlowStage(undefined);
-                      chooseNeedsFocus("all");
-                      toggleHighlight("overdue");
-                    }}
-                  />
+                  {nextKind === "act" ? null : (
+                    <HeroStat
+                      inline
+                      value={heroActNow}
+                      label="Act now"
+                      tone={heroActNow > 0 ? "danger" : undefined}
+                      pressed={shownView === "needs" && needsFocus === "act"}
+                      onToggle={() => toggleFocus("act")}
+                    />
+                  )}
+                  {nextKind === "decide" ? null : (
+                    <HeroStat
+                      inline
+                      value={referralQueue.length}
+                      label="To decide"
+                      tone={referralQueue.length > 0 ? "info" : undefined}
+                      pressed={shownView === "needs" && needsFocus === "decide"}
+                      onToggle={() => toggleFocus("decide")}
+                    />
+                  )}
+                  {nextKind === "overdue" ? null : (
+                    <HeroStat
+                      inline
+                      value={chips.overdueInQueue}
+                      label={overdueWord}
+                      tone={chips.overdueInQueue > 0 ? "warning" : undefined}
+                      pressed={shownView === "queue" && highlight === "overdue"}
+                      onToggle={() => {
+                        showView("queue");
+                        // A hero count covers the whole queue, so it clears any chosen stage.
+                        setFlowStage(undefined);
+                        chooseNeedsFocus("all");
+                        toggleHighlight("overdue");
+                      }}
+                    />
+                  )}
                   <HeroStat
                     inline
                     value={chips.tierOneInQueue}
