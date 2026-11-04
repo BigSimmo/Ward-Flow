@@ -92,7 +92,7 @@ import {
 } from "@/components/ward-management/ward-flow-provider";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { releaseUndoStep } from "./shortlist-release-undo";
+import { releaseUndoStep, withdrawUndoStep } from "./shortlist-release-undo";
 import { sendStepsInOrder } from "@/components/ward-management/coordinator/send-steps-in-order";
 import { useWardFormSave } from "../use-ward-form-save";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
@@ -872,21 +872,13 @@ export function ShortlistPanel({
     event.preventDefault();
     if (withdrawUnitId === undefined || withdrawReason === "") return;
     let completion: ReturnType<typeof dispatch> | undefined;
-    const undo = releaseUndo(`Ward request withdrawn for ${patientIdentity.formalName}.`, "Undone. The ward request is open again.");
+    const withdraw = { role: "coordinator", now, movementId, unitId: withdrawUnitId, reason: withdrawReason } as const;
     withdrawSave.submit(
-      () =>
-        (completion = dispatch({
-          type: "WITHDRAW_WARD_REQUEST",
-          role: "coordinator",
-          now,
-          movementId,
-          unitId: withdrawUnitId,
-          reason: withdrawReason,
-        })),
+      () => (completion = dispatch({ type: "WITHDRAW_WARD_REQUEST", ...withdraw })),
       () => {
         setWithdrawUnitId(undefined);
         setWithdrawReason("");
-        offerUndo(undo, { completion });
+        offerUndo(withdrawUndoStep(movementId, patientIdentity.formalName), { completion });
       },
     );
   }

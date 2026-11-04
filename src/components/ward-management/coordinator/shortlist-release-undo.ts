@@ -13,3 +13,7 @@ export function releaseUndoStep(movementId: string, success: string, undone: str
   };
 }
 
+/** The ward request withdrawal's Undo; the panel dispatches the withdrawal itself as a literal (merge of #1398 with main). */
+export function withdrawUndoStep(movementId: string, name: string): UndoableStep {
+  return releaseUndoStep(movementId, `Ward request withdrawn for ${name}.`, "Undone. The ward request is open again.");
+}
