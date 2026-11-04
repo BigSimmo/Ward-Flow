@@ -76,6 +76,34 @@
   border-color: var(--wf-hero-ink-2);
   background: var(--wf-hero-1);
 }
+
+/* S4 (Josh, 4 Nov 2026): a graph dot never moves on press. The global press nudge (`translate`) is
+   cancelled; the chosen dot shows a ring. An invisible hit area centred on the dot reaches 28px with
+   a mouse and 44px for a finger, so the dot itself never shifts. */
+.mark:active {
+  translate: none;
+}
+
+.mark[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--wf-hero-ink-2);
+}
+
+button.mark::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 28px;
+  height: 28px;
+  transform: translate(-50%, -50%);
+}
+
+@media (pointer: coarse) {
+  button.mark::before {
+    width: 44px;
+    height: 44px;
+  }
+}
 .mark:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;

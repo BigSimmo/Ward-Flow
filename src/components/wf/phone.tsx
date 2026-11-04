@@ -27,6 +27,7 @@ import { StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./phone.module.css";
 import foldStyles from "./phone-fold.module.css";
 import { useModalFocus } from "./use-modal-focus";
+import { useSheetHistory } from "./sheet-history";
 
 /*
  * v9 phone parts (design system v9 section 7, "Phone"). Phone is its own design at 390 by 844,
@@ -66,6 +67,8 @@ export type PhoneSheetProps = {
    * slide-over: full height against the right edge, the same header, body and footer.
    */
   placement?: "bottom" | "right";
+  /** On a phone, Back closes the sheet first (`sheet-history.ts`). False when the page owns that entry. */
+  closeOnBack?: boolean;
   className?: string;
   "data-testid"?: string;
 };
@@ -94,6 +97,7 @@ export function PhoneSheet({
   returnFocusRef,
   height = "content",
   placement = "bottom",
+  closeOnBack = true,
   className,
   ...data
 }: PhoneSheetProps) {
@@ -120,6 +124,7 @@ export function PhoneSheet({
     fallbackFocusRef: closeRef,
     returnFocusRef,
   });
+  useSheetHistory(open, onClose, closeOnBack);
 
   // Drag to dismiss from the handle only, so it never competes with scrolling the body.
   function onHandleDown(event: ReactPointerEvent<HTMLDivElement>) {

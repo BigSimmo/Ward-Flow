@@ -583,3 +583,21 @@ export function startSheetOpenFocus({
     cancel: finish,
   };
 }
+
+// S5 (sheet-history.ts): how many history steps a kit sheet has taken on its own, after an ordinary
+// close, whose popstate has not arrived yet. Kept here so the page's unsaved-form guard can read it.
+let sheetHistorySteps = 0;
+
+/**
+ * True while the popstate under way is a kit sheet's own step back after an ordinary close. It never
+ * leaves the page, so the unsaved-form guard lets it through. A person's Back is not included: with
+ * typed text on the page the guard still asks first, and Keep editing keeps the sheet.
+ */
+export function sheetHistoryStepInFlight(): boolean {
+  return sheetHistorySteps > 0;
+}
+
+/** sheet-history.ts only. */
+export function setSheetHistorySteps(steps: number) {
+  sheetHistorySteps = Math.max(0, steps);
+}

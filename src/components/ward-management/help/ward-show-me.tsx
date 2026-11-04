@@ -31,6 +31,7 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
   const cardRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const spotRef = useRef<HTMLDivElement>(null);
+  const outsidePressRef = useRef(false);
   const pathname = usePathname() ?? "";
   const router = useRouter();
   // A computer and a phone walk different steps, so a window narrowed mid-walk (or a tablet
@@ -87,7 +88,24 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
 
   return (
     <OverlayPortal layer="modal" name="ward-show-me">
-      <div ref={rootRef} className={styles.layer} data-testid="ward-show-me" data-device={device} data-flow="show-me">
+      {/* S5 (Josh, 4 Nov 2026): a tap on the dim outside the card closes, as every pop-up does; Escape
+          closes from the keyboard. Only a press that starts outside the card counts. */}
+      {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- the dim closes on a tap; Escape closes from the keyboard */}
+      <div
+        ref={rootRef}
+        className={styles.layer}
+        data-testid="ward-show-me"
+        data-device={device}
+        data-flow="show-me"
+        onPointerDown={(event) => {
+          outsidePressRef.current = !cardRef.current?.contains(event.target as Node);
+        }}
+        onClick={(event) => {
+          const startedOutside = outsidePressRef.current;
+          outsidePressRef.current = false;
+          if (startedOutside && !cardRef.current?.contains(event.target as Node)) onClose();
+        }}
+      >
         {/* Keyed apart, so a new spot is never the dim's box reused and flown in from the corner. */}
         {box ? (
           <div

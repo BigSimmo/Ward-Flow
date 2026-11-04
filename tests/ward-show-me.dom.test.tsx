@@ -106,6 +106,23 @@ describe("Show me player", () => {
     expect(onClose).toHaveBeenCalledTimes(2);
   });
 
+  it("closes on a tap outside the card, never on a press inside it (S5, 4 Nov 2026)", () => {
+    const onClose = vi.fn();
+    render(<WardShowMe id="theme" onClose={onClose} onBack={vi.fn()} />);
+    const card = screen.getByTestId("ward-show-me-card");
+    act(() => {
+      fireEvent.pointerDown(card);
+      fireEvent.click(card);
+    });
+    expect(onClose).not.toHaveBeenCalled();
+    const layer = screen.getByTestId("ward-show-me");
+    act(() => {
+      fireEvent.pointerDown(layer);
+      fireEvent.click(layer);
+    });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps the phone dock in view under its card, so dock controls can be lit", () => {
     render(<WardShowMe id="alerts" onClose={vi.fn()} onBack={vi.fn()} />);
     expect(screen.getByTestId("ward-show-me-card").id).toBe("ward-show-me-card");

@@ -16,6 +16,7 @@ import { OverlayPortal } from "./overlay-root";
 import { cn } from "@/components/ui-primitives";
 import styles from "./sheet.module.css";
 import { modalFocusTargets } from "./focus-targets";
+import { useSheetHistory } from "./sheet-history";
 import {
   canRestoreFocusTo,
   isTopmostSheet,
@@ -102,6 +103,11 @@ type SheetBaseProps = {
   testId?: string;
   /** Stable dialog id so an opener can advertise `aria-controls`. */
   id?: string;
+  /**
+   * On a phone, Back closes the sheet first (`sheet-history.ts`). Pass false only when the page
+   * already gives this sheet its own history entry.
+   */
+  closeOnBack?: boolean;
 };
 
 export type SheetProps = SheetBaseProps & SheetAccessibleName;
@@ -165,6 +171,7 @@ export function Sheet({
   desktopBackdropClassName,
   testId,
   id,
+  closeOnBack = true,
 }: SheetProps) {
   const backdropRef = useRef<HTMLDivElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -200,6 +207,8 @@ export function Sheet({
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
+
+  useSheetHistory(open, onClose, closeOnBack);
 
   useEffect(() => {
     unmountingRef.current = false;

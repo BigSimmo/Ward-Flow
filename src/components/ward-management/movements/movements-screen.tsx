@@ -178,13 +178,11 @@ export function MovementsScreen() {
   }, []);
 
   useEffect(() => {
-    function handlePopState() {
-      setDetailId(null);
-    }
+    // S5: a kit sheet over the record stepping off its own entry lands on the record's: it stays.
+    const handlePopState = (event: PopStateEvent) =>
+      setDetailId((id) => (id !== null && id === event.state?.wardMovementDetail ? id : null));
     window.addEventListener("popstate", handlePopState);
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-    };
+    return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
   // Usability review, 24 Oct 2026: the tab lives in the address, so Back from a record returns to it.

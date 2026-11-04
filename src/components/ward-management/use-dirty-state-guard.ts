@@ -3,6 +3,7 @@
 import { useEffect, useCallback, useRef, useState } from "react";
 
 import { hasConfirmHost, requestConfirm } from "@/components/wf";
+import { sheetHistoryStepInFlight } from "@/components/wf/sheet-focus";
 
 import {
   clearWardFlowDraftCaches,
@@ -219,6 +220,13 @@ function handleGuardedPopState(event: PopStateEvent): void {
     restoreSourceEntry(window.location.href !== sourceEntry?.url);
     event.stopImmediatePropagation();
     window.dispatchEvent(new Event(WARD_HISTORY_TRAVERSAL_CANCELLED));
+    return;
+  }
+  if (sheetHistoryStepInFlight()) {
+    // A kit sheet stepping back over its own entry after an ordinary close: the page is not left.
+    lastHistoryIndex = readHistoryIndex(event.state) ?? lastHistoryIndex;
+    lastNavigationIndex = navigationIndex();
+    rememberEntry();
     return;
   }
   if (traversalApprovedOnce) {

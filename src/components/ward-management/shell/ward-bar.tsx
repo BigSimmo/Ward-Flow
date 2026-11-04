@@ -723,7 +723,7 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
       // so a later close may try again without approving any other dirty form.
       closingViaHistoryRef.current = null;
     }
-    function onPopState() {
+    function onPopState(event: PopStateEvent) {
       const closing = closingViaHistoryRef.current;
       if (closing !== null) {
         // Only the drawer that initiated Back may be closed by its delayed event, and it keeps
@@ -735,6 +735,9 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
         return;
       }
       if (openPanel === null) return;
+      // A kit sheet opened inside the drawer stepped off its own entry (S5, Back closes the top
+      // sheet first): the drawer's entry is current again, so the drawer stays.
+      if (isDrawerPanel(openPanel) && event.state?.wardDrawer === openPanel) return;
       setOpenPanel(null);
       // Announce in the event, outside React's state updater/render phase.
       announceToWardShell("Closed.");
@@ -1228,6 +1231,7 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
 
       <Sheet
         id="ward-bar-tasks-drawer"
+        closeOnBack={false}
         open={openPanel === "tasks"}
         onClose={() => closePopover("tasks")}
         ariaLabel="Alerts"
@@ -1266,6 +1270,7 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
 
       <Sheet
         id="ward-bar-tools-drawer"
+        closeOnBack={false}
         open={openPanel === "tools"}
         onClose={() => closePopover("tools")}
         title="Tools"
@@ -1321,6 +1326,7 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
 
       <Sheet
         id="ward-bar-referral-drawer"
+        closeOnBack={false}
         open={openPanel === "referral"}
         onClose={() => (referralCloseRef.current ? referralCloseRef.current() : closeReferral())}
         ariaLabel="Referrals"
