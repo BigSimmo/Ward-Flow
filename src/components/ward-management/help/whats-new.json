@@ -90,6 +90,11 @@
     "line": "Open forms stay with their record, and failed changes keep their answers until the save is confirmed."
   },
   {
+    "id": "2026-11-03-simpler-new-referral",
+    "date": "2026-11-03",
+    "line": "Simpler New referral with a one-tap catchment and a clearer close for drafts. Add patient puts core details on top."
+  },
+  {
     "id": "2026-11-03-journey-recovery",
     "date": "2026-11-03",
     "line": "Cancel and reroute unfinished care transfers; clearer reload, partial-save and sign-in recovery."

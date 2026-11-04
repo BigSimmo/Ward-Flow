@@ -6,7 +6,7 @@ import {
   BookOpen,
   CalendarClock,
   Check,
-  CheckCircle2,
+  CircleCheck,
   Clock,
   Copy,
   ExternalLink,
@@ -69,7 +69,7 @@ const NEXT_ICON: Record<NextStepAction, LucideIcon> = {
   written: Clock,
   received: Inbox,
   examination: Stethoscope,
-  none: CheckCircle2,
+  none: CircleCheck,
 };
 
 /**

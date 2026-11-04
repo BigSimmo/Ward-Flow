@@ -47,10 +47,11 @@ describe("Add a patient redesign", () => {
   it("names what is still needed beside the greyed Add patient button, in field order", () => {
     renderForm();
     const needed = screen.getByTestId("ward-add-patient-unavailable");
-    expect(needed).toHaveTextContent("Needed: UMRN, date of birth, given and family name");
+    // RF7 (Josh, 3 Nov 2026): surname first, so the line reads in the new field order.
+    expect(needed).toHaveTextContent("Needed: family and given name, date of birth, UMRN");
     fireEvent.change(screen.getByLabelText(/Record number|UMRN/i), { target: { value: "UM999999" } });
     fireEvent.change(screen.getByLabelText("Given name"), { target: { value: "Testable" } });
-    expect(needed).toHaveTextContent("Needed: date of birth, family name");
+    expect(needed).toHaveTextContent("Needed: family name, date of birth");
   });
 
   it("takes the birth date as DD/MM/YYYY and clears a half-typed date on reset", () => {
@@ -64,11 +65,33 @@ describe("Add a patient redesign", () => {
     expect((screen.getByLabelText("Date of birth") as HTMLInputElement).value).toBe("");
   });
 
-  it("starts with no gender and no Aboriginal status chosen", () => {
+  it("starts with no sex, no gender and no Aboriginal status chosen", () => {
     renderForm();
-    for (const radio of within(screen.getByRole("radiogroup", { name: "Gender" })).getAllByRole("radio")) {
-      expect(radio).toHaveAttribute("aria-checked", "false");
+    for (const group of ["Sex", "Gender", "Aboriginal or Torres Strait Islander"]) {
+      for (const radio of within(screen.getByRole("radiogroup", { name: group })).getAllByRole("radio")) {
+        expect(radio).toHaveAttribute("aria-checked", "false");
+      }
     }
-    expect(screen.getByLabelText("Aboriginal or Torres Strait Islander")).toHaveValue("");
+  });
+
+  // RF7 (Josh, 3 Nov 2026): core details on top, then folded sections, closed, for the rest.
+  it("puts the core details on top and folds the rest underneath, closed, with no browser controls", () => {
+    const { container } = renderForm();
+    const form = screen.getByTestId("ward-add-patient-form");
+    const labels = ["Family name", "Given name", "Date of birth", /UMRN/];
+    const order = labels.map((label) => screen.getByLabelText(label));
+    for (let i = 1; i < order.length; i += 1) {
+      expect(order[i - 1]!.compareDocumentPosition(order[i]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+    const folds = within(form).getByTestId("ward-add-patient-more-details");
+    for (const id of ["contact", "care", "culture"]) {
+      const fold = within(folds).getByTestId(`ward-add-patient-fold-${id}`);
+      expect(fold.tagName).toBe("DETAILS");
+      expect(fold).not.toHaveAttribute("open");
+    }
+    expect(within(folds).getByTestId("ward-add-patient-fold-contact-summary")).toHaveTextContent(
+      "Optional · preferred name, street address",
+    );
+    expect(container.querySelector("select, input[type='date']")).toBeNull();
   });
 });
