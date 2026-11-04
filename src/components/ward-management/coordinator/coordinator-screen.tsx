@@ -1102,8 +1102,9 @@ export function CoordinatorScreen() {
                 {
                   id: "needs",
                   label: "Needs you",
-                  tone: actNowCount > 0 ? "danger" : undefined,
-                  count: actNowCount + referralQueue.length,
+                  // Same scope as the hero, so the tab, the hero and the rows agree (review, 4 Nov).
+                  tone: heroActNow > 0 ? "danger" : undefined,
+                  count: heroActNow + referralQueue.length,
                 },
                 { id: "queue", label: "Flow", count: queue.length },
                 ...(isPhone || layout === "tablet-portrait"
@@ -1184,7 +1185,7 @@ export function CoordinatorScreen() {
                 />
               ) : (
                 <MyListCard
-                  act={actEntries}
+                  act={isInServiceScope ? actEntries.filter(actEntryInScope) : actEntries}
                   toPull={toPull}
                   wait={unmarkedWait}
                   hideWait={unmarkedWait.length === 0}

@@ -35,31 +35,59 @@ describe("Discharges charts under the table (direction A)", () => {
   const dayChart = () => screen.getAllByTestId("ward-discharge-day-chart")[0]!;
   const barrierBars = () => screen.getAllByTestId("ward-discharge-barrier-bars")[0]!;
 
-  it("highlights a day's people in the admission records and hides nobody", () => {
+  it("labels the first bar Overdue, and a day click lights that day's people and adds the unlisted to Expected", () => {
     renderBoard();
-    fireEvent.click(screen.getByRole("button", { name: /^History/u }));
-    const day = within(dayChart())
-      .getAllByRole("button", { pressed: false })
-      .find((button) => /: [1-9]\d* due/u.test(button.getAttribute("aria-label") ?? ""));
+    const bars = within(dayChart()).getAllByRole("button");
+    // DC5 (Josh, 3 Nov 2026): the column of dates already passed reads "Overdue".
+    expect(bars[0]).toHaveTextContent("Overdue");
+    expect(bars[0]).toHaveAccessibleName(/^Overdue, expected date already passed: \d+ due/u);
+    expect(within(dayChart()).queryByText("Passed")).not.toBeInTheDocument();
+    // The furthest day with anyone due is two or more days ahead, so the list's groups leave its
+    // not-held-up releases out until the day is chosen.
+    const day = [...bars].reverse().find((button) => /: [1-9]\d* due/u.test(button.getAttribute("aria-label") ?? ""));
     expect(day).toBeDefined();
-    const expected = Number(/: (\d+) due/u.exec(day!.getAttribute("aria-label") ?? "")?.[1]);
+    const due = Number(/: (\d+) due/u.exec(day!.getAttribute("aria-label") ?? "")?.[1]);
+    const before = worklistRows().length;
+    // The Now switch's name carries the rows to work: "Now, N to work now".
+    const nowSwitch = screen.getByRole("button", { name: /^Now, \d+ to work now$/u });
+    const toWork = Number(/(\d+) to work now/u.exec(nowSwitch.textContent ?? "")?.[1]);
+    expect(toWork).toBeGreaterThan(0);
     fireEvent.click(day!);
-    // On History a click stays on History and highlights the people (admission records).
-    expect(screen.getByRole("button", { name: /^History/u })).toHaveAttribute("aria-pressed", "true");
+    // On Now a click stays on Now.
+    expect(screen.getByRole("button", { name: /^Now,/u })).toHaveAttribute("aria-pressed", "true");
+    const extra = Number(/^\+(\d+) that day$/u.exec(screen.getByText(/^\+\d+ that day$/u).textContent ?? "")?.[1]);
+    expect(extra).toBeGreaterThan(0);
     const rows = worklistRows();
     const lit = rows.filter((row) => row.getAttribute("data-highlighted") === "true");
-    expect(lit).toHaveLength(expected);
-    // Highlighted people come first, and every other record is still listed.
-    expect(rows.slice(0, expected)).toEqual(lit);
-    expect(rows.length).toBeGreaterThan(expected);
+    // The chart leaves closed wards out (as Capacity's forecast does); the list keeps every row, so it
+    // can only hold as many or more. Nobody is hidden: the day's extra people join the rows to work
+    // (lit rows first; a group's unlit rows past its cap stay behind Show more).
+    expect(lit.length).toBeGreaterThanOrEqual(due);
+    expect(rows.slice(0, 1)).toEqual(lit.slice(0, 1));
     expect(screen.getByTestId("ward-discharge-highlight-note")).toHaveTextContent(
-      new RegExp(`${expected} of \\d+ highlighted, all rows stay`),
+      new RegExp(`^${lit.length} of ${toWork + extra} highlighted, all rows stay`, "u"),
     );
     fireEvent.click(within(screen.getByTestId("ward-discharge-highlight-note")).getByRole("button", { name: "Clear" }));
     expect(screen.queryByTestId("ward-discharge-highlight-note")).not.toBeInTheDocument();
+    expect(screen.queryByText(/^\+\d+ that day$/u)).not.toBeInTheDocument();
+    expect(worklistRows()).toHaveLength(before);
   });
 
-  it("highlights a day's bed releases within Now, never jumping to History (Josh, 30 Oct)", () => {
+  it("opens a release the day bar added, not the resting panel (Codex review, #1374)", () => {
+    renderBoard();
+    const listed = new Set(worklistRows().map((row) => row.getAttribute("data-release-id")));
+    const bars = within(dayChart()).getAllByRole("button");
+    const day = [...bars].reverse().find((button) => /: [1-9]\d* due/u.test(button.getAttribute("aria-label") ?? ""));
+    fireEvent.click(day!);
+    const added = worklistRows().find(
+      (row) => row.getAttribute("data-highlighted") === "true" && !listed.has(row.getAttribute("data-release-id")),
+    );
+    expect(added).toBeDefined();
+    fireEvent.click(within(added!).getAllByRole("button")[0]!);
+    expect(screen.getByRole("tablist", { name: /discharge/iu })).toBeInTheDocument();
+  });
+
+  it("highlights a day's bed releases within Now, never jumping to Recorded (Josh, 30 Oct)", () => {
     renderBoard();
     const day = within(dayChart())
       .getAllByRole("button", { pressed: false })
@@ -68,13 +96,13 @@ describe("Discharges charts under the table (direction A)", () => {
     const due = Number(/: (\d+) due/u.exec(day!.getAttribute("aria-label") ?? "")?.[1]);
     fireEvent.click(day!);
     expect(screen.getByRole("button", { name: /^Now,/u })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("button", { name: /^Recorded/u })).toHaveAttribute("aria-pressed", "false");
     const note = screen.getByTestId("ward-discharge-highlight-note").textContent ?? "";
     const listed = Number(/^(\d+) of \d+ highlighted, all rows stay/u.exec(note)?.[1]);
-    const notListed = Number(/· (\d+) more that day not listed/u.exec(note)?.[1] ?? 0);
-    // The chart leaves closed wards out (as Capacity's forecast does); the list keeps every row, so it
-    // can only hold as many or more.
-    expect(listed + notListed).toBeGreaterThanOrEqual(due);
-    expect(listed + notListed).toBeGreaterThan(0);
+    // The chart leaves closed wards out (as Capacity's forecast does); the list keeps every row, and
+    // adds the day's unlisted people to Expected, so it can only hold as many or more.
+    expect(listed).toBeGreaterThanOrEqual(due);
+    expect(listed).toBeGreaterThan(0);
   });
 
   it("counts held-up releases by barrier and highlights the barrier picked, within Now", () => {
@@ -94,38 +122,43 @@ describe("Discharges charts under the table (direction A)", () => {
     expect(screen.queryByTestId("ward-discharge-barrier-table")).not.toBeInTheDocument();
   });
 
-  it("clears a hiding status filter on a chart click, and drops the highlight on a population switch", () => {
+  it("drops the highlight on a population switch, and Recorded hides the charts and KPI bar", () => {
     renderBoard();
-    fireEvent.click(screen.getByRole("button", { name: /^History/u }));
-    const confirmedChip = () =>
-      within(screen.getByRole("group", { name: "Status" })).getByRole("button", { name: /^\d+ Confirmed/u });
-    fireEvent.click(confirmedChip());
-    expect(confirmedChip()).toHaveAttribute("aria-pressed", "true");
     const first = within(barrierBars()).getAllByRole("button")[0]!;
     const count = Number(/: (\d+) held up/u.exec(first.getAttribute("aria-label") ?? "")?.[1]);
     expect(count).toBeGreaterThan(0);
     fireEvent.click(first);
-    expect(confirmedChip()).toHaveAttribute("aria-pressed", "false");
     expect(worklistRows().filter((row) => row.getAttribute("data-highlighted") === "true")).toHaveLength(count);
+    // DC4 (Josh, 3 Nov 2026): Recorded lists the last 7 days of discharges with no barrier side,
+    // charts or KPI bar, and a Now highlight never carries over.
+    fireEvent.click(screen.getByRole("button", { name: /^Recorded/u }));
+    expect(screen.queryByTestId("ward-discharge-highlight-note")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-discharge-day-chart")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-discharge-barrier-bars")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-discharge-kpi-strip")).not.toBeInTheDocument();
+    expect(worklistRows().some((row) => row.getAttribute("data-highlighted") === "true")).toBe(false);
     fireEvent.click(screen.getByRole("button", { name: /^Now,/u }));
     expect(screen.queryByTestId("ward-discharge-highlight-note")).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("ward-discharge-day-chart").length).toBeGreaterThan(0);
   });
 
-  it("offers one control per filter: no blocker chip row and no status tab row (decision 5)", () => {
+  it("offers one control per filter: no blocker chip row, no status chips and no browser selects (DC2)", () => {
     renderBoard();
     expect(screen.queryByRole("toolbar", { name: "Quick blocker filters" })).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Filter by discharge status")).not.toBeInTheDocument();
-    expect(screen.getAllByRole("combobox", { name: "Held up by" })).toHaveLength(1);
-    // Plan item 2i (proposal): one set of status counts. The hero chips are the Status filter, so
-    // the list's filter card carries no second row of status chips.
-    const statusGroups = screen.getAllByRole("group", { name: "Status" });
-    expect(statusGroups).toHaveLength(1);
-    expect(statusGroups[0]).toHaveAttribute("data-testid", "ward-discharge-kpi-strip");
-    const blocked = screen.getByTestId("ward-discharge-kpi-blocked");
-    fireEvent.click(blocked);
-    expect(blocked).toHaveAttribute("aria-pressed", "true");
-    // A status filter is applied (not a highlight), so it shows as an applied filter to remove.
-    expect(screen.getByRole("button", { name: "Remove status filter" })).toBeInTheDocument();
+    // DC2 (Josh, 3 Nov 2026): the in-list Status chips are gone; the KPI bar alone picks a status.
+    expect(screen.queryByRole("group", { name: "Status" })).not.toBeInTheDocument();
+    // Q12 (3 Nov 2026): kit Menu radio pickers replace the browser drop-downs.
+    expect(screen.queryAllByRole("combobox")).toHaveLength(0);
+    const heldUpBy = screen.getAllByRole("button", { name: /^Held up by: /u });
+    expect(heldUpBy).toHaveLength(1);
+    expect(heldUpBy[0]).toHaveAccessibleName("Held up by: Any");
+    expect(screen.getByTestId("ward-discharges-sort")).toHaveAccessibleName(/^Sort: /u);
+    fireEvent.click(heldUpBy[0]!);
+    const options = within(screen.getByRole("menu", { name: "Held up by" })).getAllByRole("menuitemradio");
+    expect(options[0]).toHaveAccessibleName("Any");
+    expect(options[0]).toHaveAttribute("aria-checked", "true");
+    expect(options.slice(1).every((option) => option.getAttribute("aria-checked") === "false")).toBe(true);
   });
 
   it("keeps the table full width until a row is opened", () => {

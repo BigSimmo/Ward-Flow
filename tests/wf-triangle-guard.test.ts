@@ -61,12 +61,6 @@ const KNOWN: readonly Known[] = [
     reason: "Waiting rows (table and portrait) mark every wait over 24 hours with the triangle",
   },
   {
-    file: "src/components/ward-management/discharges/discharge-board.tsx",
-    kind: "raw",
-    sites: ['<StatusGlyph tone="danger" size={9} />'],
-    reason: "Discharges: every held-up row's blocker tag carries the triangle",
-  },
-  {
     file: "src/components/ward-management/discharges/discharge-detail-panes.tsx",
     kind: "control",
     sites: ['id === "barriers"'],
@@ -145,6 +139,24 @@ function initialiser(source: string, start: number): string {
   return source.slice(start);
 }
 
+/** From `start` (a `[`) to the `]` that closes it, skipping strings. */
+function bracketExtent(source: string, start: number): string {
+  let depth = 0;
+  let quote: string | null = null;
+  for (let i = start; i < source.length; i += 1) {
+    const c = source[i];
+    if (quote) {
+      if (c === quote && source[i - 1] !== "\\") quote = null;
+    } else if (c === '"' || c === "'" || c === "`") quote = c;
+    else if ("([{".includes(c)) depth += 1;
+    else if (")]}".includes(c)) {
+      depth -= 1;
+      if (depth === 0) return source.slice(start, i + 1);
+    }
+  }
+  return source.slice(start);
+}
+
 type Finding = { file: string; kind: Kind; line: number; site: string };
 
 export function triangleFindings(file: string, raw: string): Finding[] {
@@ -161,14 +173,29 @@ export function triangleFindings(file: string, raw: string): Finding[] {
     }
     if (danger) found.push({ file, kind: "control", line: lineOf(match.index), site: tag });
   }
+  // A triangle icon counts only inside the brackets of a tabs, chips, pills or filters list, so a
+  // rows list that follows one is left alone (review, 4 Nov 2026).
+  const controlLists = [...source.matchAll(new RegExp(CONTROL_LIST.source, "gu"))].map((match) => {
+    const open = match.index + match[0].length - 1;
+    return [open, open + bracketExtent(source, open).length] as const;
+  });
+  for (const match of source.matchAll(new RegExp(LIST_ICON.source, "gu"))) {
+    if (controlLists.some(([from, to]) => match.index > from && match.index < to))
+      found.push({ file, kind: "raw", line: lineOf(match.index), site: source.split("\n")[lineOf(match.index) - 1] ?? "" });
+  }
   const lines = source.split("\n");
+  let offset = 0;
   lines.forEach((line, index) => {
+    const lineStart = offset;
+    offset += line.length + 1;
     if (WAIT_TONE.test(line)) found.push({ file, kind: "wait", line: index + 1, site: line });
-    if (LIST_ICON.test(line) && CONTROL_LIST.test(lines.slice(Math.max(0, index - 12), index).join("\n")))
-      found.push({ file, kind: "raw", line: index + 1, site: line });
-    if (!TRIANGLE.test(line)) return;
+    // A `StatusGlyph` whose `tone` sits on a later line still counts: read its whole opening tag.
+    const glyphAt = line.indexOf("<StatusGlyph");
+    const tag = glyphAt >= 0 ? tagExtent(source, lineStart + glyphAt).replace(/\s+/gu, " ") : "";
+    const site = TRIANGLE.test(line) ? line : tag && TRIANGLE.test(tag) ? tag : null;
+    if (site === null) return;
     const context = lines.slice(Math.max(0, index - 4), index + 1).join("\n");
-    if (CHIP_CLASS.test(context)) found.push({ file, kind: "raw", line: index + 1, site: line });
+    if (CHIP_CLASS.test(context)) found.push({ file, kind: "raw", line: index + 1, site });
   });
   return found;
 }
@@ -220,6 +247,12 @@ describe("triangle guard (plan 2k, 3 Nov 2026)", () => {
     expect(scan(`<Glyph tone={waitTone(row.waited)} />`)).toEqual(["wait"]);
     expect(scan(`const tabs = [\n  {\n    id: "a",\n    Icon: TriangleAlert,\n  },\n];`)).toEqual(["raw"]);
     expect(scan(`const rows = [\n  {\n    id: "a",\n    Icon: TriangleAlert,\n  },\n];`)).toEqual([]);
+    expect(
+      scan(`const tabs = [{ id: "a", label: "A" }];\nconst rows = [\n  {\n    Icon: TriangleAlert,\n  },\n];`),
+    ).toEqual([]);
+    expect(scan(`<span className={s.chip}>\n  <StatusGlyph\n    size={9}\n    tone="danger"\n  />\n</span>`)).toEqual([
+      "raw",
+    ]);
 
     expect(scan(`<div className={s.row}>\n  <StatusGlyph tone="danger" size={9} />\n</div>`)).toEqual([]);
     expect(scan(`<dd className={s.tabularNum}>\n  <StatusGlyph tone="danger" size={9} />\n</dd>`)).toEqual([]);

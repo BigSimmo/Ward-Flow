@@ -13,6 +13,7 @@ Planned discharges and departures, blocked releases first.
 
 ## Jobs done here
 
+- Chase overdue discharge dates. On Discharges, the line under the counts says how many dates have passed on how many wards. Press Ask N wards to send those wards one desk alert asking them to confirm or record a new date. To ask about one person, open them and use Message ward beside the hold-up.
 - Clear a held-up discharge. Open Discharges, where held-up discharges come first. Open one to see what is blocking it and the bed release, and update the barrier once it is sorted.
 
 In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.

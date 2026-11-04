@@ -188,7 +188,6 @@ describe("the community clinician's phone hero", () => {
       onBeds={vi.fn()}
       bedsOpen={false}
       onNextOverdue={vi.fn()}
-      onMeeting={vi.fn()}
     />
   );
 
@@ -198,7 +197,8 @@ describe("the community clinician's phone hero", () => {
     expect(screen.getByText("Referrals · Midland team")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Nothing waiting on the team" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open the team’s Waiting list" })).toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Next overdue|Bed meeting list|Beds ready|Tier 1/ })).toBeNull();
+    expect(screen.queryByRole("button", { name: /Next overdue|Beds ready|Tier 1/ })).toBeNull();
+    expect(screen.queryByTestId("ward-referral-meeting")).toBeNull();
     expect(screen.queryByText("No referral waiting")).toBeNull();
   });
 
@@ -208,7 +208,7 @@ describe("the community clinician's phone hero", () => {
     expect(screen.getByRole("heading", { name: "2 waiting on the team" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Tier 1/ })).toBeInTheDocument();
     expect(screen.queryByTestId("ward-referral-phone-beds")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Bed meeting list" })).toBeNull();
+    expect(screen.queryByRole("link", { name: /^Bed meeting/ })).toBeNull();
   });
 
   it("is unchanged for the coordinator", () => {
@@ -216,7 +216,7 @@ describe("the community clinician's phone hero", () => {
     render(hero(2));
     expect(screen.getByText("Referrals · statewide")).toBeInTheDocument();
     expect(screen.getByTestId("ward-referral-phone-beds")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Bed meeting list" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /^Bed meeting/ })).toBeInTheDocument();
     expect(screen.queryByTestId("ward-referral-team-page")).toBeNull();
   });
 });

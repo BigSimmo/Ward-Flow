@@ -101,7 +101,8 @@ export const UNDO_STEP_ACTIONS = {
   // Audit A3-10 (13 Oct 2026): Mark absent starts the police steps on one tap, so it offers Undo.
   UNDO_ABSENT_WITHOUT_LEAVE: ["RECORD_ABSENT_WITHOUT_LEAVE"],
   // H-0150 (26 Oct 2026): a bed meeting action marked done by mistake comes back from its toast.
-  UNDO_BED_MEETING_ACTION: ["COMPLETE_BED_MEETING_ACTION"],
+  // Chase Undo (Josh, 3 Nov 2026): a recorded action, such as a Chase tapped by mistake, comes back too.
+  UNDO_BED_MEETING_ACTION: ["COMPLETE_BED_MEETING_ACTION", "RECORD_BED_MEETING_ACTION"],
 } as const;
 export type UndoStepType = keyof typeof UNDO_STEP_ACTIONS;
 export type UndoableStepAction = (typeof UNDO_STEP_ACTIONS)[UndoStepType][number];

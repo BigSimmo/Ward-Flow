@@ -37,6 +37,11 @@ export interface OperationalDefault {
 /** How long a recorded decision or bed move can be undone (v10 Undo toasts). A software safety
  *  window, not a clinical or legal limit. */
 export const UNDO_WINDOW_MINUTES = 5;
+/** How long an Ask wards alert stays on a ward's screen, and the window in which a ward already
+ *  asked the same question is skipped (M6, Josh 3 Nov 2026). An alert setting, not a clinical limit. */
+export const ASK_WARDS_MINUTES = 4 * MINUTES_PER_HOUR;
+/** The same window in words, for the Ask wards lines. */
+export const ASK_WARDS_WINDOW_TEXT = `${ASK_WARDS_MINUTES / MINUTES_PER_HOUR} hours`;
 /** How long an Undo toast stays on screen (pass 2 engine: 8 seconds). The engine's
  *  `UNDO_WINDOW_MINUTES` still decides whether an undo is accepted. */
 export const UNDO_TOAST_MS = 8000;

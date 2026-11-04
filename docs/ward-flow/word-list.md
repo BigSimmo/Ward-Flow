@@ -147,6 +147,7 @@ Nothing was changed.") says that reason, because it already names what to change
 | **Nothing was saved.**     | The change definitely did not reach the board.                           | failed to persist, error saving              |
 | **Press Retry**            | Resend the same change. It is never saved twice.                         | resubmit, reload the page                    |
 | **Check the board**        | Look at the current board before making the change again.                | review the workflow requirements             |
+| **Waiting on this page**   | Offline: the change is kept in this page's memory and sends by itself.   | held (only for a leave bed, D-85), queued    |
 
 When another desk changed a record first (P058), the message names the record type (bed, stay, movement, referral, alert or discharge, otherwise record) and the desk only, never a patient name, UMRN, bed number or record id: **Another desk changed this bed first. Review the latest board before trying again.** Only queued actions on that same record are stopped: **1 queued action on this bed was not sent. Check the board, then try again.** These conflict sentences live in `src/components/ward-management/ward-conflict-scope.ts` and `staleReason` in `backend/ward-flow/records.mjs`.
 

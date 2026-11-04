@@ -1,12 +1,12 @@
 "use client";
 
-import { useId } from "react";
 import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
 import { DUE_SORT_OPTIONS, type DueSortMode } from "@/components/ward-management/ward-due-sort";
-import { ArrowDownUp } from "lucide-react";
-import { AppliedFilter, Button, Card, ChipGroup, FilterChip, Select } from "@/components/wf";
+import { ArrowDownUp, ChevronDown } from "lucide-react";
+import { AppliedFilter, Button, Card, Menu } from "@/components/wf";
+import releaseList from "./discharge-release-list.module.css";
 import pageStyles from "./discharges-third-edition.module.css";
-import { WORK_STATUS_LABELS, WORK_ORDER, BLOCKER_CATEGORIES, stageTone } from "./discharge-board-model";
+import { WORK_STATUS_LABELS, BLOCKER_CATEGORIES } from "./discharge-board-model";
 import { useDischargeDeskView } from "./discharge-desk-view";
 import { HELD_UP } from "./discharge-release-actions";
 import type { DischargeWorkspaceState } from "./use-discharge-workspace-state";
@@ -25,7 +25,6 @@ export function DischargePopulationSwitch({ s }: { s: DischargeWorkspaceState })
     setBlockerCategory,
     setHighlight,
     guarded,
-    records,
     clearSelection,
     sessionAdopted,
   } = s;
@@ -36,7 +35,12 @@ export function DischargePopulationSwitch({ s }: { s: DischargeWorkspaceState })
           Preparing discharge workspace…
         </span>
       ) : null}
-      <div className={pageStyles.populationSwitch} role="group" aria-label="Now or history" aria-busy={!sessionAdopted}>
+      <div
+        className={pageStyles.populationSwitch}
+        role="group"
+        aria-label="Now or recorded"
+        aria-busy={!sessionAdopted}
+      >
         <button
           type="button"
           disabled={!sessionAdopted}
@@ -72,9 +76,10 @@ export function DischargePopulationSwitch({ s }: { s: DischargeWorkspaceState })
             clearSelection();
           }}
         >
-          History
+          {/* DC4 (Josh, 3 Nov 2026): History becomes Recorded, the discharges of the last 7 days. */}
+          Recorded
           <span className="sr-only">
-            , admission records {guarded.status === "allowed" ? records.length : "unavailable"}
+            , discharges in the last 7 days{guarded.status === "allowed" ? "" : ", unavailable"}
           </span>
         </button>
       </div>
@@ -82,20 +87,60 @@ export function DischargePopulationSwitch({ s }: { s: DischargeWorkspaceState })
   );
 }
 
-/** The filters: service, ward, status, blocker, link, destination and sort. */
-export function DischargeFilterCard({
-  s,
-  bare = false,
-  statusChips = true,
+/**
+ * One filter as a kit menu, not a browser drop-down (Q12, 3 Nov 2026). The pill shows the filter's
+ * name and its current choice, and turns accent when it narrows the list.
+ */
+function FilterPick({
+  label,
+  value,
+  options,
+  onChange,
+  testId,
+  icon = false,
+  alwaysPlain = false,
 }: {
-  s: DischargeWorkspaceState;
-  bare?: boolean;
-  /**
-   * Plan item 2i (proposal): `false` where the hero's counts already are the Status filter (desktop
-   * and tablet), so the page shows one set of status counts. The phone sheet keeps the chips.
-   */
-  statusChips?: boolean;
+  label: string;
+  value: string;
+  options: readonly { id: string; label: string }[];
+  onChange: (id: string) => void;
+  testId?: string;
+  icon?: boolean;
+  /** Sort never narrows the list, so it never turns accent. */
+  alwaysPlain?: boolean;
 }) {
+  const current = options.find((option) => option.id === value)?.label ?? options[0]?.label ?? "";
+  const on = !alwaysPlain && value !== "all";
+  return (
+    <Menu
+      label={label}
+      items={options.map((option) => ({
+        id: option.id,
+        label: option.label,
+        checkable: "radio" as const,
+        checked: option.id === value,
+        onSelect: () => onChange(option.id),
+      }))}
+      trigger={(props) => (
+        <button
+          type="button"
+          {...props}
+          className={`${releaseList.pick}${on ? ` ${releaseList.pickOn}` : ""}`}
+          data-testid={testId}
+          aria-label={`${label}: ${current}`}
+        >
+          {icon ? <ArrowDownUp size={14} aria-hidden="true" /> : null}
+          <span className={releaseList.pickLabel}>{label}</span>
+          <span className={releaseList.pickValue}>{current}</span>
+          <ChevronDown size={14} aria-hidden="true" className={releaseList.pickChevron} />
+        </button>
+      )}
+    />
+  );
+}
+
+/** The filters: service, ward, held up by and sort; Recorded adds destination. */
+export function DischargeFilterCard({ s, bare = false }: { s: DischargeWorkspaceState; bare?: boolean }) {
   const {
     population,
     status,
@@ -104,8 +149,6 @@ export function DischargeFilterCard({
     setService,
     ward,
     setWard,
-    identity,
-    setIdentity,
     destination,
     setDestination,
     blockerCategory,
@@ -114,12 +157,10 @@ export function DischargeFilterCard({
     setSortMode,
     services,
     scopedUnits,
-    counts,
     clearSelection,
     clearAllFilters,
     filtersActive,
   } = s;
-  const baseId = useId();
   // ROLE BRANCHES (approved 31 Oct 2026). Nurse in charge: a ward desk sees only its own wards, so the
   // Service filter is left out, and with one ward the Ward filter too (one choice each). Site bed manager:
   // one site is one service, so the Service filter is left out and the Ward filter stays. Every other
@@ -127,8 +168,6 @@ export function DischargeFilterCard({
   const { wardDesk, ownWard, siteName } = useDischargeDeskView(s.units);
   const showService = !wardDesk && siteName === undefined;
   const showWard = ownWard === undefined;
-  const pill = (key: string, value: string) =>
-    `${pageStyles.filterPill}${value !== "all" ? ` ${pageStyles.filterPillOn}` : ""}`;
   const blockerLabel = BLOCKER_CATEGORIES.find((category) => category.id === blockerCategory)?.label;
   const wardLabel = scopedUnits.find((unit) => unit.id === ward)?.name;
   return (
@@ -139,159 +178,73 @@ export function DischargeFilterCard({
       role="region"
     >
       <div className={pageStyles.filters}>
-        {/* Mock-up (1 Nov 2026): Status is one row of chips with their counts, so a status is one
-            press, not a dropdown. Pressing the chip that is on goes back to every status. */}
-        {statusChips ? (
-          <>
-            <ChipGroup label="Status" className={pageStyles.statusChips}>
-              {WORK_ORDER.map((key) => (
-                <FilterChip
-                  key={key}
-                  pressed={status === key}
-                  tone={key === "departed" ? undefined : stageTone(key)}
-                  count={counts[key]}
-                  onPressedChange={(on) => {
-                    setStatus(on ? key : "all");
-                    clearSelection();
-                  }}
-                >
-                  {key === "blocked"
-                    ? HELD_UP
-                    : population === "releases" && key === "departed"
-                      ? "Discharged · 24h"
-                      : WORK_STATUS_LABELS[key]}
-                </FilterChip>
-              ))}
-            </ChipGroup>
-            <span className={pageStyles.filterDivider} aria-hidden="true" />
-          </>
-        ) : null}
+        {/* DC2 (Josh, 3 Nov 2026): the status chips are gone from here. The hero's counts already pick a
+            status, and the list's groups already sort by it, so a third copy only doubled up. */}
         <div className={pageStyles.filterPills}>
           {showService ? (
-            <label htmlFor={`${baseId}-discharges-filter-service`} className={pill("service", service)}>
-              <span className={pageStyles.filterLabelText}>Service</span>
-              <Select
-                id={`${baseId}-discharges-filter-service`}
-                name="dischargesFilterService"
-                value={service}
-                boxClassName={pageStyles.filterSelect}
-                onChange={(event) => {
-                  setService(event.target.value);
-                  setWard("all");
-                  clearSelection();
-                }}
-              >
-                <option value="all">All</option>
-                {services.map((item) => (
-                  <option key={item}>{item}</option>
-                ))}
-              </Select>
-            </label>
-          ) : null}
-          {showWard ? (
-            <label htmlFor={`${baseId}-discharges-filter-ward`} className={pill("ward", ward)}>
-              <span className={pageStyles.filterLabelText}>Ward</span>
-              <Select
-                id={`${baseId}-discharges-filter-ward`}
-                name="dischargesFilterWard"
-                value={ward}
-                boxClassName={pageStyles.filterSelect}
-                onChange={(event) => {
-                  setWard(event.target.value);
-                  clearSelection();
-                }}
-              >
-                <option value="all">All</option>
-                {scopedUnits.map((unit) => (
-                  <option key={unit.id} value={unit.id}>
-                    {unit.name}
-                  </option>
-                ))}
-              </Select>
-            </label>
-          ) : null}
-          <label htmlFor={`${baseId}-discharges-filter-blocker`} className={pill("blocker", blockerCategory)}>
-            <span className={pageStyles.filterLabelText}>Held up by</span>
-            <Select
-              id={`${baseId}-discharges-filter-blocker`}
-              name="dischargesFilterBlocker"
-              value={blockerCategory}
-              boxClassName={pageStyles.filterSelect}
-              onChange={(event) => {
-                setBlockerCategory(event.target.value);
+            <FilterPick
+              label="Service"
+              value={service}
+              options={[{ id: "all", label: "All" }, ...services.map((item) => ({ id: item, label: item }))]}
+              onChange={(id) => {
+                setService(id);
+                setWard("all");
                 clearSelection();
               }}
-            >
-              <option value="all">Any</option>
-              {BLOCKER_CATEGORIES.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.label}
-                </option>
-              ))}
-            </Select>
-          </label>
-          {population === "records" && (
-            <>
-              <label htmlFor={`${baseId}-discharges-filter-identity`} className={pill("identity", identity)}>
-                <span className={pageStyles.filterLabelText}>Patient link</span>
-                <Select
-                  id={`${baseId}-discharges-filter-identity`}
-                  name="dischargesFilterIdentity"
-                  value={identity}
-                  boxClassName={pageStyles.filterSelect}
-                  onChange={(event) => {
-                    setIdentity(event.target.value);
-                    clearSelection();
-                  }}
-                >
-                  <option value="all">All</option>
-                  <option value="linked">Linked patient</option>
-                  <option value="missing">Missing or unavailable</option>
-                </Select>
-              </label>
-              <label htmlFor="discharges-filter-destination" className={pill("destination", destination)}>
-                <span className={pageStyles.filterLabelText}>Destination</span>
-                <Select
-                  id="discharges-filter-destination"
-                  name="dischargesFilterDestination"
-                  value={destination}
-                  boxClassName={pageStyles.filterSelect}
-                  onChange={(event) => {
-                    setDestination(event.target.value);
-                    clearSelection();
-                  }}
-                >
-                  <option value="all">All</option>
-                  {LEAVING_DESTINATIONS.map((dest) => (
-                    <option key={dest.id} value={dest.id}>
-                      {dest.label}
-                    </option>
-                  ))}
-                </Select>
-              </label>
-            </>
+            />
+          ) : null}
+          {showWard ? (
+            <FilterPick
+              label="Ward"
+              value={ward}
+              options={[{ id: "all", label: "All" }, ...scopedUnits.map((unit) => ({ id: unit.id, label: unit.name }))]}
+              onChange={(id) => {
+                setWard(id);
+                clearSelection();
+              }}
+            />
+          ) : null}
+          {population === "records" ? (
+            <FilterPick
+              label="Going to"
+              value={destination}
+              options={[
+                { id: "all", label: "All" },
+                ...LEAVING_DESTINATIONS.map((d) => ({ id: d.id, label: d.label })),
+              ]}
+              onChange={(id) => {
+                setDestination(id);
+                clearSelection();
+              }}
+            />
+          ) : (
+            <FilterPick
+              label="Held up by"
+              value={blockerCategory}
+              options={[
+                { id: "all", label: "Any" },
+                ...BLOCKER_CATEGORIES.map((category) => ({ id: category.id, label: category.label })),
+              ]}
+              onChange={(id) => {
+                setBlockerCategory(id);
+                clearSelection();
+              }}
+            />
           )}
         </div>
-        <label htmlFor={`${baseId}-discharges-sort`} className={pageStyles.sortField}>
-          <ArrowDownUp size={14} aria-hidden="true" />
-          <span className={pageStyles.filterLabelText}>Sort</span>
-          <Select
-            id={`${baseId}-discharges-sort`}
-            name="dischargesSort"
-            value={sortMode}
-            boxClassName={pageStyles.filterSelect}
-            data-testid="ward-discharges-sort"
-            onChange={(event) => {
-              setSortMode(event.target.value as DueSortMode);
-            }}
-          >
-            {DUE_SORT_OPTIONS.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.label}
-              </option>
-            ))}
-          </Select>
-        </label>
+        {population === "records" ? null : (
+          <span className={releaseList.sortPick}>
+            <FilterPick
+              label="Sort"
+              icon
+              alwaysPlain
+              value={sortMode}
+              options={DUE_SORT_OPTIONS.map((option) => ({ id: option.id, label: option.label }))}
+              onChange={(id) => setSortMode(id as DueSortMode)}
+              testId="ward-discharges-sort"
+            />
+          </span>
+        )}
       </div>
       {filtersActive ? (
         <div className={pageStyles.appliedRow}>
@@ -308,6 +261,11 @@ export function DischargeFilterCard({
           ) : null}
           {blockerCategory !== "all" && blockerLabel ? (
             <AppliedFilter onRemove={() => setBlockerCategory("all")}>{blockerLabel}</AppliedFilter>
+          ) : null}
+          {destination !== "all" ? (
+            <AppliedFilter onRemove={() => setDestination("all")}>
+              {LEAVING_DESTINATIONS.find((d) => d.id === destination)?.label ?? destination}
+            </AppliedFilter>
           ) : null}
           <Button size="sm" variant="ghost" className={pageStyles.clearButton} onClick={clearAllFilters}>
             Clear all

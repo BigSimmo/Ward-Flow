@@ -15,6 +15,7 @@
  */
 import type { WardScreenId } from "@/components/ward-management/ward-role-access";
 
+import { ASK_WARDS_WINDOW_TEXT } from "@/components/ward-management/ward-operational-defaults";
 import { deskOpens, EVERY_LOGIN, howToFor, type WardEventType } from "./ward-help-access";
 import type { WardTourRole } from "./ward-help-store";
 import { MORE_JOBS, SCREEN_TOURS } from "./ward-help-screen-tours";
@@ -221,6 +222,24 @@ const JOBS: readonly HowTo[] = [
         target: { sel: '[data-testid="ward-referral-ask-open"]' },
         title: "Ask more wards",
         body: "Tick the wards to ask. They are listed A to Z, and only a ward that fits can be ticked.",
+      },
+    ],
+  },
+  {
+    id: "chase-discharge-dates",
+    topic: "Beds and referrals",
+    title: "Chase overdue discharge dates",
+    keywords: "discharge date passed overdue ask ward message ward confirm date edd chase",
+    answer:
+      "On Discharges, the line under the counts says how many dates have passed on how many wards. Press Ask N wards to send those wards one desk alert asking them to confirm or record a new date. To ask about one person, open them and use Message ward beside the hold-up.",
+    desks: ["coordinator"],
+    acts: ["DISPATCH_BROADCAST_ALERT"],
+    go: "discharges",
+    showMe: [
+      {
+        target: { sel: '[data-testid="ward-discharge-ask-overdue"]' },
+        title: "Ask the wards",
+        body: `Asks only the wards with a date that has passed. A ward asked in the last ${ASK_WARDS_WINDOW_TEXT} is not asked again.`,
       },
     ],
   },

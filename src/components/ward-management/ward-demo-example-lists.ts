@@ -14,7 +14,6 @@
  * first on screen). A live shared build swaps this module for the no-op in
  * `live-build/ward-no-demo-data.ts`, so a production-like build gains no invented record.
  */
-import type { Admission } from "./ward-admissions";
 import { MINUTES_PER_DAY, type Instant } from "./ward-clock";
 import type { WardFlowState } from "./ward-flow-reducer";
 import type { Cohort, ReferralAddressing, ReferralSource, Unit } from "./ward-model";
@@ -123,13 +122,6 @@ function sexFor(unit: Unit, index: number): "Female" | "Male" {
   return index % 2 === 0 ? "Female" : "Male";
 }
 
-function homeRegionOn(state: Draft, unit: Unit): Admission["homeRegion"] {
-  return (
-    state.admissions.find((admission) => admission.unitId === unit.id && admission.homeRegion !== null)?.homeRegion ??
-    null
-  );
-}
-
 /** Two finished stays per ward: one left two days ago, one about ten days ago. */
 function addFinishedStays(state: Draft, people: People, anchor: Instant) {
   const today = Math.floor(anchor / MINUTES_PER_DAY) * MINUTES_PER_DAY;
@@ -147,7 +139,8 @@ function addFinishedStays(state: Draft, people: People, anchor: Instant) {
         movementId: null,
         patientId: people.add(unit.cohort, sex),
         sex,
-        homeRegion: homeRegionOn(state, unit),
+        // Example stays record no source region rather than borrow another patient's (review, 4 Nov).
+        homeRegion: null,
         tentativeDiagnosis: null,
         state: "departed",
         pulledAt: arrivedAt - 300,
@@ -212,7 +205,7 @@ function addInboxReferrals(state: Draft, people: People, anchor: Instant) {
           patientId: people.add(first.cohort, sex),
           destinations,
           ageBand: first.cohort,
-          homeRegion: homeRegionOn(state, first) ?? "Perth Metropolitan",
+          homeRegion: "Perth Metropolitan",
           suburb: { kind: "unknown", reason: "not_known" },
           source: SOURCES[count % SOURCES.length]!,
           raisedAt,

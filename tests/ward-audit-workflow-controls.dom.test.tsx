@@ -47,18 +47,16 @@ describe("discharge actions stay usable and accessible across filters", () => {
     );
     expect(document.activeElement!.isConnected).toBe(true);
   });
-  it("does not offer release shortcuts in incompatible status or record views", () => {
+  it("does not offer release shortcuts in the recorded view", () => {
     wrap(<DischargeBoard />);
     expect(shortcut()).not.toBeNull();
-    // Plan item 2i (proposal): the hero chips are the Status filter, so they narrow the list.
-    fireEvent.click(
-      within(screen.getByRole("group", { name: "Status" })).getByRole("button", { name: /^\d+ Confirmed/u }),
-    );
-    expect(shortcut()).toBeNull();
-    fireEvent.click(screen.getByRole("button", { name: /^History/ }));
+    // DC2 (Josh, 3 Nov 2026): the in-list Status chips are gone (the hero counts highlight and never
+    // hide), so the record view is now the only view without release shortcuts.
+    expect(screen.queryByRole("group", { name: "Status" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^Recorded/ }));
     expect(shortcut()).toBeNull();
   });
-  it("offers every blocker in both populations and announces pipeline counts", () => {
+  it("offers every blocker on Now and announces pipeline counts", () => {
     wrap(<DischargeBoard />);
     const labels = [
       "Any",
@@ -74,20 +72,22 @@ describe("discharge actions stay usable and accessible across filters", () => {
       // acceptance" blockers matched no category, so no filter or barrier bar could reach them.
       "Receiving service",
     ];
+    // L26 (Josh, 3 Nov 2026): a kit menu of radio choices, not a browser drop-down.
+    expect(screen.queryByRole("combobox", { name: "Held up by" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^Held up by: Any/u }));
+    const menu = screen.getByRole("menu", { name: "Held up by" });
     expect(
-      within(screen.getByRole("combobox", { name: "Held up by" }))
-        .getAllByRole("option")
+      within(menu)
+        .getAllByRole("menuitemradio")
         .map((option) => option.textContent),
     ).toEqual(labels);
-    fireEvent.change(screen.getByRole("combobox", { name: "Held up by" }), { target: { value: "pharmacy" } });
+    fireEvent.click(within(menu).getByRole("menuitemradio", { name: "Pharmacy" }));
+    expect(screen.getByRole("button", { name: /^Held up by: Pharmacy/u })).toBeInTheDocument();
     expect(screen.getByTestId("discharge-pipeline-announcement")).toHaveTextContent(/Discharges by bed: \d+ held up/);
-    fireEvent.click(screen.getByRole("button", { name: /^History/ }));
-    expect(within(screen.getByRole("combobox", { name: "Held up by" })).getAllByRole("option")).toHaveLength(
-      labels.length,
-    );
-    fireEvent.change(screen.getByRole("combobox", { name: "Held up by" }), { target: { value: "pharmacy" } });
-    expect(screen.getByRole("combobox", { name: "Held up by" })).toHaveValue("pharmacy");
-    expect(screen.getByTestId("discharge-pipeline-announcement")).toHaveTextContent(/Admission records: \d+ held up/);
+    // DC4: Recorded lists people who have left, so it filters by where they went, not by hold-up.
+    fireEvent.click(screen.getByRole("button", { name: /^Recorded/ }));
+    expect(screen.queryByRole("button", { name: /^Held up by: /u })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Going to: /u })).toBeInTheDocument();
   });
 });
 

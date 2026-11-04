@@ -142,8 +142,8 @@ const AROUND: readonly Around[] = [
       {
         device: "desk",
         target: id("ward-referral-meeting"),
-        title: "Bed meeting list",
-        body: "The referrals to talk through at the bed meeting.",
+        title: "Bed meeting",
+        body: "Opens the bed meeting agenda at its referrals, the ones to talk through at the meeting.",
       },
     ],
   },
@@ -262,7 +262,7 @@ const AROUND: readonly Around[] = [
       {
         target: id("ward-on-call-hud-island"),
         title: "Who to call now",
-        body: "The main state and service lines, with who answers each one now.",
+        body: "The state lines, then bed flow for each service, then your starred lines. Copy a number straight from its card.",
       },
       {
         target: [id("ward-on-call-directory"), { sel: '#main-content [role="tablist"]' }],
@@ -604,7 +604,7 @@ export const MORE_JOBS: readonly HowTo[] = [
     title: "Find who is on call",
     keywords: "oncall phone number call roster consultant registrar switchboard",
     answer:
-      "Open On-call and search by role, hospital, ward, team or number. Use Cover at to see who answers at a later time, and star a line to keep it under Mine.",
+      "Open On-call and search by role, hospital, ward, team or number. A line opens on who answers now, with Copy number, and If no answer names who to try next. Use Cover at for a later time, and star a line to keep it under Mine.",
     desks: "all",
     go: "on-call",
     showMe: [

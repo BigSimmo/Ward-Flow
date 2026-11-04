@@ -11,6 +11,7 @@ import { referralFollowUpLine } from "@/components/ward-management/referrals/ref
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { REPEAT_TAP_WINDOW_MS } from "@/components/ward-management/ward-repeat-tap-guard";
 
 /** Fix plan item 4 on screen: the referral's owner desk, Assign, and Log a call. */
 let pathname = "/ward-flow/referrals";
@@ -182,8 +183,13 @@ describe("community team Assign", () => {
     fireEvent.click(dialog.getByRole("button", { name: "Take for this team" }));
     expect(screen.getByTestId("owner")).toHaveTextContent("community");
     expect(await dialog.findByText("Assigned to this team's desk.")).toHaveAttribute("role", "status");
+    // A second tap straight away is a double tap and records nothing new (Tier 1 item 2); a later
+    // deliberate tap reaches the workflow, which refuses it.
+    const realNow = Date.now();
+    const clock = vi.spyOn(Date, "now").mockReturnValue(realNow + REPEAT_TAP_WINDOW_MS + 1);
     fireEvent.click(dialog.getByRole("button", { name: "Take for this team" }));
     expect(screen.getByTestId("owner")).toHaveTextContent(/^community$/u);
     expect(await dialog.findByText(/^Not assigned\. It may already be/u)).toHaveAttribute("role", "status");
+    clock.mockRestore();
   });
 });

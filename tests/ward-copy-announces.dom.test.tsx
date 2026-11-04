@@ -17,8 +17,10 @@ vi.mock("@/components/ward-management/shell/ward-live-region", async (original) 
 }));
 
 import { useLegalFormsCopy } from "@/components/ward-management/legal-forms/use-legal-forms-copy";
-import { BedMeetingSheet, type ScopedMeetingRow } from "@/components/ward-management/referrals/bed-meeting-sheet";
-import { bedsReadySummary } from "@/components/ward-management/referrals/referral-board-parts";
+import {
+  AgendaReferralsCopy,
+  agendaReferralsText,
+} from "@/components/ward-management/bed-meeting/agenda-referrals-copy";
 import { IsbarSheet } from "@/components/ward-management/referrals/referral-board-sheets";
 import { ReferralSummarySheet } from "@/components/ward-management/referrals/referral-summary-sheet";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -78,23 +80,14 @@ const sheets: [string, () => ReactNode, string][] = [
     "Copy summary",
   ],
   [
-    "Bed meeting list",
-    () => {
-      const rows: ScopedMeetingRow[] = [{ referral, name: "SMITH, Alex", umrn: "UM100001", restricted: false }];
-      return (
-        <WardFlowProvider initialNow={NOW_ANCHOR}>
-          <BedMeetingSheet
-            open
-            onClose={() => undefined}
-            rows={rows}
-            scopeLabel="Statewide"
-            now={NOW_ANCHOR}
-            summary={bedsReadySummary(state.units, state.admissions, state.bedReleases, NOW_ANCHOR)}
-          />
-        </WardFlowProvider>
-      );
-    },
-    "Copy 1",
+    // R5 fold (Josh, 3 Nov 2026): the bed meeting's referrals and their Copy list live on the agenda.
+    "Agenda referrals",
+    () => (
+      <AgendaReferralsCopy
+        text={() => agendaReferralsText([referral], () => "SMITH, Alex", NOW_ANCHOR, "Referrals awaiting decision")}
+      />
+    ),
+    "Copy list",
   ],
 ];
 
