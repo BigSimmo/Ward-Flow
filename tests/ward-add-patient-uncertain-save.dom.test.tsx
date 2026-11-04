@@ -239,7 +239,7 @@ describe("Add patient uncertain shared save", () => {
     const dispatch = vi.fn();
     render(tree({ dispatch }));
     fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: "12/" } });
-    const link = screen.getByRole("link", { name: "Back to patient search" });
+    const link = screen.getByRole("link", { name: "Cancel and go back to patient search" });
     const click = new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 });
     const navigate = vi.fn();
     link.addEventListener(
@@ -298,7 +298,7 @@ describe("Add patient uncertain shared save", () => {
     await screen.findByTestId("ward-add-patient-rejection");
     // The leave guard attaches its click listener in an effect after this render.
     await act(async () => {});
-    const link = screen.getByRole("link", { name: "Back to patient search" });
+    const link = screen.getByRole("link", { name: "Cancel and go back to patient search" });
     const click = new MouseEvent("click", { bubbles: true, cancelable: true, button: 0 });
     link.addEventListener("click", (event) => event.preventDefault(), { once: true });
     act(() => link.dispatchEvent(click));

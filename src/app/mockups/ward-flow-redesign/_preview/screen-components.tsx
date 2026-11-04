@@ -381,6 +381,25 @@ const StatisticsUnitScreen = dynamic<MockupPageProps>(() =>
   ),
 );
 
+// 3 Nov 2026: the Network statistics page and one ED's page, so their polish shows in the viewer.
+const StatisticsNetworkScreen = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-management/statistics/statistics-screen").then(
+    (module) =>
+      function StatisticsNetworkScreenPreview() {
+        return <module.StatisticsScreen />;
+      },
+  ),
+);
+
+const EdDepartmentScreen = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-management/ed/ed-screen").then(
+    (module) =>
+      function EdDepartmentScreenPreview() {
+        return <module.EdScreen edId="fsh-ed" />;
+      },
+  ),
+);
+
 import type { BuiltPageSlug } from "./built-pages";
 
 export type MockupPageProps = { openOnLoad?: string };
@@ -421,5 +440,7 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "sign-in": SignInScreen,
   "statistics-list": StatisticsListScreen,
   "statistics-unit": StatisticsUnitScreen,
+  "statistics-network": StatisticsNetworkScreen,
+  "ed-department": EdDepartmentScreen,
   transport: TransportScreen,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;

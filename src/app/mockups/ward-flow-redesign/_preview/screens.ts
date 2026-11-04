@@ -115,6 +115,8 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
     group: "Statistics pages",
     appPath: "/ward-flow/statistics/ward/fsh-adult-secure",
   },
+  { slug: "statistics-network", label: "Network", group: "Statistics pages", appPath: "/ward-flow/statistics" },
+  { slug: "ed-department", label: "One ED", group: "Coordinator", appPath: "/ward-flow/ed/fsh-ed" },
 ];
 
 /** Popups drawn over their page. Each page opens its own; the viewer asks it to on load. */

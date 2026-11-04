@@ -1,17 +1,10 @@
 "use client";
 
 import { useContext, useEffect, useRef, useState } from "react";
-import { CheckCircle2, MapPin, Search, User, UserPlus, X } from "lucide-react";
+import { Search, User, UserPlus, X } from "lucide-react";
 import Link from "next/link";
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
-import {
-  COHORTS,
-  HEALTH_SERVICES,
-  HOME_REGIONS,
-  type HomeRegion,
-  type Cohort,
-  type HealthService,
-} from "@/components/ward-management/ward-model";
+import { COHORTS, type Cohort } from "@/components/ward-management/ward-model";
 import { GENDERS, type Gender } from "@/components/ward-management/ward-patients";
 import { RECORDED_SEXES, type RecordedSex } from "@/components/ward-management/ward-model-vocabulary";
 import {
@@ -19,20 +12,32 @@ import {
   type NotOnSendingWardReason,
 } from "@/components/ward-management/ward-change-reasons";
 import styles from "./ward-referral-drawer.module.css";
-import { cx } from "@/components/wf";
-import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
-import { communityTeamOptions, suburbOptions } from "./referral-destination-options";
-import { DateField, ErrorSummary, StatusGlyph, type ErrorSummaryItem } from "@/components/wf";
+import {
+  DateField,
+  ErrorSummary,
+  Segmented,
+  StatusGlyph,
+  type ChoiceItem,
+  type ErrorSummaryItem,
+} from "@/components/wf";
 import { revealWardOption } from "@/components/ward-management/ward-scroll";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { ageSexLabel, RISK_FLAG_LABELS, formatDob } from "./ward-referral-drawer-model";
 import { Field, SelectBox, CardHead } from "./ward-referral-drawer-fields";
+import { ReferralCatchmentCard } from "./ward-referral-drawer-catchment";
+import { catchmentForSuburb } from "./referral-catchment-suggestion";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
 import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
 
 /** Step 1, Patient: find or add the person, the priority grid and the catchment card. */
+/** RF3: kit segments instead of the browser's drop-downs. Nothing is chosen until someone picks. */
+const NEW_PATIENT_SEX_ITEMS: ChoiceItem<RecordedSex | "">[] = RECORDED_SEXES.filter(
+  (sex) => sex !== "Not recorded",
+).map((sex) => ({ id: sex, label: sex }));
+const NEW_PATIENT_GENDER_ITEMS: ChoiceItem<Gender | "">[] = GENDERS.map((gender) => ({ id: gender, label: gender }));
+
 export function ReferralPatientStep({
   s,
   alreadyOpen,
@@ -70,26 +75,15 @@ export function ReferralPatientStep({
     newPatientError,
     setNewPatientError,
     confirmationOpen,
-    setFlowError,
     isPhone,
     liveMovement,
     patientRecord,
     effectiveCohort,
     isMedicalCleared,
-    catchmentSuburb,
-    setCatchmentSuburb,
     catchmentTeam,
-    setCatchmentTeam,
-    catchmentService,
-    setCatchmentService,
     catchmentConfirmed,
-    setCatchmentConfirmed,
     catchmentNotKnown,
-    setCatchmentNotKnown,
-    catchmentEditing,
-    setCatchmentEditing,
     homeRegion,
-    setHomeRegion,
     activeSection,
     setActiveSection,
     unidentified,
@@ -107,7 +101,6 @@ export function ReferralPatientStep({
     recordedFlags,
     clearance,
     patientShowErrors,
-    suburbKnown,
     readmissionFlag,
     sendingWard,
     notOnSendingWard,
@@ -175,6 +168,12 @@ export function ReferralPatientStep({
   useEffect(() => {
     if (showResults && highlight >= 0) revealWardOption(document.getElementById(`${searchId}-opt-${highlight}`));
   }, [highlight, showResults, searchId]);
+  const offeringCatchment =
+    !catchmentNotKnown &&
+    !catchmentConfirmed &&
+    !s.catchmentEditing &&
+    !!catchmentTeam.trim() &&
+    !!(homeRegion || catchmentForSuburb(s.catchmentSuburb, catchmentTeam)?.region);
   // The step's faults in field order, worded as the fields word them, for the error summary.
   const problems: ErrorSummaryItem[] = patientShowErrors
     ? [
@@ -193,10 +192,16 @@ export function ReferralPatientStep({
         ...(!catchmentNotKnown && !catchmentTeam.trim()
           ? [{ id: `${sectionId}-team`, text: "Choose the catchment" }]
           : []),
-        ...(!homeRegion ? [{ id: `${sectionId}-region`, text: "Choose the home region" }] : []),
-        ...(!catchmentNotKnown && !catchmentConfirmed
-          ? [{ id: `${sectionId}-confirm-catchment`, text: "Confirm the catchment before continuing" }]
-          : []),
+        // RF1: while the card offers a whole suggested catchment, the one fix is to use or change it,
+        // so the summary links that button rather than fields that are not on screen yet.
+        ...(offeringCatchment
+          ? [{ id: `${sectionId}-use-catchment`, text: "Use the suggested catchment or change it" }]
+          : [
+              ...(!homeRegion ? [{ id: `${sectionId}-region`, text: "Choose the home region" }] : []),
+              ...(!catchmentNotKnown && !catchmentConfirmed
+                ? [{ id: `${sectionId}-confirm-catchment`, text: "Confirm the catchment before continuing" }]
+                : []),
+            ]),
       ]
     : [];
   return (
@@ -207,9 +212,12 @@ export function ReferralPatientStep({
     >
       <ErrorSummary items={problems} action="before the next step" />
       <section className={styles.refCard}>
-        <CardHead icon={User} title="Patient">
+        <CardHead icon={newPatientOpen ? UserPlus : User} title={newPatientOpen ? "New patient" : "Patient"}>
+          {/* RF3 (Current Issues, 3 Nov 2026): while a new patient is being added, the card is only that
+              form, with its own close; the search and the chosen person come back when it closes. */}
           <button
             type="button"
+            hidden={newPatientOpen}
             className={`${styles.btn} ${styles.btnGhost}`}
             aria-expanded={newPatientOpen}
             aria-controls={`${sectionId}-new-patient`}
@@ -223,7 +231,7 @@ export function ReferralPatientStep({
             Add patient
           </button>
         </CardHead>
-        <div className={styles.cardBody}>
+        <div className={styles.cardBody} data-adding={newPatientOpen || undefined}>
           {newPatientOpen ? (
             <form
               id={`${sectionId}-new-patient`}
@@ -232,6 +240,19 @@ export function ReferralPatientStep({
               noValidate
               data-testid="ward-referral-new-patient"
             >
+              <div className={styles.newPatientHead}>
+                <p className={styles.bodyMeta}>
+                  Not found in search? Add them here and they are used for this referral.
+                </p>
+                <button
+                  type="button"
+                  className={styles.newPatientClose}
+                  aria-label="Close new patient"
+                  onClick={() => setNewPatientOpen(false)}
+                >
+                  <X aria-hidden="true" />
+                </button>
+              </div>
               <div className={styles.fieldGrid} data-layout="three">
                 <Field label="Family name" htmlFor={`${sectionId}-np-family`} required>
                   <input
@@ -291,40 +312,30 @@ export function ReferralPatientStep({
                 </Field>
                 {/* WT-05 (walk-through, 26 Oct 2026): recorded sex is asked once, here, and the referral
                     and placement start from it instead of "Not recorded". */}
-                <Field label="Recorded sex" htmlFor={`${sectionId}-np-sex`} hint="optional">
-                  <SelectBox>
-                    <select
-                      id={`${sectionId}-np-sex`}
-                      className={styles.fieldSelect}
+                <div className={styles.npChoices}>
+                  <div className={styles.npChoice}>
+                    <span className={styles.npChoiceLabel} id={`${sectionId}-np-sex`}>
+                      Recorded sex <small>optional</small>
+                    </span>
+                    <Segmented
+                      label="Recorded sex"
+                      items={NEW_PATIENT_SEX_ITEMS}
                       value={newPatient.sex ?? ""}
-                      onChange={({ target: { value } }) =>
-                        setNewPatient((p) => ({ ...p, sex: value as RecordedSex | "" }))
-                      }
-                    >
-                      <option value="">Not recorded</option>
-                      {RECORDED_SEXES.filter((sex) => sex !== "Not recorded").map((sex) => (
-                        <option key={sex}>{sex}</option>
-                      ))}
-                    </select>
-                  </SelectBox>
-                </Field>
-                <Field label="Gender" htmlFor={`${sectionId}-np-gender`} hint="optional">
-                  <SelectBox>
-                    <select
-                      id={`${sectionId}-np-gender`}
-                      className={styles.fieldSelect}
+                      onChange={(sex) => setNewPatient((p) => ({ ...p, sex: sex as RecordedSex | "" }))}
+                    />
+                  </div>
+                  <div className={styles.npChoice}>
+                    <span className={styles.npChoiceLabel} id={`${sectionId}-np-gender`}>
+                      Gender <small>optional, bed matching</small>
+                    </span>
+                    <Segmented
+                      label="Gender"
+                      items={NEW_PATIENT_GENDER_ITEMS}
                       value={newPatient.gender}
-                      onChange={({ target: { value } }) =>
-                        setNewPatient((p) => ({ ...p, gender: value as Gender | "" }))
-                      }
-                    >
-                      <option value="">Not recorded</option>
-                      {GENDERS.map((gender) => (
-                        <option key={gender}>{gender}</option>
-                      ))}
-                    </select>
-                  </SelectBox>
-                </Field>
+                      onChange={(gender) => setNewPatient((p) => ({ ...p, gender: gender as Gender | "" }))}
+                    />
+                  </div>
+                </div>
                 <Field label="Suburb" htmlFor={`${sectionId}-np-suburb`} hint="optional">
                   <input
                     id={`${sectionId}-np-suburb`}
@@ -348,19 +359,19 @@ export function ReferralPatientStep({
               <div className={styles.confirmRow}>
                 <button type="submit" className={`${styles.btn} ${styles.btnTint}`} {...addPatientGate.buttonProps}>
                   <UserPlus aria-hidden="true" />
-                  Add patient
+                  Add and use for this referral
                 </button>
                 {addPatientGate.note}
                 <button
                   type="button"
                   className={styles.btn}
                   onClick={() => {
-                    // Cancel discards what was typed, so no guard later asks about details already given up.
+                    // Back to search discards what was typed, so no guard later asks about details already given up.
                     resetNewPatient();
                     setNewPatientOpen(false);
                   }}
                 >
-                  Cancel
+                  Back to search
                 </button>
               </div>
             </form>
@@ -503,8 +514,11 @@ export function ReferralPatientStep({
                 </p>
                 <p className={styles.patientSub}>
                   {isPhone ? null : "UMRN "}
-                  <span className={styles.mono}>{currentPatient.umrn}</span> · DOB {formatDob(currentPatient.dob)} ·
-                  Medicare {currentPatient.medicare}
+                  <span className={styles.mono}>{currentPatient.umrn}</span> · DOB {formatDob(currentPatient.dob)}
+                  {/* RF4: "Medicare Not recorded" was a third fact that told the referrer nothing. */}
+                  {currentPatient.medicare && currentPatient.medicare !== "Not recorded"
+                    ? ` · Medicare ${currentPatient.medicare}`
+                    : null}
                 </p>
                 <ReadmissionFlag flag={readmissionFlag} testId="ward-referral-readmission" />
               </div>
@@ -773,239 +787,18 @@ export function ReferralPatientStep({
         </div>
       </section>
 
-      <section className={styles.refCard}>
-        <CardHead icon={MapPin} title="Catchment">
-          <span className={styles.asideText}>
-            {catchmentNotKnown ? (
-              "Not known"
-            ) : catchmentConfirmed ? (
-              <>
-                <StatusGlyph tone="success" size={9} /> Confirmed
-              </>
-            ) : (
-              "Needs confirming"
-            )}
-          </span>
-        </CardHead>
-        <div className={styles.cardBody}>
-          {/* One line says what is known. The old card said "not known" three ways
-              (address, suggestion box, suburb note) before the first field. */}
-          <p className={styles.catchmentStatus} data-testid="ward-referral-suburb-note">
-            <StatusGlyph tone={catchmentConfirmed ? "success" : "warning"} size={9} />
-            <span>
-              {patientRecord?.address
-                ? `Recorded address ${patientRecord.address}`
-                : !addressUnknown
-                  ? "No recorded address"
-                  : addressReplied
-                    ? "Address not available"
-                    : "Checking the recorded address"}
-              {" · "}
-              {suburbKnown ? `suburb ${catchmentSuburb} on the referral` : "suburb not on the referral"}
-            </span>
-          </p>
-          {catchmentTeam && !catchmentEditing ? (
-            <div className={styles.suggestion}>
-              <StatusGlyph tone={catchmentConfirmed ? "success" : "warning"} size={9} />
-              <span className={styles.suggestionText}>
-                <strong>{catchmentTeam}</strong>
-                <small>
-                  {catchmentConfirmed
-                    ? "Catchment confirmed"
-                    : catchmentSuburb
-                      ? `Suggested from suburb ${catchmentSuburb}, confirm before continuing`
-                      : "Confirm before continuing"}
-                </small>
-              </span>
-              <button
-                type="button"
-                className={styles.btn}
-                onClick={() => {
-                  // Move focus into the catchment fields opened by Change.
-                  setCatchmentEditing(true);
-                  setCatchmentConfirmed(false);
-                  window.requestAnimationFrame(() => document.getElementById(`${sectionId}-suburb`)?.focus());
-                }}
-              >
-                Change
-              </button>
-            </div>
-          ) : null}
-          {(!catchmentTeam || catchmentEditing) && (
-            <div className={styles.fieldGrid}>
-              <Field label="Patient suburb" htmlFor={`${sectionId}-suburb`}>
-                <input
-                  id={`${sectionId}-suburb`}
-                  className={styles.fieldInput}
-                  list={`${sectionId}-suburbs`}
-                  autoComplete="off"
-                  autoCorrect="off"
-                  placeholder="Type a suburb"
-                  value={catchmentSuburb}
-                  onChange={(e) => {
-                    setCatchmentSuburb(e.target.value);
-                    setCatchmentConfirmed(false);
-                    const teams = catchmentRoutingDestinations(lookupCatchment(e.target.value));
-                    setCatchmentTeam(teams?.length === 1 ? teams[0] : "");
-                  }}
-                />
-              </Field>
-              <Field
-                label="Community team"
-                htmlFor={`${sectionId}-team`}
-                error={patientShowErrors && !catchmentTeam.trim() ? "Choose the catchment" : null}
-              >
-                <input
-                  id={`${sectionId}-team`}
-                  className={styles.fieldInput}
-                  list={`${sectionId}-teams`}
-                  autoComplete="off"
-                  autoCorrect="off"
-                  placeholder="Filled from the suburb, or search"
-                  value={catchmentTeam}
-                  maxLength={200}
-                  onChange={(e) => {
-                    setCatchmentTeam(e.target.value);
-                    setCatchmentConfirmed(false);
-                  }}
-                />
-              </Field>
-            </div>
-          )}
-          <datalist id={`${sectionId}-suburbs`}>
-            {suburbOptions().map((suburb) => (
-              <option key={suburb} value={suburb} />
-            ))}
-          </datalist>
-          <datalist id={`${sectionId}-teams`}>
-            {communityTeamOptions().map((team) => (
-              <option key={team} value={team} />
-            ))}
-          </datalist>
-          {lookupCatchment(catchmentSuburb).state === "contested" && (
-            <p className={styles.fieldError}>
-              <StatusGlyph tone="warning" size={9} />
-              Catchment sources disagree for this suburb. Select and confirm the catchment manually.
-            </p>
-          )}
-          <div className={styles.fieldGrid}>
-            <Field
-              label="Home region"
-              htmlFor={`${sectionId}-region`}
-              required
-              error={patientShowErrors && !homeRegion ? "Choose the home region" : null}
-            >
-              <SelectBox>
-                <select
-                  id={`${sectionId}-region`}
-                  className={styles.fieldSelect}
-                  value={homeRegion}
-                  aria-invalid={patientShowErrors && !homeRegion ? true : undefined}
-                  onChange={(e) => {
-                    setHomeRegion(e.target.value as HomeRegion);
-                    // The region is its own answer; a team already confirmed stays so,
-                    // so choosing it does not ask for the catchment a second time.
-                    if (!catchmentTeam.trim()) setCatchmentConfirmed(false);
-                  }}
-                >
-                  <option value="">Choose region</option>
-                  {HOME_REGIONS.map((region) => (
-                    <option key={region}>{region}</option>
-                  ))}
-                </select>
-              </SelectBox>
-            </Field>
-            <Field label="Service area" htmlFor={`${sectionId}-service`} hint="optional">
-              <SelectBox>
-                <select
-                  id={`${sectionId}-service`}
-                  className={styles.fieldSelect}
-                  value={catchmentService}
-                  onChange={(e) => {
-                    // Finding 39: the optional service area never un-confirms the catchment.
-                    setCatchmentService(e.target.value as HealthService | "");
-                  }}
-                >
-                  <option value="">Not known, confirm later</option>
-                  {HEALTH_SERVICES.map((service) => (
-                    <option key={service}>{service}</option>
-                  ))}
-                </select>
-              </SelectBox>
-            </Field>
-          </div>
-          <div className={styles.catchmentFoot}>
-            {destType !== "community" ? (
-              <label
-                className={styles.checkChip}
-                data-checked={catchmentNotKnown}
-                data-testid="ward-referral-catchment-not-known"
-              >
-                <input
-                  type="checkbox"
-                  checked={catchmentNotKnown}
-                  onChange={(e) => {
-                    setCatchmentNotKnown(e.target.checked);
-                    setFlowError(null);
-                  }}
-                />
-                Catchment not known
-              </label>
-            ) : null}
-            <div className={cx(styles.confirmRow, styles.confirmEnd)}>
-              {catchmentNotKnown ? (
-                <span className={styles.confirmedNote} data-testid="ward-referral-catchment-not-known-note">
-                  <StatusGlyph tone="warning" size={10} />
-                  Catchment not known.
-                </span>
-              ) : catchmentConfirmed ? (
-                <span className={styles.confirmedNote}>
-                  <StatusGlyph tone="success" size={10} />
-                  Catchment confirmed
-                </span>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    id={`${sectionId}-confirm-catchment`}
-                    className={`${styles.btn} ${styles.btnTint}`}
-                    aria-disabled={!catchmentTeam.trim() || !homeRegion ? "true" : undefined}
-                    // A button cannot carry aria-invalid; this marks it as the step's fault for the focus move.
-                    data-referral-invalid={patientShowErrors && catchmentTeam.trim() && homeRegion ? "" : undefined}
-                    aria-describedby={
-                      !catchmentTeam.trim() || !homeRegion
-                        ? `${sectionId}-catchment-why`
-                        : patientShowErrors
-                          ? `${sectionId}-catchment-error`
-                          : undefined
-                    }
-                    onClick={() => {
-                      if (!catchmentTeam.trim() || !homeRegion) return;
-                      setCatchmentConfirmed(true);
-                      setCatchmentEditing(false);
-                      setFlowError(null);
-                    }}
-                  >
-                    <CheckCircle2 aria-hidden="true" />
-                    Confirm catchment
-                  </button>
-                  {!catchmentTeam.trim() || !homeRegion ? (
-                    <span className={styles.bodyMeta} id={`${sectionId}-catchment-why`}>
-                      {!catchmentTeam.trim() ? "Choose the catchment first" : "Choose the home region first"}
-                    </span>
-                  ) : null}
-                </>
-              )}
-            </div>
-          </div>
-          {patientShowErrors && !catchmentConfirmed && !catchmentNotKnown ? (
-            <p className={styles.fieldError} id={`${sectionId}-catchment-error`}>
-              <StatusGlyph tone="danger" size={9} />
-              Confirm the catchment before continuing
-            </p>
-          ) : null}
-        </div>
-      </section>
+      <ReferralCatchmentCard
+        s={s}
+        addressLine={
+          patientRecord?.address
+            ? `Recorded address ${patientRecord.address}`
+            : !addressUnknown
+              ? "No recorded address"
+              : addressReplied
+                ? "Address not available"
+                : "Checking the recorded address"
+        }
+      />
     </div>
   );
 }

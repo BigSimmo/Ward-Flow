@@ -70,8 +70,11 @@ describe("the pre-filled banner only claims what was pre-filled (WT-28)", () => 
     fireEvent.change(newPatientForm.getByLabelText(/Given name/), { target: { value: "Elena" } });
     fireEvent.change(newPatientForm.getByLabelText(/Date of birth/), { target: { value: "15/05/1991" } });
     fireEvent.change(newPatientForm.getByLabelText(/UMRN/), { target: { value: "UM999002" } });
-    fireEvent.change(newPatientForm.getByLabelText(/Gender/), { target: { value: "Female" } });
-    fireEvent.click(newPatientForm.getByRole("button", { name: "Add patient" }));
+    // RF3 (3 Nov 2026): recorded sex is a kit segmented radio group, not a drop-down.
+    fireEvent.click(
+      within(newPatientForm.getByRole("radiogroup", { name: "Recorded sex" })).getByRole("radio", { name: "Female" }),
+    );
+    fireEvent.click(newPatientForm.getByRole("button", { name: "Add and use for this referral" }));
     expect(screen.getByText("Rostova, Elena (35F)")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-referral-fast-track")).toBeNull();
 

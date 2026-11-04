@@ -8,6 +8,7 @@ import type { Movement } from "@/components/ward-management/ward-model";
 
 import { currentLegalDueAt, legalDeadlineText, legalFormRowClassification } from "./legal-forms-derivations";
 import { formProgression } from "./legal-form-progression";
+import { nextStep, type NextStepAction } from "./legal-forms-next-step";
 import {
   STANDING_TONE,
   clockStanding,
@@ -38,11 +39,15 @@ export const GAP_LABEL: Record<RecordGap, string> = {
 };
 
 export const ROW_COLUMNS = "minmax(0,1.25fr) minmax(0,1.3fr) minmax(0,1.15fr) minmax(0,1.1fr) minmax(0,0.95fr)";
-/** The short word for a fact still to record, as the To record column names it. */
-const TO_RECORD_WORD: Record<RecordGap, string> = {
-  written: "Time written",
-  received: "Received",
-  examination: "Examined",
+/**
+ * FS1 (Josh, 3 Nov 2026): the last column is the row's one next step, the same step the side panel
+ * leads with (`nextStep`). Its short label fits the cell, and the button says it in full.
+ */
+const STEP_LABEL: Record<Exclude<NextStepAction, "none" | "next-form">, string> = {
+  written: "Add the time",
+  received: "Mark received",
+  examination: "Record examination",
+  extend: "Extend or next form",
 };
 const CHECK_COLUMNS = "minmax(0,1.4fr) 56px minmax(0,1fr) minmax(0,1fr) minmax(0,1fr)";
 
@@ -89,7 +94,7 @@ export function FormRow({
   const reason = `${legalDeadlineText(movement, now)}${standingSuffix(typedTimeStanding(movement, now, thresholds))}`;
   const facts = recordedFacts(movement);
   const done = facts.filter((fact) => fact.at !== undefined).length;
-  const missing = facts.filter((fact) => fact.at === undefined).map((fact) => TO_RECORD_WORD[fact.gap]);
+  const step = nextStep(movement, now);
   const canAddTime = movement.formedAt === undefined && isOwnedLegalFormCode(legalForm.code);
   // Audit S-6: an ended form's typed expiry is history, so the row shows it ended, not a countdown.
   const progression = formProgression(movement);
@@ -136,11 +141,10 @@ export function FormRow({
       <span className={styles.cellStack}>
         {progression ? (
           <>
+            {/* Icon rules (3 Nov 2026): the words already say the state, so no mark beside them. */}
             <span className={styles.leftLine}>
-              <StatusGlyph tone="closed" size={9} />
               <span className={styles.sub}>Ended {progression.endedWhen}</span>
             </span>
-            <span className={styles.sub}>Form {progression.nextCode} to record</span>
           </>
         ) : hasDue ? (
           <>
@@ -154,49 +158,38 @@ export function FormRow({
         ) : (
           <>
             <span className={styles.leftLine}>
-              <StatusGlyph tone="closed" size={9} />
               <span className={styles.sub}>
                 {movement.formedAt === undefined ? "No time written" : "No expiry typed"}
               </span>
             </span>
-            {canAddTime ? (
-              <button
-                type="button"
-                className={styles.rowLink}
-                aria-label={`Add the time for ${name}`}
-                onClick={() => onAddTime(movement)}
-              >
-                Add the time
-              </button>
-            ) : (
-              <span className={cx(styles.sub, styles.mono)}>In ED {durText(now - movement.openedAt)}</span>
-            )}
+            <span className={cx(styles.sub, styles.mono)}>In ED {durText(now - movement.openedAt)}</span>
           </>
         )}
         <span className={styles.srOnly}>{reason}</span>
       </span>
-      <span className={styles.recorded}>
-        {facts.length === 0 ? (
-          <span className={styles.sub} aria-hidden="true">
-            –
+      <span className={styles.cellStack}>
+        {step.action === "none" ? (
+          <span className={styles.leftLine}>
+            {/* A quiet line: nothing to do is not a warning, so it carries no cross or colour. */}
+            {facts.length > 0 ? <StatusGlyph tone="success" size={9} /> : null}
+            <span className={styles.sub}>{facts.length > 0 ? "All recorded" : "Nothing due"}</span>
           </span>
-        ) : missing.length === 0 ? (
-          <>
-            <StatusGlyph tone="success" size={9} />
-            <span className={styles.recordedText}>All recorded</span>
-          </>
         ) : (
-          <>
-            <StatusGlyph tone="neutral" size={9} />
-            {/* One fact names itself; more show as a count so the cell never cuts a word. */}
-            <span className={styles.recordedText} title={missing.join(", ")}>
-              {missing.length === 1 ? missing[0] : `${missing.length} to record`}
-            </span>
-          </>
+          <button
+            type="button"
+            className={styles.rowLink}
+            aria-label={`${step.action === "written" && canAddTime ? "Add the time" : step.title} for ${name}`}
+            title={step.detail}
+            onClick={() => (step.action === "written" && canAddTime ? onAddTime(movement) : onSelect(movement))}
+          >
+            {step.action === "next-form" ? step.title : STEP_LABEL[step.action]}
+          </button>
         )}
-        <span className={styles.srOnly}>
-          {facts.length === 0 ? "Nothing to record for this form" : `${done} of ${facts.length} recorded`}
-        </span>
+        {facts.length > 0 && done < facts.length ? (
+          <span className={styles.sub}>
+            {done} of {facts.length} recorded
+          </span>
+        ) : null}
       </span>
     </DataRow>
   );
@@ -211,8 +204,8 @@ export function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimm
   const thresholds = useDueSoonThresholds();
   const legalForm = movement.legalForm!;
   const standing = clockStanding(movement, now, thresholds);
-  const facts = recordedFacts(movement);
-  const missing = facts.filter((fact) => fact.at === undefined).length;
+  // FS1: the row names its one next step, the same one the sheet leads with.
+  const step = nextStep(movement, now);
   const where = wardName ? `${edName} to ${wardName}` : edName;
   const dueAt = currentLegalDueAt(movement);
   const hasDue = dueAt !== undefined;
@@ -229,10 +222,12 @@ export function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimm
       meta={
         <>
           <span className={styles.phoneMetaLine}>{formTitle(legalForm.code)}</span>
-          <span className={styles.phoneMetaLine}>
-            {where}
-            {missing > 0 ? ` · ${missing} to record` : ""}
-          </span>
+          <span className={styles.phoneMetaLine}>{where}</span>
+          {step.action === "none" ? null : (
+            <span className={cx(styles.phoneMetaLine, styles.phoneStep)}>
+              {step.action === "next-form" ? step.title : STEP_LABEL[step.action]}
+            </span>
+          )}
         </>
       }
       // Josh's no-wrap rule: the typed time and its word on one line ("15:42 as typed"), never a count.

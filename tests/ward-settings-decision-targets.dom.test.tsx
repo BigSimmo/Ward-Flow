@@ -67,9 +67,10 @@ describe("settings: decision targets", () => {
   });
 });
 
-describe("settings: browser notifications", () => {
+describe("settings: the one Alerts switch", () => {
+  const SWITCH = "Alerts on this device";
   function openAlerts() {
-    return screen.getByTestId("setting-browser-notifications-row");
+    return screen.getByTestId("setting-device-alerts-row");
   }
 
   it("says when the browser cannot notify, and stays off", async () => {
@@ -78,10 +79,10 @@ describe("settings: browser notifications", () => {
     const row = openAlerts();
     expect(row).toHaveTextContent("Not available in this browser");
     await act(async () => {
-      fireEvent.click(within(row).getByRole("switch", { name: "Browser notifications" }));
+      fireEvent.click(within(row).getByRole("switch", { name: SWITCH }));
     });
     expect(getActNowNotificationPreference()).toBe(false);
-    expect(within(row).getByRole("switch", { name: "Browser notifications" })).not.toBeChecked();
+    expect(within(row).getByRole("switch", { name: SWITCH })).not.toBeChecked();
   });
 
   it("respects a denied permission without turning on", async () => {
@@ -89,21 +90,54 @@ describe("settings: browser notifications", () => {
     renderSettings();
     const row = openAlerts();
     await act(async () => {
-      fireEvent.click(within(row).getByRole("switch", { name: "Browser notifications" }));
+      fireEvent.click(within(row).getByRole("switch", { name: SWITCH }));
     });
     expect(getActNowNotificationPreference()).toBe(false);
     expect(row).toHaveTextContent("Blocked for this site in the browser");
     expect(screen.getByText("Notifications are blocked for this site in the browser.")).toBeInTheDocument();
   });
 
-  it("turns on when the browser grants permission", async () => {
+  it("turns on when the browser grants permission, and off again", async () => {
     vi.stubGlobal("Notification", { permission: "default", requestPermission: vi.fn(async () => "granted") });
     renderSettings();
     const row = openAlerts();
     await act(async () => {
-      fireEvent.click(within(row).getByRole("switch", { name: "Browser notifications" }));
+      fireEvent.click(within(row).getByRole("switch", { name: SWITCH }));
     });
     expect(getActNowNotificationPreference()).toBe(true);
-    expect(within(row).getByRole("switch", { name: "Browser notifications" })).toBeChecked();
+    expect(within(row).getByRole("switch", { name: SWITCH })).toBeChecked();
+    expect(screen.getByText("Alerts on while Ward Flow is open.")).toBeInTheDocument();
+    await act(async () => {
+      fireEvent.click(within(row).getByRole("switch", { name: SWITCH }));
+    });
+    expect(getActNowNotificationPreference()).toBe(false);
+    expect(screen.getByText("Alerts off on this device.")).toBeInTheDocument();
+  });
+
+  it("keeps alerts on for a person who turned Browser notifications on before", () => {
+    window.localStorage.setItem(ACT_NOW_NOTIFICATIONS_STORAGE_KEY, "true");
+    vi.stubGlobal("Notification", { permission: "granted", requestPermission: vi.fn() });
+    renderSettings();
+    expect(within(openAlerts()).getByRole("switch", { name: SWITCH })).toBeChecked();
+  });
+
+  it("a test alert shows in Ward Flow even when the browser cannot notify", () => {
+    vi.stubGlobal("Notification", undefined);
+    renderSettings();
+    fireEvent.click(screen.getByRole("button", { name: "Send a test alert" }));
+    expect(screen.getByText("Test alert shown here. Nothing needs doing.")).toBeInTheDocument();
+  });
+
+  it("a test alert also shows as a browser notification when the browser allows one", () => {
+    const shown = vi.fn();
+    const FakeNotification = vi.fn(function (this: unknown, title: string, options?: NotificationOptions) {
+      shown(title, options?.body);
+    });
+    Object.assign(FakeNotification, { permission: "granted", requestPermission: vi.fn() });
+    vi.stubGlobal("Notification", FakeNotification);
+    renderSettings();
+    fireEvent.click(screen.getByRole("button", { name: "Send a test alert" }));
+    expect(shown).toHaveBeenCalledWith("Ward Flow test alert", "Synthetic test. Nothing needs doing.");
+    expect(screen.getByText("Test alert shown here and in the browser.")).toBeInTheDocument();
   });
 });

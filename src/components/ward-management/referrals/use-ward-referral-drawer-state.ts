@@ -209,8 +209,7 @@ export function useWardReferralDrawerState({
     `${PATIENT_KEY_PREFIX}${effectiveInitialPatientId}`,
   );
   const fromEntryPoint = kept === null && prefillKey !== null;
-  // A2-3 (audit 13 Oct 2026): opened plainly, with no named person, the sheet starts on nobody,
-  // never a demo person from another site.
+  // A2-3 (audit 13 Oct 2026): opened with no named person, the sheet starts on nobody, not another site's.
   const initialPatientKey = kept?.activePatientKey ?? prefillKey ?? NO_PATIENT_KEY;
   const [activePatientKey, setActivePatientKey] = useState<string>(initialPatientKey);
   const [extraPatientKeys, setExtraPatientKeys] = useState<string[]>(
@@ -503,10 +502,9 @@ export function useWardReferralDrawerState({
       closeRequestRef.current = null;
     };
   }, [closeRequestRef, requestClose]);
-  // The close guard is a modal over the drawer, on the shared contract: the drawer behind is inert,
-  // focus starts on Keep editing, Tab wraps inside the guard, Escape closes only the guard, and focus
-  // returns to the control that asked to close. Declared before the drawer's own modal hook so it
-  // leaves the stack first when both close together.
+  // The close guard is a modal over the drawer on the shared contract: drawer inert, focus on Keep editing,
+  // Tab wraps, Escape closes only the guard, focus returns to the closing control. Declared before the
+  // drawer's own modal hook so it leaves the stack first when both close together.
   const guardBoxRef = useRef<HTMLDivElement | null>(null);
   const { rootRef: guardRootRef } = useModalFocus({
     open: guardOpen,
@@ -553,8 +551,7 @@ export function useWardReferralDrawerState({
     }
   }
 
-  // The enclosing Sheet owns focus when embedded. Register another modal only
-  // when this drawer supplies its own backdrop.
+  // The enclosing Sheet owns focus when embedded. Register a modal only when this drawer has its own backdrop.
   useWardModalFocus(withBackdrop, drawerRef, handleDrawerClose);
 
   // A2-3: a sheet opened on nobody puts the cursor in the patient search.
@@ -714,9 +711,8 @@ export function useWardReferralDrawerState({
     );
     const readyBedsCount = matchingRecords.reduce((sum, r) => sum + r.readyBeds, 0);
     const pulledBedsCount = matchingRecords.reduce((sum, r) => sum + r.pulledBeds, 0);
-    // Owner ruling, 2026-09-05. `readyBedsCount` deliberately subtracts NOTHING for this:
-    // a ward's figure must not lurch as cleaning starts and stops. The number stays; the
-    // sentence beside it is what was missing here.
+    // Owner ruling, 2026-09-05. `readyBedsCount` deliberately subtracts NOTHING for this: a ward's figure
+    // must not lurch as cleaning starts and stops. The number stays; the sentence beside it was missing.
     const pendingPreparationCount = matchingRecords.reduce((sum, r) => sum + (r.pendingPreparation ?? 0), 0);
     // Audit 1 (decision 6), Josh 20 Oct: a fixed, neutral order (health service, then ward name),
     // never catchment first or most ready beds. Every matching ward stays listed.
@@ -844,9 +840,8 @@ export function useWardReferralDrawerState({
     placement: (community ? selectedRecipient : selectedDestinations.length) ? 0 : 1,
   };
   const totalNeeded = needed.patient + needed.referral + needed.documentation + needed.placement;
-  // L1 (review 12 Oct 2026): ONE count. "N of M ready", "Items left" and each step's "N needed"
-  // all count the same items, so the steps add up to the summary and four Complete steps read as
-  // all ready. The checklist rows below are labels for the letter, not a second count.
+  // L1 (review 12 Oct 2026): ONE count. "N of M ready", "Items left" and each step's "N needed" count the
+  // same items, so the steps add up and four Complete steps read as all ready. Rows below are labels only.
   // A2-9 (audit 13 Oct 2026): the contact details asked at Send are items too, so the hero never
   // reads "0 items left" while Confirm refuses for an empty contact field (`itemsLeft` below).
   const itemsTotal =
@@ -1087,7 +1082,13 @@ export function useWardReferralDrawerState({
     },
     {
       label: "Catchment",
-      value: catchmentNotKnown ? "Catchment not known" : catchmentConfirmed ? catchmentTeam : "To confirm",
+      value: catchmentNotKnown
+        ? "Catchment not known"
+        : catchmentConfirmed
+          ? catchmentTeam
+          : catchmentTeam.trim()
+            ? `${catchmentTeam.trim()}, suggested`
+            : "To confirm",
       state: catchmentAnswered ? "done" : "needed",
     },
     { label: "From", value: originLabel || "Needed", state: originValid ? "done" : "needed" },

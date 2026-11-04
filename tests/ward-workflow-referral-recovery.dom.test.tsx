@@ -121,7 +121,7 @@ describe("referral work survives patient selection and interrupted registration"
         fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
       else if (method === "Escape") fireEvent.keyDown(window, { key: "Escape" });
       else act(() => closeRequestRef.current?.());
-      const guard = screen.getByRole("alertdialog", { name: "Close without sending?" });
+      const guard = screen.getByRole("alertdialog", { name: "Keep this referral as a draft?" });
       expect(onClose).not.toHaveBeenCalled();
       expect(guard).toHaveTextContent("Unregistered patient details are not kept in a referral draft.");
       fireEvent.click(within(guard).getByRole("button", { name: "Keep editing" }));
@@ -131,7 +131,7 @@ describe("referral work survives patient selection and interrupted registration"
     },
   );
 
-  it("Cancel on Add patient discards its typed details, so closing asks nothing", () => {
+  it("Back to search on Add patient discards its typed details, so closing asks nothing", () => {
     const onClose = vi.fn();
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -139,12 +139,14 @@ describe("referral work survives patient selection and interrupted registration"
       </WardFlowProvider>,
     );
     enterUnregisteredIdentity();
-    fireEvent.click(within(screen.getByTestId("ward-referral-new-patient")).getByRole("button", { name: "Cancel" }));
+    fireEvent.click(
+      within(screen.getByTestId("ward-referral-new-patient")).getByRole("button", { name: "Back to search" }),
+    );
     fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
     expect(within(screen.getByTestId("ward-referral-new-patient")).getByLabelText(/Family name/)).toHaveValue("");
     fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
     fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
-    expect(screen.queryByRole("alertdialog", { name: "Close without sending?" })).toBeNull();
+    expect(screen.queryByRole("alertdialog", { name: "Keep this referral as a draft?" })).toBeNull();
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
@@ -187,9 +189,12 @@ describe("referral work survives patient selection and interrupted registration"
     enterUnregisteredIdentity();
     fireEvent.click(screen.getByTestId("ward-referral-save-draft"));
     expect(onClose).not.toHaveBeenCalled();
-    const guard = screen.getByRole("alertdialog", { name: "Close without sending?" });
-    expect(within(guard).getByRole("button", { name: "Keep draft" })).toHaveAttribute("aria-disabled", "true");
-    fireEvent.click(within(guard).getByRole("button", { name: "Keep draft" }));
+    const guard = screen.getByRole("alertdialog", { name: "Keep this referral as a draft?" });
+    expect(within(guard).getByRole("button", { name: "Keep draft and close" })).toHaveAttribute(
+      "aria-disabled",
+      "true",
+    );
+    fireEvent.click(within(guard).getByRole("button", { name: "Keep draft and close" }));
     expect(onClose).not.toHaveBeenCalled();
     expect(Object.values(window.sessionStorage).join(" ")).not.toContain("Unregistered Synthetic");
     fireEvent.click(within(guard).getByRole("button", { name: "Discard" }));
@@ -212,7 +217,7 @@ describe("referral work survives patient selection and interrupted registration"
       fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
       expect(onClose).not.toHaveBeenCalled();
       fireEvent.click(within(screen.getByRole("alertdialog")).getByRole("button", { name: "Keep editing" }));
-      // Hiding the form with its toggle keeps the typed text; Cancel discards it (tested below).
+      // Hiding the form with its toggle keeps the typed text; Back to search discards it (tested below).
       fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
       fireEvent.click(screen.getByTestId("ward-referral-new-patient-toggle"));
       expect(within(screen.getByTestId("ward-referral-new-patient")).getByLabelText(/Date of birth/)).toHaveValue(

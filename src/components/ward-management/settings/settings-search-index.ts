@@ -56,16 +56,10 @@ export const SETTINGS_SEARCH_ENTRIES: readonly SettingsSearchEntry[] = [
   },
   { id: "recent-changes", label: "Recent changes", tab: "rules", keywords: "audit history saves" },
   {
-    id: "browser-notifications",
-    label: "Browser notifications",
+    id: "device-alerts",
+    label: "Alerts on this device",
     tab: "alerts",
-    keywords: "act now red alert desktop notify",
-  },
-  {
-    id: "phone-alerts",
-    label: "Phone alerts",
-    tab: "alerts",
-    keywords: "push mobile lock screen after hours act now red alert notify",
+    keywords: "browser notifications phone push mobile lock screen desktop act now red alert notify",
   },
   { id: "buzz", label: "Buzz sound", tab: "alerts", keywords: "chime urgent audio sound test" },
   {
