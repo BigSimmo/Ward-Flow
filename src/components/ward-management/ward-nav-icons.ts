@@ -1,27 +1,28 @@
 import {
   Ambulance,
+  ArrowLeftRight,
   BedSingle,
-  ChartColumn,
+  Bell,
+  BookUser,
   Building2,
-  Hospital,
+  ChartColumn,
   ClipboardList,
+  DoorClosed,
+  DoorOpen,
+  FileBadge,
+  FilePlusCorner,
+  Hospital,
+  Hourglass,
+  House,
   Inbox,
   LayoutGrid,
-  House,
-  DoorClosed,
-  List,
-  ListFilter,
+  MapPin,
   PhoneOff,
-  LogOut,
-  Milestone,
-  Route,
-  ScanSearch,
-  Scale,
+  Presentation,
   ShieldCheck,
+  Signpost,
   Siren,
   TriangleAlert,
-  Tv,
-  UserPlus,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -29,8 +30,8 @@ import {
 import type { WardMode, WardNavId } from "./ward-nav";
 
 /**
- * One icon per destination, keyed by the ids in `ward-nav.ts`. Kept out of `ward-nav.ts` so that
- * single source of truth stays plain data with no React dependency, which is what lets
+ * One crisp Lucide line icon per destination (icon audit, 3 Nov 2026), keyed by the ids in
+ * `ward-nav.ts`. Kept out of `ward-nav.ts` so that single source of truth stays plain data with no React dependency, which is what lets
  * `tests/ward-nav.test.ts` and `tests/ward-management.test.ts` read it in a plain Node context.
  *
  * Both the icon rail and the labelled panel/drawer read these, so an icon is chosen once rather
@@ -39,9 +40,10 @@ import type { WardMode, WardNavId } from "./ward-nav";
 export const WARD_VIEW_ICONS: Record<WardMode, LucideIcon> = {
   // A house, as on the phone menu, so Home reads as Home on the icon rail (Josh, 27 Oct 2026).
   command: House,
-  delays: ListFilter,
+  // An hourglass (icon audit, 3 Nov 2026): Waiting is time spent waiting for a bed, not a filter.
+  delays: Hourglass,
   capacity: BedSingle,
-  movements: Route,
+  movements: ArrowLeftRight,
   governance: ShieldCheck,
 };
 
@@ -57,30 +59,24 @@ export const WARD_VIEW_ICONS: Record<WardMode, LucideIcon> = {
  * point.
  */
 export const WARD_NAV_ICONS: Record<WardNavId, LucideIcon> = {
-  // The ward index: every ward in the network. `Hospital` rather than a second `Building2`, which
-  // the single seeded ward example beside it already uses — two destinations sharing an icon in an
-  // icon-only rail are two destinations a reader cannot tell apart.
+  // The ward index: every ward in the network, a hospital with its cross. The single ward beside it
+  // is a plain building, so the two never share an icon in the icon-only rail.
   wards: Hospital,
-  // The community team index. `Users` — a group of people rather than a building — because a
-  // community team is the only destination in this rail that is a team and not a place. Distinct
-  // from every other icon here, which is the one property an icon-only rail actually needs.
+  // The community team index: two people, because a community team is the only destination in
+  // this rail that is a team and not a place.
   community: Users,
   board: LayoutGrid,
   ward: Building2,
   officer: Ambulance,
   ed: Siren,
   handover: ClipboardList,
-  /* Siren, not TriangleAlert: `escalation` already owns TriangleAlert below, and two nav items
-   * sharing one glyph is a reader's problem before it is a designer's — this rail is scanned, not
-   * read. Siren is already imported for another item's use and needs no new dependency. */
-  alerts: Siren,
+  /* A bell (icon audit, 3 Nov 2026), the one the phone dock and the top bar already use for
+   * Alerts. It was a Siren, which All EDs also used, so two rail items shared one glyph. */
+  alerts: Bell,
   escalation: TriangleAlert,
-  // Patients is a census list, not a search (UX audit, 21 Oct 2026), so a list rather than the
-  // magnifier the bar's own Search uses.
-  search: List,
-  // The master search hub. `ScanSearch`: this rail is icon-only at its narrow width, and two
-  // destinations sharing a glyph are two destinations a reader cannot tell apart. The
-  // magnifier-over-a-frame reads as searching ACROSS a set, which is what this destination does.
+  // Patients is a census, not a search (UX audit, 21 Oct 2026): a book of people rather than the
+  // magnifier the bar's own Search uses or a bare list.
+  search: BookUser,
   /*
    * 🔴 **`PhoneOff`, AND THE CROSSED-OUT HANDSET IS THE POINT, NOT A PLACEHOLDER.**
    * This destination holds no number and nothing diallable, by design. A plain `Phone` would promise
@@ -90,19 +86,23 @@ export const WARD_NAV_ICONS: Record<WardNavId, LucideIcon> = {
   "on-call": PhoneOff,
   // D-72: a closed door for the seclusion room, distinct from every other glyph in the rail.
   seclusion: DoorClosed,
-  hub: ScanSearch,
-  discharges: LogOut,
+  // Places, the index of every site: a map pin. It was a magnifier, which read as a second Search.
+  hub: MapPin,
+  // An open door (icon audit): LogOut is the Sign out icon in the rail's own foot. Seclusion keeps
+  // the closed door.
+  discharges: DoorOpen,
   referrals: Inbox,
-  "referral-intake": UserPlus,
+  // A page with a plus: a referral is a document, and UserPlus read as adding a user account.
+  "referral-intake": FilePlusCorner,
   // A column chart, because this destination is figures rather than a board of patients. Distinct
   // from every other icon in the rail, which is the only property an icon-only rail actually needs.
   statistics: ChartColumn,
-  // A distance marker on a road, deliberately not a map pin or a compass: this destination is
-  // about how far somebody is from home, and nothing in Phase 8 may assert where any hospital is.
-  "out-of-area": Milestone,
-  // A balance scale, distinct from every icon above: this is the one destination whose subject is
-  // a legal instrument rather than a place, a person, a vehicle or a board of patients.
-  "legal-forms": Scale,
-  // A television: the one destination meant to be read from across a meeting room.
-  "bed-meeting": Tv,
+  // A signpost, deliberately not a map pin or a compass: this destination is about how far somebody
+  // is from home, and nothing in Phase 8 may assert where any hospital is.
+  "out-of-area": Signpost,
+  // A form with its badge: the one destination whose subject is a legal instrument rather than a
+  // place, a person, a vehicle or a board of patients. The page is the forms, not the court.
+  "legal-forms": FileBadge,
+  // A presentation screen: the one destination meant to be read from across a meeting room.
+  "bed-meeting": Presentation,
 };

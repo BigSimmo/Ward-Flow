@@ -8,7 +8,7 @@
 
 import Link from "next/link";
 import {
-  BedDouble,
+  BedSingle,
   ChevronLeft,
   ChevronRight,
   Clock3,
@@ -266,7 +266,7 @@ export function BedsStrip({ summary }: { summary: BedsReadySummary }) {
         className={s.bedsLead}
         title="Beds ready statewide for your desk's admissions. Open Places"
       >
-        <BedDouble size={14} aria-hidden="true" />
+        <BedSingle size={14} aria-hidden="true" />
         <b>{summary.total}</b> beds ready
       </Link>
       {cohorts.map((cell) => (
