@@ -35,7 +35,8 @@ const HASH_TABS: Record<string, AlertsTab> = {
 };
 
 export function alertsTabFromHash(hash: string): AlertsTab | undefined {
-  return HASH_TABS[hash.replace(/^#/u, "").toLowerCase()];
+  const key = hash.replace(/^#/u, "").toLowerCase();
+  return Object.hasOwn(HASH_TABS, key) ? HASH_TABS[key] : undefined;
 }
 
 function subscribeHash(onChange: () => void) {

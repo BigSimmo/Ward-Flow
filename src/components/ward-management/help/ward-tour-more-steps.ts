@@ -281,7 +281,7 @@ function deskMore(role: TourRole): MoreStep[] {
           "settings",
           RAIL_SETTINGS,
           "Settings",
-          "Your name at the foot of the menu opens Settings, which starts on Access. That is where you give, check and remove roles.",
+          "Your name at the foot of the menu opens your account menu. Choose Settings there. It starts on Access, where you give, check and remove roles.",
           "review",
         ),
         BOARD_TIME_STEP,

@@ -722,7 +722,11 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   // "Switch login (demo)" is hidden once real sign-in is on, so Find does not offer it either.
   const results = findRedesignSettings(query, sections, 7, editsRules).filter(
     // The access rows exist only while Role access shows them (under You on a desk without Access).
-    (entry) => (entry.id !== "go-to-desk" || switchLogin !== undefined) && (entry.tab !== "access" || accessOn),
+    (entry) =>
+      (entry.id !== "go-to-desk" || switchLogin !== undefined) &&
+      (entry.tab !== "access" || accessOn) &&
+      // A phone's Display sheet leaves out the keyboard shortcuts row.
+      !(isPhone && entry.id === "character-shortcuts"),
   );
 
   useEffect(() => {

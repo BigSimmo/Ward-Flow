@@ -268,7 +268,7 @@ function MoreSection({
           </Link>
         </li>
         <HelpRow onClose={onClose} />
-        <DeskRow onSwitch={onSwitch} />
+        <DeskRow onSwitch={onSwitch} onClose={onClose} />
         <SignOutRow />
         <DataModeRow onClose={onClose} />
       </ul>
@@ -354,7 +354,7 @@ function SignOutRow() {
  * demo, "Try another desk (demo)" opens the desk drawer the who row used to open. Nothing for a
  * signed-in account with one membership.
  */
-function DeskRow({ onSwitch }: { onSwitch: () => void }) {
+function DeskRow({ onSwitch, onClose }: { onSwitch: () => void; onClose: () => void }) {
   const session = useContext(SharedSessionContext);
   const switchRole = session?.switchRole;
   if (session && !switchRole) return null;
@@ -365,7 +365,12 @@ function DeskRow({ onSwitch }: { onSwitch: () => void }) {
         className={styles.row}
         aria-haspopup={switchRole ? undefined : "dialog"}
         data-testid="ward-phone-menu-switch-workstation"
-        onClick={switchRole ?? onSwitch}
+        onClick={() => {
+          if (!switchRole) return onSwitch();
+          // Close the sheet first, as the executive phone menu does, before the desk changes.
+          onClose();
+          switchRole();
+        }}
       >
         <RowBody icon={Repeat} label={switchRole ? "Switch desk" : "Try another desk (demo)"} />
         <Chevron />

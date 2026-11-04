@@ -580,7 +580,10 @@ const JOBS: readonly HowTo[] = [
     go: "alerts",
     showMe: [
       {
-        target: { sel: '[data-testid="ward-alerts-filters"]' },
+        target: [
+          { sel: '[data-testid="ward-alerts-filters"]' },
+          { sel: '[role="tablist"][aria-label="Alerts views"]' },
+        ],
         title: "Open, Cleared and Broadcasts",
         body: "Chips show one kind of open alert at a time. Cleared, beside Open, lists what this desk already acted on.",
       },
