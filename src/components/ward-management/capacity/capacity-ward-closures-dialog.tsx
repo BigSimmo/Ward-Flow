@@ -13,7 +13,7 @@ import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
 import { wardStaySeats } from "@/components/ward-management/ward/ward-bed-layout";
 
 import { WARD_CLOSURE_REASONS, wardClosureReasonLabel, type WardClosureReason } from "./ward-closure";
-import { WardClosurePanel } from "./ward-closure-panel";
+import { WardClosurePanel, type FootAction } from "./ward-closure-panel";
 import styles from "./capacity-page.module.css";
 
 /**
@@ -39,6 +39,8 @@ export function WardClosuresDialog({
   const raise = useWardRaise(actor.role);
   const [bed, setBed] = useState<number | null>(null);
   const [reason, setReason] = useState<WardClosureReason | null>(null);
+  // The whole-ward close is the dialog's one primary action, in its foot (stress test, 3 Nov 2026).
+  const [closeWard, setCloseWard] = useState<FootAction | null>(null);
   const closed = activeClosedBeds(unit);
   const taken = useMemo(() => {
     const seats = wardStaySeats(unit, admissions);
@@ -70,7 +72,9 @@ export function WardClosuresDialog({
       description="A last resort. A closed bed or ward is not offered until someone reopens it."
       size="md"
       data-testid="capacity-ward-closures"
-      secondary={[{ label: "Done", onAction: onClose }]}
+      // One filled action: the whole-ward close while it can be done, otherwise Done.
+      secondary={closeWard ? [{ label: "Done", onAction: onClose }] : undefined}
+      primary={closeWard ?? { label: "Done", onAction: onClose }}
     >
       <div className={styles.popBody}>
         <section aria-labelledby="closures-bed" className={styles.popSection}>
@@ -82,7 +86,7 @@ export function WardClosuresDialog({
           ) : (
             <>
               <span className={styles.popLabel}>Which bed</span>
-              <ChipGroup label="Empty beds">
+              <ChipGroup label="Empty beds" className={styles.popChips}>
                 {empty.map((number) => (
                   <FilterChip
                     key={number}
@@ -94,7 +98,7 @@ export function WardClosuresDialog({
                 ))}
               </ChipGroup>
               <span className={styles.popLabel}>Why</span>
-              <ChipGroup label="Reason">
+              <ChipGroup label="Reason" className={styles.popChips}>
                 {WARD_CLOSURE_REASONS.map((entry) => (
                   <FilterChip
                     key={entry.id}
@@ -147,7 +151,7 @@ export function WardClosuresDialog({
           <h3 id="closures-ward" className={styles.popHead}>
             Close the whole ward to admissions
           </h3>
-          <WardClosurePanel unit={unit} now={now} actor={actor} />
+          <WardClosurePanel unit={unit} now={now} actor={actor} onFootAction={setCloseWard} />
         </section>
       </div>
     </Dialog>

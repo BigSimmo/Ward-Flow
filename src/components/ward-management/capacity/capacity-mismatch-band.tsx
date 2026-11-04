@@ -26,9 +26,12 @@ export function MismatchBand({
   model,
   hideEmptyTypes = false,
   onWard,
+  networkWide = false,
 }: {
   model: CapacityModel;
   hideEmptyTypes?: boolean;
+  /** A service is chosen, but who is waiting is counted across the network, so the card says so. */
+  networkWide?: boolean;
   /** Opens a ward's drawer from the pop-up's ready-bed list. */
   onWard?: (unitId: string) => void;
 }) {
@@ -57,6 +60,7 @@ export function MismatchBand({
       <CardHead
         id="capacity-mismatch-title"
         title="Mismatch"
+        meta={networkWide ? "Network-wide" : undefined}
         action={
           <Segmented
             label="Show bed types"

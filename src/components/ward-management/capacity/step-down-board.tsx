@@ -1,10 +1,10 @@
 "use client";
 
-// Capacity's Step down board. List names are surname first (D-83); the Review button keeps the
+// Capacity's step-down refer step, used by the Planned moves pop-up. List names are surname first (D-83); the Review button keeps the
 // spoken order.
 
 import Link from "next/link";
-import { type ReactNode, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { Button } from "@/components/wf";
 import { REFERRAL_CAP_REASONS, type ReferralCapReason } from "@/components/ward-management/ward-change-reasons";
@@ -14,53 +14,8 @@ import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
-import { CapacityPanel } from "./capacity-panel";
-import { deriveStepDownBoard, type StepDownBoardRow } from "@/components/ward-management/ward-step-down";
+import type { StepDownBoardRow } from "@/components/ward-management/ward-step-down";
 import styles from "@/components/ward-management/capacity/step-down-board.module.css";
-
-/**
- * Top 25 item 8 and item 16: each step-down
- * candidate with the wards that pass the main eligibility gates and have a Ready bed now, plus
- * incoming movements that fit `fromUnit` with a bed actually free there. Owner ruling (17 Oct 2026,
- * 10:13 PM AWST): no combined swap, each leg is referred on its own; a movement needing a gender
- * placement review is routed to Placement instead of being offered here.
- */
-export function StepDownBoard({ now, titleSlot }: { now: Instant; titleSlot?: ReactNode }) {
-  const kit = useStepDownRefer(now);
-  const { admissions, units, movements, patients, referrals } = useWardFlowSelect(
-    "admissions",
-    "units",
-    "movements",
-    "patients",
-    "referrals",
-  );
-  const rows = useMemo(
-    () => deriveStepDownBoard({ admissions, units, movements, patients, referrals, now }),
-    [admissions, units, movements, patients, referrals, now],
-  );
-
-  return (
-    <CapacityPanel
-      title="Step down board"
-      titleSlot={titleSlot}
-      count={titleSlot ? undefined : `${rows.length} ${rows.length === 1 ? "patient" : "patients"}`}
-    >
-      <div data-testid="capacity-step-down-board">
-        {rows.length === 0 ? (
-          <p className={styles.absent}>No patient is marked for step down.</p>
-        ) : (
-          <ul className={styles.list}>
-            {rows.map((row) => (
-              <li key={row.admission.id} className={styles.row} data-testid="step-down-row">
-                <StepDownRowDetail row={row} kit={kit} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </CapacityPanel>
-  );
-}
 
 /**
  * The bed coordinator's refer step for the Step down board, shared by the board and Capacity's

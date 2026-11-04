@@ -43,7 +43,16 @@ const LANE_MARKS = 10;
  * else is hidden. Each row opens a pop-up modelled on the Movements one. Every write still goes
  * through the planned admissions forms and the Step down board's refer step.
  */
-export function ComingIn({ now, wardRows }: { now: Instant; wardRows: readonly NetworkWardRow[] }) {
+export function ComingIn({
+  now,
+  wardRows,
+  networkWide = false,
+}: {
+  now: Instant;
+  wardRows: readonly NetworkWardRow[];
+  /** A service is chosen but bookings and step downs are listed for the whole network. */
+  networkWide?: boolean;
+}) {
   const { admissions, units, movements, patients, referrals, plannedAdmissions } = useWardFlowSelect(
     "admissions",
     "units",
@@ -78,6 +87,7 @@ export function ComingIn({ now, wardRows }: { now: Instant; wardRows: readonly N
               ? "Nobody booked in or marked for step down"
               : `${people} ${people === 1 ? "person" : "people"} booked in or marked for step down`}
             {next ? ` · next arrival ${formatInstantWithDay(next.expectedArrivalAt, now)}` : ""}
+            {networkWide ? " · Network-wide" : ""}
           </p>
         </div>
       }

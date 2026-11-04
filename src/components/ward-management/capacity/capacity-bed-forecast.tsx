@@ -40,9 +40,12 @@ export function BedForecast({
   siteName,
   onWard,
   onAskWard,
+  networkWide = false,
 }: {
   model: CapacityModel;
   onTryScenario: () => void;
+  /** A service is chosen, but the forecast is the whole network's, so the title row says so. */
+  networkWide?: boolean;
   stacked?: boolean;
   /** Opens a ward's drawer from a "What would help tomorrow" pop-up. */
   onWard: (unitId: string) => void;
@@ -107,7 +110,12 @@ export function BedForecast({
       {stacked ? (
         <div className={styles.fcToolbar}>{actions}</div>
       ) : (
-        <CardHead id="capacity-forecast-title" title="Bed forecast" action={actions} />
+        <CardHead
+          id="capacity-forecast-title"
+          title="Bed forecast"
+          meta={networkWide ? "Network-wide" : undefined}
+          action={actions}
+        />
       )}
       {/* Capacity issue 3 (Josh, 3 Nov 2026): the figures are one slim strip under the title, so the
           chart and the help list get the width and the card is shorter. */}

@@ -72,6 +72,15 @@ export function PlannedMoveDrawer({
   const arrived = run(api.arrived);
   const change = run(api.change);
   const cancel = run(api.cancel);
+  // One filled action in the foot: Record arrival when it is due, otherwise the first page link.
+  const lead =
+    arrived && dueToday
+      ? "arrival"
+      : recordHref && canOpen(recordHref)
+        ? "record"
+        : canOpen(boardHref)
+          ? "board"
+          : null;
 
   return (
     <Drawer
@@ -81,7 +90,6 @@ export function PlannedMoveDrawer({
       description={`Planned admission · ${PLANNED_ADMISSION_REASON_LABELS[planned.reason]} · ${planned.ageBand}`}
       titleAccessory={<span className={styles.pmKind}>Planned</span>}
       testId="capacity-planned-detail"
-      footerClassName={styles.pmFootWrap}
       footer={
         <div className={styles.pmFoot}>
           {arrived && dueToday ? (
@@ -98,24 +106,24 @@ export function PlannedMoveDrawer({
           )}
           <div className={styles.pmFootRow}>
             {recordHref && canOpen(recordHref) ? (
-              <Link href={recordHref} className={buttonClass({ variant: "sec", size: "sm" })}>
+              <Link href={recordHref} className={buttonClass({ variant: lead === "record" ? "pri" : "sec" })}>
                 <FileText size={14} aria-hidden="true" />
                 Patient record
               </Link>
             ) : null}
             {canOpen(boardHref) ? (
-              <Link href={boardHref} className={buttonClass({ variant: "sec", size: "sm" })}>
+              <Link href={boardHref} className={buttonClass({ variant: lead === "board" ? "pri" : "sec" })}>
                 <BedSingle size={14} aria-hidden="true" />
                 Ward board
               </Link>
             ) : null}
             {change ? (
-              <Button variant="sec" size="sm" icon={Pencil} onClick={change}>
+              <Button variant="sec" icon={Pencil} onClick={change}>
                 Change booking
               </Button>
             ) : null}
             {cancel ? (
-              <Button variant="sec" size="sm" icon={X} onClick={cancel}>
+              <Button variant="sec" icon={X} onClick={cancel}>
                 Cancel booking
               </Button>
             ) : null}
@@ -262,7 +270,6 @@ export function StepDownDrawer({
       description={`${who.umrn} · marked for step down`}
       titleAccessory={<span className={styles.pmKind}>Step down</span>}
       testId="capacity-step-down-detail"
-      footerClassName={styles.pmFootWrap}
       footer={
         <div className={styles.pmFoot}>
           <p className={styles.pmFootNext}>
@@ -282,13 +289,16 @@ export function StepDownDrawer({
           </p>
           <div className={styles.pmFootRow}>
             {recordHref && canOpen(recordHref) ? (
-              <Link href={recordHref} className={buttonClass({ variant: "sec", size: "sm" })}>
+              <Link href={recordHref} className={buttonClass({ variant: "pri" })}>
                 <FileText size={14} aria-hidden="true" />
                 Patient record
               </Link>
             ) : null}
             {canOpen(boardHref) ? (
-              <Link href={boardHref} className={buttonClass({ variant: "sec", size: "sm" })}>
+              <Link
+                href={boardHref}
+                className={buttonClass({ variant: recordHref && canOpen(recordHref) ? "sec" : "pri" })}
+              >
                 <BedSingle size={14} aria-hidden="true" />
                 Ward board
               </Link>

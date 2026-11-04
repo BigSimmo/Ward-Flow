@@ -22,7 +22,18 @@ type Toggle = "clearHeldUp" | "confirmDates" | "overdueGoAhead";
  * answer sits at the top and changes as each box is ticked, so the reader never scrolls to see
  * what a choice did. Nothing is saved: closing the dialog forgets the scenario.
  */
-export function ScenarioDialog({ open, onClose, model }: { open: boolean; onClose: () => void; model: ForecastModel }) {
+export function ScenarioDialog({
+  open,
+  onClose,
+  model,
+  networkWide = false,
+}: {
+  open: boolean;
+  onClose: () => void;
+  model: ForecastModel;
+  /** A service is chosen but the scenario counts the whole network, so it says so. */
+  networkWide?: boolean;
+}) {
   const { tomorrow, units } = model;
   const [scenario, setScenario] = useState<ForecastScenario>(EMPTY_SCENARIO);
   const [unitId, setUnitId] = useState("");
@@ -48,7 +59,7 @@ export function ScenarioDialog({ open, onClose, model }: { open: boolean; onClos
       open={open}
       onClose={close}
       title="Try a scenario"
-      description="Nothing here is saved."
+      description={networkWide ? "Network-wide. Nothing here is saved." : "Nothing here is saved."}
       size="md"
       primary={{ label: "Done", onAction: close }}
       secondary={[

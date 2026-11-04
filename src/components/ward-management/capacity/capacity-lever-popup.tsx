@@ -65,7 +65,7 @@ export function LeverPopup({
       footer={
         !wardLevel && canOpen(pageHref) ? (
           <div className={styles.popFoot}>
-            <Link href={pageHref} className={buttonClass({ variant: "sec", size: "sm" })}>
+            <Link href={pageHref} className={buttonClass({ variant: "pri" })}>
               Open Discharges
             </Link>
           </div>
@@ -119,7 +119,7 @@ export function LeverPopup({
                     {record.blocker ? (
                       <span className={`${styles.tag} ${styles.wdTagWarn}`}>{record.blocker}</span>
                     ) : passed ? (
-                      <span className={`${styles.tag} ${styles.wdTagDanger}`}>Date passed</span>
+                      <span className={`${styles.tag} ${styles.wdTagWarn}`}>Date passed</span>
                     ) : null}
                   </>
                 );

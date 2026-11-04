@@ -47,7 +47,7 @@ export {
   type JourneyStage,
 } from "./v10-pass2";
 export { RowSpark, RowTrend, trendDelta, DeltaTwin } from "./v10-pass4";
-export { Meter, StackBar, Legend, type WfFill, type StackSegment, type LegendItem } from "./stat";
+export { Meter, StackBar, Legend, type WfFill, type StackSegment } from "./stat";
 export {
   Tabs,
   PillTabs,

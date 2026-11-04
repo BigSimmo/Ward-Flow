@@ -19,6 +19,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import { bedReleaseStateLabels } from "@/components/ward-management/ward-derivations";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
+import { openBedReleases } from "@/components/ward-management/ward-bed-availability";
 import { countCellText, freeingCellText, type NetworkWardRow } from "./capacity-derivations";
 import local from "./capacity-page.module.css";
 import { BedCells } from "./capacity-bed-map-cards";
@@ -70,6 +71,9 @@ export function CapacityWardSidebar({
   const records = readDischargeRecords(recordActor, row.unit.id);
   const detail = opened ? readDischargeRecord(recordActor, opened.admissionId, opened.handle) : null;
   const anonymousReleases = bedReleases.filter((release) => release.unitId === row.unit.id);
+  // Integration QA (3 Nov 2026): the Discharges count is the ward page's own window, releases not
+  // yet discharged (`openBedReleases`), not every record plus every past release.
+  const openReleases = openBedReleases(bedReleases, row.unit.id);
   const request = refreshRequests
     .filter((entry) => entry.unitId === row.unit.id && capacityRequestIsOpen(entry, row.unit.allocatable))
     .at(-1);
@@ -120,7 +124,7 @@ export function CapacityWardSidebar({
           {
             id: "discharges" as const,
             label: "Discharges",
-            count: records.status === "allowed" ? records.value.length + anonymousReleases.length : undefined,
+            count: openReleases.length,
           },
         ]}
         value={tab}
@@ -282,6 +286,7 @@ export function CapacityWardSidebar({
         ) : (
           <>
             <p className={local.wdSummary}>{freeingWords}</p>
+            <p className={local.mutedXs}>{openReleases.length} not yet discharged, the count the ward page shows.</p>
             {records.status === "denied" ? (
               <p className={local.mutedXs}>Discharge records are unavailable for this role.</p>
             ) : sortedRecords.length === 0 ? (
@@ -365,26 +370,30 @@ export function CapacityWardFoot({ row, now }: { row: NetworkWardRow; now: Insta
     recordActors.find((actor) => actor.role === "ward" && actor.actingUnitId === row.unit.id) ?? recordActors[0]!;
   const [closures, setClosures] = useState(false);
   const wardHref = `/ward-flow/ward/${row.unit.id}`;
+  // A ward desk may close beds only on its own ward, the same test as the closure panel's mayAct.
   const mayClose =
-    recordActor.role === "coordinator" || recordActor.role === "bed_manager" || recordActor.role === "ward";
+    recordActor.role === "coordinator" ||
+    recordActor.role === "bed_manager" ||
+    (recordActor.role === "ward" && recordActor.actingUnitId === row.unit.id);
   // Redesign (Josh, 30 Oct): each link shows only when this desk can open its page.
   if (!canOpen(wardHref) && !canOpen(DISCHARGES_HREF) && !mayClose) return null;
   return (
     <div className={local.wdFoot}>
+      {/* One filled action, as every Capacity pop-up foot: Open ward, or the Discharge board when this
+          desk cannot open the ward. Closures is never the filled one. */}
       {canOpen(wardHref) ? (
-        <Link href={wardHref} className={buttonClass({ variant: "sec", size: "sm" })}>
+        <Link href={wardHref} className={buttonClass({ variant: "pri" })}>
           Open ward
         </Link>
       ) : null}
       {canOpen(DISCHARGES_HREF) ? (
-        <Link href={DISCHARGES_HREF} className={buttonClass({ variant: "ghost", size: "sm" })}>
+        <Link href={DISCHARGES_HREF} className={buttonClass({ variant: canOpen(wardHref) ? "ghost" : "pri" })}>
           Discharge board
         </Link>
       ) : null}
       {mayClose ? (
         <>
           <Button
-            size="sm"
             variant="ghost"
             className={local.wdFootQuiet}
             aria-haspopup="dialog"
@@ -418,7 +427,8 @@ function stageWords(record: DischargeRecord, now: Instant): string {
 function stageTone(record: DischargeRecord, now: Instant): string {
   const words = stageWords(record, now);
   if (words === "Blocked") return local.wdTagWarn ?? "";
-  if (words === "Date passed") return local.wdTagDanger ?? "";
+  // Q8 (Josh, 4 Nov 2026): a passed date is amber, as everywhere else. Red means act now only.
+  if (words === "Date passed") return local.wdTagWarn ?? "";
   if (words === "Due today" || words === "Due tomorrow") return local.wdTagInfo ?? "";
   if (words === "Confirmed" || words === "Departed") return local.wdTagGood ?? "";
   return "";

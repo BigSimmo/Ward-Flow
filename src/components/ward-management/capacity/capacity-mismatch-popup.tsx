@@ -66,7 +66,7 @@ export function MismatchPopup({
       footer={
         canOpen(WAITING_HREF) ? (
           <div className={styles.popFoot}>
-            <Link href={WAITING_HREF} className={buttonClass({ variant: "sec", size: "sm" })}>
+            <Link href={WAITING_HREF} className={buttonClass({ variant: "pri" })}>
               Open Waiting
             </Link>
           </div>
