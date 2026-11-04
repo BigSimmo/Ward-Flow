@@ -58,8 +58,35 @@ describe("UNDO_BED_MEETING_ACTION", () => {
       subject: { kind: "movement", movementId },
     });
     expect(wardFlowReducer(undone, { ...undo, now: NOW + 32 }).rejections.at(-1)?.reason).toBe(
-      "There is no bed meeting action marked done here to undo",
+      "There is no bed meeting action recorded or marked done here to undo",
     );
+  });
+
+  it("takes back a recorded action, such as a Chase tapped by mistake (3 Nov 2026)", () => {
+    const seeded = seedWardFlowState();
+    const movement = seeded.movements.find((candidate) => !candidate.closure && candidate.stage !== "arrived")!;
+    const subject = { kind: "movement" as const, id: movement.id };
+    const recorded = wardFlowReducer(seeded, {
+      type: "RECORD_BED_MEETING_ACTION",
+      role: "coordinator",
+      now: NOW,
+      subject,
+      action: "book_transport",
+      owner: "coordinator",
+      dueAt: NOW + 120,
+    });
+    expect(recorded.rejections).toEqual([]);
+    const undone = wardFlowReducer(recorded, {
+      type: "UNDO_BED_MEETING_ACTION",
+      role: "coordinator",
+      now: NOW + 1,
+      subject,
+      action: "book_transport",
+    });
+    expect(undone.rejections).toEqual([]);
+    const actions = (s: WardFlowState) => s.movements.find((candidate) => candidate.id === movement.id)!.meetingActions;
+    expect(actions(undone)).toEqual(actions(seeded));
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify({ ...undone, rejections: [] })))).toBe(true);
   });
 
   it("keeps an Undo for each action kind on one person, and refuses a stale toast's record number", () => {

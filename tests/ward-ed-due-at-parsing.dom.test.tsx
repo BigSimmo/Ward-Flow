@@ -16,7 +16,7 @@ import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { perthCalendarDay } from "@/components/ward-management/ward-clock";
-import { EdInboxReferralFixture, openRaiseIntoMovementForm } from "./helpers/ed-raise-into-movement";
+import { EdInboxReferralFixture, openRaiseIntoMovementForm, chooseEdChoice } from "./helpers/ed-raise-into-movement";
 import { typeDate } from "./helpers/type-date-time";
 
 /**
@@ -103,11 +103,11 @@ function raiseTransportReferral(typed: { date: string; time: string } | undefine
   openRaiseIntoMovementForm();
   expect(screen.getByTestId("ward-ed-referral-unidentified")).toBeChecked();
   for (const field of REQUIRED) {
-    fireEvent.change(screen.getByTestId(field.testId), { target: { value: field.value } });
+    chooseEdChoice(field.testId, field.value);
   }
-  fireEvent.change(screen.getByTestId("ward-ed-referral-observation"), { target: { value: "general" } });
+  chooseEdChoice("ward-ed-referral-observation", "general");
   fireEvent.click(screen.getByTestId("ward-ed-referral-high-acuity-not-required"));
-  fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form"), { target: { value: "4A" } });
+  chooseEdChoice("ward-ed-referral-legal-form", "4A");
   if (typed !== undefined) {
     typeDate(screen.getByTestId("ward-ed-referral-legal-form-due-at-date"), typed.date);
     fireEvent.change(screen.getByTestId("ward-ed-referral-legal-form-due-at-time"), {

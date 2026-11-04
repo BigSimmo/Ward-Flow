@@ -1,11 +1,17 @@
 # Ward Flow: what's new for staff
 
-<!-- last-checked: 2026-10-24 -->
+<!-- last-checked: 2026-11-03 -->
 
 Plain-English notes on what changed on screen, for the clinicians and staff testing Ward Flow.
 Newest first. The [desk guides](desk-guides/README.md) show each desk's steps in full.
 
 _Ward Flow is a prototype on synthetic data. Not for real patients._
+
+## Earlier announcements retained on 3 November 2026
+
+- 2026-10-31 (2026-10-31-redesign-ed-transport): The ED board, All EDs, Transport and Out of area have a new look, with a simpler actions menu on the ED board.
+- 2026-10-31 (2026-10-31-redesign-records): Waiting, Alerts, Legal forms, Patients, Movements and the patient record have a new look for each desk.
+- 2026-10-31 (2026-10-31-redesign-referrals): Referrals and Ward answer are tidier: rows wrap in full, and Accept and Decline sit in a bar at the foot.
 
 ## 21 to 24 October 2026
 

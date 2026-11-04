@@ -34,7 +34,7 @@ of shared UI pieces) and nothing else. Nothing in PsychSift imports Ward Flow.
 | Area (tracked files, `git ls-files`)                         |  Files | Size                                                                                                                                                                                                         |
 | ------------------------------------------------------------ | -----: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Ward Flow engine + screens `src/components/ward-management/` |    315 | ~153,000 lines of `.ts/.tsx` (plus 99 CSS modules and `src/components/wf/` shared v10 primitives)                                                                                                            |
-| Ward Flow routes `src/app/ward-flow/`                        |     57 | **<!-- fact:ward-route-count -->53<!-- /fact --> `page.tsx`** (**<!-- fact:app-route-count -->57<!-- /fact --> total routes** incl. `/ward-flow-sign-in` and `/mockups/ward-flow-digest`, plus `/` redirect) |
+| Ward Flow routes `src/app/ward-flow/`                        |     57 | **<!-- fact:ward-route-count -->54<!-- /fact --> `page.tsx`** (**<!-- fact:app-route-count -->58<!-- /fact --> total routes** incl. `/ward-flow-sign-in` and `/mockups/ward-flow-digest`, plus `/` redirect) |
 | Ward Flow tests `tests/ward-*`, `tests/ui-ward-*`            |    648 | ~188,700 lines (635 unit/DOM + 13 browser)                                                                                                                                                                   |
 | Ward Flow scripts `scripts/ward-flow/`                       |     49 | 45 top-level + `audit/`                                                                                                                                                                                      |
 | Ward Flow docs `docs/ward-flow/`                             |  1,272 | incl. 140 files of design drawings                                                                                                                                                                           |
@@ -248,7 +248,7 @@ Every page file is a server component that renders one client screen (or redirec
 | `/bed-meeting/agenda`                                                                    | `BedMeetingAgendaScreen` (bed-meeting)                                    |
 | `/board/[unitId]`                                                                        | `WardBoard` (board)                                                       |
 | `/capacity`                                                                              | `CapacityScreen` (capacity)                                               |
-| `/community`                                                                             | `CommunityIndex` (community)                                              |
+| `/community`                                                                             | redirect to `/hub/catchments` (PL1)                                       |
 | `/community/[teamId]`                                                                    | `CommunityScreen` (community)                                             |
 | `/discharges`                                                                            | `DischargeBoard` (discharges)                                             |
 | `/ed`                                                                                    | `EdIndex` (`ed/ed-index.tsx`)                                             |
@@ -256,6 +256,7 @@ Every page file is a server component that renders one client screen (or redirec
 | `/governance`                                                                            | `WardModeWorkspace` mode "governance" (root `ward-management-modes.tsx`)  |
 | `/handover`                                                                              | `HandoverPage` (handover)                                                 |
 | `/hub`                                                                                   | `HubScreen` (hub) — "Search hub"                                          |
+| `/hub/catchments`                                                                        | `CommunityIndex` (community) — Places Catchments tab                      |
 | `/legal-forms`                                                                           | `LegalFormsScreen` (legal-forms)                                          |
 | `/movements`                                                                             | `MovementsScreen` (movements) — absorbed the transport tracker            |
 | `/movements/[movementId]`                                                                | `WardPatientWorkspace` (root `ward-management-console.tsx`, 3,287 lines)  |

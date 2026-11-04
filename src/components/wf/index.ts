@@ -77,6 +77,7 @@ export { useModalFocus, type UseModalFocusOptions } from "./use-modal-focus";
 export { cycleTabWithin, focusIsLost } from "./focus-return";
 export { rememberOpener, returnFocusToOpener, type FocusOpener } from "./focus-opener";
 export { StateLine, type StateKind } from "./state";
+export { PanelBoundary } from "./panel-boundary";
 export { ToastDeviceSaveContext, ToastProvider, useOptionalToast, useToast, type ToastInput } from "./toast-provider";
 export { LiveChip, Timer, publishLiveClock, publishLiveRefresh, useSharedRefreshLate } from "./live";
 export {

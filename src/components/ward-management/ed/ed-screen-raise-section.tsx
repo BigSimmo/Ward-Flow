@@ -4,7 +4,7 @@
 // inbox. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { useRef, useState } from "react";
-import { DateField, DisabledReason } from "@/components/wf";
+import { DateField, DisabledReason, type ChoiceItem, type ListPickerOption } from "@/components/wf";
 import { legalFormName, SELECTABLE_LEGAL_FORMS } from "@/components/ward-management/ward-legal-forms";
 import { legalFormStatusWarning } from "@/components/ward-management/ward-legal-form-fit";
 import {
@@ -22,6 +22,7 @@ import type {
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { referralDraftBlockedReason, referralDraftMissingFields, type ReferralDraftField } from "./ed-blocked-reasons";
 import missingStyles from "./ed-raise-missing.module.css";
+import { EdPickerField, EdSegmentedField, EdTimeBox } from "./ed-referral-choices";
 import { EdReferralPatientField } from "./ed-referral-patient-field";
 import type { EdScreenContext } from "./ed-screen-context";
 import {
@@ -33,12 +34,7 @@ import {
   LEGAL_STATUS_OPTIONS,
   NO_COHORT_VALUE,
   NO_DIAGNOSIS_VALUE,
-  NO_GENDER_VALUE,
-  NO_LEGAL_FORM_VALUE,
-  NO_LEGAL_STATUS_VALUE,
   NO_SECURITY_VALUE,
-  NO_SEX_VALUE,
-  NO_URGENCY_VALUE,
   SECURITY_OPTIONS,
   SEX_OPTIONS,
   URGENCY_OPTIONS,
@@ -52,8 +48,48 @@ import {
   type ObservationLevel,
 } from "@/components/ward-management/ward-observation";
 
-/** The observation picker's "nothing chosen yet" value: unanswered, never a level. */
-const NO_OBSERVATION_VALUE = "";
+// L31 (Josh, 3 Nov 2026): kit choices in place of the browser's drop-downs. A few answers are a
+// segmented control, a longer list the kit list picker. Nothing is chosen for the person.
+const COHORT_ITEMS: ChoiceItem<Cohort>[] = COHORT_OPTIONS.map((option) => ({ id: option, label: option }));
+const SECURITY_ITEMS: ChoiceItem<Security>[] = SECURITY_OPTIONS.map((option) => ({
+  id: option,
+  label: securityWord(option),
+}));
+const SEX_PICKER_OPTIONS: ListPickerOption[] = SEX_OPTIONS.map((option) => ({ value: option, label: option }));
+const GENDER_PICKER_OPTIONS: ListPickerOption[] = [
+  ...GENDER_OPTIONS.map((option) => ({ value: option, label: option })),
+  { value: GENDER_NOT_RECORDED_VALUE, label: "Not yet recorded" },
+];
+const DIAGNOSIS_PICKER_OPTIONS: ListPickerOption[] = TENTATIVE_DIAGNOSIS_BLOCKS.map((block) => ({
+  value: block.code,
+  label: tentativeDiagnosisPhrase(block.code) ?? block.label,
+}));
+const LEGAL_STATUS_PICKER_OPTIONS: ListPickerOption[] = LEGAL_STATUS_OPTIONS.map((option) => ({
+  value: option,
+  label: option,
+}));
+const LEGAL_FORM_PICKER_OPTIONS: ListPickerOption[] = SELECTABLE_LEGAL_FORMS.map((form) => ({
+  value: form.code,
+  label: legalFormName(form),
+}));
+const URGENCY_PICKER_OPTIONS: ListPickerOption[] = URGENCY_OPTIONS.map((option) => ({
+  value: String(option),
+  label: urgencyTierLabel(option),
+}));
+const OBSERVATION_PICKER_OPTIONS: ListPickerOption[] = OBSERVATION_LEVELS.map((level) => ({
+  value: level,
+  label: observationRatio(level)
+    ? `${observationLevelName(level)} (${observationRatio(level)})`
+    : observationLevelName(level),
+}));
+const INTERVAL_ITEMS: ChoiceItem<string>[] = INTERMITTENT_INTERVAL_MINUTES.map((minutes) => ({
+  id: String(minutes),
+  label: `${minutes} minutes`,
+}));
+const REVIEW_DAY_ITEMS: ChoiceItem<"today" | "tomorrow">[] = [
+  { id: "today", label: "Today" },
+  { id: "tomorrow", label: "Tomorrow" },
+];
 
 export function EdRaiseIntoMovementSection({ ctx }: { ctx: EdScreenContext }) {
   const { referralOpen, setReferralOpen, setRaisingFromReferralId, setDraft } = ctx;
@@ -165,7 +201,12 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
     setAttempted(true);
     const first = referralDraftMissingFields(answers)[0];
     if (!first) return;
-    formRef.current?.querySelector<HTMLElement>(`[data-testid="${MISSING_FIELD_TEST_IDS[first]}"]`)?.focus();
+    const target = formRef.current?.querySelector<HTMLElement>(`[data-testid="${MISSING_FIELD_TEST_IDS[first]}"]`);
+    // A segmented question's test id is on its wrapper, so focus goes to its tab stop.
+    const focusable = target?.matches("button, input, select, textarea")
+      ? target
+      : target?.querySelector<HTMLElement>('[tabindex="0"]');
+    focusable?.focus();
   }
 
   return (
@@ -213,172 +254,100 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
               })
             }
           />
-          <label className={fieldClass("cohort", styles.referralField)}>
-            Cohort
-            <select
-              data-testid="ward-ed-referral-cohort"
-              aria-invalid={isMissing("cohort") || undefined}
-              value={draft.cohort ?? NO_COHORT_VALUE}
-              onChange={({ target: { value } }) =>
-                setDraft((current) => ({
-                  ...current,
-                  cohort: value === NO_COHORT_VALUE ? undefined : (value as Cohort),
-                }))
-              }
-            >
-              {/* Nothing chosen, first and selected — never a cohort standing in for a
-                            decision nobody made. Same idiom as `NO_DECLINE_REASON_VALUE` below. */}
-              <option value={NO_COHORT_VALUE}>Choose a cohort</option>
-              {COHORT_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-            {missingNote("cohort")}
-          </label>
-          <label className={fieldClass("security", styles.referralField)}>
-            Security
-            <select
-              data-testid="ward-ed-referral-security"
-              aria-invalid={isMissing("security") || undefined}
-              value={draft.security ?? NO_SECURITY_VALUE}
-              onChange={({ target: { value } }) =>
-                setDraft((current) => ({
-                  ...current,
-                  security: value === NO_SECURITY_VALUE ? undefined : (value as Security),
-                }))
-              }
-            >
-              <option value={NO_SECURITY_VALUE}>Choose a security level</option>
-              {SECURITY_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {securityWord(option)}
-                </option>
-              ))}
-            </select>
-            {missingNote("security")}
-          </label>
-          <label className={fieldClass("sex", styles.referralField)}>
-            Sex
-            <select
-              data-testid="ward-ed-referral-sex"
-              aria-invalid={isMissing("sex") || undefined}
-              value={draft.sex ?? NO_SEX_VALUE}
-              onChange={({ target: { value } }) =>
-                setDraft((current) => ({
-                  ...current,
-                  sex: value === NO_SEX_VALUE ? undefined : (value as RecordedSex),
-                }))
-              }
-            >
-              <option value={NO_SEX_VALUE}>Choose a sex</option>
-              {SEX_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-            {missingNote("sex")}
-          </label>
-          {/* T11 (after T10, item 8, owner answer 17 September 2026): "Gender (decides
-                    which bed)" — the exact label build plan §2 gives, so a clinician never
-                    confuses this with the "Sex" question above it, which the gate no longer
-                    reads at all. */}
-          <label className={fieldClass("gender", styles.referralField)}>
-            Gender (decides which bed)
-            <select
-              data-testid="ward-ed-referral-gender"
-              aria-invalid={isMissing("gender") || undefined}
-              value={draft.gender ?? NO_GENDER_VALUE}
-              onChange={({ target: { value } }) =>
-                setDraft((current) => ({
-                  ...current,
-                  gender:
-                    value === NO_GENDER_VALUE
-                      ? undefined
-                      : (value as ReferralGender | typeof GENDER_NOT_RECORDED_VALUE),
-                }))
-              }
-            >
-              <option value={NO_GENDER_VALUE}>Choose a gender</option>
-              {GENDER_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-              <option value={GENDER_NOT_RECORDED_VALUE}>Not yet recorded</option>
-            </select>
-            {missingNote("gender")}
-          </label>
-          {/* T15 (item 12, owner answer 17 September 2026): "An admission from a
-                    referral carries the referral's broad diagnosis category, marked tentative."
-                    OPTIONAL, and never blocks "Raise referral" — a clinician with no diagnosis to
-                    record is not made to invent one. */}
-          <label className={styles.referralField}>
-            Broad diagnosis category (tentative)
-            <select
-              data-testid="ward-ed-referral-tentative-diagnosis"
-              value={draft.tentativeDiagnosis}
-              onChange={({ target: { value } }) =>
-                setDraft((current) => ({
-                  ...current,
-                  tentativeDiagnosis: value as TentativeDiagnosisBlock | "none",
-                }))
-              }
-            >
-              <option value={NO_DIAGNOSIS_VALUE}>Not recorded</option>
-              {TENTATIVE_DIAGNOSIS_BLOCKS.map((block) => (
-                <option key={block.code} value={block.code}>
-                  {tentativeDiagnosisPhrase(block.code)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className={fieldClass("legalStatus", styles.referralField)}>
-            Legal status
-            <select
-              data-testid="ward-ed-referral-legal-status"
-              aria-invalid={isMissing("legalStatus") || undefined}
-              value={draft.legalStatus ?? NO_LEGAL_STATUS_VALUE}
-              onChange={({ target: { value } }) =>
-                setDraft((current) => ({
-                  ...current,
-                  legalStatus: value === NO_LEGAL_STATUS_VALUE ? undefined : (value as LegalStatus),
-                }))
-              }
-            >
-              <option value={NO_LEGAL_STATUS_VALUE}>Choose a legal status</option>
-              {LEGAL_STATUS_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-            {missingNote("legalStatus")}
-          </label>
-          <label className={styles.referralField}>
-            Legal form
-            <select
-              data-testid="ward-ed-referral-legal-form"
-              value={draft.legalFormCode ?? NO_LEGAL_FORM_VALUE}
-              onChange={({ target: { value } }) =>
-                setDraft((current) => ({
-                  ...current,
-                  legalFormCode: value === NO_LEGAL_FORM_VALUE ? null : value,
-                  legalFormDueAtDate: "",
-                  legalFormDueAtTime: "",
-                }))
-              }
-            >
-              <option value={NO_LEGAL_FORM_VALUE}>No form</option>
-              {SELECTABLE_LEGAL_FORMS.map((form) => (
-                <option key={form.code} value={form.code}>
-                  {legalFormName(form)}
-                </option>
-              ))}
-            </select>
-            {(() => {
+          <EdSegmentedField<Cohort>
+            label="Cohort"
+            testId="ward-ed-referral-cohort"
+            items={COHORT_ITEMS}
+            value={draft.cohort ?? NO_COHORT_VALUE}
+            missing={isMissing("cohort")}
+            onChange={(cohort) => setDraft((current) => ({ ...current, cohort }))}
+          />
+          <EdSegmentedField<Security>
+            label="Security"
+            testId="ward-ed-referral-security"
+            items={SECURITY_ITEMS}
+            value={draft.security ?? NO_SECURITY_VALUE}
+            missing={isMissing("security")}
+            onChange={(security) => setDraft((current) => ({ ...current, security }))}
+          />
+          <EdPickerField
+            label="Sex"
+            testId="ward-ed-referral-sex"
+            name="ward-ed-referral-sex"
+            options={SEX_PICKER_OPTIONS}
+            placeholder="Choose"
+            value={draft.sex ?? null}
+            missing={isMissing("sex")}
+            onChange={(sex) =>
+              setDraft((current) => ({ ...current, sex: sex === null ? undefined : (sex as RecordedSex) }))
+            }
+            note={missingNote("sex")}
+          />
+          {/* T11 (after T10, item 8, owner answer 17 September 2026): "Gender (decides which bed)",
+              so a clinician never confuses this with the "Sex" question above it. */}
+          <EdPickerField
+            label="Gender (decides which bed)"
+            testId="ward-ed-referral-gender"
+            name="ward-ed-referral-gender"
+            options={GENDER_PICKER_OPTIONS}
+            placeholder="Choose"
+            value={draft.gender ?? null}
+            missing={isMissing("gender")}
+            onChange={(gender) =>
+              setDraft((current) => ({
+                ...current,
+                gender: gender === null ? undefined : (gender as ReferralGender | typeof GENDER_NOT_RECORDED_VALUE),
+              }))
+            }
+            note={missingNote("gender")}
+          />
+          {/* T15 (item 12, owner answer 17 September 2026): optional, and never blocks the send. */}
+          <EdPickerField
+            label="Broad diagnosis (tentative)"
+            testId="ward-ed-referral-tentative-diagnosis"
+            name="ward-ed-referral-tentative-diagnosis"
+            options={DIAGNOSIS_PICKER_OPTIONS}
+            placeholder="Not recorded"
+            value={draft.tentativeDiagnosis === NO_DIAGNOSIS_VALUE ? null : draft.tentativeDiagnosis}
+            onChange={(code) =>
+              setDraft((current) => ({
+                ...current,
+                tentativeDiagnosis: code === null ? NO_DIAGNOSIS_VALUE : (code as TentativeDiagnosisBlock),
+              }))
+            }
+          />
+          <EdPickerField
+            label="Legal status"
+            testId="ward-ed-referral-legal-status"
+            name="ward-ed-referral-legal-status"
+            options={LEGAL_STATUS_PICKER_OPTIONS}
+            placeholder="Choose"
+            value={draft.legalStatus ?? null}
+            missing={isMissing("legalStatus")}
+            onChange={(legalStatus) =>
+              setDraft((current) => ({
+                ...current,
+                legalStatus: legalStatus === null ? undefined : (legalStatus as LegalStatus),
+              }))
+            }
+            note={missingNote("legalStatus")}
+          />
+          <EdPickerField
+            label="Legal form"
+            testId="ward-ed-referral-legal-form"
+            name="ward-ed-referral-legal-form"
+            options={LEGAL_FORM_PICKER_OPTIONS}
+            placeholder="No form"
+            value={draft.legalFormCode ?? null}
+            onChange={(code) =>
+              setDraft((current) =>
+                // The kit picker reports a pick of the form already chosen, so keep its expiry then.
+                code === current.legalFormCode
+                  ? current
+                  : { ...current, legalFormCode: code, legalFormDueAtDate: "", legalFormDueAtTime: "" },
+              )
+            }
+            note={(() => {
               // Finding 6 (Josh, 27 Oct 2026): a form that contradicts the status warns, never blocks.
               const formMismatch = legalFormStatusWarning(draft.legalStatus, draft.legalFormCode);
               return formMismatch ? (
@@ -387,7 +356,7 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
                 </span>
               ) : null;
             })()}
-          </label>
+          />
           {draft.legalFormCode !== null ? (
             <fieldset className={styles.declineFieldset}>
               <legend className={styles.declineLegend}>Expiry written on the form (optional)</legend>
@@ -402,84 +371,61 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
                 />
                 {missingNote("legalFormDueAtDate")}
               </label>
-              <label className={fieldClass("legalFormDueAtTime", styles.referralField)}>
-                Time
-                <input
-                  type="time"
-                  data-testid="ward-ed-referral-legal-form-due-at-time"
-                  aria-invalid={isMissing("legalFormDueAtTime") || undefined}
+              <div className={fieldClass("legalFormDueAtTime", styles.referralField)}>
+                <span aria-hidden="true">Time</span>
+                <EdTimeBox
+                  label="Expiry time"
+                  testId="ward-ed-referral-legal-form-due-at-time"
+                  invalid={isMissing("legalFormDueAtTime")}
                   value={draft.legalFormDueAtTime}
-                  onChange={({ target: { value } }) =>
-                    setDraft((current) => ({ ...current, legalFormDueAtTime: value }))
-                  }
+                  onChange={(legalFormDueAtTime) => setDraft((current) => ({ ...current, legalFormDueAtTime }))}
                 />
                 {missingNote("legalFormDueAtTime")}
-              </label>
+              </div>
             </fieldset>
           ) : null}
-          <label className={fieldClass("urgency", styles.referralField)}>
-            Urgency
-            <select
-              data-testid="ward-ed-referral-urgency"
-              aria-invalid={isMissing("urgency") || undefined}
-              value={draft.urgency ?? NO_URGENCY_VALUE}
-              onChange={({ target: { value } }) =>
-                setDraft((current) => ({
-                  ...current,
-                  urgency: value === NO_URGENCY_VALUE ? undefined : (Number(value) as 1 | 2 | 3),
-                }))
-              }
-            >
-              <option value={NO_URGENCY_VALUE}>Choose an urgency tier</option>
-              {URGENCY_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {urgencyTierLabel(option)}
-                </option>
-              ))}
-            </select>
-            {missingNote("urgency")}
-          </label>
-          <label className={fieldClass("observation", styles.referralField)}>
-            Observation level
-            <select
-              data-testid="ward-ed-referral-observation"
-              aria-invalid={isMissing("observation") || undefined}
-              value={draft.observation ?? NO_OBSERVATION_VALUE}
-              onChange={({ target: { value } }) =>
-                setDraft((current) => ({
-                  ...current,
-                  observation: value === NO_OBSERVATION_VALUE ? undefined : (value as ObservationLevel),
-                }))
-              }
-            >
-              <option value={NO_OBSERVATION_VALUE}>Choose an observation level</option>
-              {OBSERVATION_LEVELS.map((level) => (
-                <option key={level} value={level}>
-                  {observationRatio(level)
-                    ? `${observationLevelName(level)} (${observationRatio(level)})`
-                    : observationLevelName(level)}
-                </option>
-              ))}
-            </select>
-            {missingNote("observation")}
-          </label>
+          <EdPickerField
+            label="Urgency"
+            testId="ward-ed-referral-urgency"
+            name="ward-ed-referral-urgency"
+            options={URGENCY_PICKER_OPTIONS}
+            placeholder="Choose"
+            value={draft.urgency === undefined ? null : String(draft.urgency)}
+            missing={isMissing("urgency")}
+            onChange={(urgency) =>
+              setDraft((current) => ({
+                ...current,
+                urgency: urgency === null ? undefined : (Number(urgency) as 1 | 2 | 3),
+              }))
+            }
+            note={missingNote("urgency")}
+          />
+          <EdPickerField
+            label="Observation level"
+            testId="ward-ed-referral-observation"
+            name="ward-ed-referral-observation"
+            options={OBSERVATION_PICKER_OPTIONS}
+            placeholder="Choose"
+            value={draft.observation ?? null}
+            missing={isMissing("observation")}
+            onChange={(observation) =>
+              setDraft((current) => ({
+                ...current,
+                observation: observation === null ? undefined : (observation as ObservationLevel),
+              }))
+            }
+            note={missingNote("observation")}
+          />
           {draft.observation === "intermittent" ? (
-            <label className={styles.referralField}>
-              Check every
-              <select
-                data-testid="ward-ed-referral-observation-interval"
-                value={draft.observationIntervalMinutes}
-                onChange={({ target: { value } }) =>
-                  setDraft((current) => ({ ...current, observationIntervalMinutes: Number(value) }))
-                }
-              >
-                {INTERMITTENT_INTERVAL_MINUTES.map((minutes) => (
-                  <option key={minutes} value={minutes}>
-                    {minutes} minutes
-                  </option>
-                ))}
-              </select>
-            </label>
+            <EdSegmentedField<string>
+              label="Check every"
+              testId="ward-ed-referral-observation-interval"
+              items={INTERVAL_ITEMS}
+              value={String(draft.observationIntervalMinutes)}
+              onChange={(minutes) =>
+                setDraft((current) => ({ ...current, observationIntervalMinutes: Number(minutes) }))
+              }
+            />
           ) : null}
           <label className={fieldClass("observationReviewTime", styles.referralField)}>
             Review time (optional)
@@ -497,22 +443,13 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
             {missingNote("observationReviewTime")}
           </label>
           {draft.observationReviewTime.trim() !== "" ? (
-            <label className={styles.referralField}>
-              Review day
-              <select
-                data-testid="ward-ed-referral-observation-review-day"
-                value={draft.observationReviewDay}
-                onChange={({ target: { value } }) =>
-                  setDraft((current) => ({
-                    ...current,
-                    observationReviewDay: value as "today" | "tomorrow",
-                  }))
-                }
-              >
-                <option value="today">Today</option>
-                <option value="tomorrow">Tomorrow</option>
-              </select>
-            </label>
+            <EdSegmentedField<"today" | "tomorrow">
+              label="Review day"
+              testId="ward-ed-referral-observation-review-day"
+              items={REVIEW_DAY_ITEMS}
+              value={draft.observationReviewDay}
+              onChange={(observationReviewDay) => setDraft((current) => ({ ...current, observationReviewDay }))}
+            />
           ) : null}
           <fieldset
             className={fieldClass("highAcuity", styles.referralCheckbox)}
