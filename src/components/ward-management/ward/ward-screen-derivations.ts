@@ -304,6 +304,11 @@ export function wardBedRoster({
       dischargeConfirmed: admission ? admission.dischargeConfirmedAt != null : null,
       dischargeConfirmedBy: admission?.dischargeConfirmedBy ?? null,
       expectedDischargeLabel,
+      // The recorded instant, so the printed list can date it absolutely.
+      expectedDischargeAt:
+        admission?.expectedDischargeAt != null && Number.isFinite(admission.expectedDischargeAt)
+          ? admission.expectedDischargeAt
+          : null,
       // Audit A1-3: a pulled bed carries its hold, so a lapsed hold reaches the ward's Act now.
       // WT-07: Delivered stops the pull clock; the bed then awaits the ward's arrival check.
       bedHold:

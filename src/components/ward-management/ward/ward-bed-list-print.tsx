@@ -77,9 +77,7 @@ export function WardBedListPrint({
               <td>{bedHasPerson(bed) ? (bed.legalStatusLabel ?? "Not recorded") : ""}</td>
               <td>{formEnd(bed, now, dayZero)}</td>
               <td>{bed.observation && bedHasPerson(bed) ? observationSummary(bed.observation) : ""}</td>
-              <td>
-                {bedHasPerson(bed) && bed.status !== "incoming" ? (bed.expectedDischargeLabel ?? "Not recorded") : ""}
-              </td>
+              <td>{bedHasPerson(bed) && bed.status !== "incoming" ? expectedOut(bed, dayZero) : ""}</td>
             </tr>
           ))}
         </tbody>
@@ -117,6 +115,12 @@ function bedNote(bed: WardScreenBed): string | undefined {
   if (bed.pastDate) return "Past expected date";
   if (bed.dischargeConfirmed === true) return "Discharge confirmed";
   return undefined;
+}
+
+/** The expected discharge as a dated time, never "tomorrow": the paper copy may be read days later. */
+function expectedOut(bed: WardScreenBed, dayZero: Date): string {
+  if (typeof bed.expectedDischargeAt === "number") return formatSheetMoment(bed.expectedDischargeAt, dayZero);
+  return bed.expectedDischargeLabel ?? "Not recorded";
 }
 
 /** The current form's end time as typed. A form the stay has moved on from shows nothing here. */

@@ -769,7 +769,7 @@ const JOBS: readonly HowTo[] = [
     title: "Undo something I just did",
     keywords: "undo mistake wrong reverse back",
     answer:
-      "Many saves show Undo in the message at the foot of the screen, and Undo works for 5 minutes. After that, change the record back yourself; the history keeps both steps. Undo on Arrived is for a wrong tap only. If the person really has gone back, record that as its own step.",
+      "Many saves show Undo in the message at the foot of the screen, and Undo works for 5 minutes. After that, change the record back yourself; the history keeps both steps. Undo on Arrived can reverse a recent arrival when the normal Undo checks pass. If the person really has gone back, record that as its own step.",
     desks: EVERY_DESK,
   },
   {
