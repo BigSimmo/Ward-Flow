@@ -1597,9 +1597,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             setAcceptModalFor(activeMovement.id);
                           }
                         }}
-                        // Review 5 Nov 2026: the squares are counts in ruled order, not beds, so they
-                        // carry no bed number. "01 Ready" here contradicted bed 07 being the ready one
-                        // on the ward's own bed board.
+                        // Review 5 Nov 2026: counts in ruled order, not beds, so no bed number.
                         aria-label={`Census square ${i + 1}: ${statusLabel}`}
                         aria-describedby={isVacant ? undefined : `ward-answer-bed-reason-${unit.id}`}
                         title={isVacant ? undefined : "Only a ready bed can take a request"}
