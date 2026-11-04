@@ -543,7 +543,7 @@ test(
           await gate.stop();
         }
         const result = await connection.query(sql, parameters);
-        if (String(sql).startsWith("SELECT patient_id, opened_at, until FROM ward_flow.break_glass")) scopedResolved++;
+        if (String(sql).startsWith("SELECT patient_id, opened_at, until")) scopedResolved++;
         return result;
       },
     });

@@ -655,6 +655,15 @@ export function commandScopeRefusal(
   command: Record<string, unknown>,
   options: StateScopeOptions,
 ): string | null {
+  // Unknown command fields survive schema parsing. Every accepted alias must agree before a
+  // coordinator exemption or membership check can admit the command.
+  if (command.type === "WITHDRAW_REFERRAL") {
+    const claims = [command.actingPlaceId, command.placeId, command.actingUnitId].filter(
+      (value) => value !== undefined,
+    );
+    if (claims.some((value) => typeof value !== "string" || value.length === 0 || value !== claims[0]))
+      return "Conflicting referral withdrawal places.";
+  }
   if (accessIsWholeNetwork(access)) return null;
   const outside = "This change names a record outside your role's place.";
   const { places } = options;
@@ -662,17 +671,18 @@ export function commandScopeRefusal(
   if (command.type === "SET_CONFIGURATION") return "Only the statewide coordinator may change global settings.";
   const scope = access.scope;
   const placeIn = (id: string) => unitInScope(scope, id, places) || edInScope(scope, id, places);
-  // Decision 41 (Josh, 31 Oct 2026): a ward signs off, or takes back, its own ward's handover only,
-  // so its command names that ward (the target check below keeps it inside the desk's wards).
-  if (
-    access.role === "ward" &&
-    (command.type === "RECORD_HANDOVER_SIGN_OFF" || command.type === "UNDO_HANDOVER_SIGN_OFF") &&
-    typeof command.unitId !== "string"
-  )
-    return "A ward's handover sign-off names its ward.";
   // Q67 (Josh, 31 Oct 2026): only a whole-network desk (returned above) signs off the whole network.
   if (command.type === "RECORD_HANDOVER_SIGN_OFF" && command.network !== undefined)
     return "Only the statewide coordinator signs off the whole network.";
+  // Decision 41 (Josh, 31 Oct 2026): a ward signs off, or takes back, its own ward's handover only,
+  // so its command names that ward (the target check below keeps it inside the desk's wards).
+  if (
+    (command.type === "RECORD_HANDOVER_SIGN_OFF" || command.type === "UNDO_HANDOVER_SIGN_OFF") &&
+    (typeof command.unitId !== "string" || command.unitId.length === 0)
+  )
+    return access.role === "ward"
+      ? "A ward's handover sign-off names its ward."
+      : "A scoped handover sign-off names an authorised ward.";
   // Q61 (Josh, 31 Oct 2026): a site bed manager signs off, or takes back, its own site's handover only.
   // Every other desk short of the whole network (returned above) is refused, a service coordinator too.
   if (
@@ -735,6 +745,41 @@ export function commandScopeRefusal(
         ? siteByCode(command.originSiteCode)?.emergencyDepartment?.id
         : undefined;
     if (!origin || !edInScope(scope, origin, places)) return outside;
+  }
+  // Visibility of an outgoing referral never permits the sender to answer for its recipient.
+  // Select the same stored arm as the reducer, then bind its canonical place to membership.
+  if (
+    (command.type === "ACCEPT_REFERRAL" || command.type === "DECLINE_REFERRAL") &&
+    (access.role === "ed" || access.role === "community")
+  ) {
+    const referral = state.referrals.find((candidate) => candidate.id === command.referralId);
+    const destination = referral?.destinations.find(
+      (arm) => arm.destination.kind === command.destinationKind,
+    )?.destination;
+    if (
+      access.role === "ed"
+        ? destination?.kind !== "emergency_department" || !edInScope(scope, destination.edId, places)
+        : destination?.kind !== "community_team" || !teamIsOwn(access, destination.teamName, places)
+    )
+      return outside;
+  }
+  if (command.type === "WITHDRAW_REFERRAL") {
+    const actingPlace = command.actingPlaceId ?? command.placeId ?? command.actingUnitId;
+    if (
+      access.role !== "coordinator" &&
+      (typeof actingPlace !== "string" || !(placeIn(actingPlace) || teamIsOwn(access, actingPlace, places)))
+    )
+      return outside;
+  }
+  // Undo belongs to the original ward, even while a sending ward retains a handoff view.
+  if (command.type === "UNDO_LEGAL_FORM_RECORD" && access.role === "ward") {
+    const record = state.undoRecords?.find(
+      (candidate) =>
+        candidate.kind === "step" &&
+        candidate.undoType === "UNDO_LEGAL_FORM_RECORD" &&
+        candidate.subjectId === command.movementId,
+    );
+    if (!record || record.unitId === null || !unitInScope(scope, record.unitId, places)) return outside;
   }
   // The sender's own tools, for the desk that sent the referral only: a ward's or team's scope also
   // takes in referrals sent to it (role access plan v2, D-80).

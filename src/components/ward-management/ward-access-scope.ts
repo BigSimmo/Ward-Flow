@@ -62,6 +62,7 @@ const MINUTES_PER_DAY = 24 * MINUTES_PER_HOUR;
 /** The parts of the workspace that hold people. Everything else (units, configuration) is place
  *  information every role may read. */
 export type ScopableWorkspace = {
+  readonly worldGeneration?: number;
   readonly movements: readonly Movement[];
   readonly referrals: readonly Referral[];
   readonly patients: readonly Patient[];
@@ -75,6 +76,8 @@ export type ScopableWorkspace = {
 export type BreakGlassGrant = {
   readonly patientId: string;
   readonly until: Instant;
+  /** Missing only on legacy grants from the original, unreset workspace. */
+  readonly generation?: number;
 };
 
 export type ScopeOptions = {
@@ -91,8 +94,15 @@ export type ScopedWorkspace<T extends ScopableWorkspace> = T & {
   readonly datesOnlyAdmissionIds: ReadonlySet<string>;
 };
 
-function activeGrantIds(grants: readonly BreakGlassGrant[] | undefined, now: Instant): Set<string> {
-  return new Set((grants ?? []).filter((grant) => grant.until > now).map((grant) => grant.patientId));
+function activeGrantIds(grants: readonly BreakGlassGrant[] | undefined, now: Instant, generation: number): Set<string> {
+  // Record IDs can be reused by shared demo reset. An opening belongs to the generation it
+  // authorised, even while its expiry and patient ID still match. Legacy openings belong only
+  // to the initial generation; after a reset the desk must explicitly open the new record.
+  return new Set(
+    (grants ?? [])
+      .filter((grant) => grant.until > now && (grant.generation ?? 0) === generation)
+      .map((grant) => grant.patientId),
+  );
 }
 
 /** The units a movement touches: where it was accepted and every ward it was sent to. */
@@ -885,7 +895,11 @@ export function scopeWorkspace<T extends ScopableWorkspace>(
   options: ScopeOptions,
 ): ScopedWorkspace<T> {
   const { now, places } = options;
-  const grantIds = activeGrantIds(access.role === "executive" ? undefined : options.grants, now);
+  const grantIds = activeGrantIds(
+    access.role === "executive" ? undefined : options.grants,
+    now,
+    workspace.worldGeneration ?? 0,
+  );
   if (accessIsWholeNetwork(access))
     return { ...workspace, breakGlassPatientIds: NO_GRANTS, datesOnlyAdmissionIds: NO_GRANTS };
 

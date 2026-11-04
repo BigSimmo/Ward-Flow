@@ -133,9 +133,10 @@ export function PatientWardChangeCard({
   const edLimit = roleLimit("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT");
   const dischargeLimit = roleLimit("UPDATE_EXPECTED_DISCHARGE");
   const absentLimit = roleLimit("RECORD_ABSENT_WITHOUT_LEAVE");
+  const formLimit = form === "leave" ? leaveLimit : dischargeLimit;
 
   function toggle(next: Exclude<WardChangeForm, "none">) {
-    if (pending) return;
+    if (pending || (next === "leave" ? leaveLimit : dischargeLimit)) return;
     onFormChange(form === next ? "none" : next);
     setTime("");
     setDay(0);
@@ -164,7 +165,7 @@ export function PatientWardChangeCard({
         disabledReason={pending ? "Saving change…" : edLimit}
         reasonDisplay="tooltip"
         onClick={() => {
-          if (!pending) onGoneToEd();
+          if (!pending && !edLimit) onGoneToEd();
         }}
       >
         Gone to ED
@@ -190,7 +191,9 @@ export function PatientWardChangeCard({
           icon={UserRoundX}
           disabledReason={absentLimit}
           reasonDisplay="tooltip"
-          onClick={onMarkAbsent}
+          onClick={() => {
+            if (!pending && !absentLimit) onMarkAbsent();
+          }}
         >
           Mark absent
         </Button>
@@ -205,11 +208,16 @@ export function PatientWardChangeCard({
       aria-label={form === "leave" ? "Start leave" : "Set discharge date"}
       onSubmit={(event) => {
         event.preventDefault();
-        if (pending || !future || parsed === undefined) return;
+        if (pending || formLimit || !future || parsed === undefined) return;
         if (form === "leave") onRecordLeave(parsed, kind, leaveLegal?.onOrder ? authorised : undefined);
         else onSaveDischarge(parsed);
       }}
     >
+      {formLimit ? (
+        <p className={styles.changeHint} role="status">
+          {formLimit}
+        </p>
+      ) : null}
       {form === "leave" && leaveLegal ? (
         <p className={styles.legalLine} data-testid="ward-patient-leave-legal">
           <span>{leaveLegal.form}</span>
@@ -340,7 +348,13 @@ export function PatientWardChangeCard({
         </>
       )}
       {isPhone ? null : (
-        <Button className={styles.tap} type="submit" size="sm" variant="pri" disabled={pending || !future}>
+        <Button
+          className={styles.tap}
+          type="submit"
+          size="sm"
+          variant="pri"
+          disabled={pending || Boolean(formLimit) || !future}
+        >
           {form === "leave" ? "Record leave" : "Save date"}
         </Button>
       )}
@@ -394,7 +408,7 @@ export function PatientWardChangeCard({
                 type="submit"
                 form={`${baseId}-pn-ward-change-form`}
                 variant="pri"
-                disabled={pending || !future}
+                disabled={pending || Boolean(formLimit) || !future}
               >
                 {form === "leave" ? "Record leave" : "Save date"}
               </Button>

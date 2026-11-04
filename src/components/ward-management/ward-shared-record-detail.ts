@@ -38,20 +38,24 @@ export function withRecordDetail<P extends { state: WardFlowState }>(
 /**
  * The detail one desk has been sent, for the access view it was sent under. The server's access
  * context names the account, desk, place and openings, so another desk starts empty, and a reply
- * that arrives after the view changed is not kept.
+ * that arrives after the view or workspace generation changed is not kept. Record ids can be
+ * reused by a demo reset, so a desk alone is not the identity of the opened record.
  */
 export class RecordDetailHold {
   private details = new Map<string, RecordDetail>();
   private context: string | undefined;
+  private generation: WardFlowState["worldGeneration"] | undefined;
   /** The board with the held detail put back, once the view it was sent under is checked. */
   apply<P extends { state: WardFlowState }>(payload: P, context: string | undefined): P {
-    if (context !== this.context) this.details = new Map();
+    if (context !== this.context || payload.state.worldGeneration !== this.generation) this.details = new Map();
     this.context = context;
+    this.generation = payload.state.worldGeneration;
     return withRecordDetail(payload, this.details);
   }
   /** Keeps a logged opening's detail. True when it was kept, so the board should be drawn again. */
-  take(reply: unknown, askedUnder: string | undefined): boolean {
-    if (askedUnder !== this.context || !reply || typeof reply !== "object") return false;
+  take(reply: unknown, askedUnder: string | undefined, askedGeneration: WardFlowState["worldGeneration"]): boolean {
+    if (askedUnder !== this.context || askedGeneration !== this.generation || !reply || typeof reply !== "object")
+      return false;
     // `opened` is the person whose record the server logged as opened.
     const { opened, detail } = reply as { opened?: unknown; detail?: unknown };
     const parsed = parseRecordDetail(detail);

@@ -57,12 +57,28 @@ const rows = [
     changes: {},
   },
 ];
-function fixture(world = { valid: true }) {
+function fixture(world = { valid: true }, scope = own) {
   const sql = [];
   const pool = {
     query: async (text, values) => {
       sql.push(text);
+      if (["BEGIN", "COMMIT", "ROLLBACK"].includes(text)) return { rows: [] };
       if (text.includes("FROM ward_flow.workspaces")) return { rows: [{ payload: world }] };
+      if (text.includes("FROM ward_flow.memberships"))
+        return {
+          rows: [
+            {
+              id: "synthetic-role",
+              role: "ward",
+              scope,
+              kind: "role",
+              last_used_at: new Date(),
+              expires_at: new Date("2099-01-01T00:00:00Z"),
+            },
+          ],
+        };
+      if (text.includes("FROM ward_flow.break_glass")) return { rows: [] };
+      assert.ok(text.includes("FROM ward_flow.audit"), `Unexpected SQL: ${text}`);
       const before = values?.[1];
       // The SQL leaves out role changes and rows without a sender place; mirror it here.
       return {
@@ -75,6 +91,7 @@ function fixture(world = { valid: true }) {
       };
     },
   };
+  pool.connect = async () => ({ query: pool.query, release() {} });
   const engine = {
     validWorld: (payload) => payload?.valid === true,
     wholeNetwork: (access) => access.role === "coordinator" && access.scope.kind === "statewide",
@@ -135,7 +152,7 @@ test("a ward desk reads the kind and time of changes made inside its own place",
 });
 
 test("a ward desk cannot read changes made outside its place, break glass or unreadable senders", async () => {
-  const { store } = fixture();
+  const { store } = fixture(undefined, other);
   const body = await (await endpoint(store, { role: "ward", scope: other })(get())).json();
   assert.deepEqual(
     body.events.map((row) => row.sequence),
@@ -171,7 +188,7 @@ test("a desk's audit read keeps the cursor rules and leaves out role changes in 
     body.events.map((row) => row.sequence),
     ["5"],
   );
-  const auditSql = sql.find((text) => text.includes("FROM ward_flow.audit"));
+  const auditSql = sql.find((text) => text.startsWith("SELECT sequence") && text.includes("FROM ward_flow.audit"));
   assert.ok(auditSql.includes("NOT LIKE 'ACCESS\\_%'"));
   assert.ok(auditSql.includes("actor_scope IS NOT NULL"));
   assert.equal(auditSql.includes("changes"), false);

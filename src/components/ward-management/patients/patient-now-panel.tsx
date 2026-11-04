@@ -20,9 +20,10 @@ import { type PatientNowRecord, clock } from "./patient-now-records";
 import { PatientJourneyTimeline } from "./patient-journey-timeline";
 import { Button, buttonClass } from "@/components/wf";
 import { raiseReferralHref, unitHref } from "@/components/ward-management/shell/ward-facade";
-import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { useCanOpenHref, useIsBreakGlassRecord } from "@/components/ward-management/shell/ward-access";
 import { type TabKey } from "./patient-now-screen-helpers";
-import type { Dispatch, SetStateAction } from "react";
+import { useContext, type Dispatch, type SetStateAction } from "react";
+import { SharedSessionContext } from "../shell/ward-shared-session-context";
 import type { LeaveBed, Movement, TransportProvider, Unit } from "@/components/ward-management/ward-model";
 import type { PatientMode } from "./patient-mode";
 import type { ResolvedPatientNow } from "./patient-now-adapter";
@@ -142,7 +143,40 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
   // Community clinician (redesign, 31 Oct 2026): the team follows its person on the ward but records
   // none of the ward's changes (leave, gone to ED, discharge date are ward or coordinator only), so the
   // Record a change card of greyed buttons and its "Switch to Ward desk" link are left out for this desk.
-  const ownTeamDesk = useEffectiveWardAccess().role === "community";
+  const access = useEffectiveWardAccess();
+  const ownTeamDesk = access.role === "community";
+  const session = useContext(SharedSessionContext);
+  const isBreakGlass = useIsBreakGlassRecord();
+  const readOnly = isBreakGlass(resolved.liveAdmission) || isBreakGlass(liveMovement);
+  const recordLimit = readOnly ? "Read only. Ask the owning ward to record this change." : undefined;
+  const actionLimit = (eventType: WardFlowEventType) => recordLimit ?? gate(eventType).reason;
+  const deskPrompt = (eventType: WardFlowEventType) => {
+    const required = requiredRoleForPermission(eventType, gate(eventType).reason);
+    if (recordLimit) return <span className="lockline">{recordLimit}</span>;
+    if (session && access.role !== "coordinator")
+      return session.switchRole ? (
+        <button
+          type="button"
+          className="lockline"
+          onClick={session.switchRole}
+          data-testid={`ward-patient-role-switch-${required.role}`}
+        >
+          Choose an authorised desk →
+        </button>
+      ) : (
+        <span className="lockline">Ask the {required.label} desk to record this change.</span>
+      );
+    return (
+      <button
+        type="button"
+        className="lockline"
+        onClick={() => setDeskRole(required.role, pathname)}
+        data-testid={`ward-patient-role-switch-${required.role}`}
+      >
+        Switch to {required.label} desk →
+      </button>
+    );
+  };
   const wardChangeOpen = !ownTeamDesk || gate("RECORD_LEAVE_BED").allowed;
   const whyCard =
     isLiveBedflow && liveMovement ? (
@@ -187,7 +221,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
         confirmHref: confirmHref && canOpenHref(confirmHref) ? confirmHref : undefined,
       })
     : null;
-  const stepLimit = (eventType: WardFlowEventType) => gate(eventType).reason;
+  const stepLimit = actionLimit;
   // Phone: the pinned bar carries the page's one filled button. On the ward that is the next step
   // itself; on leave, absent or at ED the status card pins the same action. The card's button is
   // then the quiet secondary, never a second filled one.
@@ -216,7 +250,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
         dischargeInBar={wardStepInBar && nextStep?.key === "set-discharge"}
         refusal={wardRefusal}
         saveError={wardSaveError}
-        roleLimit={(eventType) => gate(eventType).reason}
+        roleLimit={actionLimit}
         leaveLegal={leaveLegal}
       />
     ) : null;
@@ -297,17 +331,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
                   liveMovement.stage === "pulled" && !gate("HANDOVER_READY").allowed
                     ? "HANDOVER_READY"
                     : "RECORD_MOVEMENT_MEDICAL_CLEARANCE";
-                const req = requiredRoleForPermission(lockedEvent, gate(lockedEvent).reason);
-                return (
-                  <button
-                    type="button"
-                    className="lockline"
-                    onClick={() => setDeskRole(req.role, pathname)}
-                    data-testid={`ward-patient-role-switch-${req.role}`}
-                  >
-                    Switch to {req.label} desk →
-                  </button>
-                );
+                return deskPrompt(lockedEvent);
               })()}
             </div>
           ) : null}
@@ -315,22 +339,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
           {mode === "ward" && wardChangeOpen ? (
             <>
               {!gate("RECORD_LEAVE_BED").allowed ? (
-                <div className="lockline">
-                  <button
-                    type="button"
-                    className="lockline"
-                    onClick={() =>
-                      setDeskRole(
-                        requiredRoleForPermission("RECORD_LEAVE_BED", gate("RECORD_LEAVE_BED").reason).role,
-                        pathname,
-                      )
-                    }
-                    data-testid="ward-patient-role-switch-ward"
-                  >
-                    Switch to {requiredRoleForPermission("RECORD_LEAVE_BED", gate("RECORD_LEAVE_BED").reason).label}{" "}
-                    desk →
-                  </button>
-                </div>
+                <div className="lockline">{deskPrompt("RECORD_LEAVE_BED")}</div>
               ) : null}
             </>
           ) : null}

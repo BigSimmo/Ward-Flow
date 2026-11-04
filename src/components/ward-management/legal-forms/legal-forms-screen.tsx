@@ -1,5 +1,8 @@
 "use client";
 
+import { admittedStayForArrival } from "../ward-admissions";
+import { movementSourceAdmission } from "../ward-flow-reducer";
+
 import { useWardRaise } from "../ward-flow-raise";
 
 import { useSearchParams } from "next/navigation";
@@ -338,6 +341,17 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const sheetReason = routeRole === "ward" && admitted.length === 0 ? WARD_RECORDS_ADMITTED : writtenGate.reason;
   const extendGate = gate("RECORD_LEGAL_FORM_EXPIRY");
   const receivedTextOf = (movementId: string) => (receivedDraft?.id === movementId ? receivedDraft.text : "");
+  // Include the same authoritative ward on Undo as the reducer captured on save. Receipt marks
+  // belong to the sender; written forms and expiry belong to the receiving stay.
+  const undoWard = (movementId: string, receipt = false) => {
+    const movement = movements.find((candidate) => candidate.id === movementId);
+    const unitId =
+      movement &&
+      (receipt
+        ? movementSourceAdmission({ admissions, referrals }, movement)?.unitId
+        : admittedStayForArrival(movement, admissions)?.unitId);
+    return routeRole === "ward" && unitId ? { actingUnitId: unitId } : {};
+  };
   const markReceived = (movement: Movement, receivedAt?: Instant) => {
     if (receivedUnavailable(movement) !== undefined) return;
     if (!receiptEventAccepts(movement.legalForm?.code) || movement.legalFormReceivedAt !== undefined) return;
@@ -351,7 +365,13 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       },
       {
         success: `Form marked received for ${nameOf(movement)}`,
-        undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId: movement.id }),
+        undo: (at) => ({
+          type: "UNDO_LEGAL_FORM_RECORD",
+          role: routeRole,
+          now: at,
+          movementId: movement.id,
+          ...undoWard(movement.id, true),
+        }),
         undone: `Received mark undone for ${nameOf(movement)}.`,
       },
     );
@@ -528,7 +548,13 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       },
       {
         success: `Form time recorded for ${nameOf(target)}`,
-        undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId }),
+        undo: (at) => ({
+          type: "UNDO_LEGAL_FORM_RECORD",
+          role: routeRole,
+          now: at,
+          movementId,
+          ...undoWard(movementId),
+        }),
         undone: `Form time undone for ${nameOf(target)}.`,
       },
     );
@@ -1228,7 +1254,13 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
               offerStep(
                 {
                   success: `Form ${formCode} recorded for ${nameOf(movement)}`,
-                  undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId }),
+                  undo: (at) => ({
+                    type: "UNDO_LEGAL_FORM_RECORD",
+                    role: routeRole,
+                    now: at,
+                    movementId,
+                    ...undoWard(movementId),
+                  }),
                   undone: `Form ${formCode} record undone for ${nameOf(movement)}.`,
                 },
                 { completion: outcome },
@@ -1275,7 +1307,13 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
               offerStep(
                 {
                   success: `Form ${movement.legalForm?.code ?? ""} extended for ${nameOf(movement)}`,
-                  undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId: movement.id }),
+                  undo: (at) => ({
+                    type: "UNDO_LEGAL_FORM_RECORD",
+                    role: routeRole,
+                    now: at,
+                    movementId: movement.id,
+                    ...undoWard(movement.id),
+                  }),
                   undone: `Form extension undone for ${nameOf(movement)}.`,
                 },
                 { completion: outcome },

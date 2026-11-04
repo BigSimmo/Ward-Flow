@@ -156,6 +156,7 @@ import {
   lacksObservationStaff,
   remainingHighAcuityCapacity,
   bedIsOccupied,
+  admittedStayForArrival,
   type Admission,
   type PlannedAdmission,
 } from "@/components/ward-management/ward-admissions";
@@ -910,10 +911,15 @@ function referralAcceptanceRefusal(
 }
 
 /** A recorded sending ward is the only exception to the one-current-stay placement rule. */
-export function movementSourceAdmission(state: WardFlowState, movement: Movement): Admission | undefined {
+export function movementSourceAdmission(
+  state: Pick<WardFlowState, "admissions" | "referrals">,
+  movement: Movement,
+): Admission | undefined {
   const pinnedSource = movement.sourceAdmissionId ?? movement.referralSourceAdmissionId;
-  if (pinnedSource !== undefined) return findAdmission(state, pinnedSource);
-  const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
+  if (pinnedSource !== undefined) return state.admissions.find((admission) => admission.id === pinnedSource);
+  const referral = movement.referralId
+    ? state.referrals.find((candidate) => candidate.id === movement.referralId)
+    : undefined;
   if (referral?.source !== "psychiatric_ward" || !referral.originUnitId) return undefined;
   const patientId = movement.patientId ?? referral.patientId;
   return state.admissions.find(
@@ -1512,7 +1518,25 @@ function withStepUndo(state: WardFlowState, next: WardFlowState, event: WardFlow
   const changes = diffForStepUndo(state, next);
   if (changes.length === 0) return next;
   const acting = "actingUnitId" in event && typeof event.actingUnitId === "string" ? event.actingUnitId : undefined;
-  const unitId = event.role !== "ward" ? null : event.type === "ACCEPT_IN_PRINCIPLE" ? event.unitId : (acting ?? null);
+  // A ward's form belongs to its authoritative stay, even when the screen omitted an acting
+  // unit. A submitted claim cannot replace that provenance.
+  const formMovement =
+    undoType === "UNDO_LEGAL_FORM_RECORD" && "movementId" in event && typeof event.movementId === "string"
+      ? findMovement(state, event.movementId)
+      : undefined;
+  const formWard = formMovement
+    ? event.type === "RECORD_LEGAL_FORM_RECEIVED"
+      ? movementSourceAdmission(state, formMovement)?.unitId
+      : admittedStayForArrival(formMovement, state.admissions)?.unitId
+    : undefined;
+  const unitId =
+    event.role !== "ward"
+      ? null
+      : event.type === "ACCEPT_IN_PRINCIPLE"
+        ? event.unitId
+        : undoType === "UNDO_LEGAL_FORM_RECORD"
+          ? (formWard ?? acting ?? null)
+          : (acting ?? null);
   return {
     ...next,
     undoRecords: withUndoRecord(next.undoRecords, {

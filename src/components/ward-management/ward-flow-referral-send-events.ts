@@ -902,8 +902,10 @@ export function reduceReferralSendEvent(
         actingPlaceId?: string;
         actingUnitId?: string;
       };
-      const callerPlaceId =
-        caller.placeId ?? caller.actingPlaceId ?? (caller.role === "ward" ? caller.actingUnitId : undefined);
+      const claims = [caller.actingPlaceId, caller.placeId, caller.actingUnitId].filter((value) => value !== undefined);
+      if (claims.some((value) => typeof value !== "string" || value.length === 0 || value !== claims[0]))
+        return reject(state, event, "Conflicting referral withdrawal places.");
+      const callerPlaceId = caller.actingPlaceId ?? caller.placeId ?? caller.actingUnitId;
       const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
       // Verified senders: a transfer from a recorded stay is the sending ward's alone. Otherwise
       // the ED that raised the journey (`originEdId`) owns it, and for a ward-sent referral the

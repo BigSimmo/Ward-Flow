@@ -154,6 +154,17 @@ const SCHEMAS: Partial<Record<WardFlowEvent["type"], z.ZodType>> = {
     // Finding 15 (Josh, 27 Oct 2026): an urgency change may be saved without a reason.
     reason: z.union([label, record]).optional(),
   }),
+  WITHDRAW_REFERRAL: z
+    .looseObject({
+      movementId: id,
+      actingPlaceId: id.optional(),
+      placeId: id.optional(),
+      actingUnitId: id.optional(),
+    })
+    .refine((value) => {
+      const claims = [value.actingPlaceId, value.placeId, value.actingUnitId].filter((claim) => claim !== undefined);
+      return claims.every((claim) => claim === claims[0]);
+    }, "Conflicting referral withdrawal places."),
   ACCEPT_REFERRAL: z.looseObject({
     referralId: id,
     destinationKind: label,

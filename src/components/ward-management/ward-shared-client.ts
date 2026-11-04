@@ -1273,10 +1273,12 @@ export class SharedWorkspaceClient {
   async logRecordView(patientId: string, surface: RecordViewSurface): Promise<boolean> {
     if (this.view.executiveSnapshot || !this.view.snapshot) return false;
     const asked = this.recordDetail.view; // H-0731: a logged opening also sends that record's detail.
+    const askedGeneration = this.view.snapshot.payload.state.worldGeneration;
     try {
       const { response, value } = await this.request("/v1/workspace/record-access", { patientId, surface });
       const held = this.view.snapshot;
-      if (!held || !this.rawPayload || !this.recordDetail.take(response.ok ? value : null, asked)) return false;
+      if (!held || !this.rawPayload || !this.recordDetail.take(response.ok ? value : null, asked, askedGeneration))
+        return false;
       const payload = this.withArchive(this.rawPayload, held.accessContext);
       this.publish({ snapshot: { ...held, payload: reuseUnchangedPayload(held.payload, payload) } });
       return true;

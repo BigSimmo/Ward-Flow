@@ -233,7 +233,7 @@ export function createWorkspaceStore(
     };
     const grants = (view.grants ?? [])
       .filter((grant) => new Date(grant.until).getTime() > at.getTime())
-      .map((grant) => [grant.patientId, new Date(grant.until).toISOString()])
+      .map((grant) => [grant.patientId, new Date(grant.until).toISOString(), String(grant.generation ?? 0)])
       .sort((a, b) => a[0].localeCompare(b[0]) || a[1].localeCompare(b[1]));
     return {
       accessContext: createHash("sha256")
@@ -384,6 +384,7 @@ export function createWorkspaceStore(
             grants: view
               ? (view.grants ?? []).map((grant) => [
                   grant.patientId,
+                  grant.generation ?? 0,
                   now + Math.max(0, Math.ceil((new Date(grant.until).getTime() - at.getTime()) / 60_000)),
                 ])
               : null,
@@ -484,12 +485,12 @@ export function createWorkspaceStore(
    * `cap`. Pages on (granted_at, id), with the time carried as text so its microseconds survive the
    * driver. At most ten pages, to bound one request.
    */
-  async function pagedMemberships(where, params, keep, cap = 500) {
+  async function pagedMemberships(where, params, keep, cap = 500, connection = pool) {
     const kept = [];
     let last = null;
     const next = params.length + 1;
     for (let page = 0; page < 10 && kept.length < cap; page += 1) {
-      const { rows } = await pool.query(
+      const { rows } = await connection.query(
         `SELECT *, granted_at::text AS granted_key FROM ward_flow.memberships WHERE ${where}${last ? ` AND (granted_at, id) > ($${next}::timestamptz, $${next + 1}::uuid)` : ""} ORDER BY granted_at, id LIMIT 500`,
         last ? [...params, last.granted_key, last.id] : params,
       );
@@ -554,10 +555,10 @@ export function createWorkspaceStore(
   /** When this server last logged the workspace size warning, and last alerted the operator. */
   let sizeWarnedAt = -Infinity;
   let sizeAlertedAt = -Infinity;
-  async function schemaVersion() {
+  async function schemaVersion(connection = pool) {
     const now = clock().getTime();
     if (known.until > now) return known.version;
-    const { rows } = await pool.query("SELECT max(version) AS version FROM ward_flow.migrations");
+    const { rows } = await connection.query("SELECT max(version) AS version FROM ward_flow.migrations");
     const version = rows[0]?.version;
     if (!Number.isInteger(version) || version < MINIMUM_RUNTIME_MIGRATION || version > LATEST_MIGRATION)
       throw new Error("Shared schema unavailable");
@@ -685,13 +686,7 @@ export function createWorkspaceStore(
    * the records whose openings it may review. `null` for the statewide coordinator: every record.
    * A break glass grant of the coordinator's own never widens it.
    */
-  async function recordsInPlace(view, at) {
-    if (engine.wholeNetwork(view.access)) return null;
-    const stored = await readWorld(pool, "payload");
-    if (!stored || !engine.validWorld(stored.payload)) return [];
-    return placeRecords(stored.payload, view.access, at);
-  }
-  /** The ids `recordsInPlace` lists, from a world already in hand. */
+  /** Patient and journey ids in an already locked world, without exceptional grants. */
   function placeRecords(world, access, at) {
     const { state } = engine.scopeWorld(world, access, at, []);
     const ids = [
@@ -1452,8 +1447,8 @@ export function createWorkspaceStore(
       const { rows } = await connection
         .query(
           covers
-            ? `SELECT id, role, scope, kind, last_used_at, expires_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $4) ORDER BY granted_at, id LIMIT 20`
-            : `SELECT id, role, scope, expires_at, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} ORDER BY granted_at, id LIMIT 20`,
+            ? `SELECT id, role, scope, kind, last_used_at, expires_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $4) ORDER BY granted_at, id`
+            : `SELECT id, role, scope, expires_at, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} ORDER BY granted_at, id`,
           covers ? [workspaceId, actorId, at, unusedBefore(at)] : [workspaceId, actorId, at],
         )
         .catch((error) => {
@@ -1541,7 +1536,13 @@ export function createWorkspaceStore(
         });
     if (chosen.membershipId) {
       const { rows } = await connection.query(
-        `SELECT patient_id, opened_at, until FROM ward_flow.break_glass WHERE workspace_id=$1 AND actor_id=$2 AND membership_id=$3 AND until > $4 ORDER BY until DESC LIMIT ${GRANT_LIST_LIMIT}`,
+        `SELECT patient_id, opened_at, until,
+          (SELECT a.changes->'worldGeneration' FROM ward_flow.audit a
+           WHERE a.workspace_id=b.workspace_id AND a.data_mode='prototype' AND a.actor_id=b.actor_id AND a.action='BREAK_GLASS'
+             AND a.changes->>'membershipId'=b.membership_id::text AND a.changes->>'patientId'=b.patient_id
+             AND a.changes->>'openingId'=b.id::text ORDER BY a.sequence DESC LIMIT 1) AS generation
+         FROM ward_flow.break_glass b WHERE b.workspace_id=$1 AND b.actor_id=$2 AND b.membership_id=$3
+           AND b.until > $4 ORDER BY b.until DESC LIMIT ${GRANT_LIST_LIMIT}`,
         [workspaceId, actorId, chosen.membershipId, new Date(at.getTime() - GRANT_SETTLE_MS)],
       );
       const nowMs = at.getTime();
@@ -1564,7 +1565,7 @@ export function createWorkspaceStore(
       }
       grants = rows
         .filter((row) => row.until > at)
-        .map((row) => ({ patientId: row.patient_id, until: new Date(row.until) }));
+        .map((row) => ({ patientId: row.patient_id, until: new Date(row.until), generation: row.generation ?? 0 }));
     }
     return {
       status: "ok",
@@ -1719,12 +1720,15 @@ export function createWorkspaceStore(
    * @param {string | null} [cursor]
    */
   async function auditPage(view, cursor = null) {
+    return currentRecordRead(view, (client, at, current, stored) => auditPageRead(client, current, cursor, stored));
+  }
+  async function auditPageRead(client, view, cursor, stored) {
     const whole = !view || engine.wholeNetwork(view.access);
     const scoped = view && view.version >= ROLE_ACCESS_MIGRATION ? ", actor_scope" : "";
     const statewide = whole || view.access.scope.kind === "statewide";
     let payload;
     if (!statewide) {
-      payload = (await readWorld(pool, "payload"))?.payload;
+      payload = stored?.payload;
       if (!payload || !engine.validWorld(payload)) return { events: [], complete: true, nextCursor: null };
     }
     // Scan at most ten raw pages per request, applying scope before the public 200-row cap.
@@ -1732,7 +1736,7 @@ export function createWorkspaceStore(
     const selected = [];
     let before = cursor;
     for (let page = 0; page < 10; page++) {
-      const { rows } = await pool.query(
+      const { rows } = await client.query(
         `SELECT sequence, actor_id, actor_role${scoped}, data_mode, action, outcome, prior_revision, revision, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype'${whole ? "" : " AND action LIKE 'ACCESS\\_%'"}${before === null ? "" : " AND sequence < $2::bigint"} ORDER BY sequence DESC LIMIT 200`,
         before === null ? [workspaceId] : [workspaceId, before],
       );
@@ -1914,6 +1918,18 @@ export function createWorkspaceStore(
       },
       forgetVersionOnMissing,
     }),
+    async forecastHistory(view) {
+      return currentRecordRead(view, (client, at, current, stored) =>
+        forecastHistoryStore({
+          pool: client,
+          workspaceId,
+          schemaVersion: () => schemaVersion(client),
+          worldGeneration: async () =>
+            stored && engine.validWorld(stored.payload) ? stored.payload.state.worldGeneration : null,
+          forgetVersionOnMissing,
+        }).forecastHistory(current),
+      );
+    },
     /**
      * History's archived records (migration 14): the newest `ARCHIVE_READ_LIMIT` of this world
      * generation, newest closed first, narrowed by the desk's place exactly as its live workspace is
@@ -2020,15 +2036,17 @@ export function createWorkspaceStore(
     auditPage,
     /** P056: a desk's Activity, the kind and time of changes made inside its own place (desk-audit.mjs). */
     deskAuditPage: (view, cursor = null) =>
-      deskAuditPage({
-        pool,
-        workspaceId,
-        engine,
-        view,
-        cursor,
-        minimumVersion: ROLE_ACCESS_MIGRATION,
-        readPayload: async () => (await readWorld(pool, "payload"))?.payload,
-      }),
+      currentRecordRead(view, (client, at, current, stored) =>
+        deskAuditPage({
+          pool: client,
+          workspaceId,
+          engine,
+          view: current,
+          cursor,
+          minimumVersion: ROLE_ACCESS_MIGRATION,
+          readPayload: async () => stored?.payload,
+        }),
+      ),
     // Legacy callers keep their array result; HTTP uses auditPage's explicit continuation.
     async audit(view, cursor = null) {
       return (await auditPage(view, cursor)).events;
@@ -2052,43 +2070,46 @@ export function createWorkspaceStore(
      * was last used, and from 9 the open requests for access there too.
      */
     async listAccess(view) {
-      const blocked = accessRefusal(view);
-      if (blocked) return blocked;
-      const at = clock();
-      const world = await read(view.actorId);
-      const inside = (row) => {
-        const access = engine.parseAccess(row.role, row.scope);
-        return !!access && engine.scopeWithin(world.payload, access.scope, view.access.scope);
-      };
-      // A role that names no health service gives nothing and has no place to filter by, so only a
-      // statewide access admin sees it, marked to be given again with a service (RA-02).
-      const statewide = view.access.scope.kind === "statewide";
-      const needsGrant = (row) => statewide && engine.accessNeedsService(row.role, row.scope);
-      // The place filter runs here, so read oldest grant first a page at a time until this admin's
-      // own 500 are found: roles elsewhere never crowd them out.
-      const memberships = await pagedMemberships(
-        "workspace_id=$1 AND revoked_at IS NULL AND expires_at > $2",
-        [workspaceId, at],
-        (row) => inside(row) || needsGrant(row),
-      );
-      const requests =
-        view.version >= ACCESS_COVER_MIGRATION
-          ? (
-              await pool.query(
-                "SELECT * FROM ward_flow.access_requests WHERE workspace_id=$1 AND decision IS NULL ORDER BY requested_at, id LIMIT $2",
-                [workspaceId, MAX_OPEN_REQUESTS],
-              )
-            ).rows
-          : [];
-      return {
-        status: 200,
-        body: {
-          memberships: memberships.map((row) =>
-            needsGrant(row) ? { ...presentMembership(row, at), needsGrantAgain: true } : presentMembership(row, at),
-          ),
-          requests: requests.filter(inside).map((row) => presentRequest(row, at)),
-        },
-      };
+      return currentRecordRead(view, async (client, at, view, stored) => {
+        const blocked = accessRefusal(view);
+        if (blocked) return blocked;
+        const world = stored;
+        const inside = (row) => {
+          const access = engine.parseAccess(row.role, row.scope);
+          return !!access && engine.scopeWithin(world.payload, access.scope, view.access.scope);
+        };
+        // A role that names no health service gives nothing and has no place to filter by, so only a
+        // statewide access admin sees it, marked to be given again with a service (RA-02).
+        const statewide = view.access.scope.kind === "statewide";
+        const needsGrant = (row) => statewide && engine.accessNeedsService(row.role, row.scope);
+        // The place filter runs here, so read oldest grant first a page at a time until this admin's
+        // own 500 are found: roles elsewhere never crowd them out.
+        const memberships = await pagedMemberships(
+          "workspace_id=$1 AND revoked_at IS NULL AND expires_at > $2",
+          [workspaceId, at],
+          (row) => inside(row) || needsGrant(row),
+          500,
+          client,
+        );
+        const requests =
+          view.version >= ACCESS_COVER_MIGRATION
+            ? (
+                await client.query(
+                  "SELECT * FROM ward_flow.access_requests WHERE workspace_id=$1 AND decision IS NULL ORDER BY requested_at, id LIMIT $2",
+                  [workspaceId, MAX_OPEN_REQUESTS],
+                )
+              ).rows
+            : [];
+        return {
+          status: 200,
+          body: {
+            memberships: memberships.map((row) =>
+              needsGrant(row) ? { ...presentMembership(row, at), needsGrantAgain: true } : presentMembership(row, at),
+            ),
+            requests: requests.filter(inside).map((row) => presentRequest(row, at)),
+          },
+        };
+      });
     },
     /**
      * Gives a person a role at a place until a set time. Nobody grants themselves a role or one
@@ -2163,30 +2184,32 @@ export function createWorkspaceStore(
     },
     /** The cover this desk gave or holds, and for a coordinator all cover inside its place. */
     async listCovers(view) {
-      const blocked = coverRefusalBefore9(view);
-      if (blocked) return blocked;
-      const at = clock();
-      const world = await read(view.actorId);
-      const coordinator = view.access.role === "coordinator";
-      // Read a page at a time and filtered as read, so cover elsewhere never crowds out this desk's.
-      const rows = await pagedMemberships(
-        coordinator
-          ? "workspace_id=$1 AND kind='cover' AND revoked_at IS NULL AND expires_at > $2"
-          : "workspace_id=$1 AND kind='cover' AND revoked_at IS NULL AND expires_at > $2 AND (granted_by=$3 OR actor_id=$3)",
-        coordinator ? [workspaceId, at] : [workspaceId, at, view.actorId],
-        (row) => {
-          if (row.granted_by === view.actorId || row.actor_id === view.actorId) return true;
-          const access = engine.parseAccess(row.role, row.scope);
-          return coordinator && !!access && engine.scopeWithin(world.payload, access.scope, view.access.scope);
-        },
-        200,
-      );
-      return {
-        status: 200,
-        body: {
-          covers: rows.map((row) => presentMembership(row, at)),
-        },
-      };
+      return currentRecordRead(view, async (client, at, view, stored) => {
+        const blocked = coverRefusalBefore9(view);
+        if (blocked) return blocked;
+        const world = stored;
+        const coordinator = view.access.role === "coordinator";
+        // Read a page at a time and filtered as read, so cover elsewhere never crowds out this desk's.
+        const rows = await pagedMemberships(
+          coordinator
+            ? "workspace_id=$1 AND kind='cover' AND revoked_at IS NULL AND expires_at > $2"
+            : "workspace_id=$1 AND kind='cover' AND revoked_at IS NULL AND expires_at > $2 AND (granted_by=$3 OR actor_id=$3)",
+          coordinator ? [workspaceId, at] : [workspaceId, at, view.actorId],
+          (row) => {
+            if (row.granted_by === view.actorId || row.actor_id === view.actorId) return true;
+            const access = engine.parseAccess(row.role, row.scope);
+            return coordinator && !!access && engine.scopeWithin(world.payload, access.scope, view.access.scope);
+          },
+          200,
+          client,
+        );
+        return {
+          status: 200,
+          body: {
+            covers: rows.map((row) => presentMembership(row, at)),
+          },
+        };
+      });
     },
     /**
      * A signed-in person with no role asks for one (feature 7). Open to any signed-in account, so
@@ -2427,47 +2450,52 @@ export function createWorkspaceStore(
      * before this runs. `minutes` is the opening's time as minutes from the server's now.
      */
     async recordViews(view, patientId = null) {
-      if (!(view.version >= RECORD_ACCESS_MIGRATION)) return [];
-      const at = clock();
-      if (view.access.role === "coordinator" && view.access.scope.kind !== "statewide") {
-        const inPlace = await recordsInPlace(view, at);
-        if (inPlace?.length === 0) return [];
-        const params = [workspaceId, new Date(at.getTime() - REVIEW_DAYS * 86_400_000)];
-        const patient = patientId ? ` AND patient_id=$${params.push(patientId)}` : "";
-        const place = inPlace ? ` AND patient_id = ANY($${params.push(inPlace)})` : "";
-        const { rows } = await pool.query(
-          `SELECT id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at FROM ward_flow.record_access WHERE workspace_id=$1 AND data_mode='prototype' AND viewed_at > $2${patient}${place} ORDER BY id DESC LIMIT ${VIEW_LIST_LIMIT}`,
+      return currentRecordRead(view, async (client, at, view, stored) => {
+        if (!(view.version >= RECORD_ACCESS_MIGRATION)) return [];
+        if (view.access.role === "coordinator" && view.access.scope.kind !== "statewide") {
+          const inPlace = engine.wholeNetwork(view.access)
+            ? null
+            : stored && engine.validWorld(stored.payload)
+              ? placeRecords(stored.payload, view.access, at)
+              : [];
+          if (inPlace?.length === 0) return [];
+          const params = [workspaceId, new Date(at.getTime() - REVIEW_DAYS * 86_400_000)];
+          const patient = patientId ? ` AND patient_id=$${params.push(patientId)}` : "";
+          const place = inPlace ? ` AND patient_id = ANY($${params.push(inPlace)})` : "";
+          const { rows } = await client.query(
+            `SELECT id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at FROM ward_flow.record_access WHERE workspace_id=$1 AND data_mode='prototype' AND viewed_at > $2${patient}${place} ORDER BY id DESC LIMIT ${VIEW_LIST_LIMIT}`,
+            params,
+          );
+          return rows.map((row) => ({ ...row, minutes: minutesBefore(row.viewed_at, at) }));
+        }
+        const params = [workspaceId];
+        let where = "workspace_id=$1 AND data_mode='prototype'";
+        if (patientId) {
+          params.push(patientId);
+          where += ` AND patient_id=$${params.length}`;
+        }
+        if (view.access.scope.kind !== "statewide") {
+          const world = stored;
+          const { rows: desks } = await client.query(
+            `SELECT DISTINCT actor_role, actor_scope FROM ward_flow.record_access WHERE ${where}`,
+            params,
+          );
+          const inside = desks
+            .filter((desk) => {
+              const access = engine.parseAccess(desk.actor_role, desk.actor_scope);
+              return !!access && engine.scopeWithin(world.payload, access.scope, view.access.scope);
+            })
+            .map((desk) => JSON.stringify([desk.actor_role, desk.actor_scope]));
+          if (inside.length === 0) return [];
+          params.push(inside);
+          where += ` AND jsonb_build_array(actor_role, actor_scope) = ANY($${params.length}::jsonb[])`;
+        }
+        const { rows } = await client.query(
+          `SELECT id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at FROM ward_flow.record_access WHERE ${where} ORDER BY id DESC LIMIT ${VIEW_LIST_LIMIT}`,
           params,
         );
-        return rows.map((row) => ({ ...row, minutes: minutesBefore(row.viewed_at, at) }));
-      }
-      const params = [workspaceId];
-      let where = "workspace_id=$1 AND data_mode='prototype'";
-      if (patientId) {
-        params.push(patientId);
-        where += ` AND patient_id=$${params.length}`;
-      }
-      if (view.access.scope.kind !== "statewide") {
-        const world = await read(view.actorId);
-        const { rows: desks } = await pool.query(
-          `SELECT DISTINCT actor_role, actor_scope FROM ward_flow.record_access WHERE ${where}`,
-          params,
-        );
-        const inside = desks
-          .filter((desk) => {
-            const access = engine.parseAccess(desk.actor_role, desk.actor_scope);
-            return !!access && engine.scopeWithin(world.payload, access.scope, view.access.scope);
-          })
-          .map((desk) => JSON.stringify([desk.actor_role, desk.actor_scope]));
-        if (inside.length === 0) return [];
-        params.push(inside);
-        where += ` AND jsonb_build_array(actor_role, actor_scope) = ANY($${params.length}::jsonb[])`;
-      }
-      const { rows } = await pool.query(
-        `SELECT id, actor_id, actor_role, actor_scope, patient_id, surface, viewed_at FROM ward_flow.record_access WHERE ${where} ORDER BY id DESC LIMIT ${VIEW_LIST_LIMIT}`,
-        params,
-      );
-      return rows.map((row) => ({ ...row, minutes: minutesFrom(row.viewed_at, at) }));
+        return rows.map((row) => ({ ...row, minutes: minutesFrom(row.viewed_at, at) }));
+      });
     },
     /**
      * H-0731: the server's own record that this desk was sent its whole list (`list`) or the TV
@@ -2526,20 +2554,25 @@ export function createWorkspaceStore(
      * coordinator's `recordViews`; the HTTP layer gives them to coordinators only. The record itself shows only on the screens the coordinator already has.
      */
     async breakGlassOpenings(view) {
-      if (!(view.version >= ROLE_ACCESS_MIGRATION)) return [];
-      const at = clock();
-      const inPlace = await recordsInPlace(view, at);
-      if (inPlace?.length === 0) return [];
-      const params = [workspaceId, new Date(at.getTime() - REVIEW_DAYS * 86_400_000)];
-      const place = inPlace ? ` AND b.patient_id = ANY($${params.push(inPlace)})` : "";
-      const { rows } = await pool.query(
-        `SELECT b.id, m.role AS actor_role, m.scope AS actor_scope, b.patient_id, b.reason, b.opened_at, b.until FROM ward_flow.break_glass b JOIN ward_flow.memberships m ON m.id = b.membership_id WHERE b.workspace_id=$1 AND b.data_mode='prototype' AND b.opened_at > $2${place} ORDER BY b.id DESC LIMIT ${VIEW_LIST_LIMIT}`,
-        params,
-      );
-      return rows.map(({ opened_at: opened, until, ...row }) => ({
-        ...row,
-        minutes: { opened: minutesBefore(opened, at), until: minutesBefore(until, at) },
-      }));
+      return currentRecordRead(view, async (client, at, view, stored) => {
+        if (!(view.version >= ROLE_ACCESS_MIGRATION)) return [];
+        const inPlace = engine.wholeNetwork(view.access)
+          ? null
+          : stored && engine.validWorld(stored.payload)
+            ? placeRecords(stored.payload, view.access, at)
+            : [];
+        if (inPlace?.length === 0) return [];
+        const params = [workspaceId, new Date(at.getTime() - REVIEW_DAYS * 86_400_000)];
+        const place = inPlace ? ` AND b.patient_id = ANY($${params.push(inPlace)})` : "";
+        const { rows } = await client.query(
+          `SELECT b.id, m.role AS actor_role, m.scope AS actor_scope, b.patient_id, b.reason, b.opened_at, b.until FROM ward_flow.break_glass b JOIN ward_flow.memberships m ON m.id = b.membership_id WHERE b.workspace_id=$1 AND b.data_mode='prototype' AND b.opened_at > $2${place} ORDER BY b.id DESC LIMIT ${VIEW_LIST_LIMIT}`,
+          params,
+        );
+        return rows.map(({ opened_at: opened, until, ...row }) => ({
+          ...row,
+          minutes: { opened: minutesBefore(opened, at), until: minutesBefore(until, at) },
+        }));
+      });
     },
     /**
      * Readiness review item 8: a sign-out ends the sign-in here at once, not when its token
@@ -2591,8 +2624,8 @@ export function createWorkspaceStore(
         if (refusal || !view.membershipId)
           return refused(422, refusal ?? "Opening a record outside your care is not part of your role.");
         const until = new Date(at.getTime() + engine.BREAK_GLASS_MINUTES * 60_000);
-        await client.query(
-          "INSERT INTO ward_flow.break_glass(workspace_id, actor_id, membership_id, patient_id, reason, opened_at, until) VALUES ($1,$2,$3,$4,$5,$6,$7)",
+        const opening = await client.query(
+          "INSERT INTO ward_flow.break_glass(workspace_id, actor_id, membership_id, patient_id, reason, opened_at, until) VALUES ($1,$2,$3,$4,$5,$6,$7) RETURNING id::text AS id",
           [workspaceId, view.actorId, view.membershipId, patientId, reason, at, until],
         );
         const { rows } = await client.query(
@@ -2606,9 +2639,20 @@ export function createWorkspaceStore(
           outcome: "accepted",
           priorRevision: revision,
           revision,
-          changes: { patientId, reason, until: until.toISOString(), membershipId: view.membershipId, pattern },
+          changes: {
+            patientId,
+            reason,
+            until: until.toISOString(),
+            membershipId: view.membershipId,
+            pattern,
+            openingId: opening.rows[0].id,
+            worldGeneration: row.payload.state.worldGeneration,
+          },
         });
-        const opened = { ...view, grants: [...view.grants, { patientId, until }] };
+        const opened = {
+          ...view,
+          grants: [...view.grants, { patientId, until, generation: row.payload.state.worldGeneration }],
+        };
         await prepareReviewAuthority(client, row, opened);
         return {
           status: 200,

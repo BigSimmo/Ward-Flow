@@ -392,6 +392,8 @@ onWardSessionEnd(forgetAccountAccess);
  */
 export function breakGlass(input: {
   patientId: string;
+  /** Captured when this opening was requested, never rebound after a reset. */
+  generation?: number;
   now: Instant;
   windowMinutes: number;
   reason: BreakGlassReasonId;
@@ -403,6 +405,7 @@ export function breakGlass(input: {
   const record: BreakGlassRecord = {
     id: sequence++,
     patientId: input.patientId,
+    generation: input.generation ?? 0,
     openedAt: input.now,
     until: input.now + input.windowMinutes,
     role: snapshot.access.role,

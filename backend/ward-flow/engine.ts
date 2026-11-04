@@ -427,13 +427,14 @@ export function validWorld(value: unknown): value is SharedWorld {
 }
 
 /** A break glass grant as the server holds it: one patient, read only, until a wall-clock time. */
-export type StoredGrant = { patientId: string; until: Date };
+export type StoredGrant = { patientId: string; until: Date; generation?: number };
 
 /** Grants in the workspace's own minutes, as the scoping rule reads them. */
 function worldGrants(world: SharedWorld, grants: readonly StoredGrant[], at: Date) {
   const now = worldNow(world, at);
   return grants.map((grant) => ({
     patientId: grant.patientId,
+    generation: grant.generation,
     until: now + Math.max(0, Math.ceil((grant.until.getTime() - at.getTime()) / 60_000)),
   }));
 }

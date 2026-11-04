@@ -738,7 +738,7 @@ function OperationalWardAccessGate({ children }: { children: ReactNode }) {
   if (!decision.open) return <ClosedScreen access={access} />;
   if (address?.movementId !== undefined && !scoped.movements.some((movement) => movement.id === address.movementId))
     return <ClosedScreen access={access} />;
-  const subject = address?.patientId;
+  const subject = address?.patientId ?? address?.movementId;
   if (subject === undefined) return <>{children}</>;
   // The patient page takes a person id or a movement id (`people/[patientId]/page.tsx`).
   const seen =
@@ -864,7 +864,7 @@ function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: s
 
 /** Break glass: warn, ask why, then open one record read only for a set time (plan section 7). */
 function BreakGlassForm({ access, patientId }: { access: WardAccess; patientId: string }) {
-  const { now, units } = useUnscopedWardFlow();
+  const { now, units, worldGeneration } = useUnscopedWardFlow();
   const [reason, setReason] = useState<BreakGlassReasonId | null>(null);
   const [other, setOther] = useState("");
   const minutes = CLINICAL_VALUES.breakGlassWindow.value;
@@ -920,6 +920,7 @@ function BreakGlassForm({ access, patientId }: { access: WardAccess; patientId: 
             }
             return breakGlass({
               patientId,
+              generation: worldGeneration,
               now,
               windowMinutes: minutes,
               reason,

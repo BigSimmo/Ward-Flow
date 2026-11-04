@@ -10,32 +10,25 @@ test("scoped audit assembles migration-10 record rows before testing place membe
   let assembled = false;
   const pool = {
     query: async (sql) => {
+      if (["BEGIN", "COMMIT", "ROLLBACK"].includes(sql)) return { rows: [] };
       if (sql.includes("max(version)")) return { rows: [{ version: LATEST_MIGRATION }] };
       if (sql.includes("FROM ward_flow.workspaces"))
         return {
           rows: [
             {
               payload,
-              ...(sql.includes("jsonb_agg")
-                ? {
-                    cache_revision: 1,
-                    cache_updated_at: new Date("2026-10-26T00:00:00.000Z"),
-                    records: [
-                      {
-                        collection: "units",
-                        record_id: own.id,
-                        kind: "item",
-                        ordinal: 0,
-                        revision: 1,
-                        fresh: true,
-                        body: own,
-                      },
-                    ],
-                  }
-                : {}),
+              revision: 1,
+              cache_updated_at: new Date("2026-10-26T00:00:00.000Z"),
             },
           ],
         };
+      if (sql.includes("FROM ward_flow.workspace_records"))
+        return {
+          rows: [
+            { collection: "units", record_id: own.id, kind: "item", ordinal: 0, revision: 1, fresh: true, body: own },
+          ],
+        };
+      assert.ok(sql.includes("FROM ward_flow.audit"), `Unexpected SQL: ${sql}`);
       return {
         rows: [
           { sequence: "9007199254740999", changes: { role: "admin", scope: { kind: "service", service: "Own" } } },
@@ -43,6 +36,7 @@ test("scoped audit assembles migration-10 record rows before testing place membe
       };
     },
   };
+  pool.connect = async () => ({ query: pool.query, release() {} });
   const engine = {
     validWorld: (world) => Array.isArray(world.state.units),
     wholeNetwork: () => false,
@@ -74,11 +68,14 @@ test("scoped audit finds its retained event after more than 200 unrelated access
   events.push({ sequence: 1, changes: { role: "admin", scope: { kind: "service", service: "Own" } } });
   const pool = {
     query: async (sql, values) => {
-      if (sql.includes("SELECT payload")) return { rows: [{ payload: {} }] };
+      if (["BEGIN", "COMMIT", "ROLLBACK"].includes(sql)) return { rows: [] };
+      if (sql.includes("FROM ward_flow.workspaces")) return { rows: [{ payload: {} }] };
+      assert.ok(sql.includes("FROM ward_flow.audit"), `Unexpected SQL: ${sql}`);
       const before = values?.[1];
       return { rows: events.filter((row) => before == null || row.sequence < before).slice(0, 200) };
     },
   };
+  pool.connect = async () => ({ query: pool.query, release() {} });
   const engine = {
     validWorld: () => true,
     wholeNetwork: () => false,
@@ -158,6 +155,7 @@ function scopedAuditFixture(events) {
   const cursors = [];
   const pool = {
     query: async (sql, values) => {
+      if (["BEGIN", "COMMIT", "ROLLBACK"].includes(sql)) return { rows: [] };
       if (sql.includes("FROM ward_flow.workspaces")) return { rows: [{ payload: {} }] };
       assert.ok(sql.includes("FROM ward_flow.audit"));
       const before = values?.[1];
@@ -167,6 +165,7 @@ function scopedAuditFixture(events) {
       };
     },
   };
+  pool.connect = async () => ({ query: pool.query, release() {} });
   const engine = {
     validWorld: () => true,
     wholeNetwork: () => false,
