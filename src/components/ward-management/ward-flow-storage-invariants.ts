@@ -3,22 +3,18 @@ import { isObservation, type Observation } from "./ward-observation";
 import type { Admission } from "./ward-admissions";
 import type { WardFlowState } from "./ward-flow-reducer";
 
-/** Restore mirrors the placement/absence guards; shape validation alone cannot protect these joins. */
-export function storedPlacementInvariants(state: WardFlowState): boolean {
+/** Restore receives groups from the approved identity fence; this helper reads placement facts only. */
+export function storedPlacementInvariants(
+  state: WardFlowState,
+  patientStays: readonly (readonly Pick<Admission, "id" | "unitId" | "state">[])[],
+): boolean {
   const onLeave = new Set(state.leaveBeds.map((row) => row.admissionId));
   const active = state.admissions.filter((row) => row.state === "occupied" || row.state === "pulled");
-  const staysByPatient = new Map<string, Admission[]>();
   for (const stay of state.admissions) {
     // Departure retains this timestamp as history; only simultaneous live absence claims conflict.
     if (stay.awayAtEmergencyDepartmentSince !== null && onLeave.has(stay.id)) return false;
   }
-  for (const stay of active) {
-    if (stay.patientId === null) continue;
-    const stays = staysByPatient.get(stay.patientId) ?? [];
-    stays.push(stay);
-    staysByPatient.set(stay.patientId, stays);
-  }
-  for (const stays of staysByPatient.values()) {
+  for (const stays of patientStays) {
     if (stays.length < 2) continue;
     if (stays.length !== 2) return false;
     // A recorded transfer holds the sending bed until destination arrival atomically departs it.

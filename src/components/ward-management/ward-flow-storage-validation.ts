@@ -10,6 +10,7 @@ import * as z from "zod/mini";
 import { validCareJourney, validCareChange } from "./ward-care-journey";
 import type { WardFlowState } from "./ward-flow-reducer";
 import {
+  type Admission,
   isDischargeBarrier,
   isLeavingDestination,
   isPlannedAdmissionCancelReason,
@@ -1228,6 +1229,8 @@ function consistent(state: StoredState, value: RecordValue): boolean {
     )
       return false;
   }
+  // Identity keys stay in this approved restore-only reader; the helper receives placement facts.
+  const patientStays = new Map<string, Pick<Admission, "id" | "unitId" | "state">[]>();
   for (const admission of state.admissions) {
     const ward = stateUnitById.get(admission.unitId);
     if (!ward || (admission.bedNumber !== undefined && admission.bedNumber > ward.beds)) return false;
@@ -1237,6 +1240,11 @@ function consistent(state: StoredState, value: RecordValue): boolean {
       !reference(admission.movementId, movementIds)
     )
       return false;
+    if (admission.patientId !== null && (admission.state === "occupied" || admission.state === "pulled")) {
+      const stays = patientStays.get(admission.patientId) ?? [];
+      stays.push({ id: admission.id, unitId: admission.unitId, state: admission.state });
+      patientStays.set(admission.patientId, stays);
+    }
   }
 
   const samePatient = (left: { patientId?: string | null }, right: { patientId?: string | null } | undefined) =>
@@ -1413,18 +1421,13 @@ function consistent(state: StoredState, value: RecordValue): boolean {
 
   for (const key of Object.keys(state.dischargeRevisions)) if (!admissionIds.has(key)) return false;
   for (const key of Object.keys(state.morningRollupConfirmations)) if (!unitIds.has(key)) return false;
-  return true;
+  return storedPlacementInvariants(value as unknown as WardFlowState, [...patientStays.values()]);
 }
 
 export function isValidStoredWardFlowState(value: unknown): value is WardFlowState {
   if (!object(value) || !nested(value)) return false;
   const parsed = storedState.safeParse(value);
-  return (
-    parsed.success &&
-    consistent(parsed.data, value) &&
-    typedRecordsResolve(value as unknown as WardFlowState) &&
-    storedPlacementInvariants(value as unknown as WardFlowState)
-  );
+  return parsed.success && consistent(parsed.data, value) && typedRecordsResolve(value as unknown as WardFlowState);
 }
 
 /**

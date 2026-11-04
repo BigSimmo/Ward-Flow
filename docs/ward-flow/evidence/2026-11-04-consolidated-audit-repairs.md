@@ -80,3 +80,27 @@ Not executed: full repository unit population, PostgreSQL integration, productio
 build, browser journeys, hosted CI/artifact retrieval, physical-phone or installed-PWA
 checks. No publication, merge, database change or deployment was performed. Raw local output is retained outside Git in `/tmp/ward-flow-*` and
 the ignored `.local/consolidated-audit-repairs/` checkpoint.
+
+## Extended verification and privacy-boundary correction
+
+On the owner's request to continue, the full offline gate ran on `eae1d2d97`:
+2,028 files, 20,102 passed assertions, one failure and three explicit skips.
+The failure was `ward-patient-link-default-deny.test.ts`: the new restore helper
+read patient links outside the approved validator file. The guard was correct.
+
+The correction keeps active-stay identity grouping inside the approved restore
+validator and passes only stay ID, ward ID and state projections to the structural
+helper. No privacy allowlist, clinical rule or test threshold was weakened. The
+validator remains under its 1,500-line limit. Independent review found equivalent
+acceptance conditions; the unchanged D-14 guard, all 19 actual import tests and
+neighbouring storage/transfer controls passed (six files, 58 tests).
+
+Offline backend verification: 360 passed, zero failed, 42 skipped without a local
+PostgreSQL target. The three full-unit skips were a historical diff-integrity check
+whose old commit is absent and two opt-in timing probes for inactive reporting.
+
+The production build and corrected-source full rerun are pending at this checkpoint.
+Pinned Chromium is absent. Approval was requested for its download and a disposable
+PostgreSQL 16 image; it has not yet been received. No live provider was contacted.
+Earlier queued backend/build attempts timed out on the shared heavyweight lock and
+were not counted as execution evidence.
