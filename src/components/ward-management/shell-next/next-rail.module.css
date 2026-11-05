@@ -30,6 +30,8 @@
 }
 
 .capacityReady {
+  display: block;
+  min-width: 0;
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
@@ -241,4 +243,18 @@
   .liveDot {
     animation: none;
   }
+}
+
+/* WF-44: Metro occupancy and ready beds stack, so the Metro figure cannot overlap a service row. */
+.readyStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.125rem;
+  min-width: 0;
+}
+
+.readyMetro {
+  color: var(--wf-ink-2);
+  white-space: nowrap;
 }

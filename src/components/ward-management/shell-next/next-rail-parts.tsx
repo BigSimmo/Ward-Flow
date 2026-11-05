@@ -228,19 +228,31 @@ export function PinButton({ id, label, pinned }: { id: string; label: string; pi
 export { RailAccountMenu } from "@/components/ward-management/shell-next/next-account-menu";
 
 /** H2 (Josh, 3 Nov 2026): the bed alerts foot line, Metro as a whole (when the rows above rank
- *  services) and the beds ready now. */
+ *  services) and the beds ready now.
+ * WF-44 (5 Nov 2026): Metro sits on its own line above the ready count, so "Metro 74.6%" never
+ * paints over the East Metro row above it on a tight rail. */
 export function RailReadyLine({ metro, ready }: { metro: number | null; ready: number }) {
   return (
-    <>
+    <span className={parts.readyStack}>
       {metro !== null ? (
-        <>
+        <span className={parts.readyMetro}>
           Metro <b>{formatOccupancyPercent(metro)}</b>
-          <span aria-hidden="true"> · </span>
-        </>
+        </span>
       ) : null}
-      <b>{ready}</b> {ready === 1 ? "bed" : "beds"} ready now
-    </>
+      <span>
+        <b>{ready}</b> {ready === 1 ? "bed" : "beds"} ready now
+      </span>
+    </span>
   );
+}
+
+/** WF-44: closed-rail pip shows a short place name with the percent ("East 87%"), never a bare "87%". */
+export function compactOccupancyLabel(name: string | undefined, percent: number | null): string {
+  if (percent === null || percent === undefined) return "—";
+  const rounded = `${Math.round(percent)}%`;
+  if (!name) return rounded;
+  const short = name.replace(/\s+Metro$/u, "").trim() || name;
+  return `${short} ${rounded}`;
 }
 
 export function RailLiveClock({
