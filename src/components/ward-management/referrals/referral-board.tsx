@@ -50,7 +50,7 @@ import {
 
 import { ReferralHistoryAndCorrections } from "./referral-history-corrections-lazy";
 import { ReferralMatchView } from "./referral-match-lazy";
-import { HistoryFoldProvider } from "./folded-history";
+import { HistoryFoldProvider } from "./folded-history-context";
 import { ReferralPhoneChips } from "./referral-phone-chips";
 import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";

@@ -6,7 +6,7 @@
 import { useState } from "react";
 import { Download, FileText, Paperclip } from "lucide-react";
 
-import { documentLabel } from "./referral-document-links";
+import { documentLabel } from "./referral-document-labels";
 import type { FollowableChartKind, ReferralChart } from "./referral-submission";
 import { Button, Sheet } from "@/components/wf";
 
