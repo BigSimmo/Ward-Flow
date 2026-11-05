@@ -132,6 +132,8 @@ const NOW_ANCHOR_ALLOWLIST = new Set([
   // synthetic time as an offset from the anchor, and is shifted onto the live clock by the reducer.
   "src/components/ward-management/ward-demo-network.ts",
   "src/components/ward-management/ward-flow-provider.tsx", // the provider, which reads it once to derive the live `now`
+  // #1435 (5 Nov 2026): the scenario import owner moved out of the provider, with its clock check.
+  "src/components/ward-management/ward-scenario-import-owner.ts",
   "src/components/ward-management/ward-flow-demo-restore.ts", // the saved-session read, moved out of ward-flow-demo-storage.ts (21 Oct 2026)
   // The saved-session read and write, moved out of the provider unchanged: it compares a saved clock with the anchor.
   "src/components/ward-management/ward-flow-demo-storage.ts",

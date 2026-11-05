@@ -166,6 +166,16 @@ describe("the sending ward's own journey (D-80)", () => {
     expect(within(controls).getByLabelText("Urgency tier for Synthetic person")).toHaveValue("1");
   });
 
+  it("opens on the current urgency when another desk changed it and nothing was picked here", () => {
+    setState([journey("WF-D80-BACK", { sourceAdmissionId: stay.id, patientId: stay.patientId })]);
+    renderDossier();
+    // Another desk raises the journey to tier 1 while this form is closed (same record, newer value).
+    Object.assign(context.movements[0]!, { urgency: 1 });
+    const controls = screen.getByTestId("sent-journey-changes");
+    fireEvent.click(within(controls).getByRole("button", { name: "Change urgency" }));
+    expect(within(controls).getByLabelText("Urgency tier for Synthetic person")).toHaveValue("1");
+  });
+
   it("offers nothing on a journey an ED sent for the same person", () => {
     setState([journey("WF-D80-ED", { referralId: edSent.id, patientId: stay.patientId })]);
     renderDossier();
