@@ -66,6 +66,7 @@ import { WardSearchCommands } from "./ward-global-search-commands";
 import { WardSearchKeyHints } from "./ward-global-search-key-hints";
 import { askWardHelp, looksLikeHelpQuestion } from "./help/ward-help-events";
 import { useWardFeatureFlag } from "./shell/ward-feature-flag-store";
+import { useAccessNavFilter } from "./shell/ward-access";
 import { recentsLifetimeNow, rememberRecent, useSessionRecents } from "./ward-global-search-recents";
 import {
   EmptyTry,
@@ -89,17 +90,9 @@ export { clearGlobalSearchRecents } from "./ward-global-search-recents";
 export { permittedSearchResult } from "./ward-global-search-smart";
 
 /**
- * WARD FLOW'S GLOBAL SEARCH — one control, mounted once in the header of every ward route.
- *
- * OWNER RULING: this is the one part of the chrome that does NOT adapt between roles. Same
- * position, same width, same keyboard shortcut everywhere a coordinator, an ED psychiatrist or a
- * ward manager works, so a habit learned in one role works in every other. The only thing that may
- * differ is a small "scope" chip — and that difference belongs to the CALLER, not to this file.
- *
- * ⚠️ THIS COMPONENT CONTAINS NO ROLE LOGIC AT ALL. It takes `scope` as a plain `ReactNode` and
- * renders whatever it is given, unexamined. It does not know what a role is, does not branch on
- * one, and does not read `WardRole` from `ward-derivations.ts`. Whoever wires this into a header
- * decides what the chip says; this file only reserves the slot.
+ * Global search keeps its position, width and keyboard shortcut across desks (owner ruling).
+ * Callers supply the scope chip. Shared catalogue matches use the menu's own-place destination
+ * adaptation followed by the caller's permission checks.
  *
  * PALETTE (Josh, 8 Oct 2026, option B of the global search mockups). The field stays where it is in
  * the header. Focusing it opens a glass palette under the bar, over a soft scrim: kind chips with
@@ -354,9 +347,14 @@ export function WardGlobalSearch({
   const wardFlow = useOptionalWardFlow();
   const demoOff = wardFlow?.demoControlsAvailable === false;
   const preparing = wardFlow?.sessionAdopted === false;
+  const accessNav = useAccessNavFilter();
   const permittedResult = useCallback(
-    (item: SearchResultItem) => permittedSearchResult(item, canOpenHref, canRunAction),
-    [canOpenHref, canRunAction],
+    (item: SearchResultItem) => {
+      // Match the catalogue first, then apply the menu's own-place destination and gate.
+      const adapted = item.kind === "view" ? accessNav([{ ...item, label: item.title }]) : [item];
+      return adapted.flatMap((shown) => permittedSearchResult(shown, canOpenHref, canRunAction));
+    },
+    [accessNav, canOpenHref, canRunAction],
   );
 
   const [query, setQuery] = useState(initialQuery);
@@ -565,12 +563,13 @@ export function WardGlobalSearch({
 
   /** The four common screens: the start screen's Go to, and the empty state's Try. */
   const startViews = useMemo(() => {
+    const views = accessNav(CORE_SEARCH_VIEWS.map((view) => ({ ...view, id: view.key, label: view.title })));
     const usual = START_VIEW_KEYS.flatMap((key) => {
-      const view = CORE_SEARCH_VIEWS.find((candidate) => candidate.key === key);
+      const view = views.find((candidate) => candidate.key === key);
       return view && canOpenHref(view.href) ? [view] : [];
     });
-    return usual.length ? usual : CORE_SEARCH_VIEWS.filter((view) => canOpenHref(view.href)).slice(0, 4);
-  }, [canOpenHref]);
+    return usual.length ? usual : views.filter((view) => canOpenHref(view.href)).slice(0, 4);
+  }, [accessNav, canOpenHref]);
 
   /** What someone sees before typing: live work, recent records, common screens and actions. */
   const startGroups = useMemo(() => {
