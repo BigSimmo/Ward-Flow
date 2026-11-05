@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import {
   seedWardFlowState,
@@ -16,7 +16,12 @@ import {
   scrubTypedTextFields,
 } from "@/components/ward-management/ward-flow-typed-text-scrub";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
+import { tryReadDemoState } from "@/components/ward-management/ward-flow-demo-restore";
+import { WARD_FLOW_STORED_STATE_VERSION } from "@/components/ward-management/ward-flow-demo-storage-constants";
+import { isValidSharedWardFlowState } from "@/components/ward-management/ward-shared-state-validation";
+import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { TYPED_TEXT_FIXTURES } from "./helpers/ward-typed-text-fixtures";
+import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 
 /*
  * Josh, 21 Oct 2026 (fix plan item 2, option A): a session holding typed text keeps saving everything
@@ -295,5 +300,88 @@ describe("device copy of a session holding typed text", () => {
     expect(copy).not.toBeNull();
     expect(copy!.referrals.find((referral) => referral.id === seeded!.id)!.history).toBe(seeded!.history);
     expect(copy!.referrals.at(-1)!.history).toBe(TYPED_TEXT_NOT_KEPT);
+  });
+
+  // Form rule (FORM-REF and W13, Josh, 5 Nov 2026): a referral may be sent with no home region or
+  // location of referral, and a return plan recorded with no provider or depart time. The device
+  // copy must still pass the restore fence, or the saved session is cleared on refresh.
+  it("keeps a referral with no region or location and a sparse return plan through save and restore", () => {
+    const seed = seedWardFlowState();
+    const receive: WardFlowEvent = {
+      type: "RECEIVE_REFERRAL",
+      role: "community",
+      now: NOW_ANCHOR,
+      ageBand: "Adult",
+      source: "community",
+      destinations: [
+        {
+          kind: "psychiatric_ward",
+          unitId: "scgh-adult-open",
+          sex: "Female",
+          gender: "Female",
+          secureBedNeeded: false,
+          involuntaryBedNeeded: false,
+          highAcuityNursingNeeded: false,
+        },
+      ],
+      suburb: { kind: "unknown", reason: "not_known" },
+      urgency: 2,
+      transportNeeded: true,
+      ...FIXTURE_HISTORY,
+    };
+    const received = wardFlowReducer(seed, receive);
+    expect(received.rejections).toEqual(seed.rejections);
+    const admissionId = seed.admissions.find((admission) => admission.state === "occupied")!.id;
+    const cad = "Synthetic typed CAD 7c31";
+    const repatriate: WardFlowEvent = {
+      type: "RECORD_REPATRIATION",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      admissionId,
+      homeHospital: "RPH",
+      receivingWardAgreed: false,
+      mode: "road",
+      cadNumber: cad,
+      transportLegalStatus: "voluntary",
+    };
+    const next = wardFlowReducer(received, repatriate);
+    expect(next.rejections).toEqual(seed.rejections);
+    const sent = next.referrals.at(-1)!;
+    expect([sent.homeRegion, sent.originSiteCode, sent.sendingTeamName]).toEqual([undefined, undefined, undefined]);
+    const plan = next.repatriations!.find((row) => row.admissionId === admissionId)!;
+    expect([plan.provider, plan.estimatedAt]).toEqual([undefined, undefined]);
+
+    const copy = redactTypedTextForDevice(
+      next,
+      [...(typedTextOf(receive) ?? []), ...(typedTextOf(repatriate) ?? [])],
+      worlds,
+    );
+    expect(copy).not.toBeNull();
+    expect(stored(copy)).not.toContain(cad);
+    expect(isValidStoredWardFlowState(copy)).toBe(true);
+    expect(isValidSharedWardFlowState(JSON.parse(stored(copy)))).toBe(true);
+
+    const dayZero = new Date("2026-10-23T16:00:00Z");
+    const savedAtAbsolute = new Date("2026-10-24T02:00:00Z").getTime() / 60_000;
+    const raw = stored({
+      version: WARD_FLOW_STORED_STATE_VERSION,
+      dayZero: dayZero.getTime(),
+      worldGeneration: copy!.worldGeneration,
+      now: NOW_ANCHOR,
+      savedAtAbsolute,
+      state: copy,
+    });
+    // Only the existence of window is needed: the real guarded reader receives the raw save.
+    vi.stubGlobal("window", {});
+    try {
+      const restored = tryReadDemoState(dayZero, savedAtAbsolute + 1, raw).saved?.state;
+      expect(restored).toBeDefined();
+      expect(restored!.referrals.find((referral) => referral.id === sent.id)).toBeDefined();
+      expect(restored!.repatriations!.find((row) => row.admissionId === admissionId)!.cadNumber).toBe(
+        TYPED_TEXT_NOT_KEPT,
+      );
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });
