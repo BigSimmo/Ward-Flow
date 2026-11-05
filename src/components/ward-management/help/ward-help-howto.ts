@@ -16,7 +16,7 @@
 import type { WardAccess, WardScreenId } from "@/components/ward-management/ward-role-access";
 
 import { ASK_WARDS_WINDOW_TEXT } from "@/components/ward-management/ward-operational-defaults";
-import { deskOpens, EVERY_LOGIN, howToFor, type WardEventType } from "./ward-help-access";
+import { deskMayAct, deskOpens, EVERY_LOGIN, howToFor, type WardEventType } from "./ward-help-access";
 import type { WardTourRole } from "./ward-help-store";
 import { MORE_JOBS, SCREEN_TOURS } from "./ward-help-screen-tours";
 import { HELP_SYNONYMS } from "./ward-help-synonyms";
@@ -31,6 +31,8 @@ import type { TourDevice, TourTarget } from "./ward-tour-steps";
  */
 export type ShowMeStep = {
   readonly device?: TourDevice;
+  /** Skip controls this desk cannot record. */
+  readonly acts?: readonly WardEventType[];
   readonly target?: TourTarget | readonly TourTarget[];
   readonly title: string;
   readonly body: string;
@@ -100,8 +102,10 @@ const setting = (id: string, tab: string): TourTarget => ({
 });
 
 /** The Show me steps walked on this device: those for every device and those marked for it. */
-export function showMeSteps(howTo: HowTo | undefined, device: TourDevice): readonly ShowMeStep[] {
-  return (howTo?.showMe ?? []).filter((step) => !step.device || step.device === device);
+export function showMeSteps(howTo: HowTo | undefined, device: TourDevice, role?: WardTourRole): readonly ShowMeStep[] {
+  return (howTo?.showMe ?? []).filter(
+    (step) => (!step.device || step.device === device) && (!step.acts || !role || deskMayAct(role, step.acts)),
+  );
 }
 
 /** Whether Show me can walk this how-to on this device (`computerOnly` ones cannot on a phone). */
@@ -461,15 +465,15 @@ const JOBS: readonly HowTo[] = [
     topic: "Handover and reports",
     title: "Print the handover sheet",
     keywords: "print paper copy present meeting",
-    answer: "Open Handover and choose More, then Print handover. Present is there too, for the meeting screen.",
+    answer: "Open Handover and choose Print handover. Review the sheet before printing it.",
     desks: ["coordinator", "ward", "bed_manager"],
     go: "handover",
     computerOnly: true,
     showMe: [
       {
-        target: { sel: '[data-testid="ward-handover-more"]' },
-        title: "More",
-        body: "Print handover and Present are in this menu.",
+        target: { sel: '[data-testid="ward-handover-print"]' },
+        title: "Print handover",
+        body: "Open the handover sheet, review it, then print the prepared copy.",
       },
     ],
   },

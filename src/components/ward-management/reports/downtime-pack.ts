@@ -3,12 +3,12 @@ import { bedStates, type BedStateCounts } from "@/components/ward-management/war
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 import { isEdOriginJourney, recordedEdDeparture } from "@/components/ward-management/ward-ed-presence";
-import { isOpen } from "@/components/ward-management/ward-derivations";
+import { isOpen, isStoppedTransportAwaitingRelease } from "@/components/ward-management/ward-derivations";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
-import { stageCopy } from "@/components/ward-management/ward-stage-copy";
+import { movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 import { legalFormOrdered } from "@/components/ward-management/legal-forms/legal-forms-derivations";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
 import { observationSummary } from "@/components/ward-management/ward-observation";
@@ -103,7 +103,13 @@ export type DowntimePackInput = {
 };
 
 /** "Armadale ED", one line in a printed row; the full name only when no short name exists. */
-function originLabel(movement: Movement): string {
+function originLabel(movement: Movement, admissions: readonly Admission[], units: readonly Unit[]): string {
+  if (movement.sourceAdmissionId !== undefined) {
+    const source = admissions.find((admission) => admission.id === movement.sourceAdmissionId);
+    return source
+      ? (units.find((unit) => unit.id === source.unitId)?.name ?? "Sending ward not recorded")
+      : "Sending ward not recorded";
+  }
   if (movement.originEdId === undefined) return communityOriginLabel(movement.originCommunity);
   const ed = edById(movement.originEdId);
   return edShortName(ed) || ed?.name || movement.originEdId;
@@ -157,12 +163,14 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
     .map((movement) => ({
       movementId: movement.id,
       person: identify(movement),
-      ed: originLabel(movement),
+      ed: originLabel(movement, admissions, units),
       openedAt: movement.openedAt,
       waitedMinutes: Math.max(0, now - movement.openedAt),
       urgency: movement.urgency,
       legalStatus: movement.legalStatus,
-      stage: stageCopy[movement.stage]?.label ?? movement.stage,
+      stage: isStoppedTransportAwaitingRelease(movement)
+        ? "Transport stopped, release pulled bed"
+        : movementStatusLabel(movement),
       acceptedWard: unitName(movement.acceptedUnitId),
       observation: observationSummary(movement.observation),
     }))
@@ -173,9 +181,11 @@ export function downtimePack(input: DowntimePackInput): DowntimePack {
     .map((movement) => ({
       movementId: movement.id,
       person: identify(movement),
-      from: originLabel(movement),
+      from: originLabel(movement, admissions, units),
       to: unitName(movement.acceptedUnitId),
-      stage: stageCopy[movement.stage]?.label ?? movement.stage,
+      stage: isStoppedTransportAwaitingRelease(movement)
+        ? "Transport stopped, release pulled bed"
+        : movementStatusLabel(movement),
       plannedAt: finiteOrNull(movement.plannedMoveAt),
       transportEta: finiteOrNull(movement.transport?.estimatedAt),
       observation: observationSummary(movement.observation),

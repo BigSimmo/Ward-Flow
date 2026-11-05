@@ -238,7 +238,9 @@ describe.each(["ed", "community"] as const)("%s transport answers survive close 
     fireEvent.keyDown(field(prefix, cadPart), { key: "Escape" });
     const question = await screen.findByTestId("wf-confirm-dialog");
     expect(screen.getByTestId(dialogId())).toBeInTheDocument();
-    fireEvent.click(within(question).getByRole("button", { name: "Discard answers" }));
+    expect(question).toHaveTextContent("It may already be recorded");
+    expect(question).not.toHaveTextContent("have not been recorded");
+    fireEvent.click(within(question).getByRole("button", { name: "Close booking" }));
     await act(async () => {});
     expect(screen.queryByTestId(dialogId())).toBeNull();
     expect(dispatch).toHaveBeenCalledTimes(1);

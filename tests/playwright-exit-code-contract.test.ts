@@ -5,7 +5,7 @@ import { runInNewContext } from "node:vm";
 import { describe, expect, it, vi } from "vitest";
 import { childProcessExitCode } from "../scripts/child-process-result.mjs";
 import { journeyRunVerdict, requestedProjects } from "../scripts/ward-flow/journey-run-verdict.mjs";
-import { releaseGateCases } from "../scripts/ward-flow/browser-run-contract.mjs";
+import { releaseGateCases, splitPlaywrightArguments } from "../scripts/ward-flow/browser-run-contract.mjs";
 
 /**
  * `scripts/run-playwright.mjs` propagates failure through its exit status.
@@ -71,11 +71,13 @@ async function runPhase({
   codes = [0],
   reports = [executionReport()],
   rerunCode = 0,
+  groups = null,
 }: {
   args?: string[];
   codes?: number[];
   reports?: (ReturnType<typeof executionReport> | null)[];
   rerunCode?: number;
+  groups?: { seconds: number; files: string[] }[] | null;
 } = {}) {
   let exitCode: number | undefined;
   let shardIndex = 0;
@@ -116,13 +118,14 @@ async function runPhase({
       findFreePort: async () => 4201,
       startIsolatedServer: () => ({}),
       waitForServer: async () => {},
-      balancedShardGroups: () => null,
+      balancedShardGroups: () => groups,
       spawn: shardChild,
       spawnSync: child,
       childProcessExitCode,
       requestedProjects,
       journeyRunVerdict,
       releaseGateCases,
+      splitPlaywrightArguments,
       requiredReleaseGate: false,
       releaseGateProject: null,
       releaseGatePart: null,
@@ -143,6 +146,35 @@ async function runPhase({
 }
 
 describe("run-playwright post-build verdict", () => {
+  it("preserves spaced option values in duration-balanced shards", async () => {
+    const args = ["--project", "chromium", "--workers", "2", "--reporter", "line", "--timeout", "30000", "ui-ward-"];
+    const result = await runPhase({
+      args,
+      codes: [0, 0],
+      reports: [executionReport(), executionReport()],
+      groups: [
+        { seconds: 1, files: ["a.spec.ts"] },
+        { seconds: 1, files: ["b.spec.ts"] },
+      ],
+    });
+    expect(result.exitCode).toBe(0);
+    for (const [index, call] of result.shardChild.mock.calls.entries()) {
+      expect(call[1]).toEqual(
+        expect.arrayContaining([
+          "--project",
+          "chromium",
+          "--workers",
+          "2",
+          "--reporter=line,json",
+          "--timeout",
+          "30000",
+          index === 0 ? "a.spec.ts" : "b.spec.ts",
+        ]),
+      );
+      expect(call[1]).not.toContain("ui-ward-");
+    }
+  });
+
   it.each([0, 1])("retains the original shard failure after a diagnostic rerun exits %s", async (rerunCode) => {
     const result = await runPhase({
       codes: [2, 0],

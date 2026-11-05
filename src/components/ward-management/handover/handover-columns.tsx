@@ -16,7 +16,7 @@ import {
   nextStep,
   obsLong,
   obsShort,
-  STAGE_LABEL,
+  handoverStatusLabel,
   type HandoverRow,
 } from "./handover-model";
 import styles from "./handover-refined.module.css";
@@ -80,14 +80,14 @@ export const HANDOVER_COLUMNS: HandoverColumn[] = [
       <span className={styles.two}>
         <span className={styles.glyphText}>
           <StatusGlyph tone={rowTone(row, ctx)} />
-          <span className={styles.trunc}>{STAGE_LABEL[row.stage]}</span>
+          <span className={styles.trunc}>{handoverStatusLabel(row)}</span>
         </span>
         <span className={styles.sub}>
           <SpelledCodes text={row.ownerShort} />
         </span>
       </span>
     ),
-    paper: (row) => `${STAGE_LABEL[row.stage]}, ${row.ownerShort}`,
+    paper: (row) => `${handoverStatusLabel(row)}, ${row.ownerShort}`,
   },
   {
     id: "wait",

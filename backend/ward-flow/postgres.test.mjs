@@ -1322,7 +1322,7 @@ test(
         actorId: nurse,
         role: "ward",
         scope: ward,
-        expiresAt: later,
+        expiresAt: new Date(later.getTime() + 60_000),
       });
       assert.equal(secondMembership.status, 200);
       const secondDesk = await store.viewer(nurse, { workingAs: secondMembership.body.membership.id });
@@ -1414,6 +1414,18 @@ test(
       });
       assert.equal(granted.status, 200);
       assert.equal(granted.body.membership.approved, true);
+      const repeatedGrant = await store.grantAccess(leadView, {
+        actorId: nurse,
+        role: "ward",
+        scope: ward,
+        expiresAt: later,
+      });
+      assert.equal(repeatedGrant.status, 200);
+      assert.equal(
+        repeatedGrant.body.membership.id,
+        granted.body.membership.id,
+        "retrying an uncertain identical grant returns its original membership",
+      );
 
       // The nurse's desk is the ward, and everything sent back is that ward's part only.
       const nurseView = await store.viewer(nurse);
@@ -3059,3 +3071,60 @@ test(
     }
   },
 );
+
+test("real PostgreSQL: exceptional openings stay in their original world generation", { skip: !url }, async () => {
+  const engine = await import("./dist/engine.mjs");
+  const pool = new Pool({ connectionString: url, max: 4 });
+  const workspaceId = randomUUID();
+  const lead = randomUUID();
+  const nurse = randomUUID();
+  let at = new Date("2026-11-04T12:00:00Z");
+  try {
+    await migrate(pool);
+    const store = createWorkspaceStore(pool, { workspaceId, engine, clock: () => at, demoEvents: true });
+    const leadView = await store.viewer(lead, { bootstrap: true });
+    const initial = await store.read(lead, leadView);
+    const unit = initial.payload.state.units[0].id;
+    const ward = { role: "ward", scope: { kind: "ward", unitIds: [unit] } };
+    const own = new Set(engine.scopeWorld(initial.payload, ward, at).state.patients.map((patient) => patient.id));
+    const outside = initial.payload.state.patients.find((patient) => !own.has(patient.id)).id;
+    const granted = await store.grantAccess(leadView, {
+      actorId: nurse,
+      ...ward,
+      expiresAt: new Date(at.getTime() + 3600000),
+    });
+    const nurseView = await store.viewer(nurse, { workingAs: granted.body.membership.id });
+    assert.equal((await store.breakGlass(nurseView, outside, "handover")).status, 200);
+    assert.ok(
+      (await store.viewer(nurse, { workingAs: nurseView.membershipId })).grants.some(
+        (grant) => grant.patientId === outside,
+      ),
+    );
+    at = new Date(at.getTime() + 1000);
+    const beforeReset = await store.read(lead, leadView);
+    const reset = await store.command(
+      lead,
+      randomUUID(),
+      beforeReset.revision,
+      { type: "RESET_SCENARIO", role: "demo", now: 0 },
+      { view: leadView },
+    );
+    assert.equal(reset.status, 200);
+    assert.equal(reset.body.snapshot.payload.state.worldGeneration, initial.payload.state.worldGeneration + 1);
+    assert.ok(
+      reset.body.snapshot.payload.state.patients.some((patient) => patient.id === outside),
+      "the reset reuses the synthetic patient ID",
+    );
+    const afterReset = await store.viewer(nurse, { workingAs: nurseView.membershipId });
+    assert.deepEqual(afterReset.grants, [], "the old exceptional opening cannot attach to the replacement person");
+    assert.equal((await store.breakGlass(afterReset, outside, "handover")).status, 200);
+    assert.ok(
+      (await store.viewer(nurse, { workingAs: nurseView.membershipId })).grants.some(
+        (grant) => grant.patientId === outside,
+      ),
+      "a new generation opening remains usable",
+    );
+  } finally {
+    await pool.end();
+  }
+});

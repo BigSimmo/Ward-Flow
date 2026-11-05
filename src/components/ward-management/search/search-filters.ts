@@ -188,7 +188,8 @@ export function matchesLegal(result: PatientSearchResult, legal: string): boolea
 export function matchesWait(result: PatientSearchResult, wait: string, now: number): boolean {
   if (wait === "all") return true;
 
-  const hours = result.kind === "movement" ? waitedHours(result.movement, now) : 0;
+  const hours =
+    result.kind === "movement" ? waitedHours(result.movement, now) : Math.max(0, now - result.referral.raisedAt) / 60;
 
   if (wait === "under6") return hours < 6;
   if (wait === "6to24") return hours >= 6 && hours < 24;

@@ -34,7 +34,7 @@ import {
   type Instant,
   MINUTES_PER_DAY,
 } from "@/components/ward-management/ward-clock";
-import { isOpen } from "@/components/ward-management/ward-derivations";
+import { acceptedReferralAwaitingMovement, isOpen } from "@/components/ward-management/ward-derivations";
 import type { LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { foldPatientSearchText, patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
@@ -114,6 +114,8 @@ export type CensusRow = {
    * A bed request whose next step is booking transport (none booked, or the booking cancelled).
    */
   transportNotBooked?: boolean;
+  /** A live destination bed hold, distinct from acceptance alone. */
+  bedReserved?: boolean;
   /** A ward stay whose recorded expected discharge falls on today's date. */
   leavingToday?: boolean;
   /** A ward stay with its bed held for leave (`leaveBeds`), absent without leave not included. */
@@ -274,6 +276,10 @@ export function buildCensus(state: {
         ? communityOriginLabel(movement.originCommunity)
         : "ED not recorded";
     const source = operational.sourceAdmission ? unitOf.get(operational.sourceAdmission.unitId) : undefined;
+    const sourceLeave = operational.sourceAdmission ? leaveByAdmission.get(operational.sourceAdmission.id) : undefined;
+    const sourceAway = operational.sourceAdmission?.awayAtEmergencyDepartmentSince != null;
+    const sourceAbsent = sourceLeave?.absentWithoutLeave !== undefined;
+    const sourceOnLeave = sourceLeave !== undefined && !sourceAbsent;
     const waited = Math.max(0, now - movement.openedAt);
     const form = movement.legalForm;
     const declines = movement.declines?.length ?? 0;
@@ -304,14 +310,28 @@ export function buildCensus(state: {
       service: movementOriginService(movement),
       transport: operational.transportStatus,
       escort: Boolean(movement.transport?.escortRequired),
-      where: moving ? "In transit" : lost ? "Location not recorded" : source ? source.name : edText,
+      where: moving
+        ? "In transit"
+        : lost
+          ? "Location not recorded"
+          : sourceAway
+            ? "At ED"
+            : sourceAbsent
+              ? "Absent without leave"
+              : sourceOnLeave
+                ? "On leave"
+                : source
+                  ? source.name
+                  : edText,
       whereSub: moving
         ? `From ${edText}`
         : lost
           ? `Movement stopped after leaving ${edText}`
-          : source
-            ? "Ward transfer"
-            : movementOriginService(movement),
+          : sourceAway || sourceLeave
+            ? `${source?.name ?? "Ward"} bed kept`
+            : source
+              ? "Ward transfer"
+              : movementOriginService(movement),
       to: accepted ? accepted.name : asked > 0 ? `Asked ${plural(asked, "ward")}` : "No ward yet",
       toSub: accepted
         ? moving
@@ -321,7 +341,12 @@ export function buildCensus(state: {
           ? `${declines} declined`
           : "",
       next,
-      transportNotBooked: next === "Book transport",
+      transportNotBooked:
+        Boolean(movement.acceptedUnitId) &&
+        !moving &&
+        movement.transportNeed?.needed !== false &&
+        (!movement.transport || movement.transport.cancelledAt !== undefined),
+      bedReserved: operational.hasBedHold,
       nextWho: cause ? OWNER_WORDS[ownerOf(cause)] : "Bed desk",
       glyph,
       // A movement with no legal status of its own shows the person's recorded status, not "Not recorded".
@@ -336,19 +361,14 @@ export function buildCensus(state: {
       timeSub: "waiting",
       longWait: waited >= LONG_WAIT_MINUTES,
       pastExpected: false,
-      awayAtEd: false,
+      awayAtEd: sourceAway,
+      onLeave: sourceOnLeave,
+      absentWithoutLeave: sourceAbsent,
       reservedTimePassed: cause === "bed_pull_expired",
       acceptedUnitName: accepted?.name ?? null,
       timeline: timeline.sort((a, b) => b.at - a.at),
       placeText: foldPatientSearchText(`${edText} ${ed?.name ?? ""} ${accepted?.name ?? ""} ${source?.name ?? ""}`),
     });
-  }
-
-  // Everyone who has held a ward record, discharged included.
-  const admitted = new Set<string>();
-  for (const admission of admissions) {
-    const occupant = resolve(admission).patient;
-    if (occupant) admitted.add(occupant.id);
   }
 
   for (const referral of referrals) {
@@ -360,12 +380,28 @@ export function buildCensus(state: {
     if (accepted === undefined && (outcome !== "queued" || awaiting.length === 0)) continue;
     const linked = resolve(referral).patient;
     if (linked && busy.has(linked.id)) continue;
-    // An accepted referral is finished once its person has held a ward record; only a known person
-    // with none is still waiting for the move.
-    if (accepted && (!linked || admitted.has(linked.id))) continue;
+    // Completion belongs to this referral episode, never to the person's lifetime history.
+    if (accepted && !acceptedReferralAwaitingMovement(referral, movements, admissions)) continue;
     const who = person(referral);
     const community = isCommunityReferral(referral);
-    const where = community ? `${referral.originSiteCode} Community` : `${referral.originSiteCode} ED`;
+    const occupied = linked
+      ? admissions.find((stay) => stay.state === "occupied" && resolve(stay).patient?.id === linked.id)
+      : undefined;
+    const occupiedUnit = occupied ? unitOf.get(occupied.unitId) : undefined;
+    const leave = occupied ? leaveByAdmission.get(occupied.id) : undefined;
+    const away = occupied?.awayAtEmergencyDepartmentSince != null;
+    const absent = leave?.absentWithoutLeave !== undefined;
+    const onLeave = leave !== undefined && !absent;
+    const referralOrigin = community ? `${referral.originSiteCode} Community` : `${referral.originSiteCode} ED`;
+    const where = away
+      ? "At ED"
+      : absent
+        ? "Absent without leave"
+        : onLeave
+          ? "On leave"
+          : occupied
+            ? (occupiedUnit?.name ?? "Ward not recorded")
+            : referralOrigin;
     const waited = Math.max(0, now - referral.raisedAt);
     const wards = awaiting.filter((arm) => arm.destination.kind === "psychiatric_ward").length;
     const others = awaiting.length - wards;
@@ -381,7 +417,11 @@ export function buildCensus(state: {
       transport: null,
       escort: false,
       where,
-      whereSub: referralOriginService(referral.originSiteCode),
+      whereSub: occupied
+        ? away || leave
+          ? `${occupiedUnit?.name ?? "Ward"} bed kept`
+          : siteName(occupiedUnit?.siteCode)
+        : referralOriginService(referral.originSiteCode),
       to: accepted
         ? (acceptedUnit?.name ?? "Accepted")
         : wards > 0 && others === 0
@@ -401,10 +441,12 @@ export function buildCensus(state: {
       timeSub: "waiting",
       longWait: waited >= LONG_WAIT_MINUTES,
       pastExpected: false,
-      awayAtEd: false,
+      awayAtEd: away,
+      onLeave,
+      absentWithoutLeave: absent,
       reservedTimePassed: false,
       acceptedUnitName: acceptedUnit?.name ?? null,
-      timeline: [{ at: referral.raisedAt, glyph: "wait", text: `Referral raised at ${where}` }],
+      timeline: [{ at: referral.raisedAt, glyph: "wait", text: `Referral raised at ${referralOrigin}` }],
       placeText: foldPatientSearchText(`${where} ${siteName(referral.originSiteCode)}`),
     });
   }
@@ -435,6 +477,7 @@ export function buildCensus(state: {
         whereSub: who.communityTeam ?? "No team recorded",
         to: unit?.name ?? "Ward not recorded",
         toSub: pulled ? "Bed reserved" : "On the waiting list",
+        bedReserved: pulled,
         next: pulled ? "Bed reserved" : "On the waiting list",
         nextWho: "Ward",
         glyph: pulled ? "done" : "wait",
@@ -487,14 +530,22 @@ export function buildCensus(state: {
       transport: null,
       escort: false,
       // At ED for review the person is in ED while the ward keeps their bed.
-      where: away ? "At ED" : (unit?.name ?? "Ward not recorded"),
-      whereSub: away ? `${unit?.name ?? "Ward"} bed kept` : siteName(unit?.siteCode),
+      where: away
+        ? "At ED"
+        : leave?.absentWithoutLeave
+          ? "Absent without leave"
+          : leave
+            ? "On leave"
+            : (unit?.name ?? "Ward not recorded"),
+      whereSub: away || leave ? `${unit?.name ?? "Ward"} bed kept` : siteName(unit?.siteCode),
       to:
         edd === null
           ? "No date set"
-          : edd < now
-            ? `Expected ${daysText(now - edd)} ago`
-            : `Expected in ${daysText(edd - now)}`,
+          : dayOf(edd) === dayOf(now)
+            ? `Expected today ${formatInstantWithDay(edd, now)}`
+            : edd < now
+              ? `Expected ${daysText(now - edd)} ago`
+              : `Expected in ${daysText(edd - now)}`,
       toSub: "Expected discharge",
       next,
       nextWho: glyph === "done" ? "" : "Ward",

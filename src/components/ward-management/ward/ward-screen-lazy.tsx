@@ -30,10 +30,9 @@ export const WardDailySheetDialog = dynamic(
   () => import("@/components/ward-management/board/ward-daily-sheet").then((m) => m.WardDailySheetDialog),
   { ssr: false },
 );
-// Paper only (Tier 1 item 9): the printed bed list loads after the page, off the phone budget.
-export const WardBedListPrint = dynamic(() => import("./ward-bed-list-print").then((m) => m.WardBedListPrint), {
-  ssr: false,
-});
+// Printing can start before an asynchronous chunk arrives, including from the browser menu.
+// Keep the paper table available with the ward page's first render.
+export { WardBedListPrint } from "./ward-bed-list-print";
 export const WardBedDossierDrawer = dynamic(
   () => import("./ward-bed-dossier-drawer").then((m) => m.WardBedDossierDrawer),
   {
@@ -134,3 +133,8 @@ export function WardAnswerFromLink({ unitId }: { unitId: string }) {
   const named = recordIdFromParam(useOptionalSearchParams()?.get("movement"));
   return <WardAnswerView unitId={unitId} initialMovementId={named ?? undefined} />;
 }
+
+export const WardPlannedAdmissionsPanel = dynamic(
+  () => import("../capacity/planned-admissions-panel").then((m) => m.PlannedAdmissionsPanel),
+  { loading: () => <p role="status">Loading planned admissions…</p> },
+);

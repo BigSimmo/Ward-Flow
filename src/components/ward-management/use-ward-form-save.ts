@@ -29,7 +29,7 @@ export function useWardFormSave(scope: string) {
     flights: new Map(),
     held: new Map(),
   }));
-  const [error, setError] = useState<{ scope: object; message: string }>();
+  const [error, setError] = useState<{ scope: object; message: string; uncertain: boolean }>();
   useLayoutEffect(() => {
     currentScope.current = scopeToken;
     if (lastLifetime.current !== accessLifetime) {
@@ -62,6 +62,7 @@ export function useWardFormSave(scope: string) {
         } else
           setError({
             scope: flight.scope,
+            uncertain: outcome?.status !== "refused",
             message:
               (outcome?.status === "accepted" ? undefined : wardCommandFailure(outcome || undefined)) ??
               SAVE_NOT_CONFIRMED,
@@ -109,10 +110,11 @@ export function useWardFormSave(scope: string) {
   const awaiting = view.held.get(key);
   const isPending = view.flights.has(key) || holding(awaiting);
   const shownError = error?.scope === scopeToken ? error.message : holding(awaiting) ? SAVE_NOT_CONFIRMED : undefined;
+  const uncertain = holding(awaiting) || (error?.scope === scopeToken && error.uncertain === true);
   // One object per change of what a form shows, not per render (review of PR #1326): callers such
   // as the tasks drawer's escalation guard list this hook's result as a callback dependency.
   return useMemo(
-    () => ({ pending: isPending, error: shownError, clearError, forget, submit }),
-    [isPending, shownError, clearError, forget, submit],
+    () => ({ pending: isPending, uncertain, error: shownError, clearError, forget, submit }),
+    [isPending, uncertain, shownError, clearError, forget, submit],
   );
 }

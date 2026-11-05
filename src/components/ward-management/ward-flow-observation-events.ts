@@ -1,3 +1,4 @@
+import type { AuditDecision } from "./ward-audit";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -59,6 +60,7 @@ export function reduceObservationLevelEvent(
   state: WardFlowState,
   event: ObservationLevelEvent,
   helpers: ObservationLevelHelpers,
+  decision?: AuditDecision,
 ): WardFlowState {
   const { findAdmission, findMovement, reject, replaceAdmission, replaceMovement } = helpers;
   const level = event.observation;
@@ -174,5 +176,9 @@ export function reduceObservationLevelEvent(
   let next = state;
   if (movement) next = replaceMovement(next, movement.id, changed(movement));
   if (admission) next = replaceAdmission(next, admission.id, changed(admission));
+  if (decision) {
+    decision.outcome = "accepted";
+    decision.reasonCode = "none";
+  }
   return next;
 }

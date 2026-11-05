@@ -27,4 +27,9 @@ export type SharedAccessApi = Pick<
    */
   Partial<Pick<SharedWorkspaceClient, "readRecordAccess" | "forecastHistory" | "preferences">>;
 
-export const SharedAccessContext = createContext<{ api: SharedAccessApi; actorId: string | null } | null>(null);
+export const SharedAccessContext = createContext<{
+  api: SharedAccessApi;
+  actorId: string | null;
+  /** Stable, non-secret identity of the configured shared API workspace. */
+  workspaceId?: string;
+} | null>(null);

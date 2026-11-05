@@ -1,5 +1,38 @@
 # Screens B: board, capacity, movements, delays, handover, patients and the rest
 
+## Handover completion and ownership — 4 November 2026
+
+Local repair branch from main `559f225892b27b6c42bd7e9a6fa81f3ef81e62ec`:
+Handover's Mine chip and its counts use the existing desk-owner vocabulary for the current role;
+rows remain visible. The accepted group says "Accepted, awaiting move" for both waiting-bed and
+pulled-bed rows, preserving hold expiry, priority and Move by instructions. When an open selected
+journey leaves the population, desktop, phone and portrait panels explain its absence instead of
+substituting Sign off. The notice takes focus, or the replacement sheet's close control retains it.
+Movements opens the selected journey through the existing record-address builder.
+
+`tests/ward-consolidated-handover.test.ts` and
+`tests/ward-consolidated-handover-transition.dom.test.tsx` cover those model and rendered
+transitions. They use synthetic snapshots; no hosted cross-desk result is implied.
+
+## Output repair contract — 4 November 2026
+
+Local repairs based on `559f225892b27b6c42bd7e9a6fa81f3ef81e62ec` include the explicit sending
+stay in Handover ward/service membership and use it for the origin label. Sender summaries preserve
+permitted destination status when identifiers are masked; they disclose no hidden ward or bed.
+Current deadline fields use the legal-form lifecycle helper while historical typed expiry is retained.
+Handover screen, copy and configured paper fields share delivered/stopped journey wording.
+
+Downtime and TV phase labels distinguish delivery from collection and a stopped journey. Downtime
+labels missing times as not recorded and calls its totals the wards in the snapshot. The Shift brief's
+existing ED-only population is labelled explicitly as being at an emergency department; its population
+has not been widened to all kinds of leave. A frozen TV resolves identities against the same frozen
+records, including after a supported scenario replacement.
+
+Handover pagination moves the first heading and patient past a summary that consumes page one.
+Oversized measured blocks remain together, but the builder refuses their clipped paper output and
+asks for different orientation, columns or ISBAR options. A browser print in that state prints the
+reason instead. This is a bounded layout guard, not automatic splitting of arbitrarily large rows.
+
 ## Regression repair notes — 28 October 2026
 
 The local repair branch based on `aca285b8` guards the closure conflict's read-only recovery

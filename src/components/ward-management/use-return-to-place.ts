@@ -78,18 +78,25 @@ export function useReturnedView<T>(route: string): T | null {
  * Keeps `view` and the row last opened (`rememberReturnRow`) for a return to `route`, and on a
  * return focuses that row again, found with `findRow`.
  */
-export function useReturnToPlace<T>(route: string, view: T, findRow: (id: string) => HTMLElement | null): void {
+export function useReturnToPlace<T>(
+  route: string,
+  view: T,
+  findRow: (id: string) => HTMLElement | null,
+  captureView?: () => T,
+): void {
   const world = useWorldKey();
-  const latest = useRef<{ view: T; world: string; access: object | null; find: typeof findRow }>({
+  const latest = useRef<{ view: T; world: string; access: object | null; find: typeof findRow; capture?: () => T }>({
     view,
     world,
     access: null,
     find: findRow,
+    capture: captureView,
   });
   useEffect(() => {
     latest.current.view = view;
     latest.current.world = world;
     latest.current.find = findRow;
+    latest.current.capture = captureView;
   });
   // Kept across React's development remount, so the return is read once and focused once.
   const returned = useRef<Place | null | undefined>(undefined);
@@ -125,7 +132,12 @@ export function useReturnToPlace<T>(route: string, view: T, findRow: (id: string
       if (frame) window.cancelAnimationFrame(frame);
       mounted.delete(route);
       const opened = openedRows.get(route) ?? null;
-      places.set(route, { view: state.view, row: opened, access: state.access!, world: state.world });
+      places.set(route, {
+        view: state.capture?.() ?? state.view,
+        row: opened,
+        access: state.access!,
+        world: state.world,
+      });
     };
   }, [route]);
 }

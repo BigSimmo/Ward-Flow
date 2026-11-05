@@ -39,6 +39,12 @@ describe("save problems say what happened, then what to do now (item 11)", () =>
     expect(boardNotRefreshed(false)).toMatch(/^The action was not applied, /u);
   });
 
+  it("does not promise automatic replay for a save that may need manual Retry", () => {
+    expect(saveProblem("connectionLost")).toContain("press Retry");
+    expect(saveProblem("mayNotBeSaved")).not.toContain("by itself");
+    expect(saveProblem("heldOffline")).toContain("by itself");
+  });
+
   it("leaves no old save-problem sentence without its next step in screen code", () => {
     // These were said with no clear next step, or each screen wrote its own copy.
     const retired = [

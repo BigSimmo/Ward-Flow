@@ -5,8 +5,10 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 
 import {
   useDirtyStateGuard,
+  navigateWithDirtyGuard,
   WARD_HISTORY_TRAVERSAL_CANCELLED,
 } from "@/components/ward-management/use-dirty-state-guard";
+import { ConfirmHost } from "@/components/wf";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 import {
@@ -73,6 +75,53 @@ function dispatchGuardedLink(link: HTMLAnchorElement, event: MouseEvent): boolea
 }
 
 describe("useDirtyStateGuard", () => {
+  it("asks once for nested imperative navigation without a styled host, then rearms", () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderHook(() => useDirtyStateGuard({ isDirty: true, value: "Synthetic draft" }));
+    const go = vi.fn();
+    navigateWithDirtyGuard(() => {
+      navigateWithDirtyGuard(() => navigateWithDirtyGuard(go));
+      navigateWithDirtyGuard(go);
+    });
+    expect(go).toHaveBeenCalledTimes(2);
+    expect(confirm).toHaveBeenCalledOnce();
+    navigateWithDirtyGuard(go);
+    expect(confirm).toHaveBeenCalledTimes(2);
+    expect(go).toHaveBeenCalledTimes(3);
+  });
+
+  it("rearms navigation after an approved imperative callback throws", () => {
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(true);
+    renderHook(() => useDirtyStateGuard({ isDirty: true }));
+    expect(() =>
+      navigateWithDirtyGuard(() => {
+        throw new Error("Synthetic navigation failure");
+      }),
+    ).toThrow("Synthetic navigation failure");
+    navigateWithDirtyGuard(() => {});
+    expect(confirm).toHaveBeenCalledTimes(2);
+  });
+
+  it("imperative navigation waits for the styled confirmation and preserves newly edited work", async () => {
+    const go = vi.fn();
+    const hook = renderHook(({ value }) => useDirtyStateGuard({ isDirty: true, value }), {
+      initialProps: { value: "synthetic draft one" },
+    });
+    render(<ConfirmHost />);
+    act(() => navigateWithDirtyGuard(go));
+    expect(go).not.toHaveBeenCalled();
+    fireEvent.click(await screen.findByRole("button", { name: "Keep editing" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+    expect(go).not.toHaveBeenCalled();
+    act(() => navigateWithDirtyGuard(go));
+    hook.rerender({ value: "synthetic draft two" });
+    fireEvent.click(await screen.findByRole("button", { name: "Leave without saving" }));
+    await waitFor(() => expect(screen.getByRole("alertdialog")).toBeInTheDocument());
+    expect(go).not.toHaveBeenCalled();
+    fireEvent.click(await screen.findByRole("button", { name: "Leave without saving" }));
+    await waitFor(() => expect(go).toHaveBeenCalledTimes(1));
+  });
+
   beforeEach(() => {
     window.sessionStorage.clear();
     discardReferralDraft();

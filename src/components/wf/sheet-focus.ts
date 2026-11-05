@@ -96,7 +96,7 @@ let bodyScrollLockPreviousOverflow = "";
 // offset (an element made `overflow: hidden` retains its scrollTop), so nothing
 // jumps when the sheet closes.
 let rootScrollLockPreviousOverflowY = "";
-const pageScrollLocks = new Map<HTMLElement, { overflowY: string; scrollTop: number; locked: boolean }>();
+const pageScrollLocks = new Map<HTMLElement, { overflowY: string; scrollTop: number; pathname: string }>();
 let pageScrollLockFrame = 0;
 
 function syncPageScrollLocks() {
@@ -105,18 +105,23 @@ function syncPageScrollLocks() {
       pageScrollLocks.set(scroller, {
         overflowY: scroller.style.overflowY,
         scrollTop: scroller.scrollTop,
-        locked: false,
+        pathname: window.location.pathname,
       });
     const previous = pageScrollLocks.get(scroller)!;
+    // A persistent tour may navigate under its sheet. Start a new canonical position there.
+    if (previous.pathname !== window.location.pathname) {
+      previous.pathname = window.location.pathname;
+      previous.scrollTop = scroller.scrollTop;
+    }
     // Read the CSS for the current width without our lock overriding it. A phone
     // column must stay visible/clip; a desktop column must remain locked.
     scroller.style.overflowY = previous.overflowY;
     if (/^(auto|scroll)$/.test(window.getComputedStyle(scroller).overflowY)) {
       scroller.style.overflowY = "hidden";
-      if (previous.locked) previous.scrollTop = scroller.scrollTop;
-      else scroller.scrollTop = previous.scrollTop;
-      previous.locked = true;
-    } else previous.locked = false;
+      // Resize can transiently clamp even an auto→auto owner. Keep its original target
+      // across every width until that range is available again; never adopt the clamp.
+      scroller.scrollTop = previous.scrollTop;
+    }
   }
 }
 

@@ -1,6 +1,8 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
+import { ConfirmHost } from "@/components/wf";
+import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
 import { WARD_PERSONA_SYNC_EVENT } from "@/components/ward-management/settings/persona-sync";
@@ -56,6 +58,26 @@ const COMMANDS = [
 ] as const;
 
 describe("global search quick commands respect the unsaved-changes guard", () => {
+  it("a keyboard-style command waits for the styled dialog and resumes once after approval", async () => {
+    const onNavigate = vi.fn();
+    renderHook(() => useDirtyStateGuard({ isDirty: true, value: "synthetic draft" }));
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Host onNavigate={onNavigate} />
+        <ConfirmHost />
+      </WardFlowProvider>,
+    );
+    openCommands();
+    fireEvent.click(screen.getByTestId("ward-global-search-cmd-handover"));
+    expect(onNavigate).not.toHaveBeenCalled();
+    fireEvent.click(await screen.findByRole("button", { name: "Keep editing" }));
+    await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
+    expect(onNavigate).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByTestId("ward-global-search-cmd-handover"));
+    fireEvent.click(await screen.findByRole("button", { name: "Leave without saving" }));
+    await waitFor(() => expect(onNavigate).toHaveBeenCalledExactlyOnceWith("/ward-flow/handover"));
+  });
+
   for (const [testId, href] of COMMANDS) {
     it(`${testId} stays put, and changes no desk, when the person cancels`, () => {
       const confirm = vi.fn(() => false);

@@ -37,25 +37,28 @@ export function withRecordDetail<P extends { state: WardFlowState }>(
 
 /**
  * The detail one desk has been sent, for the access view it was sent under. The server's access
- * context names the account, desk, place and openings, so another desk starts empty, and a reply
- * that arrives after the access view or world changed is not kept.
+ * context names the account, desk, place and openings. Its authoritative world generation also
+ * distinguishes replacement people after a synthetic reset reuses ids. A changed desk or generation
+ * starts empty, and a reply from an earlier view is not kept.
  */
 export class RecordDetailHold {
   private details = new Map<string, RecordDetail>();
   private context: string | undefined;
+  private generation: number | undefined;
   /** The board with the held detail put back, once the view it was sent under is checked. */
   apply<P extends { state: WardFlowState }>(payload: P, context: string | undefined): P {
-    // IDs may be reused after replacement, even for the same desk and access grant.
-    const identity = JSON.stringify([context, payload.state.worldGeneration]);
+    const identity = JSON.stringify([context ?? null, payload.state.worldGeneration]);
     if (identity !== this.context) this.details = new Map();
     this.context = identity;
+    this.generation = payload.state.worldGeneration;
     return withRecordDetail(payload, this.details);
   }
   /** Keeps a logged opening's detail. True when it was kept, so the board should be drawn again. */
   take(reply: unknown, askedUnder: string | undefined): boolean {
     if (askedUnder !== this.context || !reply || typeof reply !== "object") return false;
     // `opened` is the person whose record the server logged as opened.
-    const { opened, detail } = reply as { opened?: unknown; detail?: unknown };
+    const { opened, detail, generation } = reply as { opened?: unknown; detail?: unknown; generation?: unknown };
+    if (typeof generation !== "number" || generation !== this.generation) return false;
     const parsed = parseRecordDetail(detail);
     if (typeof opened !== "string" || !parsed) return false;
     this.details = new Map(this.details).set(opened, parsed);
