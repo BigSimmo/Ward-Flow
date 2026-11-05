@@ -23,19 +23,32 @@ it("reserves the address budget before admitting asynchronous code comparisons",
   vi.mocked(demoCodeMatches).mockImplementation(
     () => new Promise<boolean>((resolve) => finish.push(() => resolve(false))),
   );
-  const requests = Array.from({ length: 20 }, () => {
-    const request = new NextRequest("https://ward.example.test/api/session", {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-real-ip": "192.0.2.80" },
-      body: JSON.stringify({ demoCode: "WRONG" }),
-    });
-    vi.spyOn(request, "json").mockResolvedValue({ demoCode: "WRONG" });
-    return POST(request);
-  });
-  // All request bodies are already resolved. Leave verification deliberately pending, so the
-  // test checks admission at the await boundary rather than depending on hashing/network speed.
-  await Promise.resolve();
+  const requests: Array<Promise<Response>> = [];
   try {
+    for (let attempt = 0; attempt < 20; attempt += 1) {
+      const before = vi.mocked(demoCodeMatches).mock.calls.length;
+      let settled = false;
+      const pending = POST(
+        new NextRequest("https://ward.example.test/api/session", {
+          method: "POST",
+          headers: { "content-type": "application/json", "x-real-ip": "192.0.2.80" },
+          body: JSON.stringify({ demoCode: "WRONG" }),
+        }),
+      );
+      requests.push(pending);
+      void pending.then(() => {
+        settled = true;
+      });
+      // Stage real body reads so this checks the separate wrong-code budget, not the8-read
+      // parser limit. Keep every admitted comparison pending. Without pre-await reservation,
+      // all20 comparisons enter; with it, the last10 requests refuse before comparison.
+      await vi.waitFor(
+        () => {
+          expect(settled || vi.mocked(demoCodeMatches).mock.calls.length > before).toBe(true);
+        },
+        { interval: 1, timeout: 1000 },
+      );
+    }
     expect(demoCodeMatches).toHaveBeenCalledTimes(10);
   } finally {
     finish.forEach((resolve) => resolve());

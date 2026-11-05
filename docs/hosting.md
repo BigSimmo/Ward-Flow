@@ -125,12 +125,18 @@ history, within the existing 60-snapshot/200-reason windows. These bounded inser
 original rows and let existing canonical days win. Unseen hashes cannot be reversed or recovered
 by guessing scopes. Cached edits from a noncanonical address return a conflict and need review.
 This source behaviour does not establish a completed hosted upgrade or full historical recovery.
+Replace or drain all older push workers before relying on renewed-registration fences too: an
+older worker can still apply its unfenced delivery result during a mixed-version rollout.
 
 Front-door account verification is bounded per process. Without verified ingress identity, the
 route shares one allowance of 30 checks per minute across callers and allows eight pending checks,
 with an eight-second caller deadline. Raw forwarded headers do not create separate allowances.
-This protects local provider work but is not a distributed per-person limit; verify capacity and
-the ingress contract before a separately authorised rollout.
+The route's JSON reader also limits consumption to 16 KiB, five seconds and eight pending reads.
+These are separate per-process budgets. Installed Next middleware finalises its cloned body before
+calling the route, so these route limits do not establish an upstream HTTP-body timeout or
+connection limit. Its 1 MiB proxy clone limit truncates buffering rather than rejecting an upload.
+Verify the Next/Node and hosting ingress limits, capacity and identity contract before a separately
+authorised rollout; no distributed per-person or end-to-end slow-upload protection is established.
 
 Both services wait for CI: the owner turned on Railway's **Wait for CI** for `ward-flow-backend`
 and `ward-flow-shared` on 19 October 2026, so a deploy (now a move of `live`) goes ahead only after its GitHub

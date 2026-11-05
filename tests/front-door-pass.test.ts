@@ -248,6 +248,132 @@ describe("POST /api/session", () => {
     expect(cookies.some((line) => line.startsWith("wf_door=1") && !line.includes("HttpOnly"))).toBe(true);
   });
 
+  it("refuses a sign-in whose12-hour limit passes while provider verification is pending", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    vi.stubEnv("WARD_FRONT_DOOR", "required");
+    vi.stubEnv("WARD_PASS_SECRET", SECRET);
+    vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_synthetic");
+    vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_URL", "https://synthetic.supabase.co");
+    let start!: () => void;
+    const started = new Promise<void>((resolve) => {
+      start = resolve;
+    });
+    let finish!: (value: Response) => void;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => {
+        start();
+        return new Promise<Response>((resolve) => {
+          finish = resolve;
+        });
+      }),
+    );
+    const pending = POST(post({ token: token(NOW / 1000 - 12 * 3600 + 2) }));
+    await started;
+    vi.setSystemTime(NOW + 5000);
+    finish(Response.json({ id: "synthetic-account" }));
+    const response = await pending;
+    expect(response.status).toBe(401);
+    expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
+  it("uses the remaining sign-in lifetime after a successful delayed verification", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    vi.stubEnv("WARD_FRONT_DOOR", "required");
+    vi.stubEnv("WARD_PASS_SECRET", SECRET);
+    vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_synthetic");
+    vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_URL", "https://synthetic.supabase.co");
+    let start!: () => void;
+    const started = new Promise<void>((resolve) => {
+      start = resolve;
+    });
+    let finish!: (value: Response) => void;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => {
+        start();
+        return new Promise<Response>((resolve) => {
+          finish = resolve;
+        });
+      }),
+    );
+    const pending = POST(post({ token: token(NOW / 1000 - 12 * 3600 + 20) }));
+    await started;
+    vi.setSystemTime(NOW + 5000);
+    finish(Response.json({ id: "synthetic-account" }));
+    const response = await pending;
+    expect(response.status).toBe(204);
+    const cookie = response.headers.getSetCookie().find((line) => line.startsWith("wf_pass="))!;
+    expect(cookie).toContain("Max-Age=15;");
+    const pass = await verifyPass(SECRET, cookie.split(";")[0].slice(8), Date.now());
+    expect(pass).toMatchObject({ issuedAt: NOW + 5000, expiresAt: NOW + 20000 });
+  });
+
+  it("does not acknowledge a pass with less than one second of cookie lifetime", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW + 500);
+    vi.stubEnv("WARD_FRONT_DOOR", "required");
+    vi.stubEnv("WARD_PASS_SECRET", SECRET);
+    vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_synthetic");
+    vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_URL", "https://synthetic.supabase.co");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ id: "synthetic-account" })),
+    );
+    const response = await POST(post({ token: token(NOW / 1000 - 12 * 3600 + 1) }));
+    expect(response.status).toBe(401);
+    expect(response.headers.get("set-cookie")).toBeNull();
+  });
+
+  it.each([
+    { remaining: 2, elapsed: 3000, status: 401, maxAge: null },
+    { remaining: 20, elapsed: 5000, status: 204, maxAge: 15 },
+  ])("rechecks cookie lifetime after asynchronous signing: %j", async ({ remaining, elapsed, status, maxAge }) => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    vi.stubEnv("WARD_FRONT_DOOR", "required");
+    vi.stubEnv("WARD_PASS_SECRET", SECRET);
+    vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_synthetic");
+    vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_URL", "https://synthetic.supabase.co");
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ id: "synthetic-account" })),
+    );
+    let start!: () => void;
+    const started = new Promise<void>((resolve) => {
+      start = resolve;
+    });
+    let finish!: () => void;
+    const release = new Promise<void>((resolve) => {
+      finish = resolve;
+    });
+    const nativeSign = crypto.subtle.sign.bind(crypto.subtle);
+    const signing = vi.spyOn(crypto.subtle, "sign").mockImplementationOnce(async (...args) => {
+      start();
+      await release;
+      return nativeSign(...args);
+    });
+    try {
+      const pending = POST(post({ token: token(NOW / 1000 - 12 * 3600 + remaining) }));
+      await started;
+      vi.setSystemTime(NOW + elapsed);
+      finish();
+      const response = await pending;
+      expect(response.status).toBe(status);
+      if (maxAge === null) expect(response.headers.get("set-cookie")).toBeNull();
+      else {
+        const cookie = response.headers.getSetCookie().find((line) => line.startsWith("wf_pass="))!;
+        expect(cookie).toContain(`Max-Age=${maxAge};`);
+        expect(await verifyPass(SECRET, cookie.split(";")[0].slice(8), Date.now())).not.toBeNull();
+      }
+    } finally {
+      finish();
+      signing.mockRestore();
+    }
+  });
+
   it("refuses a sign-in Supabase refuses, and says busy when Supabase cannot answer", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);

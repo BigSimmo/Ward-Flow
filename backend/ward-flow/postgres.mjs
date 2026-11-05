@@ -1237,6 +1237,47 @@ export function createWorkspaceStore(
   // H-0289: saves share one delivery pass on the 4-connection pool instead of one pass each. The
   // five-minute sweep runs its own pass, so a delivery stuck on a dead connection never holds it.
   const deliver = singleFlight(() => deliverOnce());
+  // A subscribe keeps its ID but starts a new registration and clears its old deliveries. Lock
+  // the workspace before subscriptions and deliveries, as subscribe does. An evaluation holds
+  // the workspace exclusively while deleting old deliveries and inserting new ones (whose FK
+  // locks subscriptions), so this order also avoids a cycle with that writer. Keep exact SQL
+  // microseconds: a JavaScript Date loses same-clock replacements.
+  async function withPushClaims(claims, at, run) {
+    if (!claims.length) return;
+    await transaction(async (client) => {
+      await client.query("SELECT id FROM ward_flow.workspaces WHERE id=$1 AND data_mode='prototype' FOR KEY SHARE", [
+        workspaceId,
+      ]);
+      const registrations = new Map(claims.map((claim) => [claim.id, claim.registration_at]));
+      const { rows } = await client.query(
+        "SELECT s.id FROM ward_flow.push_subscriptions s JOIN unnest($1::bigint[], $2::text[]) AS u(id, registered) ON s.id=u.id WHERE s.workspace_id=$3 AND s.revoked_at IS NULL AND s.created_at=u.registered::timestamptz ORDER BY s.id FOR UPDATE OF s",
+        [[...registrations.keys()], [...registrations.values()], workspaceId],
+      );
+      const active = new Set(rows.map((row) => row.id));
+      const current = claims.filter((claim) => active.has(claim.id));
+      if (!current.length) return;
+      // Lock the actual captured items too. In particular, expiry must not delete a device
+      // after a newer worker has reclaimed its pending item while the provider was awaited.
+      const locked = await client.query(
+        "SELECT d.subscription_id AS id, d.item_id FROM ward_flow.push_deliveries d JOIN unnest($1::bigint[], $2::text[]) AS u(id, item) ON d.subscription_id=u.id AND d.item_id=u.item WHERE d.status='pending' AND d.last_attempt_at=$3 ORDER BY d.subscription_id, d.item_id FOR UPDATE OF d",
+        [current.map((claim) => claim.id), current.map((claim) => claim.item_id), at],
+      );
+      const lockedItems = new Set(locked.rows.map((row) => `${row.id}\0${row.item_id}`));
+      const owned = current.filter((claim) => lockedItems.has(`${claim.id}\0${claim.item_id}`));
+      if (owned.length) await run(client, owned);
+    });
+  }
+  async function clearPushClaims(claims, at, discard) {
+    await withPushClaims(claims, at, async (client, owned) => {
+      const matched = "d.subscription_id=u.id AND d.item_id=u.item AND d.status='pending' AND d.last_attempt_at=$3";
+      await client.query(
+        discard
+          ? `DELETE FROM ward_flow.push_deliveries d USING unnest($1::bigint[], $2::text[]) AS u(id, item) WHERE ${matched}`
+          : `UPDATE ward_flow.push_deliveries d SET attempts=d.attempts - 1, last_attempt_at=NULL FROM unnest($1::bigint[], $2::text[]) AS u(id, item) WHERE ${matched}`,
+        [owned.map((claim) => claim.id), owned.map((claim) => claim.item_id), at],
+      );
+    });
+  }
   async function deliverOnce() {
     const counts = { sent: 0, expired: 0, failed: 0 };
     const failures = {};
@@ -1271,7 +1312,7 @@ export function createWorkspaceStore(
         // still recoverable; a lost provider response can therefore still yield a duplicate.
         const at = clock();
         const { rows } = await pool.query(
-          `UPDATE ward_flow.push_deliveries d SET attempts = d.attempts + 1, last_attempt_at = $5 FROM ward_flow.push_subscriptions s WHERE d.subscription_id = s.id AND ${due} AND d.subscription_id IN (SELECT DISTINCT d.subscription_id FROM ward_flow.push_deliveries d JOIN ward_flow.push_subscriptions s ON s.id = d.subscription_id WHERE s.workspace_id=$1 AND s.data_mode='prototype' AND s.revoked_at IS NULL AND ${listener} AND ${due} AND d.subscription_id > $6 ORDER BY d.subscription_id LIMIT $7) RETURNING d.subscription_id AS id, d.item_id, s.endpoint, s.p256dh, s.auth${desk}`,
+          `UPDATE ward_flow.push_deliveries d SET attempts = d.attempts + 1, last_attempt_at = $5 FROM ward_flow.push_subscriptions s WHERE d.subscription_id = s.id AND ${due} AND d.subscription_id IN (SELECT DISTINCT d.subscription_id FROM ward_flow.push_deliveries d JOIN ward_flow.push_subscriptions s ON s.id = d.subscription_id WHERE s.workspace_id=$1 AND s.data_mode='prototype' AND s.revoked_at IS NULL AND ${listener} AND ${due} AND d.subscription_id > $6 ORDER BY d.subscription_id LIMIT $7) RETURNING d.subscription_id AS id, d.item_id, to_char(s.created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"') AS registration_at, s.endpoint, s.p256dh, s.auth${desk}`,
           [
             workspaceId,
             // A delivery runs only while push is on.
@@ -1292,10 +1333,8 @@ export function createWorkspaceStore(
         if (!read) return;
         const { world, red } = read;
         const devices = new Map();
-        /** @type {{ ids: string[], items: string[] }} */
-        const unseen = { ids: [], items: [] };
-        /** @type {{ ids: string[], items: string[] }} */
-        const outside = { ids: [], items: [] };
+        const unseen = [];
+        const outside = [];
         // Recheck membership after claiming and reading the world. A removal committed between
         // those awaits must not lend its old scope to an already queued delivery.
         const deskIds = [...new Set(rows.map((row) => row.desk_id).filter(Boolean))];
@@ -1326,16 +1365,14 @@ export function createWorkspaceStore(
               );
             }
             if (!scoped.get(row.desk_id).has(row.item_id)) {
-              outside.ids.push(row.id);
-              outside.items.push(row.item_id);
+              outside.push(row);
               continue;
             }
           }
           // An item no longer red is released unclaimed for the next evaluation to clear,
           // never sent as an empty entry or marked sent with the device's other rows.
           if (!item) {
-            unseen.ids.push(row.id);
-            unseen.items.push(row.item_id);
+            unseen.push(row);
             continue;
           }
           const device = devices.get(row.id) ?? { ...row, items: [] };
@@ -1343,16 +1380,8 @@ export function createWorkspaceStore(
           devices.set(row.id, device);
         }
         after = rows.map((row) => row.id).reduce((a, b) => (BigInt(a) > BigInt(b) ? a : b));
-        if (unseen.ids.length)
-          await pool.query(
-            "UPDATE ward_flow.push_deliveries d SET attempts = d.attempts - 1, last_attempt_at = NULL FROM unnest($1::bigint[], $2::text[]) AS u(id, item) WHERE d.subscription_id = u.id AND d.item_id = u.item AND d.status='pending' AND d.last_attempt_at=$3",
-            [unseen.ids, unseen.items, at],
-          );
-        if (outside.ids.length)
-          await pool.query(
-            "DELETE FROM ward_flow.push_deliveries d USING unnest($1::bigint[], $2::text[]) AS u(id, item) WHERE d.subscription_id = u.id AND d.item_id = u.item AND d.status='pending' AND d.last_attempt_at=$3",
-            [outside.ids, outside.items, at],
-          );
+        await clearPushClaims(unseen, at, false);
+        await clearPushClaims(outside, at, true);
         // Scope loading can await another query. Re-read eligibility at a fresh time immediately
         // before sending, so a max-term boundary crossed during those awaits never lends an old
         // membership to the pending delivery. Bootstrap recipients were checked against config.
@@ -1373,26 +1402,20 @@ export function createWorkspaceStore(
         const sendingItems = new Map();
         for (const [deskId, access] of sendingAccesses)
           sendingItems.set(deskId, new Set(engine.scopedActNowAlerts(world, access, sendingAt).map((item) => item.id)));
-        /** @type {{ ids: string[], items: string[] }} */
-        const noLongerAllowed = { ids: [], items: [] };
+        const noLongerAllowed = [];
         const list = pendingDevices.flatMap((device) => {
           if (!device.desk_id) return [device];
           const allowed = sendingItems.get(device.desk_id);
           const items = device.items.filter((item) => {
             if (allowed?.has(item.id)) return true;
-            noLongerAllowed.ids.push(device.id);
-            noLongerAllowed.items.push(item.id);
+            noLongerAllowed.push({ ...device, item_id: item.id });
             return false;
           });
           return items.length ? [{ ...device, items }] : [];
         });
         // Device-level delivery outcomes apply only to the items actually sent. Remove omitted
         // claims first, or a mixed own/expired-cover batch would falsely mark the latter sent.
-        if (noLongerAllowed.ids.length)
-          await pool.query(
-            "DELETE FROM ward_flow.push_deliveries d USING unnest($1::bigint[], $2::text[]) AS u(id, item) WHERE d.subscription_id = u.id AND d.item_id = u.item AND d.status='pending' AND d.last_attempt_at=$3",
-            [noLongerAllowed.ids, noLongerAllowed.items, at],
-          );
+        await clearPushClaims(noLongerAllowed, at, true);
         const sender = /** @type {WorkspacePush} */ (push);
         const results = await Promise.all(list.map((device) => sender.send(device, sender.payload(device.items))));
         /** @type {Record<"sent" | "expired" | "retry" | "rejected", string[]>} */
@@ -1404,23 +1427,28 @@ export function createWorkspaceStore(
             ids[result.retry ? "retry" : "rejected"].push(list[index].id);
           } else ids[result.outcome].push(list[index].id);
         });
-        const claimed = "subscription_id = ANY($1::bigint[]) AND status='pending' AND last_attempt_at=$2";
-        if (ids.sent.length) {
-          await pool.query(`UPDATE ward_flow.push_deliveries SET status='sent' WHERE ${claimed}`, [ids.sent, at]);
-          await pool.query("UPDATE ward_flow.push_subscriptions SET last_success_at=$2 WHERE id = ANY($1::bigint[])", [
-            ids.sent,
-            at,
-          ]);
-        }
-        if (ids.expired.length)
-          await pool.query("DELETE FROM ward_flow.push_subscriptions WHERE id = ANY($1::bigint[])", [ids.expired]);
-        if (ids.rejected.length)
-          await pool.query(`UPDATE ward_flow.push_deliveries SET status='failed' WHERE ${claimed}`, [ids.rejected, at]);
-        if (ids.retry.length)
-          await pool.query(
-            `UPDATE ward_flow.push_deliveries SET status = CASE WHEN attempts >= $3 THEN 'failed' ELSE 'pending' END WHERE ${claimed}`,
-            [ids.retry, at, MAX_DELIVERY_ATTEMPTS],
-          );
+        const sentClaims = list.flatMap((device) => device.items.map((item) => ({ ...device, item_id: item.id })));
+        await withPushClaims(sentClaims, at, async (client, owned) => {
+          const claimed = "d.subscription_id=u.id AND d.item_id=u.item AND d.status='pending' AND d.last_attempt_at=$3";
+          for (const outcome of ["sent", "expired", "rejected", "retry"]) {
+            const current = owned.filter((claim) => ids[outcome].includes(claim.id));
+            if (!current.length) continue;
+            const params = [current.map((claim) => claim.id), current.map((claim) => claim.item_id), at];
+            if (outcome === "expired") {
+              await client.query("DELETE FROM ward_flow.push_subscriptions WHERE id = ANY($1::bigint[])", [params[0]]);
+              continue;
+            }
+            const updated = await client.query(
+              `UPDATE ward_flow.push_deliveries d SET status=${outcome === "sent" ? "'sent'" : outcome === "rejected" ? "'failed'" : "CASE WHEN attempts >= $4 THEN 'failed' ELSE 'pending' END"} FROM unnest($1::bigint[], $2::text[]) AS u(id, item) WHERE ${claimed} RETURNING d.subscription_id AS id`,
+              outcome === "retry" ? [...params, MAX_DELIVERY_ATTEMPTS] : params,
+            );
+            if (outcome === "sent" && updated.rows.length)
+              await client.query(
+                "UPDATE ward_flow.push_subscriptions SET last_success_at=GREATEST(last_success_at,$2) WHERE id = ANY($1::bigint[])",
+                [updated.rows.map((row) => row.id), at],
+              );
+          }
+        });
         if (new Set(rows.map((row) => row.id)).size < SUBSCRIPTION_PAGE) break;
       }
       if (counts.failed) log({ event: "ward_backend_push_delivery_failures", ...counts, failures });
@@ -1900,7 +1928,7 @@ export function createWorkspaceStore(
           [subscription.endpoint],
         );
         const takeover =
-          "ON CONFLICT (endpoint) DO UPDATE SET workspace_id=EXCLUDED.workspace_id, actor_id=EXCLUDED.actor_id, p256dh=EXCLUDED.p256dh, auth=EXCLUDED.auth, created_at=EXCLUDED.created_at, last_success_at=NULL, revoked_at=NULL" +
+          "ON CONFLICT (endpoint) DO UPDATE SET workspace_id=EXCLUDED.workspace_id, actor_id=EXCLUDED.actor_id, p256dh=EXCLUDED.p256dh, auth=EXCLUDED.auth, created_at=GREATEST(EXCLUDED.created_at,ward_flow.push_subscriptions.created_at + interval '1 microsecond'), last_success_at=NULL, revoked_at=NULL" +
           (byRole ? ", membership_id=EXCLUDED.membership_id" : "") +
           " WHERE ward_flow.push_subscriptions.revoked_at IS NOT NULL OR (ward_flow.push_subscriptions.p256dh=EXCLUDED.p256dh AND ward_flow.push_subscriptions.auth=EXCLUDED.auth) OR (ward_flow.push_subscriptions.workspace_id=EXCLUDED.workspace_id AND ward_flow.push_subscriptions.actor_id=EXCLUDED.actor_id)";
         const stored = await client.query(
