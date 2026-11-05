@@ -60,8 +60,6 @@ function contactGaps(contact: ReferralContact): string[] {
 export function referralSendWarnings(f: {
   catchmentAnswered: boolean;
   homeRegion: string;
-  originValid: boolean;
-  sendingTeamMissing: boolean;
   reasonMissing: boolean;
   documentation: DocumentationDraft;
   contact: ReferralContact;
@@ -69,8 +67,7 @@ export function referralSendWarnings(f: {
   return [
     f.catchmentAnswered ? "" : "catchment",
     f.homeRegion ? "" : "home region",
-    f.originValid ? "" : "location of referral",
-    f.sendingTeamMissing ? "referring service" : "",
+    // Josh, 5 Nov 2026 (finding 2): the location and referring service block, so they are not here.
     f.reasonMissing ? "reason for referral" : "",
     ...clearanceGaps(f.documentation),
     ...contactGaps(f.contact),

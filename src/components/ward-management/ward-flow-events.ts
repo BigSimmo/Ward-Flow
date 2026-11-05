@@ -211,15 +211,6 @@ export type WardFlowEvent =
       pullBed?: boolean;
       actingUnitId?: string;
       /**
-       * Form rule (FORM-REF, Josh, 5 Nov 2026): an accepted community referral sent without its
-       * referring service or location records them here when its journey starts, because moving
-       * the patient needs them. `teamId` is a `communityTeamSlug` of an offered team and `siteCode`
-       * a site of this world; each is refused when it resolves to nothing or the referral already
-       * records one. An ED referral sent without its location names the ED with `edId` instead.
-       */
-      teamId?: string;
-      siteCode?: string;
-      /**
        * THE FRONT-DOOR REFERRAL THIS JOURNEY IS BEING RAISED FROM, when there is one.
        *
        * Owner ruling 8, 2026-09-01: a community team refers a patient TO an emergency department,

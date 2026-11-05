@@ -5,6 +5,8 @@ import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward
 import { WardReferralDrawer } from "@/components/ward-management/referrals/ward-referral-drawer";
 import { discardReferralDraft } from "@/components/ward-management/referrals/referral-draft-store";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { chooseSampleReferralPerson } from "./helpers/referral-drawer-person";
 
 /**
@@ -25,6 +27,8 @@ vi.mock("next/link", () => ({
 afterEach(() => {
   cleanup();
   discardReferralDraft();
+  resetWardAccessStoreForTests();
+  setWardFeatureFlagOnDevice("role-access", null);
 });
 
 function Probe() {
@@ -45,6 +49,13 @@ function tab(name: string) {
 function next(name: string) {
   fireEvent.click(screen.getAllByRole("button", { name }).at(-1)!);
 }
+/** The location and referring service block (finding 2), so a desk-less view fills them in. */
+function fillOrigin() {
+  const origin = screen.getByLabelText(/Referring (emergency department|service location)/) as HTMLSelectElement;
+  fireEvent.change(origin, { target: { value: origin.options[1]!.value } });
+  const team = screen.queryByLabelText("Referring community service");
+  if (team) fireEvent.change(team, { target: { value: "Synthetic referring service" } });
+}
 function answer(label: string, value: string) {
   fireEvent.click(within(screen.getByRole("group", { name: label })).getByLabelText(value));
 }
@@ -62,6 +73,7 @@ describe("New referral form rule (FORM-REF)", () => {
     next("Next, referral");
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
     expect(screen.getByLabelText(/Patient story/)).toBeVisible();
+    fillOrigin();
     expect(screen.getByTestId("ward-referral-send-warnings")).toHaveTextContent(
       /^Not recorded: catchment.*\. You can still send\.$/,
     );
@@ -72,7 +84,8 @@ describe("New referral form rule (FORM-REF)", () => {
       "expected clearance time, clarification contact, clarification phone",
     );
     next("Next, wards");
-    const locations = screen.getByRole("list", { name: "Placement Destination Options" });
+    expect(screen.queryByRole("alert")).toBeNull();
+    const locations = screen.getByRole("list", { name: "Destinations" });
     fireEvent.click(within(locations).getAllByRole("checkbox")[0]!);
     const baseline = Number(screen.getByTestId("submitted-count").textContent);
     fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
@@ -105,6 +118,7 @@ describe("New referral legal status (LEGAL-REF)", () => {
     // The age band blocks too (card 2); answer it so the legal status is what stops the step.
     fireEvent.change(screen.getByLabelText("Age band"), { target: { value: "Adult" } });
     tab("Referral");
+    fillOrigin();
     const legal = screen.getByLabelText("Legal status");
     // A registered person with no legal status on record opens unanswered, never on a default.
     expect(legal).toHaveValue("");
@@ -114,5 +128,47 @@ describe("New referral legal status (LEGAL-REF)", () => {
     expect(legal).toHaveValue("Not yet recorded");
     next("Next, clearance");
     expect(screen.queryByText('Choose the legal status, or "Not yet recorded".')).not.toBeInTheDocument();
+  });
+});
+
+// Josh, 5 Nov 2026 (finding 2): the location of referral and the referring service are filled from
+// the sending desk, and block Send only when nothing could fill them. An accepted referral cannot be
+// moved without them.
+describe("New referral location from the sending desk", () => {
+  it("an ED desk's location is filled in, so the referral step goes on with no block", () => {
+    setWardFeatureFlagOnDevice("role-access", true);
+    setWardAccess({ role: "ed", scope: { kind: "ed", edId: "rph-ed" } });
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardReferralDrawer onClose={vi.fn()} initialPatientId="PT-005" />
+        <Probe />
+      </WardFlowProvider>,
+    );
+    fireEvent.change(screen.getByLabelText("Age band"), { target: { value: "Adult" } });
+    tab("Referral");
+    expect(screen.getByLabelText(/Referring emergency department/)).toHaveValue("RPH");
+    fireEvent.change(screen.getByLabelText("Legal status"), { target: { value: "Not yet recorded" } });
+    next("Next, clearance");
+    expect(screen.queryByText("Choose the referring emergency department.")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-referral-send-warnings")?.textContent ?? "").not.toMatch(/location of referral/);
+  });
+
+  it("blocks with a clear message when no desk can fill the location", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardReferralDrawer onClose={vi.fn()} initialPatientId="PT-005" initialCategory="ed" />
+        <Probe />
+      </WardFlowProvider>,
+    );
+    fireEvent.change(screen.getByLabelText("Age band"), { target: { value: "Adult" } });
+    tab("Referral");
+    const origin = screen.getByLabelText(/Referring emergency department/);
+    fireEvent.change(origin, { target: { value: "" } });
+    fireEvent.change(screen.getByLabelText("Legal status"), { target: { value: "Not yet recorded" } });
+    next("Next, clearance");
+    expect(screen.getByRole("alert")).toHaveTextContent("Choose the referring emergency department.");
+    fireEvent.change(origin, { target: { value: "SCGH" } });
+    next("Next, clearance");
+    expect(screen.queryByText("Choose the referring emergency department.")).not.toBeInTheDocument();
   });
 });

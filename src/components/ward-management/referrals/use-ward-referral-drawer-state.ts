@@ -789,9 +789,14 @@ export function useWardReferralDrawerState({
   }
   // WS-01: a ward referral answers gender before Send ("Not yet recorded" counts as an answer).
   const genderUnanswered = destType === "ward" && referralGender === "";
-  // FORM-REF: the location, referring service and reason warn (`sendWarnings`); these block.
+  // FORM-REF: the reason warns (`sendWarnings`); these block. Josh, 5 Nov 2026 (finding 2): the location
+  // and referring service come from the sending desk (ED: its site; community: its service) and block
+  // only when nothing could fill them, because an accepted referral cannot be moved without them.
   function referralError() {
     if (senderMissing) return NO_SENDING_WARD;
+    if (!originValid)
+      return sourceKind === "ed" ? "Choose the referring emergency department." : "Choose the location of referral.";
+    if (sendingTeamMissing) return "Record the referring community service.";
     if (legalStatus === "") return warn.LEGAL_STATUS_UNANSWERED;
     if (!URGENCY_LEVELS.some((tier) => String(tier) === shownUrgency))
       return community ? "Choose when the team should first make contact." : "Choose the referral urgency.";
@@ -810,6 +815,7 @@ export function useWardReferralDrawerState({
         (site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment),
       ));
   const needsSendingTeam = !sendingWard && !senderMissing && sourceKind === "community";
+  const sendingTeamMissing = needsSendingTeam && !sendingTeam.trim();
   const needed: Record<DrawerSection, number> = {
     patient: [
       (!patientRecord && !unidentified?.trim()) || (notOnSendingWard && (!!heldBedUnitId || !notOnWardReason)),
@@ -818,6 +824,8 @@ export function useWardReferralDrawerState({
     ].filter(Boolean).length,
     referral:
       [
+        !originValid,
+        sendingTeamMissing,
         legalStatus === "",
         !URGENCY_LEVELS.some((tier) => String(tier) === shownUrgency),
         community && !communityPurpose,
@@ -830,7 +838,13 @@ export function useWardReferralDrawerState({
   const totalNeeded = needed.patient + needed.referral + needed.documentation + needed.placement;
   // L1 (review 12 Oct 2026): ONE count. "N of M ready", "Items left" and each step's "N needed" add up.
   // FORM-REF (5 Nov 2026): only blocking items count; contact and the rest warn (`sendWarnings`).
-  const itemsTotal = 4 + (destType === "ward" ? 1 : 0) + (community ? 2 : documentationItems(documentation)) + 1;
+  const itemsTotal =
+    4 +
+    (sendingWard ? 0 : 1) +
+    (needsSendingTeam ? 1 : 0) +
+    (destType === "ward" ? 1 : 0) +
+    (community ? 2 : documentationItems(documentation)) +
+    1;
   // D-77: the community short form has no Documents step, so its checks skip triage and charts.
   const docsError = () => (community ? null : documentationError(documentation));
   // The saved history carries the unidentified label ahead of the patient story, so the two together
@@ -996,8 +1010,6 @@ export function useWardReferralDrawerState({
   const sendWarnings = warn.referralSendWarnings({
     catchmentAnswered,
     homeRegion,
-    originValid,
-    sendingTeamMissing: needsSendingTeam && !sendingTeam.trim(),
     reasonMissing: reasonNoteRequired && !doctorNote.trim(),
     documentation,
     contact,
@@ -1068,7 +1080,7 @@ export function useWardReferralDrawerState({
             : "To confirm",
       state: catchmentAnswered ? "done" : "follow",
     },
-    { label: "From", value: originLabel || "Not recorded", state: originValid ? "done" : "follow" },
+    { label: "From", value: originLabel || "Needed", state: originValid ? "done" : "needed" },
     ...(community ? [communityPurposeRow(communityPurpose)] : []),
     {
       label: "Legal status",

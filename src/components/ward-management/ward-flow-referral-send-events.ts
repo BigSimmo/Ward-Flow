@@ -148,7 +148,7 @@ export function reduceReferralSendEvent(
        */
       let raisedFrom: Referral | undefined;
       let continuedAcceptance: Referral["destinations"][number] | undefined;
-      // FORM-REF: the referring service and location a community referral was sent without.
+      // D-76: the referring service and location a community journey starts at.
       let recordedOrigin: { siteCode: string; teamName: string } | undefined;
       if (event.acceptedUnitId !== undefined && event.referralId === undefined)
         return reject(state, event, "Starting an accepted placement requires its referral");
@@ -163,40 +163,28 @@ export function reduceReferralSendEvent(
         }
         const referral = raisedFrom;
         const directContinuation = event.acceptedUnitId !== undefined;
-        if ((event.teamId !== undefined || event.siteCode !== undefined) && (department || !directContinuation))
-          return reject(state, event, "A referring service or location is recorded only to start a community journey");
         if (directContinuation) {
-          // FORM-REF (Josh, 5 Nov 2026): a detail the referral was sent without is recorded here,
-          // never one it already holds, and only from the offered team and site lists.
-          const teamName =
-            event.teamId === undefined
-              ? referral.sendingTeamName
-              : referral.sendingTeamName === undefined
-                ? communityTeamOptions().find((name) => communityTeamSlug(name) === event.teamId)
-                : undefined;
-          const siteCode =
-            event.siteCode === undefined
-              ? referral.originSiteCode
-              : referral.originSiteCode === undefined && scenarioSite(state.scenario, event.siteCode)
-                ? event.siteCode
-                : undefined;
           if (
             (event.role !== "ward" && event.role !== "coordinator") ||
             (event.role === "ward" && event.actingUnitId !== event.acceptedUnitId) ||
             (department
-              ? referral.source !== "ed_medical" ||
-                (referral.originSiteCode !== undefined && department.siteCode !== referral.originSiteCode)
+              ? referral.source !== "ed_medical" || department.siteCode !== referral.originSiteCode
               : referral.source !== "community") ||
             !findUnit(state, event.acceptedUnitId!)
           )
             return reject(state, event, "Only the accepting ward or coordinator can start this direct ED placement");
-          if (!department && (teamName === undefined || siteCode === undefined))
-            return reject(
-              state,
-              event,
-              `Record the referring ${teamName === undefined ? "community service" : "service location"} to start this journey`,
-            );
-          if (!department) recordedOrigin = { siteCode: siteCode!, teamName: teamName! };
+          // A community journey starts at the referring service and its location, so both must be on
+          // the referral. Josh, 5 Nov 2026 (finding 2): the drawer fills them from the sending desk and
+          // blocks Send when it cannot, so this refuses only a record that skipped that check.
+          if (!department) {
+            if (referral.sendingTeamName === undefined || referral.originSiteCode === undefined)
+              return reject(
+                state,
+                event,
+                `This community referral has no referring ${referral.sendingTeamName === undefined ? "service" : "location"} recorded, so its journey cannot start`,
+              );
+            recordedOrigin = { siteCode: referral.originSiteCode, teamName: referral.sendingTeamName };
+          }
           continuedAcceptance = referral.destinations.find(
             (candidate) =>
               candidate.destination.kind === "psychiatric_ward" &&

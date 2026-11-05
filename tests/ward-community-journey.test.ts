@@ -227,48 +227,20 @@ describe("a journey from an accepted community referral (D-76)", () => {
     expect(refused.movements).toEqual(unnamed.movements);
   });
 
-  // Form rule (FORM-REF, Josh, 5 Nov 2026): a referral may be sent without its referring service or
-  // location. Starting its journey needs them, so they are recorded there, from the offered lists.
-  it("starts a community journey sent with no service or location once both are recorded", () => {
+  // Josh, 5 Nov 2026 (finding 2): the drawer fills the location and referring service from the
+  // sending desk and blocks Send without them. A record that has neither still never starts a journey
+  // at an empty site, which the restore fence would refuse.
+  it("refuses a start when the referral records no location, and writes no empty site", () => {
     const { state, event, referral } = acceptedCommunityReferral();
-    const sparse = {
-      ...state,
-      referrals: state.referrals.map((r) =>
-        r.id === referral.id ? { ...r, sendingTeamName: undefined, originSiteCode: undefined } : r,
-      ),
-    };
-    const teamId = communityTeamSlug(TEAM_NAME);
-    expect(wardFlowReducer(sparse, event).rejections.at(-1)?.reason).toBe(
-      "Record the referring community service to start this journey",
-    );
-    expect(wardFlowReducer(sparse, { ...event, teamId }).rejections.at(-1)?.reason).toBe(
-      "Record the referring service location to start this journey",
-    );
-    expect(wardFlowReducer(sparse, { ...event, teamId: "no-such-team", siteCode: ORIGIN_SITE }).movements).toEqual(
-      sparse.movements,
-    );
-    expect(wardFlowReducer(sparse, { ...event, teamId, siteCode: "NOWHERE" }).movements).toEqual(sparse.movements);
-    // A detail the referral already holds is never replaced.
-    expect(wardFlowReducer(state, { ...event, siteCode: "SCGH" }).movements).toEqual(state.movements);
-
-    const started = apply(sparse, { ...event, teamId, siteCode: ORIGIN_SITE });
-    expect(started.movements.at(-1)!.originCommunity).toEqual({ siteCode: ORIGIN_SITE, teamName: TEAM_NAME });
-    expect(validOnTheWire(started)).toBe(true);
-  });
-
-  it("starts an ED referral sent with no location at the ED the coordinator names", () => {
-    const { state, event, referral } = acceptedCommunityReferral("ed_medical");
-    const sparse = {
+    const unplaced = {
       ...state,
       referrals: state.referrals.map((r) => (r.id === referral.id ? { ...r, originSiteCode: undefined } : r)),
     };
-    const ed = allEmergencyDepartments().find((place) => place.siteCode === "SCGH")!;
-    const started = apply(sparse, { ...event, role: "coordinator", actingUnitId: undefined, edId: ed.id });
-    expect(started.movements.at(-1)!.originEdId).toBe(ed.id);
-    expect(validOnTheWire(started)).toBe(true);
-    // A referral that records its ED still starts only there.
-    const elsewhere = wardFlowReducer(state, { ...event, role: "coordinator", actingUnitId: undefined, edId: ed.id });
-    expect(elsewhere.movements).toEqual(state.movements);
+    const refused = wardFlowReducer(unplaced, event);
+    expect(refused.rejections.at(-1)?.reason).toBe(
+      "This community referral has no referring location recorded, so its journey cannot start",
+    );
+    expect(refused.movements).toEqual(unplaced.movements);
   });
 
   it("names a missing location in Patients and never matches a search for undefined", () => {

@@ -183,8 +183,7 @@ describe("approved four-tab referral drawer journey", () => {
 });
 
 describe("errors mark and move to the field at fault (DA-12)", () => {
-  // FORM-REF (Josh, 5 Nov 2026): the location of referral now warns, so these cases use the legal
-  // status, which still blocks (LEGAL-REF). PT-005 is a registered person with no legal status here.
+  // FORM-REF (Josh, 5 Nov 2026): these cases use the legal status, which blocks (LEGAL-REF). PT-005 is a registered person with no legal status here.
   const legal = () => screen.getByLabelText("Legal status");
   const legalError = 'Choose the legal status, or "Not yet recorded"';
   function setupUnanswered() {
@@ -221,6 +220,13 @@ describe("errors mark and move to the field at fault (DA-12)", () => {
 
   it("opens the step at fault when Send finds a problem on an earlier step", async () => {
     setupUnanswered();
+    // Josh, 5 Nov 2026 (finding 2): the location and service block when no desk fills them; give them.
+    tab("Referral");
+    fireEvent.change(screen.getByLabelText(/Referring (emergency department|service location)/), {
+      target: { value: "RPH" },
+    });
+    const team = screen.queryByLabelText("Referring community service");
+    if (team) fireEvent.change(team, { target: { value: "Synthetic referring service" } });
     tab("Wards");
     expect(legal()).not.toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
