@@ -276,12 +276,15 @@ type PlacedLabel = { x: number; y: number; anchor: "start" | "middle" | "end" };
 /**
  * Place each label on its mark without running off the card or over its neighbour. A mark near the
  * left edge reads from the mark rightwards, one near the right edge ends at its mark, and a label that
- * would collide with the one before drops below the line.
+ * would collide with the one before drops below the line. Visual review (5 Nov 2026): the Now line
+ * runs the chart's full height, so a label that would cross it moves to the side of the line its mark
+ * is on ("Pull ended" a few minutes ago ends just before Now).
  */
-export function placeTrackLabels(marks: { x: number; label: string }[], width: number): PlacedLabel[] {
+export function placeTrackLabels(marks: { x: number; label: string }[], width: number, nowX?: number): PlacedLabel[] {
   const edge = 6;
   const above = 10;
   const below = 46;
+  const nowGap = 6;
   const lastRightByRow = new Map<number, number>();
   return marks.map(({ x, label }) => {
     const w = labelWidth(label);
@@ -293,6 +296,19 @@ export function placeTrackLabels(marks: { x: number; label: string }[], width: n
     } else if (x + w / 2 > width - edge) {
       anchor = "end";
       left = Math.min(width - edge, x + 6) - w;
+    }
+    if (nowX !== undefined && left < nowX + nowGap && left + w > nowX - nowGap) {
+      const before = nowX - nowGap - w;
+      const after = nowX + nowGap;
+      const fitsBefore = before >= edge;
+      const fitsAfter = after + w <= width - edge;
+      if (fitsBefore && (x <= nowX || !fitsAfter)) {
+        anchor = "end";
+        left = before;
+      } else if (fitsAfter) {
+        anchor = "start";
+        left = after;
+      }
     }
     const y = left < (lastRightByRow.get(above) ?? -Infinity) + 8 ? below : above;
     lastRightByRow.set(y, left + w);
@@ -312,6 +328,7 @@ export function WaitTrack({ points, now }: { points: TrackPoint[]; now: Instant 
   const placed = placeTrackLabels(
     sorted.map((point) => ({ x: x(point.at), label: point.label })),
     width,
+    x(now),
   );
   return (
     <div ref={frameRef} className={styles.chartFrame}>

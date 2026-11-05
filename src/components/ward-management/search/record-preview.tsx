@@ -906,7 +906,7 @@ export function RecordPreview({
   const statutory = legalStatutoryInfo(legalStatus);
   // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
   const subjectName = linkedPatient ? patientDisplayName(linkedPatient) : NAME_NOT_RECORDED;
-  const subjectUrm = linkedPatient ? linkedPatient.umrn : "UMRN not recorded";
+  const subjectUrm = linkedPatient?.umrn || "UMRN not recorded";
   const history = deriveClinicalHistory(linkedPatient);
   const legalClass = legalClassFor(legalStatus);
 
@@ -936,7 +936,7 @@ export function RecordPreview({
         <div className={styles.dossierHeader}>
           <div className={styles.dossierTitleRow}>
             <h3 className={styles.dossierName}>{subjectName}</h3>
-            <span className={styles.dossierUrm}>{subjectUrm}</span>
+            <span className={linkedPatient?.umrn ? styles.dossierUrm : styles.dossierUrmMissing}>{subjectUrm}</span>
           </div>
           <div className={styles.dossierMetaRow}>
             <span className={styles.metaDemographics}>
