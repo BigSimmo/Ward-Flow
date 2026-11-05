@@ -10,6 +10,7 @@ import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import {
   bedKindGaps,
   bedKindTotals,
+  bedsFreeingTodayTotal,
   networkTotals,
   networkWardRows,
   type NetworkWardRow,
@@ -82,8 +83,12 @@ export function useCapacityModel() {
   );
   const lockedReady = networkRows.reduce((sum, row) => sum + row.lockedReady, 0);
   const pulled = networkRows.reduce((sum, row) => sum + row.pulled, 0);
-  const freeingValues = networkRows.map((row) => row.freeing).filter((value): value is number => value !== undefined);
-  const dueOutToday = freeingValues.length > 0 ? freeingValues.reduce((sum, value) => sum + value, 0) : undefined;
+  // WF-16: hero "Beds freeing today" from the same releasesFreeingToday source as each ward card.
+  const dueOutToday = bedsFreeingTodayTotal(
+    bedReleases,
+    now,
+    new Set(networkRows.map((row) => row.unit.id)),
+  );
   const oldestCount = networkRows.reduce<NetworkWardRow | undefined>(
     (oldest, row) => (oldest === undefined || row.confirmedAt < oldest.confirmedAt ? row : oldest),
     undefined,

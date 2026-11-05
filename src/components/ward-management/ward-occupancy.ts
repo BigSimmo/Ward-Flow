@@ -43,6 +43,32 @@ export function wardBedsInUse(
   return states.occupied + states.pulled;
 }
 
+/**
+ * Occupied / On the ward count from the same `bedStates` box every screen reads (WF-16).
+ * Leave is a marker inside Occupied, never a separate bed.
+ */
+export function wardOccupiedBeds(
+  unit: Unit,
+  admissions: readonly Admission[],
+  bedReleases: readonly BedRelease[],
+): number {
+  return bedStates(unit, admissions, [...bedReleases], []).occupied;
+}
+
+/** Occupied, Pulled and In use from one `bedStates` call so the three figures cannot drift (WF-16). */
+export function wardBedUseFigures(
+  unit: Unit,
+  admissions: readonly Admission[],
+  bedReleases: readonly BedRelease[],
+): { occupied: number; pulled: number; inUse: number } {
+  const states = bedStates(unit, admissions, [...bedReleases], []);
+  return {
+    occupied: states.occupied,
+    pulled: states.pulled,
+    inUse: states.occupied + states.pulled,
+  };
+}
+
 export type OccupancyFigure = {
   /** Beds Occupied or Pulled. */
   inUse: number;

@@ -32,6 +32,7 @@ import {
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { IN_USE_NOUN } from "@/components/ward-management/ward-occupancy";
 import type {
   BedRelease,
   EmergencyDepartment,
@@ -545,7 +546,7 @@ function MapPresentation({
             value: String(network.ready),
             label: network.preparing > 0 ? `Ready beds, ${network.preparing} being made ready` : "Ready beds",
           },
-          { value: `${network.pct}%`, label: "Occupied" },
+          { value: `${network.pct}%`, label: IN_USE_NOUN },
           {
             value: String(network.wardsOverLine),
             label: `Wards at or over ${BED_ALERT_THRESHOLD_PERCENT}%`,

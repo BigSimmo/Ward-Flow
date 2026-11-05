@@ -114,7 +114,7 @@ export function CapacityHero({
           <>
             <HeroStat
               value={model.lockedReady}
-              label="Locked ready"
+              label="Locked ready beds"
               tone="success"
               pressed={highlight === "locked"}
               onToggle={() => onHighlight("locked")}
@@ -134,13 +134,13 @@ export function CapacityHero({
           <div className={styles.heroStats} role="group" aria-label={site ? `${site.name} beds` : "Network beds"}>
             <HeroChip
               value={model.lockedReady}
-              label="Locked ready"
+              label="Locked ready beds"
               pressed={highlight === "locked"}
               onPress={() => onHighlight("locked")}
             />
             <HeroChip
               value={model.openReady}
-              label="Open ready"
+              label="Open ready beds"
               pressed={highlight === "open"}
               onPress={() => onHighlight("open")}
             />
