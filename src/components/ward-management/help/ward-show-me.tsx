@@ -101,8 +101,10 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
     return () => window.removeEventListener("keydown", onKey);
   }, [ownsFocus, howTo, step, onClose]);
 
+  // The restricted notice has no steps, so the admit effect never runs; it owns focus as soon as it shows.
+  const restricted = Boolean(howTo && !permitted);
   const { rootRef } = useModalFocus({
-    open: ownsFocus,
+    open: ownsFocus || restricted,
     onClose,
     panelRef: cardRef,
     initialFocusRef: nextRef,
