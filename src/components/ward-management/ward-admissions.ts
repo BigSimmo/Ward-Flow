@@ -1113,18 +1113,12 @@ export function normalisePlannedAdmissionInitials(value: unknown): string | null
   return PLANNED_ADMISSION_INITIALS_PATTERN.test(compact) ? compact : null;
 }
 
-/**
- * WF-07: why typed initials are refused, naming the real cause (digits, length, empty) so a 422
- * is not a generic "one to three letters" when the value clearly has extras.
- */
+/** WF-07: name why typed initials are refused (digits, length, empty). */
 export function plannedInitialsRefusal(value: string): string | null {
   if (normalisePlannedAdmissionInitials(value) !== null) return null;
   const letters = value.replace(/[\s.]/g, "");
-  return /\d/.test(letters)
-    ? "Initials are letters only — remove the number."
-    : letters.length > 3
-      ? "Initials are at most three letters."
-      : "Initials are one to three letters.";
+  if (/\d/.test(letters)) return "Initials are letters only — remove the number.";
+  return letters.length > 3 ? "Initials are at most three letters." : "Initials are one to three letters.";
 }
 
 /**

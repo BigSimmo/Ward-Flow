@@ -261,6 +261,14 @@ function navHistoryIndex(): number | null {
   return typeof index === "number" ? index : null;
 }
 
+function replaceReferralBoard(router: { replace: (href: string) => void }) {
+  startTransition(() => {
+    router.replace(REFERRAL_BOARD_HREF);
+  });
+}
+
+/** WF-42: leave /referrals/new for the board without opening the drawer. */
+
 function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarProps) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
@@ -644,9 +652,7 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
     if (skipNextRouteReferralOpenRef.current) {
       skipNextRouteReferralOpenRef.current = false;
       routeReferralOpenedRef.current = true;
-      startTransition(() => {
-        router.replace(REFERRAL_BOARD_HREF);
-      });
+      replaceReferralBoard(router);
       return undefined;
     }
     // The page's own access gate answers a desk that may not open the intake; no slide-out over it.
@@ -679,9 +685,7 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
       if (isReferralSheetPath(pathname) && window.history.state?.wardDrawer !== "referral") {
         skipNextRouteReferralOpenRef.current = true;
         routeReferralOpenedRef.current = true;
-        startTransition(() => {
-          router.replace(REFERRAL_BOARD_HREF);
-        });
+        replaceReferralBoard(router);
       }
     }
     referralWasOpenRef.current = open;
@@ -729,18 +733,17 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
     }
     function onPopState() {
       const closing = closingViaHistoryRef.current;
-      // WF-42: Back onto the intake URL (for example from a referral detail) must not reopen New referral.
-      // Forward to the same bare intake should still open (CodeRabbit on PR #1471).
+      // WF-42: Back onto intake must not reopen; Forward still may.
       const currentIndex = navHistoryIndex();
       const previousIndex = historyIndexRef.current;
-      const isBack = currentIndex === null || previousIndex === null ? true : currentIndex < previousIndex;
       if (currentIndex !== null) historyIndexRef.current = currentIndex;
+      const isBack = currentIndex === null || previousIndex === null || currentIndex < previousIndex;
       if (
         isBack &&
-        isReferralSheetPath(window.location.pathname) &&
-        window.history.state?.wardDrawer !== "referral" &&
+        closing === null &&
         openPanel !== "referral" &&
-        closing === null
+        isReferralSheetPath(window.location.pathname) &&
+        window.history.state?.wardDrawer !== "referral"
       ) {
         skipNextRouteReferralOpenRef.current = true;
       }

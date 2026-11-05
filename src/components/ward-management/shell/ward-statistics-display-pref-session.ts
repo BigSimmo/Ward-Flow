@@ -44,4 +44,4 @@ export function enterStatisticsDisplayPrefScope(): () => void {
   };
 }
 
-export { resetDisplayPrefScopeForTests as resetStatisticsDisplayPrefScopeForTests } from "@/lib/display-pref-scope";
+export { resetDisplayPrefScopeModuleForTests as resetStatisticsDisplayPrefScopeForTests } from "@/lib/display-pref-scope";

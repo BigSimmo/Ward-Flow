@@ -1,8 +1,9 @@
 /**
- * WF-31: route-scoped display preferences. While a scope is open, theme / glare / rail writers
- * apply in memory only and must not touch localStorage or cookies. Restoring the baseline is the
- * caller's job (statistics layout) once the last scope exits.
+ * WF-31: route-scoped display preferences. Depth lives in theme-client so writers can check it
+ * without pulling this module into the shared shell chunk; enter/baseline stay here for the
+ * statistics session (dynamic import) and tests.
  */
+import { adjustDisplayPrefScopeDepth, displayPrefScopeActive, resetDisplayPrefScopeForTests } from "./theme-client";
 import type { ThemePreference } from "./theme";
 
 export type DisplayPrefBaseline = {
@@ -11,21 +12,21 @@ export type DisplayPrefBaseline = {
   railOpen: boolean;
 };
 
-let depth = 0;
 let baseline: DisplayPrefBaseline | null = null;
+let depth = 0;
 
-export function displayPrefScopeActive(): boolean {
-  return depth > 0;
-}
+export { displayPrefScopeActive, resetDisplayPrefScopeForTests };
 
 export function enterDisplayPrefScope(snap: DisplayPrefBaseline): () => DisplayPrefBaseline | null {
   if (depth === 0) baseline = snap;
   depth += 1;
+  adjustDisplayPrefScopeDepth(1);
   let disposed = false;
   return () => {
     if (disposed) return null;
     disposed = true;
     depth = Math.max(0, depth - 1);
+    adjustDisplayPrefScopeDepth(-1);
     if (depth > 0) return null;
     const out = baseline;
     baseline = null;
@@ -33,7 +34,8 @@ export function enterDisplayPrefScope(snap: DisplayPrefBaseline): () => DisplayP
   };
 }
 
-export function resetDisplayPrefScopeForTests() {
+export function resetDisplayPrefScopeModuleForTests() {
   depth = 0;
   baseline = null;
+  resetDisplayPrefScopeForTests();
 }

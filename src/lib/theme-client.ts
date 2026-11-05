@@ -26,7 +26,23 @@ import {
   type ResolvedTheme,
   type ThemePreference,
 } from "./theme";
-import { displayPrefScopeActive } from "./display-pref-scope";
+
+/** WF-31: statistics routes bump this so theme/glare writers stay in-memory only. */
+let displayPrefScopeDepth = 0;
+
+export function displayPrefScopeActive(): boolean {
+  return displayPrefScopeDepth > 0;
+}
+
+/** Used by display-pref-scope (loaded with the statistics session, not the shared shell). */
+export function adjustDisplayPrefScopeDepth(delta: number): number {
+  displayPrefScopeDepth = Math.max(0, displayPrefScopeDepth + delta);
+  return displayPrefScopeDepth;
+}
+
+export function resetDisplayPrefScopeForTests() {
+  displayPrefScopeDepth = 0;
+}
 
 export const THEME_CHANGE_EVENT = "clinical-kb-theme-change";
 

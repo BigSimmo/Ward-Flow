@@ -9,8 +9,8 @@ import {
   applyThemeToDocument,
   readStoredGlarePreference,
   readStoredThemePreference,
+  displayPrefScopeActive,
 } from "@/lib/theme-client";
-import { displayPrefScopeActive } from "@/lib/display-pref-scope";
 import { useAppearanceStore, useGlareStore } from "./ward-bar";
 import { openWardDrawer } from "./ward-drawer-bus";
 import { RAIL_OPEN_STORAGE_KEY } from "./ward-rail-early";
