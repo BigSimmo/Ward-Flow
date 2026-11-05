@@ -222,7 +222,13 @@ export function PlannedAdmissionsPanel({
   // reducer refuses the same people, so this list only spares a coordinator a refusal.
   const getBookablePatients = () => bookablePatientsFor(patients, admissions, movements, plannedFromContext ?? []);
 
+  // One message at a time, the newest: a local refusal clears an older save error, and a new save
+  // clears an older refusal, so neither can hide the other (CodeRabbit on PR #1471).
   const displayedRefusal = save.error ?? refusal ?? null;
+  const refuse = (message: string | null) => {
+    save.clearError();
+    setRefusal(message);
+  };
 
   // A calendar date needs the provider's day zero; a screen given none still labels each day by
   // its distance from today rather than failing to render.
@@ -328,8 +334,7 @@ export function PlannedAdmissionsPanel({
     if (reason === "" || legalStatus === "") return;
     const timing = draftTiming(draft, formOpenedAt);
     if (!timing.ok) {
-      save.clearError();
-      setRefusal(timing.refusal);
+      refuse(timing.refusal);
       return;
     }
     const { expectedArrivalAt, expectedStayDays } = timing;
@@ -353,7 +358,7 @@ export function PlannedAdmissionsPanel({
       if (draft.who === "initials") {
         initials = normalisePlannedAdmissionInitials(draft.initials);
         if (initials === null) {
-          setRefusal(plannedInitialsRefusal(draft.initials));
+          refuse(plannedInitialsRefusal(draft.initials));
           return;
         }
       } else {
@@ -371,8 +376,7 @@ export function PlannedAdmissionsPanel({
               : patientCohort(patient.dateOfBirth, arrivalDay);
         }
       }
-      setRefusal(null);
-      save.clearError();
+      refuse(null);
       save.submit(
         () =>
           dispatch({

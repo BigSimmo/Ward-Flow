@@ -13,6 +13,11 @@ describe("WF-20 owner hints", () => {
     );
   });
 
+  it("names the owner by its full role name, never a cut-short one", () => {
+    expect(roleOwnerHint("ward", "UNDO_SITE_HANDOVER_SIGN_OFF")).toBe("Ask the site bed manager to do this.");
+    expect(roleOwnerHint("ed", "UNDO_SITE_HANDOVER_SIGN_OFF")).not.toMatch(/Ask the (bed manager|ed)\b/u);
+  });
+
   it("says nothing extra when the role may take the step", () => {
     expect(roleOwnerHint("coordinator", "PULL_PATIENT")).toBeUndefined();
     expect(withOwnerHint("x", "coordinator", "PULL_PATIENT")).toBe("x");

@@ -113,6 +113,16 @@ export function capacityRowsSpoken(rows: readonly CapacityRow[]): string {
 }
 
 /**
+ * WF-44: the closed rail's tile names its place before the percent ("East 74%", "RPH 81%"), so
+ * it never shows a bare "74%". "East Metro" shortens to "East" to fit the tile; "Metro" stays.
+ */
+export function compactPipText(row: Pick<CapacityRow, "name" | "percent"> | undefined): string {
+  if (row?.percent == null) return "—";
+  const place = row.name.replace(/\s+Metro$/u, "").trim() || "Beds";
+  return `${place} ${Math.round(row.percent)}%`;
+}
+
+/**
  * "1 at or over 85% full", "None at or over 85% full": the chip's words, so the alert never rests on colour alone.
  * WF-15 (live test, 5 Nov 2026): "full" says this counts places by bed occupancy, so "None over 85%"
  * no longer reads as a contradiction of the Alerts badge beside it, which counts alerts. "At or over"

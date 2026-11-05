@@ -9,7 +9,7 @@
  * The other shared figures live beside the data they read and are not restated here:
  * - occupancy (WF-16): `wardOccupiedBeds` / `wardBedsInUse` / `wardBedUseFigures` (`ward-occupancy.ts`) —
  *   Occupied / On the ward vs In use (Occupied + Pulled); percentage always uses In use;
- * - beds freeing today vs forecast discharges (WF-16): `releasesFreeingToday` / `bedsFreeingTodayTotal`
+ * - beds freeing today vs forecast discharges (WF-16): `bedsFreeingTodayTotal` (over `releasesFreeingToday`)
  *   vs forecast next-24h sources (`capacity-derivations.ts` / `beds-forecast-sources.ts`);
  * - ready vs spare that fit (WF-16): `readyBedsNow` / `totalReadyBedsNow` vs `bedKindGaps(...).gap`
  *   (`ward-bed-states.ts` / `capacity-derivations.ts`);

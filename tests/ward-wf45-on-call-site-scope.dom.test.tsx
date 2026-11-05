@@ -31,6 +31,32 @@ afterEach(() => {
 });
 
 describe("on-call for a site bed manager (WF-45 follow-up)", () => {
+  it("keeps its own service's service-wide lines and drops another service's (#1470 review)", () => {
+    const all = buildOnCallDirectory();
+    const own = all.find((e) => e.siteCode !== undefined && e.service === "North Metro")!.siteCode!;
+    const ownService = all.filter(
+      (e) => e.siteCode === undefined && e.service === "North Metro" && e.section === "hospitals",
+    );
+    const otherService = all.filter(
+      (e) => e.siteCode === undefined && e.service === "South Metro" && e.section === "hospitals",
+    );
+    expect(ownService.map((e) => e.id)).toEqual(
+      expect.arrayContaining(["nmhs-bfc", "nmhs-scon", "nmhs-exec", "nmhs-aml"]),
+    );
+    expect(otherService.length).toBeGreaterThan(0);
+
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "bed_manager", scope: { kind: "site", siteCode: own } });
+    });
+    renderOnCall();
+
+    expect(within(screen.getByTestId("ward-on-call-hud-island")).getByText(`${own} + NMHS + statewide`)).toBeVisible();
+    for (const entry of ownService) expect(screen.getByTestId(`ward-on-call-row-${entry.id}`)).toBeInTheDocument();
+    for (const entry of otherService)
+      expect(screen.queryByTestId(`ward-on-call-row-${entry.id}`)).not.toBeInTheDocument();
+  });
+
   it("keeps own-site and statewide lines, drops other hospitals", () => {
     const all = buildOnCallDirectory();
     const siteCodes = [...new Set(all.map((e) => e.siteCode).filter(Boolean))] as string[];
@@ -51,7 +77,7 @@ describe("on-call for a site bed manager (WF-45 follow-up)", () => {
     renderOnCall();
 
     const hud = screen.getByTestId("ward-on-call-hud-island");
-    expect(within(hud).getByText(`${own} + statewide`)).toBeVisible();
+    expect(within(hud).getByText(new RegExp(`^${own} \\+ (\\w+ \\+ )?statewide$`, "u"))).toBeVisible();
 
     for (const id of ownIds.slice(0, 3)) {
       expect(screen.getByTestId(`ward-on-call-row-${id}`)).toBeInTheDocument();

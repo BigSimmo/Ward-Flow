@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 
 import { StatisticsScreen } from "@/components/ward-management/statistics/statistics-screen";
-import { StatisticsOwnRedirect } from "@/components/ward-management/statistics/statistics-own-redirect";
 
 export const metadata: Metadata = {
   title: "Statistics — Ward Flow",
@@ -20,12 +19,7 @@ export const metadata: Metadata = {
  * is showing.
  *
  * There is no role gate here, and the screen says so on itself rather than implying one exists.
- * WF-42: a desk held to its own place's Statistics is redirected there instead of a closed hub.
  */
 export default function WardStatisticsPage() {
-  return (
-    <StatisticsOwnRedirect>
-      <StatisticsScreen />
-    </StatisticsOwnRedirect>
-  );
+  return <StatisticsScreen />;
 }

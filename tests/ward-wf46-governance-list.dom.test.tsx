@@ -1,6 +1,3 @@
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
@@ -9,7 +6,8 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
  * WF-46 (5 Nov 2026): the access admin's Audit trail drew the column heads over an empty note, with
- * the scroll edge running half way down, so the list read as half-drawn; the text was small too.
+ * the scroll edge running half way down, so the list read as half-drawn. Its CSS sizes are pinned in
+ * tests/css-mobile-ergonomics-and-v9-contract.test.ts.
  */
 type Props = Parameters<typeof EventTable>[0];
 
@@ -42,17 +40,5 @@ describe("WF-46 governance event list", () => {
     expect(getByText("Nothing captured")).toBeInTheDocument();
     expect(container.textContent).not.toMatch(/Outcome/);
     expect(container.firstElementChild).toHaveAttribute("data-empty", "true");
-  });
-
-  it("keeps readable sizes and switches off the edge for an empty list", () => {
-    const css = readFileSync(
-      join(process.cwd(), "src/components/ward-management/governance-third-edition.module.css"),
-      "utf8",
-    );
-    expect(css).toMatch(/\.capturedList\[data-empty\]\s*\{[^}]*animation:\s*none/);
-    const head = css.match(/\n\.eventHeader \{[^}]*\}/)?.[0] ?? "";
-    expect(head).toContain("var(--wf-fs-13)");
-    const row = css.match(/\n\.eventRow \{\n  width: 100%;[^}]*\}/)?.[0] ?? "";
-    expect(row).toContain("var(--wf-fs-14)");
   });
 });

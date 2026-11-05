@@ -317,3 +317,25 @@ describe("WF-07 planned initials refusal", () => {
     expect(screen.queryByText(/at most three/i)).toBeNull();
   });
 });
+
+describe("planned admissions: the newest refusal shows (CodeRabbit on PR #1471)", () => {
+  it("replaces an earlier save refusal with a later local one", () => {
+    renderPanel();
+    fireEvent.click(screen.getByTestId("ward-planned-book"));
+    chooseRequired();
+    fireEvent.change(screen.getByTestId("ward-planned-who"), { target: { value: "initials" } });
+    fireEvent.change(screen.getByTestId("ward-planned-initials"), { target: { value: "gh" } });
+    fireEvent.change(screen.getByTestId("ward-planned-day"), { target: { value: "0" } });
+    fireEvent.change(screen.getByTestId("ward-planned-time"), { target: { value: "00:01" } });
+    fireEvent.click(screen.getByTestId("ward-planned-submit"));
+    const first = screen.getByTestId("ward-planned-form-refusal").textContent ?? "";
+    expect(first).not.toBe("");
+    expect(first).not.toMatch(/whole number of days/u);
+
+    fireEvent.change(screen.getByTestId("ward-planned-stay"), { target: { value: "abc" } });
+    fireEvent.click(screen.getByTestId("ward-planned-submit"));
+    expect(screen.getByTestId("ward-planned-form-refusal")).toHaveTextContent(
+      /Enter the expected stay as a whole number of days/u,
+    );
+  });
+});

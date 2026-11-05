@@ -341,8 +341,10 @@ const REDIRECT_TARGETS: Readonly<Record<string, WardScreenId>> = {
   transport: "movements",
   // B4 step 3 (19 Oct 2026): the Delays screen's address since it was renamed Waiting.
   waiting: "delays",
-  activity: "home", // WF-42 shell panels
-  help: "home",
+  // WF-42 (Josh, 5 Nov 2026): typed Activity and Help addresses open their shell panel on the
+  // desk's own home. Every role holds Settings, so these stubs open for every desk.
+  activity: "settings",
+  help: "settings",
 };
 
 /**
@@ -521,13 +523,7 @@ export function screenDecision(
       return { open: false, why: "place" };
   }
   const ownSection = OWN_STATISTICS_SECTION[access.role];
-  // WF-42: bare /statistics has no section (own-place redirect).
-  if (
-    address.screen === "statistics" &&
-    ownSection !== undefined &&
-    address.statisticsSection !== undefined &&
-    address.statisticsSection !== ownSection
-  )
+  if (address.screen === "statistics" && ownSection !== undefined && address.statisticsSection !== ownSection)
     return { open: false, why: "place" };
   // A desk held to one ED or one team never opens the index of every ED or team (review on PR #330).
   if (address.screen === "ed" && address.edId === undefined && scope.kind === "ed")

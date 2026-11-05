@@ -1,6 +1,6 @@
 // P160 (Josh, 27 Oct 2026): the "Not part of your role" page offers Go to your home only. Switch
 // desk is not shown there. Who may change desk, and where, is unchanged.
-// WF-42: bare /statistics now opens for a ward desk (own-place redirect), so this closed case uses Governance.
+// WF-42: bare /statistics sends a ward desk on to its own Statistics, so this closed case uses Governance.
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";

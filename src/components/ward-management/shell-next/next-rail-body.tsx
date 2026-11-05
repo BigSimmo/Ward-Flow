@@ -77,6 +77,7 @@ import {
   CLOSE_MENUS_EVENT,
   capacityRowsSpoken,
   cardScopeNote,
+  compactPipText,
   overLineLabel,
   RailLiveClock,
   RailReadyLine,
@@ -909,9 +910,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               }}
             >
               {overLine.over > 0 ? <Dot tone="warning" /> : null}
-              <span className={styles.compactAlertVal}>
-                {firstRow?.percent == null ? "—" : `${Math.round(firstRow.percent)}%`}
-              </span>
+              <span className={styles.compactAlertVal}>{compactPipText(firstRow)}</span>
             </button>
           </Tooltip>
 

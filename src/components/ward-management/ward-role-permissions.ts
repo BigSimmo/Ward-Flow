@@ -18,7 +18,7 @@
  * reviewable rather than scattered. Anything not in the table is limited strictly to `EVENT_ROLE`.
  */
 import { EVENT_ROLE, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
+import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 
 export type WardFlowEventType = WardFlowEvent["type"];
@@ -91,13 +91,24 @@ export function dispatchPermission(role: WardFlowRole, eventType: WardFlowEventT
   return { allowed: false, reason: rolesOnlyReason(EVENT_ROLE[eventType]) };
 }
 
-/** WF-20: who to ask when a step is locked (text only). */
+/** A full role name inside a sentence: "nurse in charge", but "ED clinician" keeps its capitals. */
+function roleNameInSentence(role: WardFlowRole): string {
+  const label = WARD_FLOW_ROLE_LABELS[role];
+  const [first = ""] = label.split(" ");
+  return first === first.toUpperCase() ? label : `${label.charAt(0).toLowerCase()}${label.slice(1)}`;
+}
+
+/**
+ * WF-20 (Josh, 5 Nov 2026): who to ask when a step is locked, by full role name. The bed
+ * coordinator is named alone when it owns the step, as it can take every coordinated step.
+ */
 export function roleOwnerHint(role: WardFlowRole, eventType: WardFlowEventType): string | undefined {
   if (canDispatch(role, eventType)) return;
-  const owners = EVENT_ROLE[eventType].filter((o) => o !== "demo" && o !== role);
-  if (!owners.length) return;
-  const named = owners.includes("coordinator") ? "bed coordinator" : rolesOnlyReason(owners).slice(0, -5).toLowerCase();
-  return `Ask the ${named} to do this.`;
+  const owners = EVENT_ROLE[eventType].filter((owner) => owner !== "demo" && owner !== role);
+  if (owners.length === 0) return;
+  const names = (owners.includes("coordinator") ? ["coordinator" as const] : owners).map(roleNameInSentence);
+  const list = names.length === 1 ? names[0] : `${names.slice(0, -1).join(", ")} or ${names.at(-1)}`;
+  return `Ask the ${list} to do this.`;
 }
 
 export function withOwnerHint(reason: string, role: WardFlowRole, eventType: WardFlowEventType): string {

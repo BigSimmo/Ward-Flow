@@ -255,8 +255,6 @@ type WardBarProps = {
   onServiceChange?: (service: HealthService | null) => void;
 };
 
-/** WF-42: leave /referrals/new for the board without opening the drawer. */
-
 function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarProps) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
