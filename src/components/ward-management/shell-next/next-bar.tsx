@@ -530,11 +530,7 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
           `Activity opened. Synthetic data: changes, recent activity and ${scopedNotices.length} notices.`,
         );
       } else if (id === "tasks") {
-        announceToWardShell(
-          oneAlertsQueue
-            ? `Alerts opened. ${tasksActiveCount} invented alerts outstanding.`
-            : `Tasks opened. ${tasksActiveCount} invented tasks outstanding.`,
-        );
+        announceToWardShell(`Alerts opened. ${tasksActiveCount} invented alerts outstanding.`);
       } else if (id === "tools") {
         announceToWardShell("Tools opened. Quick actions, look ups, print and share, and demo controls are here.");
       } else if (id === "referral") {

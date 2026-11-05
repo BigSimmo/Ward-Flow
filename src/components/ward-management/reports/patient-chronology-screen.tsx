@@ -343,14 +343,14 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   );
 
   // The start page, used with nobody chosen. No recently-opened store exists, so the list is
-  // named for what it is: people with records on this demo night, by surname.
+  // named for what it is: people with records on the board, by surname.
   const startPage = (
     <div className={start.start}>
       <Card aria-labelledby={`${baseId}-night`}>
         <CardHead
           id={`${baseId}-night`}
           icon={ListOrdered}
-          title="Patients on this demo night"
+          title="Patients on the board"
           // Round 2: a short label instead of the sentence. Ward Flow keeps no list of who you opened,
           // so this lists people with at least one record, by surname.
           // The total sits here once, so the Show more row below only says how many it adds.
@@ -360,7 +360,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
             </span>
           }
         />
-        <ul className={start.people} aria-label="Patients on this demo night">
+        <ul className={start.people} aria-label="Patients on the board">
           {people.slice(0, shownPeople).map((patient) => (
             <li key={patient.id}>
               <button

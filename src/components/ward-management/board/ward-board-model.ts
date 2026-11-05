@@ -77,7 +77,7 @@ export const BOARD_FILTER_LABELS: Record<BoardFilter, string> = {
   all: "All beds",
   look: "Needs a look",
   ready: "Ready",
-  quiet: "Nobody due out",
+  quiet: "No discharge due",
 };
 
 export const BOARD_ORDERS = ["stay", "leaving", "recorded"] as const;

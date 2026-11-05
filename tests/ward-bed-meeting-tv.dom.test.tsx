@@ -720,9 +720,9 @@ describe("the ward and ED TV views", () => {
     expect(screen.getByTestId("bed-meeting-tv-tiles").children).toHaveLength(5);
   });
 
-  it("says the ready beds' locked share plainly and counts releases held up (TV-11, NA3-02)", () => {
+  it("says the ready beds' locked share plainly and counts discharges held up (TV-11, NA3-02)", () => {
     renderTv();
-    expect(screen.getByTestId("bed-meeting-tv-discharges")).toHaveTextContent(/\d+ releases? held up/u);
+    expect(screen.getByTestId("bed-meeting-tv-discharges")).toHaveTextContent(/\d+ discharges? held up/u);
     expect(screen.getByTestId("bed-meeting-tv-ready")).not.toHaveTextContent(/locked, of/u);
   });
 

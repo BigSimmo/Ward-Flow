@@ -555,7 +555,7 @@ export function WardBedsMatrix({
         },
         {
           id: "nobody-due",
-          label: "Nobody due out",
+          label: "No discharge due",
           count: nobodyDueOutBeds.length,
           note: "No expected date set",
           tone: null,

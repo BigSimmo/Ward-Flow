@@ -94,7 +94,7 @@ describe("list order lines", () => {
     expect(note).toHaveTextContent(/^Longest wait first$/u);
     fireEvent.click(screen.getByRole("button", { name: "By hold-up" }));
     expect(screen.getByTestId("delays-order-note")).toHaveTextContent(
-      "Form times first, then other blockers. Longest wait first in each.",
+      "Form times first, then every other reason. Longest wait first in each.",
     );
   });
 

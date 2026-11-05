@@ -627,7 +627,7 @@ function WardDetailView({ model, slots }: { model: WardDetailModel; slots: WardS
               <StatCard
                 icon={FileText}
                 title="Discharge planning"
-                aside="Not departed"
+                aside="Not yet discharged"
                 id="ward-planning"
                 data-testid="ward-statistics-ward-discharge-planning"
               >
@@ -980,7 +980,7 @@ function Barriers({
             value={show}
             onChange={setShow}
             items={[
-              { id: "blocked", label: "With blockers" },
+              { id: "blocked", label: "Held up" },
               { id: "all", label: `All ${ready.vocabularySize}` },
             ]}
           />
@@ -1037,7 +1037,7 @@ function Barriers({
               </p>
               {rows.length === 0 ? (
                 <p className={ward.note} aria-hidden="true">
-                  No recorded blockers
+                  Nothing held up
                 </p>
               ) : (
                 <div aria-hidden="true">
@@ -1164,7 +1164,7 @@ function Roster({
           icon={Search}
           boxClassName={styles.search}
           aria-label="Filter recorded admission roster"
-          placeholder="Search by ID or status"
+          placeholder="ID or status"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
         />
@@ -1176,7 +1176,7 @@ function Roster({
             { id: "all", label: "All", count: counts.all },
             { id: "no-date", label: "No date", count: counts["no-date"] },
             { id: "long", label: "Over 3 months", count: counts.long },
-            { id: "blocked", label: "Blocked", count: counts.blocked },
+            { id: "blocked", label: "Held up", count: counts.blocked },
             { id: "pulled", label: "Pulled", count: counts.pulled },
           ]}
         />

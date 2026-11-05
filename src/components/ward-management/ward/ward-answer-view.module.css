@@ -2390,13 +2390,12 @@ details[open] > summary > .phoneFoldChevron {
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
+/* Audit D2: the person's name and the ward wrap in full here, never "Loxbury, Saoi…" (DS §5). */
 .phoneAcceptFacts dd {
   margin: 2px 0 0;
-  overflow: hidden;
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .phoneSheetField {

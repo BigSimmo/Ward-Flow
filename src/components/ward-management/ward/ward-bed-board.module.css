@@ -134,12 +134,11 @@
 }
 
 .chipName {
+  /* Names in full, wrapping, never cut (DS §4 Names). */
   min-width: 0;
-  overflow: hidden;
   font-size: var(--wf-fs-14);
   font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .chipMeta {

@@ -139,7 +139,7 @@ To decline, choose a reason:
 - "No suitable bed"
 - "Age band not provided here"
 - "Sex designation unavailable"
-- "Secure bed unavailable"
+- "Locked bed unavailable"
 - "Belongs to another service"
 - "Referred elsewhere"
 - "Another reason — needs follow-up"

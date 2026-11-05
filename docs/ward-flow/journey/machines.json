@@ -1541,12 +1541,12 @@
       {
         "path": "src/components/ward-management/patients/add-patient.tsx",
         "line": 84,
-        "sha256": "ad9bcd309d79693b15108b984eec9ede9ad6929b0f19b7e7f285b45c07be8400"
+        "sha256": "18ffebe0ec5ea264aa64939a4164654175cd9f92c22ca315a99855c5556ea7c2"
       },
       {
         "path": "src/components/ward-management/patients/patient-now-screen.tsx",
         "line": 1,
-        "sha256": "f1f46f6ac7772b5c14ac446f123c236ea8156ff74524b18d80595a6e3645eb27"
+        "sha256": "3d1b1140f1527ccc2f7fa69a17f3259ba28e85ee6dc6f3d18c392a36e70e1393"
       },
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner-body.tsx",
@@ -1556,7 +1556,7 @@
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner.tsx",
         "line": 1,
-        "sha256": "e4a96b5edba8cf8a2bdeb730eb10c2b7d786d472e2acaaa836b5a91e7057f706"
+        "sha256": "7a516cde32a0e0b0a03f570a64771d0991e3a24978233cee5915d6d0db011562"
       },
       {
         "path": "src/components/ward-management/shell/ward-facade.ts",
@@ -1581,7 +1581,7 @@
       {
         "path": "src/components/ward-management/ward-derivations.ts",
         "line": 1,
-        "sha256": "ead1e4f2bc330d458ccb28355d656d484fa1d547eec4f920f91544215c123e00"
+        "sha256": "236959386b82a4123336555f5b1bb9a778ead1f8a817712b08ce700593e9148e"
       },
       {
         "path": "src/components/ward-management/ward-duplicate-bed-requests.ts",

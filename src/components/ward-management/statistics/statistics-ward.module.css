@@ -106,11 +106,3 @@
   gap: 6px;
   white-space: nowrap;
 }
-
-/*
- * The barriers list follows the referrals card beside it with no floor of its own, so a short
- * list never makes the row taller than the referrals card; showing all reasons scrolls inside.
- */
-.followShort.followShort {
-  --follow-min: 0px;
-}

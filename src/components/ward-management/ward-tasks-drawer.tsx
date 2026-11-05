@@ -192,7 +192,7 @@ const ROLE_LABELS: Partial<Record<WardFlowRole, string>> = {
 function rowIcon(item: InboxItem) {
   if (/transport/i.test(item.title)) return item.icon;
   if (/legal/i.test(item.title)) return FileText;
-  if (/bed pull/i.test(item.title)) return BedSingle;
+  if (/bed pull|pulls? expired/i.test(item.title)) return BedSingle;
   if (/destination/i.test(item.title)) return TriangleAlert;
   return item.icon;
 }
@@ -209,7 +209,7 @@ function rowTiming(
   now: Instant,
   waitWord: string,
 ): { value?: string; word?: string; state: string; tone: WfTone; stateTone?: WfTone } {
-  if (movement && /bed pull/i.test(item.title) && movement.pullExpiresAt !== undefined) {
+  if (movement && /bed pull|pulls? expired/i.test(item.title) && movement.pullExpiresAt !== undefined) {
     // pop-alerts (Josh, 31 Oct 2026): "Past pull limit", because "overdue" means form times.
     return {
       value: durMinutes(now - movement.pullExpiresAt),
@@ -262,7 +262,7 @@ function rowDetail(
   units: readonly Unit[] | undefined,
   now: Instant,
 ): string {
-  if (movement && /bed pull/i.test(item.title) && movement.pullExpiresAt !== undefined) {
+  if (movement && /bed pull|pulls? expired/i.test(item.title) && movement.pullExpiresAt !== undefined) {
     const unit = units?.find((candidate) => candidate.id === movement.acceptedUnitId);
     return `${unit?.name ?? "The pulled bed"}: the pull time limit passed at ${formatInstantWithDay(movement.pullExpiresAt, now)}`;
   }
@@ -643,7 +643,7 @@ export function WardTasksDrawer({
     const rows = callRows(contactTargets(item, movement, records?.units), now);
     return (
       <div className={styles.escalationForm} data-ward-task-contacts data-testid={`ward-task-contacts-${item.id}`}>
-        <ul className={styles.callList} aria-label="Who to call, mock numbers">
+        <ul className={styles.callList} aria-label="Who to call, synthetic numbers">
           {rows.map((row) => renderCallRow(row))}
         </ul>
         <div className={styles.escalationFoot}>
@@ -725,7 +725,7 @@ export function WardTasksDrawer({
           ))}
         </div>
         {/* Ops-6: each pick's number. Nothing is recorded until Record escalation is pressed. */}
-        <ul className={styles.callList} aria-label="Escalation contacts, mock numbers">
+        <ul className={styles.callList} aria-label="Escalation contacts, synthetic numbers">
           {callRows(escalationTargets(movement), now).map((row) => renderCallRow(row))}
         </ul>
         {escalationSave.error ? (
@@ -1192,8 +1192,8 @@ export function WardTasksDrawer({
                   : ackFilter === "acknowledged"
                     ? "Nothing acknowledged yet this shift"
                     : ackFilter === "unacknowledged"
-                      ? "Every visible task is acknowledged"
-                      : "Clear the filters to see every task"}
+                      ? "Every visible alert is acknowledged"
+                      : "Clear the filters to see every alert"}
               </p>
               <button
                 type="button"

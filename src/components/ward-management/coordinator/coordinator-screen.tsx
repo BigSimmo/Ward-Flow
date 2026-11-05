@@ -507,7 +507,7 @@ export function CoordinatorScreen() {
         },
         now,
       ).map((item) => {
-        if (!item.id.startsWith("bed-pull-") && item.title !== "Bed pull expired") return item;
+        if (!item.id.startsWith("bed-pull-") && item.title !== "Pull expired, bed still pulled") return item;
         return {
           ...item,
           title: "Pull expired, bed still pulled",

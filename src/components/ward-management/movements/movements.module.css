@@ -2185,6 +2185,12 @@
 }
 
 @media (max-width: 46.4375rem) {
+  /* Keep the custom count/title inside the space reserved beside the Live chip. */
+  .dayOpenTitle {
+    max-width: 100%;
+    white-space: normal;
+  }
+
   /* Needs you head on one line: the uppercase label left, "3 of 18 Tier 1" right. */
   .needsYouHead.needsYouHead {
     flex-direction: row;

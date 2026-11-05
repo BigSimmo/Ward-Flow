@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { planSave } from "./records.mjs";
+import { coveredRecords, planSave, recordToken } from "./records.mjs";
 
 /** Save rows keep their bodies, just as the immutable engine's unchanged records do. */
 function storedFrom(plan) {
@@ -83,4 +83,56 @@ test("distinct references retain canonical JSON equality and existing primitive 
     assert.equal(plan.upserts.length, changed ? 1 : 0);
     assert.deepEqual(plan.deletes, []);
   }
+});
+
+test("deep-cloned equal JSON bodies avoid serialisation in save plans and covered records", () => {
+  const unchanged = { id: "synthetic-equal", details: { a: 1, b: [2, 3] } };
+  const changed = { id: "synthetic-changed", details: { a: 4, b: [5, 6] } };
+  const world = { version: 1, state: { patients: [unchanged, changed] } };
+  const initial = planSave([], world, 1);
+  const rows = structuredClone(storedFrom(initial));
+  const next = structuredClone(world);
+  next.state.patients[0] = { details: next.state.patients[0].details, id: unchanged.id };
+  next.state.patients[1].details.b[1] = 7;
+  const originalInputs = structuredClone({ world, rows });
+  let equalBodySerialisations = 0;
+  let changedBodySerialisations = 0;
+  const stringify = JSON.stringify;
+  const countingStringify = /** @type {typeof JSON.stringify} */ (
+    (...args) => {
+      const value = args[0];
+      if (value && typeof value === "object" && "id" in value) {
+        if (value.id === unchanged.id) equalBodySerialisations++;
+        if (value.id === changed.id) changedBodySerialisations++;
+      }
+      return Reflect.apply(stringify, JSON, args);
+    }
+  );
+  // Observe the existing public operations on genuine JSON values, restoring the built-in
+  // synchronously even when an operation throws. The fixture has no getters or toJSON hooks.
+  const observed = (() => {
+    JSON.stringify = countingStringify;
+    try {
+      return {
+        plan: planSave(rows, next, 2, initial.core),
+        covered: coveredRecords({
+          core: initial.core,
+          before: world,
+          after: next,
+          event: { type: "SYNTHETIC_UPDATE", patientId: changed.id },
+        }),
+      };
+    } finally {
+      JSON.stringify = stringify;
+    }
+  })();
+  assert.deepEqual(
+    observed.plan.upserts.map((part) => [part.recordId, part.revision, part.body]),
+    [[changed.id, 2, next.state.patients[1]]],
+  );
+  assert.deepEqual(observed.plan.deletes, []);
+  assert.deepEqual(observed.covered, [recordToken(`patients/${changed.id}`)]);
+  assert.deepEqual({ world, rows }, originalInputs);
+  assert.equal(changedBodySerialisations, 4, "different nested JSON retains the canonical fallback in both operations");
+  assert.equal(equalBodySerialisations, 0, "equal cloned JSON must not allocate canonical serialisations");
 });

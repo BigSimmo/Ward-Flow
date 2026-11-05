@@ -549,7 +549,7 @@ function ToolsSheetView({
             key: "update-bed",
             icon: BedSingle,
             name: "Update a bed",
-            detail: "Open, close or hold",
+            detail: "Open or close",
             body: <UpdateBedWards onNavigate={onNavigate} />,
           }
         : updateBedHref
@@ -557,7 +557,7 @@ function ToolsSheetView({
               key: "update-bed",
               icon: BedSingle,
               name: "Update a bed",
-              detail: "Open, close or hold",
+              detail: "Open or close",
               href: updateBedHref,
             }
           : null,
