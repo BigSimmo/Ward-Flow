@@ -409,16 +409,15 @@ export function OnCallScreen() {
             <SrOnly>On-call:</SrOnly> {answering.length} {answering.length === 1 ? "line" : "lines"} answering
           </>
         }
-        // WF-45: scope sits in the meta so the heading name stays "On-call: N lines answering".
+        // F-08 (phone review, Oct 2026): the phone hero carries the Demo pill and says the numbers are invented.
+        // WF-45: on desktop, scope sits in the meta so the heading name stays "On-call: N lines answering".
         titleMeta={
-          access.role === "officer"
-            ? isPhone
-              ? "Transport lines · prototype data"
-              : "Transport lines"
-            : scope
-              ? `${SERVICE_META[scope].short} + statewide`
-              : isPhone
-                ? "All services · prototype data"
+          isPhone
+            ? "Prototype data, invented numbers"
+            : access.role === "officer"
+              ? "Transport lines"
+              : scope
+                ? `${SERVICE_META[scope].short} + statewide`
                 : "All services"
         }
         stats={
