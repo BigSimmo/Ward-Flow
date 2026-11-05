@@ -10,7 +10,7 @@ it.each([{ demoCode: "invalid", extra: true }, { token: "synthetic", demoCode: "
   "refuses invalid session input before any provider request: %#",
   async (body) => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
-    vi.stubEnv("WARD_PASS_SECRET", "synthetic-private-pass-secret-at-least-32-characters");
+    vi.stubEnv("WARD_PASS_SECRET", "synthetic-private-pass-secret-at-least-32-characters"); // gitleaks:allow (synthetic test value)
     const fetcher = vi.spyOn(globalThis, "fetch").mockRejectedValue(new Error("Offline test guard"));
     const response = await POST(
       new NextRequest("https://synthetic.invalid/api/session", {

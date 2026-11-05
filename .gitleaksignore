@@ -51,3 +51,7 @@ b7e1674808dbe0b48459aa0fe65778e933674122:backend/ward-flow/azure-setup.mjs:gener
 # tests/front-door-pass.test.ts signs its synthetic front door passes with a made-up HMAC key
 # that only exists in that test (27 Oct 2026). The line now carries inline gitleaks:allow.
 e28ff6baad4713590f736e5da5fec9413f50d726:tests/front-door-pass.test.ts:generic-api-key:18
+
+# tests/api-session-shapes.test.ts stubs WARD_PASS_SECRET with a made-up synthetic value that
+# only exists in that test (5 Nov 2026, #1452). The line now carries inline gitleaks:allow.
+2c9b9a66c50416bd6431bafdcf3a8f3829867b40:tests/api-session-shapes.test.ts:generic-api-key:13
