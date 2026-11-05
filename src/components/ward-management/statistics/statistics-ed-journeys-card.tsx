@@ -19,7 +19,7 @@ import { ED_ELEVATED_PRESSURE_WAIT_MINUTES, ED_SEVERE_PRESSURE_WAIT_MINUTES } fr
 import type { SummaryEd } from "./statistics-network-cards";
 import { exactStatisticsCount, statisticsCountText, type StatisticsCount } from "./statistics-small-numbers";
 import { hoursLabel } from "./statistics-bands";
-import { SortTh, medianText, waitText, type EdSortKey } from "./statistics-screen-parts";
+import { SortTh, waitText, type EdSortKey } from "./statistics-screen-parts";
 import styles from "./statistics-v6.module.css";
 
 export function StatisticsEdJourneysCard({
@@ -65,7 +65,7 @@ export function StatisticsEdJourneysCard({
     const figures = [
       { id: "waiting", label: "Open ED movements", value: small(only.waiting), mark: null },
       { id: "longest", label: "Longest", value: waitText(only.longest), mark },
-      { id: "median", label: "Median", value: medianText(only.median), mark: null },
+      { id: "median", label: "Median", value: waitText(only.median), mark: null },
       { id: "over8", label: "8h+", value: small(only.over8), mark: null },
       { id: "over24", label: "24h+", value: small(only.over24), mark: null },
     ];
@@ -168,7 +168,7 @@ export function StatisticsEdJourneysCard({
                   <Z v={zero(d.over24)} />
                 </td>
                 <td className={cx(redesign.r, tableClasses.num)}>
-                  <Z v={medianText(d.median)} />
+                  <Z v={waitText(d.median)} />
                 </td>
               </tr>
             ))}
@@ -181,7 +181,7 @@ export function StatisticsEdJourneysCard({
               <td className={cx(redesign.r, tableClasses.num)}>{waitText(longestEd?.longest ?? null)}</td>
               <td className={cx(redesign.r, tableClasses.num)}>{small(totalEdOver8)}</td>
               <td className={cx(redesign.r, tableClasses.num)}>{small(totalEdOver24)}</td>
-              <td className={cx(redesign.r, tableClasses.num)}>{medianText(networkMedianWait)}</td>
+              <td className={cx(redesign.r, tableClasses.num)}>{waitText(networkMedianWait)}</td>
             </tr>
           </tfoot>
         </table>
