@@ -1,5 +1,9 @@
 # What changed on the ward journey map
 
-Nothing changed since the last run.
+**1 change(s) since the last run.**
 
-_Written 2026-10-03T15:43:10.656Z by `npm run ward:journey`._
+## Refusals named, by action (1)
+
+- Start a bed search from a department: 5 → 6
+
+_Written 2026-11-05T06:20:23.066Z by `npm run ward:journey`._

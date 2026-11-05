@@ -165,6 +165,16 @@
   color: var(--wf-ink-3);
 }
 
+/* WF-30: the cap message is read out; the visible count says the same. */
+.limitNote {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
 /* Select. */
 .select {
   appearance: none;

@@ -17,7 +17,7 @@ import styles from "./ward-whats-new.module.css";
  * Each change is its own file in `whats-new/`, so parallel pull requests never edit the same lines
  * (Josh, 4 Nov 2026). A pull request that changes something staff will see adds one file,
  * `whats-new/<YYYY-MM-DD-short-slug>.json`, holding `{ "line": "One plain sentence." }`.
- * `scripts/ward-flow/whats-new-list.mjs` combines the files, newest 20 only, and the build inlines
+ * `scripts/ward-flow/whats-new-list.mjs` combines the files from the last 6 months, and the build inlines
  * the result here as `__WARD_WHATS_NEW__`. The live site only moves at the daily release, so the note
  * appears the morning after the merge, and the release workflow copies the new lines into its
  * GitHub release notes. Lines describe merged, visible changes only. The stored value is the list of
@@ -28,7 +28,7 @@ export type WhatsNewEntry = { readonly id: string; readonly date: string; readon
 // Inlined by the build and the tests (`next.config.ts`, `vitest.config.mts`) as a JSON string.
 declare const __WARD_WHATS_NEW__: string | undefined;
 
-/** Oldest first: the newest 20 entry files, by date and then id. Empty where nothing inlined it. */
+/** Oldest first: the last 6 months of entry files, by date and then id. Empty where nothing inlined it. */
 export const WHATS_NEW: readonly WhatsNewEntry[] =
   typeof __WARD_WHATS_NEW__ === "string" ? (JSON.parse(__WARD_WHATS_NEW__) as WhatsNewEntry[]) : [];
 
@@ -117,15 +117,38 @@ export function whatsNewSeenIds(seen: string | null, list: readonly WhatsNewEntr
   return list.slice(0, at + 1).map((entry) => entry.id);
 }
 
+/** How many read ids a device keeps. */
+export const WHATS_NEW_SEEN_LIMIT = 200;
+
+/**
+ * The read ids to store, capped: older history first, then the current changes oldest to newest,
+ * keeping the last ones, so the cap drops the oldest ids and never a change the note would show again.
+ */
+export function cappedWhatsNewSeen(
+  ids: readonly string[],
+  held: readonly string[],
+  list: readonly WhatsNewEntry[] = WHATS_NEW,
+): string[] {
+  const position = new Map(list.map((entry, index) => [entry.id, index]));
+  const all = [...new Set([...ids, ...held])];
+  const current = all.filter((id) => position.has(id)).sort((a, b) => (position.get(a) ?? 0) - (position.get(b) ?? 0));
+  const older = all.filter((id) => !position.has(id));
+  return [...older, ...current].slice(-WHATS_NEW_SEEN_LIMIT);
+}
+
 /** Adds `ids` to the changes read on this device (all current ones when none are named). */
 export function markWhatsNewSeen(
   ids: readonly string[] = WHATS_NEW.map((entry) => entry.id),
   fromAccount = false,
 ): void {
   if (ids.length === 0) return;
+  // The note shown this visit stays until what it shows is read: an account reply naming only older
+  // changes must not close a note about newer ones.
+  const named = new Set(ids);
+  if (shownThisVisit?.every((entry) => named.has(entry.id))) shownThisVisit = null;
   try {
     const held = whatsNewSeenIds(window.localStorage.getItem(WHATS_NEW_STORAGE_KEY));
-    window.localStorage.setItem(WHATS_NEW_STORAGE_KEY, JSON.stringify([...new Set([...ids, ...held])].slice(0, 200)));
+    window.localStorage.setItem(WHATS_NEW_STORAGE_KEY, JSON.stringify(cappedWhatsNewSeen(ids, held)));
   } catch {
     // Without storage the note never shows (see `readUnseen`), so there is nothing to record.
     return;
@@ -134,6 +157,28 @@ export function markWhatsNewSeen(
 }
 
 const NONE: readonly WhatsNewEntry[] = [];
+/** The note as first shown on this visit, kept until it is closed (WF-25: show once). */
+let shownThisVisit: readonly WhatsNewEntry[] | null = null;
+
+/**
+ * Records the shown changes as seen without closing the note, so it stays for this visit but a
+ * reload or another tab never shows it again.
+ */
+function recordWhatsNewShown(entries: readonly WhatsNewEntry[]): void {
+  shownThisVisit = entries;
+  try {
+    const held = whatsNewSeenIds(window.localStorage.getItem(WHATS_NEW_STORAGE_KEY));
+    // Every current change, as Got it records, so the older ones the card had no room for do not
+    // bring it back on the next page.
+    const ids = WHATS_NEW.map((entry) => entry.id);
+    window.localStorage.setItem(WHATS_NEW_STORAGE_KEY, JSON.stringify(cappedWhatsNewSeen(ids, held)));
+  } catch {
+    // Unreadable storage shows nothing anyway.
+    return;
+  }
+  // So a signed-in account remembers them too, even if the note is left without Got it.
+  window.dispatchEvent(new CustomEvent(WHATS_NEW_SEEN_EVENT, { detail: { fromAccount: false } }));
+}
 let cached: { key: string; value: readonly WhatsNewEntry[] } = { key: "", value: NONE };
 
 /**
@@ -141,6 +186,7 @@ let cached: { key: string; value: readonly WhatsNewEntry[] } = { key: "", value:
  * repeated reads return the same list, as `useSyncExternalStore` needs.
  */
 function readUnseen(): readonly WhatsNewEntry[] {
+  if (shownThisVisit) return shownThisVisit;
   try {
     const storage = window.localStorage;
     if (storage.getItem(TOUR_AUTO_DONE_STORAGE_KEY) === null) return NONE;
@@ -159,6 +205,27 @@ const subscribeSeen = (onChange: () => void) => {
   return () => window.removeEventListener(WHATS_NEW_SEEN_EVENT, onChange);
 };
 const readNone = () => NONE;
+
+const MODAL_SELECTOR = '[role="dialog"][aria-modal="true"], [role="alertdialog"][aria-modal="true"], dialog[open]';
+
+/** Whether a modal dialog or drawer is on screen, watched only while the note would show. */
+function useModalOpen(watch: boolean): boolean {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!watch || typeof MutationObserver === "undefined") return;
+    const check = () => setOpen(document.querySelector(MODAL_SELECTOR) !== null);
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["open", "aria-modal"],
+    });
+    return () => observer.disconnect();
+  }, [watch]);
+  return watch && open;
+}
 
 /**
  * The note itself: a small card in the corner, never a dialog, so it blocks nothing on screen. It is
@@ -179,9 +246,26 @@ export function WardWhatsNew() {
     markWhatsNewSeen();
     setClosed(true);
   };
-  // Escape is "Got it".
-  useCornerCardEscape(unseen.length > 0 && !closed, close);
-  if (unseen.length === 0 || closed) return null;
+  // WF-25 (live test, 4 Nov 2026): the note shows once. It is recorded as seen when it first shows,
+  // so a reload or the next page never brings it back, and it steps aside while a dialog or drawer
+  // is open so it never covers that dialog's Send or Cancel.
+  const showing = unseen.length > 0 && !closed;
+  // Declared before the record below, so a remount (Strict Mode) records the visit again.
+  useEffect(
+    () => () => {
+      shownThisVisit = null;
+    },
+    [],
+  );
+  const modalOpen = useModalOpen(showing);
+  // Recorded only once the note is on screen: a dialog opened before this loaded hides it, and the
+  // watcher above has not looked yet on the first render, so the page is checked here too.
+  useEffect(() => {
+    if (showing && !modalOpen && document.querySelector(MODAL_SELECTOR) === null) recordWhatsNewShown(unseen);
+  }, [showing, modalOpen, unseen]);
+  // Escape is "Got it", only while the note is on screen, so closing a dialog never closes it too.
+  useCornerCardEscape(showing && !modalOpen, close);
+  if (unseen.length === 0 || closed || modalOpen) return null;
   return (
     <OverlayPortal layer="overlay" name="ward-whats-new">
       <section className={styles.card} aria-labelledby="ward-whats-new-title" data-testid="ward-whats-new">

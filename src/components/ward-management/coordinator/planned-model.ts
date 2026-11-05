@@ -1,3 +1,4 @@
+import { placeDisplayName } from "@/components/ward-management/ward-place-names";
 import type { WardConfiguration } from "@/components/ward-management/ward-configuration";
 import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
@@ -66,7 +67,8 @@ export function plannedRows(input: PlannedInput): PlannedRow[] {
     movement.originEdId === undefined
       ? communityOriginLabel(movement.originCommunity)
       : (edName.get(movement.originEdId) ?? movement.originEdId);
-  const ward = (unitId: string | undefined) => (unitId ? (unitName.get(unitId) ?? unitId) : "Ward not chosen");
+  const ward = (unitId: string | undefined) =>
+    unitId ? (unitName.get(unitId) ?? placeDisplayName(unitId)) : "Ward not chosen";
   const who = (info: ResolvedPatientInfo) => ({
     who: info.formalName,
     ...(info.patient ? { recordId: info.patient.id } : {}),

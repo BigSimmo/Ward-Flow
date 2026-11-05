@@ -693,7 +693,7 @@ describe("Use my details", () => {
 
   it("shows unavailable with its reason when the role has no profile", () => {
     const onFill = vi.fn();
-    const lookup = profileForChromeRole("ward");
+    const lookup = profileForChromeRole("officer");
     expect(lookup).toEqual({ status: "unavailable", reason: expect.stringMatching(/^No profile set for /) });
     render(<UseMyDetailsButton lookup={lookup} onFill={onFill} />);
     const button = screen.getByTestId("ward-referral-use-my-details");

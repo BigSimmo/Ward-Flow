@@ -225,6 +225,7 @@
     "tests/ward-zero-gap-capacity-copy.test.ts",
     "tests/wf-button-reason-wrap.test.ts",
     "tests/wf-hero-band-hairline.test.ts",
+    "tests/wf-native-date-confirm-guard.test.ts",
     "tests/wf-no-side-stripes.test.ts",
     "tests/wf-phone-parts.dom.test.tsx",
     "tests/wf-primitives.dom.test.tsx",

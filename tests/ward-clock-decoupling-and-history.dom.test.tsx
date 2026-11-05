@@ -1,10 +1,11 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import Link from "next/link";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { absoluteWallClockMinutes, wallClockNow } from "@/components/ward-management/ward-clock";
 import { WardFlowProvider, useWardFlow, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { NextBarMount as WardBar } from "@/components/ward-management/shell-next/next-bar";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/navigation", () => ({
@@ -114,6 +115,28 @@ describe("Issue 3: Shell drawer history sync", () => {
 
     // Drawer should be closed
     expect(screen.queryByTestId("ward-bar-activity-sheet")).toBeNull();
+  });
+
+  it("closes the live drawer without stepping Back while a selected page is pending", async () => {
+    const back = vi.spyOn(window.history, "back");
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardBar />
+        <Link href="/ward-flow/ed" onClick={(event) => event.preventDefault()}>
+          Synthetic pending page
+        </Link>
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("ward-bar-activity-trigger"));
+    expect(window.history.state).toEqual(expect.objectContaining({ wardDrawer: "activity" }));
+    expect(await screen.findByTestId("ward-bar-activity-sheet")).toBeInTheDocument();
+    // A real route would load next; leave pathname unchanged to model that interval.
+    fireEvent.click(screen.getByRole("link", { name: "Synthetic pending page" }));
+    fireEvent.click(screen.getByTestId("ward-bar-activity-trigger"));
+    await waitFor(() => expect(screen.queryByTestId("ward-bar-activity-sheet")).toBeNull());
+    expect(back).not.toHaveBeenCalled();
+    expect(window.history.state?.wardDrawer).toBeUndefined();
+    back.mockRestore();
   });
 
   it("calls window.history.back() when closePopover is invoked via close button or toggle", async () => {

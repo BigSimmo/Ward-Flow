@@ -133,7 +133,7 @@ describe("Weekly executive aggregate adoption", () => {
       report(data);
       expect(screen.getByTestId("ward-weekly-ed-count")).toHaveTextContent("fewer than 5");
       expect(screen.getByTestId("ward-pilot-arrival-typical")).toHaveTextContent("2h");
-      expect(screen.getByText(/typical time from 8 of not shown arrivals/)).toBeInTheDocument();
+      expect(screen.getByText(/typical time from 8 arrivals; total held back \(small numbers\)/)).toBeInTheDocument();
       expect(screen.getByTestId("ward-pilot-bed-figures-on-time")).toHaveTextContent("16");
       expect(screen.getByText("of 22 wards")).toBeInTheDocument();
       expect(screen.getByTestId("ward-pilot-missed")).toHaveTextContent("fewer than 5");

@@ -262,6 +262,8 @@ export function reduceRecordedStayEvent(
     }
 
     case "RECORD_STAY_DISCHARGE_BLOCKER": {
+      // The time joins the stay's hold-up log, so a non-finite one is refused before anything changes.
+      if (!Number.isFinite(event.now)) return reject(state, event, `${event.type} requires a finite current time`);
       const admission = findAdmission(state, event.admissionId);
       if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
       if (event.actingUnitId !== admission.unitId) {
@@ -287,7 +289,15 @@ export function reduceRecordedStayEvent(
           `admission ${admission.id} is ${admission.state}, and only somebody occupying a bed can have a discharge blocker`,
         );
       }
-      const updated = replaceAdmission(state, admission.id, { ...admission, blockReason: event.blocker });
+      const updated = replaceAdmission(state, admission.id, {
+        ...admission,
+        blockReason: event.blocker,
+        // logged with time and role for the bed timeline.
+        stayBlockRecords: [
+          ...(admission.stayBlockRecords ?? []),
+          { at: event.now, by: event.role, blocker: event.blocker },
+        ],
+      });
       return {
         ...updated,
         bedReleases: updated.bedReleases.map((release) =>

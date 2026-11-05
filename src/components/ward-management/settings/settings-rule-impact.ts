@@ -93,7 +93,8 @@ export const IMPACT_NOUNS: Partial<Record<RuleKey, { one: string; many: string }
   ed: { one: "person", many: "people" },
   soon: { one: "form", many: "forms" },
   urgent: { one: "form", many: "forms" },
-  referralTarget: { one: "referral", many: "referrals" },
+  // WF-01: this counts bed requests (movements) awaiting a ward decision, not the Referrals page queue.
+  referralTarget: { one: "bed request", many: "bed requests" },
   transferTarget: { one: "transfer", many: "transfers" },
   transportTarget: { one: "booking", many: "bookings" },
 };

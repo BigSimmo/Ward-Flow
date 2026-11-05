@@ -11,6 +11,7 @@ import {
   bedIsOccupied,
   daysInBed,
   isPastExpectedDischarge,
+  isStayBlockRecords,
   stayBand,
   type Admission,
 } from "../src/components/ward-management/ward-admissions";
@@ -79,6 +80,7 @@ function anAdmission(overrides: Partial<Admission> = {}): Admission {
     dischargeConfirmedBy: null,
     blockReason: null,
     stayBlockClearances: [],
+    stayBlockRecords: [],
     leavingDestination: null,
     leftAt: null,
     followUp: null,
@@ -611,6 +613,8 @@ describe("Admission privacy — structural", () => {
     "blockReason",
     // 16 Oct 2026: stay-level blocker clearances. A time, a role and two fixed-list values, no free text.
     "stayBlockClearances",
+    // WF-23 (5 Nov 2026): recorded hold-ups. A time, a role and a fixed-list value, no free text.
+    "stayBlockRecords",
     "leavingDestination",
     "leftAt",
     "followUp",
@@ -665,6 +669,7 @@ describe("Admission privacy — structural", () => {
       dischargeConfirmedBy: "Ward manager",
       blockReason: "Awaiting transport",
       stayBlockClearances: [],
+      stayBlockRecords: [],
       leavingDestination: "discharged-to-the-community",
       leftAt: DAY_ZERO + 30 * MINUTES_PER_DAY,
       // Populated for the same reason the ED timestamp above is: a null here would make the new
@@ -787,5 +792,18 @@ describe("Admission privacy — structural", () => {
     // Non-vacuity: the two sets are really populated, so the loops above are not passing on nothing.
     expect(runtimeFields).toHaveLength(ALLOWED_ADMISSION_FIELDS.length);
     expect(builtFields).toHaveLength(ALLOWED_ADMISSION_FIELDS.length);
+  });
+});
+
+describe("a stored hold-up log", () => {
+  const blocker = BED_RELEASE_BLOCKERS[0];
+  it("accepts time, a known role and a listed blocker", () => {
+    expect(isStayBlockRecords([{ at: 10, by: "ward", blocker }])).toBe(true);
+    expect(isStayBlockRecords([])).toBe(true);
+  });
+  it("refuses an unknown role and any extra key", () => {
+    expect(isStayBlockRecords([{ at: 10, by: "unknown", blocker }])).toBe(false);
+    expect(isStayBlockRecords([{ at: 10, by: "ward", blocker, note: "free text" }])).toBe(false);
+    expect(isStayBlockRecords([{ at: Number.NaN, by: "ward", blocker }])).toBe(false);
   });
 });

@@ -71,7 +71,7 @@
   background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
 }
 
-.highlight[aria-pressed="true"] {
+.highlight[data-highlighted="true"] {
   border-color: color-mix(in srgb, var(--wf-hero-ink) 70%, transparent);
   background: color-mix(in srgb, var(--wf-hero-ink) 18%, transparent);
 }
@@ -103,7 +103,7 @@
   color: var(--wf-hero-ink-2);
 }
 
-.highlight[aria-pressed="true"] .highlightLabel {
+.highlight[data-highlighted="true"] .highlightLabel {
   color: var(--wf-hero-ink);
 }
 
@@ -843,7 +843,7 @@
 }
 
 @media (forced-colors: active) {
-  .highlight[aria-pressed="true"],
+  .highlight[data-highlighted="true"],
   .row[data-highlight="true"] {
     outline: 2px solid Highlight;
   }
@@ -1036,7 +1036,7 @@
     border-left: 0;
   }
 
-  .highlights > .highlight[aria-pressed="true"] {
+  .highlights > .highlight[data-highlighted="true"] {
     background: transparent;
     text-decoration: underline;
     text-underline-offset: 4px;

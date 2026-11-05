@@ -75,6 +75,7 @@ import {
   type DaysAwayGroupId,
   type RepatDraft,
   type ReturnStatus,
+  currentReturnMovement,
 } from "./out-of-area-model";
 import { OutOfAreaPhone, type PhonePerson } from "./out-of-area-phone";
 import { returnEarlyFlagOf } from "./return-early";
@@ -233,7 +234,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const statusOf = (entry: OutOfAreaEntry) =>
     returnStatus(recordOf(entry.admission.id), drafts[entry.admission.id], now);
   const offsetOf = (entry: OutOfAreaEntry) => dischargeOffsetDays(entry, now);
-  const returnMovementOf = (id: string) => movements.find((movement) => movement.sourceAdmissionId === id)?.id;
+  const returnMovementOf = (id: string) => currentReturnMovement(movements, id)?.id;
 
   // Device audit 11 Oct 2026: a Return column where every row reads the same says nothing the
   // Checking line has not; it shows only when the plan state differs between people.

@@ -117,6 +117,7 @@ export function AccessLog() {
         <div className={styles.form}>
           <Field label="Find a record id or account">
             <TextInput
+              maxLength={100}
               value={filter}
               onChange={(event) => setFilter(event.target.value)}
               autoComplete="off"

@@ -279,6 +279,7 @@ export function ReferralBoard({
     patients = [],
     admissions = [],
     bedReleases = [],
+    dayZero,
   } = useWardFlowSelect(
     "referrals",
     "units",
@@ -288,6 +289,7 @@ export function ReferralBoard({
     "patients",
     "admissions",
     "bedReleases",
+    "dayZero",
   );
   // ROLE BRANCH (ward): this ward's name, and its own units for beds ready. Every unit on other desks.
   const { ownWardName, bedUnits } = useWardDeskPlace(units);
@@ -1005,6 +1007,7 @@ export function ReferralBoard({
                 {/* ROLE BRANCH (ward): an empty ward queue shows one line, below, not two. */}
                 {wardEmpty ? null : (
                   <QueuedSection
+                    dayZero={dayZero}
                     progressUnavailable={presentationLists.unavailable.length > 0}
                     queued={listedQueued}
                     searchMiss={phoneFiltered && listedQueued.length === 0 && queued.length > 0}

@@ -32,27 +32,38 @@ export const SETTINGS_DEMO_PROFILE: WorkspaceProfile = {
 
 /** Synthetic, like the coordinator's: the same fictional 08 5550 range and example domain. */
 const ED_DEMO_PROFILE: WorkspaceProfile = {
-  name: "Dr A. Nguyen",
-  initials: "AN",
+  // WF-39 (live test, 4 Nov 2026): the same person the rail names as signed in (`DESK_PERSONAS`).
+  name: "Sr M. Gallagher",
+  initials: "MG",
   role: CHROME_ROLE_LABELS.ed,
   location: "Emergency department",
   phone: "+61 8 5550 0167",
-  email: "a.nguyen@example.org",
+  email: "m.gallagher@example.org",
 };
 
 const COMMUNITY_DEMO_PROFILE: WorkspaceProfile = {
-  name: "J. Walker",
-  initials: "JW",
+  name: "L. Hart",
+  initials: "LH",
   role: CHROME_ROLE_LABELS.community,
   location: "Community mental health team",
   phone: "+61 8 5550 0183",
-  email: "j.walker@example.org",
+  email: "l.hart@example.org",
+};
+
+const WARD_DEMO_PROFILE: WorkspaceProfile = {
+  name: "K. Vance RN",
+  initials: "KV",
+  role: CHROME_ROLE_LABELS.ward,
+  location: "Ward nurse in charge",
+  phone: "+61 8 5550 0175",
+  email: "k.vance@example.org",
 };
 
 const PROFILES: Partial<Record<WardChromeRole, WorkspaceProfile>> = {
   coordinator: SETTINGS_DEMO_PROFILE,
   ed: ED_DEMO_PROFILE,
   community: COMMUNITY_DEMO_PROFILE,
+  ward: WARD_DEMO_PROFILE,
 };
 
 export type ProfileLookup =

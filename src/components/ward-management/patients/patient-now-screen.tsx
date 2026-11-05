@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFormSave } from "../use-ward-form-save";
 import { resolveSubjectPatient } from "../ward-patient-resolver";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
@@ -191,6 +192,10 @@ export function PatientNowScreen({
   const awolHoldReview = useWardFeatureFlag("awol-bed-hold-review");
   // Feature 11: actions follow the route's role (`ward-role-permissions.ts`, cross-role pairs listed there).
   const deskSwitch = useDeskRoleSwitch();
+  // WF-21 (live test, 4 Nov 2026): as in `useRoleGate`, only a coordinator's desk can switch desks
+  // (a shared session offers its own desk chooser instead).
+  const accessRole = useEffectiveWardAccess().role;
+  const canSwitchDesk = deskSwitch.shared ? deskSwitch.canSwitch : accessRole === "coordinator";
   // A CTO is logged under the viewer's own role, never borrowed as the community team's.
   const routeRole = useRouteRole();
   // Access audit (31 Oct 2026): a link this desk cannot open is left off, never a dead end.
@@ -1256,7 +1261,7 @@ export function PatientNowScreen({
                   endCtoUnavailable={gate("END_COMMUNITY_TREATMENT_ORDER").reason}
                 />
               ) : null}
-              {deskSwitch.canSwitch && !gate("RECORD_COMMUNITY_TREATMENT_ORDER").allowed ? (
+              {canSwitchDesk && !gate("RECORD_COMMUNITY_TREATMENT_ORDER").allowed ? (
                 <div className="lockline">
                   <button
                     type="button"

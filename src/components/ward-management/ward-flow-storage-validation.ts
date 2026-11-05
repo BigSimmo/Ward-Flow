@@ -19,6 +19,7 @@ import {
   isPlannedAdmissionStayDays,
   PLANNED_ADMISSION_INITIALS_PATTERN,
   PLANNED_ADMISSION_STATES,
+  isStayBlockRecords,
 } from "./ward-admissions";
 import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/referral-submission";
 import { REFERRAL_INFORMATION_NEED_IDS } from "./referrals/referral-information-needs";
@@ -586,6 +587,7 @@ const admission = z.looseObject({
   dischargeDateSetBy: nullableText,
   dischargeConfirmedBy: nullableText,
   blockReason: z.nullable(z.enum(BED_RELEASE_BLOCKERS)),
+  stayBlockRecords: z.optional(z.custom(isStayBlockRecords)), // absent in older saves.
   leavingDestination: z.nullable(z.custom(isLeavingDestination)),
   // A stored barrier is a list value or absent; free text here would be typed text restored from
   // storage (review finding A2-2).
@@ -1322,8 +1324,7 @@ function consistent(state: StoredState, value: RecordValue): boolean {
     }
   }
   // Owner ruling 2026-09-25: a leave bed names the stay it belongs to, mirrored from the
-  // reducer's RECORD_LEAVE_BED refusals: a real, occupied admission on the same unit, at most one
-  // leave per stay.
+  // reducer's RECORD_LEAVE_BED refusals: a real, occupied admission on the same unit, at most one leave per stay.
   const leaveCountByAdmission = new Map<string, number>();
   for (const row of state.leaveBeds) {
     leaveCountByAdmission.set(row.admissionId, (leaveCountByAdmission.get(row.admissionId) ?? 0) + 1);
@@ -1346,8 +1347,7 @@ function consistent(state: StoredState, value: RecordValue): boolean {
   }
 
   // An arrived booking names the admission it became: that admission is on the booking's ward and
-  // carries the booking's own patient link (none for initials only). A later departure leaves both
-  // facts true.
+  // carries the booking's own patient link (none for initials only). A later departure leaves both facts true.
   for (const row of state.plannedAdmissions) {
     if (!unitIds.has(row.unitId) || (row.patientId !== null && !patientIds.has(row.patientId))) return false;
     if (row.state === "arrived") {

@@ -19,7 +19,18 @@
 import { useContext, useMemo, useState, type ReactNode } from "react";
 import { KeyRound, UserPlus, Users } from "lucide-react";
 
-import { Badge, Button, Card, CardBody, CardHead, Field, Select, TextInput, type WfTone } from "@/components/wf";
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHead,
+  Field,
+  Select,
+  TextInput,
+  requestConfirm,
+  type WfTone,
+} from "@/components/wf";
 import {
   ACCESS_ROLE_LABELS,
   WARD_ACCESS_ROLES,
@@ -278,20 +289,27 @@ function AccessAdminPanel() {
                     ) : null}
                     {m.kind === "cover" ? <Badge size="sm">Cover</Badge> : null}
                   </span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    disabledReason={
-                      m.access.role === "admin" && m.actorId === source.self
-                        ? "You cannot remove your own admin role. Ask another admin."
-                        : undefined
-                    }
-                    // Polish r2: the reason on the control, so the row stays one line.
-                    reasonDisplay="tooltip"
-                    onClick={() => run(() => source.revoke(m.id), `Removed: ${describe(m.access)}.`)}
-                  >
-                    Remove
-                  </Button>
+                  {/* WF-34 (live test, 4 Nov 2026): no Remove on the person's own row, a destructive
+                    style, and a confirm before the role ends. */}
+                  {m.actorId === source.self ? null : (
+                    <Button
+                      size="sm"
+                      variant="danger"
+                      data-testid="ward-access-role-remove"
+                      onClick={() =>
+                        void requestConfirm({
+                          title: "Remove this role?",
+                          message: `Remove ${describe(m.access)} from ${source.label(m.actorId)}? They lose this access straight away.`,
+                          confirmLabel: "Remove role",
+                          cancelLabel: "Keep role",
+                        }).then((confirmed) => {
+                          if (confirmed) run(() => source.revoke(m.id), `Removed: ${describe(m.access)}.`);
+                        })
+                      }
+                    >
+                      Remove
+                    </Button>
+                  )}
                 </li>
               );
             })}

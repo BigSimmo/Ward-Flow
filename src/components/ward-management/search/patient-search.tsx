@@ -54,6 +54,8 @@ import {
 } from "@/components/ward-management/ward-patients";
 import { WARD_ADD_PERSON_HREF } from "@/components/ward-management/ward-nav";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
 import { allEmergencyDepartments } from "@/components/ward-management/ward-sites";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -221,6 +223,7 @@ export function PatientSearchPage() {
     plannedAdmissions = [],
     dayZero,
   } = useWardFlowSelect("movements", "referrals", "units", "patients", "admissions", "plannedAdmissions", "dayZero");
+  const registerAccess = useEffectiveWardAccess();
   const now = useWardFlowClock();
   // shell-6: a "Person not found" page can hand a UMRN over in memory, never in the address.
   const [text, setText] = useState(() => takeHandedOffPatientSearchText() ?? "");
@@ -1060,7 +1063,10 @@ export function PatientSearchPage() {
         <div data-testid="ward-patient-search-cockpit" className={styles.v6HeroWrap}>
           <Hero
             className={cx(cs.censusHero, isPhone && cs.heroPhone)}
-            eyebrow="Patient register · Statewide"
+            // WF-11 (live test, 4 Nov 2026): the eyebrow names the desk's real scope, since the
+            // count is that scope's, not the state's. Shown on phones too, so the count keeps its scope.
+            eyebrow={`Patient register · ${accessPlaceLabel(registerAccess, units)}`}
+            phoneEyebrow="show"
             title={`${census.rows.length} people`}
             titleMeta={isPhone ? flowLine : undefined}
             aside={
