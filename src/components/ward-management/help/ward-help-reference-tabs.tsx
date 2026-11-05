@@ -4,16 +4,26 @@ import {
   Accessibility,
   BookA,
   ChevronDown,
+  Hand,
   Hash,
   Keyboard,
   MessageCircleQuestion,
   Palette,
+  Smartphone,
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
 import { useId, useMemo, useState } from "react";
 
-import { Button, foldLimit, ShowMoreRow, StatusGlyph } from "@/components/wf";
+import {
+  Button,
+  foldLimit,
+  ShowMoreRow,
+  StatusGlyph,
+  useIsPhone,
+  useMediaQuery,
+  WF_TABLET_PORTRAIT_QUERY,
+} from "@/components/wf";
 
 import { SCREEN_HELP, type GlossaryTerm, type ScreenHelp } from "./ward-help-content";
 import { COLOUR_LEGEND, COLOUR_LEGEND_NOTE } from "./ward-help-legend";
@@ -22,7 +32,10 @@ import type { WardTourRole } from "./ward-help-store";
 import {
   ACCESSIBILITY_HELP,
   COMMON_QUESTIONS,
+  DEVICE_INPUT_HELP,
   INTERACTIONS_HELP,
+  TOUCH_HELP,
+  type HelpDevice,
 } from "@/components/ward-management/help-content/ward-help-reference";
 import {
   CONFUSABLE_TERMS,
@@ -181,10 +194,84 @@ function TermGroup({ title, terms, code }: { title: string; terms: readonly Glos
   );
 }
 
+/** The kinds of device, in the order Reference lists them. */
+const DEVICES: readonly HelpDevice[] = ["phone", "tablet", "desk"];
+
+/** Which devices a gesture applies to, in words. */
+function devicesText(devices: readonly HelpDevice[]): string {
+  const names = { phone: "phone", tablet: "tablet", desk: "computer" } as const;
+  const words = devices.map((device) => names[device]);
+  const text = words.length > 1 ? `${words.slice(0, -1).join(", ")} and ${words.at(-1)}` : (words[0] ?? "");
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+/** This device as Reference speaks to it: a phone, a tablet (746 to 1000 pixels wide) or a computer. */
+function useHelpDevice(): HelpDevice {
+  const phone = useIsPhone();
+  const tablet = useMediaQuery(WF_TABLET_PORTRAIT_QUERY);
+  return phone ? "phone" : tablet ? "tablet" : "desk";
+}
+
+/**
+ * HOW THIS DEVICE IS USED, then touch and gestures (Help expansion, 5 Nov 2026). This device's way of
+ * working first, marked so; the gestures this device answers first, each saying where it works.
+ */
+function DeviceAndTouch() {
+  const device = useHelpDevice();
+  const devices = [device, ...DEVICES.filter((each) => each !== device)];
+  const gestures = [
+    ...TOUCH_HELP.filter((entry) => entry.devices.includes(device)),
+    ...TOUCH_HELP.filter((entry) => !entry.devices.includes(device)),
+  ];
+  return (
+    <>
+      <section className={s.section} aria-label="Phone, tablet and computer" data-testid="ward-help-reference-devices">
+        <SectionHead icon={Smartphone}>Phone, tablet and computer</SectionHead>
+        <div className={s.card}>
+          {devices.map((each) => (
+            <div key={each} className={s.deskRow} data-device={each}>
+              <b>
+                {DEVICE_INPUT_HELP[each].title}
+                {each === device ? <span className={s.you}>This device</span> : null}
+              </b>
+              <span>{DEVICE_INPUT_HELP[each].text}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+      <section className={s.section} aria-label="Touch and gestures" data-testid="ward-help-reference-touch">
+        <SectionHead icon={Hand} n={gestures.length}>
+          Touch and gestures
+        </SectionHead>
+        <div className={s.card}>
+          {gestures.map((entry) => (
+            <div key={entry.title} className={s.deskRow}>
+              <b>{entry.title}</b>
+              <span>{entry.text}</span>
+              <span className={s.note}>{devicesText(entry.devices)}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
+
+/** The shortcuts button, worded for this device: a phone needs a keyboard attached to use them. */
+function KeysButton({ onKeys }: { onKeys: () => void }) {
+  const device = useHelpDevice();
+  return (
+    <Button variant="sec" icon={Keyboard} onClick={onKeys} className={s.back}>
+      {DEVICE_INPUT_HELP[device].keys ? "Keyboard shortcuts" : "Keyboard shortcuts, with a keyboard"}
+    </Button>
+  );
+}
+
 /**
  * REFERENCE: everything to look up, in five parts. Glossary (words that are easy to mix up, then
  * each word by group), Codes (hospital and site codes, services and short forms), Colours (each
- * colour, its shape and meaning), Desks (what each login is for) and Display and keys.
+ * colour, its shape and meaning), Desks (what each login is for) and Display and keys, which also
+ * says how this device is used and the touch gestures the app answers.
  */
 export function HelpReference({
   terms,
@@ -321,6 +408,7 @@ export function HelpReference({
               ))}
             </div>
           </section>
+          <DeviceAndTouch />
           <section className={s.section} aria-label="Using the screens">
             <SectionHead>Using the screens</SectionHead>
             <div className={s.card}>
@@ -332,9 +420,7 @@ export function HelpReference({
               ))}
             </div>
           </section>
-          <Button variant="sec" icon={Keyboard} onClick={onKeys} className={s.back}>
-            Keyboard shortcuts
-          </Button>
+          <KeysButton onKeys={onKeys} />
         </>
       ) : null}
     </>

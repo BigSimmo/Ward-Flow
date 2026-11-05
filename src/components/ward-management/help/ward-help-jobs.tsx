@@ -607,7 +607,14 @@ export function HelpTasks({
             <div className={s.card}>
               <ul className={s.list}>{group.tasks.map(row)}</ul>
               {last && limit < shown.length ? (
-                <ShowMoreRow onClick={() => setAll(true)}>Show {shown.length - limit} more</ShowMoreRow>
+                <ShowMoreRow onClick={() => setAll(true)} expanded={false}>
+                  Show {shown.length - limit} more
+                </ShowMoreRow>
+              ) : last && topic === "all" && foldLimit(shown.length, FIRST) < shown.length ? (
+                // The longer list (5 Nov 2026) folds back, so the topics stay within reach.
+                <ShowMoreRow onClick={() => setAll(false)} expanded>
+                  Show fewer
+                </ShowMoreRow>
               ) : null}
             </div>
           </section>
