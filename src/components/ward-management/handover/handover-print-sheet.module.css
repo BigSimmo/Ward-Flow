@@ -460,3 +460,18 @@
 .colHold {
   width: 180px;
 }
+
+.printWarning {
+  display: none;
+}
+@media print {
+  .stack[data-print-overflow] .frame {
+    display: none;
+  }
+  .stack[data-print-overflow] .printWarning {
+    display: block;
+    color-scheme: light;
+    color: CanvasText;
+    background: Canvas;
+  }
+}

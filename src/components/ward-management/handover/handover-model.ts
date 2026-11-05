@@ -9,7 +9,7 @@ import type { WardChromeRole } from "../ward-chrome-role";
  * file never computes a legal time limit.
  */
 import { durMinutes } from "@/components/wf";
-import { stageCopy } from "@/components/ward-management/ward-stage-copy";
+import { deliveredAwaitingWard, movementStatusLabel, stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { bedHold, bedHoldLapsed } from "@/components/ward-management/ward-bed-hold";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import {
@@ -38,6 +38,8 @@ import { declineReasonLabels } from "@/components/ward-management/movements/move
 import { bedStates, readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
+import { currentLegalDueAt, formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
+import type { SenderMovementPartialView } from "@/components/ward-management/ward-partial-view-contract";
 import { SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
 import { coordinatorOwnsAcceptedAwaitingBed } from "@/components/ward-management/ward-shared-figures";
 
@@ -190,6 +192,9 @@ export type HandoverRow = {
   legalStatus: LegalStatus;
   formCode?: string;
   formDueAt?: Instant;
+  formEnded?: boolean;
+  /** Permitted status only; never a hidden destination or command capability. */
+  destinationStatus?: SenderMovementPartialView["destinationStatus"] | "unavailable";
   obs: HandoverObs;
   /**
    * Audit r1 item 3: the risk flags recorded on this journey's referral intake, read as recorded.
@@ -242,10 +247,22 @@ export function toHandoverRow(
   units: Unit[],
   patients: Patient[],
   referrals: Referral[],
+  admissions: readonly Admission[] = [],
+  sender?: SenderMovementPartialView | null,
 ): HandoverRow {
   const identity = resolveSubjectPatient(movement, { patients, referrals });
   const community = movement.originEdId === undefined ? communityOriginLabel(movement.originCommunity) : undefined;
-  const ed = community ? { short: community, full: community } : edNames(movement.originEdId!);
+  const source =
+    movement.sourceAdmissionId === undefined
+      ? undefined
+      : admissions.find((admission) => admission.id === movement.sourceAdmissionId);
+  const sourceName = units.find((unit) => unit.id === source?.unitId)?.name ?? "Sending ward not recorded";
+  const ed =
+    movement.sourceAdmissionId !== undefined
+      ? { short: sourceName, full: sourceName }
+      : community
+        ? { short: community, full: community }
+        : edNames(movement.originEdId!);
   const accepted = movement.acceptedUnitId;
   const leg = transportLeg(movement.transport);
   // P032: an accepted patient still waiting for the bed is the coordinator's, as on Waiting.
@@ -267,7 +284,14 @@ export function toHandoverRow(
     ownerShort: OWNER_SHORT[recordedOwner] ?? (recordedOwner || "No owner recorded"),
     legalStatus: movement.legalStatus,
     formCode: movement.legalForm?.code,
-    formDueAt: movement.legalForm?.dueAt,
+    formDueAt: currentLegalDueAt(movement),
+    formEnded: movement.legalForm?.endedBy !== undefined || formProgression(movement) !== undefined,
+    destinationStatus:
+      accepted === undefined && movement.referredUnitIds.length === 0
+        ? sender === null
+          ? "unavailable"
+          : sender?.destinationStatus
+        : undefined,
     obs: movement.flaggedUrgent ? "Urgent" : isConstantObservation(movement.observation) ? "Constant" : "Standard",
     riskFlags:
       movement.referralId === undefined
@@ -371,6 +395,7 @@ export function groupOf(row: HandoverRow, now: Instant, cutoff: Instant): Handov
   if (isFlaggedUrgent(row, now)) return "urg";
   if (isDueBy(row, now, cutoff)) return "due";
   if (isStoppedAwaitingRelease(row)) return "rel";
+  if (row.destinationStatus === "accepted" && isWaitingForBed(row)) return "acc";
   if (isWaitingForBed(row)) return "bed";
   if (row.stage === "accepted_awaiting_bed" || row.stage === "pulled") return "acc";
   return "mov";
@@ -399,13 +424,13 @@ export function handoverGroups(cutoff: Instant, now: Instant) {
 /* ------------------------------------------------------------------ text */
 
 export function legalShort(row: HandoverRow): string {
-  if (row.formCode) return `Form ${row.formCode}`;
+  if (row.formCode) return `Form ${row.formCode}${row.formEnded ? " ended" : ""}`;
   if (row.legalStatus === "Referred for psychiatric examination") return "Referred";
   return row.legalStatus;
 }
 
 export function legalLong(row: HandoverRow): string {
-  return row.formCode ? `${row.legalStatus}, Form ${row.formCode}` : row.legalStatus;
+  return row.formCode ? `${row.legalStatus}, Form ${row.formCode}${row.formEnded ? " ended" : ""}` : row.legalStatus;
 }
 
 /** The recorded observation level, with the urgent flag first when set: "Flagged urgent, General, hourly". */
@@ -421,6 +446,12 @@ export function obsShort(row: HandoverRow): string {
 
 export function destinationText(row: HandoverRow): string {
   if (row.to) return row.to.name;
+  if (row.destinationStatus === "accepted" || row.stage === "accepted_awaiting_bed")
+    return "Accepted, destination not available";
+  if (row.destinationStatus === "awaiting_answer") return "Awaiting a destination decision";
+  if (row.destinationStatus === "unavailable") return "Destination status not available";
+  if (row.destinationStatus === "withdrawn") return "Destination request withdrawn";
+  if (row.destinationStatus === "none_found") return "No destination found";
   if (row.asked.length === 1) return `${row.asked[0]!.name} reviewing`;
   if (row.asked.length > 1) return `${row.asked.length} wards reviewing`;
   if (row.declines.length) return `${row.declines.length} declined, none asked`;
@@ -499,6 +530,8 @@ export function nextStep(
   const hold = shownBedHold(row, now);
   if (isStoppedAwaitingRelease(row)) {
     text = `Transport stopped. Release the pulled bed at ${row.to?.name ?? "the ward"}`;
+  } else if (deliveredAwaitingWard(row.movement)) {
+    text = `Confirm ward arrival at ${row.to?.name ?? "the ward"}`;
   } else if (row.stage === "pulled") {
     text =
       hold?.state === "lapsed"
@@ -519,6 +552,10 @@ export function nextStep(
       ready > 0
         ? `Pull the bed, ${row.to!.name} shows ${ready} ready`
         : `Wait for a bed at ${row.to?.name ?? "the ward"}`;
+  } else if (row.destinationStatus === "accepted") {
+    text = "Accepted, await destination details";
+  } else if (row.destinationStatus === "awaiting_answer" || row.destinationStatus === "unavailable") {
+    text = "Await destination status";
   } else if (row.asked.length) {
     text =
       row.asked.length === 1
@@ -539,6 +576,7 @@ function backgroundLine(row: HandoverRow, now: Instant): string {
     return `${row.declines.length} declined, last ${last.name} ${formatInstantWithDay(last.at, now)}${row.escalated ? ", escalated" : ""}`;
   }
   if (row.to) return `Accepted by ${row.to.name}`;
+  if (row.destinationStatus && row.destinationStatus !== "not_requested") return destinationText(row);
   if (row.asked.length)
     return `Asked ${row.asked.map((ward) => ward.name).join(", ")}${row.escalated ? ", escalated" : ""}`;
   return row.escalated ? "Escalated to state desk" : "No ward asked yet";
@@ -548,9 +586,16 @@ function backgroundLine(row: HandoverRow, now: Instant): string {
  * Audit A4-26: the Situation from the journey's latest state, never the bare stage label, which
  * went stale ("Ward reviewing" with every ward declined, "Bed pulled" after the pull expired).
  */
+/** Current phase for every screen, copy and configured print consumer. */
+export function handoverStatusLabel(row: HandoverRow): string {
+  if (isStoppedAwaitingRelease(row)) return "Transport stopped, release pulled bed";
+  return row.movement.stage === undefined ? STAGE_LABEL[row.stage] : movementStatusLabel(row.movement);
+}
+
 export function situationState(row: HandoverRow, now: Instant): string {
   const to = row.to?.name ?? "the ward";
   if (isStoppedAwaitingRelease(row)) return `Transport stopped, bed pulled at ${to} awaiting release`;
+  if (deliveredAwaitingWard(row.movement)) return movementStatusLabel(row.movement);
   if (row.stage === "pulled") {
     if (row.pullExpiresAt === undefined) return `Bed pulled at ${to}`;
     return row.pullExpiresAt <= now
@@ -589,11 +634,13 @@ export function isbarLines(
   readyBeds: (unitId: string) => number = () => 0,
 ): IsbarLine[] {
   const form =
-    row.formCode && row.formDueAt !== undefined
-      ? `, Form ${row.formCode} due ${formatInstantWithDay(row.formDueAt, now)} as typed`
-      : row.formCode
-        ? `, Form ${row.formCode}, no due time typed`
-        : "";
+    row.formCode && row.formEnded
+      ? `, Form ${row.formCode} ended`
+      : row.formCode && row.formDueAt !== undefined
+        ? `, Form ${row.formCode} due ${formatInstantWithDay(row.formDueAt, now)} as typed`
+        : row.formCode
+          ? `, Form ${row.formCode}, no due time typed`
+          : "";
   return [
     { key: "I", label: "Identify", text: `${row.umrn}, ${legalLong(row)}` },
     {
@@ -815,9 +862,9 @@ export function summaryText(
     for (const row of group.rows) {
       const due = dueLong(row, now);
       lines.push(
-        `- ${row.name} ${row.umrn}, T${row.tier}, ${row.edShort}, waiting ${durMinutes(now - row.openedAt)}, ${
-          STAGE_LABEL[row.stage]
-        }, ${row.ownerShort}${due ? `, ${due}` : ""}`,
+        `- ${row.name} ${row.umrn}, T${row.tier}, ${row.edShort}, waiting ${durMinutes(now - row.openedAt)}, ${handoverStatusLabel(
+          row,
+        )}, ${row.ownerShort}${due ? `, ${due}` : ""}`,
       );
     }
   }

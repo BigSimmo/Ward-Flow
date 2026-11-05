@@ -30,6 +30,7 @@ import { wardPlaceLookup } from "@/components/ward-management/ward-access-places
 import { accessIsWholeNetwork, unitInScope } from "@/components/ward-management/ward-role-access";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+import { useWardPartialDisplay, useWardPartialDisplayHost } from "@/components/ward-management/ward-partial-view";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
@@ -92,7 +93,7 @@ import {
   summaryText,
   toHandoverRow,
   toHandoverWard,
-  STAGE_LABEL,
+  handoverStatusLabel,
   nextStep,
   type HandoverChip,
   type HandoverGrouping,
@@ -223,6 +224,8 @@ export function HandoverPage() {
     "inboxSnoozes",
   );
   const now = useWardFlowClock();
+  const partialDisplay = useWardPartialDisplay();
+  const partialHost = useWardPartialDisplayHost();
   const access = useEffectiveWardAccess();
   // Role branches: the nurse in charge's one ward (no scope picker, empty groups folded), and the ED
   // clinician's own department (no Beds tab, no bed counts, no sign-off).
@@ -299,11 +302,21 @@ export function HandoverPage() {
     () =>
       movements
         .filter((movement) => isOpen(movement) || isStoppedTransportAwaitingRelease(movement))
-        .map((movement) => ({
-          ...toHandoverRow(movement, units, patients, referrals),
-          actNow: actNowMovementIds.has(movement.id),
-        })),
-    [movements, units, patients, referrals, actNowMovementIds],
+        .map((movement) => {
+          const sender = partialDisplay?.movements.find((row) => row.id === movement.id);
+          return {
+            ...toHandoverRow(
+              movement,
+              units,
+              patients,
+              referrals,
+              admissions,
+              sender?.kind === "sender" ? sender : partialHost.senderRequired ? null : undefined,
+            ),
+            actNow: actNowMovementIds.has(movement.id),
+          };
+        }),
+    [movements, units, patients, referrals, admissions, partialDisplay, partialHost.senderRequired, actNowMovementIds],
   );
   const rows = useMemo(
     () => allRows.filter((row) => movementInHandoverScope(row.movement, scope, units, referrals, admissions)),
@@ -1418,7 +1431,7 @@ export function HandoverPage() {
               return {
                 id: row.id,
                 name: row.name,
-                sub: `${row.umrn} · T${row.tier} · ${STAGE_LABEL[row.stage]}`,
+                sub: `${row.umrn} · T${row.tier} · ${handoverStatusLabel(row)}`,
                 figure: durMinutes(now - row.openedAt),
                 figureNote: "waiting",
                 tone: rowTone(row, ctx),

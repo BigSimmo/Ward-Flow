@@ -3,6 +3,7 @@
 // The facts a captured audit event carries, as the governance detail panel lists them. Split out
 // of `governance-registers.tsx` (18 October 2026) to keep that file under the line cap.
 
+import { observationSummary, type Observation } from "./ward-observation";
 import type { ReactNode } from "react";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -26,6 +27,11 @@ import {
   reviewLabels,
   when,
 } from "./governance-shared";
+
+function observationFact(observation: Observation | null, now: Instant): string {
+  if (!observation) return "Not recorded";
+  return `${observationSummary(observation)}; review ${observation.reviewAt === null ? "not recorded" : formatInstantWithDay(observation.reviewAt, now)}`;
+}
 
 export function FactList({ facts }: { facts: readonly (readonly [string, ReactNode])[] }) {
   return (
@@ -328,6 +334,16 @@ export function EventFacts({ event, units, now }: { event: AuditEvent; units: Un
         />
       );
     case "patient-record":
+      if (event.action === "RECORD_OBSERVATION_LEVEL")
+        return (
+          <FactList
+            facts={[
+              ["Before", observationFact(event.details.before, now)],
+              ["Requested", observationFact(event.details.requested, now)],
+              ["After", observationFact(event.details.after, now)],
+            ]}
+          />
+        );
       return (
         <FactList
           facts={[

@@ -13,6 +13,7 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import { type Movement, type Referral, type Unit } from "@/components/ward-management/ward-model";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { edById } from "@/components/ward-management/ward-sites";
+import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { movementBelongsToService } from "@/components/ward-management/ward-service-scope";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { referralForMovement } from "@/components/ward-management/ward-derivations";
@@ -56,6 +57,7 @@ export function movementInHandoverScope(
   referrals: Referral[],
   admissions: readonly Admission[] = [],
 ): boolean {
+  const sourceUnitId = admissions.find((admission) => admission.id === movement.sourceAdmissionId)?.unitId;
   switch (scope.kind) {
     case "network":
       return true;
@@ -71,7 +73,11 @@ export function movementInHandoverScope(
       );
     }
     case "service":
-      return movementBelongsToService(movement, scope.id, units);
+      return (
+        (sourceUnitId !== undefined &&
+          units.some((unit) => unit.id === sourceUnitId && unitHealthService(unit) === scope.id)) ||
+        movementBelongsToService(movement, scope.id, units)
+      );
     case "team": {
       const team = communityTeamById(scope.id);
       if (team === null) return false;
@@ -131,9 +137,11 @@ export function urgentMovementsOutsideScope(
   units: Unit[],
   referrals: Referral[],
   now: Instant,
+  admissions: readonly Admission[] = [],
 ): Movement[] {
   return openMovements.filter(
-    (movement) => !movementInHandoverScope(movement, scope, units, referrals) && movementIsUrgent(movement, now),
+    (movement) =>
+      !movementInHandoverScope(movement, scope, units, referrals, admissions) && movementIsUrgent(movement, now),
   );
 }
 
