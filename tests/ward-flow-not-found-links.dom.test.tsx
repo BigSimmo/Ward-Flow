@@ -57,7 +57,8 @@ describe("the Ward Flow 404 offers only what the desk can open", () => {
 
   it.each([
     ["executive", { role: "executive", scope: { kind: "statewide" } }, "/ward-flow/statistics"],
-    ["access admin", { role: "admin", scope: { kind: "statewide" } }, "/ward-flow/settings"],
+    // #1471: access admins now land on Governance.
+    ["access admin", { role: "admin", scope: { kind: "statewide" } }, "/ward-flow/governance"],
   ] as const)("the %s desk gets its own home and no patient search", (_name, access, home) => {
     atDesk(access as WardAccess);
     renderNotFound();
