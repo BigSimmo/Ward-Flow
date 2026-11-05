@@ -192,6 +192,22 @@ const GENDER_ITEMS: ChoiceItem<GenderChoice>[] = [
   { id: GENDER_NOT_RECORDED, label: "Not recorded" },
 ];
 
+/**
+ * Names and suburbs have no hard cap (Josh, 5 Nov 2026): only Mental Health Act 2014 legal and
+ * safety fields block. A value over LONG_TEXT_WARNING characters, typed, pasted or carried in from
+ * search, shows a plain warning under the field and still saves.
+ */
+export const LONG_TEXT_WARNING = 100;
+
+function longTextWarning(value: string, what: "name" | "suburb") {
+  if (value.trim().length <= LONG_TEXT_WARNING) return undefined;
+  return (
+    <span>
+      <StatusGlyph tone="warning" size={9} /> Long {what}. Check it is right.
+    </span>
+  );
+}
+
 const NEAR_MATCH_MINIMUM_TERM_LENGTH = 4;
 const RECENT_RECORDS_SHOWN = 7;
 
@@ -968,6 +984,7 @@ export function AddPatientForm() {
                   label={<Required>Family name</Required>}
                   id="ward-add-patient-family-name"
                   error={fieldError("familyName")}
+                  help={longTextWarning(draft.familyName, "name")}
                 >
                   <TextInput
                     data-testid="ward-add-patient-family-name"
@@ -977,7 +994,6 @@ export function AddPatientForm() {
                     autoCapitalize="words"
                     spellCheck={false}
                     enterKeyHint="done"
-                    maxLength={100}
                     value={draft.familyName}
                     onChange={(event) => setDraftField("familyName")(event.target.value)}
                   />
@@ -986,6 +1002,7 @@ export function AddPatientForm() {
                   label={<Required>Given name</Required>}
                   id="ward-add-patient-given-name"
                   error={fieldError("givenName")}
+                  help={longTextWarning(draft.givenName, "name")}
                 >
                   <TextInput
                     data-testid="ward-add-patient-given-name"
@@ -995,7 +1012,6 @@ export function AddPatientForm() {
                     autoCapitalize="words"
                     spellCheck={false}
                     enterKeyHint="done"
-                    maxLength={100}
                     value={draft.givenName}
                     onChange={(event) => setDraftField("givenName")(event.target.value)}
                   />
@@ -1069,7 +1085,12 @@ export function AddPatientForm() {
                     />
                   </div>
                 </div>
-                <Field label="Suburb" id="ward-add-patient-suburb" className={styles.span2}>
+                <Field
+                  label="Suburb"
+                  id="ward-add-patient-suburb"
+                  className={styles.span2}
+                  help={longTextWarning(extras.suburb, "suburb")}
+                >
                   <TextInput
                     data-testid="ward-add-patient-suburb"
                     autoComplete="off"
@@ -1077,7 +1098,6 @@ export function AddPatientForm() {
                     autoCapitalize="words"
                     spellCheck={false}
                     enterKeyHint="done"
-                    maxLength={100}
                     value={extras.suburb}
                     onChange={(event) => setExtra("suburb")(event.target.value)}
                   />

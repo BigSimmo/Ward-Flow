@@ -526,24 +526,22 @@ export function OfficerScreen() {
       `Patient collected for ${officerPatientName(movement)}. In transit.`,
       "Collection",
     );
-  // WF-22 (live test, 4 Nov 2026): arrival cannot be taken back, so it is confirmed first.
+  // WF-22 (live test, 4 Nov 2026): arrival is confirmed first; the message after it offers Undo.
   const runDelivered = async (movement: Movement) => {
     const confirmed = await requestConfirm({
       title: "Record arrival at the ward?",
-      message: `Record that ${officerPatientName(movement)} has arrived at the ward. This cannot be undone here.`,
+      message: `Record that ${officerPatientName(movement)} has arrived at the ward. You can undo it for a few seconds after.`,
       confirmLabel: "Record arrival",
       cancelLabel: "Not yet",
     });
     if (!confirmed) return;
-    return recordDelivered(movement);
-  };
-  const recordDelivered = (movement: Movement) =>
-    reportOutcome(
+    return reportOutcome(
       movement.id,
       () => raise("PATIENT_ARRIVED", { movementId: movement.id }),
       `Arrival at ward recorded for ${officerPatientName(movement)}. The receiving ward confirms the arrival.`,
       "Arrived at ward",
     );
+  };
 
   /** The one action a job is waiting on, why it cannot be taken yet, and how to take it. */
   const nextStep = (movement: Movement) => withCrewLimit(officerStep(movement), booking.crewLimit);

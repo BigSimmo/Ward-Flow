@@ -1018,8 +1018,9 @@ export function PatientSearchPage() {
           <Hero
             className={cx(cs.censusHero, isPhone && cs.heroPhone)}
             // WF-11 (live test, 4 Nov 2026): the eyebrow names the desk's real scope, since the
-            // count is that scope's, not the state's.
+            // count is that scope's, not the state's. Shown on phones too, so the count keeps its scope.
             eyebrow={`Patient register · ${accessPlaceLabel(registerAccess, units)}`}
+            phoneEyebrow="show"
             title={`${census.rows.length} people`}
             titleMeta={isPhone ? flowLine : undefined}
             aside={

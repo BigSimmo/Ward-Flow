@@ -22,7 +22,7 @@ import {
   unseenWhatsNew,
   type WhatsNewEntry,
 } from "@/components/ward-management/help/ward-whats-new";
-import { readWhatsNewEntries, WHATS_NEW_DIR } from "../scripts/ward-flow/whats-new-list.mjs";
+import { readWhatsNewEntries, WHATS_NEW_DIR, whatsNewCutoff } from "../scripts/ward-flow/whats-new-list.mjs";
 
 const TOUR_AUTO_DONE = "ward_flow_choice_tour_auto_done";
 const newest = () => WHATS_NEW.at(-1) as WhatsNewEntry;
@@ -147,11 +147,23 @@ describe("what's new list", () => {
     }
   });
 
-  it("stays short enough to load with every page", () => {
-    expect(WHATS_NEW.length).toBeLessThanOrEqual(20);
+  it("keeps only the last 6 months, so the list loaded with every page stays short", () => {
+    const cutoff = whatsNewCutoff(new Date());
+    for (const entry of WHATS_NEW) expect(entry.date >= cutoff, entry.id).toBe(true);
   });
 
-  it("is the newest 20 entry files, one per change, so parallel pull requests never share lines", () => {
+  it("measures the 6 months back from the build's Perth date, keeping the edge day", () => {
+    // 5 Nov 2026 in Perth: the window opens on 5 May 2026.
+    expect(whatsNewCutoff(new Date("2026-11-05T01:00:00Z"))).toBe("2026-05-05");
+    // 10 pm UTC on 4 Nov is already 5 Nov in Perth.
+    expect(whatsNewCutoff(new Date("2026-11-04T22:00:00Z"))).toBe("2026-05-05");
+    // A day the earlier month lacks falls back to that month's last day.
+    expect(whatsNewCutoff(new Date("2026-08-31T04:00:00Z"))).toBe("2026-02-28");
+    expect(whatsNewCutoff(new Date("2028-08-31T04:00:00Z"))).toBe("2028-02-29");
+    expect(whatsNewCutoff(new Date("2027-03-15T04:00:00Z"))).toBe("2026-09-15");
+  });
+
+  it("is the last 6 months of entry files, one per change, so parallel pull requests never share lines", () => {
     expect(WHATS_NEW).toEqual(readWhatsNewEntries());
     expect(() => readFileSync("src/components/ward-management/help/whats-new.json")).toThrow();
     const root = mkdtempSync(path.join(tmpdir(), "whats-new-"));
@@ -163,17 +175,37 @@ describe("what's new list", () => {
       add("2026-11-03-z.json", '{ "line": "Z." }');
       add("2026-11-04-a.json", '{ "line": "A." }');
       add("notes.md", "ignored");
-      expect(readWhatsNewEntries(root).map((entry) => entry.id)).toEqual([
+      const build = new Date("2026-11-05T01:00:00Z");
+      expect(readWhatsNewEntries(root, build).map((entry) => entry.id)).toEqual([
         "2026-11-03-z",
         "2026-11-04-a",
         "2026-11-04-b",
       ]);
-      expect(readWhatsNewEntries(root, 2).map((entry) => entry.id)).toEqual(["2026-11-04-a", "2026-11-04-b"]);
+      // Outside, exactly on and inside the window for a build on 5 Nov 2026 in Perth (cutoff 5 May).
+      add("2026-05-04-outside.json", '{ "line": "Out." }');
+      add("2026-05-05-edge.json", '{ "line": "Edge." }');
+      add("2026-05-06-inside.json", '{ "line": "In." }');
+      expect(readWhatsNewEntries(root, build).map((entry) => entry.id)).toEqual([
+        "2026-05-05-edge",
+        "2026-05-06-inside",
+        "2026-11-03-z",
+        "2026-11-04-a",
+        "2026-11-04-b",
+      ]);
+      // A day later the edge entry has aged out; the file itself stays.
+      expect(readWhatsNewEntries(root, new Date("2026-11-06T01:00:00Z")).map((entry) => entry.id)).toEqual([
+        "2026-05-06-inside",
+        "2026-11-03-z",
+        "2026-11-04-a",
+        "2026-11-04-b",
+      ]);
+      for (const name of ["2026-05-04-outside", "2026-05-05-edge", "2026-05-06-inside"])
+        rmSync(path.join(folder, `${name}.json`));
       add("2026-11-04-c.json", '{ "line": "C.", "id": "x" }');
-      expect(() => readWhatsNewEntries(root)).toThrow(/exactly/);
+      expect(() => readWhatsNewEntries(root, build)).toThrow(/exactly/);
       rmSync(path.join(folder, "2026-11-04-c.json"));
       add("Nov-4.json", '{ "line": "D." }');
-      expect(() => readWhatsNewEntries(root)).toThrow(/YYYY-MM-DD/);
+      expect(() => readWhatsNewEntries(root, build)).toThrow(/YYYY-MM-DD/);
     } finally {
       rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
     }
@@ -204,6 +236,46 @@ describe("What's new stays out of the way (WF-25)", () => {
     await act(async () => {
       dialog.remove();
     });
+    expect(screen.getByTestId("ward-whats-new")).toBeTruthy();
+  });
+
+  it("steps aside for a confirmation, and Escape there leaves the note alone", async () => {
+    window.localStorage.setItem(TOUR_AUTO_DONE, "yes");
+    render(<WardWhatsNew />);
+    const confirm = document.createElement("div");
+    confirm.setAttribute("role", "alertdialog");
+    confirm.setAttribute("aria-modal", "true");
+    await act(async () => {
+      document.body.append(confirm);
+    });
+    expect(screen.queryByTestId("ward-whats-new")).toBeNull();
+    fireEvent.keyDown(window, { key: "Escape" });
+    await act(async () => {
+      confirm.remove();
+    });
+    expect(screen.getByTestId("ward-whats-new")).toBeTruthy();
+  });
+
+  it("is recorded seen only once it is on screen, not while a dialog that was open first hides it", async () => {
+    window.localStorage.setItem(TOUR_AUTO_DONE, "yes");
+    const dialog = document.createElement("dialog");
+    dialog.setAttribute("open", "");
+    document.body.append(dialog);
+    const { unmount } = render(<WardWhatsNew />);
+    expect(screen.queryByTestId("ward-whats-new")).toBeNull();
+    expect(seenList()).toEqual([]);
+    unmount();
+    dialog.remove();
+    render(<WardWhatsNew />);
+    expect(screen.getByTestId("ward-whats-new")).toBeTruthy();
+    expect(seenList()).toContain(newest().id);
+  });
+
+  it("stays when the account names only older changes as read", () => {
+    window.localStorage.setItem(TOUR_AUTO_DONE, "yes");
+    render(<WardWhatsNew />);
+    expect(screen.getByTestId("ward-whats-new")).toBeTruthy();
+    act(() => markWhatsNewSeen(["2026-10-31-role-names-hidden-names"], true));
     expect(screen.getByTestId("ward-whats-new")).toBeTruthy();
   });
 });

@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 import { Field, TextInput } from "@/components/wf";
 
@@ -29,12 +29,24 @@ describe("a capped text input (WF-30)", () => {
   it("shows the count near the cap and says when the cap is reached", () => {
     const view = input("x".repeat(85), 100);
     expect(screen.getByTestId("wf-input-limit")).toHaveTextContent("85/100");
-    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+    // The status region is there, empty, before the cap, so the message is announced when it arrives.
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
     view.rerender(
       <Field label="Suburb">
         <TextInput value={"x".repeat(100)} maxLength={100} onChange={() => {}} />
       </Field>,
     );
+    expect(screen.getByRole("status")).toHaveTextContent("Limit of 100 characters reached");
+  });
+
+  it("counts an uncontrolled input from its default value and what is typed", () => {
+    render(
+      <Field label="Note">
+        <TextInput defaultValue={"x".repeat(85)} maxLength={100} />
+      </Field>,
+    );
+    expect(screen.getByTestId("wf-input-limit")).toHaveTextContent("85/100");
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "x".repeat(100) } });
     expect(screen.getByRole("status")).toHaveTextContent("Limit of 100 characters reached");
   });
 });

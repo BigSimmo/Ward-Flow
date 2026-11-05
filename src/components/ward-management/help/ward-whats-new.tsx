@@ -17,7 +17,7 @@ import styles from "./ward-whats-new.module.css";
  * Each change is its own file in `whats-new/`, so parallel pull requests never edit the same lines
  * (Josh, 4 Nov 2026). A pull request that changes something staff will see adds one file,
  * `whats-new/<YYYY-MM-DD-short-slug>.json`, holding `{ "line": "One plain sentence." }`.
- * `scripts/ward-flow/whats-new-list.mjs` combines the files, newest 20 only, and the build inlines
+ * `scripts/ward-flow/whats-new-list.mjs` combines the files from the last 6 months, and the build inlines
  * the result here as `__WARD_WHATS_NEW__`. The live site only moves at the daily release, so the note
  * appears the morning after the merge, and the release workflow copies the new lines into its
  * GitHub release notes. Lines describe merged, visible changes only. The stored value is the list of
@@ -28,7 +28,7 @@ export type WhatsNewEntry = { readonly id: string; readonly date: string; readon
 // Inlined by the build and the tests (`next.config.ts`, `vitest.config.mts`) as a JSON string.
 declare const __WARD_WHATS_NEW__: string | undefined;
 
-/** Oldest first: the newest 20 entry files, by date and then id. Empty where nothing inlined it. */
+/** Oldest first: the last 6 months of entry files, by date and then id. Empty where nothing inlined it. */
 export const WHATS_NEW: readonly WhatsNewEntry[] =
   typeof __WARD_WHATS_NEW__ === "string" ? (JSON.parse(__WARD_WHATS_NEW__) as WhatsNewEntry[]) : [];
 
@@ -123,7 +123,10 @@ export function markWhatsNewSeen(
   fromAccount = false,
 ): void {
   if (ids.length === 0) return;
-  shownThisVisit = null;
+  // The note shown this visit stays until what it shows is read: an account reply naming only older
+  // changes must not close a note about newer ones.
+  const named = new Set(ids);
+  if (shownThisVisit?.every((entry) => named.has(entry.id))) shownThisVisit = null;
   try {
     const held = whatsNewSeenIds(window.localStorage.getItem(WHATS_NEW_STORAGE_KEY));
     window.localStorage.setItem(WHATS_NEW_STORAGE_KEY, JSON.stringify([...new Set([...ids, ...held])].slice(0, 200)));
@@ -152,7 +155,10 @@ function recordWhatsNewShown(entries: readonly WhatsNewEntry[]): void {
     window.localStorage.setItem(WHATS_NEW_STORAGE_KEY, JSON.stringify([...new Set([...ids, ...held])].slice(0, 200)));
   } catch {
     // Unreadable storage shows nothing anyway.
+    return;
   }
+  // So a signed-in account remembers them too, even if the note is left without Got it.
+  window.dispatchEvent(new CustomEvent(WHATS_NEW_SEEN_EVENT, { detail: { fromAccount: false } }));
 }
 let cached: { key: string; value: readonly WhatsNewEntry[] } = { key: "", value: NONE };
 
@@ -181,7 +187,7 @@ const subscribeSeen = (onChange: () => void) => {
 };
 const readNone = () => NONE;
 
-const MODAL_SELECTOR = '[role="dialog"][aria-modal="true"], dialog[open]';
+const MODAL_SELECTOR = '[role="dialog"][aria-modal="true"], [role="alertdialog"][aria-modal="true"], dialog[open]';
 
 /** Whether a modal dialog or drawer is on screen, watched only while the note would show. */
 function useModalOpen(watch: boolean): boolean {
@@ -232,12 +238,14 @@ export function WardWhatsNew() {
     },
     [],
   );
-  useEffect(() => {
-    if (showing) recordWhatsNewShown(unseen);
-  }, [showing, unseen]);
   const modalOpen = useModalOpen(showing);
-  // Escape is "Got it".
-  useCornerCardEscape(unseen.length > 0 && !closed, close);
+  // Recorded only once the note is on screen: a dialog opened before this loaded hides it, and the
+  // watcher above has not looked yet on the first render, so the page is checked here too.
+  useEffect(() => {
+    if (showing && !modalOpen && document.querySelector(MODAL_SELECTOR) === null) recordWhatsNewShown(unseen);
+  }, [showing, modalOpen, unseen]);
+  // Escape is "Got it", only while the note is on screen, so closing a dialog never closes it too.
+  useCornerCardEscape(showing && !modalOpen, close);
   if (unseen.length === 0 || closed || modalOpen) return null;
   return (
     <OverlayPortal layer="overlay" name="ward-whats-new">

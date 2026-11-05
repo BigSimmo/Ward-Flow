@@ -28,7 +28,7 @@ export function ExecutiveCapacityScreen() {
       <Card aria-labelledby="ward-capacity-executive-beds">
         <CardHead id="ward-capacity-executive-beds" title="Beds by ward" meta={`${network.wards.length} wards`} />
         <CardBody flush>
-          <table>
+          <table aria-labelledby="ward-capacity-executive-beds">
             <thead>
               <tr>
                 <th scope="col">Ward</th>

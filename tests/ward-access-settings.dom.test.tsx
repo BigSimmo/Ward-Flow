@@ -236,11 +236,13 @@ describe("the Access tab", () => {
     const rows = screen.getAllByTestId("ward-access-role-row").length;
     const remove = screen.getAllByTestId("ward-access-role-remove")[0];
     await act(async () => fireEvent.click(remove));
-    // The confirm is the kit dialog when its host is mounted, else the browser's own.
-    const keep = screen.queryByRole("button", { name: "Keep role" });
+    // The confirm is the kit dialog when its host is mounted, else the browser's own. The kit dialog
+    // loads on demand, so wait for one or the other before choosing.
+    const keepButton = () => screen.queryByRole("button", { name: "Keep role" });
+    await waitFor(() => expect(keepButton() !== null || confirm.mock.calls.length === 1).toBe(true));
+    const keep = keepButton();
     if (keep) await act(async () => fireEvent.click(keep));
     else expect(confirm).toHaveBeenCalledTimes(1);
-    expect(keep !== null || confirm.mock.calls.length === 1).toBe(true);
     expect(screen.queryByTestId("ward-step-up")).not.toBeInTheDocument();
     expect(screen.getAllByTestId("ward-access-role-row")).toHaveLength(rows);
     confirm.mockRestore();

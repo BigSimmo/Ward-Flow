@@ -62,6 +62,7 @@ describe("Capacity for a signed-in executive (WF-06)", () => {
     );
     expect(screen.getByTestId("ward-capacity-executive")).toHaveTextContent(/beds ready of/u);
     expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
+    expect(screen.getByRole("table", { name: /Beds by ward/u })).toBeInTheDocument();
     expect(guard.operational).not.toHaveBeenCalled();
   });
 
@@ -77,6 +78,7 @@ describe("Capacity for a signed-in executive (WF-06)", () => {
       </ExecutiveStatisticsProvider>,
     );
     expect(screen.queryByTestId("ward-capacity-executive")).not.toBeInTheDocument();
+    expect(screen.getByTestId("ward-statistics-unavailable")).toHaveTextContent(/Statistics are unavailable/u);
     expect(guard.operational).not.toHaveBeenCalled();
   });
 });
