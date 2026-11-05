@@ -1,9 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  ARRIVALS_AXIS_REACH_MINUTES,
-  arrivalsAxis,
-  arrivedSinceStartOfDay,
-} from "@/components/ward-management/officer/officer-screen-helpers";
+import { arrivalsAxis, arrivedSinceStartOfDay } from "@/components/ward-management/officer/officer-screen-helpers";
 import { createdEvent } from "@/components/ward-management/patients/patient-history-tab";
 import { clockTime, savedAtToast } from "@/components/ward-management/ward-saved-at-toast";
 
@@ -11,7 +7,7 @@ describe("WF-09 arrivals axis", () => {
   it("clamps to now +/-48h and bounds the tick count", () => {
     const now = 20_000;
     const axis = arrivalsAxis(now, [now - 8 * 1440 - 7 * 60, now + 30]);
-    expect(axis.start).toBe(now - ARRIVALS_AXIS_REACH_MINUTES);
+    expect(axis.start).toBe(now - 48 * 60);
     expect(axis.end).toBe(now + 30);
     expect(axis.ticks.length).toBeLessThanOrEqual(13);
     expect(axis.left(now - 100 * 1440)).toBe("0%");

@@ -1,7 +1,7 @@
 "use client";
 
 /*
- * WF-05: the Midland team's referral decisions, kept in this browser (localStorage) so an
+ * the Midland team's referral decisions, kept in this browser (localStorage) so an
  * "Accept for Midland" really records the answer: the referral leaves To answer, joins Answered,
  * and the counts stay changed after a reload. Demo data only; nothing goes to the server.
  */

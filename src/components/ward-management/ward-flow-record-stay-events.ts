@@ -284,7 +284,15 @@ export function reduceRecordedStayEvent(
           `admission ${admission.id} is ${admission.state}, and only somebody occupying a bed can have a discharge blocker`,
         );
       }
-      const updated = replaceAdmission(state, admission.id, { ...admission, blockReason: event.blocker });
+      const updated = replaceAdmission(state, admission.id, {
+        ...admission,
+        blockReason: event.blocker,
+        // logged with time and role for the bed timeline.
+        stayBlockRecords: [
+          ...(admission.stayBlockRecords ?? []),
+          { at: event.now, by: event.role, blocker: event.blocker },
+        ],
+      });
       return {
         ...updated,
         bedReleases: updated.bedReleases.map((release) =>

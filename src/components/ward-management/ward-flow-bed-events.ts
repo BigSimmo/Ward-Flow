@@ -570,7 +570,10 @@ export function reduceBedEvent(
       };
       decision.outcome = "accepted";
       decision.reasonCode = "none";
-      return withStayBlocker(replaceBedRelease(state, release.id, updated), release.admissionId, event.blocker);
+      return withStayBlocker(replaceBedRelease(state, release.id, updated), release.admissionId, event.blocker, {
+        at: event.now,
+        by: event.role,
+      });
     }
 
     case "CLEAR_BED_RELEASE_BLOCK": {

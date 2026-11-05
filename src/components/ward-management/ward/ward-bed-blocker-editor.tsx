@@ -31,7 +31,7 @@ export function useBlockerSave(
             () => onUpdateBlocker(admissionId, blocker),
             () => {
               setOpen(false);
-              // WF-47: a clear on-screen confirmation with the time of the save.
+              // a clear on-screen confirmation with the time of the save.
               savedAtToast(toast, blocker ? `Hold-up saved: ${blocker}` : "Hold-up cleared");
             },
           )

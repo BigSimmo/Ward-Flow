@@ -245,7 +245,7 @@ export type SortKey = "next" | "wait" | "eta";
 export type JobsTab = "jobs" | "history";
 
 /**
- * WF-08: an arrival counts in History from the moment it is written. A write stamped on a later
+ * an arrival counts in History from the moment it is written. A write stamped on a later
  * day than the screen's clock (a clock that has not caught up, or a stored world behind real time)
  * used to drop out of both Jobs and History; anything from the start of today onward now counts.
  */
@@ -253,18 +253,16 @@ export function arrivedSinceStartOfDay(arrivedAt: Instant, now: Instant): boolea
   return dayOf(arrivedAt) >= dayOf(now);
 }
 
-export const ARRIVALS_AXIS_REACH_MINUTES = 48 * 60;
-const ARRIVALS_AXIS_MAX_TICKS = 12;
-
-/** WF-09: the Arrivals card's time axis, clamped to now +/-48h, with a bounded number of hour ticks. */
-export function arrivalsAxis(now: Instant, etas: readonly Instant[]) {
-  const lo = now - ARRIVALS_AXIS_REACH_MINUTES;
-  const hi = now + ARRIVALS_AXIS_REACH_MINUTES;
+/** the Arrivals card's time axis, clamped to now +/-48h, with a bounded number of hour ticks. */
+export function arrivalsAxis(now: Instant, etas: readonly Instant[], reachHours = 48, maxTicks = 12) {
+  const reach = reachHours * 60;
+  const lo = now - reach;
+  const hi = now + reach;
   const clamp = (at: Instant) => Math.min(hi, Math.max(lo, at));
   const start = Math.min(now, ...etas.map(clamp));
   const end = Math.max(now, ...etas.map(clamp));
   const span = Math.max(end - start, 1);
-  const step = Math.max(1, Math.ceil(span / 60 / ARRIVALS_AXIS_MAX_TICKS)) * 60;
+  const step = Math.max(1, Math.ceil(span / 60 / maxTicks)) * 60;
   const ticks: Instant[] = [];
   for (let tick = Math.ceil(start / step) * step; tick <= end; tick += step) ticks.push(tick);
   const left = (at: Instant) => `${((clamp(at) - start) / span) * 100}%`;

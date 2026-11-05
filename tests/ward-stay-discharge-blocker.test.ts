@@ -104,6 +104,17 @@ describe("a stay-level discharge blocker, recorded before any bed release exists
     expect(history[1]).toEqual({ at: NOW + 5, by: "coordinator", blocker: BED_RELEASE_BLOCKERS[1] });
   });
 
+  it("WF-23: logs every recorded hold-up with its time and role", () => {
+    const state = seedWardFlowState();
+    const person = anOccupantWithNoBlocker(state);
+    const blocked = record(state, person.id, person.unitId, BED_RELEASE_BLOCKERS[0]);
+    const records = find(blocked, person.id).stayBlockRecords ?? [];
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ blocker: BED_RELEASE_BLOCKERS[0] });
+    expect(Number.isFinite(records[0]!.at)).toBe(true);
+    expect(typeof records[0]!.by).toBe("string");
+  });
+
   it("refuses a reason that is not on the chosen list, so typed text can never be stored", () => {
     const state = seedWardFlowState();
     const person = anOccupantWithNoBlocker(state);

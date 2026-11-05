@@ -341,7 +341,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
           })()
         : null}
 
-      {/* WF-22: the alert follows whichever ETA the job shows (ward ETA, else the booked ETA). */}
+      {/* the alert follows whichever ETA the job shows (ward ETA, else the booked ETA). */}
       {eta !== undefined &&
       transport.arrivedAt === undefined &&
       !movement.closure &&

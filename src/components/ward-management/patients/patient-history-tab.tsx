@@ -309,7 +309,7 @@ const SCOPE_DESK: Record<PatientRegistrationScope["kind"], string> = {
   service: "service desk",
 };
 
-/** WF-49: "Record created by <desk>" at the time it was added; undefined when that was not recorded. */
+/** "Record created by <desk>" at the time it was added; undefined when that was not recorded. */
 export function createdEvent(
   patient: Pick<Patient, "addedAt" | "registrationScope"> | undefined,
   unitName: (id: string) => string | undefined,
@@ -399,7 +399,7 @@ export function PatientHistoryTab({
     events.push({ at: absence.since, tone: "danger", text: `${absenceWord}, recorded` });
     for (const done of absence.steps) events.push({ at: done.at, tone: "info", text: ABSENCE_STEP_LABELS[done.step] });
   }
-  // WF-49: who created this record and when, from the registration itself.
+  // who created this record and when, from the registration itself.
   const created = createdEvent(
     patients.find((p) => p.id === (patientId ?? record.id)),
     unitName,

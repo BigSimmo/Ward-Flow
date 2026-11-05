@@ -1575,7 +1575,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       warnToast(`Enter a whole number from 0 to ${unit.beds} beds.`);
       return;
     }
-    // WF-47: say on screen that the beds were saved, and when.
+    // say on screen that the beds were saved, and when.
     completeCommand(
       "capacity-rollup",
       () => submitCapacity(),

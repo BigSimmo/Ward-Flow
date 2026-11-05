@@ -5,8 +5,8 @@
  * referral-page-light.png, referral-page-dark.png and referral-document-viewer.png): the queue with
  * To answer, Sent by team and Answered; the side panel for the chosen referral; and the full
  * referral page, modelled on the ward Answer page. Midland demo data, ported from the mock-up
- * (Q126, Q132). The team accepts as itself (Q125). Answers are recorded in this browser (WF-05,
- * midland-decisions.ts) so the counts and lists stay changed after a reload.
+ * (Q126, Q132). The team accepts as itself (Q125). Answers are recorded in this browser
+ * (midland-decisions.ts) so the counts and lists stay changed after a reload.
  */
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -77,7 +77,7 @@ function TimeCard({ r }: { r: DemoReferral }) {
   );
 }
 
-/** Accept records the answer (WF-05) and turns the actions into one success line with Undo. */
+/** Accept records the answer and turns the actions into one success line with Undo. */
 export function useAnswer(name: string, id?: string) {
   const toast = useOptionalToast();
   const decisions = useMidlandDecisions();

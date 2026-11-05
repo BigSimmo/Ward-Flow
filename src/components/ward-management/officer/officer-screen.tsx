@@ -648,7 +648,7 @@ export function OfficerScreen() {
     })
     .filter((item): item is { movement: Movement; eta: Instant; booked: boolean } => item !== undefined)
     .sort((a, b) => a.eta - b.eta);
-  // WF-09: the axis is clamped to now +/-48h with at most a dozen labels; a job eight days late
+  // the axis is clamped to now +/-48h with at most a dozen labels; a job eight days late
   // used to draw ~200 hourly labels and was the suspected cause of the tab crash.
   const { left: arrivalsLeft, ticks: hourTicks } = arrivalsAxis(
     now,

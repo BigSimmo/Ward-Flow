@@ -495,7 +495,7 @@ export function AddPatientForm() {
             ...(prior.intent === "refer"
               ? { nextStep: { label: "Open patient", onNextStep: () => router.push(patientHref(added.id)) } }
               : {
-                  // WF-19: a new record is on no board until something brings them in; say so and
+                  // a new record is on no board until something brings them in; say so and
                   // offer the next step there and then.
                   body: "Not on a board yet. Start a referral to add this presentation.",
                   nextStep: {
