@@ -104,6 +104,10 @@ all unit time. Josh's ruling (27 October 2026): a pull request runs it only when
 the sweep runs. `scripts/ward-ci-public/legal-sweep-scope.mjs` follows the sweep's imports from the
 PR's own tree, and also counts the package manifests, `.nvmrc`, Vitest and TypeScript config,
 `tests/setup/`, the workflow, the expected-reds manifest and the gate scripts that make this decision.
+The import closure includes the execution harness and Vitest configuration, including their local
+dependencies. Missing or unresolved local execution inputs refuse the narrow plan. The sweep's
+iterator narrows movement subjects before constructing candidates; the complete world, exhaustive
+candidate API, expiry sentinel registration and accepted-event/undo assertions stay unchanged.
 Deletions, renames and any planner error run the sweep. The plan writes `legal_sweep=false` only for
 a readable pull request diff, `verify-plan.mjs` re-derives it, and the shards leave the sweep out
 (`WARD_GATE_SKIP_LEGAL_SWEEP=1`) only on that explicit `false`. Main pushes, the nightly run and
