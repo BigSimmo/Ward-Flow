@@ -3,7 +3,7 @@ import { hasDuplicateRetainedUmrns } from "./ward-retained-umrn";
 import type { WardFlowState } from "./ward-flow-reducer";
 
 /** Plain words for a refused restore. Fixed text only: never the save's own content. */
-export const PLACEMENT_PROBLEMS = {
+const PLACEMENT_PROBLEMS = {
   leaveAndEd: "a patient is recorded both on leave and away at an emergency department",
   twoStays: "a patient has more than one active ward stay",
   sharedBed: "two records hold the same numbered bed",
@@ -24,7 +24,7 @@ export function restoreRuleProblem(state: WardFlowState, patientStays: PatientSt
 }
 
 /** The first placement invariant a stored state breaks, in plain words, or null. */
-export function placementInvariantProblem(
+function placementInvariantProblem(
   state: WardFlowState,
   patientStays: readonly (readonly Pick<Admission, "id" | "unitId" | "state">[])[],
 ): string | null {
