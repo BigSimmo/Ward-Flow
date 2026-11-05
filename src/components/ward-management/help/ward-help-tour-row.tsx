@@ -11,7 +11,6 @@ import { readTourStep, type WardTourRole } from "./ward-help-store";
 import { tourChapters, useTourDevice } from "./ward-tour-device";
 import { useTourFacts } from "./ward-tour-facts";
 import { fullTourSteps } from "./ward-tour-more-steps";
-import type { TourDevice } from "./ward-tour-steps";
 import s from "./ward-help-panel.module.css";
 
 // The welcome cards load only when asked for again here.
@@ -24,7 +23,7 @@ const WardTourWelcome = dynamic(() => import("./ward-tour-welcome").then((m) => 
 export function TourRow({ role, onTour }: { role: WardTourRole; onTour: () => void }) {
   const device = useTourDevice();
   const { facts } = useTourFacts(role);
-  const steps = useMemo(() => fullTourSteps(role, device as TourDevice, facts), [role, device, facts]);
+  const steps = useMemo(() => fullTourSteps(role, device, facts), [role, device, facts]);
   const chapters = useMemo(() => tourChapters(steps), [steps]);
   const total = steps.length;
   // The tour's own saved place (`ward-help-store`), read once when Help opens.

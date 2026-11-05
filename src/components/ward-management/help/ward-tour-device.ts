@@ -24,10 +24,8 @@ export function tourChapters(steps: readonly TourStep[]): readonly TourChapterSp
 /**
  * The three screens the tour and Show me play on: a phone (under 746px, with the dock), a tablet
  * (746px to 1000px, where the rail is a bar across the top) and a desk (the rail down the side).
- * `TourDevice` gains "tablet" in `ward-tour-steps.ts`; until then this union says the same thing,
- * and once it has, the two are one type.
  */
-export type WardTourDevice = TourDevice | "tablet";
+export type WardTourDevice = TourDevice;
 
 /** Which of the three this window is now. Follows the window as it is resized or turned. */
 export function useTourDevice(): WardTourDevice {

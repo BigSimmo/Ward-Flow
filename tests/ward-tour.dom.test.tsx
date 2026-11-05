@@ -30,12 +30,14 @@ vi.mock("@/components/wf", async (importOriginal) => ({
   useIsTabletPortrait: () => tablet.on,
 }));
 
-// Go further's steps come from the tour content (WS4); here a test sets them.
+// Go further's steps come from the tour content (`ward-tour-more-steps.ts`, tested on its own); here
+// each test sets them, so the player's behaviour does not hang on how many a desk has.
 const further: { steps: readonly import("@/components/ward-management/help/ward-tour-steps").TourStep[] } = {
   steps: [],
 };
 const furtherCalls: string[] = [];
-vi.mock("@/components/ward-management/help/ward-tour-go-further", () => ({
+vi.mock("@/components/ward-management/help/ward-tour-more-steps", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/components/ward-management/help/ward-tour-more-steps")>()),
   goFurtherSteps: (_role: string, device: string) => {
     furtherCalls.push(device);
     return further.steps;

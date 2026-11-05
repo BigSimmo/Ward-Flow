@@ -9,7 +9,7 @@ import { OverlayPortal, useModalFocus } from "@/components/wf";
 import { useTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
 import { fullTourSteps } from "./ward-tour-more-steps";
-import { tourMinutes, type TourDevice } from "./ward-tour-steps";
+import { tourMinutes } from "./ward-tour-steps";
 import { useSwipe, useTourDevice, type WardTourDevice } from "./ward-tour-device";
 import styles from "./ward-tour-offer.module.css";
 
@@ -70,10 +70,7 @@ export function WardTourWelcome({
   const role = useTourRole();
   const device = useTourDevice();
   const { facts } = useTourFacts(role);
-  const minutes = useMemo(
-    () => tourMinutes(fullTourSteps(role, device as TourDevice, facts).length, device as TourDevice),
-    [role, device, facts],
-  );
+  const minutes = useMemo(() => tourMinutes(fullTourSteps(role, device, facts).length, device), [role, device, facts]);
   const cards = useMemo(() => welcomeCards(device, minutes), [device, minutes]);
   const [at, setAt] = useState(0);
   // Which way the last move went, so the new card slides in from that side.
