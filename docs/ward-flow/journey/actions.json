@@ -1683,7 +1683,7 @@
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
           "line": 727,
-          "sha256": "e1f6c9924777b185642b2824939b23a587dc58e555d3506fb92f3662cecfd1ce"
+          "sha256": "2587f644a86e751b4d4e3bb49d609b0f72b9a74ead8af9b9f222edb63fab9712"
         },
         {
           "path": "src/components/ward-management/delays/delays-screen.tsx",
@@ -1964,7 +1964,7 @@
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
           "line": 712,
-          "sha256": "e1f6c9924777b185642b2824939b23a587dc58e555d3506fb92f3662cecfd1ce"
+          "sha256": "2587f644a86e751b4d4e3bb49d609b0f72b9a74ead8af9b9f222edb63fab9712"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
@@ -4769,7 +4769,7 @@
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
           "line": 659,
-          "sha256": "e1f6c9924777b185642b2824939b23a587dc58e555d3506fb92f3662cecfd1ce"
+          "sha256": "2587f644a86e751b4d4e3bb49d609b0f72b9a74ead8af9b9f222edb63fab9712"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
@@ -7019,7 +7019,7 @@
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
           "line": 816,
-          "sha256": "e1f6c9924777b185642b2824939b23a587dc58e555d3506fb92f3662cecfd1ce"
+          "sha256": "2587f644a86e751b4d4e3bb49d609b0f72b9a74ead8af9b9f222edb63fab9712"
         },
         {
           "path": "src/components/ward-management/alerts/ward-broadcast-reducer.ts",
@@ -7147,7 +7147,7 @@
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
           "line": 850,
-          "sha256": "e1f6c9924777b185642b2824939b23a587dc58e555d3506fb92f3662cecfd1ce"
+          "sha256": "2587f644a86e751b4d4e3bb49d609b0f72b9a74ead8af9b9f222edb63fab9712"
         },
         {
           "path": "src/components/ward-management/shell/ward-broadcast-banner.tsx",
