@@ -429,7 +429,7 @@ export function useWardSupabaseShared(
         refresh: async () => {
           if (sessionEnded()) return false;
           const before = lastRead;
-          await client.refresh();
+          if ((await client.refresh()) === "skipped") return "skipped";
           return lastRead > before;
         },
       });

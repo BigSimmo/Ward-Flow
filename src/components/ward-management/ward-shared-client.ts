@@ -839,7 +839,8 @@ export class SharedWorkspaceClient {
   async refresh() {
     // Audit 4 A4-03: a save waiting on Retry does not stop the board being read: reads change
     // nothing. Held saves go once a read succeeds; the server still refuses a stale one (CS-19).
-    if (this.busy || this.disposed || this.gated()) return;
+    if (this.busy) return "skipped" as const; // SD-04: a save or read in flight is not a failed read
+    if (this.disposed || this.gated()) return;
     this.busy = true;
     let resend = false;
     const poll = (this.pollAbort = new AbortController());
