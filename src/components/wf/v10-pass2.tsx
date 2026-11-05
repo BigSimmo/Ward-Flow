@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { cx } from "./cx";
 import { SrOnly } from "./primitives";
-import { StatusGlyph, type WfTone } from "./status-glyph";
+import { controlTone, StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./v10-pass2.module.css";
 
 /*
@@ -46,7 +46,7 @@ export function HeroChip({ value, label, tone, twin, twinLabel, onPress, pressed
           {twin}
         </span>
       ) : null}
-      {tone ? <StatusGlyph tone={tone} size={9} /> : null}
+      {tone ? <StatusGlyph tone={controlTone(tone)} size={9} /> : null}
       <span className={styles.chipLabel}>{label}</span>
       {twinLabel ? <SrOnly>, {twinLabel}</SrOnly> : null}
     </>

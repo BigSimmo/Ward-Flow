@@ -194,7 +194,10 @@ describe("loading a demonstration scenario", () => {
     expect(state.units.every((unit) => unit.id.startsWith("dn-"))).toBe(true);
     expect(allUnits().map((unit) => unit.id)).toEqual(state.units.map((unit) => unit.id));
     expect(unitById("dn-bty-women")?.name).toBe("Bentley Women's Acute");
-    expect(state.patients.length).toBe(demoNetwork("demo").patients.length);
+    // S6 example data (3 Nov 2026): plus the example people (`PT-EX-`), added to every scenario.
+    expect(state.patients.filter((patient) => !patient.id.startsWith("PT-EX-")).length).toBe(
+      demoNetwork("demo").patients.length,
+    );
     activateScenarioNetwork("standard");
     expect(unitById("dn-bty-women")).toBeUndefined();
   });

@@ -34,6 +34,7 @@ import { logFailure } from "./error-report.mjs";
 import { LruCache, registerPart } from "./reply-cache.mjs";
 import { recordDetailOf, withoutRecordDetail } from "./record-detail.mjs";
 import { forecastHistoryStore } from "./forecast-history.mjs";
+import { accountPreferencesStore } from "./account-preferences.mjs";
 import { deskAuditPage } from "./desk-audit.mjs";
 
 /**
@@ -1906,6 +1907,8 @@ export function createWorkspaceStore(
       return { notModified: false, snapshot: await read(actorId, view) };
     },
     viewer,
+    // Migration 17: each signed-in account's Help memory.
+    ...accountPreferencesStore({ pool, workspaceId, schemaVersion, forgetVersionOnMissing }),
     // Proposal 013 (migration 16): each desk's shared forecast snapshots and miss reasons.
     ...forecastHistoryStore({
       pool,

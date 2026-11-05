@@ -18,6 +18,8 @@ import { helpTipsOff, setHelpTipsOff } from "./ward-help-tips-off";
 import styles from "./ward-help-hints.module.css";
 
 export const HELP_HINTS_KEY = "ward_flow_choice_help_hints_seen";
+/** Fired when a tip is marked seen, so a signed-in account can remember it too. */
+export const HELP_HINTS_CHANGED_EVENT = "ward-flow-help-hints-changed";
 // Only static Help topic ids may enter storage. No paths, record ids or typed words.
 const TOPICS = new Set([
   "command",
@@ -61,6 +63,7 @@ export function markHelpHint(role: WardTourRole, topic: string): boolean {
     const seen = parseHelpHints(window.localStorage.getItem(HELP_HINTS_KEY) ?? "");
     if (seen.some((mark) => mark.endsWith(`:${topic}`))) return false;
     window.localStorage.setItem(HELP_HINTS_KEY, [...seen, key].join(","));
+    window.dispatchEvent(new Event(HELP_HINTS_CHANGED_EVENT));
     return true;
   } catch {
     return false;

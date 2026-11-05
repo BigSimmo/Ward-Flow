@@ -311,21 +311,23 @@
   width: 9.5rem;
 }
 
-/* With the job panel open the table narrows: the forms column keeps its dots only. */
-.layout[data-open="true"] .jobsTable th:nth-child(1) {
-  width: 22%;
-}
+/* With the job panel open beside it the table narrows: the forms column keeps its dots only. */
+@media (min-width: 62.5625rem) {
+  .layout[data-open="true"] .jobsTable th:nth-child(1) {
+    width: 22%;
+  }
 
-.layout[data-open="true"] .jobsTable th:nth-child(3) {
-  width: 17%;
-}
+  .layout[data-open="true"] .jobsTable th:nth-child(3) {
+    width: 17%;
+  }
 
-.layout[data-open="true"] .jobsTable th:nth-child(4) {
-  width: 4.5rem;
-}
+  .layout[data-open="true"] .jobsTable th:nth-child(4) {
+    width: 4.5rem;
+  }
 
-.layout[data-open="true"] .jobsTable th:nth-child(5) {
-  width: 15%;
+  .layout[data-open="true"] .jobsTable th:nth-child(5) {
+    width: 15%;
+  }
 }
 
 /* Layout sweep PT-12: "Not needed" wraps in the narrow forms column rather than being cut. */
@@ -333,12 +335,16 @@
   white-space: normal;
 }
 
-.layout[data-open="true"] .formsCell > span:last-child {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
+/* Review 5 Nov 2026: only where the panel sits beside the table. Up to 1000px the panel stacks
+ * above a full-width table, and hiding the words left three bare circles at 834. */
+@media (min-width: 62.5625rem) {
+  .layout[data-open="true"] .formsCell > span:last-child {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
 }
 
 .jobRow {

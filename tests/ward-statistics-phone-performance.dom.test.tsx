@@ -109,7 +109,8 @@ describe("Statistics phone computation work", () => {
         </WardFlowProvider>
       </ToastProvider>,
     );
-    expect(patients).toBe(362);
+    // 362 -> 411 (3 Nov 2026, S6 example data): the 49 example people on the standard night.
+    expect(patients).toBe(411);
     expect(observed.phone?.wardCount).toBe(22);
     expect(screen.getByRole("button", { name: /^Open ED movements/u })).toBeInTheDocument();
     console.info(

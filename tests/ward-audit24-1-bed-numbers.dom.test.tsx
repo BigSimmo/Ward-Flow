@@ -102,17 +102,22 @@ describe("bed numbers stay put (audit 24-1)", () => {
     const unit = "sjgs-adult-open";
     renderWard(unit);
     const before = bedsByStay();
-    const first = card(3).admissionId!;
+    // Searched, not named (3 Nov 2026): the S6 example stays that left earlier shift who sits where.
+    const occupied = cards().filter(
+      (candidate) => candidate.admissionId !== undefined && candidate.state !== "incoming",
+    );
+    const [firstBed, secondBed] = [occupied[1]!.bed, occupied[3]!.bed];
+    const first = card(firstBed).admissionId!;
     const firstTarget = cards().find((candidate) => candidate.state === "ready")!.bed;
     placeInBed(unit, first, firstTarget);
     expect(bedsByStay().get(first)).toBe(firstTarget);
-    expect(card(3).state).toBe("ready");
+    expect(card(firstBed).state).toBe("ready");
 
-    const second = card(6).admissionId!;
-    placeInBed(unit, second, 3);
-    expect(bedsByStay().get(second)).toBe(3);
+    const second = card(secondBed).admissionId!;
+    placeInBed(unit, second, firstBed);
+    expect(bedsByStay().get(second)).toBe(firstBed);
     expect(movedStays(before, [first, second])).toEqual([]);
-    expect(card(6).state, "the bed the second person left is the one that is free").toBe("ready");
+    expect(card(secondBed).state, "the bed the second person left is the one that is free").toBe("ready");
   });
 
   it("B-02: ending one pulled bed leaves the other pulled person in her bed", () => {

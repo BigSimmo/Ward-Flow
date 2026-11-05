@@ -229,14 +229,14 @@ describe("one health service on the executive desk, counts only", () => {
   it("shows the coordinator, and the executive with the flag off, the exact counts and the lists", () => {
     asDesk("coordinator", true);
     const first = renderScreen(<StatisticsServiceScreen serviceId="North Metro" />);
-    expect(text("ward-statistics-service-placement-raised")).toBe("2");
+    expect(text("ward-statistics-service-placement-raised")).toBe("3"); // 2 -> 3 (3 Nov 2026): one S6 example referral raised at a North Metro site
     expect(text("ward-statistics-service-out-of-area-value")).toBe("4");
     expect(screen.getByTestId("ward-statistics-service-ed-swarm")).toBeInTheDocument();
     first.unmount();
 
     asDesk("executive", false);
     renderScreen(<StatisticsServiceScreen serviceId="East Metro" />);
-    expect(text("ward-statistics-service-placement-not-yet")).toBe("15");
+    expect(text("ward-statistics-service-placement-not-yet")).toBe("17"); // 15 -> 17 (3 Nov 2026): two S6 example referrals from East Metro sites, declined, not placed
     expect(within(screen.getByTestId("ward-statistics-service-repatriation")).getByRole("table")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-statistics-people-not-listed")).toBeNull();
   });

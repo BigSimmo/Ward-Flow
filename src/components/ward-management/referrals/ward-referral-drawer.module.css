@@ -3880,6 +3880,22 @@ details.refCard > summary {
   min-height: var(--spacing-tap, 3rem);
 }
 
+/* Design sweep (4 Nov 2026): on a phone the inbox's buttons, such as Show answered, meet the 40px
+ * tap floor. The demo now seeds answered referrals, so a ward's phone shows that toggle. */
+@media (max-width: 46.4375rem) {
+  .patientChipBtn {
+    position: relative;
+    height: auto;
+    min-height: var(--wf-phone-pill-h);
+  }
+  /* An invisible 4px cover above and below, as the kit Button has, makes the tap area 48px. */
+  .patientChipBtn::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+}
+
 /* RF2 (4 Nov 2026): the letter preview is the paper itself, with its two actions above it. */
 .letterSection {
   display: grid;
