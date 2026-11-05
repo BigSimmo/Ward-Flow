@@ -13,6 +13,8 @@ const PRIORITY = [
   "WardDemoNotSavedNote",
   "WardBroadcastBanner",
   "WardRecoveryNotice",
+  // SD-03 (audit, 5 Nov 2026): two demonstration tabs keeping separate days.
+  "WardOtherTabDayNote",
   "WardOfflineBanner",
   "WardDowntimePackLine",
   "WardAccessBanner",

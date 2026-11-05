@@ -24,6 +24,7 @@ import { WardDowntimePackLine } from "@/components/ward-management/shell/ward-do
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import { WardDemoNotSavedNote, WardDemoTypedTextNote } from "@/components/ward-management/shell/ward-demo-saving";
 import { WardRecoveryNotice } from "@/components/ward-management/shell/ward-recovery-notice";
+import { WardOtherTabDayNote } from "@/components/ward-management/shell/ward-other-tab-day";
 import { WardFeatureFlagLink } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardOfflineLinks } from "@/components/ward-management/shell/ward-offline-links";
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
@@ -261,6 +262,7 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                     <WardDemoNotSavedNote />
                     <WardBroadcastBanner />
                     <WardRecoveryNotice />
+                    <WardOtherTabDayNote />
                     <WardOfflineBanner practice={false} />
                     {/* Fix plan item 9: retakes the downtime pack hourly and at shift change, and offers it to print or save. */}
                     <WardDowntimePackLine />
