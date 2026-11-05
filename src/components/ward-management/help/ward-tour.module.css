@@ -110,8 +110,10 @@
   max-height: 72vh !important;
 }
 
+/* On a phone the ask list stays short, so See common tasks and Go further show without scrolling the card. */
 .layer[data-device="phone"] .canDo {
   grid-template-columns: minmax(0, 1fr);
+  max-height: min(15rem, 30vh);
 }
 
 .layer[data-device="phone"] .card[data-place="centre"] {

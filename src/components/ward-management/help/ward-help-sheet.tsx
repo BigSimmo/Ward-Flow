@@ -635,6 +635,7 @@ function WardHelpSheetView({
               typed(words);
             }}
             onOpenChecklist={openChecklist}
+            here={screen ? aroundId(screen.id) : undefined}
           />
         </div>
       ) : suggesting ? (

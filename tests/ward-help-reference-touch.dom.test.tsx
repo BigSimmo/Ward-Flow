@@ -120,6 +120,40 @@ describe("Help search with no answer", () => {
     expect(location.href).toBe(before);
   });
 
+  it("offers only the walk round of the screen Help is open on", () => {
+    const onShowMe = vi.fn();
+    const { unmount } = render(
+      <HelpFindResults
+        found={undefined}
+        query="xyzzy"
+        role="coordinator"
+        active={-1}
+        onChoose={vi.fn()}
+        onShowMe={onShowMe}
+        canShow={() => true}
+        onUseTyped={vi.fn()}
+      />,
+    );
+    // No screen named: no walk round, rather than the first one the desk could play elsewhere.
+    expect(screen.queryByText("Show me around this screen")).toBeNull();
+    unmount();
+    render(
+      <HelpFindResults
+        found={undefined}
+        query="xyzzy"
+        role="coordinator"
+        active={-1}
+        onChoose={vi.fn()}
+        onShowMe={onShowMe}
+        canShow={() => true}
+        onUseTyped={vi.fn()}
+        here="around-capacity"
+      />,
+    );
+    fireEvent.click(screen.getByText("Show me around this screen"));
+    expect(onShowMe).toHaveBeenCalledWith("around-capacity");
+  });
+
   it("lists this desk's checklists when Help can open them", () => {
     const onOpenChecklist = vi.fn();
     render(

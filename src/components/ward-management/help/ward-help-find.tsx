@@ -271,6 +271,7 @@ export function HelpFindResults({
   canShow,
   onUseTyped,
   onOpenChecklist,
+  here,
 }: {
   found: HelpFound | undefined;
   query: string;
@@ -282,6 +283,8 @@ export function HelpFindResults({
   onUseTyped: (words: string) => void;
   /** Opens one of this desk's checklists inside Help; without it the empty state lists none. */
   onOpenChecklist?: (id: string) => void;
+  /** The walk round of the screen Help is open on (its how-to id), offered when nothing matches. */
+  here?: string;
 }) {
   const access = useEffectiveWardAccess();
   if (found?.kind === "clinical") {
@@ -314,6 +317,7 @@ export function HelpFindResults({
           onShowMe={onShowMe}
           canShow={canShow}
           onOpenChecklist={onOpenChecklist}
+          here={here}
         />
       </>
     );
@@ -439,15 +443,21 @@ function NoAnswer({
   onShowMe,
   canShow,
   onOpenChecklist,
+  here,
 }: {
   role: WardTourRole;
   onChoose: (result: HelpSearchResult) => void;
   onShowMe: (id: string) => void;
   canShow: (id: string) => boolean;
   onOpenChecklist?: (id: string) => void;
+  /** The walk round of the screen Help is open on, if it has one. */
+  here?: string;
 }) {
   const access = useEffectiveWardAccess();
-  const walk = HOW_TOS.find((howTo) => howTo.around && howToFor(howTo, role, access) && canShow(howTo.id));
+  // Only this screen's own walk round: another screen's would send them away from where they asked.
+  const walk = here
+    ? HOW_TOS.find((howTo) => howTo.id === here && howTo.around && howToFor(howTo, role, access) && canShow(howTo.id))
+    : undefined;
   const checklists = onOpenChecklist ? checklistsForDesk(role).slice(0, LEADS) : [];
   const jobs = tasksForDesk(role, access).slice(0, LEADS);
   const lead = (key: string, Icon: typeof Play, title: string, detail: string, onClick: () => void) => (
