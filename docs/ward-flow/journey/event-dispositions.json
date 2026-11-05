@@ -155,8 +155,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
-          "line": 148,
-          "sha256": "e821cf3a8a08b764d868debdf6568a5705ea0e4629dd77d851ed0dc81d39f770"
+          "line": 154,
+          "sha256": "1ea8f3c4f644456cfff2f29b16085917696fb2b118a50d08a9acdf056a18e04e"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -331,13 +331,14 @@
       "effects": [
         "Updates observation and appends {at,sequence,from,to} on each linked record",
         "No new placement or capacity allocation; staffing eligibility remains a separate pull check",
-        "Accepted observation history entries also carry sequence=max(all retained movement/admission observation sequences,0)+1; an agreeing linked counterpart receives that same edit sequence. PATIENT_ARRIVED uses retained accepted order before legacy minute timestamps. Genuinely unordered legacy ties retain the previous fallback; no historical order is invented."
+        "Accepted observation history entries also carry sequence=max(all retained movement/admission observation sequences,0)+1; an agreeing linked counterpart receives that same edit sequence. PATIENT_ARRIVED uses retained accepted order before legacy minute timestamps. Genuinely unordered legacy ties retain the previous fallback; no historical order is invented.",
+        "An accepted edit marks its audit decision accepted with no reason code."
       ],
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-observation-events.ts",
-          "line": 32,
-          "sha256": "b710d406227a810c4020dadb7ffeb75bb6c7e790d3911dd26895d771de5041b1"
+          "line": 33,
+          "sha256": "275eabc8477f1bbfb0fff94c155c389a544304f1daebb6be8036d13c54ade72c"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -346,8 +347,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-observation-events.ts",
-          "line": 32,
-          "sha256": "b710d406227a810c4020dadb7ffeb75bb6c7e790d3911dd26895d771de5041b1"
+          "line": 33,
+          "sha256": "275eabc8477f1bbfb0fff94c155c389a544304f1daebb6be8036d13c54ade72c"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
@@ -393,7 +394,7 @@
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
           "line": 2024,
-          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
+          "sha256": "8e056e60e9ae556496e92a26fc4f9d9dd32e68d3f1fc16358889fe6442e826c8"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -444,7 +445,7 @@
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
           "line": 2025,
-          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
+          "sha256": "8e056e60e9ae556496e92a26fc4f9d9dd32e68d3f1fc16358889fe6442e826c8"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1514,7 +1515,7 @@
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
           "line": 664,
-          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
+          "sha256": "f9ec8f13505e04398caa83f2bcacb04e4eb212fa967ea92da1132d6c46527bd2"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1874,8 +1875,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
-          "line": 267,
-          "sha256": "e821cf3a8a08b764d868debdf6568a5705ea0e4629dd77d851ed0dc81d39f770"
+          "line": 273,
+          "sha256": "1ea8f3c4f644456cfff2f29b16085917696fb2b118a50d08a9acdf056a18e04e"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -1918,8 +1919,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
-          "line": 198,
-          "sha256": "e821cf3a8a08b764d868debdf6568a5705ea0e4629dd77d851ed0dc81d39f770"
+          "line": 204,
+          "sha256": "1ea8f3c4f644456cfff2f29b16085917696fb2b118a50d08a9acdf056a18e04e"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -1971,7 +1972,7 @@
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
           "line": 2347,
-          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
+          "sha256": "8e056e60e9ae556496e92a26fc4f9d9dd32e68d3f1fc16358889fe6442e826c8"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -2022,7 +2023,7 @@
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
           "line": 2349,
-          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
+          "sha256": "8e056e60e9ae556496e92a26fc4f9d9dd32e68d3f1fc16358889fe6442e826c8"
         }
       ],
       "tests": ["tests/ward-on-call-checks.test.ts"]
@@ -2273,13 +2274,13 @@
       "sources": [
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
-          "line": 298,
-          "sha256": "448d7f6e084c37776896bfc2bb9020b1c25cea6b31676a87421b1a8c76280ba4"
+          "line": 299,
+          "sha256": "61ad20c2605a7461ce59b5fd80350ebbc3555aefe361eaa620eaa8904d713893"
         },
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
-          "line": 262,
-          "sha256": "448d7f6e084c37776896bfc2bb9020b1c25cea6b31676a87421b1a8c76280ba4"
+          "line": 263,
+          "sha256": "61ad20c2605a7461ce59b5fd80350ebbc3555aefe361eaa620eaa8904d713893"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -2324,13 +2325,13 @@
       "sources": [
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
-          "line": 382,
-          "sha256": "448d7f6e084c37776896bfc2bb9020b1c25cea6b31676a87421b1a8c76280ba4"
+          "line": 383,
+          "sha256": "61ad20c2605a7461ce59b5fd80350ebbc3555aefe361eaa620eaa8904d713893"
         },
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
-          "line": 262,
-          "sha256": "448d7f6e084c37776896bfc2bb9020b1c25cea6b31676a87421b1a8c76280ba4"
+          "line": 263,
+          "sha256": "61ad20c2605a7461ce59b5fd80350ebbc3555aefe361eaa620eaa8904d713893"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -2371,8 +2372,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
-          "line": 458,
-          "sha256": "448d7f6e084c37776896bfc2bb9020b1c25cea6b31676a87421b1a8c76280ba4"
+          "line": 459,
+          "sha256": "61ad20c2605a7461ce59b5fd80350ebbc3555aefe361eaa620eaa8904d713893"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -2401,7 +2402,7 @@
       "scope": "ward or coordinator only; ward must name its own booked ward. Authenticated booking/ward scope additionally applies.",
       "guards": [
         "Plan exists and is booked; unit matches and is open. Linked patient has neither another held/occupied bed nor an open movement.",
-        "A Ready bed exists (pulledBedAvailability, counting live pulled admissions) and, when beds are pending preparation, more Ready beds than pending ones. Secure request requires a free locked bed.",
+        "A Ready bed exists (pulledBedAvailability, counting live pulled admissions) and, when beds are pending preparation, more Ready beds than pending ones. Secure request requires a free locked bed. Other journeys' pending numbered reservations at the ward come off Ready and off the free locked and open counts first.",
         "Current placement eligibility gates pass; only a recorded same-ward authorisation override waives that specific gate.",
         "A gender-placement review requirement refuses this shortcut; use referral journey instead."
       ],
@@ -2413,8 +2414,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
-          "line": 482,
-          "sha256": "448d7f6e084c37776896bfc2bb9020b1c25cea6b31676a87421b1a8c76280ba4"
+          "line": 483,
+          "sha256": "61ad20c2605a7461ce59b5fd80350ebbc3555aefe361eaa620eaa8904d713893"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -2667,7 +2668,7 @@
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
           "line": 1456,
-          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
+          "sha256": "8e056e60e9ae556496e92a26fc4f9d9dd32e68d3f1fc16358889fe6442e826c8"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -2706,8 +2707,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
-          "line": 101,
-          "sha256": "1ae21de095af6c797544a45a71fa0bf8513930e9cfd66974fe85e9a9e5aed856"
+          "line": 102,
+          "sha256": "8b3f5fac10eff9018aefb9cf83a8cfdd06fb5f97ca040a5176507e70b96c700b"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -3486,7 +3487,7 @@
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
           "line": 1950,
-          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
+          "sha256": "8e056e60e9ae556496e92a26fc4f9d9dd32e68d3f1fc16358889fe6442e826c8"
         },
         {
           "path": "src/components/ward-management/ward-flow-restrictive-practice-events.ts",
@@ -3524,8 +3525,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
-          "line": 215,
-          "sha256": "e821cf3a8a08b764d868debdf6568a5705ea0e4629dd77d851ed0dc81d39f770"
+          "line": 221,
+          "sha256": "1ea8f3c4f644456cfff2f29b16085917696fb2b118a50d08a9acdf056a18e04e"
         }
       ],
       "tests": ["tests/ward-legal-form-gap-items.test.ts"]
@@ -3554,7 +3555,7 @@
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
           "line": 405,
-          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
+          "sha256": "8e056e60e9ae556496e92a26fc4f9d9dd32e68d3f1fc16358889fe6442e826c8"
         },
         {
           "path": "src/components/ward-management/out-of-area/return-early.ts",
@@ -3590,7 +3591,7 @@
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
           "line": 1499,
-          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
+          "sha256": "8e056e60e9ae556496e92a26fc4f9d9dd32e68d3f1fc16358889fe6442e826c8"
         },
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
@@ -3626,7 +3627,7 @@
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
           "line": 1507,
-          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
+          "sha256": "8e056e60e9ae556496e92a26fc4f9d9dd32e68d3f1fc16358889fe6442e826c8"
         },
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
@@ -3662,7 +3663,7 @@
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
           "line": 1508,
-          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
+          "sha256": "8e056e60e9ae556496e92a26fc4f9d9dd32e68d3f1fc16358889fe6442e826c8"
         },
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
@@ -3698,7 +3699,7 @@
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
           "line": 1509,
-          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
+          "sha256": "8e056e60e9ae556496e92a26fc4f9d9dd32e68d3f1fc16358889fe6442e826c8"
         },
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",

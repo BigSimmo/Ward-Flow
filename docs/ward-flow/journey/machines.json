@@ -1299,7 +1299,7 @@
   ],
   "resources": {
     "title": "A ward's two bed counts",
-    "blurb": "The illustrated routes below show the principal stored-count changes; the current event models also cover planned admissions, direct placement and undo. A normal departure completes the named live release and raises empty/allocatable once. A departure resolving an arrival-capacity conflict clears that conflict instead of inventing another bed. Ready capacity also excludes closed wards and individually closed beds.",
+    "blurb": "The illustrated routes below show the principal stored-count changes; the current event models also cover planned admissions, direct placement and undo. A normal departure completes the named live release and raises empty/allocatable once. A departure resolving an arrival-capacity conflict clears that conflict instead of inventing another bed. Ready capacity also excludes closed wards, individually closed beds and other journeys' pending numbered reservations.",
     "counts": [
       {
         "name": "Allocatable",
@@ -1521,12 +1521,12 @@
   ],
   "review": {
     "reviewedOn": "2026-11-05",
-    "basis": "Source comparison of eleven machines, route nodes, gates, resources and current gap notes; not runtime or clinical acceptance. 5 November follow-up: explicit handler, payload, authority and caller review reconciled the consolidated audit repairs. Accepted observation sequence and legacy-tie fallback, current place/Undo provenance, safe world reset/import identity, return retry, meeting occurrence metadata and UI draft/completion ownership qualify existing transitions; they add no clinical decision or new physical transport stage. See CURRENT-REVIEW.md for the source-by-source review scope and reused versus fresh evidence. Main29f61/domain1430 reconciliation: accepted observation order is max(retained history,0)+1 with positive-safe restore metadata and sequence preserved through arrival; legacy ties retain compatibility fallback. Import and archive Undo share normalized retained identity, excluding explicit missing/privacy sentinels. Complete inverses preserve occupied-stay/leave consistency. No transition geometry or clinical rule changed; see CURRENT-REVIEW.md.",
+    "basis": "Source comparison of eleven machines, route nodes, gates, resources and current gap notes; not runtime or clinical acceptance. 5 November follow-up: explicit handler, payload, authority and caller review reconciled the consolidated audit repairs. Accepted observation sequence and legacy-tie fallback, current place/Undo provenance, safe world reset/import identity, return retry, meeting occurrence metadata and UI draft/completion ownership qualify existing transitions; they add no clinical decision or new physical transport stage. See CURRENT-REVIEW.md for the source-by-source review scope and reused versus fresh evidence. Main29f61/domain1430 reconciliation: accepted observation order is max(retained history,0)+1 with positive-safe restore metadata and sequence preserved through arrival; legacy ties retain compatibility fallback. Import and archive Undo share normalized retained identity, excluding explicit missing/privacy sentinels. Complete inverses preserve occupied-stay/leave consistency. No transition geometry or clinical rule changed; see CURRENT-REVIEW.md. #1447 consolidation, 5 November: other journeys' pending numbered bed reservations come off Ready and the free locked/open counts in the pull and planned-arrival gates; a pull release clears its held bed number and refuses a release matching no reservation; a coordinator transfer recorded as arrived needs a Ready bed; restore refuses a save whose live absences, active stays or numbered beds have more than one owner and names the broken rule. No transition geometry or clinical rule changed.",
     "sources": [
       {
         "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
-        "line": 581,
-        "sha256": "448d7f6e084c37776896bfc2bb9020b1c25cea6b31676a87421b1a8c76280ba4"
+        "line": 584,
+        "sha256": "61ad20c2605a7461ce59b5fd80350ebbc3555aefe361eaa620eaa8904d713893"
       },
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
@@ -1610,13 +1610,13 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
-        "line": 419,
-        "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
+        "line": 421,
+        "sha256": "11f1c9df8f0154239a42edf9a246cab8bc5cabb791fd86977843a67f567fa460"
       },
       {
         "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
         "line": 1,
-        "sha256": "1ae21de095af6c797544a45a71fa0bf8513930e9cfd66974fe85e9a9e5aed856"
+        "sha256": "8b3f5fac10eff9018aefb9cf83a8cfdd06fb5f97ca040a5176507e70b96c700b"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -1626,7 +1626,7 @@
       {
         "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
         "line": 51,
-        "sha256": "e821cf3a8a08b764d868debdf6568a5705ea0e4629dd77d851ed0dc81d39f770"
+        "sha256": "1ea8f3c4f644456cfff2f29b16085917696fb2b118a50d08a9acdf056a18e04e"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
@@ -1636,12 +1636,12 @@
       {
         "path": "src/components/ward-management/ward-flow-reducer.ts",
         "line": 1160,
-        "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
+        "sha256": "8e056e60e9ae556496e92a26fc4f9d9dd32e68d3f1fc16358889fe6442e826c8"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
         "line": 386,
-        "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
+        "sha256": "f9ec8f13505e04398caa83f2bcacb04e4eb212fa967ea92da1132d6c46527bd2"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
@@ -1650,8 +1650,8 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-storage-validation.ts",
-        "line": 453,
-        "sha256": "67d4c326f9f77149ea6a96d37ea653da7dfcdddb27983bcd32d0e6c6c2671f32"
+        "line": 454,
+        "sha256": "152ba777fbcc0194eca6545c443cf50dae78e16d1ba1e24b0997cac1dc621ec4"
       },
       {
         "path": "src/components/ward-management/ward-flow-transport-events.ts",
