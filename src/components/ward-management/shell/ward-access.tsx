@@ -834,9 +834,11 @@ function OwnHomeRedirect({ href }: { href: string }) {
 function GenericClosedTitle() {
   // useLayoutEffect: overwrite the route metadata title before paint so a forbidden ward/ED/team
   // never flashes its real name in the tab (WF-13). Unknown and forbidden then share one title.
+  // Re-run on each route change: the gate stays mounted across client navigation (PR #1470 review).
+  const pathname = usePathname();
   useLayoutEffect(() => {
     document.title = CLOSED_TAB_TITLE;
-  }, []);
+  }, [pathname]);
   return null;
 }
 
