@@ -15,6 +15,7 @@ An operational view of seclusion rooms, seclusion and restraint in use, and inci
 ## Jobs done here
 
 - Record seclusion, restraint or an incident. Open Forms, then Seclusion and restraint. Start seclusion or restraint when it begins and Record end when it finishes, or Record incident for an incident. Times are as typed, and nothing works out a legal limit.
+- Mark the seclusion room available or out of service. Open Seclusion and choose the ward. Under Seclusion room, press Mark available or Mark out of service, then confirm. Everyone sees the status until it is marked again.
 
 In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
 

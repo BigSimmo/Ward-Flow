@@ -18,6 +18,8 @@ Counts and waits for the network, a service or a ward, worked out from the recor
 ## Jobs done here
 
 - See the statistics. Open Statistics for the network's trends. Every figure is from synthetic records.
+- Compare wards in the statistics. Open Statistics, then Compare. Pin up to three wards to set them beside the network, or choose two wards to compare. Every figure is from synthetic records.
+- Read the weekly report. Open Statistics, then Weekly. The pilot's four agreed measures lead, and the two counted outside Ward Flow say so. How this is counted explains each one.
 
 In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
 

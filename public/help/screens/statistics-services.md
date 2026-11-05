@@ -13,7 +13,7 @@ Each health service's beds, where referrals were accepted and its open ED moveme
 
 ## On a phone
 
-- Each service. Beds in use, wards over 85% and open ED movements. Open a service for its own figures.
+- Each service. Beds in use, wards at the at-risk line and open ED movements. Open a service for its own figures.
 - Where referrals were accepted. Every referral on record, counted by the service that accepted it.
 
 In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.

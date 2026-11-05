@@ -149,8 +149,11 @@ describe("typeAheadHelp: the desk", () => {
       typeAheadHelp("transp", role, GLOSSARY).suggestions.find((item) => item.kind === "job")?.text;
     expect(firstJob("officer")).toBe("Record a transport job");
     expect(firstJob("coordinator")).toBe("Book transport");
-    // Another desk's job may still appear, after the desk's own.
-    expect(texts(typeAheadHelp("transp", "officer", GLOSSARY))).toContain("Book transport");
+    // Another desk's job may still appear, after the desk's own. Since the officer gained its own
+    // transport jobs (5 Nov 2026), they fill the list ahead of the coordinator's Book transport.
+    const officer = typeAheadHelp("transp", "officer", GLOSSARY).suggestions.filter((item) => item.kind === "job");
+    expect(officer.map((item) => item.text)).toContain("Record a transport job");
+    expect(officer.findIndex((item) => item.text === "Book transport")).not.toBe(0);
   });
 
   it("never offers a shortcut, walk or screen the desk cannot use", () => {

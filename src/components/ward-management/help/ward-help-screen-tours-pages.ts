@@ -502,7 +502,7 @@ export const MORE_PAGES: readonly Around[] = [
         device: "phone",
         target: id("ward-statistics-services-phone"),
         title: "Each service",
-        body: "Beds in use, wards over 85% and open ED movements. Open a service for its own figures.",
+        body: "Beds in use, wards at the at-risk line and open ED movements. Open a service for its own figures.",
       },
       {
         device: "phone",
@@ -587,7 +587,7 @@ export const MORE_PAGES: readonly Around[] = [
         device: "desk",
         target: id("ward-statistics-eds-bands"),
         title: "Time since opening",
-        body: "Open movements counted in bands, from under 4 hours up.",
+        body: "Open movements counted in bands by how long they have been open.",
       },
     ],
   },
@@ -650,7 +650,7 @@ export const MORE_PAGES: readonly Around[] = [
       {
         target: id("ward-weekly-occupancy"),
         title: "Supporting figures",
-        body: "Occupancy, out of area days, delayed days and ED waits past 24 hours that week.",
+        body: "Occupancy, out of area days, delayed days and long ED waits that week.",
       },
       {
         device: "desk",

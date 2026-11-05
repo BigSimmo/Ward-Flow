@@ -28,8 +28,10 @@ import {
 } from "@/components/ward-management/help/ward-tour-auto-start";
 import { resetTourSeenForTests } from "@/components/ward-management/help/ward-help-store";
 
-/** P188: the tour is offered first; this presses "Start the tour" on the card. */
+/** P188: the tour is offered first; this reads the three welcome cards and presses "Start the tour". */
 async function startFromOffer() {
+  fireEvent.click(await screen.findByTestId("ward-tour-welcome-next"));
+  fireEvent.click(screen.getByTestId("ward-tour-welcome-next"));
   fireEvent.click(await screen.findByRole("button", { name: "Start the tour" }));
 }
 

@@ -1227,7 +1227,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "Surge", meaning: "A Settings choice that tightens some rules at once for a busy period." },
   {
     term: "Cover",
-    meaning: "One ward or one ED handed to another desk for a time. It lasts 12 hours at most and ends by itself.",
+    meaning: "One ward or one ED handed to another desk for a time. It lasts for a set time and ends by itself.",
   },
 ];
 

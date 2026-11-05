@@ -195,7 +195,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "menu",
           ROLE_MENU,
           "Your screens",
-          `My list is where you start.${menuFigures.length ? ` ${joinAnd(menuFigures)}.` : ""} The numbers update as the network changes.`,
+          `Needs you is where you start.${menuFigures.length ? ` ${joinAnd(menuFigures)}.` : ""} The numbers update as the network changes.`,
         ),
         step(
           "Your daily work",
@@ -220,7 +220,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "shortlist",
           PLACEMENT,
           "Placing a patient",
-          "Choose a patient, alert or referral from My list and Placement opens for that person, with the checks for a bed. Nothing is chosen for you. Offer a bed once the checks you need are met.",
+          "Choose a patient, alert or referral in Needs you and Placement opens for that person, with the checks for a bed. Nothing is chosen for you. Offer a bed once the checks you need are met.",
         ),
         step(
           "Your daily work",
@@ -770,7 +770,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "queue",
           MY_LIST,
           "What needs you",
-          `My list holds Act now, Referrals to decide and Waiting on others, oldest first.${
+          `Needs you holds Act now, Referrals to decide and Waiting on others, oldest first.${
             f.referralsWaiting === undefined
               ? ""
               : ` ${count(f.referralsWaiting, "referral is", "referrals are")} waiting for a decision.`

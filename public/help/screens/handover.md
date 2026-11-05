@@ -16,6 +16,7 @@ A point-in-time handover sheet for the next shift, ready to print.
 - Hand over to the next shift. Open Handover. Read Act now first, then what is due before the next handover. Work through Before you sign, then choose Sign off.
 - Print the handover sheet. Open Handover and choose Print handover. Review the sheet before printing it.
 - What to do if Ward Flow is down. Switch to the paper process. The downtime pack on Handover prints what you need. The app shows when it last saved, and says so when it is offline.
+- Sign off the site handover. On Handover, the Site handover card shows each ward's sign-off, read only, and the checks before you sign. Press Sign off when the checks allow. Undo sign-off shows afterwards.
 
 In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
 
