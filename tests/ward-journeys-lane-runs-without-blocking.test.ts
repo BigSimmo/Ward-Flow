@@ -29,7 +29,7 @@ describe("the public Ward Flow browser journeys lane", () => {
     // prepared build, static checks and production build (cheap first); only verified main reuse can intentionally skip a selected group.
     const header = browser.slice(0, browser.indexOf("    steps:"));
     expect(header.match(/^ {4}if:.*$/gmu)).toEqual([
-      "    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.browser_verified != 'true' && github.event.pull_request.draft != true && needs.browser-build.result == 'success' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true'))) }}",
+      "    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.browser_verified != 'true' && github.event.pull_request.draft != true && needs.browser-build.result == 'success' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true'))) }}",
     ]);
     expect(job("reuse")).toContain("if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}");
     expect(browser).not.toContain("WARD_JOURNEYS_BLOCKING");

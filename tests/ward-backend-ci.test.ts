@@ -59,6 +59,7 @@ describe("Ward backend CI", () => {
     expect(backendJob?.text).toContain(
       "needs.plan.outputs.backend == 'true' && needs.reuse.outputs.backend_verified != 'true'",
     );
+    expect(backendJob?.text).toContain("needs.plan.result == 'success'");
     expect(backendJob?.text).toMatch(/^\s*run: node scripts\/install-locked-dependencies\.mjs\s*$/mu);
     expect(backendJob?.text).toMatch(/^\s*image:\s*postgres:16@sha256:[0-9a-f]{64}\s*$/mu);
     expect(backendJob?.text).toMatch(/^\s*POSTGRES_DB:\s*wardflow_test\s*$/mu);

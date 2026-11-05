@@ -264,7 +264,7 @@ jobs:
   backend:
     name: Ward Flow backend and shared production proof
     needs: [plan, reuse]
-    if: ${{ !cancelled() && needs.plan.outputs.backend == 'true' && needs.reuse.outputs.backend_verified != 'true' }}
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.backend == 'true' && needs.reuse.outputs.backend_verified != 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     services:
@@ -363,7 +363,7 @@ jobs:
   unit:
     name: Ward Flow unit shard ${{ matrix.shard }}
     needs: [plan, reuse, static, build]
-    if: ${{ !cancelled() && needs.plan.outputs.unit == 'true' && needs.reuse.outputs.unit_verified != 'true' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true'))) }}
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.unit == 'true' && needs.reuse.outputs.unit_verified != 'true' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true'))) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
@@ -465,7 +465,7 @@ jobs:
   browser-build:
     name: Ward Flow prepared browser build
     needs: [plan, reuse]
-    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && (needs.reuse.outputs.browser_verified != 'true' || needs.reuse.outputs.release_verified != 'true') && github.event.pull_request.draft != true }}
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.browser == 'true' && (needs.reuse.outputs.browser_verified != 'true' || needs.reuse.outputs.release_verified != 'true') && github.event.pull_request.draft != true }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -524,7 +524,7 @@ jobs:
   browser:
     name: Ward Flow browser journeys ${{ matrix.group }}
     needs: [plan, reuse, browser-build, static, build]
-    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.browser_verified != 'true' && github.event.pull_request.draft != true && needs.browser-build.result == 'success' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true'))) }}
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.browser_verified != 'true' && github.event.pull_request.draft != true && needs.browser-build.result == 'success' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true'))) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
@@ -817,11 +817,11 @@ jobs:
           path: ~/.cache/ms-playwright
           key: ward-release-browsers-${{ runner.os }}-${{ matrix.browser }}-${{ steps.release-version.outputs.version }}
     needs: [plan, reuse, browser-build, static, build]
-    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.release_verified != 'true' && github.event.pull_request.draft != true && needs.browser-build.result == 'success' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true'))) }}
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.release_verified != 'true' && github.event.pull_request.draft != true && needs.browser-build.result == 'success' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true'))) }}
   build:
     name: Ward Flow production build
     needs: [plan, reuse]
-    if: ${{ !cancelled() && needs.plan.outputs.build == 'true' && needs.reuse.outputs.build_verified != 'true' }}
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.build == 'true' && needs.reuse.outputs.build_verified != 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     # actions: read lets the budget gate reuse main's saved measurements instead of building main twice.
@@ -913,7 +913,7 @@ jobs:
     name: Ward Flow coverage
     # Merges only a complete set of passing shards: a failed shard already fails Ward Flow required.
     needs: [plan, reuse, unit]
-    if: ${{ !cancelled() && needs.plan.outputs.unit == 'true' && needs.reuse.outputs.coverage_verified != 'true' && needs.unit.result == 'success' }}
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.unit == 'true' && needs.reuse.outputs.coverage_verified != 'true' && needs.unit.result == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
