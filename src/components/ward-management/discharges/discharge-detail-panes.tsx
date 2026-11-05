@@ -13,7 +13,18 @@ import type { DischargeRecord } from "@/components/ward-management/ward-discharg
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
-import { Badge, Button, EmptyState, PillTabs, StatusGlyph, TimeField, buttonClass, durMinutes } from "@/components/wf";
+import {
+  Badge,
+  Button,
+  EmptyState,
+  Field,
+  PillTabs,
+  StatusGlyph,
+  TIME_FIELD_ERROR,
+  TimeField,
+  buttonClass,
+  durMinutes,
+} from "@/components/wf";
 import { DischargeFollowUp } from "./discharge-follow-up";
 import { ReadyToLeave } from "./discharge-ready-to-leave";
 import { SupportNotificationChecklist } from "../movements/support-notification-checklist";
@@ -99,6 +110,7 @@ export function DischargeRecordDetail({
 }) {
   const [datePending, setDatePending] = useState(false);
   const [dateMessage, setDateMessage] = useState("");
+  const [dateTimeWrong, setDateTimeWrong] = useState(false);
   const datePendingRef = useRef(false);
   const mountedRef = useRef(true);
   useEffect(() => {
@@ -266,6 +278,7 @@ export function DischargeRecordDetail({
                   disabledReason={canUpdateDate ? undefined : "Only the ward or coordinator can update this date."}
                   onClick={() => {
                     setDateMessage("");
+                    setDateTimeWrong(false);
                     setShowUpdateDate(true);
                     setNewTimeDraft(
                       activeRecord.expectedDischargeAt !== null
@@ -296,6 +309,8 @@ export function DischargeRecordDetail({
                           (Math.floor(recorded / MINUTES_PER_DAY) - Math.floor(now / MINUTES_PER_DAY)) *
                             MINUTES_PER_DAY;
                   }
+                  // An unfinished or not-real time stops the save with words (PR #1474 review).
+                  if (parsed === undefined) setDateTimeWrong(true);
                   if (parsed !== undefined) {
                     datePendingRef.current = true;
                     setDatePending(true);
@@ -331,16 +346,24 @@ export function DischargeRecordDetail({
                   }
                 }}
               >
-                <TimeField
+                <Field
+                  label="New expected discharge time"
+                  hint="HH:MM"
                   id="ward-discharge-new-time-input"
-                  name="newExpectedDischargeTime"
-                  aria-label="New expected discharge time"
-                  data-testid="ward-discharge-new-time-input"
-                  disabled={datePending}
-                  value={newTimeDraft}
-                  onValueChange={setNewTimeDraft}
-                  required
-                />
+                  error={dateTimeWrong ? TIME_FIELD_ERROR : undefined}
+                >
+                  <TimeField
+                    name="newExpectedDischargeTime"
+                    data-testid="ward-discharge-new-time-input"
+                    disabled={datePending}
+                    value={newTimeDraft}
+                    onValueChange={(time) => {
+                      setDateTimeWrong(false);
+                      setNewTimeDraft(time);
+                    }}
+                    required
+                  />
+                </Field>
                 <Button
                   type="submit"
                   size="sm"

@@ -20,6 +20,13 @@
   color: var(--wf-ink-1);
   font-size: var(--wf-fs-13);
   line-height: 1.4;
+  /* The note only reads; taps pass through to the page under it (PR #1474 review). */
+  pointer-events: none;
+}
+
+/* Anything in the note that can be pressed still takes the press. */
+.banner :is(a, button) {
+  pointer-events: auto;
 }
 
 /* The downtime pack is the second, quieter part of the note. */

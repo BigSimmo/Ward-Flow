@@ -194,6 +194,16 @@ describe("states", () => {
     expect(css).toMatch(/\.banner \{\s*bottom: calc\(var\(--wf-dock-clear/u);
   });
 
+  it("ST8 (PR #1474 review): the offline note lets taps through and the page ends with room for it", () => {
+    const css = read("src/components/ward-management/shell/ward-offline-banner.module.css");
+    expect(block(css, ".banner")).toContain("pointer-events: none");
+    expect(block(css, ".banner :is(a, button)")).toContain("pointer-events: auto");
+    const layout = read("src/app/ward-flow/ward-flow-layout.module.css");
+    const room = block(layout, ".shellContent:has(> .bannerHolder > [data-wf-offline-slot]:first-child)::after");
+    expect(room).toContain('content: ""');
+    expect(room).toMatch(/block-size: \d/u);
+  });
+
   it("ST6: the route error panel is drawn from kit tokens, not host classes", () => {
     const panel = read("src/app/ward-flow/ward-flow-error-panel.tsx");
     expect(panel).not.toMatch(/--surface-lux|--text-heading|--danger-soft|primaryControl/u);
@@ -213,6 +223,8 @@ describe("states", () => {
   it("W34: a confirm whose dialog code fails to load keeps editing, never the browser box", () => {
     const confirm = read("src/components/wf/confirm-dialog.tsx");
     expect(confirm).toMatch(/function keepEditing\(current: Pending\) \{\s*settle\(current, false\);/u);
+    // PR #1474 review: and says so (the toast provider passes `onUnavailable`).
+    expect(confirm).toMatch(/keepEditing\(request\);\s*onUnavailable\?\.\(\);/u);
     // The only browser box left is the no-host fallback (a test or a page outside the app frame).
     expect(confirm.match(/window\.confirm\(/gu)).toHaveLength(1);
   });

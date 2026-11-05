@@ -26,7 +26,8 @@ export function WardNotFoundBody({
   list: { href: string; label: string };
   /** An extra, more specific way on, ahead of the list link. */
   extra?: ReactNode;
-  /** The patient search link; a caller may swap in one that carries a UMRN in memory. */
+  /** The patient search link; a caller may swap in one that carries a UMRN in memory, or pass null
+   *  to leave it out for a desk that cannot open the search. */
   search?: ReactNode;
 }) {
   return (

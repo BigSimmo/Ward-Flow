@@ -17,7 +17,7 @@ import type { Dialog } from "./dialog";
  * - Phone size trim (31 Oct 2026): the dialog's code is fetched just after the page starts, not in
  *   the first download. If that fetch fails (offline), the question resolves as "Keep editing"
  *   (W34, design audit 5 Nov 2026: never the browser's own box on a Ward Flow page), so the change
- *   is kept rather than lost. The host itself mounts on every Ward Flow page through the
+ *   is kept rather than lost, and the host's `onUnavailable` shows a toast saying it could not open. The host itself mounts on every Ward Flow page through the
  *   `ToastProvider` that the Ward Flow layout wraps round every page.
  */
 export type ConfirmRequest = {
@@ -83,7 +83,12 @@ function keepEditing(current: Pending) {
   settle(current, false);
 }
 
-export function ConfirmHost() {
+export function ConfirmHost({
+  onUnavailable,
+}: {
+  /** Called when a question cannot be shown because the dialog code failed to load (a toast says so). */
+  onUnavailable?: () => void;
+} = {}) {
   const [request, setRequest] = useState<Pending | null>(null);
   const [LoadedDialog, setLoadedDialog] = useState<DialogPart | null>(null);
 
@@ -107,12 +112,13 @@ export function ConfirmHost() {
         if (!live || !request) return;
         setRequest(null);
         keepEditing(request);
+        onUnavailable?.();
       },
     );
     return () => {
       live = false;
     };
-  }, [LoadedDialog, request]);
+  }, [LoadedDialog, request, onUnavailable]);
 
   // The question shown is the one answered: it comes from this host's state.
   const answer = (confirmed: boolean) => {

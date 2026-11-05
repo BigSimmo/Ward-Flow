@@ -128,6 +128,7 @@ export {
   isoDateAsTyped,
   parseTypedDate,
   parseTypedTime,
+  TIME_FIELD_ERROR,
   TimeField,
   type DateFieldProps,
 } from "./date-field";

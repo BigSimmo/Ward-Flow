@@ -146,6 +146,31 @@ describe("K11: kit controls that cannot be changed now carry their reason", () =
     expect(toggle).toHaveAttribute("aria-disabled", "true");
     expect(described(toggle)).toContain(REASON);
   });
+
+  it("Checkbox and Radio: a refused press never calls the caller's onChange, by click or Space", async () => {
+    const user = userEvent.setup();
+    const onCheckbox = vi.fn();
+    const onRadio = vi.fn();
+    render(
+      <>
+        <Checkbox label="Escort booked" checked={false} onChange={onCheckbox} disabledReason={REASON} />
+        <Radio label="Locked bed" name="bed" checked={false} onChange={onRadio} disabledReason={REASON} />
+      </>,
+    );
+    const checkbox = screen.getByRole("checkbox", { name: "Escort booked" });
+    const radio = screen.getByRole("radio", { name: "Locked bed" });
+    fireEvent.click(checkbox);
+    fireEvent.click(radio);
+    await user.click(screen.getByText("Escort booked"));
+    checkbox.focus();
+    await user.keyboard(" ");
+    radio.focus();
+    await user.keyboard(" ");
+    expect(onCheckbox).not.toHaveBeenCalled();
+    expect(onRadio).not.toHaveBeenCalled();
+    expect(checkbox).not.toBeChecked();
+    expect(radio).not.toBeChecked();
+  });
 });
 
 describe("W14: the kit typed time box", () => {
@@ -170,6 +195,52 @@ describe("W14: the kit typed time box", () => {
     fireEvent.change(box, { target: { value: "1430" } });
     expect(screen.getByTestId("time-value")).toHaveTextContent("14:30");
     expect(box).toHaveValue("1430");
+  });
+
+  it.each([
+    ["three digits", "143"],
+    ["a pasted am/pm time", "2:30 pm"],
+    ["a pasted am/pm time with no space", "11:45pm"],
+    ["past the end of the day", "24:00"],
+    ["a single digit", "9"],
+  ])("never sends %s (%s) as a time", (_case, typed) => {
+    render(<Harness />);
+    const box = screen.getByRole("textbox", { name: "Arrival time" });
+    expect(box).not.toHaveAttribute("maxLength");
+    fireEvent.change(box, { target: { value: typed } });
+    // Shown as typed, never cut short or converted to a different 24-hour time.
+    expect(box).toHaveValue(typed);
+    expect(screen.getByTestId("time-value")).toHaveTextContent(/^$/u);
+    fireEvent.blur(box);
+    expect(box).toHaveValue(typed);
+  });
+
+  it("marks letters and an unreal finished time wrong at once, but not a time still being typed", () => {
+    render(<Harness />);
+    const box = screen.getByRole("textbox", { name: "Arrival time" });
+    for (const typed of ["2:30 pm", "11:45pm", "24:00"]) {
+      fireEvent.change(box, { target: { value: typed } });
+      expect(box).toHaveAttribute("aria-invalid", "true");
+    }
+    for (const typed of ["9", "143"]) {
+      fireEvent.change(box, { target: { value: typed } });
+      expect(box).not.toHaveAttribute("aria-invalid", "true");
+    }
+  });
+
+  it.each([
+    ["14:30", "14:30"],
+    ["1430", "14:30"],
+    ["9:05", "09:05"],
+    ["14.30", "14:30"],
+  ])("takes %s as %s and shows the stored time on leaving the box", (typed, stored) => {
+    render(<Harness />);
+    const box = screen.getByRole("textbox", { name: "Arrival time" });
+    fireEvent.change(box, { target: { value: typed } });
+    expect(screen.getByTestId("time-value")).toHaveTextContent(stored);
+    expect(box).not.toHaveAttribute("aria-invalid", "true");
+    fireEvent.blur(box);
+    expect(box).toHaveValue(stored);
   });
 
   it("marks a finished time that is not real, and keeps a value given by the caller", () => {

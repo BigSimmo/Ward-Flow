@@ -93,4 +93,19 @@ describe("expected departure clock input keeps its separately recorded day", () 
     expect(probe).toHaveAttribute("data-state", "occupied");
     expect(probe).toHaveAttribute("data-leave-count", leaveCount);
   });
+
+  it("refuses a bad or unfinished time with words, and saves nothing (PR #1474 review)", () => {
+    const probe = openFutureDepartureEditor();
+    for (const typed of ["2:30 pm", "143"]) {
+      fireEvent.change(screen.getByLabelText("Expected discharge time"), { target: { value: typed } });
+      fireEvent.click(screen.getByRole("button", { name: "Save departure date" }));
+      expect(screen.getByRole("alert")).toHaveTextContent("Type a 24-hour time, HH:MM");
+      expect(probe).toHaveAttribute("data-date", String(RECORDED_DEPARTURE));
+      expect(screen.getByRole("button", { name: "Save departure date" })).toBeInTheDocument();
+    }
+    fireEvent.change(screen.getByLabelText("Expected discharge time"), { target: { value: "0913" } });
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Save departure date" }));
+    expect(probe).toHaveAttribute("data-date", String(FUTURE_DAY + 9 * 60 + 13));
+  });
 });

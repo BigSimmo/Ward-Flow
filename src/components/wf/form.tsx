@@ -300,13 +300,21 @@ export type CheckboxProps = Omit<ComponentPropsWithRef<"input">, "type" | "child
   disabledReason?: string;
 };
 
-/** The press guard and description an unavailable checkbox or radio takes (K11). */
-function refusedChoice(reasonId: string, describedBy: string | undefined, off: boolean) {
+/**
+ * The press guard and description an unavailable checkbox or radio takes (K11). As in Select, the
+ * caller's `onChange` and `onClick` are replaced, so a refused press never reaches the caller (PR
+ * #1474 review). React puts a controlled box back itself; an uncontrolled one has its press cancelled
+ * instead (cancelling a controlled one's press as well leaves it showing the wrong state).
+ */
+function refusedChoice(reasonId: string, describedBy: string | undefined, off: boolean, controlled: boolean) {
   if (!off) return { "aria-describedby": describedBy };
   return {
     "aria-disabled": true as const,
     "aria-describedby": cx(describedBy, reasonId),
-    onClick: (event: { preventDefault: () => void }) => event.preventDefault(),
+    onChange: () => undefined,
+    onClick: (event: { preventDefault: () => void }) => {
+      if (!controlled) event.preventDefault();
+    },
   };
 }
 
@@ -343,7 +351,7 @@ export function Checkbox({
         className={styles.native}
         disabled={disabled && !off}
         {...rest}
-        {...refusedChoice(reasonId, describedBy, off)}
+        {...refusedChoice(reasonId, describedBy, off, rest.checked !== undefined)}
       />
       <span className={styles.box} aria-hidden="true">
         <Check size={12} strokeWidth={3} className={cx(styles.mark, styles.tick)} aria-hidden="true" />
@@ -383,7 +391,7 @@ export function Radio({
         className={styles.native}
         disabled={disabled && !off}
         {...rest}
-        {...refusedChoice(reasonId, describedBy, off)}
+        {...refusedChoice(reasonId, describedBy, off, rest.checked !== undefined)}
       />
       <span className={styles.dot} aria-hidden="true" />
       {label}
