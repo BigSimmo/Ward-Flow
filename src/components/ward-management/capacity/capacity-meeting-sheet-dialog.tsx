@@ -41,7 +41,7 @@ export function BedMeetingSheetDialog({
     {
       label: "Beds freeing today",
       value: discharges.freeingToday,
-      sub: `${discharges.heldUp} held up`,
+      sub: `${discharges.heldUpToday} held up`,
     },
     { label: "Pulled", value: capacity.pulled, sub: `${capacity.closed} closed` },
   ];

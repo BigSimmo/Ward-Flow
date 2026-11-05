@@ -93,8 +93,9 @@ export function PhoneFocal({
   const [focalId, setFocalId] = useState<string>("sw-bfc");
   // Offer only the bed flow lines this list holds (a site manager's may lack some; PR #1470 review).
   const choices = FOCAL.filter(([id]) => entries.some((item) => item.id === id));
-  const entry =
-    entries.find((item) => item.id === focalId) ?? entries.find((item) => item.id === choices[0]?.[0]) ?? entries[0]!;
+  // No bed flow line for this viewer (an officer's transport-only list): no bed flow card.
+  const entry = entries.find((item) => item.id === focalId) ?? entries.find((item) => item.id === choices[0]?.[0]);
+  if (entry === undefined) return null;
   const crisis = entries.find((item) => item.id === "sw-mherl");
   const now = availability(entry, actions.minute);
   const number = numberAt(entry, actions.minute);

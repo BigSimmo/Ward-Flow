@@ -67,6 +67,8 @@ export type BedMeetingDischarges = {
   dischargedToday: number;
   /** Beds due out today only, from the hero's own source (`bedsFreeingTodayTotal`). */
   freeingToday: number;
+  /** Held up among those due out today, so the sheet's subcount shares the figure's day. */
+  heldUpToday: number;
   /** Releases expected two or more days ahead — left out of today's figures, and said so. */
   beyondToday: number;
   /** Held up first, then confirmed, then expected — the same order the Discharges board reads. */
@@ -214,6 +216,10 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
     ).length,
     beyondToday: groups.excludedBeyondToday,
     freeingToday: bedsFreeingTodayTotal(scopedReleases, now, scopedUnitIds) ?? 0,
+    heldUpToday: scopedReleases.filter(
+      (release) =>
+        release.state !== "discharged" && release.blocker !== null && dayOf(release.expectedAt) === dayOf(now),
+    ).length,
     rows: dischargeRows.slice(0, BED_MEETING_ROW_LIMIT),
     moreRows: Math.max(0, dischargeRows.length - BED_MEETING_ROW_LIMIT),
   };
