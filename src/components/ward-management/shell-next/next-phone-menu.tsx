@@ -623,22 +623,9 @@ export function NextPhoneMenu({
   const { counts, shellRole } = useNextNavCounts();
   const deskRoleLabel = useDeskRoleLabel(shellRole);
   const accessAdmin = useEffectiveWardAccess().role === "admin";
-  const [openPath, setOpenPath] = useState<string | null>(null);
-  const [createPath, setCreatePath] = useState<string | null>(null);
-  const [switcherPath, setSwitcherPath] = useState<string | null>(null);
-  const open = openPath === pathname;
-  const createOpen = createPath === pathname;
-  const switcherOpen = switcherPath === pathname;
-  const setOpen = useCallback((next: boolean) => setOpenPath(next ? pathname : null), [pathname]);
-  const setCreateOpen = useCallback((next: boolean) => setCreatePath(next ? pathname : null), [pathname]);
-  const setSwitcherOpen = useCallback((next: boolean) => setSwitcherPath(next ? pathname : null), [pathname]);
-  const [sheetEpoch, setSheetEpoch] = useState(pathname);
-  if (sheetEpoch !== pathname) {
-    setSheetEpoch(pathname);
-    if (openPath !== null) setOpenPath(null);
-    if (createPath !== null) setCreatePath(null);
-    if (switcherPath !== null) setSwitcherPath(null);
-  }
+  const [open, setOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [switcherOpen, setSwitcherOpen] = useState(false);
   // The sheets mount on the first open, not on page load: mounting the dynamic component would fetch
   // its chunk straight away instead of when the browser is idle.
   const [sheetsMounted, setSheetsMounted] = useState(false);
