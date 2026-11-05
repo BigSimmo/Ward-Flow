@@ -7,6 +7,10 @@ import {
   onceOnlyExtensionWarning,
   regionWord,
 } from "@/components/ward-management/legal-forms/legal-form-ledger";
+import { isValidSharedWardFlowState } from "@/components/ward-management/ward-shared-state-validation";
+import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
+import { shiftInstants } from "@/components/ward-management/ward-reanchor";
+import { seedWardFlowState, wardFlowReducer } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -70,6 +74,49 @@ describe("typed ledger fields", () => {
       legalFormExpiryHistory: [oldExtension, { ...oldExtension, dueAt: NOW + 900 }],
     });
     expect(extensionsOfCurrentForm(extendedSameMinute)).toBe(1);
+  });
+
+  it("keeps a new form's same-minute extension even when it repeats the old expiry", () => {
+    let state = seedWardFlowState();
+    const id = template!.id;
+    state = {
+      ...state,
+      movements: state.movements.map((movement) =>
+        movement.id === id ? move({ legalForm: { code: "3A", dueAt: NOW + 400 } }) : movement,
+      ),
+    };
+    state = wardFlowReducer(state, {
+      type: "RECORD_LEGAL_FORM_CODE",
+      role: "ed",
+      now: NOW,
+      movementId: id,
+      formCode: "1A",
+    });
+    state = wardFlowReducer(state, {
+      type: "RECORD_LEGAL_FORM_EXPIRY",
+      role: "ed",
+      now: NOW,
+      movementId: id,
+      dueAt: NOW + 100,
+    });
+    state = wardFlowReducer(state, {
+      type: "RECORD_LEGAL_FORM_EXPIRY",
+      role: "ed",
+      now: NOW,
+      movementId: id,
+      dueAt: NOW + 400,
+    });
+    expect(state.rejections).toEqual([]);
+    const current = state.movements.find((movement) => movement.id === id)!;
+    expect(extensionsOfCurrentForm(current)).toBe(1);
+    expect(onceOnlyExtensionWarning(current)).toMatch(/already has an extension/);
+    const reloaded = JSON.parse(JSON.stringify(state));
+    expect(isValidSharedWardFlowState(reloaded)).toBe(true);
+    expect(isValidStoredWardFlowState(reloaded)).toBe(true);
+    const shifted = shiftInstants(reloaded, 1440);
+    const restored = shifted.movements.find((movement: Movement) => movement.id === id)!;
+    expect(extensionsOfCurrentForm(restored)).toBe(1);
+    expect(restored.legalFormExpiryHistory!.at(-1)!.formInstance).toBe(1);
   });
 
   it("warns, never blocks, when a 1A or 4A already has its once-only extension", () => {

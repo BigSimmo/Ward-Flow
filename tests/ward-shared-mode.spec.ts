@@ -323,6 +323,13 @@ test("keyboard focus: after a shared save the activated control still has focus"
 });
 
 test("different records at once: two desks change different records from the same revision, and both saves land on both desks", async () => {
+  // The preceding capacity save advances revision without changing urgency labels.
+  // Reload both boards before forms so this case begins from the same accepted save base.
+  await Promise.all([
+    one.page.reload({ waitUntil: "domcontentloaded" }),
+    two.page.reload({ waitUntil: "domcontentloaded" }),
+  ]);
+  for (const desk of [one, two]) await expect(sharedStatus(desk.page)).toHaveText(new RegExp(`^${READY}`, "u"), POLL);
   const other = await anotherMovement(two.page);
   for (const desk of [one, two]) for (const movement of [MOVEMENT, other]) await revealRow(desk.page, movement);
   // Desk one changes the movement, desk two a different one, both from the board they hold now.

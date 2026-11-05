@@ -1,3 +1,4 @@
+import { pulledBedAvailability } from "./ward-ready-beds";
 import { withoutRecordNumbers } from "./ward-patient-resolver";
 import { validCareChange, careChangeRefusal, applyCareChange, emptyCareJourney } from "./ward-care-journey";
 import { PROTECTED_REFUSAL_REASONS } from "./ward-protected-refusal-reasons";
@@ -320,6 +321,13 @@ export function reduceProtectedRecordEvent(
           "denied",
           "The receiving ward must have a suitable available bed and a linked placement record.",
         );
+      // This coordinator path allocates a new bed, so existing pulls still consume Ready
+      // after a ward reconfirms capacity. PATIENT_ARRIVED keeps its physical-arrival exception.
+      const livePulled = state.admissions.filter(
+        (a) => a.unitId === receiving.id && a.state === "pulled" && a.movementId !== null,
+      ).length;
+      if (pulledBedAvailability(receiving, livePulled).ready <= 0)
+        return deny("transition", "denied", "No Ready bed remains at the receiving ward.");
       if (
         state.admissions.some(
           (a) =>

@@ -205,14 +205,21 @@ required production build red until someone raised the limit by hand. Three part
   establish a match, and the existing ten-minute wait bound remains.
 - **Fair blame.** The budget step is `budget-gate.mjs`. When a PR's merged result is over budget, it
   builds and measures main alone in a separate worktree and fails only routes the PR pushed over,
-  or grew more than 1.5 KB (build noise) past an already-over main. Inherited overage is a warning. This second
-  build runs only when the merged result is over.
-- **Reviewed heal proposal.** Main's build saves its measurements as the `script-budget-measured`
-  artifact. When a main run fails and measurements show an exceeded route, the heal workflow can
-  propose a small budget increase with a per-route history entry. New proposals are held for growth
-  diagnosis and an attempted trim before owner release; they do not automatically arm auto-merge.
-  Existing held or armed PRs remain owner-controlled. A bigger-than-allowed increase still needs
-  explicit owner review. Passing by raising a limit is not a CI speed improvement.
+  or grew more than 1.5 KB (build noise) past an already-over main. Inherited overage is a warning. It first reuses the
+  measurements main's own push run saved for that commit (`main-measured.mjs`), so main is built a
+  second time only when none exist. That build runs only when the merged result is over.
+- **Trim issue, never an automatic raise.** Main's build saves its measurements as the
+  `script-budget-measured` artifact. When a main run fails and those show a route over budget,
+  `ward-flow-budget-heal.yml` opens one issue, "Phone script budget: main is over, trim needed",
+  or rewrites the open one with the latest sizes. It comments only when a route newly goes over or
+  grows more than 1.5 KB past the last report. It has issue permission only and never edits
+  `script-budget.json`: a person decides any raise in a PR with its own history file (Josh,
+  5 November 2026; until then the bot opened a PR raising the limit, a one-way ratchet).
+- **Finding what to trim.** Build with `ANALYZE=true` and the usual production build command, then
+  open `.next/analyze/client.html`. Look first at what every Ward Flow page loads (the root and
+  `ward-flow` layouts and their shared chunks), then at the route's own page chunk. Lazy-load
+  panels a phone does not draw on first paint, and keep demo seed data and large tables out of
+  the shared chunks.
 
 `ward-flow-ci-tidy.yml` frees runner slots on PR close and hourly (no longer on each PR push). It
 cancels runs for merged or closed PRs, and other workflows' runs for an older head of an open PR

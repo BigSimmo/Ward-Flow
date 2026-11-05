@@ -69,6 +69,7 @@ export const reasonLabels: Record<AuditEvent["reasonCode"], string> = {
   transition: "Transition not permitted",
 };
 export const actionLabels: Record<AuditEvent["action"], string> = {
+  RECORD_OBSERVATION_LEVEL: "Observation level changed",
   REFER_TO_UNITS: "Refer to wards",
   PULL_PATIENT: "Pull the bed",
   ACCEPT_IN_PRINCIPLE: "Accept in principle",

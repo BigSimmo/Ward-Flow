@@ -513,13 +513,16 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
           className={styles.quietButton}
           type="button"
           onClick={() => {
-            const handoff = separationHandoff({
-              id: record.admissionId,
-              state: record.admissionState,
-              leftAt: record.leftAt,
-              leavingDestination: record.leavingDestination,
-              careJourney: care,
-            });
+            const handoff = separationHandoff(
+              {
+                id: record.admissionId,
+                state: record.admissionState,
+                leftAt: record.leftAt,
+                leavingDestination: record.leavingDestination,
+                careJourney: care,
+              },
+              dayZero,
+            );
             if (!handoff) {
               setLocalError("Coding must match the current departure before export.");
               return;

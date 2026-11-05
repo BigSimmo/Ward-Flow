@@ -677,7 +677,7 @@ export function WardDailySheet({
          * every other rendering of this fact does.
          */}
         <p className={styles.awayCard} data-testid="ward-daily-sheet-away">
-          <strong>Off the ward:</strong>{" "}
+          <strong>At an emergency department:</strong>{" "}
           {groups.awayFromWard.length === 0
             ? "none."
             : `${groups.awayFromWard

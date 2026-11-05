@@ -1,6 +1,6 @@
 import { communityTeamById } from "./community/community-derivations";
 import type { Admission } from "./ward-admissions";
-import type { Instant } from "./ward-clock";
+import { calendarDateOf, type Instant } from "./ward-clock";
 import { EARLIER_ROLE_LABELS, WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
 
 /**
@@ -433,12 +433,13 @@ export function applyCareChange(
 /** A review handoff only. It never claims PAS/HMDC submission or external acceptance. */
 export function separationHandoff(
   admission: Pick<Admission, "id" | "leftAt" | "state" | "leavingDestination" | "careJourney">,
+  dayZero?: Date,
 ) {
   const coding = admission.careJourney?.coding;
   if (!coding || coding.separationCode !== codingCode(admission, coding.receivingClass, coding.dischargedFromLeave))
     return null;
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     kind: "separation-review",
     // Audit 24-7 (CT-16): the file says it is synthetic, as the scenario file does.
     synthetic: true,
@@ -448,6 +449,17 @@ export function separationHandoff(
     receivingClass: coding.receivingClass,
     dischargedFromLeave: coding.dischargedFromLeave,
     leftAt: admission.leftAt,
+    timeBasis:
+      dayZero && Number.isFinite(dayZero.getTime())
+        ? { unit: "minutes", origin: dayZero.toISOString(), timeZone: "Australia/Perth" }
+        : null,
+    departureAt:
+      dayZero &&
+      Number.isFinite(dayZero.getTime()) &&
+      typeof admission.leftAt === "number" &&
+      Number.isFinite(admission.leftAt)
+        ? calendarDateOf(admission.leftAt, dayZero).toISOString()
+        : null,
     externalSubmission: "not_connected",
     requires: ["verified_receiving_establishment_code", "authorised_PAS_adapter"],
   } as const;

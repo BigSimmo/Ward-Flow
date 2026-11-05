@@ -78,7 +78,7 @@ export function withGoTo(
   const lead = allGroups
     .flatMap((group) => group.items)
     .find((item) =>
-      ["view", "ward", "ed", "team"].includes(item.kind)
+      ["view", "ward", "ed", "community"].includes(item.kind)
         ? item.title.toLowerCase().startsWith(q) || (q.length >= 3 && item.title.toLowerCase().includes(` ${q}`))
         : (item.umrn ?? item.subjectUmrn)?.toLowerCase() === q,
     );
@@ -166,7 +166,7 @@ export function permittedSearchResult(
       ? wardStatisticsHref(item.id)
       : item.kind === "ed"
         ? edStatisticsHref(item.id)
-        : item.kind === "team"
+        : item.kind === "community"
           ? communityStatisticsHref(item.id)
           : null;
   // A Help answer with nowhere to go opens Help itself, which every desk may open.

@@ -31,6 +31,14 @@ import { announceToWardShell } from "@/components/ward-management/shell/ward-liv
 import { siteDirectory } from "@/components/ward-management/ward-sites";
 import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
 
+/**
+ * Names and suburbs have no hard cap (Josh, 5 Nov 2026), as on Add a patient: over 100 characters
+ * shows a plain warning under the field and still saves.
+ */
+const LONG_TEXT_WARNING = 100;
+const longTextWarning = (value: string, what: "name" | "suburb") =>
+  value.trim().length > LONG_TEXT_WARNING ? `Long ${what}. Check it is right.` : undefined;
+
 /** Step 1, Patient: find or add the person, the priority grid and the catchment card. */
 /** RF3: kit segments instead of the browser's drop-downs. Nothing is chosen until someone picks. */
 const NEW_PATIENT_SEX_ITEMS: ChoiceItem<RecordedSex | "">[] = RECORDED_SEXES.filter(
@@ -259,12 +267,16 @@ export function ReferralPatientStep({
                 </button>
               </div>
               <div className={styles.fieldGrid} data-layout="three">
-                <Field label="Family name" htmlFor={`${sectionId}-np-family`} required>
+                <Field
+                  label="Family name"
+                  htmlFor={`${sectionId}-np-family`}
+                  required
+                  warning={longTextWarning(newPatient.familyName, "name")}
+                >
                   <input
                     id={`${sectionId}-np-family`}
                     className={styles.fieldInput}
                     value={newPatient.familyName}
-                    maxLength={100}
                     autoComplete="off"
                     autoCorrect="off"
                     autoCapitalize="words"
@@ -273,12 +285,16 @@ export function ReferralPatientStep({
                     onChange={({ target: { value } }) => setNewPatient((p) => ({ ...p, familyName: value }))}
                   />
                 </Field>
-                <Field label="Given name" htmlFor={`${sectionId}-np-given`} required>
+                <Field
+                  label="Given name"
+                  htmlFor={`${sectionId}-np-given`}
+                  required
+                  warning={longTextWarning(newPatient.givenName, "name")}
+                >
                   <input
                     id={`${sectionId}-np-given`}
                     className={styles.fieldInput}
                     value={newPatient.givenName}
-                    maxLength={100}
                     autoComplete="off"
                     autoCorrect="off"
                     autoCapitalize="words"
@@ -341,13 +357,17 @@ export function ReferralPatientStep({
                     />
                   </div>
                 </div>
-                <Field label="Suburb" htmlFor={`${sectionId}-np-suburb`} hint="optional">
+                <Field
+                  label="Suburb"
+                  htmlFor={`${sectionId}-np-suburb`}
+                  hint="optional"
+                  warning={longTextWarning(newPatient.suburb, "suburb")}
+                >
                   <input
                     id={`${sectionId}-np-suburb`}
                     className={styles.fieldInput}
                     list={`${sectionId}-suburbs`}
                     value={newPatient.suburb}
-                    maxLength={100}
                     autoComplete="off"
                     autoCorrect="off"
                     autoCapitalize="words"

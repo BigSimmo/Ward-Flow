@@ -13,7 +13,12 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import type { Admission, PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { currentInboxOwner, type InboxOwnershipEntry } from "@/components/ward-management/ward-inbox-snooze";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
-import { movementHref, patientHref as personHref } from "@/components/ward-management/shell/ward-facade";
+import {
+  dischargeHref,
+  movementHref,
+  unitHref,
+  patientHref as personHref,
+} from "@/components/ward-management/shell/ward-facade";
 import { plannedInitialsLabel } from "@/components/ward-management/ward-flow-demo-storage-constants";
 import { originName } from "@/components/ward-management/ward-movement-origin";
 
@@ -306,15 +311,21 @@ export function alertActionFor(item: InboxItem, subject: AlertSubject): AlertAct
     case "transport":
       return { kind: "link", label: "Chase transport", href: ownMovementHref };
     case "planned":
-      // H-0975: a planned arrival has no movement to open, and the booking id is kept out of every
-      // link (`ward-planned-admissions-panel.dom.test.tsx`), so the row still opens Capacity's list.
-      return { kind: "link", label: "Open bookings", href: item.href ?? "/ward-flow/capacity" };
+      // Wards cannot open Capacity. Open the booking ward's own supported list without putting
+      // the booking or patient identity in the address.
+      return {
+        kind: "link",
+        label: "Open bookings",
+        href: item.plannedAdmission?.unitId
+          ? `${unitHref(item.plannedAdmission.unitId)}?bookings=1`
+          : (item.href ?? "/ward-flow/capacity"),
+      };
     case "duplicate":
       return { kind: "link", label: "Open oldest request", href: item.href ?? "/ward-flow/referrals" };
     case "notify":
       // A discharge row opens its stay on the discharges board, as the Tasks drawer does.
       return item.admissionId !== undefined
-        ? { kind: "link", label: "Record notifications", href: "/ward-flow/discharges" }
+        ? { kind: "link", label: "Record notifications", href: dischargeHref(item.admissionId) }
         : { kind: "link", label: "Record notifications", href: patientHref };
     default:
       if (item.id.includes("referral-decision")) {

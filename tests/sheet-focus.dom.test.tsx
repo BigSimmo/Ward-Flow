@@ -83,6 +83,68 @@ it("locks the desktop work column until the last stacked sheet closes and preser
   scroller.remove();
 });
 
+it("retains the canonical work-column offset through auto-to-auto resize clamps", async () => {
+  const column = document.createElement("div");
+  column.setAttribute("data-wf-scroller", "");
+  column.scrollTop = 420;
+  document.body.append(column);
+  const getStyle = window.getComputedStyle.bind(window);
+  vi.spyOn(window, "getComputedStyle").mockImplementation((element, pseudo) =>
+    element === column
+      ? ({ overflowY: column.style.overflowY || "auto" } as CSSStyleDeclaration)
+      : getStyle(element, pseudo),
+  );
+  const view = render(<TwoSheets shown="a" />);
+  try {
+    expect(column.style.overflowY).toBe("hidden");
+    // Native layout can clamp the offset before the queued resize callback runs.
+    column.scrollTop = 52;
+    fireEvent(window, new Event("resize"));
+    await waitFor(() => expect(column.scrollTop).toBe(420));
+    column.scrollTop = 17;
+    fireEvent(window, new Event("resize"));
+    await waitFor(() => expect(column.scrollTop).toBe(420));
+    view.rerender(<TwoSheets shown="none" />);
+    expect(column.scrollTop).toBe(420);
+  } finally {
+    view.unmount();
+    column.remove();
+  }
+});
+
+it("adopts a new route's position behind a persistent sheet before preserving further clamps", async () => {
+  const original = window.location.href;
+  window.history.replaceState(null, "", "/ward-flow/search");
+  const column = document.createElement("div");
+  column.setAttribute("data-wf-scroller", "");
+  column.scrollTop = 420;
+  document.body.append(column);
+  const getStyle = window.getComputedStyle.bind(window);
+  vi.spyOn(window, "getComputedStyle").mockImplementation((element, pseudo) =>
+    element === column
+      ? ({ overflowY: column.style.overflowY || "auto" } as CSSStyleDeclaration)
+      : getStyle(element, pseudo),
+  );
+  const view = render(<TwoSheets shown="a" />);
+  try {
+    window.history.replaceState(null, "", "/ward-flow/capacity");
+    column.scrollTop = 73;
+    const reads = vi.mocked(window.getComputedStyle).mock.calls.length;
+    fireEvent(window, new Event("resize"));
+    await waitFor(() => expect(vi.mocked(window.getComputedStyle).mock.calls.length).toBeGreaterThan(reads));
+    expect(column.scrollTop).toBe(73);
+    column.scrollTop = 12;
+    fireEvent(window, new Event("resize"));
+    await waitFor(() => expect(column.scrollTop).toBe(73));
+    view.rerender(<TwoSheets shown="none" />);
+    expect(column.scrollTop).toBe(73);
+  } finally {
+    view.unmount();
+    column.remove();
+    window.history.replaceState(null, "", original);
+  }
+});
+
 it("leaves the document-scrolling phone column visible so it does not gain a sticky scroll ancestor", () => {
   const column = document.createElement("div");
   column.setAttribute("data-wf-scroller", "");

@@ -822,6 +822,10 @@ jobs:
     if: ${{ !cancelled() && needs.plan.outputs.build == 'true' && needs.reuse.outputs.build_verified != 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 40
+    # actions: read lets the budget gate reuse main's saved measurements instead of building main twice.
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -880,9 +884,11 @@ jobs:
       # this PR grew, so one over-budget merge to main no longer fails every PR (4 Nov 2026).
       - name: Check the phone script budget
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/ward-ci-public/budget-gate.mjs
-      # ward-flow-budget-heal.yml reads this when main goes over budget and opens a PR raising it.
-      - name: Keep main's phone script measurements for the budget heal
+      # ward-flow-budget-heal.yml reads this when main goes over budget and opens a trim issue.
+      - name: Keep main's phone script measurements for the budget trim issue
         if: ${{ !cancelled() && github.event_name == 'push' && steps.install.outcome == 'success' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:

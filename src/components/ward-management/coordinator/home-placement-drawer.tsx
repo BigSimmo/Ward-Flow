@@ -82,7 +82,9 @@ export function HomePlacementDrawer({
   );
 
   const entry = subject.kind === "alert" ? subject.entry : undefined;
-  const movement = subject.kind === "movement" ? subject.movement : entry?.movement;
+  // A retained discharge task belongs to the departed stay, even when its old journey remains.
+  const movement =
+    subject.kind === "movement" ? subject.movement : entry?.item.admissionId ? undefined : entry?.movement;
   const referral = subject.kind === "referral" ? subject.referral : undefined;
   const lookup = { patients: flow.patients, referrals: flow.referrals, movements: flow.movements };
   const personSubject = entry ? undefined : (movement ?? referral);

@@ -242,6 +242,11 @@ const UNITS_FIXTURE_ALLOWLIST = new Set([
   // and lends the ward routes the immutable `.name` for the browser tab. Existence and name only,
   // never a field the reducer writes, so the mutable-field guard below applies to it in full.
   "src/components/ward-management/ward-known-places.ts",
+  // EIGHTH ENTRY, 5 Nov 2026 (WF-26/27, PR #1448), the same shape as the seventh:
+  // `placeDisplayName` falls back to the active network's catalogue for the immutable `.name` of a
+  // ward the screen's own scoped unit list does not hold, so a slug is never printed. Name only,
+  // after the caller's live units; the mutable-field guard below applies to it in full.
+  "src/components/ward-management/ward-place-names.ts",
 ]);
 
 /**

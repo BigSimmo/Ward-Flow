@@ -12,6 +12,7 @@ import { useTourFacts } from "./ward-tour-facts";
 import { TOUR_ROLE_LABELS, tourCanDo, tourGreeting, type TourDevice, type TourStep } from "./ward-tour-steps";
 import { fullTourSteps } from "./ward-tour-more-steps";
 import { openWardHelp } from "./ward-help-events";
+import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { SPOT_NOT_HERE, usePlacedCard, useSpotlight } from "./ward-spotlight";
 import styles from "./ward-tour.module.css";
 
@@ -52,8 +53,12 @@ export function WardTour({ onClose }: { onClose: () => void }) {
   const wentHome = useRef<string | null>(null);
   useEffect(() => {
     if (!home || wentHome.current === home) return;
-    wentHome.current = home;
-    if (pathname !== home) router.push(home);
+    if (pathname !== home)
+      navigateWithDirtyGuard(() => {
+        wentHome.current = home;
+        router.push(home);
+      });
+    else wentHome.current = home;
   }, [home, pathname, router]);
 
   // Find the step's control, light it and keep the card clear of it (`ward-spotlight.ts`).

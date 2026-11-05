@@ -9,6 +9,7 @@
 import { closedToAdmissionsRefusal } from "./ward-closure";
 import { bedsPendingPreparation } from "../ward-bed-availability";
 import { lockedBedsFree, openBedsFree } from "../ward-bed-designation";
+import { pendingNumberedReservations } from "../ward-movement-bed-hold";
 import { pulledBedAvailability } from "../ward-ready-beds";
 import {
   isPlannedAdmissionCancelReason,
@@ -506,7 +507,10 @@ export function reducePlannedAdmissionEvent(
       const livePulled = state.admissions.filter(
         (admission) => admission.unitId === unit.id && admission.state === "pulled" && admission.movementId !== null,
       ).length;
-      const ready = pulledBedAvailability(unit, livePulled).ready;
+      const reservations = pendingNumberedReservations(unit, state);
+      const ready = pulledBedAvailability(unit, livePulled).ready - reservations.total;
+      const freeLocked = Math.max(0, lockedBedsFree(unit) - reservations.locked);
+      const freeOpen = Math.max(0, openBedsFree(unit) - reservations.open);
       if (ready <= 0) return reject(state, event, `${unit.name} has no empty bed to admit this planned arrival`);
       const pending = bedsPendingPreparation(unit.id, state.bedReleases);
       if (pending > 0 && ready <= pending)
@@ -523,7 +527,7 @@ export function reducePlannedAdmissionEvent(
       );
       // `PULL_PATIENT` lets a recorded override reason take an open bed when no locked bed is free.
       // A booking has no override path, so the same fact is a plain refusal here.
-      if (view.security === "Secure" && lockedBedsFree(unit) <= 0)
+      if (view.security === "Secure" && freeLocked <= 0)
         return reject(state, event, `No locked bed is free at ${unit.name} for this planned arrival.`);
       // Audit 24-1 CS2-19: a booking accepted with a recorded reason for this same ward is not then
       // refused at arrival on that gate, as a pull with a recorded reason is not. Only the
@@ -539,8 +543,7 @@ export function reducePlannedAdmissionEvent(
           event,
           "This planned arrival needs a coordinator gender placement review. Use the referral journey to record the review before allocating a bed.",
         );
-      const bedKind: "locked" | "open" =
-        view.security === "Secure" ? "locked" : openBedsFree(unit) > 0 ? "open" : "locked";
+      const bedKind: "locked" | "open" = view.security === "Secure" ? "locked" : freeOpen > 0 ? "open" : "locked";
       const sequence = state.admissionSequence + 1;
       const admission: Admission = {
         id: `AD-ARR-${String(sequence).padStart(2, "0")}`,

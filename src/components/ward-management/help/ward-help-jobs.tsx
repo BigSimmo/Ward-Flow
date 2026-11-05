@@ -196,14 +196,15 @@ function TaskRow({
   showMeOn: boolean;
 }) {
   const id = useId();
-  const phone = useIsPhone();
   const access = useEffectiveWardAccess();
-  const href = howToFor(task, role, access) ? howToHref(task.go, role, home) : undefined;
+  const phone = useIsPhone();
+  const permitted = howToFor(task, role, access);
+  const href = permitted ? howToHref(task.go, role, home) : undefined;
   // Another Settings tab is still somewhere to go, even while Help is open on Settings.
   const goThere = href && (href.includes("#") || href !== pathname) ? href : undefined;
   const showMe = canShowTask(task, role, home, phone, showMeOn, pathname, access);
   const computerOnly = phone && task.computerOnly;
-  const steps = showMeSteps(task, phone ? "phone" : "desk");
+  const steps = permitted ? showMeSteps(task, phone ? "phone" : "desk", role) : [];
   return (
     <li className={s.task} data-testid={`ward-help-task-answer-${task.id}`}>
       <button
@@ -403,7 +404,7 @@ export function HelpTasks({
     const walk = screen ? HOW_TOS.find((each) => each.id === aroundId(screen.id)) : undefined;
     return walk && canShowTask(walk, role, home, phone, showMeOn, pathname, access) ? walk : undefined;
   }, [access, home, pathname, phone, role, screen, showMeOn]);
-  const aroundSteps = around ? showMeSteps(around, phone ? "phone" : "desk").length : 0;
+  const aroundSteps = around ? showMeSteps(around, phone ? "phone" : "desk", role).length : 0;
   const hereTiles = here.slice(0, 4);
 
   const counts = HOW_TO_TOPICS.map((name) => ({ name, n: mine.filter((task) => task.topic === name).length })).filter(

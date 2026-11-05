@@ -44,6 +44,8 @@ function EdTransportDialog({ row, ctx }: { row: EdBoardRowModel; ctx: EdScreenCo
     answers: transportDraft,
     legalReason,
     pending: saving,
+    uncertain: save.uncertain,
+    refused: !!save.error && !save.uncertain,
     onClose: closeTransportDialog,
   });
   // Focus starts on the first question (who is collecting), as the popup did before the kit dialog.

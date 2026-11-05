@@ -224,7 +224,13 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   );
   const patientOf = (entry: OutOfAreaEntry): ResolvedPatientInfo =>
     people.get(entry.admission.id) ?? resolveSubjectPatient(entry.admission, { patients, referrals, movements });
-  const recordOf = (id: string) => repatriations.find((record) => record.admissionId === id);
+  const recordOf = (id: string) => {
+    const record = repatriations.find((row) => row.admissionId === id);
+    const lastJourney = record
+      ? movements.findLast((row) => row.sourceAdmissionId === id && row.openedAt >= record.at)
+      : undefined;
+    return lastJourney?.closure?.outcome === "did_not_proceed" ? undefined : record;
+  };
   const statusOf = (entry: OutOfAreaEntry) =>
     returnStatus(recordOf(entry.admission.id), drafts[entry.admission.id], now);
   const offsetOf = (entry: OutOfAreaEntry) => dischargeOffsetDays(entry, now);

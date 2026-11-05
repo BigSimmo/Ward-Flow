@@ -38,6 +38,29 @@ describe("withLoadRetry", () => {
     expect(load).toHaveBeenCalledTimes(3);
   });
 
+  it("updates a reopened fallback when an earlier instance's retry finishes", async () => {
+    let resolve: (panel: typeof Panel) => void = () => {};
+    const load = vi
+      .fn<() => Promise<typeof Panel>>()
+      .mockRejectedValueOnce(new Error("ChunkLoadError"))
+      .mockImplementationOnce(
+        () =>
+          new Promise((done) => {
+            resolve = done;
+          }),
+      );
+    const Lazy = dynamic(withLoadRetry(load, "Tools did not load"));
+    const first = render(<Lazy label="Tools" />);
+    await screen.findByRole("alert");
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    first.unmount();
+    render(<Lazy label="Reopened" />);
+    expect(await screen.findByRole("alert")).toBeInTheDocument();
+    await act(async () => resolve(Panel));
+    expect(await screen.findByText("Reopened loaded")).toBeInTheDocument();
+    expect(load).toHaveBeenCalledTimes(2);
+  });
+
   it("adds Close when the panel takes onClose, for drawers that draw their own header", async () => {
     const onClose = vi.fn();
     const Lazy = dynamic(

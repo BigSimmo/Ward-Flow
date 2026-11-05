@@ -9,7 +9,8 @@
 export type SaveProblem = readonly [happened: string, doNow: string];
 
 const NOT_CONFIRMED = "Save is not confirmed.";
-const RETRY = "It sends again by itself when you are back online, or press Retry. It will not be saved twice.";
+const RETRY =
+  "Keep this page open and press Retry to confirm this change. Retry uses the same command, so it will not be saved twice.";
 const CHECK = "Check the board, then try again.";
 /** Not sent yet: definitely not saved. */
 const unsent = (why: string, doNow = CHECK): SaveProblem => [`${why}, so this action was not saved.`, doNow];

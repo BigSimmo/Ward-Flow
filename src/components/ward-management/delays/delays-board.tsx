@@ -5,6 +5,7 @@
  * the table by blocker, a registers rail that becomes the person's panel, and graphs under it.
  * Figures come from `delays-board-model.ts`; the one write is Escalate, which the screen dispatches.
  */
+import { edById } from "@/components/ward-management/ward-sites";
 import { deskPlaceLabel } from "@/components/ward-management/shell/ward-bar-desk-place";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
@@ -434,6 +435,14 @@ export function DelaysBoard({
       label: desk.ownerName(filters.owner),
       clear: () => {
         set({ owner: null });
+      },
+    });
+  if (filters.edId != null)
+    chips.push({
+      key: "ed",
+      label: edById(filters.edId)?.name ?? filters.edId,
+      clear: () => {
+        set({ edId: null });
       },
     });
   if (filters.origin !== null)

@@ -1,5 +1,7 @@
 "use client";
 
+import { confirmLeavingShell } from "../shell/ward-leave-guard";
+
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
@@ -355,12 +357,14 @@ export function OfficerScreen() {
   const [detailTab, setDetailTab] = useState<OfficerDetailTab>("details");
   const [bookingId, setBookingId] = useState<string | undefined>(undefined);
   const selectJob = (id: string) => {
+    if (!confirmLeavingShell(() => selectJob(id))) return;
     diversion.cancelDiversion();
     setDetailTab("details");
     setBookingId(undefined);
     setSelectedId(selectedId === id ? undefined : id);
   };
   const openJob = (id: string) => {
+    if ((id !== selectedId || bookingId !== undefined) && !confirmLeavingShell(() => openJob(id))) return;
     if (id !== selectedId) {
       diversion.cancelDiversion();
       setDetailTab("details");
@@ -368,12 +372,16 @@ export function OfficerScreen() {
     setBookingId(undefined);
     setSelectedId(id);
   };
-  const closeJob = () => {
+  const clearJob = () => {
     diversion.cancelDiversion();
     setSelectedId(undefined);
     setBookingId(undefined);
   };
+  const closeJob = () => {
+    if (confirmLeavingShell(closeJob)) clearJob();
+  };
   const openBooking = (id: string) => {
+    if (!confirmLeavingShell(() => openBooking(id))) return;
     diversion.cancelDiversion();
     setSelectedId(undefined);
     setBookingId((current) => (current === id ? undefined : id));
@@ -1413,7 +1421,7 @@ export function OfficerScreen() {
               raise={booking.raise}
               acting={booking.acting.get(bookingMovement.id) ?? {}}
               onClose={closeJob}
-              onSaved={(name) => (closeJob(), showToast(`Transport booking logged for ${name}.`))}
+              onSaved={(name) => (clearJob(), showToast(`Transport booking logged for ${name}.`))}
             />
           ) : null}
           {!bookingMovement && panelOpen && selectedJob && selectedJob.transport ? (

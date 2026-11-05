@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 import type { CommandUndoType } from "../ward-command-metadata";
 import { useOptionalToast } from "@/components/wf";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
@@ -114,10 +114,12 @@ export function useWardCommandCompletion(say?: (message: string) => void) {
   const toast = useOptionalToast();
   const generation = useOptionalWardFlowSelect("worldGeneration")?.worldGeneration;
   const generationRef = useRef(generation);
-  useEffect(() => {
+  const pending = useRef(new Map<string, symbol>());
+  useLayoutEffect(() => {
+    if (generationRef.current === generation) return;
     generationRef.current = generation;
+    pending.current.clear();
   }, [generation]);
-  const pending = useRef(new Set<string>());
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -136,18 +138,31 @@ export function useWardCommandCompletion(say?: (message: string) => void) {
       else toast?.push({ tone: "info", title: WARD_STILL_SAVING });
       return false;
     }
-    pending.current.add(key);
+    const owner = Symbol(key);
+    pending.current.set(key, owner);
     const startedRow = typeof document === "undefined" ? null : document.activeElement?.closest("li");
     commandOrigin = startedRow ? { key, row: startedRow } : null;
     const commandGeneration = generationRef.current;
     const finish = (outcome?: WardCommandOutcome) => {
-      pending.current.delete(key);
+      if (pending.current.get(key) !== owner) return;
+      const recovering = outcome?.status === "failed" && outcome.confirmation !== undefined;
+      if (!recovering) pending.current.delete(key);
       if (
         mounted.current &&
         commandGeneration === generationRef.current &&
         (!outcome?.isCurrent || outcome.isCurrent())
       )
         settled(outcome);
+      if (recovering) {
+        void outcome.confirmation!.then(
+          (terminal) => {
+            if (terminal.commandId === outcome.commandId && terminal.status !== "failed") finish(terminal);
+          },
+          () => {
+            if (pending.current.get(key) === owner) pending.current.delete(key);
+          },
+        );
+      }
     };
     const failed = () => finish({ commandId: "", status: "failed" });
     try {

@@ -62,6 +62,7 @@ const AROUND: readonly Around[] = [
       },
       {
         device: "desk",
+        acts: ["CONVERT_PLANNED_ADMISSION"],
         target: id("ward-capacity-planned-admissions"),
         title: "Planned admissions",
         body: "Admissions booked ahead. Press Arrived when the person reaches the ward.",
@@ -170,6 +171,7 @@ const AROUND: readonly Around[] = [
         body: "Use Show to filter the sheet to a service, then use Print handover for the paper copy.",
       },
       {
+        acts: ["RECORD_HANDOVER_SIGN_OFF", "RECORD_SITE_HANDOVER_SIGN_OFF"],
         target: [id("ward-handover-hero-sign-off"), id("ward-handover-phone-sign-off")],
         title: "Sign off",
         body: "Sign off shows how many checks are clear. Open it, work through the Before you sign checks, then choose Sign off.",
@@ -339,19 +341,22 @@ const AROUND: readonly Around[] = [
       {
         target: id("seclusion-live"),
         title: "In use now",
-        body: "Everyone in seclusion or restraint now, longest first, with Record end on each row.",
+        body: "Everyone in seclusion or restraint now, longest first. Ward staff record changes on their own ward.",
       },
       {
+        acts: ["RECORD_RESTRICTIVE_PRACTICE_START"],
         target: id("seclusion-start-open"),
         title: "Start seclusion or restraint",
         body: "Find the patient, choose what is in use, type the time or press Now, then Record start.",
       },
       {
+        acts: ["SET_SECLUSION_ROOM_STATUS"],
         target: id("seclusion-rooms"),
         title: "The seclusion rooms",
         body: "Each secure ward's room. Change marks it available or out of service.",
       },
       {
+        acts: ["RECORD_WARD_INCIDENT"],
         target: id("seclusion-incident-open"),
         title: "Record incident",
         body: "Choose the ward and the kind, type the time, then Record incident.",
@@ -370,6 +375,7 @@ const AROUND: readonly Around[] = [
       },
       {
         device: "phone",
+        acts: ["REVIEW_AUDIT_EVENT"],
         target: id("wf-group-head"),
         title: "Waiting for review",
         body: "Newest first. Choose an event, then Record review.",
@@ -382,6 +388,7 @@ const AROUND: readonly Around[] = [
       },
       {
         device: "desk",
+        acts: ["REVIEW_AUDIT_EVENT"],
         target: id("ward-governance-decision-record"),
         title: "Your review",
         body: "Record review once you have looked at it.",
@@ -465,6 +472,7 @@ const AROUND: readonly Around[] = [
       {
         target: id("ward-patient-search-add"),
         title: "Add patient",
+        acts: ["ADD_PATIENT"],
         body: "Register a new synthetic person when they are not found.",
       },
     ],
