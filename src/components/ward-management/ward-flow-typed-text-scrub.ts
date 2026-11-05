@@ -280,42 +280,53 @@ export function scrubTypedTextFields(state: WardFlowState, worlds: FixtureWorlds
     if (Array.isArray(value))
       return value.map((entry, index) => visit(entry, [...path, "[]"], [...place, entryPlace(entry, index)]));
     if (value && typeof value === "object") {
-      // An undo step keeps copies of support notification rows, which the anchored reason rule must reach.
-      const rebased = supportUndoPaths(path, value);
+      // Undo copies retain the live record path for scrub rules and its identity for fixture text.
+      const rebased = genericUndoPaths(path, value, state);
       const referralCopies = referralUndoPlaces(path, value);
-      return Object.fromEntries(
+      const transformed = Object.fromEntries(
         Object.entries(value).map(([key, entry]) => [
           key,
           visit(
             entry,
             referralCopies?.[key] ? ["referrals", "[]"] : (rebased?.[key] ?? [...path, key]),
-            referralCopies?.[key] ?? [...place, key],
+            referralCopies?.[key] ??
+              (rebased?.[key]
+                ? rebased[key].map((part) => (part === "[]" ? entryPlace(entry, 0) : part))
+                : [...place, key]),
             value as Record<string, unknown>,
           ),
         ]),
       );
+      return path.length === 2 && path[0] === "referrals" && path[1] === "[]"
+        ? keepHoldableIntake(transformed)
+        : transformed;
     }
     return value;
   };
   return keepHoldableIntakes(visit(state, [], []) as WardFlowState);
 }
 
-/** Where a support notification undo change holds its rows, as paths in the live world. */
-const SUPPORT_UNDO_ROW_PATHS: Readonly<Record<string, string[]>> = {
-  before: ["supportNotifications", "[]"],
-  after: ["supportNotifications", "[]"],
-  rows: ["supportNotifications"],
-};
-const SUPPORT_UNDO_LIST_PATHS: Readonly<Record<string, string[]>> = {
-  before: ["supportNotifications"],
-  after: ["supportNotifications"],
-};
+/** Generic Undo snapshots follow the same rules and exact fixture identities as live rows. */
 const UNDO_CHANGE = { anchored: true, segments: ["undoRecords", "[]", "changes", "[]"] };
 
-function supportUndoPaths(path: readonly string[], value: object): Readonly<Record<string, string[]>> | undefined {
+function genericUndoPaths(
+  path: readonly string[],
+  value: object,
+  state: WardFlowState,
+): Readonly<Record<string, string[]>> | undefined {
   const change = value as { slice?: unknown; mode?: unknown };
-  if (change.slice !== "supportNotifications" || !matchesRule(path, UNDO_CHANGE)) return undefined;
-  return change.mode === "whole" ? SUPPORT_UNDO_LIST_PATHS : SUPPORT_UNDO_ROW_PATHS;
+  if (
+    typeof change.slice !== "string" ||
+    change.slice === "undoRecords" ||
+    !Object.hasOwn(state, change.slice) ||
+    !matchesRule(path, UNDO_CHANGE)
+  )
+    return undefined;
+  const root = [change.slice];
+  if (change.mode === "whole") return { before: root, after: root };
+  if (change.mode === "append") return { rows: root };
+  if (change.mode === "id") return { before: [...root, "[]"], after: [...root, "[]"] };
+  return undefined;
 }
 
 /** Decision snapshots keep the same referral identity, so only its own exact fixture text stays. */

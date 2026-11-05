@@ -143,56 +143,68 @@ export function WardObservationControl({
         </Button>
       ) : (
         <>
-          {/* WH1 (Josh, 3 Nov 2026): kit chips and segments in place of browser drop-downs. */}
-          <div className={styles.field}>
-            <span className={styles.fieldLabel}>Observation level</span>
-            <ChoiceChips
-              label="Observation level"
-              items={LEVEL_CHOICES}
-              value={level}
-              onChange={setLevel}
-              testId="ward-observation-level"
-            />
-          </div>
-          {level === "intermittent" ? (
-            <div className={styles.field} data-testid="ward-observation-interval" data-value={String(interval)}>
-              <span className={styles.fieldLabel}>Check every</span>
-              <Segmented
-                label="Check every"
-                items={INTERVAL_CHOICES}
-                value={String(interval)}
-                onChange={(minutes) => setIntervalMinutes(Number(minutes))}
-              />
-            </div>
-          ) : null}
-          <div className={styles.fieldRow}>
-            <label className={styles.field}>
-              <span className={styles.fieldLabel}>Next review (optional)</span>
-              <input
-                className={styles.select}
-                data-testid="ward-observation-review-time"
-                inputMode="numeric"
-                placeholder="For example 14:30"
-                value={reviewTime}
-                onChange={(event) => {
-                  setReviewTime(event.target.value);
-                  setReviewEdited(true);
-                }}
-              />
-            </label>
+          <fieldset
+            disabled={recording.pending}
+            style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+            aria-label="Observation settings"
+          >
+            {/* WH1 (Josh, 3 Nov 2026): kit chips and segments in place of browser drop-downs. */}
             <div className={styles.field}>
-              <span className={styles.fieldLabel}>Day</span>
-              <Segmented
-                label="Review day"
-                items={REVIEW_DAYS}
-                value={reviewDay}
-                onChange={(day) => {
-                  setReviewDay(day);
-                  setReviewEdited(true);
+              <span className={styles.fieldLabel}>Observation level</span>
+              <ChoiceChips
+                label="Observation level"
+                items={LEVEL_CHOICES}
+                value={level}
+                onChange={(value) => {
+                  if (!recording.pending) setLevel(value);
                 }}
+                testId="ward-observation-level"
               />
             </div>
-          </div>
+            {level === "intermittent" ? (
+              <div className={styles.field} data-testid="ward-observation-interval" data-value={String(interval)}>
+                <span className={styles.fieldLabel}>Check every</span>
+                <Segmented
+                  label="Check every"
+                  items={INTERVAL_CHOICES}
+                  value={String(interval)}
+                  onChange={(minutes) => {
+                    if (!recording.pending) setIntervalMinutes(Number(minutes));
+                  }}
+                />
+              </div>
+            ) : null}
+            <div className={styles.fieldRow}>
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>Next review (optional)</span>
+                <input
+                  className={styles.select}
+                  data-testid="ward-observation-review-time"
+                  inputMode="numeric"
+                  disabled={recording.pending}
+                  placeholder="For example 14:30"
+                  value={reviewTime}
+                  onChange={(event) => {
+                    setReviewTime(event.target.value);
+                    setReviewEdited(true);
+                  }}
+                />
+              </label>
+              <div className={styles.field}>
+                <span className={styles.fieldLabel}>Day</span>
+                <Segmented
+                  label="Review day"
+                  items={REVIEW_DAYS}
+                  value={reviewDay}
+                  onChange={(day) => {
+                    if (recording.pending) return;
+                    setReviewDay(day);
+                    setReviewEdited(true);
+                  }}
+                />
+              </div>
+            </div>
+          </fieldset>
           {error || recording.error ? (
             <p className={styles.meta} role="alert" data-testid="ward-observation-error">
               {error ?? recording.error}
