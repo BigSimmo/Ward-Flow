@@ -15,7 +15,9 @@ Source: the owner-supplied stress-tested PDF and the decisions in this task.
 - Preserve historical documents. Licence enforcement awaits review of the actual inventory.
 - Josh owns operational alerts; email is the intended channel. Downtime wording is a draft.
 - Native screen-reader and live-service acceptance are separate from local automated evidence.
-- Do not edit `ward-screen.tsx` or `shortlist-panel.tsx`, raise script budgets, publish or deploy.
+- Do not edit `ward-screen.tsx` or `shortlist-panel.tsx` or raise script budgets.
+- The original local-only stage was extended by the owner on 5 November to a feature-branch
+  publication and draft PR into `main`. Release and deployment remain separate.
 
 ## Delivery sequence and acceptance
 

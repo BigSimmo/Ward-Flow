@@ -62,6 +62,16 @@ export async function openDesk(
   await page.getByLabel("Password", { exact: true }).fill(account.password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(sharedStatus(page)).toContainText(READY, { timeout: 30_000 });
+  // Account Help memory can restore the tour marker after sign-in, revealing this first-visit
+  // note later. Read it through its normal button once; leave repeat appearances observable.
+  // A note underneath an open modal must wait until it is interactive again.
+  const whatsNew = page.locator('[data-testid="ward-whats-new"]:not([inert], [inert] *)');
+  const dismissWhatsNew = async () => {
+    await whatsNew.getByRole("button", { name: "Got it", exact: true }).click();
+    await expect(whatsNew).toBeHidden();
+  };
+  if (await whatsNew.isVisible()) await dismissWhatsNew();
+  else await page.addLocatorHandler(whatsNew, dismissWhatsNew, { times: 1 });
   return { context, page } satisfies Desk;
 }
 

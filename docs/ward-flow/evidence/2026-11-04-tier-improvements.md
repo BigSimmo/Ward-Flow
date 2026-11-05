@@ -268,6 +268,51 @@ The focused conflict checks passed another 16 cases across three files. These ar
 checks; the full unit suite and hosted CI remain separate. Earlier browser/PDF/budget results above
 are evidence for `c57ca5b91`, not fresh results for the integrated candidate.
 
+The fresh integrated shared-mode run is
+`test-results/shared-mode-49428-1793853432083/journeys.json`: all 15 cases passed, with zero
+skipped, failed, flaky or retried. This includes all 14 required desktop/phone cases and the
+separate slow-phone advisory. The new account-backed Help memory on `main` revealed a first-visit
+What's new note after sign-in and initially obstructed phone Undo. Shared desk setup now reads it
+once through the normal Got it button, including a late appearance, while leaving repeated notes
+and other dialogs observable. The focused Help/setup checks passed 25 cases across three files,
+full frontend TypeScript and focused ESLint passed, and independent review found no important
+remaining issue. The final phone Undo screenshot was inspected and shows only the confirmed result.
+
+Private retained artifacts are `shared-pr-journeys-final.json`, `phone-undo-pr-final.png` and
+`slow-phone-pr-advisory.json`. The advisory used the integrated fixture (77 movements, 312 admissions,
+22 units): usable shared UI in 8,811.4 ms, FCP 8,468 ms, DOM content loaded 1,323.3 ms and load
+4,696.9 ms. Viewport, CPU/network emulation and warm-local-server limitations are unchanged; this
+is not a physical-device or absolute-speed verdict. The owned throwaway PostgreSQL was stopped.
+
+A fresh matching mockups-enabled demo build passed both print cases after the integration:
+30 beds on one readable A4 landscape page and 31 beds across two, retaining every bed and the
+Perth print stamp. Report:
+`test-results/tier-improvements-pr-20261105-103441f4-5d31-4c91-bd4f-e86f24110403/journeys.json`.
+Private copies are `print-pr-journeys-final.json`, `pr-bed-board-30.pdf`, `pr-bed-board-31.pdf`
+and both PNG previews. Physical printing remains unverified.
+
+The same fresh build passed all five phone script budgets using the repository's measurement
+implementation and an identity-verified owned production server:
+
+| Route                              | Integrated demo, KiB gzip | Target main limit |
+| ---------------------------------- | ------------------------: | ----------------: |
+| `/ward-flow`                       |                   552.142 |             554.1 |
+| `/ward-flow/referrals`             |                   556.925 |             558.9 |
+| `/ward-flow/ed`                    |                   506.399 |             516.1 |
+| `/ward-flow/ward/rph-adult-secure` |                   583.737 |             585.1 |
+| `/ward-flow/movements/WF-001`      |                   613.124 |             614.7 |
+
+These limits were inherited from the target `main`; this task did not raise them. The private
+measurement is `pr-demo-phone-budgets.json`. The measurement server was stopped. This supersedes
+the earlier candidate's PDF and five-route budget evidence for the integrated candidate; the full
+offline release-gate result remains reused evidence for `c57ca5b91`. Hosted CI is not claimed passed.
+
+Immediately before publication, `main` had advanced again to
+`599bf4490ce059d6560eb642c8d8201489c348cf`. A fresh merge-tree preview was clean, so this task
+did not add an unnecessary synchronisation merge. The protected files and script budgets remain
+unchanged relative to that target. The fresh checks above cover this feature candidate; they are
+not a claim that the newer peer changes have been integrated or deployed.
+
 ### Read-only hosted configuration findings
 
 The working Railway connection verified the exact Ward Flow project and production environment
