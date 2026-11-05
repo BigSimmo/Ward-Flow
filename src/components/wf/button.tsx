@@ -83,6 +83,12 @@ export function buttonClass({
 }
 
 /**
+ * The class a `Button` gives its `count`, for a link styled with `buttonClass` that holds a `Count`.
+ * Without it the count misses the variant's own count colour (on the hero, about 1.6:1: audit A3).
+ */
+export const buttonCountClass: string = styles.count;
+
+/**
  * v6 button. Real `<button>`, `type="button"` by default, 2px focus outline with 2px offset
  * (white on the hero). Heights follow density/pointer tokens. `data-placement-action` keeps
  * medium placement decisions at least 48px across phone, tablet and desktop.

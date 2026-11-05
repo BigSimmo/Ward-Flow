@@ -152,7 +152,7 @@ function BedTiles({ rows, wards, held, now, waitingForBed }: Omit<HandoverBedsPr
       </div>
       <div className={styles.tile}>
         <b className={cx(styles.tileValue, held.length > 0 && styles.inkWarning)}>{held.length}</b>
-        <span className={styles.tileLabel}>Discharges held</span>
+        <span className={styles.tileLabel}>Discharges held up</span>
         <span className={styles.tileSub}>{sum("longStays")} stays over 7 days</span>
       </div>
       <div className={styles.tile}>

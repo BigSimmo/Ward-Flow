@@ -70,7 +70,7 @@ describe("correcting a stage on a movement that is holding a bed", () => {
     expect(stepBackPanel().queryByTestId(NOTICE)).toBeNull();
   });
 
-  it("names the bed as still held once one is, and points at the control that releases it", () => {
+  it("names the bed as still pulled once one is, and points at the control that releases it", () => {
     renderWorkspace(MOVEMENT);
     // Crossing the boundary inside one test is the point: the same movement, the same panel, before
     // and after. Two separate fixtures could differ for some other reason.
@@ -79,7 +79,9 @@ describe("correcting a stage on a movement that is holding a bed", () => {
     fireEvent.click(screen.getByTestId("test-pull-patient"));
 
     const notice = stepBackPanel().getByTestId(NOTICE);
-    expect(notice.textContent).toMatch(/still hold/i);
+    // "Held" is a ward's own bed kept for leave; an incoming bed is pulled (audit A1, 5 Nov 2026).
+    expect(notice.textContent).toMatch(/still has a ward bed pulled/i);
+    expect(notice.textContent).not.toMatch(/\bhold|\bheld\b/i);
     expect(notice.textContent).toMatch(/Release the pulled bed/i);
   });
 
