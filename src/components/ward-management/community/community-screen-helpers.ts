@@ -6,6 +6,7 @@
  * "this file" or "this screen" in them still means the community team screen as a whole.
  */
 
+import { placeDisplayName } from "@/components/ward-management/ward-place-names";
 import type { SinceItem } from "@/components/wf";
 import {
   isAwaitingTeamAnswer,
@@ -120,7 +121,7 @@ export function teamSinceItems(
  * An id the unit list does not carry renders as the id rather than as a blank or a guess.
  */
 export function unitName(unitId: string, units: readonly Unit[]): string {
-  return units.find((unit) => unit.id === unitId)?.name ?? unitId;
+  return placeDisplayName(unitId, units);
 }
 
 /**

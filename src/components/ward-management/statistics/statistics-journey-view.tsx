@@ -174,7 +174,8 @@ export function journeyStages({
     {
       id: "moving",
       label: "Pulled or in transit",
-      caption: "Bed given, not arrived",
+      // WF-17: this count is people (movements), not beds — bed board keeps exact bed counts.
+      caption: "People with a bed given, not arrived",
       tone: "info",
       count: moving.length,
       breakdown: IN_TRANSIT.map((stage) => ({

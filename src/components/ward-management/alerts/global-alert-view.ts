@@ -4,9 +4,10 @@
  * Pure reads over `broadcastAlerts`, so the banner, the Alerts page and the tests agree. Nothing
  * here is stored: overdue, live and the reply board are all derived from the alert and the movement.
  */
+import { placeDisplayName } from "@/components/ward-management/ward-place-names";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
-import { allEmergencyDepartments, edById, siteByCode } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
 import {
   alertAsksDesk,
   broadcastKind,
@@ -186,5 +187,5 @@ export function replyBoard(alert: BroadcastAlert, units: readonly { id: string; 
 }
 
 export function deskName(unitId: string, units: readonly { id: string; name: string }[]): string {
-  return units.find((unit) => unit.id === unitId)?.name ?? edById(unitId)?.name ?? unitId;
+  return placeDisplayName(unitId, units);
 }

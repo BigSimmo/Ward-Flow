@@ -12,6 +12,7 @@ import {
 } from "@/components/ward-management/ward-flow-provider";
 import { withRecordedChecks } from "./on-call-checks";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import {
   Button,
@@ -150,11 +151,18 @@ export function OnCallScreen() {
   );
   // OC2 mock-up (4 Nov 2026): the page follows the header's service, as every other page does. A
   // chosen service shows its own lines plus the statewide ones; Statewide shows everyone.
+  // WF-45: transport officers only need transport/retrieval lines (not the full statewide roster).
   const scope = useServiceScope();
-  const entries = useMemo(
-    () => (scope ? allEntries.filter((entry) => entry.service === scope || entry.service === "Statewide") : allEntries),
-    [allEntries, scope],
-  );
+  const access = useEffectiveWardAccess();
+  const entries = useMemo(() => {
+    const scoped = scope
+      ? allEntries.filter((entry) => entry.service === scope || entry.service === "Statewide")
+      : allEntries;
+    if (access.role === "officer") {
+      return scoped.filter((entry) => entry.group === "Transport and retrieval");
+    }
+    return scoped;
+  }, [allEntries, scope, access.role]);
   const ids = useMemo(() => new Set(baseEntries.map((entry) => entry.id)), [baseEntries]);
 
   const [tab, setTab] = useState<DirectoryTab>("hospitals");
@@ -401,8 +409,18 @@ export function OnCallScreen() {
             <SrOnly>On-call:</SrOnly> {answering.length} {answering.length === 1 ? "line" : "lines"} answering
           </>
         }
-        // F-08 (phone review, Oct 2026): the phone hero carries the Demo pill and says the numbers are invented.
-        titleMeta={isPhone ? "Prototype data, invented numbers" : undefined}
+        // WF-45: scope sits in the meta so the heading name stays "On-call: N lines answering".
+        titleMeta={
+          access.role === "officer"
+            ? isPhone
+              ? "Transport lines · prototype data"
+              : "Transport lines"
+            : scope
+              ? `${SERVICE_META[scope].short} + statewide`
+              : isPhone
+                ? "All services · prototype data"
+                : "All services"
+        }
         stats={
           isPhone ? (
             // Device audit 11 Oct 2026: the three figures sit on one short line so the number comes sooner.
@@ -798,7 +816,8 @@ export function OnCallScreen() {
               className={styles.dirFoot}
               meta={
                 <span className={styles.footMeta} data-testid="ward-on-call-count">
-                  {tabRows.length} {tabRows.length === 1 ? "contact" : "contacts"} in this tab, {entries.length} in all.{" "}
+                  {tabRows.length} {tabRows.length === 1 ? "contact" : "contacts"} in this tab, {entries.length} in
+                  scope ({answering.length} answering).{" "}
                   {atLater ? `Shown as at ${hhmm(minute)}.` : `Shown as at ${hhmm(boardMinute)}, the board time.`}
                 </span>
               }
