@@ -131,7 +131,7 @@ function requireWorkflow(source) {
         ? " && (needs.reuse.outputs.browser_verified != 'true' || needs.reuse.outputs.release_verified != 'true')"
         : ` && needs.reuse.outputs.${reuseGate}_verified != 'true'`;
     const route = expression(
-      `!cancelled() && needs.plan.outputs.${scope} == 'true'${reuseGuard}${scope === "browser" ? " && github.event.pull_request.draft != true" : ""}${job === "browser" || job === "release-gate" ? " && needs.browser-build.result == 'success'" : ""}${job === "coverage" ? " && needs.unit.result == 'success'" : ""}${cheapFirst.has(job) ? cheapGate : ""}`,
+      `!cancelled() && needs.plan.result == 'success' && needs.plan.outputs.${scope} == 'true'${reuseGuard}${scope === "browser" ? " && github.event.pull_request.draft != true" : ""}${job === "browser" || job === "release-gate" ? " && needs.browser-build.result == 'success'" : ""}${job === "coverage" ? " && needs.unit.result == 'success'" : ""}${cheapFirst.has(job) ? cheapGate : ""}`,
     );
     assert.ok(jobs.get(job)?.includes(`    if: ${route}\n`), `${job} job scope`);
     assert.match(jobs.get(job), /^ {4}needs: (?:plan|\[[^\n]*\bplan\b[^\n]*\])$/mu);
@@ -924,6 +924,10 @@ for (const [before, after] of [
     "if: ${{ false }}\n        run: node scripts/ward-ci-public/merge-latest-main.mjs\n  reuse:",
   ],
   ["&& needs.browser-build.result == 'success' && ", "&& "],
+  [
+    "!cancelled() && needs.plan.result == 'success' && needs.plan.outputs.build",
+    "!cancelled() && needs.plan.outputs.build",
+  ],
   ["    needs: [plan, reuse, static, build]\n", "    needs: [plan, reuse]\n"],
   ["    needs: [plan, reuse, browser-build, static, build]\n", "    needs: [plan, browser-build]\n"],
   [" && needs.static.result == 'success' && (needs.build.result == 'success'", " && (needs.build.result == 'success'"],
