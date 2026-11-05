@@ -54,6 +54,7 @@ import { documentationError, intakeCharts, type DocumentationDraft } from "./ref
 import { UNIDENTIFIED_REFERRAL_PREFIX } from "./referral-inbox";
 import {
   discardReferralDraft,
+  retireAcceptedReferralDraft,
   draftFingerprint,
   draftNeedsChartReattachment,
   keepReferralDraft,
@@ -210,8 +211,8 @@ export function useWardReferralDrawerState({
     prefillKey,
     `${PATIENT_KEY_PREFIX}${effectiveInitialPatientId}`,
   );
+  // An unnamed opening starts on nobody, not another site's.
   const fromEntryPoint = kept === null && prefillKey !== null;
-  // A2-3 (audit 13 Oct 2026): opened with no named person, the sheet starts on nobody, not another site's.
   const initialPatientKey = kept?.activePatientKey ?? prefillKey ?? NO_PATIENT_KEY;
   const [activePatientKey, setActivePatientKey] = useState<string>(initialPatientKey);
   const [extraPatientKeys, setExtraPatientKeys] = useState<string[]>(
@@ -434,7 +435,6 @@ export function useWardReferralDrawerState({
     }
   };
   const drawerRef = useRef<HTMLDivElement>(null);
-
   const referralDirty = !sentReferralId && draftJson !== openingDraft;
   const dirty = referralDirty || newPatientDirty;
   const [initialKept] = useState(() => (kept ? { at: readKeptReferralDraftAt(), json: draftFingerprint(kept) } : null));
@@ -460,11 +460,13 @@ export function useWardReferralDrawerState({
     draftOwnerVersion,
     setPending: setSendPending,
     onError: setFlowError,
-    onCommitted(intake) {
+    onRetired(intake) {
+      retireAcceptedReferralDraft(draftNow, liveDraftKey, draftOwnerVersion);
+      rememberReferrerContact(intake.referrer, draftOwnerVersion);
+    },
+    onCommitted() {
       setFlowError(null);
       stopDraftAutosave();
-      discardReferralDraft(draftDiscardOwner);
-      rememberReferrerContact(intake.referrer, draftOwnerVersion);
       announceToWardShell("Referral saved. Check the Referrals board for its record before sending again.");
     },
     onAccepted(created) {
@@ -546,7 +548,6 @@ export function useWardReferralDrawerState({
     onClose();
     announceToWardShell(kept ? "Synthetic referral draft kept for this session." : "Draft not kept: signed in again.");
   }
-
   function handleDrawerClose() {
     if (isSearchOpen) {
       setIsSearchOpen(false);
@@ -555,7 +556,6 @@ export function useWardReferralDrawerState({
       requestClose();
     }
   }
-
   // The enclosing Sheet owns focus when embedded. Register a modal only when this drawer has its own backdrop.
   useWardModalFocus(withBackdrop, drawerRef, handleDrawerClose);
 

@@ -88,6 +88,27 @@ describe("shortlist confirmed outcomes", () => {
       status === "accepted" ? "Escalation recorded." : "This escalation was refused.",
     );
   });
+  it("retains an escalation choice after refusal and while uncertain", async () => {
+    const confirmation = pending();
+    const dispatch = vi
+      .fn()
+      .mockReturnValueOnce({ commandId: "refusal", status: "refused", message: "Review escalation." })
+      .mockReturnValueOnce({ commandId: "uncertain", status: "failed", confirmation: confirmation.promise });
+    panel(
+      state.movements.find((row) => row.id === "WF-308")!,
+      dispatch,
+    );
+    fireEvent.click(screen.getByTestId("ward-shortlist-escalation-toggle"));
+    const contact = screen.getByTestId("ward-shortlist-escalation-contact");
+    fireEvent.change(contact, { target: { value: ESCALATION_CONTACTS[0] } });
+    fireEvent.click(screen.getByTestId("ward-shortlist-escalation-submit"));
+    expect(contact).toHaveValue(ESCALATION_CONTACTS[0]);
+    fireEvent.click(screen.getByTestId("ward-shortlist-escalation-submit"));
+    expect(contact).toHaveValue(ESCALATION_CONTACTS[0]);
+    expect(contact).toBeDisabled();
+    await act(async () => confirmation.finish({ commandId: "uncertain", status: "accepted" }));
+    expect(screen.queryByTestId("ward-shortlist-escalation-contact")).not.toBeInTheDocument();
+  });
   it("reports a refused cancellation at the form's own surface", async () => {
     const result = pending();
     const base = state.movements.find((row) => row.stage === "pulled")!;

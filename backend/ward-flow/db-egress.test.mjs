@@ -102,7 +102,12 @@ test(
       at = new Date(at.getTime() + 60_000);
       meter.failCommit = true;
       await assert.rejects(store.command(actor, randomUUID(), revision, refresh(units[1])));
-      assert.deepEqual((await store.read(actor)).payload, before);
+      // Another writer commits distinct content at the failed candidate's exact revision/time,
+      // before this process observes the rollback. It must not promote that failed candidate.
+      assert.equal((await other.command(actor, randomUUID(), revision, refresh(units[0]))).status, 200);
+      revision += 1;
+      assert.notDeepEqual(await truth(), before);
+      assert.deepEqual((await store.read(actor)).payload, await truth());
       assert.equal((await store.command(actor, randomUUID(), revision, refresh(units[1]))).status, 200);
       assert.deepEqual((await store.read(actor)).payload, await truth());
     } finally {

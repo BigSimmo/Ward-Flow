@@ -483,7 +483,11 @@ function StartDialog({
       }}
       data-testid="seclusion-start-dialog"
     >
-      <div className={styles.form}>
+      <fieldset
+        className={styles.form}
+        disabled={save.pending}
+        style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+      >
         {chosen ? (
           <div className={styles.picked} data-testid="seclusion-start-chosen">
             <span className={styles.rowMain}>
@@ -528,7 +532,7 @@ function StartDialog({
         />
         <TimeBox label="Started at" time={time} now={now} testId="seclusion-start-time" />
         <SaveLine save={save} testId="seclusion-start-failure" />
-      </div>
+      </fieldset>
     </Dialog>
   );
 }
@@ -566,11 +570,15 @@ function EndDialog({
       }}
       data-testid="seclusion-end-dialog"
     >
-      <div className={styles.form}>
+      <fieldset
+        className={styles.form}
+        disabled={save.pending}
+        style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+      >
         <TimeBox label="Ended at" time={time} now={now} testId="seclusion-end-time" />
         <p className={styles.note}>Once ended, it moves to Governance, Registers.</p>
         <SaveLine save={save} testId="seclusion-end-failure" />
-      </div>
+      </fieldset>
     </Dialog>
   );
 }
@@ -613,7 +621,11 @@ function RoomDialog({
       }}
       data-testid="seclusion-room-dialog"
     >
-      <div className={styles.form}>
+      <fieldset
+        className={styles.form}
+        disabled={save.pending}
+        style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+      >
         <ChoiceChips
           label="Mark the room"
           items={ROOM_CHOICES}
@@ -622,7 +634,7 @@ function RoomDialog({
           testId="seclusion-room-choice"
         />
         <SaveLine save={save} testId="seclusion-room-failure" />
-      </div>
+      </fieldset>
     </Dialog>
   );
 }
@@ -668,7 +680,11 @@ function IncidentDialog({
       }}
       data-testid="seclusion-incident-dialog"
     >
-      <div className={styles.form}>
+      <fieldset
+        className={styles.form}
+        disabled={save.pending}
+        style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+      >
         {units.length > 1 ? (
           <ChoiceChips
             label="Ward"
@@ -687,7 +703,7 @@ function IncidentDialog({
         />
         <TimeBox label="Happened at" time={time} now={now} testId="seclusion-incident-time" />
         <SaveLine save={save} testId="seclusion-incident-failure" />
-      </div>
+      </fieldset>
     </Dialog>
   );
 }

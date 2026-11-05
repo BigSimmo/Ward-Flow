@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { useWardFlowSelect } from "../ward-flow-provider";
 import { useWardRaise } from "../ward-flow-raise";
 import { allEmergencyDepartments } from "../ward-sites";
@@ -59,6 +59,13 @@ export function WardAcceptedReferralPlacementForm({
     /** Intermittent only: minutes between checks, as the ED intake form asks. */
     intervalMinutes: number;
   } | null>(null);
+  const currentDraft = useRef(placementDraft);
+  useLayoutEffect(() => {
+    currentDraft.current = placementDraft;
+    return () => {
+      currentDraft.current = null;
+    };
+  }, [placementDraft]);
   // Acceptance is a decision only. Starting its separate journey consumes no bed.
   const acceptedToStart = inboxEntries
     .filter(
@@ -115,7 +122,7 @@ export function WardAcceptedReferralPlacementForm({
         const failure = wardCommandFailure(outcome);
         const started = "Placement started. Open Ward flow, Admissions, then choose Pull the bed.";
         onMessage(failure ?? (mismatch ? `${started} ${mismatch}` : started));
-        if (!failure) {
+        if (!failure && currentDraft.current === placementDraft) {
           setPlacementDraft(null);
           onStarted();
         }
