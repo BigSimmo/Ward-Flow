@@ -71,7 +71,8 @@ export function StagePipeline({
               <button
                 type="button"
                 className={styles.stage}
-                aria-pressed={highlight === `stage:${stage.id}`}
+                aria-haspopup="dialog"
+                data-highlighted={highlight === `stage:${stage.id}` ? "true" : undefined}
                 onClick={() => onToggle(stage.id)}
                 title={stage.blurb}
               >

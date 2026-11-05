@@ -19,7 +19,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { NextBarMount as WardBar } from "@/components/ward-management/shell-next/next-bar";
 import { openWardDrawer } from "@/components/ward-management/shell/ward-drawer-bus";
 import { WardLiveRegion, resetWardLiveRegionForTests } from "@/components/ward-management/shell/ward-live-region";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";

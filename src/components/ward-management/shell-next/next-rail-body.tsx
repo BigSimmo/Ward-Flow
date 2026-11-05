@@ -1191,11 +1191,11 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
             viewing={viewing}
             triggerRef={personaTriggerRef}
             onTryAnotherDesk={() => {
+              setOpenOverlay(null);
               if (onOpenOperatorModal) {
                 onOpenOperatorModal();
                 return;
               }
-              setOpenOverlay(null);
               deskReturnRef.current = personaTriggerRef.current;
               setDeskModalOpen(true);
             }}
@@ -1242,6 +1242,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               place={deskPlace}
               onLeave={() => setMoreOpen(false)}
               onTryAnotherDesk={() => {
+                setOpenOverlay(null);
                 if (onOpenOperatorModal) {
                   onOpenOperatorModal();
                   return;

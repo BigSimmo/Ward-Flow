@@ -76,7 +76,8 @@ export function HighlightStat({
     <button
       type="button"
       className={flow.highlight}
-      aria-pressed={pressed}
+      aria-haspopup="dialog"
+      data-highlighted={pressed ? "true" : undefined}
       onClick={onToggle}
       data-testid="movements-day-metric"
     >

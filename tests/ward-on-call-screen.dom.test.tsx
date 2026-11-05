@@ -411,3 +411,28 @@ describe("the on-call screen", () => {
     expect(row("sw-gov")).toBeVisible();
   });
 });
+
+it("offers service jumps only to rendered service headers, never while grouped by role", () => {
+  renderOnCall();
+  expect(screen.getByRole("group", { name: "Jump to service" })).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: /^By role/u }));
+  expect(screen.queryByRole("group", { name: "Jump to service" })).not.toBeInTheDocument();
+});
+
+it("removes jumps to services emptied by each Show filter", () => {
+  renderOnCall();
+  const scroll = vi.fn();
+  Object.defineProperty(HTMLElement.prototype, "scrollIntoView", { configurable: true, value: scroll });
+  const initially = screen.getAllByRole("button", { name: /^Jump to/u }).length;
+  for (const name of [/^Answering/u, /^Ending soon/u, /^Has email/u, /^Check due/u]) {
+    fireEvent.click(screen.getByRole("button", { name }));
+    const jumps = screen.queryAllByRole("button", { name: /^Jump to/u });
+    expect(jumps.length).toBeLessThanOrEqual(initially);
+    for (const jump of jumps) {
+      scroll.mockClear();
+      fireEvent.click(jump);
+      expect(scroll).toHaveBeenCalledOnce();
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Show all" }));
+  }
+});
