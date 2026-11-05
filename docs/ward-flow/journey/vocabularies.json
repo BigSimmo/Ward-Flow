@@ -190,6 +190,40 @@
     "paper_rechecked"
    ]
   },
+  "LEGAL_FORM_MAKER_ROLES": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "medical_practitioner",
+    "amhp",
+    "psychiatrist",
+    "mental_health_practitioner",
+    "person_in_charge"
+   ]
+  },
+  "LEGAL_FORM_COPY_STATES": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "yes",
+    "declined",
+    "not_yet"
+   ]
+  },
+  "LEGAL_FORM_ENDINGS": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "revoked",
+    "form_3e",
+    "replaced",
+    "ended_as_typed"
+   ]
+  },
+  "LEGAL_FORM_CONSENT_STATES": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "yes",
+    "not_yet"
+   ]
+  },
   "TRANSPORT_PROVIDERS": {
    "file": "ward-model-movement-parts.ts",
    "members": [
