@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { compactOccupancyLabel } from "@/components/ward-management/shell-next/next-rail-parts";
@@ -20,5 +22,14 @@ describe("WF-44 compact occupancy label", () => {
 
   it("shows an em dash when occupancy is missing", () => {
     expect(compactOccupancyLabel("East Metro", null)).toBe("—");
+  });
+
+  it("is what the closed-rail pip in NextRailBody renders", () => {
+    // Full NextRailBody mount needs the shell provider tree; pin the call site instead.
+    const source = readFileSync(
+      resolve(__dirname, "../src/components/ward-management/shell-next/next-rail-body.tsx"),
+      "utf8",
+    );
+    expect(source).toMatch(/compactOccupancyLabel\(\s*firstRow\?\.name/);
   });
 });

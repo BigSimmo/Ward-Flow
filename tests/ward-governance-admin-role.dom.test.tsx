@@ -98,6 +98,9 @@ describe("Governance as the access admin", () => {
       expect(screen.getByRole("link", { name: "Open the Access log" })).toBeInTheDocument();
       // WF-46: phone Audit trail tab matches the desktop label (was "Reviewed").
       expect(screen.getByRole("radio", { name: /^Audit trail/ })).toBeInTheDocument();
+      // Without an api the audit read is refused — empty copy names who can read it.
+      fireEvent.click(screen.getByRole("radio", { name: /^Audit trail/ }));
+      expect(screen.getByText("Audit is read by coordinators.")).toBeInTheDocument();
     });
   });
 });
