@@ -1,5 +1,5 @@
 import { validDischargeRequestNamespace } from "./ward-discharge-records";
-import { placementInvariantProblem, storedPlacementInvariants } from "./ward-flow-storage-invariants";
+import { restoreRuleProblem, storedPlacementInvariants } from "./ward-flow-storage-invariants";
 import { hasDuplicateRetainedUmrns } from "./ward-retained-umrn";
 import {
   RESTRICTIVE_PRACTICE_IDS,
@@ -11,7 +11,6 @@ import * as z from "zod/mini";
 import { validCareJourney, validCareChange } from "./ward-care-journey";
 import type { WardFlowState } from "./ward-flow-reducer";
 import {
-  type Admission,
   isDischargeBarrier,
   isLeavingDestination,
   isPlannedAdmissionCancelReason,
@@ -75,7 +74,7 @@ import {
 import { isSnoozeReason } from "./ward-inbox-snooze";
 import { scenarioWardNetwork, WARD_SCENARIOS } from "./ward-scenarios";
 import { communityTeamById } from "./community/community-derivations";
-import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
+import { syntheticGovernanceAuditEvents, withSeededReviewIds } from "./ward-governance-seed";
 import { isBreakGlassReviewId } from "./ward-break-glass-review-id";
 import { UNDO_STEP_ACTIONS } from "./ward-undo";
 import { BED_RELEASE_BLOCKERS } from "./ward-change-reasons";
@@ -1231,8 +1230,6 @@ function consistent(state: StoredState, value: RecordValue): boolean {
     )
       return false;
   }
-  // Identity keys stay in this approved restore-only reader; the helper receives placement facts.
-  const patientStays = new Map<string, Pick<Admission, "id" | "unitId" | "state">[]>();
   for (const admission of state.admissions) {
     const ward = stateUnitById.get(admission.unitId);
     if (!ward || (admission.bedNumber !== undefined && admission.bedNumber > ward.beds)) return false;
@@ -1242,11 +1239,6 @@ function consistent(state: StoredState, value: RecordValue): boolean {
       !reference(admission.movementId, movementIds)
     )
       return false;
-    if (admission.patientId !== null && (admission.state === "occupied" || admission.state === "pulled")) {
-      const stays = patientStays.get(admission.patientId) ?? [];
-      stays.push({ id: admission.id, unitId: admission.unitId, state: admission.state });
-      patientStays.set(admission.patientId, stays);
-    }
   }
 
   const samePatient = (left: { patientId?: string | null }, right: { patientId?: string | null } | undefined) =>
@@ -1424,26 +1416,23 @@ function consistent(state: StoredState, value: RecordValue): boolean {
   for (const key of Object.keys(state.dischargeRevisions)) if (!admissionIds.has(key)) return false;
   for (const key of Object.keys(state.morningRollupConfirmations)) if (!unitIds.has(key)) return false;
   // H-IMPORT (#1455): live absence, active stays and numbered beds must each have one owner.
-  return storedPlacementInvariants(value as unknown as WardFlowState, [...patientStays.values()]);
+  return storedPlacementInvariants(value as unknown as WardFlowState, activePatientStays(state.admissions));
 }
 
-/**
- * Why a refused restore was refused, in plain words, when the save is well formed but breaks a
- * record-ownership rule. `undefined` means only the generic refusal can be given. Fixed sentences
- * only: never the save's own content (D-18).
- */
+// Identity keys stay in this approved restore-only reader; the invariants get placement facts.
+function activePatientStays(rows: readonly StoredState["admissions"][number][]) {
+  const byPatient = new Map<string, { id: string; unitId: string; state: "occupied" | "pulled" }[]>();
+  for (const { id, unitId, state, patientId } of rows)
+    if (patientId !== null && (state === "occupied" || state === "pulled"))
+      byPatient.set(patientId, [...(byPatient.get(patientId) ?? []), { id, unitId, state }]);
+  return [...byPatient.values()];
+}
+
+/** Why a well-formed save was refused, in fixed plain words (never its content), or undefined. */
 export function storedStateRestoreProblem(value: unknown): string | undefined {
   if (!object(value) || !nested(value) || !storedState.safeParse(value).success) return undefined;
   const state = value as unknown as WardFlowState;
-  if (hasDuplicateRetainedUmrns(state.patients)) return "two patients hold the same record number";
-  const patientStays = new Map<string, Pick<Admission, "id" | "unitId" | "state">[]>();
-  for (const admission of state.admissions) {
-    if (admission.patientId === null || (admission.state !== "occupied" && admission.state !== "pulled")) continue;
-    const stays = patientStays.get(admission.patientId) ?? [];
-    stays.push({ id: admission.id, unitId: admission.unitId, state: admission.state });
-    patientStays.set(admission.patientId, stays);
-  }
-  return placementInvariantProblem(state, [...patientStays.values()]) ?? undefined;
+  return restoreRuleProblem(state, activePatientStays(state.admissions)) ?? undefined;
 }
 
 export function isValidStoredWardFlowState(value: unknown): value is WardFlowState {
@@ -1465,33 +1454,6 @@ export function withInboxStreamADefaults<T extends WardFlowState>(state: T): T {
     inboxOwnership: stored.inboxOwnership ?? {},
     inboxSnoozes: stored.inboxSnoozes ?? {},
   });
-}
-
-/**
- * Seeded entries once had fixed ids (`audit-seed-legal-status`). They were derived from the first
- * records of this same state, so a review saved under one, and the audit rows recording that review
- * or its undo, move to the entry's current id (`audit-seed-legal-status:<movement id>`). The entry
- * then stays shown as reviewed, with its review history.
- */
-function withSeededReviewIds<T extends WardFlowState>(state: T): T {
-  const legacy = (eventId: string) => /^audit-seed-[a-z-]+$/.test(eventId);
-  if (
-    !state.auditReviews.some((review) => legacy(review.eventId)) &&
-    !state.auditEvents.some((event) => event.subject.kind === "audit-event" && legacy(event.subject.eventId))
-  )
-    return state;
-  const seeded = syntheticGovernanceAuditEvents(state);
-  const current = (eventId: string) =>
-    legacy(eventId) ? (seeded.find((entry) => entry.id.startsWith(`${eventId}:`))?.id ?? eventId) : eventId;
-  return {
-    ...state,
-    auditReviews: state.auditReviews.map((review) => ({ ...review, eventId: current(review.eventId) })),
-    auditEvents: state.auditEvents.map((event) =>
-      event.subject.kind === "audit-event"
-        ? { ...event, subject: { ...event.subject, eventId: current(event.subject.eventId) } }
-        : event,
-    ),
-  };
 }
 
 /**

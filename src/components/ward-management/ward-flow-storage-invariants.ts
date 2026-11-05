@@ -1,4 +1,5 @@
 import type { Admission } from "./ward-admissions";
+import { hasDuplicateRetainedUmrns } from "./ward-retained-umrn";
 import type { WardFlowState } from "./ward-flow-reducer";
 
 /** Plain words for a refused restore. Fixed text only: never the save's own content. */
@@ -8,12 +9,18 @@ export const PLACEMENT_PROBLEMS = {
   sharedBed: "two records hold the same numbered bed",
 } as const;
 
-/** Restore receives groups from the approved identity fence; this helper reads placement facts only. */
-export function storedPlacementInvariants(
-  state: WardFlowState,
-  patientStays: readonly (readonly Pick<Admission, "id" | "unitId" | "state">[])[],
-): boolean {
+/** Each patient's active stays, grouped by the approved restore reader (identity stays there). */
+export type PatientStays = readonly (readonly Pick<Admission, "id" | "unitId" | "state">[])[];
+
+/** Restore's placement fence, beside the duplicate retained UMRN fence. */
+export function storedPlacementInvariants(state: WardFlowState, patientStays: PatientStays): boolean {
   return placementInvariantProblem(state, patientStays) === null;
+}
+
+/** The first record-ownership rule a stored state breaks, in plain words, or null. */
+export function restoreRuleProblem(state: WardFlowState, patientStays: PatientStays): string | null {
+  if (hasDuplicateRetainedUmrns(state.patients)) return "two patients hold the same record number";
+  return placementInvariantProblem(state, patientStays);
 }
 
 /** The first placement invariant a stored state breaks, in plain words, or null. */
