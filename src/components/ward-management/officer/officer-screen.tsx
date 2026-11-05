@@ -78,8 +78,8 @@ import { SYNTHETIC_COPY_LINE } from "@/components/ward-management/referrals/refe
 import {
   type HighlightPill,
   type HistoryTab,
-  arrivedSinceStartOfDay,
   arrivalsAxis,
+  deliveredSinceStartOfDay,
   type JobsTab,
   LEG_TONE,
   OFFICER_ACTION_REJECTION_LABELS,
@@ -431,13 +431,7 @@ export function OfficerScreen() {
       })),
   );
 
-  // Delivered today: closed jobs leave the live list and land here, newest first.
-  const deliveredToday = movements
-    .filter(
-      (movement) =>
-        movement.transport?.arrivedAt !== undefined && arrivedSinceStartOfDay(movement.transport.arrivedAt, now),
-    )
-    .sort((a, b) => b.transport!.arrivedAt! - a.transport!.arrivedAt!);
+  const deliveredToday = deliveredSinceStartOfDay(movements, now);
 
   // Hero counts. Each label names exactly the population its count holds.
   const legCount = (leg: OfficerLeg) => jobs.filter((job) => job.transport && officerLeg(job.transport) === leg).length;

@@ -100,8 +100,8 @@
         },
         {
           "path": "src/components/ward-management/referrals/use-ward-referral-drawer-state.ts",
-          "line": 987,
-          "sha256": "489e5d1f707a84f6cc328ad843767b58e8c2ae15273e6400c5b6ddbb1542789a"
+          "line": 986,
+          "sha256": "0c92881440899ddb8ff8514da526d7e18d0f7987d28e37354d2c027ece675652"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
@@ -2388,8 +2388,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 506,
-          "sha256": "ebb8e3406c8ab15b4cd4b7d9fbe99b3b28130d031f21093de2729069bac2368a"
+          "line": 500,
+          "sha256": "f89fc392a61123a8ad339e5787260ea42202d7d0def1898f91733b5e0f9ccde3"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2457,8 +2457,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 513,
-          "sha256": "ebb8e3406c8ab15b4cd4b7d9fbe99b3b28130d031f21093de2729069bac2368a"
+          "line": 507,
+          "sha256": "f89fc392a61123a8ad339e5787260ea42202d7d0def1898f91733b5e0f9ccde3"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2534,8 +2534,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 529,
-          "sha256": "ebb8e3406c8ab15b4cd4b7d9fbe99b3b28130d031f21093de2729069bac2368a"
+          "line": 523,
+          "sha256": "f89fc392a61123a8ad339e5787260ea42202d7d0def1898f91733b5e0f9ccde3"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2611,8 +2611,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 548,
-          "sha256": "ebb8e3406c8ab15b4cd4b7d9fbe99b3b28130d031f21093de2729069bac2368a"
+          "line": 542,
+          "sha256": "f89fc392a61123a8ad339e5787260ea42202d7d0def1898f91733b5e0f9ccde3"
         },
         {
           "path": "src/components/ward-management/tools/ward-tool-feed.tsx",
