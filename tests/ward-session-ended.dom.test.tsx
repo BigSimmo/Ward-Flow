@@ -174,3 +174,105 @@ it("drops the in-memory sign-in too, so a token refresh still on its way cannot 
   expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
   unmount();
 });
+
+function sharedSnapshot() {
+  return {
+    dataMode: "prototype",
+    revision: 1,
+    now: 642,
+    payload: {
+      version: 1,
+      state: seedWardFlowStateAt(0),
+      dayZero: "2026-10-07T00:00:00Z",
+      startedAt: "2026-10-07T10:00:00Z",
+    },
+  };
+}
+
+/** A short-lived token, so every token read refreshes, and a captured three-second poll tick. */
+function shortLivedSignIn() {
+  const snapshot = sharedSnapshot();
+  const fetcher = vi.fn(async (url: string | URL | Request) => {
+    const path = String(url);
+    if (path.includes("/v1/workspace"))
+      return Response.json({
+        snapshot,
+        actorId: user.id,
+        access: { role: "coordinator", scope: { kind: "statewide" } },
+      });
+    if (path.endsWith("/user")) return Response.json(user);
+    return Response.json({ access_token: "access", refresh_token: "refresh", expires_in: 30, user });
+  });
+  vi.stubGlobal("fetch", fetcher);
+  const realSetTimeout = globalThis.setTimeout;
+  const poll: { tick?: () => void } = {};
+  vi.spyOn(globalThis, "setTimeout").mockImplementation(((fn: TimerHandler, ms?: number) => {
+    if (ms === 3000 && typeof fn === "function") {
+      poll.tick = fn as () => void;
+      return 0 as unknown as ReturnType<typeof setTimeout>;
+    }
+    return realSetTimeout(fn, ms);
+  }) as typeof setTimeout);
+  return { fetcher, poll };
+}
+
+// TE-09 (audit, 5 Nov 2026): a token refresh that lands between the removal and the next poll used
+// to write the sign-in back, so the poll never saw it gone and the tab stayed signed in.
+it("does not let a token refresh before the next poll bring a cleared sign-in back", async () => {
+  const { poll } = shortLivedSignIn();
+  const { result, unmount } = renderHook(() => useWardShared(true));
+  await waitFor(() => expect(result.current.status).toBe("ready"));
+  await act(async () => {
+    await result.current.credentials!.signIn("synthetic@example.invalid", "private-password");
+  });
+  await waitFor(() => expect(result.current.signedIn).toBe(true));
+  await waitFor(() => expect(poll.tick).toBeDefined());
+
+  sessionStorage.removeItem(WARD_AUTH_STORAGE_KEY);
+  // A read outside the poll (coming back online does this) refreshes the short-lived token.
+  await act(async () => {
+    await result.current.client.current!.refresh();
+  });
+  expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
+  await act(async () => {
+    poll.tick!();
+  });
+  expect(result.current.signedIn).toBe(false);
+  expect(result.current.error).toBe("Your session ended. Sign in again to carry on.");
+  unmount();
+});
+
+// SD-05 (audit, 5 Nov 2026): when the browser refuses to store a rotated sign-in, the adapter removes
+// the old copy itself. That is not a sign-out elsewhere: the tab stays signed in and keeps its data.
+it("keeps the session and this tab's data when the browser cannot store a rotated sign-in", async () => {
+  const { poll } = shortLivedSignIn();
+  const { result, unmount } = renderHook(() => useWardShared(true));
+  await waitFor(() => expect(result.current.status).toBe("ready"));
+  await act(async () => {
+    await result.current.credentials!.signIn("synthetic@example.invalid", "private-password");
+  });
+  await waitFor(() => expect(result.current.signedIn).toBe(true));
+  await waitFor(() => expect(poll.tick).toBeDefined());
+  sessionStorage.setItem("ward-synthetic-tab-note", "x");
+  const setItem = Storage.prototype.setItem;
+  vi.spyOn(Storage.prototype, "setItem").mockImplementation(function (this: Storage, key: string, value: string) {
+    if (key === WARD_AUTH_STORAGE_KEY) throw new DOMException("full", "QuotaExceededError");
+    return setItem.call(this, key, value);
+  });
+
+  // This read refreshes the token, and the browser refuses to store the rotated sign-in.
+  await act(async () => {
+    poll.tick!();
+  });
+  await waitFor(() => expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull());
+  await act(async () => {
+    poll.tick!();
+  });
+  expect(result.current.signedIn).toBe(true);
+  expect(result.current.error ?? null).toBeNull();
+  expect(sessionStorage.getItem("ward-synthetic-tab-note")).toBe("x");
+  expect(result.current.credentials!.message).toBe(
+    "This browser could not keep your sign-in. A reload will ask you to sign in again.",
+  );
+  unmount();
+});

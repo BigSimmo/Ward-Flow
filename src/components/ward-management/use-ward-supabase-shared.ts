@@ -13,6 +13,7 @@ import { CLINICAL_VALUES } from "./ward-clinical-values";
 /** Every Ward Flow tab in this browser hears a deliberate sign-out (Audit 5 PS-08, Audit 4 A4-06). */
 const SESSION_CHANNEL = "ward-flow-session";
 const SESSION_ENDED_MESSAGE = "Your session ended. Sign in again to carry on.";
+const SIGN_IN_NOT_KEPT_MESSAGE = "This browser could not keep your sign-in. A reload will ask you to sign in again.";
 
 /** Whether this tab still stores a sign-in; `null` when the browser blocks storage. */
 function storedSignIn(): boolean | null {
@@ -46,7 +47,10 @@ import { WardAuthError, consumeRecoveryFragment, WARD_AUTH_STORAGE_KEY } from ".
 import type { WardBrowserAuthAdapter } from "./ward-supabase-auth";
 import { createWardAuth, tabStorage } from "./ward-auth-session";
 import { renewFrontDoorPass } from "@/components/ward-management/front-door/front-door-pass-client";
-import { SIGNED_OUT_NOTICE } from "@/components/ward-management/front-door/front-door-notice";
+import {
+  SIGNED_OUT_NOTICE,
+  SIGNED_OUT_UNCONFIRMED_NOTICE,
+} from "@/components/ward-management/front-door/front-door-notice";
 
 /** #805, #839: fetch the shared client and every chunk its first read awaits (state checks and the
  * scenario wards) while the sign-in is checked, not one after another once it is. */
@@ -384,8 +388,16 @@ export function useWardSupabaseShared(
       // was stored when connecting counts, so a browser that blocks storage keeps its in-memory one.
       // Read before the first workspace read, so a removal while that read is pending still counts.
       const storedAtConnect = storedSignIn() === true;
+      let toldNotKept = false;
       const sessionEnded = () => {
         if (!storedAtConnect || storedSignIn() !== false) return false;
+        // SD-05: the adapter removed the saved copy itself after the browser refused a rotated
+        // sign-in. That is not a sign-out elsewhere: keep the session and drafts, and say so once.
+        if (instance.storageLost) {
+          if (!toldNotKept) setForm((old) => ({ ...old, message: SIGN_IN_NOT_KEPT_MESSAGE, messageKind: "info" }));
+          toldNotKept = true;
+          return false;
+        }
         disconnect();
         // Drop the in-memory sign-in as well, so a token refresh already on its way cannot store
         // it again, and clear this tab's Ward Flow data as a sign-out here would. This tab only:
@@ -594,8 +606,11 @@ export function useWardSupabaseShared(
                   messageKind: "warning",
                 });
             });
-            const { rememberScreenReturn } = await import("./ward-screen-return");
-            rememberScreenReturn(returnPath);
+            // TE-05: offline this code may not load; the sign-out itself is already done.
+            await import("./ward-screen-return").then(
+              ({ rememberScreenReturn }) => rememberScreenReturn(returnPath),
+              () => {},
+            );
           },
           retry: () =>
             run(async () => {
@@ -716,16 +731,23 @@ export function useWardSupabaseShared(
       const owner = connection.current;
       const epoch = view.viewEpoch;
       const finish = () => {
-        if (connection.current === owner && publishedEpoch.current === epoch)
-          void actions.current?.signOut(why, undefined, why !== undefined);
+        if (connection.current !== owner || publishedEpoch.current !== epoch) return false;
+        void actions.current?.signOut(why, undefined, why !== undefined);
+        return true;
       };
       if (why === undefined && view.unconfirmedSave) {
         void import("./ward-sign-out-guard")
           .then(({ allowWardSignOut }) => allowWardSignOut(true, false))
-          .then((allowed) => {
-            if (allowed) finish();
-          })
-          .catch(() => {});
+          .then(
+            (allowed) => {
+              if (allowed) finish();
+            },
+            // TE-03: the question could not load (offline). Never leave the person signed in
+            // without telling them: sign out, and say what the unconfirmed changes mean.
+            () => {
+              if (finish()) setFarewell(SIGNED_OUT_UNCONFIRMED_NOTICE);
+            },
+          );
       } else finish();
     },
     retry: () => actions.current?.retry(),
