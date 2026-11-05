@@ -81,3 +81,22 @@ export function useMidlandDecisions(): Record<string, MidlandDecision> {
 export function openReferrals<T extends { id: string }>(all: readonly T[], decided: Record<string, MidlandDecision>) {
   return all.map((r, index) => ({ r, index })).filter(({ r }) => !decided[r.id]);
 }
+
+/**
+ * Record contact (Josh, 5 Nov 2026): a recorded contact joins Today's log with its time and the
+ * desk role. It stores only which row it was for ("team" or a fixed row key), never a typed note.
+ */
+const CONTACT_PREFIX = "contact:";
+export type MidlandContact = { about: string; at: number };
+
+export function recordMidlandContact(about: string, at = Date.now()) {
+  recordMidlandDecision(`${CONTACT_PREFIX}${about}:${at}`, about, at);
+}
+
+/** Recorded contacts, newest first. */
+export function midlandContacts(all: Record<string, MidlandDecision>): MidlandContact[] {
+  return Object.values(all)
+    .filter((d) => d.id.startsWith(CONTACT_PREFIX))
+    .map((d) => ({ about: d.line, at: d.at }))
+    .sort((a, b) => b.at - a.at);
+}

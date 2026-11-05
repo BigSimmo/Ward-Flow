@@ -11,7 +11,8 @@ import { ArrowLeftRight, List, Phone, Users } from "lucide-react";
 import { Button, Card, CardHead, Count, Segmented, SrOnly, StatusGlyph, type WfTone } from "@/components/wf";
 import home from "@/components/ward-management/ward/ward-home-tab.module.css";
 import { CLIENTS, DEMO_FIGURES, REFERRALS, SENT, STAFF, shortName } from "./midland-demo";
-import { openReferrals, useMidlandDecisions } from "./midland-decisions";
+import { clockTime } from "@/components/ward-management/ward-saved-at-toast";
+import { midlandContacts, openReferrals, recordMidlandContact, useMidlandDecisions } from "./midland-decisions";
 import { Initials } from "./parts";
 import t from "./team-2026.module.css";
 
@@ -151,6 +152,20 @@ const ADMITTED_THIS_WEEK = [
 
 export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
   const decisions = useMidlandDecisions();
+  // Recorded contacts lead Today's log, with time and desk role; the Act-now row shows it is done.
+  const contacts = midlandContacts(decisions);
+  const cleoContact = contacts.find((c) => c.about === "a");
+  const log = [
+    ...contacts.map(
+      (c) =>
+        [
+          clockTime(new Date(c.at)),
+          "Contact recorded",
+          `${c.about === "a" ? "Thornbury, Cleo" : "Team contact"} · by Community`,
+        ] as const,
+    ),
+    ...TODAY_LOG,
+  ];
   const [list, setList] = useState<"todo" | "log">("todo");
   const [flow, setFlow] = useState<"ref" | "adm" | "dis">("ref");
   const f = DEMO_FIGURES;
@@ -250,8 +265,8 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                   value={list}
                   onChange={setList}
                   items={[
-                    { id: "todo", label: "To do", count: 7 },
-                    { id: "log", label: "Today's log", count: TODAY_LOG.length },
+                    { id: "todo", label: "To do", count: cleoContact ? 6 : 7 },
+                    { id: "log", label: "Today's log", count: log.length },
                   ]}
                 />
               }
@@ -262,16 +277,20 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                   {[
                     <ListRow
                       key="a"
-                      tone="danger"
-                      title="7-day follow-up due today"
+                      tone={cleoContact ? "success" : "danger"}
+                      title={
+                        cleoContact
+                          ? `Contact recorded at ${clockTime(new Date(cleoContact.at))}`
+                          : "7-day follow-up due today"
+                      }
                       name="Thornbury, Cleo"
                       umrn="UM200288"
                       detail="left RGH Adult Secure · Byrne, T."
                       when="Day 7"
                       whenSub="of 7"
-                      action="Record contact"
-                      primary
-                      go={() => go("hospital")}
+                      action={cleoContact ? "Open" : "Record contact"}
+                      primary={!cleoContact}
+                      go={() => (cleoContact ? go("hospital") : recordMidlandContact("a"))}
                     />,
                     <ListRow
                       key="b"
@@ -354,8 +373,8 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
               </div>
             ) : (
               <ul className={t.log}>
-                {TODAY_LOG.map(([when, what, detail]) => (
-                  <li key={`${when}-${what}`}>
+                {log.map(([when, what, detail], i) => (
+                  <li key={`${i}-${when}-${what}`}>
                     <span className={`${t.mono} ${t.logT}`}>{when}</span>
                     <span className={t.person}>
                       <span className={t.logA}>{what}</span>
