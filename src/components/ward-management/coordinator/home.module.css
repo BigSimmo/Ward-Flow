@@ -567,10 +567,9 @@
 }
 
 .queueName strong {
-  overflow: hidden;
+  /* Names in full, wrapping, never cut (DS §4 Names). */
   font-weight: 600;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .queueFlag {

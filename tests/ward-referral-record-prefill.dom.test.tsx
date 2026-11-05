@@ -152,8 +152,8 @@ describe("the referral slide-out", () => {
     desk.edId = otherEd.id;
     renderWith((m) => m, patient.id);
     const notice = screen.getByTestId("ward-referral-open-journey");
-    expect(notice).toHaveTextContent(`Already on an open ED journey at ${journeyEd.name}`);
-    expect(notice).toHaveTextContent("starts a second journey");
+    expect(notice).toHaveTextContent(`Already on an open ED movement at ${journeyEd.name}`);
+    expect(notice).toHaveTextContent("starts a second movement");
     expect(screen.getByTestId("ward-referral-summary-rail")).toHaveTextContent(
       `Already openOpen ED movement at ${journeyEd.name}`,
     );

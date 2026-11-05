@@ -283,7 +283,7 @@ export function reduceBroadcastAlertEvent(
                 ...a,
                 targetUnitIds,
                 targetScopeLabel:
-                  names.length === 1 ? names[0] : `${names.length} ${kind === "bed_call" ? "wards" : "units"}`,
+                  names.length === 1 ? names[0] : `${names.length} ${kind === "bed_call" ? "wards" : "desks"}`,
               }
             : a,
         ),

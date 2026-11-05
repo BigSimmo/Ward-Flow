@@ -703,9 +703,7 @@ export function ReferralBoard({
             <dd>{askingForShort(r)}</dd>
             <dd className={a.stripSub}>
               {/* "Locked", the word the Needs column uses (F-24), not "Secure". */}
-              {needWords(r)
-                .map((word) => (word === "Secure bed" ? "Locked bed" : word))
-                .join(", ") || "No bed needs"}
+              {needWords(r).join(", ") || "No bed needs"}
             </dd>
           </div>
         ) : null}
@@ -1204,10 +1202,10 @@ export function ReferralBoard({
                       return stages ? (
                         <section className={mph.journey} aria-labelledby="ward-referral-phone-journey">
                           <p className={mph.ch} id="ward-referral-phone-journey">
-                            Journey
+                            Movement
                           </p>
                           <JourneyStrip
-                            label="Referral journey"
+                            label="Referral movement"
                             stages={stages}
                             formatDuration={journeyDuration}
                             note={false}

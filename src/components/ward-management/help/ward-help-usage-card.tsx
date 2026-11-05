@@ -32,7 +32,7 @@ export function WardHelpUsageCard() {
         iconPlain
         id="help-usage-title"
         icon={CircleHelp}
-        title="Help answers used on this device"
+        title="Help answers used here"
         action={
           rows.length ? (
             <button

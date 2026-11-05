@@ -585,7 +585,7 @@ const JOBS: readonly HowTo[] = [
     showMe: [
       {
         target: { sel: '[data-testid="ward-ed-raise-referral-toggle"], [data-testid^="ward-ed-patient-"]' },
-        title: "Raise a referral",
+        title: "New referral",
         body: "Start from the patient's row on the board.",
       },
     ],
@@ -653,8 +653,7 @@ const JOBS: readonly HowTo[] = [
     topic: "Finding your way",
     title: "See alerts for my desk",
     keywords: "alerts tasks notifications bell to do",
-    answer:
-      "Press Alerts in the header (Tasks on some desks). Shift+T opens it on a keyboard. Each alert opens the record it is about.",
+    answer: "Press Alerts in the header. Shift+T opens it on a keyboard. Each alert opens the record it is about.",
     desks: EVERY_DESK,
     needs: "alerts",
     showMe: [

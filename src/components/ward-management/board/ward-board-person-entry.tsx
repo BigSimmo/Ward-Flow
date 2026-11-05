@@ -26,7 +26,7 @@ function blockerInBarrierTag(occupant: Occupant): boolean {
 
 /** The long-stay tag. A recorded blocker answers it, so it never says "unrecorded" beside one (UX audit, 21 Oct 2026). */
 function barrierText(occupant: Occupant): string {
-  if (occupant.dischargeBarrier) return `Discharge barrier: ${occupant.dischargeBarrier}`;
+  if (occupant.dischargeBarrier) return `Held up by: ${occupant.dischargeBarrier}`;
   if (occupant.blockReason !== null) return `Held up: ${occupant.blockReason}`;
   return "Hold-up not recorded (stay ≥ 7d)";
 }

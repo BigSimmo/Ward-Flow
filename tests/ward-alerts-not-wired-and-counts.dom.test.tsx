@@ -63,7 +63,7 @@ describe("Alerts — confirm controls (F3.1)", () => {
   // something else (here an expired bed pull) must not offer it, and a click must change nothing.
   it("Escalate is unavailable for an alert that is not about the bed search and records nothing", () => {
     renderScreen();
-    fireEvent.click(screen.getAllByRole("button", { name: /^Open Bed pull expired/ })[0]!);
+    fireEvent.click(screen.getAllByRole("button", { name: /^Open Pull expired, bed still pulled/ })[0]!);
     const panel = screen.getByRole("complementary", { name: "Selected alert" });
     const escalate = within(panel).getByRole("button", { name: /^Escalate / });
     expect(escalate).toHaveAttribute("aria-disabled", "true");

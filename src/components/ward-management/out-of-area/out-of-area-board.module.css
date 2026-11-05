@@ -1561,6 +1561,7 @@ fieldset.formRow {
 
 .phoneBarName {
   font-weight: 400;
+  overflow-wrap: anywhere;
 }
 
 .phoneToast {

@@ -820,7 +820,7 @@ test("@mockup the Tasks and Referrals drawers opened offline show Try again and 
 
   await page.getByTestId("ward-bar-tasks-trigger").click();
   const tasks = page.getByTestId("ward-bar-tasks-sheet");
-  await expect(tasks.getByTestId("ward-load-retry")).toContainText("Tasks and alerts did not load");
+  await expect(tasks.getByTestId("ward-load-retry")).toContainText("Alerts did not load");
   await expect(page.getByText("Something went wrong")).toHaveCount(0);
 
   await context.setOffline(false);
@@ -892,7 +892,7 @@ test("@mockup compact Referrals opens from Tools and retains a draft across sect
   await referral.locator("#refDocInput").fill("Synthetic draft clinician");
   await closeStep.click();
   await sections.getByRole("button", { name: "Wards", exact: true }).click();
-  await expect(referral.getByRole("list", { name: "Placement Destination Options" })).toBeVisible();
+  await expect(referral.getByRole("list", { name: "Destinations" })).toBeVisible();
   await closeStep.click();
   await sections.getByRole("button", { name: "Referral", exact: true }).click();
   await expect(referral.locator("#refDocInput")).toHaveValue("Synthetic draft clinician");

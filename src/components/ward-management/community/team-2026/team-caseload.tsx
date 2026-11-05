@@ -11,7 +11,7 @@ import { useMemo, useState } from "react";
 import { BedSingle, ChevronDown, House, Users } from "lucide-react";
 import { Button, Card, CardHead, Segmented, SrOnly, StatusGlyph } from "@/components/wf";
 import home from "@/components/ward-management/ward/ward-home-tab.module.css";
-import { CLIENTS, DEMO_FIGURES, DISCHARGED, INPATIENTS, IN_BED, STAFF, shortName } from "./midland-demo";
+import { CLIENTS, DEMO_FIGURES, DISCHARGED, INPATIENTS, IN_BED, STAFF, staffName } from "./midland-demo";
 import { CaseManagerCell, Initials, Person, SeenCell, Tag } from "./parts";
 import wt from "@/components/ward-management/ward-table/ward-table.module.css";
 import t from "./team-2026.module.css";
@@ -108,7 +108,7 @@ export function TeamCaseload({
                 <td>
                   <CaseManagerCell client={c} />
                 </td>
-                <td>{shortName(c.dr)}</td>
+                <td>{staffName(c.dr)}</td>
                 <td>
                   {c.legal === "CTO" ? (
                     <>
@@ -281,7 +281,7 @@ export function TeamHospital() {
                   <td>
                     <span className={t.cm}>
                       <Initials id={d.cm} />
-                      {shortName(d.cm)}
+                      {staffName(d.cm)}
                     </span>
                   </td>
                   <td>

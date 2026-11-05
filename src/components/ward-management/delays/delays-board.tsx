@@ -1294,7 +1294,7 @@ export function DelaysBoard({
                         <abbr title="Urgency tier">T</abbr>
                       </th>
                       <th scope="col" role="columnheader">
-                        {flat ? "Blocker" : "Wards"}
+                        {flat ? "Held up by" : "Wards"}
                       </th>
                       <th scope="col" role="columnheader">
                         Legal

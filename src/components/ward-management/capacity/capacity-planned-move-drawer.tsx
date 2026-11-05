@@ -169,7 +169,7 @@ export function PlannedMoveDrawer({
         <Steps steps={["Booked", "Due", "Arrived"]} current={step} />
 
         <section className={styles.pmJourney} aria-label="Where to">
-          <h3 className={styles.pmSectionHead}>Journey</h3>
+          <h3 className={styles.pmSectionHead}>Movement</h3>
           <div className={styles.pmStops}>
             <p className={styles.pmLeg}>
               <span className={styles.pmLegDot} data-kind="from" aria-hidden="true" />

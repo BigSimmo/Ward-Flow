@@ -228,6 +228,9 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   about code size; staff wording is a product decision. One squeeze turned "beds still pulled" into
   "beds pulled" (commit `0f38d544`), and it has been put back. Split at-cap files first (F-17).
 - New events go in EVENT_ROLE (`ward-flow-event-roles.ts`) and `tests/ward-event-permissions.test.ts`.
+- **Live pill "Demo 10:42" (Josh, 5 November 2026, design audit card 9).** The hero's live pill keeps
+  the word Demo and the board time ("Demo 10:42"). It is the live-state word: it says nothing is live.
+  Elsewhere the clock is Board time, never Demo time ([DESIGN-SYSTEM §6](../design/DESIGN-SYSTEM.md#6-words)).
 - **Phone size limits (owner rule [D-82](decisions.md#d-82-a-pr-may-raise-a-phone-size-limit-by-up-to-5-kb-per-screen-without-asking-26-october-2026), 26 October 2026).**
   The five phone first-load script limits live in `script-budget.json` and are checked by
   `scripts/check-script-budget.mjs`. A PR may raise a screen's limit by up to **5 KB in total per

@@ -70,7 +70,8 @@ describe("ward wording lists (item 55, owner answers 2026-09-17)", () => {
         "No suitable bed",
         "Age band not provided here",
         "Sex designation unavailable",
-        "Secure bed unavailable",
+        // Josh, 5 Nov 2026 (design audit card 7): "Secure bed" became "Locked bed" everywhere.
+        "Locked bed unavailable",
         "Belongs to another service",
         "Referred elsewhere",
         "Specialling unavailable",

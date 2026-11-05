@@ -1,7 +1,7 @@
 "use client";
 
 import { RotateCcw } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/wf";
 
@@ -19,6 +19,8 @@ import {
   scenarioLabels,
   type WardScenario,
 } from "@/components/ward-management/ward-scenarios";
+
+import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 
 import styles from "./ward-demo-reset.module.css";
 
@@ -56,10 +58,35 @@ export function WardDemoReset({
   offNoteId?: string;
 }) {
   const enabled = useWardFeatureFlag("demo-reset");
-  const { scenario, shared } = useWardFlowSelect("scenario", "shared");
+  const { scenario, shared, worldGeneration } = useWardFlowSelect("scenario", "shared", "worldGeneration");
   const raise = useWardRaise("demo");
   const demoOn = useDemoControlsAvailable();
   const [pending, setPending] = useState<WardScenario | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const available = enabled && demoOn;
+  const [wasAvailable, setWasAvailable] = useState(available);
+  // Drop an old confirm/result when controls are withdrawn; it must not reopen on return.
+  if (wasAvailable !== available) {
+    setWasAvailable(available);
+    setPending(null);
+    setSubmitting(false);
+    setMessage(null);
+  }
+  const mounted = useRef(false);
+  const requestOwner = useRef(0);
+  const inFlight = useRef(false);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+      requestOwner.current += 1;
+    };
+  }, []);
+  useLayoutEffect(() => {
+    requestOwner.current += 1;
+    inFlight.current = false;
+  }, [available]);
   const baseId = useId();
   const titleId = `${baseId}-title`;
   const ownOffId = `${baseId}-off`;
@@ -80,9 +107,33 @@ export function WardDemoReset({
   }
 
   function load(next: WardScenario) {
+    if (!available || inFlight.current) return;
+    const owner = ++requestOwner.current;
+    const fromGeneration = worldGeneration;
+    inFlight.current = true;
+    setSubmitting(true);
     setPending(null);
-    raise("SET_SCENARIO", { scenario: next });
-    announceToWardShell(`${scenarioLabels[next]} loaded. Synthetic demo data only.`);
+    setMessage(null);
+    const notConfirmed = `${scenarioLabels[next]} was not confirmed as loaded. Check the current scenario before trying again.`;
+    const settle = (outcome: WardCommandOutcome | void) => {
+      if (!mounted.current || requestOwner.current !== owner) return;
+      inFlight.current = false;
+      setSubmitting(false);
+      // An old desk/world must never announce into the replacement workspace.
+      if (outcome?.isCurrent?.() === false) return;
+      const loaded =
+        outcome?.status === "accepted" && (outcome.generation === undefined || outcome.generation !== fromGeneration);
+      const text = loaded ? `${scenarioLabels[next]} loaded. Synthetic demo data only.` : notConfirmed;
+      setMessage(text);
+      announceToWardShell(text);
+    };
+    try {
+      const outcome = raise("SET_SCENARIO", { scenario: next });
+      if (outcome && "then" in outcome) void outcome.then(settle, () => settle());
+      else settle(outcome);
+    } catch {
+      settle();
+    }
   }
 
   return (
@@ -90,6 +141,7 @@ export function WardDemoReset({
       className={className ? `${styles.reset} ${className}` : styles.reset}
       aria-labelledby={titleId}
       data-testid="ward-demo-reset"
+      aria-busy={submitting || undefined}
     >
       <h3 id={titleId} className={headingClassName}>
         <RotateCcw aria-hidden="true" strokeWidth={1.75} />
@@ -113,7 +165,7 @@ export function WardDemoReset({
               data-testid={`ward-demo-reset-${choice}`}
               aria-describedby={demoOn ? noteId : `${noteId} ${offId}`}
               aria-pressed={loaded}
-              disabled={!demoOn}
+              disabled={!demoOn || submitting}
               onClick={() => setPending(choice)}
             >
               <strong>{scenarioLabels[choice]}</strong>
@@ -123,6 +175,11 @@ export function WardDemoReset({
           );
         })}
       </div>
+      {submitting || message ? (
+        <p className={styles.feedback} data-testid="ward-demo-reset-feedback">
+          {submitting ? "Loading scenario..." : message}
+        </p>
+      ) : null}
       {pending && demoOn ? (
         <div
           className={styles.confirm}

@@ -183,7 +183,7 @@ export function WardConfirmBedsDialog({
           </p>
           {staleRevision ? (
             <button type="button" className={styles.linkish} onClick={onStartFromCurrent}>
-              Start a new capacity observation from the current count
+              Use current count
             </button>
           ) : null}
         </div>
