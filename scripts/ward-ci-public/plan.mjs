@@ -127,6 +127,7 @@ export function documentChecks(entries) {
 export function docContractInput(file) {
   return (
     /^(?:src|docs|design|scripts|mockups)\//u.test(file) ||
+    file.startsWith("public/help/") ||
     file === "package.json" ||
     file === ".github/workflows/ward-flow.yml"
   );

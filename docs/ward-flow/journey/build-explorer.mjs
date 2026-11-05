@@ -1,13 +1,13 @@
 // Builds the Ward Flow journey explorer from extracted data.
 //
-// The build is the guarantee. It refuses to produce a page unless EVERY action in the
-// engine is accounted for — either as a transition drawn on a state machine, or as an
-// explicit "changes no state, writes this instead" entry. An action nobody mapped is a
-// build failure, not a quiet gap on a diagram.
+// The build checks structural coverage and reviewed-source identity. Every current command
+// needs route/action notes or a complete before/after model. This is not runtime acceptance
+// or a proof that every prose statement is correct.
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
 import { execFileSync } from "node:child_process";
+import { readSourceContracts, checkDispositions, checkReview } from "./source-contracts.mjs";
 
 const here = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
 const repoRoot = path.resolve(here, "../../..");
@@ -33,16 +33,24 @@ function provenance() {
       return fallback;
     }
   };
-  const commit = git(["rev-parse", "--short", "HEAD"], "");
-  const branch = git(["rev-parse", "--abbrev-ref", "HEAD"], "");
+  const commit = process.env.WARD_JOURNEY_COMMIT ?? git(["rev-parse", "HEAD"], "");
+  const branch = process.env.WARD_JOURNEY_BRANCH ?? git(["rev-parse", "--abbrev-ref", "HEAD"], "");
   // Only the ward source and this folder count: an unrelated edit elsewhere did not affect the page.
   const dirty = git(["status", "--porcelain", "--", "src/components/ward-management", "docs/ward-flow/journey"], "");
   return {
     builtAt: new Date().toISOString(),
     commit,
     branch,
-    dirty: dirty.length > 0,
-    dirtyCount: dirty ? dirty.split("\n").filter(Boolean).length : 0,
+    dirty:
+      process.env.WARD_JOURNEY_DIRTY_COUNT !== undefined
+        ? Number(process.env.WARD_JOURNEY_DIRTY_COUNT) > 0
+        : dirty.length > 0,
+    dirtyCount:
+      process.env.WARD_JOURNEY_DIRTY_COUNT !== undefined
+        ? Number(process.env.WARD_JOURNEY_DIRTY_COUNT)
+        : dirty
+          ? dirty.split("\n").filter(Boolean).length
+          : 0,
   };
 }
 
@@ -50,6 +58,8 @@ const vocab = read("vocabularies.json");
 const actions = read("actions.json");
 const stages = read("stages.json");
 const machines = read("machines.json");
+const contracts = readSourceContracts(repoRoot);
+const catalogue = checkDispositions(contracts, actions, read("event-dispositions.json"), repoRoot);
 
 /* ---------------------------------------------------------------------------
    Actions that change a record WITHOUT moving it between states. Each must say
@@ -66,29 +76,37 @@ const WRITES = {
   RECORD_DIVERSION: "That a journey already under way was diverted, with a reason and where the patient went instead.",
   RELEASE_DIVERTED_BED:
     "Gives back the bed a diverted movement was still holding. Refused unless it really was diverted.",
-  SET_ARRIVAL_DETAILS: "How and when they are expected, any tracking number, and a cleared pull timer.",
+  SET_ARRIVAL_DETAILS:
+    "Stores arrival mode, optional tracking and estimate, retaining first-record author/time and later update provenance. Keeps the pull-expiry timer. An already-late estimate can send one-time ED/ward notices; it reserves no bed and moves no stage.",
   SET_STEP_DOWN_CANDIDATE: "Whether this admission is a candidate to step down to a lower level of care.",
-  SET_DISCHARGE_BARRIER: "The one thing holding this discharge up, or that nothing is.",
-  RELEASE_BED:
-    "Nothing, in practice: recording the named patient leaving completes their release in the same write, so none is left for this to complete.",
+  SET_DISCHARGE_BARRIER:
+    "Stores a listed discharge barrier or clears it; no seven-day reducer gate and no bed count change.",
   UPDATE_EXPECTED_DISCHARGE:
-    "When this admission is expected to leave, how many times that date has moved, and when it was set.",
+    "Sets the expected time, increments date-move count only when an existing date differs, and stamps when. A ward setter is Nurse in charge; coordinator setter is null. Pending linked bed-release dates follow; completed release dates stay historical.",
   RECORD_MOVEMENT_MEDICAL_CLEARANCE:
-    "The medical-clearance answer on a MOVEMENT — the referral carries its own, separately.",
-  UPLOAD_PATIENT_FORM: "That a file was attached to this movement, by name and size. The file itself is not modelled.",
-  RECORD_LEGAL_FORM_WRITTEN: "The written form and clinician-typed times; clears the old legal clock.",
-  RECORD_COUNTRY_EXTENSION: "Nothing. This event is always refused; record a typed expiry instead.",
+    "Replaces clearance on the movement, matching linked referral and matching sibling movements. Positive fresh clearance records resumedAt for satisfied pauses; it does not restore released resources.",
+  UPLOAD_PATIENT_FORM:
+    "Appends generated document id, formName, fileType, sizeBytes and role/time metadata; no file body or original filename is retained.",
+  RECORD_LEGAL_FORM_WRITTEN:
+    "Stores current paper facts and history, preserves matching same-form paper facts on a time edit, and clears a calculated legacy clock. A different form clears the old receipt.",
+  RECORD_COUNTRY_EXTENSION:
+    "For eligible country Form1A, records typed paper expiry through the ordinary expiry handler; computes no statutory deadline.",
   RECORD_LEGAL_FORM_CONTINUATION: "The continued form and clinician-typed times; clears the old legal clock.",
   EVALUATE_ARRIVAL_LATENESS: "When late, stamps the movement and sends ED and ward notices; changes no stage.",
-  RELEASE_AND_REOPEN_SEARCH: "Gives the held bed back AND puts the movement back into the search, in one act.",
-  RAISE_EXPECT_FLAG: "Starts one of two hand-set clocks on a movement. A second one is refused.",
-  CLEAR_EXPECT_FLAG: "Clears that flag. Refused when none is open.",
+  RELEASE_AND_REOPEN_SEARCH:
+    "Returns any matching held bed, clears acceptance/hold/requests/transport and moves to placement_requested. Logs pull release when held, otherwise acceptance withdrawal.",
+  RAISE_EXPECT_FLAG:
+    "Records the current manually raised flag. Replacing a previously cleared flag keeps that prior record in expectFlagHistory; no automatic state transition is implied.",
+  CLEAR_EXPECT_FLAG: "Stamps clearedAt and clearedBy on the flag; it is retained rather than removed.",
   FLAG_LEGAL_MISMATCH: "That a ward's authority does not match this person's legal status, in one of two shapes.",
-  EVALUATE_LEAVE_BED_WARNINGS: "Sweeps beds held during leave and works out which are worth warning about.",
+  EVALUATE_LEAVE_BED_WARNINGS:
+    "For each leave bed over the open-warning threshold that has not been warned, records openWarningAt and sends a ward notice. It does not release the bed or move capacity.",
   CONFIRM_MORNING_ROLLUP: "A ward confirming its own morning count of expected discharges.",
-  SEND_WARD_BUZZ: "A message sent to a ward, optionally marked urgent. Belongs to no patient.",
+  SEND_WARD_BUZZ:
+    "Appends a refresh request with a listed message and optional urgency; blank messages refuse and nothing is sent externally.",
   ADD_PATIENT: "Creates a patient record.",
-  RECORD_MEDICAL_CLEARANCE: "The medical-clearance answer, on a referral. Overwritable on purpose.",
+  RECORD_MEDICAL_CLEARANCE:
+    "Replaces the referral answer and the matching movements’ clearance. Positive re-clearance stamps resumedAt and restates their blocker; it does not restore a released bed or booking.",
   RECORD_ARRIVED_IN_DEPARTMENT: "The arrival time, on a referral. Stamped once; a repeat is harmless.",
   ADD_REFERRAL_CORRECTION: "Appends a correction note to a referral. Never overwrites.",
   RECORD_LOCAL_BED_SOUGHT: "That a closer-to-home bed was looked for, on a referral.",
@@ -99,7 +117,8 @@ const WRITES = {
   CHANGE_LEGAL_STATUS: "The Mental Health Act status, on a movement, plus a log entry. Triggers nothing.",
   RECORD_LEGAL_FORM_RECEIVED: "That the Form 1A physically arrived, on a movement.",
   CORRECT_LEGAL_FORM_RECEIPT: "Clears that receipt and appends the correction.",
-  RECORD_LEGAL_FORM_EXPIRY: "The expiry a clinician typed, and its history. Nothing is computed.",
+  RECORD_LEGAL_FORM_EXPIRY:
+    "Stores the typed expiry, clears any calculated legacy clock, appends basis/author/time history and, for a correction, its previous facts and reason.",
   RECORD_MOVEMENT_GENDER: "The recorded gender on a movement, plus a notice if a bed is involved.",
   RECORD_LEAVE_BED: "Creates a leave record against a ward's bed.",
   END_LEAVE_BED: "Removes that leave record.",
@@ -113,18 +132,23 @@ const WRITES = {
   CLEAR_MOVEMENT_BLOCKER: "Writes the sentinel meaning nothing is holding it up.",
   MARK_NOTICE_READ: "Who read a notice, and when.",
   ACKNOWLEDGE_INBOX_ITEM: "Logs that a coordinator has seen an inbox row.",
-  COMPLETE_INBOX_ITEM: "Logs an accepted ID as done, even if no inbox row matches it.",
+  COMPLETE_INBOX_ITEM: "Appends completed role/time history without mutating patient, movement or unit facts.",
   REOPEN_INBOX_ITEM: "Logs an inbox row as reopened, keeping that it was once done.",
-  ADVANCE_CLOCK: "The demonstration clock. Nothing in this prototype moves on its own.",
-  RESET_SCENARIO: "Replaces the whole board with the standard starting scenario.",
+  ADVANCE_CLOCK: "Adds the simulation clock offset; the provider also follows wall time at visible minute ticks.",
+  RESET_SCENARIO:
+    "Re-seeds all board state around the current visible time and clears the simulation offset, preserving the visible clock rather than always selecting the standard scenario.",
   SET_SCENARIO: "Replaces the whole board with a different simulated night.",
-  SET_CONFIGURATION: "The tunable settings the rest of the system reads.",
-  RECORD_PATIENT_DISCHARGE: "Nothing — this branch is unreachable; the real handling runs earlier.",
-  OPEN_DISCHARGE_RECORD: "Nothing — this branch is unreachable; the real handling runs earlier.",
-  REVIEW_AUDIT_EVENT: "Nothing — this branch is unreachable; the real handling runs earlier.",
+  SET_CONFIGURATION:
+    "Applies the validated configuration or field merge atomically. It does not silently overwrite a conflicting baseline.",
+  RECORD_PATIENT_DISCHARGE:
+    "Departs the stay through the shared departure helper, adjusts resources, retains audit and a bounded step-undo record. A stale or inaccessible request refuses.",
+  OPEN_DISCHARGE_RECORD: "Records an accepted read audit event; changes no admission or bed figure.",
+  REVIEW_AUDIT_EVENT:
+    "Appends a uniquely sequenced review and its audit record. A later review changes the expected count; UNDO_AUDIT_REVIEW is a separate recorded action.",
   RECORD_REPATRIATION:
-    "A phone-logged repatriation. Books nothing. If the home ward agreed, it also opens a new return movement at placement requested.",
-  RECORD_HANDOVER_SIGN_OFF: "The role and the time of a handover sign-off. No note, no name.",
+    "Creates or updates the telephone plan. First agreement creates an open placement_requested return movement linked to the source stay; it does not itself book transport or transfer the patient.",
+  RECORD_HANDOVER_SIGN_OFF:
+    "Appends role/time plus the selected ward id or network flag. It records no personal name/note and makes no claim that a sheet was sent.",
   RECORD_CLINICAL_CONTACT: "Which community team was contacted, when, and by which role.",
   DISPATCH_BROADCAST_ALERT: "A network-wide alert, active, with nobody yet acknowledging it. Belongs to no patient.",
   ACKNOWLEDGE_BROADCAST_ALERT: "One more unit on the alert's acknowledged list.",
@@ -134,6 +158,7 @@ const WRITES = {
 
 /* ---------------------------- integrity checks ---------------------------- */
 const problems = [];
+checkReview(machines.review, "route and state machines", repoRoot, problems);
 const byEvent = new Map(actions.map((a) => [a.event, a]));
 
 // 1. Every transition names a real action, and real states at both ends.
@@ -343,7 +368,6 @@ stages.edges.forEach((e, i) => {
     problems.push(`only ${sources.length} source files were found under src/, so no screen claim can be checked`);
   } else {
     const text = new Map(sources.map((f) => [f, fs.readFileSync(f, "utf8")]));
-    const basenames = new Set(sources.map((f) => path.basename(f)));
     for (const a of actions) {
       const claim = a.screen?.screen;
       if (!claim) {
@@ -351,16 +375,19 @@ stages.edges.forEach((e, i) => {
         continue;
       }
       if (claim === "NONE") {
-        const dispatch = new RegExp(String.raw`type:\s*["']${a.event}["']`);
+        const dispatch = new RegExp(String.raw`(?:type:\s*|(?:dispatch|raise)\(\s*)["']${a.event}["']`);
         const callers = sources.filter((f) => dispatch.test(text.get(f))).map((f) => path.relative(repoRoot, f));
         if (callers.length)
           problems.push(
             `action ${a.event} is marked "no screen can trigger this", but it is dispatched from ${callers.join(", ")}`,
           );
       } else {
-        const named = /^(\S+\.tsx?)\b/.exec(claim)?.[1];
-        if (!named || !basenames.has(named))
-          problems.push(`action ${a.event} names screen "${claim}", and no such file exists under src/`);
+        const named = [...claim.matchAll(/[A-Za-z0-9_./-]+\.tsx?\b/g)].map((match) => match[0]);
+        if (
+          !named.length ||
+          named.some((name) => !sources.some((file) => file.replaceAll("\\", "/").endsWith("/" + name)))
+        )
+          problems.push(`action ${a.event} names screen "${claim}", and at least one named file is absent under src/`);
       }
     }
   }
@@ -418,10 +445,7 @@ stages.edges.forEach((e, i) => {
     "twenty",
   ];
   const word = (n) => (n <= 20 ? NUMBER_WORDS[n] : n < 30 ? "twenty-" + NUMBER_WORDS[n - 20] : String(n));
-  const model = fs.readFileSync(path.join(repoRoot, "src/components/ward-management/ward-model.ts"), "utf8");
-  // Ends at the first member followed by ";" — comments inside the union carry semicolons of their own.
-  const union = model.match(/export type NoticeKind =([\s\S]*?"\s*;)/)?.[1];
-  const kinds = union ? [...union.matchAll(/\|\s*"([a-z_]+)"/g)].length : 0;
+  const kinds = contracts.noticeKinds.length;
   if (kinds < 5) {
     problems.push(`only ${kinds} notice kinds were read out of NoticeKind in ward-model.ts, which cannot be right`);
   } else {
@@ -442,41 +466,9 @@ stages.edges.forEach((e, i) => {
 }
 
 {
-  const EVENTS_FILE = path.join(repoRoot, "src/components/ward-management/ward-flow-events.ts");
-  const source = fs.readFileSync(EVENTS_FILE, "utf8");
-  const block = source.split("export const EVENT_ROLE")[1]?.split("} as const")[0];
-  if (!block) {
-    problems.push("could not find EVENT_ROLE in ward-flow-events.ts, so the map's completeness cannot be checked");
-  } else {
-    const engineEvents = [...block.matchAll(/^ {2}([A-Z][A-Z0-9_]*):/gm)].map((m) => m[1]);
-    // A parse that finds almost nothing would report "nothing is missing" — the most reassuring
-    // possible way to fail. Refuse instead.
-    if (engineEvents.length < 40) {
-      problems.push(
-        `only ${engineEvents.length} events were read out of EVENT_ROLE, which cannot be right — ` +
-          "refusing rather than reporting a map that looks complete",
-      );
-    } else {
-      const known = new Set(actions.map((a) => a.event));
-      const missing = engineEvents.filter((e) => !known.has(e));
-      if (missing.length)
-        problems.push(
-          `the engine has ${missing.length} action(s) the map does not show, so the map is not the whole journey: ` +
-            missing.join(", "),
-        );
-      // The other direction. OVERRIDE_LEGAL_MISMATCH was removed from the engine by owner ruling
-      // (decisions D-16) and stayed on the map for a day as a working action, because only the
-      // direction above was ever checked. A removed action on the map says something can be done
-      // that cannot, which for a legal override is the worse of the two errors.
-      const engine = new Set(engineEvents);
-      const phantom = actions.map((a) => a.event).filter((e) => !engine.has(e));
-      if (phantom.length)
-        problems.push(
-          `the map shows ${phantom.length} action(s) the engine no longer has, so it claims something can be done that cannot: ` +
-            phantom.join(", "),
-        );
-    }
-  }
+  // Every current event has reviewed route notes or an explicit behavioural model.
+  // checkDispositions above rejects missing, obsolete, duplicate and source-less entries.
+  if (catalogue.length !== contracts.catalogue.length) problems.push("Event catalogue coverage mismatch");
 }
 
 // 4. THE ONE THAT MATTERS: every action is modelled somewhere.
@@ -495,22 +487,18 @@ if (problems.length) {
   process.exit(1);
 }
 
-/*
- * How much of the engine's refusing this page actually names. A refusal is a pathway — it is where
- * somebody's intended route stops — and the curated list holds a subset of them. Saying so on the
- * page's face is the difference between a map that is incomplete and a map that pretends not to
- * be. Both numbers are counted here rather than typed, so neither can go stale: one from the
- * engine slices' own `return reject(` sites, one from the curated list.
- */
-const engineSources = ["ward-flow-reducer.ts", "ward-flow-record-events.ts", "ward-flow-undo-events.ts"].map((file) =>
+// Retained measurement scope: these three files are not the whole split engine. The source-site
+// count and curated example count are independent samples, never a coverage fraction.
+const sampledSourceFiles = ["ward-flow-reducer.ts", "ward-flow-record-events.ts", "ward-flow-undo-events.ts"];
+const engineSources = sampledSourceFiles.map((file) =>
   fs.readFileSync(path.resolve(here, `../../../src/components/ward-management/${file}`), "utf8"),
 );
-const refusalsInEngine = engineSources.reduce(
+const refusalSitesInSelectedFiles = engineSources.reduce(
   (total, source) => total + (source.match(/return reject\(/g) || []).length,
   0,
 );
 const refusalsNamed = actions.reduce((n, a) => n + (a.refuses || []).length, 0);
-if (!refusalsInEngine) {
+if (!refusalSitesInSelectedFiles) {
   console.error("REFUSING TO BUILD — found no refusals in the engine slices, so the coverage line would be a lie.");
   process.exit(1);
 }
@@ -518,7 +506,8 @@ if (!refusalsInEngine) {
 const coverage = {
   total: actions.length,
   mapped: rows.filter((r) => r.transitions.length).length,
-  refusalsInEngine,
+  refusalSitesInSelectedFiles,
+  sampledSourceFiles,
   refusalsNamed,
   rows,
 };
@@ -528,7 +517,17 @@ const coverage = {
 const savedCoverage = fs.existsSync(path.join(here, "refusal-coverage.json")) ? read("refusal-coverage.json") : null;
 const reducerHash = crypto.createHash("sha256").update(engineSources.join("\n").replace(/\r\n/g, "\n")).digest("hex");
 const refusalCoverage = savedCoverage?.input?.reducerSha256 === reducerHash ? savedCoverage : null;
-const DATA = JSON.stringify({ vocab, actions, stages, machines, coverage, made: provenance(), refusalCoverage });
+const DATA = JSON.stringify({
+  vocab,
+  actions,
+  stages,
+  machines,
+  coverage,
+  catalogue,
+  contractSha256: contracts.sha256,
+  made: provenance(),
+  refusalCoverage,
+}).replaceAll("<", "\\u003c");
 const template = fs.readFileSync(path.join(here, "explorer-template.html"), "utf8");
 
 /*
@@ -565,5 +564,5 @@ console.log(
 );
 console.log(
   `coverage: ${coverage.mapped} of ${coverage.total} actions move a record between states; ` +
-    `${coverage.total - coverage.mapped} change a record without changing its state. None unaccounted for.`,
+    `${coverage.total - coverage.mapped} have record-effect notes outside these machines. Additional command models are in Current events.`,
 );
