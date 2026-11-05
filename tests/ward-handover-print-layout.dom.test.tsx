@@ -67,3 +67,20 @@ it("allocates a positive percentage width to every Full paper column including F
   expect(widths.reduce((sum, width) => sum + width, 0)).toBeCloseTo(100);
   expect(within(first).getByRole("columnheader", { name: "From and to" }).style.width).toMatch(/%$/);
 });
+
+// Consolidation (5 Nov 2026): only a measured layout that does not fit refuses printing. Before the
+// layout is measured the sheet prints its estimated pages, as the Print button always has.
+it("does not refuse native browser printing before layout measurements are available", () => {
+  render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <HandoverPage />
+    </WardFlowProvider>,
+  );
+  fireEvent.keyDown(window, { key: "p" });
+  fireEvent(window, new Event("beforeprint"));
+  expect(screen.getByRole("button", { name: "Print or save PDF" })).toBeEnabled();
+  expect(document.querySelector("[data-wf-print-stack]")).not.toHaveAttribute("data-print-overflow");
+  expect(screen.queryAllByRole("alert").some((alert) => /does not fit the paper/.test(alert.textContent ?? ""))).toBe(
+    false,
+  );
+});

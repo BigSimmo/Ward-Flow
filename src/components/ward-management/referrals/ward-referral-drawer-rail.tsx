@@ -2,6 +2,7 @@
 
 import { ChevronDown, Eye, ListChecks, Lock, Send } from "lucide-react";
 import Link from "next/link";
+import { referralBoardHref } from "../ed/ed-bed-search-step";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import styles from "./ward-referral-drawer.module.css";
 import { referralDraftAgeText } from "./referral-draft-store";
@@ -78,7 +79,11 @@ export function ReferralSummaryRail({
         <section className={styles.railCard}>
           <p className={styles.eyebrow}>Next</p>
           <p className={styles.bodyMeta}>Follow {sentReferralId} on the Referrals board.</p>
-          <Link className={styles.btn} href="/ward-flow/referrals" onClick={onClose}>
+          <Link
+            className={styles.btn}
+            href={s.sentReferralId ? referralBoardHref(s.sentReferralId) : "/ward-flow/referrals"}
+            onClick={onClose}
+          >
             Open Referrals board
           </Link>
         </section>
@@ -259,7 +264,11 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
       <div className={styles.sendActionCluster}>
         {submissionAwaitingRecord ? (
           <>
-            <Link className={styles.btnCancelReferral} href="/ward-flow/referrals" onClick={onClose}>
+            <Link
+              className={styles.btnCancelReferral}
+              href={s.sentReferralId ? referralBoardHref(s.sentReferralId) : "/ward-flow/referrals"}
+              onClick={onClose}
+            >
               Open referrals board
             </Link>
             <button type="button" className={styles.btnSendReferral} onClick={requestClose}>
@@ -317,7 +326,11 @@ export function ReferralDrawerFoot({ s }: { s: WardReferralDrawerState }) {
             </button>
           </>
         ) : view === "inbox" ? (
-          <Link className={styles.btnCancelReferral} href="/ward-flow/referrals" onClick={onClose}>
+          <Link
+            className={styles.btnCancelReferral}
+            href={s.sentReferralId ? referralBoardHref(s.sentReferralId) : "/ward-flow/referrals"}
+            onClick={onClose}
+          >
             Open referrals board
           </Link>
         ) : sentReferralId ? (

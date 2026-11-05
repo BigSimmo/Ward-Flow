@@ -19,6 +19,7 @@ const rows = [
     committed_at: "2026-10-27T12:00:00.000Z",
     changes: { patients: [{ umrn: "SYN0001" }] },
     actor_id: actor,
+    command_id: "22222222-2222-4222-8222-222222222222",
   },
   {
     sequence: "8",
@@ -59,9 +60,25 @@ const rows = [
 ];
 function fixture(world = { valid: true }) {
   const sql = [];
+  let currentAccess = { role: "ward", scope: own };
   const pool = {
     query: async (text, values) => {
       sql.push(text);
+      if (["BEGIN", "COMMIT", "ROLLBACK"].includes(text)) return { rows: [] };
+      if (text.startsWith("SELECT id, role, scope"))
+        return {
+          rows: [
+            {
+              id: "synthetic-role",
+              ...currentAccess,
+              kind: "role",
+              last_used_at: new Date(),
+              expires_at: new Date(Date.now() + 3600000),
+            },
+          ],
+        };
+      if (text.startsWith("SELECT patient_id, opened_at, until") || text.startsWith("UPDATE ward_flow.memberships"))
+        return { rows: [] };
       if (text.includes("FROM ward_flow.workspaces")) return { rows: [{ payload: world }] };
       const before = values?.[1];
       // The SQL leaves out role changes and rows without a sender place; mirror it here.
@@ -75,13 +92,22 @@ function fixture(world = { valid: true }) {
       };
     },
   };
+  pool.connect = async () => ({ query: pool.query, release() {} });
   const engine = {
     validWorld: (payload) => payload?.valid === true,
     wholeNetwork: (access) => access.role === "coordinator" && access.scope.kind === "statewide",
     parseAccess: (role, scope) => (scope && Array.isArray(scope.unitIds) ? { role, scope } : null),
     scopeWithin: (_world, inner, outer) => inner.unitIds.every((id) => outer.unitIds.includes(id)),
   };
-  return { store: createWorkspaceStore(pool, { workspaceId: "synthetic", engine }), sql };
+  const store = createWorkspaceStore(pool, { workspaceId: "synthetic", engine });
+  return {
+    store: Object.assign(store, {
+      setTestAccess(access) {
+        currentAccess = access;
+      },
+    }),
+    sql,
+  };
 }
 /** Only the audit reads: the rest of the store would ask the fake pool for sessions. */
 const pick = (store) => ({
@@ -89,6 +115,7 @@ const pick = (store) => ({
   ...(store.deskAuditPage ? { deskAuditPage: store.deskAuditPage } : {}),
 });
 function endpoint(store, access) {
+  store.setTestAccess?.(access);
   return createSharedHandler({
     config: { coordinatorIds: [], workspaceId: "synthetic" },
     store: {
@@ -122,7 +149,13 @@ test("a ward desk reads the kind and time of changes made inside its own place",
   const body = await response.json();
   assert.deepEqual(body, {
     events: [
-      { sequence: "9", action: "CLOSE_UNIT", outcome: "accepted", committed_at: "2026-10-27T12:00:00.000Z" },
+      {
+        sequence: "9",
+        action: "CLOSE_UNIT",
+        outcome: "accepted",
+        committed_at: "2026-10-27T12:00:00.000Z",
+        ownCommandId: "22222222-2222-4222-8222-222222222222",
+      },
       { sequence: "5", action: "CONFIRM_CAPACITY", outcome: "rejected", committed_at: "2026-10-27T08:00:00.000Z" },
     ],
     complete: true,

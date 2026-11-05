@@ -1,5 +1,6 @@
 "use client";
 
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { deskPlaceLabel } from "@/components/ward-management/shell/ward-bar-desk-place";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-forms-derivations";
@@ -142,6 +143,8 @@ export function MovementsScreen() {
   // them). The officers' Transport board and the coordinator's queue are not this desk's.
   const access = useEffectiveWardAccess();
   const community = access.role === "community";
+  // WF-10: only desks that may open the Transport desk see its link, as on the phone sheet.
+  const canOpenHref = useCanOpenHref();
   const teamName = access.scope.kind === "team" ? access.scope.teamName : undefined;
 
   /**
@@ -175,14 +178,14 @@ export function MovementsScreen() {
   }, []);
 
   useEffect(() => {
-    function handlePopState() {
-      setDetailId(null);
+    function handlePopState(event: PopStateEvent) {
+      const state = event.state;
+      const id = state && Object.hasOwn(state, "wardMovementDetail") ? state.wardMovementDetail : null;
+      setDetailId(typeof id === "string" && movements.some((movement) => movement.id === id) ? id : null);
     }
     window.addEventListener("popstate", handlePopState);
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-    };
-  }, []);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [movements]);
 
   // Usability review, 24 Oct 2026: the tab lives in the address, so Back from a record returns to it.
   const [boardTab, setBoardTab] = useAddressTab("tab", MOVEMENT_BOARD_TABS, "every");
@@ -962,7 +965,7 @@ export function MovementsScreen() {
             }
             barAside={
               <div className={cx(flow.heroTools, isPhone && phoneRows.heroPills)}>
-                {isPhone || community ? null : (
+                {isPhone || community || !canOpenHref("/ward-flow/transport/officer") ? null : (
                   <>
                     {/* Phone: Transport opens from the "Transport now" card below the hero. */}
                     <Link

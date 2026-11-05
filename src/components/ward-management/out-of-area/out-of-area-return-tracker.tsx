@@ -29,7 +29,10 @@ export function returnStepsDone(
   const steps = [
     record !== undefined || Boolean(draft.homeHospital),
     record ? Boolean(record.receivingWardAgreed) : draft.receivingWardAgreed === true && Boolean(draft.homeHospital),
-    returnMovement?.transport !== undefined,
+    returnMovement?.transport !== undefined &&
+      returnMovement.transport.cancelledAt === undefined &&
+      returnMovement.transport.stoppedAt === undefined &&
+      returnMovement.closure?.outcome !== "did_not_proceed",
     returnMovement?.closure?.outcome === "arrived",
   ];
   const firstOpen = steps.indexOf(false);

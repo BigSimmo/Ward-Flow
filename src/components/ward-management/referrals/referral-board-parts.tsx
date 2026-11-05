@@ -108,6 +108,33 @@ export function readyUnitCount(referral: Referral, units: Unit[], now: Instant):
   return ready.size;
 }
 
+/**
+ * WF-04 (live test, 5 Nov 2026): why the Fit column reads 0 while beds show ready. Counts the
+ * wards that would accept but for `capacity_freshness` alone (their bed count was last confirmed
+ * too long ago), each ward once. The fit figure itself stays strict; this only explains a gap.
+ */
+export function staleOnlyUnitCount(referral: Referral, units: Unit[], now: Instant): number {
+  const waiting = openArms(referral).flatMap((arm) =>
+    arm.destination.kind === "psychiatric_ward" ? [arm.destination] : [],
+  );
+  const ready = new Set<string>();
+  const stale = new Set<string>();
+  for (const ward of waiting) {
+    for (const candidate of referralCandidates(referral, ward, units, now)) {
+      if (candidateAccepts(candidate)) {
+        ready.add(candidate.unit.id);
+        continue;
+      }
+      const failing = candidate.verdict.gates.filter((gate) => !gate.pass);
+      if (failing.length > 0 && failing.every((gate) => gate.gate === "capacity_freshness")) {
+        stale.add(candidate.unit.id);
+      }
+    }
+  }
+  for (const id of ready) stale.delete(id);
+  return stale.size;
+}
+
 export function declineReasonWords(reason: string | undefined): string {
   if (!reason) return "Reason not recorded";
   return (

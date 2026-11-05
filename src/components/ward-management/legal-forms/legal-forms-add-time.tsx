@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useWardFormSave } from "../use-ward-form-save";
+import type { WardCommandDispatch } from "../ward-shared-client";
+import { useWardDraftAcceptance } from "../use-ward-draft-acceptance";
 
 import { Button, DateField, Dialog, Field, Segmented, TextInput, requestConfirm } from "@/components/wf";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -51,36 +54,42 @@ export function AddTimeDialog({
   refusal: string | undefined;
   onClose: () => void;
   /** Records the written time; `onAccepted` runs only once the engine accepts it. */
-  onSave: (save: WrittenSave, onAccepted: () => void) => void;
+  onSave: (save: WrittenSave, onAccepted: () => void) => ReturnType<WardCommandDispatch>;
 }) {
   const legalForm = movement.legalForm;
   const [draft, setDraft] = useState<WrittenDraft>(() => writtenDraftFor(legalForm));
+  const command = useWardFormSave(`legal-written:${movement.id}`);
+  const acceptDraft = useWardDraftAcceptance(JSON.stringify(draft));
   const { writtenProblem } = writtenTimeCheck(draft, now, dayZero);
   const typed = draft.date !== "" || draft.time !== "";
   // Leaving the page with a typed time asks first, in the kit's styled confirm.
   useDirtyStateGuard({ isDirty: typed });
 
   const close = () => {
+    if (command.pending) return;
     if (!typed) {
       onClose();
       return;
     }
+    const discardOwned = acceptDraft(onClose);
     void requestConfirm({
       title: "Discard the typed time?",
       message: DISCARD_TYPED_TIME,
       confirmLabel: "Discard",
       cancelLabel: "Keep editing",
     }).then((confirmed) => {
-      if (confirmed) onClose();
+      // Only this opening and draft may close on its own discard confirmation.
+      if (confirmed) discardOwned();
     });
   };
 
   const save = () => {
-    if (recordUnavailable) return;
+    if (recordUnavailable || command.pending) return;
     const written = writtenSaveOf(draft, now, dayZero);
     if (!written) return;
     // Closes only once the engine has accepted the time; a refusal keeps it open with its reason.
-    onSave(written, onClose);
+    const accepted = acceptDraft(onClose);
+    command.submit(() => onSave(written, accepted), accepted);
   };
 
   const id = movement.id;
@@ -167,12 +176,17 @@ export function AddTimeDialog({
             variant="pri"
             data-testid={`ward-legal-forms-written-confirm-${id}`}
             aria-describedby={`ward-legal-forms-add-time-note-${id}`}
-            disabledReason={recordUnavailable ?? writtenProblem}
+            disabledReason={command.pending ? "Saving" : (recordUnavailable ?? writtenProblem)}
             onClick={save}
           >
             Save time
           </Button>
         </div>
+        {command.error ? (
+          <p className={styles.note} role="alert">
+            {command.error}
+          </p>
+        ) : null}
         {refusal ? (
           <p className={styles.note} role="alert" data-testid={`ward-legal-forms-written-refusal-${id}`}>
             Not recorded: {refusal}

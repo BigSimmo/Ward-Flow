@@ -1,7 +1,7 @@
+import { resolveBash } from "./bash.mjs";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
-import path from "node:path";
+import { readFileSync } from "node:fs";
 import { classifyChanges, hasDependencyChanges, parseNameStatus } from "./plan.mjs";
 
 const workflow = readFileSync(new URL("../../.github/workflows/ward-flow.yml", import.meta.url), "utf8").replace(
@@ -114,20 +114,24 @@ function requireWorkflow(source) {
   // build; a build skipped by scope (not by failure) still lets them run.
   const cheapFirst = new Set(["unit", "browser", "release-gate"]);
   const cheapGate =
-    " && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && needs.plan.outputs.build != 'true'))";
+    " && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true')))";
   for (const job of cheapFirst)
     assert.match(jobs.get(job), /^ {4}needs: \[[^\n]*\bstatic, build\]$/mu, `${job}: waits for cheap checks`);
-  for (const [job, scope, reusable] of [
-    ["unit", "unit", true],
-    ["browser-build", "browser", true],
-    ["browser", "browser", true],
-    ["build", "build", true],
-    ["coverage", "unit", true],
-    ["backend", "backend", false],
-    ["release-gate", "browser", false],
+  for (const [job, scope, reuseGate] of [
+    ["unit", "unit", "unit"],
+    ["browser-build", "browser", null],
+    ["browser", "browser", "browser"],
+    ["build", "build", "build"],
+    ["coverage", "unit", "coverage"],
+    ["backend", "backend", "backend"],
+    ["release-gate", "browser", "release"],
   ]) {
+    const reuseGuard =
+      job === "browser-build"
+        ? " && (needs.reuse.outputs.browser_verified != 'true' || needs.reuse.outputs.release_verified != 'true')"
+        : ` && needs.reuse.outputs.${reuseGate}_verified != 'true'`;
     const route = expression(
-      `!cancelled() && needs.plan.outputs.${scope} == 'true'${reusable ? " && needs.reuse.outputs.verified != 'true'" : ""}${job === "backend" ? " && needs.reuse.outputs.backend_verified != 'true'" : ""}${scope === "browser" ? " && github.event.pull_request.draft != true" : ""}${job === "browser" ? " && needs.browser-build.result == 'success'" : ""}${job === "release-gate" ? " && needs.browser-build.result != 'skipped'" : ""}${job === "coverage" ? " && needs.unit.result == 'success'" : ""}${cheapFirst.has(job) ? cheapGate : ""}`,
+      `!cancelled() && needs.plan.outputs.${scope} == 'true'${reuseGuard}${scope === "browser" ? " && github.event.pull_request.draft != true" : ""}${job === "browser" || job === "release-gate" ? " && needs.browser-build.result == 'success'" : ""}${job === "coverage" ? " && needs.unit.result == 'success'" : ""}${cheapFirst.has(job) ? cheapGate : ""}`,
     );
     assert.ok(jobs.get(job)?.includes(`    if: ${route}\n`), `${job} job scope`);
     assert.match(jobs.get(job), /^ {4}needs: (?:plan|\[[^\n]*\bplan\b[^\n]*\])$/mu);
@@ -324,11 +328,11 @@ function requireWorkflow(source) {
   assert.equal(step("browser", "Install Chromium").fields.get("id"), "chromium");
   exact(
     "release-gate",
-    "Install Chromium and WebKit",
-    "node scripts/ward-ci-public/install-chromium.mjs chromium webkit",
+    "Install the release device browser",
+    "node scripts/ward-ci-public/install-chromium.mjs ${{ matrix.browser }}",
     installed,
   );
-  assert.equal(step("release-gate", "Install Chromium and WebKit").fields.get("id"), "browsers");
+  assert.equal(step("release-gate", "Install the release device browser").fields.get("id"), "browsers");
   exact(
     "release-gate",
     "Run the release-gate journeys",
@@ -365,6 +369,7 @@ function requireWorkflow(source) {
         [...`  ${entry}`.matchAll(/^ {2,12}([a-z_]+): ([^\n]*)$/gmu)].map((match) => [match[1], match[2]]),
       );
       assert.deepEqual(Object.keys(fields).sort(), [
+        "browser",
         "pair",
         "part",
         "project",
@@ -373,6 +378,7 @@ function requireWorkflow(source) {
         "third_part",
         "third_project",
       ]);
+      assert.equal(fields.browser, fields.project === "release-gate-phone" ? "webkit" : "chromium");
       return fields;
     });
   assert.equal(gateEntries.length, 2, "release-gate: two jobs of three suites");
@@ -536,12 +542,11 @@ function requireWorkflow(source) {
     );
     assert.ok(jobs.get(job).includes(`${variable}: ${expression(`matrix.${key}`)}/${count}`));
   }
-  // The release gate follows reuse through the browser build it needs (skipped only when reuse is
-  // verified, or when it is skipped anyway); the backend has its own backend_verified evidence.
-  for (const name of ["static", "release-gate"]) assert.doesNotMatch(jobs.get(name), /needs.reuse/u);
+  // Static checks always run. Every expensive gate consumes its own verified evidence.
+  assert.doesNotMatch(jobs.get("static"), /needs.reuse/u);
   assert.ok(!jobs.has("secret-scan"), "the secret scan runs inside the scope plan job");
   assert.match(jobs.get("backend"), /^ {4}needs: \[plan, reuse\]$/mu);
-  assert.match(jobs.get("release-gate"), /^ {4}needs: \[plan, browser-build, static, build\]$/mu);
+  assert.match(jobs.get("release-gate"), /^ {4}needs: \[plan, reuse, browser-build, static, build\]$/mu);
   assert.match(
     jobs.get("reuse"),
     /^ {4}if: \$\{\{ github.event_name == 'push' && github.ref == 'refs\/heads\/main' \}\}$/mu,
@@ -563,6 +568,12 @@ function requireWorkflow(source) {
     "build",
     "Record the built tree",
     `echo "::notice title=Ward built tree::$(git rev-parse 'HEAD^{tree}')"`,
+    expression("github.event_name == 'pull_request'"),
+  );
+  exact(
+    "build",
+    "Record the measured main",
+    `echo "::notice title=Ward budget main::$(git rev-parse refs/remotes/origin/main)"`,
     expression("github.event_name == 'pull_request'"),
   );
   {
@@ -669,6 +680,11 @@ function requireWorkflow(source) {
   for (const [key, value] of Object.entries({
     REUSE_VERIFIED: "needs.reuse.outputs.verified",
     BACKEND_REUSED: "needs.reuse.outputs.backend_verified",
+    UNIT_REUSED: "needs.reuse.outputs.unit_verified",
+    COVERAGE_REUSED: "needs.reuse.outputs.coverage_verified",
+    BROWSER_REUSED: "needs.reuse.outputs.browser_verified",
+    RELEASE_REUSED: "needs.reuse.outputs.release_verified",
+    BUILD_REUSED: "needs.reuse.outputs.build_verified",
     PLAN_RESULT: "needs.plan.result",
     REUSE_RESULT: "needs.reuse.result",
     STATIC_RESULT: "needs.static.result",
@@ -699,6 +715,19 @@ function requireWorkflow(source) {
             elif [ "$1" = false ]; then test "$2" = skipped;
             else return 1; fi
           }
+          require_gate() {
+            case "$3" in
+              true)
+                test "$GITHUB_EVENT_NAME" = push
+                test "$GITHUB_REF" = refs/heads/main
+                test "$REUSE_RESULT" = success
+                test "$1" = true
+                test "$2" = skipped
+                ;;
+              false|"") require_scope "$1" "$2" ;;
+              *) return 1 ;;
+            esac
+          }
           test "$PLAN_RESULT" = success
           test "$STATIC_RESULT" = success
           test "$SECRET_SCAN_RESULT" = success
@@ -714,27 +743,17 @@ function requireWorkflow(source) {
             echo "::error title=Draft fast lane::Quick checks passed. Browser, phone and accessibility checks run when this pull request is marked ready; only that run can pass this check."
             exit 1
           fi
-          if [ "$REUSE_VERIFIED" = true ]; then
-            test "$GITHUB_EVENT_NAME" = push
-            test "$GITHUB_REF" = refs/heads/main
-            test "$REUSE_RESULT" = success
-            test "$UNIT_RESULT" = skipped
-            test "$BROWSER_BUILD_RESULT" = skipped
-            test "$BROWSER_RESULT" = skipped
-            test "$BUILD_RESULT" = skipped
-            test "$COVERAGE_RESULT" = skipped
-            test "$RELEASE_GATE_RESULT" = skipped
-            if [ "$BACKEND_REUSED" = true ]; then test "$BACKEND_RESULT" = skipped;
-            else require_scope "$BACKEND_SCOPE" "$BACKEND_RESULT"; fi
+          test "$UNIT_REUSED" = "$COVERAGE_REUSED"
+          require_gate "$BACKEND_SCOPE" "$BACKEND_RESULT" "$BACKEND_REUSED"
+          require_gate "$UNIT_SCOPE" "$UNIT_RESULT" "$UNIT_REUSED"
+          require_gate "$UNIT_SCOPE" "$COVERAGE_RESULT" "$COVERAGE_REUSED"
+          require_gate "$BROWSER_SCOPE" "$BROWSER_RESULT" "$BROWSER_REUSED"
+          require_gate "$BROWSER_SCOPE" "$RELEASE_GATE_RESULT" "$RELEASE_REUSED"
+          require_gate "$BUILD_SCOPE" "$BUILD_RESULT" "$BUILD_REUSED"
+          if [ "$BROWSER_SCOPE" = true ] && { [ "$BROWSER_REUSED" != true ] || [ "$RELEASE_REUSED" != true ]; }; then
+            test "$BROWSER_BUILD_RESULT" = success
           else
-            test "$BACKEND_REUSED" != true
-            require_scope "$BACKEND_SCOPE" "$BACKEND_RESULT"
-            require_scope "$BROWSER_SCOPE" "$RELEASE_GATE_RESULT"
-            require_scope "$UNIT_SCOPE" "$UNIT_RESULT"
-            require_scope "$UNIT_SCOPE" "$COVERAGE_RESULT"
-            require_scope "$BROWSER_SCOPE" "$BROWSER_BUILD_RESULT"
-            require_scope "$BROWSER_SCOPE" "$BROWSER_RESULT"
-            require_scope "$BUILD_SCOPE" "$BUILD_RESULT"
+            test "$BROWSER_BUILD_RESULT" = skipped
           fi`,
   );
 }
@@ -745,28 +764,7 @@ const verdictShell = /^ {8}run: \|\n([\s\S]*)$/mu.exec(workflow.slice(workflow.i
 assert.ok(verdictShell);
 // On Windows a bare "bash" can resolve to WSL's System32\bash.exe, which does not run this shell
 // against the given environment. Prefer Git Bash there; Linux and macOS keep the bash on PATH.
-function resolveBash() {
-  if (process.platform !== "win32") return "bash";
-  const env = process.env;
-  const candidates = [
-    env.ProgramFiles && path.win32.join(env.ProgramFiles, "Git", "bin", "bash.exe"),
-    env["ProgramFiles(x86)"] && path.win32.join(env["ProgramFiles(x86)"], "Git", "bin", "bash.exe"),
-    env.LOCALAPPDATA && path.win32.join(env.LOCALAPPDATA, "Programs", "Git", "bin", "bash.exe"),
-  ];
-  const gitExecPath = spawnSync("git", ["--exec-path"], { encoding: "utf8" });
-  // <git>/mingw64/libexec/git-core -> <git>/bin/bash.exe
-  if (gitExecPath.status === 0 && gitExecPath.stdout.trim())
-    candidates.push(path.win32.resolve(gitExecPath.stdout.trim(), "..", "..", "..", "bin", "bash.exe"));
-  const system32 = path.win32.join(env.SystemRoot || "C:\\Windows", "System32").toLowerCase();
-  const found = candidates.find(
-    (candidate) =>
-      candidate && existsSync(candidate) && !path.win32.resolve(candidate).toLowerCase().startsWith(system32),
-  );
-  if (found) return found;
-  throw new Error(
-    "check-contracts needs Git Bash on Windows (%ProgramFiles%\\Git\\bin\\bash.exe); it refuses the WSL System32\\bash.exe.",
-  );
-}
+
 const bash = resolveBash();
 const baseEnv = {
   PATH: process.env.PATH ?? "",
@@ -777,36 +775,40 @@ const runVerdict = (env) =>
     env: { ...baseEnv, ...env },
   }).status;
 let verdictCases = 0;
-for (let bits = 0; bits < 16; bits++)
-  for (const [reuse, backendReused] of [
-    [false, false],
-    [true, false],
-    [true, true],
-  ]) {
-    const enabled = (bit) => Boolean(bits & (1 << bit));
+for (let bits = 0; bits < 16; bits++) {
+  const enabled = (bit) => Boolean(bits & (1 << bit));
+  const permitted = (enabled(0) ? 1 : 0) | (enabled(1) ? 2 : 0) | (enabled(2) ? 12 : 0) | (enabled(3) ? 16 : 0);
+  for (let mask = 0; mask < 32; mask++) {
+    if ((mask & ~permitted) !== 0) continue;
+    const reused = (bit) => Boolean(mask & (1 << bit));
     const values = {
       PLAN_RESULT: "success",
       STATIC_RESULT: "success",
       SECRET_SCAN_RESULT: "success",
-      REUSE_RESULT: reuse ? "success" : "skipped",
-      REUSE_VERIFIED: String(reuse),
-      BACKEND_REUSED: String(backendReused),
+      REUSE_RESULT: mask ? "success" : "skipped",
+      REUSE_VERIFIED: String((mask & 30) === 30),
+      BACKEND_REUSED: String(reused(0)),
+      UNIT_REUSED: String(reused(1)),
+      COVERAGE_REUSED: String(reused(1)),
+      BROWSER_REUSED: String(reused(2)),
+      RELEASE_REUSED: String(reused(3)),
+      BUILD_REUSED: String(reused(4)),
       DRAFT: "false",
-      GITHUB_EVENT_NAME: reuse ? "push" : "pull_request",
-      GITHUB_REF: reuse ? "refs/heads/main" : "refs/pull/1/merge",
+      GITHUB_EVENT_NAME: mask ? "push" : "pull_request",
+      GITHUB_REF: mask ? "refs/heads/main" : "refs/pull/1/merge",
       BACKEND_SCOPE: String(enabled(0)),
       UNIT_SCOPE: String(enabled(1)),
       BROWSER_SCOPE: String(enabled(2)),
       BUILD_SCOPE: String(enabled(3)),
-      BACKEND_RESULT: !backendReused && enabled(0) ? "success" : "skipped",
-      UNIT_RESULT: !reuse && enabled(1) ? "success" : "skipped",
-      COVERAGE_RESULT: !reuse && enabled(1) ? "success" : "skipped",
-      BROWSER_RESULT: !reuse && enabled(2) ? "success" : "skipped",
-      BROWSER_BUILD_RESULT: !reuse && enabled(2) ? "success" : "skipped",
-      BUILD_RESULT: !reuse && enabled(3) ? "success" : "skipped",
-      RELEASE_GATE_RESULT: !reuse && enabled(2) ? "success" : "skipped",
+      BACKEND_RESULT: enabled(0) && !reused(0) ? "success" : "skipped",
+      UNIT_RESULT: enabled(1) && !reused(1) ? "success" : "skipped",
+      COVERAGE_RESULT: enabled(1) && !reused(1) ? "success" : "skipped",
+      BROWSER_RESULT: enabled(2) && !reused(2) ? "success" : "skipped",
+      BROWSER_BUILD_RESULT: enabled(2) && (!reused(2) || !reused(3)) ? "success" : "skipped",
+      BUILD_RESULT: enabled(3) && !reused(4) ? "success" : "skipped",
+      RELEASE_GATE_RESULT: enabled(2) && !reused(3) ? "success" : "skipped",
     };
-    assert.equal(runVerdict(values), 0);
+    assert.equal(runVerdict(values), 0, JSON.stringify({ bits, mask }));
     verdictCases++;
     for (const key of [
       "PLAN_RESULT",
@@ -819,40 +821,25 @@ for (let bits = 0; bits < 16; bits++)
       "BROWSER_BUILD_RESULT",
       "BUILD_RESULT",
       "RELEASE_GATE_RESULT",
-      ...(reuse ? ["REUSE_RESULT"] : []),
+      ...(mask ? ["REUSE_RESULT"] : []),
     ])
       for (const result of ["failure", "cancelled", "", values[key] === "success" ? "skipped" : "success"]) {
         assert.notEqual(runVerdict({ ...values, [key]: result }), 0, `${key}=${result} must block`);
         verdictCases++;
       }
     for (const key of ["BACKEND_SCOPE", "UNIT_SCOPE", "BROWSER_SCOPE", "BUILD_SCOPE"]) {
-      // Scope values bypassed by reuse are checked by the independent planner.
-      if (reuse && !(key === "BACKEND_SCOPE" && !backendReused)) continue;
       assert.notEqual(runVerdict({ ...values, [key]: "" }), 0);
       verdictCases++;
     }
-    // A draft never passes, whatever its results: only the run after ready_for_review can merge.
-    if (!reuse)
-      for (const browserResult of ["skipped", "success"]) {
-        assert.notEqual(
-          runVerdict({
-            ...values,
-            DRAFT: "true",
-            BROWSER_RESULT: browserResult,
-            BROWSER_BUILD_RESULT: browserResult,
-            RELEASE_GATE_RESULT: browserResult,
-          }),
-          0,
-          "a draft must not pass Ward Flow required",
-        );
-        verdictCases++;
-      }
-    // Backend reuse never stands alone: without verified reuse it must block.
-    if (!reuse) {
-      assert.notEqual(runVerdict({ ...values, BACKEND_REUSED: "true", BACKEND_RESULT: "skipped" }), 0);
-      verdictCases++;
-    }
-    if (reuse)
+    assert.notEqual(runVerdict({ ...values, DRAFT: "true" }), 0, "drafts never pass");
+    assert.notEqual(runVerdict({ ...values, UNIT_REUSED: "unknown" }), 0, "unknown evidence refuses");
+    assert.notEqual(
+      runVerdict({ ...values, COVERAGE_REUSED: values.UNIT_REUSED === "true" ? "false" : "true" }),
+      0,
+      "unit and coverage evidence must be reused together",
+    );
+    verdictCases += 3;
+    if (mask)
       for (const [key, value] of [
         ["GITHUB_EVENT_NAME", "pull_request"],
         ["GITHUB_REF", "refs/heads/other"],
@@ -861,6 +848,7 @@ for (let bits = 0; bits < 16; bits++)
         verdictCases++;
       }
   }
+}
 // Every enforcing run command is an exact contract; mutation probes must change
 // the input before rejection, preventing obsolete no-op controls from passing.
 for (const [before, after] of [
@@ -895,16 +883,14 @@ for (const [before, after] of [
   ["if: always()", "if: success()"],
   ['          if [ "$DRAFT" = true ]; then', '          if [ "$DRAFT" = never ]; then'],
   [
-    '            exit 1\n          fi\n          if [ "$REUSE_VERIFIED" = true ]; then',
-    '            true\n          fi\n          if [ "$REUSE_VERIFIED" = true ]; then',
+    '            exit 1\n          fi\n          test "$UNIT_REUSED" = "$COVERAGE_REUSED"',
+    '            true\n          fi\n          test "$UNIT_REUSED" = "$COVERAGE_REUSED"',
   ],
   ["    types: [opened, synchronize, reopened, ready_for_review]", "    types: [opened, synchronize, reopened]"],
-  [
-    "needs.reuse.outputs.verified != 'true' && github.event.pull_request.draft != true }}",
-    "needs.reuse.outputs.verified != 'true' }}",
-  ],
+  ["&& github.event.pull_request.draft != true }}", "}}"],
   ["shard: [1, 2, 3, 4]", "shard: [1, 2, 3]"],
   ["group: [1, 2]", "group: [1]"],
+  ["            browser: webkit\n", "            browser: chromium\n"],
   ["            second_part: referrals\n", "            second_part: journeys\n"],
   [
     "          - pair: desktop journeys, referrals and checks\n",
@@ -931,20 +917,23 @@ for (const [before, after] of [
   ["--gitleaks-ignore-path .gitleaksignore", ""],
   ["        id: secret-scan\n", "        id: unused-secret-scan\n"],
   ["SECRET_SCAN_RESULT: ${{ needs.plan.outputs.secret_scan }}", "SECRET_SCAN_RESULT: success"],
-  ['            test "$RELEASE_GATE_RESULT" = skipped\n            if', "            if"],
-  ['            test "$BACKEND_REUSED" != true\n', ""],
+  ['          require_gate "$BROWSER_SCOPE" "$RELEASE_GATE_RESULT" "$RELEASE_REUSED"\n', ""],
+  ['                test "$REUSE_RESULT" = success\n', ""],
   [
     "if: ${{ github.event_name == 'pull_request' }}\n        run: node scripts/ward-ci-public/merge-latest-main.mjs\n  reuse:",
     "if: ${{ false }}\n        run: node scripts/ward-ci-public/merge-latest-main.mjs\n  reuse:",
   ],
-  ["&& needs.browser-build.result != 'skipped' && ", "&& "],
+  ["&& needs.browser-build.result == 'success' && ", "&& "],
   ["    needs: [plan, reuse, static, build]\n", "    needs: [plan, reuse]\n"],
-  ["    needs: [plan, browser-build, static, build]\n", "    needs: [plan, browser-build]\n"],
+  ["    needs: [plan, reuse, browser-build, static, build]\n", "    needs: [plan, browser-build]\n"],
   [" && needs.static.result == 'success' && (needs.build.result == 'success'", " && (needs.build.result == 'success'"],
-  ["(needs.build.result == 'skipped' && needs.plan.outputs.build != 'true')", "needs.build.result == 'skipped'"],
+  [
+    "(needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true'))",
+    "needs.build.result == 'skipped'",
+  ],
   [" && needs.unit.result == 'success' }}", " }}"],
   [
-    "          - pair: desktop journeys, referrals and checks\n            project: release-gate-desktop\n            part: journeys\n            second_project: release-gate-desktop\n            second_part: referrals\n            third_project: release-gate-desktop\n            third_part: checks\n",
+    "          - pair: desktop journeys, referrals and checks\n            project: release-gate-desktop\n            browser: chromium\n            part: journeys\n            second_project: release-gate-desktop\n            second_part: referrals\n            third_project: release-gate-desktop\n            third_part: checks\n",
     "",
   ],
   [

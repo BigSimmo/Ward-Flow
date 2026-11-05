@@ -827,7 +827,8 @@ export function executiveJourney(
     {
       id: "moving" as const,
       label: "Pulled or in transit",
-      caption: "Bed given, not arrived",
+      // WF-17: people count; bed board keeps exact bed pulls.
+      caption: "People with a bed given, not arrived",
       rows: open.filter((row) => transit.some((stage) => stage === row.stage)),
     },
   ];

@@ -29,6 +29,106 @@ export const REQUIRED_RELEASE_JOURNEY_FILES = Object.freeze([
   },
 ]);
 
+// Independently pinned obligations for the release checks. Phone WebKit deliberately skips
+// the desktop ED menus and layout-shift cases; every other check must pass exactly once.
+const RELEASE_CHECK_ROUTES = Object.freeze([
+  "",
+  "/alerts",
+  "/bed-meeting",
+  "/bed-meeting/agenda",
+  "/board/rph-adult-secure",
+  "/capacity",
+  "/hub/catchments",
+  "/community/midland",
+  "/waiting",
+  "/discharges",
+  "/ed",
+  "/ed/peel-ed",
+  "/governance",
+  "/handover",
+  "/hub",
+  "/legal-forms",
+  "/movements",
+  "/movements/1nfzcp26wc0g",
+  "/on-call",
+  "/out-of-area",
+  "/people/new",
+  "/people/196zcp26wet0",
+  "/referrals",
+  "/referrals/new",
+  "/reports/chronology",
+  "/reports/downtime",
+  "/search",
+  "/seclusion",
+  "/settings",
+  "/statistics",
+  "/statistics/community/bentley",
+  "/statistics/compare",
+  "/statistics/ed/rph-ed",
+  "/statistics/eds",
+  "/statistics/service/North%20Metro",
+  "/statistics/services",
+  "/statistics/teams",
+  "/statistics/ward/rph-adult-secure",
+  "/statistics/wards",
+  "/statistics/weekly",
+  "/transport",
+  "/transport/officer",
+  "/ward/rph-adult-secure",
+  "/ward/rph-adult-secure/answer",
+  "/wards",
+  "/ward-flow-sign-in",
+]);
+const RELEASE_DARK_CHECK_ROUTES = Object.freeze([
+  "",
+  "/community/midland",
+  "/discharges",
+  "/ed/peel-ed",
+  "/referrals/new",
+  "/settings",
+  "/statistics",
+  "/transport/officer",
+  "/ward/rph-adult-secure",
+]);
+const RELEASE_SHIFT_ROUTES = Object.freeze([
+  "",
+  "/community/midland",
+  "/discharges",
+  "/ed/peel-ed",
+  "/movements",
+  "/people/new",
+  "/referrals",
+  "/statistics",
+  "/transport/officer",
+  "/waiting",
+  "/ward/rph-adult-secure",
+  "/wards",
+]);
+
+export function releaseGateCheckCases(project) {
+  const phone = project === "release-gate-phone";
+  const titles = [
+    ...RELEASE_CHECK_ROUTES.map((route) => `axe: ${route || "/"} has no serious or critical violation`),
+    "axe: the header search palette with results open has no serious or critical violation",
+    "axe: a ward's bed drawer when open has no serious or critical violation",
+    "axe: the page tip card when showing has no serious or critical violation",
+    ...RELEASE_DARK_CHECK_ROUTES.map((route) => `axe dark: ${route || "/"} has no serious or critical violation`),
+    "axe dark: the header search palette with results open",
+    "axe dark: the page tip card when showing",
+    "axe dark: the Tools sheet, or the phone Menu sheet, when open",
+    ...(!phone
+      ? [
+          "axe: the ED actions menu when open has no serious or critical violation",
+          "axe dark: the ED actions menu when open",
+          ...RELEASE_SHIFT_ROUTES.map(
+            (route) => `layout shift: ${route || "/"} stays still as it loads, desktop and phone`,
+          ),
+        ]
+      : []),
+  ];
+  return titles.map((title) => ({ project, file: "release-gate-axe-sweep.spec.ts", title }));
+}
+
 export const RELEASE_GATE_PROJECTS = Object.freeze(["release-gate-desktop", "release-gate-phone"]);
 
 /**
@@ -51,9 +151,7 @@ export function releaseGateProjectFor(value) {
  * were split again). The parts partition the release-gate spec files: together they run every file
  * once on each device. `journeys` (the four core bed-flow journeys) and `referrals` (inpatient
  * transfer, community referral and filing a legal form) each require their own named journeys,
- * seven in all, so the
- * required-case check is unchanged; `checks` runs the accessibility and layout-shift sweep, which
- * has no named required cases.
+ * seven in all. `checks` independently requires its applicable accessibility and layout-shift cases.
  */
 export const RELEASE_GATE_PARTS = Object.freeze({
   journeys: Object.freeze(["release-gate-journeys.spec.ts"]),
@@ -82,7 +180,7 @@ export function releaseGatePartFor(value) {
 /**
  * Why a release-gate part cannot narrow these Playwright arguments, or null when it can. A part
  * replaces the file selection, so any file filter or test-selection option would run less than the
- * whole part (the checks part has no named required cases to catch that).
+ * whole part.
  * @param {readonly string[]} args
  * @returns {string | null}
  */
@@ -110,6 +208,7 @@ export function releaseGateCases(required, only = null, part = null) {
     .flatMap((project) => [
       ...REQUIRED_RELEASE_JOURNEYS.map((title) => ({ project, file: "release-gate-journeys.spec.ts", title })),
       ...REQUIRED_RELEASE_JOURNEY_FILES.map(({ file, title }) => ({ project, file, title })),
+      ...releaseGateCheckCases(project),
     ])
     .filter((entry) => files === null || files.includes(entry.file));
 }
@@ -130,10 +229,67 @@ export const REQUIRED_SHARED_JOURNEYS = Object.freeze([
   "different records at once: two desks change different records from the same revision, and both saves land on both desks",
   "a desk that loses its network says it is not connected, then catches up without a reload when it returns",
 ]);
+/** Recovery/session journeys need the shared backend on both desktop and phone. */
+export const REQUIRED_SHARED_RECOVERY_JOURNEYS = Object.freeze([
+  "offline recovery: a save accepted before reload is checked by receipt and is never replayed",
+  "stale board: five minutes without a successful refresh shows its time and one keyboard retry",
+  "Activity Undo: a desk reviews its own bed closure and waits for the server to confirm the inverse",
+  "sign-out return: cancelling preserves a waiting change and confirmed sign-out returns only to the authorised screen",
+]);
 export function sharedModeCases() {
-  return REQUIRED_SHARED_JOURNEYS.map((title) => ({
-    project: "ward-shared-mode",
-    file: "ward-shared-mode.spec.ts",
-    title,
-  }));
+  return [
+    ...REQUIRED_SHARED_JOURNEYS.map((title) => ({
+      project: "ward-shared-mode",
+      file: "ward-shared-mode.spec.ts",
+      title,
+    })),
+    ...["ward-shared-mode", "ward-shared-phone"].flatMap((project) =>
+      REQUIRED_SHARED_RECOVERY_JOURNEYS.map((title) => ({ project, file: "ward-shared-recovery.spec.ts", title })),
+    ),
+  ];
+}
+
+/** Preserve option/value pairs while replacing only positional spec filters. */
+export function splitPlaywrightArguments(args) {
+  const options = [];
+  const files = [];
+  const valued = new Set([
+    "-c",
+    "--config",
+    "-g",
+    "--grep",
+    "--grep-invert",
+    "--workers",
+    "-j",
+    "--reporter",
+    "--output",
+    "--shard",
+    "--timeout",
+    "--retries",
+    "--max-failures",
+    "--repeat-each",
+    "--global-timeout",
+    "--trace",
+    "--browser",
+    "--device",
+    "--test-list",
+    "--test-list-invert",
+    "--only-changed",
+    "--update-snapshots",
+  ]);
+  for (let index = 0; index < args.length; index++) {
+    const argument = args[index];
+    if (!argument.startsWith("-")) {
+      files.push(argument);
+      continue;
+    }
+    options.push(argument);
+    if (argument === "--project") {
+      while (args[index + 1] && !args[index + 1].startsWith("-") && !/[\\/]|\.[cm]?[jt]sx?$/.test(args[index + 1]))
+        options.push(args[++index]);
+    } else if (valued.has(argument) && args[index + 1] && !args[index + 1].startsWith("-")) {
+      options.push(args[++index]);
+    }
+  }
+  return { options, files };
 }

@@ -9,6 +9,7 @@
 import { useCallback, useContext, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
 import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import {
   noteWardSessionAccount,
   wardLeaveSaveAllowed,
@@ -213,22 +214,25 @@ const serverLook = () => null;
 export function useForecastChange(model: ForecastModel, now: Instant, { remember }: { remember: boolean }) {
   const { scenario, worldGeneration } = useWardFlowSelect("scenario", "worldGeneration");
   const account = useContext(SharedAccessContext);
+  const localAllowed = !account || Boolean(account.workspaceId);
   const userId = account?.actorId ?? "local-demo";
-  const key = `${FORECAST_LAST_LOOK_STORAGE_KEY}:${encodeURIComponent(userId)}`;
+  const access = useEffectiveWardAccess();
+  const deskIdentity = JSON.stringify([account?.workspaceId ?? "local-demo", access.role, access.scope]);
+  const key = `${FORECAST_LAST_LOOK_STORAGE_KEY}:${encodeURIComponent(userId)}:${encodeURIComponent(deskIdentity)}`;
   noteWardSessionAccount(account);
   const current = useMemo(
     () => takeForecastLook({ scenario, worldGeneration, userId }, model.tomorrow, now),
     [scenario, worldGeneration, userId, model.tomorrow, now],
   );
-  const latest = useRef(current);
+  const latest = useRef({ key, current });
   useEffect(() => {
-    latest.current = current;
-  }, [current]);
-  const stored = useSyncExternalStore(subscribe, () => readStored(key), serverLook);
+    latest.current = { key, current };
+  }, [current, key]);
+  const stored = useSyncExternalStore(subscribe, () => (localAllowed ? readStored(key) : null), serverLook);
   const previous = useMemo(() => parseForecastLook(stored), [stored]);
 
   useEffect(() => {
-    if (!remember) return;
+    if (!remember || !localAllowed) return;
     const timer = pendingSaves.get(key);
     if (timer !== undefined) window.clearTimeout(timer);
     pendingSaves.delete(key);
@@ -236,8 +240,9 @@ export function useForecastChange(model: ForecastModel, now: Instant, { remember
     const save = () => {
       // Audit 4 A4-07: never write after the session that owned this picture ended, including a
       // save scheduled by the signed-out re-render just before the screen closes.
-      if (!wardLeaveSaveAllowed(ticket) || latest.current.userId !== userId) return;
-      writeForecastLook(latest.current, key);
+      if (!wardLeaveSaveAllowed(ticket) || latest.current.current.userId !== userId || latest.current.key !== key)
+        return;
+      writeForecastLook(latest.current.current, key);
       window.dispatchEvent(new Event(CHANGE_EVENT));
     };
     window.addEventListener("pagehide", save);
@@ -253,7 +258,7 @@ export function useForecastChange(model: ForecastModel, now: Instant, { remember
         }, 0),
       );
     };
-  }, [key, remember, account, userId]);
+  }, [key, remember, account, userId, localAllowed]);
 
   return useMemo(() => forecastChangeSinceLook(previous, current), [previous, current]);
 }
@@ -292,7 +297,7 @@ function readLocal(key: string): string | null {
  * keys on a shared device are left alone.
  */
 function dropEarlierWorlds(key: string) {
-  const person = key.slice(0, key.indexOf(":", key.indexOf(":") + 1) + 1);
+  const person = `${key.split(":").slice(0, -2).join(":")}:`;
   try {
     const stale: string[] = [];
     for (let index = 0; index < window.localStorage.length; index += 1) {
@@ -314,24 +319,58 @@ function dropEarlierWorlds(key: string) {
 export function useForecastHistory(model: ForecastModel, now: Instant) {
   const { scenario, worldGeneration } = useWardFlowSelect("scenario", "worldGeneration");
   const account = useContext(SharedAccessContext);
+  const localAllowed = !account || Boolean(account.workspaceId);
+  const access = useEffectiveWardAccess();
+  const scope =
+    account || access.role !== "coordinator" || access.scope.kind !== "statewide"
+      ? `:${encodeURIComponent(JSON.stringify([account?.workspaceId ?? "local-demo", access.role, access.scope]))}`
+      : "";
   // A reseed restarts the demo days, so it starts a fresh history rather than comparing two worlds.
-  const key = `${FORECAST_HISTORY_STORAGE_KEY}:${encodeURIComponent(account?.actorId ?? "local-demo")}:${scenario}:${worldGeneration}`;
-  const stored = useSyncExternalStore(subscribeHistory, () => readLocal(key), serverLook);
+  const key = `${FORECAST_HISTORY_STORAGE_KEY}:${encodeURIComponent(account?.actorId ?? "local-demo")}${scope}:${scenario}:${worldGeneration}`;
+  const stored = useSyncExternalStore(subscribeHistory, () => (localAllowed ? readLocal(key) : null), serverLook);
   const history = useMemo(() => parseForecastHistory(stored), [stored]);
   const entry = useMemo(() => historyEntry(now, model.tomorrow.total.now, model.tomorrow.total), [now, model.tomorrow]);
   const shared = useSharedForecastHistory(worldGeneration);
   const sharedHistory = shared.state.status === "shared" ? shared.state.snapshots : null;
   const { send } = shared;
   const sharedHasToday = sharedHistory?.some((existing) => existing.day === entry.day) ?? true;
-  // One try a demo day: a refused or failed send is not repeated with every clock tick.
+  // Only acknowledgement completes the day. A failed attempt may recover on reconnect, returning
+  // to the view or a bounded interval, without resending on every clock tick.
   const sentDay = useRef<string | null>(null);
+  const snapshotAttempt = useRef<{ identity: string; at: number; pending: boolean } | null>(null);
   useEffect(() => {
-    const attempt = `${worldGeneration}:${entry.day}`;
-    if (sharedHasToday || sentDay.current === attempt) return;
-    sentDay.current = attempt;
-    void send({ snapshot: entry });
-  }, [sharedHasToday, send, entry, worldGeneration]);
+    const identity = `${key}:${entry.day}`;
+    if (sharedHasToday || sentDay.current === identity) return;
+    let live = true;
+    const attempt = (force = false) => {
+      if (!live || sentDay.current === identity) return;
+      const held = snapshotAttempt.current;
+      if (held?.identity === identity && (held.pending || (!force && Date.now() - held.at < 120_000))) return;
+      const started = { identity, at: Date.now(), pending: true };
+      snapshotAttempt.current = started;
+      void send({ snapshot: entry }).then((accepted) => {
+        started.pending = false;
+        if (accepted && snapshotAttempt.current === started) sentDay.current = identity;
+      });
+    };
+    const online = () => attempt(true);
+    const shown = () => {
+      if (document.visibilityState === "visible") attempt(true);
+    };
+    attempt();
+    const timer = window.setInterval(attempt, 120_000);
+    window.addEventListener("online", online);
+    document.addEventListener("visibilitychange", shown);
+    return () => {
+      live = false;
+      window.clearInterval(timer);
+      window.removeEventListener("online", online);
+      document.removeEventListener("visibilitychange", shown);
+    };
+  }, [sharedHasToday, send, entry, key]);
   useEffect(() => {
+    // Older servers without workspace identity may show shared data, but cannot reuse a durable fallback.
+    if (!localAllowed) return;
     const before = parseForecastHistory(readLocal(key));
     if (before.some((existing) => existing.day === entry.day)) return;
     const next = recordForecastHistory(before, entry);
@@ -342,7 +381,7 @@ export function useForecastHistory(model: ForecastModel, now: Instant) {
       // Private windows and full storage simply keep no history.
     }
     window.dispatchEvent(new Event(HISTORY_EVENT));
-  }, [key, entry]);
+  }, [key, entry, localAllowed]);
   const shown = sharedHistory ?? history;
   return useMemo(() => ({ history: shown, record: forecastTrackRecord(shown) }), [shown]);
 }
@@ -368,8 +407,14 @@ function subscribeMissReasons(onChange: () => void) {
 export function useForecastMissReasons() {
   const { scenario, worldGeneration } = useWardFlowSelect("scenario", "worldGeneration");
   const account = useContext(SharedAccessContext);
-  const key = `${FORECAST_MISS_REASONS_STORAGE_KEY}:${encodeURIComponent(account?.actorId ?? "local-demo")}:${scenario}:${worldGeneration}`;
-  const stored = useSyncExternalStore(subscribeMissReasons, () => readLocal(key), serverLook);
+  const localAllowed = !account || Boolean(account.workspaceId);
+  const access = useEffectiveWardAccess();
+  const scope =
+    account || access.role !== "coordinator" || access.scope.kind !== "statewide"
+      ? `:${encodeURIComponent(JSON.stringify([account?.workspaceId ?? "local-demo", access.role, access.scope]))}`
+      : "";
+  const key = `${FORECAST_MISS_REASONS_STORAGE_KEY}:${encodeURIComponent(account?.actorId ?? "local-demo")}${scope}:${scenario}:${worldGeneration}`;
+  const stored = useSyncExternalStore(subscribeMissReasons, () => (localAllowed ? readLocal(key) : null), serverLook);
   const local = useMemo(() => parseForecastMissReasons(stored), [stored]);
   const { state: shared, sendReason, refresh } = useSharedForecastHistory(worldGeneration);
   const entries = shared.status === "shared" ? shared.reasons : local;

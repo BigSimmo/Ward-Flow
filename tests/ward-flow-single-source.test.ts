@@ -132,6 +132,8 @@ const NOW_ANCHOR_ALLOWLIST = new Set([
   // synthetic time as an offset from the anchor, and is shifted onto the live clock by the reducer.
   "src/components/ward-management/ward-demo-network.ts",
   "src/components/ward-management/ward-flow-provider.tsx", // the provider, which reads it once to derive the live `now`
+  // #1435 (5 Nov 2026): the scenario import owner moved out of the provider, with its clock check.
+  "src/components/ward-management/ward-scenario-import-owner.ts",
   "src/components/ward-management/ward-flow-demo-restore.ts", // the saved-session read, moved out of ward-flow-demo-storage.ts (21 Oct 2026)
   // The saved-session read and write, moved out of the provider unchanged: it compares a saved clock with the anchor.
   "src/components/ward-management/ward-flow-demo-storage.ts",
@@ -240,6 +242,11 @@ const UNITS_FIXTURE_ALLOWLIST = new Set([
   // and lends the ward routes the immutable `.name` for the browser tab. Existence and name only,
   // never a field the reducer writes, so the mutable-field guard below applies to it in full.
   "src/components/ward-management/ward-known-places.ts",
+  // EIGHTH ENTRY, 5 Nov 2026 (WF-26/27, PR #1448), the same shape as the seventh:
+  // `placeDisplayName` falls back to the active network's catalogue for the immutable `.name` of a
+  // ward the screen's own scoped unit list does not hold, so a slug is never printed. Name only,
+  // after the caller's live units; the mutable-field guard below applies to it in full.
+  "src/components/ward-management/ward-place-names.ts",
 ]);
 
 /**

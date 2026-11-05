@@ -484,7 +484,8 @@ function ForgotDoor({
           <p className={styles.hint}>
             <Info aria-hidden="true" />
             <span>
-              Test accounts end in example.test and cannot receive email. Ask the Ward Flow coordinator to reset those.
+              Shared test accounts cannot receive email, so a reset link will not reach them. Ask the Ward Flow
+              coordinator to reset those.
             </span>
           </p>
         </form>
@@ -831,6 +832,8 @@ function TvDoor({
                 type="submit"
                 className={`${styles.btn} ${styles.btnPrimary}`}
                 disabled={busy || !form || !online}
+                // WF-29 (live test, 4 Nov 2026): a stable accessible name while the icon and spinner swap.
+                aria-label={busy ? "Signing in" : "Sign in"}
               >
                 {busy ? (
                   <>

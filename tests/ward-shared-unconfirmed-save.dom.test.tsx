@@ -179,7 +179,10 @@ describe("shared commands protect their tab-memory recovery from reload", () => 
         confirmed = true;
       });
       const stored = storage.get(WARD_COMMAND_RECOVERY_KEY)!;
-      expect(JSON.parse(stored)).toEqual({ commandId, receiptScope, expiresAt });
+      expect(JSON.parse(stored)).toEqual({
+        version: 2,
+        entries: [{ commandId, receiptScope, expiresAt, phase: "sent" }],
+      });
       expect(stored).not.toMatch(/REQUEST_CAPACITY_REFRESH|synthetic-ward|event|payload/);
 
       expect(confirmed).toBe(false);

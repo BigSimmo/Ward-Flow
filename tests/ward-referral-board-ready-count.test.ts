@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { readyUnitCount } from "@/components/ward-management/referrals/referral-board-parts";
+import { readyUnitCount, staleOnlyUnitCount } from "@/components/ward-management/referrals/referral-board-parts";
 import { referralEligibility } from "@/components/ward-management/ward-eligibility";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import type { Referral, ReferralAddressing } from "@/components/ward-management/ward-model";
@@ -54,5 +54,23 @@ describe("readyUnitCount with several wards asked", () => {
 
   it("has no figure once no ward bed is still asked for", () => {
     expect(readyUnitCount(referral([arm(FIT_A, "declined")]), BASE.units, NOW_ANCHOR)).toBeUndefined();
+  });
+});
+
+describe("staleOnlyUnitCount (WF-04: why Fit reads 0)", () => {
+  const stale = (unitId: string) =>
+    BASE.units.map((unit) =>
+      unit.id === unitId ? { ...unit, allocatable: { ...unit.allocatable, confirmedAt: NOW_ANCHOR - 100_000 } } : unit,
+    );
+
+  it("counts a ward that fails only on stale bed confirmation", () => {
+    const units = stale(FIT_A);
+    const asked = referral([arm(FIT_A)]);
+    expect(readyUnitCount(asked, units, NOW_ANCHOR)).toBe(0);
+    expect(staleOnlyUnitCount(asked, units, NOW_ANCHOR)).toBe(1);
+  });
+
+  it("is zero when the ward already fits", () => {
+    expect(staleOnlyUnitCount(referral([arm(FIT_A)]), BASE.units, NOW_ANCHOR)).toBe(0);
   });
 });

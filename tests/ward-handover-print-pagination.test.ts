@@ -3,6 +3,7 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { toHandoverRow, type RowGroup } from "@/components/ward-management/handover/handover-model";
 import {
   paginateHandoverItems,
+  handoverPaperFits,
   paginateHandoverExtras,
   paperItemKey,
   type PaperItem,
@@ -91,6 +92,30 @@ describe("measured handover paper pagination", () => {
     const measured = { ...measurement(220, items, 100), firstPageCost: 80 };
     const pages = paginateHandoverItems(items, 500, 0, measured);
     expect(pages.map((page) => page.filter((item) => item.kind === "row").length)).toEqual([1, 2, 1]);
+  });
+
+  it("moves the first heading and patient together when the summary consumes page one", () => {
+    const items: PaperItem[] = [
+      { kind: "group", group, continued: false },
+      { kind: "row", row: rows[0]! },
+      { kind: "isbar", row: rows[0]! },
+    ];
+    const measured = { ...measurement(200, items, 100, 40), firstPageCost: 80 };
+    const pages = paginateHandoverItems(items, 500, 0, measured);
+    expect(handoverPaperFits(pages, [], measured)).toBe(true);
+    expect(pages.map((page) => page.map((item) => item.kind))).toEqual([[], ["group", "row", "isbar"]]);
+  });
+
+  it("keeps an oversized first block with its heading instead of creating a heading-only page", () => {
+    const items: PaperItem[] = [
+      { kind: "group", group, continued: false },
+      { kind: "row", row: rows[0]! },
+      { kind: "isbar", row: rows[0]! },
+    ];
+    const measured = { ...measurement(200, items, 200, 40), firstPageCost: 80 };
+    const pages = paginateHandoverItems(items, 500, 0, measured);
+    expect(handoverPaperFits(pages, [], measured)).toBe(false);
+    expect(pages.map((page) => page.map((item) => item.kind))).toEqual([[], ["group", "row", "isbar"]]);
   });
 
   it("paginates the measured discharge sections as well as patient rows", () => {

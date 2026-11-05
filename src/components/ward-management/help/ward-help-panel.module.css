@@ -10,9 +10,9 @@
   max-width: min(calc(100vw - 1.5rem), 34rem);
 }
 
-/* Phone (through 48rem): the kit's bottom sheet, full width and near-full height, so the sheet does
+/* Phone (through 46.4375rem): the kit's bottom sheet, full width and near-full height, so the sheet does
  * not jump in size as answers come and go. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .sheet {
     width: 100%;
     max-width: none;
@@ -1707,7 +1707,7 @@
 }
 
 /* ── phone sizes: 40px faces, 48px tap areas ────────────────────────────────────────────────── */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   /* The row scrolls sideways when the tabs do not fit, so its end fades as the chips do. */
   .tabs {
     padding-top: var(--wf-phone-pill-hit);

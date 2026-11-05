@@ -393,6 +393,16 @@
   text-decoration: none;
   overflow-wrap: anywhere;
 }
+
+.ownCommand {
+  grid-column: 3 / -1;
+  min-width: 0;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+.ownCommand p {
+  margin: var(--wf-s-1) 0;
+}
 a.eventText::after {
   content: "";
   position: absolute;

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import { WardMovementNotFound } from "@/components/ward-management/ward-management-console";
+import { WardMovementNotFound } from "@/components/ward-management/ward-movement-not-found";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { decodeRecordAddress, querySuffix } from "@/components/ward-management/shell/ward-record-address";

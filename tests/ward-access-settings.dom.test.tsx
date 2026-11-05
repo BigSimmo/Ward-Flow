@@ -226,6 +226,28 @@ describe("the Access tab", () => {
     expect(screen.getAllByTestId("ward-access-role-row")).toHaveLength(rows);
   });
 
+  it("asks before removing a role, and removes nothing when told to keep it (WF-34)", async () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "admin", scope: { kind: "statewide" } });
+    });
+    const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
+    settings();
+    const rows = screen.getAllByTestId("ward-access-role-row").length;
+    const remove = screen.getAllByTestId("ward-access-role-remove")[0];
+    await act(async () => fireEvent.click(remove));
+    // The confirm is the kit dialog when its host is mounted, else the browser's own. The kit dialog
+    // loads on demand, so wait for one or the other before choosing.
+    const keepButton = () => screen.queryByRole("button", { name: "Keep role" });
+    await waitFor(() => expect(keepButton() !== null || confirm.mock.calls.length === 1).toBe(true));
+    const keep = keepButton();
+    if (keep) await act(async () => fireEvent.click(keep));
+    else expect(confirm).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId("ward-step-up")).not.toBeInTheDocument();
+    expect(screen.getAllByTestId("ward-access-role-row")).toHaveLength(rows);
+    confirm.mockRestore();
+  });
+
   it("lets a nurse in charge give cover of their own ward, and end it", async () => {
     act(() => {
       setWardFeatureFlagOnDevice("role-access", true);

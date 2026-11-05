@@ -20,7 +20,10 @@ export type EdPerson = {
   /** UMRN, or "UMRN not recorded" (D-39: never the movement id). */
   umrn: string;
   href: string;
+  /** Minutes in ED (`minutesInEd`), the access-target clock. Labelled "in ED" wherever shown. */
   wait: number;
+  /** Minutes since referral (`minutesSinceReferral`), the main wait figure; undefined when unrecorded. */
+  sinceReferral?: number;
   clock: WaitClock;
   stage: string;
   destination?: string;

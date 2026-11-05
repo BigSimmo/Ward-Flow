@@ -31,12 +31,14 @@ it("retains and fails the initial serious axe finding without a hidden retry", a
     evaluate: vi.fn().mockResolvedValue({ window: 0, column: 0 }),
     url: () => "http://localhost:3100/ward-flow",
     waitForTimeout: vi.fn(),
+    screenshot: vi.fn().mockResolvedValue(Buffer.from("synthetic-png")),
   } as unknown as Page;
   await expect(expectAccessible(page, { attach } as unknown as TestInfo, "initial scan")).rejects.toThrow(
     /accessibility violations/,
   );
   expect(analyze).toHaveBeenCalledTimes(2); // regular rules and the separate target-size scan
-  expect(JSON.parse(attach.mock.calls[0][1].body).violations).toEqual([violation]);
+  const report = attach.mock.calls.find(([name]) => !String(name).startsWith("screen:"));
+  expect(JSON.parse(report?.[1].body).violations).toEqual([violation]);
   expect(page.waitForTimeout).not.toHaveBeenCalled();
 });
 

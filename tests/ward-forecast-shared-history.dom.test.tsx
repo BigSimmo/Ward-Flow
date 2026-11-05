@@ -80,7 +80,7 @@ function renderWith(api: SharedAccessApi | null, seen: Seen) {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       {api ? (
-        <SharedAccessContext.Provider value={{ api, actorId: "synthetic-actor" }}>
+        <SharedAccessContext.Provider value={{ api, actorId: "synthetic-actor", workspaceId: "synthetic-workspace" }}>
           <Probe onSeen={(next) => Object.assign(seen, next)} />
         </SharedAccessContext.Provider>
       ) : (

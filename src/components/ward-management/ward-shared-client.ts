@@ -1,3 +1,13 @@
+import { recoverCommandReceipts } from "./ward-command-recovery-run";
+import {
+  COMMAND_RECOVERY_KEY,
+  readCommandRecovery,
+  recordCommandRecovery,
+  removeCommandRecovery,
+  type RecoveryEntry,
+} from "./ward-command-recovery";
+import * as activityAudit from "./ward-shared-activity-audit";
+import type { SharedActivityAuditEvent } from "./ward-shared-activity-audit";
 import { forecastHistoryFailure } from "./forecast/forecast-history-response";
 import {
   anySignal,
@@ -17,7 +27,7 @@ import type { RecordViewSurface } from "./shell/ward-shared-session-context";
 import { eventLogEntryFor } from "./ward-event-log";
 import { bindReferralDraftAccessContext, clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
 import type { BoundWardPartialView, WardPartialView } from "./ward-partial-view-contract";
-import { boardNotRefreshed, SAVE_PROBLEMS, saveProblem } from "./ward-save-failure";
+import { boardNotRefreshed, saveProblem } from "./ward-save-failure";
 import {
   ARCHIVED_COLLECTIONS,
   foldArchiveReply,
@@ -52,8 +62,7 @@ import {
 } from "./ward-shared-pending-command";
 export type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
 
-// The shared state schema loads with the first request rather than with every phone page (Josh,
-// 21 Oct 2026: no script budget raises). Until it has loaded, `adopt` refuses every snapshot.
+// Lazy schema keeps the phone budget; adopt refuses snapshots until validation has loaded.
 let isValidSharedState: ((value: unknown) => boolean) | undefined;
 let bindSharedPartialView: typeof import("./ward-partial-view-contract").bindWardPartialView | undefined;
 let mergeSharedPartialView: typeof import("./ward-partial-view-contract").mergeArchivedWardPartialView | undefined;
@@ -82,13 +91,13 @@ export type {
 } from "./ward-shared-client-types";
 /** The lists closed records are archived from, older than 30 days (Josh, 25 Oct 2026). */
 type ArchivedRecords = Record<ArchivedCollection, { id: string }[]>;
-export const WARD_COMMAND_RECOVERY_KEY = "wardflow:pending-command-v1";
+export const WARD_COMMAND_RECOVERY_KEY = COMMAND_RECOVERY_KEY;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Matches the provider: keep the newest entries; sequence keeps advancing past dropped ones. */
 const MAX_SHARED_EVENT_LOG_ENTRIES = 1000;
 const NO_ROLE = "No Ward Flow role is assigned to this account";
 /** P056: one audit row as a desk's Activity reads it; nothing in it names a patient or a person. */
-export type SharedActivityAuditEvent = { sequence: string; action: string; outcome: string; committed_at: string };
+export type { SharedActivityAuditEvent, SharedActivityAuditPage } from "./ward-shared-activity-audit";
 /** A member desk reads its part of the workspace in full at least this often (audit F-04). */
 const FULL_READ_EVERY_MS = 60_000;
 
@@ -100,123 +109,59 @@ export class SharedWorkspaceClient {
   private pending: PendingCommand | null = null;
   private accessTimer: ReturnType<typeof setTimeout> | undefined;
   private recoveryPending = false;
-  private recoveryWrite(commandId: string) {
+  private recoveryStorageUnavailable = false;
+  private recoveryWrite(commandId: string, phase: RecoveryEntry["phase"] = "sent") {
     const { receiptScope, accessUntil } = this.view;
-    if (!receiptScope || !Number.isFinite(accessUntil) || accessUntil! <= Date.now()) return;
-    try {
-      this.options.recoveryStorage?.setItem(
-        WARD_COMMAND_RECOVERY_KEY,
-        JSON.stringify({ commandId, receiptScope, expiresAt: accessUntil }),
-      );
-    } catch {
-      /* Storage refusal keeps the unload warning and same-instance retry. */
-    }
-  }
-  private clearRecovery() {
-    this.recoveryPending = false;
-    try {
-      this.options.recoveryStorage?.removeItem(WARD_COMMAND_RECOVERY_KEY);
-    } catch {
-      /* Storage unavailable. */
-    }
-  }
-  private async recoverReceipt() {
-    if (this.pending || !this.options.recoveryStorage) return;
-    const generation = this.viewGeneration;
-    const grantGeneration = this.grantGeneration;
-    const roleSignal = this.roleLifetime.signal;
-    const receiptScope = this.view.receiptScope;
-    const current = () => {
-      if (
-        this.disposed ||
-        roleSignal.aborted ||
-        generation !== this.viewGeneration ||
-        grantGeneration !== this.grantGeneration ||
-        receiptScope !== this.view.receiptScope ||
-        (Number.isFinite(this.view.accessUntil) && this.view.accessUntil! <= Date.now()) ||
-        (held && held.expiresAt <= Date.now())
-      ) {
-        // Role switches can occur in the promise continuation after request() validated its reply.
-        // Its refresh was deferred by this busy recovery, so ensure the current desk is read next.
-        if (!this.disposed && !this.gated()) this.needsRefresh = true;
-        throw new Error("The recovery view changed; reconnect to check the current desk.");
-      }
-    };
-    let held: { commandId: string; receiptScope: string; expiresAt: number } | undefined;
-    try {
-      const raw = this.options.recoveryStorage.getItem(WARD_COMMAND_RECOVERY_KEY);
-      if (!raw) {
-        if (this.recoveryPending) {
-          this.recoveryPending = false;
-          this.publish({ recovery: undefined });
-        }
-        return;
-      }
-      held = JSON.parse(raw);
-    } catch {
-      this.clearRecovery();
-      this.publish({ recovery: undefined });
-      return;
-    }
-    if (
-      !held ||
-      !UUID.test(held.commandId ?? "") ||
-      held.receiptScope !== this.view.receiptScope ||
-      !Number.isFinite(held.expiresAt) ||
-      held.expiresAt <= Date.now()
-    ) {
-      this.clearRecovery();
-      this.publish({
-        recovery: undefined,
-        ...(held &&
-        held.receiptScope === this.view.receiptScope &&
-        Number.isFinite(held.expiresAt) &&
-        held.expiresAt <= Date.now()
-          ? {
-              recovery:
-                "The previous save receipt has expired. Its outcome is unknown. Review the board before repeating any action.",
-            }
-          : {}),
-      });
-      return;
-    }
-    this.recoveryPending = true;
-    this.publish({
-      status: "saving",
-      recovering: true,
-      recovery: "Checking the previous uncertain save. Changes are disabled until its receipt is checked.",
+    if (!this.options.recoveryStorage || !receiptScope || !Number.isFinite(accessUntil) || accessUntil! <= Date.now())
+      return true;
+    const stored = recordCommandRecovery(this.options.recoveryStorage, {
+      commandId,
+      receiptScope,
+      expiresAt: accessUntil!,
+      phase,
     });
-    current();
-    const { response, value } = await this.request(`/v1/workspace/receipt?commandId=${held.commandId}`);
-    current();
-    if (!response.ok) throw new Error("Receipt unavailable");
-    const outcome = value.receipt?.outcome;
-    if (value.receipt !== null && !["accepted", "partly", "refused"].includes(outcome)) throw new Error("Bad receipt");
-    if (
-      (outcome === "accepted" || outcome === "partly") &&
-      Number.isSafeInteger(value.receipt.commandRevision) &&
-      value.receipt.commandRevision > (this.view.snapshot?.revision ?? 0)
-    ) {
-      const latest = await this.request("/v1/workspace");
-      current();
-      if (!latest.response.ok || latest.value.snapshot?.revision < value.receipt.commandRevision)
-        throw new Error("The accepted save is not yet reflected in the board");
-      this.adopt(latest.value.snapshot);
-      current();
-      this.publish({ access: latest.value.access, accessUntil: latest.value.accessUntil });
-    }
-    current();
-    this.clearRecovery();
-    current();
-    this.publish({
-      status: "ready",
-      recovering: false,
-      recovery:
-        outcome === "accepted" || outcome === "partly"
-          ? `The previous uncertain save was ${outcome === "partly" ? "partially applied" : "accepted"}. Review the refreshed board before acting again.`
-          : outcome === "refused"
-            ? `The previous uncertain save was not applied. ${SAVE_PROBLEMS.refused[1]}`
-            : "No retained receipt was found for the previous uncertain save. Its outcome is unknown. Review the board before repeating any action.",
+    this.recoveryStorageUnavailable = !stored.available;
+    return stored.sendSafe;
+  }
+  private clearRecovery(commandId?: string) {
+    if (!commandId) this.recoveryPending = false;
+    if (this.options.recoveryStorage)
+      this.recoveryStorageUnavailable = !removeCommandRecovery(this.options.recoveryStorage, commandId);
+  }
+
+  private async recoverReceipt() {
+    if (this.pending || this.queue.length || !this.options.recoveryStorage) return;
+    const generation = this.viewGeneration,
+      grantGeneration = this.grantGeneration;
+    const roleSignal = this.roleLifetime.signal,
+      receiptScope = this.view.receiptScope;
+    await recoverCommandReceipts({
+      storage: this.options.recoveryStorage,
+      view: () => this.view,
+      publish: (update) => this.publish(update),
+      remove: (id) => this.clearRecovery(id),
+      request: (path) => this.request(path),
+      adopt: (snapshot) => this.adopt(snapshot),
+      pending: (pending) => {
+        this.recoveryPending = pending;
+      },
+      unavailable: () => {
+        this.recoveryStorageUnavailable = true;
+      },
+      current: (held, checkExpiry = true) => {
+        if (
+          this.disposed ||
+          roleSignal.aborted ||
+          generation !== this.viewGeneration ||
+          grantGeneration !== this.grantGeneration ||
+          receiptScope !== this.view.receiptScope ||
+          (this.view.accessUntil ?? Infinity) <= Date.now() ||
+          (checkExpiry && held.expiresAt <= Date.now())
+        ) {
+          if (!this.disposed && !this.gated()) this.needsRefresh = true;
+          throw new Error("The recovery view changed; reconnect to check the current desk.");
+        }
+      },
     });
   }
 
@@ -257,6 +202,7 @@ export class SharedWorkspaceClient {
       undoStep: metadata?.undoStep,
       ...(partly ? { partly } : {}),
     };
+    if (status !== "failed" && !this.disposed) this.clearRecovery(commandId);
     this.completions.get(commandId)?.(outcome);
     this.completions.delete(commandId);
     if (status !== "failed") {
@@ -301,11 +247,18 @@ export class SharedWorkspaceClient {
       this.settle(this.pending.commandId, "failed", saveProblem("roleChangedWhileSaving"));
     this.cancelAll(saveProblem("roleChanged"), saveProblem("roleChangedWhileSaving"));
   }
-  /**
-   * A signed-out or denied request ends the session. Only a refusal of the pending command itself is
-   * a definite "refused"; when a different request ended the session while the command was already
-   * sent, the server may have applied it, so say that. An unsent command is cancelled by the caller.
-   */
+  /** End the working view before replacing a role or authoritative workspace. */
+  private retireWorkingView() {
+    this.cancelForRoleChange();
+    this.clearRecovery();
+    forgetDowntimePack();
+    this.roleLifetime.abort();
+    this.roleLifetime = new AbortController();
+    this.viewGeneration += 1;
+    this.headRevision = 0;
+    this.sheetSeen = new WeakMap();
+  }
+  /** Only this command's own refusal is definite; a session ending after send leaves its outcome uncertain. */
   private settleForSessionEnd(body: unknown, message: string, answered: boolean) {
     const pending = this.pending;
     if (!pending) return;
@@ -332,11 +285,7 @@ export class SharedWorkspaceClient {
   private workingAsOverride: string | null | undefined;
   /** The revision this tab's own accepted revision-only commands reached, ahead of its snapshot. */
   private headRevision = 0;
-  /**
-   * Audit CS-19: the revision this tab held when each open popup opened. A command asked for from
-   * a popup is checked against that, so the server refuses it when another desk changed the record
-   * while the person was looking, rather than letting an edit made from an older view through.
-   */
+  /** CS-19: popup opening revisions let the server refuse stale edits after another desk changed the record. */
   private sheetSeen = new WeakMap<object, SheetSeen>();
   /** The popups the command in flight was asked for from, while it is in flight. */
   private pendingSheets: readonly object[] | undefined;
@@ -407,11 +356,7 @@ export class SharedWorkspaceClient {
     const tracked = () => new Set([...openSheetHandles(), ...this.queue.flatMap((queued) => queued.sheets ?? [])]);
     markOwnSave(this.sheetSeen, tracked, from, to, sheets, covered);
   }
-  /**
-   * History's archived records for this desk and world generation, as the server last sent them.
-   * They are put back beside the live records of every snapshot this tab publishes, so History,
-   * reports and the patient record still show a closed record after it leaves the live workspace.
-   */
+  /** Server archive for this desk and world; restored beside live records for History and reports. */
   private archive: {
     count: number;
     generation: number;
@@ -551,7 +496,14 @@ export class SharedWorkspaceClient {
     if (this.disposed) return;
     if (update.snapshot === null) {
       // A dropped desk has no inherited access deadline. Preserve an explicit replacement.
-      update = { executiveSnapshot: null, accessUntil: undefined, recovery: undefined, ...update };
+      update = {
+        executiveSnapshot: null,
+        workspaceId: undefined,
+        accessUntil: undefined,
+        recovery: undefined,
+        recoveryResults: undefined,
+        ...update,
+      };
       this.archive = null;
       this.archiveAsked = null;
       this.rawPayload = null;
@@ -568,6 +520,8 @@ export class SharedWorkspaceClient {
       ...update,
       viewEpoch: (this.view.viewEpoch ?? 0) + (changedLifetime ? 1 : 0),
       recovering: this.recoveryPending,
+      recoveryStorageUnavailable: this.recoveryStorageUnavailable,
+      pendingCount: (this.pending ? 1 : 0) + this.queue.length,
       unconfirmedSave: this.pending !== null || this.queue.length > 0 || this.recoveryPending,
       waiting: this.offlineHold ? (this.pending ? 1 : 0) + this.queue.length : 0,
     };
@@ -622,8 +576,7 @@ export class SharedWorkspaceClient {
         this.archiveAsked = null;
         this.archiveEpoch++;
       }
-      // Keep the held object for every unchanged record, list and map (audit PS-06), so a change
-      // re-renders only what reads the changed records (`ward-shared-client-reuse.ts`).
+      // PS-06: reuse unchanged records and lists, including on permission-only full polls.
       if (!unchanged) this.rawPayload = reuseUnchangedPayload(this.rawPayload, snapshot.payload);
       const raw = this.rawPayload!;
       const payload = reuseUnchangedPayload(held?.payload, this.withArchive(raw, snapshot.accessContext));
@@ -735,8 +688,9 @@ export class SharedWorkspaceClient {
       if (path === "/v1/workspace/commands" && body && "commandId" in body) {
         if (Number.isFinite(this.view.accessUntil) && this.view.accessUntil! <= Date.now())
           throw new Error(`Access verification expired. ${saveProblem("notReady")}`);
+        if (!this.recoveryWrite(body.commandId as string))
+          throw new Error("Safe reload recovery could not be recorded.");
         this.sentCommandId = body.commandId as string;
-        this.recoveryWrite(this.sentCommandId);
       }
       if (body && this.options.authenticatedActorId)
         sentBinding =
@@ -909,6 +863,23 @@ export class SharedWorkspaceClient {
       if (generation !== this.viewGeneration || grantGeneration !== this.grantGeneration || epoch !== this.roleEpoch)
         return;
       if (!response.ok) throw new Error("Workspace unavailable");
+      const workspaceId =
+        typeof value.workspaceId === "string" && value.workspaceId.trim() ? value.workspaceId : undefined;
+      if (this.view.snapshot && workspaceId !== this.view.workspaceId) {
+        // The endpoint may have been rebound to another workspace at the same revision. Retire
+        // its commands, openings and receipt before asking for that workspace's full board.
+        this.retireWorkingView();
+        this.publish({
+          snapshot: null,
+          workspaceId,
+          eventLog: [],
+          access: undefined,
+          actorId: null,
+          status: "loading",
+          error: null,
+        });
+        return;
+      }
       const bound = await bindWorkspaceReply(
         {
           ...this.bindingHost(),
@@ -941,7 +912,9 @@ export class SharedWorkspaceClient {
       // Gate nested dispatches from changed() before exposing a recovered board as ready.
       try {
         this.recoveryPending =
-          !this.pending && (this.recoveryPending || !!this.options.recoveryStorage?.getItem(WARD_COMMAND_RECOVERY_KEY));
+          !this.pending &&
+          !this.queue.length &&
+          (this.recoveryPending || readCommandRecovery(this.options.recoveryStorage).entries.length > 0);
       } catch {
         /* Storage unavailable. */
       }
@@ -954,6 +927,7 @@ export class SharedWorkspaceClient {
             }
           : { status: "ready" as const, error: this.view.status === "unavailable" ? null : this.view.error }),
         access: actualAccess,
+        workspaceId,
         workingAs: typeof value.workingAs === "string" ? value.workingAs : null,
         actorId: typeof value.actorId === "string" ? value.actorId : null,
         canSwitch: !!this.workingAs(),
@@ -1009,12 +983,21 @@ export class SharedWorkspaceClient {
       });
     const roleSignal = this.roleLifetime.signal;
     const generation = this.viewGeneration;
+    const worldEpoch = this.worldEpoch;
+    const worldGeneration = this.view.snapshot.payload.state.worldGeneration;
+    const replacesWorld = event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO";
     const currentOutcome = (outcome: WardCommandOutcome): WardCommandOutcome => {
-      const worldEpoch = this.worldEpoch;
       return {
         ...outcome,
         isCurrent: () =>
-          !this.disposed && !roleSignal.aborted && generation === this.viewGeneration && this.worldEpoch === worldEpoch,
+          !this.disposed &&
+          !roleSignal.aborted &&
+          generation === this.viewGeneration &&
+          (this.worldEpoch === worldEpoch ||
+            (replacesWorld &&
+              outcome.status === "accepted" &&
+              this.worldEpoch === worldEpoch + 1 &&
+              this.view.snapshot?.payload.state.worldGeneration === worldGeneration + 1)),
         canUndo: () => !!this.view.snapshot && ["ready", "saving"].includes(this.view.status),
       };
     };
@@ -1037,6 +1020,7 @@ export class SharedWorkspaceClient {
       sheets: this.openSheetsNoted(),
     });
     // Made while offline: pinned now, before a resend can adopt a newer board.
+    this.recoveryWrite(commandId, "queued");
     if (this.offlineHold) pinToBoard(this.queue.slice(-1), this.sheetSeen, this.held());
     // #817: a poll in flight is stopped (reads change nothing) so the save goes now, not after it.
     this.pollAbort?.abort();
@@ -1081,7 +1065,7 @@ export class SharedWorkspaceClient {
         if (response.status >= 500) throw new Error("Save not confirmed");
         if (value.responseBindingChanged) {
           this.sentCommandId = null;
-          this.clearRecovery();
+          this.clearRecovery(command.commandId);
           this.pending = null;
           this.settle(command.commandId, response.ok ? "accepted" : "refused");
           this.needsRefresh = true;
@@ -1135,7 +1119,7 @@ export class SharedWorkspaceClient {
         }
         // Keep the uncertain-save marker until the returned board has passed adoption checks.
         this.sentCommandId = null;
-        this.clearRecovery();
+        this.clearRecovery(command.commandId);
         if (response.ok)
           this.ownSaveLanded(
             command.expectedRevision,
@@ -1256,10 +1240,7 @@ export class SharedWorkspaceClient {
   pushSubscribe = (subscription: push.PushSubscriptionShape) => push.pushSubscribe(this.ask, subscription);
   pushStatus = (endpoint: string) => push.pushStatus(this.ask, endpoint);
   pushUnsubscribe = (endpoint: string) => push.pushUnsubscribe(this.ask, endpoint);
-  /**
-   * Readiness review item 9: tells the server this desk opened a patient's record (patient, movement or referral page, D-80), for a
-   * log nobody can change. Best effort, and a repeat within a minute is ignored. True once the record's detail (H-0731) is shown.
-   */
+  /** D-80: log an opening best-effort; true only once its H-0731 detail was adopted. */
   async logRecordView(patientId: string, surface: RecordViewSurface): Promise<boolean> {
     if (this.view.executiveSnapshot || !this.view.snapshot) return false;
     const asked = this.recordDetail.view; // H-0731: a logged opening also sends that record's detail.
@@ -1283,16 +1264,56 @@ export class SharedWorkspaceClient {
       openings: Array.isArray(value?.openings) ? value.openings : [],
     };
   }
-  /** P056: the newest audit page this desk may read, for the Activity feed (/v1/workspace/audit). */
-  async readActivityAudit(): Promise<SharedActivityAuditEvent[]> {
-    const { response, value } = await this.request("/v1/workspace/audit");
-    if (!response.ok || !Array.isArray(value?.events)) throw new Error("Activity could not be read");
-    return value.events;
-  }
   /**
-   * Readiness review item 8: ends this sign-in on the server, so its token is refused at once
-   * rather than when it expires. True when the server recorded it.
+   * Audit pages keep completeness and the permitted continuation cursor. P056: rows are reduced to
+   * the Activity contract (with this actor's own command id) and refused if the desk changed meanwhile.
    */
+  readActivityAuditPage = async (before?: string) => {
+    const generation = this.viewGeneration;
+    const context = this.view.snapshot?.accessContext;
+    const page = await activityAudit.readActivityAuditPage(this.ask, before);
+    return { ...page, events: await this.ownActivityEvents(page.events, generation, context) };
+  };
+  /** Compatibility for callers that only need the newest permitted audit page. */
+  readActivityAudit = async () => {
+    const generation = this.viewGeneration;
+    const context = this.view.snapshot?.accessContext;
+    return this.ownActivityEvents(await activityAudit.readActivityAudit(this.ask), generation, context);
+  };
+  private async ownActivityEvents(
+    events: SharedActivityAuditEvent[],
+    generation: number,
+    context: string | undefined,
+  ): Promise<SharedActivityAuditEvent[]> {
+    const { activityAuditEvents } = await import("./ward-own-command-receipt");
+    if (this.disposed || generation !== this.viewGeneration || context !== this.view.snapshot?.accessContext)
+      throw new Error("Activity could not be read");
+    return activityAuditEvents(events);
+  }
+  /** An outcome belongs to this actor; Undo attribution additionally belongs to this exact desk. */
+  async readOwnCommand(commandId: string) {
+    if (!UUID.test(commandId) || this.view.status !== "ready" || !this.accessChangeAllowed())
+      throw new Error("The change could not be checked");
+    const generation = this.viewGeneration,
+      grant = this.grantGeneration,
+      actor = this.view.actorId;
+    const context = this.view.snapshot?.accessContext;
+    const { response, value } = await this.request(`/v1/workspace/receipt?commandId=${encodeURIComponent(commandId)}`);
+    const { ownCommandReceipt } = await import("./ward-own-command-receipt");
+    if (
+      !response.ok ||
+      this.disposed ||
+      this.view.status !== "ready" ||
+      !this.accessChangeAllowed() ||
+      generation !== this.viewGeneration ||
+      grant !== this.grantGeneration ||
+      actor !== this.view.actorId ||
+      context !== this.view.snapshot?.accessContext
+    )
+      throw new Error("The workspace or working role changed. Review the current board.");
+    return ownCommandReceipt(value?.receipt);
+  }
+  /** End the server sign-in immediately; true only when the server recorded it. */
   async signOutServer(): Promise<boolean> {
     const { response, value } = await this.request("/v1/workspace/sign-out", {});
     return response.ok && value?.signedOut === true;
@@ -1300,14 +1321,7 @@ export class SharedWorkspaceClient {
   /** Work as one of this account's roles (`choose-role`), then read the board again. */
   chooseRole = (workingAs: string) => {
     if (workingAs !== "bootstrap" && !UUID.test(workingAs)) return;
-    this.cancelForRoleChange();
-    this.clearRecovery();
-    forgetDowntimePack();
-    this.roleLifetime.abort();
-    this.roleLifetime = new AbortController();
-    this.viewGeneration += 1;
-    this.headRevision = 0;
-    this.sheetSeen = new WeakMap();
+    this.retireWorkingView();
     this.workingAsOverride = workingAs;
     this.options.workingAs?.set(workingAs);
     this.publish({ snapshot: null, eventLog: [], status: "loading", choices: undefined, error: null });
@@ -1315,12 +1329,7 @@ export class SharedWorkspaceClient {
   };
   /** Forget the role worked as, so the server lists this account's roles again. */
   switchRole = () => {
-    this.cancelForRoleChange();
-    this.clearRecovery();
-    forgetDowntimePack();
-    this.roleLifetime.abort();
-    this.roleLifetime = new AbortController();
-    this.viewGeneration += 1;
+    this.retireWorkingView();
     this.workingAsOverride = null;
     this.options.workingAs?.set(null);
     this.publish({ snapshot: null, eventLog: [], status: "loading", error: null });
@@ -1355,10 +1364,7 @@ export class SharedWorkspaceClient {
       requests: Array.isArray(value.requests) ? value.requests : [],
     };
   }
-  /**
-   * The newest record openings for the Access log (D-80 item 14). Only the statewide coordinator
-   * and the access admin are answered; anyone else is refused.
-   */
+  /** D-80: newest openings; only statewide coordinator and access admin may read them. */
   async listRecordViews(): Promise<SharedRecordView[]> {
     const { response, value } = await this.request("/v1/workspace/record-access");
     if (!response.ok)
@@ -1399,17 +1405,10 @@ export class SharedWorkspaceClient {
     return this.change("/v1/workspace/access/cover", input);
   }
   decideRequest(requestId: string, decision: "approved" | "declined", expiresInMinutes: number) {
-    return this.change("/v1/workspace/access/decide", {
-      requestId,
-      decision,
-      expiresInMinutes,
-    });
+    return this.change("/v1/workspace/access/decide", { requestId, decision, expiresInMinutes });
   }
-  /**
-   * Open one record outside this desk's care, read only, for the set window. The server checks
-   * the reason (from the list, never typed text), records it, and answers with the board as the
-   * desk now sees it, so the record shows at once.
-   */
+  /** Open one out-of-care record read only for the window. The server checks and records the listed
+   *  reason (never typed text) and answers with the board, so the record shows at once. */
   async breakGlass(patientId: string, reason: string): Promise<SharedChangeResult> {
     if (!this.accessChangeAllowed())
       return "Opening records is unavailable. Reconnect and finish checking any uncertain save first.";
@@ -1470,16 +1469,13 @@ export class SharedWorkspaceClient {
     if (this.pending) await this.drain();
     else await this.refresh();
   };
-  /**
-   * P172 (Josh, 28 Oct 2026): the person reads the outcome of an uncertain save and dismisses it.
-   * Never while the receipt is still being checked, since that message tells the person the board is locked until the receipt is read.
-   */
+  /** P172: dismiss a read outcome, keeping an unresolved receipt's warning until it settles. */
   dismissRecovery = (shown?: string) => {
     if (this.disposed || this.view.recovering || this.view.recovery === undefined) return;
     // A newer outcome than the one the person read stays until they read it.
     if (shown !== undefined && shown !== this.view.recovery) return;
     // Putting a message away is not news about the board, so what the status bar knows stays as it was.
-    this.publish({ recovery: undefined, boardCurrent: this.view.boardCurrent });
+    this.publish({ recovery: undefined, recoveryResults: undefined, boardCurrent: this.view.boardCurrent });
   };
   dispose() {
     this.disposed = true;

@@ -1162,3 +1162,26 @@ describe("M3: the worklist leads and check in lives on Transport (3 Nov 2026)", 
     expect(screen.queryByTestId("transport-check-in")).toBeNull();
   });
 });
+
+describe("movement detail browser history", () => {
+  it("restores the exact owned movement on Forward, closes on Back, and retains Next metadata", () => {
+    const nextState = { __NA: true, tree: ["ward-flow"] };
+    window.history.replaceState(nextState, "", "/ward-flow/movements");
+    renderScreen();
+    const row = findRecordRow(screen.getByRole("region", { name: /Movement worklist/u }), "WF-001");
+    fireEvent.click(within(row).getByRole("button", { name: /What is recorded/u }));
+    const detailState = window.history.state;
+    expect(detailState).toEqual({ ...nextState, wardMovementDetail: "WF-001" });
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    act(() => window.dispatchEvent(new PopStateEvent("popstate", { state: nextState })));
+    expect(screen.queryByRole("dialog")).toBeNull();
+    act(() => window.dispatchEvent(new PopStateEvent("popstate", { state: detailState })));
+    expect(screen.getByRole("dialog")).toHaveAttribute("aria-labelledby", "ward-movement-drawer-title-WF-001");
+    for (const state of [null, {}, { wardMovementDetail: 1 }, { wardMovementDetail: "missing-movement" }]) {
+      act(() => window.dispatchEvent(new PopStateEvent("popstate", { state })));
+      expect(screen.queryByRole("dialog")).toBeNull();
+      act(() => window.dispatchEvent(new PopStateEvent("popstate", { state: detailState })));
+      expect(screen.getByRole("dialog")).toHaveAttribute("aria-labelledby", "ward-movement-drawer-title-WF-001");
+    }
+  });
+});

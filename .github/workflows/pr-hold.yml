@@ -11,19 +11,12 @@ on:
     branches: [main]
   merge_group:
     types: [checks_requested]
-  # Only for the budget heal bot's PR (ward-flow-budget-heal.yml), whose own events start no
-  # workflows. Any other dispatch fails closed.
-  workflow_dispatch:
-    inputs:
-      pr:
-        description: Budget heal pull request number
-        required: true
 
 permissions:
   pull-requests: read
 
 concurrency:
-  group: ward-hold-${{ github.event.pull_request.number || github.event.merge_group.head_sha || inputs.pr }}
+  group: ward-hold-${{ github.event.pull_request.number || github.event.merge_group.head_sha }}
   cancel-in-progress: true
 
 jobs:
@@ -56,21 +49,3 @@ jobs:
             exit 1
           fi
           echo "PR #$pr not held."
-      - name: Block the budget heal PR if it is labelled hold
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR: ${{ inputs.pr }}
-          DISPATCH_REF: ${{ github.ref_name }}
-        run: |
-          set -euo pipefail
-          case "$DISPATCH_REF" in
-            ward-flow-bot/script-budget-*) ;;
-            *) echo "::error::Manual runs are only for the budget heal bot's branch; failing closed."; exit 1 ;;
-          esac
-          [[ "$PR" =~ ^[0-9]+$ ]] || { echo "::error::invalid PR number"; exit 1; }
-          if gh api "repos/$GITHUB_REPOSITORY/issues/$PR/labels" --jq '.[].name' | grep -qx hold; then
-            echo "::error::PR #$PR is labelled hold."
-            exit 1
-          fi
-          echo "PR #$PR not held."

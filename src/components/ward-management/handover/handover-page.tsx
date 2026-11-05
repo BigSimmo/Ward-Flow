@@ -30,6 +30,7 @@ import { wardPlaceLookup } from "@/components/ward-management/ward-access-places
 import { accessIsWholeNetwork, unitInScope } from "@/components/ward-management/ward-role-access";
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
+import { useWardPartialDisplay, useWardPartialDisplayHost } from "@/components/ward-management/ward-partial-view";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
@@ -92,7 +93,7 @@ import {
   summaryText,
   toHandoverRow,
   toHandoverWard,
-  STAGE_LABEL,
+  handoverStatusLabel,
   nextStep,
   type HandoverChip,
   type HandoverGrouping,
@@ -223,6 +224,8 @@ export function HandoverPage() {
     "inboxSnoozes",
   );
   const now = useWardFlowClock();
+  const partialDisplay = useWardPartialDisplay();
+  const partialHost = useWardPartialDisplayHost();
   const access = useEffectiveWardAccess();
   // Role branches: the nurse in charge's one ward (no scope picker, empty groups folded), and the ED
   // clinician's own department (no Beds tab, no bed counts, no sign-off).
@@ -278,6 +281,7 @@ export function HandoverPage() {
   const shortcutScopeRef = useRef<HTMLElement | null>(null);
   const keysTriggerRef = useRef<HTMLButtonElement | null>(null);
   const signOffRef = useRef<HTMLDivElement | null>(null);
+  const focusDepartedNotice = useCallback((node: HTMLParagraphElement | null) => node?.focus(), []);
 
   useDirtyStateGuard({ isDirty: meetingStartedAt !== null });
 
@@ -298,19 +302,29 @@ export function HandoverPage() {
     () =>
       movements
         .filter((movement) => isOpen(movement) || isStoppedTransportAwaitingRelease(movement))
-        .map((movement) => ({
-          ...toHandoverRow(movement, units, patients, referrals),
-          actNow: actNowMovementIds.has(movement.id),
-        })),
-    [movements, units, patients, referrals, actNowMovementIds],
+        .map((movement) => {
+          const sender = partialDisplay?.movements.find((row) => row.id === movement.id);
+          return {
+            ...toHandoverRow(
+              movement,
+              units,
+              patients,
+              referrals,
+              admissions,
+              sender?.kind === "sender" ? sender : partialHost.senderRequired ? null : undefined,
+            ),
+            actNow: actNowMovementIds.has(movement.id),
+          };
+        }),
+    [movements, units, patients, referrals, admissions, partialDisplay, partialHost.senderRequired, actNowMovementIds],
   );
   const rows = useMemo(
-    () => allRows.filter((row) => movementInHandoverScope(row.movement, scope, units, referrals)),
-    [allRows, scope, units, referrals],
+    () => allRows.filter((row) => movementInHandoverScope(row.movement, scope, units, referrals, admissions)),
+    [allRows, scope, units, referrals, admissions],
   );
   const outside = useMemo(
-    () => allRows.filter((row) => !movementInHandoverScope(row.movement, scope, units, referrals)),
-    [allRows, scope, units, referrals],
+    () => allRows.filter((row) => !movementInHandoverScope(row.movement, scope, units, referrals, admissions)),
+    [allRows, scope, units, referrals, admissions],
   );
   const deskPlaces = useMemo(() => wardPlaceLookup(units), [units]);
   const allWards = useMemo(
@@ -351,11 +365,11 @@ export function HandoverPage() {
       if (pill !== null && !pillTest(pill, row, now, cutoff, newSince)) return false;
       for (const chip of chips) {
         const definition = HANDOVER_CHIPS.find((candidate) => candidate.id === chip);
-        if (definition && !definition.test(row, now)) return false;
+        if (definition && !definition.test(row, now, access.role === "admin" ? undefined : access.role)) return false;
       }
       return true;
     },
-    [pill, chips, now, cutoff, newSince],
+    [pill, chips, now, cutoff, newSince, access.role],
   );
   const groups = useMemo(() => groupRows(rows, grouping, sort, now, cutoff), [rows, grouping, sort, now, cutoff]);
   const visibleOrder = useMemo(
@@ -694,6 +708,12 @@ export function HandoverPage() {
       {!passed ? signOffGate.note : null}
     </div>
   );
+  const departedPanel =
+    selectedId !== null && !selected ? (
+      <p ref={focusDepartedNotice} role="status" tabIndex={-1}>
+        This journey is no longer open in Handover. Check the patient record for its latest status.
+      </p>
+    ) : null;
   const flowPanel = selected ? (
     <HandoverFlowPanel
       row={selected}
@@ -713,8 +733,14 @@ export function HandoverPage() {
   const portraitRail = (signedLine: string | null, checksDone: number) =>
     !signOffPanel && !flowPanel ? null : (
       <PortraitRail
-        title={selected ? selected.name : "Sign off"}
-        summary={selected ? "Patient flow" : (signedLine ?? `${checksDone} of ${signChecks.length} checks`)}
+        title={selected ? selected.name : selectedId !== null ? "Journey no longer open" : "Sign off"}
+        summary={
+          selected
+            ? "Patient flow"
+            : selectedId !== null
+              ? "Check the patient record"
+              : (signedLine ?? `${checksDone} of ${signChecks.length} checks`)
+        }
         open={drawerOpen}
         onOpenChange={(open) => {
           // The trigger opens the rest state (sign off); closing returns to it.
@@ -722,7 +748,7 @@ export function HandoverPage() {
           setDrawerOpen(open);
         }}
       >
-        {flowPanel ?? signOffPanel}
+        {flowPanel ?? departedPanel ?? signOffPanel}
       </PortraitRail>
     );
 
@@ -783,7 +809,7 @@ export function HandoverPage() {
       key={chip.id}
       pressed={chips.has(chip.id)}
       onPressedChange={() => toggleChip(chip.id)}
-      count={rows.filter((row) => chip.test(row, now)).length}
+      count={rows.filter((row) => chip.test(row, now, access.role === "admin" ? undefined : access.role)).length}
     >
       {chip.label}
     </FilterChip>
@@ -799,7 +825,11 @@ export function HandoverPage() {
           id: chip.id,
           label: chip.label,
           checked: chips.has(chip.id),
-          meta: <span className={styles.mono}>{rows.filter((row) => chip.test(row, now)).length}</span>,
+          meta: (
+            <span className={styles.mono}>
+              {rows.filter((row) => chip.test(row, now, access.role === "admin" ? undefined : access.role)).length}
+            </span>
+          ),
           onSelect: () => toggleChip(chip.id),
         })),
       ]}
@@ -884,7 +914,8 @@ export function HandoverPage() {
           drawerOpen={drawerOpen}
           onCloseDrawer={() => setDrawerOpen(false)}
           flowPanel={flowPanel}
-          signOffPanel={signOffPanel}
+          signOffPanel={departedPanel ?? signOffPanel}
+          journeyUnavailable={!!departedPanel}
           outsideAct={scope.kind !== "network" ? outsideAct : []}
           selected={selected}
           onCopyIsbar={copyIsbar}
@@ -896,7 +927,7 @@ export function HandoverPage() {
           chips={deskChips.map((chip) => ({
             id: chip.id,
             label: chip.label,
-            count: rows.filter((row) => chip.test(row, now)).length,
+            count: rows.filter((row) => chip.test(row, now, access.role === "admin" ? undefined : access.role)).length,
             pressed: chips.has(chip.id),
             onToggle: () => toggleChip(chip.id),
           }))}
@@ -1400,7 +1431,7 @@ export function HandoverPage() {
               return {
                 id: row.id,
                 name: row.name,
-                sub: `${row.umrn} · T${row.tier} · ${STAGE_LABEL[row.stage]}`,
+                sub: `${row.umrn} · T${row.tier} · ${handoverStatusLabel(row)}`,
                 figure: durMinutes(now - row.openedAt),
                 figureNote: "waiting",
                 tone: rowTone(row, ctx),
@@ -1418,11 +1449,11 @@ export function HandoverPage() {
   } else {
     body = (
       <TabPanel idPrefix="ward-handover-tab" id="pts">
-        <div className={`${styles.split} ${wide || !flowPanel ? styles.splitFull : ""}`}>
+        <div className={`${styles.split} ${wide || !(flowPanel ?? departedPanel) ? styles.splitFull : ""}`}>
           {table}
-          {wide || !flowPanel ? null : (
+          {wide || !(flowPanel ?? departedPanel) ? null : (
             <aside className={styles.side} aria-label="Patient flow" data-wf-rail="1201">
-              {flowPanel}
+              {flowPanel ?? departedPanel}
             </aside>
           )}
         </div>
@@ -1448,9 +1479,9 @@ export function HandoverPage() {
         <Drawer
           open={drawerOpen && (wide ? (flowPanel ?? signOffPanel) : signOffPanel) !== null}
           onClose={() => setDrawerOpen(false)}
-          title={selected ? selected.name : "Sign off"}
+          title={selected ? selected.name : selectedId !== null ? "Journey no longer open" : "Sign off"}
         >
-          {flowPanel ?? signOffPanel}
+          {flowPanel ?? departedPanel ?? signOffPanel}
         </Drawer>
       ) : null}
       <WardPrototypeFooter

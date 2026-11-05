@@ -130,7 +130,11 @@ export function WardPwaRegistration() {
     };
 
     const onControllerChange = () => {
-      if (reloadRequested) window.location.reload();
+      if (!reloadRequested) return;
+      // Consume the one requested reload before the browser can cancel it for unsaved work.
+      // A later controller event must never replay a cancelled navigation.
+      reloadRequested = false;
+      window.location.reload();
     };
     const onMessage = (event: MessageEvent) => {
       const target = wardPwaOpenTarget(event.data, window.location.origin);

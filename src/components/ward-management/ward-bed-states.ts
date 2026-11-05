@@ -2,7 +2,11 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { pulledBedAvailability } from "@/components/ward-management/ward-ready-beds";
-import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
+import {
+  numberedReservationBeds,
+  type ReservationReferral as BaseReservationReferral,
+} from "@/components/ward-management/ward-movement-bed-hold";
 
 /**
  * The ward's bed states, as ruled (R-B-05, 2026-09-04, "option 2"; R-B-09 "Ready, everywhere";
@@ -37,11 +41,25 @@ export type BedStateCounts = {
   onLeave: number;
 };
 
+export type ReservationReferral = BaseReservationReferral | Movement;
+
+/** Named holds not yet taken up by a stay: the same rule the pull gates use (WF-CAP-001). */
+function namedReservationCount(
+  unit: Unit,
+  admissions: readonly Admission[],
+  referrals: readonly ReservationReferral[],
+): number {
+  const movements = referrals.filter((row): row is Movement => "stage" in row);
+  const others = referrals.filter((row): row is BaseReservationReferral => !("stage" in row));
+  return numberedReservationBeds(unit, admissions, movements, others).size;
+}
+
 export function bedStates(
   unit: Unit,
   admissions: readonly Admission[],
   bedReleases: BedRelease[],
   leaveBeds: readonly LeaveBed[],
+  referrals: readonly ReservationReferral[] = [],
 ): BedStateCounts {
   const capacity = unitCapacity(unit, bedReleases);
   let livePulled = 0;
@@ -54,12 +72,15 @@ export function bedStates(
   // Clamped to the box each one sits in, so a malformed fixture can never push a box negative or
   // the four past the ward's beds.
   const { ready, pulledFromEmpty, pulledFromAvailable } = pulledBedAvailability(unit, livePulled);
+  const named = namedReservationCount(unit, admissions, referrals);
+  const namedFromReady = Math.min(named, ready);
+  const namedFromClosed = Math.min(named - namedFromReady, capacity.held - pulledFromEmpty);
   const pulledFromOccupied = Math.min(seededPulled, capacity.occupied);
   const occupied = capacity.occupied - pulledFromOccupied;
   return {
-    ready,
-    pulled: pulledFromEmpty + pulledFromAvailable + pulledFromOccupied,
-    closed: capacity.held - pulledFromEmpty + capacity.blocked,
+    ready: ready - namedFromReady,
+    pulled: pulledFromEmpty + pulledFromAvailable + pulledFromOccupied + namedFromReady + namedFromClosed,
+    closed: capacity.held - pulledFromEmpty - namedFromClosed + capacity.blocked,
     occupied,
     beingMadeReady: bedsPendingPreparation(unit.id, bedReleases),
     onLeave: Math.min(leaveBeds.filter((bed) => bed.unitId === unit.id).length, occupied),
@@ -73,8 +94,13 @@ export function bedStates(
  * box through `bedStates`. New pulls use the same reservation partition through
  * `pulledBedAvailability`; physical arrivals keep their separate recording rules.
  */
-export function readyBedsNow(unit: Unit, admissions: readonly Admission[], bedReleases: readonly BedRelease[]): number {
-  return bedStates(unit, admissions, [...bedReleases], []).ready;
+export function readyBedsNow(
+  unit: Unit,
+  admissions: readonly Admission[],
+  bedReleases: readonly BedRelease[],
+  referrals: readonly ReservationReferral[] = [],
+): number {
+  return bedStates(unit, admissions, [...bedReleases], [], referrals).ready;
 }
 
 /** `readyBedsNow` summed over a set of wards. */
@@ -82,8 +108,9 @@ export function totalReadyBedsNow(
   units: readonly Unit[],
   admissions: readonly Admission[],
   bedReleases: readonly BedRelease[],
+  referrals: readonly ReservationReferral[] = [],
 ): number {
-  return units.reduce((sum, unit) => sum + readyBedsNow(unit, admissions, bedReleases), 0);
+  return units.reduce((sum, unit) => sum + readyBedsNow(unit, admissions, bedReleases, referrals), 0);
 }
 
 /** The ruled words, spelled once. */

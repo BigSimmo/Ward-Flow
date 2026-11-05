@@ -75,6 +75,28 @@ describe("Dismiss on the uncertain-save outcome (view)", () => {
     expect(screen.getByTestId("ward-shared-recovery-outcome")).toHaveFocus();
   });
 
+  it("names each recovered change's outcome in plain words, not internal codes", () => {
+    render(
+      <WardSharedAccess
+        connection={connection({
+          recovery: ACCEPTED,
+          recoveryResults: [
+            { commandId: "11111111-1111-4111-8111-111111111111", outcome: "accepted" },
+            { commandId: "22222222-2222-4222-8222-222222222222", outcome: "unsent" },
+            { commandId: "33333333-3333-4333-8333-333333333333", outcome: "expired" },
+          ],
+        })}
+      >
+        <p>Board</p>
+      </WardSharedAccess>,
+    );
+    const list = screen.getByRole("list", { name: "Recovered changes" });
+    expect(list).toHaveTextContent("Change 1: saved.");
+    expect(list).toHaveTextContent("Change 2: not sent before the reload.");
+    expect(list).toHaveTextContent("Change 3: outcome not known, the check ran out of time.");
+    expect(list).not.toHaveTextContent(/unsent|expired|accepted/);
+  });
+
   it("does not offer Dismiss while the receipt is still being checked", () => {
     render(
       <WardSharedAccess

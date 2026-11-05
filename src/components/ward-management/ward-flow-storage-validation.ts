@@ -1,4 +1,5 @@
 import { validDischargeRequestNamespace } from "./ward-discharge-records";
+import { restoreRuleProblem, storedPlacementInvariants } from "./ward-flow-storage-invariants";
 import { hasDuplicateRetainedUmrns } from "./ward-retained-umrn";
 import {
   RESTRICTIVE_PRACTICE_IDS,
@@ -18,11 +19,11 @@ import {
   isPlannedAdmissionStayDays,
   PLANNED_ADMISSION_INITIALS_PATTERN,
   PLANNED_ADMISSION_STATES,
+  isStayBlockRecords,
 } from "./ward-admissions";
 import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/referral-submission";
 import { REFERRAL_INFORMATION_NEED_IDS } from "./referrals/referral-information-needs";
 import { REFERRAL_CONTACT_OUTCOME_IDS, REFERRAL_OWNER_DESKS } from "./referrals/referral-owner-and-calls";
-// Closing-the-loop package A (24 Oct 2026): response commitments.
 import { REFERRAL_COMMITMENT_STEP_IDS } from "./referrals/referral-commitments";
 import {
   MOVEMENT_STAGES,
@@ -40,7 +41,6 @@ import {
 import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
 import { WARD_CLOSURE_REASONS, type WardClosureReason } from "./capacity/ward-closure";
-// Closing the loop, package D (24 Oct 2026).
 import {
   ACCEPTANCE_CONDITION_AGREED_WITH,
   ACCEPTANCE_CONDITION_KINDS,
@@ -75,7 +75,7 @@ import {
 import { isSnoozeReason } from "./ward-inbox-snooze";
 import { scenarioWardNetwork, WARD_SCENARIOS } from "./ward-scenarios";
 import { communityTeamById } from "./community/community-derivations";
-import { syntheticGovernanceAuditEvents } from "./ward-governance-seed";
+import { syntheticGovernanceAuditEvents, withSeededReviewIds } from "./ward-governance-seed";
 import { isBreakGlassReviewId } from "./ward-break-glass-review-id";
 import { UNDO_STEP_ACTIONS } from "./ward-undo";
 import { BED_RELEASE_BLOCKERS } from "./ward-change-reasons";
@@ -87,11 +87,7 @@ import { upgradeLegacyObservationRows } from "./ward-observation-legacy";
 import { isTentativeDiagnosisBlock } from "./ward-diagnosis";
 import { isCommunityReferralPurpose } from "./ward-model-referral-parts";
 
-/**
- * The device copy's stand-in for the `n`th typed patient specific criterion (1 based). Numbered from
- * the second, because each criterion on a list must be distinct to be ticked (21 Oct 2026, the
- * typed-text device copy, D-72).
- */
+// D-72: numbered device-copy stand-ins keep typed criteria distinct.
 export function typedCriterionNotKept(n: number): string {
   return n === 1 ? TYPED_TEXT_NOT_KEPT : `${TYPED_TEXT_NOT_KEPT} (${n})`;
 }
@@ -100,11 +96,7 @@ const CRITERION_STAND_INS: ReadonlySet<string> = new Set(
   Array.from({ length: PATIENT_SPECIFIC_CRITERIA_MAX }, (_, index) => typedCriterionNotKept(index + 1)),
 );
 
-/**
- * A record browser storage may hold since 21 Oct 2026 (D-72): fixed-list criteria, and patient
- * specific criteria only as the device copy's stand-ins. The typed words themselves are still
- * refused on restore (D-18, D-65).
- */
+// D-18/D-65/D-72: restore fixed criteria and typed-text stand-ins only.
 function isDeviceCopyDischargeCriteriaRecord(value: unknown): value is DischargeCriteriaRecord {
   return (
     isDischargeCriteriaRecord(value) &&
@@ -112,15 +104,9 @@ function isDeviceCopyDischargeCriteriaRecord(value: unknown): value is Discharge
   );
 }
 
-// The stored-state fence runs in three passes, each only on what the previous one accepted:
-//  1. `nested` walks every value: finite numbers only, no prototype keys, and the fixed shape of
-//     each known history or record key wherever it appears.
-//  2. `storedState` (zod) checks each collection's row shape, its fixed lists, and the facts one
-//     row holds about itself.
-//  3. `consistent` checks the links between rows and the counts they must agree with.
-// `nested` refuses an `undefined` value under any key, so `.optional()` below means "absent".
-// Objects are loose (unknown keys pass) except where a refusal of extra keys is noted: a CTO, an
-// absence and a patient's identity fields, which must never carry restored free text.
+// Restore validates nested values, collection shapes, then cross-row consistency in order.
+// `nested` refuses undefined, so optional fields must be absent. Strict identity/care records
+// refuse unknown keys to prevent restoring free text.
 
 type RecordValue = Record<string, unknown>;
 const object = (v: unknown): v is RecordValue => typeof v === "object" && v !== null && !Array.isArray(v);
@@ -601,6 +587,7 @@ const admission = z.looseObject({
   dischargeDateSetBy: nullableText,
   dischargeConfirmedBy: nullableText,
   blockReason: z.nullable(z.enum(BED_RELEASE_BLOCKERS)),
+  stayBlockRecords: z.optional(z.custom(isStayBlockRecords)), // absent in older saves.
   leavingDestination: z.nullable(z.custom(isLeavingDestination)),
   // A stored barrier is a list value or absent; free text here would be typed text restored from
   // storage (review finding A2-2).
@@ -941,35 +928,40 @@ const undoRecord = z.discriminatedUnion("kind", [
 
 const notice = z.looseObject({ id, raisedAt: finite, to: record, about: record, kind: text, sentence: text });
 
-// Since 21 Oct 2026 (D-72) the device copy of a session that holds typed text keeps repatriations and
-// carer, PSP and MHAS notifications, with every typed value as the placeholder. These closed shapes
-// mirror `isValidSharedWardFlowState`, but a typed field must hold the placeholder: the typed words
-// themselves are still refused (D-18).
+// D-18/D-72: closed record shapes mirror shared validation, with typed values replaced.
 const notKept = z.literal(TYPED_TEXT_NOT_KEPT);
 const role = z.enum(Object.keys(WARD_FLOW_ROLE_LABELS) as [string, ...string[]]);
+const repatriationFields = {
+  admissionId: id,
+  at: finite,
+  estimatedAt: finite,
+  by: role,
+  homeHospital: text,
+  cadNumber: notKept,
+  receivingWardAgreed: bool,
+  mode: z.enum(REPATRIATION_MODES),
+  provider: z.enum(TRANSPORT_PROVIDERS),
+  transportLegalStatus: z.enum(TRANSPORT_LEGAL_STATUSES),
+  agreedAt: z.optional(finite),
+  agreedBy: z.optional(role),
+  form4CReceived: z.optional(bool),
+  escortRequired: z.optional(bool),
+};
+const agreementPair = (row: { agreedAt?: number; agreedBy?: string }) =>
+  (row.agreedAt === undefined) === (row.agreedBy === undefined);
+const priorRepatriation = z.strictObject(repatriationFields).check(z.refine(agreementPair));
 const repatriation = z
   .strictObject({
-    admissionId: id,
-    at: finite,
-    estimatedAt: finite,
-    by: role,
-    // Membership is checked against the saved scenario below; other text is still refused.
-    homeHospital: text,
-    cadNumber: notKept,
-    receivingWardAgreed: bool,
-    mode: z.enum(REPATRIATION_MODES),
-    provider: z.enum(TRANSPORT_PROVIDERS),
-    transportLegalStatus: z.enum(TRANSPORT_LEGAL_STATUSES),
-    // A plan agreed after it was first logged also carries both of these.
-    agreedAt: z.optional(finite),
-    agreedBy: z.optional(role),
-    // #177 (Josh, 27 Oct 2026): an involuntary return's Form 4C and escort answers, when given.
-    form4CReceived: z.optional(bool),
-    escortRequired: z.optional(bool),
+    ...repatriationFields,
+    earlier: z.optional(z.array(priorRepatriation)),
   })
-  .check(z.refine((row) => (row.agreedAt === undefined) === (row.agreedBy === undefined)));
-// Closing-the-loop (package E): return requested vs home service agreed. Closed lists, roles and
-// instants only; one record per stay, on a stay that exists.
+  .check(
+    z.refine(agreementPair),
+    z.refine((row) =>
+      (row.earlier ?? []).every((prior) => prior.admissionId === row.admissionId && prior.at <= row.at),
+    ),
+  );
+// Package E: one closed-list home-service return record per existing stay.
 const homeServiceReturn = z.strictObject({
   admissionId: id,
   // Membership is checked against the saved scenario below, as a repatriation's is.
@@ -1130,7 +1122,9 @@ function identitiesMatchScenario(state: StoredState): boolean {
         ({ destination }) => destination.kind !== "emergency_department" || edIds.has(destination.edId),
       ),
     ) &&
-    state.repatriations.every((row) => siteCodes.has(row.homeHospital)) &&
+    state.repatriations.every((row) =>
+      [row, ...(row.earlier ?? [])].every((plan) => siteCodes.has(plan.homeHospital)),
+    ) &&
     (state.homeServiceReturns ?? []).every((row) => siteCodes.has(row.homeHospital)) &&
     (state.returnEarlyFlags ?? []).every((row) => siteCodes.has(row.homeHospital)) &&
     (state.returnEarlyNotices ?? []).every((row) => siteCodes.has(row.homeHospital)) &&
@@ -1330,8 +1324,7 @@ function consistent(state: StoredState, value: RecordValue): boolean {
     }
   }
   // Owner ruling 2026-09-25: a leave bed names the stay it belongs to, mirrored from the
-  // reducer's RECORD_LEAVE_BED refusals: a real, occupied admission on the same unit, at most one
-  // leave per stay.
+  // reducer's RECORD_LEAVE_BED refusals: a real, occupied admission on the same unit, at most one leave per stay.
   const leaveCountByAdmission = new Map<string, number>();
   for (const row of state.leaveBeds) {
     leaveCountByAdmission.set(row.admissionId, (leaveCountByAdmission.get(row.admissionId) ?? 0) + 1);
@@ -1354,8 +1347,7 @@ function consistent(state: StoredState, value: RecordValue): boolean {
   }
 
   // An arrived booking names the admission it became: that admission is on the booking's ward and
-  // carries the booking's own patient link (none for initials only). A later departure leaves both
-  // facts true.
+  // carries the booking's own patient link (none for initials only). A later departure leaves both facts true.
   for (const row of state.plannedAdmissions) {
     if (!unitIds.has(row.unitId) || (row.patientId !== null && !patientIds.has(row.patientId))) return false;
     if (row.state === "arrived") {
@@ -1423,7 +1415,24 @@ function consistent(state: StoredState, value: RecordValue): boolean {
 
   for (const key of Object.keys(state.dischargeRevisions)) if (!admissionIds.has(key)) return false;
   for (const key of Object.keys(state.morningRollupConfirmations)) if (!unitIds.has(key)) return false;
-  return true;
+  // H-IMPORT (#1455): live absence, active stays and numbered beds must each have one owner.
+  return storedPlacementInvariants(value as unknown as WardFlowState, activePatientStays(state.admissions));
+}
+
+// Identity keys stay in this approved restore-only reader; the invariants get placement facts.
+function activePatientStays(rows: readonly StoredState["admissions"][number][]) {
+  const byPatient = new Map<string, { id: string; unitId: string; state: "occupied" | "pulled" }[]>();
+  for (const { id, unitId, state, patientId } of rows)
+    if (patientId !== null && (state === "occupied" || state === "pulled"))
+      byPatient.set(patientId, [...(byPatient.get(patientId) ?? []), { id, unitId, state }]);
+  return [...byPatient.values()];
+}
+
+/** Why a well-formed save was refused, in fixed plain words (never its content), or undefined. */
+export function storedStateRestoreProblem(value: unknown): string | undefined {
+  if (!object(value) || !nested(value) || !storedState.safeParse(value).success) return undefined;
+  const state = value as unknown as WardFlowState;
+  return restoreRuleProblem(state, activePatientStays(state.admissions)) ?? undefined;
 }
 
 export function isValidStoredWardFlowState(value: unknown): value is WardFlowState {
@@ -1445,33 +1454,6 @@ export function withInboxStreamADefaults<T extends WardFlowState>(state: T): T {
     inboxOwnership: stored.inboxOwnership ?? {},
     inboxSnoozes: stored.inboxSnoozes ?? {},
   });
-}
-
-/**
- * Seeded entries once had fixed ids (`audit-seed-legal-status`). They were derived from the first
- * records of this same state, so a review saved under one, and the audit rows recording that review
- * or its undo, move to the entry's current id (`audit-seed-legal-status:<movement id>`). The entry
- * then stays shown as reviewed, with its review history.
- */
-function withSeededReviewIds<T extends WardFlowState>(state: T): T {
-  const legacy = (eventId: string) => /^audit-seed-[a-z-]+$/.test(eventId);
-  if (
-    !state.auditReviews.some((review) => legacy(review.eventId)) &&
-    !state.auditEvents.some((event) => event.subject.kind === "audit-event" && legacy(event.subject.eventId))
-  )
-    return state;
-  const seeded = syntheticGovernanceAuditEvents(state);
-  const current = (eventId: string) =>
-    legacy(eventId) ? (seeded.find((entry) => entry.id.startsWith(`${eventId}:`))?.id ?? eventId) : eventId;
-  return {
-    ...state,
-    auditReviews: state.auditReviews.map((review) => ({ ...review, eventId: current(review.eventId) })),
-    auditEvents: state.auditEvents.map((event) =>
-      event.subject.kind === "audit-event"
-        ? { ...event, subject: { ...event.subject, eventId: current(event.subject.eventId) } }
-        : event,
-    ),
-  };
 }
 
 /**

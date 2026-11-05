@@ -57,6 +57,14 @@ export function eventLogEntryFor(event: WardFlowEvent, accepted: boolean): Event
       if (typeof value === "string" && value.length > 0) entry[field] = value;
     }
   }
+  // Observation commands name their record inside a closed target, not at the top level.
+  if (event.type === "RECORD_OBSERVATION_LEVEL" && event.target && typeof event.target === "object") {
+    if (event.target.kind === "movement" && typeof event.target.movementId === "string")
+      entry.movementId = event.target.movementId;
+    else if (event.target.kind === "admission" && typeof event.target.admissionId === "string")
+      entry.admissionId = event.target.admissionId;
+    if (typeof event.target.actingUnitId === "string") entry.actingUnitId = event.target.actingUnitId;
+  }
   return entry;
 }
 

@@ -10,6 +10,9 @@ export type WaitingViewId = (typeof WAITING_VIEWS)[number];
 const WAITING_PATH = "/ward-flow/waiting";
 
 /** A link that opens the board on one saved view, or on everyone when no view is named. */
-export function waitingHref(view?: WaitingViewId): string {
-  return view === undefined ? WAITING_PATH : `${WAITING_PATH}?view=${view}`;
+export function waitingHref(view?: WaitingViewId, edId?: string): string {
+  const query = new URLSearchParams();
+  if (view !== undefined) query.set("view", view);
+  if (edId !== undefined) query.set("ed", edId);
+  return query.size === 0 ? WAITING_PATH : `${WAITING_PATH}?${query.toString()}`;
 }

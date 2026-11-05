@@ -98,7 +98,7 @@ describe("the record's facts, read without guessing", () => {
     expect(initialReferrerContact(kept, sent, ed).name).toBe("Kept");
     expect(initialReferrerContact(undefined, sent, ed).name).toBe("Sent");
     expect(initialReferrerContact(undefined, null, ed).name).toBe(ed.status === "available" ? ed.profile.name : "");
-    expect(initialReferrerContact(undefined, null, profileForChromeRole("ward")).name).toBe("");
+    expect(initialReferrerContact(undefined, null, profileForChromeRole("officer")).name).toBe("");
   });
 
   it("finds the person's open ED journey and their recorded home region (H-0973, H-0976)", () => {

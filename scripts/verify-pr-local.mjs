@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync, spawnSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, realpathSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { classifyChanges, parseNameStatus } from "./ward-ci-public/plan.mjs";
@@ -32,7 +32,7 @@ export function selectedScripts(scope, _extended = false, { full = false, explic
   if (plan.full) scripts.push("check:installed-lock-parity");
   if (plan.policy) scripts.push("check:ward-policy-contracts");
   if (plan.backend) scripts.push("typecheck:backend");
-  if (plan.backend && full) scripts.push("test:backend");
+  if (plan.backend && full) scripts.push("test:backend:integration");
   if (plan.frontend_static) scripts.push("lint", "typecheck");
   // test:related reads the Git diff, not a --files list, so an explicit scope keeps the full unit gate.
   if (plan.unit) scripts.push(full || explicitFiles ? "check:ward-expected-reds" : "test:related");
@@ -47,7 +47,7 @@ export function deferredToHostedCi(scope, { full = false, explicitFiles = false 
   const plan = Array.isArray(scope.entries) ? classifyChanges(scope.entries) : scope;
   return [
     ...(plan.unit && !explicitFiles ? ["full unit suite (check:ward-expected-reds)"] : []),
-    ...(plan.backend ? ["PostgreSQL backend tests (test:backend)"] : []),
+    ...(plan.backend ? ["PostgreSQL backend tests (test:backend:integration)"] : []),
     ...(plan.build ? ["production build (build)"] : []),
     ...(plan.browser ? ["browser journeys (test:e2e:ward-journeys)"] : []),
   ];
@@ -109,7 +109,7 @@ export function summarizePrLocalRun(
     `- completed: ${completed.join(", ") || "(none)"}`,
     `- failed: ${failedScript ? `${failedScript} (exit ${failedExitCode})` : "(none)"}`,
     `- not reached: ${notReached.join(", ") || "(none)"}`,
-    ...(scripts.includes("test:backend") && !completed.includes("test:backend")
+    ...(scripts.some((script) => script.startsWith("test:backend")) && !completed.includes("test:backend:integration")
       ? ["Backend PostgreSQL integration: NOT RUN to completion; no passing database evidence."]
       : []),
     ...(deferred.length ? [`- left to hosted CI (not run here; --full runs them): ${deferred.join(", ")}`] : []),
@@ -185,4 +185,9 @@ async function main() {
   }
   process.exitCode = runPrLocalScripts(scripts, { deferred, base });
 }
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) await main();
+if (
+  process.argv[1] &&
+  existsSync(process.argv[1]) &&
+  realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))
+)
+  await main();

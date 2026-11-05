@@ -6,6 +6,7 @@
  * (Josh, 9 Oct 2026: "the placeholder on the right is a sign off sheet for the handover").
  */
 import Link from "next/link";
+import { movementHref } from "../shell/ward-facade";
 import dynamic from "next/dynamic";
 import { useId } from "react";
 import { Check, ClipboardCopy, Clock, Route, Ambulance, UserRound, X } from "lucide-react";
@@ -290,7 +291,7 @@ export function HandoverFlowPanel({
       </div>
 
       <div className={styles.panelFoot}>
-        <Link href="/ward-flow/movements" className={buttonClass({ variant: "sec", size: "sm" })}>
+        <Link href={movementHref(row.movement.id)} className={buttonClass({ variant: "sec", size: "sm" })}>
           <Icon icon={Ambulance} size={14} />
           Movements
         </Link>

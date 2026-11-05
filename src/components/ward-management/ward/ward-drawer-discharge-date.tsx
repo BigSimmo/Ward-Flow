@@ -37,7 +37,15 @@ export function WardDrawerDischargeDate({
   const [open, setOpen] = useState(false);
   const [day, setDay] = useState(0);
   const [time, setTime] = useState("");
-  const parsed = typedTimeToInstant(time, day, now);
+  const [openedAt, setOpenedAt] = useState(now);
+  const parsed = typedTimeToInstant(time, day, openedAt);
+  const dayFromToday = day + dayOf(openedAt) - dayOf(now);
+  const dayLabel =
+    dayFromToday === -1
+      ? "Yesterday"
+      : dayFromToday < 0
+        ? `${-dayFromToday} days ago`
+        : dayOptionLabel(dayFromToday, now, dayZero);
   const future = parsed !== undefined && parsed > now;
   const unchanged = parsed !== undefined && parsed === recordedAt;
   const hasDate = recordedAt !== null;
@@ -53,6 +61,7 @@ export function WardDrawerDischargeDate({
           disabledReason={gate.reason}
           onClick={() => {
             save.forget();
+            setOpenedAt(now);
             setDay(startOnRecorded ? recordedDay : 0);
             setTime(startOnRecorded && recordedAt !== null ? clockInputValue(recordedAt) : "");
             setOpen(true);
@@ -93,18 +102,21 @@ export function WardDrawerDischargeDate({
         <span>Day</span>
         <Stepper
           noun="discharge day"
+          unavailable={save.pending}
           value={day}
           min={0}
           max={DISCHARGE_DAYS.length - 1}
-          onChange={setDay}
-          display={dayOptionLabel(day, now, dayZero)}
-          valueText={dayOptionLabel(day, now, dayZero)}
+          onChange={(value) => {
+            if (!save.pending) setDay(value);
+          }}
+          display={dayLabel}
+          valueText={dayLabel}
           valueTestId="ward-drawer-discharge-day"
         />
       </div>
       <label>
         Expected discharge time
-        <input type="time" value={time} onChange={(event) => setTime(event.target.value)} />
+        <input disabled={save.pending} type="time" value={time} onChange={(event) => setTime(event.target.value)} />
       </label>
       <p className={styles.hint} aria-live="polite">
         {parsed === undefined

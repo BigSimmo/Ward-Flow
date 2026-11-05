@@ -25,6 +25,7 @@ import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flo
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import type { TransportExceptionReason } from "@/components/ward-management/ward-model";
 import type { TransportBookingAnswers } from "@/components/ward-management/ward-transport-checks";
+import { useDirtyStateGuard } from "../use-dirty-state-guard";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { useWardRaise, type WardRaise } from "@/components/ward-management/ward-flow-raise";
@@ -312,6 +313,12 @@ export function OfficerBookingPanel({
   const [answers, setAnswers] = useState<TransportBookingAnswers>(() => returnPlanBooking(plan, now));
   const [legalReason, setLegalReason] = useState<TransportExceptionReason | "">("");
   const save = useWardFormSave(movement.id);
+  useDirtyStateGuard({
+    isDirty:
+      save.pending || legalReason !== "" || Object.values(answers).some((value) => value !== undefined && value !== ""),
+    value: JSON.stringify([answers, legalReason]),
+    confirmMessage: "The transport booking has unsaved answers. Leave without recording them?",
+  });
   // Held from opening, so a change by another desk is reported before this booking is accepted.
   useHoldOpenForm(true, movement.id);
   useOfficerPanelHeight("ward-officer-booking", isPhone, movement.id);

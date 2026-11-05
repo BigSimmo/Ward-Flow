@@ -81,10 +81,20 @@ export function withheldBar(value: number, shown: number | string): { value: num
 }
 
 /** In place of a list of people on the executive desk. */
+/** WF-17: the one small-number rule every Statistics figure follows, in words. */
+const SMALL_NUMBER_RULE_TEXT =
+  'Small counts of people are held back ("fewer than" or "not shown"); bed counts and times are always exact.';
+
 export function PeopleNotListed({ testId = "ward-statistics-people-not-listed" }: { testId?: string }) {
   return (
-    <p className={styles.muted} data-testid={testId}>
-      Counts only on this desk, so people are not listed.
-    </p>
+    <>
+      <p className={styles.muted} data-testid={testId}>
+        Counts only on this desk, so people are not listed.
+      </p>
+      {/* WF-17: one stated rule, so a held-back people count beside an exact bed count or time reads as intended. */}
+      <p className={styles.muted} data-testid={`${testId}-rule`}>
+        {SMALL_NUMBER_RULE_TEXT}
+      </p>
+    </>
   );
 }

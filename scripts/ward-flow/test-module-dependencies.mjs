@@ -4,6 +4,107 @@ import path from "node:path";
 import { readFileSync } from "node:fs";
 import { isBuiltin } from "node:module";
 
+// Shared bounded AST reader: callers decide how unresolved loads affect their evidence.
+export function staticModuleReferences(source) {
+  const requireAliases = new Set();
+  const references = [];
+  let uncertain = source.parseDiagnostics.length > 0;
+  const resolve = (specifier, requireResolution = false) => references.push({ specifier, requireResolution });
+  // Deliberately bounded static resolution: only uniquely named local const literals,
+  // with no other same-name occurrences beyond direct module-load arguments.
+  // Checking the entire file first rejects writes and shadowed bindings even
+  // when they occur after a load or inside a nested/destructured scope.
+  const constantModules = new Map();
+  function collectConstants(node) {
+    if (
+      ts.isVariableDeclaration(node) &&
+      ts.isVariableDeclarationList(node.parent) &&
+      ts.isVariableStatement(node.parent.parent) &&
+      (ts.isSourceFile(node.parent.parent.parent) || ts.isBlock(node.parent.parent.parent)) &&
+      node.parent.flags & ts.NodeFlags.Const &&
+      ts.isIdentifier(node.name) &&
+      node.initializer &&
+      ts.isStringLiteralLike(node.initializer)
+    )
+      constantModules.set(node.name.text, node);
+    ts.forEachChild(node, collectConstants);
+  }
+  collectConstants(source);
+  function checkConstantUses(node) {
+    if (ts.isIdentifier(node) && constantModules.has(node.text)) {
+      const declaration = constantModules.get(node.text);
+      const parent = node.parent;
+      const declarationScope = declaration.parent.parent.parent;
+      let inScope = false;
+      for (let ancestor = parent; ancestor; ancestor = ancestor.parent) {
+        if (ancestor === declarationScope) {
+          inScope = true;
+          break;
+        }
+      }
+      const moduleArgument =
+        inScope &&
+        node.pos >= declaration.end &&
+        ts.isCallExpression(parent) &&
+        parent.arguments.length === 1 &&
+        parent.arguments[0] === node &&
+        (parent.expression.kind === ts.SyntaxKind.ImportKeyword ||
+          (ts.isIdentifier(parent.expression) && parent.expression.text === "require"));
+      if (node !== declaration.name && !moduleArgument) constantModules.delete(node.text);
+    }
+    ts.forEachChild(node, checkConstantUses);
+  }
+  checkConstantUses(source);
+  function walk(node) {
+    if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference)) {
+      const expression = node.moduleReference.expression;
+      if (expression && ts.isStringLiteralLike(expression)) resolve(expression.text);
+      else uncertain = true;
+    }
+    // eval/new Function keep the full gate only when their code text itself loads modules; running
+    // opaque code (e.g. a theme bootstrap script) is not a module load. A createRequire result is
+    // tracked as a require alias so literal loads resolve and non-literal ones stay uncertain.
+    if (
+      (ts.isCallExpression(node) || ts.isNewExpression(node)) &&
+      ts.isIdentifier(node.expression) &&
+      ["eval", "Function"].includes(node.expression.text) &&
+      (node.arguments ?? []).some(
+        (argument) => ts.isStringLiteralLike(argument) && /\b(?:import|require)\b/u.test(argument.text),
+      )
+    )
+      uncertain = true;
+    if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === "createRequire") {
+      if (ts.isVariableDeclaration(node.parent) && ts.isIdentifier(node.parent.name))
+        requireAliases.add(node.parent.name.text);
+      else uncertain = true;
+    }
+    if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) {
+      if (ts.isStringLiteralLike(node.moduleSpecifier)) resolve(node.moduleSpecifier.text);
+      else uncertain = true;
+    }
+    if (
+      ts.isCallExpression(node) &&
+      (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
+        (ts.isIdentifier(node.expression) &&
+          (node.expression.text === "require" || requireAliases.has(node.expression.text))))
+    ) {
+      const argument = node.arguments[0];
+      if (node.arguments.length === 1 && argument && ts.isStringLiteralLike(argument)) resolve(argument.text);
+      else if (
+        node.arguments.length === 1 &&
+        argument &&
+        ts.isIdentifier(argument) &&
+        constantModules.has(argument.text)
+      )
+        resolve(constantModules.get(argument.text).initializer.text, true);
+      else uncertain = true;
+    }
+    ts.forEachChild(node, walk);
+  }
+  walk(source);
+  return { references, uncertain };
+}
+
 export function referencedTestChanges({ root, population, changed }) {
   const blocked = new Set();
   const graph = new Map();
@@ -23,7 +124,6 @@ export function referencedTestChanges({ root, population, changed }) {
     const id = key(file);
     if (graph.has(id)) return;
     const imports = new Set();
-    const requireAliases = new Set();
     graph.set(id, imports);
     let source;
     try {
@@ -33,51 +133,8 @@ export function referencedTestChanges({ root, population, changed }) {
       return;
     }
     if (source.parseDiagnostics.length) uncertain = true;
-    // Deliberately bounded static resolution: only uniquely named local const literals,
-    // with no other same-name occurrences beyond direct module-load arguments.
-    // Checking the entire file first rejects writes and shadowed bindings even
-    // when they occur after a load or inside a nested/destructured scope.
-    const constantModules = new Map();
-    function collectConstants(node) {
-      if (
-        ts.isVariableDeclaration(node) &&
-        ts.isVariableDeclarationList(node.parent) &&
-        ts.isVariableStatement(node.parent.parent) &&
-        (ts.isSourceFile(node.parent.parent.parent) || ts.isBlock(node.parent.parent.parent)) &&
-        node.parent.flags & ts.NodeFlags.Const &&
-        ts.isIdentifier(node.name) &&
-        node.initializer &&
-        ts.isStringLiteralLike(node.initializer)
-      )
-        constantModules.set(node.name.text, node);
-      ts.forEachChild(node, collectConstants);
-    }
-    collectConstants(source);
-    function checkConstantUses(node) {
-      if (ts.isIdentifier(node) && constantModules.has(node.text)) {
-        const declaration = constantModules.get(node.text);
-        const parent = node.parent;
-        const declarationScope = declaration.parent.parent.parent;
-        let inScope = false;
-        for (let ancestor = parent; ancestor; ancestor = ancestor.parent) {
-          if (ancestor === declarationScope) {
-            inScope = true;
-            break;
-          }
-        }
-        const moduleArgument =
-          inScope &&
-          node.pos >= declaration.end &&
-          ts.isCallExpression(parent) &&
-          parent.arguments.length === 1 &&
-          parent.arguments[0] === node &&
-          (parent.expression.kind === ts.SyntaxKind.ImportKeyword ||
-            (ts.isIdentifier(parent.expression) && parent.expression.text === "require"));
-        if (node !== declaration.name && !moduleArgument) constantModules.delete(node.text);
-      }
-      ts.forEachChild(node, checkConstantUses);
-    }
-    checkConstantUses(source);
+    const references = staticModuleReferences(source);
+    if (references.uncertain) uncertain = true;
     function resolve(specifier, requireResolution = false) {
       const result = ts.resolveModuleName(specifier, file, parsed.options, ts.sys).resolvedModule;
       if (!result) {
@@ -89,53 +146,7 @@ export function referencedTestChanges({ root, population, changed }) {
       imports.add(key(result.resolvedFileName));
       visit(result.resolvedFileName);
     }
-    function walk(node) {
-      if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference)) {
-        const expression = node.moduleReference.expression;
-        if (expression && ts.isStringLiteralLike(expression)) resolve(expression.text);
-        else uncertain = true;
-      }
-      // eval/new Function keep the full gate only when their code text itself loads modules; running
-      // opaque code (e.g. a theme bootstrap script) is not a module load. A createRequire result is
-      // tracked as a require alias so literal loads resolve and non-literal ones stay uncertain.
-      if (
-        (ts.isCallExpression(node) || ts.isNewExpression(node)) &&
-        ts.isIdentifier(node.expression) &&
-        ["eval", "Function"].includes(node.expression.text) &&
-        (node.arguments ?? []).some(
-          (argument) => ts.isStringLiteralLike(argument) && /\b(?:import|require)\b/u.test(argument.text),
-        )
-      )
-        uncertain = true;
-      if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === "createRequire") {
-        if (ts.isVariableDeclaration(node.parent) && ts.isIdentifier(node.parent.name))
-          requireAliases.add(node.parent.name.text);
-        else uncertain = true;
-      }
-      if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) {
-        if (ts.isStringLiteralLike(node.moduleSpecifier)) resolve(node.moduleSpecifier.text);
-        else uncertain = true;
-      }
-      if (
-        ts.isCallExpression(node) &&
-        (node.expression.kind === ts.SyntaxKind.ImportKeyword ||
-          (ts.isIdentifier(node.expression) &&
-            (node.expression.text === "require" || requireAliases.has(node.expression.text))))
-      ) {
-        const argument = node.arguments[0];
-        if (node.arguments.length === 1 && argument && ts.isStringLiteralLike(argument)) resolve(argument.text);
-        else if (
-          node.arguments.length === 1 &&
-          argument &&
-          ts.isIdentifier(argument) &&
-          constantModules.has(argument.text)
-        )
-          resolve(constantModules.get(argument.text).initializer.text, true);
-        else uncertain = true;
-      }
-      ts.forEachChild(node, walk);
-    }
-    walk(source);
+    for (const { specifier, requireResolution } of references.references) resolve(specifier, requireResolution);
   }
   for (const file of population) visit(path.join(root, file));
   if (uncertain) return [...changed];
