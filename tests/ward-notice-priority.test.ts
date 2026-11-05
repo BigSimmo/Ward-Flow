@@ -9,13 +9,15 @@ import { describe, expect, it } from "vitest";
  * when it has nothing to say, so the first one present is always the highest.
  */
 const PRIORITY = [
+  // SD-02 (Josh, 5 Nov 2026): the "not saved on this device" note outranks broadcasts.
+  "WardDemoNotSavedNote",
   "WardBroadcastBanner",
   "WardRecoveryNotice",
   "WardOfflineBanner",
   "WardDowntimePackLine",
   "WardAccessBanner",
   "WardPracticeLine",
-  "WardDemoNotSavedNote",
+  "WardDemoTypedTextNote",
 ];
 
 const strip = (text: string) => text.replace(/\{\/\*[\s\S]*?\*\/\}/gu, "").replace(/\/\*[\s\S]*?\*\//gu, "");

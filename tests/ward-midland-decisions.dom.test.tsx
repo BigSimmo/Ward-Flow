@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { clearWardFlowDemoState } from "@/components/ward-management/ward-flow-demo-storage";
 import {
   MIDLAND_DECISIONS_KEY,
   midlandSavedLine,
@@ -22,6 +23,20 @@ describe("WF-05 Accept for Midland records the decision", () => {
     expect(open.every(({ r, index }) => REFERRALS[index] === r)).toBe(true);
     undoMidlandDecision(first.id);
     expect(read()[first.id]).toBeUndefined();
+  });
+});
+
+// SD-06 (audit, 5 Nov 2026): Midland's decisions belong to the demonstration day, so Reset demo
+// (which clears the saved day) clears them too, in storage and in this page's memory.
+describe("Reset demo clears Midland's decisions", () => {
+  beforeEach(() => window.localStorage.clear());
+  it("removes the stored decisions with the saved day", () => {
+    const first = REFERRALS[0]!;
+    recordMidlandDecision(first.id, "Accepted for Midland", 1);
+    expect(read()[first.id]).toBeDefined();
+    expect(clearWardFlowDemoState()).toBe(true);
+    expect(window.localStorage.getItem(MIDLAND_DECISIONS_KEY)).toBeNull();
+    expect(openReferrals(REFERRALS, {})).toHaveLength(REFERRALS.length);
   });
 });
 

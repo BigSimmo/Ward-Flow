@@ -76,6 +76,17 @@ export function undoMidlandDecision(id: string) {
   write(next);
 }
 
+/** Reset demo clears every decision with the demonstration's saved day (audit SD-06, 5 Nov 2026). */
+export function clearMidlandDecisions() {
+  try {
+    window.localStorage.removeItem(MIDLAND_DECISIONS_KEY);
+  } catch {
+    /* storage unavailable: the in-memory copy below is still cleared */
+  }
+  cache = { raw: null, value: {} };
+  listeners.forEach((l) => l());
+}
+
 function subscribe(cb: () => void) {
   listeners.add(cb);
   const onStorage = (e: StorageEvent) => {

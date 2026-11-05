@@ -91,7 +91,9 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
    * patient's date of birth, below). Typed text never reaches storage either way.
    */
   describe("typed-text events keep saving everything except the typed text, on DISPATCH", () => {
-    it("stops saving once ADD_PATIENT carrying a typed date of birth is dispatched, and a remount finds nothing to restore", () => {
+    // SD-01 (Josh, 5 Nov 2026): when no safe copy can be made, the last safe save is KEPT, not
+    // deleted. It never held typed text, so nothing typed reaches storage either way.
+    it("stops saving once ADD_PATIENT carrying a typed date of birth is dispatched, and keeps the last safe save", async () => {
       const { unmount } = render(
         <WardFlowProvider>
           <Capture />
@@ -100,6 +102,13 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
       // The seeded world persists before any typed text — proves the lock is triggered BY the typed
       // event below, not by persistence being broken from the start.
       expect(readStoredState()).not.toBeNull();
+      // Earlier safe work: five minutes on the clock, saved before any typed text.
+      act(() => {
+        current!.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current!.now, minutes: 5 });
+      });
+      const safeSave = window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
+      expect(readStoredState()?.state.clockOffsetMinutes).toBe(5);
+      expect(window.sessionStorage.getItem("ward-flow:demo-save-current")).toBe("1");
 
       act(() => {
         current!.dispatch({
@@ -112,35 +121,36 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
           dateOfBirth: "1990-01-01",
         });
       });
-      expect(readStoredState()).toBeNull();
+      // The earlier safe save survives unchanged, holds none of the typed values, and is marked as no
+      // longer the latest, so its restore says later changes may not have been saved.
+      expect(storedWithout("Josephine", "Typiste", "UMRN-TEST-001", "1990-01-01")).toBe(safeSave);
+      expect(window.sessionStorage.getItem("ward-flow:demo-save-current")).toBeNull();
       // A patient really was added — this is a genuine acceptance, so the "even a rejected one
       // locks" property is left to its own test below rather than conflated with this one.
       expect(current!.patients.some((patient) => patient.givenName === "Josephine")).toBe(true);
 
-      // The lock outlives the triggering dispatch: a later ALLOWLISTED event must not resurrect a
-      // payload, let alone one containing the typed name.
+      // The lock outlives the triggering dispatch: a later ALLOWLISTED event writes nothing, let
+      // alone a payload containing the typed name.
       act(() => {
         current!.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current!.now, minutes: 5 });
       });
-      expect(readStoredState()).toBeNull();
+      expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).toBe(safeSave);
 
-      // 🔴 P3 finding 8: "nothing later restores it" was asserted only within the SAME mounted
-      // session — the property that actually matters is that a REMOUNT, which is the only way this
-      // storage is ever read back at all, finds nothing OF THE LOCKED SESSION's to restore. Unmount
-      // and remount to prove it directly, rather than trusting that a null `sessionStorage` key
-      // implies a null restore. The fresh mount legitimately WRITES its own payload again — nothing
-      // was left to restore, so it reseeds from the fixture and that fresh (safe) world persists as
-      // normal — so the proof is that the typed name never comes back, not that storage stays empty.
+      // 🔴 P3 finding 8: the property that matters is what a REMOUNT, the only reader of this storage,
+      // brings back: the earlier safe work (the first five minutes), never the typed name.
       unmount();
+      // The saved-session read loads on demand; load it first so the remount restores at once.
+      await act(async () => {
+        await import("@/components/ward-management/ward-flow-demo-restore");
+      });
       render(
         <WardFlowProvider>
           <Capture />
         </WardFlowProvider>,
       );
       expect(current!.patients.some((patient) => patient.givenName === "Josephine")).toBe(false);
-      const restored = readStoredState();
-      expect(restored).not.toBeNull();
-      expect(JSON.stringify(restored)).not.toContain("Josephine");
+      expect(readStoredState()?.state.clockOffsetMinutes).toBe(5);
+      storedWithout("Josephine", "Typiste", "UMRN-TEST-001", "1990-01-01");
     });
 
     // Item #17: typed text held while nothing saves (a refused copy, or failed storage) asks before a
@@ -688,6 +698,23 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
     expect(readStoredState()?.state.clockOffsetMinutes).toBe(0);
   });
 
+  /**
+   * SD-01 (Josh, 5 Nov 2026): a typed-text lock no longer deletes the save. The mount's own safe save
+   * stays exactly as written (no write since: its clock is still at zero), holds no typed name or date
+   * of birth, and is marked as no longer the latest.
+   */
+  function expectLockedKeepingSafeSave() {
+    storedWithout("Zzyzx", "1985-05-05");
+    expect(readStoredState()?.state.clockOffsetMinutes ?? 0).toBe(0);
+    expect(window.sessionStorage.getItem("ward-flow:demo-save-current")).toBeNull();
+  }
+
+  /** After a reseed the session writes again, and its save is the latest. */
+  function expectSavingAgain() {
+    expect(readStoredState()).not.toBeNull();
+    expect(window.sessionStorage.getItem("ward-flow:demo-save-current")).toBe("1");
+  }
+
   describe("a demo reset re-enables saving after a typed-text lock", () => {
     it("via the context's own resetDemoState()", () => {
       const { unmount } = render(
@@ -710,7 +737,7 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
           dateOfBirth: "1985-05-05",
         });
       });
-      expect(readStoredState()).toBeNull();
+      expectLockedKeepingSafeSave();
       expect(current!.patients.some((patient) => patient.givenName === TYPED_GIVEN_NAME)).toBe(true);
 
       act(() => {
@@ -718,7 +745,7 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
       });
       // A genuine reseed (RESET_SCENARIO, accepted — `worldGeneration` increments) replaces the
       // whole world with fresh fixture data carrying no typed text, so saving may resume.
-      expect(readStoredState()).not.toBeNull();
+      expectSavingAgain();
       expect(current!.patients.some((patient) => patient.givenName === TYPED_GIVEN_NAME)).toBe(false);
 
       act(() => {
@@ -756,14 +783,14 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
           dateOfBirth: "1985-05-05",
         });
       });
-      expect(readStoredState()).toBeNull();
+      expectLockedKeepingSafeSave();
 
       // The raw dispatch `ward-demo-controls.tsx`'s `reset()` handler performs — no
       // `clearWardFlowDemoState()` call anywhere in this test.
       act(() => {
         current!.dispatch({ type: "RESET_SCENARIO", role: "demo", now: current!.now });
       });
-      expect(readStoredState()).not.toBeNull();
+      expectSavingAgain();
       expect(current!.patients.some((patient) => patient.givenName === TYPED_GIVEN_NAME)).toBe(false);
 
       act(() => {
@@ -805,7 +832,7 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
           dateOfBirth: "1985-05-05",
         });
       });
-      expect(readStoredState()).toBeNull();
+      expectLockedKeepingSafeSave();
       const worldGenerationBefore = current!.worldGeneration;
       const rejectionsBefore = current!.rejections.length;
 
@@ -823,11 +850,11 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
       expect(current!.rejections.length).toBeGreaterThan(rejectionsBefore);
       expect(current!.patients.some((patient) => patient.givenName === TYPED_GIVEN_NAME)).toBe(true);
       // The lock is still live: an allowlisted event afterwards must not be written.
-      expect(readStoredState()).toBeNull();
+      expectLockedKeepingSafeSave();
       act(() => {
         current!.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current!.now, minutes: 5 });
       });
-      expect(readStoredState()).toBeNull();
+      expectLockedKeepingSafeSave();
       unmount();
     });
 
@@ -849,7 +876,7 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
           dateOfBirth: "1985-05-05",
         });
       });
-      expect(readStoredState()).toBeNull();
+      expectLockedKeepingSafeSave();
       const worldGenerationBefore = current!.worldGeneration;
 
       act(() => {
@@ -858,7 +885,7 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
       expect(current!.worldGeneration).toBeGreaterThan(worldGenerationBefore);
       expect(current!.scenario).toBe("scarce");
       expect(current!.patients.some((patient) => patient.givenName === TYPED_GIVEN_NAME)).toBe(false);
-      expect(readStoredState()).not.toBeNull();
+      expectSavingAgain();
 
       act(() => {
         current!.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current!.now, minutes: 5 });
@@ -889,7 +916,7 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
           dateOfBirth: "1985-05-05",
         });
       });
-      expect(readStoredState()).toBeNull();
+      expectLockedKeepingSafeSave();
       const worldGenerationBefore = current!.worldGeneration;
 
       act(() => {
@@ -898,11 +925,11 @@ describe("ward-flow-provider default-deny persistence privacy", () => {
       });
       expect(current!.worldGeneration).toBe(worldGenerationBefore);
       expect(current!.patients.some((patient) => patient.givenName === TYPED_GIVEN_NAME)).toBe(true);
-      expect(readStoredState()).toBeNull();
+      expectLockedKeepingSafeSave();
       act(() => {
         current!.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current!.now, minutes: 5 });
       });
-      expect(readStoredState()).toBeNull();
+      expectLockedKeepingSafeSave();
       unmount();
     });
 
