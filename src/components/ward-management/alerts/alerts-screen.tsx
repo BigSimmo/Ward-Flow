@@ -157,7 +157,7 @@ function AlertsWorkspace() {
   usePrintableDisclosures();
   const access = useEffectiveWardAccess();
   const deskRole = access.role === "admin" ? "executive" : access.role;
-  const deskRoleLabel = access.role === "admin" ? ACCESS_ROLE_LABELS.admin : WARD_FLOW_ROLE_LABELS[deskRole]; // WF-15
+  const deskRoleLabel = access.role === "admin" ? ACCESS_ROLE_LABELS.admin : WARD_FLOW_ROLE_LABELS[deskRole];
   const coordDesk = access.role === "coordinator";
   const actionDisabledReason = coordDesk ? undefined : "Only the coordinator can change alerts.";
   const broadcastDisabledReason = // coordinator or site bed manager (`EVENT_ROLE.DISPATCH_BROADCAST_ALERT`)

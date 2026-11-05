@@ -114,7 +114,7 @@ export function CapacityHero({
           <>
             <HeroStat
               value={model.lockedReady}
-              label="Locked ready beds"
+              label="Locked ready"
               tone="success"
               pressed={highlight === "locked"}
               onToggle={() => onHighlight("locked")}
@@ -134,20 +134,20 @@ export function CapacityHero({
           <div className={styles.heroStats} role="group" aria-label={site ? `${site.name} beds` : "Network beds"}>
             <HeroChip
               value={model.lockedReady}
-              label="Locked ready beds"
+              label="Locked ready"
               pressed={highlight === "locked"}
               onPress={() => onHighlight("locked")}
             />
             <HeroChip
               value={model.openReady}
-              label="Open ready beds"
+              label="Open ready"
               pressed={highlight === "open"}
               onPress={() => onHighlight("open")}
             />
             <HeroChip value={model.pulled} label="Beds pulled" tone={model.pulled > 0 ? "warning" : undefined} />
             <HeroChip
               value={model.dueOutToday ?? "Not tracked"}
-              // WF-16: same source as each ward card's "freeing today" (release plans due today).
+              // Same source as each ward card's "freeing today" (release plans due today).
               // The Bed forecast's discharge counts are the next 24h windows — a different figure.
               label="Beds freeing today"
             />

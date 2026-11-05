@@ -177,10 +177,10 @@ describe("the Capacity screen", () => {
       `Capacity, ${totalReady} beds ready of ${netTotals.beds}`,
     );
     expect(heroChips().getByRole("button", { name: /Locked ready/u })).toHaveTextContent(
-      new RegExp(`^${totalLocked}\\s*Locked ready beds$`, "u"),
+      new RegExp(`^${totalLocked}\\s*Locked ready$`, "u"),
     );
     expect(heroChips().getByRole("button", { name: /Open ready/u })).toHaveTextContent(
-      new RegExp(`^${totalReady - totalLocked}\\s*Open ready beds$`, "u"),
+      new RegExp(`^${totalReady - totalLocked}\\s*Open ready$`, "u"),
     );
   });
 
