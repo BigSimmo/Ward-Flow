@@ -1,0 +1,167 @@
+"use client";
+
+/**
+ * Help remembered by account (eight suggestions item 3, Josh, 4 Nov 2026, "Yes to all
+ * recommendations"). A signed-in account keeps the desks whose tour is done, the page tips already
+ * seen, whether tips are turned off and the What's new lines already read on the server (migration
+ * 17), so a new phone, PC or browser does not show them all again. At sign-in the account's memory
+ * and this device's are combined: seen on either counts as seen. Later marks are sent as they are
+ * made. The device keeps its own copy, so Help works the same when the server cannot be reached,
+ * before migration 17 (`shared: false`) and on the demo site, which has no account and keeps device
+ * memory only. Desk role ids, static Help topic ids and What's new entry ids only.
+ */
+import { useContext, useEffect } from "react";
+
+import { HELP_HINTS_CHANGED_EVENT, HELP_HINTS_KEY, parseHelpHints } from "../help-content/ward-help-hints";
+import { HELP_TIPS_CHANGED_EVENT, helpTipsChoice, setHelpTipsOff } from "../help-content/ward-help-tips-off";
+import { SharedAccessContext } from "../shell/ward-shared-access-context";
+import { markTourSeen, parseTourSeen, TOUR_SEEN_CHANGE_EVENT, TOUR_SEEN_STORAGE_KEY } from "./ward-help-store";
+import { markWhatsNewSeen, WHATS_NEW_SEEN_EVENT, WHATS_NEW_STORAGE_KEY, whatsNewSeenIds } from "./ward-whats-new";
+
+// The same key as `ward-tour-auto-start.tsx`, written out so this file does not load the tour.
+const TOUR_AUTO_DONE_STORAGE_KEY = "ward_flow_choice_tour_auto_done";
+/** Marks made close together go in one save. */
+const SEND_AFTER_MS = 1_000;
+
+type Lists = { tours: string[]; tips: string[]; whatsNew: string[] };
+export type AccountHelpMemory = Lists & { tipsOff: boolean | null };
+
+function read(key: string): string | null {
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+/** This device's Help memory, as the account stores it. */
+export function deviceHelpMemory(): Lists {
+  return {
+    tours: [...parseTourSeen(read(TOUR_SEEN_STORAGE_KEY) ?? "")],
+    tips: parseHelpHints(read(HELP_HINTS_KEY) ?? ""),
+    whatsNew: whatsNewSeenIds(read(WHATS_NEW_STORAGE_KEY)),
+  };
+}
+
+const strings = (value: unknown): string[] =>
+  Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+
+/** The account's reply, or null when Help is not remembered by account (before migration 17). */
+export function accountHelpReply(value: unknown): AccountHelpMemory | null {
+  if (typeof value !== "object" || value === null || (value as { shared?: unknown }).shared !== true) return null;
+  const reply = value as Record<string, unknown>;
+  return {
+    tours: strings(reply.tours),
+    tips: strings(reply.tips),
+    whatsNew: strings(reply.whatsNew),
+    tipsOff: typeof reply.tipsOff === "boolean" ? reply.tipsOff : null,
+  };
+}
+
+/**
+ * Takes the account's memory into this device's: each list gains what the account has seen, and the
+ * account's tips choice, once it has one, stands. A device that had not offered the tour yet treats
+ * an account with a seen tour as already offered, so the tour is offered once per account.
+ */
+export function applyAccountHelpMemory(account: AccountHelpMemory): void {
+  for (const role of parseTourSeen(account.tours.join(","))) markTourSeen(role);
+  if (account.tours.length > 0) {
+    try {
+      const done = parseTourSeen(read(TOUR_AUTO_DONE_STORAGE_KEY) ?? "");
+      if (done.length === 0) window.localStorage.setItem(TOUR_AUTO_DONE_STORAGE_KEY, account.tours.join(","));
+    } catch {
+      // Unreadable storage already counts as offered.
+    }
+  }
+  const tips = parseHelpHints([...parseHelpHints(read(HELP_HINTS_KEY) ?? ""), ...account.tips].join(","));
+  try {
+    window.localStorage.setItem(HELP_HINTS_KEY, tips.join(","));
+  } catch {
+    // Without storage the tips' own mark fails closed and shows nothing.
+  }
+  markWhatsNewSeen(account.whatsNew, true);
+  if (account.tipsOff !== null && account.tipsOff !== helpTipsChoice()) setHelpTipsOff(account.tipsOff, true);
+}
+
+/** What the account lacks from this device, or null when it already holds everything. */
+export function missingFromAccount(device: Lists, account: Lists): Partial<Lists> | null {
+  const body: Partial<Lists> = {};
+  for (const key of ["tours", "tips", "whatsNew"] as const) {
+    const held = new Set(account[key]);
+    const missing = device[key].filter((item) => !held.has(item));
+    if (missing.length > 0) body[key] = missing;
+  }
+  return Object.keys(body).length > 0 ? body : null;
+}
+
+const fromAccount = (event: Event) => (event as CustomEvent<{ fromAccount?: boolean }>).detail?.fromAccount === true;
+
+/**
+ * Mounted by the Help host. Draws nothing. Does nothing on the demo site, where there is no account.
+ */
+export function WardHelpAccountMemory() {
+  const shared = useContext(SharedAccessContext);
+  const call = shared?.api.preferences;
+  const actorId = shared?.actorId ?? null;
+  useEffect(() => {
+    if (!call || !actorId) return;
+    let live = true;
+    // What the account is known to hold, so a save sends only what is new to it.
+    let account: AccountHelpMemory | null = null;
+    let applying = false;
+    let tipsChanged = false;
+    let timer: number | undefined;
+    const send = () => {
+      timer = undefined;
+      if (!live || !account) return;
+      const body: Record<string, unknown> = { ...missingFromAccount(deviceHelpMemory(), account) };
+      if (tipsChanged) {
+        const choice = helpTipsChoice();
+        if (choice !== null && choice !== account.tipsOff) body.tipsOff = choice;
+        tipsChanged = false;
+      }
+      if (Object.keys(body).length === 0) return;
+      call(body).then(
+        (reply) => {
+          const held = accountHelpReply(reply);
+          if (live && held) account = held;
+        },
+        () => {
+          // The device keeps its own copy, and the next mark or sign-in sends it again.
+        },
+      );
+    };
+    const later = (event: Event) => {
+      if (applying || fromAccount(event)) return;
+      if (event.type === HELP_TIPS_CHANGED_EVENT) tipsChanged = true;
+      if (timer === undefined) timer = window.setTimeout(send, SEND_AFTER_MS);
+    };
+    const events = [TOUR_SEEN_CHANGE_EVENT, HELP_HINTS_CHANGED_EVENT, HELP_TIPS_CHANGED_EVENT, WHATS_NEW_SEEN_EVENT];
+    for (const name of events) window.addEventListener(name, later);
+    call().then(
+      (reply) => {
+        const held = accountHelpReply(reply);
+        if (!live || !held) return;
+        applying = true;
+        try {
+          applyAccountHelpMemory(held);
+        } finally {
+          applying = false;
+        }
+        account = held;
+        // A choice made on this device before the account had one is kept.
+        if (held.tipsOff === null && helpTipsChoice() !== null) tipsChanged = true;
+        send();
+      },
+      () => {
+        // Not reachable: this device's memory stands.
+      },
+    );
+    return () => {
+      live = false;
+      window.clearTimeout(timer);
+      for (const name of events) window.removeEventListener(name, later);
+    };
+  }, [call, actorId]);
+  return null;
+}

@@ -275,16 +275,52 @@ describe("LiveChip", () => {
     const onTogglePause = vi.fn();
     const { rerender } = render(<LiveChip state="live" age="1s" onTogglePause={onTogglePause} />);
     expect(screen.getByRole("status")).toHaveTextContent(/^Demo$/);
-    // F-19 (WCAG 2.5.3): the name starts with the pill's own words.
+    // F-19 (WCAG 2.5.3): the name starts with the pill's own words. M8: on tablet and desktop the
+    // pill shows no age, because the top bar owns time.
     expect(screen.getByRole("button", { name: /pause demo updates$/ })).toHaveAccessibleName(
-      "Demo 1s, pause demo updates",
+      "Demo, pause demo updates",
     );
     await userEvent.click(screen.getByRole("button", { name: /pause demo updates$/ }));
     expect(onTogglePause).toHaveBeenCalledOnce();
     rerender(<LiveChip state="paused" onTogglePause={onTogglePause} />);
     expect(screen.getByRole("button", { name: "Paused, pause demo updates" })).toHaveAttribute("aria-pressed", "true");
     rerender(<LiveChip state="stale" asAt={new Date("2026-10-07T10:26:00+08:00")} />);
-    expect(screen.getByRole("status")).toHaveTextContent("Stale, as at 10:26");
+    expect(screen.getByRole("status")).toHaveTextContent(/^Not updating since 10:26$/);
+  });
+
+  // M8 (Josh, 3 Nov 2026): "One clock in the top bar. Stale is said in words, and phones and TVs keep
+  // a freshness line."
+  it("shows nothing on tablet and desktop while live, keeps the phone's freshness line, and says stale and offline in words", () => {
+    const { container, rerender } = render(<LiveChip state="live" age="10:42" onHero />);
+    // Desktop: no pill, no clock; the status line stays for screen readers.
+    expect(container.querySelector('[aria-hidden="true"]')).toBeNull();
+    expect(container).not.toHaveTextContent("10:42");
+    expect(screen.getByRole("status")).toHaveTextContent(/^Demo$/);
+    rerender(<LiveChip state="stale" asAt={new Date("2026-10-07T10:26:00+08:00")} onHero />);
+    expect(container.querySelector('[aria-hidden="true"]')).toHaveTextContent("Not updating since 10:26");
+    rerender(<LiveChip state="offline" onHero />);
+    expect(container.querySelector('[aria-hidden="true"]')).toHaveTextContent(/^Offline$/);
+    rerender(<LiveChip state="paused" onHero />);
+    expect(container.querySelector('[aria-hidden="true"]')).toHaveTextContent(/^Paused$/);
+
+    // Phone: the chip keeps "Demo 10:42".
+    const original = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: query === "(max-width: 46.4375rem)",
+      media: query,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      onchange: null,
+      dispatchEvent: () => false,
+    })) as unknown as typeof window.matchMedia;
+    try {
+      const phone = render(<LiveChip state="live" age="10:42" onHero />);
+      expect(phone.container.querySelector('[aria-hidden="true"]')).toHaveTextContent("Demo 10:42");
+    } finally {
+      window.matchMedia = original;
+    }
   });
 
   it("reads Stale while the shared refresh is failing or older than allowed (Audit 1, CS-13)", () => {
@@ -292,10 +328,10 @@ describe("LiveChip", () => {
     try {
       act(() => publishLiveRefresh({ unavailable: true, receivedAt }));
       const { rerender } = render(<LiveChip state="live" />);
-      expect(screen.getByRole("status")).toHaveTextContent("Stale, as at 10:26");
+      expect(screen.getByRole("status")).toHaveTextContent(/^Not updating since 10:26$/);
       act(() => publishLiveRefresh({ unavailable: false, receivedAt, staleAfterMs: 6000 }));
       rerender(<LiveChip state="live" />);
-      expect(screen.getByRole("status")).toHaveTextContent("Stale, as at 10:26");
+      expect(screen.getByRole("status")).toHaveTextContent(/^Not updating since 10:26$/);
       act(() => publishLiveRefresh({ unavailable: false, receivedAt: Date.now(), staleAfterMs: 60 * 60_000 }));
       rerender(<LiveChip state="live" />);
       expect(screen.getByRole("status")).toHaveTextContent(/^Demo$/);
@@ -312,7 +348,7 @@ describe("LiveChip", () => {
       render(<LiveChip state="live" />);
       expect(screen.getByRole("status")).toHaveTextContent(/^Demo$/);
       act(() => vi.advanceTimersByTime(7000));
-      expect(screen.getByRole("status")).toHaveTextContent("Stale, as at 10:26");
+      expect(screen.getByRole("status")).toHaveTextContent(/^Not updating since 10:26$/);
     } finally {
       act(() => publishLiveRefresh(undefined));
       vi.useRealTimers();

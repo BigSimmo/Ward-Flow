@@ -21,7 +21,8 @@ vi.mock("next/link", () => ({
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { RECENTLY_DECIDED_DISPLAY_LIMIT } from "@/components/ward-management/ward-referrals";
-import { referrals } from "@/components/ward-management/ward-movements";
+// S6 example data (3 Nov 2026): the board reads the whole seed, example referrals included.
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 /**
@@ -51,6 +52,7 @@ const NOW = NOW_ANCHOR;
  * "Decided" re-derived independently: a referral with any destination no longer queued. Written
  * from the domain rule rather than imported, for the reason above.
  */
+const { referrals } = seedWardFlowState();
 const decidedInSeed = referrals.filter((referral) =>
   referral.destinations.some((destination) => destination.state !== "queued"),
 ).length;

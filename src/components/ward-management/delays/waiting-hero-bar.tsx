@@ -3,14 +3,17 @@
 /**
  * Waiting redesign, round 4 (Josh, 31 Oct 2026): "make the header larger, with something high
  * yield in it". Under the header counts, one row of three tiles on the dark band: the daily check
- * (passed in, coordinator only), the longest wait, and the next person to pass 8h. The two people
- * tiles open that person's row. Laptop only; the phone keeps its short header. Also the table's
- * key line and the blocker groups' whose-move tag.
+ * (passed in, coordinator only) and the next person to pass 8h, whose tile opens that person's row.
+ * Laptop only; the phone keeps its short header. Also the table's key line and the blocker groups'
+ * whose-move tag.
+ *
+ * Plan item 2i (proposal, 3 Nov 2026): the longest wait tile is gone. The longest wait shows once,
+ * as the list's first row, instead of three times (this bar, the owner tile and the row).
  */
 import type { ReactNode } from "react";
-import { ChevronRight, Hourglass, TimerReset } from "lucide-react";
+import { ChevronRight, TimerReset } from "lucide-react";
 
-import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { H8, OVER_8H, SILENT_MINUTES, ownerName, type BoardRow } from "./delays-board-model";
 import { SrOnly, useIsPhone } from "@/components/wf";
@@ -18,7 +21,6 @@ import { TierKey } from "@/components/ward-management/tier-key";
 import { TYPED_TIME_KEY } from "./waiting-typed-time";
 import board from "./delays-board.module.css";
 import waitingKeys from "./waiting.module.css";
-import { originCode } from "./wait-bands";
 import styles from "./waiting-polish.module.css";
 
 function Item({
@@ -62,44 +64,19 @@ export function WaitingHeroBar({
   now,
   check,
   onOpen,
-  showOrigin = true,
 }: {
   rows: readonly BoardRow[];
   now: Instant;
   check?: ReactNode;
   onOpen: (id: string) => void;
-  /** Role view (as ED clinician): every person is the desk's own ED's, so no ED code. */
-  showOrigin?: boolean;
 }) {
   const patientOf = usePatientOf();
-  const longest = rows.reduce<BoardRow | null>(
-    (best, row) => (best === null || row.waited > best.waited ? row : best),
-    null,
-  );
   const under8 = rows.filter((row) => row.waited < OVER_8H).sort((a, b) => b.waited - a.waited);
   const next = under8[0] ?? null;
   const withinHour = under8.filter((row) => OVER_8H - row.waited <= 60).length;
   return (
     <div className={styles.heroBar} role="group" aria-label="At a glance">
       {check}
-      <Item
-        icon={<Hourglass size={14} aria-hidden="true" className={styles.stripIcon} data-tone="danger" />}
-        label="Longest wait"
-        value={
-          longest ? (
-            <>
-              <b className={styles.heroNum}>{splitDuration(longest.waited)}</b>{" "}
-              <span className={styles.heroName}>{patientOf(longest.movement).formalName}</span>
-            </>
-          ) : (
-            "Nobody waiting"
-          )
-        }
-        sub={longest && showOrigin ? originCode(longest.movement) : ""}
-        row={longest}
-        onOpen={onOpen}
-        testId="delays-hero-longest"
-      />
       <Item
         icon={<TimerReset size={14} aria-hidden="true" className={styles.stripIcon} data-tone="warning" />}
         label={`Next past ${H8}`}

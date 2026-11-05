@@ -9,18 +9,19 @@ import { StatusGlyph } from "./status-glyph";
 import { useIsPhone } from "./use-is-phone";
 import { useMinuteNow } from "./use-minute-now";
 import styles from "./live.module.css";
+import primitiveStyles from "./primitives.module.css";
 
 type LiveState = "live" | "paused" | "syncing" | "stale" | "offline";
 
 export type LiveChipProps = {
   state: LiveState;
   /**
-   * Live: age of the last sync, shown small after the word ("1s", "synced 1s ago"). On a phone the
-   * chip shows the shared clock instead ("Live 10:42", v10 phone hero) when the shell publishes one;
-   * pass `null` to show the word alone.
+   * Live, phone only (M8: tablet and desktop chips never show it, the top bar owns time): age of the
+   * last sync, shown small after the word ("1s"). The phone chip shows the shared clock instead
+   * ("Demo 10:42", v10 phone hero) when the shell publishes one; pass `null` to show the word alone.
    */
   age?: ReactNode;
-  /** Stale: the last good sync. Shown as "as at HH:MM". */
+  /** Stale: the last good sync. Shown as "Not updating since HH:MM" (M8). */
   asAt?: Date | number;
   onHero?: boolean;
   /** Renders the pause control beside the chip. */
@@ -61,7 +62,7 @@ function useLiveClock(): string | undefined {
  * Audit 1 (CS-13, Josh 20 Oct): whether the shared board's refresh is failing or late. The app shell
  * publishes it (`publishLiveRefresh`) in shared mode; with nothing published (local mode) a live
  * chip follows the browser's connection flag alone. `receivedAt` is the last good refresh (epoch
- * ms), and the chip reads Stale "as at" it once it is older than `staleAfterMs`.
+ * ms), and the chip reads "Not updating since" it once it is older than `staleAfterMs`.
  */
 export type LiveRefresh = { unavailable: boolean; receivedAt?: number; staleAfterMs?: number };
 let liveRefresh: LiveRefresh | undefined;
@@ -154,7 +155,7 @@ const WORD: Record<LiveState, string> = {
 
 /**
  * Live chip (rule 9: live and honest). Live pulses once as it turns live (none under reduced motion),
- * Paused shows a ring, Syncing a small spinner, Stale an amber circle with "as at HH:MM", and
+ * Paused shows a ring, Syncing a small spinner, Stale an amber circle with "Not updating since HH:MM", and
  * Offline a grey dot (a live chip turns Offline by itself while the browser has no connection, and
  * Stale while the shared refresh it is told about is failing or late). A `role="status"` line announces state changes only, never the ticking age.
  */
@@ -176,39 +177,58 @@ function useBrowserOnline(): boolean {
   );
 }
 
-export function LiveChip({ state: requested, age, asAt, onHero = false, onTogglePause, className }: LiveChipProps) {
-  // A1-18 (audit 13 Oct 2026): a chip asked to read live says Offline while the browser has no
-  // connection, so no page shows a live dot over a session that is not updating.
+/**
+ * M8 (Josh, 3 Nov 2026): "One clock in the top bar. Stale is said in words, and phones and TVs keep
+ * a freshness line." The shared board's freshness for the top bar's clock and the Live chip alike:
+ * live, stale (with the last good refresh, epoch ms, when known) or offline. Offline follows the
+ * browser's connection flag (A1-18); stale follows the refresh the shell publishes (CS-13, P167).
+ * `active` false skips the refresh deadline (a chip asked to read paused, say).
+ */
+export function useLiveFreshness(active = true): { state: "live" | "stale" | "offline"; since?: number } {
   const online = useBrowserOnline();
-  // CS-13: and Stale once the last good refresh is too old. P167: one failed or slow refresh is not
-  // a gap by itself; a publisher with a limit turns Stale only when that limit passes.
   const refresh = useSyncExternalStore(
     subscribeLiveRefresh,
     () => liveRefresh,
     () => undefined,
   );
-  const late = useSharedRefreshLate(requested === "live");
-  const state: LiveState =
-    requested !== "live"
-      ? requested
-      : !online
-        ? "offline"
-        : late || (refresh?.unavailable && refresh.staleAfterMs === undefined)
-          ? "stale"
-          : "live";
-  const word = WORD[state];
-  const staleAt = asAt ?? refresh?.receivedAt;
-  const asAtText = state === "stale" && staleAt != null ? `as at ${clk(staleAt)}` : null;
+  const late = useSharedRefreshLate(active);
+  if (!online) return { state: "offline" };
+  // P167: one failed or slow refresh is not a gap by itself; a publisher with a limit turns stale
+  // only when that limit passes.
+  if (late || (refresh?.unavailable && refresh.staleAfterMs === undefined))
+    return { state: "stale", since: refresh?.receivedAt };
+  return { state: "live" };
+}
+
+/** M8: a stale board in words, "Not updating since 10:42" ("Not updating" with no known time). */
+export function notUpdatingWords(since: Date | number | undefined): string {
+  return since == null ? "Not updating" : `Not updating since ${clk(since)}`;
+}
+
+export function LiveChip({ state: requested, age, asAt, onHero = false, onTogglePause, className }: LiveChipProps) {
+  // A1-18 (audit 13 Oct 2026): a chip asked to read live says Offline while the browser has no
+  // connection, so no page shows a live dot over a session that is not updating. CS-13: and Stale
+  // once the last good refresh is too old.
+  const freshness = useLiveFreshness(requested === "live");
+  const state: LiveState = requested !== "live" ? requested : freshness.state;
+  // M8: Stale is said in words ("Not updating since 10:42"), replacing "Stale as at 10:42".
+  const word = state === "stale" ? notUpdatingWords(asAt ?? freshness.since) : WORD[state];
   const paused = state === "paused";
   const isPhone = useIsPhone();
   const clock = useLiveClock();
-  // Phone (v10): the chip reads "Live HH:MM" from the shared clock; desktop keeps its own age.
+  // M8: one clock, in the top bar. A phone has no bar clock, so its chip keeps the freshness line:
+  // "Demo 10:42" from the shared clock (v10 phone hero), or its own age when none is published.
+  // Tablet and desktop chips never show an age or a clock.
   const phoneClock = isPhone && age !== null && clock ? clock : undefined;
-  const shownAge = phoneClock ?? age;
-  // The pill's own words for the toggle's name: the state, the clock or age when it is text.
+  const shownAge = isPhone ? (phoneClock ?? age) : null;
+  // M8: on tablet and desktop a plain Live chip would only repeat the top bar, so no pill shows.
+  // The same status line stays mounted in every state, so a later Stale or Offline updates its
+  // text and is announced, rather than arriving in a new region a screen reader can miss (#1375).
+  const hidden = !isPhone && state === "live" && !onTogglePause;
+  // The pill's own words for the toggle's name: the state, and the phone's clock or age when text.
   const spokenAge =
     state === "live" && (typeof shownAge === "string" || typeof shownAge === "number") ? shownAge : null;
-  const toggleWords = [word, spokenAge, asAtText].filter((part) => part != null).join(" ");
+  const toggleWords = [word, spokenAge].filter((part) => part != null).join(" ");
   const chip = (
     <span className={cx(styles.lv, onHero && styles.onHero)} aria-hidden="true">
       {state === "live" ? <span className={styles.pulse} /> : null}
@@ -222,7 +242,6 @@ export function LiveChip({ state: requested, age, asAt, onHero = false, onToggle
       {state === "live" && shownAge != null ? (
         <span className={cx(styles.u, phoneClock && styles.clk)}>{shownAge}</span>
       ) : null}
-      {asAtText ? <span className={styles.u}>{asAtText}</span> : null}
       {onTogglePause ? (
         <span className={styles.toggleGlyph}>
           {paused ? <Play strokeWidth={2} aria-hidden="true" /> : <Pause strokeWidth={2} aria-hidden="true" />}
@@ -231,10 +250,10 @@ export function LiveChip({ state: requested, age, asAt, onHero = false, onToggle
     </span>
   );
   return (
-    <span className={cx(styles.group, className)} data-wf-live="">
+    <span className={cx(hidden ? primitiveStyles.srOnly : styles.group, className)} data-wf-live="">
       {/* Device audit (11 Oct 2026): the pause is folded into the Live pill — one control, not a pill
           and a separate 32 x 48 tile. The whole pill is the button; its glyph shows pause or play. */}
-      {onTogglePause ? (
+      {hidden ? null : onTogglePause ? (
         <button
           type="button"
           className={styles.toggle}
@@ -249,7 +268,7 @@ export function LiveChip({ state: requested, age, asAt, onHero = false, onToggle
       ) : (
         chip
       )}
-      <SrOnly role="status">{asAtText ? `${word}, ${asAtText}` : word}</SrOnly>
+      <SrOnly role="status">{word}</SrOnly>
     </span>
   );
 }

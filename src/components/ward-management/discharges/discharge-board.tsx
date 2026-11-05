@@ -34,6 +34,7 @@ import {
   SrOnly,
   StatusGlyph,
   buttonClass,
+  type HeroNextStep,
 } from "@/components/wf";
 import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -352,6 +353,47 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   // Now and Recorded: in the hero on desktop and tablet, under it on a phone (v10).
   const populationSwitch = <DischargePopulationSwitch s={s} />;
   const filterCard = <DischargeFilterCard s={s} />;
+  // Plan item 2i (proposal): the hero's next step, from the same status counts as the chips. Held up
+  // first, as the list is ordered; with nothing held up, the confirmed ones are next to see out.
+  const noun = (n: number) =>
+    population === "releases" ? (n === 1 ? "release" : "releases") : n === 1 ? "record" : "records";
+  const nextKey: "blocked" | "confirmed" | null =
+    counts.blocked > 0 ? "blocked" : counts.confirmed > 0 ? "confirmed" : null;
+  // Desk and scope (role branches, 31 Oct 2026): the counts are already the desk's own (a ward desk's
+  // ward, a site bed manager's site, or the chosen service), so the sentence names that place.
+  const nextPlace = ownWard
+    ? ` on ${ownWard.name}`
+    : siteName
+      ? ` at ${siteName}`
+      : service === "all"
+        ? ""
+        : ` in ${service}`;
+  const heroNext: HeroNextStep = {
+    answer:
+      nextKey === "blocked"
+        ? `${counts.blocked} held-up ${noun(counts.blocked)}${nextPlace} ${counts.blocked === 1 ? "needs" : "need"} chasing`
+        : nextKey === "confirmed"
+          ? `Nothing held up${nextPlace} · ${counts.confirmed} confirmed ${noun(counts.confirmed)} to see out`
+          : `Nothing held up${nextPlace}`,
+    // CodeRabbit (#1380): the status counts are open records, not Recorded's list, so no action there.
+    action:
+      nextKey === null || !nowView
+        ? undefined
+        : {
+            label:
+              status === nextKey
+                ? "Show all"
+                : nextKey === "blocked"
+                  ? `Show ${HELD_UP.toLowerCase()}`
+                  : "Show confirmed",
+            pressed: status === nextKey,
+            testId: "ward-discharge-next-action",
+            onClick: () => {
+              setStatus(status === nextKey ? "all" : nextKey);
+              s.clearSelection();
+            },
+          },
+  };
 
   return (
     <div className={`${styles.screen} ${pageStyles.screen}`} data-testid="ward-discharge-board" data-ward-design="v6">
@@ -419,6 +461,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               )}
             </span>
           }
+          next={heroNext}
           aside={
             <div className={pageStyles.heroTools}>
               <LiveChip state="live" onHero />
@@ -1022,7 +1065,11 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                       ) : (
                                         <>
                                           <strong className={pageStyles.band}>
-                                            {BAND_LABELS[releaseBand(release, now) as ReleaseBand]}
+                                            {/* Review 5 Nov 2026: a completed discharge said "Now" beside
+                                            the time it left. It says "Left" and keeps that time. */}
+                                            {release.state === "discharged"
+                                              ? "Left"
+                                              : BAND_LABELS[releaseBand(release, now) as ReleaseBand]}
                                           </strong>{" "}
                                           <span className={pageStyles.due}>
                                             {/* Josh, 30 Oct: a Later row shows its date alone; its clock time

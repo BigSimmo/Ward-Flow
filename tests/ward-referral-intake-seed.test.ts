@@ -17,7 +17,8 @@ describe("complete synthetic referral form content", () => {
   it("provides a valid deterministic intake for every actual referral in every scenario", () => {
     for (const scenario of WARD_SCENARIOS) {
       const state = seedWardFlowState(scenario);
-      expect(state.referrals.length, scenario).toBe(scenario === "standard" || scenario === "scarce" ? 31 : 9);
+      // S6 example data (3 Nov 2026): 5 example referrals on the standard nights, 9 on the networks.
+      expect(state.referrals.length, scenario).toBe(scenario === "standard" || scenario === "scarce" ? 36 : 18);
       const before = structuredClone(state.referrals);
       const completed = completeSyntheticReferralIntakes(state.referrals, { movements: state.movements });
       expect(completed).toHaveLength(before.length);

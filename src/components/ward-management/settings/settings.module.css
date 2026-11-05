@@ -711,7 +711,9 @@
 /* Cells come from the one canonical ward table rule set. */
 .table {
   composes: table from "../ward-table/ward-table.module.css";
-  min-width: 54rem;
+  /* Review 5 Nov 2026: 54rem ran past the card at tablet portrait (834) and cut "Set by" and "How"
+   * mid-word behind a scroll with no cue. 40rem fits the 744 card; the text cells wrap instead. */
+  min-width: 40rem;
 }
 
 .cellStrong {

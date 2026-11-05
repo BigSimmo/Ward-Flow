@@ -52,6 +52,11 @@ export type Toast = {
   skipOfflineNote?: boolean;
   /** Test id of the card. Defaults to "toast"; a screen's own outcome can keep its own name. */
   testId?: string;
+  /**
+   * Lets the title and body wrap instead of ending in an ellipsis, for a toast whose whole sentence
+   * must be read (a restore notice ends with its warning that later changes may not be saved).
+   */
+  wrap?: boolean;
 };
 
 export type ToastInput = Omit<Toast, "id">;
@@ -97,7 +102,8 @@ type ToastContextValue = {
 const ToastContext = createContext<ToastContextValue | null>(null);
 
 /** A short timed outcome's time; a longer one gets a little more (`timedToastMs`). */
-const DEFAULT_DURATION = 6000;
+/** GEN1 (Josh, 3 Nov 2026): an info or success toast hides after five seconds, longer for many words. */
+const DEFAULT_DURATION = 5000;
 const MAX_VISIBLE_TOASTS = 5;
 
 /** A warning or danger stays until it is closed (Audit 24-7, CT-09), so a full stack never drops one. */
@@ -335,6 +341,7 @@ function ToastCard({
       data-announce-key={toast.announceKey ?? 0}
       // Closes itself (Undo window or timer): the phone pill drops its X, as the v10 mockup draws it.
       data-auto-dismiss={toast.undo || duration > 0 ? "true" : undefined}
+      data-wrap={toast.wrap ? "true" : undefined}
       // The region is pointer-events: none so it never blocks the page; each card opts back in.
       className={overlayStyles.toastPointer}
       tone={toast.tone}

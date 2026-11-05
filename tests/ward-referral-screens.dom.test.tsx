@@ -77,6 +77,7 @@ import { installMatchMediaStub } from "./setup/jsdom.setup";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 import { markBroomeForensicForThisFile } from "./helpers/ward-made-up-forensic-ward";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 /**
  * D-77 (change 3, Josh 21 Oct 2026). The match view is one list on every width: three groups
  * ("Fits, bed ready", "Fits, no bed now", "Needs review"), each a radiogroup of one row per ward.
@@ -938,6 +939,8 @@ describe("ReferralBoard", () => {
 const SEEDED_REFERRAL_IDS = new Set([
   ...referrals.map((referral) => referral.id),
   ...rulingsDemoOverlay(NOW_ANCHOR).referrals.map((referral) => referral.id),
+  // S6 example data (3 Nov 2026): the seed's example inbox referrals are seeded too.
+  ...seedWardFlowState().referrals.map((referral) => referral.id),
 ]);
 
 /** A real emergency department, read from the network rather than written down here: the reducer

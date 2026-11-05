@@ -141,12 +141,9 @@ test("ED referral to bed offer: the ED raises a referral, the coordinator offers
   // second sign-off (D-30), which is the one path that offers a ward without a second referral.
   await goToDesk(page, (drawer) => drawer.getByTestId("workstation-open-coordinator"), "ward-coordinator");
   await expectAccessible(page, testInfo, "coordinator Home");
-  // Tours are already seen in this journey, while the first-visit Home hint is still offered.
-  // Acknowledge its visible control before using the queue below it.
-  const homeHelp = page.getByRole("complementary", { name: "Home help", exact: true });
-  await expect(homeHelp).toBeVisible();
-  await homeHelp.getByRole("button", { name: "Got it", exact: true }).click();
-  await expect(homeHelp).toHaveCount(0);
+  // Tours are already seen in this journey, and page tips start off on the demo site (eight
+  // suggestions Q3, 4 Nov 2026), so no Home hint sits over the queue below.
+  await expect(page.getByRole("complementary", { name: "Home help", exact: true })).toHaveCount(0);
   // Each Flow stage shows its oldest five (Home flow, Q345); a new movement can sit below them.
   await showEveryoneWaitingOn(page);
   const queueRow = page.getByTestId(`ward-queue-row-${movementId}`);
