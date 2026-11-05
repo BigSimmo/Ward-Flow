@@ -109,8 +109,22 @@ describe("Help request identity and eligibility", () => {
       tipsOff: null,
     }));
     const reads = () => preferences.mock.calls.filter(([body]) => body === undefined).length;
+    const unused = vi.fn(async () => {
+      throw new Error("Unexpected access operation in Help fixture");
+    });
+    const api: SharedAccessApi = {
+      listAccess: unused,
+      listCovers: unused,
+      listRecordViews: unused,
+      grantAccess: unused,
+      revokeAccess: unused,
+      giveCover: unused,
+      decideRequest: unused,
+      breakGlass: unused,
+      preferences,
+    };
     render(
-      <SharedAccessContext.Provider value={{ api: { preferences } as SharedAccessApi, actorId: "synthetic-actor" }}>
+      <SharedAccessContext.Provider value={{ api, actorId: "synthetic-actor" }}>
         <WardHelpHost />
       </SharedAccessContext.Provider>,
     );
