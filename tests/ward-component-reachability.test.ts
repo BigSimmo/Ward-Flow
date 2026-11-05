@@ -144,6 +144,10 @@ const rel = (path: string) => relative(ROOT, path).replaceAll("\\", "/");
  */
 const DECLARED_UNREACHABLE: readonly { module: string; why: string }[] = [
   {
+    module: "src/components/ward-management/ward-management-console.tsx",
+    why: "the movement page renders PatientNowScreen and only imported this module for its WardMovementNotFound re-export, which pulled the movement cockpit into every movement page's first load. #1467 (5 Nov 2026) imports the not-found view directly, so WardPatientWorkspace is reached by no route, as it already was in practice. Kept with its tests until Josh decides whether to delete it",
+  },
+  {
     module: "src/components/ward-management/shell/ward-rail.tsx",
     why: "the master design's sidebar (ward-management/shell-next/next-rail-body.tsx, a fork of this rail with Josh's 30 Oct fixes) now mounts in the Ward Flow layout (Josh, 2 Nov 2026). Kept with its tests until Josh decides whether to delete it",
   },

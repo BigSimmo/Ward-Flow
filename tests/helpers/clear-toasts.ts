@@ -8,10 +8,12 @@ import { expect, type Page } from "playwright/test";
 export async function clearToasts(page: Page) {
   await page.mouse.move(0, 0);
   const toasts = page.getByTestId("toast");
-  for (let guard = 0; guard < 8; guard += 1) {
+  for (let guard = 0; guard < 12; guard += 1) {
     const close = toasts.getByRole("button", { name: /^Dismiss/u }).first();
     if (!(await close.isVisible())) break;
-    await close.click();
+    // A notice still sliding in (or replaced mid-click) is never "stable": a bare click retried until
+    // the 2 minute test timeout (release gate, 5 Nov 2026). Give each try 2 s and look again.
+    await close.click({ timeout: 2_000 }).catch(() => undefined);
   }
   await expect(toasts).toHaveCount(0, { timeout: 15_000 });
 }

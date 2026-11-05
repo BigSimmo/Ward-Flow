@@ -1,3 +1,4 @@
+import { placeDisplayName } from "@/components/ward-management/ward-place-names";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { DECLINE_REASON_NOT_SHARED } from "@/components/ward-management/ward-model";
 import {
@@ -47,6 +48,7 @@ type ActivityEvent = {
 };
 
 export type CommandActivity = {
+  auditFeed?: { hasOlder: boolean; loading: boolean; loadMore: () => void; error?: string };
   departments: EdPressure[];
   content: WardActivityContent;
   lastEventAt: Instant | undefined;
@@ -142,7 +144,9 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
     }
 
     movement.overrides.forEach((override, index) => {
-      const destinations = override.unitIds.map((unitId) => unitNames.get(unitId) ?? unitId).join(", ");
+      const destinations = override.unitIds
+        .map((unitId) => unitNames.get(unitId) ?? placeDisplayName(unitId))
+        .join(", ");
       events.push({
         at: override.at,
         id: `override:${movement.id}:${override.at}:${index}`,

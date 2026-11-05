@@ -69,6 +69,12 @@ describe("the access table", () => {
     expect(WARD_ACCESS_ROLES.filter((role) => !seesNetworkBedFigures(role))).toEqual(["officer", "admin"]);
   });
 
+  it("keeps the transport desk to the officer, bed manager and coordinator (WF-10, replaces Q154)", () => {
+    expect(screenForPath("/ward-flow/transport/officer")).toEqual({ screen: "officer" });
+    for (const role of ["ward", "ed", "community"] as const) expect(ROLE_SCREENS[role].officer, role).toBeUndefined();
+    expect(ROLE_SCREENS.officer.officer).toBe("own");
+  });
+
   it("opens the bed meeting agenda to the site bed manager, and to no other desk but the coordinator (decision 46)", () => {
     const places = wardPlaceLookup(seedWardFlowState().units);
     const address = screenForPath("/ward-flow/bed-meeting/agenda");
@@ -119,7 +125,6 @@ describe("the access table", () => {
         handover: "own",
         "legal-forms": "own",
         movements: "own",
-        officer: "own",
         "on-call": "all",
         patient: "own",
         "patient-new": "all",
@@ -139,7 +144,6 @@ describe("the access table", () => {
         handover: "own",
         "legal-forms": "own",
         movements: "own",
-        officer: "own",
         "on-call": "all",
         patient: "own",
         "patient-new": "all",
@@ -155,7 +159,6 @@ describe("the access table", () => {
         delays: "own",
         "legal-forms": "own",
         movements: "own",
-        officer: "own",
         "on-call": "all",
         patient: "own",
         "patient-new": "all",

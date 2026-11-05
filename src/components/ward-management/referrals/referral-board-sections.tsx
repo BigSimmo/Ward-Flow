@@ -22,6 +22,7 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import { createReadmissionIndex, referralReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { patientAgeText } from "@/components/ward-management/ward-patients";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { siteByCode } from "@/components/ward-management/ward-sites";
@@ -61,6 +62,7 @@ import {
   declineReasonWords,
   isOverdue,
   readyUnitCount,
+  staleOnlyUnitCount,
   wardArm,
 } from "./referral-board-parts";
 import styles from "./referrals.module.css";
@@ -144,7 +146,10 @@ export function QueuedSection({
   isDimmed = () => false,
   searchMiss = false,
   filterMiss = false,
+  dayZero,
 }: {
+  /** WF-03: the board's calendar day zero, so each row can show the person's age beside the UMRN. */
+  dayZero?: Date;
   progressUnavailable?: boolean;
   queued: Referral[];
   /** The phone's chip filter, not the search, narrowed the queue to nothing. */
@@ -226,6 +231,7 @@ export function QueuedSection({
                 const selected = referral.id === selectedId;
                 const priority = getReferralPriority(referral, now);
                 const ready = summary === undefined ? readyUnitCount(referral, units, now) : undefined;
+                const staleOnly = ready === 0 ? staleOnlyUnitCount(referral, units, now) : 0;
                 const ward = wardArm(referral)?.destination;
                 // Redesign (Josh, 30 Oct 2026): short words, not icons alone; "Locked" is the app's word (F-24).
                 const needs = [
@@ -278,7 +284,8 @@ export function QueuedSection({
                           {nameFor(patientInfo.formalName, patientInfo.umrn)}
                         </button>
                         <span className={a.sub}>
-                          <span className={a.mono}>{patientInfo.umrn}</span> · {personLine(referral)}
+                          <span className={a.mono}>{patientInfo.umrn}</span>
+                          {patientAgeText(patientInfo.patient, dayZero, now)} · {personLine(referral)}
                         </span>
                       </span>
                       <ReadmissionFlag
@@ -370,6 +377,15 @@ export function QueuedSection({
                         <span className={a.fit}>
                           {/* Redesign (Josh, 30 Oct 2026): the figure counts wards, so it says so. */}
                           <b>{ready}</b> {ready === 1 ? "ward" : "wards"}
+                          {ready === 0 && staleOnly > 0 ? (
+                            <span
+                              className={a.sub}
+                              data-testid={`ward-referral-board-fit-stale-${referral.id}`}
+                              title={`${staleOnly} ${staleOnly === 1 ? "ward fits" : "wards fit"} on every check but their bed count was last confirmed too long ago. Ask the ward to confirm beds.`}
+                            >
+                              {` · ${staleOnly} need bed check`}
+                            </span>
+                          ) : null}
                         </span>
                       )}
                     </td>

@@ -13,6 +13,7 @@ import {
   useCallback,
   useDeferredValue,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useTransition,
@@ -76,13 +77,14 @@ import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import { LEAVE_BED_OPEN_WARNING_MINUTES, UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import { wardTransferNeedsCoordinator } from "@/components/ward-management/ward-referrals";
-import { setDeskRole, useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { useDeskRoleSwitch, useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { plural } from "@/components/ward-management/ward-plural";
 import { CheckingFoot, durMinutes, Menu, useIsPhone, useOptionalToast } from "@/components/wf";
+import { clockTime, savedAtToast } from "@/components/ward-management/ward-saved-at-toast";
 import { useActionToast } from "@/components/ward-management/use-action-toast";
 import { useWardUnitQueues } from "./use-ward-unit-queues";
 import styles from "./ward.module.css";
@@ -129,6 +131,7 @@ import {
   WardConfirmBedsDialog,
   WardDailySheetDialog,
   WardDischargeNotices,
+  WardPlannedAdmissionsPanel,
 } from "./ward-screen-lazy";
 import { WardScreenReferralsTab } from "./ward-screen-referrals-tab";
 import { moveBetweenWardTabs, WardScreenTopBar } from "./ward-screen-top-bar";
@@ -349,6 +352,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const searchParams = useOptionalSearchParams();
   // A link from another screen asks for the board with `?tab=board`, the same key as the tab's own
   // address state (H-0186). Followed when the request arrives, as before.
+  const bookingsRequested = searchParams?.get("bookings") === "1";
   const boardTabRequested = searchParams?.get("tab") === "board";
   useEffect(() => {
     if (boardTabRequested) setActiveTab("board");
@@ -382,15 +386,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const toast = useOptionalToast();
   const pathname = usePathname() ?? "";
   const raiseAsRouteRole = useWardRaise(routeRole);
+  const { shared: sharedDesk, canSwitch: canSwitchDesk, switchDesk } = useDeskRoleSwitch();
   const setRole = useCallback(
     (nextRole: "ward") => {
-      setDeskRole(nextRole, pathname);
+      switchDesk(nextRole, pathname);
     },
-    [pathname],
+    [pathname, switchDesk],
   );
   const wardRoleLockNote =
     // A bed manager cannot switch desks, and each button it may not use says so itself.
-    routeRole !== "ward" && routeRole !== "bed_manager" ? (
+    canSwitchDesk && routeRole !== "ward" && routeRole !== "bed_manager" ? (
       <span className="lockline" data-testid="ward-role-lockline">
         Viewing as {routeRole} desk (ward actions are read-only) &middot;{" "}
         <button
@@ -401,7 +406,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           }}
           data-testid="ward-switch-to-ward-desk-btn"
         >
-          Switch to Ward desk
+          {sharedDesk ? "Choose a desk" : "Switch to Ward desk"}
         </button>
       </span>
     ) : null;
@@ -679,6 +684,20 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     };
   }, [setActiveTab]);
 
+  const drawerVisit = useRef<object | null>(null);
+  const drawerSubject = useRef<string | undefined>(undefined);
+  useLayoutEffect(() => {
+    drawerSubject.current = admissions.find(
+      (admission) =>
+        admission.unitId === unitId && admission.bedNumber === selectedBed && admission.state === "occupied",
+    )?.id;
+  }, [admissions, unitId, selectedBed]);
+  useLayoutEffect(() => {
+    drawerVisit.current = {};
+    return () => {
+      drawerVisit.current = null;
+    };
+  }, [selectedBed, drawerLeavingDestination]);
   const prevSelectedBedRef = useRef<number | null>(selectedBed);
   const bedDrawerSteppedRef = useRef(false);
   useEffect(() => {
@@ -1557,7 +1576,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     // stops *this* caller misusing the event — it is what stops any other call site writing to a
     // unit it did not claim to be acting as, and what puts that claim on the event where the
     // reducer can compare it.
-    raise("CONFIRM_CAPACITY", {
+    return raise("CONFIRM_CAPACITY", {
       unitId: wardUnitId,
       actingUnitId: unitId,
       value: Math.floor(parsed),
@@ -1574,7 +1593,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       warnToast(`Enter a whole number from 0 to ${unit.beds} beds.`);
       return;
     }
-    submitCapacity();
+    // say on screen that the beds were saved, and when.
+    completeCommand(
+      "capacity-rollup",
+      () => submitCapacity(),
+      (outcome) => {
+        const failure = wardCommandFailure(outcome);
+        if (failure) warnToast(failure);
+        else savedAtToast(toast, `Beds confirmed: ${parsed} of ${unit.beds}`);
+      },
+    );
   }
 
   function handleConfirmBedsAndMorningRollup() {
@@ -1605,7 +1633,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         }
         const confirmed = () =>
           setToastMessage(
-            `Capacity and morning bed numbers confirmed (due ${morningRollupTimeLabel}): ${plural(releasesCountedToday.length, "discharge", "discharges")} planned today.`,
+            `Capacity and morning bed numbers confirmed at ${clockTime()} (due ${morningRollupTimeLabel}): ${plural(releasesCountedToday.length, "discharge", "discharges")} planned today.`,
           );
         if (isRollupConfirmedToday) {
           confirmed();
@@ -1682,6 +1710,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   function handleDrawerRecordLeft(admissionId: string, who: string) {
     if (!drawerLeavingDestination) return;
+    const visit = drawerVisit.current;
     const resolved = resolvePatientIdentity(admissions.find((admission) => admission.id === admissionId));
     const destinationLabel = LEAVING_DESTINATIONS.find(
       (destination) => destination.id === drawerLeavingDestination,
@@ -1706,7 +1735,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       (outcome) => {
         dischargeCheckRef.current = { ...check, outcome };
         setDischargeToken((token) => token + 1);
-        if (!outcome || outcome.status === "accepted") closeBedDrawer();
+        if (
+          outcome?.status === "accepted" &&
+          outcome.isCurrent?.() !== false &&
+          drawerVisit.current === visit &&
+          (!drawerSubject.current || drawerSubject.current === admissionId)
+        )
+          closeBedDrawer();
       },
     );
   }
@@ -2194,6 +2229,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             bedsList={bedsList}
           />
         )}
+        {bookingsRequested ? <WardPlannedAdmissionsPanel now={now} unitId={unit.id} /> : null}
         {isPhone && !phoneCardOpen ? (
           /* Phone (v10): the two views pin under the header as one segmented control, outside the
              ward card so they stay in place while the page scrolls. */

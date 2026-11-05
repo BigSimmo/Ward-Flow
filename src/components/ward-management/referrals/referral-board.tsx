@@ -1,18 +1,11 @@
 "use client";
 
+import { useLocationSearch } from "@/components/ward-management/ward-url-state";
+
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { BEDS_READY_SCOPED_TITLE } from "@/components/ward-management/ward-shared-figures";
-import {
-  useCallback,
-  useEffect,
-  useEffectEvent,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type ReactNode,
-} from "react";
+import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
@@ -57,7 +50,7 @@ import {
 
 import { ReferralHistoryAndCorrections } from "./referral-history-corrections-lazy";
 import { ReferralMatchView } from "./referral-match-lazy";
-import { HistoryFoldProvider } from "./folded-history";
+import { HistoryFoldProvider } from "./folded-history-context";
 import { ReferralPhoneChips } from "./referral-phone-chips";
 import { allClinicalValuesSigned } from "@/components/ward-management/ward-clinical-values";
 import { useReferralDecisionUndo } from "./use-referral-decision-undo";
@@ -243,15 +236,6 @@ function isTyping(target: EventTarget | null): boolean {
   );
 }
 
-function subscribeToLocation(listener: () => void) {
-  window.addEventListener("popstate", listener);
-  return () => window.removeEventListener("popstate", listener);
-}
-function readLinkedReferralId(): string | null {
-  // D-39: the link carries an address code; an old link may still carry the raw id.
-  return recordIdFromParam(new URLSearchParams(window.location.search).get("referral"));
-}
-
 /**
  * Option A (Josh, 9 October 2026): the statewide referral queue as a dense table with a decision
  * panel beside it. The hero carries the page's own tools: highlight pills, the waiting runway,
@@ -295,6 +279,7 @@ export function ReferralBoard({
     patients = [],
     admissions = [],
     bedReleases = [],
+    dayZero,
   } = useWardFlowSelect(
     "referrals",
     "units",
@@ -304,6 +289,7 @@ export function ReferralBoard({
     "patients",
     "admissions",
     "bedReleases",
+    "dayZero",
   );
   // ROLE BRANCH (ward): this ward's name, and its own units for beds ready. Every unit on other desks.
   const { ownWardName, bedUnits } = useWardDeskPlace(units);
@@ -324,11 +310,20 @@ export function ReferralBoard({
   const phoneLayout = useIsPhone();
   const [phoneSheet, setPhoneSheet] = useState<"axis" | "beds" | null>(null);
   // A2-5: `?referral=<id>` (the ED row's "Referred to" link) opens that referral until someone chooses.
-  const linkedReferralId = useSyncExternalStore(subscribeToLocation, readLinkedReferralId, () => null);
+  const locationSearch = useLocationSearch();
+  const linkedReferralId = recordIdFromParam(new URLSearchParams(locationSearch).get("referral"));
+  const [selectionTarget, setSelectionTarget] = useState(linkedReferralId);
+  if (selectionTarget !== linkedReferralId) {
+    setSelectionTarget(linkedReferralId);
+    setSelectedReferralId(undefined);
+  }
+  const linkedReferralUnavailable = linkedReferralId !== null && !referrals.some((r) => r.id === linkedReferralId);
   const selectedReferralId =
     chosenReferralId === undefined
-      ? linkedReferralId !== null && referrals.some((referral) => referral.id === linkedReferralId)
-        ? linkedReferralId
+      ? linkedReferralId !== null
+        ? linkedReferralUnavailable
+          ? undefined
+          : linkedReferralId
         : defaultSelectFirst && splitDetailLayout
           ? // Community desk: with nothing waiting on the team, the detail opens on its latest
             // decided referral rather than an empty panel.
@@ -525,11 +520,12 @@ export function ReferralBoard({
 
   // WS-04 (workflow speed audit, 26 Oct 2026): Decide on Home opens this board on its referral. The
   // decision is brought into view once, so Accept and Decline are not left below the board's header.
-  const linkedOpenScrolled = useRef(false);
+  const linkedOpenScrolled = useRef<string | null>(null);
   const openedFromLink = chosenReferralId === undefined && linkedReferralId !== null;
   useEffect(() => {
-    if (!openedFromLink || selectedReferralId !== linkedReferralId || linkedOpenScrolled.current) return;
-    linkedOpenScrolled.current = true;
+    if (!openedFromLink || selectedReferralId !== linkedReferralId || linkedOpenScrolled.current === linkedReferralId)
+      return;
+    linkedOpenScrolled.current = linkedReferralId;
     if (typeof detailRef.current?.scrollIntoView === "function")
       detailRef.current.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
   }, [openedFromLink, selectedReferralId, linkedReferralId]);
@@ -765,6 +761,9 @@ export function ReferralBoard({
     >
       <main id="main-content" className={cx(styles.main, redesign.page)}>
         <h1 className="sr-only">{heading}</h1>
+        {linkedReferralUnavailable && chosenReferralId === undefined ? (
+          <p role="status">The requested referral is unavailable. Choose a referral from the queue to continue.</p>
+        ) : null}
         {phoneLayout ? (
           <ReferralPhoneTop>
             <ReferralPhoneHero
@@ -1008,6 +1007,7 @@ export function ReferralBoard({
                 {/* ROLE BRANCH (ward): an empty ward queue shows one line, below, not two. */}
                 {wardEmpty ? null : (
                   <QueuedSection
+                    dayZero={dayZero}
                     progressUnavailable={presentationLists.unavailable.length > 0}
                     queued={listedQueued}
                     searchMiss={phoneFiltered && listedQueued.length === 0 && queued.length > 0}

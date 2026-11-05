@@ -167,4 +167,22 @@ describe("CAD drafts belong to their movement", () => {
     expect(input()).toHaveValue(CAD_B);
     expect(capture.raise).toHaveBeenCalledTimes(1);
   });
+  it("keeps an old job's delayed accepted save away from its replacement on the same movement", async () => {
+    let finish!: (outcome: WardCommandOutcome) => void;
+    capture.raise.mockReturnValue(new Promise<WardCommandOutcome>((resolve) => (finish = resolve)));
+    const job = (transportId: string) => (
+      <TransportCadToFollow movementId={A} transportId={transportId} role="officer" testId="cad-draft" />
+    );
+    const view = render(job("synthetic-job-old"));
+    type(CAD_A);
+    fireEvent.click(save());
+    expect(input()).toBeDisabled();
+    view.rerender(job("synthetic-job-new"));
+    expect(input()).toHaveValue("");
+    expect(input()).not.toBeDisabled();
+    type(CAD_B);
+    await act(async () => finish({ status: "accepted", commandId: "synthetic-old-job-save" }));
+    expect(input()).toHaveValue(CAD_B);
+    expect(capture.raise).toHaveBeenCalledTimes(1);
+  });
 });

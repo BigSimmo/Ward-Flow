@@ -482,7 +482,7 @@ export function createSharedHandler({
         const commandId = new URL(request.url).searchParams.get("commandId");
         if (!UUID.test(commandId ?? "")) return reply(400, { error: "A command ID is required" });
         if (typeof store.receipt !== "function") return reply(404, { error: "Command receipts are not available" });
-        return reply(200, { receipt: await store.receipt(actorId, (commandId ?? "").toLowerCase()) });
+        return reply(200, { receipt: await store.receipt(actorId, (commandId ?? "").toLowerCase(), view) });
       }
       if (path === "/v1/workspace/archive" && request.method === "GET") {
         if (view.access.role === "executive")

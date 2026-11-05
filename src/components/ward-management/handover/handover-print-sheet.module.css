@@ -433,6 +433,23 @@
   .patientRow.hlr:focus-within td {
     background: var(--wf-accent-tint);
   }
+
+  /* A measured layout that does not fit prints the reason instead of clipped pages. */
+  .stack[data-print-overflow] .frame {
+    display: none;
+  }
+
+  .stack[data-print-overflow] .printWarning {
+    display: block;
+    color-scheme: light;
+    color: CanvasText;
+    background: Canvas;
+  }
+}
+
+/* Shown only on paper, when the layout does not fit. */
+.printWarning {
+  display: none;
 }
 
 /* Moved from inline styles (styles cleanup, 16 Oct 2026). */

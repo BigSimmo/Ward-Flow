@@ -8,7 +8,7 @@ import path from "node:path";
  * of all unit test time. Josh's ruling (27 October 2026): a pull request runs it only when it
  * changes something the sweep runs. Main pushes, the nightly run and manual runs always run it.
  *
- * "Something the sweep runs" is the import closure of the sweep files and the unit setup file,
+ * "Something the sweep runs" is the import closure of the sweep, setup, execution harness and config,
  * followed from the PR's own tree: a change that adds a new import does so by editing a file already
  * in the closure. Configuration that changes how every test runs, and the files that decide this,
  * always count. Anything not positively recognised runs the sweep (fail closed).
@@ -16,6 +16,7 @@ import path from "node:path";
 
 const SWEEP_TEST = /^tests\/ward-legal-figure-guard-sweep-\d+\.test\.ts$/u;
 const SETUP_FILES = ["tests/setup/reducer-slices.setup.ts"];
+const EXECUTION_FILES = ["scripts/check-ward-expected-reds.mjs", "vitest.config.mts"];
 
 /** Files outside the import closure that still change what the sweep does or whether it runs. */
 const ALWAYS = new Set([
@@ -69,20 +70,23 @@ function resolveImport(root, from, specifier) {
 }
 
 /**
- * Every repository file the sweep imports, directly or not, plus the sweep files and setup file.
+ * Every repository file the sweep, its harness or its config imports, directly or not.
  * Uses the same import pattern as the related-test selector; a match inside a comment only adds a
- * file, which errs towards running the sweep.
+ * file, which errs towards running the sweep. Missing execution inputs and unresolved local imports
+ * throw so the planner's existing error path runs the full suite rather than accepting a partial graph.
  */
 export function legalSweepInputs(root = ".") {
-  const start = [...legalSweepTests(root), ...SETUP_FILES.filter((file) => existsSync(path.join(root, file)))];
+  const start = [...legalSweepTests(root), ...SETUP_FILES, ...EXECUTION_FILES];
   const seen = new Set(start);
   const queue = [...start];
   for (let index = 0; index < queue.length; index++) {
     const file = queue[index];
-    if (!/\.(tsx?|mjs|cjs|js)$/u.test(file)) continue;
+    if (!/\.(?:[cm]?[jt]s|[jt]sx)$/u.test(file)) continue;
     const source = readFileSync(path.join(root, file), "utf8");
     for (const match of source.matchAll(/(?:from\s+|import\s*\(\s*|import\s+|require\(\s*)["']([^"']+)["']/gu)) {
       const target = resolveImport(root, file, match[1]);
+      if (!target && (match[1].startsWith(".") || match[1].startsWith("@/")))
+        throw new Error(`Cannot resolve local sweep input ${match[1]} imported by ${file}`);
       if (target && !seen.has(target)) {
         seen.add(target);
         queue.push(target);

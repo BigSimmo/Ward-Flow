@@ -1034,7 +1034,7 @@ function Confirmed({ row, now, countsOnly = false }: { row: WardRow; now: Instan
     <span className={styles.confirmed}>
       <StatusGlyph tone="warning" size={8} />
       {/* Site bed manager: another site's count is its own ward's to chase, not this desk's. */}
-      <b className={styles.num}>{age}</b> {countsOnly ? "stale" : "stale, ask NUM"}
+      <b className={styles.num}>{age}</b> {countsOnly ? "stale" : "stale, ask the nurse unit manager"}
     </span>
   ) : (
     <span className={styles.confirmed}>

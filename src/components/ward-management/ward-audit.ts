@@ -1,3 +1,4 @@
+import { isObservation, type Observation } from "./ward-observation";
 import { communityTeamById } from "./community/community-derivations";
 import { stepUndoSubjectId } from "./ward-flow-subject-id";
 import { validCareChange, type CareChange } from "./ward-care-journey";
@@ -297,6 +298,11 @@ export type AuditEvent = AuditBase &
         details: { patientId: PatientId | null; umrn: string | null; reason: PatientArchiveReason | null };
       }
     | {
+        category: "patient-record";
+        action: "RECORD_OBSERVATION_LEVEL";
+        details: { before: Observation | null; requested: Observation | null; after: Observation | null };
+      }
+    | {
         category: "configuration";
         action: "SET_CONFIGURATION";
         details: {
@@ -387,6 +393,7 @@ export function classifyAuditEvent(event: WardFlowEvent): AuditCategory | null {
     case "SET_CONFIGURATION":
       return "configuration";
     case "ARCHIVE_PATIENT":
+    case "RECORD_OBSERVATION_LEVEL":
       return "patient-record";
     case "TAKE_INBOX_ITEM_OWNERSHIP":
     case "RELEASE_INBOX_ITEM_OWNERSHIP":
@@ -403,7 +410,16 @@ function auditActor(state: WardFlowState, event: WardFlowEvent): AuditActor {
   return {
     role,
     actingUnitId:
-      role === "ward" && "actingUnitId" in event ? (uniqueRecord(state.units, event.actingUnitId)?.id ?? null) : null,
+      role === "ward"
+        ? (uniqueRecord(
+            state.units,
+            event.type === "RECORD_OBSERVATION_LEVEL"
+              ? event.target?.actingUnitId
+              : "actingUnitId" in event
+                ? event.actingUnitId
+                : undefined,
+          )?.id ?? null)
+        : null,
     ...("actingTeamId" in event &&
     role === "community" &&
     typeof event.actingTeamId === "string" &&
@@ -417,6 +433,30 @@ function patientReference(state: WardFlowState, id: unknown): PatientId | null {
   return uniqueRecord(state.patients, id)?.id ?? null;
 }
 export function auditSubject(state: WardFlowState, event: WardFlowEvent): AuditSubject {
+  if (event.type === "RECORD_OBSERVATION_LEVEL") {
+    if (event.target?.kind === "movement") {
+      const movement = uniqueRecord(state.movements, event.target.movementId);
+      if (movement)
+        return {
+          kind: "movement",
+          movementId: movement.id,
+          patientId: patientReference(
+            state,
+            uniqueRecord(state.referrals, movement.referralId)?.patientId ?? movement.patientId,
+          ),
+        };
+    } else if (event.target?.kind === "admission") {
+      const admission = uniqueRecord(state.admissions, event.target.admissionId);
+      if (admission && uniqueRecord(state.units, admission.unitId))
+        return {
+          kind: "admission",
+          admissionId: admission.id,
+          unitId: admission.unitId,
+          patientId: patientReference(state, admission.patientId),
+        };
+    }
+    return { kind: "unresolved" };
+  }
   if ("admissionId" in event) {
     const admission = uniqueRecord(state.admissions, event.admissionId);
     if (admission && uniqueRecord(state.units, admission.unitId))
@@ -726,6 +766,28 @@ export function captureAuditEvent(
         },
       };
       break;
+    case "RECORD_OBSERVATION_LEVEL": {
+      const observation = (state: WardFlowState): Observation | null => {
+        const row =
+          event.target?.kind === "movement"
+            ? uniqueRecord(state.movements, event.target.movementId)
+            : event.target?.kind === "admission"
+              ? uniqueRecord(state.admissions, event.target.admissionId)
+              : undefined;
+        return isObservation(row?.observation) ? structuredClone(row.observation) : null;
+      };
+      captured = {
+        ...base,
+        category: "patient-record",
+        action: event.type,
+        details: {
+          before: observation(before),
+          requested: isObservation(event.observation) ? structuredClone(event.observation) : null,
+          after: observation(after),
+        },
+      };
+      break;
+    }
     case "ARCHIVE_PATIENT": {
       const record = uniqueRecord(before.patients, event.patientId);
       captured = {

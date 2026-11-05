@@ -214,7 +214,7 @@ describe("shared recovery within an open sheet", () => {
           <p>Synthetic screen</p>
         </WardSharedAccess>,
       );
-      expect(screen.getByRole("status").textContent).toBe("Checking your sign-in.");
+      expect(screen.getByRole("status").textContent).toBe("Checking your sign-in. This usually takes a few seconds.");
       expect(screen.queryByRole("button", { name: "Sign in" })).toBeNull();
       expect(screen.queryByRole("button", { name: "Sign out" })).toBeNull();
       view.rerender(

@@ -25,8 +25,11 @@ import {
   TRANSPORT_PROVIDERS,
 } from "@/components/ward-management/ward-model";
 import { nextRuntimeIdNumber } from "@/components/ward-management/ward-runtime-ids";
-import { allEmergencyDepartments, siteByCode } from "@/components/ward-management/ward-sites";
-import { scenarioHasSite, scenarioSite } from "@/components/ward-management/ward-scenarios";
+import {
+  scenarioEmergencyDepartments,
+  scenarioHasSite,
+  scenarioSite,
+} from "@/components/ward-management/ward-scenarios";
 import {
   SUPPORT_NOTIFICATION_OCCASIONS,
   SUPPORT_NOTIFICATION_OUTCOMES,
@@ -259,6 +262,8 @@ export function reduceRecordedStayEvent(
     }
 
     case "RECORD_STAY_DISCHARGE_BLOCKER": {
+      // The time joins the stay's hold-up log, so a non-finite one is refused before anything changes.
+      if (!Number.isFinite(event.now)) return reject(state, event, `${event.type} requires a finite current time`);
       const admission = findAdmission(state, event.admissionId);
       if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
       if (event.actingUnitId !== admission.unitId) {
@@ -284,7 +289,15 @@ export function reduceRecordedStayEvent(
           `admission ${admission.id} is ${admission.state}, and only somebody occupying a bed can have a discharge blocker`,
         );
       }
-      const updated = replaceAdmission(state, admission.id, { ...admission, blockReason: event.blocker });
+      const updated = replaceAdmission(state, admission.id, {
+        ...admission,
+        blockReason: event.blocker,
+        // logged with time and role for the bed timeline.
+        stayBlockRecords: [
+          ...(admission.stayBlockRecords ?? []),
+          { at: event.now, by: event.role, blocker: event.blocker },
+        ],
+      });
       return {
         ...updated,
         bedReleases: updated.bedReleases.map((release) =>
@@ -476,7 +489,19 @@ export function reduceRecordedStayEvent(
         return reject(state, event, `cannot initiate repatriation for closed movement ${movement.id}`);
       }
       const existing = Array.isArray(state.repatriations) ? state.repatriations : [];
-      const existingRecord = existing.find((record) => record.admissionId === admission.id);
+      const retainedRecord = existing.find((record) => record.admissionId === admission.id);
+      if (state.movements.some((row) => row.sourceAdmissionId === admission.id && !row.closure)) {
+        return reject(
+          state,
+          event,
+          `admission ${admission.id} already has ${retainedRecord ? "a repatriation record and " : ""}an open return journey`,
+        );
+      }
+      const previousReturn = retainedRecord
+        ? state.movements.findLast((row) => row.sourceAdmissionId === admission.id && row.openedAt >= retainedRecord.at)
+        : undefined;
+      // A withdrawn agreed journey is retained history, not an active plan for a new attempt.
+      const existingRecord = previousReturn?.closure?.outcome === "did_not_proceed" ? undefined : retainedRecord;
       if (existingRecord && (existingRecord.receivingWardAgreed || event.receivingWardAgreed !== true)) {
         return reject(state, event, `admission ${admission.id} already has a repatriation record`);
       }
@@ -541,8 +566,14 @@ export function reduceRecordedStayEvent(
         typeof event.form4CReceived === "boolean" ? event.form4CReceived : existingRecord?.form4CReceived;
       const escortRequired =
         typeof event.escortRequired === "boolean" ? event.escortRequired : existingRecord?.escortRequired;
+      let earlier = existingRecord?.earlier;
+      if (retainedRecord && !existingRecord) {
+        const { earlier: previous, ...priorPlan } = retainedRecord;
+        earlier = [...(previous ?? []), priorPlan];
+      }
       const recorded: RepatriationRecord = {
         admissionId: admission.id,
+        ...(earlier ? { earlier } : {}),
         at: existingRecord?.at ?? event.now,
         by: existingRecord?.by ?? event.role,
         homeHospital,
@@ -566,11 +597,11 @@ export function reduceRecordedStayEvent(
           returnMovementId = nextReferralId(nextSequence);
         }
         const currentUnit = findUnit(state, admission.unitId);
-        const currentSite = currentUnit?.siteCode ? siteByCode(currentUnit.siteCode) : undefined;
+        const currentSite = currentUnit?.siteCode ? scenarioSite(state.scenario, currentUnit.siteCode) : undefined;
         const currentEdId =
           currentSite?.emergencyDepartment?.id ??
-          allEmergencyDepartments().find((ed) => ed.siteCode === currentSite?.code)?.id ??
-          allEmergencyDepartments()[0]?.id ??
+          scenarioEmergencyDepartments(state.scenario).find((ed) => ed.siteCode === currentSite?.code)?.id ??
+          scenarioEmergencyDepartments(state.scenario)[0]?.id ??
           "rph-ed";
         const targetSite = scenarioSite(state.scenario, homeHospital);
         const targetHealthService = targetSite?.service ?? "North Metro";
@@ -612,7 +643,7 @@ export function reduceRecordedStayEvent(
       }
       return {
         ...state,
-        repatriations: existingRecord
+        repatriations: retainedRecord
           ? existing.map((record) => (record.admissionId === admission.id ? recorded : record))
           : [...existing, recorded],
         movements: nextMovements,

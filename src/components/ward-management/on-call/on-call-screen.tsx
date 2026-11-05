@@ -12,6 +12,7 @@ import {
 } from "@/components/ward-management/ward-flow-provider";
 import { withRecordedChecks } from "./on-call-checks";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import {
   Button,
@@ -150,14 +151,24 @@ export function OnCallScreen() {
   );
   // OC2 mock-up (4 Nov 2026): the page follows the header's service, as every other page does. A
   // chosen service shows its own lines plus the statewide ones; Statewide shows everyone.
+  // WF-45: transport officers only need transport/retrieval lines (not the full statewide roster).
   const scope = useServiceScope();
-  const entries = useMemo(
-    () => (scope ? allEntries.filter((entry) => entry.service === scope || entry.service === "Statewide") : allEntries),
-    [allEntries, scope],
-  );
+  const access = useEffectiveWardAccess();
+  const entries = useMemo(() => {
+    const scoped = scope
+      ? allEntries.filter((entry) => entry.service === scope || entry.service === "Statewide")
+      : allEntries;
+    if (access.role === "officer") {
+      return scoped.filter((entry) => entry.group === "Transport and retrieval");
+    }
+    return scoped;
+  }, [allEntries, scope, access.role]);
   const ids = useMemo(() => new Set(baseEntries.map((entry) => entry.id)), [baseEntries]);
 
-  const [tab, setTab] = useState<DirectoryTab>("hospitals");
+  // WF-45: an officer's three transport lines all sit in Statewide, so an officer starts there, not
+  // on an empty Hospitals tab. Derived until a tab is picked, so a late-arriving role still applies.
+  const [pickedTab, setTab] = useState<DirectoryTab | null>(null);
+  const tab: DirectoryTab = pickedTab ?? (access.role === "officer" ? "statewide" : "hospitals");
   const [groupBy, setGroupBy] = useState<"place" | "role">("place");
   const [highlight, setHighlight] = useState<Highlight | null>(null);
   const [query, setQuery] = useState("");
@@ -402,7 +413,16 @@ export function OnCallScreen() {
           </>
         }
         // F-08 (phone review, Oct 2026): the phone hero carries the Demo pill and says the numbers are invented.
-        titleMeta={isPhone ? "Prototype data, invented numbers" : undefined}
+        // WF-45: on desktop, scope sits in the meta so the heading name stays "On-call: N lines answering".
+        titleMeta={
+          isPhone
+            ? "Prototype data, invented numbers"
+            : access.role === "officer"
+              ? "Transport lines"
+              : scope
+                ? `${SERVICE_META[scope].short} + statewide`
+                : "All services"
+        }
         stats={
           isPhone ? (
             // Device audit 11 Oct 2026: the three figures sit on one short line so the number comes sooner.
@@ -596,9 +616,12 @@ export function OnCallScreen() {
   ));
 
   // OC2 mock-up: one service index in the toolbar replaces the jump pills repeated on every service row.
-  const indexServices = [...new Set(tabRows.map((entry) => entry.service))].filter(
-    (service): service is Exclude<DirectoryService, "Statewide"> => service !== "Statewide",
-  );
+  const shownRows = showTest ? tabRows.filter((entry) => showTest(entry, minute)) : tabRows;
+  const indexServices = groupRows(entries, shownRows, tab, tab === "hospitals" ? groupBy : "place")
+    .map((block) => block.service)
+    .filter(
+      (service): service is Exclude<DirectoryService, "Statewide"> => service !== null && service !== "Statewide",
+    );
   const serviceIndex =
     tab !== "mine" && indexServices.length > 1 ? (
       <span className={styles.jump} role="group" aria-label="Jump to service">
@@ -777,7 +800,7 @@ export function OnCallScreen() {
             </div>
             <DirectoryTable
               entries={entries}
-              rows={showTest ? tabRows.filter((entry) => showTest(entry, minute)) : tabRows}
+              rows={shownRows}
               tab={tab}
               groupBy={tab === "hospitals" ? groupBy : "place"}
               actions={actions}
@@ -798,7 +821,8 @@ export function OnCallScreen() {
               className={styles.dirFoot}
               meta={
                 <span className={styles.footMeta} data-testid="ward-on-call-count">
-                  {tabRows.length} {tabRows.length === 1 ? "contact" : "contacts"} in this tab, {entries.length} in all.{" "}
+                  {tabRows.length} {tabRows.length === 1 ? "contact" : "contacts"} in this tab, {entries.length} in
+                  scope ({answering.length} answering).{" "}
                   {atLater ? `Shown as at ${hhmm(minute)}.` : `Shown as at ${hhmm(boardMinute)}, the board time.`}
                 </span>
               }

@@ -87,42 +87,61 @@ export function WardSharedSaveStatus({
   // Compiler caches add download weight to this small shared recovery surface.
   "use no memo";
   const save = useWardSharedSave();
+  const [retrying, setRetrying] = useState(false);
+  const stale = useSharedRefreshLate(connection.enabled, 5 * 60_000, false) && connection.receivedAt > 0;
   // Tier 1 item 4 (Josh, 4 Nov 2026): a refresh that is late but not yet failed used to show only on
   // pages with a Live chip. The strip now says when the board last updated, on every screen.
   const late =
     useSharedRefreshLate(connection.enabled && connection.status !== "unavailable") && connection.receivedAt > 0;
   // Inside an open sheet the strip is inert, so a late refresh moves its words and Retry there too.
-  const showRecovery = connection.status === "saving" || connection.status === "unavailable" || late;
+  const showRecovery = connection.status === "saving" || connection.status === "unavailable" || late || stale;
   const host = useRecoveryHost(showRecovery);
-  const saving = connection.status === "saving";
+  const saving = connection.status === "saving" || retrying;
   const recoveryRef = useRef<HTMLElement>(null);
   // Josh, 27 Oct 2026 ("it is pointless"): the strip shows only when something needs action, a lost
   // connection or a save not yet confirmed. Otherwise its words stay a screen-reader status, and
   // Sign out lives in the rail and the phone menu (`WardAccountActions`).
-  const problem = connection.status === "unavailable" || !!save?.unconfirmedSave || late;
+  const problem = connection.status === "unavailable" || !!save?.unconfirmedSave || late || stale;
   const barRef = useRef<HTMLDivElement>(null);
   useBarHeight(barRef, problem);
   // Retry disappears while the save runs. Park focus on the persistent status, still inside the sheet.
   const retry = () => {
-    recoveryRef.current?.focus({ preventScroll: true });
-    connection.retry();
+    (recoveryRef.current ?? barRef.current)?.focus({ preventScroll: true });
+    if (retrying) return;
+    setRetrying(true);
+    try {
+      void Promise.resolve(connection.retry())
+        .catch(() => {})
+        .finally(() => setRetrying(false));
+    } catch {
+      setRetrying(false);
+    }
   };
   const waiting = connection.waiting ?? 0;
-  const message = saving
-    ? "Saving shared changes… Keep this page open until the save is confirmed."
-    : connection.status === "unavailable"
-      ? // Tier 1 item 1: saves waiting while offline go by themselves when the connection returns.
-        waiting > 0 && !connection.boardCurrent
-        ? waitingMessage(waiting)
-        : // Audit 24-3 SM-4: the connection is fine when only a save waits on Retry; its message says so.
-          connection.boardCurrent
-          ? ""
-          : saveProblem("connectionUnavailable")
-      : late
-        ? `Not updated since ${clk(connection.receivedAt)}. Still checking every few seconds.`
-        : `${deskLabel} · shared synthetic workspace`;
+  const message = retrying
+    ? "Retrying…"
+    : saving
+      ? "Saving shared changes… Keep this page open until the save is confirmed."
+      : connection.status === "unavailable"
+        ? // Tier 1 item 1: saves waiting while offline go by themselves when the connection returns.
+          waiting > 0 && !connection.boardCurrent
+          ? waitingMessage(waiting)
+          : // Audit 24-3 SM-4: the connection is fine when only a save waits on Retry; its message says so.
+            connection.boardCurrent
+            ? ""
+            : saveProblem("connectionUnavailable")
+        : stale
+          ? `Stale. Last updated at ${clk(connection.receivedAt)}. Check updates before acting.`
+          : late
+            ? `Not updated since ${clk(connection.receivedAt)}. Still checking every few seconds.`
+            : `${deskLabel} · shared synthetic workspace`;
+  const freshness =
+    connection.status === "unavailable" && connection.receivedAt > 0
+      ? `${stale ? "Stale. " : ""}Last updated at ${clk(connection.receivedAt)}. Check updates before acting.`
+      : null;
   const detail: ReactNode = (
     <>
+      {freshness && <span> {freshness}</span>}
       {connection.error && <span> {connection.error}</span>}
       {save?.unconfirmedSave && <p className={styles.warning}>{RELOAD_WARNING}</p>}
     </>
@@ -131,6 +150,7 @@ export function WardSharedSaveStatus({
     <>
       <div
         ref={barRef}
+        tabIndex={-1}
         className={problem ? styles.bar : styles.quiet}
         data-state={connection.status}
         data-testid="ward-shared-status-bar"
@@ -141,17 +161,19 @@ export function WardSharedSaveStatus({
       >
         <span className={styles.message}>
           {message}
+          {freshness && <span> {freshness}</span>}
           {connection.error && <span> {connection.error}</span>}
         </span>
         {save?.unconfirmedSave && <p className={styles.warning}>{RELOAD_WARNING}</p>}
         {problem && (
           <span className={styles.end}>
-            {(connection.status === "unavailable" || late) && (
-              <button type="button" className={styles.action} onClick={connection.retry}>
+            {!retrying && (connection.status === "unavailable" || late || stale) && (
+              <button type="button" className={styles.action} onClick={retry}>
                 Retry
               </button>
             )}
-            <button type="button" className={styles.action} onClick={connection.signOut}>
+            {/* WF-38 (live test, 4 Nov 2026): Sign out stands apart from Retry, so a slip does not end the session. */}
+            <button type="button" className={`${styles.action} ${styles.signOut}`} onClick={connection.signOut}>
               Sign out
             </button>
           </span>
@@ -169,7 +191,7 @@ export function WardSharedSaveStatus({
           >
             <p>{message}</p>
             {detail}
-            {!saving && (
+            {!saving && !retrying && (
               <button type="button" className={styles.retry} onClick={retry}>
                 Retry
               </button>

@@ -247,7 +247,7 @@
 }
 
 /* Phone: the tick row is a 40px target, with a cover keeping the 48px tap area on touch screens. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .tick {
     min-height: 40px;
   }

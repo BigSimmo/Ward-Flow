@@ -5,13 +5,19 @@ import path from "node:path";
 
 import { describe, expect, it } from "vitest";
 
-import { decide, listOpenPullRequests } from "../scripts/ward-ci-public/budget-recheck.mjs";
+import {
+  budgetMainFromAnnotations,
+  decide,
+  listOpenPullRequests,
+  withBudgetMainReceipt,
+} from "../scripts/ward-ci-public/budget-recheck.mjs";
 import { mergeLatestMain } from "../scripts/ward-ci-public/merge-latest-main.mjs";
 
 const since = Date.parse("2026-10-21T06:00:00Z");
 const armed = { draft: false, auto_merge: { merge_method: "merge" } };
 const build = (fields: Record<string, unknown>) => ({ id: 7, name: "Ward Flow production build", ...fields });
 const done = { status: "completed" };
+const mainSha = "a".repeat(40);
 
 describe("budget recheck: which pull requests re-measure when main moves", () => {
   it("reads every page of open pull requests, not just the first 100", async () => {
@@ -75,6 +81,44 @@ describe("budget recheck: which pull requests re-measure when main moves", () =>
     ).toBe("skip");
   });
 
+  it("does not repeat a build that recorded this exact main before a delayed recheck started", () => {
+    expect(
+      decide(armed, done, [build({ budgetMainSha: mainSha, started_at: "2026-10-21T05:00:00Z" })], since, mainSha),
+    ).toEqual({
+      action: "skip",
+      reason: "build already measured the current main",
+    });
+  });
+
+  it("does not let a later start time override a different recorded main", () => {
+    const jobs = [build({ budgetMainSha: "b".repeat(40), started_at: "2026-10-21T06:01:00Z" })];
+    expect(decide(armed, done, jobs, since, mainSha)).toEqual({ action: "rerun", jobId: 7 });
+    expect(decide(armed, { status: "in_progress" }, jobs, since, mainSha)).toEqual({ action: "wait" });
+  });
+
+  it.each(
+    [undefined, null, "", "not-a-sha", mainSha.toUpperCase(), [mainSha]].map((budgetMainSha) => ({ budgetMainSha })),
+  )("keeps the legacy timestamp fallback for an unusable receipt %j", ({ budgetMainSha }) => {
+    expect(
+      decide(armed, done, [build({ budgetMainSha, started_at: "2026-10-21T05:00:00Z" })], since, mainSha).action,
+    ).toBe("rerun");
+    expect(decide(armed, done, [build({ budgetMainSha, started_at: "2026-10-21T06:01:00Z" })], since, mainSha)).toEqual(
+      {
+        action: "skip",
+        reason: "build started after main moved",
+      },
+    );
+  });
+
+  it("does not let matching main evidence bypass draft, auto-merge or current-head ownership", () => {
+    const jobs = [build({ budgetMainSha: mainSha, started_at: "2026-10-21T05:00:00Z" })];
+    expect(decide({ ...armed, draft: true }, done, jobs, since, mainSha).reason).toBe("draft");
+    expect(decide({ ...armed, auto_merge: null }, done, jobs, since, mainSha).reason).toBe("auto-merge not armed");
+    expect(decide({ ...armed, head: { sha: "new" } }, { ...done, head_sha: "old" }, jobs, since, mainSha).reason).toBe(
+      "run is for an older head",
+    );
+  });
+
   it("waits for a run whose build started before main moved", () => {
     expect(
       decide(
@@ -103,6 +147,71 @@ describe("budget recheck: which pull requests re-measure when main moves", () =>
   });
 });
 
+describe("budget recheck measured-main evidence", () => {
+  const notice = (message = mainSha) => ({ title: "Ward budget main", annotation_level: "notice", message });
+
+  it("reads one exact measured-main notice and ignores unrelated annotations", () => {
+    expect(budgetMainFromAnnotations([notice(), { ...notice(), title: "Unrelated notice" }])).toBe(mainSha);
+  });
+
+  it.each(
+    [
+      null,
+      [],
+      [notice("not-a-sha")],
+      [{ ...notice(), annotation_level: "warning" }],
+      [{ ...notice(), message: null }],
+      [notice(), notice()],
+      [notice(), notice("b".repeat(40))],
+    ].map((annotations) => ({ annotations })),
+  )("refuses missing, malformed or ambiguous notices %j", ({ annotations }) => {
+    expect(budgetMainFromAnnotations(annotations)).toBeNull();
+  });
+
+  it("reads annotations only from the latest build whose producer step actually succeeded", async () => {
+    const jobs = [build({ steps: [{ name: "Record the measured main", conclusion: "success" }] })];
+    const paths: string[] = [];
+    const result = await withBudgetMainReceipt(jobs, async (path: string) => {
+      paths.push(path);
+      return [notice()];
+    });
+    expect(paths).toEqual(["/check-runs/7/annotations?per_page=100"]);
+    expect(result[0]).toMatchObject({ budgetMainSha: mainSha });
+    expect(jobs[0]).not.toHaveProperty("budgetMainSha");
+  });
+
+  it.each(["skipped", "failure", undefined])(
+    "does not read an annotation when the producer step is %s",
+    async (conclusion) => {
+      const jobs = [build({ steps: [{ name: "Record the measured main", conclusion }] })];
+      let calls = 0;
+      expect(
+        await withBudgetMainReceipt(jobs, async () => {
+          calls++;
+          return [notice()];
+        }),
+      ).toEqual(jobs);
+      expect(calls).toBe(0);
+    },
+  );
+
+  it("does not accept a possibly truncated annotation page as exact evidence", async () => {
+    const jobs = [build({ steps: [{ name: "Record the measured main", conclusion: "success" }] })];
+    const annotations = [notice(), ...Array.from({ length: 99 }, () => ({ title: "Unrelated notice" }))];
+    const result = await withBudgetMainReceipt(jobs, async () => annotations);
+    expect(result[0].budgetMainSha).toBeNull();
+  });
+
+  it("cannot claim a match when reading the annotation API fails", async () => {
+    const jobs = [build({ steps: [{ name: "Record the measured main", conclusion: "success" }] })];
+    await expect(
+      withBudgetMainReceipt(jobs, async () => {
+        throw new Error("Synthetic annotation API failure");
+      }),
+    ).rejects.toThrow("Synthetic annotation API failure");
+  });
+});
+
 describe("budget recheck workflow", () => {
   const workflow = readFileSync(new URL("../.github/workflows/ward-flow-budget-recheck.yml", import.meta.url), "utf8");
 
@@ -113,7 +222,9 @@ describe("budget recheck workflow", () => {
     // pull_request_target must only ever run main's script: no PR ref, head or repository checkout.
     expect(workflow).toMatch(/^ {10}ref: main$/mu);
     expect(workflow).not.toMatch(/github\.event\.pull_request\.head|github\.head_ref|repository: \$\{\{/u);
-    expect(workflow).toMatch(/^permissions:\n {2}contents: read\n {2}actions: write\n {2}pull-requests: read\n\n/mu);
+    const permissions = /^permissions:\n((?: {2}[^\n]+\n)+)/mu.exec(workflow)?.[1] ?? "";
+    for (const permission of ["contents: read", "actions: write", "pull-requests: read", "checks: read"])
+      expect(permissions).toContain(`  ${permission}\n`);
     expect(workflow).not.toMatch(/contents: write|pull-requests: write|secrets\./u);
     expect(workflow).toContain("persist-credentials: false");
     expect(workflow).toContain("run: node scripts/ward-ci-public/budget-recheck.mjs");

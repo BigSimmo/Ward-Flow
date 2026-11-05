@@ -559,10 +559,13 @@ describe("SV-4 observation level control (ward bed drawer and ED patient record)
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     fireEvent.click(screen.getByTestId("ward-observation-change"));
     pickObservationLevel("within_sight");
+    expect(screen.getByTestId("ward-observation-level")).toHaveAttribute("data-value", "general");
     await act(async () => {
       answer({ commandId: "c-1", status: "accepted" });
       await Promise.resolve();
     });
+    expect(screen.getByTestId("ward-observation-level")).toHaveAttribute("data-value", "general");
+    pickObservationLevel("within_sight");
     expect(screen.getByTestId("ward-observation-level")).toHaveAttribute("data-value", "within_sight");
   });
 

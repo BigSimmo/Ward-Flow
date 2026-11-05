@@ -30,6 +30,8 @@ type SharedStatus = "loading" | "ready" | "saving" | "unavailable" | "not-author
 /** One role this account may work as: the membership id (or "bootstrap") and its role and place. */
 export type SharedRoleChoice = { workingAs: string; role: string; scope: unknown };
 export type SharedView = {
+  /** The authoritative server workspace; absent on older servers until a full read supplies it. */
+  workspaceId?: string;
   snapshot: SharedSnapshot | null;
   /** Aggregate-only reports never enter the operational payload/archive/command path. */
   executiveSnapshot?: ExecutiveAggregateSnapshot | null;
@@ -63,6 +65,9 @@ export type SharedView = {
   receiptScope?: string;
   recovery?: string;
   recovering?: boolean;
+  pendingCount?: number;
+  recoveryStorageUnavailable?: boolean;
+  recoveryResults?: readonly import("./ward-command-recovery").RecoveryResult[];
 };
 /** What a change returns: `null` when done, "step-up" for a fresh sign-in first, or the refusal. */
 export type SharedChangeResult = string | null;

@@ -8,7 +8,10 @@ import {
   backendProved,
   BUILT_TREE_TITLE,
   decideMainReuse,
+  gatherAndDecide,
+  mainReuseOutputs,
   runEvidenceGap,
+  STRICT_BUDGET_TREE_TITLE,
   TESTED_TREE_TITLE,
   testedTreeFromAnnotations,
   treeAcrossAttempts,
@@ -22,6 +25,8 @@ const sha = "a".repeat(40);
 const before = "b".repeat(40);
 const head = "c".repeat(40);
 const tree = "d".repeat(40);
+const allGates = { unit: true, coverage: true, browser: true, release: true, build: true, backend: true };
+const noGates = { unit: false, coverage: false, browser: false, release: false, build: false, backend: false };
 
 const passedJob = (name: string, ...steps: string[]) => ({
   name,
@@ -42,9 +47,19 @@ function greenJobs() {
     ),
     passedJob("Ward Flow coverage", "Merge shard coverage and enforce thresholds"),
     passedJob("Ward Flow production build", "Build for production (Railway build command)"),
-    passedJob("Ward Flow release gate release-gate-desktop journeys", "Run the release-gate journeys"),
-    passedJob("Ward Flow release gate release-gate-phone journeys", "Run the release-gate journeys"),
-    passedJob("Ward Flow backend and shared production proof", "Run Ward backend tests"),
+    ...["desktop", "phone"].map((device) =>
+      passedJob(
+        `Ward Flow release gate ${device} journeys, referrals and checks`,
+        "Run the release-gate journeys",
+        "Run the second release-gate suite",
+        "Run the third release-gate suite",
+      ),
+    ),
+    passedJob(
+      "Ward Flow backend and shared production proof",
+      "Run Ward backend tests",
+      "Run the shared-mode browser journey",
+    ),
     { name: "Ward Flow required", conclusion: "success", steps: [] },
   ];
 }
@@ -73,6 +88,8 @@ function evidence(overrides: Record<string, unknown> = {}) {
         head_sha: head,
         event: "pull_request",
         conclusion: "success",
+        builtTree: tree,
+        strictBudgetTree: tree,
         jobs: greenJobs(),
       },
     ],
@@ -92,7 +109,7 @@ describe("main-push reuse decision", () => {
     });
   });
 
-  it("refuses a pull request run that left the legal-figure sweep out", () => {
+  it("retains other gates when a pull request run left the legal-figure sweep out", () => {
     const withoutSweep = greenJobs().map((job) =>
       job.name === "Ward Flow unit shard 3"
         ? {
@@ -106,17 +123,21 @@ describe("main-push reuse decision", () => {
     );
     expect(decideMainReuse(evidence({ runs: [{ ...evidence().runs[0], jobs: withoutSweep }] }))).toMatchObject({
       verified: false,
+      gates: { ...allGates, unit: false, coverage: false },
     });
     expect(runEvidenceGap(withoutSweep, counts)).toBe("Ward Flow unit shard 3 did not run its checks (scope-skipped)");
   });
 
   it("verifies only an identical, up-to-date tree whose PR run really ran every reusable job", () => {
     expect(decideMainReuse(evidence())).toMatchObject({ verified: true, pr: 75 });
-    // The single-job coverage run that preceded the shard merge is equally strong evidence.
+    // The current workflow needs merged shard coverage; an older single-job step does not prove it.
     const legacy = greenJobs().map((job) =>
       job.name === "Ward Flow coverage" ? passedJob(job.name, "Run unit suite with coverage thresholds") : job,
     );
-    expect(decideMainReuse(evidence({ runs: [{ ...evidence().runs[0], jobs: legacy }] })).verified).toBe(true);
+    expect(decideMainReuse(evidence({ runs: [{ ...evidence().runs[0], jobs: legacy }] }))).toMatchObject({
+      verified: false,
+      gates: { ...allGates, coverage: false },
+    });
   });
 
   it("reuses a head that was behind main when its run tested exactly this tree", () => {
@@ -126,16 +147,19 @@ describe("main-push reuse decision", () => {
     // The production build merges the then-current main; it must have built this same tree.
     expect(decideMainReuse(evidence({ ...behind, runs: [{ ...run, builtTree: "f".repeat(40) }] }))).toMatchObject({
       verified: false,
-      reason: expect.stringContaining("built a different tree"),
+      gates: { ...allGates, build: false },
+      reasons: { build: expect.stringContaining("built tree") },
     });
     expect(decideMainReuse(evidence({ ...behind, runs: [{ ...run, builtTree: null }] }))).toMatchObject({
       verified: false,
-      reason: expect.stringContaining("recorded no single built tree"),
+      gates: { ...allGates, build: false },
+      reasons: { build: expect.stringContaining("built tree") },
     });
     // Main moved after the run: its merge ref was a different tree, so the suite runs again.
     expect(decideMainReuse(evidence({ ...behind, runs: [{ ...run, testedTree: "f".repeat(40) }] }))).toMatchObject({
       verified: false,
-      reason: expect.stringContaining("tested a different tree"),
+      gates: { ...noGates, build: true },
+      reasons: { unit: expect.stringContaining("tested tree") },
     });
     // A run from before the notice existed proves nothing for a head that was behind.
     expect(decideMainReuse(evidence({ ...behind, runs: [{ ...run, testedTree: null }] })).verified).toBe(false);
@@ -310,6 +334,194 @@ describe("main-push reuse decision", () => {
       job.name === "Ward Flow required" ? { ...job, conclusion: "failure" } : job,
     );
     expect(runEvidenceGap(jobs, counts)).toMatch(/required did not succeed/u);
+  });
+
+  it("reuses mixed evidence independently and couples unit/coverage only in workflow outputs", () => {
+    const jobs = greenJobs().filter(
+      (job) => job.name !== "Ward Flow coverage" && job.name !== "Ward Flow browser journeys 2",
+    );
+    jobs.find((job) => job.name.startsWith("Ward Flow release gate phone"))!.steps[1].conclusion = "skipped";
+    jobs.find((job) => job.name.startsWith("Ward Flow backend"))!.steps.pop();
+    const result = decideMainReuse(evidence({ runs: [{ ...evidence().runs[0], jobs }] }));
+    expect(result).toMatchObject({
+      verified: false,
+      gates: { unit: true, coverage: false, browser: false, release: false, backend: false, build: true },
+    });
+    expect(mainReuseOutputs(result)).toEqual({
+      verified: false,
+      unit_verified: false,
+      coverage_verified: false,
+      browser_verified: false,
+      release_verified: false,
+      backend_verified: false,
+      build_verified: true,
+    });
+  });
+
+  it.each([undefined, null, "e".repeat(40)])(
+    "requires strict-budget proof even for an up-to-date head (%s)",
+    (strictBudgetTree) => {
+      const result = decideMainReuse(evidence({ runs: [{ ...evidence().runs[0], strictBudgetTree }] }));
+      expect(result).toMatchObject({ verified: false, gates: { ...allGates, build: false } });
+      expect(result.reasons.build).toMatch(/strict budget/iu);
+    },
+  );
+
+  it("requires recorded build-tree proof even for an up-to-date head", () => {
+    const result = decideMainReuse(evidence({ runs: [{ ...evidence().runs[0], builtTree: null }] }));
+    expect(result).toMatchObject({ verified: false, gates: { ...allGates, build: false } });
+  });
+
+  it.each([null, "f".repeat(40)])(
+    "does not overwrite invalid or contradictory tested-tree evidence with the up-to-date fallback (%s)",
+    (testedTree) => {
+      const result = decideMainReuse(evidence({ runs: [{ ...evidence().runs[0], testedTree }] }));
+      expect(result.gates).toEqual({ ...noGates, build: true });
+    },
+  );
+
+  it("never fills missing evidence on the newest green from an older complete green", () => {
+    const older = { ...evidence().runs[0], updated_at: "2026-10-06T01:00:00Z" };
+    const jobs = greenJobs();
+    jobs[0].steps.pop();
+    const newest = { ...older, id: 2, updated_at: "2026-10-06T02:00:00Z", strictBudgetTree: null, jobs };
+    for (const runs of [
+      [older, newest],
+      [newest, older],
+    ]) {
+      expect(decideMainReuse(evidence({ runs }))).toMatchObject({
+        verified: false,
+        gates: { ...allGates, unit: false, coverage: false, build: false },
+      });
+    }
+  });
+
+  it("requires a successful required job before any partial reuse, without falling back to older green", () => {
+    const older = { ...evidence().runs[0], updated_at: "2026-10-06T01:00:00Z" };
+    const newest = {
+      ...older,
+      id: 2,
+      updated_at: "2026-10-06T02:00:00Z",
+      jobs: greenJobs().filter((job) => job.name !== "Ward Flow required"),
+    };
+    const result = decideMainReuse(evidence({ runs: [older, newest] }));
+    expect(result).toMatchObject({ verified: false, gates: noGates });
+    expect(mainReuseOutputs(result)).toEqual({
+      verified: false,
+      unit_verified: false,
+      coverage_verified: false,
+      browser_verified: false,
+      release_verified: false,
+      backend_verified: false,
+      build_verified: false,
+    });
+  });
+
+  it("clears every gate on an ownership refusal", () => {
+    const result = decideMainReuse(evidence({ pulls: [{ ...evidence().pulls[0], merge_commit_sha: "f".repeat(40) }] }));
+    expect(result.gates).toEqual(noGates);
+  });
+});
+
+async function gatherSynthetic(
+  overrides: {
+    incomplete?: "runs" | "latest jobs" | "all jobs";
+    latestStrict?: boolean;
+    warningStrict?: boolean;
+    testedAnnotations?: "absent" | "malformed" | "conflicting";
+    apiError?: boolean;
+  } = {},
+) {
+  const jobs = greenJobs().map((job, index) => ({ ...job, id: 200 + index }));
+  const build = jobs.find((job) => job.name === "Ward Flow production build")!;
+  const all = [
+    { name: "Ward Flow scope plan", id: 100 },
+    ...(overrides.testedAnnotations === "conflicting" ? [{ name: "Ward Flow scope plan", id: 110 }] : []),
+    { ...build, id: 101 },
+    ...jobs,
+  ];
+  const notice = (title: string, annotation_level = "notice") => ({ title, annotation_level, message: tree });
+  const api = async (path: string) => {
+    if (overrides.apiError) throw new Error("synthetic API failure");
+    if (path === `/commits/${sha}/pulls`) return evidence().pulls;
+    if (path === `/git/commits/${head}`) return { tree: { sha: tree } };
+    if (path.startsWith("/compare/")) return evidence().compare;
+    if (path.startsWith("/actions/workflows/"))
+      return { total_count: overrides.incomplete === "runs" ? 2 : 1, workflow_runs: evidence().runs };
+    if (path === "/actions/runs/1/jobs?filter=latest&per_page=100")
+      return { total_count: jobs.length + Number(overrides.incomplete === "latest jobs"), jobs };
+    if (path === "/actions/runs/1/jobs?filter=all&per_page=100")
+      return { total_count: all.length + Number(overrides.incomplete === "all jobs"), jobs: all };
+    if (path === "/check-runs/100/annotations?per_page=50") {
+      if (overrides.testedAnnotations === "absent") return [];
+      return [
+        { ...notice(TESTED_TREE_TITLE), message: overrides.testedAnnotations === "malformed" ? "not-a-tree" : tree },
+      ];
+    }
+    if (path === "/check-runs/110/annotations?per_page=50")
+      return [{ ...notice(TESTED_TREE_TITLE), message: "e".repeat(40) }];
+    // An older attempt's strong build/budget proof must never fill gaps in the latest attempt.
+    if (path === "/check-runs/101/annotations?per_page=50")
+      return [notice(BUILT_TREE_TITLE), notice(STRICT_BUDGET_TREE_TITLE)];
+    if (path === `/check-runs/${build.id}/annotations?per_page=50`)
+      return [
+        notice(BUILT_TREE_TITLE),
+        ...(overrides.latestStrict === false
+          ? []
+          : [notice(STRICT_BUDGET_TREE_TITLE, overrides.warningStrict ? "warning" : "notice")]),
+      ];
+    throw new Error(`unexpected synthetic API path: ${path}`);
+  };
+  return gatherAndDecide({
+    env: {
+      GITHUB_EVENT_NAME: "push",
+      GITHUB_REF: "refs/heads/main",
+      GITHUB_REPOSITORY: repo,
+      GITHUB_SHA: sha,
+      WARD_BEFORE_SHA: before,
+      GH_TOKEN: "synthetic-test-token",
+    },
+    api,
+    git: (args: string[]) => (args.includes("HEAD^{tree}") ? tree : sha),
+  });
+}
+
+describe("bounded offline main reuse gathering", () => {
+  it("gathers the latest successful build's exact strict-budget receipt", async () => {
+    expect(await gatherSynthetic()).toMatchObject({ verified: true, gates: allGates });
+  });
+
+  it("uses the up-to-date fallback only when the complete attempt history contains no tested-tree notice", async () => {
+    expect(await gatherSynthetic({ testedAnnotations: "absent" })).toMatchObject({ verified: true, gates: allGates });
+  });
+
+  it.each(["malformed", "conflicting"] as const)(
+    "retains only independent build proof when tested-tree annotations are %s",
+    async (testedAnnotations) => {
+      expect(await gatherSynthetic({ testedAnnotations })).toMatchObject({
+        verified: false,
+        gates: { ...noGates, build: true },
+      });
+    },
+  );
+
+  it.each([{ latestStrict: false }, { warningStrict: true }])(
+    "does not reuse a warning-only or historical strict-budget receipt (%s)",
+    async (overrides) => {
+      expect(await gatherSynthetic(overrides)).toMatchObject({ verified: false, gates: { ...allGates, build: false } });
+    },
+  );
+
+  it.each(["runs", "latest jobs", "all jobs"] as const)("refuses incomplete bounded %s history", async (incomplete) => {
+    expect(await gatherSynthetic({ incomplete })).toMatchObject({ verified: false, gates: noGates });
+  });
+
+  it("returns all gates false after an API error", async () => {
+    expect(await gatherSynthetic({ apiError: true })).toMatchObject({
+      verified: false,
+      gates: noGates,
+      reason: expect.stringContaining("synthetic API failure"),
+    });
   });
 });
 

@@ -8,6 +8,24 @@ const MAX_RECHECK_FILES = 8;
 const sameFiles = (a, b) => a.length === b.length && a.every((file, index) => file === b[index]);
 const sorted = (files) => [...files].sort();
 
+// This public fixture's only case uses a POSIX executable PATH stub. Other shipped files have
+// passing cases on Windows. Keep this list source-owned, never inferred from a report's skips.
+const WINDOWS_SKIPPED_FILE = "tests/guard-push-no-merge-base.test.ts";
+export function approvedPlatformSkippedFiles(population, platform = process.platform) {
+  return platform === "win32" && population.includes(WINDOWS_SKIPPED_FILE) ? [WINDOWS_SKIPPED_FILE] : [];
+}
+
+function approvedSkipProblem(population, approvedSkippedFiles, platform) {
+  const permitted = approvedPlatformSkippedFiles(population, platform);
+  if (
+    !Array.isArray(approvedSkippedFiles) ||
+    new Set(approvedSkippedFiles).size !== approvedSkippedFiles.length ||
+    approvedSkippedFiles.some((file) => !permitted.includes(file))
+  )
+    return "approved skipped files are outside the selected platform contract";
+  return null;
+}
+
 // Vitest's numTotalTests includes pending/skipped assertions. Floors measure execution.
 export function executedAssertionCount(report) {
   return (report?.testResults ?? []).reduce(
@@ -16,6 +34,25 @@ export function executedAssertionCount(report) {
       (suite.assertionResults ?? []).filter((test) => test.status === "passed" || test.status === "failed").length,
     0,
   );
+}
+
+// Preserve named execution populations even when aggregate floors pass. Skips remain explicit;
+// policy-specific validators, rather than this inventory, decide which suites must execute.
+export function suiteExecutionSummary(report, root) {
+  return (report?.testResults ?? []).map((suite) => {
+    const assertions = suite.assertionResults ?? [];
+    const count = (...statuses) => assertions.filter((test) => statuses.includes(test.status)).length;
+    return {
+      file: relativeName(root, suite.name),
+      status: suite.status,
+      executed: count("passed", "failed"),
+      passed: count("passed"),
+      failed: count("failed"),
+      skipped: count("pending", "skipped"),
+      todo: count("todo"),
+      unknown: assertions.length - count("passed", "failed", "pending", "skipped", "todo"),
+    };
+  });
 }
 
 export function validatePolicyReport(report, expectedFiles, root) {
@@ -72,6 +109,7 @@ export function withGateRunResult(report, files, root, runResult) {
     wardGateRuns: [
       {
         files,
+        suites: suiteExecutionSummary(report, root),
         status: runResult?.status ?? null,
         signal: runResult?.signal ?? null,
         error: runResult?.error ? String(runResult.error.message ?? runResult.error) : null,
@@ -81,7 +119,18 @@ export function withGateRunResult(report, files, root, runResult) {
   };
 }
 
-export function validateBatchReport(report, expectedFiles, root, { requireProcessEvidence = false } = {}) {
+export function validateBatchReport(
+  report,
+  expectedFiles,
+  root,
+  {
+    requireProcessEvidence = false,
+    approvedSkippedFiles = /** @type {string[]} */ ([]),
+    platform = process.platform,
+  } = {},
+) {
+  const skipProblem = approvedSkipProblem(expectedFiles, approvedSkippedFiles, platform);
+  if (skipProblem) return { valid: false, reason: skipProblem };
   if (
     !Array.isArray(report?.testResults) ||
     !Number.isInteger(report.numTotalTests) ||
@@ -100,6 +149,17 @@ export function validateBatchReport(report, expectedFiles, root, { requireProces
     )
   )
     return { valid: false, reason: "batch result has no assertion list" };
+  const notRun = report.testResults.filter(
+    (suite) =>
+      suite.status !== "failed" &&
+      !suite.assertionResults?.some((test) => ["passed", "failed"].includes(test.status)) &&
+      !approvedSkippedFiles.includes(relativeName(root, suite.name)),
+  );
+  if (notRun.length)
+    return {
+      valid: false,
+      reason: `selected files not run: ${notRun.map((suite) => relativeName(root, suite.name)).join(", ")}`,
+    };
   const failing = report.testResults.filter(isFailingSuite).map((suite) => relativeName(root, suite.name));
   if (report.numUnhandledErrors > 0 || report.errors?.length || report.unhandledErrors?.length)
     return { valid: false, reason: "Vitest reported unhandled errors" };
@@ -146,11 +206,21 @@ export function runFullGateBatches({
   stateDir,
   runBatch,
   maxFiles = 100,
+  singleBatch = false,
+  platform = process.platform,
+  approvedSkippedFiles = /** @type {string[]} */ ([]),
 }) {
   if (!environmentFingerprint) throw new Error("FULL checkpoint requires a reliable outcome-input identity");
-  const batches = splitFullGateBatches(population, { maxFiles });
+  if (typeof singleBatch !== "boolean") throw new Error("FULL single-batch selection must be explicit");
+  const skipProblem = approvedSkipProblem(population, approvedSkippedFiles, platform);
+  if (skipProblem) throw new Error(skipProblem);
+  // Manifest transport removes test paths from argv. Local callers keep their bounded batches.
+  const batches = singleBatch ? [[...population]] : splitFullGateBatches(population, { maxFiles });
   const identity = {
-    version: 3,
+    version: 5,
+    selectionTransport: singleBatch ? "manifest-v1" : "argv",
+    platform,
+    approvedSkippedFiles,
     commit,
     root: path.resolve(root),
     population,
@@ -173,6 +243,11 @@ export function runFullGateBatches({
   const wardGateRuns = [];
   let numTotalTests = 0;
   for (const [index, files] of batches.entries()) {
+    const validation = {
+      requireProcessEvidence: true,
+      platform,
+      approvedSkippedFiles: approvedSkippedFiles.filter((file) => files.includes(file)),
+    };
     const stable = path.join(stateDir, `batch-${String(index + 1).padStart(3, "0")}.json`);
     const resumed = existsSync(stable);
     if (!resumed) {
@@ -180,7 +255,7 @@ export function runFullGateBatches({
       const runResult = runBatch({ files, index, reportPath: pending });
       if (!existsSync(pending)) throw new Error(`batch ${index + 1} produced no report`);
       const candidate = withGateRunResult(JSON.parse(readFileSync(pending, "utf8")), files, root, runResult);
-      const check = validateBatchReport(candidate, files, root, { requireProcessEvidence: true });
+      const check = validateBatchReport(candidate, files, root, validation);
       if (!check.valid) throw new Error(`batch ${index + 1} is incomplete: ${check.reason}`);
       writeFileSync(pending, `${JSON.stringify(candidate)}\n`);
       renameSync(pending, stable);
@@ -190,10 +265,10 @@ export function runFullGateBatches({
       );
     }
     const report = JSON.parse(readFileSync(stable, "utf8"));
-    const check = validateBatchReport(report, files, root, { requireProcessEvidence: true });
+    const check = validateBatchReport(report, files, root, validation);
     if (!check.valid) throw new Error(`saved batch ${index + 1} is invalid: ${check.reason}`);
     console.log(
-      `FULL batch ${index + 1}/${batches.length}: ${resumed ? "reused" : "ran"} ${files.length} files, ${report.numTotalTests} tests; failures: ${check.failing.length}.`,
+      `FULL batch ${index + 1}/${batches.length}: ${resumed ? "reused" : "ran"} ${files.length} files, ${report.numTotalTests} tests (${executedAssertionCount(report)} executed); failures: ${check.failing.length}.`,
     );
     testResults.push(...report.testResults);
     wardGateRuns.push(...report.wardGateRuns);
@@ -211,8 +286,12 @@ export function planFullGateRecheck({
   environmentFingerprint,
   referencedByOtherTests = /** @type {string[]} */ ([]),
   minimumTests = 2500,
+  platform = process.platform,
+  approvedSkippedFiles = /** @type {string[]} */ ([]),
 }) {
   const refuse = (reason) => ({ eligible: false, reason });
+  const skipProblem = approvedSkipProblem(population, approvedSkippedFiles, platform);
+  if (skipProblem) return refuse(skipProblem);
   if (receipt?.version !== 2 || !/^[a-f0-9]{40}$/.test(receipt.commit ?? ""))
     return refuse("missing or invalid full-run receipt");
   if (!/^[a-f0-9]{40}$/.test(currentCommit ?? "") || currentCommit === receipt.commit)
@@ -221,12 +300,22 @@ export function planFullGateRecheck({
   if (!environmentFingerprint || !receipt.environmentFingerprint)
     return refuse("the test outcome-input identity is unavailable");
   if (receipt.environmentFingerprint !== environmentFingerprint) return refuse("the test environment changed");
+  if (
+    receipt.platform !== platform ||
+    !Array.isArray(receipt.approvedSkippedFiles) ||
+    !sameFiles(sorted(receipt.approvedSkippedFiles), sorted(approvedSkippedFiles))
+  )
+    return refuse("the platform skip contract changed or is unavailable");
   if (!Array.isArray(receipt.population) || !sameFiles(sorted(receipt.population), sorted(population)))
     return refuse("the test population changed");
   const prior = receipt.report;
   if (!Array.isArray(prior?.testResults) || executedAssertionCount(prior) < minimumTests)
     return refuse("the original full report is incomplete");
-  const original = validateBatchReport(prior, population, "", { requireProcessEvidence: true });
+  const original = validateBatchReport(prior, population, "", {
+    requireProcessEvidence: true,
+    platform,
+    approvedSkippedFiles,
+  });
   if (!original.valid) return refuse(`the original full report is invalid: ${original.reason}`);
   const ran = prior.testResults.map((suite) => suite.name);
   if (new Set(ran).size !== ran.length || !sameFiles(sorted(ran), sorted(population)))
@@ -250,15 +339,28 @@ export function planFullGateRecheck({
 const relativeName = (root, name) =>
   path.isAbsolute(name) ? path.relative(root, name).replace(/\\/g, "/") : name.replace(/\\/g, "/");
 
-export function mergeGateReports({ baseReport, rerunReport, selected, root }) {
+export function mergeGateReports({
+  baseReport,
+  rerunReport,
+  selected,
+  root,
+  platform = process.platform,
+  approvedSkippedFiles = /** @type {string[]} */ ([]),
+}) {
   if (!Array.isArray(baseReport?.testResults) || !Array.isArray(rerunReport?.testResults))
     throw new Error("missing test results in the full or recheck report");
   const baseFiles = baseReport.testResults.map((suite) => relativeName(root, suite.name));
+  const skipProblem = approvedSkipProblem(baseFiles, approvedSkippedFiles, platform);
+  if (skipProblem) throw new Error(skipProblem);
   for (const [report, files] of [
     [baseReport, baseFiles],
     [rerunReport, selected],
   ]) {
-    const check = validateBatchReport(report, files, root, { requireProcessEvidence: true });
+    const check = validateBatchReport(report, files, root, {
+      requireProcessEvidence: true,
+      platform,
+      approvedSkippedFiles: approvedSkippedFiles.filter((file) => files.includes(file)),
+    });
     if (!check.valid) throw new Error(`invalid full or recheck report: ${check.reason}`);
   }
   const replacements = new Map();

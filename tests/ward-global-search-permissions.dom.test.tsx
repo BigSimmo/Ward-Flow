@@ -1,3 +1,4 @@
+import { WARD_NAV_ICONS } from "@/components/ward-management/ward-nav-icons";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
@@ -253,4 +254,99 @@ describe("search choices follow caller-owned permissions", () => {
       screen.getAllByTestId("ward-phone-menu-result").every((link) => canOpenHref(link.getAttribute("href")!)),
     ).toBe(true);
   });
+});
+
+describe("role menu destination adaptation", () => {
+  const ownWard = units[0]!.id;
+  const ownStats = `/ward-flow/statistics/ward/${ownWard}`;
+  const scope = (children: ReactNode) => (
+    <WardShellPublicProvider value={{ places, placeLabel: "Synthetic ward", now: 100 }}>
+      {children}
+    </WardShellPublicProvider>
+  );
+  const useWardDesk = () =>
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: [ownWard] } });
+    });
+  it("rewrites starting, keyword, Go to and remembered Statistics destinations", () => {
+    installMatchMediaStub(false);
+    useWardDesk();
+    const navigate = vi.fn();
+    // Force the start catalogue fallback: the usual ward choices are otherwise available.
+    // Only the rewritten destination passes this caller gate, which catches filtering too early.
+    render(
+      scope(
+        <WardGlobalSearch
+          movements={[]}
+          patients={[]}
+          units={units}
+          onNavigate={navigate}
+          canOpenHref={(href) => href === ownStats}
+        />,
+      ),
+    );
+    fireEvent.focus(input());
+    expect(screen.getByTestId("ward-global-search-result-view-statistics")).toHaveAttribute("href", ownStats);
+    fireEvent.change(input(), { target: { value: "metrics" } });
+    expect(screen.getByTestId("ward-global-search-result-view-statistics")).toHaveAttribute("href", ownStats);
+    fireEvent.change(input(), { target: { value: "Statistics" } });
+    expect(screen.getByTestId("ward-global-search-result-view-statistics")).toHaveAttribute("href", ownStats);
+    // The keyword and exact-title query share one option identity; explicitly choose that row.
+    fireEvent.keyDown(input(), { key: "ArrowDown" });
+    fireEvent.keyDown(input(), { key: "Enter" });
+    expect(navigate).toHaveBeenCalledWith(ownStats);
+    fireEvent.focus(input());
+    fireEvent.change(input(), { target: { value: "" } });
+    const recent = screen.getAllByTestId("ward-global-search-result-view-statistics");
+    expect(recent.length).toBeGreaterThan(1);
+    expect(recent.every((link) => link.getAttribute("href") === ownStats)).toBe(true);
+  });
+  it("preserves phone keyword matches after Statistics has become an own-place link", async () => {
+    installMatchMediaStub(true);
+    useWardDesk();
+    render(
+      <WardFlowProvider initialNow={100}>
+        {scope(
+          <MenuSearchResults
+            query="metrics"
+            entries={[{ id: "statistics", label: "Statistics", href: ownStats, icon: WARD_NAV_ICONS.statistics }]}
+            pageRow={(entry) => (
+              <li key={entry.id}>
+                <a href={entry.href}>{entry.label}</a>
+              </li>
+            )}
+            onGo={() => {}}
+          />,
+        )}
+      </WardFlowProvider>,
+    );
+    await waitFor(() => expect(screen.getByRole("region", { name: "Pages" })).toBeInTheDocument());
+    expect(screen.getByRole("link", { name: "Statistics" })).toHaveAttribute("href", ownStats);
+    expect(screen.queryByTestId("ward-phone-menu-result")).not.toBeInTheDocument();
+  });
+});
+
+it("excludes Capacity for an officer in global search and phone menu search", async () => {
+  installMatchMediaStub(false);
+  act(() => {
+    setWardFeatureFlagOnDevice("role-access", true);
+    setWardAccess({ role: "officer", scope: { kind: "jobs" } });
+  });
+  const scope = (children: ReactNode) => (
+    <WardShellPublicProvider value={{ places, placeLabel: "Jobs", now: 100 }}>{children}</WardShellPublicProvider>
+  );
+  const view = render(scope(<WardGlobalSearch movements={[]} patients={[]} units={units} />));
+  fireEvent.focus(input());
+  expect(screen.queryByTestId("ward-global-search-result-view-capacity")).not.toBeInTheDocument();
+  fireEvent.change(input(), { target: { value: "capacity" } });
+  expect(screen.queryByTestId("ward-global-search-result-view-capacity")).not.toBeInTheDocument();
+  view.unmount();
+  render(
+    <WardFlowProvider initialNow={100}>
+      {scope(<MenuSearchResults query="capacity" entries={[]} pageRow={() => null} onGo={() => {}} />)}
+    </WardFlowProvider>,
+  );
+  await waitFor(() => expect(screen.queryByRole("region", { name: "Searching" })).not.toBeInTheDocument());
+  expect(screen.queryByRole("link", { name: /^Capacity/ })).not.toBeInTheDocument();
 });

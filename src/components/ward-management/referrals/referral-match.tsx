@@ -143,10 +143,18 @@ export function ReferralMatchView({
   // Keep every hook above the destination-specific early returns.
   // #794: only the coordinator or the desk a destination belongs to may answer it.
   const deskRole = useRouteRole();
-  const answers = (desk: string) => deskRole === "coordinator" || deskRole === desk;
+  const access = useEffectiveWardAccess();
+  const answers = (desk: string) =>
+    deskRole === "coordinator" || (deskRole === desk && (desk !== "ward" || access.scope.kind === "ward"));
   // Josh, 31 Oct 2026 (answer 33): the community desk does not see the community arm's Accept and
   // Decline, because they record the answer as the coordinator's. Its own team page is unchanged.
-  const communityDeskView = useEffectiveWardAccess().role === "community";
+  const communityDeskView = access.role === "community";
+  const actingUnitId = (unitId: string | undefined) =>
+    deskRole === "ward" && access.scope.kind === "ward"
+      ? unitId && access.scope.unitIds.includes(unitId)
+        ? unitId
+        : access.scope.unitIds[0]
+      : undefined;
   const s = useReferralMatchState({ referral, rejections, dispatch, now });
   const localBedFocus = useRef(false);
   // Fix plan item 16 (D-76): asking more wards about an open community referral.
@@ -391,11 +399,12 @@ export function ReferralMatchView({
     priorRejectionCountRef.current = rejections.length;
     const completion = dispatch({
       type: "ACCEPT_REFERRAL",
-      role: "coordinator",
+      role: deskRole,
       now,
       referralId: referral.id,
       destinationKind: "psychiatric_ward",
       unitId,
+      actingUnitId: actingUnitId(unitId),
       overrideReason,
       genderPlacementReason,
       genderPlacementChecked,
@@ -435,11 +444,12 @@ export function ReferralMatchView({
     if (reason === undefined) return;
     const completion = dispatch({
       type: "DECLINE_REFERRAL",
-      role: "coordinator",
+      role: deskRole,
       now,
       referralId: referral.id,
       destinationKind,
       unitId: destinationKind === "psychiatric_ward" ? ward?.destination.unitId : undefined,
+      actingUnitId: actingUnitId(ward?.destination.unitId),
       reason,
     });
     setCheckToken((token) => token + 1);
@@ -502,7 +512,7 @@ export function ReferralMatchView({
     priorRejectionCountRef.current = rejections.length;
     const completion = dispatch({
       type: "ACCEPT_REFERRAL",
-      role: "coordinator",
+      role: deskRole,
       now,
       referralId: referral.id,
       destinationKind: "emergency_department",

@@ -301,6 +301,19 @@ function MovementPreview({
             Open patient
           </Action>
         ) : null}
+        {(lookup.movements ?? [])
+          .filter(
+            (candidate) =>
+              isOpen(candidate) &&
+              candidate.id !== movement.id &&
+              patient !== undefined &&
+              resolveSubjectPatient(candidate, lookup).patient?.id === patient.id,
+          )
+          .map((candidate) => (
+            <Action key={candidate.id} href={movementHref(candidate.id)} onOpen={onOpen}>
+              {`Open other request ${candidate.id}`}
+            </Action>
+          ))}
         {linkedReferral ? (
           <Action
             href={referralBoardHref(linkedReferral.id)}
@@ -324,8 +337,12 @@ function PersonPreview({
   activeDate,
   onOpen,
   censusRow,
+  referralId,
+  requestRow,
 }: {
   patient: Patient;
+  referralId?: string;
+  requestRow?: CensusRow;
   lookup: PatientLookup;
   movements: readonly Movement[];
   units: Unit[];
@@ -336,7 +353,8 @@ function PersonPreview({
 }) {
   const name = patientListName(patient);
   const whereNow = censusRow ? whereNowLine(censusRow) : "";
-  const next = censusRow ? nextStepLine(censusRow) : undefined;
+  const nextRow = referralId !== undefined ? requestRow : censusRow;
+  const next = nextRow ? nextStepLine(nextRow) : undefined;
   // A ward stay (on the ward, a reserved bed or the ward's waiting list) opens that ward, and its bed
   // when one is recorded, through the same address the Patients page's "Ward bed" button uses.
   const stayUnitId = censusRow?.kind === "admission" ? censusRow.unitId : undefined;
@@ -345,14 +363,21 @@ function PersonPreview({
     : undefined;
   // Through the shared resolver, never the raw patient link (D-14 default-deny).
   const openMovement = movements.find(
-    (movement) => isOpen(movement) && resolveSubjectPatient(movement, lookup).patient?.id === patient.id,
+    (movement) =>
+      isOpen(movement) &&
+      (referralId === undefined || movement.referralId === referralId) &&
+      resolveSubjectPatient(movement, lookup).patient?.id === patient.id,
   );
   const destination = openMovement ? destinationUnit(openMovement, units) : undefined;
   const wait = openMovement ? waited(openMovement, now) : null;
   const personReferrals = lookup.referrals ?? [];
   const linkedReferral =
-    (openMovement !== undefined ? personReferrals.find((ref) => ref.id === openMovement.referralId) : undefined) ??
-    personReferrals.find((ref) => resolveSubjectPatient(ref, lookup).patient?.id === patient.id);
+    referralId !== undefined
+      ? personReferrals.find(
+          (ref) => ref.id === referralId && resolveSubjectPatient(ref, lookup).patient?.id === patient.id,
+        )
+      : ((openMovement !== undefined ? personReferrals.find((ref) => ref.id === openMovement.referralId) : undefined) ??
+        personReferrals.find((ref) => resolveSubjectPatient(ref, lookup).patient?.id === patient.id));
 
   return (
     <>
@@ -395,7 +420,7 @@ function PersonPreview({
         ) : null}
         {openMovement ? (
           <>
-            <dt>Movement</dt>
+            <dt>{referralId !== undefined ? "Linked movement" : "Movement"}</dt>
             <dd>{stageCopy[openMovement.stage].label}</dd>
             {wait ? (
               <>
@@ -414,7 +439,7 @@ function PersonPreview({
           </>
         ) : (
           <>
-            <dt>Movement</dt>
+            <dt>{referralId !== undefined ? "Linked movement" : "Movement"}</dt>
             <dd>None open</dd>
           </>
         )}
@@ -439,6 +464,19 @@ function PersonPreview({
             Open movement
           </Action>
         ) : null}
+        {(lookup.movements ?? [])
+          .filter(
+            (candidate) =>
+              isOpen(candidate) &&
+              candidate.id !== openMovement?.id &&
+              patient !== undefined &&
+              resolveSubjectPatient(candidate, lookup).patient?.id === patient.id,
+          )
+          .map((candidate) => (
+            <Action key={candidate.id} href={movementHref(candidate.id)} onOpen={onOpen}>
+              {`Open other request ${candidate.id}`}
+            </Action>
+          ))}
         {linkedReferral ? (
           <Action
             href={referralBoardHref(linkedReferral.id)}
@@ -643,7 +681,7 @@ function SimplePreview({
 }) {
   const helpRow = item.kind === "help" && help ? help : undefined;
   const icon =
-    item.kind === "community" ? (
+    item.kind === "community" || item.kind === "team" ? (
       <Users size={16} strokeWidth={1.75} aria-hidden="true" />
     ) : item.kind === "form" ? (
       <FileText size={16} strokeWidth={1.75} aria-hidden="true" />
@@ -719,6 +757,12 @@ export function GlobalSearchPreview({
     body = patient ? (
       <PersonPreview
         patient={patient}
+        referralId={item.kind === "referral" ? item.id : undefined}
+        requestRow={
+          item.kind === "referral"
+            ? census?.rows.find((row) => row.kind === "referral" && row.key === item.id)
+            : undefined
+        }
         lookup={lookup}
         movements={movements}
         units={units}

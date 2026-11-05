@@ -43,7 +43,11 @@ export const EVERY_LOGIN: readonly WardTourRole[] = WARD_ACCESS_ROLES;
  * Help still answers when searched for, but with no Show me or Go there.
  */
 export function howToFor(howTo: HowTo, role: WardTourRole, access?: WardAccess): boolean {
-  if (howTo.requiresWholeNetwork && (!access || access.role !== role || !accessIsWholeNetwork(access))) return false;
+  if (
+    (howTo.requiresWholeNetwork || howTo.acts?.includes("SET_CONFIGURATION")) &&
+    (!access || access.role !== role || !accessIsWholeNetwork(access))
+  )
+    return false;
   if (howTo.desks !== "all" && !howTo.desks.includes(role)) return false;
   if (howTo.acts && !deskMayAct(role, howTo.acts)) return false;
   if (howTo.needs && !deskOpens(role, howTo.needs)) return false;

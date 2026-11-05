@@ -8,7 +8,7 @@ import { useEffect, useId, useState } from "react";
 import { Badge, Card, EmptyState, StatusGlyph, Tabs } from "@/components/wf";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { DeclineRegister } from "@/components/ward-management/decline-register";
-import { OverrideRegister } from "@/components/ward-management/override-register";
+import { OverrideRegister } from "@/components/ward-management/ward/ward-on-demand";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { DeclineEntry, InboxItem, OverrideEntry } from "@/components/ward-management/ward-derivations";
 import { usePatientOf, useUmrnText } from "@/components/ward-management/ward-patient-name";

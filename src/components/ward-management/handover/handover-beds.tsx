@@ -30,7 +30,7 @@ import {
   isActOrUrgent,
   isMoving,
   isWaitingForBed,
-  STAGE_LABEL,
+  handoverStatusLabel,
   wardIsStale,
   type HandoverRow,
   type HandoverWard,
@@ -180,7 +180,7 @@ function PatientButton({
         <b>{row.name}</b>
         <span className={styles.mono}>{row.umrn}</span>
       </span>
-      <span className={styles.personStage}>{STAGE_LABEL[row.stage]}</span>
+      <span className={styles.personStage}>{handoverStatusLabel(row)}</span>
       <Icon icon={ChevronRight} size={14} className={styles.chev} />
       <SrOnly>, open in Patients</SrOnly>
     </button>

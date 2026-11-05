@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useContext, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { SharedAccessContext } from "../shell/ward-shared-access-context";
+import { ActivityOwnCommand } from "./activity-own-command";
 
 import { Button, ChipGroup, Drawer, FilterChip, PillTabs, StatusGlyph, TabPanel, useIsPhone } from "@/components/wf";
 import {
@@ -12,6 +14,9 @@ import {
 } from "@/components/ward-management/shell/ward-bar-model";
 import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
 import { useActivityFromAudit } from "@/components/ward-management/shell/ward-desk-audit";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { accessIsWholeNetwork, edInScope } from "@/components/ward-management/ward-role-access";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { edHref } from "@/components/ward-management/shell/ward-facade";
 import type { ActivityPanelTab } from "@/components/ward-management/shell/ward-activity-panel-store";
@@ -77,6 +82,7 @@ type ActivityPanelProps = {
   testId?: string;
   /** The tab it opens on; by default Changes when any wait for review, otherwise Recent activity. */
   initialTab?: ActivityTab;
+  initialCommandId?: string;
   /** Home's paused clock; elsewhere the live demo clock. */
   now?: Instant;
   /** The page's published figure checks (O-9); none published draws nothing. */
@@ -102,6 +108,7 @@ function OpenActivityPanel({
   id = "home-activity-panel",
   testId = "home-activity-panel",
   initialTab,
+  initialCommandId,
   now: givenNow,
   figureChecks = [],
   returnFocusRef,
@@ -125,6 +132,7 @@ function OpenActivityPanel({
   }, [open, initialTab, live.length, capture]);
   const isPhone = useIsPhone();
   const network = useWardNetwork();
+  const access = useEffectiveWardAccess();
   const thresholds = useDueSoonThresholds();
   const {
     movements,
@@ -185,7 +193,15 @@ function OpenActivityPanel({
     ],
   );
   // P056: the bar's feed, with its events from the server audit once read (`ward-desk-audit.ts`).
-  const activity = useActivityFromAudit(derivedActivity, now);
+  const auditedActivity = useActivityFromAudit(derivedActivity, now);
+  const activity = useMemo(() => {
+    if (accessIsWholeNetwork(access)) return auditedActivity;
+    const places = wardPlaceLookup(units);
+    return {
+      ...auditedActivity,
+      departments: auditedActivity.departments.filter((row) => edInScope(access.scope, row.ed.id, places)),
+    };
+  }, [auditedActivity, access, units]);
   const deskNotices = useMemo(
     () =>
       notices
@@ -230,7 +246,7 @@ function OpenActivityPanel({
       id={id}
       open={open}
       onClose={onClose}
-      title="Activity · Statewide"
+      title={accessIsWholeNetwork(access) ? "Activity · Statewide" : "Activity · Your desk"}
       testId={testId}
       returnFocusRef={returnFocusRef}
       bodyTabIndex={bodyTabIndex}
@@ -252,7 +268,13 @@ function OpenActivityPanel({
         <ChangesBody review={review} now={now} links={links} />
       </TabPanel>
       <TabPanel idPrefix="home-activity" id="recent" hidden={tab !== "recent"}>
-        <RecentBody events={events} tones={activity.tones} links={links} />
+        <RecentBody
+          events={events}
+          tones={activity.tones}
+          links={links}
+          commandId={initialCommandId}
+          auditFeed={activity.auditFeed}
+        />
       </TabPanel>
       <TabPanel idPrefix="home-activity" id="notices" hidden={tab !== "notices"}>
         <NoticesBody notices={noticeViews} now={now} onMarkRead={markRead} />
@@ -485,11 +507,17 @@ function RecentBody({
   events,
   tones,
   links,
+  commandId,
+  auditFeed,
 }: {
+  auditFeed?: Activity["auditFeed"];
   events: Activity["content"]["changes"];
   tones: Activity["tones"];
   links: Links;
+  commandId?: string;
 }) {
+  const access = useContext(SharedAccessContext);
+  const scope = `${access?.actorId ?? ""}:${access?.scopeKey ?? ""}`;
   const [filter, setFilter] = useState<ActivityCategoryFilter>("all");
   const personText = usePersonText();
   const counts = useMemo(() => {
@@ -533,6 +561,11 @@ function RecentBody({
         ))}
       </ChipGroup>
       <ol className={styles.plainList} aria-label="Recent activity">
+        {commandId && !rows.some((event) => event.ownCommandId === commandId) ? (
+          <li>
+            <ActivityOwnCommand key={`${scope}:${commandId}`} commandId={commandId} autoReview />
+          </li>
+        ) : null}
         {rows.map((event) => (
           <li key={event.id} className={styles.eventRow}>
             <time className={styles.eventTime}>{event.time}</time>
@@ -549,9 +582,27 @@ function RecentBody({
             ) : (
               <span className={styles.eventText}>{personText(event.text)}</span>
             )}
+            {event.ownCommandId ? (
+              <ActivityOwnCommand
+                key={`${scope}:${event.ownCommandId}`}
+                commandId={event.ownCommandId}
+                autoReview={event.ownCommandId === commandId}
+              />
+            ) : null}
           </li>
         ))}
       </ol>
+      {auditFeed?.error ? <p role="status">{auditFeed.error}</p> : null}
+      {auditFeed?.hasOlder ? (
+        <Button
+          variant="sec"
+          size="sm"
+          onClick={auditFeed.loadMore}
+          disabledReason={auditFeed.loading ? "Loading older activity" : undefined}
+        >
+          {auditFeed.loading ? "Loading older activity…" : "Load older activity"}
+        </Button>
+      ) : null}
     </>
   );
 }

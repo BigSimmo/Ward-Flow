@@ -2,6 +2,8 @@
 
 // Alerts redesign (Q149, 1 Nov 2026): Add units on a live broadcast. The same grouped desk list the
 // composer's Choose units shows, less the desks the alert already asks. A bed call asks wards only.
+import { useWardFormSave } from "../use-ward-form-save";
+import type { WardCommandDispatch } from "../ward-shared-client";
 import { useState } from "react";
 
 import { Checkbox, Dialog } from "@/components/wf";
@@ -33,8 +35,9 @@ export function AddUnitsDialog({
   alert: BroadcastAlert;
   units: readonly Unit[];
   onClose: () => void;
-  onAdd: (unitIds: string[]) => void;
+  onAdd: (unitIds: string[]) => ReturnType<WardCommandDispatch>;
 }) {
+  const saving = useWardFormSave(`add-desks:${alert.id}`);
   const [picked, setPicked] = useState<string[]>([]);
   const groups = addableGroups(alert, units);
   const toggle = (id: string) =>
@@ -51,21 +54,23 @@ export function AddUnitsDialog({
       secondary={[{ label: "Cancel", onAction: onClose }]}
       primary={{
         label: count === 1 ? "Add 1 desk" : `Add ${count} desks`,
-        onAction: () => onAdd(picked),
-        disabledReason: count === 0 ? "Choose at least one desk." : undefined,
+        onAction: () => saving.submit(() => onAdd(picked), onClose),
+        disabledReason: saving.pending ? "Adding desks…" : count === 0 ? "Choose at least one desk." : undefined,
       }}
     >
+      {saving.error ? <p role="alert">{saving.error}</p> : saving.pending ? <p role="status">Adding desks…</p> : null}
       <div className={css.unitPick}>
         {groups.map((group) => {
           const ids = group.desks.map((desk) => desk.id);
           const on = ids.filter((id) => picked.includes(id)).length;
           const all = on === ids.length;
           return (
-            <fieldset key={group.id}>
+            <fieldset key={group.id} disabled={saving.pending}>
               <legend>
                 <span>{group.label}</span>
                 <button
                   type="button"
+                  disabled={saving.pending}
                   className={css.linkBtn}
                   aria-label={`${all ? "Clear" : "All"} ${group.label}`}
                   onClick={() =>

@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useWardFormSave } from "../use-ward-form-save";
 import {
   areCharacterShortcutsEnabled,
   useCharacterShortcutsPreference,
@@ -14,6 +15,7 @@ import {
   useEffect,
   useEffectEvent,
   useMemo,
+  useLayoutEffect,
   useRef,
   useState,
   type ChangeEvent,
@@ -174,11 +176,16 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
    */
   const [draft, setDraft] = useState<WardConfiguration>(configuration);
   const [draftBase, setDraftBase] = useState<WardConfiguration>(configuration);
-  const [saving, setSaving] = useState(false);
+  const configurationSave = useWardFormSave("settings-configuration");
+  const saving = configurationSave.pending;
+  const savingRef = useRef(saving);
+  useLayoutEffect(() => {
+    savingRef.current = saving;
+  });
   // Round 3: Save opens a review first; "file" when a loaded rules file put the draft there.
   const [review, setReview] = useState<"draft" | "file" | null>(null);
-  const savingRef = useRef(false);
-  const [configurationFailure, setConfigurationFailure] = useState<string | null>(null);
+  const [localConfigurationFailure, setConfigurationFailure] = useState<string | null>(null);
+  const configurationFailure = localConfigurationFailure ?? configurationSave.error ?? null;
   const latestConfiguration = useRef(configuration);
   useEffect(() => {
     latestConfiguration.current = configuration;
@@ -428,36 +435,22 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       return;
     }
     if (savingRef.current) return;
-    savingRef.current = true;
-    setSaving(true);
     setConfigurationFailure(null);
-    const finish = (outcome: void | WardCommandOutcome) => {
-      savingRef.current = false;
-      setSaving(false);
-      if (outcome?.status !== "accepted" || outcome.isCurrent?.() === false) {
-        const message = outcome?.message ?? "The rule change was not confirmed. Your draft is still available.";
-        setConfigurationFailure(message);
-        showToast(message, "warning");
-        return;
-      }
-      const merged = mergeConfiguration(latestConfiguration.current, requested, base, replaceAll);
-      const applied = merged.status === "merged" ? merged.configuration : requested;
-      setDraft(applied);
-      setDraftBase(applied);
-      onAccepted(applied, outcome);
-    };
-    try {
-      const completion = operational.raise("SET_CONFIGURATION", {
-        payload: requested,
-        baseConfiguration: base,
-        replaceAll,
-      });
-      if (completion && typeof (completion as Promise<WardCommandOutcome>).then === "function") {
-        void (completion as Promise<WardCommandOutcome>).then(finish, () => finish(undefined));
-      } else finish(completion as void | WardCommandOutcome);
-    } catch {
-      finish(undefined);
-    }
+    configurationSave.submit(
+      () =>
+        operational.raise("SET_CONFIGURATION", {
+          payload: requested,
+          baseConfiguration: base,
+          replaceAll,
+        }),
+      (outcome) => {
+        const merged = mergeConfiguration(latestConfiguration.current, requested, base, replaceAll);
+        const applied = merged.status === "merged" ? merged.configuration : requested;
+        setDraft(applied);
+        setDraftBase(applied);
+        onAccepted(applied, outcome);
+      },
+    );
   };
 
   const handleSave = () => {

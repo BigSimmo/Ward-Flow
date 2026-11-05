@@ -78,7 +78,7 @@ describe("shared workspace resilience (audit 4)", () => {
     online = false;
     expect((await client.dispatch(event)).status).toBe("failed");
     expect(view()?.error).toBe(
-      "Your change may not have been saved. It sends again by itself when you are back online, or press Retry. It will not be saved twice.",
+      "Your change may not have been saved. Keep this page open and press Retry to confirm this change. Retry uses the same command, so it will not be saved twice.",
     );
     online = true;
     await client.refresh();

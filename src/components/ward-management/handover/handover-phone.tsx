@@ -34,7 +34,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import type { ColumnContext } from "./handover-columns";
 import {
   HANDOVER_SHIFTS,
-  STAGE_LABEL,
+  handoverStatusLabel,
   destinationText,
   groupOf,
   handoverAt,
@@ -82,6 +82,7 @@ export type HandoverPhoneProps = {
   onCloseDrawer: () => void;
   flowPanel: ReactNode | null;
   signOffPanel: ReactNode;
+  journeyUnavailable?: boolean;
   /** Act-now patients the scope leaves out, so narrowing never hides them from the handover. */
   outsideAct: HandoverRow[];
   /** The patient whose ISBAR is open, if any. */
@@ -311,7 +312,7 @@ function IsbarSheet({
       <div className={styles.isbarBody}>
         <div className={styles.isbarPills}>
           <StatusPill tone={step.tone === "act" ? "danger" : step.tone === "due" ? "warning" : undefined} size="sm">
-            {STAGE_LABEL[row.stage]}
+            {handoverStatusLabel(row)}
           </StatusPill>
           <StatusPill size="sm">T{row.tier}</StatusPill>
           <StatusPill size="sm">waiting {durMinutes(ctx.now - row.openedAt)}</StatusPill>
@@ -430,6 +431,7 @@ export function HandoverPhone({
   onCloseDrawer,
   flowPanel,
   signOffPanel,
+  journeyUnavailable,
   outsideAct,
   selected,
   onCopyIsbar,
@@ -799,7 +801,7 @@ export function HandoverPhone({
         <Drawer
           open={drawerOpen && !flowPanel}
           onClose={onCloseDrawer}
-          title="Sign off"
+          title={journeyUnavailable ? "Journey no longer open" : "Sign off"}
           testId="ward-handover-phone-drawer"
         >
           {signOffPanel}

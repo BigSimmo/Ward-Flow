@@ -316,8 +316,17 @@ const lensAria = (site: PresentedSiteFigures, lens: MapLens): string => {
   if (!applies(site, lens)) return `${site.name}, ${lens === "ed" ? "no ED" : "no ward"}`;
   if (lens === "beds")
     return `${site.name}: ${site.ready} ready beds, ${site.pct}% occupied${site.wardsOverLine ? `, ${site.wardsOverLine} ${site.wardsOverLine === 1 ? "ward" : "wards"} at or over ${BED_ALERT_THRESHOLD_PERCENT}%` : ""}`;
-  if (lens === "ed")
-    return `${site.name} ED: ${statisticsCountText(site.edWaiting)} open ED movements${site.edLongest === null ? "" : `, longest ${durMinutes(Math.round(site.edLongest))}`}${exactStatisticsCount(site.edOver24) !== 0 ? `, ${statisticsCountText(site.edOver24)} over ${LONG_WAIT_HOURS} hours` : ""}`;
+  if (lens === "ed") {
+    // WF-17: times stay exact, but do not pair an exact longest wait with a withheld people count.
+    const waitingExact = exactStatisticsCount(site.edWaiting) !== null;
+    const longest =
+      waitingExact && site.edLongest !== null ? `, longest ${durMinutes(Math.round(site.edLongest))}` : "";
+    const over =
+      exactStatisticsCount(site.edOver24) !== 0
+        ? `, ${statisticsCountText(site.edOver24)} over ${LONG_WAIT_HOURS} hours`
+        : "";
+    return `${site.name} ED: ${statisticsCountText(site.edWaiting)} open ED movements${longest}${over}`;
+  }
   if (lens === "dis")
     return `${site.name}: ${statisticsCountText(site.dischargedToday)} discharged today, ${statisticsCountText(site.dueToday)} due later today${exactStatisticsCount(site.blocked) !== 0 ? `, ${statisticsCountText(site.blocked)} blocked` : ""}`;
   return `${site.name}: average stay ${site.meanStay === null ? "none" : `${site.meanStay.toFixed(1)} days`}, ${statisticsCountText(site.longStays)} over 3 months`;
@@ -547,7 +556,13 @@ function MapPresentation({
         ? [
             { value: String(statisticsCountText(network.edWaiting)), label: "Open ED movements" },
             {
-              value: network.longest?.edLongest == null ? "none" : durMinutes(Math.round(network.longest.edLongest)),
+              // WF-17: keep longest beside an exact open-ED count only.
+              value:
+                exactStatisticsCount(network.edWaiting) === null
+                  ? "not shown"
+                  : network.longest?.edLongest == null
+                    ? "none"
+                    : durMinutes(Math.round(network.longest.edLongest)),
               label: network.longest ? `Longest, ${network.longest.name}` : "Longest",
               tone: (exactStatisticsCount(network.edOver48) ?? 0) > 0 ? "danger" : undefined,
             },
@@ -740,7 +755,11 @@ function SiteCard({ site, lens, onClose }: { site: PresentedSiteFigures; lens: M
         ) : (exactStatisticsCount(site.edOver24) ?? 0) > 0 ? (
           <StatusGlyph tone="warning" size={9} />
         ) : null}
-        {site.edLongest === null ? "none" : `${durMinutes(Math.round(site.edLongest))} longest`}
+        {exactStatisticsCount(site.edWaiting) === null
+          ? "longest held back (small numbers)"
+          : site.edLongest === null
+            ? "none"
+            : `${durMinutes(Math.round(site.edLongest))} longest`}
       </span>
       {edLinked ? <ChevronRight size={14} aria-hidden="true" /> : null}
     </>

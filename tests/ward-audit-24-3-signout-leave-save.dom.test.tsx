@@ -24,10 +24,11 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * after the sweep and the later unmount wrote the per-account picture back. This follows the real
  * order: end the session, re-render signed out, then unmount and let the deferred save run.
  */
-type Account = { api: SharedAccessApi; actorId: string | null } | null;
+const SYNTHETIC_WORKSPACE = "synthetic-signout-workspace";
+type Account = { api: SharedAccessApi; actorId: string | null; workspaceId: string } | null;
 
 function signedIn(actorId: string): Account {
-  return { actorId, api: {} as SharedAccessApi };
+  return { actorId, workspaceId: SYNTHETIC_WORKSPACE, api: {} as SharedAccessApi };
 }
 
 function Screens() {
@@ -51,7 +52,18 @@ function App({ account }: { account: Account }) {
 const flush = () => act(() => new Promise((resolve) => setTimeout(resolve, 0)));
 
 function forecastKey(actorId: string) {
-  return `${FORECAST_LAST_LOOK_STORAGE_KEY}:${encodeURIComponent(actorId)}`;
+  const scope = JSON.stringify([
+    actorId === "local-demo" ? "local-demo" : SYNTHETIC_WORKSPACE,
+    "coordinator",
+    { kind: "statewide" },
+  ]);
+  return `${FORECAST_LAST_LOOK_STORAGE_KEY}:${encodeURIComponent(actorId)}:${encodeURIComponent(scope)}`;
+}
+
+/** The sign-out invariant covers legacy and scoped keys, including any other desk for this actor. */
+function forecastPicturesFor(actorId: string): string[] {
+  const prefix = `${FORECAST_LAST_LOOK_STORAGE_KEY}:${encodeURIComponent(actorId)}`;
+  return Object.keys(window.sessionStorage).filter((key) => key === prefix || key.startsWith(`${prefix}:`));
 }
 
 describe("leave-saves after a sign-out (Audit 4 A4-07)", () => {
@@ -67,8 +79,8 @@ describe("leave-saves after a sign-out (Audit 4 A4-07)", () => {
     view.unmount();
     await flush();
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
-    expect(window.sessionStorage.getItem(forecastKey("synthetic-account-one"))).toBeNull();
-    expect(window.sessionStorage.getItem(forecastKey("local-demo"))).toBeNull();
+    expect(forecastPicturesFor("synthetic-account-one")).toHaveLength(0);
+    expect(forecastPicturesFor("local-demo")).toHaveLength(0);
   });
 
   it("writes no picture back when the old account's context is still shown after the end", async () => {
@@ -79,7 +91,7 @@ describe("leave-saves after a sign-out (Audit 4 A4-07)", () => {
     view.unmount();
     await flush();
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
-    expect(window.sessionStorage.getItem(forecastKey("synthetic-account-one"))).toBeNull();
+    expect(forecastPicturesFor("synthetic-account-one")).toHaveLength(0);
   });
 
   it("writes no picture back after a this-tab-only idle sign-out either", async () => {
@@ -90,7 +102,7 @@ describe("leave-saves after a sign-out (Audit 4 A4-07)", () => {
     view.unmount();
     await flush();
     expect(window.sessionStorage.getItem(LAST_LOOK_STORAGE_KEY)).toBeNull();
-    expect(window.sessionStorage.getItem(forecastKey("synthetic-account-one"))).toBeNull();
+    expect(forecastPicturesFor("synthetic-account-one")).toHaveLength(0);
   });
 
   it("writes no picture for the old account when another signs in before its save runs", async () => {
@@ -99,7 +111,7 @@ describe("leave-saves after a sign-out (Audit 4 A4-07)", () => {
     endWardFlowBrowserSession();
     const next = render(<App account={signedIn("synthetic-account-two")} />);
     await flush();
-    expect(window.sessionStorage.getItem(forecastKey("synthetic-account-one"))).toBeNull();
+    expect(forecastPicturesFor("synthetic-account-one")).toHaveLength(0);
     next.unmount();
     await flush();
     expect(window.sessionStorage.getItem(forecastKey("synthetic-account-two"))).not.toBeNull();

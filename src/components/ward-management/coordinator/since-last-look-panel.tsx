@@ -1,5 +1,6 @@
 "use client";
 
+import { readWardAccessSnapshot, useWardAccessSnapshot } from "@/components/ward-management/shell/ward-access-store";
 import { useCallback, useContext, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 
 import { StatusGlyph, type WfTone } from "@/components/wf";
@@ -55,6 +56,7 @@ function readStored(key: string): string | null {
 }
 
 function writeSnapshot(snapshot: LastLookSnapshot, key: string): void {
+  if (readWardAccessSnapshot().previewOf !== null) return;
   try {
     window.sessionStorage.setItem(key, JSON.stringify(snapshot));
   } catch {
@@ -64,6 +66,7 @@ function writeSnapshot(snapshot: LastLookSnapshot, key: string): void {
 }
 
 function clearSnapshot(key: string): void {
+  if (readWardAccessSnapshot().previewOf !== null) return;
   try {
     window.sessionStorage.removeItem(key);
   } catch {
@@ -119,6 +122,7 @@ export function useSinceLastLook(
   options?: { scopeKey?: string; windowMinutes?: number; explicit?: boolean },
 ) {
   const scopeKey = options?.scopeKey;
+  const preview = useWardAccessSnapshot().previewOf !== null;
   // Home's Activity panel (Josh, 30 Oct 2026): review is explicit, so leaving the screen saves nothing.
   const explicit = options?.explicit ?? false;
   const windowMinutes = options?.windowMinutes ?? 15;
@@ -135,9 +139,13 @@ export function useSinceLastLook(
   const account = useContext(SharedAccessContext);
   const userId = account?.actorId ?? "local-demo";
   noteWardSessionAccount(account);
-  const storageKey = scopeKey
+  const baseStorageKey = scopeKey
     ? `${LAST_LOOK_STORAGE_KEY}:${scopeKey}:${encodeURIComponent(userId)}:${encodeURIComponent(world.scenario)}:${generation}`
     : LAST_LOOK_STORAGE_KEY;
+  const storageKey = account?.scopeKey
+    ? `${baseStorageKey}:desk:${account.scopeKey}:${encodeURIComponent(userId)}:${encodeURIComponent(world.scenario)}:${generation}`
+    : baseStorageKey;
+
   const current = useMemo(
     () => takeLastLookSnapshot({ ...scoped, worldGeneration: generation, userId }, now, thresholds, scopeKey),
     [scoped, now, thresholds, generation, userId, scopeKey],
@@ -159,7 +167,7 @@ export function useSinceLastLook(
     const timer = pendingLeaveSaves.get(storageKey);
     if (timer !== undefined) window.clearTimeout(timer);
     pendingLeaveSaves.delete(storageKey);
-    if (scopeKey || explicit) return;
+    if (scopeKey || explicit || preview) return;
     const ticket = wardLeaveSaveTicket(account);
     const saveOnLeave = () => {
       // A cleanup from another account/world must never write that world's picture, and none may
@@ -184,7 +192,7 @@ export function useSinceLastLook(
         }, 0),
       );
     };
-  }, [storageKey, userId, generation, scopeKey, account, explicit]);
+  }, [storageKey, userId, generation, scopeKey, account, explicit, preview]);
 
   // Before any look this session, count what the record says happened since the shift started, so
   // "N new since 07:00" is true rather than a 0 (L1, site review, 12 Oct 2026).
@@ -196,16 +204,18 @@ export function useSinceLastLook(
           changesSinceInstant(world, currentShiftStartInstant(now), now)),
     [previous, current, world, now, scopeKey, windowMinutes],
   );
-  const markSeen = useCallback(() => writeSnapshot(latest.current, storageKey), [storageKey]);
+  const markSeen = useCallback(() => {
+    if (!preview) writeSnapshot(latest.current, storageKey);
+  }, [storageKey, preview]);
   /** Explicit review: save a given picture (the one taken when Activity opened), or clear it. */
   const saveReview = useCallback(
     (snapshot: LastLookSnapshot | undefined) => {
       // A press from a screen whose session has ended (A4-07) writes nothing.
-      if (!wardLeaveSaveAllowed(wardLeaveSaveTicket(account))) return;
+      if (preview || !wardLeaveSaveAllowed(wardLeaveSaveTicket(account))) return;
       if (snapshot) writeSnapshot(snapshot, storageKey);
       else clearSnapshot(storageKey);
     },
-    [storageKey, account],
+    [storageKey, account, preview],
   );
   return { changes, markSeen, previous, current, saveReview };
 }
