@@ -30,6 +30,7 @@ import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { PersonEntry } from "./ward-board-person-entry";
 import { WardDiagnosisControl } from "./ward-board-ward-diagnosis";
+import { plural } from "@/components/ward-management/ward-plural";
 
 /** Redesign: the record's buttons are the kit's, so the panel matches the rest of the page. */
 // Long labels ("Record that they have gone to an emergency department") wrap inside the panel
@@ -431,7 +432,7 @@ export function WardBoardDetailPanel({
                             htmlFor="ward-board-barrier-select"
                             className={cx(styles.leavingLabel, redesign.fieldLabel)}
                           >
-                            Main discharge hold-up (stay: {selectedOccupant.days} days)
+                            Main discharge hold-up (stay: {plural(selectedOccupant.days, "day", "days")})
                           </label>
                           <Select
                             id="ward-board-barrier-select"
