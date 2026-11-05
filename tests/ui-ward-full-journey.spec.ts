@@ -546,7 +546,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await arrived.click();
     // WF-22: arrival cannot be undone, so the officer confirms it first.
     await page
-      .getByRole("dialog", { name: "Record arrival at the ward?" })
+      .getByRole("alertdialog", { name: "Record arrival at the ward?" })
       .getByRole("button", { name: "Record arrival", exact: true })
       .click();
     await expectNoReloadSince(page, "the officer's transport steps");

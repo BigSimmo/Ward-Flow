@@ -271,7 +271,7 @@ test("Inpatient transfer: a stay on one ward is referred, accepted and held at a
     // WF-22: arrival cannot be undone, so the officer confirms it first.
     if (stage === "arrive")
       await page
-        .getByRole("dialog", { name: "Record arrival at the ward?" })
+        .getByRole("alertdialog", { name: "Record arrival at the ward?" })
         .getByRole("button", { name: "Record arrival", exact: true })
         .click();
     // Collected warns and asks for a recorded reason when Form 4A or fit to travel is missing.

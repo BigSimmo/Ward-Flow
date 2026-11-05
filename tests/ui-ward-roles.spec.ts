@@ -1478,7 +1478,7 @@ test.describe("@mockup Role switcher — the loop", () => {
       // WF-22: arrival cannot be undone, so the officer confirms it first.
       if (stage === "arrive")
         await page
-          .getByRole("dialog", { name: "Record arrival at the ward?" })
+          .getByRole("alertdialog", { name: "Record arrival at the ward?" })
           .getByRole("button", { name: "Record arrival", exact: true })
           .click();
       // Audit fix (13 Oct 2026): WF-315 has no Form 4A or fit to travel recorded, so Collected asks
