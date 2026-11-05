@@ -21,7 +21,10 @@ export function ExecutiveCapacityScreen() {
       <h1>
         {beds.ready} beds ready of {beds.total}
       </h1>
-      <p>{scopeLabel} · bed counts only, no patient details.</p>
+      <p>
+        {beds.beingMadeReady > 0 ? `${beds.beingMadeReady} still being made ready · ` : ""}
+        {scopeLabel} · bed counts only, no patient details.
+      </p>
       <Card aria-labelledby="ward-capacity-executive-beds">
         <CardHead id="ward-capacity-executive-beds" title="Beds by ward" meta={`${network.wards.length} wards`} />
         <CardBody flush>
@@ -31,6 +34,7 @@ export function ExecutiveCapacityScreen() {
                 <th scope="col">Ward</th>
                 <th scope="col">Beds</th>
                 <th scope="col">Ready</th>
+                <th scope="col">Being made ready</th>
                 <th scope="col">In use</th>
                 <th scope="col">Closed</th>
               </tr>
@@ -41,6 +45,7 @@ export function ExecutiveCapacityScreen() {
                   <th scope="row">{ward.name}</th>
                   <td>{ward.beds.total}</td>
                   <td>{ward.beds.ready}</td>
+                  <td>{ward.beds.beingMadeReady}</td>
                   <td>{ward.beds.inUse}</td>
                   <td>{ward.beds.closed}</td>
                 </tr>

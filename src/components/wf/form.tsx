@@ -119,7 +119,7 @@ export function TextInput({
   // the cap is reached, instead of silently dropping what is typed or pasted.
   const max = typeof rest.maxLength === "number" && rest.maxLength > 0 ? rest.maxLength : null;
   const typed = rest.value != null ? String(rest.value).length : 0;
-  const nearCap = max !== null && max >= 10 && typed >= Math.floor(max * 0.8);
+  const nearCap = max !== null && max >= 20 && typed >= Math.floor(max * 0.8);
   return (
     <div className={cx(styles.in, fieldProps["aria-invalid"] && styles.invalid, locked && styles.locked, boxClassName)}>
       {icon ? <Icon icon={icon} size={16} className={styles.adorn} /> : null}
@@ -139,9 +139,11 @@ export function TextInput({
           <span aria-hidden="true">
             {typed}/{max}
           </span>
-          <span className={styles.limitNote} role="status">
-            {typed >= max ? `Limit of ${max} characters reached` : ""}
-          </span>
+          {typed >= max ? (
+            <span className={styles.limitNote} role="status">
+              Limit of {max} characters reached
+            </span>
+          ) : null}
         </span>
       ) : null}
       {locked ? (

@@ -20,12 +20,16 @@ describe("a capped text input (WF-30)", () => {
     cleanup();
     input("x".repeat(500));
     expect(screen.queryByTestId("wf-input-limit")).not.toBeInTheDocument();
+    cleanup();
+    // Short fixed-format fields (a 10-character date) fill to the cap as normal entry.
+    input("25/10/2026", 10);
+    expect(screen.queryByTestId("wf-input-limit")).not.toBeInTheDocument();
   });
 
   it("shows the count near the cap and says when the cap is reached", () => {
     const view = input("x".repeat(85), 100);
     expect(screen.getByTestId("wf-input-limit")).toHaveTextContent("85/100");
-    expect(screen.getByRole("status")).toHaveTextContent("");
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
     view.rerender(
       <Field label="Suburb">
         <TextInput value={"x".repeat(100)} maxLength={100} onChange={() => {}} />
