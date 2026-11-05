@@ -476,7 +476,9 @@ export function WardGlobalSearch({
           const row = census?.rows.find((candidate) => candidate.kind === "admission" && candidate.key === recent.id);
           return row ? [censusRowItem(row)] : [];
         }
-        if (recent.kind === "view") return recentViewItem(recent.id, canOpenHref);
+        // The catalogue row only: the start groups' permittedResult pass applies the menu's own-place
+        // destination and then the caller's route permission, so a revoked screen still drops out.
+        if (recent.kind === "view") return recentViewItem(recent.id);
         let query = recent.id;
         if (recent.kind === "person") {
           const patient = patients.find((candidate) => candidate.id === recent.id);
@@ -519,7 +521,6 @@ export function WardGlobalSearch({
       now,
       plannedAdmissions,
       admissions,
-      canOpenHref,
     ],
   );
 

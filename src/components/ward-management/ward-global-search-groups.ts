@@ -372,8 +372,9 @@ export function smartSearchGroups(
   return [{ key: "answers", heading: answer.question.heading, items: answered }, ...rest];
 }
 
-/** Recent screens resolve directly from the current catalogue, with the same navigation permission. */
-export function recentViewItem(id: string, canOpenHref: (href: string) => boolean): SearchResultItem[] {
+/** Recent screens resolve directly from the current catalogue. A caller that applies own-place
+ * destinations afterwards (Search's permittedResult) leaves `canOpenHref` to that later gate. */
+export function recentViewItem(id: string, canOpenHref: (href: string) => boolean = () => true): SearchResultItem[] {
   const view = CORE_SEARCH_VIEWS.find((candidate) => candidate.key === id);
   return view && canOpenHref(view.href)
     ? [
