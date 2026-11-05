@@ -14,7 +14,7 @@ import {
   Download,
   FileText,
   ListOrdered,
-  MoreHorizontal,
+  Ellipsis,
   Printer,
   X,
 } from "lucide-react";
@@ -606,7 +606,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                     aria-haspopup="dialog"
                     onClick={() => setFiltersOpen(true)}
                   >
-                    <MoreHorizontal size={20} aria-hidden="true" />
+                    <Ellipsis size={20} aria-hidden="true" />
                     <span className={phone.srOnly}>Record kind, view and print: {kindSummary}</span>
                   </button>
                 </span>

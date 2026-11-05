@@ -2,7 +2,7 @@
 
 import { Fragment, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { BedDouble, Check, ChevronRight, Download, ListFilter, Minus, Plus, X } from "lucide-react";
+import { BedSingle, Check, ChevronRight, Download, ListFilter, Minus, Plus, X } from "lucide-react";
 
 import {
   Button,
@@ -368,7 +368,7 @@ function CapacityChartView({
           closeDetails();
         }
       }}
-      icon={BedDouble}
+      icon={BedSingle}
       title={title}
       action={
         <span className={styles.headControls}>

@@ -3,7 +3,7 @@
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { useMemo, useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { BedDouble, Clock, Columns3, Route } from "lucide-react";
+import { BedSingle, Clock, Columns3, Route } from "lucide-react";
 
 import { Button, CardBody, Legend, SrOnly, StatusGlyph, cx, type WfTone } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
@@ -563,7 +563,7 @@ function JourneyPresentation({
       <FlushRow layout="halves" className={styles.bedsRow}>
         <StatCard
           id="journey-beds"
-          icon={BedDouble}
+          icon={BedSingle}
           title="Where is a bed"
           meta={totalPreparing > 0 ? `${totalReady} ready, ${totalPreparing} being made ready` : `${totalReady} ready`}
           action={

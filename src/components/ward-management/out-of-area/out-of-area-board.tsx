@@ -127,8 +127,9 @@ function getPatientProfileHref(info: ResolvedPatientInfo): string | null {
 type SortOrder = "ledger" | "days" | "patient";
 type HighlightKey = "due" | "air" | "road" | "noplan" | "notagreed" | "bed" | `age:${DaysAwayGroupId}`;
 
+// Design audit 4 (B21): no plan yet is a gap (the ring), not declined or closed (the cross).
 const STATUS_TONE: Record<ReturnStatus, WfTone> = {
-  none: "closed",
+  none: "neutral",
   started: "neutral",
   not_agreed: "neutral",
   agreed: "neutral",
@@ -885,7 +886,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             <CheckingFoot
               items={[
                 { id: "due", label: "Discharge date passed", value: countOf("due"), tone: "warning" },
-                { id: "noplan", label: "No return plan", value: countOf("noplan"), tone: "closed" },
+                { id: "noplan", label: "No return plan", value: countOf("noplan"), tone: "neutral" },
               ]}
             />
           }
@@ -952,7 +953,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                   {pill("due", "Date passed", "warning")}
                   {pill("air", "Air only")}
                   {pill("road", TRAVEL_SHORT.three_hours_or_more)}
-                  {pill("noplan", "No plan", "closed")}
+                  {pill("noplan", "No plan", "neutral")}
                   {pill("notagreed", "Not agreed", "neutral")}
                   {pill("bed", "Awaiting home bed", "neutral")}
                 </div>
@@ -1086,7 +1087,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                               <span className={styles.two}>
                                 <span className={cx(styles.status, offset !== null && offset < 0 && styles.inkWarning)}>
                                   {offset === null ? (
-                                    <StatusGlyph tone="closed" size={9} />
+                                    <StatusGlyph tone="neutral" size={9} />
                                   ) : offset < 0 ? (
                                     <StatusGlyph tone="warning" size={9} />
                                   ) : null}
@@ -1119,7 +1120,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                 <CardFoot
                   meta={
                     <span className={styles.footNote}>
-                      <StatusGlyph tone="closed" size={9} />
+                      <StatusGlyph tone="neutral" size={9} />
                       <span>
                         <b>{bedDays}</b> {bedDays === 1 ? "bed day" : "bed days"} across {entries.length}{" "}
                         {entries.length === 1 ? "person" : "people"}

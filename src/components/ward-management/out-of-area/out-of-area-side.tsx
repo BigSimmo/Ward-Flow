@@ -73,7 +73,7 @@ export function ShiftCard({
         </ul>
       ) : (
         <p className={styles.emptyLine}>
-          <StatusGlyph tone="closed" size={9} />
+          <StatusGlyph tone="neutral" size={9} />
           No returns recorded yet
         </p>
       )}
@@ -120,7 +120,7 @@ export function HomeBedsCard({
       />
       {rows.length === 0 ? (
         <p className={styles.emptyLine}>
-          <StatusGlyph tone="closed" size={9} />
+          <StatusGlyph tone="neutral" size={9} />
           Nobody is away from a recorded home region.
         </p>
       ) : (
@@ -169,7 +169,7 @@ export function HomeBedsCard({
               </ul>
             ) : (
               <p className={styles.emptyLine}>
-                <StatusGlyph tone="closed" size={9} />
+                <StatusGlyph tone="neutral" size={9} />
                 No travel band recorded
               </p>
             )}
@@ -178,7 +178,7 @@ export function HomeBedsCard({
       )}
       {notBanded === undefined ? null : (
         <p className={styles.gapRow}>
-          <StatusGlyph tone="closed" size={9} />
+          <StatusGlyph tone="neutral" size={9} />
           <b className={styles.mono}>{notBanded}</b> records with no travel band
         </p>
       )}
@@ -243,7 +243,7 @@ export function ReadyCard({
           </ul>
         ) : (
           <p className={styles.emptyLine}>
-            <StatusGlyph tone="closed" size={9} />
+            <StatusGlyph tone="neutral" size={9} />
             Nobody is past their discharge date
           </p>
         )}

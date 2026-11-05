@@ -2643,18 +2643,16 @@ details[open] > summary > .phoneFoldChevron {
   background: color-mix(in srgb, var(--wf-success) 30%, var(--wf-surface));
 }
 
+/* One meaning for the hatch (DESIGN-SYSTEM §2 Data: "the hatch means may move"): a pulled bed is
+ * hatched here as on All wards, and a closed bed takes the closed data fill (design audit 4, B15). */
 .cell.cell.fillPulled {
   border: 1px solid var(--wf-line);
-  background: color-mix(in srgb, var(--wf-info) 30%, var(--wf-surface));
+  background: var(--wf-hatch), var(--wf-surface);
 }
 
 .cell.cell.fillClosed {
-  border: 1px dashed var(--wf-line-ctl);
-  background: repeating-linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--wf-warning) 30%, var(--wf-surface)) 0 4px,
-    var(--wf-surface) 4px 8px
-  );
+  border: 1px solid var(--wf-line);
+  background: var(--wf-data-closed);
 }
 
 .cell.cell.fillOccupied {
@@ -2672,11 +2670,11 @@ details[open] > summary > .phoneFoldChevron {
 }
 
 .cell.cell.fillPulled > span:first-child {
-  color: var(--wf-info-ink);
+  color: var(--wf-ink-1);
 }
 
 .cell.cell.fillClosed > span:first-child {
-  color: var(--wf-warning-ink);
+  color: var(--wf-ink-1);
 }
 
 .cell.cell.fillOccupied > span:first-child {
@@ -2723,12 +2721,12 @@ details[open] > summary > .phoneFoldChevron {
 
 .swatch.fillPulled {
   border: 1px solid var(--wf-line);
-  background: color-mix(in srgb, var(--wf-info) 30%, var(--wf-surface));
+  background: var(--wf-hatch), var(--wf-surface);
 }
 
 .swatch.fillClosed {
-  border: 1px dashed var(--wf-line-ctl);
-  background: color-mix(in srgb, var(--wf-warning) 30%, var(--wf-surface));
+  border: 1px solid var(--wf-line);
+  background: var(--wf-data-closed);
 }
 
 .swatch.fillOccupied {

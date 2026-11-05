@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import {
   ArrowUpRight,
-  BarChart3,
+  ChartColumn,
   BedSingle,
   BellRing,
   CalendarCheck,
@@ -27,7 +27,7 @@ import {
   Printer,
   Scale,
   SearchCheck,
-  Truck,
+  Ambulance,
   Megaphone,
   Send,
   Zap,
@@ -190,7 +190,7 @@ const ROLE_QUICK: Partial<Record<WardAccessRole, readonly QuickSpec[]>> = {
     "remind",
   ],
   officer: [
-    { key: "jobs", icon: Truck, name: "My jobs", detail: "Steps and check-in", href: `${root}/transport/officer` },
+    { key: "jobs", icon: Ambulance, name: "My jobs", detail: "Steps and check-in", href: `${root}/transport/officer` },
     { key: "alerts", icon: BellRing, name: "Alerts", detail: "Notices", href: `${root}/alerts` },
     "contacts",
     "remind",
@@ -198,7 +198,7 @@ const ROLE_QUICK: Partial<Record<WardAccessRole, readonly QuickSpec[]>> = {
   executive: [
     "figures",
     { key: "capacity", icon: Gauge, name: "Capacity", detail: "By service", href: `${root}/capacity` },
-    { key: "statistics", icon: BarChart3, name: "Statistics", detail: "Reports", href: `${root}/statistics` },
+    { key: "statistics", icon: ChartColumn, name: "Statistics", detail: "Reports", href: `${root}/statistics` },
     "messages",
     "contacts",
   ],
@@ -577,7 +577,7 @@ function ToolsSheetView({
         ? null
         : {
             key: "book-transport",
-            icon: Truck,
+            icon: Ambulance,
             name: "Book transport",
             detail: "Log a transfer",
             href: canOpen(`${root}/transport/officer`) ? `${root}/transport/officer` : `${root}/movements`,
@@ -613,7 +613,7 @@ function ToolsSheetView({
     figures: networkFigures
       ? {
           key: "figures",
-          icon: BarChart3,
+          icon: ChartColumn,
           name: "Key figures",
           detail: "Beds, flow and waits",
           body: <ToolFigures onNavigate={onNavigate} />,

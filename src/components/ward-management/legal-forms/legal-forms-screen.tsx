@@ -808,7 +808,8 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   id: "none",
                   value: noDeadline.length,
                   label: `${forms(noDeadline.length)}, time not written`,
-                  tone: "closed",
+                  // Design audit 4 (B21): a time not written is a gap (the ring), not declined or closed.
+                  tone: "neutral",
                 },
               ]}
               actions={

@@ -1,5 +1,6 @@
 "use client";
 
+import { ChevronDown, ChevronUp } from "lucide-react";
 import { useState } from "react";
 import { currentLegalDueAt } from "./legal-forms/legal-form-progression";
 import { usePathname } from "next/navigation";
@@ -338,7 +339,11 @@ function WardStatsToggle({
         <span className={styles.toggleState}>{flagged.length > 0 ? alarm : "nothing flagged"}</span>
       </span>
       <span aria-hidden="true" className={styles.chev}>
-        {open ? "▲" : "▼"}
+        {open ? (
+          <ChevronUp size={14} strokeWidth={1.75} aria-hidden="true" />
+        ) : (
+          <ChevronDown size={14} strokeWidth={1.75} aria-hidden="true" />
+        )}
       </span>
     </button>
   );

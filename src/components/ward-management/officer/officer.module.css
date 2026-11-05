@@ -2362,8 +2362,9 @@
   color: var(--wf-warning-ink);
 }
 
+/* Tier 1 stays neutral ink, weight only (the neutral tier ruling; design audit 4, B22). */
 .needTier[data-tier="1"] {
-  color: var(--wf-danger-ink);
+  color: var(--wf-ink-1);
   font-weight: 600;
 }
 

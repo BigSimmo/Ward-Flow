@@ -5,7 +5,7 @@ import { wardPlaceLookup } from "@/components/ward-management/ward-access-places
 import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
 import { journeySentByDesk } from "@/components/ward-management/ward-referral-sender";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { ArrowRight, BedSingle, Check, Hospital, ShieldCheck, Ambulance } from "lucide-react";
+import { ArrowRight, BedSingle, Check, Hospital, Info, ShieldCheck, Ambulance } from "lucide-react";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { candidateReason, eligibility, gateMark } from "../ward-eligibility";
 import { stageCopy } from "../ward-derivations";
@@ -524,7 +524,16 @@ export function PatientTransitOperations({
               <ul className={styles.gates}>
                 {eligibility(movement, destination, now).gates.map((g) => (
                   <li key={g.gate} data-pass={g.pass} data-mark={gateMark(g)}>
-                    <span>{gateMark(g) === "info" ? "i" : g.pass ? "✓" : "!"}</span>
+                    <span aria-hidden="true">
+                      {gateMark(g) === "info" ? (
+                        <Info size={12} strokeWidth={1.75} aria-hidden="true" />
+                      ) : (
+                        <StatusGlyph tone={g.pass ? "success" : "closed"} />
+                      )}
+                    </span>
+                    <span className="sr-only">
+                      {gateMark(g) === "info" ? "For information: " : g.pass ? "Met: " : "Not met: "}
+                    </span>
                     <p>{g.detail}</p>
                   </li>
                 ))}
