@@ -87,8 +87,8 @@ export function WardBoardGridColumn({
   const foldedCount = filteredTiles.length - drawnKeys.size;
   const bedsClass = `${styles.beds} ${redesign.beds}`;
   const countText = (filter: BoardFilter) => (filterCounts[filter] === 0 ? "none" : filterCounts[filter]);
-  // Final polish (31 Oct 2026): the kit's select, as the other redesigned pages, in place of the
-  // browser's own. Same id, name and spoken label.
+  // MU5 (Josh, 5 Nov 2026): the toolbar's Order is three kit segments with short names. The phone
+  // keeps its sort icon over the browser's own select, with the long names.
   const BOARD_ORDER_SHORT: Record<BoardOrder, string> = {
     stay: "Longest stay",
     leaving: "Soonest to leave",

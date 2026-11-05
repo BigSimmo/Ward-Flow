@@ -6,6 +6,7 @@ import type { WardCommandOutcome } from "@/components/ward-management/ward-share
 
 import { BedMeetingAgendaScreen } from "@/components/ward-management/bed-meeting/bed-meeting-agenda-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const submitted = vi.hoisted(() => ({
@@ -30,6 +31,7 @@ vi.mock("@/components/ward-management/ward-flow-raise", async (original) => {
 });
 afterEach(() => {
   submitted.raise = null;
+  act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", null));
 });
 
 /** Smart features idea 5 on screen: record an action from the agenda, then mark it done. */
@@ -229,7 +231,7 @@ describe("bed meeting agenda", () => {
     );
   });
 
-  it("opens the same bed meeting sheet as Capacity and starts the meeting on the TV (core pages redesign)", () => {
+  it("shows only Start meeting on the hero while the TV views are on (MU2, Josh 5 Nov 2026)", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <BedMeetingAgendaScreen />
@@ -237,6 +239,17 @@ describe("bed meeting agenda", () => {
     );
     expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Agenda");
     expect(screen.getByTestId("agenda-start-meeting")).toHaveAttribute("href", "/ward-flow/bed-meeting");
+    expect(screen.queryByTestId("bed-meeting-sheet-open")).not.toBeInTheDocument();
+  });
+
+  it("opens the same bed meeting sheet as Capacity when the TV views are off (core pages redesign)", () => {
+    act(() => setWardFeatureFlagOnDevice("bed-meeting-tv", false));
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <BedMeetingAgendaScreen />
+      </WardFlowProvider>,
+    );
+    expect(screen.queryByTestId("agenda-start-meeting")).not.toBeInTheDocument();
     fireEvent.click(screen.getByTestId("bed-meeting-sheet-open"));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByTestId("bed-meeting-sheet-print")).toBeInTheDocument();

@@ -11,9 +11,10 @@ const desk = vi.hoisted(() => ({
   role: "ed" as "ed" | "coordinator",
   phone: false,
 }));
+const push = vi.hoisted(() => vi.fn());
 vi.mock("next/navigation", () => ({
   usePathname: () => "/ward-flow/referrals",
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
+  useRouter: () => ({ push, replace: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
 vi.mock("@/components/wf", async (original) => ({
@@ -34,6 +35,7 @@ vi.mock("@/components/ward-management/shell/ward-access-store", async (original)
 afterEach(() => {
   desk.role = "ed";
   desk.phone = false;
+  push.mockClear();
 });
 
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
@@ -131,13 +133,15 @@ describe("Referrals, coordinator desk is unchanged by the ED branches", () => {
     const hero = screen.getByTestId("ward-referral-kpis");
     expect(within(hero).getByText("Referrals")).toBeTruthy();
     expect(within(hero).getByText("1 awaiting decision")).toBeTruthy();
-    const meeting = screen.getByTestId("ward-referral-meeting");
-    expect(meeting.getAttribute("href")).toBe("/ward-flow/bed-meeting/agenda#agenda-referrals");
     expect(screen.queryByTestId("ward-referral-ed-raised")).toBeNull();
-    // R5 fold (Josh, 3 Nov 2026): M opens the agenda at its referrals, through the same link.
-    const opened = vi.fn((event: Event) => event.preventDefault());
-    meeting.addEventListener("click", opened);
+    // MU1 (Josh, 5 Nov 2026): Next overdue is the hero's one button; the agenda sits under "...".
+    expect(within(hero).queryByRole("link", { name: /Bed meeting/ })).toBeNull();
+    fireEvent.click(within(hero).getByRole("button", { name: "More referral actions" }));
+    fireEvent.click(screen.getByRole("menuitem", { name: /^Bed meeting agenda/ }));
+    expect(push).toHaveBeenLastCalledWith("/ward-flow/bed-meeting/agenda#agenda-referrals");
+    // R5 fold (Josh, 3 Nov 2026): M still opens the agenda at its referrals.
+    push.mockClear();
     fireEvent.keyDown(window, { key: "m" });
-    expect(opened).toHaveBeenCalledTimes(1);
+    expect(push).toHaveBeenCalledWith("/ward-flow/bed-meeting/agenda#agenda-referrals");
   });
 });

@@ -69,6 +69,14 @@ describe("Capacity for the bed coordinator", () => {
     expect(screen.getByTestId("ward-capacity-governance")).toBeInTheDocument();
   });
 
+  it("keeps Open on TV in the Bed meeting menu, not on the hero (MU3, Josh 5 Nov 2026)", () => {
+    renderCapacity();
+    expect(screen.queryByRole("link", { name: /Open on TV/ })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Bed meeting/ }));
+    expect(screen.getByRole("menuitem", { name: "Open on TV" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Print the meeting sheet" })).toBeInTheDocument();
+  });
+
   it("opens a ward's drawer from the bed map", () => {
     renderCapacity();
     const map = screen.getByRole("region", { name: "Bed map" });
@@ -136,6 +144,6 @@ describe("Capacity offers only pages the desk may open", () => {
     fireEvent.click(screen.getByRole("button", { name: /Bed meeting/ }));
     expect(screen.getByRole("menuitem", { name: "Print the meeting sheet" })).toBeInTheDocument();
     expect(screen.queryByRole("menuitem", { name: "Open the meeting agenda" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: /Open on TV/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("menuitem", { name: "Open on TV" })).not.toBeInTheDocument();
   });
 });

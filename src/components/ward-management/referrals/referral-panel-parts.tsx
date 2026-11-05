@@ -7,7 +7,6 @@
 // with one compact row under the header: previous and next with "n of N", then Summary and Patient.
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import {
   BedSingle,
   Ellipsis,
@@ -33,8 +32,9 @@ import { demographicLabel } from "./referral-board-model";
 import { ReferralWorkedOn } from "./referral-worked-on-note";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import { referralPresentation } from "@/components/ward-management/ward-partial-view-presenters";
-import { Button, Count, Icon, Menu, buttonClass, cx, durMinutes } from "@/components/wf";
+import { Button, Icon, Menu, buttonClass, cx, durMinutes } from "@/components/wf";
 import { BED_MEETING_REFERRALS_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
+import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 
 import s from "./referral-panel.module.css";
 
@@ -236,9 +236,12 @@ export function HeroTools({
   );
 }
 
-/** Mock-up (design audit H1): the hero's one action stays; the rest sit under "...". */
+/**
+ * MU1 (Josh, 5 Nov 2026): Next overdue is the hero's one button; the bed meeting agenda moves under
+ * "...". Optional router, so the board also renders outside the app router (its tests).
+ */
 function HeroMoreMenu({ meetingCount }: { meetingCount: number }) {
-  const router = useRouter();
+  const router = useOptionalRouter();
   return (
     <Menu
       label="More referral actions"
@@ -249,7 +252,8 @@ function HeroMoreMenu({ meetingCount }: { meetingCount: number }) {
           label: "Bed meeting agenda",
           icon: ListOrdered,
           meta: meetingCount > 0 ? String(meetingCount) : undefined,
-          onSelect: () => router.push(BED_MEETING_REFERRALS_HREF),
+          onSelect: () =>
+            router ? router.push(BED_MEETING_REFERRALS_HREF) : window.location.assign(BED_MEETING_REFERRALS_HREF),
         },
       ]}
       trigger={(props) => (
