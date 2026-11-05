@@ -20,7 +20,8 @@ vi.mock("next/link", () => ({
 
 import { WardPhoneDesktopOnly } from "@/components/ward-management/shell/ward-phone-desktop-only";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { NOW_ANCHOR, siteByCode } from "@/components/ward-management/ward-sites";
+import { BedMeetingTvScreen } from "@/components/ward-management/bed-meeting/bed-meeting-tv";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
@@ -61,5 +62,18 @@ describe("the larger-screen card comes after the role check (WF-12)", () => {
       </WardFlowProvider>,
     );
     expect(screen.getByText(/needs a larger screen/u)).toBeInTheDocument();
+  });
+
+  it("opens on its own site's health service, not the whole state", () => {
+    as({ role: "bed_manager", scope: { kind: "site", siteCode: "FSH" } });
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <BedMeetingTvScreen />
+      </WardFlowProvider>,
+    );
+    const service = siteByCode("FSH")?.service;
+    expect(service).toBeTruthy();
+    expect(screen.getAllByText(`Bed meeting · ${service}`).length).toBeGreaterThan(0);
+    expect(screen.queryByText("Bed meeting · All services")).not.toBeInTheDocument();
   });
 });

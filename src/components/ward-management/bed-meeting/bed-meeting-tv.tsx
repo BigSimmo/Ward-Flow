@@ -17,6 +17,8 @@ import { bedMeetingSheet, type BedMeetingSheet } from "@/components/ward-managem
 import type { BedKindGap, BedKindId } from "@/components/ward-management/capacity/capacity-derivations";
 import { asAtStamp, type DailySheetPerson } from "@/components/ward-management/board/ward-daily-sheet";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { siteByCode } from "@/components/ward-management/ward-sites";
 import { useWardFeatureFlag, useWardFeatureFlags } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import {
@@ -1137,6 +1139,7 @@ export function BedMeetingTvScreen({
   const { scenario, configuration, shared } = useWardFlowSelect("scenario", "configuration", "shared");
   const now = useWardFlowClock();
   const deviceService = useServiceScope();
+  const access = useEffectiveWardAccess();
   const patientOf = usePatientOf();
   const enabled = useWardFeatureFlag("bed-meeting-tv");
   const deviceCanChange = useWardFeatureFlags()[0]?.deviceCanChange ?? false;
@@ -1187,7 +1190,11 @@ export function BedMeetingTvScreen({
   const department = ed === undefined ? undefined : edById(ed);
   const accessTarget = configuration.edAccessTargetMinutes;
   // A pinned link wins over this device's scope, so a TV shows the same service for good.
-  const service = serviceParam === undefined ? deviceService : tvServiceFromParam(serviceParam, units);
+  // WF-12 (live test, 4 Nov 2026): a site desk with no service chosen opens on its own site's
+  // service, not the whole network; the heading names it ("Bed meeting · <service>").
+  const siteService = access.scope.kind === "site" ? siteByCode(access.scope.siteCode)?.service : undefined;
+  const service =
+    serviceParam === undefined ? (deviceService ?? siteService ?? null) : tvServiceFromParam(serviceParam, units);
 
   const view = useMemo(() => {
     // Full names, as on every other screen (Josh, 26 Oct 2026), surname first (D-83, core pages redesign).
