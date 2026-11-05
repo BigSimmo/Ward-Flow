@@ -333,7 +333,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   // WF-42: More stays tied to the path it opened on, so a route change closes it without an effect.
   const [moreOpenPath, setMoreOpenPath] = useState<string | null>(null);
   const moreOpen = moreOpenPath === pathname;
-  const setMoreOpen = (open: boolean) => setMoreOpenPath(open ? pathname : null);
+  const setMoreOpen = useCallback((open: boolean) => setMoreOpenPath(open ? pathname : null), [pathname]);
   // B1: the rail's More shows only the rest; the bar's Menu (tablet portrait, no rail) shows it all.
   const [sheetShowsMain, setSheetShowsMain] = useState(false);
   const [deskModalOpen, setDeskModalOpen] = useState(false);
@@ -428,7 +428,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
     const close = () => setMoreOpen(false);
     window.addEventListener(CLOSE_MENUS_EVENT, close);
     return () => window.removeEventListener(CLOSE_MENUS_EVENT, close);
-  }, []);
+  }, [setMoreOpen]);
 
   // Phone bar (8 Oct 2026): the rail row is hidden under 48rem and the bar's own Menu button opens
   // this same sheet, so the navigation has one home.
@@ -441,7 +441,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
         setSheetShowsMain(true);
         setMoreOpen(true);
       }),
-    [],
+    [setMoreOpen],
   );
 
   useEffect(() => {
@@ -475,7 +475,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, setOpen, openOverlay, isTabletLandscape, canRefer]);
+  }, [open, setOpen, setMoreOpen, openOverlay, isTabletLandscape, canRefer]);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {

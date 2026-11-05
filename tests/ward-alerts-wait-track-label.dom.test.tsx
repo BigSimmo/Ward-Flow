@@ -68,5 +68,4 @@ describe("Recorded times track labels", () => {
     expect(second.y).toBe(46);
     expect(third.y).toBe(62);
   });
-
 });

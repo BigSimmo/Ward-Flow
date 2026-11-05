@@ -6,10 +6,7 @@ import { StatisticsOwnRedirect } from "@/components/ward-management/statistics/s
 import { setStatisticsSamples } from "@/components/ward-management/statistics/statistics-samples";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
-import {
-  resetWardLiveRegionForTests,
-  WardLiveRegion,
-} from "@/components/ward-management/shell/ward-live-region";
+import { resetWardLiveRegionForTests, WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
 import { homeHrefFor, screenForPath } from "@/components/ward-management/ward-role-access";
 
 const replace = vi.fn();
@@ -66,8 +63,6 @@ describe("WF-42 navigation quirks", () => {
 
 describe("WF-46 access admin home", () => {
   it("sends the access admin home to Governance", () => {
-    expect(homeHrefFor({ role: "admin", scope: { kind: "statewide" } }, (name) => name)).toBe(
-      "/ward-flow/governance",
-    );
+    expect(homeHrefFor({ role: "admin", scope: { kind: "statewide" } }, (name) => name)).toBe("/ward-flow/governance");
   });
 });

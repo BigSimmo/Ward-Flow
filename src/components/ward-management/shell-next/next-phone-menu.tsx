@@ -630,9 +630,9 @@ export function NextPhoneMenu({
   const open = openPath === pathname;
   const createOpen = createPath === pathname;
   const switcherOpen = switcherPath === pathname;
-  const setOpen = (next: boolean) => setOpenPath(next ? pathname : null);
-  const setCreateOpen = (next: boolean) => setCreatePath(next ? pathname : null);
-  const setSwitcherOpen = (next: boolean) => setSwitcherPath(next ? pathname : null);
+  const setOpen = useCallback((next: boolean) => setOpenPath(next ? pathname : null), [pathname]);
+  const setCreateOpen = useCallback((next: boolean) => setCreatePath(next ? pathname : null), [pathname]);
+  const setSwitcherOpen = useCallback((next: boolean) => setSwitcherPath(next ? pathname : null), [pathname]);
   // The sheets mount on the first open, not on page load: mounting the dynamic component would fetch
   // its chunk straight away instead of when the browser is idle.
   const [sheetsMounted, setSheetsMounted] = useState(false);
@@ -654,7 +654,7 @@ export function NextPhoneMenu({
         setOpen(true);
         announceToWardShell("Menu opened.");
       }),
-    [],
+    [setOpen],
   );
 
   // One order for the signed-in person (device audit, 11 Oct 2026), as the desktop rail.

@@ -912,7 +912,6 @@
   flex: 1 1 auto;
 }
 
-
 /* WF-41 (5 Nov 2026): at tablet widths the ED pressure table sat in a half column and clipped the
    8h+ cells. Stack earlier, keep horizontal scroll inside the card, and never let the table widen
    the page. */

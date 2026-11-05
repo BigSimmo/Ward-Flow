@@ -311,8 +311,7 @@ export function placeTrackLabels(marks: { x: number; label: string }[], width: n
       }
     }
     // WF-35: pick the first row with room; a third row keeps three close labels from painting over each other.
-    const y =
-      rows.find((row) => left >= (lastRightByRow.get(row) ?? -Infinity) + gap) ?? rows[rows.length - 1];
+    const y = rows.find((row) => left >= (lastRightByRow.get(row) ?? -Infinity) + gap) ?? rows[rows.length - 1];
     lastRightByRow.set(y, left + w);
     const ax = anchor === "start" ? left : anchor === "end" ? left + w : x;
     return { x: ax, y, anchor };
