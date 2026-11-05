@@ -121,21 +121,22 @@ describe("Ready beds by road time", () => {
   it("re-ranks when another department is chosen, and reports the ward picked", async () => {
     const user = userEvent.setup();
     const { card, onSelectUnit } = renderCard(rows);
-    const select = within(card).getByLabelText("From") as HTMLSelectElement;
-    expect(select.value).toBe(departments[0]!.id);
+    // The kit menu, not a browser drop-down: its trigger reads "From" and the chosen department.
+    expect(card.querySelector("select")).toBeNull();
+    const picker = within(card).getByRole("button", { name: /^From/u });
+    expect(picker.getAttribute("aria-haspopup")).toBe("menu");
+    expect(picker.textContent).toBe(`From${edLabel(departments[0]!.siteCode)}`);
     const before = listedNames(card);
 
     const other = departments.find((d) => {
       const ranked = rows.filter((row) => row.ready > 0 && routeFrom(d.id, row) !== null);
       return d.id !== departments[0]!.id && ranked.length > 0;
     })!;
-    // The phone shows a 13px copy of the chosen department over the invisible 16px select.
-    const shown = () => select.parentElement?.nextElementSibling;
-    expect(shown()?.getAttribute("aria-hidden")).toBe("true");
-    expect(shown()?.textContent).toBe(edLabel(departments[0]!.siteCode));
-    await user.selectOptions(select, other.id);
-    expect(select.value).toBe(other.id);
-    expect(shown()?.textContent).toBe(edLabel(other.siteCode));
+    await user.click(picker);
+    const options = screen.getAllByRole("menuitemradio");
+    expect(options).toHaveLength(departments.length);
+    await user.click(options[departments.indexOf(other)]!);
+    expect(picker.textContent).toBe(`From${edLabel(other.siteCode)}`);
     expect(listedNames(card)).not.toEqual(before);
 
     await user.click(within(within(card).getByRole("list")).getAllByRole("button")[0]!);

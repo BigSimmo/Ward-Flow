@@ -67,9 +67,8 @@ describe("A2-7: Clear session stays cleared after the next change", () => {
     });
     expect(referralState(storedReferral("RF-011")!)).toBe("accepted");
 
-    // Settings by login (31 Oct 2026): "Reset the demo in this tab" sits in the closed Demo tools.
-    fireEvent.click(within(screen.getByTestId("ward-settings-demo-tools")).getByText("Demo tools"));
-    fireEvent.click(screen.getByTestId("btn-clear-cache"));
+    // Settings by role (Josh, 3 Nov 2026, ST1): "Reset the demo in this tab" sits open in Demo tools.
+    fireEvent.click(within(screen.getByTestId("ward-settings-demo-tools")).getByTestId("btn-clear-cache"));
     act(() => {
       current!.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current!.now, minutes: 5 });
     });

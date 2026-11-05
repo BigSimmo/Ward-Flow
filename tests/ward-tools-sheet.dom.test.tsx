@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WardFlowOverride, WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
@@ -38,6 +38,11 @@ function renderSheet(isPhone = false) {
   return { onNavigate, onNewReferral };
 }
 
+/** Tools polish (3 Nov 2026): long groups show five rows, then Show more. Opens every group. */
+function showAllRows() {
+  for (const more of screen.queryAllByRole("button", { name: /^Show \d+ more$/u })) fireEvent.click(more);
+}
+
 describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
   it("is one sheet in the reviewed groups, with the repeated items gone", () => {
     renderSheet();
@@ -62,6 +67,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
 
   it("keeps working tools only on a desktop, as change 8 mocked (D-77)", () => {
     renderSheet();
+    showAllRows();
     // Each has its own place already. The new frame (Josh, 31 Oct 2026) drops the header's Synthetic
     // pill, so the Demo controls sit at the foot of Tools on a desktop too (the board clock opens them).
     expect(screen.getByRole("region", { name: "Demo" })).toBeTruthy();
@@ -76,6 +82,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
 
   it("starts a referral from Do now on a phone, which has no Synthetic pill and keeps its Tools", () => {
     const { onNewReferral } = renderSheet(true);
+    showAllRows();
     expect(screen.getByRole("region", { name: "Demo" })).toBeTruthy();
     expect(screen.getByRole("link", { name: /Handover sheet/u })).toBeTruthy();
     expect(screen.getByRole("link", { name: /Out of area/u })).toBeTruthy();
@@ -114,6 +121,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
 
   it("keeps one tool open at a time, so opening another closes the first (Q310)", () => {
     renderSheet();
+    showAllRows();
     const finder = screen.getByTestId("ward-tools-toggle-bed-finder");
     const formTimes = screen.getByTestId("ward-tools-toggle-form-times");
     fireEvent.click(finder);
@@ -202,8 +210,38 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(within(picker).getByRole("button", { name: /Standard day/u })).toBeTruthy();
   });
 
+  it("shows five rows of a long group, then Show more", async () => {
+    renderSheet();
+    const lookUp = screen.getByRole("region", { name: "Look up" });
+    const more = within(lookUp).getByRole("button", { name: /^Show \d+ more$/u });
+    expect(within(lookUp).queryByRole("link", { name: /Legal forms/u })).toBeNull();
+    fireEvent.click(more);
+    await act(async () => {
+      await new Promise((resolve) => window.requestAnimationFrame(() => resolve(null)));
+    });
+    // Focus moves to the first revealed row, not lost with the button.
+    expect(lookUp.contains(document.activeElement)).toBe(true);
+    expect(within(lookUp).getByRole("link", { name: /Legal forms/u })).toBeTruthy();
+    expect(within(lookUp).queryByRole("button", { name: /^Show \d+ more$/u })).toBeNull();
+  });
+
+  it("opens a Recent tool even when its row sits under Show more", () => {
+    renderSheet(true);
+    showAllRows();
+    fireEvent.click(screen.getByTestId("ward-tools-toggle-form-times"));
+    cleanup();
+    renderSheet(true);
+    const recent = screen.getByRole("region", { name: "Recent" });
+    fireEvent.click(within(recent).getByRole("button", { name: /Form times/u }));
+    expect(screen.getByTestId("ward-form-times")).toBeTruthy();
+    // Closing it keeps the row, so focus is not lost.
+    fireEvent.click(screen.getByTestId("ward-tools-toggle-form-times"));
+    expect(screen.getByTestId("ward-tools-toggle-form-times")).toBeTruthy();
+  });
+
   it("puts the Hospital feed under Do now and Find a bed, then Legal forms, under Look up", () => {
     renderSheet();
+    showAllRows();
     const doNow = screen.getByRole("region", { name: "Do now" });
     expect(within(doNow).getByTestId("ward-tools-toggle-feed")).toBeTruthy();
     const lookUp = screen.getByRole("region", { name: "Look up" });
@@ -240,6 +278,41 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(search).toHaveValue("");
     expect(screen.getByRole("region", { name: "Do now" })).toBeTruthy();
     expect(screen.getByRole("region", { name: "Demo" })).toBeTruthy();
+  });
+
+  it("clears the search on Escape, and empties the side pane when nothing matches", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardToolsSheet
+          isPhone={false}
+          twoPane
+          roleLabel="Bed coordinator"
+          onNavigate={vi.fn()}
+          onNewReferral={vi.fn()}
+        />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByTestId("ward-tools-toggle-figures"));
+    expect(screen.getByRole("region", { name: "Key figures" })).toBeTruthy();
+    const search = screen.getByRole("searchbox", { name: "Search tools" });
+    fireEvent.change(search, { target: { value: "zzz" } });
+    // No match: the old tool leaves the pane rather than sitting beside "No tool matches".
+    expect(screen.queryByRole("region", { name: "Key figures" })).toBeNull();
+    expect(screen.getByText("Choose a tool.")).toBeTruthy();
+    // Escape with words typed clears the box and is marked handled, so the sheet stays open.
+    const escape = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+    act(() => {
+      search.dispatchEvent(escape);
+    });
+    expect(escape.defaultPrevented).toBe(true);
+    expect(search).toHaveValue("");
+    expect(screen.getByRole("region", { name: "Key figures" })).toBeTruthy();
+    // An empty box leaves Escape alone, for the sheet to close.
+    const again = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+    act(() => {
+      search.dispatchEvent(again);
+    });
+    expect(again.defaultPrevented).toBe(false);
   });
 
   it("opens every figure in place without repeating the headline figures (simplification A2)", () => {

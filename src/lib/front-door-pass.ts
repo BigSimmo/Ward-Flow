@@ -27,9 +27,16 @@ const MIN_SECRET_LENGTH = 32;
 
 type Env = Record<string, string | undefined>;
 
-/** Whether the hosted switch asks for the front door. Anything but `required` leaves it open. */
+/**
+ * Whether the hosted switch asks for the front door. `required` shuts it and `off` opens it. On
+ * Railway (Q372, 3 November 2026) an unset or mistyped switch fails closed, so a lost variable
+ * never opens the site; elsewhere, such as a local `next start`, it stays open.
+ */
 export function frontDoorRequired(env: Env = process.env): boolean {
-  return env.WARD_FRONT_DOOR?.trim() === "required";
+  const value = env.WARD_FRONT_DOOR?.trim();
+  if (value === "required") return true;
+  if (value === "off") return false;
+  return Boolean(env.RAILWAY_ENVIRONMENT_NAME?.trim() || env.RAILWAY_ENVIRONMENT?.trim());
 }
 
 /** The signing secret, or null when it is missing or too short to trust. */

@@ -25,7 +25,7 @@ import { decodeRecordAddress } from "@/components/ward-management/shell/ward-rec
 
 /*
  * Audit P143 (Josh, 27 Oct 2026, 8:57 PM: "add the Open patient link for the refer path only").
- * Register & start referral goes on to the referral form, so the "added" toast offers a way
+ * Add and start referral goes on to the referral form, so the "added" toast offers a way
  * to the new person's page. A plain Add patient already opens that page, so its toast is unchanged.
  * Synthetic seed data only.
  */
@@ -49,9 +49,9 @@ afterEach(() => {
 });
 
 describe("Add patient toast, Open patient link (audit P143)", () => {
-  it("offers Open patient after Register & start referral", async () => {
+  it("offers Open patient after Add and start referral", async () => {
     renderForm();
-    fireEvent.click(screen.getByRole("button", { name: /Register & start referral/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Add and start referral/ }));
     await waitFor(() => expect(router.push).toHaveBeenCalledTimes(1));
     expect(router.push.mock.calls[0][0]).toMatch(/new=1/);
     expect(await screen.findByTestId("toast")).toHaveTextContent("Newcomer, Testable added, UM999999");

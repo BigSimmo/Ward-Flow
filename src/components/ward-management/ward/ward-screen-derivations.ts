@@ -20,7 +20,6 @@ import {
   formatRemaining,
   minutesUntil,
 } from "@/components/ward-management/ward-clock";
-import { stageCopy } from "@/components/ward-management/ward-derivations";
 import { deliveredAwaitingWard } from "@/components/ward-management/ward-stage-copy";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
 import { admissionCriteriaEligibility, admissionLegalStatus } from "@/components/ward-management/ward-flow-reducer";
@@ -32,11 +31,12 @@ import { patientAgeYears } from "@/components/ward-management/ward-patients";
 import { WARD_LOCKED_BED_SPLITS } from "@/components/ward-management/ward-sites";
 import { layoutBedNumbers, wardStaySeats } from "./ward-bed-layout";
 import { activeClosedBeds } from "@/components/ward-management/ward-ready-beds";
-import { arrivalIsLate, originPlaceLabel } from "./ward-screen-helpers";
+import { arrivalIsLate } from "./ward-screen-helpers";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
 import type { BedStateCounts } from "@/components/ward-management/ward-bed-states";
 import type { PatientResolutionSubject, ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
+import { NAME_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import type { WardReferralInboxEntry } from "@/components/ward-management/referrals/referral-inbox";
 import type { DueSoonThresholds } from "@/components/ward-management/ward-clock";
@@ -303,6 +303,11 @@ export function wardBedRoster({
       dischargeConfirmed: admission ? admission.dischargeConfirmedAt != null : null,
       dischargeConfirmedBy: admission?.dischargeConfirmedBy ?? null,
       expectedDischargeLabel,
+      // The recorded instant, so the printed list can date it absolutely.
+      expectedDischargeAt:
+        admission?.expectedDischargeAt != null && Number.isFinite(admission.expectedDischargeAt)
+          ? admission.expectedDischargeAt
+          : null,
       // Audit A1-3: a pulled bed carries its hold, so a lapsed hold reaches the ward's Act now.
       // WT-07: Delivered stops the pull clock; the bed then awaits the ward's arrival check.
       bedHold:
@@ -409,9 +414,8 @@ export function wardBedRoster({
   return { bedsList, inboxEntries, isMixed };
 }
 
-/** The live alerts the Home tab lists: referrals awaiting an answer, form due times, late arrivals and long leave. */
+/** The live alerts the Home tab lists: form due times, late arrivals and long leave. Referrals waiting are their own row. */
 type WardLiveFormAlertsInputs = {
-  incoming: Movement[];
   resolvePatientIdentity: (subject: PatientResolutionSubject) => ResolvedPatientInfo;
   accepted: Movement[];
   now: number;
@@ -421,7 +425,6 @@ type WardLiveFormAlertsInputs = {
 };
 
 export function wardLiveFormAlerts({
-  incoming,
   resolvePatientIdentity,
   accepted,
   now,
@@ -430,16 +433,8 @@ export function wardLiveFormAlerts({
   unit,
 }: WardLiveFormAlertsInputs) {
   const liveFormAlerts = [
-    ...incoming.map((movement) => ({
-      key: `incoming-${movement.id}`,
-      tone: "warning" as const,
-      title: "Referral awaiting this ward's answer",
-      countdown: stageCopy[movement.stage].label,
-      // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
-      text: `${resolvePatientIdentity(movement).formalName} from ${originPlaceLabel(movement)}.`,
-      actionLabel: "Answer",
-      actionTarget: "answer" as const,
-    })),
+    // Integration QA (3 Nov 2026): a referral waiting is one row, "Referrals waiting", raised by
+    // This shift itself and counted once by wardActNowCount, so it is not repeated here.
     ...accepted.flatMap((movement) => {
       const alerts: Array<{
         key: string;
@@ -499,3 +494,12 @@ export function wardLiveFormAlerts({
 
 /** One bed on the ward screen's roster. */
 export type WardScreenBed = ReturnType<typeof wardBedRoster>["bedsList"][number];
+
+/** Bug B1 (4 Nov 2026): the Ward answer note under the facts, only for what this movement does not
+ *  record. No linked person means no name and no age; a linked person without a date of birth has no
+ *  age. Nothing when both are held. */
+export function identityAbsenceNote(identity: ResolvedPatientInfo): string | undefined {
+  if (identity.formalName === NAME_NOT_RECORDED) return "Patient name and age are not recorded for this movement.";
+  if (identity.patient && !identity.patient.dateOfBirth) return "Age is not recorded for this movement.";
+  return undefined;
+}

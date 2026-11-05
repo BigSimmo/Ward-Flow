@@ -13,6 +13,7 @@ import {
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { chooseSampleReferralPerson } from "./helpers/referral-drawer-person";
 import { typeDate } from "./helpers/type-date-time";
+import { ConfirmHost } from "@/components/wf";
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -91,6 +92,7 @@ describe("approved four-tab referral drawer journey", () => {
 
   it("keeps draft text through tabs and clears patient-specific catchment and documentation on switching patient", async () => {
     setup();
+    render(<ConfirmHost />);
     confirmCatchment();
     tab("Referral");
     fireEvent.change(screen.getByLabelText(/Patient story/), { target: { value: "Synthetic story retained" } });
@@ -103,6 +105,9 @@ describe("approved four-tab referral drawer journey", () => {
     fireEvent.click(screen.getByRole("button", { name: "Change patient" }));
     const results = screen.getByRole("listbox");
     fireEvent.click(within(results).getAllByRole("option")[1]);
+    const confirmation = await screen.findByRole("alertdialog", { name: "Change patient?" });
+    fireEvent.click(within(confirmation).getByRole("button", { name: "Discard and change patient" }));
+    await waitFor(() => expect(confirmation).not.toBeInTheDocument());
     expect(screen.getByRole("button", { name: "Confirm catchment" })).toBeInTheDocument();
     tab("Referral");
     expect(screen.getByLabelText(/Patient story/)).toHaveValue("");

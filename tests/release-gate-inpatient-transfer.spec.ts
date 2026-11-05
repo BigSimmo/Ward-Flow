@@ -57,8 +57,12 @@ async function openBedBoardFromWards(page: Page, unitName: string, unitId: strin
       .click();
     await page.getByTestId("ward-index-phone-sheet").getByRole("button", { name: "Bed board", exact: true }).click();
   } else {
-    await page.getByRole("button", { name: `${unitName} profile`, exact: true }).click();
-    await page.getByRole("link", { name: "Bed board", exact: true }).click();
+    // The ward card's name opens its side panel, which links to the Bed board (#1360).
+    await page
+      .getByRole("button", { name: unitName.split(" — ")[0], exact: true })
+      .first()
+      .click();
+    await page.getByRole("dialog").getByRole("link", { name: "Bed board", exact: true }).click();
   }
   await page.waitForURL(`**/ward-flow/board/${unitId}`);
   await waitForScreen(page, "ward-board");
@@ -145,7 +149,10 @@ test("Inpatient transfer: a stay on one ward is referred, accepted and held at a
   await plan.getByTestId("ward-out-of-area-repat-home-hospital").selectOption({ label: "Bunbury Hospital" });
   await plan.getByRole("group", { name: "Ward agreed" }).getByText("Agreed", { exact: true }).click();
   await plan.getByRole("group", { name: "Travel by" }).getByText("Road", { exact: true }).click();
-  await plan.getByTestId("ward-out-of-area-repat-provider").selectOption("Patient transport service");
+  await plan
+    .getByTestId("ward-out-of-area-repat-provider")
+    .getByTestId("ward-officer-contact-Patient transport service")
+    .click();
   await plan.getByRole("group", { name: "Legal status" }).getByText("Voluntary", { exact: true }).click();
   await plan.getByTestId("ward-out-of-area-repat-cad").fill("CAD-GATE-0003");
   await plan.getByTestId("ward-out-of-area-repat-estimated-time").fill("09:00");

@@ -210,9 +210,14 @@ describe("Legal forms — titles come from the Chief Psychiatrist register (F2.2
     fireEvent.click(screen.getByRole("button", { name: "Record a form" }));
     const select = screen.getByLabelText("Form type") as HTMLSelectElement;
     const optionText = Array.from(select.options).map((o) => o.textContent);
-    expect(optionText.some((t) => t?.includes(formTitleForCode("3B") as string))).toBe(true);
-    expect(optionText.some((t) => t?.includes(formTitleForCode("3D") as string))).toBe(true);
-    expect(optionText.some((t) => t?.includes(formTitleForCode("4C") as string))).toBe(true);
+    for (const code of ["3C", "3D", "3E", "6D"]) {
+      expect(optionText.some((t) => t?.includes(formTitleForCode(code) as string))).toBe(true);
+    }
+    // Gap list item 2 (4 Nov 2026): the sheet offers only forms the engine records here. 3B, 4A and
+    // 4C are recorded at intake or on the move, so offering them here was a dead end.
+    for (const code of ["3B", "4A", "4C"]) {
+      expect(optionText.some((t) => t?.startsWith(`Form ${code} `))).toBe(false);
+    }
   });
 });
 

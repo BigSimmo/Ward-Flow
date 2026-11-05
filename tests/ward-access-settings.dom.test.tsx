@@ -120,17 +120,21 @@ function confirmStepUp() {
 }
 
 describe("the Access tab", () => {
-  // Settings by login (31 Oct 2026): one page of sections, so Access is a section and a jump button.
+  // Settings by role (Josh, 3 Nov 2026, ST1): a coordinator, ward or ED desk asks for cover from
+  // its You section; only the access admin has a separate Access section.
   it("is not offered with the role-access flag off", () => {
     settings();
     expect(screen.queryByTestId("ward-settings-jump-access")).not.toBeInTheDocument();
     expect(document.querySelector('[data-pane="access"]')).toBeNull();
     expect(screen.queryByTestId("ward-access-cover")).not.toBeInTheDocument();
-    // Anti-vacuity: the same desk with the flag on has it.
+    // Anti-vacuity: the same desk with the flag on has cover, inside You and with no Access section.
     cleanup();
     act(() => setWardFeatureFlagOnDevice("role-access", true));
     settings();
-    expect(screen.getByTestId("ward-settings-jump-access")).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-settings-jump-access")).not.toBeInTheDocument();
+    expect(
+      within(document.getElementById("settings-section-you")!).getByTestId("ward-access-cover"),
+    ).toBeInTheDocument();
   });
 
   it("gives a statewide coordinator both cover and the roles lists", () => {
@@ -139,7 +143,7 @@ describe("the Access tab", () => {
       setWardAccess({ role: "coordinator", scope: { kind: "statewide" } });
     });
     settings();
-    fireEvent.click(screen.getByTestId("ward-settings-jump-access"));
+    fireEvent.click(screen.getByTestId("ward-settings-jump-you"));
     expect(screen.getByTestId("ward-access-cover")).toBeInTheDocument();
     expect(screen.getByTestId("ward-access-roles")).toBeInTheDocument();
     expect(screen.getByText(/As a statewide coordinator you also give and remove roles/u)).toBeInTheDocument();
@@ -228,7 +232,7 @@ describe("the Access tab", () => {
       setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["fsh-adult-secure"] } });
     });
     settings();
-    fireEvent.click(screen.getByTestId("ward-settings-jump-access"));
+    fireEvent.click(screen.getByTestId("ward-settings-jump-you"));
     // Nothing is chosen for the nurse in charge: the place, the colleague and the length start empty.
     expect(screen.getByTestId("ward-access-cover-submit")).toHaveAttribute("aria-disabled", "true");
     choose(screen.getByTestId("ward-access-cover"));
@@ -371,7 +375,7 @@ describe("the Access tab", () => {
       setWardAccess({ role: "ward", scope: { kind: "ward", unitIds: ["fsh-adult-secure"] } });
     });
     settings();
-    fireEvent.click(screen.getByTestId("ward-settings-jump-access"));
+    fireEvent.click(screen.getByTestId("ward-settings-jump-you"));
     expect(screen.queryByTestId("ward-access-log")).not.toBeInTheDocument();
   });
 
@@ -497,12 +501,16 @@ describe("the Access tab", () => {
   });
 });
 
-function renderStepUpPopup(run: () => Promise<StepUpResult>, reauthenticate: (password: string) => Promise<void>) {
+function renderStepUpPopup(
+  run: () => Promise<StepUpResult>,
+  reauthenticate: (password: string) => Promise<void>,
+  onResult: (result: StepUpResult) => void = () => {},
+) {
   function Check() {
     const { guard, dialog } = useStepUp();
     return (
       <>
-        <button type="button" onClick={() => void guard(run)}>
+        <button type="button" onClick={() => void guard(run).then(onResult)}>
           Open protected action
         </button>
         {dialog}
@@ -517,6 +525,35 @@ function renderStepUpPopup(run: () => Promise<StepUpResult>, reauthenticate: (pa
     </WardFlowProvider>,
   );
 }
+
+it("keeps a submitted protected action open until its actual result, without claiming cancellation", async () => {
+  let finish!: (result: StepUpResult) => void;
+  const action = new Promise<StepUpResult>((resolve) => {
+    finish = resolve;
+  });
+  const run = vi
+    .fn<() => Promise<StepUpResult>>()
+    .mockResolvedValueOnce("step-up")
+    .mockImplementationOnce(() => action);
+  const results: StepUpResult[] = [];
+  renderStepUpPopup(
+    run,
+    async () => {},
+    (result) => results.push(result),
+  );
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Open protected action" })));
+  fireEvent.change(screen.getByLabelText("Password"), { target: { value: "synthetic-test-password" } });
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Sign in and carry on" })));
+  expect(screen.getByRole("button", { name: "Cancel" })).toHaveAttribute("aria-disabled", "true");
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+  fireEvent.keyDown(screen.getByTestId("ward-step-up"), { key: "Escape" });
+  expect(screen.getByTestId("ward-step-up")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Close" })).toBeNull();
+  expect(results).toEqual([]);
+  await act(async () => finish(null));
+  expect(results).toEqual([null]);
+  expect(screen.queryByTestId("ward-step-up")).toBeNull();
+});
 
 it("distinguishes an action error after successful sign-in from a rejected password", async () => {
   const run = vi
@@ -555,7 +592,7 @@ it("keeps a rejected sign-in on the password field and does not run the protecte
   fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
 });
 
-it("does not show a late action error in a newly opened sign-in dialog", async () => {
+it("blocks replacement during submission and clears the old action error before a new sign-in", async () => {
   let rejectAction!: (reason: Error) => void;
   const action = new Promise<StepUpResult>((_resolve, reject) => {
     rejectAction = reject;
@@ -570,8 +607,13 @@ it("does not show a late action error in a newly opened sign-in dialog", async (
   fireEvent.change(screen.getByLabelText("Password"), { target: { value: "synthetic-test-password" } });
   await act(async () => fireEvent.click(screen.getByRole("button", { name: "Sign in and carry on" })));
   fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+  expect(screen.getByTestId("ward-step-up")).toBeInTheDocument();
   await act(async () => fireEvent.click(screen.getByRole("button", { name: "Open protected action" })));
+  expect(run).toHaveBeenCalledTimes(2);
   await act(async () => rejectAction(new Error("Synthetic late action error")));
+  expect(screen.getByRole("alert")).toHaveTextContent("The action could not be confirmed");
+  fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+  await act(async () => fireEvent.click(screen.getByRole("button", { name: "Open protected action" })));
   expect(screen.getByTestId("ward-step-up")).toBeInTheDocument();
   expect(screen.getByLabelText("Password")).toHaveValue("");
   expect(screen.queryByRole("alert")).toBeNull();

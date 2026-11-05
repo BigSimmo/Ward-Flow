@@ -41,11 +41,13 @@ it("populates the existing clock time when editing tomorrow's departure", () => 
     </WardFlowProvider>,
   );
   fireEvent.click(screen.getByRole("button", { name: "Set tomorrow" }));
-  fireEvent.click(screen.getByRole("button", { name: /^History/ }));
-  const row = within(screen.getByRole("region", { name: "Discharge worklist" }))
-    .getByText(screen.getByTestId("target-umrn").textContent!)
-    .closest("tr")!;
-  fireEvent.click(row);
+  // Discharges redesign (3 Nov 2026): Recorded (which replaced History) lists only departures, so
+  // tomorrow's departure is opened from its bed release on Now, then its "Discharge record".
+  const worklist = screen.getByRole("region", { name: "Discharge worklist" });
+  for (const more of within(worklist).queryAllByRole("button", { name: /^Show \d+ more/ })) fireEvent.click(more);
+  const row = within(worklist).getByText(screen.getByTestId("target-umrn").textContent!).closest("tr")!;
+  fireEvent.click(within(row).getAllByRole("button")[0]!);
+  fireEvent.click(screen.getByRole("button", { name: "Discharge record" }));
   fireEvent.click(screen.getByTestId("ward-discharge-update-date-btn"));
   expect(screen.getByTestId("ward-discharge-new-time-input")).toHaveValue("14:00");
 });

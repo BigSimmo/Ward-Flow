@@ -1,3 +1,4 @@
+import { updateExpectedDischargeDate } from "../ward-expected-discharge-update";
 import type { AuditDecision } from "@/components/ward-management/ward-audit";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
@@ -132,8 +133,12 @@ export function reduceDischargeDependencyEvent(
   }
   decision.outcome = "accepted";
   decision.reasonCode = "none";
-  return replaceBedRelease(state, release.id, {
+  const changed = replaceBedRelease(state, release.id, {
     ...updated,
     ...(change ? { planChanges: [...(release.planChanges ?? []), change] } : {}),
   });
+  if (!hasDate || !release.admissionId) return changed;
+  const admission = state.admissions.find((stay) => stay.id === release.admissionId);
+  if (!admission || admission.state === "departed") return changed;
+  return updateExpectedDischargeDate(changed, admission, event.expectedAt as Instant, event.now, event.role);
 }

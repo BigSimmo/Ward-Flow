@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Clock, FileText, MoreHorizontal, Printer, Send } from "lucide-react";
+import { Bell, Clock, FileText, Ellipsis, Printer, Send } from "lucide-react";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
@@ -36,7 +36,7 @@ import {
   releaseBand,
 } from "@/components/ward-management/ward-bed-availability";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
-import { releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
+import { currentShiftStartInstant, releasesDueByShiftEnd } from "@/components/ward-management/ward-board-time-features";
 import {
   OVERRIDE_REASONS,
   type OverrideReason,
@@ -123,13 +123,19 @@ import {
   WARD_BED_DRAWER_ENTRY,
   wardHandoverHref,
 } from "./ward-screen-helpers";
-import { WardAnswerFromLink, WardDailySheetDialog, WardDischargeNotices, WardReferralInbox } from "./ward-screen-lazy";
+import {
+  WardAnswerFromLink,
+  WardBedListPrint,
+  WardConfirmBedsDialog,
+  WardDailySheetDialog,
+  WardDischargeNotices,
+} from "./ward-screen-lazy";
+import { WardScreenReferralsTab } from "./ward-screen-referrals-tab";
 import { moveBetweenWardTabs, WardScreenTopBar } from "./ward-screen-top-bar";
 import { wardBedRoster, wardLiveFormAlerts } from "./ward-screen-derivations";
 import { WardAcceptedReferralPlacement } from "./ward-accepted-referral-placement";
 import { WardScreenHomeSection } from "./ward-screen-home-section";
-import { WardConfirmBedsDialog } from "./ward-confirm-beds-dialog";
-import { WardAcceptDialog } from "./ward-answer-accept-dialog";
+import { WardAcceptDialog, WardScreenDecisionJobs } from "./ward-on-demand";
 import type { DecisionReport } from "./ward-decisions-cockpit";
 import { formatDateOfBirth } from "@/components/ward-management/ward-patients";
 import { WardScreenBedDrawer } from "./ward-screen-overlays";
@@ -149,10 +155,10 @@ type WardScreenProps = {
  * counters and patient lists continue to come from authoritative state.
  */
 
-type WardTab = "attn" | "board" | "coming" | "out" | "beds" | "return";
-const WARD_TABS: readonly WardTab[] = ["attn", "board", "coming", "out", "beds", "return"];
+type WardTab = "attn" | "board" | "coming" | "out" | "beds" | "referrals" | "return";
+const WARD_TABS: readonly WardTab[] = ["attn", "board", "coming", "out", "beds", "referrals", "return"];
 const WARD_FLOW_TABS: readonly WardFlowTab[] = ["referrals", "admissions", "discharges"];
-const WARD_SHIFT_VIEWS: readonly WardShiftView[] = ["todo", "log", "stay"];
+const WARD_SHIFT_VIEWS: readonly WardShiftView[] = ["todo", "log"];
 
 export function WardScreen({ unitId, presentation = "overview", departurePlanning = false }: WardScreenProps) {
   if (presentation === "answer") {
@@ -308,7 +314,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const [flowTab, setFlowTab] = useAddressTab<WardFlowTab>("flow", WARD_FLOW_TABS, "referrals");
   const [shiftView, setShiftView] = useAddressTab<WardShiftView>("shift", WARD_SHIFT_VIEWS, "todo");
   const selectActiveTab = useCallback(
-    (next: "attn" | "board" | "coming" | "out" | "beds" | "return") => {
+    (next: "attn" | "board" | "coming" | "out" | "beds" | "referrals" | "return") => {
       startTransition(() => {
         setActiveTab(next);
       });
@@ -395,7 +401,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           }}
           data-testid="ward-switch-to-ward-desk-btn"
         >
-          Switch to Ward desk →
+          Switch to Ward desk
         </button>
       </span>
     ) : null;
@@ -1095,7 +1101,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     (leaveBed) => now - leaveBed.confirmedAt >= LEAVE_BED_OPEN_WARNING_MINUTES,
   );
   const { liveFormAlerts } = wardLiveFormAlerts({
-    incoming,
     resolvePatientIdentity,
     accepted,
     now,
@@ -1884,13 +1889,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       }}
       actNow={actNowCount}
       onActNow={() => {
+        // WH2 (3 Nov 2026): the This shift sheet opens on its To do list, on every layout.
         setShiftView("todo");
-        if (isPhone) {
-          setActiveTab("attn");
-          setPhonePanel("shift");
-          return;
-        }
-        showHome("ward-this-shift");
+        setActiveTab("attn");
+        setPhonePanel("shift");
       }}
       phone={isPhone}
     />
@@ -1898,7 +1900,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const wardHeroFoot = (
     <span className={styles.heroFootStack}>
       <span className={styles.heroMeta}>
-        <Clock size={14} aria-hidden="true" className={styles.heroMetaIcon} />
+        <Clock strokeWidth={1.75} size={14} aria-hidden="true" className={styles.heroMetaIcon} />
         <span>{shiftLine(now)}</span>
         {" · "}
         <Link
@@ -1911,7 +1913,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             showHome("bed-capacity");
           }}
         >
-          {unit.beds} beds · {states.ready} ready
+          {/* Integration QA (3 Nov 2026): Ready sits once, in the hero figures above. */}
+          {unit.beds} beds
         </Link>
         {" · "}
         {/* The staffed figure is the bed count; no roster is held, and the screen says so. */}
@@ -1984,7 +1987,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         },
         {
           id: "handover",
-          label: "Handover",
+          // WH9 and WH10 (3 Nov 2026): named for the ward, as in Decisions, and opens the one Handover.
+          label: "Ward handover",
           icon: Printer,
           onSelect: () => {
             if (router) router.push(handoverHref);
@@ -2014,7 +2018,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           aria-label="More ward actions"
           data-testid={tablet ? "ward-tools-more" : "ward-phone-chip-more"}
         >
-          <MoreHorizontal size={tablet ? 16 : 20} aria-hidden="true" />
+          <Ellipsis strokeWidth={1.75} size={tablet ? 16 : 20} aria-hidden="true" />
           {tablet ? "More" : null}
         </button>
       )}
@@ -2030,8 +2034,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         id="tabBtn-attn"
         // Josh, 27 Oct 2026: two views, Ward home and Decisions. Placing and moving beds (the old Bed
         // board tab) opens inside Ward home, so Ward home stays the chosen view while it is open.
-        aria-selected={activeTab !== "return"}
-        tabIndex={activeTab !== "return" ? 0 : -1}
+        aria-selected={activeTab !== "return" && activeTab !== "referrals"}
+        tabIndex={activeTab !== "return" && activeTab !== "referrals" ? 0 : -1}
         aria-controls={
           activeTab === "coming"
             ? "tab-coming"
@@ -2079,19 +2083,49 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     </li>
   );
 
-  // The service sentence and the referral inbox open the page on desktop. On a phone they sit
-  // under the hero and the view tabs, so the dark hero still joins the header.
-  const wardLead = (
-    <>
-      {service !== null && unitHealthService(unit) !== undefined ? (
-        <p className={styles.placeholder} data-testid="ward-unit-service-sentence">
-          {`This ward is one unit in ${unitHealthService(unit)}, so its own figures below do not change with the service.`}
-        </p>
-      ) : null}
-
-      <WardReferralInbox unitId={unit.id} />
-    </>
+  // Josh, 3 Nov 2026 (WH7, reverses CRIT-07): the referral inbox left the top of the page for its
+  // own Referrals tab, counted here by everything in it still waiting for this ward's answer: the
+  // inbox's referrals plus the bed requests from an emergency department, so the tab never says 0
+  // while Ward flow shows one waiting.
+  const inboxWaiting = (wardReferralInbox?.(unit.id) ?? []).filter(
+    (entry) => entry.state === "queued" && entry.withdrawnAt === undefined,
+  ).length;
+  const referralsWaiting = inboxWaiting + incoming.length;
+  const referralsLabel = `${referralsWaiting} ${referralsWaiting === 1 ? "referral" : "referrals"} waiting`;
+  const tabReferrals = (
+    <li role="presentation">
+      <button
+        type="button"
+        className={styles.tabBtn}
+        role="tab"
+        id="tabBtn-referrals"
+        aria-selected={activeTab === "referrals"}
+        tabIndex={activeTab === "referrals" ? 0 : -1}
+        aria-controls="tab-referrals"
+        aria-label={`Referrals, ${referralsLabel}`}
+        data-testid="ward-tab-referrals"
+        onClick={() => {
+          selectActiveTab("referrals");
+        }}
+      >
+        <span className={styles.tabLabel} data-label="Referrals">
+          Referrals
+        </span>
+        <span className={styles.tabBadge} title={referralsLabel} aria-hidden="true">
+          {referralsWaiting}
+        </span>
+      </button>
+    </li>
   );
+
+  // The service sentence opens the page on desktop. On a phone it sits under the hero and the view
+  // tabs, so the dark hero still joins the header.
+  const wardLead =
+    service !== null && unitHealthService(unit) !== undefined ? (
+      <p className={styles.placeholder} data-testid="ward-unit-service-sentence">
+        {`This ward is one unit in ${unitHealthService(unit)}, so its own figures below do not change with the service.`}
+      </p>
+    ) : null;
 
   return (
     <div
@@ -2103,6 +2137,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     >
       <main id="main-content" className={styles.main}>
         <h1 className={styles.screenName}>{presentation === "answer" ? "Ward answer" : "Ward"}</h1>
+        {/* Tier 1 item 9: the one-page bed list, on paper only. */}
+        {presentation === "answer" ? null : (
+          <WardBedListPrint unit={unit} beds={bedsList} now={now} dayZero={dayZero} />
+        )}
 
         {/* Item 44, build plan task F3, §3 "Ward": this page is about ONE named place (§2 "Never
          *  hidden", S4) and is never itself narrowed by the chosen service — this states how the
@@ -2141,6 +2179,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             setNotificationCenterOpen={setNotificationCenterOpen}
             notificationTriggerRef={notificationTriggerRef}
             tabHome={tabHome}
+            tabReferrals={tabReferrals}
             tabDecisions={tabDecisions}
             bedQuery={bedQuery}
             setBedQuery={setBedQuery}
@@ -2148,7 +2187,6 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             unreadAlertsCount={unreadAlertsCount}
             setDailySheetOpen={setDailySheetOpen}
             tvViewsOn={tvViewsOn}
-            handoverHref={handoverHref}
             handleRaiseWardReferral={handleRaiseWardReferral}
             raisedReferral={null}
             selectedBed={selectedBed}
@@ -2168,6 +2206,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
               onKeyDown={moveBetweenWardTabs}
             >
               {tabHome}
+              {tabReferrals}
               {tabDecisions}
             </ul>
           </nav>
@@ -2289,6 +2328,24 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           states={states}
           blockedReleases={blockedReleases}
           pendingPreparation={pendingPreparation}
+          confirmBedRelease={confirmBedRelease}
+        />
+
+        {/* ───────── REFERRALS: the ward's own referral inbox (WH7, WH9) ───────── */}
+        <WardScreenReferralsTab
+          active={activeTab === "referrals"}
+          unit={unit}
+          waiting={inboxWaiting}
+          bedRequests={incoming.length}
+          onOpenBedRequests={() => {
+            setFlowTab("referrals");
+            if (isPhone) {
+              setActiveTab("attn");
+              setPhonePanel("flow");
+              return;
+            }
+            showHome("ward-flow");
+          }}
         />
 
         {/* ───────── TAB 5: TODAY'S DECISIONS & SHIFT COCKPIT ───────── */}
@@ -2334,6 +2391,30 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           selectedPod={selectedPod}
           setSelectedPod={setSelectedPod}
           isMixed={isMixed}
+          decisionJobs={
+            <WardScreenDecisionJobs
+              unitName={unit.name}
+              handoverHref={handoverHref}
+              capacityLine={
+                unit.allocatable.confirmedAt >= currentShiftStartInstant(now)
+                  ? `Confirmed ${formatInstantWithDay(unit.allocatable.confirmedAt, now)}`
+                  : "Not confirmed this shift"
+              }
+              capacityDone={unit.allocatable.confirmedAt >= currentShiftStartInstant(now)}
+              onConfirmCapacity={openCapacityModal}
+              referralsWaiting={referralsWaiting}
+              onOpenReferrals={() => {
+                selectActiveTab("referrals");
+              }}
+              unreadNotices={unreadAlertsCount}
+              onOpenNotices={() => {
+                setNotificationCenterOpen(true);
+              }}
+              onOpenShiftBrief={() => {
+                setDailySheetOpen(true);
+              }}
+            />
+          }
         />
 
         {/* ───────── BED TELEMETRY & CLINICAL DOSSIER DRAWER ───────── */}

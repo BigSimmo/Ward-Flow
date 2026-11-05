@@ -22,21 +22,15 @@ import {
   X,
 } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useId, useRef, useState, type Dispatch, type MouseEvent, type RefObject } from "react";
+import { useEffect, useId, useRef, useState, type MouseEvent, type RefObject } from "react";
+import { useWardFormSave } from "./use-ward-form-save";
+import type { WardCommandDispatch } from "./ward-shared-client";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import { acceptedPullReferralId, isAcceptedPullRow } from "@/components/ward-management/ward-alerts-figures";
 import { TasksQuickJumps } from "./ward-tasks-quick-jumps";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import {
-  StatusGlyph,
-  buttonClass,
-  durMinutes,
-  hasConfirmHost,
-  requestConfirm,
-  useIsPhone,
-  type WfTone,
-} from "@/components/wf";
+import { StatusGlyph, buttonClass, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
 import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { callRows, type CallRow, type CallTarget } from "./patients/patient-call-list";
 import { edHealthService } from "./ward-service-scope";
@@ -48,7 +42,7 @@ import type { Admission } from "./ward-admissions";
 import type { Movement, Referral, Unit } from "./ward-model";
 import type { Patient } from "./ward-patients";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
-import type { WardFlowEvent, WardFlowRole } from "@/components/ward-management/ward-flow-events";
+import type { WardFlowRole } from "@/components/ward-management/ward-flow-events";
 import {
   inboxItemCompletionState,
   type InboxAcknowledgement,
@@ -70,6 +64,7 @@ import {
 } from "./ward-inbox-snooze";
 import { InboxRowStatus, InboxSnoozeControl, snoozedLine } from "./inbox-snooze-control";
 import { useDirtyStateGuard } from "./use-dirty-state-guard";
+import { DISCARD_ESCALATION, useEscalationDiscard } from "./use-escalation-discard";
 import { AcknowledgeVisibleButton } from "./tasks-acknowledge-visible";
 
 import styles from "./ward-tasks-drawer.module.css";
@@ -88,7 +83,7 @@ type WardTasksDrawerProps = {
   configuration?: WardConfiguration;
   role: WardFlowRole;
   now: Instant;
-  dispatch: Dispatch<WardFlowEvent>;
+  dispatch: WardCommandDispatch;
   onClose: () => void;
   /** The shell consults this drawer's own draft decision before closing its outer Sheet. */
   dismissalGuardRef?: RefObject<((retry?: () => void) => boolean) | null>;
@@ -113,11 +108,9 @@ type WardTasksDrawerProps = {
 
 type AckFilter = "all" | "open" | "unacknowledged" | "acknowledged" | "completed";
 
-/**
- * The drawer's words. For the bed coordinator's desk, Tasks and Alerts are one queue (Josh, D-61,
- * 16 Oct 2026), so the drawer uses the Alerts screen's name and groups. Red rows are act now and
- * every other row is waiting, the same split `inboxItemIsActNow` makes for the Alerts screen.
- */
+/** The drawer's words. For the bed coordinator's desk, Tasks and Alerts are one queue (Josh, D-61, 16 Oct 2026), so
+ * the drawer uses the Alerts screen's name and groups. Red rows are act now and every other row is waiting, the same
+ * split `inboxItemIsActNow` makes for the Alerts screen. */
 type DrawerWords = { name: string; plural: string; act: string; wait: string; running?: string };
 // The drawer is called Alerts on every desk, as its button is (Josh, 31 Oct 2026). Desks without the
 // one Alerts queue keep their own filters and row behaviour, which follow these words by identity.
@@ -143,14 +136,11 @@ function ackFilterLabels(words: DrawerWords): Record<AckFilter, string> {
 
 /** Quick picks only fill the box; the person still records the escalation themselves. */
 const ESCALATION_PICKS = ["Duty consultant", "State bed desk", "Executive on call"] as const;
-const DISCARD_ESCALATION = "You have an unsaved escalation contact. Discard it?";
 // These links dismiss the drawer as well as navigating, including a link to the current page.
 const isTasksDrawerLink = (anchor: HTMLAnchorElement) => anchor.closest("[data-ward-tasks-drawer]") !== null;
 
-/**
- * Ops-6 (remaining-pages audit, 13 Oct 2026): each escalation pick with the number that answers
- * now, from the On-call directory for the patient's service. Every number is a mock.
- */
+/** Ops-6 (remaining-pages audit, 13 Oct 2026): each escalation pick with the number that answers now, from the
+ * On-call directory for the patient's service. Every number is a mock. */
 function escalationTargets(movement: Movement): CallTarget[] {
   const service = edHealthService(movement.originEdId);
   return [
@@ -166,11 +156,8 @@ function escalationTargets(movement: Movement): CallTarget[] {
   ];
 }
 
-/**
- * Ops-5 (remaining-pages audit, 13 Oct 2026): the numbers a task needs, from the On-call
- * directory: transport when a leg is booked or waiting, the sending ED's liaison and the
- * receiving ward's nurse in charge.
- */
+/** Ops-5 (remaining-pages audit, 13 Oct 2026): the numbers a task needs, from the On-call directory: transport when
+ * a leg is booked or waiting, the sending ED's liaison and the receiving ward's nurse in charge. */
 function contactTargets(item: InboxItem, movement: Movement, units: readonly Unit[] | undefined): CallTarget[] {
   const targets: CallTarget[] = [];
   if (movement.transport || /transport/i.test(item.title)) {
@@ -343,65 +330,22 @@ export function WardTasksDrawer({
   const escalatingItem = allItems.find((item) => item.id === escalating);
   const savedContact =
     records?.movements.find((movement) => movement.id === escalatingItem?.movementId)?.escalation?.contact ?? "";
+  const escalationSave = useWardFormSave(`task-escalation:${escalatingItem?.movementId ?? "none"}`);
   const hasUnsavedEscalation = escalating !== null && contact !== savedContact;
-  const dirtyEscalationRef = useRef(hasUnsavedEscalation);
-  useEffect(() => {
-    dirtyEscalationRef.current = hasUnsavedEscalation;
-  }, [hasUnsavedEscalation]);
   const { approveNextHistoryNavigation } = useDirtyStateGuard({
     isDirty: hasUnsavedEscalation,
     value: JSON.stringify([escalating, contact]),
     confirmMessage: DISCARD_ESCALATION,
     skipAnchor: isTasksDrawerLink,
   });
-
-  /**
-   * True when there is no unsaved escalation (or the person lets it go). With `retry` and the kit's
-   * styled confirm mounted, an unsaved escalation returns false at once, the question is asked in the
-   * styled dialog, and on Discard the draft is cleared and `retry` runs the step again. Without
-   * `retry` the browser's confirm box asks, as before.
-   */
-  const discardEscalation = useCallback((retry?: () => void) => {
-    const clear = () => {
-      // The shell can recheck within this event, before React commits the cleared draft below.
-      dirtyEscalationRef.current = false;
-      setEscalating(null);
-      setContact("");
-    };
-    if (dirtyEscalationRef.current && retry && hasConfirmHost()) {
-      void requestConfirm({
-        title: "Discard the escalation contact?",
-        message: DISCARD_ESCALATION,
-        confirmLabel: "Discard",
-        cancelLabel: "Keep editing",
-      }).then((confirmed) => {
-        if (!confirmed) return;
-        clear();
-        retry();
-      });
-      return false;
-    }
-    if (dirtyEscalationRef.current && !window.confirm(DISCARD_ESCALATION)) return false;
-    clear();
-    return true;
-  }, []);
-
-  const confirmDrawerDismissal = useCallback(
-    (retry?: () => void) => {
-      if (!discardEscalation(retry)) return false;
-      approveNextHistoryNavigation();
-      return true;
-    },
-    [discardEscalation, approveNextHistoryNavigation],
-  );
-
-  useEffect(() => {
-    if (!dismissalGuardRef) return;
-    dismissalGuardRef.current = confirmDrawerDismissal;
-    return () => {
-      if (dismissalGuardRef.current === confirmDrawerDismissal) dismissalGuardRef.current = null;
-    };
-  }, [dismissalGuardRef, confirmDrawerDismissal]);
+  const { discardEscalation, confirmDrawerDismissal } = useEscalationDiscard({
+    hasUnsavedEscalation,
+    setEscalating,
+    setContact,
+    approveNextHistoryNavigation,
+    dismissalGuardRef,
+    pending: escalationSave.pending,
+  });
 
   function closeDrawer(): boolean {
     if (!confirmDrawerDismissal(closeDrawer)) return false;
@@ -409,7 +353,6 @@ export function WardTasksDrawer({
     onClose();
     return true;
   }
-
   function closeFromLink(event: MouseEvent<HTMLAnchorElement>) {
     const link = event.currentTarget;
     // On Discard the same link is pressed again, now with nothing unsaved.
@@ -419,14 +362,12 @@ export function WardTasksDrawer({
     }
     onClose();
   }
-
   const openerRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
     if (!withBackdrop && document.activeElement instanceof HTMLElement && document.activeElement !== document.body) {
       openerRef.current = document.activeElement;
     }
   }, [withBackdrop]);
-
   function handleEscape(target: EventTarget | null = document.activeElement) {
     const inContacts = target instanceof Element && target.closest("[data-ward-task-contacts]") !== null;
     if (contacting !== null && (escalating === null || inContacts)) {
@@ -453,7 +394,6 @@ export function WardTasksDrawer({
     if (!closeDrawer()) return;
     if (opener && opener.isConnected) opener.focus();
   }
-
   useWardModalFocus(withBackdrop, drawerRef, handleEscape);
 
   // The inline panel has no modal focus handling, so Escape pressed inside it is caught here. A
@@ -716,6 +656,7 @@ export function WardTasksDrawer({
                 event.currentTarget.focus();
                 return;
               }
+              escalationSave.forget();
               setEscalating(item.id);
               setContact(movement.escalation?.contact ?? "");
             }}
@@ -768,17 +709,23 @@ export function WardTasksDrawer({
         className={styles.escalationForm}
         onSubmit={(event) => {
           event.preventDefault();
-          if (!contact.trim()) return;
-          recordEscalation(contact.trim());
-          focusTrigger(event.currentTarget);
-          setEscalating(null);
-          setContact("");
+          if (!contact.trim() || escalationSave.pending) return;
+          const form = event.currentTarget;
+          escalationSave.submit(
+            () => recordEscalation(contact.trim()),
+            () => {
+              focusTrigger(form);
+              setEscalating(null);
+              setContact("");
+            },
+          );
         }}
       >
         <label className={styles.escalationLabel}>
           Who did you escalate to?
           <span className={styles.escalationInput}>
             <input
+              disabled={escalationSave.pending}
               // eslint-disable-next-line jsx-a11y/no-autofocus -- the field appears only after the user asks to escalate, so focus moves to it
               autoFocus
               required
@@ -797,6 +744,7 @@ export function WardTasksDrawer({
             <button
               key={pick}
               type="button"
+              disabled={escalationSave.pending}
               className={styles.pick}
               aria-pressed={contact === pick}
               onClick={() => {
@@ -811,11 +759,17 @@ export function WardTasksDrawer({
         <ul className={styles.callList} aria-label="Escalation contacts, mock numbers">
           {callRows(escalationTargets(movement), now).map((row) => renderCallRow(row))}
         </ul>
+        {escalationSave.error ? (
+          <p className={styles.escalationNote} role="alert">
+            {escalationSave.error}
+          </p>
+        ) : null}
         <div className={styles.escalationFoot}>
           <span className={styles.escalationNote}>Records only. Sends nothing.</span>
           <button
             type="button"
             className={`${styles.btn} ${styles.btnGhost}`}
+            disabled={escalationSave.pending}
             onClick={(event) => {
               const button = event.currentTarget;
               if (!discardEscalation(() => focusTrigger(button))) return;
@@ -824,7 +778,11 @@ export function WardTasksDrawer({
           >
             Cancel
           </button>
-          <button type="submit" className={`${styles.btn} ${styles.btnPrimary}`} disabled={!contact.trim()}>
+          <button
+            type="submit"
+            className={`${styles.btn} ${styles.btnPrimary}`}
+            disabled={escalationSave.pending || !contact.trim()}
+          >
             Record escalation
           </button>
         </div>

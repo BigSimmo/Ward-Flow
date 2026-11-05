@@ -21,6 +21,12 @@ export const REQUIRED_RELEASE_JOURNEY_FILES = Object.freeze([
     title:
       "Community referral: a community team refers from its own desk, the ward it asked accepts into a held bed, and the coordinator's board and the team's desk agree",
   },
+  // Tier 1 item 7 (Josh, 4 Nov 2026): filing a Mental Health Act form, with its Undo.
+  {
+    file: "release-gate-legal-form.spec.ts",
+    title:
+      "Legal form: a Form 1A gets its time written and is marked received, the receipt undoes, and the move shows the form",
+  },
 ]);
 
 export const RELEASE_GATE_PROJECTS = Object.freeze(["release-gate-desktop", "release-gate-phone"]);
@@ -44,13 +50,18 @@ export function releaseGateProjectFor(value) {
  * 2026: the phone leg ran 10.4 minutes in one job; split in two it still ran 10.2, so the journeys
  * were split again). The parts partition the release-gate spec files: together they run every file
  * once on each device. `journeys` (the four core bed-flow journeys) and `referrals` (inpatient
- * transfer and community referral) each require their own named journeys, six in all, so the
+ * transfer, community referral and filing a legal form) each require their own named journeys,
+ * seven in all, so the
  * required-case check is unchanged; `checks` runs the accessibility and layout-shift sweep, which
  * has no named required cases.
  */
 export const RELEASE_GATE_PARTS = Object.freeze({
   journeys: Object.freeze(["release-gate-journeys.spec.ts"]),
-  referrals: Object.freeze(["release-gate-inpatient-transfer.spec.ts", "release-gate-community-referral.spec.ts"]),
+  referrals: Object.freeze([
+    "release-gate-inpatient-transfer.spec.ts",
+    "release-gate-community-referral.spec.ts",
+    "release-gate-legal-form.spec.ts",
+  ]),
   checks: Object.freeze(["release-gate-axe-sweep.spec.ts"]),
 });
 

@@ -67,6 +67,8 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   // Closing-the-loop (package E).
   RECORD_HOME_SERVICE_RETURN: { category: "patient", plainWording: "Return to home service requested or answered" },
   RECORD_DIRECTORY_CHECK: { category: "neither", plainWording: "On-call directory entry checked" },
+  // Out of area "Flag early" (Josh, 3 Nov 2026).
+  FLAG_RETURN_EARLY: { category: "patient", plainWording: "Out of area return flagged early" },
 
   // 2.2 Front-door referrals
   ADD_PATIENT: { category: "patient", plainWording: "Patient registered in system" },
@@ -120,6 +122,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   RECORD_LEGAL_FORM_WRITTEN: { category: "patient", plainWording: "Statutory form completion recorded" },
   RECORD_LEGAL_FORM_CODE: { category: "patient", plainWording: "Statutory form recorded, written time not entered" },
   RECORD_ED_PRESENTATION: { category: "patient", plainWording: "ED presentation recorded" },
+  RECORD_LEGAL_FORM_DETAILS: { category: "patient", plainWording: "Statutory form details recorded" },
   RECORD_COUNTRY_EXTENSION: { category: "patient", plainWording: "Country extension recorded" },
   RECORD_LEGAL_FORM_CONTINUATION: { category: "patient", plainWording: "Statutory form continuation recorded" },
   CLEAR_EXPECT_FLAG: { category: "patient", plainWording: "Expected patient flag cleared" },
@@ -176,6 +179,10 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   COMPLETE_BED_MEETING_ACTION: { category: "both", plainWording: "Bed meeting action done" },
   RECORD_RESTRICTIVE_PRACTICE_START: { category: "both", plainWording: "Seclusion or restraint started" },
   RECORD_RESTRICTIVE_PRACTICE_END: { category: "both", plainWording: "Seclusion or restraint ended" },
+  RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP: {
+    category: "both",
+    plainWording: "Seclusion or restraint follow-up marked",
+  },
   RECORD_WARD_INCIDENT: { category: "bed", plainWording: "Ward incident recorded" },
   SET_SECLUSION_ROOM_STATUS: { category: "bed", plainWording: "Seclusion room status recorded" },
   // Closing the loop, package D (24 Oct 2026).
@@ -232,6 +239,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   UNDO_LEGAL_FORM_RECORD: { category: "patient", plainWording: "Legal form record undone" },
   UNDO_SUPPORT_NOTIFICATION: { category: "patient", plainWording: "Carer, PSP or MHAS record undone" },
   UNDO_REPATRIATION: { category: "patient", plainWording: "Repatriation record undone" },
+  UNDO_FLAG_RETURN_EARLY: { category: "patient", plainWording: "Early return flag undone" },
   UNDO_HANDOVER_SIGN_OFF: { category: "neither", plainWording: "Handover sign-off undone" },
   UNDO_SITE_HANDOVER_SIGN_OFF: { category: "neither", plainWording: "Site handover sign-off undone" },
   UNDO_ED_STEP: { category: "patient", plainWording: "Emergency department step undone" },
@@ -239,6 +247,9 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   UNDO_DEPARTURE: { category: "neither", plainWording: "Departure undone" },
   UNDO_ABSENT_WITHOUT_LEAVE: { category: "patient", plainWording: "Absent without leave record undone" },
   UNDO_BED_MEETING_ACTION: { category: "both", plainWording: "Bed meeting action done undone" },
+  UNDO_BED_STEP: { category: "bed", plainWording: "Bed closure or return from leave undone" },
+  UNDO_RELEASE_STEP: { category: "both", plainWording: "Release or cancellation undone" },
+  UNDO_PATIENT_RECORD: { category: "patient", plainWording: "Order or archive undone" },
 
   // 2.9 World and admin
   ADVANCE_CLOCK: { category: "neither", plainWording: "Operational demonstration clock advanced" },

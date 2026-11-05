@@ -4,6 +4,7 @@ import { errorFields, parseSubscription } from "./push.mjs";
 import { bootstrapCoordinators } from "./auth.mjs";
 import { jsonResponse } from "./reply-cache.mjs";
 import { forecastHistoryInput, forecastReasonRole } from "./forecast-history.mjs";
+import { accountPreferencesInput } from "./account-preferences.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Each shared path and the closed route name it is logged under. */
@@ -14,6 +15,7 @@ const ROUTES = new Map([
   ["/v1/workspace/audit", "workspace_audit"],
   ["/v1/workspace/archive", "workspace_archive"],
   ["/v1/workspace/forecast-history", "forecast_history"],
+  ["/v1/workspace/preferences", "account_preferences"],
   ["/v1/workspace/push-key", "push_key"],
   ["/v1/workspace/push-subscribe", "push_subscribe"],
   ["/v1/workspace/push-unsubscribe", "push_unsubscribe"],
@@ -493,6 +495,18 @@ export function createSharedHandler({
         }
         const result = await store.recordForecast(view, input);
         return reply(result.status, result.body);
+      }
+      if (path === "/v1/workspace/preferences") {
+        // Migration 17: this account's Help memory (tours done, tips seen, tips off, What's new
+        // read), so a new device does not show them all again. Keyed by the signed-in account, never
+        // by anything the browser names. A store without the table answers `shared: false`.
+        if (!store.accountPreferences || !store.recordAccountPreferences) return reply(200, { shared: false });
+        if (request.method === "GET") return reply(200, await store.accountPreferences({ actorId }));
+        const { body, refusal } = await json();
+        if (refusal) return refusal;
+        const input = accountPreferencesInput(body);
+        if (!input) return reply(400, { error: "Desk, tip or What's new ids, or tips off, are required" });
+        return reply(200, await store.recordAccountPreferences({ actorId }, input));
       }
       if (path === "/v1/workspace/audit" && request.method === "GET") {
         // Change facts name records across the network, so only the statewide coordinator reads

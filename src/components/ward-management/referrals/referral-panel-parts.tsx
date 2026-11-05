@@ -8,7 +8,7 @@
 
 import Link from "next/link";
 import {
-  BedDouble,
+  BedSingle,
   ChevronLeft,
   ChevronRight,
   Clock3,
@@ -31,7 +31,8 @@ import { demographicLabel } from "./referral-board-model";
 import { ReferralWorkedOn } from "./referral-worked-on-note";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import { referralPresentation } from "@/components/ward-management/ward-partial-view-presenters";
-import { Button, buttonClass, cx, durMinutes } from "@/components/wf";
+import { Button, Count, Icon, buttonClass, cx, durMinutes } from "@/components/wf";
+import { BED_MEETING_REFERRALS_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 
 import s from "./referral-panel.module.css";
 
@@ -180,10 +181,10 @@ export function PanelNav({
         type="button"
         className={buttonClass({ variant: "ghost", size: "sm" })}
         onClick={onSummary}
-        title="Referral summary (S)"
+        title="Referral (S)"
       >
         <FileText size={14} aria-hidden="true" />
-        Summary
+        Referral
       </button>
       {patientHref ? (
         <Link
@@ -200,19 +201,19 @@ export function PanelNav({
 }
 
 /**
- * Fork of HeroTools (referral-board-parts.tsx). Changed: Bed meeting list carries the number of
- * people it will list, which follows the header's service and any highlight.
+ * Fork of HeroTools (referral-board-parts.tsx). Changed: the bed meeting button carries the number
+ * of referrals waiting in the header's service. R5 fold (Josh, 3 Nov 2026): it opens the bed
+ * meeting agenda at its Referrals list, where the meeting's referrals now live, in place of a
+ * separate sheet.
  */
 export function HeroTools({
   overdueCount,
   meetingCount,
   onNextOverdue,
-  onMeeting,
 }: {
   overdueCount: number;
   meetingCount: number;
   onNextOverdue: () => void;
-  onMeeting: () => void;
 }) {
   return (
     <div className={s.heroTools}>
@@ -228,17 +229,16 @@ export function HeroTools({
       >
         Next overdue
       </Button>
-      <Button
-        variant="onHero"
-        size="sm"
-        icon={ListOrdered}
-        count={meetingCount}
-        onClick={onMeeting}
-        title="Bed meeting list (M)"
+      <Link
+        href={BED_MEETING_REFERRALS_HREF}
+        className={buttonClass({ variant: "onHero", size: "sm" })}
+        title="Bed meeting agenda (M)"
         data-testid="ward-referral-meeting"
       >
-        Bed meeting list
-      </Button>
+        <Icon icon={ListOrdered} size={16} />
+        <span>Bed meeting</span>
+        <Count n={meetingCount} />
+      </Link>
     </div>
   );
 }
@@ -266,7 +266,7 @@ export function BedsStrip({ summary }: { summary: BedsReadySummary }) {
         className={s.bedsLead}
         title="Beds ready statewide for your desk's admissions. Open Places"
       >
-        <BedDouble size={14} aria-hidden="true" />
+        <BedSingle size={14} aria-hidden="true" />
         <b>{summary.total}</b> beds ready
       </Link>
       {cohorts.map((cell) => (

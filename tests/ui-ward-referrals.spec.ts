@@ -146,13 +146,16 @@ async function raiseReferralInSlideOut(page: Page, referral: SlideOutReferral) {
   await newPatient.getByLabel("UMRN", { exact: true }).fill(referral.patient.umrn);
   // A real suburb from the catchment table, so the slide-out suggests its catchment team.
   await newPatient.getByLabel("Suburb", { exact: true }).fill("Albany");
-  await newPatient.getByRole("button", { name: "Add patient" }).click();
+  await newPatient.getByRole("button", { name: "Add and use for this referral" }).click();
   await expect(newPatient).toHaveCount(0);
   await expect(sheet).toContainText(`${referral.patient.familyName}, ${referral.patient.givenName}`);
   await sheet.getByLabel("Age band", { exact: true }).selectOption(referral.ageBand);
+  // RF1 (3 Nov 2026): Albany points to one country team, so no region is suggested and the region
+  // field shows. Once a region is chosen the card offers the whole catchment as one suggestion.
   await sheet.getByLabel("Home region", { exact: true }).selectOption(referral.homeRegion);
-  await sheet.getByRole("button", { name: "Confirm catchment" }).click();
-  await expect(sheet.getByText("Catchment confirmed", { exact: true }).first()).toBeVisible();
+  await sheet.getByTestId("ward-referral-use-catchment").click();
+  await expect(sheet.getByTestId("ward-referral-use-catchment")).toHaveCount(0);
+  await expect(sheet.getByText(/Catchment confirmed/u).first()).toBeVisible();
 
   // Referral: from a community service, voluntary, the bed security, the urgency and bed needs.
   await openReferralStep(sheet, "Referral");
@@ -324,8 +327,11 @@ const SEEDED_QUEUED = 7;
  * shown count stays pinned at the cap (`Math.min(24, 10)` is still 10, exactly as it was at 18), so
  * only this constant needed to move — neither `SEEDED_DECIDED_SHOWN`'s derivation nor either
  * assertion below needed a separate edit.
+ *
+ * 2026-11-04: the demo example rows (plan 2d) raised it from 24 to 29. Still above the cap, so the
+ * shown count stays 10 and only this constant moves. The queued seed is unchanged at 7.
  */
-const SEEDED_DECIDED_STRUCTURAL = 24;
+const SEEDED_DECIDED_STRUCTURAL = 29;
 
 /**
  * What the board actually renders in its heading — `decided.length` on the CAPPED list. Derived

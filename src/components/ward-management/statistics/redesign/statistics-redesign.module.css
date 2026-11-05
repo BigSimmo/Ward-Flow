@@ -96,6 +96,17 @@
   align-items: center;
   gap: 6px;
 }
+/* Review 5 Nov 2026: a title beside its "now" tag was cut mid-word ("STILL C", "FORECAST TRACK RE",
+ * "BED FIGURES ON TIMI") because the flex title cannot show an ellipsis. Titles wrap in full and the
+ * tag drops under them when the tile is narrow. */
+.tile > :first-child {
+  flex-wrap: wrap;
+  row-gap: 2px;
+}
+.tile .tileTitle {
+  white-space: normal !important;
+  overflow: visible !important;
+}
 .nowMuted {
   color: var(--wf-ink-3);
   font-weight: 500 !important;

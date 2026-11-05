@@ -1,9 +1,9 @@
 "use client";
 
-import { ChevronRight, Eye, Inbox, Send, X } from "lucide-react";
+import { ChevronRight, Eye, Send, X } from "lucide-react";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import styles from "./ward-referral-drawer.module.css";
-import { Select, StatusGlyph } from "@/components/wf";
+import { StatusGlyph } from "@/components/wf";
 import { DESTINATIONS, sectionLabel } from "./ward-referral-drawer-model";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
@@ -38,17 +38,6 @@ function ReferralDrawerPhoneHero({ s }: { s: WardReferralDrawerState }) {
               ? `New referral · ${destination.label}`
               : `New referral · to ${destination.label}`}
         </span>
-        {view === "new" && !sentReferralId ? (
-          <button
-            type="button"
-            className={styles.phHeroChip}
-            onClick={() => onViewChange("inbox")}
-            data-testid="ward-referral-phone-inbox"
-          >
-            <Inbox aria-hidden="true" />
-            Inbox <b className={styles.mono}>{inboxCount}</b>
-          </button>
-        ) : null}
         <button
           type="button"
           className={styles.phHeroClose}
@@ -134,7 +123,6 @@ function ReferralDrawerPhoneHero({ s }: { s: WardReferralDrawerState }) {
 export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
   const {
     view,
-    onViewChange,
     patientAddedInForm,
     sectionId,
     previewOpen,
@@ -142,7 +130,6 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
     sendPending,
     sentReferralId,
     attempted,
-    setInboxUnitId,
     isPhone,
     activeSection,
     destType,
@@ -150,9 +137,6 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
     handleTouchEnd,
     requestClose,
     needed,
-    inboxWards,
-    inboxCount,
-    inboxWard,
     originLabel,
     chooseDestination,
     selectSection,
@@ -168,25 +152,12 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
         <span className={styles.headIcon} aria-hidden="true">
           <Send aria-hidden="true" />
         </span>
+        {/* RF8 (Current Issues, 3 Nov 2026): the drawer only sends, so it is named for that. Each ward's
+            inbox lives on its own ward page and the coordinator's on Referrals (RF5), so the old
+            "Ward inboxes" switch, whose nine ward names never fitted, is gone. */}
         <h2 className={styles.drawerTitle} id="referralDrawerTitle">
-          Referrals
+          New referral
         </h2>
-        <div className={styles.headTabs} role="group" aria-label="Referral views">
-          <button type="button" aria-pressed={view === "new"} onClick={() => onViewChange("new")}>
-            New referral
-          </button>
-          {/* Overall review (20 Oct 2026): "Inbox 0" sat beside the menu's "7 awaiting a decision" and
-              read as a contradiction. They count different things: this is referrals already sent to a
-              ward and waiting in that ward's own inbox, so the tab says so. */}
-          <button
-            type="button"
-            aria-pressed={view === "inbox"}
-            onClick={() => onViewChange("inbox")}
-            title="Referrals sent to a ward and waiting in that ward's inbox"
-          >
-            Ward inboxes <span className={styles.count}>{inboxCount}</span>
-          </button>
-        </div>
         <kbd className={styles.kbd} aria-hidden="true">
           Esc
         </kbd>
@@ -309,38 +280,7 @@ export function ReferralDrawerHead({ s }: { s: WardReferralDrawerState }) {
             </div>
           ) : null}
         </>
-      ) : (
-        <div className={styles.inboxPicker}>
-          <span className={styles.inboxPickerLabel}>Ward</span>
-          {/* Phone (Josh, 20 Oct 2026): a dropdown, as nine ward names do not fit one row. */}
-          {isPhone ? (
-            <Select
-              aria-label="Recipient ward"
-              value={inboxWard?.unit.unitId}
-              onChange={(event) => setInboxUnitId(event.target.value)}
-            >
-              {inboxWards.map((ward) => (
-                <option key={ward.unit.unitId} value={ward.unit.unitId}>
-                  {ward.unit.name} · {ward.toDecide} to decide
-                </option>
-              ))}
-            </Select>
-          ) : (
-            <div className={styles.headTabs} role="group" aria-label="Recipient ward">
-              {inboxWards.map((ward) => (
-                <button
-                  key={ward.unit.unitId}
-                  type="button"
-                  aria-pressed={inboxWard?.unit.unitId === ward.unit.unitId}
-                  onClick={() => setInboxUnitId(ward.unit.unitId)}
-                >
-                  {ward.unit.name} <span className={styles.count}>{ward.toDecide}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      ) : null}
     </div>
   );
 }

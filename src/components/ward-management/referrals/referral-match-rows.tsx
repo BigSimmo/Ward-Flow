@@ -1,7 +1,8 @@
 "use client";
 
+import { Info } from "lucide-react";
 import { useState } from "react";
-import { Button } from "@/components/wf";
+import { Button, StatusGlyph } from "@/components/wf";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
   GENDER_PLACEMENT_REASONS,
@@ -94,7 +95,11 @@ export function MatchRow({
               data-mark={gateMark(gate)}
             >
               <span className={styles.criteriaGlyph} aria-hidden="true">
-                {gateMark(gate) === "info" ? "i" : gate.pass ? "✓" : "✕"}
+                {gateMark(gate) === "info" ? (
+                  <Info aria-hidden="true" size={12} strokeWidth={2} />
+                ) : (
+                  <StatusGlyph tone={gate.pass ? "success" : "closed"} size={10} />
+                )}
               </span>
               <span className={styles.criteriaName}>{GATE_LABELS[gate.gate] ?? gate.gate}</span>
               <span className={styles.criteriaDetail}>{gate.detail}</span>

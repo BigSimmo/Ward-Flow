@@ -4,13 +4,14 @@
 // out of `patient-now-screen.tsx`, which renders it with the values and handlers it has derived.
 import { scrollWardPageToTop } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
-import { BedDouble, Copy, FileText, RotateCcw, Truck } from "lucide-react";
+import dynamic from "next/dynamic";
+import { Ambulance, BedSingle, Copy, FileText, RotateCcw } from "lucide-react";
 import { PatientRecordOverview } from "./patient-record-overview";
 import { callRows, type CallTarget } from "./patient-call-list";
 import { PatientNowLayout, PatientSheetRow, PatientSheetRows } from "./patient-now-layouts";
 import { type Patient } from "@/components/ward-management/ward-patients";
-import { type PatientStatusContext } from "./patient-status-card";
-import { PatientWardChangeCard, type LeaveKind, type WardChangeForm } from "./patient-ward-change-card";
+import { absenceVoluntary, type PatientStatusContext } from "./patient-status-card";
+import type { LeaveKind, WardChangeForm } from "./patient-ward-change-card";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { requiredRoleForPermission, setDeskRole } from "@/components/ward-management/ward-role-gate";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
@@ -18,7 +19,7 @@ import { PatientLastSeenCard, PatientLeaveCard, PatientLegalNowCard, PatientWhyC
 import { type PatientNowRecord, clock } from "./patient-now-records";
 import { PatientJourneyTimeline } from "./patient-journey-timeline";
 import { Button, buttonClass } from "@/components/wf";
-import { raiseReferralHref } from "@/components/ward-management/shell/ward-facade";
+import { raiseReferralHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { type TabKey } from "./patient-now-screen-helpers";
 import type { Dispatch, SetStateAction } from "react";
@@ -28,6 +29,17 @@ import type { ResolvedPatientNow } from "./patient-now-adapter";
 import type { RoleGate } from "@/components/ward-management/ward-role-gate";
 import { plural } from "@/components/ward-management/ward-plural";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { patientNextStep } from "./patient-now-ward";
+import { PatientNextStepButton } from "./patient-now-ward-button";
+
+// The ward cards load on their own: only a stay needs them (phone script budget).
+const loadWardCards = () => import("./patient-now-ward-cards");
+// The ward change row shows only for a patient on the ward, so it loads with that state.
+const PatientWardChangeCard = dynamic(() => import("./patient-ward-change-card").then((m) => m.PatientWardChangeCard));
+const PatientDischargeReadiness = dynamic(() => loadWardCards().then((m) => m.PatientDischargeReadiness));
+const PatientLastDay = dynamic(() => loadWardCards().then((m) => m.PatientLastDay));
+const PatientNextStepCard = dynamic(() => loadWardCards().then((m) => m.PatientNextStepCard));
 
 /** The values and handlers `PatientNowScreen` passes to its Now tab. */
 export type PatientNowPanelProps = {
@@ -70,7 +82,9 @@ export type PatientNowPanelProps = {
   tabs: { key: TabKey; label: string; count?: number }[];
   voluntaryNow: boolean;
   wardForm: WardChangeForm;
+  wardPending: boolean;
   wardRefusal: string | undefined;
+  wardSaveError: string | undefined;
 };
 
 export function PatientNowPanel(props: PatientNowPanelProps) {
@@ -120,7 +134,9 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
     tabs,
     voluntaryNow,
     wardForm,
+    wardPending,
     wardRefusal,
+    wardSaveError,
   } = props;
   const newReferralHref = livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new";
   // Community clinician (redesign, 31 Oct 2026): the team follows its person on the ward but records
@@ -159,11 +175,80 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
   // otherwise empty band. Copy takes the bar as its labelled main action instead, as Ask more wards
   // does on the coordinator's patient page.
   const copyAsMain = ownTeamDesk && isPhone && !phoneMovement && !referralMain;
+  // Josh's approved list (3 Nov 2026): on the ward, on leave, absent or at ED the one thing due now
+  // leads Now. Each action reuses the screen's own handler (discharge date form, record return, the
+  // absence steps, return from ED). Confirming a discharge date is the ward's, on its discharges list.
+  const stay = resolved.liveAdmission;
+  const stayMode = mode === "ward" || mode === "leave" || mode === "awol" || mode === "ed";
+  const confirmHref = stay ? `${unitHref(stay.unitId)}?tab=out` : undefined;
+  const nextStep = stayMode
+    ? patientNextStep(mode, statusContext, {
+        voluntary: absenceVoluntary(statusContext.movement, livePatient),
+        confirmHref: confirmHref && canOpenHref(confirmHref) ? confirmHref : undefined,
+      })
+    : null;
+  const stepLimit = (eventType: WardFlowEventType) => gate(eventType).reason;
+  // Phone: the pinned bar carries the page's one filled button. On the ward that is the next step
+  // itself; on leave, absent or at ED the status card pins the same action. The card's button is
+  // then the quiet secondary, never a second filled one.
+  const wardStepInBar = isPhone && mode === "ward" && Boolean(nextStep?.action) && !copyAsMain;
+  const stepInBar =
+    isPhone &&
+    (mode === "ward" ? wardStepInBar : mode === "awol" ? nextStep?.key !== "awol-return" : Boolean(nextStep?.action));
+  const movements = useOptionalWardFlowSelect("movements")?.movements;
+  const stayMovement =
+    stay?.movementId != null ? movements?.find((movement) => movement.id === stay.movementId) : undefined;
+  const wardChangeRow =
+    mode === "ward" && wardChangeOpen ? (
+      <PatientWardChangeCard
+        key={stay?.id}
+        embedded
+        now={now}
+        dayZero={dayZero}
+        form={wardForm}
+        pending={wardPending}
+        onFormChange={setWardForm}
+        onRecordLeave={recordLeave}
+        onGoneToEd={goneToEd}
+        onSaveDischarge={saveDischarge}
+        onMarkAbsent={stay?.state === "occupied" ? markAbsent : undefined}
+        // Phone: when the bar's one button opens the discharge date form, the row leaves it out.
+        dischargeInBar={wardStepInBar && nextStep?.key === "set-discharge"}
+        refusal={wardRefusal}
+        saveError={wardSaveError}
+        roleLimit={(eventType) => gate(eventType).reason}
+        leaveLegal={leaveLegal}
+      />
+    ) : null;
   return (
     <PatientNowLayout
       mode={mode}
       context={statusContext}
+      nextStep={nextStep ? <PatientNextStepCard step={nextStep} quiet={stepInBar} roleLimit={stepLimit} /> : null}
+      readiness={
+        mode === "ward" && stay ? (
+          <PatientDischargeReadiness admission={stay} patient={livePatient} dayZero={dayZero} />
+        ) : null
+      }
+      recent={
+        stayMode && stay ? (
+          <PatientLastDay
+            input={{
+              admission: stay,
+              leaveBed: stayLeaveBed,
+              movement: stayMovement,
+              patient: livePatient,
+              now,
+              dayZero,
+              withholdObservation: statusContext.stayWithheld,
+            }}
+            onOpenHistory={() => openTab("history")}
+          />
+        ) : null
+      }
       statusCardProps={{
+        quietActions: nextStep !== null,
+        children: wardChangeRow,
         barLead:
           isPhone && !phoneMovement && !copyAsMain ? (
             <Button iconOnly icon={Copy} aria-label={copyLabel} onClick={handleCopySummary} />
@@ -182,11 +267,15 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
           <Button variant="pri" icon={Copy} onClick={handleCopySummary}>
             {copyLabel}
           </Button>
+        ) : wardStepInBar && nextStep?.action ? (
+          <PatientNextStepButton action={nextStep.action} primary roleLimit={stepLimit} />
         ) : undefined,
         phoneFoot: phoneStatusFoot,
       }}
+      // Josh's approved list (3 Nov 2026): on the ward, Legal now lives in the top band and the Forms
+      // tab, so the ward patient's Now tab does not repeat it.
       legal={
-        mode !== "idle" || isPhone ? (
+        mode !== "ward" && (mode !== "idle" || isPhone) ? (
           <PatientLegalNowCard
             movement={movementInForce ? liveMovement : undefined}
             patient={livePatient}
@@ -225,20 +314,6 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
           {whyMovesLeft ? whyCard : null}
           {mode === "ward" && wardChangeOpen ? (
             <>
-              <PatientWardChangeCard
-                key={resolved.liveAdmission?.id}
-                now={now}
-                dayZero={dayZero}
-                form={wardForm}
-                onFormChange={setWardForm}
-                onRecordLeave={recordLeave}
-                onGoneToEd={goneToEd}
-                onSaveDischarge={saveDischarge}
-                dischargeInBar={isPhone && resolved.liveAdmission?.state === "occupied"}
-                refusal={wardRefusal}
-                roleLimit={(eventType) => gate(eventType).reason}
-                leaveLegal={leaveLegal}
-              />
               {!gate("RECORD_LEAVE_BED").allowed ? (
                 <div className="lockline">
                   <button
@@ -291,7 +366,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
         isLiveBedflow && liveMovement ? (
           <PatientSheetRows>
             <PatientSheetRow
-              icon={<BedDouble size={16} aria-hidden="true" />}
+              icon={<BedSingle size={16} strokeWidth={1.75} aria-hidden="true" />}
               title="Destination"
               sub={
                 acceptingUnit
@@ -309,7 +384,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
             />
             {mode === "held" || mode === "transit" ? (
               <PatientSheetRow
-                icon={<Truck size={16} aria-hidden="true" />}
+                icon={<Ambulance size={16} strokeWidth={1.75} aria-hidden="true" />}
                 title="Transport"
                 sub={
                   isTransportBooked

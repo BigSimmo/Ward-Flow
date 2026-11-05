@@ -25,7 +25,8 @@ describe("Mobile 16px input floor, 44x44px touch targets, 320px DOB overflow & v
       "src/components/ward-management/search/patient-typeahead.module.css",
       // census.module.css left this list with the Patients redesign (D-91): its search and date of birth
       // boxes are the kit's SearchField and DateField, whose `.control` carries the floor above.
-      "src/components/ward-management/statistics/statistics-nav.module.css",
+      // statistics-nav.module.css left this list on 3 Nov 2026: its phone section select became the kit Menu,
+      // so it has no text box to zoom.
       "src/components/ward-management/community/community-team-phone.module.css",
       "src/components/ward-management/ed/ed-board-controls.module.css",
       "src/components/ward-management/ed/ed.module.css",

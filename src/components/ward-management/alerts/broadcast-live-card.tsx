@@ -9,6 +9,7 @@ import { Button, durMinutes } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 
 import { minutesText } from "./alerts-model";
+import { useConfirmBroadcastStandDown } from "./confirm-broadcast-stand-down";
 import { replyBoard } from "./global-alert-view";
 import {
   DEFAULT_BROADCAST_EXTENSION_MINUTES,
@@ -101,6 +102,7 @@ export function BroadcastLiveCard({
   onCopyAnswers: (text: string) => void;
   onStandDown: () => void;
 }) {
+  const confirmStandDown = useConfirmBroadcastStandDown(alert, onStandDown);
   const bedCall = broadcastKind(alert) === "bed_call";
   const board = bedCall ? replyBoard(alert, units) : undefined;
   const severity = SEVERITY[alert.severity];
@@ -222,7 +224,7 @@ export function BroadcastLiveCard({
           </Button>
         ) : null}
         <span className={css.spacer} />
-        <Button aria-label="Stand down this alert" onClick={onStandDown}>
+        <Button aria-label="Stand down this alert" onClick={confirmStandDown}>
           Stand down
         </Button>
       </div>

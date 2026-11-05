@@ -6,6 +6,8 @@ import { formatInstant } from "@/components/ward-management/ward-clock";
 import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { useWardShellPublic } from "./shell/ward-shell-public-context";
 import { requestDemoMenu } from "@/components/ward-management/tools/ward-demo-menu-open";
+import { notUpdatingWords, useLiveFreshness } from "@/components/wf";
+import barStyles from "@/components/ward-management/shell/ward-bar.module.css";
 
 export type WardDemoClockPopoverProps = {
   className?: string;
@@ -42,19 +44,37 @@ function WardDemoClockView({
   now,
 }: WardDemoClockPopoverProps & { now: number }) {
   const clockText = formatInstant(now);
+  // M8 (Josh, 3 Nov 2026): "One clock in the top bar. Stale is said in words." While the board is
+  // offline or its shared refresh is late, the clock says so in words with its amber dot, in place
+  // of the time ("Offline", "Not updating since 10:42"), so no bar or sheet shows a live time over
+  // a board that is not updating. Its name starts with the same words (label in name, F-19).
+  const freshness = useLiveFreshness();
+  const stateWords =
+    freshness.state === "offline" ? "Offline" : freshness.state === "stale" ? notUpdatingWords(freshness.since) : null;
+  const name = stateWords
+    ? `${stateWords}. Board time ${clockText} AWST`
+    : (ariaLabel ?? `Board time ${clockText} AWST`);
   return (
     <button
       type="button"
       className={className}
-      title={title ?? `Board time ${clockText} AWST`}
-      aria-label={`${ariaLabel ?? `Board time ${clockText} AWST`}. Open demo controls`}
+      title={stateWords ? name : (title ?? `Board time ${clockText} AWST`)}
+      aria-label={`${name}. Open demo controls`}
       data-testid={testId}
+      data-freshness={stateWords ? freshness.state : undefined}
       onClick={(event) => (onOpen ?? requestDemoMenu)(event.currentTarget)}
     >
-      {children ?? (
+      {stateWords ? (
         <>
-          <span>Board time</span> <b>{clockText}</b> <span>AWST</span>
+          <span className={barStyles.demoClockDot} data-offline="true" aria-hidden="true" />
+          <span>{stateWords}</span>
         </>
+      ) : (
+        (children ?? (
+          <>
+            <span>Board time</span> <b>{clockText}</b> <span>AWST</span>
+          </>
+        ))
       )}
     </button>
   );

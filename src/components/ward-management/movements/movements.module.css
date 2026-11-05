@@ -2375,3 +2375,9 @@
     overflow: visible;
   }
 }
+
+/* M2 (Josh, 3 Nov 2026): a more compact worklist, each row keeping a little less air. */
+.wlWrapRows [data-record-key] {
+  min-height: 3rem;
+  padding-block: 6px;
+}

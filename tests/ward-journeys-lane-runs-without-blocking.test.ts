@@ -26,16 +26,16 @@ describe("the public Ward Flow browser journeys lane", () => {
     expect(workflow).toMatch(/^ {2}merge_group:/mu);
     const browser = job("browser");
     // Scope is verified once before allocation. Selected groups also require a successful
-    // prepared build; only verified main reuse can intentionally skip a selected group.
+    // prepared build, static checks and production build (cheap first); only verified main reuse can intentionally skip a selected group.
     const header = browser.slice(0, browser.indexOf("    steps:"));
     expect(header.match(/^ {4}if:.*$/gmu)).toEqual([
-      "    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.verified != 'true' && needs.browser-build.result == 'success' }}",
+      "    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.verified != 'true' && github.event.pull_request.draft != true && needs.browser-build.result == 'success' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && needs.plan.outputs.build != 'true')) }}",
     ]);
     expect(job("reuse")).toContain("if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}");
     expect(browser).not.toContain("WARD_JOURNEYS_BLOCKING");
     expect(job("plan")).toContain("run: node scripts/ward-ci-public/plan.mjs");
     expect(job("plan")).toContain("run: node scripts/ward-ci-public/verify-plan.mjs");
-    expect(browser).toContain("needs: [plan, reuse, browser-build]");
+    expect(browser).toContain("needs: [plan, reuse, browser-build, static, build]");
     expect(browser).toContain("if: ${{ !cancelled() && steps.install.outcome == 'success' }}");
     expect(browser).toContain("if: ${{ !cancelled() && steps.chromium.outcome == 'success' }}");
   });
@@ -64,7 +64,7 @@ describe("the public Ward Flow browser journeys lane", () => {
     const required = job("required");
     expect(required).toContain("if: always()");
     expect(required).toContain(
-      "needs: [plan, reuse, static, backend, unit, browser-build, browser, release-gate, secret-scan, build, coverage]",
+      "needs: [plan, reuse, static, backend, unit, browser-build, browser, release-gate, build, coverage]",
     );
     expect(required).toContain("BROWSER_RESULT: ${{ needs.browser.result }}");
     expect(required).toContain("RELEASE_GATE_RESULT: ${{ needs.release-gate.result }}");

@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createRef } from "react";
 vi.mock("../src/components/ward-management/ward-flow-provider", () => ({
@@ -10,6 +10,7 @@ import { WardBarFrame, WardRailFrame } from "../src/components/ward-management/s
 import { WardShellPublicProvider } from "../src/components/ward-management/shell/ward-shell-public-context";
 import { WardDemoClockPopover } from "../src/components/ward-management/ward-demo-controls";
 import type { PlaceLookup } from "../src/components/ward-management/ward-role-access";
+import { publishLiveRefresh } from "../src/components/wf/live";
 const places: PlaceLookup = {
   unitSiteCode: () => undefined,
   unitService: () => undefined,
@@ -62,5 +63,36 @@ describe("public chrome mechanical reuse", () => {
     expect(button).toHaveTextContent("Board time 10:42 AWST");
     fireEvent.click(button);
     expect(open).toHaveBeenCalledWith(button);
+  });
+  // M8 (Josh, 3 Nov 2026): "One clock in the top bar. Stale is said in words."
+  it("says Offline and Not updating since in words, with a name that starts with them", () => {
+    const shell = { places, placeLabel: "Statewide", now: 642, authenticated: true };
+    const onLine = vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(false);
+    try {
+      const { unmount } = render(
+        <WardShellPublicProvider value={shell}>
+          <WardDemoClockPopover testId="clock" />
+        </WardShellPublicProvider>,
+      );
+      const offline = screen.getByTestId("clock");
+      expect(offline).toHaveTextContent(/^Offline$/);
+      expect(offline).toHaveAccessibleName("Offline. Board time 10:42 AWST. Open demo controls");
+      unmount();
+    } finally {
+      onLine.mockRestore();
+    }
+    try {
+      act(() => publishLiveRefresh({ unavailable: true, receivedAt: new Date("2026-10-07T10:26:00+08:00").getTime() }));
+      render(
+        <WardShellPublicProvider value={shell}>
+          <WardDemoClockPopover testId="clock" />
+        </WardShellPublicProvider>,
+      );
+      const stale = screen.getByTestId("clock");
+      expect(stale).toHaveTextContent(/^Not updating since 10:26$/);
+      expect(stale).toHaveAccessibleName("Not updating since 10:26. Board time 10:42 AWST. Open demo controls");
+    } finally {
+      act(() => publishLiveRefresh(undefined));
+    }
   });
 });

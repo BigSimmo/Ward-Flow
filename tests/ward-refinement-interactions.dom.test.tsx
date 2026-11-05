@@ -9,7 +9,21 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { journeyStages } from "@/components/ward-management/movements/movements-derivations";
 import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
-import { showEveryoneWaiting } from "./helpers/ward-home-queue";
+
+// Home flow (Q340, Q341, Q345, 3 Nov 2026): the "My List | Open | Planned" switch became the
+// "Home list" switch, Needs you and Flow. Flow is the stage-grouped queue (was Open), and referrals
+// are listed only under Needs you.
+function showFlow(): void {
+  const flow = screen.getByRole("radio", { name: /^Flow/u });
+  if (flow.getAttribute("aria-checked") !== "true") fireEvent.click(flow);
+}
+
+/** Opens every stage's "Show all N" so the Flow card lists every row (each stage shows 5 at rest). */
+function showEveryFlowRow(queue: HTMLElement): void {
+  for (const more of within(queue).queryAllByRole("button", { name: /^Show all \d+$/u })) {
+    if (more.getAttribute("aria-expanded") !== "true") fireEvent.click(more);
+  }
+}
 
 function renderMovements() {
   return render(
@@ -96,8 +110,8 @@ describe("Q004 refinement interaction regressions", () => {
 
   it("starts Command with the shortlist closed, opens it only on selection, and Close clears view state only", () => {
     renderCoordinator();
-    showEveryoneWaiting();
-    const queue = screen.getByRole("region", { name: "Priority queue" });
+    showFlow();
+    const queue = screen.getByRole("region", { name: "Flow" });
     const row = within(queue).getAllByTestId(/^ward-queue-row-/u)[0]!;
     const before = screen.getByTestId("ward-refinement-domain-state").textContent;
 
@@ -112,7 +126,7 @@ describe("Q004 refinement interaction regressions", () => {
     expect(row).toHaveAttribute("aria-pressed", "true");
     expect(screen.queryByTestId("home-placement-prompt")).toBeNull();
     const shortlist = screen.getByRole("complementary", { name: "Placement" });
-    fireEvent.click(within(shortlist).getByRole("button", { name: "Close shortlist and clear selection" }));
+    fireEvent.click(within(shortlist).getByRole("button", { name: "Close placement and clear selection" }));
 
     expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
     expect(document.querySelector('aside[aria-label="Placement"]')).toBeNull();
@@ -122,14 +136,14 @@ describe("Q004 refinement interaction regressions", () => {
 
   it("offers nothing to act on before a patient is chosen, on either list", () => {
     // Home v7 replaced the WP-06 preview (Audit 1, Josh 20 Oct): with no preview there is no
-    // first tap to intercept, so neither list offers a Placement action at rest.
+    // first tap to intercept, so neither list (Needs you, Flow) offers a Placement action at rest.
     renderCoordinator();
     const before = screen.getByTestId("ward-refinement-domain-state").textContent;
-    expect(screen.getByRole("radio", { name: /^My List/u })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByRole("radio", { name: /^Needs you/u })).toHaveAttribute("aria-checked", "true");
     expect(screen.queryByRole("button", { name: /^Offer /u })).toBeNull();
     expect(screen.queryByTestId("ward-placement-top-of-queue")).toBeNull();
 
-    showEveryoneWaiting();
+    showFlow();
     expect(screen.queryByRole("button", { name: /^Offer /u })).toBeNull();
     expect(screen.queryByTestId("ward-placement-top-of-queue")).toBeNull();
     expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
@@ -139,12 +153,12 @@ describe("Q004 refinement interaction regressions", () => {
   it("clears the chosen patient when the coordinator switches lists", () => {
     // Home v7: Placement never shows someone the list on screen does not highlight.
     renderCoordinator();
-    showEveryoneWaiting();
-    const queue = screen.getByRole("region", { name: "Priority queue" });
+    showFlow();
+    const queue = screen.getByRole("region", { name: "Flow" });
     fireEvent.click(within(queue).getAllByTestId(/^ward-queue-row-/u)[0]!);
     expect(screen.getByRole("complementary", { name: "Placement" })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("radio", { name: /^My List/u }));
+    fireEvent.click(screen.getByRole("radio", { name: /^Needs you/u }));
     expect(document.querySelector('aside[aria-label="Placement"]')).toBeNull();
     expect(screen.getByTestId("home-placement-prompt")).toBeInTheDocument();
   });
@@ -159,28 +173,38 @@ describe("Q004 refinement interaction regressions", () => {
     fireEvent.click(chip);
 
     expect(chip).toHaveAttribute("aria-pressed", "true");
-    const queue = screen.getByRole("region", { name: "Priority queue" });
+    // The chip opens Flow; each stage shows 5 rows at rest, so open them all before counting.
+    expect(screen.getByRole("radio", { name: /^Flow/u })).toHaveAttribute("aria-checked", "true");
+    const queue = screen.getByRole("region", { name: "Flow" });
+    showEveryFlowRow(queue);
     const rows = within(queue).getAllByTestId(/^ward-queue-row-/u);
+    const flowCount = Number(screen.getByRole("radio", { name: /^Flow/u }).textContent!.match(/\d+/u)![0]);
+    expect(rows, "every Flow row is listed once its stages are opened").toHaveLength(flowCount);
     expect(rows.filter((row) => row.getAttribute("data-dim") !== "true")).toHaveLength(count);
-    expect(screen.getByTestId("ward-queue-highlight-foot")).toHaveTextContent(`${count} of ${rows.length}`);
+    expect(queue).toHaveTextContent(`${count} overdue highlighted, all rows stay`);
   });
 
-  it("retains an explicitly selected referral as the shortlist subject across queue-tab switches", () => {
+  it("retains an explicitly selected referral as the shortlist subject across Needs you focus switches", () => {
+    // Home flow (Q340, 3 Nov 2026): the Patients/Referrals queue tabs went; referrals are listed
+    // only under Needs you. Its nearest equivalent is the hero's "To decide" focus, which narrows
+    // Needs you to referrals and back without leaving the list, so the selection must survive it.
     renderCoordinator();
-    showEveryoneWaiting();
-    const referralsTab = screen.getByRole("radio", { name: /Referrals/u });
-    const patientsTab = screen.getByRole("radio", { name: /Patients/u });
+    expect(screen.getByRole("radio", { name: /^Needs you/u })).toHaveAttribute("aria-checked", "true");
+    const hero = screen.getByRole("region", { name: /^\d+ open ED movements, \d+ beds? ready$/u });
+    const decideChip = within(hero).getByRole("button", { name: /To decide/u });
 
-    fireEvent.click(referralsTab);
-    const referralRow = screen.getAllByTestId(/^ward-referral-row-/u)[0];
-    expect(referralRow, "the real fixture must expose at least one queued referral").toBeDefined();
-    const referralId = referralRow!.getAttribute("data-testid")!.replace("ward-referral-row-", "");
-    fireEvent.click(referralRow!);
+    // Accepted pulls carry a referral id too; the referral to decide is the row that opens one.
+    const openReferral = screen.getAllByRole("button", { name: /^Open referral for /u })[0];
+    expect(openReferral, "the real fixture must expose at least one queued referral").toBeDefined();
+    const referralId = openReferral!.closest("li")!.getAttribute("data-referral-id")!;
+    fireEvent.click(openReferral!);
 
     expect(screen.getByTestId(`ward-referral-placement-${referralId}`)).toBeInTheDocument();
-    fireEvent.click(patientsTab);
+    fireEvent.click(decideChip);
+    expect(decideChip).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByTestId(`ward-referral-placement-${referralId}`)).toBeInTheDocument();
-    fireEvent.click(referralsTab);
+    fireEvent.click(decideChip);
+    expect(decideChip).toHaveAttribute("aria-pressed", "false");
     expect(screen.getByTestId(`ward-referral-placement-${referralId}`)).toBeInTheDocument();
   });
 });

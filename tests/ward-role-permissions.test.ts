@@ -160,8 +160,8 @@ const ROLE_SCREENS: Record<string, WardChromeRole> = {
   "ed/ed-medical-placement-controls.tsx": "ed",
   "officer/officer-screen.tsx": "officer",
   "officer/officer-forms-pack.tsx": "officer",
-  // Split from officer-screen.tsx (18 Oct 2026): the job panel raises the diversion itself.
-  "officer/officer-job-detail.tsx": "officer",
+  // The diversion raise moved from officer-job-detail.tsx into its save hook (audit remediation, Nov 2026).
+  "officer/use-officer-diversion-save.ts": "officer",
   "community/community-screen.tsx": "community",
   "coordinator/shortlist-panel.tsx": "coordinator",
   "movements/movement-drawer.tsx": "coordinator",
@@ -253,24 +253,28 @@ describe("Patient status card actions follow the route's role", () => {
     patient: seedWardFlowState().patients[0],
   };
 
+  // PT1 round 2 (3 Nov 2026): Record CTO left the idle card for the band, so the card's role gating
+  // is shown on the CTO card's Record ended action. The band's Record CTO uses the same route gate.
+  const ctoBase: PatientStatusContext = {
+    ...base,
+    patient: {
+      ...seedWardFlowState().patients[0],
+      communityTreatmentOrder: { form: "5A", recordedAt: NOW_ANCHOR - 120, recordedBy: "Community" },
+    },
+  };
+
   it("shows an action as unavailable with its reason, never hidden", () => {
-    const open = buildPatientStatus("idle", base).cells.find((cell) => cell.key === "legal")?.action;
-    expect(open).toMatchObject({ kind: "button", label: "Record CTO" });
-    const limited = buildPatientStatus("idle", {
-      ...base,
-      roleLimit: (type) => (type === "RECORD_COMMUNITY_TREATMENT_ORDER" ? "Community team only" : undefined),
-    }).cells.find((cell) => cell.key === "legal")?.action;
-    expect(limited).toEqual({ kind: "unavailable", label: "Record CTO", reason: "Community team only" });
+    const open = buildPatientStatus("cto", ctoBase).cells.find((cell) => cell.key === "cto")?.action;
+    expect(open).toMatchObject({ kind: "button", label: "Record ended" });
+    const limited = buildPatientStatus("cto", {
+      ...ctoBase,
+      roleLimit: (type) => (type === "END_COMMUNITY_TREATMENT_ORDER" ? "Community team only" : undefined),
+    }).cells.find((cell) => cell.key === "cto")?.action;
+    expect(limited).toEqual({ kind: "unavailable", label: "Record ended", reason: "Community team only" });
   });
 
   it("leaves Record CTO available on the coordinator route", () => {
-    const action = buildPatientStatus("idle", {
-      ...base,
-      roleLimit: (type) => {
-        const permission = dispatchPermission("coordinator", type);
-        return permission.allowed ? undefined : permission.reason;
-      },
-    }).cells.find((cell) => cell.key === "legal")?.action;
-    expect(action).toMatchObject({ kind: "button", label: "Record CTO" });
+    expect(dispatchPermission("coordinator", "RECORD_COMMUNITY_TREATMENT_ORDER").allowed).toBe(true);
+    expect(buildPatientStatus("idle", base).cells.find((cell) => cell.key === "legal")).toBeUndefined();
   });
 });

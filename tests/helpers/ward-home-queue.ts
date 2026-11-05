@@ -7,17 +7,21 @@
 // "Everyone waiting" switch, so the queue helpers choose it first, as a coordinator would. Home and
 // Activity (Josh, 31 Oct 2026) renamed that switch "Waiting", beside My List and Planned; Q260 (2 Nov
 // 2026) renamed it "Open", as it lists every open movement.
+//
+// Home flow (Q340, Q345, 3 Nov 2026): the queue is the "Flow" tab, grouped by stage, each stage
+// showing its oldest 5 rows with its own "Show all N" button.
 import { fireEvent, screen } from "@testing-library/react";
 
-/** Switches Home's list to Open (the priority queue); does nothing when it is showing. */
+/** Switches Home's list to Flow (the open movements by stage); does nothing when it is showing. */
 export function showEveryoneWaiting(): void {
-  const everyone = screen.queryByRole("radio", { name: /^Open/u });
-  if (everyone && everyone.getAttribute("aria-checked") !== "true") fireEvent.click(everyone);
+  const flow = screen.queryByRole("radio", { name: /^Flow/u });
+  if (flow && flow.getAttribute("aria-checked") !== "true") fireEvent.click(flow);
 }
 
-/** Reveals every queue row when the queue is capped; does nothing when it already shows them all. */
+/** Reveals every row in every stage; does nothing when they already show them all. */
 export function showWholeHomeQueue(): void {
   showEveryoneWaiting();
-  const showAll = screen.queryByTestId("ward-queue-show-all");
-  if (showAll && showAll.getAttribute("aria-expanded") !== "true") fireEvent.click(showAll);
+  for (const showAll of screen.queryAllByRole("button", { name: /^Show all \d+/u })) {
+    if (showAll.getAttribute("aria-expanded") !== "true") fireEvent.click(showAll);
+  }
 }

@@ -32,8 +32,8 @@ for real patient data or clinical deployment.
 The 8 October clean exact-lock baseline passed **916 test files and 10,688 tests**
 (9 files / 146 tests skipped, plus 24 backend mock tests; expanded to 936 files /
 10,881 tests during remediation). These are dated test results. The current source tree has
-**<!-- fact:ward-route-count -->53<!-- /fact --> Ward page routes** and
-**<!-- fact:app-route-count -->57<!-- /fact --> scoped app pages/handlers**, including
+**<!-- fact:ward-route-count -->54<!-- /fact --> Ward page routes** and
+**<!-- fact:app-route-count -->58<!-- /fact --> scoped app pages/handlers**, including
 sign-in and the digest. Counts include redirect files, not distinct interactive screens.
 The separate `/` page redirects to `/ward-flow`; `/ward-flow` renders the Coordinator screen
 directly. Note that
@@ -173,20 +173,20 @@ As recorded in project notes on 24 October 2026; not re-verified against provide
 - Approve or change the access log mock-up (D-80 item 14).
 - In Supabase, turn off "Allow new users to sign up", so only invited test accounts can register.
 - Choose the Sentry organisation for server error reporting (PR #686).
-- Say when the hosted backend last deployed, so database migration 13 can be applied.
 - Turn on Remote Control on his computer for the backup-restore drill and the hosted two-person run.
-- Test sign-ins: new test passwords, and renewal before the current logins expire (about 16 November).
+- Test sign-ins: new test passwords, and a hosted sign-in renewal check (Q390, 3 Nov 2026: no deadline; sign in with a test account in the morning and make one save after lunch without signing in again). Checked 3 Nov 2026: test roles run to 31 January 2027, sign-in sessions have no time limit, and the hosted database already has migrations 1 to 16 (13 applied 25 October).
+- In Supabase, turn off the Ward Flow organisation's AI SQL, log and data options (Q391, yes 3 Nov 2026).
 - Set limits on who can grant administrator access.
 - Name the privacy officer and the clinical safety owner.
 - Decide the D-71 names question.
 - Turn on Dependabot security updates in GitHub settings.
 - Arrange the clinician trial.
-- Before any real data (deferred by Josh): point-in-time backup, paid Supabase plan, invite-only sign-up and a TV privacy review.
+- Before any real data (deferred by Josh): work through the [real-data go/no-go checklist](governance/REAL-DATA-GO-NO-GO.md), including point-in-time backup, paid Supabase plan, invite-only sign-up and a TV privacy review.
 
 ## What is built
 
-**Route and screen overview.** The <!-- fact:ward-route-count -->53<!-- /fact --> Ward page routes
-form part of the <!-- fact:app-route-count -->57<!-- /fact --> scoped app pages/handlers including
+**Route and screen overview.** The <!-- fact:ward-route-count -->54<!-- /fact --> Ward page routes
+form part of the <!-- fact:app-route-count -->58<!-- /fact --> scoped app pages/handlers including
 sign-in and digest. The separate root redirect is additional. Engine and components are under
 `src/components/ward-management/` and `src/components/wf/`. Redirect routes are retained
 for old links; their presence does not establish an independent screen:

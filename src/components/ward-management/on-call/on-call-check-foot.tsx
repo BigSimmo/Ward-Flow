@@ -6,6 +6,8 @@ import { Badge, Button, StatusGlyph } from "@/components/wf";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
+import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
+import { useWardShellPublic } from "@/components/ward-management/shell/ward-shell-public-context";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 
@@ -22,6 +24,7 @@ import own from "./on-call-check-foot.module.css";
 function MarkChecked({ entry, role }: { entry: DirectoryEntry; role: WardFlowRole }) {
   const raise = useWardRaise(role);
   const [done, setDone] = useState(false);
+  const save = useWardFormSave(`directory-check:${entry.id}`);
   return (
     <>
       <Button
@@ -29,13 +32,22 @@ function MarkChecked({ entry, role }: { entry: DirectoryEntry; role: WardFlowRol
         variant="sec"
         aria-label={`Mark ${entry.name} as checked now`}
         data-testid="ward-on-call-mark-checked"
+        disabledReason={save.pending ? "Saving" : undefined}
         onClick={() => {
-          raise("RECORD_DIRECTORY_CHECK", { entryId: entry.id });
-          setDone(true);
+          setDone(false);
+          save.submit(
+            () => raise("RECORD_DIRECTORY_CHECK", { entryId: entry.id }),
+            () => setDone(true),
+          );
         }}
       >
         Mark checked now
       </Button>
+      {save.error ? (
+        <span className={own.status} role="alert">
+          {save.error}
+        </span>
+      ) : null}
       {done ? (
         <span className={own.status} role="status">
           Check recorded.
@@ -47,6 +59,7 @@ function MarkChecked({ entry, role }: { entry: DirectoryEntry; role: WardFlowRol
 
 export function CheckFoot({ entry }: { entry: DirectoryEntry }) {
   const access = useEffectiveWardAccess();
+  const lifetime = useWardShellPublic()?.accessLifetime;
   // Rendered outside a provider (a hand-built sheet), the foot reads only; there is nothing to record into.
   // Only desks the event permits (not the executive or the access admin) see the button.
   const role = (EVENT_ROLE.RECORD_DIRECTORY_CHECK as readonly string[]).includes(access.role)
@@ -68,7 +81,9 @@ export function CheckFoot({ entry }: { entry: DirectoryEntry }) {
           {note}
         </span>
       ) : null}
-      {canRecord && role !== null ? <MarkChecked entry={entry} role={role} /> : null}
+      {canRecord && role !== null ? (
+        <MarkChecked key={JSON.stringify([lifetime, entry.id, role])} entry={entry} role={role} />
+      ) : null}
     </div>
   );
 }

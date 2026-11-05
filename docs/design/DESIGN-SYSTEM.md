@@ -6,6 +6,14 @@ Ward Flow is a prototype that uses synthetic data only. Nothing here is validate
 
 **What wins.** This page is the design system of record (Q327). [AGENTS.md](../../AGENTS.md) and Josh's rulings, then the master design's newest screens, then this page, then [design-system-v9.md](../../design/v9/design-system-v9.md) (kept as background). Where a merged page deliberately differs from its mock-up, follow what shipped. Values live in [`src/app/ward-flow-v9-tokens.css`](../../src/app/ward-flow-v9-tokens.css); this page names roles, never new values.
 
+**Token files.** `src/app/ward-flow-v9-tokens.css` is the only place token values are set. Three older files still load and must not gain new tokens (Q375):
+
+- `src/app/ckb-v2-tokens.css`: the v2 layer inherited from PsychSift, still read by older screens.
+- `src/app/ward-flow-shell-tokens.module.css`: the third-edition layer, composed by older screen styles as `wardShellTokens`.
+- `src/app/globals.css`: Tailwind set-up and compatibility values.
+
+Screens move to `--wf-*` as they are rebuilt, and each old file is deleted once nothing reads it.
+
 The lessons behind each rule are in [lessons/2026-11-02-design-lessons.md](lessons/2026-11-02-design-lessons.md).
 
 ## 1. Principles
@@ -121,6 +129,47 @@ Build with `src/components/wf`. Never copy a primitive into a screen, and never 
 | Live changes          | `LiveAnnouncer`, `live`                  | One polite region per page, batched, act-now changes only.                                                                                                                                        |
 | Formatting            | `format.ts` (`clk`, `dur`, `durMinutes`) | Never re-implement a formatter.                                                                                                                                                                   |
 
+### Icons and status marks
+
+Josh, 3 Nov 2026 (icon audit, PR #1357): icons are subtle, crisp and timeless. They help someone find a place or act, and never decorate.
+
+**Line icons.** Lucide (`lucide-react`) only, at `strokeWidth={1.75}`, coloured by the text beside them (`currentColor`), accent only when the item is active. No custom drawings, two-tone fills, emoji or icon fonts.
+
+| Where                                 | Size |
+| ------------------------------------- | ---- |
+| Inside a chip, tag or small button    | 14px |
+| Inline with body text, buttons, menus | 16px |
+| Sidebar, icon rail and More panel     | 18px |
+| Phone dock                            | 21px |
+
+**One icon, one meaning.** Use the same icon for the same thing everywhere, and never reuse a menu destination's icon for something else. The menu map is `ward-nav-icons.ts`; `tests/ward-nav-icons-audit.test.ts` keeps every destination unique.
+
+| Thing           | Icon           | Thing            | Icon             |
+| --------------- | -------------- | ---------------- | ---------------- |
+| Home            | `House`        | Bed, Capacity    | `BedSingle`      |
+| Waiting         | `Hourglass`    | Movements        | `ArrowLeftRight` |
+| Transport       | `Ambulance`    | All EDs          | `Siren`          |
+| Alerts          | `Bell`         | Escalation       | `TriangleAlert`  |
+| Patients        | `BookUser`     | Places           | `MapPin`         |
+| Referrals inbox | `Inbox`        | New referral     | `FilePlusCorner` |
+| Discharges      | `DoorOpen`     | Seclusion        | `DoorClosed`     |
+| Legal forms     | `FileBadge`    | Out of area      | `Signpost`       |
+| Bed meeting TV  | `Presentation` | Statistics       | `ChartColumn`    |
+| Sign out        | `LogOut`       | Search           | `Search`         |
+| Close, dismiss  | `X`            | More actions     | `Ellipsis`       |
+| Loading         | `LoaderCircle` | More information | `Info`           |
+
+Use Lucide's current names, never the old aliases: `TriangleAlert` not `AlertTriangle`, `CircleAlert` not `AlertCircle`, `CircleCheck` not `CheckCircle2`, `ChartColumn` not `BarChart3`, `LoaderCircle` not `Loader2`, `Ellipsis` not `MoreHorizontal`, `BedSingle` not `BedDouble`, `Ambulance` not `Truck`.
+
+**Status marks.** Use the kit's `StatusGlyph` (or `Dot`), never a typed ▲ ◆ ■ ● ○ ✓ ✕ ⚠, which render as font or emoji glyphs and differ by device. One shape per tone: triangle act now (`danger`), filled circle at risk (`warning`), tick done (`success`), capsule moving (`info`), ring waiting (`neutral`), cross declined or closed (`closed`). From 12px the triangle carries its exclamation mark. Sit a mark on the surface, never on a dot of its own colour.
+
+**Action led.** A mark earns its place only when it changes what someone does next.
+
+- At most one act-now triangle per row, on the row that needs a person now. Do not repeat it on every tab, chip or column head.
+- Do not add a mark beside words that already say the state, such as "No due time recorded" or "No wait".
+- An icon sits beside its label, not instead of it. The icon rail and phone dock are the only icon-first places, and each item still has its name for screen readers and on hover.
+- Icons and marks are `aria-hidden`; the button's words or `aria-label` carry the meaning.
+
 ## 5. Layout and patterns
 
 **Page anatomy.** Every page has the band hero, a focal part that answers the page's question and gets the most space, and a part of its own (the page's signature, see section 8). Restructure, don't restyle: each fact lives in one right place.
@@ -134,6 +183,10 @@ Build with `src/components/wf`. Never copy a primitive into a screen, and never 
 **Pop-ups and side panels.** The name, a small status tag beside it, one quiet context line. Close takes focus; no second Back link. Open on a short Summary; long lists go behind tabs with counts. Facts are label and value pairs, three to five per titled group. Notes are one compact list with icons. Actions pinned at the foot, one filled. Documents are chips that open a marked synthetic preview. Forms open blank. Tab stays inside an open panel (Q300). On short screens the header scrolls and the footer unpins (Q288).
 
 **Graphs, grids and beds.** Heat-map cells show the number alone, shade deepening, empty days a faint dot, days after tomorrow hatched, two-line day heads with today in accent. Bed pictures read "1 ready of 20 beds", a bed-type tag, squares on one line, a note line only when needed. One timeline per record with a live Now point.
+
+**Home: Needs you and Flow (Q340-Q345, #1324, 3 Nov).** One navigation row: **Needs you | Flow** as the raised switch, a rule, then the Flow stages as lighter trackless tabs with counts (All, Needs a bed, Bed agreed, Ready to move, Moving), red when someone in that stage is late. A stage tab opens Flow at that stage. Flow groups open movements by stage, oldest first, five rows per stage then "Show all N". Needs you holds act now, beds to pull and referrals to decide; a waiting alert is a mark on the patient's Flow row, not a second row. Later today sits in the right column on desktop and is a third tab on a phone. On a phone the row pins under the header. Use this one-row pattern for any page that pairs an action list with a staged list.
+
+**Tools sheet (Q308-Q326, Q350-Q353, #1316, 3 Nov).** Search and a Recent row (Suggested until a tool is used) lead, then Do now, Look up and Print and share, ordered per desk. Rows show live counts and short second lines. One tool open at a time, scrolled into view; from 1280 wide it opens in a second pane. "/" jumps to search; no match offers Search Ward Flow. Viewing as and the demo controls sit together at the foot. Pickers come from the kit, picks come from lists only, and On-call Call copies the number (no tel links).
 
 **Long data.** People and place names wrap in full and never lose the first name (Q285). Other long text takes two lines and an ellipsis, with the full text on hover and focus (Q284, Q286). Typed text breaks anywhere so it never runs out of its box (Q283). Hidden text stays inside its scroll area (Q281).
 
@@ -150,21 +203,22 @@ Short labels win. Josh rejected "For you / With other desks" as too wordy (Q179)
 
 One word for each thing:
 
-| Say                   | Not                                                     |
-| --------------------- | ------------------------------------------------------- |
-| Alerts                | Tasks                                                   |
-| movement              | journey                                                 |
-| held up (a state)     | barrier, blocker (Releases held up stays on Ward, Q305) |
-| discharge (the event) | release, departure, due out                             |
-| Bed board             | Stays and discharges, Bed Board, board                  |
-| New referral          | Raise referral                                          |
-| Add patient           | Add a patient, New patient                              |
-| desks                 | units, areas, screens (in Broadcast)                    |
-| Locked                | Secure (except inside ward names)                       |
-| Board time            | Demo time                                               |
-| Synthetic numbers     | Mock numbers                                            |
-| Community team        | team, Community teams (as a page)                       |
-| Open (Home tab)       | Waiting (Waiting is the ED count)                       |
+| Say                    | Not                                                     |
+| ---------------------- | ------------------------------------------------------- |
+| Alerts                 | Tasks                                                   |
+| movement               | journey                                                 |
+| held up (a state)      | barrier, blocker (Releases held up stays on Ward, Q305) |
+| discharge (the event)  | release, departure, due out                             |
+| Bed board              | Stays and discharges, Bed Board, board                  |
+| New referral           | Raise referral                                          |
+| Add patient            | Add a patient, New patient                              |
+| desks                  | units, areas, screens (in Broadcast)                    |
+| Locked                 | Secure (except inside ward names)                       |
+| Board time             | Demo time                                               |
+| Synthetic numbers      | Mock numbers                                            |
+| Community team         | team, Community teams (as a page)                       |
+| Needs you, Flow (Home) | Open, Waiting, Queue (Waiting is the ED count)          |
+| Later today            | Planned                                                 |
 
 States: empty pages say what is empty without a Clear button ("No patients yet."). Offline: "You're offline. Tap again once you're back online." Slow: "Still loading. Check the connection." with Reload after about 15 seconds.
 
@@ -217,6 +271,7 @@ Each page may take **one signature part**: a bespoke visual that shows its own d
 - [ ] Shell copied from the master's newest screens, compared side by side with the master's Home and Ward.
 - [ ] Checked at 390, 744, 768, 820, 1180, 1280 and 1440, light and dark, and at 200% text on phone.
 - [ ] Tokens only; kit parts only; no one-off pills.
+- [ ] Icons from the table in section 4 at 1.75 stroke; status marks from `StatusGlyph`, no typed symbols, and only where they change the next action.
 - [ ] No coloured side edges; no text under 12px; phone controls 40px; desktop tabs 30px.
 - [ ] One on-hero action, one filled button per panel, eight rows then Show more.
 - [ ] Words from section 6; patient names surname first, staff names as written, both in full; times as typed.

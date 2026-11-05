@@ -245,6 +245,8 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
     (/^\/ward-flow\/statistics\/community\//u.test(pathname) ? "Community statistics" : undefined) ??
     (/^\/ward-flow\/statistics\/service\//u.test(pathname) ? "Service statistics" : undefined) ??
     (/^\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname) ? "Patient" : undefined) ??
+    // PL1 (3 Nov 2026): Catchments is a tab of Places, so the bar keeps the page's name.
+    (/^\/ward-flow\/hub\/catchments\/?$/u.test(pathname) ? "Places" : undefined) ??
     (pathname === WARD_ED_HREF ? "All EDs" : undefined) ??
     (pathname === settingsHref() ? "Settings" : undefined) ??
     (pathname === officerHref() ? "Transport" : undefined) ??
@@ -253,7 +255,7 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
     (/^\/ward-flow\/reports\/chronology\/?$/u.test(pathname) ? "Patient chronology" : undefined) ??
     (pathname === WARD_ADD_PERSON_HREF ? "Add patient" : undefined) ??
     (/^\/ward-flow\/people\/[^/]+\/?$/u.test(pathname) ? "Patient" : undefined) ??
-    (place?.kind === "ward" && /\/answer\/?$/u.test(pathname) ? "Ward Answer" : undefined) ??
+    (place?.kind === "ward" && /\/answer\/?$/u.test(pathname) ? "Ward answer" : undefined) ??
     (/^\/ward-flow\/board\//u.test(pathname) ? (place?.name ?? "Stays and discharges") : undefined) ??
     place?.name ??
     [...WARD_VIEWS, ...WARD_NAV].find((entry) => entry.href === pathname)?.label ??

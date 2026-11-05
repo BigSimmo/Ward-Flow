@@ -34,6 +34,7 @@ import { logFailure } from "./error-report.mjs";
 import { LruCache, registerPart } from "./reply-cache.mjs";
 import { recordDetailOf, withoutRecordDetail } from "./record-detail.mjs";
 import { forecastHistoryStore } from "./forecast-history.mjs";
+import { accountPreferencesStore } from "./account-preferences.mjs";
 import { deskAuditPage } from "./desk-audit.mjs";
 
 /**
@@ -1003,11 +1004,11 @@ export function createWorkspaceStore(
     b.closedAt - a.closedAt ||
     (a.collection < b.collection ? -1 : a.collection > b.collection ? 1 : 0) ||
     (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
-  function heldArchive(generation) {
+  function heldArchive(generation, connection = pool) {
     const refresh = archiveRefresh.then(async () => {
       if (archiveHeld?.generation !== generation) archiveHeld = { generation, through: 0, total: 0, rows: [] };
       const held = /** @type {NonNullable<typeof archiveHeld>} */ (archiveHeld);
-      const { rows } = await pool
+      const { rows } = await connection
         .query(
           'SELECT collection, record_id, closed_at, body, archived_revision, count(*) OVER ()::integer AS archived, max(archived_revision) OVER () AS through FROM ward_flow.archived_records WHERE workspace_id=$1 AND world_generation=$2 AND archived_revision > $3 ORDER BY closed_at DESC, collection COLLATE "C", record_id COLLATE "C" LIMIT $4',
           [workspaceId, generation, held.through, ARCHIVE_READ_LIMIT],
@@ -1397,6 +1398,27 @@ export function createWorkspaceStore(
       row.archived = await archivedCount(client, row.payload, row.revision);
       await prepareReviewAuthority(client, row, current);
       return snapshot(row, now, current, undefined, client);
+    });
+  }
+  /** Detail/history reads share the same authority boundary as a full scoped snapshot. */
+  async function currentRecordRead(view, send, recordAccess = false) {
+    return transaction(async (client, at) => {
+      const row = await lockedWorld(client, "SHARE", true, { copy: false });
+      if (recordAccess)
+        await client.query("SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2 || ':record-access'))", [
+          workspaceId,
+          view.actorId,
+        ]);
+      // A role/cover may end while either lock is awaited. Resolve after both, not from the
+      // handler's initial view or the transaction's earlier clock value.
+      at.setTime(clock().getTime());
+      let current = view;
+      if (view?.membershipId) {
+        current = await resolveViewer(view.actorId, { workingAs: view.membershipId }, client, at, view.version);
+        if (current.status !== "ok") throw new Error("role-ended");
+        Object.assign(view, current);
+      }
+      return send(client, at, current, row);
     });
   }
   /**
@@ -1882,6 +1904,8 @@ export function createWorkspaceStore(
       return { notModified: false, snapshot: await read(actorId, view) };
     },
     viewer,
+    // Migration 17: each signed-in account's Help memory.
+    ...accountPreferencesStore({ pool, workspaceId, schemaVersion, forgetVersionOnMissing }),
     // Proposal 013 (migration 16): each desk's shared forecast snapshots and miss reasons.
     ...forecastHistoryStore({
       pool,
@@ -1908,62 +1932,69 @@ export function createWorkspaceStore(
         archiveHeld = null;
         return { archived: 0, records: [] };
       }
-      const at = clock();
-      const stored = await readWorld(pool);
-      if (!stored || !engine.validWorld(stored.payload)) return { archived: 0, records: [] };
-      const held = await heldArchive(stored.payload.state.worldGeneration);
-      const records = held.rows;
-      const shown = view ? engine.scopeArchive(stored.payload, records, view.access, at, view.grants) : records;
-      // Audit PS-01: each record carries a short hash of the copy this desk is shown, and the reply
-      // the sum of them all. A desk that already holds the archive names the revision it holds
-      // (`since`) and is sent only the records archived after it; it keeps the rest, drops what
-      // falls below `floor`, and checks the sum. Any mismatch (its place, a break glass record or a
-      // masking rule changed) and it reads the whole archive again, so it never keeps a stale copy.
-      let sum = 0;
-      const hashed = shown.map((record) => {
-        const hash = createHash("sha256")
-          .update(`${record.collection}\0${record.id}\0${JSON.stringify(record.body)}`)
-          .digest("hex")
-          .slice(0, 12);
-        sum = (sum + Number.parseInt(hash, 16)) % ARCHIVE_SUM_MODULUS;
-        return { record, hash };
-      });
-      const partial = typeof since === "number" && Number.isSafeInteger(since) && since >= 0 && since <= held.through;
-      // A retention marker must not disclose a record outside this desk.
-      // Checksum mismatch already forces a full reread when no authorised floor remains.
-      const last = held.total > records.length ? shown.at(-1) : undefined;
-      // The sender progress for the archived records shown, worked out here from the full stored
-      // records (never from the masked copies sent below) and bound to this desk's access view and
-      // the revision it was worked out at, as the live snapshot's is. Ward and bed manager desks only.
-      const context = accessContext(at, view);
-      const senderView =
-        typeof context.accessContext === "string" &&
-        (view?.access?.role === "ward" || view?.access?.role === "bed_manager");
-      return {
-        archived: held.total,
-        through: held.through,
-        sum: sum.toString(16).padStart(12, "0"),
-        ...(partial ? { since } : {}),
-        ...(last ? { floor: [last.closedAt, last.collection, last.id] } : {}),
-        records: hashed
-          .filter(({ record }) => !partial || record.archivedRevision > /** @type {number} */ (since))
-          .map(({ record, hash }) => ({
-            collection: record.collection,
-            body: record.body,
-            closedAt: record.closedAt,
-            hash,
-          })),
-        ...(senderView
-          ? {
-              revision: Number(stored.revision),
-              partialView: {
+      const send = async (connection, at, current, stored) => {
+        if (current?.access?.role === "executive")
+          throw new Error("Executive reporting does not include record access");
+        if (!stored || !engine.validWorld(stored.payload)) return { archived: 0, records: [] };
+        const held = await heldArchive(stored.payload.state.worldGeneration, connection);
+        const records = held.rows;
+        const shown = current
+          ? engine.scopeArchive(stored.payload, records, current.access, at, current.grants)
+          : records;
+        // Audit PS-01: each record carries a short hash of the copy this desk is shown, and the reply
+        // the sum of them all. A desk that already holds the archive names the revision it holds
+        // (`since`) and is sent only the records archived after it; it keeps the rest, drops what
+        // falls below `floor`, and checks the sum. Any mismatch (its place, a break glass record or a
+        // masking rule changed) and it reads the whole archive again, so it never keeps a stale copy.
+        let sum = 0;
+        const hashed = shown.map((record) => {
+          const hash = createHash("sha256")
+            .update(`${record.collection}\0${record.id}\0${JSON.stringify(record.body)}`)
+            .digest("hex")
+            .slice(0, 12);
+          sum = (sum + Number.parseInt(hash, 16)) % ARCHIVE_SUM_MODULUS;
+          return { record, hash };
+        });
+        const partial = typeof since === "number" && Number.isSafeInteger(since) && since >= 0 && since <= held.through;
+        // A retention marker must not disclose a record outside this desk.
+        // Checksum mismatch already forces a full reread when no authorised floor remains.
+        const last = held.total > records.length ? shown.at(-1) : undefined;
+        // The sender progress for the archived records shown, worked out here from the full stored
+        // records (never from the masked copies sent below) and bound to this desk's access view and
+        // the revision it was worked out at, as the live snapshot's is. Ward and bed manager desks only.
+        const context = accessContext(at, current);
+        const senderView =
+          typeof context.accessContext === "string" &&
+          (current?.access?.role === "ward" || current?.access?.role === "bed_manager");
+        return {
+          archived: held.total,
+          through: held.through,
+          sum: sum.toString(16).padStart(12, "0"),
+          ...(partial ? { since } : {}),
+          ...(last ? { floor: [last.closedAt, last.collection, last.id] } : {}),
+          records: hashed
+            .filter(({ record }) => !partial || record.archivedRevision > /** @type {number} */ (since))
+            .map(({ record, hash }) => ({
+              collection: record.collection,
+              body: record.body,
+              closedAt: record.closedAt,
+              hash,
+            })),
+          ...(senderView
+            ? {
                 revision: Number(stored.revision),
-                accessContext: context.accessContext,
-                view: engine.archivePartialViewForWorld(stored.payload, records, view.access, at, view.grants),
-              },
-            }
-          : {}),
+                partialView: {
+                  revision: Number(stored.revision),
+                  accessContext: context.accessContext,
+                  view: engine.archivePartialViewForWorld(stored.payload, records, current.access, at, current.grants),
+                },
+              }
+            : {}),
+        };
       };
+      // Every queued archive refresh already owns its connection. A bootstrap refresh
+      // must not wait for a pool slot held by scoped readers queued behind that refresh.
+      return currentRecordRead(view, send);
     },
     /**
      * The accounts holding any current role here, waiting approval included. The sign-in check
@@ -2013,7 +2044,10 @@ export function createWorkspaceStore(
       );
       const row = rows[0];
       return row
-        ? { outcome: row.status === 200 ? "accepted" : "refused", commandRevision: row.result.commandRevision }
+        ? {
+            outcome: row.status === 200 ? (row.result.outcome === "partly" ? "partly" : "accepted") : "refused",
+            commandRevision: row.result.commandRevision,
+          }
         : null;
     },
     /**
@@ -2299,72 +2333,92 @@ export function createWorkspaceStore(
       const since = new Date(at.getTime() - VIEW_REPEAT_MS);
       const { rows: recent } = await pool
         .query(
-          "SELECT EXISTS (SELECT 1 FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND patient_id=$3 AND surface=$4 AND viewed_at > $5) AS repeated, (SELECT count(*) FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND viewed_at > $5) >= $6 AS limited",
-          [workspaceId, view.actorId, patientId, surface, since, VIEW_RATE_LIMIT],
+          "SELECT EXISTS (SELECT 1 FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND membership_id IS NOT DISTINCT FROM $7::uuid AND patient_id=$3 AND surface=$4 AND viewed_at > $5) AS repeated, (SELECT count(*) FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND viewed_at > $5) >= $6 AS limited",
+          [workspaceId, view.actorId, patientId, surface, since, VIEW_RATE_LIMIT, view.membershipId ?? null],
         )
         .catch((error) => {
           forgetVersionOnMissing(error);
           throw error;
         });
       if (recent[0]?.limited && !recent[0]?.repeated) return { status: 200, body: { logged: false } };
-      const stored = await readWorld(pool, "payload");
-      if (!stored || !engine.validWorld(stored.payload)) return { status: 200, body: { logged: false } };
-      const { state } = engine.scopeWorld(stored.payload, view.access, at, view.grants);
-      const visible =
-        surface === "patient"
-          ? state.patients.some((patient) => patient.id === patientId)
-          : surface === "referral"
-            ? // A ward bed request needs no front-door referral link to be opened.
-              state.referrals.some((referral) => referral.patientId === patientId) ||
-              state.movements.some((movement) => movement.patientId === patientId)
-            : state.movements.some((movement) => movement.id === patientId || movement.patientId === patientId);
-      if (!visible) return { status: 404, body: { error: "That record is not one this desk can open" } };
-      // A movement page names its journey; the detail is its patient's.
-      const opened = state.patients.some((patient) => patient.id === patientId)
-        ? patientId
-        : state.movements.find((movement) => movement.id === patientId)?.patientId;
-      const patient = state.patients.find((candidate) => candidate.id === opened);
-      const sent = (logged) => ({
-        status: 200,
-        body: { logged, ...(patient ? { opened: patient.id, detail: recordDetailOf(patient) } : {}) },
-      });
-      if (recent[0]?.repeated) return sent(false);
-      return transaction(async (client, loggedAt) => {
-        // Serialize each account's check and insert. A separate lock statement gives the
-        // following INSERT a fresh snapshot after an earlier opening commits.
-        await client.query("SELECT pg_advisory_xact_lock(hashtext($1 || ':' || $2 || ':record-access'))", [
-          workspaceId,
-          view.actorId,
-        ]);
-        loggedAt.setTime(clock().getTime());
-        const { rowCount } = await client
-          .query(
-            "INSERT INTO ward_flow.record_access(workspace_id, actor_id, membership_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT $1,$2,$3,$4,$5,$6,$7,$8 WHERE NOT EXISTS (SELECT 1 FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND patient_id=$6 AND surface=$7 AND viewed_at > $9) AND (SELECT count(*) FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND viewed_at > $9) < $10",
+      return currentRecordRead(
+        view,
+        async (client, loggedAt, current, stored) => {
+          if (current?.access?.role === "executive")
+            return { status: 403, body: { error: "Record access is not part of your role" } };
+          if (!stored || !engine.validWorld(stored.payload)) return { status: 200, body: { logged: false } };
+          // Recheck the repeat window at the refreshed time after both locks. A preliminary repeat
+          // may have expired while waiting, and its earlier authority never authorises this reply.
+          const { rows: lockedRecent } = await client.query(
+            "SELECT EXISTS (SELECT 1 FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND membership_id IS NOT DISTINCT FROM $7::uuid AND patient_id=$3 AND surface=$4 AND viewed_at > $5) AS repeated, (SELECT count(*) FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND viewed_at > $5) >= $6 AS limited",
             [
               workspaceId,
-              view.actorId,
-              view.membershipId ?? null,
-              view.access.role,
-              view.access.scope,
+              current.actorId,
               patientId,
               surface,
-              loggedAt,
               new Date(loggedAt.getTime() - VIEW_REPEAT_MS),
               VIEW_RATE_LIMIT,
+              current.membershipId ?? null,
             ],
-          )
-          .catch((error) => {
-            forgetVersionOnMissing(error);
-            throw error;
+          );
+          if (lockedRecent[0]?.limited && !lockedRecent[0]?.repeated) return { status: 200, body: { logged: false } };
+          const { state } = engine.scopeWorld(stored.payload, current.access, loggedAt, current.grants);
+          const visible =
+            surface === "patient"
+              ? state.patients.some((patient) => patient.id === patientId)
+              : surface === "referral"
+                ? // A ward bed request needs no front-door referral link to be opened.
+                  state.referrals.some((referral) => referral.patientId === patientId) ||
+                  state.movements.some((movement) => movement.patientId === patientId)
+                : state.movements.some((movement) => movement.id === patientId || movement.patientId === patientId);
+          if (!visible) return { status: 404, body: { error: "That record is not one this desk can open" } };
+          // A movement page names its journey; the detail is its patient's.
+          const opened = state.patients.some((patient) => patient.id === patientId)
+            ? patientId
+            : state.movements.find((movement) => movement.id === patientId)?.patientId;
+          const patient = state.patients.find((candidate) => candidate.id === opened);
+          const sent = (logged) => ({
+            status: 200,
+            body: { logged, ...(patient ? { opened: patient.id, detail: recordDetailOf(patient) } : {}) },
           });
-        // A repeat that committed meanwhile was logged within the minute too; the rate limit was not.
-        if (rowCount > 0) return sent(true);
-        const { rows: again } = await client.query(
-          "SELECT 1 FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND patient_id=$3 AND surface=$4 AND viewed_at > $5",
-          [workspaceId, view.actorId, patientId, surface, new Date(loggedAt.getTime() - VIEW_REPEAT_MS)],
-        );
-        return again.length ? sent(false) : { status: 200, body: { logged: false } };
-      });
+          if (lockedRecent[0]?.repeated) return sent(false);
+          const { rowCount } = await client
+            .query(
+              "INSERT INTO ward_flow.record_access(workspace_id, actor_id, membership_id, actor_role, actor_scope, patient_id, surface, viewed_at) SELECT $1,$2,$3,$4,$5,$6,$7,$8 WHERE NOT EXISTS (SELECT 1 FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND membership_id IS NOT DISTINCT FROM $3::uuid AND patient_id=$6 AND surface=$7 AND viewed_at > $9) AND (SELECT count(*) FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND viewed_at > $9) < $10",
+              [
+                workspaceId,
+                current.actorId,
+                current.membershipId ?? null,
+                current.access.role,
+                current.access.scope,
+                patientId,
+                surface,
+                loggedAt,
+                new Date(loggedAt.getTime() - VIEW_REPEAT_MS),
+                VIEW_RATE_LIMIT,
+              ],
+            )
+            .catch((error) => {
+              forgetVersionOnMissing(error);
+              throw error;
+            });
+          // A repeat that committed meanwhile was logged within the minute too; the rate limit was not.
+          if (rowCount > 0) return sent(true);
+          const { rows: again } = await client.query(
+            "SELECT 1 FROM ward_flow.record_access WHERE workspace_id=$1 AND actor_id=$2 AND membership_id IS NOT DISTINCT FROM $6::uuid AND patient_id=$3 AND surface=$4 AND viewed_at > $5",
+            [
+              workspaceId,
+              current.actorId,
+              patientId,
+              surface,
+              new Date(loggedAt.getTime() - VIEW_REPEAT_MS),
+              current.membershipId ?? null,
+            ],
+          );
+          return again.length ? sent(false) : { status: 200, body: { logged: false } };
+        },
+        true,
+      );
     },
     /**
      * The newest record openings, optionally for one patient. The statewide coordinator reads them

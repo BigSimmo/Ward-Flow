@@ -43,7 +43,16 @@ function undoEventFor(event: WardFlowEvent, role: WardFlowRole, now = NOW + 1, a
   const undoType = (Object.keys(UNDO_STEP_ACTIONS) as UndoStepType[]).find((type) =>
     (UNDO_STEP_ACTIONS[type] as readonly string[]).includes(event.type),
   )!;
-  const fields = event as { movementId?: string; referralId?: string; admissionId?: string };
+  const fields = event as {
+    movementId?: string;
+    referralId?: string;
+    admissionId?: string;
+    leaveBedId?: string;
+    unitId?: string;
+    bedNumber?: number;
+    plannedAdmissionId?: string;
+    patientId?: string;
+  };
   return {
     type: undoType,
     role,
@@ -52,7 +61,19 @@ function undoEventFor(event: WardFlowEvent, role: WardFlowRole, now = NOW + 1, a
     ...(fields.referralId ? { referralId: fields.referralId } : {}),
     ...(fields.admissionId ? { admissionId: fields.admissionId } : {}),
     ...(actingUnitId ? { actingUnitId } : {}),
-    ...(event.type === "COMPLETE_BED_MEETING_ACTION" ? { subject: event.subject, action: event.action } : {}),
+    // Tier 1 item 6 (4 Nov 2026): the bed, booking and patient record step undos name their subject.
+    ...(undoType === "UNDO_BED_STEP"
+      ? fields.leaveBedId
+        ? { leaveBedId: fields.leaveBedId }
+        : { unitId: fields.unitId, bedNumber: fields.bedNumber }
+      : {}),
+    ...(undoType === "UNDO_RELEASE_STEP" && fields.plannedAdmissionId
+      ? { plannedAdmissionId: fields.plannedAdmissionId }
+      : {}),
+    ...(undoType === "UNDO_PATIENT_RECORD" ? { patientId: fields.patientId } : {}),
+    ...(event.type === "COMPLETE_BED_MEETING_ACTION" || event.type === "RECORD_BED_MEETING_ACTION"
+      ? { subject: event.subject, action: event.action }
+      : {}),
     ...(event.type === "RECORD_SITE_HANDOVER_SIGN_OFF" ? { siteCode: event.siteCode } : {}),
   } as WardFlowEvent;
 }
@@ -66,6 +87,7 @@ const PREREQUISITES: Partial<Record<WardFlowEvent["type"], readonly WardFlowEven
   TRANSPORT_ACCEPTED: ["BOOK_TRANSPORT", "HANDOVER_READY"],
   PATIENT_COLLECTED: ["TRANSPORT_EN_ROUTE"],
   COMPLETE_BED_MEETING_ACTION: ["RECORD_BED_MEETING_ACTION"],
+  END_COMMUNITY_TREATMENT_ORDER: ["RECORD_COMMUNITY_TREATMENT_ORDER"],
 };
 
 /** Accept a step, take it back as `role`, and expect the world exactly as before the step. */
@@ -146,7 +168,17 @@ describe("step undos restore exactly, by the role that acted or the coordinator"
     UNDO_STEP_TYPES.flatMap((undoType) =>
       UNDO_STEP_ACTIONS[undoType]
         // Q75: a site sign-off is the one step the coordinator may not take back (tested below).
-        .filter((type) => type !== "RECORD_SUPPORT_NOTIFICATION" && type !== "RECORD_SITE_HANDOVER_SIGN_OFF")
+        // Tier 1 item 6: RELEASE_HELD_BED needs the exact movement a STOP_TRANSPORT just closed, which no seeded
+        // candidate offers; the legal figure sweep forces that chain and takes it back there.
+        .filter(
+          (type) =>
+            type !== "RECORD_SUPPORT_NOTIFICATION" &&
+            type !== "RECORD_SITE_HANDOVER_SIGN_OFF" &&
+            type !== "RELEASE_HELD_BED" &&
+            // ARCHIVE_PATIENT needs a record added in error, which the seed has none of; it is
+            // taken back exactly in tests/ward-tier1-undo.test.ts.
+            type !== "ARCHIVE_PATIENT",
+        )
         .map((type) => [undoType, type] as const),
     ),
   )("%s takes back %s exactly, by the role that acted and by the coordinator", (undoType, type) => {

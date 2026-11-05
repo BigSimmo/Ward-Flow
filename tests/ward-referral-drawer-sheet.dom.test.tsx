@@ -75,6 +75,8 @@ describe("referral slide-out, option B", () => {
 
   it("clears Catchment not known when the referral moves to Community, which hides it", () => {
     renderDrawer();
+    // RF1 (3 Nov 2026): this person's team is confirmed but no home region is stored, so the region
+    // fields (and the tick) stay open for it.
     const chip = () => within(screen.getByTestId("ward-referral-catchment-not-known")).getByRole("checkbox");
     fireEvent.click(chip());
     expect(chip()).toBeChecked();
@@ -131,7 +133,7 @@ describe("referral slide-out, option B", () => {
     fireEvent.click(steps().getByRole("button", { name: "Referral" }));
     fireEvent.change(screen.getByLabelText(/Reason for referral/), { target: { value: "Synthetic reason" } });
     fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
-    const guard = screen.getByRole("alertdialog", { name: "Close without sending?" });
+    const guard = screen.getByRole("alertdialog", { name: "Keep this referral as a draft?" });
     fireEvent.click(within(guard).getByRole("button", { name: "Keep editing" }));
     expect(onClose).not.toHaveBeenCalled();
     expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("Synthetic reason");
@@ -143,14 +145,16 @@ describe("referral slide-out, option B", () => {
     fireEvent.click(steps().getByRole("button", { name: "Referral" }));
     fireEvent.change(screen.getByLabelText(/Reason for referral/), { target: { value: "Kept synthetic reason" } });
     fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
-    fireEvent.click(screen.getByRole("button", { name: "Keep draft" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep draft and close" }));
     expect(first.onClose).toHaveBeenCalledTimes(1);
     expect(setItem.mock.instances.every((storage) => storage === window.sessionStorage)).toBe(true);
     first.unmount();
 
     renderDrawer();
     expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("Kept synthetic reason");
-    expect(screen.getByRole("button", { name: "Discard draft" })).toBeInTheDocument();
+    const restored = screen.getByTestId("ward-referral-draft-restored");
+    expect(restored).toHaveTextContent("Carrying on with your unsent referral");
+    expect(within(restored).getByRole("button", { name: "Start a new referral" })).toBeInTheDocument();
     setItem.mockRestore();
   });
 
@@ -159,7 +163,7 @@ describe("referral slide-out, option B", () => {
     fireEvent.click(steps().getByRole("button", { name: "Referral" }));
     fireEvent.change(screen.getByLabelText(/Reason for referral/), { target: { value: "Kept reason" } });
     fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
-    fireEvent.click(screen.getByRole("button", { name: "Keep draft" }));
+    fireEvent.click(screen.getByRole("button", { name: "Keep draft and close" }));
     first.unmount();
 
     renderDrawer({ initialDestination: "ed", initialCategory: "ed", initialOriginSiteCode: "RPH" });
@@ -176,7 +180,7 @@ describe("referral slide-out, option B", () => {
     fireEvent.click(steps().getByRole("button", { name: "Patient" }));
     fireEvent.click(within(note).getByRole("link", { name: "Where this case is" }));
     expect(onClose).not.toHaveBeenCalled();
-    expect(screen.getByRole("alertdialog", { name: "Close without sending?" })).toBeInTheDocument();
+    expect(screen.getByRole("alertdialog", { name: "Keep this referral as a draft?" })).toBeInTheDocument();
   });
 
   it("Discard drops the draft", () => {
@@ -199,9 +203,9 @@ describe("referral slide-out, option B", () => {
     fireEvent.click(screen.getByRole("button", { name: "Preview letter" }));
     const preview = screen.getByTestId("ward-referral-letter-preview");
     expect(preview).toHaveTextContent("Mental health referral to a ward");
-    fireEvent.click(within(preview).getByRole("button", { name: "Copy as text" }));
+    fireEvent.click(within(preview).getByRole("button", { name: "Copy text" }));
     await waitFor(() => expect(writeText).toHaveBeenCalledTimes(1));
-    expect(writeText.mock.calls[0]![0]).toContain("Mental health referral to a ward");
+    expect(writeText.mock.calls[0]![0]).toContain("MENTAL HEALTH REFERRAL TO A WARD");
     expect(await screen.findByRole("status")).toHaveTextContent("Letter copied");
   });
 
@@ -228,14 +232,20 @@ describe("referral slide-out, option B", () => {
     renderDrawer();
     fireEvent.click(screen.getByRole("button", { name: "Add patient" }));
     const form = screen.getByTestId("ward-referral-new-patient");
-    fireEvent.click(within(form).getByRole("button", { name: "Add patient" }));
+    // RF3 (3 Nov 2026): the card becomes New patient, the search hides, and the form has its own close.
+    expect(screen.getByRole("heading", { name: "New patient" })).toBeInTheDocument();
+    expect(screen.queryByLabelText("Find a patient")).not.toBeInTheDocument();
+    expect(within(form).getByRole("button", { name: "Close new patient" })).toBeInTheDocument();
+    expect(within(form).getByRole("button", { name: "Back to search" })).toBeInTheDocument();
+    expect(within(form).getByRole("radiogroup", { name: "Gender" })).toBeInTheDocument();
+    fireEvent.click(within(form).getByRole("button", { name: "Add and use for this referral" }));
     expect(within(form).getByRole("alert")).toHaveTextContent("Enter the family and given names.");
     fireEvent.change(within(form).getByLabelText("Family name"), { target: { value: "Synthetica" } });
     fireEvent.change(within(form).getByLabelText("Given name"), { target: { value: "Demo" } });
     fireEvent.change(within(form).getByLabelText("Date of birth"), { target: { value: "02/01/1990" } });
     fireEvent.change(within(form).getByLabelText("UMRN"), { target: { value: "UM999901" } });
     await act(async () => {
-      fireEvent.click(within(form).getByRole("button", { name: "Add patient" }));
+      fireEvent.click(within(form).getByRole("button", { name: "Add and use for this referral" }));
     });
     await waitFor(() => expect(document.body.textContent).toMatch(/Synthetica, Demo/));
     // Finding 36: the band opens on the one the date of birth gives, still editable.
@@ -254,7 +264,7 @@ describe("referral slide-out, option B", () => {
     });
     fireEvent.change(within(form).getByLabelText("UMRN"), { target: { value: "UM999902" } });
     await act(async () => {
-      fireEvent.click(within(form).getByRole("button", { name: "Add patient" }));
+      fireEvent.click(within(form).getByRole("button", { name: "Add and use for this referral" }));
     });
     await waitFor(() => expect(document.body.textContent).toMatch(/Synthetica, Young/));
     const band = screen.getByLabelText("Age band");
@@ -303,7 +313,7 @@ describe("needs cards and the clearance checklist", () => {
     expect(checklist).toHaveTextContent("1 of 6 done");
     fireEvent.click(screen.getByRole("button", { name: "Preview letter" }));
     expect(screen.getByTestId("ward-referral-letter-preview")).toHaveTextContent(
-      "Clearance checklist: Bloods to follow, ECG done",
+      /Clearance checklist\s*Bloods to follow, ECG done/,
     );
   });
 
@@ -320,7 +330,7 @@ describe("needs cards and the clearance checklist", () => {
     expect(screen.queryByTestId("ward-referral-clearance-checklist")).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Preview letter" }));
     expect(screen.getByTestId("ward-referral-letter-preview")).toHaveTextContent(
-      "Needs: First contact within 72 hours, Interpreter needed",
+      /Needs\s*First contact within 72 hours, Interpreter needed/,
     );
   });
 
@@ -360,7 +370,7 @@ describe("needs cards and the clearance checklist", () => {
     fireEvent.click(within(firstContact).getByLabelText("24 hours"));
     expect(rail).toHaveTextContent("24 hours");
     fireEvent.click(screen.getByRole("button", { name: "Preview letter" }));
-    expect(screen.getByTestId("ward-referral-letter-preview")).toHaveTextContent("Urgency: Tier 1");
+    expect(screen.getByTestId("ward-referral-letter-preview")).toHaveTextContent(/Urgency\s*Tier 1/);
   });
 
   it("searches the community teams by team or suburb, showing six until asked for all", () => {
@@ -426,7 +436,7 @@ describe("owner pins carried over from the retired full-page form", () => {
     renderDrawer({ initialPatientId: "PT-002" });
     fireEvent.click(screen.getByRole("button", { name: "Change" }));
     fireEvent.change(screen.getByLabelText("Patient suburb"), { target: { value: "" } });
-    expect(screen.getByTestId("ward-referral-suburb-note")).toHaveTextContent("suburb not on the referral");
+    expect(screen.getByTestId("ward-referral-suburb-note")).toHaveTextContent("no suburb on the record");
     fireEvent.change(screen.getByLabelText("Patient suburb"), { target: { value: "Perth" } });
     expect(screen.getByTestId("ward-referral-suburb-note")).toHaveTextContent("Perth");
   });
@@ -498,12 +508,14 @@ describe("referral letter text", () => {
     referrer: { name: "", role: "", phone: "" },
   };
 
-  it("says Not recorded for anything left blank rather than inventing it", () => {
+  it("names anything left blank once, at the top, rather than inventing it", () => {
     const text = referralLetterText(input, "10:46");
     // Audit 1 (CS-12): the synthetic line comes before the letter's heading.
     expect(text.split("\n")[0]).toBe("Synthetic prototype. Draft 10:46 AWST.");
-    expect(text).toContain("Reason: Not recorded");
-    expect(text).toContain("Referrer: Not recorded");
+    // RF2 (Josh, 4 Nov 2026): gaps are listed once and left out of the lines below.
+    expect(text).toContain("Still to confirm: Reason, history and referrer contact.");
+    expect(text).not.toContain("Reason:");
+    expect(text).toContain("REFERRER\nNot recorded");
     expect(text).toContain("Risks: None selected");
   });
 
@@ -539,7 +551,7 @@ describe("referral draft autosave (9 Oct 2026)", () => {
     });
     expect(readKeptReferralDraft()).not.toBeNull();
     expect(screen.getByTestId("ward-referral-draft-status")).toHaveTextContent("Draft kept in this tab · just now");
-    expect(screen.getByRole("button", { name: "Discard draft" })).toBeInTheDocument();
+    expect(screen.getByTestId("ward-referral-save-draft")).not.toHaveAttribute("aria-disabled");
     expect(setItem.mock.instances.every((storage) => storage === window.sessionStorage)).toBe(true);
     setItem.mockRestore();
   });
@@ -554,27 +566,36 @@ describe("referral draft autosave (9 Oct 2026)", () => {
     expect(screen.getByLabelText(/Reason for referral/)).toHaveValue("Unpaused synthetic reason");
   });
 
-  it("Discard draft in the rail drops an autosaved draft", () => {
+  it("Discard in the close guard drops an autosaved draft", () => {
     vi.useFakeTimers();
     const first = renderDrawer();
     typeReason("Discarded synthetic reason");
     act(() => {
       vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
     });
-    fireEvent.click(screen.getByRole("button", { name: "Discard draft" }));
+    expect(readKeptReferralDraft()).not.toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Close referral side drawer" }));
+    fireEvent.click(within(screen.getByTestId("ward-referral-close-guard")).getByRole("button", { name: "Discard" }));
+    expect(first.onClose).toHaveBeenCalledTimes(1);
     first.unmount();
     expect(readKeptReferralDraft()).toBeNull();
   });
 
-  it("autosaves again after Discard draft restarts the sheet", () => {
+  it("autosaves again after Start a new referral restarts the sheet", () => {
     vi.useFakeTimers();
-    renderDrawer();
+    const first = renderDrawer();
     typeReason("Discarded first reason");
     act(() => {
       vi.advanceTimersByTime(REFERRAL_DRAFT_AUTOSAVE_MS);
     });
-    fireEvent.click(screen.getByRole("button", { name: "Discard draft" }));
+    first.unmount();
+    // RF6 (3 Nov 2026): the restored draft's card is the one way to start again.
+    renderDrawer();
+    fireEvent.click(
+      within(screen.getByTestId("ward-referral-draft-restored")).getByRole("button", { name: "Start a new referral" }),
+    );
     expect(readKeptReferralDraft()).toBeNull();
+    expect(screen.queryByTestId("ward-referral-draft-restored")).not.toBeInTheDocument();
     // Discard restarts the sheet (a fresh draft and a fresh autosave), in the same drawer.
     typeReason("Second reason after restart");
     act(() => {

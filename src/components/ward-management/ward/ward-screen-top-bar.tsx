@@ -3,8 +3,7 @@
 // The ward screen's ward card and top action bar. Split out of `ward-screen.tsx` (18 October 2026)
 // to keep that file under the line cap.
 
-import { Bell, Printer, Search, Send, Tv } from "lucide-react";
-import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { Bell, Presentation, Search, Send } from "lucide-react";
 import { designationSummary } from "@/components/ward-management/ward-bed-designation";
 import { plural } from "@/components/ward-management/ward-plural";
 import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
@@ -59,7 +58,7 @@ type WardScreenTopBarProps = {
   wardRibbon: ReactElement;
   wardHeroFoot: ReactElement;
   wardHeroFootAside: ReactElement;
-  selectActiveTab: (next: "attn" | "board" | "coming" | "out" | "beds" | "return") => void;
+  selectActiveTab: (next: "attn" | "board" | "coming" | "out" | "beds" | "referrals" | "return") => void;
   wardMoreMenu: (triggerClassName: string, tablet: boolean) => ReactElement;
   raiseReferralGate: RoleGate;
   wardRoleLockNote: ReactElement | null;
@@ -78,14 +77,14 @@ type WardScreenTopBarProps = {
   setNotificationCenterOpen: Dispatch<SetStateAction<boolean>>;
   notificationTriggerRef: RefObject<HTMLButtonElement | null>;
   tabHome: ReactElement;
+  tabReferrals: ReactElement;
   tabDecisions: ReactElement;
   bedQuery: string;
   setBedQuery: Dispatch<SetStateAction<string>>;
-  activeTab: "attn" | "board" | "coming" | "out" | "beds" | "return";
+  activeTab: "attn" | "board" | "coming" | "out" | "beds" | "referrals" | "return";
   unreadAlertsCount: number;
   setDailySheetOpen: Dispatch<SetStateAction<boolean>>;
   tvViewsOn: boolean;
-  handoverHref: string;
   handleRaiseWardReferral: (bedOverride?: unknown) => void;
   raisedReferral: { href: string; message: string; bed: number | null } | null;
   selectedBed: number | null;
@@ -124,13 +123,13 @@ export function WardScreenTopBar({
   setNotificationCenterOpen,
   notificationTriggerRef,
   tabHome,
+  tabReferrals,
   tabDecisions,
   bedQuery,
   setBedQuery,
   activeTab,
   unreadAlertsCount,
   tvViewsOn,
-  handoverHref,
   handleRaiseWardReferral,
   raisedReferral,
   selectedBed,
@@ -141,8 +140,6 @@ export function WardScreenTopBar({
   // inside WardScreen, which the compiler skips. Memoising it changed nothing visible but added
   // several KB to the phone download (script-budget.json).
   "use no memo";
-  // Handing over is the nurse in charge's own job, so on the ward desk Handover stays beside More.
-  const isWardDesk = useEffectiveWardAccess().role === "ward";
   // Josh, 1 Nov 2026: the ward's name is the heading; its hospital and facts sit in the eyebrow. The
   // ward's position (ready and occupied) stays in the ribbon of figures under it, and is kept in the
   // heading for screen readers.
@@ -232,7 +229,7 @@ export function WardScreenTopBar({
                 aria-label={unreadAlertsCount > 0 ? `Notices, ${unreadAlertsCount} new` : "Notices"}
                 data-testid="ward-notifications-toggle-btn"
               >
-                <Bell size={20} aria-hidden="true" />
+                <Bell strokeWidth={1.75} size={18} aria-hidden="true" />
                 {unreadAlertsCount > 0 ? (
                   <span className={styles.phoneHeroBadge} data-testid="ward-notification-count-badge">
                     {unreadAlertsCount}
@@ -297,6 +294,7 @@ export function WardScreenTopBar({
             onKeyDown={moveBetweenWardTabs}
           >
             {tabHome}
+            {tabReferrals}
             {tabDecisions}
           </ul>
           {isPhone ? null : (
@@ -363,20 +361,12 @@ export function WardScreenTopBar({
                   href={bedMeetingTvHref({ ward: unit.id })}
                   data-testid="ward-open-tv"
                 >
-                  <Tv size={16} aria-hidden="true" />
+                  <Presentation strokeWidth={1.75} size={16} aria-hidden="true" />
                   On TV
                 </Link>
               ) : null}
-              {isWardDesk ? (
-                <Link
-                  className={`${buttonClass({ variant: "ghost", size: "sm" })} ${styles.toolSolo}`}
-                  href={handoverHref}
-                  data-testid="ward-open-handover"
-                >
-                  <Printer size={16} aria-hidden="true" />
-                  Handover
-                </Link>
-              ) : null}
+              {/* WH9 (3 Nov 2026): Ward handover sits in Decisions and the More menu, so the toolbar
+                  keeps its row at every desktop width. */}
               {wardMoreMenu(buttonClass({ variant: "ghost", size: "sm" }), true)}
               <button
                 type="button"
@@ -385,7 +375,7 @@ export function WardScreenTopBar({
                 title="Record a ward-to-ward referral with this ward as the sending ward."
                 {...raiseReferralGate.buttonProps}
               >
-                <Send size={16} aria-hidden="true" />
+                <Send strokeWidth={1.75} size={16} aria-hidden="true" />
                 New referral
               </button>
               <Link

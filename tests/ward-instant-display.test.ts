@@ -26,6 +26,14 @@ const WARD_DIR = "src/components/ward-management";
  */
 const MAY_ASSERT_TODAY = new Map([
   [
+    "byLane.tomorrow[0].expectedArrivalAt",
+    "Capacity Planned moves (3 Nov 2026): the note sits inside the lane headed Tomorrow, and the lane only holds bookings due tomorrow.",
+  ],
+  [
+    "planned.expectedArrivalAt",
+    "Capacity Planned moves (3 Nov 2026): the row's time tile prints the day (Today, Tomorrow or the date) directly under the time.",
+  ],
+  [
     "activeRecord.expectedDischargeAt",
     "Clock-only value for an HTML time input; its separately recorded date is preserved on save, and the visible departure display still names the day.",
   ],

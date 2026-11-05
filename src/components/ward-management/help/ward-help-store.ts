@@ -24,7 +24,8 @@ export function useTourRole(): WardTourRole {
 }
 
 export const TOUR_SEEN_STORAGE_KEY = "ward_flow_choice_tour_seen";
-const tourSeenChangeEvent = "ward-flow-tour-seen-change";
+export const TOUR_SEEN_CHANGE_EVENT = "ward-flow-tour-seen-change";
+const tourSeenChangeEvent = TOUR_SEEN_CHANGE_EVENT;
 
 let inMemoryFallback: string | undefined;
 

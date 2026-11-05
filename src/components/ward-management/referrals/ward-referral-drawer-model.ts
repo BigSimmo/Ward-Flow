@@ -1,4 +1,5 @@
 import { Hospital, Siren, User, Users } from "lucide-react";
+import { PATIENT_KEY_PREFIX } from "./referral-patient-key";
 import { useMemo } from "react";
 import { formTitleForCode } from "@/lib/form-register";
 import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
@@ -213,7 +214,7 @@ export const SAMPLE_PATIENTS: Record<string, { destType: string }> = {
 export const NO_PATIENT_KEY = "none";
 
 /** A registered person with no open movement is picked by this key, `patient:<id>`. */
-export const PATIENT_KEY_PREFIX = "patient:";
+export { PATIENT_KEY_PREFIX };
 
 const NO_RISK_FLAGS: MockPatientProfile["riskFlags"] = {
   aggression: false,

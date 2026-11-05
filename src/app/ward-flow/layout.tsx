@@ -31,6 +31,7 @@ import { NextRail as WardRail } from "@/components/ward-management/shell-next/ne
 import { WardMainFocusTarget } from "@/components/ward-management/shell/ward-main-focus-target";
 import { WardSkipToActNow } from "@/components/ward-management/shell/ward-skip-to-act-now";
 import { TvLockGuard } from "@/components/ward-management/bed-meeting/tv-lock-guard";
+import { ReferralSheetHost } from "@/components/ward-management/referrals/referral-sheet-host";
 import {
   WardWorkspaceHost,
   WardExecutiveChromeMount,
@@ -211,6 +212,8 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
               <WardRowDensity />
               <WardLiveRegion />
               <WardActNowNotifier />
+              {/* RQ9: the Referral sheet any patient panel's Referral button opens (referral-sheet-bus.ts). */}
+              <ReferralSheetHost />
               <WardPwaRegistration />
               <WardOfflineLinks />
               {/* A demo link's `?flags=` switches feature flags on this device (ward-feature-flags.ts). */}

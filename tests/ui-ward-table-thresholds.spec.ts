@@ -581,7 +581,7 @@ const TYPE_FLOOR_ROUTES = [
     route: "/ward-flow/waiting",
     expect: ["delays-cause", "delays-profile", "delays-wait", "delays-since", "banner", "badge"],
   },
-  // Home v7 (Josh, 22 Oct 2026): the queue's tier labels sit behind Everyone waiting.
+  // Home v7 (Josh, 22 Oct 2026): the queue's tier labels sit behind the Flow list (Q340).
   { route: "/ward-flow", expect: ["command-tier", "banner", "badge"], everyoneWaiting: true },
   { route: "/ward-flow/movements", expect: ["banner", "badge"] },
   { route: "/ward-flow/capacity", expect: ["banner", "badge"] },
@@ -714,8 +714,11 @@ test("@mockup the Delays hidden-count note keeps Show everyone reachable at ever
     await page.goto("/ward-flow/waiting", { waitUntil: "networkidle" });
     const count = page.getByTestId("delays-shown-count");
     const everyone = await count.textContent();
-    await page.getByTestId("delays-stat-over8").click();
-    await expect(count, `${width}px: the Over 8h count did not narrow the table`).not.toHaveText(everyone ?? "");
+    // Plan item 2i: a phone's hero folds its figures away and keeps the next step, which narrows the
+    // table to the desk's own people. Desktop still narrows by the Over 8h figure.
+    const narrow = width < 744 ? page.getByTestId("delays-next-action") : page.getByTestId("delays-stat-over8");
+    await narrow.click();
+    await expect(count, `${width}px: narrowing did not narrow the table`).not.toHaveText(everyone ?? "");
     const note = page.getByTestId("delays-hidden-note");
     await expect(note).toContainText(/hidden by the filters above/u);
     await note.getByRole("button", { name: "Show everyone" }).click({ timeout: 5_000 });

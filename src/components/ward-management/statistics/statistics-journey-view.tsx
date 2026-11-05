@@ -9,6 +9,7 @@ import { Button, CardBody, Legend, SrOnly, StatusGlyph, cx, type WfTone } from "
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import { dayOf, type Instant } from "@/components/ward-management/ward-clock";
+import { isEdOriginJourney } from "@/components/ward-management/ward-ed-presence";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, LeaveBed, Movement, MovementStage, Unit } from "@/components/ward-management/ward-model";
 import { LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -23,6 +24,7 @@ import { LONG_WAIT_HOURS, edJourneyWaitFigures as edWaitFigures } from "./statis
 import { StatCard, useStatisticsLive } from "./statistics-hero";
 import { FlushRow, Follow } from "./statistics-layout";
 import styles from "./statistics-journey-view.module.css";
+import { useViewSwitchAction } from "./statistics-view-switch-slot";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
 import type { ExecutiveReportingFoundation, ReleasedCount } from "./executive-statistics-contract";
 import {
@@ -142,7 +144,7 @@ export function journeyStages({
       breakdown: [
         { label: `Past ${LONG_WAIT_HOURS}h`, value: pastADay(waiting), tone: warnIf(pastADay(waiting)) },
         { label: "Urgent", value: urgent(waiting) },
-        { label: "EDs", value: new Set(waiting.map((movement) => movement.originEdId)).size },
+        { label: "EDs", value: new Set(waiting.filter(isEdOriginJourney).map((movement) => movement.originEdId)).size },
       ],
     },
     {
@@ -490,6 +492,7 @@ function JourneyPresentation({
   totalPreparing: number;
 }) {
   const [selected, setSelected] = useState<JourneyStageId | null>(null);
+  const viewSwitch = useViewSwitchAction();
 
   function select(id: JourneyStageId) {
     const next = selected === id ? null : id;
@@ -504,6 +507,7 @@ function JourneyPresentation({
         icon={Route}
         title="Where people are now"
         aside={<span className={styles.aside}>Choose a stage to see its breakdown</span>}
+        action={viewSwitch}
         data-testid="ward-statistics-journey-ribbon"
       >
         <CardBody className={styles.ribbonBody}>

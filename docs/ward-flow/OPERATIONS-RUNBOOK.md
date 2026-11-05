@@ -41,7 +41,7 @@ There is no `supabase/` folder and no Railway config file in the repo. Build com
 commands, watch paths and the health-check path are Railway dashboard settings. The repo copy of
 the backend watch list is [watch-paths.mjs](../../backend/ward-flow/watch-paths.mjs). The schema is
 in [backend/ward-flow/migrations](../../backend/ward-flow/migrations), currently up to
-<!-- fact:latest-migration -->016-forecast-history<!-- /fact -->.
+<!-- fact:latest-migration -->017-account-preferences<!-- /fact -->.
 
 ### Front door switch
 
@@ -49,7 +49,9 @@ Both sites can require sign-in before any page or API answers (Josh, 27 October 
 **off** until Josh says yes to turning it on. The settings are server-only, read on each request,
 so changing them needs a restart, not a rebuild:
 
-- `WARD_FRONT_DOOR=required` turns it on. Anything else leaves the site open.
+- `WARD_FRONT_DOOR=required` turns it on and `WARD_FRONT_DOOR=off` turns it off. On Railway an
+  unset or mistyped value keeps the site shut (Q372, 3 November 2026), so a lost variable never
+  opens it. Off Railway, such as a local `next start`, anything but `required` leaves it open.
 - `WARD_PASS_SECRET` signs the pass cookie. Use 32 or more random characters. Without it the site
   stays shut and `/sign-in` says sign-in is not set up. Changing it signs everyone out.
 - `WARD_DEMO_CODE` (public demo only) is the code `/sign-in` asks for. Josh chose a demo code over
@@ -58,8 +60,8 @@ so changing them needs a restart, not a rebuild:
 
 With it on, a page without a pass goes to `/sign-in` and an API call gets 401. On the signed-in
 site the pass lasts until the 12-hour sign-in limit and ends at sign-out. A demo code pass lasts 8
-hours. `/api/health`, the offline page and the alert worker stay open. To switch it off, remove
-`WARD_FRONT_DOOR` and restart. Code: `src/lib/front-door-pass.ts`, `src/proxy.ts`,
+hours. `/api/health`, the offline page and the alert worker stay open. To switch it off, set
+`WARD_FRONT_DOOR=off` and restart. Code: `src/lib/front-door-pass.ts`, `src/proxy.ts`,
 `src/app/api/session/route.ts`.
 
 ## Who may do what

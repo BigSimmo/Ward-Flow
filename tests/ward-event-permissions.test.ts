@@ -478,6 +478,8 @@ describe("who may raise which event", () => {
     RECORD_LEGAL_FORM_WRITTEN: ["ed", "coordinator", "ward"],
     RECORD_LEGAL_FORM_CODE: ["ed", "coordinator", "ward"],
     RECORD_ED_PRESENTATION: ["ed", "coordinator"],
+    RECORD_LEGAL_FORM_DETAILS: ["ed", "coordinator", "ward"],
+    RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP: ["ward", "coordinator"],
     RECORD_COUNTRY_EXTENSION: ["ed", "coordinator"],
     RECORD_LEGAL_FORM_CONTINUATION: ["ed", "coordinator", "ward", "community"],
     EVALUATE_ARRIVAL_LATENESS: ["coordinator", "ed", "ward"],
@@ -494,6 +496,8 @@ describe("who may raise which event", () => {
     RECORD_REPATRIATION: ["coordinator"],
     // Closing-the-loop (package E): the home service's answer is the coordinator's; any working desk can confirm a directory entry.
     RECORD_HOME_SERVICE_RETURN: ["coordinator"],
+    // Out of area "Flag early" (Josh, 3 Nov 2026): the coordinator's return plan.
+    FLAG_RETURN_EARLY: ["coordinator"],
     RECORD_DIRECTORY_CHECK: ["coordinator", "bed_manager", "ward", "ed", "community", "officer"],
     RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
     RECORD_SITE_HANDOVER_SIGN_OFF: ["bed_manager", "coordinator"],
@@ -531,6 +535,7 @@ describe("who may raise which event", () => {
     UNDO_LEGAL_FORM_RECORD: ["ed", "coordinator", "ward", "community"],
     UNDO_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
     UNDO_REPATRIATION: ["coordinator"],
+    UNDO_FLAG_RETURN_EARLY: ["coordinator"],
     UNDO_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
     UNDO_ED_STEP: ["ed", "ward", "community", "coordinator"],
     UNDO_TRANSPORT_STEP: ["officer", "ward", "coordinator"],
@@ -538,6 +543,9 @@ describe("who may raise which event", () => {
     UNDO_ABSENT_WITHOUT_LEAVE: ["ward", "coordinator"],
     UNDO_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community", "bed_manager"],
     UNDO_SITE_HANDOVER_SIGN_OFF: ["bed_manager"],
+    UNDO_BED_STEP: ["ward", "bed_manager", "coordinator"],
+    UNDO_RELEASE_STEP: ["coordinator", "ward", "ed", "community", "bed_manager"],
+    UNDO_PATIENT_RECORD: ["community", "coordinator"],
   };
 
   it("covers every event that exists, so a new event cannot arrive unpermissioned", () => {

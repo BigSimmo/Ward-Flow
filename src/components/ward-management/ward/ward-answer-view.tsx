@@ -73,6 +73,7 @@ import { WardAcceptDialog } from "./ward-answer-accept-dialog";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
+import { identityAbsenceNote } from "./ward-screen-derivations";
 
 const ANSWER_ALERT_LINE = CLINICAL_VALUES.bedAlertLine.value; // the hero ring's signed alert line
 
@@ -145,8 +146,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const raise = useWardRaise("ward");
   const unit = units.find((candidate) => candidate.id === unitId);
 
-  // Audit 1, Josh 20 Oct (CS-08): held by journey id, never list position; `index` is where to land after answering.
-  // Notices option A (22 Oct 2026): a Notices row names its request, so the view opens on that patient.
+  // CS-08 / Notices option A: hold by journey id, not list position; a Notices link opens its named request.
   const [answerSelection, setAnswerSelection] = useState<{ id?: string; index: number; name?: string }>({
     id: initialMovementId,
     index: 0,
@@ -338,16 +338,20 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const leftName = answerSelection.name ?? (linked && resolvePatientIdentity(linked).formalName);
   const selectionLeft = heldIndex < 0 && leftName !== undefined && !answeredHere && incoming.length > 0;
   const activeMovement = selectionLeft ? undefined : incoming[activeAnswerIndex];
-  const pick = (index: number, movement = incoming[index]) =>
+  const pick = (index: number, movement = incoming[index]) => {
+    if (movement?.id !== answerSelection.id) {
+      setOverrideReason(undefined);
+      setNumConsulted(false);
+    }
     setAnswerSelection({ id: movement?.id, index, name: movement && resolvePatientIdentity(movement).formalName });
+  };
   if (activeMovement && answerSelection.id !== activeMovement.id) pick(activeAnswerIndex, activeMovement);
   const selectAnswer = (index: number) => {
     setAnsweredHereId(undefined);
     pick(index);
     setHoldChoice(undefined);
   };
-  // CS-08: the request an accept dialog or sheet was opened for has left (answered or withdrawn
-  // elsewhere), so it closes rather than confirm whoever now sits in its place.
+  // CS-08: close when the original request has left; never confirm the next person in its place.
   const phoneAcceptLeft = phoneSheet === "accept" && answerSelection.id !== undefined && heldIndex < 0;
   if ((acceptModalFor !== undefined && !acceptModalOpen) || phoneAcceptLeft) {
     setAcceptModalFor(undefined);
@@ -454,12 +458,10 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     if (!overrideReason || !lastActionRejection) return;
     const attempted = lastActionRejection.attempted;
     if (attempted !== "ACCEPT_IN_PRINCIPLE" && attempted !== "PULL_PATIENT") return;
-
     const isAcuityRefusal = lastActionRejection.reason.includes(HIGH_ACUITY_STAFFING_REFUSAL);
     if (!canSubmitOverride(overrideReason, isAcuityRefusal, numConsulted)) return;
     setPriorRejectionCount(rejections.length);
     setAnsweredHereId(movementId);
-
     if (attempted === "ACCEPT_IN_PRINCIPLE") {
       raise("ACCEPT_IN_PRINCIPLE", {
         movementId,
@@ -480,7 +482,6 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     setOverrideReason(undefined);
     setNumConsulted(false);
   }
-
   function submitCapacity(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const parsed = Number(capacityValue);
@@ -498,6 +499,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   const oldestWaiting = [...incoming].sort((left, right) => left.openedAt - right.openedAt)[0];
 
   const phoneGatesVerdict = activeMovement ? eligibility(activeMovement, unit, now) : undefined;
+  const identityNote = activeMovement && identityAbsenceNote(resolvePatientIdentity(activeMovement));
   const phoneGates = phoneGatesVerdict
     ? {
         pass: checkedGates(phoneGatesVerdict.gates).filter((gate) => gate.pass).length,
@@ -529,7 +531,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
               of this ward&rsquo;s own gates pass
             </span>
           </span>
-          <RowChevron size={16} aria-hidden="true" className={styles.phoneFoldChevron} />
+          <RowChevron strokeWidth={1.75} size={16} aria-hidden="true" className={styles.phoneFoldChevron} />
         </button>
         <PhoneSheet
           open={phoneSheet === "gates"}
@@ -573,7 +575,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
             <span className={styles.phoneFoldLine}>{line}</span>
           </span>
           <span className={styles.phoneFoldCount}>{count}</span>
-          <RowChevron size={16} aria-hidden="true" className={styles.phoneFoldChevron} />
+          <RowChevron strokeWidth={1.75} size={16} aria-hidden="true" className={styles.phoneFoldChevron} />
         </button>
         <PhoneSheet
           open={phoneSheet === id}
@@ -672,7 +674,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                       selectAnswer(activeAnswerIndex - 1);
                     }}
                   >
-                    <ChevronLeft size={14} aria-hidden="true" />
+                    <ChevronLeft strokeWidth={1.75} size={14} aria-hidden="true" />
                     Previous
                   </button>
                   {activeAnswerIndex === 0 ? (
@@ -698,7 +700,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                     }}
                   >
                     Next
-                    <ChevronRight size={14} aria-hidden="true" />
+                    <ChevronRight strokeWidth={1.75} size={14} aria-hidden="true" />
                   </button>
                   {activeAnswerIndex >= incoming.length - 1 ? (
                     <span id="ward-answer-next-reason" className="sr-only">
@@ -863,7 +865,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                           /* Phone (v10): "This patient" with the person tile; the facts below carry cohort and sex. */
                           <div className={styles.phonePatientHead}>
                             <span className={styles.phonePatientTile} aria-hidden="true">
-                              <UserRound size={18} aria-hidden="true" />
+                              <UserRound strokeWidth={1.75} size={18} aria-hidden="true" />
                             </span>
                             <span className={styles.phoneFoldText}>
                               {/* Josh, 22 Oct 2026: a ward sees who is coming before it answers. */}
@@ -879,7 +881,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                         {isPhone ? (
                           <div className={styles.phonePatientChips}>
                             <span className={styles.phonePatientChip}>
-                              <ShieldCheck size={14} aria-hidden="true" />
+                              <ShieldCheck strokeWidth={1.75} size={14} aria-hidden="true" />
                               {activeMovement.legalStatus}
                             </span>
                             {isConstantObservation(activeMovement.observation) ? (
@@ -997,9 +999,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                           </details>
                         ) : null}
 
-                        <p className={styles.answerIdentityAbsence}>
-                          Patient name and age are not recorded for this movement.
-                        </p>
+                        {identityNote ? <p className={styles.answerIdentityAbsence}>{identityNote}</p> : null}
                       </div>
                     </div>
 
@@ -1597,12 +1597,12 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             setAcceptModalFor(activeMovement.id);
                           }
                         }}
-                        aria-label={`Bed ${bedNum} ${statusLabel}`}
+                        // Review 5 Nov 2026: counts in ruled order, not beds, so no bed number.
+                        aria-label={`Census square ${i + 1}: ${statusLabel}`}
                         aria-describedby={isVacant ? undefined : `ward-answer-bed-reason-${unit.id}`}
                         title={isVacant ? undefined : "Only a ready bed can take a request"}
                         aria-disabled={!isVacant ? "true" : undefined}
                       >
-                        <span className={styles.bedNum}>{bedNum}</span>
                         <span>{statusLabel}</span>
                       </button>
                     );

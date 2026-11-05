@@ -199,7 +199,7 @@ export function WardConfirmBedsDialog({
             else window.location.assign(href);
           }}
         >
-          Review {plural(releasesTodayCount, "expected discharge", "expected discharges")} today →
+          Review {plural(releasesTodayCount, "expected discharge", "expected discharges")} today
         </button>
       </div>
     </Dialog>

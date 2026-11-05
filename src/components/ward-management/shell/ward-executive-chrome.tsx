@@ -6,7 +6,6 @@ import { usePathname, useRouter } from "next/navigation";
 import { useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import {
   Activity as ActivityIcon,
-  ArrowLeftRight,
   Bell,
   ChevronDown,
   ChevronLeft,
@@ -15,6 +14,7 @@ import {
   LogOut,
   Menu,
   PanelLeftOpen,
+  Repeat,
   RotateCcwClock,
   Settings,
   SunMoon,
@@ -31,7 +31,8 @@ import { applyAppearance, applyGlare } from "./ward-bar";
 import { WardBarBack } from "./ward-bar-controls";
 import { wardBarRouteTitle, SERVICE_SWATCH_KEY } from "./ward-bar-model";
 import { WardBarFrame, WardRailFrame } from "./ward-chrome-frame";
-import { WardAccountActions } from "./ward-account-actions";
+import { RailAccountMenu } from "../shell-next/next-account-menu";
+import { ACCESS_ADMIN_PERSONA } from "./ward-desk-personas";
 import { SharedSessionContext } from "./ward-shared-session-context";
 import { useEffectiveWardAccess } from "./ward-access-store";
 import {
@@ -78,6 +79,7 @@ import {
 } from "./ward-service-bed-alerts";
 import type { ExecutiveReportingFoundation } from "../statistics/executive-statistics-contract";
 import { publishLiveClock } from "@/components/wf";
+import { areCharacterShortcutsEnabled } from "./ward-character-shortcuts";
 import bar from "./ward-bar.module.css";
 import rail from "./ward-rail.module.css";
 import phone from "./ward-phone-menu.module.css";
@@ -86,6 +88,31 @@ import pageDock from "./ward-phone-page-dock.module.css";
 import layout from "@/app/ward-flow/ward-flow-layout.module.css";
 
 const WardPublicSearch = dynamic(() => import("../ward-public-search").then((module) => module.WardPublicSearch));
+/** DK1: Switch desk, for an account with more than one membership. Nothing otherwise. */
+function ExecutiveSwitchDeskRow({ onSwitch }: { onSwitch: () => void }) {
+  const session = useContext(SharedSessionContext);
+  const switchRole = session?.switchRole;
+  if (!switchRole) return null;
+  return (
+    <li>
+      <button
+        type="button"
+        className={phone.row}
+        data-testid="ward-phone-menu-switch-workstation"
+        onClick={() => {
+          onSwitch();
+          switchRole();
+        }}
+      >
+        <Repeat aria-hidden="true" className={phone.rowIcon} strokeWidth={1.75} />
+        <span className={phone.rowText}>
+          <span className={phone.rowLabel}>Switch desk</span>
+        </span>
+      </button>
+    </li>
+  );
+}
+
 function ExecutiveSignOutRow() {
   const session = useContext(SharedSessionContext);
   if (!session) return null;
@@ -340,7 +367,8 @@ function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }
                       .join(" · ")}
                   </span>
                   <span className={rail.alertBeds}>
-                    {service.beds.ready} of {service.beds.total} ready · ED {releasedCountText(service.waiting)} waiting
+                    {service.beds.ready} of {service.beds.total} ready · {releasedCountText(service.waiting)} open ED
+                    journeys
                   </span>
                 </span>
               </div>
@@ -425,7 +453,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
     const handle = (event: KeyboardEvent) => {
       if (event.key === "Escape") setPanel(null);
       else if (!isTypingTarget(event.target)) {
-        if (event.key === "[" && !event.ctrlKey && !event.metaKey && !event.altKey)
+        if (event.key === "[" && areCharacterShortcutsEnabled() && !event.ctrlKey && !event.metaKey && !event.altKey)
           setRailOpenPreference(!preferences.open);
         else openDrawerForShortcut(event, canRefer);
       }
@@ -474,6 +502,10 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
     close();
     shell.switchRole?.();
   };
+  // DK1: the account menu's person. The access admin is named for itself (#790), not the executive.
+  const persona = accessAdmin
+    ? { ...ACCESS_ADMIN_PERSONA, role: shell.placeLabel }
+    : { name: "Executive", initials: "EX", role: shell.placeLabel };
   const openActivity = (opener?: HTMLElement) => {
     phoneActivityOpener.current = opener ?? activityTrigger.current;
     setPanel("activity");
@@ -608,29 +640,11 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
               </nav>
             </div>
             <div className={rail.railFoot}>
-              <div className={rail.utilityLinks}>
-                {utility("appearance")}
-                {utility("settings")}
-              </div>
-              <WardAccountActions className={rail.utilityLink} wrapClassName={rail.utilityLinks} />
+              <div className={rail.utilityLinks}>{utility("appearance")}</div>
               <div className={rail.userCardWrap}>
-                <button
-                  type="button"
-                  className={`${rail.userProfileCard} ${rail.userProfileCardBtn}`}
-                  onClick={switchRole}
-                  data-testid="ward-rail-persona-trigger"
-                  aria-haspopup="dialog"
-                  aria-label="Executive. Go to a desk."
-                >
-                  <span className={rail.userAvatar} aria-hidden="true">
-                    EX
-                  </span>
-                  <span className={rail.userMeta}>
-                    <span className={rail.userName}>Executive</span>
-                    <span className={rail.userRole}>Go to a desk</span>
-                  </span>
-                  <ArrowLeftRight aria-hidden="true" className={rail.userChevron} />
-                </button>
+                {/* DK1 (Josh, 3 Nov 2026): the person opens the account menu, which holds Switch desk
+                    and Sign out; they no longer have rows of their own. */}
+                <RailAccountMenu variant="rail" persona={persona} onTryAnotherDesk={switchRole} />
               </div>
             </div>
           </WardRailFrame>
@@ -688,7 +702,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                   </button>
                   {isPhone && (
                     <span className={bar.scopeLive}>
-                      {releasedCountText(displayedWaiting)} waiting · {displayedScope}
+                      {releasedCountText(displayedWaiting)} open ED journeys · {displayedScope}
                     </span>
                   )}
                 </div>
@@ -844,20 +858,16 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
         closeButtonClassName={phone.close}
         bodyClassName={phone.body}
       >
-        <button
-          type="button"
-          className={phone.who}
-          onClick={switchRole}
-          data-testid="ward-phone-menu-switch-workstation"
-        >
+        {/* DK1: the who row names the desk; Switch desk and Sign out are rows at the foot. */}
+        <div className={phone.who} data-testid="ward-phone-menu-who">
           <span className={`${phone.avatar} ${phone.avatarInitials}`} aria-hidden="true">
-            EX
+            {persona.initials}
           </span>
           <span className={phone.whoText}>
-            <span className={phone.whoName}>Executive</span>
-            <span className={phone.whoMeta}>Go to a desk</span>
+            <span className={phone.whoName}>{persona.name}</span>
+            <span className={phone.whoMeta}>{persona.role}</span>
           </span>
-        </button>
+        </div>
         {/* One search: it already finds every page below, so the separate "Filter pages" box went in the
             search and forms review (Josh, 30 Oct 2026). */}
         {report ? (
@@ -901,6 +911,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
           {utility("settings")}
         </div>
         <ul className={phone.list}>
+          <ExecutiveSwitchDeskRow onSwitch={close} />
           <ExecutiveSignOutRow />
         </ul>
       </Sheet>
@@ -968,7 +979,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
               close();
             }}
           >
-            All services · {releasedCountText(report.network.people.waitingInEd)} waiting
+            All services · {releasedCountText(report.network.people.waitingInEd)} open ED journeys
           </button>
         )}
         {services.map((service) => (
@@ -982,7 +993,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
               close();
             }}
           >
-            {service.service}: {service.beds.ready} beds ready · {releasedCountText(service.waiting)} waiting
+            {service.service}: {service.beds.ready} beds ready · {releasedCountText(service.waiting)} open ED journeys
           </button>
         ))}
       </Sheet>

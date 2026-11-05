@@ -9,6 +9,7 @@ import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { getBedStep } from "./helpers/ward-bed-steps";
+import { chooseChip } from "./helpers/ward-choice-chips";
 
 const UNIT = "scgh-adult-open";
 const route = vi.hoisted(() => ({ pathname: "/mockups/ward-flow/ward/scgh-adult-open" }));
@@ -126,9 +127,7 @@ describe("Ward command feedback", () => {
     selectOccupiedBoardBed();
     const drawer = within(screen.getByTestId("bed-telemetry-drawer"));
     fireEvent.click(getBedStep(/^(Record|Update) hold-up$/, screen.getByTestId("bed-telemetry-drawer")));
-    fireEvent.change(drawer.getByRole("combobox", { name: "Held up by" }), {
-      target: { value: "Awaiting accommodation" },
-    });
+    chooseChip("Held up by", "Awaiting accommodation", screen.getByTestId("bed-telemetry-drawer"));
     fireEvent.click(drawer.getByRole("button", { name: "Save hold-up" }));
     expect(control.record).toHaveBeenCalledTimes(1);
     expect(screen.queryByText(/^Hold-up recorded:/)).toBeNull();
@@ -165,6 +164,7 @@ describe("Ward command feedback", () => {
       .find((bed) => bed.dataset.state === "ready" && bed.dataset.fits === "true");
     if (!free) throw new Error("The synthetic ward has no free bed");
     fireEvent.click(free);
+    fireEvent.click(screen.getByTestId("ward-board-confirm-send"));
     expect(screen.getByTestId("ward-board-say")).not.toHaveTextContent(/^Moved /);
     expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
     await act(() => control.accept());

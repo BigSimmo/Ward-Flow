@@ -73,7 +73,7 @@ const AROUND: readonly Around[] = [
       },
       {
         device: "desk",
-        target: starts("ward-diagram-unit-"),
+        target: starts("capacity-map-ward-"),
         title: "Every ward",
         body: "Each ward's beds, ready and being made ready. Choose a ward to open its panel.",
       },
@@ -97,7 +97,8 @@ const AROUND: readonly Around[] = [
       },
       {
         device: "desk",
-        target: id("ward-movement-horizon"),
+        // M3: the timeline sits behind its switch, off by default; light the switch when it is hidden.
+        target: [id("ward-movement-horizon"), id("movements-timeline-switch")],
         title: "The timeline",
         body: "What is coming up for each receiving ward.",
       },
@@ -142,8 +143,8 @@ const AROUND: readonly Around[] = [
       {
         device: "desk",
         target: id("ward-referral-meeting"),
-        title: "Bed meeting list",
-        body: "The referrals to talk through at the bed meeting.",
+        title: "Bed meeting",
+        body: "Opens the bed meeting agenda at its referrals, the ones to talk through at the meeting.",
       },
     ],
   },
@@ -166,12 +167,12 @@ const AROUND: readonly Around[] = [
         device: "desk",
         target: id("ward-handover-sheet"),
         title: "The handover sheet",
-        body: "Filter the sheet to a service, then use Print handover for the paper copy.",
+        body: "Use Show to filter the sheet to a service, then use Print handover for the paper copy.",
       },
       {
-        target: [id("ward-handover-sign-bar"), id("ward-handover-phone-sign-off")],
+        target: [id("ward-handover-hero-sign-off"), id("ward-handover-phone-sign-off")],
         title: "Sign off",
-        body: "Work through the Before you sign checks, then choose Sign off.",
+        body: "Sign off shows how many checks are clear. Open it, work through the Before you sign checks, then choose Sign off.",
       },
     ],
   },
@@ -208,9 +209,17 @@ const AROUND: readonly Around[] = [
     keywords: "bed release list",
     steps: [
       {
+        device: "desk",
         target: id("ward-discharge-kpi-strip"),
         title: "Discharges today",
         body: "Held up, confirmed, expected, and discharged in the last day.",
+      },
+      {
+        // A phone's hero folds the four counts away, so its overview points at the headline counts.
+        device: "phone",
+        target: id("ward-discharge-bed-days-past"),
+        title: "Discharges today",
+        body: "How many to work now, how many are open, and bed days past the ward's date.",
       },
       {
         target: id("ward-discharge-group-blocked"),
@@ -261,7 +270,7 @@ const AROUND: readonly Around[] = [
       {
         target: id("ward-on-call-hud-island"),
         title: "Who to call now",
-        body: "The main state and service lines, with who answers each one now.",
+        body: "The state lines, then bed flow for each service, then your starred lines. Copy a number straight from its card.",
       },
       {
         target: [id("ward-on-call-directory"), { sel: '#main-content [role="tablist"]' }],
@@ -328,24 +337,24 @@ const AROUND: readonly Around[] = [
         body: "Times are as typed, and nothing works out a legal limit.",
       },
       {
-        target: id("seclusion-ward-table"),
-        title: "Ward by ward",
-        body: "Each ward's seclusion room, what is in use now and its incidents. Choose a ward.",
+        target: id("seclusion-live"),
+        title: "In use now",
+        body: "Everyone in seclusion or restraint now, longest first, with Record end on each row.",
       },
       {
-        target: id("seclusion-room-available"),
-        title: "The seclusion room",
-        body: "Mark available or Mark out of service for the chosen ward's room.",
+        target: id("seclusion-start-open"),
+        title: "Start seclusion or restraint",
+        body: "Find the patient, choose what is in use, type the time or press Now, then Record start.",
       },
       {
-        target: id("seclusion-start-form"),
-        title: "Record start and end",
-        body: "Choose the patient and what is in use, type the time, then Record start. Record end when it finishes.",
+        target: id("seclusion-rooms"),
+        title: "The seclusion rooms",
+        body: "Each secure ward's room. Change marks it available or out of service.",
       },
       {
-        target: id("seclusion-incident-form"),
+        target: id("seclusion-incident-open"),
         title: "Record incident",
-        body: "Choose the kind, type the time, then Record incident.",
+        body: "Choose the ward and the kind, type the time, then Record incident.",
       },
     ],
   },
@@ -603,7 +612,7 @@ export const MORE_JOBS: readonly HowTo[] = [
     title: "Find who is on call",
     keywords: "oncall phone number call roster consultant registrar switchboard",
     answer:
-      "Open On-call and search by role, hospital, ward, team or number. Use Cover at to see who answers at a later time, and star a line to keep it under Mine.",
+      "Open On-call and search by role, hospital, ward, team or number. A line opens on who answers now, with Copy number, and If no answer names who to try next. Use Cover at for a later time, and star a line to keep it under Mine.",
     desks: "all",
     go: "on-call",
     showMe: [
@@ -658,25 +667,25 @@ export const MORE_JOBS: readonly HowTo[] = [
     title: "Record seclusion, restraint or an incident",
     keywords: "seclusion restraint restrictive practice incident room start end",
     answer:
-      "Open Seclusion and choose the ward. Record start when seclusion or restraint begins and Record end when it finishes, or Record incident for an incident. Times are as typed, and nothing works out a legal limit.",
+      "Open Forms, then Seclusion and restraint. Start seclusion or restraint when it begins and Record end when it finishes, or Record incident for an incident. Times are as typed, and nothing works out a legal limit.",
     desks: ["ward", "coordinator"],
     acts: ["RECORD_RESTRICTIVE_PRACTICE_START", "RECORD_WARD_INCIDENT"],
     go: "seclusion",
     showMe: [
       {
-        target: { sel: '[data-testid="seclusion-ward-table"]' },
-        title: "Choose the ward",
-        body: "Each ward's seclusion room, what is in use now and its incidents.",
+        target: { sel: '[data-testid="seclusion-live"]' },
+        title: "In use now",
+        body: "Everyone in seclusion or restraint now, with Record end on each row.",
       },
       {
-        target: { sel: '[data-testid="seclusion-start-form"]' },
-        title: "Record start",
-        body: "Choose the patient and what is in use, type the time, then Record start. Record end when it finishes.",
+        target: { sel: '[data-testid="seclusion-start-open"]' },
+        title: "Start seclusion or restraint",
+        body: "Find the patient, choose what is in use, type the time, then Record start.",
       },
       {
-        target: { sel: '[data-testid="seclusion-incident-form"]' },
+        target: { sel: '[data-testid="seclusion-incident-open"]' },
         title: "Record incident",
-        body: "Choose the kind, type the time, then Record incident.",
+        body: "Choose the ward and the kind, type the time, then Record incident.",
       },
     ],
   },
@@ -692,7 +701,11 @@ export const MORE_JOBS: readonly HowTo[] = [
     go: "discharges",
     showMe: [
       {
-        target: { sel: '[data-testid="ward-discharge-kpi-blocked"]' },
+        // The phone fallback is the next step row only when it names held-up discharges.
+        target: [
+          { sel: '[data-testid="ward-discharge-kpi-blocked"]' },
+          { sel: "#main-content [data-wf-hero-next]", text: "held-up" },
+        ],
         title: "Held up",
         body: "How many discharges have something in the way.",
       },

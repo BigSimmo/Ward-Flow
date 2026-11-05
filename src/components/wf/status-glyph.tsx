@@ -9,9 +9,15 @@ import styles from "./status-glyph.module.css";
  */
 export type WfTone = "danger" | "warning" | "success" | "info" | "neutral" | "closed";
 
+const DANGER = "M4.13 1.4a1 1 0 0 1 1.74 0l3.6 6.3a1 1 0 0 1-.87 1.5H1.4a1 1 0 0 1-.87-1.5Z";
+/** From 12px up there is room for the exclamation mark, cut out of the triangle as Home's hero draws it. */
+const DANGER_MARKED = `${DANGER}M4.45 4.1a.55.55 0 0 1 1.1 0v1.9a.55.55 0 0 1-1.1 0ZM5 6.75a.62.62 0 1 0 0 1.24.62.62 0 1 0 0-1.24Z`;
+
 // The geometry is immutable: share these elements instead of memoising six branches per glyph.
 const SHAPES: Readonly<Record<WfTone, ReactNode>> = {
-  danger: <path d="M5 0.8 9.6 9.2H0.4Z" fill="currentColor" />,
+  // Icon audit (3 Nov 2026): softened corners, the way Apple and Home's own set draw the warning
+  // triangle, so it reads as a crafted mark rather than a typed ▲.
+  danger: <path d={DANGER} fill="currentColor" />,
   warning: <circle cx="5" cy="5" r="4" fill="currentColor" />,
   success: (
     <path
@@ -40,9 +46,24 @@ export function StatusGlyph({ tone, size = 10, className }: { tone: WfTone; size
       aria-hidden="true"
       focusable="false"
     >
-      {Object.hasOwn(SHAPES, tone) ? SHAPES[tone] : null}
+      {tone === "danger" && size >= 12 ? (
+        <path d={DANGER_MARKED} fill="currentColor" fillRule="evenodd" />
+      ) : Object.hasOwn(SHAPES, tone) ? (
+        SHAPES[tone]
+      ) : null}
     </svg>
   );
+}
+
+/**
+ * Triangle guard (plan 2k, 3 Nov 2026, after the icon audit in PR #1357): the triangle means one
+ * act-now, overdue or safety state on the row that needs a person now. A chip, tab, segmented option
+ * or filter pill holds a count or a choice, never that row, so its glyph never takes the triangle:
+ * `danger` falls back to the neutral ring. Kit controls pass their `tone` through this.
+ * `tests/wf-triangle-guard.test.ts` holds the rule for page code.
+ */
+export function controlTone(tone: WfTone): WfTone {
+  return tone === "danger" ? "neutral" : tone;
 }
 
 /** An 8px status dot in the same shape language, for meters and legends. */

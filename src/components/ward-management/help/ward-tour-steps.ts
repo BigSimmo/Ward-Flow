@@ -45,6 +45,8 @@ export type TourFacts = {
   readonly openMovements?: number;
   readonly referralsWaiting?: number;
   readonly waitingInEd?: number;
+  /** Open ED journeys across the network: the figure Statistics releases, not people physically waiting. */
+  readonly openEdJourneys?: number;
   /** The ED with the longest wait, as the coordinator's ED tiles order them. */
   readonly topEd?: { readonly name: string; readonly waiting: number; readonly longest: string };
   readonly ward?: {
@@ -192,9 +194,9 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your daily work",
           "pressure",
-          { sel: '[data-testid="wf-occupancy-ring"]' },
+          { sel: '[data-testid="ward-home-occupancy-link"]' },
           "How full the network is",
-          "The ring shows how many beds are in use against the at-risk line. The chips beside it count Act now, Referrals to decide, Overdue waits and Tier 1 patients.",
+          "This figure is how many network beds are in use, and it says At risk once it passes the line. Open it for Capacity. The chips beside it count Act now, Referrals to decide, Overdue waits and Tier 1 patients.",
         ),
         step(
           "Your daily work",
@@ -640,7 +642,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
 function networkToday(f: TourFacts): string {
   const parts = [
     f.readyBeds === undefined ? "" : `${count(f.readyBeds, "bed", "beds")} ready now`,
-    f.waitingInEd === undefined ? "" : `${f.waitingInEd} waiting in ED`,
+    f.openEdJourneys === undefined ? "" : count(f.openEdJourneys, "open ED journey", "open ED journeys"),
   ].filter(Boolean);
   return parts.length ? `${capitalise(joinAnd(parts))}. ` : "";
 }

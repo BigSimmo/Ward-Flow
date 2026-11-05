@@ -50,7 +50,25 @@ export type RestrictivePracticeEpisode = {
   recordedAt: Instant;
   /** The role label of whoever recorded the start. */
   recordedBy: string;
+  /** Gap list item 9: the finished episode's follow-up tasks marked done. Absent means not yet. */
+  followUp?: Partial<Record<RestrictivePracticeFollowUpTask, true>>;
 };
+
+/**
+ * Gap list item 9 (Josh, 4 Nov 2026): the tasks the OCP Standard for Restrictive Practices 2026
+ * measures after an episode ends. Each is a Done or Not yet mark a person sets. No due time is
+ * worked out or shown.
+ */
+export const RESTRICTIVE_PRACTICE_FOLLOW_UP_TASKS = [
+  { id: "post_release_exam", label: "Medical examination after release" },
+  { id: "sent_to_ocp", label: "Forms sent to the Chief Psychiatrist" },
+  { id: "patient_debrief", label: "Debrief offered to the person" },
+  { id: "staff_debrief", label: "Staff debrief" },
+] as const;
+export type RestrictivePracticeFollowUpTask = (typeof RESTRICTIVE_PRACTICE_FOLLOW_UP_TASKS)[number]["id"];
+export const RESTRICTIVE_PRACTICE_FOLLOW_UP_TASK_IDS: readonly string[] = RESTRICTIVE_PRACTICE_FOLLOW_UP_TASKS.map(
+  (task) => task.id,
+);
 
 export type WardIncident = {
   id: string;
@@ -106,7 +124,7 @@ export function openRestrictivePracticeRefusal(
   return `${what} is still recorded as in use for this patient. Record when it ended before they leave the ward`;
 }
 
-/** The four events that write `Unit.restrictivePractice`, joined into `WardFlowEvent`. */
+/** The five events that write `Unit.restrictivePractice`, joined into `WardFlowEvent`. */
 export type RestrictivePracticeWardFlowEvent =
   | {
       /**
@@ -146,6 +164,20 @@ export type RestrictivePracticeWardFlowEvent =
       actingUnitId?: string;
       category: WardIncidentCategory;
       at: Instant;
+    }
+  | {
+      /**
+       * Gap list item 9: marks one follow-up task on a finished episode done (`done: true`) or back
+       * to not yet. A mark only, never a time or a compliance claim.
+       */
+      type: "RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP";
+      role: WardFlowRole;
+      now: Instant;
+      unitId: string;
+      actingUnitId?: string;
+      episodeId: string;
+      task: RestrictivePracticeFollowUpTask;
+      done: boolean;
     }
   | {
       /** D-72: whether the ward's seclusion room can be used, from `SECLUSION_ROOM_STATUSES`. */

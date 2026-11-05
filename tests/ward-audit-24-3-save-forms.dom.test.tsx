@@ -36,6 +36,7 @@ import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observati
 import { communityScopedReferrals } from "@/components/ward-management/ward-referral-visibility";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { pickObservationInterval, pickObservationLevel } from "./helpers/ward-choice-chips";
 
 /*
  * Audit 24-3 (saves and shared mode, 24 Oct 2026), SV-1 to SV-4: a form keeps what was typed until
@@ -45,10 +46,11 @@ import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 
 type Mode = "failed" | "refused" | "pending" | "accepted";
 const NOT_SAVED: Mode[] = ["failed", "refused", "pending"];
-const FAILED_SAYS = "Save is not confirmed. Press Retry when you are back online. It will not be saved twice.";
+const FAILED_SAYS =
+  "Save is not confirmed. It sends again by itself when you are back online, or press Retry. It will not be saved twice.";
 const REFUSED_SAYS = "This record changed while you were looking. Your action was not applied.";
 const SAYS: Record<Mode, RegExp | null> = {
-  failed: /Save is not confirmed\. Press Retry when you are back online/u,
+  failed: /Save is not confirmed\. It sends again by itself when you are back online/u,
   refused: /^Not recorded: This record changed while you were looking/u,
   pending: null,
   accepted: null,
@@ -533,8 +535,8 @@ describe("SV-4 observation level control (ward bed drawer and ED patient record)
     const onSave = vi.fn(() => outcomeFor(mode));
     render(<WardObservationControl observation={GENERAL_OBSERVATION} now={NOW_ANCHOR} onSave={onSave} />);
     fireEvent.click(screen.getByTestId("ward-observation-change"));
-    fireEvent.change(screen.getByTestId("ward-observation-level"), { target: { value: "intermittent" } });
-    fireEvent.change(screen.getByTestId("ward-observation-interval"), { target: { value: "30" } });
+    pickObservationLevel("intermittent");
+    pickObservationInterval(30);
     await press(screen.getByTestId("ward-observation-save"));
     expect(onSave).toHaveBeenCalledTimes(1);
     if (mode === "accepted") {
@@ -542,8 +544,8 @@ describe("SV-4 observation level control (ward bed drawer and ED patient record)
       expect(screen.getByTestId("ward-observation-change")).toBeInTheDocument();
       return;
     }
-    expect(screen.getByTestId("ward-observation-level")).toHaveValue("intermittent");
-    expect(screen.getByTestId("ward-observation-interval")).toHaveValue("30");
+    expect(screen.getByTestId("ward-observation-level")).toHaveAttribute("data-value", "intermittent");
+    expect(screen.getByTestId("ward-observation-interval")).toHaveAttribute("data-value", "30");
     expectSaid("ward-observation-error", mode);
   });
 
@@ -552,16 +554,16 @@ describe("SV-4 observation level control (ward bed drawer and ED patient record)
     const onSave = vi.fn(() => new Promise<WardCommandOutcome>((resolve) => (answer = resolve)));
     render(<WardObservationControl observation={GENERAL_OBSERVATION} now={NOW_ANCHOR} onSave={onSave} />);
     fireEvent.click(screen.getByTestId("ward-observation-change"));
-    fireEvent.change(screen.getByTestId("ward-observation-level"), { target: { value: "intermittent" } });
+    pickObservationLevel("intermittent");
     await press(screen.getByTestId("ward-observation-save"));
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     fireEvent.click(screen.getByTestId("ward-observation-change"));
-    fireEvent.change(screen.getByTestId("ward-observation-level"), { target: { value: "within_sight" } });
+    pickObservationLevel("within_sight");
     await act(async () => {
       answer({ commandId: "c-1", status: "accepted" });
       await Promise.resolve();
     });
-    expect(screen.getByTestId("ward-observation-level")).toHaveValue("within_sight");
+    expect(screen.getByTestId("ward-observation-level")).toHaveAttribute("data-value", "within_sight");
   });
 
   it("sends the version seen on opening, so a colleague's later change is refused, not overwritten", async () => {
@@ -573,7 +575,7 @@ describe("SV-4 observation level control (ward bed drawer and ED patient record)
     view.rerender(
       <WardObservationControl observation={GENERAL_OBSERVATION} now={NOW_ANCHOR} editingToken="v2" onSave={onSave} />,
     );
-    fireEvent.change(screen.getByTestId("ward-observation-level"), { target: { value: "intermittent" } });
+    pickObservationLevel("intermittent");
     await press(screen.getByTestId("ward-observation-save"));
     expect(onSave).toHaveBeenCalledWith(expect.objectContaining({ level: "intermittent" }), "v1");
   });

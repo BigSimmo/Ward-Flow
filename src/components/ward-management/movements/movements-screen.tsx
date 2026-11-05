@@ -16,7 +16,6 @@ import {
 import { WardGroupHeading, WardRecordList } from "@/components/ward-management/ward-record-row";
 import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
-import { edById } from "@/components/ward-management/ward-sites";
 import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
@@ -28,7 +27,6 @@ import {
   refusedCorridorCounts,
   transportCounts,
   transportLegs,
-  type MovementLegState,
 } from "./movements-derivations";
 import { useWardChecksPublisher } from "@/components/ward-management/shell/ward-checks";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
@@ -39,7 +37,7 @@ import {
   noRecordedServiceMovementCount,
   urgentMovementsOutsideService,
 } from "@/components/ward-management/ward-service-scope";
-import { ArrowRight, ArrowRightLeft, ChartColumn, Hourglass, Scale, Search, ShieldCheck, Truck, X } from "lucide-react";
+import { ArrowRightLeft, ChartColumn, Hourglass, FileBadge, Search, Ambulance, X } from "lucide-react";
 import {
   Card,
   CardHead,
@@ -51,13 +49,13 @@ import {
   TextInput,
   buttonClass,
   cx,
-  durMinutes,
   phoneRows,
   useIsPhone,
 } from "@/components/wf";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { MovementDrawer } from "./movement-drawer";
 import { MovementHorizonGantt } from "./movement-horizon-gantt-lazy";
+import { MovementsTimelineSwitch } from "./movements-timeline-switch";
 import { rankCorridorPairs } from "./movement-corridor-pairs";
 import { isCoordinatorStep, movementNextStep } from "./movement-next-step";
 import { useSenderPresentation } from "../ward-sender-presentation";
@@ -71,13 +69,13 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import { MovementsPhoneNav } from "./movements-phone-nav";
 import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace } from "../use-return-to-place";
 import { ShapeOfTheDay } from "./movements-shape-of-day";
+import { MovementPeopleSheet, corridorPeople, type MovementPeopleList } from "./movement-people-sheet";
+import { TransportFeed, TransportTiles } from "./movements-transport-now";
 import { HighlightStat, PhoneGroupHeading, StageRow } from "./movements-stage-row";
 import { CommunityNoJourneys, StagePipeline } from "./movements-lazy-parts";
 import {
   CAUSES,
   GROUP_CAP,
-  LEG_STATE_LABEL,
-  LEG_STATE_TONE,
   LIST_CAP,
   STAGE_SHORT,
   bedReadyNote,
@@ -86,7 +84,6 @@ import {
   inServiceSuffix,
   moreNote,
   movementSearchText,
-  transportRouteLabels,
 } from "./movements-screen-helpers";
 export { causeOf, inServiceSuffix } from "./movements-screen-helpers";
 
@@ -202,7 +199,7 @@ export function MovementsScreen() {
   const [sideView, setSideView] = useState<"transport" | "shape">(returned?.sideView ?? "transport");
   // Phone (v10): the timeline, corridors and transport panels open as sheets from nav cards.
   const isPhone = useIsPhone();
-  const [phoneSheet, setPhoneSheet] = useState<"arrivals" | "corridors" | "transport" | null>(null);
+  const [phoneSheet, setPhoneSheet] = useState<"arrivals" | "corridors" | "transport" | "shape" | null>(null);
   // v10 phone: Arrivals ahead reads as a list; the timeline opens under it on request.
   const [phoneArrivalsTimeline, setPhoneArrivalsTimeline] = useState(false);
   // v10 phone: each worklist group opens on its own "Show N more" row.
@@ -214,10 +211,13 @@ export function MovementsScreen() {
   const [showAll, setShowAll] = useState(returned?.showAll ?? false);
   // Hero highlight: one of `heroHighlights` by id, or `stage:<stage>` from the stage track.
   const [highlight, setHighlight] = useState<string | null>(returned?.highlight ?? null);
+  // M1 to M4 (Josh, 3 Nov 2026): a figure opens the patients behind it in a pop-up list.
+  const [peopleList, setPeopleList] = useState<MovementPeopleList | null>(null);
   const place: MovementsPlace = { order, shapeTab, sideView, phoneOpenGroups, showAll, highlight };
   useReturnToPlace(MOVEMENTS_ROUTE, place, worklistRow);
-  function toggleHighlight(key: string) {
-    setHighlight((current) => (current === key ? null : key));
+  // "Show in worklist" from the list pop-up marks those rows, as the figures used to.
+  function showHighlight(key: string) {
+    setHighlight(key);
     setSearch("");
     setBoardTab("every");
   }
@@ -371,14 +371,15 @@ export function MovementsScreen() {
   // Audit round 2, A4-18: only a pulled bed or later needs transport, so a referred-stage movement
   // is not "without" a leg.
   const legMovementIds = useMemo(() => new Set(legs.map((leg) => leg.movement.id)), [legs]);
-  const withoutTransport = useMemo(
+  const withoutTransportList = useMemo(
     () =>
       openMovements.filter(
         (m) =>
           (m.stage === "pulled" || m.stage === "handover_ready" || m.stage === "moving") && !legMovementIds.has(m.id),
-      ).length,
+      ),
     [openMovements, legMovementIds],
   );
+  const withoutTransport = withoutTransportList.length;
   const activeCorridorCount = useMemo(
     () => new Set(corridors.map((corridor) => JSON.stringify([corridor.originEdId, corridor.acceptedUnitId]))).size,
     [corridors],
@@ -520,6 +521,17 @@ export function MovementsScreen() {
       : // Every word, folded, in any order: "OQuinn" finds O'Quinn and "UM 100001" the UMRN.
         (movement: Movement) => fieldsMatchEveryWord(searchTerm, [movementSearchText(movement, patients, referrals)]);
   const highlightOptions = heroHighlights(now, accessTarget);
+  const showFigure = (option: (typeof highlightOptions)[number]) =>
+    setPeopleList({
+      title: option.id === "tier1" ? "Urgency tier 1" : option.label,
+      caption:
+        option.id === "tier1"
+          ? "The most urgent referrals still open. T1 is most urgent, T3 least."
+          : `Still in an ED, waiting ${option.label.toLowerCase()}.`,
+      tone: option.tone,
+      movements: openMovements.filter(option.test),
+      highlightKey: option.id,
+    });
   const highlightTest: ((movement: Movement) => boolean) | null =
     highlight === null
       ? null
@@ -682,21 +694,6 @@ export function MovementsScreen() {
   // Movements redesign (1 Nov 2026): the legs grouped by where they stand, on the road first, so
   // each row needs no status chip of its own. The route is short ("SCGH ED → BTY Adult Secure");
   // the provider is in the row's title and the record.
-  const LEG_GROUP_ORDER: readonly MovementLegState[] = ["Collected", "En route", "Accepted", "Arrived", "Cancelled"];
-  const LEG_GROUP_WORD: Record<MovementLegState, string> = {
-    Collected: "on the road",
-    "En route": "on the road",
-    Accepted: "booked, not collected",
-    Arrived: "delivered",
-    Cancelled: "will not run",
-  };
-  const LEG_STEP: Record<MovementLegState, number> = {
-    Accepted: 1,
-    "En route": 2,
-    Collected: 2,
-    Arrived: 3,
-    Cancelled: 0,
-  };
   // The Arrange choice: a row in the toolbar on a wider screen, inside the Filter sheet on a phone.
   const arrangeGroup = (
     <RadioGroup className={styles.orderBar} aria-label="Order">
@@ -725,82 +722,19 @@ export function MovementsScreen() {
     </RadioGroup>
   );
   const transportFeed = (onPicked?: () => void) => (
-    <div
-      className={cx(styles.transportRunsFeed, flow.trFeed)}
-      role="region"
-      aria-label="Active transport legs"
-      tabIndex={0}
-    >
-      {LEG_GROUP_ORDER.map((state) => {
-        const group = legs.filter((leg) => leg.state === state);
-        if (group.length === 0) return null;
-        return (
-          <section key={state} className={flow.trGroup} aria-label={`${LEG_STATE_LABEL[state]}, ${group.length}`}>
-            <div className={flow.trGroupHead}>
-              <StatusGlyph tone={LEG_STATE_TONE[state]} size={9} />
-              {LEG_STATE_LABEL[state]}
-              <span className={flow.trGroupCount}>{group.length}</span>
-              <span className={flow.trGroupWord}>{LEG_GROUP_WORD[state]}</span>
-            </div>
-            {group.map((leg) => {
-              const patientInfo = resolveSubjectPatient(leg.movement, { patients, referrals });
-              const { originLabel, destinationLabel } = transportRouteLabels(leg.movement, units);
-              const originEd = edById(leg.movement.originEdId);
-              const shortOrigin = originEd ? `${originEd.siteCode} ED` : originLabel;
-              const stateLabel = LEG_STATE_LABEL[leg.state] ?? leg.state;
-              const step = LEG_STEP[leg.state];
-              return (
-                <button
-                  key={leg.movement.id}
-                  type="button"
-                  className={flow.trRow}
-                  data-transport-key={leg.movement.id}
-                  data-selected={detailId === leg.movement.id ? "true" : undefined}
-                  onClick={() => {
-                    onPicked?.();
-                    openDetail(leg.movement.id);
-                    revealMovement(leg.movement.id);
-                  }}
-                  aria-label={`Inspect ${patientInfo.formalName}, ${stateLabel} via ${leg.provider}`}
-                  title={`${originLabel} to ${destinationLabel}, ${leg.provider}`}
-                >
-                  <span className={flow.trName}>
-                    <span className={flow.trNameText}>{patientInfo.formalName}</span>
-                    {leg.movement.transport?.escortRequired ? (
-                      <ShieldCheck size={14} className={flow.lock} aria-label="Escort required" />
-                    ) : null}
-                  </span>
-                  <span className={flow.trWhen}>
-                    <span className="sr-only">{stateLabel} </span>
-                    {durMinutes(leg.minutesSinceBooked)}
-                    <span className="sr-only"> ago</span>
-                  </span>
-                  <span className={flow.trRoute}>
-                    {shortOrigin}
-                    <span className={flow.routeTo}>
-                      <ArrowRight size={11} className={flow.routeArrow} aria-hidden="true" />
-                      <span className="sr-only"> to </span>
-                      <span>{destinationLabel}</span>
-                    </span>
-                  </span>
-                  {/* A three-step track, Accepted, Collected and Arrived, filled to where the leg is.
-                      The group heading and the row's label already say it in words. */}
-                  <span
-                    className={flow.trTrack}
-                    aria-hidden="true"
-                    data-cancelled={leg.state === "Cancelled" ? "true" : undefined}
-                  >
-                    {[1, 2, 3].map((n) => (
-                      <i key={n} data-on={step >= n ? "true" : undefined} />
-                    ))}
-                  </span>
-                </button>
-              );
-            })}
-          </section>
-        );
-      })}
-    </div>
+    <TransportFeed
+      legs={legs}
+      now={now}
+      units={units}
+      patients={patients}
+      referrals={referrals}
+      detailId={detailId}
+      onPicked={onPicked}
+      onOpen={(id) => {
+        openDetail(id);
+        revealMovement(id);
+      }}
+    />
   );
   // Phone: the stage highlight chips under the band, one row that slides sideways with Home's soft
   // fade (chips at 0 muted at the end). A tablet or laptop has the stage pipeline instead.
@@ -813,8 +747,15 @@ export function MovementsScreen() {
             key={stage.id}
             type="button"
             className={cx(flow.phStage, phoneRows.chip, stage.movements.length === 0 && phoneRows.zero)}
-            aria-pressed={highlight === `stage:${stage.id}`}
-            onClick={() => toggleHighlight(`stage:${stage.id}`)}
+            aria-haspopup="dialog"
+            onClick={() =>
+              setPeopleList({
+                title: stage.label,
+                caption: "Open movements at this stage.",
+                movements: stage.movements,
+                highlightKey: `stage:${stage.id}`,
+              })
+            }
             title={stage.label}
           >
             {STAGE_SHORT[stage.id]}
@@ -822,6 +763,30 @@ export function MovementsScreen() {
           </button>
         ))}
     </div>
+  );
+  // Stress test (3 Nov 2026): one Shape of the day, in the desk aside and in a phone sheet.
+  const shapeOfDay = (
+    <ShapeOfTheDay
+      arrivedMovements={arrivedMovements}
+      closedToday={closedToday}
+      didNotProceedMovements={didNotProceedMovements}
+      isInServiceScope={isInServiceScope}
+      jumpToMovement={jumpToMovement}
+      legs={legs}
+      noTransportRecord={noTransportRecord}
+      now={now}
+      openDetail={openDetail}
+      openMovements={openMovements}
+      openStages={openStages}
+      patients={patients}
+      referrals={referrals}
+      setShapeTab={setShapeTab}
+      onShowPeople={setPeopleList}
+      shapeTab={shapeTab}
+      unacceptedTransport={unacceptedTransport}
+      units={units}
+      waitingMovements={waitingMovements}
+    />
   );
   function openFromHero(id: string) {
     const target = movements.find((candidate) => candidate.id === id);
@@ -913,8 +878,8 @@ export function MovementsScreen() {
                         key={option.id}
                         type="button"
                         className={board.stat}
-                        aria-pressed={highlight === option.id}
-                        onClick={() => toggleHighlight(option.id)}
+                        aria-haspopup="dialog"
+                        onClick={() => showFigure(option)}
                         data-testid="movements-day-metric"
                       >
                         <span className={board.statV}>{value}</span>
@@ -943,7 +908,7 @@ export function MovementsScreen() {
                       tone={option.tone}
                       value={openMovements.filter(option.test).length}
                       pressed={highlight === option.id}
-                      onToggle={() => toggleHighlight(option.id)}
+                      onToggle={() => showFigure(option)}
                     />
                   ))}
                 </div>
@@ -973,7 +938,7 @@ export function MovementsScreen() {
                       onClick={() => openFromHero(nextExpiry.id)}
                       title="The soonest legal expiry still ahead, as typed on the form. Not legally checked."
                     >
-                      <Scale size={14} aria-hidden="true" className={strip.stripIcon} data-tone="warning" />
+                      <FileBadge size={14} aria-hidden="true" className={strip.stripIcon} data-tone="warning" />
                       <span className={strip.stripLabel}>Next expiry</span>
                       <span className={strip.stripValue}>
                         <b className={strip.heroNum}>{formatInstantWithDay(currentLegalDueAt(nextExpiry)!, now)}</b>{" "}
@@ -1004,7 +969,7 @@ export function MovementsScreen() {
                       href="/ward-flow/transport/officer"
                       className={buttonClass({ variant: "onHero", size: "sm" })}
                     >
-                      <Truck size={14} aria-hidden="true" />
+                      <Ambulance size={14} aria-hidden="true" />
                       Transport
                     </Link>
                   </>
@@ -1045,7 +1010,16 @@ export function MovementsScreen() {
               now={now}
               accessTarget={accessTarget}
               highlight={highlight}
-              onToggle={(stageId) => toggleHighlight(`stage:${stageId}`)}
+              onToggle={(stageId) => {
+                const stage = openStages.find((entry) => entry.id === stageId);
+                if (stage)
+                  setPeopleList({
+                    title: stage.label,
+                    caption: "Open movements at this stage.",
+                    movements: stage.movements,
+                    highlightKey: `stage:${stageId}`,
+                  });
+              }}
             />
           )}
         </section>
@@ -1056,19 +1030,23 @@ export function MovementsScreen() {
             aria-label="Today’s traffic"
             data-ward-primitive="panel"
           >
-            <span className="sr-only">{`${activeCorridorCount} active corridors`}</span>
-            <MovementHorizonGantt
-              lanes={horizonLanes}
-              corridors={corridors}
-              refusedCorridors={refusedCorridors}
-              units={units}
-              now={now}
-              selectedMovementId={detailId}
-              onSelectMovement={(id) => {
-                openDetail(id);
-                revealMovement(id);
-              }}
-            />
+            <MovementsTimelineSwitch
+              summary={`${activeCorridorCount} active ${activeCorridorCount === 1 ? "corridor" : "corridors"}`}
+            >
+              <MovementHorizonGantt
+                lanes={horizonLanes}
+                corridors={corridors}
+                refusedCorridors={refusedCorridors}
+                units={units}
+                now={now}
+                selectedMovementId={detailId}
+                onSelectMovement={(id) => {
+                  openDetail(id);
+                  revealMovement(id);
+                }}
+                onShowCorridor={(corridor) => setPeopleList(corridorPeople(corridor, movements, units, now))}
+              />
+            </MovementsTimelineSwitch>
           </section>
         )}
 
@@ -1078,6 +1056,7 @@ export function MovementsScreen() {
                 page (see the comment beside the header above) — never here, on the panel they were
                 disclaiming. */}
             <Card
+              id="movement-worklist"
               aria-label="Movement worklist"
               data-ward-primitive="panel"
               className={cx(styles.wlCard, styles.wlWrapRows)}
@@ -1368,7 +1347,7 @@ export function MovementsScreen() {
                       aria-label="Transport now"
                       title="Transport now"
                     >
-                      <Truck size={14} aria-hidden="true" />
+                      <Ambulance size={14} aria-hidden="true" />
                     </button>
                     <button
                       type="button"
@@ -1386,37 +1365,7 @@ export function MovementsScreen() {
                 <>
                   {/* Movements redesign (1 Nov 2026): four plain tiles in place of the stretched bar,
                       each a count over its words, so the card reads at a glance. */}
-                  <dl className={flow.trStats}>
-                    {[
-                      {
-                        id: "road",
-                        label: "On the road",
-                        value: counts.Collected + counts["En route"],
-                        tone: "info" as const,
-                      },
-                      {
-                        id: "booked",
-                        label: "Booked, not collected",
-                        value: counts.Accepted,
-                        tone: "neutral" as const,
-                      },
-                      { id: "arrived", label: "Arrived", value: counts.Arrived, tone: "success" as const },
-                      { id: "none", label: "No transport leg", value: withoutTransport, tone: undefined },
-                    ].map((tile) => (
-                      <div
-                        key={tile.id}
-                        className={flow.trStat}
-                        data-testid="movements-day-metric"
-                        data-zero={tile.value === 0 ? "true" : undefined}
-                      >
-                        <dt>
-                          {tile.tone ? <StatusGlyph tone={tile.tone} size={9} /> : null}
-                          {tile.label}
-                        </dt>
-                        <dd>{tile.value}</dd>
-                      </div>
-                    ))}
-                  </dl>
+                  <TransportTiles legs={legs} withoutTransport={withoutTransportList} onShow={setPeopleList} />
                   {legs.length === 0 ? (
                     <p className={styles.absent}>No transport leg is booked or moving right now.</p>
                   ) : (
@@ -1424,26 +1373,7 @@ export function MovementsScreen() {
                   )}
                 </>
               ) : (
-                <ShapeOfTheDay
-                  arrivedMovements={arrivedMovements}
-                  closedToday={closedToday}
-                  didNotProceedMovements={didNotProceedMovements}
-                  isInServiceScope={isInServiceScope}
-                  jumpToMovement={jumpToMovement}
-                  legs={legs}
-                  noTransportRecord={noTransportRecord}
-                  now={now}
-                  openDetail={openDetail}
-                  openMovements={openMovements}
-                  openStages={openStages}
-                  patients={patients}
-                  referrals={referrals}
-                  setShapeTab={setShapeTab}
-                  shapeTab={shapeTab}
-                  unacceptedTransport={unacceptedTransport}
-                  units={units}
-                  waitingMovements={waitingMovements}
-                />
+                shapeOfDay
               )}
             </Card>
           </aside>
@@ -1470,6 +1400,8 @@ export function MovementsScreen() {
             setPhoneArrivalsTimeline={setPhoneArrivalsTimeline}
             setPhoneSheet={setPhoneSheet}
             transportFeed={transportFeed}
+            shapeOfDay={shapeOfDay}
+            closedTodayCount={closedToday.length}
             units={units}
             withoutTransport={withoutTransport}
           />
@@ -1478,6 +1410,27 @@ export function MovementsScreen() {
         <WardPrototypeFooter
           testId="ward-movements-governance"
           note="Patient movements, transport legs and departments are invented · Not approved for clinical use"
+        />
+        <MovementPeopleSheet
+          list={peopleList}
+          now={now}
+          units={units}
+          patients={patients}
+          referrals={referrals}
+          onClose={() => setPeopleList(null)}
+          onOpenMovement={(id) => {
+            setPeopleList(null);
+            // D-d holds here too: a patient outside the chosen service opens, and the reason is said.
+            const target = movements.find((candidate) => candidate.id === id);
+            if (service !== null && isInServiceScope !== null && target && !isInServiceScope(target)) {
+              announceToWardShell(`This patient is outside ${service}. Show all services to see it in the list.`);
+            }
+            openDetail(id);
+          }}
+          onShowInWorklist={(key) => {
+            showHighlight(key);
+            document.getElementById("movement-worklist")?.scrollIntoView({ block: "start" });
+          }}
         />
         <MovementDrawer
           // P2 item 4 (2026-09-17 review): remounts on every patient change, so a reason chosen

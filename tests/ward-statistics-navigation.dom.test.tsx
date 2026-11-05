@@ -72,12 +72,21 @@ describe("one shared statistics navigation", () => {
     expect(nav.queryAllByTestId("ward-statistics-nav-back")).toHaveLength(slug ? 1 : 0);
   });
 
-  it("uses the same destinations from the compact mobile selector", () => {
+  it("uses the same destinations from the compact mobile section menu (the kit menu, no native select)", () => {
     routing.pathname = "/ward-flow/statistics";
     render(<StatisticsNav />);
-    fireEvent.change(screen.getByLabelText("Statistics section"), { target: { value: "compare" } });
+    expect(document.querySelector("select")).toBeNull();
+    const choose = (name: string) => {
+      fireEvent.click(screen.getByRole("button", { name: "Statistics section, Network" }));
+      fireEvent.click(screen.getByRole("menuitemradio", { name }));
+    };
+    expect(screen.getByRole("button", { name: "Statistics section, Network" })).toHaveAttribute(
+      "aria-haspopup",
+      "menu",
+    );
+    choose("Compare");
     expect(routing.push).toHaveBeenCalledWith("/ward-flow/statistics/compare");
-    fireEvent.change(screen.getByLabelText("Statistics section"), { target: { value: "service" } });
+    choose("Services");
     expect(routing.push).toHaveBeenCalledWith("/ward-flow/statistics/services");
   });
 });

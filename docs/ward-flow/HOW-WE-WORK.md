@@ -56,11 +56,14 @@ mockup only after Josh explicitly approves that mockup. See the [recorded decisi
 - **Every editing thread gets its own worktree and branch**, based on the verified Ward Flow
   `main` tip, so threads never share a working tree. Check the branch, status and base before editing.
   Read-only threads (reviews, questions, reports) need no worktree.
-- **Sign out files before editing** in the actual coordinating group's append-only log, outside Git
-  and shared by all writers in that boundary. `WARD_SIGNOUT_FILE` selects its exact path;
+- **Your branch and its open PR are your claim** (Q374, 3 Nov 2026). Before editing, check open
+  PRs and branches for one already changing the same files. Writing claim lines is no longer
+  required. An optional shared log can still record a hold on files: the commit hook blocks a
+  file another branch holds there, and a missing log no longer blocks. That log lives outside Git
+  and is shared by all writers in that boundary. `WARD_SIGNOUT_FILE` selects its exact path;
   otherwise `WARD_FLOW_LOGS/sign-out.md`, then the Windows default
   `D:/Repos/ward-flow-logs/sign-out.md` or non-Windows `~/ward-flow-logs/sign-out.md` applies.
-  Missing/unreadable logs fail closed on every host. Isolated Cloud work follows
+  An unreadable claims folder still blocks. Isolated Cloud work follows
   [Cloud ownership](../agents/cloud-ownership.md): establish actual checkout/file ownership and
   record the environment boundary, unavailable other-host state and checkpoint before editing.
   A local log never proves desktop/global clearance. An overlap needs the other owner's release or Josh's explicit scoped
@@ -121,10 +124,9 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   "what changed" note; the coordinator posts its New and Fixed lines in project chat. "Release now"
   for an urgent fix means a manual run of that workflow after Josh says so. Never push to `live` by
   hand; rolling back to an earlier `live-*` tag needs Josh's yes.
-- **One claim board across machines.** Claude threads and Codex work on different machines with
-  separate local sign-out logs (the commit hooks read the local one). Before editing, also check the
-  pinned GitHub issue "Who is editing what" and add a comment naming your branch and files; comment
-  again when you release them. File paths and task names only: the repository is public.
+- **One claim board across machines: GitHub.** Claude threads and Codex work on different
+  machines, so the open PRs and branches are the shared claim board (Q374). Comments on the pinned
+  issue "Who is editing what" are no longer needed.
 - Historical fold incidents: `archive/dated-notes/HOW-TO-FOLD-2026-09-10.md` (removed in the 15 Oct 2026 docs trim).
 
 ## 5. Testing
@@ -236,9 +238,13 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   2. Try an easy, safe trim first (load the code lazily, move a helper out of the shared shell).
   3. Raise only by what the PR needs, plus a small margin (about 0.2 KB).
   4. The PR body states, for each route raised: the old limit, the new limit, the measured size and
-     why it grew. Append the same dated reason to `docs/script-budget-history.md` (not to the
-     `$comment` in `script-budget.json`, which now points there).
+     why it grew. Add the same dated reason as a new file in `docs/script-budget-history/`, one
+     per PR (see its README), not to the shared `docs/script-budget-history.md` or the `$comment`
+     in `script-budget.json`.
   5. Lower a limit again when a page shrinks.
+  6. If main itself goes over (PRs that each fitted landed together), you do nothing. Your PR's build
+     fails only routes your PR grew, and the budget heal bot opens one PR raising main's limits
+     (`ward-flow-budget-heal.yml`; [PUBLIC-CI](PUBLIC-CI.md#phone-script-budget-on-a-moving-main)).
 
 ## 7. Model tiers for helpers and reviews
 

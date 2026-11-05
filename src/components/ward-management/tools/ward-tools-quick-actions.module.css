@@ -1,0 +1,300 @@
+/* Coordinator Quick actions inside Tools (3 Nov 2026). Tokens only; no side edges; 12px floor. */
+.panel {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.end {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  margin-left: auto;
+  color: var(--wf-ink-3);
+}
+
+.chosen {
+  display: grid;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface-2);
+  min-width: 0;
+}
+
+.set {
+  display: grid;
+  gap: var(--wf-s-2);
+}
+
+/* Actions that work here: three equal tiles, icon and live figure on top, name below. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+}
+
+.tile {
+  display: grid;
+  align-content: start;
+  gap: 2px;
+  min-width: 0;
+  min-height: 84px;
+  padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background var(--wf-m-fast, 120ms) var(--wf-ease, ease),
+    border-color var(--wf-m-fast, 120ms) var(--wf-ease, ease),
+    box-shadow var(--wf-m-fast, 120ms) var(--wf-ease, ease);
+}
+
+.tile:hover {
+  border-color: var(--wf-line-2);
+  background: var(--wf-hover);
+}
+
+.tile[aria-pressed="true"] {
+  border-color: var(--wf-accent);
+  background: var(--wf-selected);
+  box-shadow: 0 0 0 1px var(--wf-accent);
+}
+
+.tile[aria-pressed="true"] strong {
+  color: var(--wf-accent-ink);
+}
+
+.tileTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--wf-s-1);
+}
+
+.tile strong,
+.tile em {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tile strong {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.tile em {
+  font-style: normal;
+  font-size: var(--wf-fs-12);
+  line-height: 1.3;
+  color: var(--wf-ink-3);
+}
+
+.figure,
+.figureWarn {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--wf-fs-20);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--wf-ink-1);
+}
+
+.figureWarn {
+  color: var(--wf-warning-ink);
+}
+
+/* Shortcuts that leave Tools: one quiet row of links. */
+.away {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-2);
+}
+
+.awayLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 var(--wf-s-2) 0 10px;
+  border: 1px solid var(--wf-line);
+  border-radius: 999px;
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.awayLink:hover {
+  border-color: var(--wf-line-2);
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+.awayLink svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  color: var(--wf-ink-3);
+}
+
+.awayLink .end {
+  margin-left: 0;
+}
+
+.tile:focus-visible,
+.awayLink:focus-visible,
+.link:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  flex: none;
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.progress {
+  display: grid;
+  gap: var(--wf-s-2);
+}
+
+.lead b {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.request {
+  display: grid;
+  gap: var(--wf-s-3);
+}
+
+.lead,
+.quiet {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.quiet {
+  color: var(--wf-ink-3);
+}
+
+.listHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--wf-accent-ink);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  letter-spacing: 0;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.list {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+}
+
+.list li + li {
+  border-top: 1px solid var(--wf-line);
+}
+
+.ward {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 44px;
+  padding: 0 var(--wf-s-3);
+  font-size: var(--wf-fs-14);
+  cursor: pointer;
+}
+
+.wardName {
+  flex: 1;
+  min-width: 0;
+}
+
+.when {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+}
+
+/* Phone: 48px touch rows. */
+@media (max-width: 743px) {
+  .tile {
+    min-height: 92px;
+    padding: var(--wf-s-2);
+  }
+
+  .tile strong {
+    white-space: normal;
+  }
+
+  .awayLink {
+    min-height: 40px;
+    padding: 0 10px 0 8px;
+  }
+}
+
+.sent,
+.sentBad {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.sent:empty,
+.sentBad:empty {
+  display: none;
+}
+
+.sentBad {
+  color: var(--wf-danger-ink);
+}

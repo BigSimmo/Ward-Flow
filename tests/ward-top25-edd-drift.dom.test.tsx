@@ -81,7 +81,7 @@ describe("the moved date badge on the ward screen", () => {
     )!;
     expect(card).toHaveTextContent("Date moved 3 times");
     fireEvent.click(card);
-    fireEvent.click(await screen.findByRole("tab", { name: "Plan to leave" }));
+    fireEvent.click(await screen.findByRole("tab", { name: "Leaving" }));
     expect(document.querySelector('[role="dialog"][aria-labelledby="drawer-bed-title"]')).toHaveTextContent(
       "Date moved 3 times",
     );

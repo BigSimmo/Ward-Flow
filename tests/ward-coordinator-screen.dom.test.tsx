@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
@@ -64,11 +64,17 @@ describe("CoordinatorScreen", () => {
 
     expect(screen.queryByText(`Forms due within ${dueWindowLabel(DUE_SOON_URGENT_MINUTES)}`)).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Declines/ })).not.toBeInTheDocument();
-    // Home v7 (Josh, 22 Oct 2026): Act now replaced the hero's Alerts count; the registers open
-    // from Registers above the list.
-    expect(screen.getByRole("button", { name: /Act now/ })).toBeInTheDocument();
+    // Home v7 (Josh, 22 Oct 2026): Act now replaced the hero's Alerts count. Home flow (Q340/Q345,
+    // 3 Nov 2026): the registers open from Registers in the "More for this list" menu above the list.
+    // Plan 2i (Josh, 4 Nov 2026, question 2): when the next step is Act now, its "Show act now"
+    // button stands in for the Act now chip, so either way the hero offers Act now.
+    expect(screen.getAllByRole("button", { name: /act now/i }).length).toBeGreaterThan(0);
     expect(screen.queryByRole("button", { name: /^\d+\s*Alerts$/ })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Registers" })).toBeInTheDocument();
+    const homeLists = screen.getByRole("navigation", { name: "Home lists" });
+    expect(within(homeLists).queryByRole("button", { name: "Registers" })).not.toBeInTheDocument();
+    fireEvent.click(within(homeLists).getByRole("button", { name: "More for this list" }));
+    expect(screen.getByRole("menuitem", { name: "Registers" })).toBeInTheDocument();
+    expect(screen.getByRole("menuitem", { name: "Alerts history" })).toBeInTheDocument();
     expect(dueWindowLabel(60)).toBe("1h");
     expect(dueWindowLabel(240)).toBe("4h");
   });
@@ -83,6 +89,8 @@ describe("CoordinatorScreen", () => {
     );
 
     expect(screen.queryByRole("link", { name: "Start handover" })).not.toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Act now/ })).toBeInTheDocument();
+    // Plan 2i (Josh, 4 Nov 2026, question 2): when the next step is Act now, its "Show act now"
+    // button stands in for the Act now chip, so either way the hero offers Act now.
+    expect(screen.getAllByRole("button", { name: /act now/i }).length).toBeGreaterThan(0);
   });
 });

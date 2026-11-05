@@ -1,3 +1,4 @@
+import { forecastHistoryFailure } from "./forecast/forecast-history-response";
 import {
   anySignal,
   checkSharedSnapshot,
@@ -37,10 +38,13 @@ import {
 } from "./ward-shared-role-binding";
 export type { ExecutiveAggregateSnapshot, SharedWorkspaceSnapshot } from "./ward-shared-executive-snapshot";
 import * as conflict from "./ward-conflict-scope";
+import * as push from "./ward-shared-push-api";
+import type { SharedAsk } from "./ward-shared-push-api";
 export type { SharedBreakGlassOpening, SharedRecordView } from "./ward-shared-record-access-types";
 import type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
 import {
   markOwnSave,
+  pinToBoard,
   sheetBasis,
   type PendingCommand,
   type QueuedCommand,
@@ -187,9 +191,9 @@ export class SharedWorkspaceClient {
     current();
     if (!response.ok) throw new Error("Receipt unavailable");
     const outcome = value.receipt?.outcome;
-    if (outcome !== "accepted" && outcome !== "refused" && value.receipt !== null) throw new Error("Invalid receipt");
+    if (value.receipt !== null && !["accepted", "partly", "refused"].includes(outcome)) throw new Error("Bad receipt");
     if (
-      outcome === "accepted" &&
+      (outcome === "accepted" || outcome === "partly") &&
       Number.isSafeInteger(value.receipt.commandRevision) &&
       value.receipt.commandRevision > (this.view.snapshot?.revision ?? 0)
     ) {
@@ -208,8 +212,8 @@ export class SharedWorkspaceClient {
       status: "ready",
       recovering: false,
       recovery:
-        outcome === "accepted"
-          ? "The previous uncertain save was accepted. Review the refreshed board before acting again."
+        outcome === "accepted" || outcome === "partly"
+          ? `The previous uncertain save was ${outcome === "partly" ? "partially applied" : "accepted"}. Review the refreshed board before acting again.`
           : outcome === "refused"
             ? `The previous uncertain save was not applied. ${SAVE_PROBLEMS.refused[1]}`
             : "No retained receipt was found for the previous uncertain save. Its outcome is unknown. Review the board before repeating any action.",
@@ -265,6 +269,12 @@ export class SharedWorkspaceClient {
     this.queue = [];
     this.syncUnloadWarning();
   }
+  /** Offline: queued saves stay, pinned to the board they were made on (`pinToBoard`), and say so. */
+  private holdQueued() {
+    this.offlineHold = true;
+    pinToBoard(this.queue, this.sheetSeen, this.held());
+    for (const queued of this.queue) this.settle(queued.commandId, "failed", saveProblem("heldOffline"));
+  }
   /** P058: a conflict cancels only the queued actions on its own record; the rest still go. */
   private cancelQueuedOn(event: WardFlowEvent, value: unknown) {
     const hit = this.queue.filter((queued) => conflict.sameConflictRecord(event, queued.event));
@@ -305,6 +315,10 @@ export class SharedWorkspaceClient {
   }
   private disposed = false;
   private busy = false;
+  /** Tier 1 item 1: saves held in memory (D-18) after a dropped connection, sent once a read succeeds. */
+  private offlineHold = false;
+  /** The save in flight got an HTTP answer: a failure is the server's, so it waits on Retry. */
+  private saveAnswered = false;
   /** #817: the poll in flight, which a new save stops so the save is not held behind it. */
   private pollAbort: AbortController | null = null;
   /** Requests stay with the desk that started them, even while waiting for a token. */
@@ -331,6 +345,10 @@ export class SharedWorkspaceClient {
   /** When this desk last read the whole workspace (its own part of it), for `FULL_READ_EVERY_MS`. */
   private fullReadAt = 0;
   private readonly lifetime = new AbortController();
+  /** Back online: read the board, which sends any held saves (`offlineHold`). */
+  private readonly watchOnline = globalThis.window?.addEventListener("online", () => void this.refresh(), {
+    signal: this.lifetime.signal,
+  });
   /** Refused, or waiting on the person: no polling or saving until they act. */
   private gated() {
     return ["not-authorised", "choose-role", "no-role"].includes(this.view.status);
@@ -551,6 +569,7 @@ export class SharedWorkspaceClient {
       viewEpoch: (this.view.viewEpoch ?? 0) + (changedLifetime ? 1 : 0),
       recovering: this.recoveryPending,
       unconfirmedSave: this.pending !== null || this.queue.length > 0 || this.recoveryPending,
+      waiting: this.offlineHold ? (this.pending ? 1 : 0) + this.queue.length : 0,
     };
     if ("accessUntil" in update) {
       clearTimeout(this.accessTimer);
@@ -597,17 +616,14 @@ export class SharedWorkspaceClient {
     const held = this.view.snapshot;
     if (snapshot.revision >= (held?.revision ?? 0)) {
       if (held && snapshot.payload.state.worldGeneration !== held.payload.state.worldGeneration) this.worldEpoch++;
-      // Cached and in-flight archive rows belong to the access view that requested them, even
-      // when the live payload, revision and whole-workspace archive count did not change.
+      // Cached and in-flight archive rows belong to the access view that requested them.
       if (held && snapshot.accessContext !== held.accessContext) {
         this.archive = null;
         this.archiveAsked = null;
         this.archiveEpoch++;
       }
-      // Scoped polls also return full snapshots when only permissions may have changed. Keep the held
-      // object for every record, list and map whose content is unchanged (audit PS-06), so identical
-      // data stays stable for the provider and its field selectors, draft owners included, and a
-      // change re-renders only what reads the records that changed (`ward-shared-client-reuse.ts`).
+      // Keep the held object for every unchanged record, list and map (audit PS-06), so a change
+      // re-renders only what reads the changed records (`ward-shared-client-reuse.ts`).
       if (!unchanged) this.rawPayload = reuseUnchangedPayload(this.rawPayload, snapshot.payload);
       const raw = this.rawPayload!;
       const payload = reuseUnchangedPayload(held?.payload, this.withArchive(raw, snapshot.accessContext));
@@ -743,6 +759,7 @@ export class SharedWorkspaceClient {
           ...(workspaceRead && this.pollAbort ? [this.pollAbort.signal] : []),
         ]),
       });
+      if (path === "/v1/workspace/commands") this.saveAnswered = true;
       if (this.disposed || roleSignal.aborted) throw new Error("Connection closed");
       const value = onDeviceClock(await response.json().catch(() => null), Date.now());
       current();
@@ -776,9 +793,8 @@ export class SharedWorkspaceClient {
     const answer = await send(workingAs);
     current();
     if (answer.noRole && workingAs) {
-      // The role this tab was working as has ended or been removed. Forget it, even when the external
-      // setter cannot persist that; never re-send a write under whichever remaining role the server
-      // would pick by default.
+      // The working role has ended or been removed. Forget it, even when the external setter cannot
+      // persist that; never re-send a write under a remaining role the server would pick by default.
       this.workingAsOverride = null;
       this.options.workingAs?.set(null);
       if (body) {
@@ -867,9 +883,10 @@ export class SharedWorkspaceClient {
   }
   async refresh() {
     // Audit 4 A4-03: a save waiting on Retry does not stop the board being read: reads change
-    // nothing, and the person sees what changed before deciding to send it again.
+    // nothing. Held saves go once a read succeeds; the server still refuses a stale one (CS-19).
     if (this.busy || this.disposed || this.gated()) return;
     this.busy = true;
+    let resend = false;
     const poll = (this.pollAbort = new AbortController());
     const roleSignal = this.roleLifetime.signal;
     const generation = this.viewGeneration;
@@ -888,8 +905,7 @@ export class SharedWorkspaceClient {
       const { response, value } = await this.request(
         current ? `/v1/workspace?since=${current.revision}${context}` : "/v1/workspace",
       );
-      // The role ended or a grant landed while this read was out: drop its desk, and the follow-up
-      // read replaces it.
+      // The role ended or a grant landed while this read was out: drop it; the follow-up read replaces it.
       if (generation !== this.viewGeneration || grantGeneration !== this.grantGeneration || epoch !== this.roleEpoch)
         return;
       if (!response.ok) throw new Error("Workspace unavailable");
@@ -947,6 +963,7 @@ export class SharedWorkspaceClient {
         receiptScope: typeof value.receiptScope === "string" ? value.receiptScope : undefined,
       });
       await this.recoverReceipt();
+      resend = this.offlineHold && (this.pending !== null || this.queue.length > 0);
     } catch {
       if (
         generation === this.viewGeneration &&
@@ -955,7 +972,7 @@ export class SharedWorkspaceClient {
         !poll.signal.aborted &&
         !this.gated()
       ) {
-        this.cancelQueued(saveProblem("queuedNotRefreshed"));
+        if (!this.offlineHold) this.cancelQueued(saveProblem("queuedNotRefreshed"));
         this.publish({
           status: "unavailable",
           error: saveProblem("notRefreshed"),
@@ -964,6 +981,7 @@ export class SharedWorkspaceClient {
     } finally {
       this.busy = false;
       this.pollAbort = null;
+      if (resend && !this.disposed) void this.drain();
       if (!this.disposed && this.needsRefresh) {
         this.needsRefresh = false;
         void this.refresh();
@@ -979,7 +997,7 @@ export class SharedWorkspaceClient {
     const commandId = (this.options.commandId ?? (() => crypto.randomUUID()))();
     if (
       !this.view.snapshot ||
-      !["ready", "saving"].includes(this.view.status) ||
+      !(["ready", "saving"].includes(this.view.status) || (this.offlineHold && this.view.status === "unavailable")) ||
       this.disposed ||
       this.recoveryPending ||
       (Number.isFinite(this.view.accessUntil) && this.view.accessUntil! <= Date.now())
@@ -1018,6 +1036,8 @@ export class SharedWorkspaceClient {
       worldEpoch: this.worldEpoch,
       sheets: this.openSheetsNoted(),
     });
+    // Made while offline: pinned now, before a resend can adopt a newer board.
+    if (this.offlineHold) pinToBoard(this.queue.slice(-1), this.sheetSeen, this.held());
     // #817: a poll in flight is stopped (reads change nothing) so the save goes now, not after it.
     this.pollAbort?.abort();
     this.publish({});
@@ -1054,6 +1074,7 @@ export class SharedWorkspaceClient {
         const command = this.pending;
         const grantGeneration = this.grantGeneration;
         const epoch = this.roleEpoch;
+        this.saveAnswered = false;
         const { response, value } = await this.request("/v1/workspace/commands", command);
         // An ended role is this command's own definitive answer, though it also bumps the generation.
         if (generation !== this.viewGeneration && value?.code !== "role-ended") return;
@@ -1071,8 +1092,7 @@ export class SharedWorkspaceClient {
         if (value.snapshot && epoch === this.roleEpoch) {
           if (grantGeneration === this.grantGeneration) this.adopt(value.snapshot);
           else {
-            // This command already has its definitive server answer. A permissions-only read
-            // must neither retry it nor reclassify its completion when sign-in or roles change.
+            // The command has its definitive answer; a permissions-only read must not retry or reclassify it.
             this.pending = null;
             this.publish({});
             this.settle(
@@ -1082,10 +1102,8 @@ export class SharedWorkspaceClient {
               response.ok ? value.snapshot.payload.state.undoRecords : undefined,
               response.ok ? value : undefined,
             );
-            // Keep the definitive command result, but read the newly granted view rather than
-            // replacing it with the command's earlier scope. Retry retains the same command ID.
-            // A concurrent grant can invalidate this reconciliation read. Retry the read with
-            // the new generation; the command response itself is already definitive.
+            // Keep the definitive result but read the newly granted view; a concurrent grant
+            // retries this read with the new generation (the command ID is retained).
             try {
               let latest: Awaited<ReturnType<typeof this.request>>;
               for (;;) {
@@ -1162,8 +1180,7 @@ export class SharedWorkspaceClient {
           if (scoped) this.cancelQueuedOn(command.event, value);
           else this.cancelQueued();
           if (response.status === 409) {
-            // The person has now been told. Popups still open are checked against the board from
-            // here on, so trying again after reviewing it works.
+            // The person has been told; open popups are checked against the board from here on.
             this.sheetSeen = conflict.keepBasis(scoped && this.queue, this.sheetSeen, command.expectedRevision);
             if (!value?.snapshot) this.needsRefresh = true;
             else this.noteOpenSheets();
@@ -1196,8 +1213,7 @@ export class SharedWorkspaceClient {
           this.worldEpoch++;
         const partly = value.outcome === "partly" && typeof value.error === "string" ? value.error : undefined;
         this.settle(command.commandId, "accepted", undefined, value.snapshot?.payload.state.undoRecords, value, partly);
-        // Audit E-05: the board's message line tells the person which ward was not asked, as the
-        // local board's refusal note does, on whichever screen sent it.
+        // Audit E-05: the board's message line names the ward that was not asked, as the local refusal note does.
         this.publish({
           status: "ready",
           error: partly ? `Sent to the suitable wards only. ${sentence(partly)}` : null,
@@ -1206,7 +1222,11 @@ export class SharedWorkspaceClient {
     } catch {
       if (generation === this.viewGeneration) {
         if (this.pending) this.settle(this.pending.commandId, "failed", saveProblem("connectionLost"));
-        this.cancelQueued();
+        // A server that answered waits on Retry, so a fault is not resent on every poll.
+        if (this.saveAnswered || (!this.pending && !this.queue.length)) {
+          this.offlineHold = false;
+          this.cancelQueued();
+        } else this.holdQueued();
       }
       if (generation === this.viewGeneration && !this.disposed && !this.gated() && this.view.status !== "loading")
         this.publish({
@@ -1215,6 +1235,10 @@ export class SharedWorkspaceClient {
         });
     } finally {
       this.busy = false;
+      if (!this.pending && !this.queue.length && this.offlineHold) {
+        this.offlineHold = false;
+        this.publish({});
+      }
       if (generation !== this.viewGeneration && this.view.status === "loading") await this.refresh();
       // A run that ended on a revision-only reply or an ended role reads the board once to catch up.
       if (
@@ -1226,47 +1250,12 @@ export class SharedWorkspaceClient {
       }
     }
   }
-  /**
-   * Phone push (feature 4). The server's public VAPID key, or `enabled: false` when the server is
-   * not set up for phone alerts. The private key never leaves the server.
-   */
-  async pushKey(): Promise<{ enabled: true; publicKey: string } | { enabled: false }> {
-    const { response, value } = await this.request("/v1/workspace/push-key");
-    if (!response.ok) throw new Error("Phone alerts unavailable");
-    return value?.enabled === true && typeof value.publicKey === "string"
-      ? { enabled: true, publicKey: value.publicKey }
-      : { enabled: false };
-  }
-  /**
-   * Registers this device's browser push subscription for the signed-in coordinator. A refusal the
-   * person can act on comes back as its reason: this account is on its device limit, or another
-   * account's alerts are still on for this device.
-   */
-  async pushSubscribe(subscription: {
-    endpoint?: string;
-    keys?: Record<string, string>;
-  }): Promise<"subscribed" | "limit" | "in-use" | "role"> {
-    const { endpoint, keys } = subscription;
-    const { response, value } = await this.request("/v1/workspace/push-subscribe", {
-      subscription: { endpoint, keys },
-    });
-    if (response.status === 409 && (value?.code === "limit" || value?.code === "in-use")) return value.code;
-    if (response.status === 422 && value?.code === "role") return "role";
-    if (!response.ok) throw new Error("Phone alerts were not turned on");
-    return "subscribed";
-  }
-  /** Whether this account owns an active phone alert record for this device. */
-  async pushStatus(endpoint: string): Promise<boolean> {
-    const { response, value } = await this.request("/v1/workspace/push-status", { endpoint });
-    if (!response.ok) throw new Error("Phone alerts could not be checked");
-    return value?.owned === true;
-  }
-  /** Stops phone alerts for this device. True when this account's record was revoked. */
-  async pushUnsubscribe(endpoint: string): Promise<boolean> {
-    const { response, value } = await this.request("/v1/workspace/push-unsubscribe", { endpoint });
-    if (!response.ok) throw new Error("Phone alerts were not turned off");
-    return value?.revoked === true;
-  }
+  /** Phone push (feature 4): the calls live in `ward-shared-push-api.ts`. */
+  private readonly ask: SharedAsk = (path, body) => this.request(path, body);
+  pushKey = () => push.pushKey(this.ask);
+  pushSubscribe = (subscription: push.PushSubscriptionShape) => push.pushSubscribe(this.ask, subscription);
+  pushStatus = (endpoint: string) => push.pushStatus(this.ask, endpoint);
+  pushUnsubscribe = (endpoint: string) => push.pushUnsubscribe(this.ask, endpoint);
   /**
    * Readiness review item 9: tells the server this desk opened a patient's record (patient, movement or referral page, D-80), for a
    * log nobody can change. Best effort, and a repeat within a minute is ignored. True once the record's detail (H-0731) is shown.
@@ -1376,10 +1365,16 @@ export class SharedWorkspaceClient {
       throw new Error(typeof value?.error === "string" ? value.error : "The access log could not be read");
     return Array.isArray(value.views) ? value.views : [];
   }
+  /** Migration 17: this account's Help memory; with a body, saves first. */
+  async preferences(body?: Record<string, unknown>): Promise<unknown> {
+    const { response, value } = await this.request("/v1/workspace/preferences", body);
+    if (!response.ok) throw new Error("Saved Help memory could not be read");
+    return value;
+  }
   /** Proposal 013: this desk's shared forecast history; with a body, records a snapshot or reason first. */
   async forecastHistory(body?: Record<string, unknown>): Promise<unknown> {
     const { response, value } = await this.request("/v1/workspace/forecast-history", body);
-    if (!response.ok) throw new Error("Forecast history could not be read");
+    if (!response.ok) throw forecastHistoryFailure(value);
     return value;
   }
   /** Cover given or held by this account, and, for a coordinator, inside its place. */

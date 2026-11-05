@@ -251,3 +251,35 @@
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
 }
+
+/* Josh's approved list (3 Nov 2026): the change row inside the On ward card, under stay progress.
+ * A quiet label over the row; no card of its own. */
+.embedded {
+  display: grid;
+  min-width: 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.embeddedHead {
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4) 0;
+  color: var(--wf-ink-3);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.embedded .changeRow {
+  padding-top: var(--wf-s-2);
+}
+
+@media (max-width: 46.4375rem) {
+  .embedded .changeRow > * {
+    flex: 0 0 auto;
+    min-height: 48px;
+    padding: 0 var(--wf-s-4);
+    border-radius: var(--wf-r-ctl);
+  }
+
+  .embedded .refusal {
+    padding: 0 var(--wf-s-4) var(--wf-s-3);
+  }
+}

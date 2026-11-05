@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { expect, it } from "vitest";
 
 import { WardClosurePanel } from "@/components/ward-management/capacity/ward-closure-panel";
@@ -54,7 +54,7 @@ it("does not resend a pending reopen from the close-conflict recovery control", 
       </WardFlowProvider>
     );
     const view = render(tree(unit, false));
-    fireEvent.change(screen.getByTestId("ward-closure-reason"), { target: { value: "staffing" } });
+    fireEvent.click(within(screen.getByTestId("ward-closure-reason")).getByRole("button", { name: "Staffing" }));
     view.rerender(tree(closed, false));
     expect(screen.getByTestId("ward-closure-alert").textContent).toContain("was closed first");
 

@@ -321,10 +321,12 @@ async function settledSweep(page: Page): Promise<Finding[]> {
  * Q295 (2 Nov 2026): small kit buttons are drawn at 40px on phones, so Capacity, Example ED and
  * Transport dropped to none, Alerts to 1 and Discharges to 2 (its Now/History switch, which keeps
  * the shared phone track's shorter options with a 48px hit area, as Home's queue switch does).
+ * 4 Nov 2026 (#1331): Home 12 to 11 and Waiting 3 to 2. Hosted CI measured Home at 10 and a cloud
+ * container at 11, so Home holds at 11 until both agree.
  */
 const PHONE_TARGET_BASELINE: Readonly<Record<string, number>> = {
-  "/ward-flow": 12,
-  "/ward-flow/waiting": 3,
+  "/ward-flow": 11,
+  "/ward-flow/waiting": 2,
   "/ward-flow/movements": 5,
   "/ward-flow/ward/rph-adult-secure": 1,
   "/ward-flow/board/rph-adult-secure": 2,
@@ -378,4 +380,58 @@ test.describe("@mockup Ward design sweep: text size, target size and sticky bars
       expect(report.length, `${label} (${href}) design sweep violations:\n${report.join("\n")}`).toBe(0);
     });
   }
+});
+
+/**
+ * Phone hit boxes (Q377, 3 Nov 2026): controls the page sweep cannot reach because they sit in a
+ * popup or a later form step. Each is drawn at least 40px tall on a phone (DESIGN-SYSTEM.md house
+ * rule), and a time button's invisible cover still takes a press just above and below its face, so
+ * the tap area stays 48px. Synthetic demo records only.
+ */
+test.describe("@mockup Phone hit boxes: popup and form-step controls (Q377)", () => {
+  test.use({ colorScheme: "light", viewport: { width: 390, height: 844 } });
+
+  test("arrival time buttons are drawn 40px tall with a 48px tap area", async ({ page }) => {
+    await openSettled(page, "/ward-flow/ed/rph-ed");
+    // The arrival plan opens from the ED's lists; the button can sit in a closed list on a phone.
+    await page.locator('[data-testid^="ward-ed-outbox-arrival-plan-toggle-"]').first().dispatchEvent("click");
+    const presets = page
+      .getByRole("group", { name: /quick times$/u })
+      .first()
+      .getByRole("button");
+    await expect(presets.first()).toBeVisible();
+    await presets.first().scrollIntoViewIfNeeded();
+    const boxes = await presets.evaluateAll((buttons) =>
+      buttons.map((button) => {
+        const rect = button.getBoundingClientRect();
+        const x = rect.left + rect.width / 2;
+        const takes = (y: number) => {
+          const hit = document.elementFromPoint(x, y);
+          return hit === button || button.contains(hit);
+        };
+        return { height: rect.height, above: takes(rect.top - 3), below: takes(rect.bottom + 3) };
+      }),
+    );
+    expect(boxes.length).toBeGreaterThan(0);
+    for (const box of boxes) {
+      expect(box.height).toBeGreaterThanOrEqual(40);
+      expect(box.above && box.below, "the 48px tap cover takes presses beside the 40px face").toBe(true);
+    }
+  });
+
+  test("referral risk flag checkboxes are drawn 40px tall", async ({ page }) => {
+    await openSettled(page, "/ward-flow/referrals/new");
+    const risk = page.getByRole("group", { name: /^Risk flags/u });
+    // The Referral step (source, legal status, urgency) holds the risk flags.
+    await page
+      .locator("button, a")
+      .filter({ hasText: /Source · legal status/u })
+      .first()
+      .click();
+    const rows = risk.locator("label");
+    await expect(rows.first()).toBeVisible();
+    const heights = await rows.evaluateAll((labels) => labels.map((label) => label.getBoundingClientRect().height));
+    expect(heights.length).toBeGreaterThan(0);
+    for (const height of heights) expect(height).toBeGreaterThanOrEqual(40);
+  });
 });

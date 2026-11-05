@@ -127,7 +127,13 @@ export function fixedQuestionAnswers(input: FixedQuestionInput): FixedAnswer[] {
   const noWardAsked = movements
     .filter((movement) => open(movement) && movement.acceptedUnitId === undefined)
     .filter((movement) => movement.stage === "placement_requested" || movement.stage === "destination_review")
-    .filter((movement) => movement.referredUnitIds.length === 0)
+    .filter(
+      (movement) =>
+        movement.referredUnitIds.length === 0 &&
+        movement.referredAt === undefined &&
+        movement.declines.length === 0 &&
+        movement.withdrawnReferrals.length === 0,
+    )
     .map((movement) => movementRow(movement, admissions, now, `${STAGE_WORDS[movement.stage]}. No ward asked yet.`));
 
   const pastLimit = movements

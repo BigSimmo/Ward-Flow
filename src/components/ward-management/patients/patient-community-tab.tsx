@@ -4,7 +4,7 @@ import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
   ArrowUpRight,
-  BedDouble,
+  BedSingle,
   CalendarCheck,
   CalendarClock,
   Clipboard,
@@ -493,7 +493,7 @@ export function PatientCommunityTab({
       key: episode.id,
       order: dateKey(episode.start),
       when: span(episode.start, episode.end, false),
-      icon: isCommunity ? Users : episode.kind === "ed" ? Siren : BedDouble,
+      icon: isCommunity ? Users : episode.kind === "ed" ? Siren : BedSingle,
       community: isCommunity,
       where: episode.where,
       kind: [isCommunity ? "Community" : episode.kind === "ed" ? "ED" : "Admission", episode.stay]

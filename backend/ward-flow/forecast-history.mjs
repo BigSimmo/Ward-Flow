@@ -9,6 +9,12 @@ import { FORECAST_HISTORY_MIGRATION } from "./migrations.mjs";
 /** The newest snapshots and reasons a desk is sent, matching the browser's own limits. */
 const FORECAST_SNAPSHOT_LIMIT = 60;
 const FORECAST_REASON_LIMIT = 200;
+/**
+ * A reason's version token: its last change to the microsecond, in UTC, as fixed text. Written
+ * out explicitly so it never depends on the connection's TimeZone or DateStyle (a plain text cast
+ * of the timestamp did), and used for both the read and the compare-and-set.
+ */
+const FORECAST_REASON_VERSION_SQL = `to_char(updated_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`;
 
 /** The closed lists the browser offers (forecast-miss-reasons.ts) and the table checks. */
 const FORECAST_MISS_REASONS = Object.freeze([
@@ -48,11 +54,11 @@ const whole = (/** @type {unknown} */ value) =>
  * A POST body, checked: the world generation the browser counted in, and today's snapshot or a
  * day's reason (or both). Null when anything is missing or out of shape.
  * @param {any} body
- * @returns {{ generation: number, snapshot?: { day: number, at: number, nowGap: number, tomorrow: { low: number, likely: number, high: number } }, reason?: { day: number, reason: string, by: string, at: number } } | null}
+ * @returns {{ generation: number, snapshot?: { day: number, at: number, nowGap: number, tomorrow: { low: number, likely: number, high: number } }, reason?: { day: number, reason: string, by: string, at: number }, expectedVersion?: string | null } | null}
  */
 export function forecastHistoryInput(body) {
   if (typeof body !== "object" || body === null) return null;
-  const { generation, snapshot, reason } = body;
+  const { generation, snapshot, reason, expectedVersion } = body;
   if (!(typeof generation === "number" && Number.isSafeInteger(generation) && generation >= 0)) return null;
   if (snapshot === undefined && reason === undefined) return null;
   /** @type {ReturnType<typeof forecastHistoryInput>} */
@@ -78,6 +84,11 @@ export function forecastHistoryInput(body) {
   }
   if (reason !== undefined) {
     if (
+      !(
+        expectedVersion === undefined ||
+        expectedVersion === null ||
+        (typeof expectedVersion === "string" && expectedVersion.length > 0 && expectedVersion.length <= 100)
+      ) ||
       !whole(reason?.day) ||
       !whole(reason.at) ||
       !FORECAST_MISS_REASONS.includes(reason.reason) ||
@@ -85,6 +96,9 @@ export function forecastHistoryInput(body) {
     )
       return null;
     input.reason = { day: reason.day, reason: reason.reason, by: reason.by, at: reason.at };
+    // A browser from before versioned reasons sends none. It is treated as having read no reason
+    // for that day: it may record a first reason, but it can never replace one (that is a conflict).
+    input.expectedVersion = expectedVersion ?? null;
   }
   return input;
 }
@@ -126,12 +140,13 @@ export function forecastHistoryStore({ pool, workspaceId, schemaVersion, worldGe
         [workspaceId, generation, scopeKey],
       ),
       query(
-        `SELECT demo_day, reason, chosen_by, chosen_at FROM ward_flow.forecast_miss_reasons WHERE workspace_id=$1 AND data_mode='prototype' AND world_generation=$2 AND scope_key=$3 ORDER BY demo_day DESC LIMIT ${FORECAST_REASON_LIMIT}`,
+        `SELECT demo_day, reason, chosen_by, chosen_at, ${FORECAST_REASON_VERSION_SQL} AS version FROM ward_flow.forecast_miss_reasons WHERE workspace_id=$1 AND data_mode='prototype' AND world_generation=$2 AND scope_key=$3 ORDER BY demo_day DESC LIMIT ${FORECAST_REASON_LIMIT}`,
         [workspaceId, generation, scopeKey],
       ),
     ]);
     return {
       shared: true,
+      reasonWriteVersion: 1,
       generation,
       snapshots: snapshots.rows.reverse().map((row) => ({
         day: row.demo_day,
@@ -139,9 +154,13 @@ export function forecastHistoryStore({ pool, workspaceId, schemaVersion, worldGe
         nowGap: row.ready_gap_now,
         tomorrow: { low: row.tomorrow_low, likely: row.tomorrow_likely, high: row.tomorrow_high },
       })),
-      reasons: reasons.rows
-        .reverse()
-        .map((row) => ({ day: row.demo_day, reason: row.reason, by: row.chosen_by, at: row.chosen_at })),
+      reasons: reasons.rows.reverse().map((row) => ({
+        day: row.demo_day,
+        reason: row.reason,
+        by: row.chosen_by,
+        at: row.chosen_at,
+        version: row.version,
+      })),
     };
   }
 
@@ -154,8 +173,8 @@ export function forecastHistoryStore({ pool, workspaceId, schemaVersion, worldGe
       return history(view, generation);
     },
     /**
-     * Records today's snapshot (the first of a demo day stands) or a day's reason (a later one
-     * replaces it), then answers with the desk's history. A browser still counting in an earlier
+     * Records today's snapshot (the first of a demo day stands) or a day's reason from its captured
+     * version, then answers with the desk's history. A browser still counting in an earlier
      * world generation is refused, so a reset never mixes two worlds' days.
      * @param {any} view
      * @param {NonNullable<ReturnType<typeof forecastHistoryInput>>} input
@@ -186,11 +205,38 @@ export function forecastHistoryStore({ pool, workspaceId, schemaVersion, worldGe
             snapshot.tomorrow.high,
           ],
         );
-      if (reason)
-        await query(
-          "INSERT INTO ward_flow.forecast_miss_reasons(workspace_id, world_generation, scope_key, demo_day, reason, chosen_by, chosen_at, actor_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (workspace_id, world_generation, scope_key, demo_day) DO UPDATE SET reason=EXCLUDED.reason, chosen_by=EXCLUDED.chosen_by, chosen_at=EXCLUDED.chosen_at, actor_id=EXCLUDED.actor_id, updated_at=now()",
-          [workspaceId, generation, scopeKey, reason.day, reason.reason, reason.by, reason.at, view.actorId],
-        );
+      if (reason) {
+        const values = [
+          workspaceId,
+          generation,
+          scopeKey,
+          reason.day,
+          reason.reason,
+          reason.by,
+          reason.at,
+          view.actorId,
+        ];
+        const changed =
+          // No basis (none read, or an older browser): a first reason only, never an overwrite.
+          (input.expectedVersion ?? null) === null
+            ? await query(
+                `INSERT INTO ward_flow.forecast_miss_reasons(workspace_id, world_generation, scope_key, demo_day, reason, chosen_by, chosen_at, actor_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING RETURNING ${FORECAST_REASON_VERSION_SQL} AS version`,
+                values,
+              )
+            : await query(
+                `UPDATE ward_flow.forecast_miss_reasons SET reason=$5, chosen_by=$6, chosen_at=$7, actor_id=$8, updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond') WHERE workspace_id=$1 AND data_mode='prototype' AND world_generation=$2 AND scope_key=$3 AND demo_day=$4 AND ${FORECAST_REASON_VERSION_SQL}=$9 RETURNING ${FORECAST_REASON_VERSION_SQL} AS version`,
+                [...values, input.expectedVersion],
+              );
+        if (changed.rows.length === 0)
+          return {
+            status: 409,
+            body: {
+              code: "reason-conflict",
+              error: "A colleague changed this reason. Review the latest record before recording again.",
+              history: await history(view, generation),
+            },
+          };
+      }
       return { status: 200, body: await history(view, generation) };
     },
   };

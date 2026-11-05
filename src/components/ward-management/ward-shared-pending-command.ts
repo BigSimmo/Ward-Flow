@@ -72,3 +72,17 @@ export function markOwnSave(
   for (const sheet of sheets ?? [])
     for (const token of covered) if (typeof token === "string") sheetSeen.get(sheet)?.records.set(token, to);
 }
+
+/**
+ * Tier 1 item 1: a save held while offline is pinned to the board it was made on, so when it is
+ * sent later the server refuses it if another desk changed the record meanwhile, rather than it
+ * overwriting that change (CS-19). One already tied to an open popup keeps that popup's basis.
+ */
+export function pinToBoard(queue: QueuedCommand[], sheetSeen: WeakMap<object, SheetSeen>, revision: number) {
+  for (const queued of queue) {
+    if (queued.sheets?.some((sheet) => sheetSeen.has(sheet))) continue;
+    const pin = {};
+    sheetSeen.set(pin, { revision, records: new Map() });
+    queued.sheets = [pin];
+  }
+}

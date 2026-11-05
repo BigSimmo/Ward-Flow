@@ -4,6 +4,7 @@
 // urgency, legal status, typed expiry and receipt correction, plus the transport popup. Split out
 // of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
 import type { ReactNode } from "react";
+import { useWardFormSave } from "../use-ward-form-save";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { Button, DateField, Dialog, DisabledReason, Radio } from "@/components/wf";
 import { edShortName } from "@/components/ward-management/ward-sites";
@@ -25,9 +26,9 @@ import {
   LEGAL_STATUS_OPTIONS,
   LEGAL_STATUS_REASON_UNCHOSEN,
   LEGAL_STATUS_UNCHOSEN,
-  NO_CHANGE_REASON_VALUE,
   URGENCY_OPTIONS,
 } from "./ed-screen-model";
+import { EdPickerField, EdTimeBox } from "./ed-referral-choices";
 import { EdConfirmedStep } from "./ed-screen-row-menu";
 import { renderEdTransportDialog } from "./ed-screen-transport-dialog";
 import controls from "./ed-board-controls.module.css";
@@ -63,8 +64,6 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
     edOutcomeBlocked,
     dischargeBlocked,
     cmhtBlocked,
-    recordedSuburb,
-    teamOptions,
     urgencyChangeOpen,
     legalStatusChangeOpen,
     legalFormExpiryOpen,
@@ -77,11 +76,6 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
     raise,
     setWithdrawOpenFor,
     communityReferralOpenFor,
-    setCommunityReferralOpenFor,
-    communityTeamChoice,
-    setCommunityTeamChoice,
-    communityPurposeChoice,
-    setCommunityPurposeChoice,
     examinationOutcome,
     examinationFieldsDisabled,
     examinationSaveDisabled,
@@ -128,11 +122,6 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
   const urgencySave = recordSaveState("urgency", movement.id);
   const legalStatusSave = recordSaveState("legalStatus", movement.id);
   const receiptSave = recordSaveState("receipt", movement.id);
-  // D-74: the team and what the referral is for are both required before it can be sent.
-  const cmhtReady = communityTeamChoice !== "" && communityPurposeChoice !== "";
-  const cmhtMissing = !communityTeamChoice
-    ? "Choose a community team first."
-    : "Choose what the referral is for first.";
   // Why the legal status change cannot be recorded yet: the new status first, then the reason.
   const legalStatusBlocked =
     legalStatusDraft.legalStatus === undefined
@@ -183,96 +172,7 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
       ) : null}
 
       {communityReferralOpenFor === movement.id && !cmhtBlocked ? (
-        <div className={styles.declineForm} data-testid={`ward-ed-cmht-panel-${movement.id}`}>
-          <p className={styles.cardMeta}>Community team referral. No bed is requested.</p>
-          <p className={styles.cardMeta} data-testid={`ward-ed-cmht-legal-status-${movement.id}`}>
-            Legal status: {/* Never defaults to Voluntary (owner rule, 19 Oct 2026): nothing recorded says so. */}
-            {movement.legalStatus ?? (movement.legalForm ? `Form ${movement.legalForm.code}` : "Not recorded")}
-          </p>
-          {recordedSuburb ? (
-            <p className={styles.cardMeta} data-testid={`ward-ed-cmht-catchment-note-${movement.id}`}>
-              Team for the recorded home suburb ({recordedSuburb}) listed first.
-            </p>
-          ) : (
-            <p className={styles.cardMeta} data-testid={`ward-ed-cmht-catchment-note-${movement.id}`}>
-              No home suburb recorded.
-            </p>
-          )}
-          <label className={styles.referralField} htmlFor={`ward-ed-cmht-select-${movement.id}`}>
-            Select community team
-            <select
-              id={`ward-ed-cmht-select-${movement.id}`}
-              data-testid={`ward-ed-cmht-select-${movement.id}`}
-              value={communityTeamChoice}
-              onChange={(e) => setCommunityTeamChoice(e.target.value)}
-              className={styles.capacityInput}
-            >
-              <option value="">Choose a community team</option>
-              {teamOptions.map((team) => (
-                <option key={team} value={team}>
-                  {team}
-                </option>
-              ))}
-            </select>
-          </label>
-          <fieldset className={styles.referralField} data-testid={`ward-ed-cmht-purpose-${movement.id}`}>
-            <legend>What is the referral for?</legend>
-            {COMMUNITY_REFERRAL_PURPOSES.map((purpose) => (
-              <label key={purpose}>
-                <input
-                  type="radio"
-                  name={`ward-ed-cmht-purpose-${movement.id}`}
-                  value={purpose}
-                  checked={communityPurposeChoice === purpose}
-                  onChange={() => setCommunityPurposeChoice(purpose)}
-                  data-testid={`ward-ed-cmht-purpose-${purpose}-${movement.id}`}
-                />{" "}
-                {communityReferralPurposeLabel(purpose)}
-              </label>
-            ))}
-          </fieldset>
-          <div className={styles.actionRow}>
-            <button
-              type="button"
-              aria-disabled={!cmhtReady ? "true" : undefined}
-              aria-describedby={!cmhtReady ? `ward-ed-cmht-reason-${movement.id}` : undefined}
-              title={!cmhtReady ? cmhtMissing : undefined}
-              data-testid={`ward-ed-cmht-confirm-${movement.id}`}
-              className={styles.declineButton}
-              onClick={(event) => {
-                if (!communityTeamChoice || !communityPurposeChoice) {
-                  ignoreUnavailableActivation(event);
-                  return;
-                }
-                raise("REFER_TO_COMMUNITY_TEAM", {
-                  movementId: movement.id,
-                  team: communityTeamChoice,
-                  purpose: communityPurposeChoice,
-                });
-                setCommunityReferralOpenFor(undefined);
-                setCommunityTeamChoice("");
-                setCommunityPurposeChoice("");
-              }}
-            >
-              Confirm CMHT referral
-            </button>
-            {!cmhtReady ? (
-              <DisabledReason id={`ward-ed-cmht-reason-${movement.id}`}>{cmhtMissing}</DisabledReason>
-            ) : null}
-            <button
-              type="button"
-              data-testid={`ward-ed-cmht-cancel-${movement.id}`}
-              className={styles.acceptButton}
-              onClick={() => {
-                setCommunityReferralOpenFor(undefined);
-                setCommunityTeamChoice("");
-                setCommunityPurposeChoice("");
-              }}
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
+        <EdCommunityReferralForm key={movement.id} row={row} ctx={ctx} />
       ) : null}
 
       {renderEdTransportDialog(row, ctx)}
@@ -429,50 +329,37 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           onSubmit={(event) => submitUrgencyChange(event, movement.id)}
           data-testid={`ward-change-urgency-${movement.id}`}
         >
-          <label className={styles.referralField} htmlFor={`ward-change-urgency-tier-${movement.id}`}>
-            Urgency tier for {patientInfo.displayName}
-            <select
-              disabled={urgencySave.disabled}
-              id={`ward-change-urgency-tier-${movement.id}`}
-              value={urgencyDraft.urgency}
-              onChange={({ target: { value } }) =>
-                setUrgencyDraft((current) => ({
-                  ...current,
-                  urgency: Number(value) as 1 | 2 | 3,
-                }))
-              }
-            >
-              {/* Labelled, not a bare digit, for the same reason as the raise-referral
-                                picker above: the value stays the bare tier, the text carries the
-                                direction. */}
-              {URGENCY_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {urgencyTierLabel(option)}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className={styles.referralField} htmlFor={`ward-change-urgency-reason-${movement.id}`}>
-            Reason
-            <select
-              disabled={urgencySave.disabled}
-              id={`ward-change-urgency-reason-${movement.id}`}
-              value={urgencyDraft.reason ?? NO_CHANGE_REASON_VALUE}
-              onChange={({ target: { value } }) =>
-                setUrgencyDraft((current) => ({
-                  ...current,
-                  reason: value === NO_CHANGE_REASON_VALUE ? undefined : (value as UrgencyChangeReason),
-                }))
-              }
-            >
-              <option value={NO_CHANGE_REASON_VALUE}>Choose a reason</option>
-              {URGENCY_CHANGE_REASONS.map((reason) => (
-                <option key={reason} value={reason}>
-                  {changeReasonLabels[reason]}
-                </option>
-              ))}
-            </select>
-          </label>
+          <EdPickerField
+            label={`Urgency tier for ${patientInfo.displayName}`}
+            id={`ward-change-urgency-tier-${movement.id}`}
+            testId={`ward-change-urgency-tier-${movement.id}`}
+            name={`ward-change-urgency-tier-${movement.id}`}
+            disabled={urgencySave.disabled}
+            required
+            placeholder="Choose"
+            // Labelled, not a bare digit: the value stays the bare tier, the text carries the direction.
+            options={URGENCY_OPTIONS.map((option) => ({ value: String(option), label: urgencyTierLabel(option) }))}
+            value={String(urgencyDraft.urgency)}
+            onChange={(value) => {
+              if (value !== null) setUrgencyDraft((current) => ({ ...current, urgency: Number(value) as 1 | 2 | 3 }));
+            }}
+          />
+          <EdPickerField
+            label="Reason"
+            id={`ward-change-urgency-reason-${movement.id}`}
+            testId={`ward-change-urgency-reason-${movement.id}`}
+            name={`ward-change-urgency-reason-${movement.id}`}
+            disabled={urgencySave.disabled}
+            placeholder="Choose a reason"
+            options={URGENCY_CHANGE_REASONS.map((reason) => ({ value: reason, label: changeReasonLabels[reason] }))}
+            value={urgencyDraft.reason ?? null}
+            onChange={(value) =>
+              setUrgencyDraft((current) => ({
+                ...current,
+                reason: value === null ? undefined : (value as UrgencyChangeReason),
+              }))
+            }
+          />
           <button
             type="submit"
             className={styles.declineSubmit}
@@ -502,49 +389,41 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           <p className={styles.cardMeta} data-testid={`ward-change-legal-status-now-${movement.id}`}>
             Now: {movement.legalStatus ?? (movement.legalForm ? `Form ${movement.legalForm.code}` : "Not recorded")}
           </p>
-          <label className={styles.referralField} htmlFor={`ward-change-legal-status-value-${movement.id}`}>
-            Legal status for {patientInfo.displayName}
-            <select
-              disabled={legalStatusSave.disabled}
-              id={`ward-change-legal-status-value-${movement.id}`}
-              value={legalStatusDraft.legalStatus ?? ""}
-              onChange={({ target: { value } }) =>
-                setLegalStatusDraft((current) => ({
-                  ...current,
-                  legalStatus: value === "" ? undefined : (value as LegalStatus),
-                }))
-              }
-            >
-              <option value="">Choose a legal status</option>
-              {LEGAL_STATUS_OPTIONS.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className={styles.referralField} htmlFor={`ward-change-legal-status-reason-${movement.id}`}>
-            Reason
-            <select
-              disabled={legalStatusSave.disabled}
-              id={`ward-change-legal-status-reason-${movement.id}`}
-              required
-              value={legalStatusDraft.reason ?? NO_CHANGE_REASON_VALUE}
-              onChange={({ target: { value } }) =>
-                setLegalStatusDraft((current) => ({
-                  ...current,
-                  reason: value === NO_CHANGE_REASON_VALUE ? undefined : (value as LegalStatusChangeReason),
-                }))
-              }
-            >
-              <option value={NO_CHANGE_REASON_VALUE}>Choose a reason</option>
-              {LEGAL_STATUS_CHANGE_REASONS.map((reason) => (
-                <option key={reason} value={reason}>
-                  {changeReasonLabels[reason]}
-                </option>
-              ))}
-            </select>
-          </label>
+          <EdPickerField
+            label={`Legal status for ${patientInfo.displayName}`}
+            id={`ward-change-legal-status-value-${movement.id}`}
+            testId={`ward-change-legal-status-value-${movement.id}`}
+            name={`ward-change-legal-status-value-${movement.id}`}
+            disabled={legalStatusSave.disabled}
+            placeholder="Choose a legal status"
+            options={LEGAL_STATUS_OPTIONS.map((option) => ({ value: option, label: option }))}
+            value={legalStatusDraft.legalStatus ?? null}
+            onChange={(value) =>
+              setLegalStatusDraft((current) => ({
+                ...current,
+                legalStatus: value === null ? undefined : (value as LegalStatus),
+              }))
+            }
+          />
+          <EdPickerField
+            label="Reason"
+            id={`ward-change-legal-status-reason-${movement.id}`}
+            testId={`ward-change-legal-status-reason-${movement.id}`}
+            name={`ward-change-legal-status-reason-${movement.id}`}
+            disabled={legalStatusSave.disabled}
+            placeholder="Choose a reason"
+            options={LEGAL_STATUS_CHANGE_REASONS.map((reason) => ({
+              value: reason,
+              label: changeReasonLabels[reason],
+            }))}
+            value={legalStatusDraft.reason ?? null}
+            onChange={(value) =>
+              setLegalStatusDraft((current) => ({
+                ...current,
+                reason: value === null ? undefined : (value as LegalStatusChangeReason),
+              }))
+            }
+          />
           <button
             type="submit"
             className={styles.declineSubmit}
@@ -603,20 +482,20 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
                 }
               />
             </label>
-            <label className={styles.referralField}>
-              Time
-              <input
-                type="time"
-                data-testid={`ward-ed-legal-form-expiry-time-${movement.id}`}
+            <div className={styles.referralField}>
+              <span aria-hidden="true">Time</span>
+              <EdTimeBox
+                label="Time written on the form"
+                testId={`ward-ed-legal-form-expiry-time-${movement.id}`}
                 value={legalFormExpiryDraft.time}
-                onChange={({ target: { value } }) =>
+                onChange={(time) =>
                   setLegalFormExpiryDraft((current) => ({
                     ...current,
-                    time: value,
+                    time,
                   }))
                 }
               />
-            </label>
+            </div>
           </fieldset>
           <button
             type="submit"
@@ -661,29 +540,22 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
           onSubmit={(event) => submitReceiptCorrection(event, movement.id)}
           data-testid={`ed-correct-form-receipt-${movement.id}`}
         >
-          <label className={styles.referralField} htmlFor={`ed-correct-form-receipt-reason-${movement.id}`}>
-            Reason for correction
-            <select
-              disabled={receiptSave.disabled}
-              id={`ed-correct-form-receipt-reason-${movement.id}`}
-              required
-              value={receiptCorrectionReasonDraft ?? NO_CHANGE_REASON_VALUE}
-              onChange={(event) =>
-                setReceiptCorrectionReasonDraft(
-                  event.target.value === NO_CHANGE_REASON_VALUE
-                    ? undefined
-                    : (event.target.value as LegalFormReceiptCorrectionReason),
-                )
-              }
-            >
-              <option value={NO_CHANGE_REASON_VALUE}>Choose a reason</option>
-              {LEGAL_FORM_RECEIPT_CORRECTION_REASONS.map((reason) => (
-                <option key={reason} value={reason}>
-                  {legalFormReceiptCorrectionReasonLabels[reason]}
-                </option>
-              ))}
-            </select>
-          </label>
+          <EdPickerField
+            label="Reason for correction"
+            id={`ed-correct-form-receipt-reason-${movement.id}`}
+            testId={`ed-correct-form-receipt-reason-${movement.id}`}
+            name={`ed-correct-form-receipt-reason-${movement.id}`}
+            disabled={receiptSave.disabled}
+            placeholder="Choose a reason"
+            options={LEGAL_FORM_RECEIPT_CORRECTION_REASONS.map((reason) => ({
+              value: reason,
+              label: legalFormReceiptCorrectionReasonLabels[reason],
+            }))}
+            value={receiptCorrectionReasonDraft ?? null}
+            onChange={(value) =>
+              setReceiptCorrectionReasonDraft(value === null ? undefined : (value as LegalFormReceiptCorrectionReason))
+            }
+          />
           <button
             type="submit"
             className={styles.declineSubmit}
@@ -724,5 +596,126 @@ export function renderEdRowForms(row: EdBoardRowModel, ctx: EdScreenContext): Re
         </form>
       ) : null}
     </>
+  );
+}
+
+/** A mounted form owns its command until its outcome is known. */
+function EdCommunityReferralForm({ row, ctx }: { row: EdBoardRowModel; ctx: EdScreenContext }) {
+  const { movement, recordedSuburb, teamOptions } = row;
+  const {
+    raise,
+    communityTeamChoice,
+    setCommunityTeamChoice,
+    communityPurposeChoice,
+    setCommunityPurposeChoice,
+    setCommunityReferralOpenFor,
+  } = ctx;
+  const save = useWardFormSave(`ed-community-referral:${movement.id}`);
+  const cmhtReady = communityTeamChoice !== "" && communityPurposeChoice !== "" && !save.pending;
+  const cmhtMissing = save.pending
+    ? "Saving change…"
+    : !communityTeamChoice
+      ? "Choose a community team first."
+      : "Choose what the referral is for first.";
+  return (
+    <div className={styles.declineForm} data-testid={`ward-ed-cmht-panel-${movement.id}`}>
+      <p className={styles.cardMeta}>Community team referral. No bed is requested.</p>
+      <p className={styles.cardMeta} data-testid={`ward-ed-cmht-legal-status-${movement.id}`}>
+        Legal status: {/* Never defaults to Voluntary (owner rule, 19 Oct 2026): nothing recorded says so. */}
+        {movement.legalStatus ?? (movement.legalForm ? `Form ${movement.legalForm.code}` : "Not recorded")}
+      </p>
+      {recordedSuburb ? (
+        <p className={styles.cardMeta} data-testid={`ward-ed-cmht-catchment-note-${movement.id}`}>
+          Team for the recorded home suburb ({recordedSuburb}) listed first.
+        </p>
+      ) : (
+        <p className={styles.cardMeta} data-testid={`ward-ed-cmht-catchment-note-${movement.id}`}>
+          No home suburb recorded.
+        </p>
+      )}
+      <EdPickerField
+        label="Community team"
+        id={`ward-ed-cmht-select-${movement.id}`}
+        testId={`ward-ed-cmht-select-${movement.id}`}
+        name={`ward-ed-cmht-select-${movement.id}`}
+        disabled={save.pending}
+        placeholder="Choose a community team"
+        options={teamOptions.map((team) => ({ value: team, label: team }))}
+        value={communityTeamChoice === "" ? null : communityTeamChoice}
+        onChange={(value) => setCommunityTeamChoice(value ?? "")}
+      />
+      <fieldset
+        className={styles.referralField}
+        disabled={save.pending}
+        data-testid={`ward-ed-cmht-purpose-${movement.id}`}
+      >
+        <legend>What is the referral for?</legend>
+        {COMMUNITY_REFERRAL_PURPOSES.map((purpose) => (
+          <label key={purpose}>
+            <input
+              type="radio"
+              name={`ward-ed-cmht-purpose-${movement.id}`}
+              value={purpose}
+              checked={communityPurposeChoice === purpose}
+              onChange={() => setCommunityPurposeChoice(purpose)}
+              data-testid={`ward-ed-cmht-purpose-${purpose}-${movement.id}`}
+            />{" "}
+            {communityReferralPurposeLabel(purpose)}
+          </label>
+        ))}
+      </fieldset>
+      {save.error ? (
+        <p className={styles.cardMeta} role="alert">
+          {save.error}
+        </p>
+      ) : null}
+      <div className={styles.actionRow}>
+        <button
+          type="button"
+          aria-disabled={!cmhtReady ? "true" : undefined}
+          aria-describedby={!cmhtReady ? `ward-ed-cmht-reason-${movement.id}` : undefined}
+          title={!cmhtReady ? cmhtMissing : undefined}
+          data-testid={`ward-ed-cmht-confirm-${movement.id}`}
+          className={styles.declineButton}
+          onClick={(event) => {
+            if (!cmhtReady) {
+              ignoreUnavailableActivation(event);
+              return;
+            }
+            if (!communityPurposeChoice) return;
+            save.submit(
+              () =>
+                raise("REFER_TO_COMMUNITY_TEAM", {
+                  movementId: movement.id,
+                  team: communityTeamChoice,
+                  purpose: communityPurposeChoice,
+                }),
+              () => {
+                setCommunityReferralOpenFor(undefined);
+                setCommunityTeamChoice("");
+                setCommunityPurposeChoice("");
+              },
+            );
+          }}
+        >
+          Confirm CMHT referral
+        </button>
+        {!cmhtReady ? <DisabledReason id={`ward-ed-cmht-reason-${movement.id}`}>{cmhtMissing}</DisabledReason> : null}
+        <button
+          type="button"
+          aria-disabled={save.pending || undefined}
+          data-testid={`ward-ed-cmht-cancel-${movement.id}`}
+          className={styles.acceptButton}
+          onClick={() => {
+            if (save.pending) return;
+            setCommunityReferralOpenFor(undefined);
+            setCommunityTeamChoice("");
+            setCommunityPurposeChoice("");
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
   );
 }
