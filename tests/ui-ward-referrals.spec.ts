@@ -188,7 +188,7 @@ async function raiseReferralInSlideOut(page: Page, referral: SlideOutReferral) {
 
   // Wards: the named wards, then the transport for the arrival plan.
   await openReferralStep(sheet, "Wards");
-  const wards = sheet.getByRole("list", { name: "Placement Destination Options" });
+  const wards = sheet.getByRole("list", { name: "Destinations" });
   await expect(wards).toBeVisible();
   for (const unitId of referral.notOffered ?? []) {
     await expect(wards.getByRole("checkbox", { name: wardChoiceName(unitId) })).toHaveCount(0);

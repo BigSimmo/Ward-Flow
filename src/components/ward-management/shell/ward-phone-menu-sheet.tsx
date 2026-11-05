@@ -75,7 +75,7 @@ const CREATE_LINKS: readonly {
 }[] = [
   // Pop-ups build (Create, round 2, 1 Nov 2026): short noun phrases, the same words as the Tools rows.
   { id: "delays", label: "Log a delay", meta: "Patient and reason", icon: Clock3 },
-  { id: "wards", label: "Update a bed", meta: "Open, close or hold a bed", icon: BedSingle },
+  { id: "wards", label: "Update a bed", meta: "Open or close a bed", icon: BedSingle },
   {
     id: "add-patient",
     label: "Add patient",

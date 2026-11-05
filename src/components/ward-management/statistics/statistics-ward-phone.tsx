@@ -57,7 +57,7 @@ export function WardPhone({
   /** The Length of stay card (`#ward-stay`), after the lists, so the ward page's link lands here too. */
   stay?: ReactNode;
 }) {
-  const [tab, setTab] = useState<"roster" | "discharges" | "blockers">("roster");
+  const [tab, setTab] = useState<"roster" | "discharges" | "heldUp">("roster");
   const { countsOnly } = useStatisticsCounts();
   const access = useEffectiveWardAccess();
   const byStay = (a: Admission, b: Admission) => (stayDaysOf(b, now) ?? -1) - (stayDaysOf(a, now) ?? -1);
@@ -71,8 +71,8 @@ export function WardPhone({
         dayOf(admission.expectedDischargeAt) < dayOf(now) + 7,
     )
     .sort((a, b) => (a.expectedDischargeAt ?? 0) - (b.expectedDischargeAt ?? 0));
-  const blockers = current.filter((admission) => admission.blockReason !== null).sort(byStay);
-  const shown = tab === "roster" ? roster : tab === "discharges" ? discharges : blockers;
+  const heldUp = current.filter((admission) => admission.blockReason !== null).sort(byStay);
+  const shown = tab === "roster" ? roster : tab === "discharges" ? discharges : heldUp;
   // Redesign (owner rule): a long list opens on its first rows, then "Show more".
   const [expanded, setExpanded] = useState(false);
 
@@ -88,7 +88,7 @@ export function WardPhone({
         <PeopleNotListed testId="ward-statistics-ward-phone-not-listed" />
       ) : (
         <>
-          <Segmented<"roster" | "discharges" | "blockers">
+          <Segmented<"roster" | "discharges" | "heldUp">
             className={cx(phone.seg, phone.stickySeg)}
             size="md"
             label="Ward list"
@@ -97,7 +97,7 @@ export function WardPhone({
             items={[
               { id: "roster", label: "Roster", count: roster.length },
               { id: "discharges", label: "Discharges", count: discharges.length },
-              { id: "blockers", label: "Held up", count: blockers.length },
+              { id: "heldUp", label: "Held up", count: heldUp.length },
             ]}
           />
           {shown.length === 0 ? (
@@ -127,7 +127,7 @@ export function WardPhone({
                     key={admission.id}
                     as="li"
                     name={<span className={phone.mono}>{admission.id}</span>}
-                    meta={`${tab === "blockers" && admission.blockReason ? admission.blockReason : status}${
+                    meta={`${tab === "heldUp" && admission.blockReason ? admission.blockReason : status}${
                       admission.expectedDischargeAt !== null && isPastDate(admission.expectedDischargeAt, now)
                         ? " · past date"
                         : ""

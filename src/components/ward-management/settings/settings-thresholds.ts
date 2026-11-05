@@ -93,7 +93,7 @@ export function publishedThresholds(
     {
       id: "legal-form-deadline",
       figure: "A legal form's own due time, once it has passed. Each form carries its own deadline.",
-      triggers: "The amber tint on a department's pressure card on Command, and the same card's overdue-form count.",
+      triggers: "The amber tint on a department's pressure card on Home, and the same card's overdue-form count.",
       livesIn:
         "ward-pressure.ts, which counts movements whose currentLegalDueAt has passed (the legalForm.dueAt still in force; an ended form's expiry is history only); the tint is in coordinator.module.css.",
       setBy:

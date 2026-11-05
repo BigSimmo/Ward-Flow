@@ -389,7 +389,7 @@ describe("the Delays board's data views", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(within(graphs()).getByRole("tab", { name: "Where and whose move" }));
-    fireEvent.click(within(graphs()).getByRole("button", { name: "Blocker" }));
+    fireEvent.click(within(graphs()).getByRole("button", { name: "Held up by" }));
     fireEvent.click(within(graphs()).getByRole("button", { name: /, Family: 1 waiting/u }));
     expect(screen.getByTestId("delays-shown-count").textContent).toBe(`1 of ${OPEN.length}`);
 

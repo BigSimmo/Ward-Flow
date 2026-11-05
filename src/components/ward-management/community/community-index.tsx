@@ -1414,9 +1414,7 @@ function SearchEmptyNotice({ query, alikeOnly }: { query: string; alikeOnly: boo
   return (
     <div className={styles.emptyNotice} data-testid="community-gateway-search-empty">
       <p>
-        <strong>
-          {alikeOnly ? "No team in this service reads like another." : "No teams found matching active filters."}
-        </strong>
+        <strong>{alikeOnly ? "No team in this service reads like another." : "No team matches these filters."}</strong>
       </p>
       <p>Reset the filters to clear the highlight.</p>
     </div>

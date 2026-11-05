@@ -30,7 +30,7 @@ import { useForecastHistory, useForecastMissReasons, useForecastModel } from "./
 import styles from "./forecast.module.css";
 
 /**
- * Discharge dates that held, one row per ward with a recorded planned date, in the wards' own order.
+ * Discharge dates that were met, one row per ward with a recorded planned date, in the wards' own order.
  * Not sorted or cut to the lowest few (Josh, 25 Oct 2026): a worst-first list ranked wards.
  */
 export function dischargeDatesHeldByWard(units: readonly Unit[], admissions: Admission[], now: Instant) {
@@ -94,14 +94,14 @@ export function ForecastTrackRecordTiles({
         now={
           consideredCount === 0 ? undefined : (
             <Now tone={heldCount === consideredCount ? "success" : undefined}>
-              {heldCount} of {consideredCount} held
+              {heldCount} of {consideredCount} kept
             </Now>
           )
         }
         sub={
           record.days.length === 0
-            ? "Discharge dates that held, by ward · needs two days of forecasts"
-            : `Discharge dates that held, by ward · ${record.inRange} of ${record.days.length} ${record.days.length === 1 ? "day" : "days"} inside the forecast range`
+            ? "Discharge dates that were met, by ward · needs two days of forecasts"
+            : `Discharge dates that were met, by ward · ${record.inRange} of ${record.days.length} ${record.days.length === 1 ? "day" : "days"} inside the forecast range`
         }
       >
         {/* Statistics pages fold nothing away in a disclosure (the presentation rule), so the record
@@ -168,7 +168,7 @@ export function ForecastTrackRecordTiles({
             </>
           )}
 
-          <h3 className={styles.groupHead}>Discharge dates that held, by ward</h3>
+          <h3 className={styles.groupHead}>Discharge dates that were met, by ward</h3>
           {held.length === 0 ? (
             <p className={styles.caption}>No ward has a discharge with a recorded planned date yet.</p>
           ) : (

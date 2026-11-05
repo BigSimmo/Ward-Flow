@@ -8,7 +8,7 @@ My ED board
 
 ## Jobs you do most
 
-1. Raise a referral. Use New referral, from the header or on the board. Choose one or more destinations and send it.
+1. New referral. Use New referral, from the header or on the board. Choose one or more destinations and send it.
 2. Record ED steps. On a patient, use Record examination, Record medically cleared and Mark handover ready.
 3. Legal paperwork. Use Change legal status and Mark Form 1A received. Type any expiry time from the paper form.
 
@@ -31,7 +31,7 @@ My ED board
 
 - /: Search, from the box in the header. On Settings it finds a setting.
 - Ctrl+K: Search, even with single-key shortcuts off. Cmd+K on a Mac.
-- Shift+T: Open Alerts, called Tasks on some desks.
+- Shift+T: Open Alerts.
 - Shift+A: Open Activity.
 - Shift+R: Start a new referral.
 - [: Fold the side menu to icons, or open it again.
