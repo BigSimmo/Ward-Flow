@@ -1,4 +1,5 @@
 import { validDischargeRequestNamespace } from "./ward-discharge-records";
+import { hasDuplicateRetainedUmrns } from "./ward-retained-umrn";
 import {
   RESTRICTIVE_PRACTICE_IDS,
   SECLUSION_ROOM_STATUS_IDS,
@@ -254,7 +255,6 @@ function nested(value: unknown, depth = 0): boolean {
   }
   return true;
 }
-
 // Pass 2: row shapes.
 
 // D-38: a community treatment order is the one non-text patient field: Form 5A, a finite recorded
@@ -501,8 +501,12 @@ const meetingAction = z
 // Fix plan item 10: a level from the fixed list, an Intermittent interval from the fixed list, and a
 // review time as a number. `isObservation` is the same check `RECORD_OBSERVATION_LEVEL` makes.
 const observationRule = z.custom<Observation>(isObservation);
-const observationChangeRule = z.strictObject({ at: finite, from: observationRule, to: observationRule });
-
+const observationChangeRule = z.strictObject({
+  at: finite,
+  from: observationRule,
+  to: observationRule,
+  sequence: z.optional(counter.check(z.gte(1))),
+});
 const movement = z
   .looseObject({
     id,
@@ -1140,9 +1144,10 @@ function identitiesMatchScenario(state: StoredState): boolean {
     })
   );
 }
-
 // Pass 3: links between rows. Ids are already unique within each collection.
 function consistent(state: StoredState, value: RecordValue): boolean {
+  // Whole-world adoption obeys registration's retained-number ownership rule, preserving privacy placeholders.
+  if (hasDuplicateRetainedUmrns(state.patients)) return false;
   if (!identitiesMatchScenario(state)) return false;
   if (validateConfiguration(value.configuration) === null) return false;
   const submissionIds = state.referrals.flatMap((referral) =>
