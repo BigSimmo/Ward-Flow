@@ -216,8 +216,8 @@ export function BedForecast({
           {siteName ? <p>Estimate for the wards at {siteName}.</p> : null}
           <p>
             From {plural(sourceSummary.discharges, "recorded discharge", "recorded discharges")} on{" "}
-            {plural(sourceSummary.wards, "ward", "wards")} and planned admissions (not the same figure as
-            &quot;Beds freeing today&quot; on the hero, which counts only today&apos;s release plans).{" "}
+            {plural(sourceSummary.wards, "ward", "wards")} and planned admissions (not the same figure as &quot;Beds
+            freeing today&quot; on the hero, which counts only today&apos;s release plans).{" "}
             {plural(sourceSummary.overdueNotHeldUp, "release is", "releases are")} overdue and not held up;{" "}
             {plural(weekOut, "bed is", "beds are")} due out in the next {bars.length} days. Not yet counted:{" "}
             {plural(forecastModel.notCounted.leaveBeds, "bed", "beds")} held for people on leave,{" "}
