@@ -28,9 +28,17 @@ type RecoveryHost = {
 /** Check receipt identities in order without ever reconstructing or replaying a command body. */
 export async function recoverCommandReceipts(host: RecoveryHost) {
   const read = readCommandRecovery(host.storage);
+  // A check already on screen whose record has gone is retired quietly, without replay (main's rule).
+  const checking = host.view().recovering === true;
+  const retire = () => host.publish({ recovery: undefined, boardCurrent: host.view().boardCurrent });
   if (read.unavailable) {
     host.unavailable();
     host.pending(false);
+    if (checking) {
+      host.remove();
+      retire();
+      return;
+    }
     host.publish({
       recovery: "Recovery storage could not be read. Review the board before repeating an action.",
       recoveryStorageUnavailable: true,
@@ -39,6 +47,10 @@ export async function recoverCommandReceipts(host: RecoveryHost) {
   }
   if (read.invalid) {
     host.remove();
+    if (checking) {
+      retire();
+      return;
+    }
     host.publish({
       recovery:
         "The previous recovery record could not be read. Its outcome is unknown. Review the board before repeating an action.",
@@ -49,8 +61,9 @@ export async function recoverCommandReceipts(host: RecoveryHost) {
   if (entries.length !== read.entries.length) writeCommandRecovery(host.storage, entries);
   if (!entries.length) {
     host.pending(false);
-    // Another desk's entries were dropped: publish the cleared gate now, not at the next poll.
-    if (read.entries.length) host.publish({ boardCurrent: host.view().boardCurrent });
+    // Another desk's entries were dropped, or a shown check lost its record: publish the cleared
+    // gate now, not at the next poll.
+    if (checking) retire();
     return;
   }
   const results: RecoveryResult[] = [...(host.view().recoveryResults ?? [])];
@@ -73,14 +86,19 @@ export async function recoverCommandReceipts(host: RecoveryHost) {
       const { response, value } = await host.request(`/v1/workspace/receipt?commandId=${held.commandId}`);
       current(held);
       if (!response.ok) throw new Error("Receipt unavailable");
-      const answer = value.receipt === null ? "unknown" : value.receipt?.outcome;
-      if (
-        answer !== "accepted" &&
-        answer !== "partly" &&
-        answer !== "refused" &&
-        !(answer === "unknown" && value.receipt === null)
-      )
-        throw new Error("Bad receipt");
+      if (value.receipt === null) {
+        // #1435: absence cannot prove a request delayed before the write lock will never commit.
+        // Keep the entry and the gate; the next check asks again until the identity expires.
+        host.publish({
+          status: "unavailable",
+          boardCurrent: true,
+          recovery:
+            "The previous save is still unresolved. Saving remains disabled while its receipt is checked. Try checking again.",
+        });
+        return;
+      }
+      const answer = value.receipt?.outcome;
+      if (answer !== "accepted" && answer !== "partly" && answer !== "refused") throw new Error("Bad receipt");
       outcome = answer;
       if (outcome === "accepted" || outcome === "partly") {
         const revision = value.receipt?.commandRevision;
@@ -111,7 +129,7 @@ export async function recoverCommandReceipts(host: RecoveryHost) {
     recovery: unsent
       ? `${unsent} waiting change${unsent === 1 ? " was" : "s were"} not sent. Their content was not retained after reload. Review the board before entering them again.`
       : unknown
-        ? "A previous save receipt is missing or has expired. Its outcome is unknown. Review the board before repeating any action."
+        ? "A previous save receipt has expired. Its outcome is unknown. Review the board before repeating any action."
         : partly
           ? "The previous uncertain save was partially applied. Review the refreshed board before acting again."
           : refused

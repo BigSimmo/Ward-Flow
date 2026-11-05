@@ -8,8 +8,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { WARD_FLOW_ROLE_LABELS, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { useOptionalWardFlowSelect, useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
-import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
-import { wardCommandFailure } from "@/components/ward-management/ward/use-ward-command-completion";
+import { useWardFormSave } from "../use-ward-form-save";
 import { REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS, type Referral } from "@/components/ward-management/ward-model";
 import { referralSentByDesk, routeSentKind } from "@/components/ward-management/ward-referral-sender";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -54,8 +53,9 @@ export function ReferralHistoryAndCorrections({
     routeSentKind(routeRole, referral.source) &&
     referralSentByDesk(referral, access, wardPlaceLookup(flow?.units ?? []));
   const [note, setNote] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [failure, setFailure] = useState<string | undefined>(undefined);
+  const save = useWardFormSave(`referral-correction:${referral.id}`);
+  const saving = save.pending;
+  const failure = save.error;
   const noteId = useId();
   const trimmedNote = note.trim();
 
@@ -68,19 +68,11 @@ export function ReferralHistoryAndCorrections({
    */
   function handleAddCorrection() {
     if (trimmedNote.length === 0 || saving) return;
-    setFailure(undefined);
     const submitted = note;
-    const finish = (outcome?: WardCommandOutcome | void) => {
-      setSaving(false);
-      const message = wardCommandFailure(outcome ?? undefined);
-      if (message) setFailure(message);
-      else setNote((current) => (current === submitted ? "" : current));
-    };
-    const result = raise("ADD_REFERRAL_CORRECTION", { referralId: referral.id, note: submitted });
-    if (result instanceof Promise) {
-      setSaving(true);
-      result.then(finish, () => finish({ commandId: "", status: "failed" }));
-    } else finish(result);
+    save.submit(
+      () => raise("ADD_REFERRAL_CORRECTION", { referralId: referral.id, note: submitted }),
+      () => setNote((current) => (current === submitted ? "" : current)),
+    );
   }
 
   return (

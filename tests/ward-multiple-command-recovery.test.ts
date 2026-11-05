@@ -97,6 +97,50 @@ describe("multi-command reload recovery", () => {
       h.client.dispose();
     }
   });
+  it("keeps an unexpired identity and the save gate when its receipt is not yet recorded", async () => {
+    const commandId = "44444444-4444-4444-8444-444444444444";
+    let view: SharedView | undefined;
+    const data = new Map([
+      [
+        COMMAND_RECOVERY_KEY,
+        JSON.stringify({
+          version: 2,
+          entries: [{ commandId, receiptScope: "desk", expiresAt: Date.now() + 60_000, phase: "sent" }],
+        }),
+      ],
+    ]);
+    const storage = {
+      getItem: (key: string) => data.get(key) ?? null,
+      setItem: (key: string, value: string) => void data.set(key, value),
+      removeItem: (key: string) => void data.delete(key),
+    };
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://synthetic.invalid",
+      token: async () => "synthetic-token",
+      recoveryStorage: storage,
+      manageDrafts: false,
+      changed: (next) => {
+        view = next;
+      },
+      fetch: async (url) =>
+        String(url).includes("/receipt?")
+          ? Response.json({ receipt: null })
+          : Response.json({ snapshot: snapshot(), receiptScope: "desk", accessUntil: Date.now() + 60_000 }),
+    });
+    try {
+      await client.refresh();
+      expect(view?.status).toBe("unavailable");
+      expect(view?.boardCurrent).toBe(true);
+      expect(view?.recovering).toBe(true);
+      expect(view?.unconfirmedSave).toBe(true);
+      expect(view?.recovery).toBe(
+        "The previous save is still unresolved. Saving remains disabled while its receipt is checked. Try checking again.",
+      );
+      expect(readCommandRecovery(storage).entries).toEqual([expect.objectContaining({ commandId })]);
+    } finally {
+      client.dispose();
+    }
+  });
   it("publishes the cleared gate at once when only another desk's entries were held", async () => {
     const h = harness([
       {

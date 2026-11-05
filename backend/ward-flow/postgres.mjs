@@ -608,6 +608,9 @@ export function createWorkspaceStore(
       await client.query("COMMIT");
       return result;
     } catch (error) {
+      // An uncommitted candidate is never evidence for a later writer's matching revision/time.
+      // Invalidate before awaiting rollback, including when COMMIT's reply itself was lost.
+      pending = null;
       forgetVersionOnMissing(error);
       try {
         await client.query("ROLLBACK");

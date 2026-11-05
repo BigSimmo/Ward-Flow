@@ -540,10 +540,10 @@ describe("review privacy boundaries", () => {
         });
         expect(original.status).toBe("failed");
         expect(original.confirmation).toBeDefined();
+        // The v2 journal (#1452) holds identities only: one entry per sent command.
         expect(JSON.parse(storage.get(WARD_COMMAND_RECOVERY_KEY)!)).toEqual({
-          commandId,
-          receiptScope: "synthetic-role-binding",
-          expiresAt,
+          version: 2,
+          entries: [{ commandId, receiptScope: "synthetic-role-binding", expiresAt, phase: "sent" }],
         });
         if (terminal === "retry") {
           accept = true;
@@ -607,7 +607,9 @@ describe("review privacy boundaries", () => {
     await first.refresh();
     await first.dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now: 642, unitId: "synthetic-ward" });
     const saved = JSON.parse(storage.get(WARD_COMMAND_RECOVERY_KEY)!);
-    expect(Object.keys(saved).sort()).toEqual(["commandId", "expiresAt", "receiptScope"]);
+    expect(Object.keys(saved).sort()).toEqual(["entries", "version"]);
+    expect(saved.entries).toHaveLength(1);
+    expect(Object.keys(saved.entries[0]).sort()).toEqual(["commandId", "expiresAt", "phase", "receiptScope"]);
     expect(JSON.stringify(saved)).not.toMatch(/synthetic-ward|REQUEST_CAPACITY_REFRESH|event|payload/);
     const beforeUnload = new Event("beforeunload", { cancelable: true });
     window.dispatchEvent(beforeUnload);

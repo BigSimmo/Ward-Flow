@@ -38,6 +38,7 @@ export function useReferralCommandCompletion({
   setPending,
   onError,
   onCommitted,
+  onRetired,
   onAccepted,
 }: {
   dispatch: WardCommandDispatch;
@@ -47,6 +48,8 @@ export function useReferralCommandCompletion({
   setPending: (pending: boolean) => void;
   onError: (message: string) => void;
   onCommitted: (intake: ReferralIntakeDetails) => void;
+  /** Durable draft cleanup; must not update component state. Runs even after unmount. */
+  onRetired?: (intake: ReferralIntakeDetails) => void;
   onAccepted: (referral: Referral, intake: ReferralIntakeDetails) => void;
 }) {
   const submissionRef = useRef<PendingReferralSubmission | null>(null);
@@ -75,7 +78,7 @@ export function useReferralCommandCompletion({
     submissionRef.current = submitted;
     setPending(true);
     const settle = (outcome?: WardCommandOutcome) => {
-      if (!mounted.current || submissionRef.current !== submitted) return;
+      if (submissionRef.current !== submitted) return;
       if (
         submitted.generation !== currentGeneration.current ||
         submitted.ownerVersion !== referralDraftSessionVersion() ||
@@ -83,19 +86,25 @@ export function useReferralCommandCompletion({
         outcome?.isCurrent?.() === false
       ) {
         submissionRef.current = null;
-        onError(changedMessage);
-        setPending(false);
+        if (mounted.current) {
+          onError(changedMessage);
+          setPending(false);
+        }
       } else if (outcome?.status === "accepted") {
         submissionRef.current = { ...submitted, outcome };
         // Acceptance is definitive even when a scoped snapshot cannot show the new record.
         // Retire recovery now so closing/reopening cannot turn the saved intake into another Send.
+        onRetired?.(submitted.intake);
+        if (!mounted.current) return;
         onCommitted(submitted.intake);
         setSubmissionAwaitingRecord(true);
         setPending(false);
         setCompletion((value) => value + 1);
       } else if (outcome?.status === "failed" && (outcome.confirmation || submitted.unconfirmed)) {
-        onError(outcome.message ?? "Referral could not be confirmed. Check the Referrals board before trying again.");
-        setPending(true);
+        if (mounted.current) {
+          onError(outcome.message ?? "Referral could not be confirmed. Check the Referrals board before trying again.");
+          setPending(true);
+        }
         if (submitted.unconfirmed || !outcome.confirmation) return;
         submitted.unconfirmed = outcome;
         // A status-bar Retry confirms this same command; another Send must not mint a new intake.
@@ -109,8 +118,12 @@ export function useReferralCommandCompletion({
         );
       } else {
         submissionRef.current = null;
-        onError(outcome?.message ?? "Referral could not be confirmed. Check the Referrals board before trying again.");
-        setPending(false);
+        if (mounted.current) {
+          onError(
+            outcome?.message ?? "Referral could not be confirmed. Check the Referrals board before trying again.",
+          );
+          setPending(false);
+        }
       }
     };
     try {
