@@ -367,14 +367,15 @@ export function WardTour({ onClose }: { onClose: () => void }) {
                   See common tasks, with Show me
                 </button>
               ) : null}
-              {offerFurther ? (
-                <button type="button" className={styles.further} onClick={goFurther} data-testid="ward-tour-further">
-                  Go further, {extra.length} more {extra.length === 1 ? "step" : "steps"}
-                </button>
-              ) : null}
             </>
           )}
           <div className={styles.buttons}>
+            {/* In the pinned foot, so a phone sees the offer without scrolling past the ask list. */}
+            {offerFurther && !menu ? (
+              <button type="button" className={styles.further} onClick={goFurther} data-testid="ward-tour-further">
+                Go further, {extra.length} more {extra.length === 1 ? "step" : "steps"}
+              </button>
+            ) : null}
             <button
               type="button"
               className={styles.skip}

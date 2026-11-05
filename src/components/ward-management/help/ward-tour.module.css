@@ -254,6 +254,8 @@
 
 /* The end of the first-run tour: the optional extra steps, offered beside Done, never started. */
 .further {
+  /* A row of its own above Replay, Back and Done in the pinned foot. */
+  flex: 1 0 100%;
   min-height: 40px;
   padding: 0 0.875rem;
   border: 1px solid var(--wf-line-ctl);
