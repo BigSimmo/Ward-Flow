@@ -175,7 +175,7 @@ describe("the executive chrome in the new frame", () => {
     expect(card).toHaveTextContent(/over 85%/);
     expect(card).toHaveTextContent(`${report.network.beds.ready} beds ready now`);
     expect(card).toHaveTextContent("Metro");
-    expect(card.getAttribute("aria-label")).toMatch(/^Bed alerts: (None|\d+) over 85%\. Metro /);
+    expect(card.getAttribute("aria-label")).toMatch(/^Bed alerts: (None|\d+) over 85% full\. Metro /);
     fireEvent.click(card);
     const rows = screen.getAllByTestId("ward-rail-bed-alert-row");
     expect(rows).toHaveLength(report.services.length);

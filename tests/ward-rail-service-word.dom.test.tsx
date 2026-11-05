@@ -218,7 +218,7 @@ describe("rail bed alert count (#793)", () => {
     renderRail();
     const trigger = screen.getByTestId("ward-rail-capacity-alerts-trigger");
     const label = trigger.getAttribute("aria-label") ?? "";
-    expect(label).toMatch(/Bed alerts: (None|\d+) over 85%/u);
+    expect(label).toMatch(/Bed alerts: (None|\d+) over 85% full/u);
     expect(label).not.toMatch(/\b(No alerts|\d+ alerts?)\b/u);
   });
 });

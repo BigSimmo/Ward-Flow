@@ -112,10 +112,14 @@ export function capacityRowsSpoken(rows: readonly CapacityRow[]): string {
     .join(". ");
 }
 
-/** "1 over 85%", "None over 85%": the chip's words, so the alert never rests on colour alone. */
+/**
+ * "1 over 85% full", "None over 85% full": the chip's words, so the alert never rests on colour alone.
+ * WF-15 (live test, 5 Nov 2026): "full" says this counts places by bed occupancy, so "None over 85%"
+ * no longer reads as a contradiction of the Alerts badge beside it, which counts alerts.
+ */
 export function overLineLabel(rows: readonly CapacityRow[]): { label: string; over: number } {
   const over = rows.filter((row) => row.percent !== null && isBedAlert(row.percent)).length;
-  return { label: `${over === 0 ? "None" : over} over ${BED_ALERT_THRESHOLD_PERCENT}%`, over };
+  return { label: `${over === 0 ? "None" : over} over ${BED_ALERT_THRESHOLD_PERCENT}% full`, over };
 }
 
 /* ── What a count counts ────────────────────────────────────────────────────────────────────── */
