@@ -10,7 +10,8 @@
  * separate worktree and fails only the routes this PR grew (`judgeAgainstMain`). Before 4 November
  * 2026 one over-budget merge to main failed every open PR's required build until someone raised the
  * budget by hand. A PR that pushes a route over, or grows an already-over route by more than
- * MAIN_TOLERANCE_KB, still fails. The extra build runs only when the merged result is over budget,
+ * MAIN_TOLERANCE_KB, still fails. In the merge queue the checkout is already the group head, so it is
+ * judged the same way against the group's base (WARD_BUDGET_MAIN_SHA = merge_group.base_sha). The extra build runs only when the merged result is over budget,
  * and never for a PR that changes package.json, package-lock.json or .nvmrc (judged strictly).
  */
 import { execFileSync, spawnSync } from "node:child_process";
@@ -83,11 +84,9 @@ export function gate({ root = process.cwd(), event = process.env.GITHUB_EVENT_NA
     if (!/^[0-9a-f]{40}$/u.test(tree)) throw new Error("Strict budget measurement has no valid tree identity");
     console.log(`::notice title=Ward strict budget tree::${tree}`);
   }
-  if (status !== OVER_BUDGET || event !== "pull_request") return status;
-  const mainSha = execFileSync("git", ["rev-parse", "refs/remotes/origin/main"], {
-    cwd: root,
-    encoding: "utf8",
-  }).trim();
+  if (status !== OVER_BUDGET || (event !== "pull_request" && event !== "merge_group")) return status;
+  const mainRef = (event === "merge_group" && process.env.WARD_BUDGET_MAIN_SHA) || "refs/remotes/origin/main";
+  const mainSha = execFileSync("git", ["rev-parse", mainRef], { cwd: root, encoding: "utf8" }).trim();
   console.log(`Over budget merged with main ${mainSha}. Measuring main alone to see whose growth it is.`);
   // Main alone reuses this checkout's installed packages, which are only main's when the
   // dependency inputs match. A PR that changes them is judged strictly, as before.
