@@ -322,3 +322,72 @@ it("retires an accepted hidden referral draft before autosave or drawer reopenin
   setup();
   expect(state.clinicalSummary).not.toBe("Synthetic accepted intake sentinel.");
 });
+
+it.each(["direct", "later confirmation", "initial answer after close"])(
+  "retires a kept referral after its drawer unmounts on %s acceptance",
+  async (mode) => {
+    const view = setup();
+    ready();
+    act(() => state.setClinicalSummary("Synthetic pending referral draft."));
+    send();
+    let confirm!: (outcome: WardCommandOutcome) => void;
+    const confirmation = new Promise<WardCommandOutcome>((yes) => {
+      confirm = yes;
+    });
+    if (mode === "later confirmation") {
+      await act(async () => resolve({ commandId: "held-referral", status: "failed", confirmation }));
+    }
+    act(() => state.requestClose());
+    expect(state.guardOpen).toBe(true);
+    act(() => state.keepAndClose());
+    view.unmount();
+    expect(readKeptReferralDraft()).not.toBeNull();
+    if (mode === "initial answer after close") {
+      await act(async () => resolve({ commandId: "held-referral", status: "failed", confirmation }));
+    }
+    await act(async () => {
+      const accepted: WardCommandOutcome = { commandId: "held-referral", status: "accepted" };
+      if (mode === "direct") resolve(accepted);
+      else confirm(accepted);
+    });
+    expect(readKeptReferralDraft()).toBeNull();
+    setup();
+    expect(state.clinicalSummary).not.toBe("Synthetic pending referral draft.");
+  },
+);
+
+it("an old accepted referral preserves newer kept content after its drawer closes", async () => {
+  const view = setup();
+  ready();
+  act(() => state.setClinicalSummary("Synthetic submitted revision."));
+  send();
+  act(() => state.keepAndClose());
+  view.unmount();
+  setup();
+  act(() => state.setClinicalSummary("Synthetic newer unsent revision."));
+  act(() => state.keepAndClose());
+  await act(async () => resolve({ commandId: "old-referral", status: "accepted" }));
+  expect(readKeptReferralDraft()).toMatchObject({ clinicalSummary: "Synthetic newer unsent revision." });
+});
+
+it("an old accepted referral preserves replacement chart bytes with identical metadata", async () => {
+  const view = setup();
+  ready();
+  send();
+  act(() => state.keepAndClose());
+  view.unmount();
+  setup();
+  act(() =>
+    state.setDocumentation({
+      ...state.documentation,
+      charts: state.documentation.charts.map((chart) => ({ ...chart, base64: "ZGVm" })),
+    }),
+  );
+  act(() => state.keepAndClose());
+  await act(async () => resolve({ commandId: "old-chart-referral", status: "accepted" }));
+  expect(readKeptReferralDraft()).toMatchObject({
+    documentation: {
+      charts: [expect.objectContaining({ base64: "ZGVm" }), expect.objectContaining({ base64: "ZGVm" })],
+    },
+  });
+});

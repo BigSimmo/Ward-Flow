@@ -13,6 +13,7 @@ import {
   useCallback,
   useDeferredValue,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   useTransition,
@@ -680,6 +681,20 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     };
   }, [setActiveTab]);
 
+  const drawerVisit = useRef<object | null>(null);
+  const drawerSubject = useRef<string | undefined>(undefined);
+  useLayoutEffect(() => {
+    drawerSubject.current = admissions.find(
+      (admission) =>
+        admission.unitId === unitId && admission.bedNumber === selectedBed && admission.state === "occupied",
+    )?.id;
+  }, [admissions, unitId, selectedBed]);
+  useLayoutEffect(() => {
+    drawerVisit.current = {};
+    return () => {
+      drawerVisit.current = null;
+    };
+  }, [selectedBed, drawerLeavingDestination]);
   const prevSelectedBedRef = useRef<number | null>(selectedBed);
   const bedDrawerSteppedRef = useRef(false);
   useEffect(() => {
@@ -1692,6 +1707,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   function handleDrawerRecordLeft(admissionId: string, who: string) {
     if (!drawerLeavingDestination) return;
+    const visit = drawerVisit.current;
     const resolved = resolvePatientIdentity(admissions.find((admission) => admission.id === admissionId));
     const destinationLabel = LEAVING_DESTINATIONS.find(
       (destination) => destination.id === drawerLeavingDestination,
@@ -1716,7 +1732,13 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       (outcome) => {
         dischargeCheckRef.current = { ...check, outcome };
         setDischargeToken((token) => token + 1);
-        if (!outcome || outcome.status === "accepted") closeBedDrawer();
+        if (
+          outcome?.status === "accepted" &&
+          outcome.isCurrent?.() !== false &&
+          drawerVisit.current === visit &&
+          (!drawerSubject.current || drawerSubject.current === admissionId)
+        )
+          closeBedDrawer();
       },
     );
   }

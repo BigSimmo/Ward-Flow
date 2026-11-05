@@ -5,7 +5,7 @@ import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state
 import { downloadBlob } from "@/components/ward-management/ward-download";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
 import { COMMUNITY_TEAM_PAGES, communityTeamById } from "../community/community-derivations";
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   CARE_CONTACTS,
   CARE_PLAN_ITEMS,
@@ -84,13 +84,14 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
   const [cohort, setCohort] = useState("adult");
   // Search and forms review (31 Oct 2026): leaving with typed but unrecorded care details asks
   // first. Memory only; nothing typed is kept anywhere (D-18).
-  const [unrecorded, setUnrecorded] = useState(false);
+  const revisions = useRef(new Map<string, number>());
+  const [dirtySections, setDirtySections] = useState<ReadonlyMap<string, number>>(() => new Map());
   useDirtyStateGuard({
-    isDirty: unrecorded,
+    isDirty: dirtySections.size > 0,
     confirmMessage: "You have discharge details that are not recorded yet. Leave without recording them?",
   });
   // Audit 24-3 SV-5: a shared refusal reaches only the outcome, so it is said here too.
-  const careSave = useWardFormSave(record.admissionId);
+  const careSave = useWardFormSave(`${record.admissionId}:${record.generation}`);
   const care = record.careJourney;
   const editable =
     record.identity.kind === "linked" &&
@@ -103,13 +104,17 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
     const date = perthDateTimeLocal(value);
     return date ? (date.getTime() - dayZero.getTime()) / 60_000 : NaN;
   };
-  function save(value: unknown) {
+  function save(value: unknown, sectionTitle: string) {
+    const submittedRevision = revisions.current.get(sectionTitle);
+    if (careSave.pending) {
+      setLocalError("Still saving the last change. Record this section when it has finished.");
+      return;
+    }
     if (!validCareChange(value) || record.identity.kind !== "linked") {
       setLocalError("Complete the required choices and date before recording.");
       return;
     }
     setLocalError(null);
-    setUnrecorded(false);
     setSubmitted(rejections.length);
     const patientId = record.identity.patient.id;
     careSave.submit(
@@ -126,7 +131,15 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
           expectedRevision: record.revision,
           change: value,
         }),
-      () => {},
+      () => {
+        // Acceptance owns only this section's submitted content. Other edits remain guarded.
+        if (revisions.current.get(sectionTitle) !== submittedRevision) return;
+        setDirtySections((current) => {
+          const next = new Map(current);
+          next.delete(sectionTitle);
+          return next;
+        });
+      },
     );
   }
   const section = (title: string, children: ReactNode, change: (data: FormData) => unknown) => (
@@ -141,14 +154,18 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
       <summary>{title}</summary>
       <form
         className={styles.filters}
-        onInput={() => setUnrecorded(true)}
+        onInput={() => {
+          const revision = (revisions.current.get(title) ?? 0) + 1;
+          revisions.current.set(title, revision);
+          setDirtySections((current) => new Map(current).set(title, revision));
+        }}
         onSubmit={(e: FormEvent<HTMLFormElement>) => {
           e.preventDefault();
-          change(new FormData(e.currentTarget));
+          save(change(new FormData(e.currentTarget)), title);
         }}
       >
         {children}
-        <button className={styles.quietButton} type="submit">
+        <button className={styles.quietButton} type="submit" disabled={careSave.pending}>
           Record {title.toLowerCase()}
         </button>
       </form>
@@ -161,6 +178,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
       <p>
         Chosen workflow facts are attributed to the recording role. Clinical documents remain in the clinical record.
       </p>
+      {careSave.pending && <p role="status">Saving… Other sections can be recorded when this save finishes.</p>}
       {localError && <p role="alert">{localError}</p>}
       {submitted !== null &&
       rejections.length > submitted &&
@@ -307,14 +325,13 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                   clinical record.
                 </p>
               </>,
-              (d) =>
-                save({
-                  kind: "follow_up",
-                  contactId: d.get("clinician"),
-                  serviceId: d.get("service"),
-                  appointmentAt: instant(d.get("at")),
-                  mode: d.get("Appointment mode"),
-                }),
+              (d) => ({
+                kind: "follow_up",
+                contactId: d.get("clinician"),
+                serviceId: d.get("service"),
+                appointmentAt: instant(d.get("at")),
+                mode: d.get("Appointment mode"),
+              }),
             )}
           {!dead &&
             section(
@@ -326,8 +343,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                   <DateTimeField name="contactAt" label="Contact" required />
                 </label>
               </>,
-              (d) =>
-                save({ kind: "contact", outcome: d.get("Contact outcome"), contactedAt: instant(d.get("contactAt")) }),
+              (d) => ({ kind: "contact", outcome: d.get("Contact outcome"), contactedAt: instant(d.get("contactAt")) }),
             )}
           {!dead &&
             section(
@@ -336,7 +352,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                 <Choice label="Planning item" values={CARE_PLAN_ITEMS} labelOf={plain} />
                 <Choice label="Planning status" values={CARE_STATUSES} />
               </>,
-              (d) => save({ kind: "plan", item: d.get("Planning item"), status: d.get("Planning status") }),
+              (d) => ({ kind: "plan", item: d.get("Planning item"), status: d.get("Planning status") }),
             )}
           {!dead &&
             section(
@@ -360,13 +376,12 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                   it does not inspect the document.
                 </p>
               </>,
-              (d) =>
-                save({
-                  kind: "document",
-                  cohort: d.get("cohort"),
-                  document: d.get("Document"),
-                  status: d.get("Document status"),
-                }),
+              (d) => ({
+                kind: "document",
+                cohort: d.get("cohort"),
+                document: d.get("Document"),
+                status: d.get("Document status"),
+              }),
             )}
           {clinical &&
             record.admissionState === "departed" &&
@@ -384,13 +399,12 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                   control and keeps the bed occupied.
                 </p>
               </>,
-              (d) =>
-                save({
-                  kind: "coding",
-                  receivingClass: d.get("Receiving establishment class"),
-                  separationCode: d.get("Separation code"),
-                  dischargedFromLeave: d.has("fromLeave"),
-                }),
+              (d) => ({
+                kind: "coding",
+                receivingClass: d.get("Receiving establishment class"),
+                separationCode: d.get("Separation code"),
+                dischargedFromLeave: d.has("fromLeave"),
+              }),
             )}
           {clinical && record.admissionState === "occupied" && !dead && (
             <>
@@ -400,7 +414,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                   <Choice label="Episode type" values={EPISODE_TYPES} />
                   <p>This records an administrative change with code 50. It preserves the occupied bed.</p>
                 </>,
-                (d) => save({ kind: "episode", episodeType: d.get("Episode type") }),
+                (d) => ({ kind: "episode", episodeType: d.get("Episode type") }),
               )}
               {section(
                 "Transport arrangement",
@@ -424,17 +438,16 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                     it does not send a booking or infer service hours.
                   </p>
                 </>,
-                (d) =>
-                  save({
-                    kind: "transport",
-                    mode: d.get("Transport mode"),
-                    region: d.get("Transport region"),
-                    authority: d.get("Checked transport authority"),
-                    riskDocument: d.has("Risk document recorded"),
-                    escortSuitable: d.has("Escort suitability checked"),
-                    leastRestrictiveReviewed: d.has("Least restrictive option reviewed"),
-                    regionalServiceConfirmed: d.has("Regional service arrangement confirmed"),
-                  }),
+                (d) => ({
+                  kind: "transport",
+                  mode: d.get("Transport mode"),
+                  region: d.get("Transport region"),
+                  authority: d.get("Checked transport authority"),
+                  riskDocument: d.has("Risk document recorded"),
+                  escortSuitable: d.has("Escort suitability checked"),
+                  leastRestrictiveReviewed: d.has("Least restrictive option reviewed"),
+                  regionalServiceConfirmed: d.has("Regional service arrangement confirmed"),
+                }),
               )}
               {section(
                 "Ward transfer",
@@ -465,7 +478,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                     acceptance. A linked placement record is required before acceptance or handover.
                   </p>
                 </>,
-                (d) => save({ kind: "transfer", receivingUnitId: d.get("ward"), step: d.get("Transfer step") }),
+                (d) => ({ kind: "transfer", receivingUnitId: d.get("ward"), step: d.get("Transfer step") }),
               )}
               {section(
                 "Community legal transition",
@@ -484,13 +497,12 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
                     requires a recorded community clinician and appointment.
                   </p>
                 </>,
-                (d) =>
-                  save({
-                    kind: "legal",
-                    authority: d.get("Paper authority"),
-                    writtenAt: instant(d.get("written")),
-                    paperChecked: d.has("checked"),
-                  }),
+                (d) => ({
+                  kind: "legal",
+                  authority: d.get("Paper authority"),
+                  writtenAt: instant(d.get("written")),
+                  paperChecked: d.has("checked"),
+                }),
               )}
             </>
           )}

@@ -3,6 +3,7 @@ import path from "node:path";
 import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import {
+  approvedPlatformSkippedFiles,
   executedAssertionCount,
   mergeGateReports,
   planFullGateRecheck,
@@ -15,6 +16,7 @@ import {
 
 const root = "/work";
 const names = ["tests/a.test.ts", "tests/b.test.ts", "tests/c.dom.test.tsx"];
+const windowsSkippedFile = "tests/guard-push-no-merge-base.test.ts";
 const suite = (name: string, status = "passed") => ({
   name,
   status,
@@ -24,6 +26,8 @@ const receipt = () => ({
   version: 2,
   commit: "a".repeat(40),
   population: names,
+  platform: process.platform,
+  approvedSkippedFiles: [],
   skippedTooling: false,
   environmentFingerprint: "offline-default",
   problemFiles: [names[1]],
@@ -75,7 +79,8 @@ describe("a bounded full gate recheck", () => {
       numTotalTests: 2,
       testResults: [{ ...suite(names[0]), assertionResults: [{ status: "pending" }, { status: "skipped" }] }],
     };
-    expect(validateBatchReport(report, [names[0]], root).valid).toBe(true);
+    expect(validateBatchReport(report, [names[0]], root).valid).toBe(false);
+    expect(validateBatchReport(report, [names[0]], root, { approvedSkippedFiles: [names[0]] }).valid).toBe(false);
     expect(validatePolicyReport(report, [names[0]], root).valid).toBe(false);
     report.testResults[0].assertionResults.push({ status: "passed" });
     expect(validatePolicyReport(report, [names[0]], root)).toEqual({ valid: true, failing: [] });
@@ -169,11 +174,285 @@ describe("a bounded full gate recheck", () => {
   });
 });
 
+describe("explicit platform-only skipped suites", () => {
+  const skippedReport = () => ({
+    numTotalTests: 1,
+    testResults: [{ name: windowsSkippedFile, status: "passed", assertionResults: [{ status: "pending" }] }],
+  });
+
+  it("accepts only the selected known Windows skip and keeps policy execution strict", () => {
+    const report = skippedReport();
+    const options = { platform: "win32" as const, approvedSkippedFiles: [windowsSkippedFile] };
+    expect(approvedPlatformSkippedFiles([windowsSkippedFile], "win32")).toEqual([windowsSkippedFile]);
+    expect(approvedPlatformSkippedFiles([windowsSkippedFile], "linux")).toEqual([]);
+    expect(approvedPlatformSkippedFiles(names, "win32")).toEqual([]);
+    expect(validateBatchReport(report, [windowsSkippedFile], root, options).valid).toBe(true);
+    expect(executedAssertionCount(report)).toBe(0);
+    expect(validatePolicyReport(report, [windowsSkippedFile], root).valid).toBe(false);
+    expect(validateBatchReport(report, [windowsSkippedFile], root, { ...options, platform: "linux" }).valid).toBe(
+      false,
+    );
+    expect(validateBatchReport(report, [windowsSkippedFile], root, { platform: "win32" }).valid).toBe(false);
+  });
+
+  it("rejects forged, duplicate or unselected approval entries even alongside passing results", () => {
+    const report = { numTotalTests: 1, testResults: [suite(names[0])] };
+    for (const approvedSkippedFiles of [[names[0]], [windowsSkippedFile], [windowsSkippedFile, windowsSkippedFile]]) {
+      expect(validateBatchReport(report, [names[0]], root, { platform: "win32", approvedSkippedFiles }).valid).toBe(
+        false,
+      );
+    }
+    expect(
+      validateBatchReport(
+        { ...report, testResults: [{ ...suite(names[0]), assertionResults: [{ status: "pending" }] }] },
+        [names[0]],
+        root,
+        {
+          platform: "win32",
+          approvedSkippedFiles: [names[0]],
+        },
+      ).valid,
+    ).toBe(false);
+  });
+
+  it("validates a known Windows skip identically when fresh and resumed and refuses another platform", () => {
+    const stateDir = mkdtempSync(path.join(tmpdir(), "ward-gate-platform-skip-"));
+    let calls = 0;
+    const options = {
+      root,
+      stateDir,
+      population: [windowsSkippedFile],
+      platform: "win32" as const,
+      approvedSkippedFiles: [windowsSkippedFile],
+      skippedTooling: false,
+      commit: "a".repeat(40),
+      environmentFingerprint: "controlled-platform-contract",
+      runBatch: ({ reportPath }: { reportPath: string }) => {
+        calls++;
+        writeFileSync(reportPath, JSON.stringify(skippedReport()));
+        return { status: 0 };
+      },
+    };
+    try {
+      expect(executedAssertionCount(runFullGateBatches(options))).toBe(0);
+      expect(executedAssertionCount(runFullGateBatches(options))).toBe(0);
+      expect(calls).toBe(1);
+      expect(() => runFullGateBatches({ ...options, platform: "linux", approvedSkippedFiles: [] })).toThrow(
+        /different commit, checkout or population/,
+      );
+      expect(calls).toBe(1);
+    } finally {
+      rmSync(stateDir, { recursive: true, force: true, maxRetries: 5 });
+    }
+  });
+
+  it("uses the same platform contract when validating receipts and merging a bounded correction", () => {
+    const population = [windowsSkippedFile, names[1]];
+    const platform = "win32" as const;
+    const approvedSkippedFiles = [windowsSkippedFile];
+    const prior = {
+      ...receipt(),
+      population,
+      platform,
+      approvedSkippedFiles,
+      report: withGateRunResult(
+        {
+          numTotalTests: 2,
+          testResults: [...skippedReport().testResults, suite(names[1], "failed")],
+        },
+        population,
+        root,
+        { status: 1 },
+      ),
+    };
+    const options = {
+      ...input(),
+      receipt: prior,
+      population,
+      platform,
+      approvedSkippedFiles,
+      minimumTests: 1,
+    };
+    expect(planFullGateRecheck(options)).toEqual({ eligible: true, selected: [names[1]] });
+    expect(planFullGateRecheck({ ...options, platform: "linux", approvedSkippedFiles: [] }).eligible).toBe(false);
+    expect(planFullGateRecheck({ ...options, receipt: { ...prior, approvedSkippedFiles: [names[1]] } }).eligible).toBe(
+      false,
+    );
+    const corrected = withGateRunResult({ numTotalTests: 1, testResults: [suite(names[1])] }, [names[1]], root, {
+      status: 0,
+    });
+    const merged = mergeGateReports({
+      baseReport: prior.report,
+      rerunReport: corrected,
+      selected: [names[1]],
+      root,
+      platform,
+      approvedSkippedFiles,
+    });
+    expect(
+      validateBatchReport(merged, population, root, { requireProcessEvidence: true, platform, approvedSkippedFiles })
+        .valid,
+    ).toBe(true);
+    expect(executedAssertionCount(merged)).toBe(1);
+    expect(() =>
+      mergeGateReports({
+        baseReport: prior.report,
+        rerunReport: corrected,
+        selected: [names[1]],
+        root,
+        platform: "linux",
+      }),
+    ).toThrow(/selected files not run/);
+  });
+});
+
 describe("crash-resumable FULL batches", () => {
   it("partitions deterministically within file and command-length limits", () => {
     const batches = splitFullGateBatches(names, { maxFiles: 2, maxChars: 36 });
     expect(batches.flat()).toEqual(names);
     expect(batches.every((batch: string[]) => batch.length <= 2 && batch.join(" ").length <= 36)).toBe(true);
+  });
+
+  it("collects an explicit manifest-backed shard atomically beyond command-length limits", () => {
+    const stateDir = mkdtempSync(path.join(tmpdir(), "ward-gate-single-shard-"));
+    const population = Array.from({ length: 500 }, (_, index) => `tests/long-hosted-shard-regression-${index}.test.ts`);
+    const calls: string[][] = [];
+    expect(population.join(" ").length).toBeGreaterThan(12_000);
+    try {
+      const report = runFullGateBatches({
+        population,
+        root,
+        commit: "a".repeat(40),
+        skippedTooling: false,
+        environmentFingerprint: "manifest-backed-shard",
+        stateDir,
+        singleBatch: true,
+        maxFiles: Number.POSITIVE_INFINITY,
+        runBatch: ({ files, reportPath }: { files: string[]; reportPath: string }) => {
+          calls.push(files);
+          writeFileSync(
+            reportPath,
+            JSON.stringify({ numTotalTests: files.length, testResults: files.map((file) => suite(file)) }),
+          );
+          return { status: 0 };
+        },
+      });
+      expect(calls).toEqual([population]);
+      expect(report.testResults.map((entry: { name: string }) => entry.name)).toEqual(population);
+      expect(report.wardGateRuns).toHaveLength(1);
+    } finally {
+      rmSync(stateDir, { recursive: true, force: true, maxRetries: 5 });
+    }
+  });
+
+  it("keeps local batching and refuses its checkpoints when switching selection transport", () => {
+    const stateDir = mkdtempSync(path.join(tmpdir(), "ward-gate-transport-change-"));
+    const calls: string[][] = [];
+    const options = {
+      population: names,
+      root,
+      commit: "a".repeat(40),
+      skippedTooling: false,
+      environmentFingerprint: "controlled-input",
+      stateDir,
+      maxFiles: 2,
+      runBatch: ({ files, reportPath }: { files: string[]; reportPath: string }) => {
+        calls.push(files);
+        writeFileSync(
+          reportPath,
+          JSON.stringify({ numTotalTests: files.length, testResults: files.map((file) => suite(file)) }),
+        );
+        return { status: 0 };
+      },
+    };
+    try {
+      runFullGateBatches(options);
+      expect(calls).toEqual([names.slice(0, 2), names.slice(2)]);
+      expect(() => runFullGateBatches({ ...options, singleBatch: true })).toThrow(
+        /different commit, checkout or population/,
+      );
+      expect(calls).toHaveLength(2);
+    } finally {
+      rmSync(stateDir, { recursive: true, force: true, maxRetries: 5 });
+    }
+  });
+
+  it("rejects an old checkpoint even when its former batches contain the same population", () => {
+    const stateDir = mkdtempSync(path.join(tmpdir(), "ward-gate-legacy-transport-"));
+    let calls = 0;
+    const options = {
+      population: names,
+      root,
+      commit: "a".repeat(40),
+      skippedTooling: false,
+      environmentFingerprint: "controlled-input",
+      stateDir,
+      singleBatch: true,
+      runBatch: ({ files, reportPath }: { files: string[]; reportPath: string }) => {
+        calls++;
+        writeFileSync(
+          reportPath,
+          JSON.stringify({ numTotalTests: files.length, testResults: files.map((file) => suite(file)) }),
+        );
+        return { status: 0 };
+      },
+    };
+    try {
+      runFullGateBatches(options);
+      const identityPath = path.join(stateDir, "state.json");
+      const legacy = JSON.parse(readFileSync(identityPath, "utf8"));
+      legacy.version = 3;
+      delete legacy.selectionTransport;
+      writeFileSync(identityPath, JSON.stringify(legacy));
+      expect(() => runFullGateBatches(options)).toThrow(/different commit, checkout or population/);
+      expect(calls).toBe(1);
+    } finally {
+      rmSync(stateDir, { recursive: true, force: true, maxRetries: 5 });
+    }
+  });
+
+  it.each([
+    ["a missing selected file", { numTotalTests: 1, testResults: [suite(names[0])] }, { status: 0 }],
+    [
+      "a wholly skipped suite",
+      {
+        numTotalTests: 2,
+        testResults: [suite(names[0]), { ...suite(names[1]), assertionResults: [{ status: "pending" }] }],
+      },
+      { status: 0 },
+    ],
+    [
+      "an import crash reported as green",
+      { numTotalTests: 1, testResults: [suite(names[0]), { name: names[1], status: "failed", assertionResults: [] }] },
+      { status: 0 },
+    ],
+    [
+      "an interrupted launch",
+      { numTotalTests: 2, testResults: names.slice(0, 2).map((file) => suite(file)) },
+      { status: null, signal: "SIGTERM" },
+    ],
+  ])("refuses %s in explicit single-batch mode", (_label, report, runResult) => {
+    const stateDir = mkdtempSync(path.join(tmpdir(), "ward-gate-single-incomplete-"));
+    try {
+      expect(() =>
+        runFullGateBatches({
+          population: names.slice(0, 2),
+          root,
+          commit: "a".repeat(40),
+          skippedTooling: false,
+          environmentFingerprint: "controlled-input",
+          stateDir,
+          singleBatch: true,
+          runBatch: ({ reportPath }: { reportPath: string }) => {
+            writeFileSync(reportPath, JSON.stringify(report));
+            return runResult;
+          },
+        }),
+      ).toThrow(/batch 1 is incomplete/);
+      expect(existsSync(path.join(stateDir, "batch-001.json"))).toBe(false);
+    } finally {
+      rmSync(stateDir, { recursive: true, force: true, maxRetries: 5 });
+    }
   });
 
   it("accepts only a complete saved batch before it may be reused", () => {

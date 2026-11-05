@@ -70,7 +70,6 @@ import {
   type DeviceSaveInputs,
   loadTypedTextScrub,
   readDemoStateLater,
-  readScenarioFileLater,
   STORAGE_UNAVAILABLE,
   tryWriteDemoState,
   useDemoStateRead,
@@ -111,6 +110,7 @@ import {
   type UnreviewedStringOrUnknownKeys,
 } from "@/components/ward-management/ward-flow-persistence-classification";
 import { withCurrentRoleWords } from "@/components/ward-management/ward-role-words-display";
+import { readOwnedScenario, type ScenarioFileLoader } from "./ward-scenario-import-owner";
 import type { ScenarioFileBuild } from "@/components/ward-management/ward-flow-scenario-file";
 import { useWardShared, WardSharedAccess, type WardSharedConnection } from "./ward-shared-access";
 import { WardShellAuthorityProvider, WardShellPublicProvider } from "./shell/ward-shell-public-context";
@@ -254,7 +254,7 @@ type WardFlowContextValue = closingLoop.ClosingLoopContext & {
    *  presenter downloads, and a loader that replaces this world with one read back from a file.
    *  Optional so hand-built test contexts need not supply them. */
   saveScenarioFile?: () => Promise<ScenarioFileBuild>;
-  loadScenarioFile?: (text: string) => Promise<{ ok: true } | { ok: false; reason: string }>;
+  loadScenarioFile?: ScenarioFileLoader;
   /** False when the D-18 free-text privacy lock (or storage unavailability) has paused device saving. */
   savingOnDevice?: boolean;
   /** Shared workspace status, error and receivedAt (device time of the last good read, 0 before one) for shared-save forms. */
@@ -1160,18 +1160,22 @@ function WardFlowWorld({
 
   const saveScenarioFile = useCallback(() => buildScenarioFileLater(state, nowRef.current), [state]);
 
+  const importSequence = useRef(0);
   const loadScenarioFile = useCallback(
-    async (text: string): Promise<{ ok: true } | { ok: false; reason: string }> => {
+    async (
+      text: string | Promise<string>,
+      isCurrent: () => boolean = () => true,
+    ): Promise<{ ok: true } | { ok: false; reason: string }> => {
       if (shared.enabled)
         return {
           ok: false,
           reason:
             "Scenario file replacement is available only in the local demonstration. Shared changes must use audited commands.",
         };
-      const read = await readScenarioFileLater(text);
+      const read = await readOwnedScenario(text, importSequence, commandsRef, isCurrent);
       if (!read.ok) return read;
-      if (read.now < NOW_ANCHOR + read.state.clockOffsetMinutes)
-        return { ok: false, reason: "This scenario file is damaged or incomplete, so nothing was loaded." };
+      if (!read.isCurrent())
+        return { ok: false, reason: "The demo changed while the file was loading. Nothing was loaded." };
       const generation = Math.max(commandsRef.current.world.worldGeneration, read.state.worldGeneration);
       if (!safeCounter(generation) || generation >= Number.MAX_SAFE_INTEGER)
         return { ok: false, reason: "This scenario file is damaged or incomplete, so nothing was loaded." };

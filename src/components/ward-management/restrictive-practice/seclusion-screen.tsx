@@ -684,7 +684,12 @@ function EpisodeRow({
         ) : null}
       </div>
       {ending && onEnd ? (
-        <div id={formId} className={styles.form}>
+        <fieldset
+          id={formId}
+          className={styles.form}
+          disabled={save.pending}
+          style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+        >
           <TimeField label="Ended at" time={time} testId="seclusion-episode-end-time" />
           <Button
             variant="pri"
@@ -708,7 +713,7 @@ function EpisodeRow({
             </div>
           ) : null}
           <SaveAnswer save={save} testId="seclusion-episode-end-failure" />
-        </div>
+        </fieldset>
       ) : null}
     </li>
   );
@@ -734,7 +739,12 @@ function StartForm({
   const refusal =
     admissionId === "" ? "Choose the patient first." : practice === "" ? "Choose what is in use." : time.refusal;
   return (
-    <div className={styles.form} data-testid="seclusion-start-form">
+    <fieldset
+      className={styles.form}
+      data-testid="seclusion-start-form"
+      disabled={save.pending}
+      style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+    >
       <Field label="Patient">
         <Select
           value={admissionId}
@@ -791,7 +801,7 @@ function StartForm({
         </div>
       ) : null}
       <SaveAnswer save={save} testId="seclusion-start-failure" />
-    </div>
+    </fieldset>
   );
 }
 
@@ -808,7 +818,12 @@ function IncidentForm({
   const save = useWardFormSave("incident");
   const refusal = category === "" ? "Choose the kind of incident first." : time.refusal;
   return (
-    <div className={styles.form} data-testid="seclusion-incident-form">
+    <fieldset
+      className={styles.form}
+      data-testid="seclusion-incident-form"
+      disabled={save.pending}
+      style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+    >
       <Field label="Incident">
         <Select
           value={category}
@@ -849,6 +864,6 @@ function IncidentForm({
         </div>
       ) : null}
       <SaveAnswer save={save} testId="seclusion-incident-failure" />
-    </div>
+    </fieldset>
   );
 }

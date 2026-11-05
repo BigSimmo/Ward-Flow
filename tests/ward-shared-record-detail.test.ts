@@ -93,3 +93,58 @@ describe("record detail from a logged opening", () => {
     }
   });
 });
+
+it("drops cached and delayed detail when a replacement world reuses a patient ID", async () => {
+  let worldGeneration = 0;
+  let revision = 1;
+  let view: SharedView | undefined;
+  let release: ((reply: Response) => void) | undefined;
+  let delayed = false;
+  const client = new SharedWorkspaceClient({
+    baseUrl: "https://example.test",
+    token: async () => "synthetic",
+    manageDrafts: false,
+    changed: (next) => {
+      view = next;
+    },
+    fetch: async (input) => {
+      if (new URL(String(input)).pathname === "/v1/workspace/record-access") {
+        if (delayed)
+          return new Promise<Response>((resolve) => {
+            release = resolve;
+          });
+        return Response.json({ logged: true, opened: withAddress.id, detail: { address: "Synthetic old detail" } });
+      }
+      return Response.json({
+        snapshot: {
+          dataMode: "prototype",
+          revision,
+          now: 642,
+          accessContext: "a".repeat(64),
+          payload: payloadOf({ ...sentState(), worldGeneration }),
+        },
+      });
+    },
+  });
+  const shown = () => view?.snapshot?.payload.state.patients.find((patient) => patient.id === withAddress.id);
+  try {
+    await client.refresh();
+    await client.logRecordView(withAddress.id, "patient");
+    expect(shown()?.address).toBe("Synthetic old detail");
+    delayed = true;
+    const oldOpening = client.logRecordView(withAddress.id, "patient");
+    await vi.waitFor(() => expect(release).toBeDefined());
+    worldGeneration = 1;
+    revision = 2;
+    await client.refresh();
+    expect(shown()?.address).toBeUndefined();
+    release!(Response.json({ logged: true, opened: withAddress.id, detail: { address: "Synthetic delayed detail" } }));
+    expect(await oldOpening).toBe(false);
+    expect(shown()?.address).toBeUndefined();
+    delayed = false;
+    expect(await client.logRecordView(withAddress.id, "patient")).toBe(true);
+    expect(shown()?.address).toBe("Synthetic old detail");
+  } finally {
+    client.dispose();
+  }
+});

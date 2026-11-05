@@ -152,6 +152,61 @@ export function discardReferralDraft(ownerVersion: number | null = referralDraft
   return true;
 }
 
+/** Retire only the submitted content, even when its drawer has unmounted or another draft owns memory. */
+export function retireAcceptedReferralDraft(draft: unknown, storageKey: string, ownerVersion: number): void {
+  if (ownerVersion !== referralDraftMemory.sessionVersion) return;
+  // View navigation and a recovery reminder do not create a new editing revision. Attachment
+  // bytes do: a replacement file can have exactly the same metadata as its predecessor.
+  const content = (value: unknown) =>
+    JSON.stringify(value, (key, field: unknown) =>
+      ["activeSection", "needsChartReattachment"].includes(key) ? undefined : field,
+    );
+  const submitted = content(draft);
+  const matches = (value: unknown) => content(value) === submitted;
+  const recoveryProjection = (value: unknown) => {
+    const copy = value as { documentation?: object } | null;
+    return copy?.documentation ? { ...copy, documentation: { ...copy.documentation, charts: [] } } : value;
+  };
+  const submittedRecovery = content(recoveryProjection(draft));
+  const scope = recoveryScope(storageKey);
+  // Recovery intentionally omits files. When a newer memory draft differs only in attachments,
+  // that lossy projection cannot establish that its stored copy belongs to this accepted command.
+  if (
+    referralDraftMemory.kept !== null &&
+    !matches(referralDraftMemory.kept) &&
+    content(recoveryProjection(referralDraftMemory.kept)) === submittedRecovery &&
+    (!referralDraftMemory.keptStorageKey || recoveryScope(referralDraftMemory.keptStorageKey) === scope)
+  )
+    return;
+  if (typeof window !== "undefined") {
+    try {
+      const keys = Array.from({ length: window.sessionStorage.length }, (_, index) => window.sessionStorage.key(index));
+      for (const key of keys) {
+        if (!key?.startsWith(scope)) continue;
+        const raw = readSessionDraft(key);
+        if (raw === null) continue;
+        try {
+          if (content(JSON.parse(raw)) === submittedRecovery) removeSessionDraft(key);
+        } catch {
+          /* An invalid or unowned copy is not this command's draft. */
+        }
+      }
+    } catch {
+      /* Memory remains recoverable when browser storage is unavailable. */
+    }
+  }
+  if (
+    referralDraftMemory.kept !== null &&
+    matches(referralDraftMemory.kept) &&
+    (!referralDraftMemory.keptStorageKey || recoveryScope(referralDraftMemory.keptStorageKey) === scope)
+  ) {
+    referralDraftMemory.keptStorageKey = undefined;
+    referralDraftMemory.recoveryStorageKey = undefined;
+    referralDraftMemory.kept = null;
+    referralDraftMemory.keptAtMs = null;
+  }
+}
+
 /**
  * L12 (Josh, 4 Nov 2026): "Start a new referral" sets a named person's kept draft aside instead of
  * deleting it, so it stays in the Profile drafts list and reopens from there. Memory lets go; the

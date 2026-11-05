@@ -91,6 +91,43 @@ function setEdToMinimum() {
 }
 
 describe("settings screen configuration draft", () => {
+  it.each(["accepted", "refused"] as const)("consumes same-command recovery once (%s)", async (status) => {
+    let resolve!: (outcome: WardCommandOutcome) => void;
+    const confirmation = new Promise<WardCommandOutcome>((done) => {
+      resolve = done;
+    });
+    const intercept = vi.fn<Intercept>((event, dispatch) => {
+      if (event.type !== "SET_CONFIGURATION") return dispatch(event);
+      void dispatch(event);
+      return { commandId: "recover-settings", status: "failed", confirmation };
+    });
+    renderSettings(intercept);
+    setEdToMinimum();
+    fireEvent.click(screen.getByRole("button", { name: /^Save 1 change$/ }));
+    fireEvent.click(screen.getByRole("button", { name: /^Save change$/ }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(screen.getByRole("region", { name: "Unsaved rule changes" })).toBeInTheDocument();
+    expect(screen.getByText(/Save is not confirmed/)).toBeInTheDocument();
+    await act(async () =>
+      resolve({
+        commandId: "recover-settings",
+        status,
+        message: status === "refused" ? "Changed elsewhere" : undefined,
+      }),
+    );
+    expect(intercept.mock.calls.filter(([event]) => event.type === "SET_CONFIGURATION")).toHaveLength(1);
+    expect(screen.queryByText(/Save is not confirmed/)).not.toBeInTheDocument();
+    if (status === "accepted") {
+      expect(screen.queryByRole("region", { name: "Unsaved rule changes" })).not.toBeInTheDocument();
+      expect(screen.getByRole("status")).toHaveTextContent(/saved and recorded/);
+    } else {
+      expect(screen.getByRole("region", { name: "Unsaved rule changes" })).toBeInTheDocument();
+      expect(screen.getByText(/Changed elsewhere/)).toBeInTheDocument();
+    }
+  });
+
   it("does not announce or apply a restore before its command is accepted, and keeps the draft on refusal", async () => {
     let resolve!: (outcome: WardCommandOutcome) => void;
     const completion = new Promise<WardCommandOutcome>((settle) => {

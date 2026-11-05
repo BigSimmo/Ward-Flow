@@ -331,6 +331,7 @@ export function RecordFormSheet({
           <Button
             variant="ghost"
             onClick={() => {
+              // Clear stays usable while a save is pending; submissionVersion keeps the newer draft.
               submissionVersion.current += 1;
               setSaving(false);
               clearDraft();
