@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { ChevronRight } from "lucide-react";
 
 import { StatusGlyph, durMinutes } from "@/components/wf";
@@ -42,8 +43,13 @@ export function StagePipeline({
     undefined,
   );
   const worstStageId = worst !== undefined && longest(worst) >= accessTarget ? worst.id : undefined;
+  // The persistent highlight is spoken too, not only drawn (it is no longer a pressed toggle).
+  const highlightedNoteId = useId();
   return (
     <nav className={styles.pipeline} aria-label="Stages">
+      <span id={highlightedNoteId} className="sr-only">
+        Highlighted in worklist
+      </span>
       <ol>
         {/* Stress test (3 Nov 2026): at most one act-now triangle a row, so only the stage whose
             longest wait is the worst past target keeps it. The others still say "N past target". */}
@@ -73,6 +79,7 @@ export function StagePipeline({
                 className={styles.stage}
                 aria-haspopup="dialog"
                 data-highlighted={highlight === `stage:${stage.id}` ? "true" : undefined}
+                aria-describedby={highlight === `stage:${stage.id}` ? highlightedNoteId : undefined}
                 onClick={() => onToggle(stage.id)}
                 title={stage.blurb}
               >

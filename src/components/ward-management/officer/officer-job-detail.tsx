@@ -53,6 +53,7 @@ import {
   expectedArrival,
   formRequiredLabel,
   officerLeg,
+  pastWardEta,
   transportLegalStatusLabel,
 } from "./officer-screen-helpers";
 import type { Dispatch, SetStateAction } from "react";
@@ -341,11 +342,9 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
           })()
         : null}
 
-      {/* the alert follows whichever ETA the job shows (ward ETA, else the booked ETA). */}
-      {eta !== undefined &&
-      transport.arrivedAt === undefined &&
-      !movement.closure &&
-      now > eta + LATE_ARRIVAL_GRACE_MINUTES ? (
+      {/* Lateness is measured against a ward ETA only, as in the job list and Arrivals card: the
+          time typed at booking is the provider's estimate, never an overdue arrival. */}
+      {eta !== undefined && transport.arrivedAt === undefined && !movement.closure && pastWardEta(movement, now) ? (
         <div
           className={styles.overdue}
           role="alert"
@@ -354,8 +353,8 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
         >
           <StatusGlyph tone="warning" size={9} />
           <span>
-            <strong>Arrival overdue.</strong> More than {LATE_ARRIVAL_GRACE_MINUTES}m past the{" "}
-            {arrival?.booked ? "booked" : "ward"} ETA ({formatInstantWithDay(eta, now)} AWST).
+            <strong>Arrival overdue.</strong> More than {LATE_ARRIVAL_GRACE_MINUTES}m past the ward ETA (
+            {formatInstantWithDay(eta, now)} AWST).
           </span>
         </div>
       ) : null}

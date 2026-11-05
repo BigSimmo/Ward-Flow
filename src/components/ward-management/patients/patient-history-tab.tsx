@@ -321,6 +321,16 @@ export function createdEvent(
   return { at: patient.addedAt, tone: "neutral", text: by ? `Record created by ${by}` : "Record created" };
 }
 
+/**
+ * The history lead's heading. "Last movement" needs a movement: a history whose only event is the
+ * record's creation is headed "Record", not a movement it never had.
+ */
+export function historyLeadTitle(current: boolean, eventCount: number, creationOnly: boolean): string {
+  if (current) return "Current presentation";
+  if (eventCount === 0) return "Ward stays";
+  return creationOnly ? "Record" : "Last movement";
+}
+
 // ── Tab ───────────────────────────────────────────────────────────────────────────────────────
 
 export function PatientHistoryTab({
@@ -465,7 +475,11 @@ export function PatientHistoryTab({
         {showLead ? (
           <div className={s.lead}>
             <SectionLabel
-              title={current ? "Current presentation" : events.length > 0 ? "Last movement" : "Ward stays"}
+              title={historyLeadTitle(
+                current !== undefined,
+                events.length,
+                created !== undefined && events.length === 1,
+              )}
             />
             {current ? <CurrentFacts p={current} stayShown={liveStay !== undefined} /> : null}
             {stays.length > 0 ? (

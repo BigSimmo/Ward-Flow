@@ -11,6 +11,7 @@ import {
   bedIsOccupied,
   daysInBed,
   isPastExpectedDischarge,
+  isStayBlockRecords,
   stayBand,
   type Admission,
 } from "../src/components/ward-management/ward-admissions";
@@ -791,5 +792,18 @@ describe("Admission privacy — structural", () => {
     // Non-vacuity: the two sets are really populated, so the loops above are not passing on nothing.
     expect(runtimeFields).toHaveLength(ALLOWED_ADMISSION_FIELDS.length);
     expect(builtFields).toHaveLength(ALLOWED_ADMISSION_FIELDS.length);
+  });
+});
+
+describe("a stored hold-up log", () => {
+  const blocker = BED_RELEASE_BLOCKERS[0];
+  it("accepts time, a known role and a listed blocker", () => {
+    expect(isStayBlockRecords([{ at: 10, by: "ward", blocker }])).toBe(true);
+    expect(isStayBlockRecords([])).toBe(true);
+  });
+  it("refuses an unknown role and any extra key", () => {
+    expect(isStayBlockRecords([{ at: 10, by: "unknown", blocker }])).toBe(false);
+    expect(isStayBlockRecords([{ at: 10, by: "ward", blocker, note: "free text" }])).toBe(false);
+    expect(isStayBlockRecords([{ at: Number.NaN, by: "ward", blocker }])).toBe(false);
   });
 });

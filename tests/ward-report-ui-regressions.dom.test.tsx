@@ -32,6 +32,7 @@ describe("people-list triggers", () => {
     expect(button).toHaveAttribute("aria-haspopup", "dialog");
     expect(button).not.toHaveAttribute("aria-pressed");
     expect(button).toHaveAttribute("data-highlighted", "true");
+    expect(button).toHaveAccessibleDescription("Highlighted in worklist");
     fireEvent.click(button);
     expect(open).toHaveBeenCalledOnce();
   });
@@ -57,6 +58,7 @@ describe("people-list triggers", () => {
     expect(button).toHaveAttribute("aria-haspopup", "dialog");
     expect(button).not.toHaveAttribute("aria-pressed");
     expect(button).toHaveAttribute("data-highlighted", "true");
+    expect(button).toHaveAccessibleDescription(/Highlighted in worklist/u);
     fireEvent.click(button);
     expect(open).toHaveBeenCalledWith("placement_requested");
   });
@@ -100,4 +102,34 @@ it("retains dock observers across count renders and refits changed labels and ne
   expect(label.style.fontSize).toBe("");
   unmount();
   expect(disconnect).toHaveBeenCalledOnce();
+});
+
+it("lets go of a dock child once it is replaced", async () => {
+  const observe = vi.fn();
+  const unobserve = vi.fn();
+  const observer = vi.fn(function () {
+    return { observe, unobserve, disconnect: vi.fn() };
+  });
+  vi.stubGlobal("ResizeObserver", observer);
+  function Swap({ which }: { which: string }) {
+    const ref = useRef<HTMLElement>(null);
+    useFitDockLabels(ref, ".dock-label");
+    return (
+      <nav ref={ref}>
+        <span key={which} className="dock-label">
+          {which}
+        </span>
+      </nav>
+    );
+  }
+  const { rerender, unmount } = render(<Swap which="Home" />);
+  const first = document.querySelector(".dock-label")!;
+  expect(observe).toHaveBeenCalledWith(first);
+  rerender(<Swap which="Referrals" />);
+  await act(async () => {});
+  const second = document.querySelector(".dock-label")!;
+  expect(second).not.toBe(first);
+  expect(unobserve).toHaveBeenCalledWith(first);
+  expect(observe).toHaveBeenCalledWith(second);
+  unmount();
 });

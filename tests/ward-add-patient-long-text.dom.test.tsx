@@ -53,6 +53,9 @@ describe("Add patient long names and suburbs (warn, never block)", () => {
     fireEvent.change(screen.getByLabelText("Family name"), { target: { value: "Newcomer" } });
     fireEvent.change(screen.getByLabelText("Date of birth"), { target: { value: "01/01/1990" } });
     expect(screen.queryByText(/Long (name|suburb)\. Check it is right\./)).toBeNull();
+    const status = screen.getByTestId("ward-add-patient-long-text-status");
+    expect(status).toHaveAttribute("role", "status");
+    expect(status).toBeEmptyDOMElement();
 
     fireEvent.change(given, { target: { value: LONG_GIVEN } });
     fireEvent.change(suburb, { target: { value: LONG_SUBURB } });
@@ -62,6 +65,7 @@ describe("Add patient long names and suburbs (warn, never block)", () => {
     expect(screen.getByText("Long suburb. Check it is right.")).toBeInTheDocument();
     expect(given).toHaveAccessibleDescription(/Long name\. Check it is right\./);
     expect(given).not.toHaveAttribute("aria-invalid");
+    expect(status).toHaveTextContent("Long given name. Check it is right. Long suburb. Check it is right.");
 
     fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
     await waitFor(() => expect(router.push).toHaveBeenCalledTimes(1));

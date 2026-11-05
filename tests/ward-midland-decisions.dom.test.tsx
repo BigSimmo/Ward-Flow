@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   MIDLAND_DECISIONS_KEY,
   midlandSavedLine,
@@ -30,5 +30,39 @@ describe("WF-05 Accept toast is honest about where it saved", () => {
     expect(midlandSavedLine(true)).toBe("Saved in this browser · moved to Answered");
     expect(midlandSavedLine(false)).toBe("Saved in this browser");
     expect(midlandSavedLine(true)).not.toMatch(/\d{2}:\d{2}/);
+  });
+});
+
+describe("a decision this browser could not store", () => {
+  it("reports it as kept for this visit only", () => {
+    const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
+      throw new Error("storage blocked");
+    });
+    try {
+      expect(recordMidlandDecision(REFERRALS[0]!.id, "Accepted for Midland", 1)).toBe(false);
+    } finally {
+      setItem.mockRestore();
+    }
+    expect(recordMidlandDecision(REFERRALS[0]!.id, "Accepted for Midland", 2)).toBe(true);
+    undoMidlandDecision(REFERRALS[0]!.id);
+    expect(midlandSavedLine(true, false)).toBe(
+      "Kept for this visit only: this browser could not save it · moved to Answered",
+    );
+  });
+});
+
+describe("the phone Answered list", () => {
+  beforeEach(() => window.localStorage.clear());
+  it("shows a referral answered on this device", async () => {
+    const { render, screen, fireEvent, cleanup } = await import("@testing-library/react");
+    const { MidlandPhone } = await import("@/components/ward-management/community/team-2026/midland-phone");
+    const first = REFERRALS[0]!;
+    recordMidlandDecision(first.id, "Accepted for Midland", Date.now());
+    render(<MidlandPhone section="referrals" open={vi.fn()} onRecordContact={vi.fn()} onReferFromTeam={vi.fn()} />);
+    fireEvent.click(screen.getByRole("radio", { name: /Answered/u }));
+    expect(screen.getByText("Accepted for Midland")).toBeTruthy();
+    expect(screen.getAllByText(first.n).length).toBeGreaterThan(0);
+    cleanup();
+    undoMidlandDecision(first.id);
   });
 });

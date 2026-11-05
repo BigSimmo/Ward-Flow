@@ -21,7 +21,8 @@ const KNOWN: Record<string, { dateBoxes?: number; confirms?: number }> = {
 };
 
 const SRC = join(process.cwd(), "src");
-const DATE_BOX = /type=(?:"|\{")(?:date|time|datetime-local|month|week)"/g;
+// Any JSX spelling: spaces round `=`, either quote, bare or in braces (`type = "date"`, `type={'date'}`).
+const DATE_BOX = /\btype\s*=\s*\{?\s*(["'`])(?:date|time|datetime-local|month|week)\1\s*\}?/g;
 const CONFIRM = /window\.confirm\(/g;
 
 function sourceFiles(dir: string): string[] {
@@ -46,6 +47,15 @@ function scan() {
   }
   return found;
 }
+
+describe("the date-box pattern", () => {
+  it("matches every JSX spelling of a native date or time box", () => {
+    for (const spelling of [`type="date"`, `type = "date"`, `type={'date'}`, `type={"time"}`, "type={`week`}"])
+      expect(spelling.match(DATE_BOX), spelling).not.toBeNull();
+    expect(`type="text"`.match(DATE_BOX)).toBeNull();
+    expect(`inputType="datetime"`.match(DATE_BOX)).toBeNull();
+  });
+});
 
 describe("2h guard: no new browser date or time boxes, no new window.confirm", () => {
   const found = scan();

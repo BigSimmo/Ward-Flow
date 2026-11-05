@@ -451,10 +451,12 @@ export function reduceBedEvent(
       decision.outcome = "accepted";
       decision.reasonCode = "none";
       // The stay's reason follows the release's blocker, so an explicit blocker on the flag is not left off the stay.
+      // A blocker the flag itself supplies is a recorded hold-up, logged on the stay with time and role.
       return withStayBlocker(
         { ...state, bedReleases: [...state.bedReleases, release] },
         flaggedAdmission.id,
         release.blocker,
+        event.blocker !== undefined ? { at: event.now, by: event.role } : undefined,
       );
     }
 

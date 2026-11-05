@@ -13,9 +13,8 @@ export function placeDisplayName(id: string | undefined, units: readonly Pick<Un
   return (
     units.find((unit) => unit.id === id)?.name ??
     // Name only: never read capacity off the network catalogue (single-source guard).
-    activeWardNetwork()
-      .sites.flatMap((site) => site.units)
-      .find((unit) => unit.id === id)?.name ??
+    // The network's cached id map, not a fresh flattening on every lookup (phone load, fix list 7.6).
+    activeWardNetwork().unitById(id)?.name ??
     siteByCode(id)?.name ??
     edById(id)?.name ??
     PLACE_NOT_RECORDED

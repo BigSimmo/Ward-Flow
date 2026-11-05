@@ -337,6 +337,18 @@ export function useWardSupabaseShared(
           setView(next);
         },
       });
+      // A sign-in cleared from this tab's storage (another tool, or the browser) ends the session
+      // here too, instead of the page still looking signed in until a reload. Only a sign-in that
+      // was stored when connecting counts, so a browser that blocks storage keeps its in-memory one.
+      // Read before the first workspace read, so a removal while that read is pending still counts.
+      const storedAtConnect = storedSignIn() === true;
+      const sessionEnded = () => {
+        if (!storedAtConnect || storedSignIn() !== false) return false;
+        disconnect();
+        setForm((old) => ({ ...old, message: SESSION_ENDED_MESSAGE, messageKind: "info" }));
+        setView({ ...emptyView, status: "ready", error: SESSION_ENDED_MESSAGE });
+        return true;
+      };
       connection.current = client;
       try {
         await client.refresh();
@@ -344,6 +356,7 @@ export function useWardSupabaseShared(
         if (!closed && connection.current === client) setFirstRead(false);
       }
       if (closed || connection.current !== client) return;
+      if (sessionEnded()) return;
       void instance.token().then(
         (token) => !closed && connection.current === client && setEndsAt(sessionEndsAt(token)),
         () => {},
@@ -355,17 +368,6 @@ export function useWardSupabaseShared(
         pushSubscribe: (subscription) => client.pushSubscribe(subscription),
         pushUnsubscribe: (endpoint) => client.pushUnsubscribe(endpoint),
       });
-      // A sign-in cleared from this tab's storage (another tool, or the browser) ends the session
-      // here too, instead of the page still looking signed in until a reload. Only a sign-in that
-      // was stored when connecting counts, so a browser that blocks storage keeps its in-memory one.
-      const storedAtConnect = storedSignIn() === true;
-      const sessionEnded = () => {
-        if (!storedAtConnect || storedSignIn() !== false) return false;
-        disconnect();
-        setForm((old) => ({ ...old, message: SESSION_ENDED_MESSAGE, messageKind: "info" }));
-        setView({ ...emptyView, status: "ready", error: SESSION_ENDED_MESSAGE });
-        return true;
-      };
       onVisibilityChange = () => {
         if (!closed && connection.current === client && document.visibilityState === "visible") {
           if (sessionEnded()) return;

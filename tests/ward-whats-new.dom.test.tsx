@@ -16,8 +16,10 @@ import {
   WHATS_NEW_CARD_LIMIT,
   WHATS_NEW_STORAGE_KEY,
   LEGACY_ORDER,
+  WHATS_NEW_SEEN_LIMIT,
   WardWhatsNew,
   TOUR_AUTO_STARTED_EVENT,
+  cappedWhatsNewSeen,
   markWhatsNewSeen,
   unseenWhatsNew,
   type WhatsNewEntry,
@@ -129,6 +131,24 @@ describe("what's new note", () => {
     act(() => markWhatsNewSeen());
     render(<WardWhatsNew />);
     expect(screen.queryByTestId("ward-whats-new")).toBeNull();
+  });
+
+  it("keeps the newest ids when a long list meets the seen-history cap", () => {
+    const list: WhatsNewEntry[] = Array.from({ length: WHATS_NEW_SEEN_LIMIT + 1 }, (_, index) => ({
+      id: `entry-${String(index).padStart(3, "0")}`,
+      date: "2026-11-05",
+      line: "Synthetic change",
+    }));
+    const kept = cappedWhatsNewSeen(
+      list.map((entry) => entry.id),
+      ["retired-old-id"],
+      list,
+    );
+    expect(kept).toHaveLength(WHATS_NEW_SEEN_LIMIT);
+    expect(kept).toContain(`entry-${WHATS_NEW_SEEN_LIMIT}`);
+    expect(kept).not.toContain("entry-000");
+    expect(kept).not.toContain("retired-old-id");
+    expect(unseenWhatsNew(JSON.stringify(kept), list).map((entry) => entry.id)).toEqual(["entry-000"]);
   });
 });
 

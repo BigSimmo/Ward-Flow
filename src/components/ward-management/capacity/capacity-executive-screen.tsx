@@ -7,13 +7,30 @@
  * draws Capacity from that report instead: bed counts only, no patient and no action.
  */
 import { Card, CardBody, CardHead } from "@/components/wf";
-import { useExecutiveStatistics } from "@/components/ward-management/statistics/executive-statistics-context";
+import {
+  useExecutiveStatistics,
+  useExecutiveStatisticsControl,
+} from "@/components/ward-management/statistics/executive-statistics-context";
 import { ExecutiveStatisticsUnavailable } from "@/components/ward-management/statistics/statistics-small-numbers";
+import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
+import { formatSheetMoment } from "@/components/ward-management/ward-clock";
+
+const FOOTER_NOTE = "Synthetic prototype · bed counts only · Not approved for clinical use";
 
 export function ExecutiveCapacityScreen() {
   const data = useExecutiveStatistics();
-  if (!data) return <ExecutiveStatisticsUnavailable />;
+  const { paused } = useExecutiveStatisticsControl();
+  // The skip link and the prototype disclosure stay even while the report is absent.
+  if (!data)
+    return (
+      <main id="main-content" data-testid="ward-capacity-executive-unavailable">
+        <ExecutiveStatisticsUnavailable />
+        <WardPrototypeFooter testId="ward-capacity-executive-footer" note={FOOTER_NOTE} />
+      </main>
+    );
   const { network } = data;
+  // The counts are as at the report's time, which a held report keeps while the board clock moves.
+  const asAt = formatSheetMoment(network.asAt.now, new Date(network.asAt.dayZero), { includeYearAndZone: true });
   const beds = network.beds;
   const scopeLabel = network.scope.kind === "statewide" ? "Whole network" : network.scope.service;
   return (
@@ -24,6 +41,10 @@ export function ExecutiveCapacityScreen() {
       <p>
         {beds.beingMadeReady > 0 ? `${beds.beingMadeReady} still being made ready · ` : ""}
         {scopeLabel} · bed counts only, no patient details.
+      </p>
+      <p data-testid="ward-capacity-executive-as-at">
+        As at {asAt}
+        {paused ? " · report paused" : ""}
       </p>
       <Card aria-labelledby="ward-capacity-executive-beds">
         <CardHead id="ward-capacity-executive-beds" title="Beds by ward" meta={`${network.wards.length} wards`} />
@@ -54,6 +75,7 @@ export function ExecutiveCapacityScreen() {
           </table>
         </CardBody>
       </Card>
+      <WardPrototypeFooter testId="ward-capacity-executive-footer" note={FOOTER_NOTE} />
     </main>
   );
 }

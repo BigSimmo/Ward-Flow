@@ -165,7 +165,10 @@ export function OnCallScreen() {
   }, [allEntries, scope, access.role]);
   const ids = useMemo(() => new Set(baseEntries.map((entry) => entry.id)), [baseEntries]);
 
-  const [tab, setTab] = useState<DirectoryTab>("hospitals");
+  // WF-45: an officer's three transport lines all sit in Statewide, so an officer starts there, not
+  // on an empty Hospitals tab. Derived until a tab is picked, so a late-arriving role still applies.
+  const [pickedTab, setTab] = useState<DirectoryTab | null>(null);
+  const tab: DirectoryTab = pickedTab ?? (access.role === "officer" ? "statewide" : "hospitals");
   const [groupBy, setGroupBy] = useState<"place" | "role">("place");
   const [highlight, setHighlight] = useState<Highlight | null>(null);
   const [query, setQuery] = useState("");

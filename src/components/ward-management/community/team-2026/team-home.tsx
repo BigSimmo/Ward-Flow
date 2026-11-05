@@ -12,7 +12,7 @@ import { Button, Card, CardHead, Count, Segmented, SrOnly, StatusGlyph, type WfT
 import home from "@/components/ward-management/ward/ward-home-tab.module.css";
 import { CLIENTS, DEMO_FIGURES, REFERRALS, SENT, STAFF, shortName } from "./midland-demo";
 import { clockTime } from "@/components/ward-management/ward-saved-at-toast";
-import { midlandContacts, openReferrals, recordMidlandContact, useMidlandDecisions } from "./midland-decisions";
+import { openReferrals, recordMidlandContact, todaysMidlandContacts, useMidlandDecisions } from "./midland-decisions";
 import { Initials } from "./parts";
 import t from "./team-2026.module.css";
 
@@ -152,9 +152,13 @@ const ADMITTED_THIS_WEEK = [
 
 export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
   const decisions = useMidlandDecisions();
-  // Recorded contacts lead Today's log, with time and desk role; the Act-now row shows it is done.
-  const contacts = midlandContacts(decisions);
+  // Today's recorded contacts lead Today's log, with time and desk role; the Act-now row shows it is
+  // done. A contact from an earlier day is not today's, so the follow-up comes back the next day.
+  const contacts = todaysMidlandContacts(decisions);
   const cleoContact = contacts.find((c) => c.about === "a");
+  // One open-referral set for the task list, the flow count and Awaiting your answer.
+  const open = openReferrals(REFERRALS, decisions);
+  const sallowfieldOpen = open.some(({ r }) => r.id === "r1");
   const log = [
     ...contacts.map(
       (c) =>
@@ -265,7 +269,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                   value={list}
                   onChange={setList}
                   items={[
-                    { id: "todo", label: "To do", count: cleoContact ? 6 : 7 },
+                    { id: "todo", label: "To do", count: 7 - (cleoContact ? 1 : 0) - (sallowfieldOpen ? 0 : 1) },
                     { id: "log", label: "Today's log", count: log.length },
                   ]}
                 />
@@ -292,18 +296,23 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                       primary={!cleoContact}
                       go={() => (cleoContact ? go("hospital") : recordMidlandContact("a"))}
                     />,
-                    <ListRow
-                      key="b"
-                      tone="warning"
-                      title="Referral past its answer time"
-                      name="Sallowfield, June"
-                      umrn="UM200322"
-                      detail="from GP · psychiatrist review"
-                      when="3d 1h"
-                      whenSub="1h overdue"
-                      action="Answer"
-                      go={() => go("referrals")}
-                    />,
+                    // An answered referral leaves the task list, as it leaves Awaiting your answer.
+                    ...(sallowfieldOpen
+                      ? [
+                          <ListRow
+                            key="b"
+                            tone="warning"
+                            title="Referral past its answer time"
+                            name="Sallowfield, June"
+                            umrn="UM200322"
+                            detail="from GP · psychiatrist review"
+                            when="3d 1h"
+                            whenSub="1h overdue"
+                            action="Answer"
+                            go={() => go("referrals")}
+                          />,
+                        ]
+                      : []),
                     <ListRow
                       key="c"
                       tone="warning"
@@ -441,7 +450,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                 value={flow}
                 onChange={setFlow}
                 items={[
-                  { id: "ref", label: "Referrals", count: openReferrals(REFERRALS, decisions).length },
+                  { id: "ref", label: "Referrals", count: open.length },
                   { id: "adm", label: "Admitted", count: ADMITTED_THIS_WEEK.length },
                   { id: "dis", label: "Leaving", count: 4 },
                 ]}
@@ -451,7 +460,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
               {flow === "ref" ? (
                 <>
                   <FlowGroup title="Awaiting your answer">
-                    {openReferrals(REFERRALS, decisions).map(({ r }) => (
+                    {open.map(({ r }) => (
                       <FlowRow
                         key={r.id}
                         title={r.n}

@@ -67,8 +67,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 367,
-          "sha256": "cb74dd708b5adda8702ecd46b94f0aea9bb7fad4ab528a6715d458b1de26fa51"
+          "line": 369,
+          "sha256": "8e99076c978c4e9fc6d05082a4c48c336fb11ecc2930749ede7ebf85f2bbf934"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -110,8 +110,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 419,
-          "sha256": "cb74dd708b5adda8702ecd46b94f0aea9bb7fad4ab528a6715d458b1de26fa51"
+          "line": 421,
+          "sha256": "8e99076c978c4e9fc6d05082a4c48c336fb11ecc2930749ede7ebf85f2bbf934"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -196,8 +196,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 664,
-          "sha256": "31b1bdbaa0257e84eb6eea40ef6ddad44dcfebdfd0356c6f7f495fc69ff59d2b"
+          "line": 666,
+          "sha256": "a63ee87e0e4c23df938c2732ded19ca0e95f859bf586980d00fa0fdb648694f3"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -230,6 +230,7 @@
       "payload": ["admissionId; actingUnitId; blocker from BED_RELEASE_BLOCKERS; role and now"],
       "scope": "Ward, site bed manager or coordinator; actingUnitId must equal admission.unitId. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": [
+        "now must be a finite time",
         "Admission must exist, be occupied and match actingUnitId",
         "blocker must be a nonempty member of BED_RELEASE_BLOCKERS"
       ],
@@ -241,7 +242,7 @@
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 261,
-          "sha256": "cb74dd708b5adda8702ecd46b94f0aea9bb7fad4ab528a6715d458b1de26fa51"
+          "sha256": "8e99076c978c4e9fc6d05082a4c48c336fb11ecc2930749ede7ebf85f2bbf934"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -286,7 +287,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 246,
-          "sha256": "31b1bdbaa0257e84eb6eea40ef6ddad44dcfebdfd0356c6f7f495fc69ff59d2b"
+          "sha256": "a63ee87e0e4c23df938c2732ded19ca0e95f859bf586980d00fa0fdb648694f3"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1766,8 +1767,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
-          "line": 750,
-          "sha256": "31b1bdbaa0257e84eb6eea40ef6ddad44dcfebdfd0356c6f7f495fc69ff59d2b"
+          "line": 752,
+          "sha256": "a63ee87e0e4c23df938c2732ded19ca0e95f859bf586980d00fa0fdb648694f3"
         },
         {
           "path": "src/components/ward-management/ward-discharge-criteria.ts",
@@ -2437,8 +2438,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 643,
-          "sha256": "cb74dd708b5adda8702ecd46b94f0aea9bb7fad4ab528a6715d458b1de26fa51"
+          "line": 645,
+          "sha256": "8e99076c978c4e9fc6d05082a4c48c336fb11ecc2930749ede7ebf85f2bbf934"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -2737,7 +2738,7 @@
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
           "line": 96,
-          "sha256": "31b1bdbaa0257e84eb6eea40ef6ddad44dcfebdfd0356c6f7f495fc69ff59d2b"
+          "sha256": "a63ee87e0e4c23df938c2732ded19ca0e95f859bf586980d00fa0fdb648694f3"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",

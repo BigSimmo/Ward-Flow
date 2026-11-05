@@ -13,7 +13,8 @@ export function noticeDraftKept(toast: ToastApi | null, kept: boolean, at: Date 
       tone: "success",
       title: line,
       body: "Open New referral again, or Settings > Drafts, to carry on from it.",
-      nextStep: { label: "View drafts", href: "/ward-flow/settings#drafts-title" },
+      // #you opens the You section (a sheet on phones), which holds the Drafts card.
+      nextStep: { label: "View drafts", href: "/ward-flow/settings#you" },
     });
   announceToWardShell(kept ? `${line}.` : line);
   return line;

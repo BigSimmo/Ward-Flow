@@ -63,7 +63,24 @@ describe("Capacity for a signed-in executive (WF-06)", () => {
     expect(screen.getByTestId("ward-capacity-executive")).toHaveTextContent(/beds ready of/u);
     expect(screen.getAllByRole("row").length).toBeGreaterThan(1);
     expect(screen.getByRole("table", { name: /Beds by ward/u })).toBeInTheDocument();
+    expect(screen.getByTestId("ward-capacity-executive-as-at")).toHaveTextContent(/^As at /u);
+    expect(screen.getByTestId("ward-capacity-executive-as-at")).not.toHaveTextContent(/paused/u);
+    expect(screen.getByTestId("ward-capacity-executive-footer")).toBeInTheDocument();
     expect(guard.operational).not.toHaveBeenCalled();
+  });
+
+  it("marks a paused report beside its as-at time", () => {
+    render(
+      <ExecutiveStatisticsProvider
+        binding={binding}
+        snapshot={{ binding, receivedAt: 100, expiresAt: 200, data: structuredClone(data) }}
+        now={150}
+        controls={{ executive: true, paused: true, togglePause: null }}
+      >
+        <CapacityRoute />
+      </ExecutiveStatisticsProvider>,
+    );
+    expect(screen.getByTestId("ward-capacity-executive-as-at")).toHaveTextContent(/report paused/u);
   });
 
   it("says the figures are unavailable when the report is absent", () => {
@@ -79,6 +96,8 @@ describe("Capacity for a signed-in executive (WF-06)", () => {
     );
     expect(screen.queryByTestId("ward-capacity-executive")).not.toBeInTheDocument();
     expect(screen.getByTestId("ward-statistics-unavailable")).toHaveTextContent(/Statistics are unavailable/u);
+    expect(screen.getByRole("main")).toHaveAttribute("id", "main-content");
+    expect(screen.getByTestId("ward-capacity-executive-footer")).toBeInTheDocument();
     expect(guard.operational).not.toHaveBeenCalled();
   });
 });

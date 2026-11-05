@@ -199,8 +199,12 @@ const GENDER_ITEMS: ChoiceItem<GenderChoice>[] = [
  */
 export const LONG_TEXT_WARNING = 100;
 
+function isLongText(value: string) {
+  return value.trim().length > LONG_TEXT_WARNING;
+}
+
 function longTextWarning(value: string, what: "name" | "suburb") {
-  if (value.trim().length <= LONG_TEXT_WARNING) return undefined;
+  if (!isLongText(value)) return undefined;
   return (
     <span>
       <StatusGlyph tone="warning" size={9} /> Long {what}. Check it is right.
@@ -980,6 +984,17 @@ export function AddPatientForm() {
                 }
               />
               <CardBody className={styles.grid}>
+                {/* Mounted before any warning, so a long name or suburb is announced as it appears.
+                    The warning never blocks saving. */}
+                <p className="sr-only" role="status" data-testid="ward-add-patient-long-text-status">
+                  {[
+                    isLongText(draft.familyName) ? "Long family name. Check it is right." : "",
+                    isLongText(draft.givenName) ? "Long given name. Check it is right." : "",
+                    isLongText(extras.suburb) ? "Long suburb. Check it is right." : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                </p>
                 <Field
                   label={<Required>Family name</Required>}
                   id="ward-add-patient-family-name"

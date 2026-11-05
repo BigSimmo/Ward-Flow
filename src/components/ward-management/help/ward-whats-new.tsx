@@ -117,6 +117,25 @@ export function whatsNewSeenIds(seen: string | null, list: readonly WhatsNewEntr
   return list.slice(0, at + 1).map((entry) => entry.id);
 }
 
+/** How many read ids a device keeps. */
+export const WHATS_NEW_SEEN_LIMIT = 200;
+
+/**
+ * The read ids to store, capped: older history first, then the current changes oldest to newest,
+ * keeping the last ones, so the cap drops the oldest ids and never a change the note would show again.
+ */
+export function cappedWhatsNewSeen(
+  ids: readonly string[],
+  held: readonly string[],
+  list: readonly WhatsNewEntry[] = WHATS_NEW,
+): string[] {
+  const position = new Map(list.map((entry, index) => [entry.id, index]));
+  const all = [...new Set([...ids, ...held])];
+  const current = all.filter((id) => position.has(id)).sort((a, b) => (position.get(a) ?? 0) - (position.get(b) ?? 0));
+  const older = all.filter((id) => !position.has(id));
+  return [...older, ...current].slice(-WHATS_NEW_SEEN_LIMIT);
+}
+
 /** Adds `ids` to the changes read on this device (all current ones when none are named). */
 export function markWhatsNewSeen(
   ids: readonly string[] = WHATS_NEW.map((entry) => entry.id),
@@ -129,7 +148,7 @@ export function markWhatsNewSeen(
   if (shownThisVisit?.every((entry) => named.has(entry.id))) shownThisVisit = null;
   try {
     const held = whatsNewSeenIds(window.localStorage.getItem(WHATS_NEW_STORAGE_KEY));
-    window.localStorage.setItem(WHATS_NEW_STORAGE_KEY, JSON.stringify([...new Set([...ids, ...held])].slice(0, 200)));
+    window.localStorage.setItem(WHATS_NEW_STORAGE_KEY, JSON.stringify(cappedWhatsNewSeen(ids, held)));
   } catch {
     // Without storage the note never shows (see `readUnseen`), so there is nothing to record.
     return;
@@ -152,7 +171,7 @@ function recordWhatsNewShown(entries: readonly WhatsNewEntry[]): void {
     // Every current change, as Got it records, so the older ones the card had no room for do not
     // bring it back on the next page.
     const ids = WHATS_NEW.map((entry) => entry.id);
-    window.localStorage.setItem(WHATS_NEW_STORAGE_KEY, JSON.stringify([...new Set([...ids, ...held])].slice(0, 200)));
+    window.localStorage.setItem(WHATS_NEW_STORAGE_KEY, JSON.stringify(cappedWhatsNewSeen(ids, held)));
   } catch {
     // Unreadable storage shows nothing anyway.
     return;

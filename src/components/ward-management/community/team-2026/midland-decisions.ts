@@ -16,8 +16,10 @@ export type MidlandDecision = { id: string; line: string; at: number };
  * The Accept toast line. Decisions live in this browser only, so the toast says so rather than
  * a time that would read as a shared save other desks can see.
  */
-export function midlandSavedLine(movedToAnswered: boolean): string {
-  return movedToAnswered ? "Saved in this browser · moved to Answered" : "Saved in this browser";
+export function midlandSavedLine(movedToAnswered: boolean, persisted = true): string {
+  // Storage refused the write: the answer holds for this visit only, and a reload loses it.
+  const saved = persisted ? "Saved in this browser" : "Kept for this visit only: this browser could not save it";
+  return movedToAnswered ? `${saved} · moved to Answered` : saved;
 }
 
 const listeners = new Set<() => void>();
@@ -49,18 +51,23 @@ function read(): Record<string, MidlandDecision> {
   return value;
 }
 
-function write(next: Record<string, MidlandDecision>) {
+/** True when the decisions reached storage; false when they are held in memory for this page only. */
+function write(next: Record<string, MidlandDecision>): boolean {
+  let persisted = true;
   try {
     window.localStorage.setItem(MIDLAND_DECISIONS_KEY, JSON.stringify(next));
   } catch {
     /* storage unavailable: the in-memory cache still carries the decision for this page */
     cache = { raw: cache.raw, value: next };
+    persisted = false;
   }
   listeners.forEach((l) => l());
+  return persisted;
 }
 
-export function recordMidlandDecision(id: string, line: string, at = Date.now()) {
-  write({ ...read(), [id]: { id, line, at } });
+/** Records one decision; false means it is kept for this visit only (storage refused it). */
+export function recordMidlandDecision(id: string, line: string, at = Date.now()): boolean {
+  return write({ ...read(), [id]: { id, line, at } });
 }
 
 export function undoMidlandDecision(id: string) {
@@ -107,4 +114,13 @@ export function midlandContacts(all: Record<string, MidlandDecision>): MidlandCo
     .filter((d) => d.id.startsWith(CONTACT_PREFIX))
     .map((d) => ({ about: d.line, at: d.at }))
     .sort((a, b) => b.at - a.at);
+}
+
+/** Contacts recorded on `today`'s local day, newest first: Today's log and the Act-now row are today's only. */
+export function todaysMidlandContacts(
+  all: Record<string, MidlandDecision>,
+  today: Date = new Date(),
+): MidlandContact[] {
+  const day = today.toDateString();
+  return midlandContacts(all).filter((c) => new Date(c.at).toDateString() === day);
 }

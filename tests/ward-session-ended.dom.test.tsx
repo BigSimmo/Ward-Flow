@@ -73,3 +73,42 @@ it("ends the session when this tab's stored sign-in is cleared, instead of still
   expect(reads()).toBe(before);
   unmount();
 });
+
+it("ends the session when the stored sign-in is cleared while the first workspace read is pending", async () => {
+  const snapshot = {
+    dataMode: "prototype",
+    revision: 1,
+    now: 642,
+    payload: {
+      version: 1,
+      state: seedWardFlowStateAt(0),
+      dayZero: "2026-10-07T00:00:00Z",
+      startedAt: "2026-10-07T10:00:00Z",
+    },
+  };
+  let clearOnRead = false;
+  const fetcher = vi.fn(async (url: string | URL | Request) => {
+    if (String(url).includes("/v1/workspace")) {
+      // Another tool clears this tab's sign-in while the first read is still on its way.
+      if (clearOnRead) sessionStorage.removeItem(WARD_AUTH_STORAGE_KEY);
+      return Response.json({
+        snapshot,
+        actorId: user.id,
+        access: { role: "coordinator", scope: { kind: "statewide" } },
+      });
+    }
+    return String(url).endsWith("/user")
+      ? Response.json(user)
+      : Response.json({ access_token: "access", refresh_token: "refresh", expires_in: 3600, user });
+  });
+  vi.stubGlobal("fetch", fetcher);
+  const { result, unmount } = renderHook(() => useWardShared(true));
+  await waitFor(() => expect(result.current.status).toBe("ready"));
+  clearOnRead = true;
+  await act(async () => {
+    await result.current.credentials!.signIn("synthetic@example.invalid", "private-password");
+  });
+  await waitFor(() => expect(result.current.error).toBe("Your session ended. Sign in again to carry on."));
+  expect(result.current.signedIn).toBe(false);
+  unmount();
+});

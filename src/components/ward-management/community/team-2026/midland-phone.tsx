@@ -574,7 +574,22 @@ function ReferralsSection({ open }: { open: (index: number) => void }) {
           <ul className={p.rows}>
             {(pane === "s"
               ? SENT.map((s) => ({ n: s.n, u: s.u, meta: s.to, value: s.state, time: s.when }))
-              : ANSWERED.map((a) => ({ n: a.n, u: a.u, meta: `${a.ask} · ${a.by}`, value: a.ans, time: a.when }))
+              : [
+                  // Answers saved on this device lead the list, as on the desktop view.
+                  ...REFERRALS.filter((r) => decisions[r.id]).map((r) => ({
+                    n: r.n,
+                    u: r.u,
+                    meta: `${r.ask} · You`,
+                    value: decisions[r.id]!.line,
+                    time: new Date(decisions[r.id]!.at).toLocaleString("en-AU", {
+                      weekday: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: false,
+                    }),
+                  })),
+                  ...ANSWERED.map((a) => ({ n: a.n, u: a.u, meta: `${a.ask} · ${a.by}`, value: a.ans, time: a.when })),
+                ]
             ).map((row) => (
               <PhoneListRow
                 key={row.u}

@@ -6,7 +6,7 @@ import {
   type DischargeDelayClearReason,
   type OverrideReason,
 } from "@/components/ward-management/ward-change-reasons";
-import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
+import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import {
@@ -782,18 +782,26 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   meetingActions: true,
 };
 
-/** a stored hold-up log is a list of {finite time, known role, listed blocker}. */
+const STAY_BLOCK_RECORD_KEYS = new Set(["at", "by", "blocker"]);
+
+/**
+ * a stored hold-up log is a list of {finite time, known role, listed blocker} and nothing else:
+ * an unknown role would render as "undefined", and an extra key could carry free text.
+ */
 export function isStayBlockRecords(value: unknown): boolean {
   return (
     Array.isArray(value) &&
-    value.every(
-      (r) =>
-        typeof r === "object" &&
-        r !== null &&
-        Number.isFinite((r as { at?: unknown }).at) &&
-        typeof (r as { by?: unknown }).by === "string" &&
-        (BED_RELEASE_BLOCKERS as readonly unknown[]).includes((r as { blocker?: unknown }).blocker),
-    )
+    value.every((r) => {
+      if (typeof r !== "object" || r === null || Array.isArray(r)) return false;
+      const record = r as { at?: unknown; by?: unknown; blocker?: unknown };
+      return (
+        Object.keys(record).every((key) => STAY_BLOCK_RECORD_KEYS.has(key)) &&
+        Number.isFinite(record.at) &&
+        typeof record.by === "string" &&
+        Object.hasOwn(WARD_FLOW_ROLE_LABELS, record.by) &&
+        (BED_RELEASE_BLOCKERS as readonly unknown[]).includes(record.blocker)
+      );
+    })
   );
 }
 

@@ -259,6 +259,8 @@ export function reduceRecordedStayEvent(
     }
 
     case "RECORD_STAY_DISCHARGE_BLOCKER": {
+      // The time joins the stay's hold-up log, so a non-finite one is refused before anything changes.
+      if (!Number.isFinite(event.now)) return reject(state, event, `${event.type} requires a finite current time`);
       const admission = findAdmission(state, event.admissionId);
       if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
       if (event.actingUnitId !== admission.unitId) {

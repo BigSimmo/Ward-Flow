@@ -1,6 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import { arrivalsAxis, arrivedSinceStartOfDay } from "@/components/ward-management/officer/officer-screen-helpers";
-import { createdEvent } from "@/components/ward-management/patients/patient-history-tab";
+import {
+  arrivalsAxis,
+  arrivedSinceStartOfDay,
+  expectedArrival,
+  pastWardEta,
+} from "@/components/ward-management/officer/officer-screen-helpers";
+import { createdEvent, historyLeadTitle } from "@/components/ward-management/patients/patient-history-tab";
 import { clockTime, savedAtToast } from "@/components/ward-management/ward-saved-at-toast";
 
 describe("WF-09 arrivals axis", () => {
@@ -35,6 +40,23 @@ describe("WF-49 created-by on the patient record", () => {
     expect(w?.text).toBe("Record created by Ward 4 (ward)");
     expect(createdEvent({}, () => undefined)).toBeUndefined();
   });
+
+  it("does not head a creation-only history as a movement", () => {
+    expect(historyLeadTitle(false, 1, true)).toBe("Record");
+    expect(historyLeadTitle(false, 2, false)).toBe("Last movement");
+    expect(historyLeadTitle(false, 0, false)).toBe("Ward stays");
+    expect(historyLeadTitle(true, 1, true)).toBe("Current presentation");
+  });
+});
+
+describe("overdue arrival follows a ward ETA only", () => {
+  it("never reports a booking estimate as overdue", () => {
+    const booked = { transport: { estimatedAt: 100 } } as unknown as Parameters<typeof pastWardEta>[0];
+    expect(expectedArrival(booked)).toEqual({ at: 100, booked: true });
+    expect(pastWardEta(booked, 10_000)).toBe(false);
+    const ward = { arrivalDetails: { estimatedArrivalAt: 100 } } as unknown as Parameters<typeof pastWardEta>[0];
+    expect(pastWardEta(ward, 10_000)).toBe(true);
+  });
 });
 
 describe("WF-47 saved-at toast", () => {
@@ -59,7 +81,7 @@ describe("WF-18 draft saved points to the Drafts list", () => {
     expect(push).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Draft saved at 09:07",
-        nextStep: { label: "View drafts", href: "/ward-flow/settings#drafts-title" },
+        nextStep: { label: "View drafts", href: "/ward-flow/settings#you" },
       }),
     );
   });

@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { renderWithToasts as render } from "./helpers/with-toasts";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -16,6 +16,8 @@ import { REFERENCE_TEAM_NAMES, referenceTeamDetail } from "@/components/ward-man
 import { WardFlowClockContext } from "@/components/ward-management/ward-flow-provider";
 import { resetServiceScopeForTests, setServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 
 /**
  * 🔴 **WHAT A READER ACTUALLY SEES ON THE SCREEN THEY WOULD RING.**
@@ -435,4 +437,23 @@ it("removes jumps to services emptied by each Show filter", () => {
     }
     fireEvent.click(screen.getByRole("button", { name: "Show all" }));
   }
+});
+
+describe("the on-call screen for a transport officer (WF-45)", () => {
+  afterEach(() => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", null);
+      resetWardAccessStoreForTests();
+    });
+  });
+
+  it("opens on the State tab, where every retained transport line sits", () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role: "officer", scope: { kind: "jobs" } });
+    });
+    renderOnCall();
+    expect(screen.getByRole("tab", { name: /^State(?! bed)/u })).toHaveAttribute("aria-selected", "true");
+    expect(row("sw-sja")).toBeInTheDocument();
+  });
 });

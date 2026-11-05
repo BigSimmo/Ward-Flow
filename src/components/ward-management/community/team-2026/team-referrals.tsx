@@ -91,12 +91,13 @@ export function useAnswer(name: string, id?: string) {
   const accepted = id ? (decisions[id]?.line ?? null) : local;
   const undo = () => (id ? undoMidlandDecision(id) : setLocal(null));
   const accept = (line: string) => {
-    if (id) recordMidlandDecision(id, line);
+    let persisted = true;
+    if (id) persisted = recordMidlandDecision(id, line);
     else setLocal(line);
     toast?.push({
-      tone: "success",
+      tone: persisted ? "success" : "warning",
       title: `Accepted ${name}`,
-      body: midlandSavedLine(Boolean(id)),
+      body: midlandSavedLine(Boolean(id), persisted),
       action: { label: "Undo", onAction: undo },
     });
   };

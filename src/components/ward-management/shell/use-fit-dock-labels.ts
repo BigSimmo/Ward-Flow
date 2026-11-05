@@ -49,10 +49,22 @@ export function useFitDockLabels(dockRef: RefObject<HTMLElement | null>, selecto
     binding.current = null;
     if (!dock || typeof ResizeObserver === "undefined") return;
     let active = true;
+    // The dock's children being watched, so a replaced child is let go rather than kept observed.
+    const observed = new Set<Element>();
     const fitAll = () => {
       if (!active) return;
       for (const label of dock.querySelectorAll<HTMLElement>(selector)) fitDockLabel(label);
-      for (const item of dock.children) observer.observe(item);
+      const current = new Set(dock.children);
+      for (const item of observed) {
+        if (current.has(item)) continue;
+        observer.unobserve(item);
+        observed.delete(item);
+      }
+      for (const item of current) {
+        if (observed.has(item)) continue;
+        observer.observe(item);
+        observed.add(item);
+      }
     };
     const observer = new ResizeObserver(fitAll);
     observer.observe(dock);
@@ -78,6 +90,7 @@ export function useFitDockLabels(dockRef: RefObject<HTMLElement | null>, selecto
       dispose: () => {
         active = false;
         observer.disconnect();
+        observed.clear();
         mutations.disconnect();
         document.fonts?.removeEventListener("loadingdone", fitAll);
       },

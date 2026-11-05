@@ -97,7 +97,16 @@ export function withStayBlocker(
   recorded?: { at: Instant; by: WardFlowRole },
 ): WardFlowState {
   const stay = findAdmission(state, admissionId);
-  if (!stay || stay.blockReason === blocker) return state;
+  if (!stay) return state;
+  if (stay.blockReason === blocker) {
+    // Unchanged: a call without recording metadata is a no-op, but an accepted, recorded repeat of
+    // the same hold-up still joins the stay's log, so the history keeps every recorded action.
+    if (!recorded || blocker === null) return state;
+    return replaceAdmission(state, stay.id, {
+      ...stay,
+      stayBlockRecords: [...(stay.stayBlockRecords ?? []), { ...recorded, blocker }],
+    });
+  }
   return replaceAdmission(state, stay.id, {
     ...stay,
     blockReason: blocker,
