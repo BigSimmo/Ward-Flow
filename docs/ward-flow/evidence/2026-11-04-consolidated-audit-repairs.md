@@ -100,8 +100,8 @@ PostgreSQL target. The three full-unit skips were a historical diff-integrity ch
 whose old commit is absent and two opt-in timing probes for inactive reporting.
 
 At this intermediate checkpoint the production build and corrected-source full rerun were pending; their completed results follow below.
-Pinned Chromium is absent. Approval was requested for its download and a disposable
-PostgreSQL 16 image; it has not yet been received. No hosted runtime or database was contacted; the earlier authorised GitHub fetch and ownership reads remain separate.
+At that checkpoint Chromium was absent, and approval for its download and a disposable
+PostgreSQL 16 image had not yet been received. No hosted runtime or database was contacted; the earlier authorised GitHub fetch and ownership reads remain separate.
 Earlier queued backend/build attempts timed out on the shared heavyweight lock and
 were not counted as execution evidence.
 
@@ -137,9 +137,66 @@ The three unit skips are explicit: the historical diff-integrity regression requ
 unavailable commit `d1485d6e8`; two inactive reporting timing probes are opt-in.
 They are not passes, and no current critical-suite all-skipped result was found.
 
-**Still unavailable:** native browser journeys, local PostgreSQL integration,
-physical-phone/installed-PWA checks, and hosted CI artifact/deployment observation.
-The pinned browser and a database image are absent; download approval remains
-pending under the repository's verification guidance. No download, live database,
-push, PR, merge or deployment was performed. No actionable source defect remains
-open after the repairs and the corrected full gate.
+At the 4 November checkpoint, native browser journeys and local PostgreSQL integration
+awaited download approval. The owner approved those downloads on 5 November; the
+fresh results below supersede those two limits. Physical devices, installed PWA,
+Safari and hosted CI/deployment remain separate and unobserved.
+
+## Approved local verification — 5 November 2026
+
+The approved downloads and previously blocked checks completed on HEAD `67c43e7f4`,
+whose product source is unchanged from `d1cfd8f45`. No application source, test policy
+or deployment setting changed in this continuation. The earlier full unit and storage
+results above are retained evidence, not labelled as fresh 5 November execution.
+
+- **Real PostgreSQL integration:** **441 passed, zero failed, zero skipped**, in
+  23.97 seconds. The backend runner used an explicit loopback administrator URL
+  and PostgreSQL 16.15 in an owned disposable container. This exercised real SQL,
+  migrations, permissions, last-bed contention, retries, audit and recovery.
+- **Native component integration:** desktop 1440×1000 and emulated phone 390×844
+  both passed on pinned Chromium revision 1248 (`156.0.8078.4`). Actual components,
+  reducer and shared client, with a bounded mocked in-memory server, demonstrated
+  CAD cancellation/rebooking draft ownership, disabled empty-save refusal, native
+  mouse hit-testing against an inert save ancestor, replacement CAD persistence,
+  and explicit confirmation of an arrived historical observation conflict.
+  Both cases had zero page errors or refused commands. This is component integration;
+  separately loading the app home page does not prove a full application workflow.
+- **Production shared-workspace browser journeys:** **six passed, zero failed,
+  zero skipped, zero flaky**, in 22.34 seconds, after a fresh isolated production
+  build with TypeScript. Two signed-in browser desks used the real local backend
+  and PostgreSQL with synthetic authentication. Checks covered cross-desk updates,
+  stale-edit refusal, visible workflow refusal, keyboard focus, concurrent edits
+  to different records, and network-loss recovery without reloading. Non-loopback
+  browser requests were blocked; the fixed authentication origin was intercepted
+  and answered by the local fake service. No hosted authentication or database was used.
+
+Commands (using the already verified pinned Node/npm toolchain):
+
+```sh
+WARD_TEST_DATABASE_URL=postgresql://postgres@127.0.0.1:32768/postgres node scripts/run-backend-tests.mjs --integration
+node .local/consolidated-audit-repairs/native-cad/run.mjs http://127.0.0.1:4210
+WARD_E2E_DATABASE_URL=postgresql://postgres@127.0.0.1:32768/postgres node tests/support/ward-shared-mode-run.mjs
+```
+
+The production shared runner was admitted through the shared heavyweight lock.
+The `npm run ensure` server identity was verified before browser access.
+Standalone harness preparation failures were corrected in ignored test-only files;
+none established a product defect. The final successful evidence is retained:
+
+| Evidence                                 | Local location                                                    | SHA-256                                                            |
+| ---------------------------------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Native component results and screenshots | `.local/consolidated-audit-repairs/native-cad/` (`evidence.json`) | `730821444233b11a001a075355466967a63dbe733fd791b1030619e0d5809942` |
+| Production shared browser JSON           | `test-results/shared-mode-2826-1793844331450/journeys.json`       | `4e1690423b0c9e2fc98afb29d7c577d266ee3675d65d6f61e3c01e92a26fc0db` |
+| PostgreSQL integration output            | `/tmp/ward-flow-postgres-integration.log`                         | Retained local command output                                      |
+
+The PostgreSQL image digest was
+`sha256:5db6dac2ef5dcff512f4f00a009c3c332b9f2f28f24277175bf3e4a3d02ef83a`.
+Only the owned disposable container and its anonymous data volume were removed.
+The local dev server, native harness/browser, production Next server, synthetic
+backend/authentication/TLS listeners and temporary shared database were stopped
+or cleaned up. Browser and image caches remain installed for authorised reuse.
+
+No actionable source defect remains open from this work. Physical-phone, Safari,
+installed-PWA, the complete release browser matrix, hosted CI artifacts and live
+deployment have not been verified. No push, PR, merge, hosted migration or release
+was performed. These local checks do not establish deployment acceptance.
