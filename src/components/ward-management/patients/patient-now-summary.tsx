@@ -445,7 +445,9 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                 <StatusGlyph tone={tierTone} size={9} />
                 {tierChipText(urgencyTier).replace(/^T\d /, "")}
               </span>
-              {isConstantObservation(liveMovement.observation) ? (
+              {/* Review 5 Nov 2026: the glance band above already shows Obs and Legal, so this row
+                  leaves them out rather than saying each twice. */}
+              {!glance && isConstantObservation(liveMovement.observation) ? (
                 <span className={styles.v6HeroFact}>
                   <Eye size={14} strokeWidth={1.75} aria-hidden="true" />
                   {observationSummary(liveMovement.observation)}
@@ -455,7 +457,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                 <BedSingle size={14} aria-hidden="true" />
                 {bedTypeChipText(liveMovement.security)}
               </span>
-              {movementTimeLeft ? (
+              {!glance && movementTimeLeft ? (
                 <span className={styles.v6HeroFact} data-testid="ward-patient-hero-form-left">
                   {movementTimeLeft.standing !== "later" ? (
                     <StatusGlyph tone={movementTimeLeft.tone} size={9} />
@@ -521,7 +523,7 @@ export function PatientNowSummary(props: PatientNowSummaryProps) {
                     onClick={() => setStagesOpen((open) => !open)}
                     data-testid="ward-patient-stages-toggle"
                   >
-                    {stagesOpen ? "Hide stages" : "All 7 stages"}
+                    {stagesOpen ? "Hide placement steps" : "Placement steps"}
                   </button>
                 ) : undefined
               }

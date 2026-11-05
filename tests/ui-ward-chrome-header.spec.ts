@@ -848,9 +848,13 @@ test("@mockup drawer workspace keeps All figures focus and every alert reachable
   await page.keyboard.press("Escape");
   await expect(page.getByTestId(PHONE_MENU[0])).toBeFocused();
 
-  // One Alerts queue (D-61): the bed coordinator's dock carries Tasks (Q177), which opens the Alerts
-  // screen. Every queue row there must still be reachable on a short phone.
+  // One Alerts queue (D-61): the bed coordinator's dock carries Alerts (Q177), which opens the Alerts
+  // drawer on a phone as on the desktop (Josh, 4 Nov 2026), and the drawer's Open Alerts goes on to
+  // the screen. Every queue row there must still be reachable on a short phone.
   await page.getByTestId("ward-phone-menu-tasks").click();
+  const drawer = page.getByRole("dialog", { name: "Alerts" });
+  await expect(drawer).toBeVisible();
+  await drawer.getByTestId("ward-tasks-open-alerts").click();
   await expect(page).toHaveURL(/\/ward-flow\/alerts(?:[?#]|$)/u);
   await expect(
     page.locator('div[hidden][id^="S:"]'),

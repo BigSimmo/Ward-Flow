@@ -60,10 +60,11 @@ function renderScreen() {
   );
 }
 
-/** The hero's Act now figure, read from its own button. */
+/** The Act now figure, read from the Open view's chip (the hero no longer repeats it, 4 Nov 2026). */
 function actNowFigure(): number {
-  const summary = screen.getByRole("group", { name: "Alert summary" });
-  return Number.parseInt(within(summary).getByRole("button", { name: /Act now/ }).textContent ?? "", 10);
+  const chips = screen.getByRole("group", { name: "Show open alerts" });
+  const chip = within(chips).getByRole("button", { name: /Act now/u });
+  return Number.parseInt((chip.textContent ?? "").replace(/\D+/gu, ""), 10);
 }
 
 describe("the alerts screen scopes buildActionInbox to open movements only", () => {

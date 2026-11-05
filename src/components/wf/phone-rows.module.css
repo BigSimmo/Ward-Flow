@@ -82,6 +82,12 @@
     font: 600 var(--wf-fs-13) / 18px var(--wf-font);
     box-shadow: none;
   }
+  /* Review 5 Nov 2026: the page's main action (Start meeting) is the one filled pill, so it leads. */
+  .heroPill.heroPill[data-primary="true"] {
+    border-color: var(--wf-hero-ink);
+    background: var(--wf-hero-ink);
+    color: var(--wf-hero-2);
+  }
   /* A pill that cannot act now reads as such (the button's own disabled look is overridden above). */
   .heroPill.heroPill:is([aria-disabled="true"], :disabled) {
     background: transparent;
