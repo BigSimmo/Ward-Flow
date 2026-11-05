@@ -85,6 +85,9 @@
   letter-spacing: -0.015em;
   color: var(--wf-hero-ink);
   overflow-wrap: break-word;
+  /* Design brief (Josh, 3 Nov 2026): a title that wraps breaks into two even lines, never one
+   * word left alone ("62 waiting across 10 / EDs"). */
+  text-wrap: balance;
   min-width: 0;
   max-width: 100%;
 }
@@ -831,5 +834,123 @@
     flex-wrap: wrap;
     overflow: visible;
     white-space: normal;
+  }
+}
+
+/*
+ * Plan item 2i (proposal, 3 Nov 2026): the next step. One plain sentence, short owner words, at most
+ * three facts and the hero's one light button, on a soft inset line under the title. No coloured
+ * edge; the button carries the action.
+ */
+.next {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-4);
+  min-width: 0;
+  padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-2) var(--wf-s-4);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-on-hero-fill);
+  box-shadow: inset 0 0 0 1px var(--wf-on-hero-line);
+}
+
+.nextText {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--wf-s-3);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.nextAnswer {
+  margin: 0;
+  min-width: 0;
+  font: 600 var(--wf-fs-15) / var(--wf-lh-15) var(--wf-font);
+  letter-spacing: var(--wf-tr-15);
+  color: var(--wf-hero-ink);
+  text-wrap: pretty;
+}
+
+.nextOwner {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-hero-ink-2);
+}
+
+.nextFacts {
+  display: flex;
+  gap: var(--wf-s-4);
+  margin: 0;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.nextFact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding-left: var(--wf-s-4);
+  border-left: 1px solid var(--wf-on-hero-div);
+}
+
+.nextFact dt {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-hero-ink-2);
+  white-space: nowrap;
+}
+
+.nextFact dd {
+  margin: 0;
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-hero-ink);
+  white-space: nowrap;
+}
+
+.nextAction {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 900px) {
+  .next {
+    flex-wrap: wrap;
+  }
+  .nextText {
+    flex-basis: 16rem;
+  }
+}
+
+/* Phone: the hero folds to the title line plus the next step, so the first row of work sits in the
+ * top 40% of a 390 x 844 screen. The figures, the second row, the foot and the lead are left to the
+ * page below; the facts are a desktop and tablet extra. The button keeps the kit's 40px phone size. */
+@media (max-width: 46.4375rem) {
+  .hero[data-next] {
+    gap: var(--wf-s-2);
+  }
+  .hero[data-next] .stats,
+  .hero[data-next] .lead,
+  .hero[data-next] .barRow,
+  .hero[data-next] .foot,
+  .hero[data-next] .nextFacts {
+    display: none;
+  }
+  /* One line where it fits: the answer wraps beside the button, and the button drops under the
+   * answer only when the two cannot share the line. */
+  .next {
+    flex-wrap: wrap;
+    gap: var(--wf-s-2) var(--wf-s-3);
+    padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-2) var(--wf-s-3);
+  }
+  .nextText {
+    flex: 1 1 11rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+  }
+  .nextAnswer {
+    font-size: var(--wf-fs-14);
+    line-height: var(--wf-lh-14);
   }
 }

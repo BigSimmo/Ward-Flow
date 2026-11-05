@@ -77,6 +77,7 @@ import { installMatchMediaStub } from "./setup/jsdom.setup";
 
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 import { markBroomeForensicForThisFile } from "./helpers/ward-made-up-forensic-ward";
+import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 /**
  * D-77 (change 3, Josh 21 Oct 2026). The match view is one list on every width: three groups
  * ("Fits, bed ready", "Fits, no bed now", "Needs review"), each a radiogroup of one row per ward.
@@ -938,6 +939,8 @@ describe("ReferralBoard", () => {
 const SEEDED_REFERRAL_IDS = new Set([
   ...referrals.map((referral) => referral.id),
   ...rulingsDemoOverlay(NOW_ANCHOR).referrals.map((referral) => referral.id),
+  // S6 example data (3 Nov 2026): the seed's example inbox referrals are seeded too.
+  ...seedWardFlowState().referrals.map((referral) => referral.id),
 ]);
 
 /** A real emergency department, read from the network rather than written down here: the reducer
@@ -2054,7 +2057,7 @@ describe("ReferralMatchView — the optional local-bed step is never owed", () =
     expect(region.textContent ?? "").not.toMatch(/\d/);
     // What IS there is the offer, and only the offer.
     expect(screen.getByTestId("ward-referral-match-local-bed-sought")).toHaveTextContent(
-      "Record that a local bed was sought and none was suitable",
+      "Local bed sought, none suitable",
     );
     expect(screen.queryByTestId("ward-referral-match-local-bed-sought-record")).not.toBeInTheDocument();
   });
@@ -2067,7 +2070,7 @@ describe("ReferralMatchView — the optional local-bed step is never owed", () =
       expect(
         screen.getByTestId("ward-referral-match-local-bed-sought"),
         `the local-bed control is missing for a ${homeRegion} referral`,
-      ).toHaveTextContent("Record that a local bed was sought and none was suitable");
+      ).toHaveTextContent("Local bed sought, none suitable");
       unmount();
     }
   });
@@ -2081,7 +2084,7 @@ describe("ReferralMatchView — the optional local-bed step is never owed", () =
 
     // The record now exists and the screen says so; the offer is gone because it is a one-shot.
     expect(screen.getByTestId("ward-referral-match-local-bed-sought-record")).toHaveTextContent(
-      /^A local bed was sought and none was suitable, at \d{2}:\d{2}\.$/,
+      /^Local bed sought, none suitable · \d{2}:\d{2}$/,
     );
     expect(screen.queryByTestId("ward-referral-match-local-bed-sought")).not.toBeInTheDocument();
     // Nothing was refused, and the referral is still queued — this step is not a decision.

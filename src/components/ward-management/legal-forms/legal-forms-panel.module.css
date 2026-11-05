@@ -139,6 +139,62 @@
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
+/* Gap list items 3 to 7: the details read as a quiet list, and edit in place. */
+.detailsList {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 6px var(--wf-s-3);
+  margin: 0;
+}
+
+.detailsList > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.detailsList dt {
+  color: var(--wf-ink-3);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.detailsList dd {
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  overflow-wrap: anywhere;
+}
+
+.detailsForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+/* Gap list item 1: the optional typed receipt time sits beside its button. */
+.receivedControls {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.receivedTime {
+  width: 76px;
+}
+
+/* H13: the once-only extension mark. A warning line in words, never a block or a side stripe. */
+.warn {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  padding: 6px var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-warning-ink);
+  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
 .body {
   display: flex;
   flex: 1 1 auto;
@@ -187,8 +243,11 @@
   background: var(--wf-accent-tint);
 }
 
+/* FS1: nothing to do reads as a quiet line, not a card competing with the real next steps. */
 .next[data-action="none"] {
-  background: var(--wf-surface-2);
+  padding: var(--wf-s-1) 0;
+  border-color: transparent;
+  background: transparent;
 }
 
 .next[data-action="extend"] {

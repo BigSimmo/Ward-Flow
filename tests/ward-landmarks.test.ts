@@ -186,6 +186,8 @@ const REDIRECT_ONLY_ROUTES = new Set<string>([
   // B4 step 3 (19 Oct 2026): Delays became Waiting; `delays/page.tsx` redirects to `/waiting`.
   `${ROUTE_PREFIX}/delays`,
   `${ROUTE_PREFIX}/ed`,
+  // PL1 (3 Nov 2026): Community folded into Places; `community/page.tsx` redirects to Catchments.
+  `${ROUTE_PREFIX}/community`,
 ]);
 
 type RouteRender = { route: string; render: () => ReactNode };
@@ -286,7 +288,7 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/referrals`, render: () => createElement(ReferralBoard) },
   { route: `${ROUTE_PREFIX}/out-of-area`, render: () => createElement(OutOfAreaBoard) },
   { route: `${ROUTE_PREFIX}/wards`, render: () => createElement(WardIndex) },
-  { route: `${ROUTE_PREFIX}/community`, render: () => createElement(CommunityIndex) },
+  { route: `${ROUTE_PREFIX}/hub/catchments`, render: () => createElement(CommunityIndex, { inPlaces: true }) },
   { route: `${ROUTE_PREFIX}/waiting`, render: () => createElement(DelaysScreen) },
   { route: `${ROUTE_PREFIX}/hub`, render: () => createElement(HubScreen) },
   { route: `${ROUTE_PREFIX}/legal-forms`, render: () => createElement(LegalFormsScreen) },

@@ -5,6 +5,7 @@ import { buildActionInbox, eligibleCandidatesAmong, isOpen } from "@/components/
 import type { Movement } from "@/components/ward-management/ward-model";
 import { PARALLEL_REFERRAL_CAP } from "@/components/ward-management/ward-model";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import { HELP_TIPS_OFF_KEY } from "@/components/ward-management/help-content/ward-help-tips-off";
 import { movementById } from "@/components/ward-management/ward-movements";
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -16,10 +17,22 @@ import { homeFlowCard, openHomeRegisters, showAllFlowRows, showEveryoneWaitingOn
  * coordinator would: open the stages first when the row is further down.
  */
 async function pickQueueRow(queue: Locator, movementId: string): Promise<Locator> {
+  await closePlacement(queue.page());
   const row = queue.getByTestId(`ward-queue-row-${movementId}`);
   if (!(await row.isVisible())) await showAllFlowRows(queue);
   await row.click();
   return row;
+}
+
+/**
+ * Placement is the patient drawer over Home on every screen size (H7, Josh 3 Nov 2026), so an open
+ * drawer covers the queue and the list menu. Close it, as a coordinator would, before reaching them.
+ */
+async function closePlacement(page: Page) {
+  const close = page.getByRole("button", { name: "Close placement and clear selection" });
+  if ((await close.count()) === 0) return;
+  await close.click();
+  await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toHaveCount(0);
 }
 
 async function gotoCoordinator(page: Page) {
@@ -160,6 +173,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // incidental step.
     await page.locator('[data-testid^="ward-queue-row-"]').first().click();
     await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toBeVisible();
+    await closePlacement(page);
     // Owner, 8 Oct 2026: the four registers start closed and open as a strip under the hero. Home
     // v7 (Josh, 22 Oct 2026): Registers opens them, under "More for this list" since Q340. Scrolled into
     // view before the visibility check, as Playwright's `toBeVisible()` needs it in the viewport.
@@ -200,9 +214,11 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await expect(firstRow).toHaveAttribute("aria-pressed", "true");
     await expect(shortlist).toHaveAttribute("data-subject-movement", String(firstId));
 
-    // A second selection replaces the first rather than accumulating.
+    // A second selection replaces the first rather than accumulating. The drawer covers the queue,
+    // so the coordinator closes it first.
     const secondRow = rows.nth(1);
     const secondId = (await secondRow.getAttribute("data-testid"))?.replace("ward-queue-row-", "");
+    await closePlacement(page);
     await secondRow.click();
     await expect(secondRow).toHaveAttribute("aria-pressed", "true");
     await expect(firstRow).toHaveAttribute("aria-pressed", "false");
@@ -300,7 +316,7 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // covers the Registers toggle. A coordinator closes it first; so does this journey. Closing
     // clears the selection, so the last step below — selecting WF-005 again from the phone drawer
     // — now proves the drawer itself selects, rather than leaning on the leftover selection.
-    await page.getByRole("button", { name: "Close shortlist and clear selection" }).click();
+    await page.getByRole("button", { name: "Close placement and clear selection" }).click();
     await expect(page.getByRole("complementary", { name: "Placement", exact: true })).toHaveCount(0);
     await expect(homeFlowCard(page)).toBeVisible();
     // Task A: the toggle only exists below 48rem now — restored exactly at the width the diagram
@@ -324,10 +340,12 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     const phoneDrawer = page.getByRole("tabpanel", { name: "Exceptions" });
     await expect(phoneDrawer).toBeVisible();
     await phoneDrawer.locator('[data-testid*="-WF-005"]').first().click();
-    // L3: an accepted movement leads with its next step instead of Refer.
-    await expect(
-      page.getByTestId("ward-shortlist-refer").or(page.getByTestId("ward-shortlist-next-step")).first(),
-    ).toBeInViewport();
+    // L3: an accepted movement leads with its next step instead of Refer. In the drawer (H7) the
+    // next step is drawn into the pinned foot band, which lays it out (the section itself takes no
+    // box there), so the band is what must be on screen.
+    const foot = page.getByTestId("home-placement-foot");
+    await expect(foot.getByTestId("ward-shortlist-next-step")).toHaveCount(1);
+    await expect(foot).toBeInViewport();
   });
 
   test("orders by longest wait only and shows no score", async ({ page }) => {
@@ -417,7 +435,12 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
 
     const strip = page.getByRole("region", { name: "Emergency department pressure" });
     const cards = strip.locator('[data-testid^="ward-ed-"]');
-    await expect(cards).toHaveCount(10);
+    // Josh, 3 Nov 2026 (appraisal 8): EDs that need nothing fold into one "no wait" line, so every
+    // ED is still on the strip, as a tile or named in the folded line.
+    const folded = strip.getByTestId("ward-home-ed-clear");
+    const foldedIds = (await folded.count()) ? ((await folded.getAttribute("data-ed-ids")) ?? "").split(" ") : [];
+    expect((await cards.count()) + foldedIds.filter(Boolean).length).toBe(10);
+    expect(await cards.count()).toBeGreaterThan(0);
 
     // The worst department leads, and says why it is worst.
     const worst = cards.first();
@@ -773,18 +796,22 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // Option B (13 Oct 2026): Refer is never greyed for the coordinator. It no longer offers any
     // ward: it opens the referral slide-out, so it cannot refer against a default either. Its
     // reason with nothing chosen is still stated (screen-reader text).
+    //
+    // Home drawer polish (Josh, 3 Nov 2026): in the drawer Override is never greyed. With no ward
+    // chosen a tap takes the coordinator to the ward list instead, so the reason form still never
+    // opens against the default. The reason stays as the button's screen-reader description.
     await expect(referButton).not.toHaveAttribute("aria-disabled", "true");
-    await expect(overrideToggle).toHaveAttribute("aria-disabled", "true");
+    await expect(overrideToggle).not.toHaveAttribute("aria-disabled", "true");
     await expect(shortlist).toContainText("Choose at least one candidate ward before referring");
     await expect(shortlist).toContainText("Choose at least one candidate ward before overriding");
 
-    // A forced activation of Override must not even open the reason form — if it opened, the
-    // textarea would be addressed to the default unit and one submission would record an override
-    // against a ward nobody picked. `force` because Playwright's actionability check already
-    // refuses an `aria-disabled` control.
-    await overrideToggle.click({ force: true });
+    // Override with nothing chosen must not open the reason form. If it opened, the textarea
+    // would be addressed to the default unit and one submission would record an override against
+    // a ward nobody picked. It moves focus to the first ward row instead.
+    await overrideToggle.click();
     await expect(overrideToggle).toHaveAttribute("aria-expanded", "false");
     await expect(shortlist.getByLabel(/Reason for overriding/)).toHaveCount(0);
+    await expect(shortlist.locator('[data-testid^="ward-shortlist-candidate-"]:focus')).toHaveCount(1);
     await expect(shortlist).not.toContainText("Overridden by a human coordinator");
 
     // Refer with nothing chosen opens the slide-out and records nothing against the default.
@@ -818,8 +845,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     await pickQueueRow(queue, "WF-004");
     await openShortlistSections(shortlist);
     await expect(shortlist).toContainText("Accepted destination:");
-    await expect(overrideToggle).toHaveAttribute("aria-disabled", "true");
-    await overrideToggle.click({ force: true });
+    // Not greyed in the drawer: with no ward chosen it only goes to the ward list.
+    await expect(overrideToggle).not.toHaveAttribute("aria-disabled", "true");
+    await overrideToggle.click();
+    await expect(shortlist.getByLabel(/Reason for overriding/)).toHaveCount(0);
     await expect(shortlist).not.toContainText("Overridden by a human coordinator");
     // Option B: Refer is not greyed and opens the slide-out; it never records a second destination.
     await expect(referButton).not.toHaveAttribute("aria-disabled", "true");
@@ -949,8 +978,10 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // Override, like Confirm, acts only on a candidate a human explicitly chose — never on the
     // panel's default (whole-branch review Critical 2, extended to the other half of the control
     // pair). Choosing Dabakarn is what a coordinator would really do before overriding into
-    // it, and it is the same unit the recorded override below must name.
-    await expect(overrideToggle).toHaveAttribute("aria-disabled", "true");
+    // it, and it is the same unit the recorded override below must name. In the drawer it is never
+    // greyed (3 Nov 2026), but with nothing chosen it opens no reason form.
+    await expect(overrideToggle).not.toHaveAttribute("aria-disabled", "true");
+    await expect(overrideToggle).toHaveAttribute("aria-expanded", "false");
     // Dabakarn takes WF-009 only with a recorded reason, so it is behind the override disclosure.
     await showOverrideWards(shortlist);
     await shortlist.locator('[data-testid="ward-shortlist-candidate-rph-adult-secure"]').click();
@@ -1131,7 +1162,9 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
     // Task 5: refusals moved out of the Exceptions panel into their own "Refused actions" tab —
     // see `exception-drawer.tsx`'s own file comment on why the two were split. On desktop the
     // registers open from the hero's Exceptions count (owner, 8 Oct 2026), so open them first.
-    // Home flow (Q340, 3 Nov 2026): Registers, under "More for this list", opens them.
+    // Home flow (Q340, 3 Nov 2026): Registers, under "More for this list", opens them, once the
+    // placement drawer over the page is closed (H7).
+    await closePlacement(page);
     await openHomeRegisters(page);
     const refusedTab = page.getByRole("tab", { name: /Refused/ });
     await refusedTab.scrollIntoViewIfNeeded();
@@ -1190,6 +1223,13 @@ test.describe("@mockup Ward Flow coordinator screen", () => {
    */
   test("keeps the referral control reachable on a phone, in the panel's natural flow", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
+    // Tours start out seen here, so Home can offer its page tip 1.5s after it settles, unless a
+    // toast holds it. On a phone that corner card sits over the Flow card's "Show all N" buttons,
+    // and a click issued after it appears waits on it until the test times out (main CI, 3 Nov
+    // 2026). Whether it appears depends on timing, so neither waiting for it nor ignoring it is
+    // reliable. Turn tips off for this device the way Settings does, so it never appears here. The
+    // release-gate journey still proves the Home tip appears and can be acknowledged.
+    await page.addInitScript((key) => window.localStorage.setItem(key, "yes"), HELP_TIPS_OFF_KEY);
     await gotoCoordinator(page);
 
     const queue = homeFlowCard(page);

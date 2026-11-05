@@ -542,11 +542,13 @@ export function buildCensus(state: {
       service: null,
       transport: null,
       escort: false,
-      where: "Not in hospital",
+      // PS1 (3 Nov 2026): someone a community team follows reads as in the community, not as
+      // inactive, so the register's Community state never lists a row that says "Not active".
+      where: patient.catchmentCommunityTeam ? "Community" : "Not in hospital",
       whereSub: patient.catchmentCommunityTeam ?? "No team recorded",
       to: "No open record",
       toSub: "",
-      next: "Not active",
+      next: patient.catchmentCommunityTeam ? "With their team" : "Not active",
       nextWho: "",
       glyph: "off",
       legal: shortLegal(patient.legalStatus),

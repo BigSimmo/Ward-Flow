@@ -3,6 +3,7 @@ import { expect, test, type Locator, type Page } from "playwright/test";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { unitById, wardSites } from "@/components/ward-management/ward-sites";
 import { clearToasts } from "./helpers/clear-toasts";
+import { chooseEdKitChoice } from "./helpers/ed-kit-choices";
 import { openEdLists } from "./helpers/ward-ed-lists";
 import { homeFlowCard, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
@@ -229,11 +230,13 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await newPatient.getByLabel("Date of birth", { exact: true }).fill("02/01/1990");
     await newPatient.getByLabel("UMRN", { exact: true }).fill("UM990703");
     await newPatient.getByLabel("Suburb", { exact: true }).fill("Albany");
-    await newPatient.getByRole("button", { name: "Add patient" }).click();
+    await newPatient.getByRole("button", { name: "Add and use for this referral" }).click();
     await expect(sheet).toContainText("Communityfield, Synthetic");
     await sheet.getByLabel("Age band", { exact: true }).selectOption("Adult");
+    // RF1 (3 Nov 2026): Albany points to one country team, so no region is suggested and the region
+    // field shows. Once a region is chosen the card offers the whole catchment as one suggestion.
     await sheet.getByLabel("Home region", { exact: true }).selectOption("Perth Metropolitan");
-    await sheet.getByRole("button", { name: "Confirm catchment" }).click();
+    await sheet.getByTestId("ward-referral-use-catchment").click();
 
     // The source this step is actually proving: a community team raising the referral, per this
     // file's own header comment on why "raises" (not "receives") is the real, wired mechanism.
@@ -332,15 +335,15 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
       .click();
     await page.getByTestId("ward-ed-inbox-raise-RF-009").click();
     await expect(page.getByRole("region", { name: "Ask for a bed" })).toBeVisible();
-    await page.getByTestId("ward-ed-referral-cohort").selectOption("Adult");
-    await page.getByTestId("ward-ed-referral-security").selectOption("Open");
-    await page.getByTestId("ward-ed-referral-sex").selectOption("Male");
+    await chooseEdKitChoice(page, "ward-ed-referral-cohort", "Adult");
+    await chooseEdKitChoice(page, "ward-ed-referral-security", "Open");
+    await chooseEdKitChoice(page, "ward-ed-referral-sex", "Male");
     // Gender ("decides which bed", T11/T10, owner answer 17 September 2026) is a separate required
     // question from Sex above it, added to this form after this spec was first written.
-    await page.getByTestId("ward-ed-referral-gender").selectOption("Male");
-    await page.getByTestId("ward-ed-referral-legal-status").selectOption("Voluntary");
-    await page.getByTestId("ward-ed-referral-urgency").selectOption("3");
-    await page.getByTestId("ward-ed-referral-observation").selectOption("general");
+    await chooseEdKitChoice(page, "ward-ed-referral-gender", "Male");
+    await chooseEdKitChoice(page, "ward-ed-referral-legal-status", "Voluntary");
+    await chooseEdKitChoice(page, "ward-ed-referral-urgency", "3");
+    await chooseEdKitChoice(page, "ward-ed-referral-observation", "general");
     await page.getByTestId("ward-ed-referral-high-acuity-not-required").click();
     await page.getByTestId("ward-ed-referral-submit").click();
 
@@ -386,6 +389,10 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await shortlist.getByRole("button", { name: "Record override" }).click();
     await expect(shortlist).toContainText(`Parallel referral:`);
     await expectNoReloadSince(page, "referring to a ward");
+    // Placement is the patient drawer over the page on every screen size (H7, Josh 3 Nov 2026);
+    // close it, as a coordinator would, before opening the tools.
+    await page.getByRole("button", { name: "Close placement and clear selection" }).click();
+    await expect(shortlist).toHaveCount(0);
 
     // --- Step 4: the ward accepts. Reached via the role switcher's own real <Link>, which now
     // offers this exact unit because REFER_TO_UNITS just set it as one of this movement's
@@ -405,9 +412,10 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     // running this spec and finding a real "Occupied (\d+)" match impossible against the actual
     // rendered text, not assumed from the source alone.
     const wardScreen = page.getByTestId("ward-unit-screen");
-    const occupiedChip = wardScreen.getByTestId("ward-unit-beds").locator('[data-state="occupied"] strong');
+    // Integration QA (3 Nov 2026): Occupied sits once, in the hero, not in the bed grid.
+    const occupiedChip = wardScreen.getByRole("button", { name: /^\d+\s*Occupied$/u });
     const occupiedBeforeText = await occupiedChip.innerText();
-    const occupiedBeforeCount = Number(occupiedBeforeText.trim());
+    const occupiedBeforeCount = Number(/\d+/u.exec(occupiedBeforeText)?.[0] ?? "NaN");
     expect(
       Number.isNaN(occupiedBeforeCount),
       `could not read the ward's own Occupied figure before admission (got "${occupiedBeforeText}")`,
@@ -569,8 +577,8 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await expect(wardScreenAfterArrival.getByTestId(`ward-accepted-${movementId}`)).toHaveCount(0);
     await page.locator("#tabBtn-attn").click();
     await expect(wardScreenAfterArrival.getByTestId(`ward-pull-${movementId}`)).toHaveCount(0);
-    await expect(wardScreenAfterArrival.getByTestId("ward-unit-beds")).toContainText(
-      `Occupied ${occupiedBeforeCount + 1}`,
+    await expect(wardScreenAfterArrival.getByRole("button", { name: /^\d+\s*Occupied$/u })).toContainText(
+      String(occupiedBeforeCount + 1),
     );
 
     // --- Step 8: a discharge is planned — the ward flags a bed coming free, the real, wired

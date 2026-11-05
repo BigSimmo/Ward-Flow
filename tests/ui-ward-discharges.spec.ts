@@ -190,7 +190,7 @@ async function boardReleaseStatus(page: Page, admissionId: string): Promise<stri
   await page.locator(`#capacity-bed-map button[aria-haspopup="dialog"][data-unit-id="${UNIT_ID}"]`).first().click();
   const panel = page.getByTestId("ward-capacity-ward-drawer");
   await expect(panel).toBeVisible();
-  await panel.getByRole("radio", { name: /^Discharges/u }).click();
+  await panel.getByRole("tab", { name: /^Discharges/u }).click();
   await panel.locator(`[id="capacity-discharge-discharge-${admissionId}"]`).click();
   const status = panel.locator("dt", { hasText: /^Status$/u }).locator("xpath=following-sibling::dd[1]");
   await expect(status).toBeVisible();
@@ -260,8 +260,12 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     expect(unitName, `fixture assumption: ${UNIT_ID} is a seeded unit`).toBeDefined();
     await clickRailLink(page, "/ward-flow/wards");
     await expect(page.getByTestId("ward-index")).toBeVisible({ timeout: 15_000 });
-    await page.getByRole("button", { name: `${unitName} profile`, exact: true }).click();
-    await page.getByRole("link", { name: "Bed board", exact: true }).click();
+    // The ward card's name opens its side panel, which links to the Bed board (#1360).
+    await page
+      .getByRole("button", { name: unitName!.split(" — ")[0], exact: true })
+      .first()
+      .click();
+    await page.getByRole("dialog").getByRole("link", { name: "Bed board", exact: true }).click();
     await page.waitForURL(`**/ward-flow/board/${UNIT_ID}`);
     await expect(
       page.locator('div[hidden][id^="S:"]'),
@@ -363,7 +367,8 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
      * every group, three columns wide, blocker folded into the third column instead of broken out
      * on its own.
      */
-    const DISCHARGE_COLUMNS = ["Person", "Expected out", "Stage", "Held up by"];
+    // DC2 (3 Nov 2026): Stage is gone; a held-up row shows its stage under the hold-up.
+    const DISCHARGE_COLUMNS = ["Person", "Expected out", "Held up by"];
     const table = page.getByRole("table");
     await expect(table, "the discharges board renders no table, so its column contract went unchecked").toBeVisible();
     const headers = table.locator("thead th");
@@ -436,30 +441,33 @@ test.describe("@mockup WA disposition pathways", () => {
       await page.locator("#tabBtn-attn").click();
       await page.getByRole("button", { name: "Full bed list", exact: true }).click();
       await page.locator(`[data-admission-id="${admission.id}"]`).click();
-      // The destination picker lives on the bed drawer's Plan to leave tab.
-      await page.getByTestId("bed-telemetry-drawer").getByRole("tab", { name: "Plan to leave" }).click();
-      const picker = page.locator("#drawer-leaving-dest");
-      await expect(picker.locator("option")).toHaveCount(LEAVING_DESTINATIONS.length);
-      await picker.selectOption(destination.id);
+      // The destination chips live on the bed drawer's Leaving tab (WH1, Josh 3 Nov 2026).
+      const drawer = page.getByTestId("bed-telemetry-drawer");
+      await drawer.getByRole("tab", { name: "Leaving" }).click();
+      await drawer.getByRole("button", { name: /^All \d+ places$/ }).click();
+      const picker = drawer.getByRole("group", { name: "Where are they going?" });
+      await expect(picker.getByRole("button")).toHaveCount(LEAVING_DESTINATIONS.length);
+      await picker.getByRole("button", { name: destination.label, exact: true }).click();
       await page.getByRole("button", { name: /Record that they have left/ }).click();
       await page.getByRole("button", { name: "Record discharge", exact: true }).click();
       await expect(page.locator(`[data-admission-id="${admission.id}"]`)).toHaveCount(0);
       await clickRailLink(page, "/ward-flow/discharges");
       await page.waitForURL((url) => url.pathname === "/ward-flow/discharges");
-      // Settle navigation and the saved workspace before selecting History. A click during the
-      // screen transition must not leave this journey searching the Now view for a History field.
+      // Settle navigation and the saved workspace before selecting Recorded (DC4, which replaced
+      // History). A click during the screen transition must not leave this journey on the Now view.
       await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
       await expect(page.getByTestId("ward-discharge-board")).toBeVisible();
-      await expect(page.getByRole("group", { name: "Now or history", exact: true })).toHaveAttribute(
+      await expect(page.getByRole("group", { name: "Now or recorded", exact: true })).toHaveAttribute(
         "aria-busy",
         "false",
       );
       const history = page.getByTestId("ward-discharge-history");
       await history.click();
       await expect(history).toHaveAttribute("aria-pressed", "true");
-      const destinationFilter = page.locator("#discharges-filter-destination");
-      await destinationFilter.selectOption(destination.id);
-      await expect(destinationFilter).toHaveValue(destination.id);
+      // DC2 (3 Nov 2026): the filters are menus, so Going to is picked from its own list.
+      await page.getByRole("button", { name: /^Going to: / }).click();
+      await page.getByRole("menuitemradio", { name: destination.label, exact: true }).click();
+      await expect(page.getByRole("button", { name: `Going to: ${destination.label}` })).toBeVisible();
       await page.getByRole("button", { name, exact: true }).click();
       const detail = page.getByRole("region", { name: "Selected discharge details" });
       await expect(detail).toContainText(destination.label);
@@ -486,14 +494,11 @@ test.describe("@mockup complete care dossier", () => {
   test("records planning, clinician responsibility and an appointment at phone width", async ({ page }) => {
     const seed = seedWardFlowState();
     const a = seed.admissions.find((a) => a.state === "occupied" && a.expectedDischargeAt !== null && a.patientId)!;
-    const p = seed.patients.find((p) => p.id === a.patientId)!;
-    await page.goto("/ward-flow/discharges");
+    // DC4 (3 Nov 2026): Recorded lists only the last 7 days' discharges, so a current stay's record
+    // opens from its Tasks link, as a ward clinician reaches it.
+    await page.goto(`/ward-flow/discharges?admissionId=${a.id}`);
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("region", { name: "Ward Flow data mode" })).toHaveCount(0);
-    const history = page.getByTestId("ward-discharge-history");
-    await history.click();
-    await expect(history).toHaveAttribute("aria-pressed", "true");
-    await page.getByRole("button", { name: `${p.familyName}, ${p.givenName}`, exact: true }).click();
     const detail = page.getByRole("region", { name: "Selected discharge details" });
     await detail.getByRole("tab", { name: "Record", exact: true }).click();
     const care = detail.getByRole("region", { name: "Care journey" });

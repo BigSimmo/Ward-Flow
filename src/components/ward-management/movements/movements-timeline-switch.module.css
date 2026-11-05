@@ -1,0 +1,29 @@
+/* Timeline switch bar (M3, 3 Nov 2026): one quiet row, so the worklist below leads the page. */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 44px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+}
+
+.bar[data-open="true"] {
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.icon {
+  display: inline-flex;
+  color: var(--wf-ink-3);
+}
+
+.title {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.summary {
+  flex: 1;
+  min-width: 0;
+  color: var(--wf-ink-3);
+  font-variant-numeric: tabular-nums;
+}

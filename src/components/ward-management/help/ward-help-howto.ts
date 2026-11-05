@@ -15,6 +15,7 @@
  */
 import type { WardScreenId } from "@/components/ward-management/ward-role-access";
 
+import { ASK_WARDS_WINDOW_TEXT } from "@/components/ward-management/ward-operational-defaults";
 import { deskOpens, EVERY_LOGIN, howToFor, type WardEventType } from "./ward-help-access";
 import type { WardTourRole } from "./ward-help-store";
 import { MORE_JOBS, SCREEN_TOURS } from "./ward-help-screen-tours";
@@ -150,6 +151,9 @@ const JOBS: readonly HowTo[] = [
           { sel: "#main-content button", text: "Release pulled bed" },
           // A phone's list opens each row in a sheet; the hero's Act now count stands in.
           { sel: "#main-content button", text: "Act now" },
+          // A phone's hero folds its counts away and keeps the next step row (plan item 2i), used only
+          // when that step is Act now; otherwise the tour says the target is not on screen.
+          { sel: "#main-content [data-wf-hero-next]", text: "a person now" },
         ],
         title: "Pulls past their limit are in Act now",
         body: "Release pulled bed opens the movement at the release step. You decide whether to release it or keep it.",
@@ -183,6 +187,9 @@ const JOBS: readonly HowTo[] = [
           { sel: "#main-content button", text: "To decide" },
           // A ward's phone keeps its referrals under the Decisions tab.
           { sel: "#main-content button", text: "Decisions" },
+          // A phone's hero folds its counts away and keeps the next step row (plan item 2i), used only
+          // when that step is the referrals to decide.
+          { sel: "#main-content [data-wf-hero-next]", text: " to decide" },
         ],
         title: "Referrals to decide",
         body: "They stay in wait order, oldest first. Press Decide to open one.",
@@ -217,6 +224,24 @@ const JOBS: readonly HowTo[] = [
         target: { sel: '[data-testid="ward-referral-ask-open"]' },
         title: "Ask more wards",
         body: "Tick the wards to ask. They are listed A to Z, and only a ward that fits can be ticked.",
+      },
+    ],
+  },
+  {
+    id: "chase-discharge-dates",
+    topic: "Beds and referrals",
+    title: "Chase overdue discharge dates",
+    keywords: "discharge date passed overdue ask ward message ward confirm date edd chase",
+    answer:
+      "On Discharges, the line under the counts says how many dates have passed on how many wards. Press Ask N wards to send those wards one desk alert asking them to confirm or record a new date. To ask about one person, open them and use Message ward beside the hold-up.",
+    desks: ["coordinator"],
+    acts: ["DISPATCH_BROADCAST_ALERT"],
+    go: "discharges",
+    showMe: [
+      {
+        target: { sel: '[data-testid="ward-discharge-ask-overdue"]' },
+        title: "Ask the wards",
+        body: `Asks only the wards with a date that has passed. A ward asked in the last ${ASK_WARDS_WINDOW_TEXT} is not asked again.`,
       },
     ],
   },
@@ -525,13 +550,13 @@ const JOBS: readonly HowTo[] = [
     title: "Go to another desk",
     keywords: "switch role desk change view ward ed workstation",
     answer:
-      "Open the person menu at the foot of the side menu (the menu button on a phone) and choose Go to a desk. Each desk shows the screens its role uses.",
+      "Open your account menu. It is your name at the foot of the side menu, or the menu button on a phone. Choose Switch desk if your account has more than one desk. In the demo, choose Try another desk (demo). Each desk shows the screens its role uses.",
     desks: EVERY_DESK,
     showMe: [
       {
         target: DESK_SWITCH,
-        title: "Go to a desk",
-        body: "Opens the list of desks.",
+        title: "Your account menu",
+        body: "Switch desk is here when your account has more than one desk. In the demo, it is Try another desk (demo).",
       },
     ],
   },
@@ -569,6 +594,27 @@ const JOBS: readonly HowTo[] = [
     ],
   },
   {
+    id: "alerts-log",
+    topic: "Finding your way",
+    title: "Find an alert I already cleared",
+    keywords: "alerts log history cleared earlier past broadcast filter acknowledged",
+    answer:
+      "Open the Alerts page. Open is what still needs someone, with chips to show one kind at a time. Cleared lists what was acted on this session, newest first. Broadcasts holds bed calls, live and past.",
+    desks: EVERY_DESK,
+    needs: "alerts",
+    go: "alerts",
+    showMe: [
+      {
+        target: [
+          { sel: '[data-testid="ward-alerts-filters"]' },
+          { sel: '[role="tablist"][aria-label="Alerts views"]' },
+        ],
+        title: "Open, Cleared and Broadcasts",
+        body: "Chips show one kind of open alert at a time. Cleared, beside Open, lists what was acted on this session.",
+      },
+    ],
+  },
+  {
     id: "search-patient",
     topic: "Finding your way",
     title: "Find a patient",
@@ -582,6 +628,23 @@ const JOBS: readonly HowTo[] = [
         target: { sel: '[data-testid="ward-global-search-input"]' },
         title: "Search",
         body: "Names, UMRNs, places and a few common questions.",
+      },
+    ],
+  },
+  {
+    id: "patient-safety-facts",
+    topic: "Finding your way",
+    title: "Check a patient's legal status and risk",
+    keywords: "legal form observation obs risk flags alert interpreter diagnosis patient page band",
+    answer:
+      "Open the patient. The dark band at the top shows Legal, Observation and Risk flags, and Alerts when there is one. Risk flags come from the referral, with its date. The working diagnosis is under Details.",
+    desks: CLINICAL_DESKS,
+    needs: "search",
+    showMe: [
+      {
+        target: { sel: '[data-testid="ward-patient-glance"]' },
+        title: "Safety at a glance",
+        body: "Legal opens the forms. A health alert opens Details.",
       },
     ],
   },
@@ -645,20 +708,15 @@ const JOBS: readonly HowTo[] = [
     title: "Get alerts when I am on another screen",
     keywords: "notifications browser phone push alert notify lock screen",
     answer:
-      "Settings, Alerts: turn on Browser notifications for this computer, or Phone alerts for your phone. Both are for act-now and red alerts only.",
+      "Settings, Alerts: turn on Alerts on this device. It covers this browser, and your phone where it can. It is for act-now and red alerts only.",
     desks: EVERY_DESK,
     needs: "alerts",
     go: "settings#alerts",
     showMe: [
       {
-        target: setting("browser-notifications", "alerts"),
-        title: "Browser notifications",
-        body: "In Settings, Alerts. For this computer.",
-      },
-      {
-        target: setting("phone-alerts", "alerts"),
-        title: "Phone alerts",
-        body: "In Settings, Alerts. For your phone, including the lock screen.",
+        target: setting("device-alerts", "alerts"),
+        title: "Alerts on this device",
+        body: "In Settings, Alerts. One switch for this browser and, where it can, your phone.",
       },
     ],
   },
@@ -717,7 +775,7 @@ const JOBS: readonly HowTo[] = [
     title: "Undo something I just did",
     keywords: "undo mistake wrong reverse back",
     answer:
-      "Many saves show Undo in the message at the foot of the screen while it is showing. After that, change the record back yourself; the history keeps both steps.",
+      "Many saves show Undo in the message at the foot of the screen, and Undo works for 5 minutes. After that, change the record back yourself; the history keeps both steps. Undo on Arrived can reverse a recent arrival when the normal Undo checks pass. If the person really has gone back, record that as its own step.",
     desks: EVERY_DESK,
   },
   {

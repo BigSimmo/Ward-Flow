@@ -22,7 +22,7 @@ export { FormalName } from "./formal-name";
 export { Button, DisabledReason, buttonClass, type ButtonSize } from "./button";
 export { Badge } from "./badge";
 export { Card, CardHead, CardBody, CardFoot } from "./card";
-export { Hero, HeroStat } from "./hero";
+export { Hero, HeroStat, type HeroNextStep } from "./hero";
 export { useWfBandActive, useWfBandBleed, registerWfBandHero, WF_BAND_SCROLLED_PX } from "./band";
 export {
   CheckingFoot,
@@ -47,7 +47,7 @@ export {
   type JourneyStage,
 } from "./v10-pass2";
 export { RowSpark, RowTrend, trendDelta, DeltaTwin } from "./v10-pass4";
-export { Meter, StackBar, Legend, type WfFill, type StackSegment, type LegendItem } from "./stat";
+export { Meter, StackBar, Legend, type WfFill, type StackSegment } from "./stat";
 export {
   Tabs,
   PillTabs,
@@ -61,6 +61,14 @@ export {
 } from "./choice";
 export { DataRow, TierTile, tableClasses } from "./table";
 export { Sheet, Drawer } from "./sheet";
+export {
+  PanelDrawer,
+  DrawerFacts,
+  DrawerFootRow,
+  type PanelDrawerProps,
+  type DrawerTab,
+  type DrawerFact,
+} from "./drawer";
 export { Menu, Popover, type MenuItem } from "./menu";
 export { ToastView } from "./toast";
 export { Dialog } from "./dialog";
@@ -69,8 +77,17 @@ export { useModalFocus, type UseModalFocusOptions } from "./use-modal-focus";
 export { cycleTabWithin, focusIsLost } from "./focus-return";
 export { rememberOpener, returnFocusToOpener, type FocusOpener } from "./focus-opener";
 export { StateLine, type StateKind } from "./state";
+export { PanelBoundary } from "./panel-boundary";
 export { ToastDeviceSaveContext, ToastProvider, useOptionalToast, useToast, type ToastInput } from "./toast-provider";
-export { LiveChip, Timer, publishLiveClock, publishLiveRefresh, useSharedRefreshLate } from "./live";
+export {
+  LiveChip,
+  Timer,
+  notUpdatingWords,
+  publishLiveClock,
+  publishLiveRefresh,
+  useLiveFreshness,
+  useSharedRefreshLate,
+} from "./live";
 export {
   Field,
   TextInput,
@@ -113,3 +130,8 @@ export {
   parseTypedTime,
   type DateFieldProps,
 } from "./date-field";
+export { ListPicker, type ListPickerOption, type ListPickerProps } from "./list-picker";
+// Plan item 2j (Josh, 3 Nov 2026): a figure borrowed from its owning page links there, and one
+// that ignores the chosen service says "Network-wide" (scope from ward-figure-scope.ts, owners from ward-page-owners.ts).
+export { FigureLink, figureLinkName, wfNumClass, type FigureOwner } from "./figure-link";
+export { NETWORK_WIDE, ScopeNote } from "./figure-scope";

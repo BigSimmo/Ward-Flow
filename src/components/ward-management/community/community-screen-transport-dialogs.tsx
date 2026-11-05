@@ -18,9 +18,10 @@ import {
 } from "@/components/ward-management/ward-change-reasons";
 import type { TransportExceptionReason } from "@/components/ward-management/ward-model";
 import { TransportBookingForm } from "@/components/ward-management/transport/transport-booking-form";
-import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { patientIdentityLine, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { useWardFormSave, type WardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
+import { useTransportBookingClose } from "@/components/ward-management/transport/use-transport-booking-close";
 import styles from "./community-screen-transport-dialogs.module.css";
 import type { CommunityScreenView } from "./community-screen";
 
@@ -61,7 +62,17 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
     setReasonFor(transportBookFor);
     setLegalReason("");
   }
-  // The page's own focus hook holds this ref; it points at the kit Dialog's panel.
+  // A command held offline stays pending. Once its error shows, the booking may close again (the
+  // discard question still guards unsaved answers); submission stays locked to that command.
+  const saving = save.pending && !save.error;
+  const requestClose = useTransportBookingClose({
+    scope: transportBookFor,
+    answers: transportDraft,
+    legalReason,
+    pending: saving,
+    onClose: closeTransportBook,
+  });
+  // Keep the page's panel ref aligned; the kit Dialog owns the booking's focus lifecycle.
   const bindPage = useCallback(
     (node: HTMLDivElement | null) => {
       transportBookDialogRef.current = node?.closest<HTMLDivElement>('[role="dialog"]') ?? null;
@@ -75,9 +86,10 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
   return (
     <Dialog
       open
-      onClose={closeTransportBook}
+      onClose={requestClose}
+      closable={!saving}
       // A stray tap on the backdrop does not close the booking, because closing clears every answer
-      // typed in (form friction audit, 27 Oct 2026). Close, Cancel and Escape still do.
+      // typed in (form friction audit, 27 Oct 2026). Close, Cancel and Escape ask before discard.
       closeOnScrim={false}
       title="Log transport booking"
       description={`${patientName} · booked by phone. Read each answer off the call with the provider.`}
@@ -99,7 +111,7 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
           pending={save.pending}
           error={save.error}
           onSubmit={(booking) => submitBookTransport(transportBookFor, booking, save.submit)}
-          onCancel={closeTransportBook}
+          onCancel={requestClose}
         />
       </div>
     </Dialog>
@@ -120,6 +132,14 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
     umrnLookup,
   } = view;
   const save = useWardFormSave(transportCancelFor ?? "");
+  const movement = movements.find((candidate) => candidate.id === transportCancelFor);
+  const job = movement?.transport;
+  const [openedFor, setOpenedFor] = useState({ movementId: transportCancelFor, jobId: job?.id });
+  if (openedFor.movementId !== transportCancelFor) setOpenedFor({ movementId: transportCancelFor, jobId: job?.id });
+  const targetProblem =
+    !movement || !job || job.id !== openedFor.jobId || job.cancelledAt !== undefined || job.collectedAt !== undefined
+      ? "This transport booking changed. Close this dialog and review the current job before cancelling."
+      : undefined;
   // A held offline command needs the connection bar's Retry. Once its error is shown,
   // permit an explicit close while keeping submission locked to the original command.
   const saving = save.pending && !save.error;
@@ -135,9 +155,7 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
     [transportCancelDialogRef],
   );
   if (transportCancelFor === undefined) return null;
-  const movement = movements.find((candidate) => candidate.id === transportCancelFor);
-  // The person, surname first (D-83), under the title; the booking's id only when no person resolves.
-  const patientName = movement ? resolveSubjectPatient(movement, umrnLookup).formalName : undefined;
+  const identity = movement ? patientIdentityLine(resolveSubjectPatient(movement, umrnLookup)) : undefined;
   return (
     <Dialog
       open
@@ -146,13 +164,18 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
       closable={!saving}
       title="Cancel this team's transport booking"
       description={
-        patientName ? <strong className={styles.who}>{patientName}</strong> : `Booking ${transportCancelFor}`
+        identity ? <strong className={styles.who}>{identity}</strong> : "The original booking is no longer available."
       }
       closeLabel="Close dialog"
       size="md"
       data-testid={`ward-community-cancel-transport-dialog-${transportCancelFor}`}
     >
       <div ref={bindPage} className={styles.body}>
+        {job ? (
+          <p className={styles.hint}>
+            {job.provider} · {job.cadNumber?.trim() || "CAD not recorded"} · Job {job.id}
+          </p>
+        ) : null}
         <Field
           label="Why is the job being cancelled?"
           id={`ward-community-cancel-transport-reason-${transportCancelFor}`}
@@ -189,7 +212,7 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
         ) : null}
         <div className={styles.actions}>
           <Button variant="ghost" onClick={closeUnlessSaving} disabled={saving}>
-            Keep booking
+            Keep as is
           </Button>
           <Button
             variant="pri"
@@ -199,8 +222,10 @@ export function CommunityScreenTransportCancelDialog({ view }: { view: Community
             // Locked while pending or held for Retry, and said so: busy alone does not announce it.
             aria-disabled={save.pending || undefined}
             // The kit shows why it is unavailable (the earlier screen-reader-only reason, now visible).
-            disabledReason={cancelTransportBlocked}
-            onClick={() => submitCancelTransport(transportCancelFor, save.submit)}
+            disabledReason={targetProblem ?? cancelTransportBlocked}
+            onClick={() => {
+              if (!targetProblem) submitCancelTransport(transportCancelFor, save.submit);
+            }}
           >
             Confirm cancel
           </Button>

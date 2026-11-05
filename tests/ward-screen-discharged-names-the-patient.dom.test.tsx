@@ -20,6 +20,17 @@ import { wardPatients } from "@/components/ward-management/ward-patients-seed";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { typeDate } from "./helpers/type-date-time";
+import { LEAVING_DESTINATIONS } from "@/components/ward-management/ward-admissions";
+import { chooseChip, getChoice } from "./helpers/ward-choice-chips";
+
+/** WH1: the destination chips are on the bed drawer's Leaving tab. */
+function showLeaving() {
+  const leaving = screen.queryByRole("tab", { name: "Leaving" });
+  if (leaving) fireEvent.click(leaving);
+  // The less common places fold behind one button.
+  const all = screen.queryByRole("button", { name: /^All \d+ places$/ });
+  if (all) fireEvent.click(all);
+}
 
 /**
  * Josh, 26 Sept 2026 (answer 1A): "Discharged" records the person the release row already names,
@@ -79,7 +90,8 @@ function openAndPick(admissionId: string, destination: string) {
   const card = document.querySelector(`[data-admission-id="${admissionId}"]`);
   expect(card, "the occupied stay is on a bed card").not.toBeNull();
   fireEvent.click(card as HTMLElement);
-  fireEvent.change(screen.getByLabelText(/Where are they going/i), { target: { value: destination } });
+  showLeaving();
+  chooseChip(/Where are they going/i, LEAVING_DESTINATIONS.find((option) => option.id === destination)!.label);
 }
 
 /** The Perth wall clock `minutes` before the provider's now, as YYYY-MM-DDTHH:MM for typeDate. */
@@ -196,7 +208,8 @@ describe("the ward screen's Discharged step names its patient and never guesses 
     expect(card?.textContent ?? "").not.toContain(release.id);
 
     fireEvent.click(card as HTMLElement);
-    expect(screen.getByLabelText(/Where are they going/i)).toBeInTheDocument();
+    showLeaving();
+    expect(getChoice(/Where are they going/i)).toBeInTheDocument();
 
     openAndChoose(release.admissionId, "transferred-to-another-psychiatric-ward");
 

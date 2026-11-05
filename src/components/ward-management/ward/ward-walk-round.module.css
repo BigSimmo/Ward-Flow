@@ -8,7 +8,7 @@
 .head {
   display: flex;
   flex-direction: column;
-  gap: var(--wf-s-2);
+  gap: var(--wf-s-3);
   padding: var(--wf-s-2) var(--wf-s-3);
   border-bottom: 1px solid var(--wf-line);
 }
@@ -78,18 +78,86 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-  font-size: var(--wf-fs-16, 16px);
+  font-size: var(--wf-fs-16);
   color: var(--wf-ink-1);
 }
 
+/* WH4: where the round is, as a quiet pill under the bed number. */
 .position {
+  align-self: flex-start;
+  margin-top: 2px;
+  padding: 2px var(--wf-s-2);
+  border-radius: 999px;
+  background: var(--wf-surface-2);
   font-size: var(--wf-fs-12);
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-2);
+}
+
+/* WH4 (Josh, 4 Nov 2026): the bed's facts on one soft raised card, the Capacity look. The rows are
+   always the same three, so moving bed to bed never shifts the layout. */
+.sheet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 4%, transparent);
+  touch-action: pan-y;
+}
+
+.facts {
+  display: grid;
+  gap: 0;
+  margin: 0;
+}
+
+.fact {
+  display: grid;
+  grid-template-columns: 7.5rem minmax(0, 1fr);
+  gap: var(--wf-s-2);
+  align-items: baseline;
+  min-height: 2.5rem;
+  padding: var(--wf-s-2) 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.fact dt {
+  font-size: var(--wf-fs-12);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
   color: var(--wf-ink-3);
+}
+
+.fact dd {
+  margin: 0;
+  font-size: var(--wf-fs-14);
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.fact dd[data-empty="true"] {
+  color: var(--wf-ink-3);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-h-md, 40px);
+}
+
+.actions > * {
+  flex: 1 1 0;
 }
 
 .cardName {
   margin: 0;
-  font-size: var(--wf-fs-20, 20px);
+  font-size: var(--wf-fs-20);
   font-weight: 650;
   line-height: 1.2;
   color: var(--wf-ink-1);
@@ -108,7 +176,9 @@
 .cardDays {
   margin-left: auto;
   font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
   color: var(--wf-ink-3);
+  white-space: nowrap;
 }
 
 .cardFoot {
@@ -133,13 +203,18 @@
   margin: 0;
 }
 
+/* WH4 polish: soft pills at the 12px floor, as the rest of the kit draws status. */
 .changed,
 .done,
 .same {
-  padding: 1px 6px;
-  border-radius: var(--wf-r-tag);
-  font-size: var(--wf-fs-11, 11px);
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .changed {

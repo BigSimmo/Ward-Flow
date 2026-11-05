@@ -8,6 +8,7 @@ import {
   BedSingle,
   BellRing,
   CalendarCheck,
+  ClipboardCheck,
   CalendarClock,
   ChevronDown,
   ChevronRight,
@@ -15,6 +16,7 @@ import {
   FileClock,
   FileText,
   FlaskConical,
+  Gauge,
   Inbox,
   Map as MapIcon,
   MapPinned,
@@ -26,8 +28,12 @@ import {
   Scale,
   SearchCheck,
   Truck,
+  Megaphone,
+  Send,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
+import { QuickActionsPanel, useUnconfirmedWards, WardUpdatesRequest, type QuickTile } from "./ward-tools-quick-actions";
 
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardRoleSwitcher } from "@/components/ward-management/ward-public-role-switcher";
@@ -37,7 +43,8 @@ import { handoverHref } from "@/components/ward-management/shell/ward-facade";
 import { useAccessNavFilter, useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useRoleGate } from "@/components/ward-management/ward-role-gate";
-import { seesNetworkBedFigures, type WardAccessRole } from "@/components/ward-management/ward-role-access";
+import { homeHrefFor, seesNetworkBedFigures, type WardAccessRole } from "@/components/ward-management/ward-role-access";
+import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import { WardDemoPanel } from "@/components/ward-management/tools/ward-demo-panel";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
@@ -71,6 +78,7 @@ export type ToolsSheetToolId =
   | "contacts"
   | "form-times"
   | "messages"
+  | "quick-actions"
   | "demo";
 
 type EntryKey =
@@ -84,6 +92,9 @@ type EntryKey =
   | "chronology";
 
 type GroupId = "do" | "look" | "share";
+
+/** Kit rule: a long group shows its first rows, then Show more. */
+const GROUP_SHOWN = 5;
 
 export type WardToolsSheetProps = {
   isPhone: boolean;
@@ -107,49 +118,128 @@ export type WardToolsSheetProps = {
  */
 const ROLE_ORDER: Record<WardAccessRole, Record<GroupId, readonly EntryKey[]>> = {
   coordinator: {
-    do: ["new-referral", "update-bed", "remind", "book-transport", "log-delay", "feed"],
+    do: ["quick-actions", "new-referral", "update-bed", "remind", "book-transport", "log-delay", "feed"],
     look: ["bed-finder", "figures", "leave-due", "catchment", "contacts", "form-times", "legal-forms", "out-of-area"],
     share: ["messages", "handover", "downtime", "chronology"],
   },
   bed_manager: {
-    do: ["update-bed", "remind", "log-delay", "book-transport", "feed"],
+    do: ["quick-actions", "update-bed", "remind", "log-delay", "book-transport", "feed"],
     look: ["bed-finder", "leave-due", "figures", "contacts", "form-times", "catchment", "legal-forms"],
     share: ["messages", "handover", "downtime"],
   },
   ward: {
-    do: ["update-bed", "remind", "log-delay", "book-transport", "feed"],
+    do: ["quick-actions", "update-bed", "remind", "log-delay", "book-transport", "feed"],
     look: ["leave-due", "form-times", "contacts", "bed-finder", "catchment", "legal-forms"],
     share: ["handover", "messages", "downtime"],
   },
   ed: {
-    do: ["new-referral", "book-transport", "remind", "log-delay"],
+    do: ["quick-actions", "new-referral", "book-transport", "remind", "log-delay"],
     look: ["bed-finder", "form-times", "contacts", "catchment", "legal-forms"],
     share: ["handover", "downtime"],
   },
   community: {
-    do: ["new-referral", "remind", "log-delay"],
+    do: ["quick-actions", "new-referral", "remind", "log-delay"],
     look: ["catchment", "contacts", "form-times", "legal-forms", "bed-finder"],
     share: ["downtime"],
   },
-  officer: { do: ["remind"], look: ["contacts", "catchment"], share: [] },
+  officer: { do: ["quick-actions", "remind"], look: ["contacts", "catchment"], share: [] },
   // The executive desk reads released reports only, so it has no tool that writes to or reads the live World.
   executive: {
-    do: [],
+    do: ["quick-actions"],
     look: ["figures", "bed-finder", "contacts", "catchment", "form-times"],
     share: ["messages", "downtime"],
   },
   admin: { do: [], look: ["contacts", "catchment"], share: [] },
 };
 
+/** A desk's Quick actions tile: a Tools row by key (keeps its gate), or a page link of its own. */
+type QuickSpec = EntryKey | (QuickTile & { href: string });
+
+/** Each desk's most used controls, most used first (Josh, 4 Nov 2026). The coordinator's are built inline. */
+const ROLE_QUICK: Partial<Record<WardAccessRole, readonly QuickSpec[]>> = {
+  bed_manager: [
+    "bed-finder",
+    "update-bed",
+    "leave-due",
+    "log-delay",
+    "book-transport",
+    { key: "broadcast", icon: Megaphone, name: "Broadcast", detail: "To your wards", href: `${root}/alerts` },
+  ],
+  ward: [
+    { key: "my-ward", icon: ClipboardCheck, name: "Confirm beds", detail: "Morning numbers", href: `${root}/wards` },
+    "leave-due",
+    "update-bed",
+    "log-delay",
+    "book-transport",
+    "remind",
+  ],
+  ed: [
+    { key: "refer", icon: Plus, name: "New referral", detail: "Start one", href: WARD_REFERRAL_INTAKE_HREF },
+    "bed-finder",
+    "book-transport",
+    "log-delay",
+    "form-times",
+    "contacts",
+  ],
+  community: [
+    { key: "inbox", icon: Inbox, name: "Referrals in", detail: "Accept or assign", href: `${root}/community` },
+    { key: "refer", icon: Plus, name: "New referral", detail: "Start one", href: WARD_REFERRAL_INTAKE_HREF },
+    "catchment",
+    "contacts",
+    "log-delay",
+    "remind",
+  ],
+  officer: [
+    { key: "jobs", icon: Truck, name: "My jobs", detail: "Steps and check-in", href: `${root}/transport/officer` },
+    { key: "alerts", icon: BellRing, name: "Alerts", detail: "Notices", href: `${root}/alerts` },
+    "contacts",
+    "remind",
+  ],
+  executive: [
+    "figures",
+    { key: "capacity", icon: Gauge, name: "Capacity", detail: "By service", href: `${root}/capacity` },
+    { key: "statistics", icon: BarChart3, name: "Statistics", detail: "Reports", href: `${root}/statistics` },
+    "messages",
+    "contacts",
+  ],
+};
+
+/** Tiles that open the desk's own home page, wherever that desk sits. */
+const DESK_HOME_TILES = new Set(["my-ward", "inbox", "jobs"]);
+
+/** Tiles are narrow on a phone, so each borrowed row gets a two or three word line (Josh, 4 Nov 2026). */
+const TILE_DETAIL: Partial<Record<EntryKey, string>> = {
+  "leave-due": "Back today",
+  "update-bed": "Open or close",
+  "log-delay": "Why it waits",
+  "book-transport": "Log a transfer",
+  remind: "Set a nudge",
+  "bed-finder": "Ready beds",
+  "form-times": "Form expiry",
+  contacts: "Who is on",
+  catchment: "Team by suburb",
+  figures: "Beds and flow",
+  messages: "Copy text",
+};
+
+const QUICK_DETAIL: Partial<Record<WardAccessRole, string>> = {
+  bed_manager: "Beds, due back and more",
+  ward: "Confirm beds, due back and more",
+  ed: "Refer, find a bed and more",
+  community: "Referrals in, suburbs and more",
+  officer: "My jobs, alerts and on-call",
+  executive: "Figures, capacity and reports",
+};
+
 /** Q309: until a desk has used a tool, the row offers its three most likely ones. */
 const ROLE_SUGGESTED: Record<WardAccessRole, readonly ToolsSheetToolId[]> = {
-  coordinator: ["bed-finder", "update-bed", "messages"],
-  bed_manager: ["update-bed", "bed-finder", "leave-due"],
-  ward: ["update-bed", "leave-due", "form-times"],
-  ed: ["bed-finder", "form-times", "contacts"],
-  community: ["catchment", "contacts", "remind"],
-  officer: ["contacts", "catchment", "remind"],
-  executive: ["figures", "messages", "bed-finder"],
+  coordinator: ["quick-actions", "bed-finder", "update-bed"],
+  bed_manager: ["quick-actions", "update-bed", "bed-finder"],
+  ward: ["quick-actions", "update-bed", "leave-due"],
+  ed: ["quick-actions", "bed-finder", "form-times"],
+  community: ["quick-actions", "catchment", "contacts"],
+  officer: ["quick-actions", "contacts", "catchment"],
+  executive: ["quick-actions", "figures", "messages"],
   admin: ["contacts", "catchment"],
 };
 
@@ -287,7 +377,7 @@ function searchWardFlow(words: string, close: () => void): boolean {
  * Viewing as and the Demo controls sit together at the foot.
  */
 /** Live counts on the rows. The executive desk has none: it never reads the operational World. */
-type SheetCounts = { bedsReady?: number; feed?: number; reminders?: number; leave?: number };
+type SheetCounts = { bedsReady?: number; feed?: number; reminders?: number; leave?: number; unconfirmed?: number };
 
 export function WardToolsSheet(props: WardToolsSheetProps) {
   return useExecutiveStatisticsControl().executive ? (
@@ -302,11 +392,12 @@ function OperationalToolsSheet(props: WardToolsSheetProps) {
   const feed = useFeedWaitingCount();
   const reminders = useReminderCount();
   const leave = useLeaveDueCount();
+  const unconfirmed = useUnconfirmedWards().waiting.length;
   return (
     <ToolsSheetView
       {...props}
       executive={false}
-      counts={{ bedsReady: counts.capacity?.value, feed, reminders, leave }}
+      counts={{ bedsReady: counts.capacity?.value, feed, reminders, leave, unconfirmed }}
     />
   );
 }
@@ -325,16 +416,19 @@ function ToolsSheetView({
   const accessNav = useAccessNavFilter();
   const updateBedHref = accessNav([{ id: "wards", href: `${root}/wards`, label: "Update a bed" }])[0]?.href;
   const canOpen = useCanOpenHref();
-  const role: WardAccessRole = useEffectiveWardAccess().role;
+  const access = useEffectiveWardAccess();
+  const role: WardAccessRole = access.role;
   const networkFigures = seesNetworkBedFigures(role);
   const gate = useRoleGate();
   const canLogDelay = gate("RECORD_MOVEMENT_BLOCKER").allowed;
   const canRefer = canOpen(WARD_REFERRAL_INTAKE_HREF);
   const recent = useRecent();
+  const unconfirmed = counts.unconfirmed ?? 0;
 
   const [open, setOpen] = useState<ToolsSheetToolId | null>(null);
   const [query, setQuery] = useState("");
   const [noSearch, setNoSearch] = useState(false);
+  const [expanded, setExpanded] = useState<ReadonlySet<GroupId>>(new Set());
   const searchRef = useRef<HTMLInputElement | null>(null);
 
   const openTool = (id: ToolsSheetToolId) => {
@@ -343,6 +437,10 @@ function ToolsSheetView({
     const inline = !twoPane || id === "demo";
     setOpen((current) => (current === id && inline ? null : id));
     pushRecent(id);
+    // A tool opened from a Recent chip may sit under Show more: keep its group open, so the row
+    // (and keyboard focus on it) stays after the tool closes.
+    const home = groups.find((group) => group.entries.findIndex((entry) => entry.key === id) >= GROUP_SHOWN);
+    if (home) setExpanded((current) => new Set(current).add(home.id));
     if (!inline) return;
     window.requestAnimationFrame(() =>
       window.requestAnimationFrame(() =>
@@ -377,6 +475,58 @@ function ToolsSheetView({
   }, []);
 
   const all: Record<EntryKey, Entry | null> = {
+    "quick-actions":
+      role === "coordinator"
+        ? {
+            key: "quick-actions",
+            icon: Zap,
+            name: "Quick actions",
+            detail: "Ward updates, beds and more",
+            count: { n: unconfirmed, label: "wards not confirmed this shift", act: true },
+            body: (
+              <QuickActionsPanel
+                onNavigate={onNavigate}
+                tiles={[
+                  {
+                    key: "ward-updates",
+                    icon: BellRing,
+                    name: "Ward updates",
+                    detail: "not confirmed",
+                    count: unconfirmed,
+                    title: "Ward updates",
+                    body: <WardUpdatesRequest />,
+                  },
+                  {
+                    key: "bed-finder",
+                    icon: SearchCheck,
+                    name: "Find a bed",
+                    detail: "ready now",
+                    count: counts.bedsReady,
+                    title: "Find a bed",
+                    body: <ToolFindBed onNavigate={onNavigate} />,
+                  },
+                  {
+                    key: "messages",
+                    icon: MessageSquareText,
+                    name: "Bed summary",
+                    detail: "Copy for email",
+                    title: "Bed summary",
+                    body: <ToolMessages onNavigate={onNavigate} />,
+                  },
+                  { key: "chase", icon: PhoneCall, name: "Chase wards", detail: "Call sheet", href: root },
+                  { key: "ask", icon: Send, name: "Ask wards", detail: "For a patient", href: `${root}/waiting` },
+                  {
+                    key: "broadcast",
+                    icon: Megaphone,
+                    name: "Broadcast",
+                    detail: "To chosen units",
+                    href: `${root}/alerts`,
+                  },
+                ]}
+              />
+            ),
+          }
+        : null,
     "new-referral":
       isPhone && canRefer
         ? {
@@ -568,6 +718,42 @@ function ToolsSheetView({
     demo: null,
   };
 
+  // Quick actions for every desk (Josh approved the mock-up, 4 Nov 2026): the coordinator keeps its
+  // own tiles above; every other desk gets its most used controls, built from the rows below so each
+  // tile keeps that row's gate. A tile this desk may not open simply drops out. The rows stay below
+  // too, so search and Recent still find them.
+  const deskSpecs = role === "coordinator" ? [] : (ROLE_QUICK[role] ?? []);
+  const deskTiles: QuickTile[] = deskSpecs.flatMap((spec): QuickTile[] => {
+    if (typeof spec !== "string") {
+      // A desk-home tile (the ward's Confirm beds, the team's Referrals in) opens this desk's own place.
+      const href = DESK_HOME_TILES.has(spec.key) ? homeHrefFor(access, communityTeamSlug) : spec.href;
+      return canOpen(href) ? [{ ...spec, href }] : [];
+    }
+    const entry = all[spec];
+    if (!entry || (entry.href && !canOpen(entry.href)) || (!entry.href && !entry.body)) return [];
+    return [
+      {
+        key: entry.key,
+        icon: entry.icon,
+        name: entry.name,
+        detail: TILE_DETAIL[entry.key] ?? entry.detail,
+        count: entry.count?.n,
+        title: entry.name,
+        body: entry.body,
+        href: entry.href,
+      },
+    ];
+  });
+  if (deskTiles.length > 0) {
+    all["quick-actions"] = {
+      key: "quick-actions",
+      icon: Zap,
+      name: "Quick actions",
+      detail: QUICK_DETAIL[role] ?? "Your most used controls",
+      body: <QuickActionsPanel onNavigate={onNavigate} tiles={deskTiles} />,
+    };
+  }
+
   const words = query.trim().toLowerCase();
   const order = ROLE_ORDER[role] ?? ROLE_ORDER.coordinator;
   const usable = (key: EntryKey): Entry | null => {
@@ -583,6 +769,13 @@ function ToolsSheetView({
       .filter((entry): entry is Entry => entry !== null)
       .filter((entry) => !words || `${entry.name} ${entry.detail}`.toLowerCase().includes(words)),
   })).filter((group) => group.entries.length > 0);
+  // A group folds after five rows unless searching, opened, short, or holding the open tool
+  // (a Recent chip can open a tool whose row sits under Show more).
+  const groupShowsAll = (group: (typeof groups)[number]) =>
+    Boolean(words) ||
+    expanded.has(group.id) ||
+    group.entries.length <= GROUP_SHOWN + 1 ||
+    group.entries.findIndex((entry) => entry.key === open) >= GROUP_SHOWN;
   const groupOf = (key: EntryKey): GroupId => GROUPS.find((group) => order[group.id].includes(key))?.id ?? "look";
   const matches = groups.reduce((total, group) => total + group.entries.length, 0);
 
@@ -599,7 +792,8 @@ function ToolsSheetView({
   // The demo controls are setup, not a tool to work in, so they open in place under their row
   // and the pane keeps showing a tool.
   const shown: ToolsSheetToolId | null = twoPane ? (open && open !== "demo" ? open : (quickIds[0] ?? null)) : open;
-  const paneEntry = shown ? usable(shown) : null;
+  // A search with no match empties the pane too, so an old tool never sits beside "No tool matches".
+  const paneEntry = shown && matches > 0 ? usable(shown) : null;
 
   const demoEntry: Entry = {
     key: "demo",
@@ -679,9 +873,19 @@ function ToolsSheetView({
           }}
           inputRef={searchRef}
           shortcut={!isPhone}
+          onKeyDown={(event) => {
+            // Escape with words typed clears the box; only an empty box lets Escape close the sheet.
+            if (event.key === "Escape" && query) {
+              // The shared Sheet leaves an Escape a field has already handled (defaultPrevented).
+              event.preventDefault();
+              setQuery("");
+              setNoSearch(false);
+            }
+          }}
         />
 
-        {!words && quickIds.length > 0 ? (
+        {/* Polish (3 Nov): chips show only tools this person has used; the desk order already leads with the likely ones. */}
+        {!words && recentIds.length > 0 ? (
           <section className={styles.quick} aria-label={quickTitle}>
             <h3 className={styles.groupHeading}>{quickTitle}</h3>
             <div className={styles.chips}>
@@ -730,8 +934,33 @@ function ToolsSheetView({
         ) : (
           groups.map((group) => (
             <section key={group.id} className={styles.group} aria-label={group.title}>
-              <h3 className={styles.groupHeading}>{group.title}</h3>
-              <div className={styles.card}>{group.entries.map((entry) => renderRow(entry, group.id))}</div>
+              <h3 className={styles.groupHeading}>
+                {group.title}
+                <span className={styles.groupCount}>{group.entries.length}</span>
+              </h3>
+              <div className={styles.card} data-tool-group={group.id}>
+                {(groupShowsAll(group) ? group.entries : group.entries.slice(0, GROUP_SHOWN)).map((entry) =>
+                  renderRow(entry, group.id),
+                )}
+                {!groupShowsAll(group) ? (
+                  <button
+                    type="button"
+                    className={styles.showMore}
+                    onClick={() => {
+                      setExpanded((current) => new Set(current).add(group.id));
+                      // The button leaves with the fold, so focus moves to the first row it revealed.
+                      window.requestAnimationFrame(() => {
+                        const row = document.querySelector(`[data-tool-group="${group.id}"]`)?.children[GROUP_SHOWN];
+                        const target = row?.matches("a, button") ? row : row?.querySelector("a, button");
+                        if (target instanceof HTMLElement) target.focus();
+                      });
+                    }}
+                  >
+                    Show {group.entries.length - GROUP_SHOWN} more
+                    <ChevronDown aria-hidden="true" strokeWidth={1.75} />
+                  </button>
+                ) : null}
+              </div>
             </section>
           ))
         )}

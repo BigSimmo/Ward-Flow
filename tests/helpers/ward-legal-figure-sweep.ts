@@ -338,6 +338,19 @@ export function candidateEvents(
           endedAt: now,
         })),
       );
+    case "RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP":
+      return state.units.flatMap((unit) =>
+        (unit.restrictivePractice?.episodes ?? []).map((episode) => ({
+          type,
+          role,
+          now,
+          unitId: unit.id,
+          actingUnitId: unit.id,
+          episodeId: episode.id,
+          task: "sent_to_ocp" as const,
+          done: true,
+        })),
+      );
     case "RECORD_WARD_INCIDENT":
       return unitIds.slice(-1).map((unitId) => ({
         type,
@@ -698,6 +711,20 @@ export function candidateEvents(
         movementId: m.id,
         presentations: ["Suicidal thoughts" as const],
       }));
+    case "RECORD_LEGAL_FORM_DETAILS":
+      // Gap list items 3 to 7: fixed choices and a typed review date on the current form only.
+      return state.movements
+        .filter((m) => m.legalForm !== undefined)
+        .map((m) => ({
+          type,
+          role,
+          now,
+          movementId: m.id,
+          formCode: m.legalForm!.code,
+          madeBy: "psychiatrist" as const,
+          copyGiven: "yes" as const,
+          reviewBy: now + 60,
+        }));
     case "RECORD_LEGAL_FORM_CONTINUATION":
       return state.movements.map((m) => ({
         type,
@@ -1636,6 +1663,11 @@ export function candidateEvents(
       return state.admissions
         .filter((admission) => admission.state !== "departed")
         .map((admission) => ({ type, role, now, admissionId: admission.id, step: "requested", homeHospital: "RPH" }));
+    // Out of area "Flag early" (3 Nov 2026): a record only, against a current stay.
+    case "FLAG_RETURN_EARLY":
+      return state.admissions
+        .filter((admission) => admission.state !== "departed")
+        .map((admission) => ({ type, role, now, admissionId: admission.id, homeHospital: "RPH" }));
     case "RECORD_DIRECTORY_CHECK":
       return buildOnCallDirectory()
         .slice(0, 3)
@@ -2111,7 +2143,18 @@ export function undoOf(
 ): { type: WardFlowEvent["type"]; state: WardFlowState } | undefined {
   const undoType = undoStepTypeFor(event.type);
   if (!undoType) return undefined;
-  const fields = event as { movementId?: string; referralId?: string; admissionId?: string; actingUnitId?: string };
+  const fields = event as {
+    movementId?: string;
+    referralId?: string;
+    admissionId?: string;
+    actingUnitId?: string;
+    // Tier 1 item 6 (4 Nov 2026): the bed, leave, booking and patient record step undos.
+    leaveBedId?: string;
+    unitId?: string;
+    bedNumber?: number;
+    plannedAdmissionId?: string;
+    patientId?: string;
+  };
   const actingUnitId =
     event.type === "ACCEPT_IN_PRINCIPLE" && event.role === "ward" ? event.unitId : fields.actingUnitId;
   const undo = {
@@ -2124,7 +2167,18 @@ export function undoOf(
     ...(fields.referralId !== undefined ? { referralId: fields.referralId } : {}),
     ...(fields.admissionId !== undefined ? { admissionId: fields.admissionId } : {}),
     ...(actingUnitId !== undefined ? { actingUnitId } : {}),
-    ...(event.type === "COMPLETE_BED_MEETING_ACTION" ? { subject: event.subject, action: event.action } : {}),
+    ...(undoType === "UNDO_BED_STEP"
+      ? fields.leaveBedId !== undefined
+        ? { leaveBedId: fields.leaveBedId }
+        : { unitId: fields.unitId, bedNumber: fields.bedNumber }
+      : {}),
+    ...(undoType === "UNDO_RELEASE_STEP" && fields.plannedAdmissionId !== undefined
+      ? { plannedAdmissionId: fields.plannedAdmissionId }
+      : {}),
+    ...(undoType === "UNDO_PATIENT_RECORD" ? { patientId: fields.patientId } : {}),
+    ...(event.type === "COMPLETE_BED_MEETING_ACTION" || event.type === "RECORD_BED_MEETING_ACTION"
+      ? { subject: event.subject, action: event.action }
+      : {}),
     ...(event.type === "RECORD_SITE_HANDOVER_SIGN_OFF" ? { siteCode: event.siteCode } : {}),
   } as WardFlowEvent;
   const state = wardFlowReducer(applied, undo);
@@ -2942,6 +2996,20 @@ export function runDueAtSweep(supplyDueAt: boolean, codes: readonly string[]): v
     ).toEqual([]);
     accepted.add("RELEASE_HELD_BED");
     offenders.push(...offendingFormsIn(heldBedReleased, `RELEASE_HELD_BED(${code})`));
+    // Tier 1 item 6 (4 Nov 2026): and its Undo, which only this forced chain can reach.
+    const heldBedUndone = undoOf(
+      {
+        type: "RELEASE_HELD_BED",
+        role: EVENT_ROLE.RELEASE_HELD_BED[0],
+        now: NOW_ANCHOR,
+        movementId: forCancel.movementId,
+      },
+      heldBedReleased,
+      NOW_ANCHOR,
+    );
+    expect(heldBedUndone, `UNDO_RELEASE_STEP after RELEASE_HELD_BED refused (${code})`).toBeDefined();
+    accepted.add("UNDO_RELEASE_STEP");
+    offenders.push(...offendingFormsIn(heldBedUndone!.state, `UNDO_RELEASE_STEP(${code})`));
 
     /*
      * 🔴 PATIENT_ARRIVED, NOW ALSO FORCED EXPLICITLY — a regression STOP_TRANSPORT's own

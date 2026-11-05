@@ -133,7 +133,7 @@ describe("client secret diagnostics", () => {
         });
       const clean = run();
       expect(clean.status).toBe(0);
-      expect(clean.stdout).toContain("1 built client chunks in .next/static scanned.");
+      expect(clean.stdout).toContain(`1 built client chunks in ${join(".next", "static")} scanned.`);
 
       // A comment marker does not excuse a chunk: one minified line can hold a whole module.
       writeFileSync(join(root, ".next/static/chunks/app/page.js"), `var k="${invented}";/* synthetic-only */\n`);

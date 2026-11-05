@@ -12,6 +12,7 @@ import {
 } from "@/components/ward-management/ward-flow-provider";
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { chooseEdChoice, edChoiceValue } from "./helpers/ed-raise-into-movement";
 
 vi.mock("next/link", () => ({
   default: ({ children, href }: { children: ReactNode; href: string }) => <a href={href}>{children}</a>,
@@ -161,7 +162,7 @@ describe.each(cases)("ED $kind save confirmation", ({ kind, type, toggle, form: 
     const sheet = within(screen.getByTestId(`ward-ed-phone-sheet-${ID}`));
     fireEvent.click(sheet.getByTestId(toggle));
     const form = sheet.getByTestId(formId);
-    for (const [id, value] of fields) fireEvent.change(form.querySelector(`#${id}`)!, { target: { value } });
+    for (const [id, value] of fields) chooseEdChoice(id, value);
     fireEvent.submit(form);
     fireEvent.submit(form);
     expect(overrideDispatch).toHaveBeenCalledTimes(1);
@@ -176,7 +177,7 @@ describe.each(cases)("ED $kind save confirmation", ({ kind, type, toggle, form: 
     await act(async () => reply.resolve({ commandId: "synthetic-correction", status: "failed" }));
     expect(form).toBeVisible();
     expect(within(form).getByRole("status")).toHaveTextContent("Save is not confirmed");
-    for (const [id, value] of fields) expect(form.querySelector(`#${id}`)).toHaveValue(value);
+    for (const [id, value] of fields) expect(edChoiceValue(id)).toBe(value);
   });
 
   it("retains pending selections, blocks repeats and closes after acceptance", async () => {

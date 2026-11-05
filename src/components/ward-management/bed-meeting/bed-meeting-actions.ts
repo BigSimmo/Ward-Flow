@@ -16,6 +16,12 @@ export const BED_MEETING_ACTION_KINDS = [
   { id: "call_guardianship", label: "Call guardianship" },
   { id: "book_transport", label: "Book transport" },
   { id: "review_step_down", label: "Review for step-down" },
+  // Diagnosed issues B1 (Josh, 3 Nov 2026): the common asks the meeting makes, still picked from a
+  // list so nothing typed is stored.
+  { id: "chase_ward", label: "Chase ward answer" },
+  { id: "seek_bed_elsewhere", label: "Seek a bed elsewhere" },
+  { id: "family_meeting", label: "Arrange family meeting" },
+  { id: "review_legal_form", label: "Review legal form" },
 ] as const;
 
 export type BedMeetingActionKind = (typeof BED_MEETING_ACTION_KINDS)[number]["id"];
@@ -34,6 +40,8 @@ export type BedMeetingActionOwner = (typeof BED_MEETING_ACTION_OWNERS)[number];
 
 /** The agenda page. Not in the access table, so it opens for the coordinator only. */
 export const BED_MEETING_AGENDA_HREF = "/ward-flow/bed-meeting/agenda";
+/** R5 fold (Josh, 3 Nov 2026): the agenda opened at its Referrals list. */
+export const BED_MEETING_REFERRALS_HREF = `${BED_MEETING_AGENDA_HREF}#agenda-referrals`;
 
 /** Due choices, in hours from the meeting. */
 export const BED_MEETING_ACTION_DUE_HOURS = [2, 4, 8, 24] as const;

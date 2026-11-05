@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { readWhatsNewEntries } from "./scripts/ward-flow/whats-new-list.mjs";
 import { buildSecurityHeaders, resolveRuntimeFlags } from "./src/lib/security-headers";
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
@@ -27,7 +28,7 @@ async function withOptionalBundleAnalyzer(config: NextConfig): Promise<NextConfi
 
 /** The demo data modules a live shared build replaces (`webpack` below). */
 export const LIVE_BUILD_DEMO_DATA =
-  /^@\/components\/ward-management\/(ward-movements|ward-patients-seed|ward-admissions-seed|ward-rulings-demo|ward-demo-planned-moves)$/;
+  /^@\/components\/ward-management\/(ward-movements|ward-patients-seed|ward-admissions-seed|ward-rulings-demo|ward-demo-planned-moves|ward-demo-example-lists)$/;
 
 const nextConfig: NextConfig = {
   distDir: requestedDistDir || ".next",
@@ -56,6 +57,11 @@ const nextConfig: NextConfig = {
   // warnings and the scenario's wards as inputs (`useDueSoonThresholds()`, `useWardNetwork()`), and
   // tests/ward-compiler-inputs.test.ts stops anything reading them from module-wide values again.
   reactCompiler: true,
+  // What's new: one file per change, combined here (scripts/ward-flow/whats-new-list.mjs) and read as
+  // `__WARD_WHATS_NEW__` by ward-whats-new.tsx. Next writes each value as a string literal.
+  compiler: {
+    define: { __WARD_WHATS_NEW__: JSON.stringify(readWhatsNewEntries(projectRoot)) },
+  },
   // Narrow the shell's server imports without changing the design-system API or other chunks.
   modularizeImports: {
     "@/components/wf": {

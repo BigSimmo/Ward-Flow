@@ -14,6 +14,7 @@ import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
+import { chooseEdChoice, edChoiceValue } from "./helpers/ed-raise-into-movement";
 
 /**
  * Opus review round 2, 17 September 2026 (P2), item 6: when the ED raises a movement from a
@@ -120,20 +121,19 @@ describe("ED screen: raising into a movement prefills gender from the linked ref
     expect(raiseButtons).toHaveLength(1);
     fireEvent.click(raiseButtons[0]!);
 
-    const genderSelect = screen.getByTestId("ward-ed-referral-gender") as HTMLSelectElement;
-    expect(genderSelect.value).toBe("Female");
+    expect(edChoiceValue("ward-ed-referral-gender")).toBe("Female");
 
     // Still editable — a clinician can change what the referral prefilled.
-    fireEvent.change(genderSelect, { target: { value: "Non-binary" } });
-    expect(genderSelect.value).toBe("Non-binary");
+    chooseEdChoice("ward-ed-referral-gender", "Non-binary");
+    expect(edChoiceValue("ward-ed-referral-gender")).toBe("Non-binary");
 
     // Fill the remaining required fields and submit.
-    fireEvent.change(screen.getByTestId("ward-ed-referral-cohort"), { target: { value: "Adult" } });
-    fireEvent.change(screen.getByTestId("ward-ed-referral-security"), { target: { value: "Open" } });
-    fireEvent.change(screen.getByTestId("ward-ed-referral-sex"), { target: { value: "Female" } });
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-status"), { target: { value: "Voluntary" } });
-    fireEvent.change(screen.getByTestId("ward-ed-referral-urgency"), { target: { value: "3" } });
-    fireEvent.change(screen.getByTestId("ward-ed-referral-observation"), { target: { value: "general" } });
+    chooseEdChoice("ward-ed-referral-cohort", "Adult");
+    chooseEdChoice("ward-ed-referral-security", "Open");
+    chooseEdChoice("ward-ed-referral-sex", "Female");
+    chooseEdChoice("ward-ed-referral-legal-status", "Voluntary");
+    chooseEdChoice("ward-ed-referral-urgency", "3");
+    chooseEdChoice("ward-ed-referral-observation", "general");
     fireEvent.click(screen.getByTestId("ward-ed-referral-high-acuity-not-required"));
     fireEvent.click(screen.getByTestId("ward-ed-referral-submit"));
 
@@ -161,7 +161,7 @@ describe("ED screen: raising into a movement prefills gender from the linked ref
     fireEvent.click(screen.getByRole("button", { name: "mark arrived" }));
     fireEvent.click(screen.getAllByTestId(/^ward-ed-inbox-raise-/)[0]!);
 
-    const value = (testId: string) => (screen.getByTestId(testId) as HTMLSelectElement).value;
+    const value = edChoiceValue;
     expect(value("ward-ed-referral-cohort")).toBe("Adult");
     expect(value("ward-ed-referral-urgency")).toBe("2");
     // Never filled in for the clinician.
@@ -169,8 +169,8 @@ describe("ED screen: raising into a movement prefills gender from the linked ref
     expect(value("ward-ed-referral-security")).toBe("");
 
     // Still editable, and an answer given here does not survive Close.
-    fireEvent.change(screen.getByTestId("ward-ed-referral-security"), { target: { value: "Secure" } });
-    fireEvent.change(screen.getByTestId("ward-ed-referral-legal-status"), { target: { value: "Voluntary" } });
+    chooseEdChoice("ward-ed-referral-security", "Secure");
+    chooseEdChoice("ward-ed-referral-legal-status", "Voluntary");
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
     fireEvent.click(screen.getAllByTestId(/^ward-ed-inbox-raise-/)[0]!);
     expect(value("ward-ed-referral-security")).toBe("");

@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useState } from "react";
-import { CalendarDays, DoorOpen, Stethoscope } from "lucide-react";
+import { CalendarDays, DoorOpen, Stethoscope, UserRoundX } from "lucide-react";
 import { Button, Card, CardHead, Sheet, StatusGlyph, useIsPhone } from "@/components/wf";
 import {
   MINUTES_PER_DAY,
@@ -57,18 +57,23 @@ export function PatientWardChangeCard({
   now,
   dayZero,
   form,
+  pending = false,
   onFormChange,
   onRecordLeave,
   onGoneToEd,
   onSaveDischarge,
   refusal,
+  saveError,
   roleLimit,
   dischargeInBar = false,
   leaveLegal,
+  embedded = false,
+  onMarkAbsent,
 }: {
   now: Instant;
   dayZero: Date;
   form: WardChangeForm;
+  pending?: boolean;
   onFormChange: (form: WardChangeForm) => void;
   /** `psychiatristAuthorised` is the tick's answer, given only when the person is on an order (#101). */
   onRecordLeave: (expectedReturn: Instant, kind: LeaveKind, psychiatristAuthorised?: boolean) => void;
@@ -76,6 +81,8 @@ export function PatientWardChangeCard({
   onSaveDischarge: (expectedDischargeAt: Instant) => void;
   /** The engine's reason when it refused the last change made here. */
   refusal?: string;
+  /** The save outcome verbatim: an uncertain save must not be presented as a definite refusal. */
+  saveError?: string;
   /** Why the route's role may not raise this event, or undefined. */
   roleLimit: (eventType: WardFlowEventType) => string | undefined;
   /** v10 phone: the discharge date is the pinned bar's primary, so the chip row leaves it out. */
@@ -86,6 +93,13 @@ export function PatientWardChangeCard({
    * never a block: the ward or coordinator still records the leave.
    */
   leaveLegal?: { form: string; onOrder: boolean };
+  /**
+   * Josh's approved list (3 Nov 2026): the row sits inside the On ward card as its one action row,
+   * in place of a separate Record a change card. Same buttons, forms and test ids.
+   */
+  embedded?: boolean;
+  /** Mark absent, moved here from the old Leave cell so the On ward card has one action row. */
+  onMarkAbsent?: () => void;
 }) {
   const [time, setTime] = useState("");
   const [day, setDay] = useState(0);
@@ -102,6 +116,7 @@ export function PatientWardChangeCard({
   const [presetId, setPresetId] = useState<string | null>(null);
   const [customTime, setCustomTime] = useState(false);
   const baseId = useId();
+  const failureMessage = saveError ?? (refusal ? `Not recorded: ${refusal}` : undefined);
   const futurePresets = LEAVE_PRESETS.filter((preset) => {
     const at = typedTimeToInstant(preset.time, preset.day, now);
     return at !== undefined && at > now;
@@ -117,8 +132,10 @@ export function PatientWardChangeCard({
   const leaveLimit = roleLimit("RECORD_LEAVE_BED");
   const edLimit = roleLimit("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT");
   const dischargeLimit = roleLimit("UPDATE_EXPECTED_DISCHARGE");
+  const absentLimit = roleLimit("RECORD_ABSENT_WITHOUT_LEAVE");
 
   function toggle(next: Exclude<WardChangeForm, "none">) {
+    if (pending) return;
     onFormChange(form === next ? "none" : next);
     setTime("");
     setDay(0);
@@ -134,7 +151,7 @@ export function PatientWardChangeCard({
         size="sm"
         icon={DoorOpen}
         aria-pressed={form === "leave"}
-        disabledReason={leaveLimit}
+        disabledReason={pending ? "Saving change…" : leaveLimit}
         reasonDisplay="tooltip"
         onClick={() => toggle("leave")}
       >
@@ -144,9 +161,11 @@ export function PatientWardChangeCard({
         className={styles.tap}
         size="sm"
         icon={Stethoscope}
-        disabledReason={edLimit}
+        disabledReason={pending ? "Saving change…" : edLimit}
         reasonDisplay="tooltip"
-        onClick={onGoneToEd}
+        onClick={() => {
+          if (!pending) onGoneToEd();
+        }}
       >
         Gone to ED
       </Button>
@@ -156,13 +175,26 @@ export function PatientWardChangeCard({
           size="sm"
           icon={CalendarDays}
           aria-pressed={form === "discharge"}
-          disabledReason={dischargeLimit}
+          disabledReason={pending ? "Saving change…" : dischargeLimit}
           reasonDisplay="tooltip"
           onClick={() => toggle("discharge")}
         >
           Discharge date
         </Button>
       )}
+      {onMarkAbsent ? (
+        <Button
+          className={styles.tap}
+          size="sm"
+          variant="ghost"
+          icon={UserRoundX}
+          disabledReason={absentLimit}
+          reasonDisplay="tooltip"
+          onClick={onMarkAbsent}
+        >
+          Mark absent
+        </Button>
+      ) : null}
     </div>
   );
 
@@ -173,10 +205,9 @@ export function PatientWardChangeCard({
       aria-label={form === "leave" ? "Start leave" : "Set discharge date"}
       onSubmit={(event) => {
         event.preventDefault();
-        if (!future || parsed === undefined) return;
+        if (pending || !future || parsed === undefined) return;
         if (form === "leave") onRecordLeave(parsed, kind, leaveLegal?.onOrder ? authorised : undefined);
         else onSaveDischarge(parsed);
-        setTime("");
       }}
     >
       {form === "leave" && leaveLegal ? (
@@ -191,7 +222,10 @@ export function PatientWardChangeCard({
             <input
               type="checkbox"
               checked={authorised}
-              onChange={(event) => setAuthorised(event.target.checked)}
+              disabled={pending}
+              onChange={(event) => {
+                if (!pending) setAuthorised(event.target.checked);
+              }}
               data-testid="ward-patient-leave-authorised"
             />
             Leave authorised by the treating psychiatrist
@@ -213,7 +247,10 @@ export function PatientWardChangeCard({
               type="button"
               className={styles.kindChoice}
               aria-pressed={kind === option}
-              onClick={() => setKind(option)}
+              disabled={pending}
+              onClick={() => {
+                if (!pending) setKind(option);
+              }}
             >
               {KIND_LABELS[option]}
             </button>
@@ -233,7 +270,10 @@ export function PatientWardChangeCard({
                   type="button"
                   className={styles.kindChoice}
                   aria-pressed={preset?.id === option.id}
-                  onClick={() => setPresetId(option.id)}
+                  disabled={pending}
+                  onClick={() => {
+                    if (!pending) setPresetId(option.id);
+                  }}
                 >
                   {option.label}
                 </button>
@@ -245,7 +285,14 @@ export function PatientWardChangeCard({
             <span aria-live="polite">{parsed !== undefined ? `Back ${formatInstantWithDay(parsed, now)}` : null}</span>
             {parsed !== undefined ? `, in ${splitDuration(parsed - now)}. The bed is held while away.` : null}
           </p>
-          <button type="button" className={styles.phOther} onClick={() => setCustomTime(true)}>
+          <button
+            type="button"
+            className={styles.phOther}
+            disabled={pending}
+            onClick={() => {
+              if (!pending) setCustomTime(true);
+            }}
+          >
             Other time
           </button>
         </>
@@ -253,7 +300,13 @@ export function PatientWardChangeCard({
         <>
           <label className={styles.changeField}>
             <span>Day</span>
-            <select value={day} onChange={(event) => setDay(Number(event.target.value))}>
+            <select
+              value={day}
+              disabled={pending}
+              onChange={(event) => {
+                if (!pending) setDay(Number(event.target.value));
+              }}
+            >
               {(form === "leave" ? LEAVE_DAYS : DISCHARGE_DAYS).map((option) => (
                 <option key={option} value={option}>
                   {dayOptionLabel(option, now, dayZero)}
@@ -263,7 +316,19 @@ export function PatientWardChangeCard({
           </label>
           <label className={styles.changeField}>
             <span>{form === "leave" ? "Expected back time" : "Expected discharge time"}</span>
-            <input type="time" value={time} onChange={(event) => setTime(event.target.value)} />
+            {/* Typed as HH:MM in a plain box, never the browser's time picker (Josh, 3 Nov 2026). */}
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="HH:MM"
+              maxLength={5}
+              value={time}
+              disabled={pending}
+              onChange={(event) => {
+                if (!pending) setTime(event.target.value);
+              }}
+            />
           </label>
           <p className={styles.changeHint} aria-live="polite">
             {parsed === undefined
@@ -275,7 +340,7 @@ export function PatientWardChangeCard({
         </>
       )}
       {isPhone ? null : (
-        <Button className={styles.tap} type="submit" size="sm" variant="pri" disabled={!future}>
+        <Button className={styles.tap} type="submit" size="sm" variant="pri" disabled={pending || !future}>
           {form === "leave" ? "Record leave" : "Save date"}
         </Button>
       )}
@@ -284,26 +349,44 @@ export function PatientWardChangeCard({
 
   if (isPhone)
     return (
-      <section className={styles.phSection} data-testid="ward-patient-change-card" aria-labelledby="pn-ward-change">
-        <h2 id="pn-ward-change" className={styles.phHead}>
-          Record a change
-        </h2>
+      <section
+        className={embedded ? styles.embedded : styles.phSection}
+        data-testid="ward-patient-change-card"
+        aria-labelledby="pn-ward-change"
+      >
+        {embedded ? (
+          <h3 id="pn-ward-change" className={styles.embeddedHead}>
+            Record a change
+          </h3>
+        ) : (
+          <h2 id="pn-ward-change" className={styles.phHead}>
+            Record a change
+          </h2>
+        )}
         {chipRow}
-        {refusal ? (
+        {failureMessage ? (
           <p className={styles.refusal} role="alert">
-            <StatusGlyph tone="danger" size={9} /> Not recorded: {refusal}
+            <StatusGlyph tone="danger" size={9} /> {failureMessage}
           </p>
         ) : null}
         <Sheet
           open={form !== "none"}
-          onClose={() => onFormChange("none")}
+          onClose={() => {
+            if (!pending) onFormChange("none");
+          }}
           title={form === "leave" ? "Start leave" : "Set discharge date"}
           description={form === "leave" ? "Bed held while away" : "Typed by the ward"}
           mobilePlacement="bottom"
           testId="ward-patient-change-sheet"
           footer={
             <div className={styles.phSheetFoot}>
-              <Button className={styles.tap} onClick={() => onFormChange("none")}>
+              <Button
+                className={styles.tap}
+                disabled={pending}
+                onClick={() => {
+                  if (!pending) onFormChange("none");
+                }}
+              >
                 Cancel
               </Button>
               <Button
@@ -311,7 +394,7 @@ export function PatientWardChangeCard({
                 type="submit"
                 form={`${baseId}-pn-ward-change-form`}
                 variant="pri"
-                disabled={!future}
+                disabled={pending || !future}
               >
                 {form === "leave" ? "Record leave" : "Save date"}
               </Button>
@@ -323,14 +406,30 @@ export function PatientWardChangeCard({
       </section>
     );
 
+  if (embedded)
+    return (
+      <section className={styles.embedded} data-testid="ward-patient-change-card" aria-labelledby="pn-ward-change">
+        <h3 id="pn-ward-change" className={styles.embeddedHead}>
+          Record a change
+        </h3>
+        {chipRow}
+        {form !== "none" ? formElement : null}
+        {failureMessage ? (
+          <p className={styles.refusal} role="alert">
+            <StatusGlyph tone="danger" size={9} /> {failureMessage}
+          </p>
+        ) : null}
+      </section>
+    );
+
   return (
     <Card data-testid="ward-patient-change-card" aria-labelledby="pn-ward-change">
       <CardHead id="pn-ward-change" level={2} title="Record a change" meta="Ward" />
       {chipRow}
       {form !== "none" ? formElement : null}
-      {refusal ? (
+      {failureMessage ? (
         <p className={styles.refusal} role="alert">
-          <StatusGlyph tone="danger" size={9} /> Not recorded: {refusal}
+          <StatusGlyph tone="danger" size={9} /> {failureMessage}
         </p>
       ) : null}
     </Card>

@@ -2,10 +2,10 @@
  * Stands in for the demo data modules in a live shared build (`NEXT_PUBLIC_WARD_SHARED_ENABLED=true`).
  * There the server owns every record, so phones never download the synthetic night's movements,
  * patients, admissions and overlays (review item 3.5). `next.config.ts` swaps these modules in
- * for the five named below; demo builds, tests and the backend keep the real ones.
+ * for the six named below; demo builds, tests and the backend keep the real ones.
  *
  * - `ward-movements`, `ward-patients-seed`, `ward-admissions-seed`, `ward-rulings-demo`,
- *   `ward-demo-planned-moves`.
+ *   `ward-demo-planned-moves`, `ward-demo-example-lists`.
  *
  * The local world a live page holds before the server's board arrives is then empty, and the
  * sign-in gate hides it. `tests/ward-no-demo-data.test.ts` checks every name the app imports from
@@ -15,6 +15,7 @@ import type { Admission, PlannedAdmission } from "@/components/ward-management/w
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { BedRelease, LeaveBed, Movement, Referral } from "@/components/ward-management/ward-model";
 import type { Patient } from "@/components/ward-management/ward-patients";
+import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 
 // Typed from the record types, not the demo modules, so nothing here reads a fixture
 // (`tests/ward-flow-single-source.test.ts`).
@@ -62,4 +63,10 @@ export function rulingsDemoOverlay(now: Instant): {
 export function withDemoPlannedMoveTimes(movements: readonly Movement[], anchor: Instant): Movement[] {
   void anchor;
   return [...movements];
+}
+
+/** S6 example data: a live shared build adds no invented example rows. */
+export function applyExampleListsOverlay(state: WardFlowState, anchor: Instant): WardFlowState {
+  void anchor;
+  return state;
 }

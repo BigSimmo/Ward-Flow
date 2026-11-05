@@ -1,8 +1,6 @@
-import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { patientRegistrationScope } from "../ward-patient-registration";
 import {
-  EMPTY_NEW_PATIENT,
   useReferralCommandCompletion,
   useReferralPatientRegistration,
   useReferralRegistrationDraft,
@@ -62,11 +60,15 @@ import {
   readKeptReferralDraftAt,
   readLastReferrerContact,
   rememberReferrerContact,
+  restartReferralDraft,
+  useLiveReferralDraftKey,
   useReferralDraftAutosave,
   useReferralDraftRecovery,
 } from "./referral-draft-store";
+import { useReferralPatientSelection, useReferralRegistrationWork } from "./use-referral-patient-selection";
 import { useReferralSectionNavigation } from "./use-referral-section-navigation";
 import { drawerFootStatus } from "./referral-drawer-foot-status";
+import { focusFirstInvalidField, referralInboxSummary } from "./referral-drawer-helpers";
 import * as fromRecord from "./referral-record-prefill";
 import { type ReferralTextInput } from "./referral-letter";
 import { useIsPhone, useModalFocus, type WfTone } from "@/components/wf";
@@ -151,8 +153,7 @@ export function useWardReferralDrawerState({
   // No sign-in: the route gives the role, and the role gives the profile (or why there is none).
   const pathname = usePathname() ?? "";
   const myProfile = profileForChromeRole(wardChromeRole(pathname));
-  // Feature 11: the sheet dispatches as the referral's source. A ward page sends in its own ward's
-  // name (role access plan item 8, Josh 15 Oct 2026), so it never borrows the ED or community role.
+  // Feature 11: sent as the referral's source; a ward page as its own ward (access plan 8, Josh 15 Oct 2026).
   const gate = useRoleGate();
   const access = useEffectiveWardAccess();
   const addPatientGate = gate("ADD_PATIENT");
@@ -210,8 +211,7 @@ export function useWardReferralDrawerState({
     `${PATIENT_KEY_PREFIX}${effectiveInitialPatientId}`,
   );
   const fromEntryPoint = kept === null && prefillKey !== null;
-  // A2-3 (audit 13 Oct 2026): opened plainly, with no named person, the sheet starts on nobody,
-  // never a demo person from another site.
+  // A2-3 (audit 13 Oct 2026): opened with no named person, the sheet starts on nobody, not another site's.
   const initialPatientKey = kept?.activePatientKey ?? prefillKey ?? NO_PATIENT_KEY;
   const [activePatientKey, setActivePatientKey] = useState<string>(initialPatientKey);
   const [extraPatientKeys, setExtraPatientKeys] = useState<string[]>(
@@ -220,6 +220,7 @@ export function useWardReferralDrawerState({
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const noPatientChosen = activePatientKey === NO_PATIENT_KEY;
+  const liveDraftKey = useLiveReferralDraftKey(activePatientKey, draftStorageKey, keepsAnotherPersonsDraft);
   const [addedInFormKey, setAddedInFormKey] = useState<string | null>(null); // WT-28
   const bodyRef = useRef<HTMLDivElement>(null);
   const sectionId = useId();
@@ -237,6 +238,8 @@ export function useWardReferralDrawerState({
   const [copyNotice, setCopyNotice] = useState<string | null>(null);
   const registrationDraft = useReferralRegistrationDraft();
   const { newPatientOpen, setNewPatientOpen, newPatient, setNewPatient } = registrationDraft;
+  const { newPatientDateText, setNewPatientDateText, newPatientDirty, resetNewPatient } =
+    useReferralRegistrationWork(registrationDraft);
   const guardKeepRef = useRef<HTMLButtonElement>(null);
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [sendPending, setSendPending] = useState(false);
@@ -296,8 +299,7 @@ export function useWardReferralDrawerState({
         fromRecord.catchmentFromRecord(patientRecord, catchmentTeam, recordedRegion)),
   );
   const [catchmentEditing, setCatchmentEditing] = useState(false);
-  // Finding 40 (Josh, 27 Oct 2026): "Catchment not known" answers the catchment for a ward or ED
-  // referral (the team stays blank and the letter says so). A community team referral still needs it.
+  // Finding 40 (Josh, 27 Oct 2026): "Catchment not known" answers it for ward/ED; community still needs it.
   const [catchmentNotKnown, setCatchmentNotKnown] = useState(kept?.catchmentNotKnown ?? false);
   const catchmentAnswered = catchmentNotKnown || (catchmentConfirmed && !!catchmentTeam.trim());
   const [homeRegion, setHomeRegion] = useState<HomeRegion | "">(kept?.homeRegion ?? recordedRegion ?? "");
@@ -307,8 +309,7 @@ export function useWardReferralDrawerState({
   );
   const [unidentified, setUnidentified] = useState<string | null>(kept?.unidentified ?? null);
   const liveOriginSite = liveMovement ? edById(liveMovement.originEdId)?.siteCode : undefined;
-  // Smart features idea 9 (19 Oct 2026): an ED or community desk refers from its own place unless
-  // the opener, a kept draft or the record says otherwise. Shown in the picker, so it can be changed.
+  // Smart idea 9 (19 Oct 2026): ED/community refer from their own place unless opener, draft or record differ.
   const deskScope = useEffectiveWardAccess().scope;
   const deskOriginSite = deskScope.kind === "ed" ? edById(deskScope.edId)?.siteCode : undefined;
   const deskSendingTeam = deskScope.kind === "team" ? deskScope.teamName : undefined;
@@ -339,8 +340,7 @@ export function useWardReferralDrawerState({
   const [legalStatus, setLegalStatus] = useState(
     kept?.legalStatus ??
       urlPrefill?.legal ??
-      // The record's status, or "Not recorded": never a default (owner rule, 19 Oct 2026). A
-      // community referral used to start at "Voluntary" when nothing was recorded.
+      // The record's status, or "Not recorded": never a default (owner rule, 19 Oct 2026).
       (defaultPatient.legalStatus.startsWith("Form")
         ? defaultPatient.legalStatus.split(" ").slice(0, 2).join(" ")
         : defaultPatient.legalStatus),
@@ -420,8 +420,7 @@ export function useWardReferralDrawerState({
   const [openingDraft] = useState(() => (kept ? "" : draftFingerprint(draftNow)));
   const draftJson = draftFingerprint(draftNow);
 
-  // The enclosing Sheet or standalone useWardModalFocus owns the shared scroll lock.
-  // A second per-drawer save/restore raced with stacked sheets and could leave body locked.
+  // The enclosing Sheet or useWardModalFocus owns the scroll lock: a second save/restore raced stacked sheets.
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
   };
@@ -436,7 +435,8 @@ export function useWardReferralDrawerState({
   };
   const drawerRef = useRef<HTMLDivElement>(null);
 
-  const dirty = !sentReferralId && draftJson !== openingDraft;
+  const referralDirty = !sentReferralId && draftJson !== openingDraft;
+  const dirty = referralDirty || newPatientDirty;
   const [initialKept] = useState(() => (kept ? { at: readKeptReferralDraftAt(), json: draftFingerprint(kept) } : null));
   const {
     sessionSaved: draftSessionSaved,
@@ -445,11 +445,11 @@ export function useWardReferralDrawerState({
     stop: stopDraftAutosave,
   } = useReferralDraftAutosave({
     draft: draftNow,
-    storageKey: draftStorageKey,
+    storageKey: liveDraftKey,
     draftJson,
     contentJson: draftFingerprint({ ...draftNow, activeSection: undefined }),
     enabled: !keepsAnotherPersonsDraft,
-    dirty,
+    dirty: referralDirty,
     initialKeptAt: initialKept?.at ?? null,
     initialKeptJson: initialKept?.json ?? null,
   });
@@ -465,22 +465,22 @@ export function useWardReferralDrawerState({
       stopDraftAutosave();
       discardReferralDraft(draftDiscardOwner);
       rememberReferrerContact(intake.referrer, draftOwnerVersion);
+      announceToWardShell("Referral saved. Check the Referrals board for its record before sending again.");
     },
     onAccepted(created) {
       setSentReferralId(created.id);
       setSentAt(now);
-      announceToWardShell("Referral sent to the selected locations.");
     },
   });
-
   const { approveNextHistoryNavigation } = useDirtyStateGuard({
-    isDirty: !sentReferralId && !submissionAwaitingRecord && (dirty || draftKeptAt !== null),
-    value: draftJson,
+    isDirty:
+      newPatientDirty || (!sentReferralId && !submissionAwaitingRecord && (referralDirty || draftKeptAt !== null)),
+    value: JSON.stringify([draftJson, newPatient, newPatientDateText]),
     skipAnchor: isOwnLeaveGuardAnchor,
     // An unfinished Add patient form is not kept, so it always counts as unsaved.
     unloadSafe: () =>
-      JSON.stringify(newPatient) === JSON.stringify(EMPTY_NEW_PATIENT) &&
-      referralDraftKeptOnScreen(draftStorageKey, draftNow, {
+      !newPatientDirty &&
+      referralDraftKeptOnScreen(liveDraftKey, draftNow, {
         destType: initialDestination,
         sourceKind: openerSourceKind,
         originSiteCode: effectiveInitialOriginSiteCode,
@@ -489,10 +489,18 @@ export function useWardReferralDrawerState({
   });
   const requestClose = useCallback(() => {
     if (guardOpen) return setGuardOpen(false);
-    if (dirty && !submissionAwaitingRecord) return setGuardOpen(true);
+    if (newPatientDirty || (referralDirty && !submissionAwaitingRecord)) return setGuardOpen(true);
     approveNextHistoryNavigation();
     onClose();
-  }, [guardOpen, dirty, submissionAwaitingRecord, onClose, approveNextHistoryNavigation]);
+  }, [
+    guardOpen,
+    newPatientDirty,
+    referralDirty,
+    submissionAwaitingRecord,
+    onClose,
+    approveNextHistoryNavigation,
+    setGuardOpen,
+  ]);
   useEffect(() => {
     if (!closeRequestRef) return;
     closeRequestRef.current = requestClose;
@@ -500,10 +508,8 @@ export function useWardReferralDrawerState({
       closeRequestRef.current = null;
     };
   }, [closeRequestRef, requestClose]);
-  // The close guard is a modal over the drawer, on the shared contract: the drawer behind is inert,
-  // focus starts on Keep editing, Tab wraps inside the guard, Escape closes only the guard, and focus
-  // returns to the control that asked to close. Declared before the drawer's own modal hook so it
-  // leaves the stack first when both close together.
+  // Close guard: a modal over the drawer (shared contract). Declared before the drawer's own modal hook
+  // so it leaves the stack first when both close together.
   const guardBoxRef = useRef<HTMLDivElement | null>(null);
   const { rootRef: guardRootRef } = useModalFocus({
     open: guardOpen,
@@ -524,29 +530,33 @@ export function useWardReferralDrawerState({
   function discardAndClose() {
     stopDraftAutosave({ resumeOnContentEdit: true });
     discardReferralDraft(draftDiscardOwner);
+    resetNewPatient();
     setGuardOpen(false);
     approveNextHistoryNavigation();
     onClose();
   }
   function keepAndClose() {
-    const kept = keepReferralDraft(draftNow, draftOwnerVersion, draftStorageKey);
+    if (newPatientDirty) {
+      setGuardOpen(true);
+      return;
+    }
+    const kept = keepReferralDraft(draftNow, draftOwnerVersion, liveDraftKey);
     setGuardOpen(false);
     approveNextHistoryNavigation();
     onClose();
     announceToWardShell(kept ? "Synthetic referral draft kept for this session." : "Draft not kept: signed in again.");
   }
 
-  const handleDrawerClose = useCallback(() => {
+  function handleDrawerClose() {
     if (isSearchOpen) {
       setIsSearchOpen(false);
       setSearchQuery("");
     } else {
       requestClose();
     }
-  }, [isSearchOpen, requestClose]);
+  }
 
-  // The enclosing Sheet owns focus when embedded. Register another modal only
-  // when this drawer supplies its own backdrop.
+  // The enclosing Sheet owns focus when embedded. Register a modal only when this drawer has its own backdrop.
   useWardModalFocus(withBackdrop, drawerRef, handleDrawerClose);
 
   // A2-3: a sheet opened on nobody puts the cursor in the patient search.
@@ -587,8 +597,23 @@ export function useWardReferralDrawerState({
       ? { ...rawCurrentPatient, gender: referralSex.charAt(0).toUpperCase() }
       : rawCurrentPatient;
 
-  function handleSelectPatient(key: string, addedInForm = false) {
-    registrationDraft.invalidateRegistration();
+  const { filteredPatients, handleSelectPatient } = useReferralPatientSelection({
+    activePatientKey,
+    searchQuery,
+    profiles: sampleProfiles,
+    record: { movements, patients, referrals, dayZero },
+    now,
+    dirty,
+    revision: JSON.stringify([draftJson, worldGeneration, sendPending, sentReferralId, access]),
+    ownerVersion: draftOwnerVersion,
+    registrationDraft,
+    setSearchQuery,
+    setIsSearchOpen,
+    onSelect: selectPatient,
+  });
+
+  function selectPatient(key: string, addedInForm: boolean) {
+    resetNewPatient();
     const p = sampleProfiles[key] ?? sampleProfile(key, { movements, patients, referrals, dayZero }, now);
     if (!sampleProfiles[key]) setExtraPatientKeys((keys) => [...keys, key]);
     setActivePatientKey(key);
@@ -658,53 +683,31 @@ export function useWardReferralDrawerState({
       onSelectPatient(key);
     }
     announceToWardShell(`Selected patient ${p.name} for clinical referral.`);
+    if (addedInForm) activateSection("patient");
   }
-
   function toggleRisk(key: string) {
     setRiskFlags((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
-  // The sample patients first, then any other registered person whose name or UMRN matches. Matched
-  // as the header search matches people: every word, folded, so "OQuinn" finds O'Quinn and
-  // "UM 100001" the UMRN (search and forms review, 31 Oct 2026). Never near spellings.
-  const filteredPatients = useMemo(() => {
-    // "Family, Given" as lists print it: the comma only separates the two names.
-    const q = searchQuery.replace(/,/g, " ").trim();
-    const profiles = Object.values(sampleProfiles).filter((p) => p.id !== NO_PATIENT_KEY);
-    if (!q) return profiles;
-    const matches = profiles.filter((p) => fieldsMatchEveryWord(q, [p.name, p.umrn, p.dob, p.origin]));
-    const shown = new Set(profiles.map((p) => p.umrn));
-    const record = { movements, patients, referrals, dayZero };
-    const more = patients
-      .filter(
-        (patient) =>
-          !shown.has(patient.umrn) &&
-          fieldsMatchEveryWord(q, [`${patient.givenName} ${patient.familyName}`, patient.umrn]),
-      )
-      .slice(0, 8)
-      .map((patient) => sampleProfile(patientKeyFor(patient.id, record) ?? "custom", record, now));
-    return [...matches, ...more];
-  }, [searchQuery, sampleProfiles, movements, patients, referrals, dayZero, now]);
+  const { newPatientError, setNewPatientError, pendingNewPatient, newPatientPending, addNewPatient } =
+    useReferralPatientRegistration({
+      patients,
+      generation: worldGeneration,
+      dispatch,
+      now,
+      dayZero,
+      role: sendingWard ? "ward" : sourceKind === "ed" ? "ed" : "community",
+      registrationScope: patientRegistrationScope(access.scope, sendingWard?.id),
+      requiresRegistrationScope: access.scope.kind === "ward",
+      allowed: addPatientGate.allowed,
+      reason: addPatientGate.reason,
+      patient: newPatient,
+      onSelect: (id) => handleSelectPatient(`${PATIENT_KEY_PREFIX}${id}`, true),
+      intentVersion: registrationDraft.intentVersion,
+      getIntentVersion: registrationDraft.getIntentVersion,
+    });
 
-  const { newPatientError, setNewPatientError, pendingNewPatient, addNewPatient } = useReferralPatientRegistration({
-    patients,
-    generation: worldGeneration,
-    dispatch,
-    now,
-    dayZero,
-    role: sendingWard ? "ward" : sourceKind === "ed" ? "ed" : "community",
-    registrationScope: patientRegistrationScope(access.scope, sendingWard?.id),
-    requiresRegistrationScope: access.scope.kind === "ward",
-    allowed: addPatientGate.allowed,
-    reason: addPatientGate.reason,
-    patient: newPatient,
-    onSelect: (id) => handleSelectPatient(`${PATIENT_KEY_PREFIX}${id}`, true),
-    intentVersion: registrationDraft.intentVersion,
-    getIntentVersion: registrationDraft.getIntentVersion,
-  });
-
-  // Live capacity for the patient's cohort and the chosen bed security.
-  // Cheap enough to work out on each render, and the cohort can come from the record or the age band.
+  // Live capacity for the patient's cohort (from the record or age band) and chosen bed security.
   const realTimeMatch = (() => {
     const patientCohort = movementCohort ?? ageBand;
     // A ward never refers to itself (Qodo's review), so the sending ward is not offered.
@@ -713,9 +716,8 @@ export function useWardReferralDrawerState({
     );
     const readyBedsCount = matchingRecords.reduce((sum, r) => sum + r.readyBeds, 0);
     const pulledBedsCount = matchingRecords.reduce((sum, r) => sum + r.pulledBeds, 0);
-    // Owner ruling, 2026-09-05. `readyBedsCount` deliberately subtracts NOTHING for this:
-    // a ward's figure must not lurch as cleaning starts and stops. The number stays; the
-    // sentence beside it is what was missing here.
+    // Owner ruling, 2026-09-05. `readyBedsCount` deliberately subtracts NOTHING for this: a ward's figure
+    // must not lurch as cleaning starts and stops. The number stays; the sentence beside it was missing.
     const pendingPreparationCount = matchingRecords.reduce((sum, r) => sum + (r.pendingPreparation ?? 0), 0);
     // Audit 1 (decision 6), Josh 20 Oct: a fixed, neutral order (health service, then ward name),
     // never catchment first or most ready beds. Every matching ward stays listed.
@@ -756,8 +758,7 @@ export function useWardReferralDrawerState({
         ? [singleRecipientLabel(destType === "community", selectedRecipient, communityPurpose)]
         : [];
 
-  // A ward refers its own inpatients, the stay the transfer moves (`movementSourceAdmission` in the
-  // reducer). Anyone else warns and asks why (Josh, 16 Oct 2026), then goes as a new admission.
+  // A ward refers its own inpatients (`movementSourceAdmission`); others warn and ask why (Josh, 16 Oct 2026).
   const patientOnSendingWard =
     !!sendingWard && !!patientRecord && patientInBedOnUnit(admissions, patientRecord.id, sendingWard.id);
   const notOnSendingWard = !!sendingWard && !patientOnSendingWard;
@@ -843,11 +844,8 @@ export function useWardReferralDrawerState({
     placement: (community ? selectedRecipient : selectedDestinations.length) ? 0 : 1,
   };
   const totalNeeded = needed.patient + needed.referral + needed.documentation + needed.placement;
-  // L1 (review 12 Oct 2026): ONE count. "N of M ready", "Items left" and each step's "N needed"
-  // all count the same items, so the steps add up to the summary and four Complete steps read as
-  // all ready. The checklist rows below are labels for the letter, not a second count.
-  // A2-9 (audit 13 Oct 2026): the contact details asked at Send are items too, so the hero never
-  // reads "0 items left" while Confirm refuses for an empty contact field (`itemsLeft` below).
+  // L1 (review 12 Oct 2026): ONE count. "N of M ready", "Items left" and each step's "N needed" add up.
+  // A2-9 (audit 13 Oct 2026): Send's contact details are items too, so the hero never reads "0 items left".
   const itemsTotal =
     4 +
     (needsSendingTeam ? 3 : 2) +
@@ -939,6 +937,7 @@ export function useWardReferralDrawerState({
     if (validation) {
       setFlowError(validation);
       setAttempted((current) => ({ ...current, contact: true }));
+      focusFirstInvalidField(confirmationHeadingRef);
       return;
     }
     const needs = needsFor(destType, communityNeeds, edNeeds);
@@ -1004,17 +1003,8 @@ export function useWardReferralDrawerState({
       intake,
     });
   }
-
   // Recipient inboxes, read from the provider the ward screen already uses.
-  const inboxWards = capacityRecords
-    .map((unit) => {
-      const entries = wardReferralInbox?.(unit.unitId) ?? [];
-      const toDecide = entries.filter((entry) => entry.state === "queued" && entry.withdrawnAt === undefined).length;
-      return { unit, entries: entries.length, toDecide };
-    })
-    .filter((ward) => ward.entries > 0);
-  const inboxCount = inboxWards.reduce((sum, ward) => sum + ward.toDecide, 0);
-  const inboxWard = inboxWards.find((ward) => ward.unit.unitId === inboxUnitId) ?? inboxWards[0];
+  const { inboxWards, inboxCount, inboxWard } = referralInboxSummary(capacityRecords, wardReferralInbox, inboxUnitId);
 
   const tier = URGENCY_LEVELS.find((level) => String(level) === shownUrgency);
   const tierLabel = tier === undefined ? "Not recorded" : urgencyTierLabel(tier);
@@ -1086,7 +1076,13 @@ export function useWardReferralDrawerState({
     },
     {
       label: "Catchment",
-      value: catchmentNotKnown ? "Catchment not known" : catchmentConfirmed ? catchmentTeam : "To confirm",
+      value: catchmentNotKnown
+        ? "Catchment not known"
+        : catchmentConfirmed
+          ? catchmentTeam
+          : catchmentTeam.trim()
+            ? `${catchmentTeam.trim()}, suggested`
+            : "To confirm",
       state: catchmentAnswered ? "done" : "needed",
     },
     { label: "From", value: originLabel || "Needed", state: originValid ? "done" : "needed" },
@@ -1121,6 +1117,11 @@ export function useWardReferralDrawerState({
     umrn: patientRecord ? currentPatient.umrn : "",
     ageSex: patientRecord ? ageSexLabel(currentPatient) : "",
     suburb: catchmentSuburb,
+    catchment: catchmentNotKnown
+      ? "Catchment not known"
+      : catchmentConfirmed && catchmentTeam.trim()
+        ? catchmentTeam.trim()
+        : undefined,
     from: originLabel,
     recipients: recipientLabels,
     urgency: tier === undefined ? "" : tierLabel,
@@ -1217,7 +1218,7 @@ export function useWardReferralDrawerState({
   const phStepIndex = sectionIds.indexOf(activeSection);
 
   return {
-    onClose,
+    onClose: requestClose,
     onSelectPatient,
     withBackdrop,
     initialCategory,
@@ -1298,11 +1299,16 @@ export function useWardReferralDrawerState({
     setCopyNotice,
     newPatientOpen,
     setNewPatientOpen,
+    resetNewPatient,
     newPatient,
+    newPatientDirty,
+    newPatientDateText,
+    setNewPatientDateText,
     setNewPatient,
     newPatientError,
     setNewPatientError,
     pendingNewPatient,
+    newPatientPending,
     guardKeepRef,
     confirmationOpen,
     setConfirmationOpen,
@@ -1408,7 +1414,7 @@ export function useWardReferralDrawerState({
     needsChartReattachment: draftNow.needsChartReattachment,
     clearRecoveredDraft: () => {
       stopDraftAutosave();
-      discardReferralDraft(draftDiscardOwner);
+      restartReferralDraft(draftDiscardOwner, draftStorageKey);
       onRestart();
     },
     openingDraft,

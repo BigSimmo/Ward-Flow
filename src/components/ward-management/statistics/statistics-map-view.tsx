@@ -31,7 +31,7 @@ import {
   MINUTES_PER_DAY,
   type Instant,
 } from "@/components/ward-management/ward-clock";
-import { unitCapacity } from "@/components/ward-management/ward-derivations";
+import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import type {
   BedRelease,
   EmergencyDepartment,
@@ -56,6 +56,7 @@ import { FlushRow, Follow } from "./statistics-layout";
 import { occupiedBeds } from "./statistics-occupancy";
 import { StatisticsWaMap, type WaMapNode } from "./statistics-wa-map";
 import styles from "./statistics-map-view.module.css";
+import { useViewSwitchAction } from "./statistics-view-switch-slot";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
 import type { ExecutiveReportingFoundation } from "./executive-statistics-contract";
 import {
@@ -199,7 +200,7 @@ export function siteFigures({
       const onWard = admissions.filter((admission) => admission.unitId === unit.id);
       return {
         unit,
-        ready: unitCapacity(unit, bedReleases).available,
+        ready: readyBedsNow(unit, admissions, bedReleases),
         occupied,
         pct: unit.beds > 0 ? Math.round((occupied / unit.beds) * 100) : 0,
         dischargedToday: onWard.filter((admission) => leftToday(admission, now)).length,
@@ -589,6 +590,7 @@ function MapPresentation({
 
   const chosen = selected ? sites.find((site) => site.code === selected) : undefined;
   const asAt = formatInstant(now);
+  const viewSwitch = useViewSwitchAction();
 
   return (
     <section id="map" aria-label="Map" data-testid="ward-statistics-map-view" className={styles.view}>
@@ -598,6 +600,7 @@ function MapPresentation({
           icon={MapIcon}
           title="Network map"
           meta="Choose a site for its wards and ED"
+          action={viewSwitch}
           className={styles.mapCard}
           data-testid="ward-statistics-map-canvas"
         >

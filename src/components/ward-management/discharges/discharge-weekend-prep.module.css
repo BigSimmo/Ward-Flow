@@ -236,3 +236,79 @@
     min-height: var(--spacing-tap, 3rem);
   }
 }
+
+/* DC3 round 2 (3 Nov 2026): desk strip. The services are pills in the head row; each opens its people. */
+.pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 0 10px 0 12px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 500 var(--wf-fs-13, 0.8125rem) / 1 var(--wf-font);
+  cursor: pointer;
+  transition:
+    background 140ms ease,
+    border-color 140ms ease;
+}
+.pill:hover {
+  border-color: var(--wf-line-3);
+}
+.pill[aria-expanded="true"] {
+  border-color: var(--wf-line-3);
+  background: var(--wf-surface-2);
+}
+.pill:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+.pillIcon,
+.pillChevron {
+  flex: none;
+  color: var(--wf-ink-3);
+}
+.pillName {
+  white-space: nowrap;
+}
+.pillCount {
+  min-width: 1.25rem;
+  padding: 1px 6px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-2);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--wf-fs-12);
+  text-align: center;
+}
+.pillPanel {
+  width: min(24rem, calc(100vw - 32px));
+}
+.pillBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  max-height: min(26rem, 60vh);
+  overflow: auto;
+}
+.pillWhen {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+/* The pills' popovers must not be cut off by the card's rounded clip. */
+.weekend[data-strip] {
+  overflow: visible;
+}

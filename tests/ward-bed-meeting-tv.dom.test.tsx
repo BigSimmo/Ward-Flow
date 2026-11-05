@@ -693,7 +693,11 @@ describe("the ward and ED TV views", () => {
     renderTv();
     const css = readFileSync("src/components/ward-management/bed-meeting/bed-meeting-tv.module.css", "utf8");
     // Core pages redesign (31 Oct 2026): a triangle marks a long wait, not an underline that read as a link.
-    expect(css).toMatch(/\.table tr\[data-long\] td\[data-wait\]::before \{\s*content: "▲"/u);
+    // Review 5 Nov 2026: the triangle is drawn (clip-path), never a typed "▲" glyph.
+    expect(css).toMatch(
+      /\.table tr\[data-long\] td\[data-wait\]::before \{[^}]*clip-path: polygon\(50% 0, 100% 100%, 0 100%\)/u,
+    );
+    expect(css).not.toMatch(/content: "▲"/u);
     // Past the 24 hour mark the time reads in days, so the words say it as well as the colour.
     for (const row of screen.getByTestId("bed-meeting-tv").querySelectorAll("li[data-long]")) {
       expect(row.querySelector("svg")).not.toBeNull();

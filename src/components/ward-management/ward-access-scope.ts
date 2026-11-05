@@ -479,6 +479,7 @@ function countsOnlyMovement(movement: Movement): Movement {
       "leftDepartmentAt",
       "formedAt",
       "legalFormReceivedAt",
+      "legalFormReceivedTyped",
       "arrivalMode",
       "pullExpiresAt",
       "plannedMoveAt",

@@ -8,7 +8,7 @@ import {
   readyBedsPromisedSentence,
 } from "@/components/ward-management/ward-ready-bed-promises";
 import { ReferralIntakeSummary } from "./referral-intake-summary";
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
   WARD_REQUEST_WITHDRAWAL_REASONS,
@@ -55,10 +55,11 @@ import { getReferralPriority, referralPriorityLabel, PriorityGlyph } from "./ref
 import { referralWaitLine } from "./referral-wait";
 import styles from "./referrals.module.css";
 import ph from "./referral-match-phone.module.css";
+import notes from "./referral-match-notes.module.css";
 // Final round: the kit Select box sizing for this panel (see the file).
 import rs from "./referral-match.module.css";
 import tabs from "./referral-tabs.module.css";
-import { Check, X } from "lucide-react";
+import { Check, Info, X } from "lucide-react";
 import { Button, RadioGroup, Select, ShowMoreRow, StatusGlyph } from "@/components/wf";
 import { useRouteRole } from "@/components/ward-management/ward-role-gate";
 import {
@@ -147,6 +148,7 @@ export function ReferralMatchView({
   // Decline, because they record the answer as the coordinator's. Its own team page is unchanged.
   const communityDeskView = useEffectiveWardAccess().role === "community";
   const s = useReferralMatchState({ referral, rejections, dispatch, now });
+  const localBedFocus = useRef(false);
   // Fix plan item 16 (D-76): asking more wards about an open community referral.
   const askMore = useAskMoreWards({ referral, units, now, dispatch, rejections });
   const turnaroundState = useOptionalWardFlowSelect(
@@ -411,6 +413,7 @@ export function ReferralMatchView({
    */
   function handleLocalBedSought() {
     priorRejectionCountRef.current = rejections.length;
+    localBedFocus.current = true;
     dispatch({ type: "RECORD_LOCAL_BED_SOUGHT", role: "coordinator", now, referralId: referral.id });
     setCheckToken((token) => token + 1);
   }
@@ -1141,6 +1144,36 @@ export function ReferralMatchView({
             </p>
           ) : null}
           <DecidedBy allowed={answers("ward")} who="the receiving ward">
+            {/* Spec D8-6: absence renders as nothing at all. Only the offer, or the record once taken.
+                R3 (Josh, 3 Nov 2026): it sits at the top of the options, beside the ward list it answers,
+                as one small control; once recorded it becomes a quiet line with its time. */}
+            <div className={notes.localBed} data-testid="ward-referral-match-local-bed">
+              {referral.localBedSought ? (
+                <p
+                  className={notes.localBedRecord}
+                  data-testid="ward-referral-match-local-bed-sought-record"
+                  // Stress test (3 Nov 2026): the button goes away, so focus lands on the line that replaced it.
+                  tabIndex={-1}
+                  ref={(node) => {
+                    if (node && localBedFocus.current) {
+                      localBedFocus.current = false;
+                      node.focus();
+                    }
+                  }}
+                >
+                  Local bed sought, none suitable · {formatInstant(referral.localBedSought.at)}
+                </p>
+              ) : (
+                <Button
+                  variant="sec"
+                  size="sm"
+                  data-testid="ward-referral-match-local-bed-sought"
+                  onClick={handleLocalBedSought}
+                >
+                  Local bed sought, none suitable
+                </Button>
+              )}
+            </div>
             {group("Fits, bed ready", tier1Candidates, "yes")}
             {group("Fits, no bed now", tier2Candidates, "nobed")}
             {group("Needs review", tier3Candidates, "review")}
@@ -1178,31 +1211,23 @@ export function ReferralMatchView({
                 {readyBedsPromisedSentence(pick.unit.name, pickPromised)}
               </p>
             ) : null}
-            <p className={ph.note} data-testid="ward-referral-match-governance">
-              <strong>Not approved for clinical use.</strong> Fixed network order in each group. This view places
-              nobody: a coordinator decides each placement, one at a time.{" "}
-              <span data-testid="ward-referral-match-synthetic-notice">{SYNTHETIC_TRAVEL_TIMES_NOTICE}</span>
+            {/* R2 (Josh, 3 Nov 2026): one quiet line. The reasons open on a tap, so the safeguard words
+                stay on the panel where the decision is taken without filling it. */}
+            <details className={notes.governance} data-testid="ward-referral-match-governance">
+              <summary>
+                <Info size={14} aria-hidden="true" />
+                <strong>Not approved for clinical use.</strong> Why?
+              </summary>
+              <p>
+                This view places nobody: a coordinator decides each placement, one at a time. Wards are in fixed network
+                order in each group.
+              </p>
+            </details>
+            {/* The invented-travel-times sentence stays visible wherever a band is shown, never folded. */}
+            <p className={notes.travelNote} data-testid="ward-referral-match-synthetic-notice">
+              {SYNTHETIC_TRAVEL_TIMES_NOTICE}
             </p>
             {phone}
-            {/* Spec D8-6: absence renders as nothing at all. Only the offer, or the record once taken. */}
-            <div data-testid="ward-referral-match-local-bed">
-              {referral.localBedSought ? (
-                <p className={ph.matchHint} data-testid="ward-referral-match-local-bed-sought-record">
-                  A local bed was sought and none was suitable, at {formatInstant(referral.localBedSought.at)}.
-                </p>
-              ) : (
-                <button
-                  type="button"
-                  className={ph.more}
-                  data-testid="ward-referral-match-local-bed-sought"
-                  onClick={handleLocalBedSought}
-                >
-                  {phone !== undefined
-                    ? "Record a local bed was sought"
-                    : "Record that a local bed was sought and none was suitable"}
-                </button>
-              )}
-            </div>
           </DecidedBy>
           {communityDeskView ? null : (
             <DecidedBy allowed={answers("community")} who="the community team">

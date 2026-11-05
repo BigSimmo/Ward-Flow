@@ -72,15 +72,24 @@ function list(mark: (bedNumber: number) => { reviewed: boolean; changed: boolean
 function Harness({
   bedList = beds,
   onOpenBed = vi.fn(),
+  onConfirmRelease,
   phone = true,
 }: {
   bedList?: WalkRoundBed[];
   onOpenBed?: (n: number) => void;
+  onConfirmRelease?: (releaseId: string) => void;
   phone?: boolean;
 }) {
   const [round, setRound] = useWalkRound("ward-a", bedList);
   return phone ? (
-    <WardWalkRound beds={bedList} round={round} setRound={setRound} onOpenBed={onOpenBed} renderList={list} />
+    <WardWalkRound
+      beds={bedList}
+      round={round}
+      setRound={setRound}
+      onOpenBed={onOpenBed}
+      onConfirmRelease={onConfirmRelease}
+      renderList={list}
+    />
   ) : (
     <p>Desktop list</p>
   );
@@ -180,6 +189,78 @@ describe("phone round (item 23, redrawn as Option B on 20 Oct 2026)", () => {
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
     fireEvent.click(screen.getByRole("button", { name: "Reviewed, finish" }));
     expect(announce).toHaveBeenLastCalledWith("Round finished. Every bed reviewed.");
+  });
+});
+
+// WH4 (Josh, 4 Nov 2026): the phone fast round. Empty beds are skipped unless All beds is chosen,
+// each card shows the same rows, the one quick action stays on the card, and swipe and Back move.
+describe("phone fast round (WH4)", () => {
+  const withFacts: WalkRoundBed[] = beds.map((bed) =>
+    bed.bedNumber === 3
+      ? { ...bed, occupied: false }
+      : bed.bedNumber === 1
+        ? { ...bed, observation: "General, hourly", dueOut: "Today 15:00", confirmReleaseId: "WR-1" }
+        : { ...bed, flag: "Accommodation" },
+  );
+
+  it("skips empty beds by default, and All beds walks every bed", () => {
+    render(<Harness bedList={withFacts} />);
+    expect(screen.getByTestId("walk-round-progress").textContent).toBe("0 of 2 reviewed");
+    fireEvent.click(screen.getByRole("button", { name: "Start the round" }));
+    fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
+    expect(screen.getByRole("region", { name: "Bed 02, 2 of 2" })).toBeTruthy();
+    expect(screen.getByTestId("walk-round-position").textContent).toBe("2 of 2 people");
+    fireEvent.click(screen.getByRole("button", { name: "Close, back to the round" }));
+    fireEvent.click(screen.getByRole("radio", { name: /All beds/ }));
+    expect(screen.getByTestId("walk-round-progress").textContent).toBe("1 of 3 reviewed");
+  });
+
+  it("shows the same three rows on every card, with a plain word when nothing is recorded", () => {
+    render(<Harness bedList={withFacts} />);
+    fireEvent.click(screen.getByRole("button", { name: "Start the round" }));
+    expect(screen.getByText("General, hourly")).toBeTruthy();
+    expect(screen.getByText("Nothing flagged")).toBeTruthy();
+    expect(screen.getByText("Today 15:00")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
+    expect(screen.getByText("Not recorded")).toBeTruthy();
+    expect(screen.getByText("Accommodation")).toBeTruthy();
+    expect(screen.getByText("No date recorded")).toBeTruthy();
+  });
+
+  it("confirms an expected discharge from the card without opening the bed", () => {
+    const onConfirmRelease = vi.fn();
+    const onOpenBed = vi.fn();
+    render(<Harness bedList={withFacts} onConfirmRelease={onConfirmRelease} onOpenBed={onOpenBed} />);
+    fireEvent.click(screen.getByRole("button", { name: "Start the round" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm discharge" }));
+    expect(onConfirmRelease).toHaveBeenCalledWith("WR-1");
+    expect(onOpenBed).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Reviewed, next bed" }));
+    expect(screen.queryByRole("button", { name: "Confirm discharge" })).toBeNull();
+  });
+
+  it("moves bed to bed on a sideways swipe, without marking it reviewed", () => {
+    render(<Harness bedList={withFacts} />);
+    fireEvent.click(screen.getByRole("button", { name: "Start the round" }));
+    const card = screen.getByRole("region", { name: "Bed 01, 1 of 2" });
+    fireEvent.touchStart(card, { touches: [{ clientX: 300, clientY: 400 }] });
+    fireEvent.touchEnd(card, { changedTouches: [{ clientX: 120, clientY: 410 }] });
+    expect(screen.getByRole("region", { name: "Bed 02, 2 of 2" })).toBeTruthy();
+    expect(screen.getByTestId("walk-round-progress").textContent).toBe("0 of 2 reviewed");
+    const next = screen.getByRole("region", { name: "Bed 02, 2 of 2" });
+    // Mostly up and down is a scroll, not a swipe.
+    fireEvent.touchStart(next, { touches: [{ clientX: 120, clientY: 100 }] });
+    fireEvent.touchEnd(next, { changedTouches: [{ clientX: 300, clientY: 500 }] });
+    expect(screen.getByRole("region", { name: "Bed 02, 2 of 2" })).toBeTruthy();
+  });
+
+  it("closes the card on the browser's Back", () => {
+    render(<Harness bedList={withFacts} />);
+    fireEvent.click(screen.getByRole("button", { name: "Start the round" }));
+    expect((window.history.state as Record<string, unknown> | null)?.wardWalkRound).toBe(true);
+    window.history.replaceState({}, "");
+    fireEvent.popState(window);
+    expect(screen.getByRole("button", { name: "Start the round" })).toBeTruthy();
   });
 });
 

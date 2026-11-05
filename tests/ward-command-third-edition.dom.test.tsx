@@ -95,7 +95,7 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     // Home and Activity (Josh, 31 Oct 2026): "in transit" as the phone says it, and the demo
     // coverage disclosure lives in the app bar and the footer, so the hero keeps only its facts.
     expect(screen.getByTestId("ward-home-ed-population")).toHaveTextContent(
-      /^\d+ still in ED · \d+ in transit( · \d+\.\d% beds in use)?$/u,
+      /^\d+ still in ED · \d+ in transit( · (At risk )?\d+\.\d%( beds in use)?)?$/u,
     );
     // Home flow (Josh, 3 Nov 2026): the queue is the Flow card, a named region with one section per
     // stage and no heading of its own; Later today sits at the foot of the right column on desktop.
@@ -134,20 +134,20 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     expect(screen.queryByTestId("home-placement-prompt")).not.toBeInTheDocument();
   });
 
-  it("reads the queue, then the shortlist on the far right once a patient is selected", () => {
+  it("reads the queue, then opens Placement as a drawer once a patient is selected", () => {
     // Owner, 8 Oct 2026. Proven by real DOM order. Home v7 (Josh, 22 Oct 2026): State bedflow is
     // no longer on Home; it sits at the foot of Capacity.
     renderCoordinator();
     fireEvent.click(screen.getByTestId("ward-queue-row-WF-001"));
     const body = screen.getByTestId("ward-coordinator-body");
     const queue = within(body).getByTestId("ward-queue-row-WF-001");
-    const shortlist = within(body).getByLabelText("Placement");
+    // H7 (Josh, 3 Nov 2026): Placement opens as the patient drawer over Home, like the Capacity
+    // pop-up, so the queue stays on the page behind it rather than sharing a column order.
+    const shortlist = screen.getByLabelText("Placement");
 
     expect(within(body).queryByLabelText("State Bedflow")).not.toBeInTheDocument();
-    expect(
-      queue.compareDocumentPosition(shortlist) & Node.DOCUMENT_POSITION_FOLLOWING,
-      "the shortlist panel must follow the priority queue",
-    ).toBeTruthy();
+    expect(queue).toBeInTheDocument();
+    expect(screen.getByTestId("home-placement-drawer")).toContainElement(shortlist);
   });
 
   it("keeps the registers closed until Registers opens them, above the columns", () => {
@@ -213,9 +213,10 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
       within(shortlist).getByText("Eligibility checks · Mental Health Unit", { selector: "summary" }),
     ).toBeInTheDocument();
 
-    fireEvent.click(within(shortlist).getByTestId("ward-shortlist-override-toggle"));
+    // H7 (Josh, 3 Nov 2026): Refer and Override sit in the drawer's pinned foot, outside its body.
+    fireEvent.click(screen.getByTestId("ward-shortlist-override-toggle"));
     expect(
-      within(shortlist).getByRole("combobox", {
+      screen.getByRole("combobox", {
         name: "Reason for overriding the shortlist for Mental Health Unit",
       }),
     ).toBeInTheDocument();
@@ -241,16 +242,16 @@ describe("Command third-edition restyle — panel order and heading pins", () =>
     }
   });
 
-  it("draws every live inpatient unit on State Bedflow (Wave 4 item 32 / R2-16)", async () => {
-    const { allUnits } = await import("@/components/ward-management/ward-sites");
-    // Home v7 (Josh, 22 Oct 2026): State bedflow sits at the foot of Capacity, unchanged.
+  it("no longer draws State Bedflow on Capacity; every ward is on the bed map instead", () => {
+    // Capacity issue 7 (Josh, 3 Nov 2026): State bedflow repeated the bed map, so it left Capacity.
+    // Its one extra figure, beds freeing today, now sits on each bed map card.
     render(
       <WardFlowProvider initialNow={NOW}>
         <CapacityScreen />
       </WardFlowProvider>,
     );
-    const unitNodes = screen.getAllByTestId(/^ward-diagram-unit-/);
-    expect(unitNodes.length).toBe(allUnits().length);
+    expect(screen.queryAllByTestId(/^ward-diagram-unit-/)).toHaveLength(0);
+    expect(screen.getByRole("heading", { name: "Bed map" })).toBeInTheDocument();
   });
 });
 

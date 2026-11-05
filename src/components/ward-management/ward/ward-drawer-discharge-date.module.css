@@ -33,3 +33,11 @@
   gap: var(--wf-s-2);
   margin-top: var(--wf-s-1);
 }
+
+/* WH1: the day stepper, labelled like the time box below it. */
+.day {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+}

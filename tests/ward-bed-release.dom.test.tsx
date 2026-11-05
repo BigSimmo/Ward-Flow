@@ -25,6 +25,12 @@ import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import { bedMapCards, wardCardName } from "./helpers/capacity-ward-table";
 
 function wardBedFigure(state: string, label: string): number {
+  // Integration QA (3 Nov 2026): Ready sits once, in the hero, not in the bed grid.
+  if (state === "available") {
+    const ready = screen.getByTestId("ward-hero-ready").textContent ?? "";
+    expect(ready, `${label} is not an exact non-negative integer`).toMatch(/^\d+$/u);
+    return Number(ready);
+  }
   const beds = screen.getByTestId("ward-unit-beds");
   const chip = beds.querySelector<HTMLElement>(`[data-state="${state}"]`);
   expect(chip, `no ${label} chip in this ward's bed grid`).not.toBeNull();

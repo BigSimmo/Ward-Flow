@@ -2,6 +2,7 @@
 
 import { useWardRaise } from "../ward-flow-raise";
 
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useLegalFormsCopy } from "./use-legal-forms-copy";
 import { BookOpen, ChevronRight, ClipboardCopy, ClipboardList, Plus } from "lucide-react";
@@ -31,7 +32,7 @@ import {
   useIsPhone,
 } from "@/components/wf";
 import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
-import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import {
   useDueSoonThresholds,
@@ -40,6 +41,8 @@ import {
 } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { ROLE_SCREENS } from "@/components/ward-management/ward-role-access";
+import { SeclusionFormsView } from "@/components/ward-management/restrictive-practice/seclusion-forms-view-lazy";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
 import { journeySentByDesk } from "@/components/ward-management/ward-referral-sender";
@@ -67,7 +70,7 @@ import {
   isLegalDeadlineBreached,
 } from "./legal-forms-derivations";
 import { admittedOnAForm, LegalFormsAdmitted, WARD_RECORDS_ADMITTED } from "./legal-forms-admitted";
-import { FocusPanel } from "./legal-forms-panel";
+import { FocusPanel, typedReceipt } from "./legal-forms-panel";
 import { AddTimeDialog } from "./legal-forms-add-time";
 import { ChecklistView, FormRow, GAP_LABEL, PhoneFormRow, ROW_COLUMNS } from "./legal-form-rows";
 import type { WrittenSave } from "./legal-forms-written-time";
@@ -98,6 +101,7 @@ import {
 import { TYPED_TIME_KEY } from "./legal-time-as-typed";
 import { LegalLimitsNotChecked } from "../legal-limits-not-checked";
 import { PhoneChecklist } from "./legal-forms-phone-checklist";
+import type { LegalFormDetailsSave } from "./legal-form-details";
 import styles from "./legal-forms.module.css";
 import wardPin from "../ward-pinned-switch.module.css";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
@@ -115,7 +119,8 @@ import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failu
 
 const CHART_WINDOW_MINUTES = 8 * 60;
 
-type View = "clocks" | "checklist" | "history";
+// FS3 (Josh, 3 Nov 2026): seclusion and restraint in use now is a view of Forms.
+type View = "clocks" | "checklist" | "history" | "seclusion";
 type Highlight =
   | { kind: "act" }
   | { kind: "soon" }
@@ -191,11 +196,17 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
     routeRole,
   });
 
-  const [view, setView] = useState<View>("clocks");
+  // FS3: `?view=seclusion` opens the seclusion and restraint view (the old Seclusion page sends
+  // people here), and `&admission=` (a synthetic stay id, never a name) opens Start for that patient.
+  const params = useSearchParams();
+  const startFor = params?.get("admission") ?? undefined;
+  const [view, setView] = useState<View>(() => (params?.get("view") === "seclusion" ? "seclusion" : "clocks"));
   const [highlight, setHighlight] = useState<Highlight>(null);
   // Governance links a gap here with ?movement=, so that patient opens selected.
   const [selectedId, setSelectedId] = useState<string | null>(initialMovementId ?? null);
   const [focusGap, setFocusGap] = useState<{ gap: RecordGap; nonce: number } | null>(null);
+  // Gap list item 1: the typed receipt time, shared by the panel and the phone's pinned action.
+  const [receivedDraft, setReceivedDraft] = useState<{ id: string; text: string } | null>(null);
   const [requirementsCode, setRequirementsCode] = useState<string | null>(null);
   const [recordOpen, setRecordOpen] = useState(
     () => recordOnOpen && initialMovementId !== undefined && gate("RECORD_LEGAL_FORM_WRITTEN", "record-a-form").allowed,
@@ -307,6 +318,10 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   // or team holds it only on a journey it sent (D-80), the same rule the server checks.
   const receivedGate = gate("RECORD_LEGAL_FORM_RECEIVED");
   const access = useEffectiveWardAccess();
+  // FS3: only the desks that may open seclusion (D-72: ward, site bed manager, coordinator) see the view.
+  const seesSeclusion = ROLE_SCREENS[access.role].seclusion !== undefined;
+  const shownView: View = view === "seclusion" && !seesSeclusion ? "clocks" : view;
+  const seclusionItem = seesSeclusion ? [{ id: "seclusion" as const, label: "Seclusion and restraint" }] : [];
   const receivedUnavailable = (movement: Movement): string | undefined =>
     receivedGate.reason ??
     ((routeRole === "ward" || routeRole === "community") &&
@@ -322,11 +337,18 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const recordGate = routeRole === "ward" ? { allowed: false, reason: WARD_RECORDS_ADMITTED } : writtenGate;
   const sheetReason = routeRole === "ward" && admitted.length === 0 ? WARD_RECORDS_ADMITTED : writtenGate.reason;
   const extendGate = gate("RECORD_LEGAL_FORM_EXPIRY");
-  const markReceived = (movement: Movement) => {
+  const receivedTextOf = (movementId: string) => (receivedDraft?.id === movementId ? receivedDraft.text : "");
+  const markReceived = (movement: Movement, receivedAt?: Instant) => {
     if (receivedUnavailable(movement) !== undefined) return;
     if (!receiptEventAccepts(movement.legalForm?.code) || movement.legalFormReceivedAt !== undefined) return;
     runStep(
-      { type: "RECORD_LEGAL_FORM_RECEIVED", role: routeRole, now, movementId: movement.id },
+      {
+        type: "RECORD_LEGAL_FORM_RECEIVED",
+        role: routeRole,
+        now,
+        movementId: movement.id,
+        ...(receivedAt === undefined ? {} : { receivedAt }),
+      },
       {
         success: `Form marked received for ${nameOf(movement)}`,
         undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId: movement.id }),
@@ -511,6 +533,17 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       },
     );
   };
+  // Gap list items 3 to 7: details typed from the paper. The panel's edit closes once accepted.
+  const saveDetails = (target: Movement, details: LegalFormDetailsSave, onAccepted: () => void) => {
+    if (!recordGate.allowed) return;
+    const formCode = target.legalForm?.code;
+    if (!formCode) return;
+    const completion = raise("RECORD_LEGAL_FORM_DETAILS", { movementId: target.id, formCode, ...details });
+    const closeIfAccepted = (outcome: Awaited<typeof completion>) =>
+      outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true) && onAccepted();
+    if (completion && "then" in completion) void completion.then(closeIfAccepted, () => undefined);
+    else closeIfAccepted(completion);
+  };
   const addTimeTarget = rows.find((movement) => movement.id === addTimeId) ?? null;
   const addTimeRefusal = addTimeTarget
     ? rejections
@@ -533,11 +566,15 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       refusal={lastWrittenRefusal?.reason}
       onSaveWritten={(written, onAccepted) => saveWritten(selected, written, onAccepted)}
       recordUnavailable={recordGate.reason}
-      onMarkReceived={() => markReceived(selected)}
+      onMarkReceived={(receivedAt) => markReceived(selected, receivedAt)}
+      receivedText={receivedTextOf(selected.id)}
+      onReceivedTextChange={(text) => setReceivedDraft({ id: selected.id, text })}
       markReceivedUnavailable={receivedUnavailable(selected)}
       onExtend={() => setExtendId(selected.id)}
       extendUnavailable={extendGate.reason}
       onRecordNext={() => openRecord(selected.id)}
+      onSaveDetails={(details, onAccepted) => saveDetails(selected, details, onAccepted)}
+      detailsUnavailable={recordGate.reason}
       onRequirements={(code) => setRequirementsCode(code)}
       onCopy={copySelectedSummary}
       copied={copied === "summary"}
@@ -560,13 +597,15 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
           label: GAP_ACTION[nextGap],
           disabledReason:
             nextGap === "received"
-              ? receivedUnavailable(selected)
+              ? (receivedUnavailable(selected) ?? typedReceipt(receivedTextOf(selected.id), now).problem)
               : nextGap === "written"
                 ? recordGate.reason
                 : undefined,
           onAction: () => {
-            if (nextGap === "received") markReceived(selected);
-            else setFocusGap((previous) => ({ gap: nextGap, nonce: (previous?.nonce ?? 0) + 1 }));
+            if (nextGap === "received") {
+              const receipt = typedReceipt(receivedTextOf(selected.id), now);
+              if (receipt.problem === undefined) markReceived(selected, receipt.at ?? undefined);
+            } else setFocusGap((previous) => ({ gap: nextGap, nonce: (previous?.nonce ?? 0) + 1 }));
           },
         }
       : undefined;
@@ -813,7 +852,6 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                 </>
               }
             />
-            <LegalLimitsNotChecked />
             {/* Ward role: with nothing to record or tell, the ward's phone skips the card. */}
             {routeRole === "ward" && phoneTaskCount === 0 ? null : (
               <button type="button" className={styles.phoneTasks} onClick={() => setTasksOpen(true)}>
@@ -831,23 +869,25 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
             <Segmented<View>
               className={`${styles.phoneViews} ${wardPin.pinnedSwitch}`}
               label="View"
-              value={view}
+              value={shownView}
               onChange={setView}
               items={[
-                { id: "clocks", label: "Clocks" },
+                { id: "clocks", label: "On a form" },
                 { id: "checklist", label: "Checklist" },
                 { id: "history", label: "History", count: closedWithForms.length },
+                ...seclusionItem.map((item) => ({ ...item, label: "Seclusion" })),
               ]}
             />
-            <Card className={styles.listCard} aria-label="Everyone on a form">
+            {shownView === "seclusion" ? <SeclusionFormsView startFor={startFor} /> : null}
+            <Card className={styles.listCard} aria-label="Everyone on a form" hidden={shownView === "seclusion"}>
               {highlight ? (
                 <p className={styles.phoneNote}>
                   {highlightCount} of {rows.length} highlighted, all rows stay
                 </p>
               ) : null}
               {/* The one colour key, near the list (Josh, 30 Oct 2026). */}
-              {view === "clocks" && !highlight ? <p className={styles.phoneNote}>{TYPED_TIME_KEY}</p> : null}
-              {view === "clocks" ? (
+              {shownView === "clocks" && !highlight ? <p className={styles.phoneNote}>{TYPED_TIME_KEY}</p> : null}
+              {shownView === "clocks" ? (
                 <section aria-label="Legal forms and deadlines" data-testid="ward-legal-forms-groups">
                   {rows.length === 0 ? (
                     <p className={styles.absent}>No open movement carries a legal form.</p>
@@ -877,7 +917,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   )}
                 </section>
               ) : null}
-              {view === "checklist" ? (
+              {shownView === "checklist" ? (
                 <PhoneChecklist
                   rows={rows}
                   nameOf={nameOf}
@@ -887,8 +927,13 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   onSelect={select}
                 />
               ) : null}
-              {view === "clocks" ? admittedList : null}
-              {view === "history" ? historyList : null}
+              {shownView === "clocks" ? admittedList : null}
+              {shownView === "history" ? historyList : null}
+              {/* FS1: as on desktop, the full notice closes the list it qualifies, so the phone reaches
+                  the people on a form first. */}
+              <div className={styles.listFoot}>
+                <LegalLimitsNotChecked />
+              </div>
             </Card>
             <PhoneSheet open={tasksOpen} onClose={() => setTasksOpen(false)} title="Record and tell">
               {taskStrip}
@@ -984,76 +1029,68 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                       pressed={highlight?.kind === "none"}
                       onToggle={() => toggleHighlight({ kind: "none" })}
                     />
-                    <button
-                      type="button"
-                      className={cx(styles.heroCopy, styles.heroAction, styles.firstHeroAction)}
-                      aria-disabled={handover.length === 0 ? "true" : undefined}
-                      title={
-                        handover.length === 0
-                          ? "No passed or upcoming typed expiry"
-                          : "Copy passed and upcoming typed expiries for handover"
-                      }
-                      onClick={() => {
-                        if (handover.length > 0) copyText("handover", handover.join("\n"));
-                      }}
-                    >
-                      <ClipboardCopy size={14} aria-hidden="true" />
-                      <span>{copied === "handover" ? "Copied" : "Copy for handover"}</span>
-                      <span className={styles.heroCopyCount}>{handover.length}</span>
-                    </button>
-                    <button
-                      type="button"
-                      className={cx(styles.heroCopy, styles.heroAction)}
-                      onClick={() => setTasksOpen(true)}
-                    >
-                      <ClipboardList size={14} aria-hidden="true" />
-                      <span>Record and tell</span>
-                      <span className={styles.heroCopyCount}>{phoneTaskCount}</span>
-                    </button>
                   </div>
                 }
                 barAside={
                   <HeroTrack<View>
                     label="View"
-                    value={view}
+                    value={shownView}
                     onChange={setView}
                     items={[
-                      { id: "clocks", label: "Clocks", count: rows.length },
+                      { id: "clocks", label: "On a form", count: rows.length },
                       { id: "checklist", label: "Checklist" },
                       { id: "history", label: "History", count: closedWithForms.length },
+                      ...seclusionItem,
                     ]}
                   />
                 }
               />
             </div>
 
-            {breakdownNote}
+            {shownView === "seclusion" ? <SeclusionFormsView startFor={startFor} /> : breakdownNote}
 
-            <div className={styles.work}>
+            <div className={styles.work} hidden={shownView === "seclusion"}>
               <Card className={styles.listCard} aria-label="Everyone on a form">
                 <CardHead
-                  title={view === "history" ? "Closed moves with a form" : "Everyone on a form"}
+                  title={shownView === "history" ? "Closed moves with a form" : "Everyone on a form"}
                   level={2}
                   aside={
                     <span className={styles.meta}>
                       {highlight
                         ? `${highlightCount} of ${rows.length} highlighted, all rows stay`
-                        : view === "clocks"
+                        : shownView === "clocks"
                           ? // The one colour key, near the list (Josh, 30 Oct 2026). The group heads say the order.
                             TYPED_TIME_KEY
                           : null}
                     </span>
                   }
                   action={
-                    highlight ? (
-                      <Button variant="ghost" size="sm" onClick={() => setHighlight(null)}>
-                        Clear highlight
+                    // FS1 (Josh, 3 Nov 2026): the list's own tools sit on the list, so the hero keeps one
+                    // job, Record a form, and its filters.
+                    <span className={styles.listTools}>
+                      {highlight ? (
+                        <Button variant="ghost" size="sm" onClick={() => setHighlight(null)}>
+                          Clear highlight
+                        </Button>
+                      ) : null}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        icon={ClipboardCopy}
+                        disabledReason={handover.length === 0 ? "No passed or upcoming typed expiry" : undefined}
+                        reasonDisplay="tooltip"
+                        onClick={() => copyText("handover", handover.join("\n"))}
+                      >
+                        {copied === "handover" ? "Copied" : `Copy for handover (${handover.length})`}
                       </Button>
-                    ) : undefined
+                      <Button variant="sec" size="sm" icon={ClipboardList} onClick={() => setTasksOpen(true)}>
+                        {`Record and tell (${phoneTaskCount})`}
+                      </Button>
+                    </span>
                   }
                 />
 
-                {view === "clocks" ? (
+                {shownView === "clocks" ? (
                   <section
                     className={styles.groups}
                     aria-label="Legal forms and deadlines"
@@ -1073,7 +1110,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                             <span className={tableClasses.th}>Form</span>
                             <span className={tableClasses.th}>Where</span>
                             <span className={tableClasses.th}>Ends, as typed</span>
-                            <span className={tableClasses.th}>To record</span>
+                            <span className={tableClasses.th}>Next step</span>
                           </DataRow>
                           <div className={styles.groupHead}>
                             <span>Expiry typed</span>
@@ -1117,7 +1154,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   </section>
                 ) : null}
 
-                {view === "checklist" ? (
+                {shownView === "checklist" ? (
                   <ChecklistView
                     rows={rows}
                     now={now}
@@ -1130,8 +1167,8 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
                   />
                 ) : null}
 
-                {view === "clocks" ? admittedList : null}
-                {view === "history" ? historyList : null}
+                {shownView === "clocks" ? admittedList : null}
+                {shownView === "history" ? historyList : null}
                 {/* The full notice closes the list it qualifies, not a loose line under the hero. */}
                 <div className={styles.listFoot}>
                   <LegalLimitsNotChecked />

@@ -13,6 +13,18 @@ let activeAccessContext: string | null = null;
 let renewSession = false;
 let fallbackSession = "memory-only";
 let fallbackStartedAt: number | null = null;
+// Q392: drafts hold names and free text, so they reach browser storage only in the prototype data
+// mode. Any other mode keeps them in memory, so a refresh loses them.
+let dataMode = process.env.NEXT_PUBLIC_WARD_DATA_MODE?.trim() || "prototype";
+
+/** Whether drafts may be copied to sessionStorage in the current data mode. */
+export const draftStorageAllowed = () => dataMode === "prototype";
+
+/** Sets the data mode; leaving prototype clears every stored draft at once. */
+export function setDraftDataMode(next: string): void {
+  dataMode = next;
+  if (!draftStorageAllowed()) clearSessionDrafts();
+}
 
 function fallbackDetails(): { id: string; startedAt: number } {
   fallbackStartedAt ??= Date.now();
@@ -33,7 +45,7 @@ export const draftSessionVersion = () => generation;
 
 function sessionDetails(): { id: string; startedAt: number } {
   const fresh = () => ({ id: sessionId(), startedAt: Date.now() });
-  if (typeof window === "undefined") return fallbackDetails();
+  if (typeof window === "undefined" || !draftStorageAllowed()) return fallbackDetails();
   try {
     const existing = renewSession ? null : window.sessionStorage.getItem(SESSION_KEY);
     if (existing) {
@@ -166,6 +178,7 @@ export function clearLegacySessionDrafts(): void {
 export function readSessionDraft(key: string): string | null {
   if (
     typeof window === "undefined" ||
+    !draftStorageAllowed() ||
     !key.startsWith(PREFIX + [account, sessionScope(sessionDetails().id)].map(encodeURIComponent).join(":") + ":")
   )
     return null;
@@ -203,8 +216,37 @@ export function readSessionDraft(key: string): string | null {
   }
 }
 
+/** One kept draft as the Profile list shows it (L12): what and who, never the typed text. */
+export type SessionDraftSummary = {
+  readonly key: string;
+  readonly kind: string;
+  /** A patient id, or "new" for a referral started before a patient was chosen. */
+  readonly subject: string;
+  readonly savedAt: number;
+};
+
+/** The newest kept drafts in this tab, read by key and save time only (L12, Josh 3 Nov 2026). */
+export function listSessionDrafts(limit = 20): SessionDraftSummary[] {
+  if (typeof window === "undefined" || !draftStorageAllowed()) return [];
+  const scope = PREFIX + [account, sessionScope(sessionDetails().id)].map(encodeURIComponent).join(":") + ":";
+  const found: SessionDraftSummary[] = [];
+  try {
+    const storage = window.sessionStorage;
+    const keys = Array.from({ length: storage.length }, (_, i) => storage.key(i));
+    for (const key of keys) {
+      if (!key?.startsWith(scope) || readSessionDraft(key) === null) continue;
+      const [, kind, subject] = key.slice(scope.length).split(":").map(decodeURIComponent);
+      const savedAt: unknown = JSON.parse(storage.getItem(key) ?? "null")?.savedAt;
+      if (kind && subject && typeof savedAt === "number") found.push({ key, kind, subject, savedAt });
+    }
+  } catch {
+    return [];
+  }
+  return found.sort((a, b) => b.savedAt - a.savedAt).slice(0, limit);
+}
+
 export function writeSessionDraft(key: string, value: string, owner: number): boolean {
-  if (typeof window === "undefined") return false;
+  if (typeof window === "undefined" || !draftStorageAllowed()) return false;
   const session = sessionDetails();
   if (
     owner !== generation ||

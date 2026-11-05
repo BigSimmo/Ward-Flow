@@ -2,6 +2,7 @@ import type { ComponentPropsWithRef, ElementType, ReactNode } from "react";
 import type { LucideIcon } from "lucide-react";
 import { cx, present } from "./cx";
 import { Icon } from "./icon";
+import { PanelBoundary } from "./panel-boundary";
 import { IconTile } from "./primitives";
 import styles from "./card.module.css";
 
@@ -70,12 +71,18 @@ export function CardHead({
   );
 }
 
+/** A render error inside the body shows one error line in its place; the card head stays (Tier 1 item 5). */
 export function CardBody({
   flush = false,
   className,
+  children,
   ...rest
 }: ComponentPropsWithRef<"div"> & { /** No padding, for tables and lists. */ flush?: boolean }) {
-  return <div className={cx(styles.body, flush && styles.flush, className)} {...rest} />;
+  return (
+    <div className={cx(styles.body, flush && styles.flush, className)} {...rest}>
+      <PanelBoundary>{children}</PanelBoundary>
+    </div>
+  );
 }
 
 /** Card foot: optional meta on the left, actions on the right (one primary at most). */

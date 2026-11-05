@@ -5,7 +5,7 @@ import "@testing-library/jest-dom/vitest";
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
-import { buildPatientStatus } from "@/components/ward-management/patients/patient-status-card";
+import { PatientGlance } from "@/components/ward-management/patients/patient-glance";
 import { WardAccessScope, useIsDatesOnlyStay } from "@/components/ward-management/shell/ward-access";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
@@ -50,29 +50,15 @@ describe("community view of a catchment client's stay", () => {
   });
 
   it("shows the observation as withheld, not General", () => {
+    // PT1 (3 Nov 2026): observation moved from the status card into the band's safety line.
     const admission = seedWardFlowState().admissions.find((candidate) => candidate.state === "occupied")!;
-    const noop = () => undefined;
-    const base = {
-      admission,
-      hasBedHold: false,
-      now: NOW_ANCHOR,
-      dayZero: new Date(0),
-      onOpenPlacement: noop,
-      onClearance: noop,
-      onBookTransport: noop,
-      onArrivalTime: noop,
-      onRecordReturn: noop,
-      onMarkAbsent: noop,
-      onAbsenceStep: noop,
-      onRecordCto: noop,
-      onEndCto: noop,
+    const obs = (withheld: boolean) => {
+      cleanup();
+      render(<PatientGlance mode="ward" admission={admission} stayWithheld={withheld} riskFlags={[]} />);
+      return screen.getByTestId("ward-patient-glance-obs");
     };
-    const cell = (withheld: boolean) =>
-      buildPatientStatus("ward", { ...base, stayWithheld: withheld }).cells.find(
-        (entry) => entry.key === "observation",
-      )!;
-    expect(cell(true).value).toBe("Withheld");
-    expect(cell(true).sub).toBe("Your team sees the ward and dates only");
-    expect(cell(false).value).not.toBe("Withheld");
+    expect(obs(true)).toHaveTextContent("Withheld");
+    expect(obs(true)).toHaveTextContent("ward and dates only");
+    expect(obs(false)).not.toHaveTextContent("Withheld");
   });
 });

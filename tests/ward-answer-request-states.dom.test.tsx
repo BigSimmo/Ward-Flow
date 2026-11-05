@@ -85,6 +85,6 @@ describe("ward answer: the Bed request panel and the census reason follow whethe
     const items = within(key).getAllByRole("listitem");
     expect(items).toHaveLength(4);
     const counted = items.reduce((total, item) => total + Number(item.querySelector("b")?.textContent ?? 0), 0);
-    expect(counted).toBe(screen.getAllByRole("button", { name: /^Bed \d+ / }).length);
+    expect(counted).toBe(screen.getAllByRole("button", { name: /^Census square \d+: / }).length);
   });
 });

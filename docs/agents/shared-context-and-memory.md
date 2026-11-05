@@ -112,6 +112,6 @@ Routine eligible recall and saving have standing approval with Supermemory credi
 
 ## Repository copy-first helper
 
-Use [the portable document draft workflow](document-drafts.md) on local or cloud hosts. The helper preserves originals and exports a hash-pinned proposal for the existing integrator. No new service or access grant is required.
+Use [the portable document draft workflow](document-drafts.md) on local or cloud hosts. Originals remain with the existing integrator and guards.
 
 <!-- END:project-context-and-memory -->

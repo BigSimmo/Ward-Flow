@@ -12,7 +12,7 @@ import {
 import { bedsPendingPreparation, openBedsNow } from "@/components/ward-management/ward-bed-availability";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import type { Admission } from "@/components/ward-management/ward-admissions";
-import { unitCapacity } from "@/components/ward-management/ward-derivations";
+import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
 import type { BedRelease, DeclineReason, HealthService, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
@@ -27,6 +27,7 @@ import {
 } from "./statistics-small-numbers";
 import type { Instant } from "../ward-clock";
 import type { ExecutiveReportingFoundation } from "./executive-statistics-contract";
+import { useViewSwitchAction } from "./statistics-view-switch-slot";
 import styles from "./statistics-v6.module.css";
 import {
   BedStack,
@@ -150,19 +151,20 @@ export function admissionStageTallies(
 
 /**
  * Ready, physically empty and confirmed-allocatable, summed across every unit in the network — the
- * whole-of-prototype capacity picture `unitCapacity` (`ward-derivations.ts`) makes possible per
- * unit. "Ready" here is exactly the owner's ruling of 2026-09-04: `min(allocatable, empty)`, never a
- * different number wearing the same word (see `statistics-screen.tsx`'s own note on that ruling).
+ * whole-of-prototype capacity picture. Display Ready uses the shared bed states, including a live
+ * pull no longer covered by a reduced observation. Empty and Allocatable remain the recorded boxes;
+ * the engine's unitCapacity calculation is unchanged.
  */
 export function networkCapacity(
   units: Unit[],
   bedReleases: BedRelease[],
+  admissions: readonly Admission[],
 ): { ready: number; empty: number; allocatable: number } {
   let ready = 0;
   let empty = 0;
   let allocatable = 0;
   for (const unit of units) {
-    ready += unitCapacity(unit, bedReleases).available;
+    ready += readyBedsNow(unit, admissions, bedReleases);
     empty += unit.empty.value;
     allocatable += unit.allocatable.value;
   }
@@ -189,6 +191,8 @@ export function ServiceOccupancyCard({
   preparingCount?: number;
 }) {
   const canOpen = useCanOpenHref();
+  // The Network board's first card: Bed board, Journey and Map in its head (owner polish, 3 Nov 2026).
+  const viewSwitch = useViewSwitchAction();
   const body = (entry: NetworkServiceRow) => (
     <>
       <span className={styles.serviceTop}>
@@ -239,9 +243,12 @@ export function ServiceOccupancyCard({
         title="Occupancy by health service"
         meta={`${beds} beds`}
         aside={
-          <span className={redesign.facts} aria-hidden="true">
-            In use, pulled, closed and ready
-          </span>
+          <>
+            <span className={redesign.facts} aria-hidden="true">
+              In use, pulled, closed and ready
+            </span>
+            {viewSwitch}
+          </>
         }
         foot={
           <Foot
@@ -315,6 +322,7 @@ export function ServiceOccupancyCard({
       title="Occupancy by health service"
       // "85% line" named nothing; each tile already says how many wards are at or over it.
       aside={<span className={styles.muted}>Select one to highlight its wards</span>}
+      action={viewSwitch}
     >
       <div className={styles.serviceGrid} data-testid="ward-statistics-overview-gauges">
         {services.map((entry) => {
@@ -526,7 +534,7 @@ export function NetworkOverviewCards({
     [units, admissions, bedReleases, leaveBeds],
   );
   const services = useMemo(() => networkServiceRows(unitRows), [unitRows]);
-  const capacity = useMemo(() => networkCapacity(units, bedReleases), [units, bedReleases]);
+  const capacity = useMemo(() => networkCapacity(units, bedReleases, admissions), [units, bedReleases, admissions]);
   const openNow = useMemo(
     () => units.reduce((sum, unit) => sum + openBedsNow(unit, bedReleases), 0),
     [units, bedReleases],
@@ -680,6 +688,7 @@ type SummaryDeclines = Omit<
 };
 export type SummaryModel = {
   executive: boolean;
+  eventLog?: readonly import("../ward-event-log").EventLogEntry[];
   directory?: { services: string[]; teams: { id: string; name: string }[]; edIds: string[] };
   now: Instant;
   dayZero: Date;

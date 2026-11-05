@@ -4,10 +4,11 @@
 // a count per day per health service, the bookings still waiting, and the forms that book,
 // change, cancel and record the arrival of one. Every write is a reducer event; this component
 // holds only the open form's draft, never in browser storage.
-import { type ReactNode, useEffect, useId, useMemo, useRef, useState } from "react";
+import { type ReactNode, useId, useMemo, useState } from "react";
 import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
-import { CalendarPlus, MoreHorizontal } from "lucide-react";
+import { CalendarPlus, Ellipsis } from "lucide-react";
 
+import { useUndoableStep } from "../use-undoable-step";
 import { Button, buttonClass, Field, Menu, Select, Sheet, StatusGlyph, TextInput } from "@/components/wf";
 import {
   PLANNED_ADMISSION_CANCEL_REASONS,
@@ -73,6 +74,7 @@ import {
 } from "./planned-admissions-draft";
 import styles from "@/components/ward-management/capacity/planned-admissions.module.css";
 import redesign from "./capacity-page.module.css";
+import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { plannedInitialsLabel } from "@/components/ward-management/ward-flow-demo-storage-constants";
 
 type Draft = PlannedAdmissionDraft;
@@ -126,16 +128,35 @@ function recordedSexOf(sex: string | undefined): RecordedSex {
  * Device audit option A (Josh, 11 Oct 2026): the bookings as a short list, without the 14-day
  * grid, and Book as a secondary button so the page keeps one primary.
  */
+/**
+ * What a caller's own list of bookings may use (Capacity issue 6, Josh 3 Nov 2026): the agenda, the
+ * names as this desk may see them, and the panel's own forms. Every write still goes through them.
+ */
+export type PlannedListApi = {
+  agenda: readonly PlannedAdmission[];
+  whoText: (planned: PlannedAdmission) => string;
+  unitName: (unitId: string) => string;
+  arrived?: (planned: PlannedAdmission) => void;
+  change?: (planned: PlannedAdmission) => void;
+  cancel?: (planned: PlannedAdmission) => void;
+};
+
 export function PlannedAdmissionsPanel({
   now,
   titleSlot,
   compactActions = false,
+  title = "Planned admissions",
+  listSlot,
 }: {
   now: Instant;
   /** Replaces the panel title and count, such as the Capacity page's Planned / Step down switch. */
   titleSlot?: ReactNode;
   /** Arrived stays a button; Change and Cancel move into a More menu, so each booking is two lines. */
   compactActions?: boolean;
+  /** The section's name, read by assistive technology when `titleSlot` replaces the visible title. */
+  title?: string;
+  /** Draws the bookings in place of the panel's own list; the forms and dialogs stay the panel's. */
+  listSlot?: (api: PlannedListApi) => ReactNode;
 }) {
   const {
     units,
@@ -144,9 +165,8 @@ export function PlannedAdmissionsPanel({
     movements,
     dayZero,
     dispatch,
-    rejections,
     plannedAdmissions: plannedFromContext,
-    shared,
+    rejections,
   } = useWardFlowSelect(
     "units",
     "patients",
@@ -154,9 +174,8 @@ export function PlannedAdmissionsPanel({
     "movements",
     "dayZero",
     "dispatch",
-    "rejections",
     "plannedAdmissions",
-    "shared",
+    "rejections",
   );
   const plannedAdmissions = useMemo(() => plannedFromContext ?? [], [plannedFromContext]);
   // Josh, 27 Oct 2026: a desk sees the bookings for its own wards, and offers only the steps its role
@@ -176,10 +195,9 @@ export function PlannedAdmissionsPanel({
   // Finding 185 (27 Oct 2026): Arrived checks who is in front of the ward first, as a movement's
   // arrival does (WT-11). Cancel leaves the booking as it was.
   const [arrivalCheck, setArrivalCheck] = useState<PlannedAdmission | null>(null);
-  const pending = useRef<{ rejections: number } | null>(null);
-  // Whether the open form has sent a change, so a shared-save error from earlier work is not shown on a
-  // form that has not asked for anything yet.
-  const [submittedInForm, setSubmittedInForm] = useState(false);
+  const save = useWardFormSave(`planned-admission:${JSON.stringify(form)}`);
+  // Tier 1 item 6 (Josh, 4 Nov 2026): a booking cancelled by mistake comes back from its toast.
+  const { offer: offerUndo } = useUndoableStep({ dispatch, rejections, now, routeRole: "coordinator" });
 
   useDirtyStateGuard(form !== null);
 
@@ -190,31 +208,7 @@ export function PlannedAdmissionsPanel({
   // reducer refuses the same people, so this list only spares a coordinator a refusal.
   const getBookablePatients = () => bookablePatientsFor(patients, admissions, movements, plannedAdmissions);
 
-  const sharedEnabled = shared?.enabled === true;
-  const sharedStatus = shared?.status;
-  const sharedError = shared?.error ?? null;
-
-  // A dispatch either adds a rejection (refused: say why) or not (accepted: close the form). In the shared
-  // workspace it settles only once saving ends, and a failed save keeps the form open with its error. The
-  // status and error are dependencies, so a save that fails without changing the board still settles.
-  useEffect(() => {
-    if (!pending.current) return;
-    if (sharedEnabled && sharedStatus === "saving") return;
-    const before = pending.current.rejections;
-    pending.current = null;
-    if (rejections.length > before) {
-      setRefusal(rejections[rejections.length - 1]?.reason ?? "Not recorded");
-    } else if (!sharedEnabled || !sharedError) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- A dispatch's outcome is only visible once the provider has answered.
-      setForm(null);
-      setDraft(null);
-      setRefusal(null);
-      setSubmittedInForm(false);
-    }
-  }, [rejections, plannedAdmissions, admissions, sharedEnabled, sharedStatus, sharedError]);
-
-  const displayedRefusal =
-    refusal ?? (form !== null && submittedInForm && sharedEnabled && sharedError ? sharedError : null);
+  const displayedRefusal = refusal ?? save.error ?? null;
 
   // A calendar date needs the provider's day zero; a screen given none still labels each day by
   // its distance from today rather than failing to render.
@@ -251,7 +245,7 @@ export function PlannedAdmissionsPanel({
   function openBook() {
     const bookablePatients = getBookablePatients();
     setRefusal(null);
-    setSubmittedInForm(false);
+    save.forget();
     setDraft({
       // WT-13: the patient, reason, ward and legal status open blank and are chosen; the day, time
       // and stay keep their usual defaults.
@@ -274,7 +268,7 @@ export function PlannedAdmissionsPanel({
 
   function openChange(planned: PlannedAdmission) {
     setRefusal(null);
-    setSubmittedInForm(false);
+    save.forget();
     setDraft({
       who: planned.patientId ? "patient" : "initials",
       patientId: planned.patientId ?? "",
@@ -296,16 +290,17 @@ export function PlannedAdmissionsPanel({
 
   function openCancel(planned: PlannedAdmission) {
     setRefusal(null);
-    setSubmittedInForm(false);
+    save.forget();
     setCancelReason("");
     setForm({ mode: "cancel", id: planned.id });
   }
 
   function closeForm() {
+    if (save.pending) return;
     setForm(null);
     setDraft(null);
     setRefusal(null);
-    setSubmittedInForm(false);
+    save.forget();
   }
 
   function submitDraft() {
@@ -332,8 +327,6 @@ export function PlannedAdmissionsPanel({
             ].join("-");
           })()
         : undefined;
-    pending.current = { rejections: rejections.length };
-    setSubmittedInForm(true);
     if (form.mode === "book") {
       let sex = draft.sex;
       let ageBand: Cohort = draft.ageBand;
@@ -341,7 +334,6 @@ export function PlannedAdmissionsPanel({
       if (draft.who === "initials") {
         initials = normalisePlannedAdmissionInitials(draft.initials);
         if (initials === null) {
-          pending.current = null;
           setRefusal("Initials are one to three letters.");
           return;
         }
@@ -360,64 +352,94 @@ export function PlannedAdmissionsPanel({
               : patientCohort(patient.dateOfBirth, arrivalDay);
         }
       }
-      dispatch({
-        type: "BOOK_PLANNED_ADMISSION",
-        role: "coordinator",
-        now,
-        ...(draft.who === "patient"
-          ? { patientId: draft.patientId as PatientId }
-          : { initials, ...(draft.gender === undefined ? {} : { gender: draft.gender }) }),
-        sex,
-        reason,
-        unitId: draft.unitId,
-        expectedArrivalAt,
-        expectedStayDays,
-        legalStatus,
-        ageBand,
-        ...(calendarDate !== undefined ? { calendarDate } : {}),
-        overrideReason: overrideReasonShown ? draft.overrideReason : undefined,
-      });
+      save.submit(
+        () =>
+          dispatch({
+            type: "BOOK_PLANNED_ADMISSION",
+            role: "coordinator",
+            now,
+            ...(draft.who === "patient"
+              ? { patientId: draft.patientId as PatientId }
+              : { initials, ...(draft.gender === undefined ? {} : { gender: draft.gender }) }),
+            sex,
+            reason,
+            unitId: draft.unitId,
+            expectedArrivalAt,
+            expectedStayDays,
+            legalStatus,
+            ageBand,
+            ...(calendarDate !== undefined ? { calendarDate } : {}),
+            overrideReason: overrideReasonShown ? draft.overrideReason : undefined,
+          }),
+        closeForm,
+      );
     } else {
-      dispatch({
-        type: "CHANGE_PLANNED_ADMISSION",
-        role: "coordinator",
-        now,
-        plannedAdmissionId: form.id,
-        ...(draft.who === "initials" && draft.gender !== undefined ? { gender: draft.gender } : {}),
-        reason,
-        unitId: draft.unitId,
-        expectedArrivalAt,
-        expectedStayDays,
-        legalStatus,
-        ...(calendarDate !== undefined ? { calendarDate } : {}),
-        overrideReason: overrideReasonShown ? draft.overrideReason : undefined,
-      });
+      save.submit(
+        () =>
+          dispatch({
+            type: "CHANGE_PLANNED_ADMISSION",
+            role: "coordinator",
+            now,
+            plannedAdmissionId: form.id,
+            ...(draft.who === "initials" && draft.gender !== undefined ? { gender: draft.gender } : {}),
+            reason,
+            unitId: draft.unitId,
+            expectedArrivalAt,
+            expectedStayDays,
+            legalStatus,
+            ...(calendarDate !== undefined ? { calendarDate } : {}),
+            overrideReason: overrideReasonShown ? draft.overrideReason : undefined,
+          }),
+        closeForm,
+      );
     }
   }
 
   function submitCancel() {
     if (!form || form.mode !== "cancel" || !cancelling || cancelReason === "") return;
-    pending.current = { rejections: rejections.length };
-    setSubmittedInForm(true);
-    dispatch({
-      type: "CANCEL_PLANNED_ADMISSION",
-      role: "coordinator",
-      now,
-      plannedAdmissionId: cancelling.id,
-      unitId: cancelling.unitId,
-      reason: cancelReason,
-    });
+    const cancelled = { id: cancelling.id, label: whoText(cancelling) };
+    let completion: ReturnType<typeof dispatch> | undefined;
+    save.submit(
+      () =>
+        (completion = dispatch({
+          type: "CANCEL_PLANNED_ADMISSION",
+          role: "coordinator",
+          now,
+          plannedAdmissionId: cancelling.id,
+          unitId: cancelling.unitId,
+          reason: cancelReason,
+        })),
+      () => {
+        closeForm();
+        offerUndo(
+          {
+            success: `Planned admission cancelled for ${cancelled.label}.`,
+            undo: (at) => ({
+              type: "UNDO_RELEASE_STEP",
+              role: "coordinator",
+              now: at,
+              plannedAdmissionId: cancelled.id,
+            }),
+            undone: "Undone. The booking is back.",
+          },
+          { completion },
+        );
+      },
+    );
   }
 
   function recordArrival(planned: PlannedAdmission) {
-    pending.current = { rejections: rejections.length };
-    dispatch({
-      type: "CONVERT_PLANNED_ADMISSION",
-      role: "coordinator",
-      now,
-      plannedAdmissionId: planned.id,
-      unitId: planned.unitId,
-    });
+    save.submit(
+      () =>
+        dispatch({
+          type: "CONVERT_PLANNED_ADMISSION",
+          role: "coordinator",
+          now,
+          plannedAdmissionId: planned.id,
+          unitId: planned.unitId,
+        }),
+      () => setRefusal(null),
+    );
   }
 
   // Audit 24-1 CS2-19: the chosen ward is not authorised for the chosen legal status, so the booking
@@ -490,7 +512,7 @@ export function PlannedAdmissionsPanel({
 
   return (
     <CapacityPanel
-      title="Planned admissions"
+      title={title}
       titleSlot={titleSlot}
       count={titleSlot ? undefined : `${booked} booked`}
       testId="ward-capacity-planned-admissions"
@@ -503,8 +525,17 @@ export function PlannedAdmissionsPanel({
         ) : undefined
       }
     >
-      <div className={styles.body}>
-        {agenda.length === 0 ? (
+      <div className={listSlot ? undefined : styles.body}>
+        {listSlot ? (
+          listSlot({
+            agenda,
+            whoText,
+            unitName,
+            arrived: canConvert ? (planned) => setArrivalCheck(planned) : undefined,
+            change: canChange ? openChange : undefined,
+            cancel: canCancel ? openCancel : undefined,
+          })
+        ) : agenda.length === 0 ? (
           <p className={styles.empty}>No planned admissions booked.</p>
         ) : (
           <ul className={styles.agenda} aria-label="Booked planned admissions">
@@ -583,7 +614,7 @@ export function PlannedAdmissionsPanel({
                               aria-label={`More for ${whoText(planned)}`}
                               className={buttonClass({ variant: "ghost", size: "sm" })}
                             >
-                              <MoreHorizontal size={15} aria-hidden="true" />
+                              <Ellipsis size={14} strokeWidth={1.75} aria-hidden="true" />
                             </button>
                           )}
                         />
@@ -632,9 +663,9 @@ export function PlannedAdmissionsPanel({
             })}
           </ul>
         )}
-        {refusal && !form ? (
+        {displayedRefusal && !form ? (
           <p className={styles.refusal} role="status" data-testid="ward-planned-refusal">
-            {refusal}
+            {displayedRefusal}
           </p>
         ) : null}
       </div>
@@ -651,7 +682,11 @@ export function PlannedAdmissionsPanel({
             <Button
               variant="pri"
               onClick={submitDraft}
-              disabledReason={draftMissing ?? (overrideReasonMissing ? "Choose an override reason first" : undefined)}
+              disabledReason={
+                save.pending
+                  ? "Saving"
+                  : (draftMissing ?? (overrideReasonMissing ? "Choose an override reason first" : undefined))
+              }
               data-testid="ward-planned-submit"
               aria-describedby={form?.mode === "book" && draftIdentity ? selectedIdentityId : undefined}
             >
@@ -911,11 +946,11 @@ export function PlannedAdmissionsPanel({
         testId="ward-planned-cancel"
         footer={
           <div className={styles.sheetFoot}>
-            <Button onClick={closeForm}>Keep booking</Button>
+            <Button onClick={closeForm}>Keep as is</Button>
             <Button
               variant="danger"
               onClick={submitCancel}
-              disabledReason={cancelReason === "" ? "Choose a reason first." : undefined}
+              disabledReason={save.pending ? "Saving" : cancelReason === "" ? "Choose a reason first." : undefined}
               data-testid="ward-planned-cancel-confirm"
             >
               {/* Audit 24-7 (CT-19): the final button names who the booking is for. */}

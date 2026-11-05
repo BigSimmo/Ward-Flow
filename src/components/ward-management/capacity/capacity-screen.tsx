@@ -1,15 +1,12 @@
 "use client";
 
+import { useWardFormSave } from "../use-ward-form-save";
+import { wardScrollBehavior } from "../ward-scroll";
+
 import { startTransition, useEffect, useMemo, useState } from "react";
 
-import { Drawer, Segmented, StatusGlyph, useIsPhone, useOptionalToast } from "@/components/wf";
-import {
-  useDueSoonThresholds,
-  useWardFlowSelect,
-  useWardNetwork,
-} from "@/components/ward-management/ward-flow-provider";
-import { HomeBedflow } from "@/components/ward-management/coordinator/home-bedflow";
-import { serviceRollup } from "@/components/ward-management/ward-morning-rollup";
+import { Drawer, PanelDrawer, Segmented, StatusPill, useIsPhone, useOptionalToast } from "@/components/wf";
+import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
@@ -21,6 +18,7 @@ import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
 import { siteLabel } from "@/components/ward-management/ward-absence-labels";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import type { BedRelease } from "@/components/ward-management/ward-model";
 
 import { bedMeetingSheet } from "./bed-meeting-derivations";
 import { BedForecast } from "./capacity-bed-forecast";
@@ -37,8 +35,9 @@ import { RoadTimeCard } from "./capacity-road-time-card";
 import { ScenarioDialog } from "./capacity-scenario-dialog";
 import { ShiftChecks } from "./capacity-shift-checks";
 import { useSiteEdWaiting } from "./capacity-site-ed";
-import { CapacityWardSidebar } from "./capacity-ward-drawer";
-import { PlannedAdmissionsPanel } from "./planned-admissions-panel";
+import { heldUpReleases } from "./capacity-held-up";
+import { shiftConfirmations, unchangedConfirmations } from "./shift-confirmations";
+import { CapacityWardFoot, CapacityWardSidebar, useCapacityWardTabs } from "./capacity-ward-drawer";
 import styles from "./capacity-page.module.css";
 
 type Popup = { kind: "scenario" } | { kind: "sheet" } | { kind: "ward"; unitId: string } | { kind: "forecast" } | null;
@@ -58,8 +57,10 @@ type PhoneTab = "overview" | "wards" | "planned";
  * - the executive (Josh, 27 Oct 2026) sees counts only: no bed meeting, no TV view, no asking a
  *   ward, no list of people and no link to a page the desk cannot open.
  *
- * A chosen service narrows the bed map; the hero, mismatch and forecast stay whole-network and the
- * eyebrow says so, as before.
+ * A chosen service narrows every ward-based panel: the bed map, nearest ready beds, This shift and
+ * the phone's wards to check. The hero, mismatch, forecast and planned moves count people waiting or
+ * booked across the network, so they stay whole-network and say "Network-wide" (scope audit, Josh,
+ * 3 Nov 2026).
  */
 export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
   const model = useCapacityModel();
@@ -115,14 +116,13 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
   const tvOn = useWardFeatureFlag("bed-meeting-tv");
   const edWaiting = useSiteEdWaiting(model.site, model.now);
   const { now } = model;
-  const network = useWardNetwork();
-  const [bedflowUnitId, setBedflowUnitId] = useState<string | undefined>(undefined);
-  const bedflowDischargesHeldUp = useMemo(
-    () => serviceRollup(network.sites, units, [...bedReleases], [...leaveBeds], now).service.blockedToday,
-    [network.sites, units, bedReleases, leaveBeds, now],
-  );
 
-  const mapModel = useMemo<CapacityModel>(() => scopeToService(model, service), [model, service]);
+  const mapModel = useMemo<CapacityModel>(
+    () => scopeToService(model, service, bedReleases),
+    [model, service, bedReleases],
+  );
+  // A figure that does not follow the chosen service says so, quietly.
+  const networkWide = service !== null && !siteDesk;
   const sheet = useMemo(
     () =>
       popup?.kind === "sheet"
@@ -158,7 +158,9 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
   );
   const selectedRow =
     popup?.kind === "ward" ? model.networkRows.find((row) => row.unit.id === popup.unitId) : undefined;
+  const wardTabs = useCapacityWardTabs(selectedRow?.unit.id);
 
+  const refreshSave = useWardFormSave(`capacity-refresh:${worldGeneration}`);
   // Asking a ward to confirm its beds is the coordinator's step (REQUEST_CAPACITY_REFRESH), as in the
   // ward drawer. A site bed manager confirms on the ward's own page instead, and every other desk,
   // the executive included, changes nothing here.
@@ -167,15 +169,23 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
       ? undefined
       : (unitId: string) => {
           const unit = units.find((candidate) => candidate.id === unitId);
-          dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId });
-          toast?.push({ tone: "success", title: `Asked ${unit?.name ?? "the ward"} to confirm its beds.` });
+          refreshSave.submit(
+            () => dispatch({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", now, unitId }),
+            () => toast?.push({ tone: "success", title: `Asked ${unit?.name ?? "the ward"} to confirm its beds.` }),
+          );
         };
+  useEffect(() => {
+    if (refreshSave.error) toast?.push({ tone: "warning", title: refreshSave.error });
+  }, [refreshSave.error, toast]);
   const openWard = (unitId: string) => {
     if (siteDesk && !model.networkRows.some((row) => row.unit.id === unitId)) {
       setFocusUnitId(unitId);
       if (isPhone) startTransition(() => setPhoneTab("wards"));
       window.setTimeout(
-        () => document.getElementById(`bm-other-${unitId}`)?.scrollIntoView({ block: "center", behavior: "smooth" }),
+        () =>
+          document
+            .getElementById(`bm-other-${unitId}`)
+            ?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() }),
         50,
       );
       return;
@@ -186,7 +196,8 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
     const value = highlight === next ? null : next;
     setHighlight(value);
     if (isPhone) startTransition(() => setPhoneTab("wards"));
-    else if (value) document.getElementById("capacity-bed-map")?.scrollIntoView({ block: "start", behavior: "smooth" });
+    else if (value)
+      document.getElementById("capacity-bed-map")?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() });
   };
   const bedMap = (
     <>
@@ -209,7 +220,17 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
     </>
   );
   // The executive sees planned bookings as counts only: the list names each person.
-  const planned = executive ? <PlannedCounts now={now} /> : <PlannedAdmissionsPanel key={worldGeneration} now={now} />;
+  // Capacity issue 6 (Josh, 3 Nov 2026): every other desk gets Planned moves, on the phone too.
+  const planned = executive ? (
+    <PlannedCounts now={now} networkWide={networkWide} />
+  ) : (
+    <ComingIn
+      key={worldGeneration}
+      now={now}
+      wardRows={[...model.networkRows, ...model.otherSiteRows]}
+      networkWide={networkWide}
+    />
+  );
 
   return (
     <div className={styles.screen} data-testid="ward-capacity-screen" data-ward-design="redesign-2026-10">
@@ -241,10 +262,12 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
             />
             {phoneTab === "overview" ? (
               <PhoneOverview
-                model={model}
+                model={mapModel}
+                networkWide={networkWide}
                 executive={executive}
                 onForecast={() => setPopup({ kind: "forecast" })}
                 onWard={openWard}
+                onAskWard={askWard}
               />
             ) : phoneTab === "wards" ? (
               bedMap
@@ -254,37 +277,31 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
           </>
         ) : (
           <>
-            <MismatchBand model={model} hideEmptyTypes={siteDesk} />
+            {/* Capacity issue 2 (Josh, 3 Nov 2026): the bed map sits straight under Mismatch, the
+                forecast below it. Issue 7: State bedflow is gone; it repeated the bed map, and its one
+                extra figure (beds freeing today) is now on each bed map card. */}
+            <MismatchBand model={model} hideEmptyTypes={siteDesk} onWard={openWard} networkWide={networkWide} />
+            {bedMap}
             <BedForecast
               model={model}
               onTryScenario={() => setPopup({ kind: "scenario" })}
               siteName={model.site?.name}
+              onWard={openWard}
+              onAskWard={askWard}
+              networkWide={networkWide}
             />
-            {bedMap}
-            <div className={styles.lowerRow}>
-              {executive ? planned : <ComingIn now={now} plannedBooked={model.plannedBooked} />}
+            {/* Capacity issue 6 (Josh, 3 Nov 2026): Planned moves, booked admissions and step downs in
+                one card, takes the full width; the nearest ready beds and this shift sit under it. */}
+            {planned}
+            <div className={styles.lowerRow} data-testid="capacity-lower-row">
               <RoadTimeCard
-                rows={siteDesk ? [...model.networkRows, ...model.otherSiteRows] : model.networkRows}
+                rows={siteDesk ? [...model.networkRows, ...model.otherSiteRows] : mapModel.networkRows}
                 defaultEdId={model.roadTimeFromEdId}
                 selectedUnitId={selectedRow?.unit.id}
                 onSelectUnit={openWard}
               />
-              <ShiftChecks model={model} onAskWard={askWard} siteName={model.site?.name} />
+              <ShiftChecks model={mapModel} onAskWard={askWard} siteName={model.site?.name} />
             </div>
-            {/* Home v7 (Josh, 22 Oct 2026): State bedflow sits at the foot of Capacity, desktop only. No
-                patient is chosen here, so it reads beds only: a ward can be picked out, never offered. */}
-            <HomeBedflow
-              units={units}
-              movements={movements}
-              bedReleases={bedReleases}
-              leaveBeds={leaveBeds}
-              admissions={admissions}
-              now={now}
-              selectedUnitId={bedflowUnitId}
-              onSelectUnit={(unitId) => setBedflowUnitId((current) => (current === unitId ? undefined : unitId))}
-              dischargesHeldUp={bedflowDischargesHeldUp}
-              service={service}
-            />
           </>
         )}
         <WardPrototypeFooter
@@ -293,32 +310,51 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
         />
       </main>
 
-      <ScenarioDialog open={popup?.kind === "scenario"} onClose={() => setPopup(null)} model={model.forecastModel} />
+      <ScenarioDialog
+        open={popup?.kind === "scenario"}
+        onClose={() => setPopup(null)}
+        model={model.forecastModel}
+        networkWide={networkWide}
+      />
       {sheet ? <BedMeetingSheetDialog open onClose={() => setPopup(null)} sheet={sheet} now={now} /> : null}
-      <Drawer
+      <PanelDrawer
         open={selectedRow !== undefined}
         onClose={() => setPopup(null)}
         title={selectedRow?.unit.name ?? "Ward capacity"}
-        ariaLabel={selectedRow ? `${selectedRow.unit.name}, ward capacity` : "Ward capacity"}
-        description={selectedRow ? wardPlace(selectedRow.unit.siteCode) : undefined}
-        titleAccessory={
+        subtitle={selectedRow ? wardPlace(selectedRow.unit.siteCode) : undefined}
+        tag={
           selectedRow ? (
-            <span className={styles.wdHeadTag}>
-              <StatusGlyph tone={selectedRow.ready > 0 ? "success" : "warning"} size={8} />
-              {selectedRow.ready > 0 ? `${selectedRow.ready} ready` : "None ready"}
-            </span>
+            <StatusPill tone={selectedRow.ready > 0 ? "success" : "warning"}>{selectedRow.ready} ready</StatusPill>
           ) : undefined
         }
+        tabs={wardTabs.tabs}
+        tab={wardTabs.tab}
+        onTabChange={wardTabs.onTabChange}
+        tabsLabel="Ward panel view"
         testId="ward-capacity-ward-drawer"
+        foot={selectedRow ? <CapacityWardFoot row={selectedRow} now={now} /> : undefined}
       >
         {selectedRow ? (
-          <CapacityWardSidebar row={selectedRow} onBack={() => setPopup(null)} now={now} showPlace={false} />
+          <CapacityWardSidebar
+            row={selectedRow}
+            onBack={() => setPopup(null)}
+            now={now}
+            tab={wardTabs.tab}
+            showPlace={false}
+            footInDrawer
+            // C3 (Josh, 4 Nov 2026): the ward's own row of the forecast's days, the "By ward" view's row.
+            week={{
+              days: model.days,
+              row: model.week.rows.find((weekRow) => weekRow.unitId === selectedRow.unit.id),
+            }}
+          />
         ) : null}
-      </Drawer>
+      </PanelDrawer>
       <Drawer
         open={popup?.kind === "forecast"}
         onClose={() => setPopup(null)}
         title="Bed forecast"
+        description={networkWide ? "Network-wide" : undefined}
         mobileSize="viewport"
         testId="ward-capacity-forecast-sheet"
       >
@@ -327,19 +363,39 @@ export function CapacityScreen({ openOnLoad }: { openOnLoad?: string } = {}) {
           onTryScenario={() => setPopup({ kind: "scenario" })}
           stacked
           siteName={model.site?.name}
+          onWard={openWard}
+          onAskWard={askWard}
         />
       </Drawer>
     </div>
   );
 }
 
-/** The bed map's part of the model, narrowed to the chosen health service (null is all services). */
-function scopeToService(model: CapacityModel, service: string | null): CapacityModel {
+/**
+ * The ward-based part of the model, narrowed to the chosen health service (null is all services):
+ * the bed map, nearest ready beds, wards to check and This shift. Waiting people and the forecast
+ * are not narrowed; the panels showing them say "Network-wide".
+ */
+function scopeToService(
+  model: CapacityModel,
+  service: string | null,
+  bedReleases: readonly BedRelease[],
+): CapacityModel {
   if (service === null || model.site) return model;
+  const networkRows = model.networkRows.filter((row) => unitHealthService(row.unit) === service);
+  const units = networkRows.map((row) => row.unit);
+  const ids = new Set(units.map((unit) => unit.id));
   return {
     ...model,
-    networkRows: model.networkRows.filter((row) => unitHealthService(row.unit) === service),
+    networkRows,
     mapGroups: model.mapGroups.filter((group) => group.service === service),
+    wardsToCheck: model.wardsToCheck.filter((row) => ids.has(row.unit.id)),
+    confirmations: shiftConfirmations(units, model.now),
+    unchanged: unchangedConfirmations(units),
+    heldUp: heldUpReleases(
+      bedReleases.filter((release) => ids.has(release.unitId)),
+      model.now,
+    ),
   };
 }
 

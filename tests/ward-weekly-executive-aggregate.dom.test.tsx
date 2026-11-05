@@ -39,6 +39,12 @@ import { wardPlaceLookup } from "../src/components/ward-management/ward-access-p
 import { NOW_ANCHOR } from "../src/components/ward-management/ward-sites";
 import { installMatchMediaStub } from "./setup/jsdom.setup";
 
+/** The week picker is the kit menu (owner polish, 3 Nov 2026): items run from -1 (this week so far) to 7. */
+function chooseWeek(offset: number) {
+  fireEvent.click(screen.getByTestId("ward-weekly-week"));
+  fireEvent.click(screen.getAllByRole("menuitemradio")[offset + 1]!);
+}
+
 const state = seedWardFlowState();
 const base = projectExecutiveReportingFoundation(
   state,
@@ -90,10 +96,11 @@ describe("Weekly executive aggregate adoption", () => {
 
   it("keeps all nine periods, the counted-to boundary and safe ED detail replacement", () => {
     report();
-    expect(screen.getByTestId("ward-weekly-week").querySelectorAll("option")).toHaveLength(9);
-    fireEvent.change(screen.getByTestId("ward-weekly-week"), { target: { value: "-1" } });
+    fireEvent.click(screen.getByTestId("ward-weekly-week"));
+    expect(screen.getAllByRole("menuitemradio")).toHaveLength(9);
+    fireEvent.click(screen.getAllByRole("menuitemradio")[0]!);
     expect(screen.getByTestId("ward-weekly-period")).toHaveTextContent("Counted to");
-    fireEvent.change(screen.getByTestId("ward-weekly-week"), { target: { value: "7" } });
+    chooseWeek(7);
     expect(screen.getByTestId("ward-weekly-range")).toHaveTextContent("Generated");
     expect(screen.getByText("Counts only on this desk, so people are not listed.")).toBeInTheDocument();
     expect(screen.queryByTestId("ward-weekly-ed-table")).not.toBeInTheDocument();

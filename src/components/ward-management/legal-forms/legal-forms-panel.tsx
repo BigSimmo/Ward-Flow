@@ -2,20 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import {
-  BookOpen,
-  CalendarClock,
-  Check,
-  CheckCircle2,
-  Clock,
-  Copy,
-  ExternalLink,
-  FilePlus2,
-  Inbox,
-  Stethoscope,
-  X,
-  type LucideIcon,
-} from "lucide-react";
+import { Check, Clock, Copy, ExternalLink, X } from "lucide-react";
 
 import {
   Button,
@@ -29,26 +16,16 @@ import {
   cx,
   type TimelineItem,
 } from "@/components/wf";
-import { formatInstantWithDay, type Instant, isClockBreached } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { edHref, movementHref } from "@/components/ward-management/shell/ward-facade";
 
-import { formProgression } from "./legal-form-progression";
-import { typedClock } from "./legal-time-as-typed";
-import { currentLegalDueAt, legalDeadlineText } from "./legal-forms-derivations";
-import {
-  STANDING_TONE,
-  clockStanding,
-  formEvents,
-  isOwnedLegalFormCode,
-  recordedFacts,
-  standingSuffix,
-  standingWord,
-  typedTimeStanding,
-  type RecordGap,
-} from "./legal-forms-view";
+import { LegalFormNextStep, LegalFormSummary } from "./legal-form-card";
+import { LegalFormDetailsSection, type LegalFormDetailsSave } from "./legal-form-details";
+import { formEvents, isOwnedLegalFormCode, recordedFacts, type RecordGap } from "./legal-forms-view";
 import styles from "./legal-forms.module.css";
-import { nextStep, type NextStepAction } from "./legal-forms-next-step";
+import { nextStep } from "./legal-forms-next-step";
+import { parseWrittenInstant } from "./legal-forms-sheets";
 import p from "./legal-forms-panel.module.css";
 import {
   writtenDraftFor,
@@ -58,25 +35,25 @@ import {
   type WrittenSave,
 } from "./legal-forms-written-time";
 
-import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 function asTimeline(items: ReturnType<typeof formEvents>, now: Instant): TimelineItem[] {
   return items.map(({ id, sortAt, tone, text }) => ({ id, at: formatInstantWithDay(sortAt, now), tone, text }));
 }
-
-const NEXT_ICON: Record<NextStepAction, LucideIcon> = {
-  "next-form": FilePlus2,
-  extend: CalendarClock,
-  written: Clock,
-  received: Inbox,
-  examination: Stethoscope,
-  none: CheckCircle2,
-};
 
 /**
  * FOCUS. The side panel for one patient: their form's clock, what is recorded and what is still to
  * record, the form's facts and its history. Desktop has this one detail surface (owner, 9 Oct
  * 2026); there is no drawer.
  */
+/**
+ * Gap list item 1: an optional typed receipt time. Blank means now. A time that will not read, or
+ * reads later than now, is a problem and nothing is sent.
+ */
+export function typedReceipt(text: string, now: Instant): { at: Instant | null; problem?: string } {
+  if (text.trim() === "") return { at: null };
+  const at = parseWrittenInstant(text, now);
+  return at === null ? { at, problem: "Type the time received as HH:MM, not later than now" } : { at };
+}
+
 export function FocusPanel({
   movement,
   name,
@@ -91,10 +68,14 @@ export function FocusPanel({
   onSaveWritten,
   recordUnavailable,
   onMarkReceived,
+  receivedText,
+  onReceivedTextChange,
   markReceivedUnavailable,
   onExtend,
   extendUnavailable,
   onRecordNext,
+  onSaveDetails,
+  detailsUnavailable,
   onRequirements,
   onCopy,
   copied,
@@ -114,20 +95,26 @@ export function FocusPanel({
   onSaveWritten: (draft: WrittenSave, onAccepted: () => void) => void;
   /** Feature 11: why this route's role may not record a form time, if it may not. */
   recordUnavailable?: string;
-  onMarkReceived: () => void;
+  /** Gap list item 1: the time typed from the paper, or undefined to mark it received now. */
+  onMarkReceived: (receivedAt?: Instant) => void;
+  /** Gap list item 1: the typed receipt time draft, held by the screen. */
+  receivedText: string;
+  onReceivedTextChange: (text: string) => void;
   /** Feature 11: why this route's role may not mark a form received ("ED only"), if it may not. */
   markReceivedUnavailable?: string;
   onExtend: () => void;
   /** Feature 11: why this route's role may not extend a recorded form, if it may not. */
   extendUnavailable?: string;
   onRecordNext: () => void;
+  /** Gap list items 3 to 7: saves the details typed from the paper. */
+  onSaveDetails: (details: LegalFormDetailsSave, onAccepted: () => void) => void;
+  /** Why this desk may not record form details, if it may not. */
+  detailsUnavailable?: string;
   onRequirements: (code: string) => void;
   onCopy: () => void;
   copied: boolean;
 }) {
-  const thresholds = useDueSoonThresholds();
   const legalForm = movement.legalForm;
-  const standing = clockStanding(movement, now, thresholds);
   const facts = recordedFacts(movement);
   // Start from the recorded region, so changing the time never resets a country form to metro.
   const recordedDraft = (): WrittenDraft => writtenDraftFor(legalForm);
@@ -161,16 +148,10 @@ export function FocusPanel({
     onSaveWritten(written, () => setChanging(false));
   };
 
-  // Audit S-6: a form ended by the examination or arrival keeps its typed expiry as history only.
-  // Legal times only as typed (Josh, 31 Oct 2026): the typed clock time and its warning words, never
-  // a running figure or a bar filling towards it.
-  const dueAt = currentLegalDueAt(movement);
-  const typedStanding = typedTimeStanding(movement, now, thresholds);
-
   const step = nextStep(movement, now);
-  const NextIcon = NEXT_ICON[step.action];
-  const fromLine = edName;
-  const toLine = wardName ?? "No receiving ward yet";
+  // Gap list item 1: an optional typed receipt time. Blank means now; a time later than now is refused.
+  // The draft lives on the screen, so the phone's pinned Mark received sends the same typed time.
+  const { at: receivedAt, problem: receivedProblem } = typedReceipt(receivedText, now);
 
   return (
     <section className={cx(styles.panel, p.panel)} aria-label={`Form for ${name}`} data-testid="ward-legal-selected">
@@ -187,69 +168,16 @@ export function FocusPanel({
       </div>
 
       <div className={p.top}>
-        <div className={p.summary}>
-          <div className={p.clock} data-tone={STANDING_TONE[standing]}>
-            <span className={p.clockLine}>
-              <StatusGlyph tone={STANDING_TONE[standing]} size={10} />
-              {dueAt !== undefined ? (
-                <>
-                  <span className={p.clockBig}>{typedClock(dueAt, now)}</span>
-                  <span className={p.clockWord}>
-                    {isClockBreached(dueAt, now) ? "Ended" : "Ends"}, as typed from the form
-                    {standingSuffix(typedStanding)}
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className={p.clockBig}>
-                    {formProgression(movement) ? "Ended" : standingWord(standing, thresholds)}
-                  </span>
-                  <span className={p.clockWord}>{legalDeadlineText(movement, now)}</span>
-                </>
-              )}
-            </span>
-            {legalForm ? (
-              <button type="button" className={p.formChip} onClick={() => onRequirements(legalForm.code)}>
-                <BookOpen size={14} aria-hidden="true" /> Form {legalForm.code}
-              </button>
-            ) : null}
-          </div>
-          <dl className={p.route}>
-            <div>
-              <dt>From</dt>
-              <dd>{fromLine}</dd>
-            </div>
-            <div>
-              <dt>To</dt>
-              <dd>{toLine}</dd>
-            </div>
-            <div>
-              <dt>Legal status</dt>
-              <dd>{movement.legalStatus}</dd>
-            </div>
-            <div>
-              <dt>Owner</dt>
-              <dd>{movement.owner}</dd>
-            </div>
-          </dl>
-          <p className={p.caveat}>Times are as typed. Not legally checked.</p>
-        </div>
+        <LegalFormSummary
+          movement={movement}
+          now={now}
+          fromLine={edName}
+          toLine={wardName ?? "No receiving ward yet"}
+          onRequirements={onRequirements}
+        />
 
         <div className={p.nextBlock}>
-          <div className={p.next} data-action={step.action} data-testid="ward-legal-next-step">
-            <span className={p.nextIcon} aria-hidden="true">
-              <NextIcon size={16} aria-hidden="true" />
-            </span>
-            <span className={p.nextText}>
-              <span className={p.nextTitle}>{step.title}</span>
-              <span className={p.nextDetail}>{step.detail}</span>
-            </span>
-            {step.action === "extend" ? (
-              <Button variant="sec" className={p.nextButton} onClick={onExtend} disabledReason={extendUnavailable}>
-                Extend recorded form
-              </Button>
-            ) : null}
-          </div>
+          <LegalFormNextStep movement={movement} now={now} onExtend={onExtend} extendUnavailable={extendUnavailable} />
           {showWrittenForm ? (
             <form
               className={styles.writtenForm}
@@ -365,7 +293,9 @@ export function FocusPanel({
                         {fact.at !== undefined
                           ? fact.gap === "written"
                             ? `Written ${formatInstantWithDay(fact.at, now)} on the form`
-                            : formatInstantWithDay(fact.at, now)
+                            : fact.gap === "received" && movement.legalFormReceivedTyped
+                              ? `${formatInstantWithDay(fact.at, now)}, as typed`
+                              : formatInstantWithDay(fact.at, now)
                           : fact.gap === "examination"
                             ? "Not recorded. Recorded on the ED screen"
                             : "Not recorded"}
@@ -384,16 +314,33 @@ export function FocusPanel({
                       </Button>
                     ) : null}
                     {fact.gap === "received" && fact.at === undefined ? (
-                      <Button
-                        ref={receivedRef}
-                        variant={step.action === "received" ? "pri" : "sec"}
-                        size="sm"
-                        data-testid={`ward-legal-forms-mark-received-${movement.id}`}
-                        onClick={onMarkReceived}
-                        disabledReason={markReceivedUnavailable}
-                      >
-                        Mark Form {legalForm?.code} received
-                      </Button>
+                      <span className={p.receivedControls}>
+                        {/* Gap list item 1: the time on the paper, typed. Blank marks it received now. */}
+                        <TextInput
+                          aria-label="Time received, as on the form. Leave blank for now"
+                          placeholder="Now"
+                          inputMode="numeric"
+                          autoComplete="off"
+                          className={p.receivedTime}
+                          data-testid={`ward-legal-forms-received-time-${movement.id}`}
+                          value={receivedText}
+                          onChange={(event) => onReceivedTextChange(event.target.value)}
+                        />
+                        <Button
+                          ref={receivedRef}
+                          variant={step.action === "received" ? "pri" : "sec"}
+                          size="sm"
+                          data-testid={`ward-legal-forms-mark-received-${movement.id}`}
+                          onClick={() => {
+                            if (receivedProblem) return;
+                            onMarkReceived(receivedAt ?? undefined);
+                          }}
+                          disabledReason={markReceivedUnavailable ?? receivedProblem}
+                          reasonDisplay="tooltip"
+                        >
+                          Mark Form {legalForm?.code} received
+                        </Button>
+                      </span>
                     ) : null}
                     {fact.gap === "examination" && fact.at === undefined && movement.originEdId !== undefined ? (
                       <Link
@@ -410,6 +357,15 @@ export function FocusPanel({
             </div>
           ) : null}
         </>
+
+        <LegalFormDetailsSection
+          // A new form on the paper starts a fresh section, so no draft carries across forms.
+          key={`${movement.legalForm?.code ?? "none"}-${movement.legalForm?.earlierForms?.length ?? 0}`}
+          movement={movement}
+          dayZero={dayZero}
+          unavailable={detailsUnavailable}
+          onSave={onSaveDetails}
+        />
 
         <div className={p.section}>
           <h3 className={p.eyebrow}>History</h3>

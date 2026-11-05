@@ -1,4 +1,5 @@
 import { liveMovementForAdmission } from "./ward-admissions";
+import { stepUndoSubjectId } from "./ward-flow-subject-id";
 import type { AuditDecision } from "./ward-audit";
 import type {
   bedNumberRefusal,
@@ -21,7 +22,6 @@ import {
   stepChangedSince,
   stepUndoFor,
   undoRoleRefusal,
-  undoStepSubjectId,
   undoWindowRefusal,
   withoutUndoRecord,
 } from "./ward-undo";
@@ -44,13 +44,17 @@ export type UndoEvent = Extract<
       | "UNDO_LEGAL_FORM_RECORD"
       | "UNDO_SUPPORT_NOTIFICATION"
       | "UNDO_REPATRIATION"
+      | "UNDO_FLAG_RETURN_EARLY"
       | "UNDO_HANDOVER_SIGN_OFF"
       | "UNDO_SITE_HANDOVER_SIGN_OFF"
       | "UNDO_ED_STEP"
       | "UNDO_TRANSPORT_STEP"
       | "UNDO_DEPARTURE"
       | "UNDO_ABSENT_WITHOUT_LEAVE"
-      | "UNDO_BED_MEETING_ACTION";
+      | "UNDO_BED_MEETING_ACTION"
+      | "UNDO_BED_STEP"
+      | "UNDO_RELEASE_STEP"
+      | "UNDO_PATIENT_RECORD";
   }
 >;
 
@@ -105,6 +109,16 @@ export function reduceUndoEvent(
           ? null
           : "This referral has changed since the decision, so it cannot be undone");
       if (refusal) return reject(state, event, refusal);
+      // A later journey can consume the acceptance without changing the referral snapshot.
+      // Keep its decision and notices while that journey or a bed still depends on it.
+      if (
+        record.action === "ACCEPT_REFERRAL" &&
+        (state.movements.some(
+          (movement) => movement.referralId === referral.id && movement.closure?.outcome !== "did_not_proceed",
+        ) ||
+          state.admissions.some((admission) => admission.referralId === referral.id && bedIsOccupied(admission)))
+      )
+        return reject(state, event, "This acceptance is already used by a journey or bed, so it cannot be undone");
       const restored = replaceReferral(state, referral.id, structuredClone(record.before));
       const raised = new Set(record.noticeIds);
       decision.outcome = "accepted";
@@ -248,15 +262,19 @@ export function reduceUndoEvent(
     case "UNDO_LEGAL_FORM_RECORD":
     case "UNDO_SUPPORT_NOTIFICATION":
     case "UNDO_REPATRIATION":
+    case "UNDO_FLAG_RETURN_EARLY":
     case "UNDO_HANDOVER_SIGN_OFF":
     case "UNDO_SITE_HANDOVER_SIGN_OFF":
     case "UNDO_ED_STEP":
     case "UNDO_TRANSPORT_STEP":
     case "UNDO_DEPARTURE":
     case "UNDO_ABSENT_WITHOUT_LEAVE":
-    case "UNDO_BED_MEETING_ACTION": {
+    case "UNDO_BED_MEETING_ACTION":
+    case "UNDO_BED_STEP":
+    case "UNDO_RELEASE_STEP":
+    case "UNDO_PATIENT_RECORD": {
       // v10 pass 3: takes back the newest step of this kind on this subject, exactly (`ward-undo.ts`).
-      const record = stepUndoFor(state.undoRecords, event.type, undoStepSubjectId(event));
+      const record = stepUndoFor(state.undoRecords, event.type, stepUndoSubjectId(event));
       if (!record) return reject(state, event, UNDO_STEP_NOTHING[event.type]);
       // An older toast's Undo must not take back a newer step that replaced its record.
       if (event.recordSeq !== undefined && record.seq !== event.recordSeq)

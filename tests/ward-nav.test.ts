@@ -723,7 +723,9 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
       "src/components/ward-management/movements/movement-drawer.tsx",
       "src/components/ward-management/movements/movements-stage-row.tsx",
       "src/components/ward-management/shell/ward-facade.ts",
-      // v6 (7 Oct 2026): All wards' profile pop-out links each ward's bed board by template.
+      // WS1 (Josh, 3 Nov 2026): All wards' ward side panel links each ward's bed board by template.
+      "src/components/ward-management/wards/ward-index-drawer.tsx",
+      // The phone sheet on All wards links each ward's bed board by template.
       "src/components/ward-management/wards/ward-index.tsx",
     ]);
     const ward = dynamicRouteScans.get("/ward-flow/ward/[unitId]");
@@ -792,6 +794,8 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
       // Census links select a numbered ward bed through a query.
       "src/components/ward-management/search/patient-census-view.tsx",
       "src/components/ward-management/shell/ward-facade.ts",
+      // WS1 (Josh, 3 Nov 2026): All wards' ward side panel has its own Open ward link.
+      "src/components/ward-management/wards/ward-index-drawer.tsx",
       "src/components/ward-management/wards/ward-index.tsx",
     ]);
 
@@ -1344,7 +1348,8 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   { route: `${ROUTE_PREFIX}/referrals`, render: () => createElement(ReferralBoard) },
   { route: `${ROUTE_PREFIX}/out-of-area`, render: () => createElement(OutOfAreaBoard) },
   { route: `${ROUTE_PREFIX}/wards`, render: () => createElement(WardIndex) },
-  { route: `${ROUTE_PREFIX}/community`, render: () => createElement(CommunityIndex) },
+  // PL1 (3 Nov 2026): the community index is Places' Catchments tab; `/community` redirects there.
+  { route: `${ROUTE_PREFIX}/hub/catchments`, render: () => createElement(CommunityIndex, { inPlaces: true }) },
   { route: `${ROUTE_PREFIX}/waiting`, render: () => createElement(DelaysScreen) },
   { route: `${ROUTE_PREFIX}/legal-forms`, render: () => createElement(LegalFormsScreen) },
   { route: `${ROUTE_PREFIX}/alerts`, render: () => createElement(AlertsScreen) },
@@ -1394,6 +1399,8 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
       // B4 step 3 (19 Oct 2026): Delays became Waiting; `delays/page.tsx` redirects to `/waiting`.
       `${ROUTE_PREFIX}/delays`,
       `${ROUTE_PREFIX}/ed`,
+      // PL1 (3 Nov 2026): Community folded into Places; `community/page.tsx` redirects to Catchments.
+      `${ROUTE_PREFIX}/community`,
     ]);
     const uncovered = [...scanned].filter((route) => !redirectOnlyRoutes.has(route) && !mapped.has(route));
     const stale = [...mapped].filter((route) => !scanned.has(route));

@@ -149,6 +149,31 @@ const eslintConfig = defineConfig([
       "jsx-a11y/tabindex-no-positive": "error",
     },
   },
+  // PT1 H10 (Josh, 3 Nov 2026): on the patient page, only `patient-referral-safety.ts` reads a
+  // referral's risk flags or working diagnosis. It reads the one referral the movement names, only
+  // when the desk's scoped workspace holds it, and always returns the referral's date.
+  {
+    files: ["src/components/ward-management/patients/**/*.{ts,tsx}"],
+    ignores: ["src/components/ward-management/patients/patient-referral-safety.ts"],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "MemberExpression[property.name='riskFlags'][object.property.name='intake'], MemberExpression[property.name='riskFlags'][object.name='intake']",
+          message: "H10: read referral risk flags only through referralSafetyFacts (patient-referral-safety.ts).",
+        },
+        {
+          selector: "MemberExpression[property.name='workingDiagnosis']",
+          message: "H10: read the referral diagnosis only through referralSafetyFacts (patient-referral-safety.ts).",
+        },
+        {
+          selector: "CallExpression[callee.name='seededReferralDossier'], Identifier[name='collectionRiskFlags']",
+          message: "H10: read referral risk only through referralSafetyFacts (patient-referral-safety.ts).",
+        },
+      ],
+    },
+  },
   // File size ratchet. New source files stay under MAX_LINES_DEFAULT lines, and the files that
   // were already larger cannot grow much past their baseline (eslint-rules/max-lines-baseline.mjs).
   {
@@ -239,6 +264,37 @@ const eslintConfig = defineConfig([
           name,
           message:
             "Use the kit's styled dialog (ConfirmDialog or Dialog), never the browser's own box (Josh, 31 Oct 2026).",
+        })),
+      ],
+    },
+  },
+  // G1 guard (plan 2h, Josh, 3 Nov 2026; an ESLint rule from 4 Nov 2026): no new browser date, date
+  // and time, or time box; use the kit's DateField. The files below still had one when the guard
+  // landed; each page group swaps its own and then removes its line, so the list only shrinks.
+  // Browser confirm boxes are covered by the dialog block above.
+  {
+    files: ["src/**/*.{jsx,tsx}"],
+    ignores: [
+      "src/components/ward-management/board/ward-board-detail-panel.tsx",
+      "src/components/ward-management/capacity/planned-admissions-panel.tsx",
+      "src/components/ward-management/discharges/discharge-dependencies-panel.tsx",
+      "src/components/ward-management/discharges/discharge-detail-panes.tsx",
+      "src/components/ward-management/ed/ed-screen-row-forms.tsx",
+      "src/components/ward-management/patients/patient-ward-change-card.tsx",
+      "src/components/ward-management/referrals/ward-referral-drawer-referral-step.tsx",
+      "src/components/ward-management/tools/ward-tool-form-times.tsx",
+      "src/components/ward-management/ward/ward-drawer-discharge-date.tsx",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        ...[
+          "JSXAttribute[name.name='type'] > Literal[value=/^(?:date|datetime-local|time)$/]",
+          "JSXAttribute[name.name='type'] > JSXExpressionContainer > Literal[value=/^(?:date|datetime-local|time)$/]",
+          "JSXAttribute[name.name='type'] > JSXExpressionContainer > TemplateLiteral[expressions.length=0] > TemplateElement[value.raw=/^(?:date|datetime-local|time)$/]",
+        ].map((selector) => ({
+          selector,
+          message: "Use the kit's DateField, never the browser's own date or time box (Josh, 3 Nov 2026).",
         })),
       ],
     },

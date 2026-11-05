@@ -87,14 +87,12 @@ import { useServiceScope } from "@/components/ward-management/shell/ward-service
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { WardDeskEmptyQueue, useWardDeskPlace } from "./referral-ward-desk";
 import desk from "./referral-desk.module.css";
-import type { ScopedMeetingRow } from "./bed-meeting-sheet";
 import panel from "./referral-panel.module.css";
 import { PatientTab, TimelineTab } from "./referral-panel-tabs";
 import { CommunityTeamLink, useCommunityDesk } from "./referral-community-desk";
 import { HighlightPills, decisionStats, deskHeroWords } from "./referral-board-hero";
 
 // The bed meeting, ISBAR and shortcut sheets open only on request, so they load after first render.
-const BedMeetingSheet = dynamic(() => import("./bed-meeting-sheet").then((m) => m.BedMeetingSheet), { ssr: false });
 const IsbarSheet = dynamic(() => import("./referral-summary-sheet").then((m) => m.ReferralSummarySheet), {
   ssr: false,
 });
@@ -177,7 +175,7 @@ const useSplitDetailLayout = createBrowserStore<boolean>(
 type HighlightKey = "overdue" | "tier1" | "ward" | "ed" | "both" | "community" | "refused";
 const HIGHLIGHT_KEYS: readonly HighlightKey[] = ["overdue", "tier1", "ward", "ed", "both", "community", "refused"];
 type InspectorTab = "place" | "patient" | "timeline";
-type BoardSheet = "meeting" | "summary" | "keys" | null;
+type BoardSheet = "summary" | "keys" | null;
 
 /**
  * WS-18: the decision's own controls (`referral-match.tsx`) that the A and D keys use. A presses
@@ -401,6 +399,14 @@ export function ReferralBoard({
 
   const anyHighlight = highlight !== null;
   const isHighlighted = (referral: Referral) => highlight !== null && highlightTest(highlight, referral, now);
+  const runwayProps = {
+    queued,
+    now,
+    selectedId: selectedReferralId,
+    isHighlighted: (referral: Referral) => anyHighlight && isHighlighted(referral),
+    nameOf,
+    umrnOf: (referral: Referral) => resolveSubjectPatient(referral, resolverState).umrn,
+  };
   const highlightedCount = anyHighlight ? queued.filter(isHighlighted).length : 0;
   /*
    * Audit round 2 (A2-14): on the phone a chip FILTERS. Dimming greyed the overdue row's act-now
@@ -486,31 +492,12 @@ export function ReferralBoard({
     () => bedsReadySummary(bedUnits, admissions, bedReleases, now),
     [bedUnits, admissions, bedReleases, now],
   );
-  // Round 4 (Josh, 31 Oct 2026): the bed meeting list follows access and filters. It keeps to the
-  // header's service (by the referring site), opens on the highlighted referrals, and marks rows
-  // whose destination details this desk may not see.
+  // R5 fold (Josh, 3 Nov 2026): the bed meeting's referrals live on the agenda now. The button
+  // counts those waiting in the header's service, as the agenda's Referrals list does.
   const serviceScope = useServiceScope();
-  const meetingRows: ScopedMeetingRow[] = queued
-    .filter((referral) => serviceScope === null || siteByCode(referral.originSiteCode)?.service === serviceScope)
-    .map((referral) => {
-      const person = resolveSubjectPatient(referral, resolverState);
-      return {
-        referral,
-        name: person.formalName,
-        umrn: person.umrn,
-        restricted: sender.referralFor(referral) !== undefined,
-      };
-    });
-  const meetingHighlightIds = anyHighlight
-    ? new Set(meetingRows.filter((row) => isHighlighted(row.referral)).map((row) => row.referral.id))
-    : undefined;
-  const meetingHighlightLabel =
-    highlight === null
-      ? undefined
-      : highlight === "refused"
-        ? "Refused once"
-        : HIGHLIGHT_LABELS.find(([key]) => key === highlight)?.[1];
-  const meetingScopeLabel = serviceScope ?? "Statewide";
+  const meetingCount = queued.filter(
+    (referral) => serviceScope === null || siteByCode(referral.originSiteCode)?.service === serviceScope,
+  ).length;
   const selectedPriority = selectedReferral ? getReferralPriority(selectedReferral, now) : undefined;
   // Audit 1 (CS-15, Josh 20 Oct): the toast names the person decided on, and the detail stays on
   // them. A default "first in queue" detail used to slide to the next person, Accept showing, as
@@ -624,7 +611,7 @@ export function ReferralBoard({
     } else if (key === "m" && !edDesk) {
       // Josh, 31 Oct 2026 (answer 35): the ED desk has no bed meeting list, so M does nothing there.
       e.preventDefault();
-      setSheet("meeting");
+      document.querySelector<HTMLAnchorElement>('[data-testid="ward-referral-meeting"]')?.click();
     } else if (e.key === "?") {
       e.preventDefault();
       setSheet("keys");
@@ -647,9 +634,8 @@ export function ReferralBoard({
     const targetWard = targetWardUnitId ? units.find((u) => u.id === targetWardUnitId) : undefined;
     if (!targetWardUnitId) return null;
     if (readOnly && !linkedMovement) return null;
-    // S-9 (audit 13 Oct 2026): an accepted referral was a dead end. It links on to
-    // its movement when one is open, otherwise names the next step, holding the
-    // bed on the accepting ward, and links the patient record.
+    // S-9 (audit 13 Oct 2026): an accepted referral was a dead end. It links on to its movement when one is open,
+    // otherwise names the next step, holding the bed on the accepting ward, and links the patient record.
     return (
       <>
         {linkedMovement ? (
@@ -805,7 +791,6 @@ export function ReferralBoard({
               bedsOpen={phoneSheet === "beds"}
               onBeds={() => setPhoneSheet("beds")}
               onNextOverdue={selectNextOverdue}
-              onMeeting={() => setSheet("meeting")}
               placeName={ownWardName}
               edHero={edDeskView.phoneHero(queued.length)}
             />
@@ -848,11 +833,7 @@ export function ReferralBoard({
                 {phoneSheet === "axis" ? (
                   <WaitRunway
                     compact
-                    queued={queued}
-                    now={now}
-                    selectedId={selectedReferralId}
-                    isHighlighted={(referral) => anyHighlight && isHighlighted(referral)}
-                    nameOf={nameOf}
+                    {...runwayProps}
                     onSelect={(id) => {
                       setPhoneSheet(null);
                       setView("queue");
@@ -913,9 +894,8 @@ export function ReferralBoard({
                 ) : (
                   <HeroTools
                     overdueCount={overdueQueued.length}
-                    meetingCount={meetingHighlightIds ? meetingHighlightIds.size : meetingRows.length}
+                    meetingCount={meetingCount}
                     onNextOverdue={selectNextOverdue}
-                    onMeeting={() => setSheet("meeting")}
                   />
                 )
               }
@@ -926,11 +906,7 @@ export function ReferralBoard({
                   <div className={cx(a.heroBand, redesign.heroBand, panel.heroBandStack)}>
                     {edQueueEmpty ? null : (
                       <WaitRunway
-                        queued={queued}
-                        now={now}
-                        selectedId={selectedReferralId}
-                        isHighlighted={(referral) => anyHighlight && isHighlighted(referral)}
-                        nameOf={nameOf}
+                        {...runwayProps}
                         onSelect={(id) => {
                           setView("queue");
                           handleSelect(id);
@@ -1069,9 +1045,10 @@ export function ReferralBoard({
                   now={now}
                   selectedId={selectedReferralId}
                   onSelect={handleSelect}
+                  undoRole={readOnly ? undefined : routeRole}
+                  onPull={!readOnly && routeRole === "coordinator" ? setPulling : undefined}
                 />
-                {/* Community desk: no chart of eight empty hours. */}
-                {decisionsByHour.length > 0 && !(community && decidedToday.length === 0) ? (
+                {decisionsByHour.length > 0 && decidedToday.length > 0 ? (
                   <div className={styles.v6Chart}>
                     <h3 className={styles.v6Eyebrow}>Decisions by hour</h3>
                     <ColumnChart
@@ -1454,16 +1431,6 @@ export function ReferralBoard({
           </div>
         </div>
 
-        <BedMeetingSheet
-          open={sheet === "meeting"}
-          onClose={() => setSheet(null)}
-          rows={meetingRows}
-          highlightedIds={meetingHighlightIds}
-          highlightLabel={meetingHighlightLabel}
-          scopeLabel={meetingScopeLabel}
-          now={now}
-          summary={bedsSummary}
-        />
         <ShortcutsSheet open={sheet === "keys"} onClose={() => setSheet(null)} />
         {pulling ? (
           <Sheet

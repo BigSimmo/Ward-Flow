@@ -26,6 +26,7 @@ export {
 };
 // Closing-the-loop (package E): return requested vs home service agreed.
 import { reduceHomeServiceReturn, type HomeServiceReturnRecord } from "./out-of-area/home-service-return";
+import { reduceFlagReturnEarly, type ReturnEarlyFlagRecord, type ReturnEarlyNotice } from "./out-of-area/return-early";
 import { withDischargeMoveDemo } from "./coordinator/since-last-look-seed";
 import { reduceDirectoryCheck, type DirectoryCheckRecord } from "./on-call/on-call-checks";
 import type { SiteHandoverSignOffRecord } from "./site-sign-off/site-handover-sign-off";
@@ -45,7 +46,6 @@ import {
   type UndoRecord,
   diffForStepUndo,
   nextStepUndoSeq,
-  undoStepSubjectId,
   undoStepTypeFor,
   type StepUndo,
   type UndoStepType,
@@ -185,7 +185,9 @@ import { withDemoStageTimes } from "@/components/ward-management/ward-demo-stage
 import { type SupportNotificationRecord } from "@/components/ward-management/ward-support-notifications";
 // Closing the loop, package D (24 Oct 2026).
 import { applyLoopChecksDemoOverlay } from "./ward-loop-checks-demo";
-import { subjectId } from "./ward-flow-subject-id";
+// S6 example data (3 Nov 2026): no demo list opens empty. A live shared build swaps in a no-op.
+import { applyExampleListsOverlay } from "@/components/ward-management/ward-demo-example-lists";
+import { stepUndoSubjectId, subjectId } from "./ward-flow-subject-id";
 import { nextBedReleaseId, withFreshIds } from "./ward-runtime-ids";
 export { UNLINKED_CARE_REFUSAL } from "./ward-flow-protected-record-events";
 
@@ -398,6 +400,16 @@ export type WardFlowState = WardAuditState & {
    * time, role and the named unsigned wards and unanswered bed calls only. Optional: absent in older saves.
    */
   siteHandoverSignOffs?: SiteHandoverSignOffRecord[];
+  /**
+   * Out of area "Flag early" (Josh, 3 Nov 2026): `FLAG_RETURN_EARLY` appends here. Stay, site, time
+   * and role only. Optional: absent in older saves, read as none.
+   */
+  returnEarlyFlags?: ReturnEarlyFlagRecord[];
+  /**
+   * Shared mode only (Josh, 4 Nov 2026): nameless early-return notices for a desk that should hear a
+   * flag but cannot see the stay. Worked out when the desk's copy is scoped; never written by the reducer.
+   */
+  returnEarlyNotices?: ReturnEarlyNotice[];
   /** Handover sign-offs — role and time only. `RECORD_HANDOVER_SIGN_OFF` appends here. */
   handoverSignOffs: HandoverSignOffRecord[];
   /**
@@ -561,7 +573,10 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
     plannedAdmissionSequence: 0,
   };
   // Closing the loop, package D (24 Oct 2026): a few synthetic marks so each record shows in the demo.
-  return network ? seed : applyLoopChecksDemoOverlay(applyRulingsDemoOverlay(seed, NOW_ANCHOR), NOW_ANCHOR);
+  return applyExampleListsOverlay(
+    network ? seed : applyLoopChecksDemoOverlay(applyRulingsDemoOverlay(seed, NOW_ANCHOR), NOW_ANCHOR),
+    NOW_ANCHOR,
+  );
 }
 
 /**
@@ -1478,13 +1493,17 @@ export const UNDO_STEP_NOTHING: Record<UndoStepType, string> = {
   UNDO_LEGAL_FORM_RECORD: "There is no legal form record on this patient to undo",
   UNDO_SUPPORT_NOTIFICATION: "There is no Tell record on this move to undo",
   UNDO_REPATRIATION: "There is no repatriation on this stay to undo",
+  UNDO_FLAG_RETURN_EARLY: "There is no early return flag on this stay to undo",
   UNDO_HANDOVER_SIGN_OFF: "There is no handover sign-off to undo",
   UNDO_SITE_HANDOVER_SIGN_OFF: "There is no site handover sign-off to undo",
   UNDO_ED_STEP: "There is no ED step on this patient to undo",
   UNDO_TRANSPORT_STEP: "There is no transport step on this journey to undo",
   UNDO_DEPARTURE: "There is no recorded departure on this stay to undo",
   UNDO_ABSENT_WITHOUT_LEAVE: "There is no absence on this stay to undo",
-  UNDO_BED_MEETING_ACTION: "There is no bed meeting action marked done here to undo",
+  UNDO_BED_MEETING_ACTION: "There is no bed meeting action recorded or marked done here to undo",
+  UNDO_BED_STEP: "There is no bed closed, reopened or returned from leave here to undo",
+  UNDO_RELEASE_STEP: "There is no release or cancellation here to undo",
+  UNDO_PATIENT_RECORD: "There is no order or archive on this record to undo",
 };
 
 /**
@@ -1505,7 +1524,7 @@ function withStepUndo(state: WardFlowState, next: WardFlowState, event: WardFlow
       kind: "step",
       undoType,
       action: event.type as StepUndo["action"],
-      subjectId: undoStepSubjectId(event),
+      subjectId: stepUndoSubjectId(event),
       at: event.now,
       seq: nextStepUndoSeq(next.undoRecords, state.auditSequence),
       role: event.role,
@@ -1720,6 +1739,7 @@ export function reduceClinicalEvent(
     case "UNDO_LEGAL_FORM_RECORD":
     case "UNDO_SUPPORT_NOTIFICATION":
     case "UNDO_REPATRIATION":
+    case "UNDO_FLAG_RETURN_EARLY":
     case "UNDO_HANDOVER_SIGN_OFF":
     case "UNDO_SITE_HANDOVER_SIGN_OFF":
     case "UNDO_ED_STEP":
@@ -1727,6 +1747,9 @@ export function reduceClinicalEvent(
     case "UNDO_DEPARTURE":
     case "UNDO_ABSENT_WITHOUT_LEAVE":
     case "UNDO_BED_MEETING_ACTION":
+    case "UNDO_BED_STEP":
+    case "UNDO_RELEASE_STEP":
+    case "UNDO_PATIENT_RECORD":
       return reducerSlices().reduceUndoEvent(state, event, decision, UNDO_EVENT_HELPERS);
     case "PLACE_IN_BED":
     case "UPDATE_EXPECTED_DISCHARGE":
@@ -1848,6 +1871,7 @@ export function reduceClinicalEvent(
     case "RECORD_LEGAL_FORM_WRITTEN":
     case "RECORD_LEGAL_FORM_CODE":
     case "RECORD_ED_PRESENTATION":
+    case "RECORD_LEGAL_FORM_DETAILS":
     case "RECORD_COUNTRY_EXTENSION":
     case "RECORD_LEGAL_FORM_CONTINUATION":
     case "RECORD_HANDOVER_SIGN_OFF":
@@ -1907,6 +1931,7 @@ export function reduceClinicalEvent(
       });
     case "RECORD_RESTRICTIVE_PRACTICE_START":
     case "RECORD_RESTRICTIVE_PRACTICE_END":
+    case "RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP":
     case "RECORD_WARD_INCIDENT":
     case "SET_SECLUSION_ROOM_STATUS":
       return reducerSlices().reduceRestrictivePracticeEvent(state, event, decision, { findUnit, reject, replaceUnit });
@@ -2307,6 +2332,9 @@ export function reduceClinicalEvent(
       return reduceHomeServiceReturn(state, event, reject);
     case "RECORD_DIRECTORY_CHECK":
       return reduceDirectoryCheck(state, event, reject);
+    // Out of area "Flag early" (3 Nov 2026); its Undo is a step undo above.
+    case "FLAG_RETURN_EARLY":
+      return reduceFlagReturnEarly(state, event, reject);
     // Q61 (31 Oct 2026): a site handover sign-off; its Undo is a step undo above.
     case "RECORD_SITE_HANDOVER_SIGN_OFF":
       return reducerSlices().reduceSiteHandoverSignOff(state, event, reject);

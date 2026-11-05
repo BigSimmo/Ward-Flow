@@ -11,9 +11,18 @@ import { seedWardFlowState } from "@/components/ward-management/ward-flow-reduce
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import type { Movement } from "@/components/ward-management/ward-model";
 
 const state = seedWardFlowState();
-const movement = state.movements[0]!;
+const movement: Movement = {
+  ...state.movements[0]!,
+  transport: {
+    id: "synthetic-cancel-job",
+    provider: "Ambulance (St John)",
+    escortRequired: false,
+    cadNumber: "CAD-4567",
+  },
+};
 const reason = CANCEL_TRANSPORT_REASONS[0]!;
 
 function Harness({ raise }: { raise: WardRaise }) {
@@ -72,9 +81,9 @@ describe("community cancellation keeps context until its command is answered", (
     const confirm = within(dialog).getByRole("button", { name: "Confirm cancel" });
     expect(within(dialog).getByRole("button", { name: "Close dialog" })).toBeInTheDocument();
     fireEvent.click(confirm);
-    // While saving the kit Dialog takes its close button away, and Keep booking is disabled.
+    // While saving the kit Dialog takes its close button away, and Keep as is is disabled.
     expect(within(dialog).queryByRole("button", { name: "Close dialog" })).toBeNull();
-    const keep = within(dialog).getByRole("button", { name: "Keep booking" });
+    const keep = within(dialog).getByRole("button", { name: "Keep as is" });
     expect(keep).toBeDisabled();
     expect(confirm).toHaveAttribute("aria-disabled", "true");
     fireEvent.click(keep);

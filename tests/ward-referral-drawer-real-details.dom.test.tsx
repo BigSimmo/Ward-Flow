@@ -1,6 +1,9 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { configure, fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { describe, expect, it, vi } from "vitest";
+configure({
+  getElementError: () => new Error("Referral details query failed; record-bearing diagnostics suppressed."),
+});
 
 vi.mock("next/link", () => ({
   default: ({ children, href, ...rest }: { children: ReactNode; href: string }) => (
@@ -48,7 +51,7 @@ describe("the referral drawer shows only what the record holds", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByRole("button", { name: "Change patient" }));
-    const search = screen.getByRole("searchbox", { name: "Find a patient" });
+    const search = screen.getByRole("combobox", { name: "Find a patient" });
     fireEvent.keyDown(search, { key: "Escape" });
     expect(close).not.toHaveBeenCalled();
     // Opened from a person (option B), closing the search shows that person's summary again, so the
@@ -84,18 +87,19 @@ describe("the referral drawer shows only what the record holds", () => {
 
     // The identity banner carries the recorded name, surname first (D-83, bug list row 18).
     expect(screen.getByText(new RegExp(`^${recorded.formalName} \\(`))).toBeInTheDocument();
-    // v6 (ReferralDrawer.webp): "UMRN UM100052 · DOB … · Medicare Not recorded", no colons.
+    // v6 (ReferralDrawer.webp): "UMRN UM100052 · DOB …", no colons. RF4 (3 Nov 2026): an
+    // unrecorded Medicare number is left out rather than shown as "Not recorded".
     expect(document.body.textContent).toContain(`UMRN ${recorded.umrn}`);
-    expect(document.body.textContent).toContain("Medicare Not recorded");
+    expect(document.body.textContent).not.toContain("Medicare Not recorded");
     expect(document.body.textContent).not.toMatch(/Dr\. L\. Patel|persecutory delusions|2940 19283 1/);
   });
 
   it("starts the free-text fields empty and offers one patient search", () => {
     renderDrawer();
     // Opened naming the person (option B), the person shows as a summary; Change opens the one search.
-    expect(screen.queryByRole("searchbox", { name: "Find a patient" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("combobox", { name: "Find a patient" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Change patient" }));
-    expect(screen.getAllByRole("searchbox", { name: "Find a patient" })).toHaveLength(1);
+    expect(screen.getAllByRole("combobox", { name: "Find a patient" })).toHaveLength(1);
     expect(screen.queryByText("Live Database Search")).not.toBeInTheDocument();
     // v6: the clinical acuity cell reads "Diagnosis not recorded".
     expect(document.body.textContent).toMatch(/Diagnosis not recorded/);

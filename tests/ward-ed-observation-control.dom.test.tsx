@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { EdScreen } from "@/components/ward-management/ed/ed-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { pickObservationInterval, pickObservationLevel } from "./helpers/ward-choice-chips";
 
 /*
  * PR #533 (owner decision 22 Oct 2026): ED changes a waiting patient's observation level from the
@@ -46,8 +47,8 @@ describe("ED patient record — observation level", () => {
     const section = screen.getByTestId("ward-ed-observation");
     // The control loads after the first paint; it is the ward drawer's own control.
     fireEvent.click(await within(section).findByTestId("ward-observation-change"));
-    fireEvent.change(within(section).getByTestId("ward-observation-level"), { target: { value: "intermittent" } });
-    fireEvent.change(within(section).getByTestId("ward-observation-interval"), { target: { value: "30" } });
+    pickObservationLevel("intermittent", section);
+    pickObservationInterval(30, section);
     fireEvent.change(within(section).getByTestId("ward-observation-review-time"), { target: { value: "23:30" } });
     fireEvent.click(within(section).getByTestId("ward-observation-save"));
     expect(screen.getByTestId("probe")).toHaveTextContent("intermittent|30|1");

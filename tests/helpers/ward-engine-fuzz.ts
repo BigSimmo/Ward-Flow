@@ -108,7 +108,7 @@ import { SNOOZE_REASON_IDS } from "@/components/ward-management/ward-inbox-snooz
 import { LEGAL_CLOCK_FORM_CODES } from "@/components/ward-management/ward-legal-clock";
 import { countryExtensionEligible } from "@/components/ward-management/ward-legal-forms";
 import { GENDERS } from "@/components/ward-management/ward-patients";
-import { UNDO_STEP_TYPES } from "@/components/ward-management/ward-undo";
+import { UNDO_STEP_TYPES, UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-undo";
 import { OBSERVATION_LEVELS, observationAt } from "@/components/ward-management/ward-observation";
 import {
   RESTRICTIVE_PRACTICE_IDS,
@@ -1038,7 +1038,14 @@ const inboxEvent =
   };
 
 /** The field an undo record's subject lives in: movement, referral or stay, else the network. */
-function undoSubjectField(state: WardFlowState, subjectId: string): Record<string, string> {
+function undoSubjectField(state: WardFlowState, subjectId: string): Record<string, string | number> {
+  // Tier 1 item 6 (4 Nov 2026): bed, leave, booking and patient subjects carry a prefix.
+  const [prefix, ...rest] = subjectId.split(":");
+  if (prefix === "leave") return { leaveBedId: rest.join(":") };
+  if (prefix === "planned") return { plannedAdmissionId: rest.join(":") };
+  if (prefix === "patient") return { patientId: rest.join(":") };
+  if (prefix === "bed" && rest.length >= 2)
+    return { unitId: rest.slice(0, -1).join(":"), bedNumber: Number(rest.at(-1)) };
   if (state.movements.some((movement) => movement.id === subjectId)) return { movementId: subjectId };
   if (state.referrals.some((referral) => referral.id === subjectId)) return { referralId: subjectId };
   if (state.admissions.some((stay) => stay.id === subjectId)) return { admissionId: subjectId };
@@ -1455,6 +1462,7 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
   [0.5, movementEvent("UNDO_LEGAL_FORM_RECORD")],
   [0.5, movementEvent("UNDO_SUPPORT_NOTIFICATION", ["arrived"])],
   [0.5, admissionEvent("UNDO_REPATRIATION", ["occupied"])],
+  [0.5, admissionEvent("UNDO_FLAG_RETURN_EARLY", ["occupied"])],
   [0.5, () => ({ type: "UNDO_HANDOVER_SIGN_OFF" })],
   [0.5, () => ({ type: "RECORD_HANDOVER_SIGN_OFF" })],
   // Q61 (31 Oct 2026): a site's handover sign-off, mostly for the next handover, and its Undo aimed
@@ -1468,7 +1476,9 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     }),
   ],
   [
-    0.5,
+    // Raised from 0.5 on 4 Nov 2026: the gap list and Tier 1 undo builders thinned the draw so far
+    // that 1000 seeds no longer reached an accepted handover sign-off undo.
+    1.5,
     (state) => {
       const record = (state.undoRecords ?? []).findLast(
         (candidate) => candidate.kind === "step" && candidate.undoType === "UNDO_SITE_HANDOVER_SIGN_OFF",
@@ -1618,6 +1628,22 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     (state, random) => {
       const patient = prefer(random, state.patients, (candidate) => candidate.id.startsWith("PT-A"));
       return { type: "ARCHIVE_PATIENT", patientId: patient?.id ?? MISSING_ID, reason: "test" };
+    },
+  ],
+  // Tier 1 item 6 (4 Nov 2026): take back the newest patient record step, so a sweep step always sends it.
+  [
+    1,
+    (state, random) => {
+      const record = (state.undoRecords ?? [])
+        .flatMap((candidate) =>
+          candidate.kind === "step" && candidate.undoType === "UNDO_PATIENT_RECORD" ? [candidate] : [],
+        )
+        .at(-1);
+      const subject = record?.subjectId ?? "";
+      const patientId = subject.startsWith("patient:")
+        ? subject.slice("patient:".length)
+        : (pick(random, state.patients)?.id ?? MISSING_ID);
+      return { type: "UNDO_PATIENT_RECORD", patientId, ...(record ? { role: record.role } : {}) };
     },
   ],
   // Movement facts: arrival details, flags, blockers, escalation, documents.
@@ -1798,6 +1824,23 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
         actingUnitId: id(unit),
         episodeId: episode?.id ?? MISSING_ID,
         endedAt: currentNow - pick(random, [0, 5, 3000])!,
+      };
+    },
+  ],
+  [
+    0.5,
+    (state, random) => {
+      const unit = prefer(random, state.units, (candidate) =>
+        (candidate.restrictivePractice?.episodes ?? []).some((episode) => episode.endedAt !== undefined),
+      );
+      const episode = pick(random, unit?.restrictivePractice?.episodes ?? []);
+      return {
+        type: "RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP",
+        unitId: id(unit),
+        actingUnitId: id(unit),
+        episodeId: episode?.id ?? MISSING_ID,
+        task: pick(random, ["post_release_exam", "sent_to_ocp", "patient_debrief", "staff_debrief"] as const),
+        done: chance(random, 0.8),
       };
     },
   ],
@@ -2103,6 +2146,15 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       };
     },
   ],
+  // Out of area "Flag early" (3 Nov 2026): a current stay and, mostly, a listed site.
+  [
+    0.5,
+    (state, random) => ({
+      type: "FLAG_RETURN_EARLY",
+      admissionId: id(stayFor(state, random, occupied)),
+      homeHospital: chance(random, 0.95) ? pick(random, SITE_CODES) : MISSING_ID,
+    }),
+  ],
   [
     0.5,
     (_state, random) => ({
@@ -2212,6 +2264,15 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       presentations: chance(random, 0.2) ? [] : [pick(random, ["Suicidal thoughts", "Psychosis", "Other"] as const)],
     })),
   ],
+  [
+    1,
+    // Gap list items 3 to 7: details on the current form, sometimes a stale code, sometimes a clear.
+    movementEvent("RECORD_LEGAL_FORM_DETAILS", undefined, (_state, random, movement) => ({
+      formCode: chance(random, 0.1) ? formCodeFor(random, movement) : (movement.legalForm?.code ?? "1A"),
+      madeBy: chance(random, 0.2) ? null : pick(random, ["psychiatrist", "medical_practitioner", "amhp"] as const),
+      copyGiven: pick(random, ["yes", "declined", "not_yet"] as const),
+    })),
+  ],
 ];
 
 const ALL_BUILDERS = [...BUILDERS, ...MORE_BUILDERS];
@@ -2280,6 +2341,23 @@ export function nextEvent(
       now: currentNow,
       ...undoSubjectField(state, justTold.subjectId),
       ...(justTold.unitId ? { actingUnitId: justTold.unitId } : {}),
+    } as unknown as WardFlowEvent;
+  }
+  // The same for a site's handover sign-off (Q61): its Undo is only within the undo window, so
+  // sometimes take it back at once, as the bed manager who signed it.
+  if (
+    !sweep &&
+    justTold?.kind === "step" &&
+    justTold.undoType === "UNDO_SITE_HANDOVER_SIGN_OFF" &&
+    currentNow - justTold.at <= UNDO_WINDOW_MINUTES &&
+    chance(random, 0.5)
+  ) {
+    FUZZED_EVENT_TYPES.add("UNDO_SITE_HANDOVER_SIGN_OFF");
+    return {
+      type: "UNDO_SITE_HANDOVER_SIGN_OFF",
+      role: justTold.role,
+      now: currentNow,
+      siteCode: justTold.subjectId.replace(/^site-handover:/, ""),
     } as unknown as WardFlowEvent;
   }
   for (let attempt = 0; ; attempt += 1) {

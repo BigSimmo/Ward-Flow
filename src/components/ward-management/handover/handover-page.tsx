@@ -13,7 +13,7 @@ import {
   SlidersHorizontal,
   Keyboard,
   MonitorPlay,
-  MoreHorizontal,
+  Ellipsis,
   Printer,
   Timer as TimerIcon,
 } from "lucide-react";
@@ -47,7 +47,7 @@ import {
   PortraitList,
   PortraitRail,
   Segmented,
-  Select,
+  Count,
   StatusGlyph,
   TabPanel,
   Tabs,
@@ -104,13 +104,7 @@ import {
 } from "./handover-model";
 import { HandoverFlowPanel, HandoverSignOffPanel, HandoverSiteSignOffSlot } from "./handover-panels";
 import { handoverSignOffChecks, sheetSignOff } from "./handover-sign-off-checks";
-import {
-  HandoverKeysHelp,
-  HandoverMeetingTimer,
-  ShowMoreRow,
-  SignOffBar,
-  signOffWaitReason,
-} from "./handover-sheet-parts";
+import { HandoverKeysHelp, HandoverMeetingTimer, ShowMoreRow, signOffWaitReason } from "./handover-sheet-parts";
 import * as desk from "./handover-desk";
 import { HandoverBeds } from "./handover-beds";
 import { LongStaySummary } from "./long-stay-summary";
@@ -123,7 +117,7 @@ import { HandoverPhone } from "./handover-phone";
 import styles from "./handover-refined.module.css";
 
 import { NETWORK_SCOPE_VALUE, handoverScopeValue, parseHandoverScope } from "./handover-scope";
-import { HandoverHistory, HandoverScopeControl, StatusCheckIcon } from "./handover-page-parts";
+import { HandoverChoiceMenu, HandoverHistory, HandoverScopeControl, StatusCheckIcon } from "./handover-page-parts";
 import {
   allRecordsScopeLabel,
   handoverScopeLabel,
@@ -161,6 +155,11 @@ const GROUPING_LABEL: Record<HandoverGrouping, string> = {
   owner: "Group: owner",
   none: "No groups",
 };
+
+/** "Meeting order" from "Group: meeting order", for the arrange button and the Group menu. */
+function groupingName(id: HandoverGrouping): string {
+  return GROUPING_LABEL[id].replace("Group: ", "").replace(/^./, (first) => first.toUpperCase());
+}
 
 const PILL_TONE: Record<Exclude<HandoverPill, "new">, "danger" | "warning" | "neutral" | "info"> = {
   act: "danger",
@@ -603,6 +602,8 @@ export function HandoverPage() {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey || isTypingTarget(event.target)) return;
+      // A letter typed in an open menu (Show, Group, Sort) jumps to a choice there, never a shortcut.
+      if (event.target instanceof Element && event.target.closest('[role="menu"]')) return;
       if (document.querySelector('[role="dialog"][aria-modal="true"]') && event.key !== "Escape") return;
       const key = event.key.toLowerCase();
       if (event.key === "Escape") {
@@ -749,32 +750,22 @@ export function HandoverPage() {
   );
   const deskChips = desk.deskChips(HANDOVER_CHIPS, ownWard !== undefined);
   const groupingControl = (
-    <Select
-      aria-label="Group by"
-      boxClassName={styles.barSelect}
+    <HandoverChoiceMenu
+      label="Group by"
+      context="Group"
       value={grouping}
-      onChange={(event) => setGrouping(event.target.value as HandoverGrouping)}
-    >
-      {(Object.keys(GROUPING_LABEL) as HandoverGrouping[]).map((id) => (
-        <option key={id} value={id}>
-          {GROUPING_LABEL[id]}
-        </option>
-      ))}
-    </Select>
+      choices={(Object.keys(GROUPING_LABEL) as HandoverGrouping[]).map((id) => ({ id, label: groupingName(id) }))}
+      onChange={(id) => setGrouping(id as HandoverGrouping)}
+    />
   );
   const sortControl = (
-    <Select
-      aria-label="Sort"
-      boxClassName={styles.barSelect}
+    <HandoverChoiceMenu
+      label="Sort"
+      context="Sort"
       value={sort}
-      onChange={(event) => setSort(event.target.value as HandoverSort)}
-    >
-      {(Object.keys(SORT_LABEL) as HandoverSort[]).map((id) => (
-        <option key={id} value={id}>
-          {SORT_LABEL[id]}
-        </option>
-      ))}
-    </Select>
+      choices={(Object.keys(SORT_LABEL) as HandoverSort[]).map((id) => ({ id, label: SORT_LABEL[id] }))}
+      onChange={(id) => setSort(id as HandoverSort)}
+    />
   );
   const densityControl = (
     <Segmented
@@ -832,16 +823,16 @@ export function HandoverPage() {
       align="end"
       trigger={(props) => (
         <Button {...props} variant="ghost" size="sm" icon={SlidersHorizontal}>
-          {GROUPING_LABEL[grouping].replace("Group: ", "").replace(/^./, (first) => first.toUpperCase())}
+          {groupingName(grouping)}
         </Button>
       )}
     >
       {() => (
         <div className={styles.viewPanel}>
-          <span className={styles.viewHead}>Group</span>
-          {groupingControl}
-          <span className={styles.viewHead}>Sort</span>
-          {sortControl}
+          <div className={styles.viewChoices}>
+            {groupingControl}
+            {sortControl}
+          </div>
           <span className={styles.viewHead}>Columns</span>
           <div className={styles.viewCols}>
             {HANDOVER_COLUMNS.filter((column) => !column.locked).map((column) => (
@@ -941,15 +932,29 @@ export function HandoverPage() {
   );
 
   const shiftClock = formatInstantWithDay(shiftAt, now);
+  /*
+   * Sign off lives in one fixed place, the hero, on every tab (Josh, 3 Nov 2026: the bar over the
+   * list and then the block at its foot were replaced). It carries the check count and opens the
+   * checklist drawer, where the checks are reviewed and Sign off is the one filled button.
+   */
+  const checksDone = signChecks.filter((check) => check.done).length;
   const signOffButton = (
     <Button
       variant="light"
       size="sm"
       icon={StatusCheckIcon(signedAt !== null)}
       onClick={showSignOff}
+      aria-label={signedAt !== null ? undefined : `Sign off, ${checksDone} of ${signChecks.length} checks clear`}
       data-testid="ward-handover-hero-sign-off"
     >
-      {signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : "Sign off"}
+      {signedAt !== null ? (
+        `Signed ${formatInstantWithDay(signedAt, now)}`
+      ) : (
+        <>
+          Sign off
+          <Count n={`${checksDone}/${signChecks.length}`} className={styles.heroSignCount} />
+        </>
+      )}
     </Button>
   );
   /*
@@ -1011,7 +1016,7 @@ export function HandoverPage() {
           >
             {meetingStartedAt !== null ? <HandoverMeetingTimer startedAt={meetingStartedAt} /> : "Start meeting"}
           </Button>
-          {tab === "pts" || edDesk ? null : signOffButton}
+          {edDesk ? null : signOffButton}
         </>
       }
       foot={
@@ -1049,14 +1054,7 @@ export function HandoverPage() {
         label="More handover actions"
         align="end"
         trigger={(props) => (
-          <Button
-            {...props}
-            variant="sec"
-            size="sm"
-            iconOnly
-            icon={MoreHorizontal}
-            aria-label="More handover actions"
-          />
+          <Button {...props} variant="sec" size="sm" iconOnly icon={Ellipsis} aria-label="More handover actions" />
         )}
       >
         {() => (
@@ -1136,12 +1134,7 @@ export function HandoverPage() {
       data-testid="ward-handover-sheet"
     >
       <div className={styles.bar} data-testid="ward-handover-prepare">
-        {scopeControl ? (
-          <label className={styles.step}>
-            <span className={styles.stepLabel}>Show</span>
-            {scopeControl}
-          </label>
-        ) : null}
+        {scopeControl}
         <div className={styles.step}>
           <span className={styles.stepLabel}>Detail</span>
           {densityControl}
@@ -1382,16 +1375,10 @@ export function HandoverPage() {
     );
   } else if (portrait) {
     const signedLine = signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : null;
-    const checksDone = signChecks.filter((check) => check.done).length;
     body = (
       <TabPanel idPrefix="ward-handover-tab" id="pts">
         <div className={styles.portraitTools}>
-          {scopeControl ? (
-            <label className={styles.step}>
-              <span className={styles.stepLabel}>Show</span>
-              {scopeControl}
-            </label>
-          ) : null}
+          {scopeControl}
           <span className={styles.portraitNote}>
             <b>{rows.length}</b> of {allRows.length} open
           </span>
@@ -1443,19 +1430,6 @@ export function HandoverPage() {
     );
   }
 
-  // One Sign off on screen: the bar shows only when the rail's own panel is not beside the table.
-  const signBar =
-    tab === "pts" && !sheetOpen && !edDesk ? (
-      <SignOffBar
-        title={`${shiftClock} handover`}
-        checks={signChecks}
-        signedLine={signedAt !== null ? `Signed ${formatInstantWithDay(signedAt, now)}` : null}
-        cannotSignReason={canSignOff ? undefined : cannotSignReason}
-        onSignOff={handleSignOff}
-        onOpenPanel={showSignOff}
-      />
-    ) : null;
-
   return (
     <main
       ref={shortcutScopeRef}
@@ -1470,7 +1444,6 @@ export function HandoverPage() {
       {sheetOpen ? null : <HandoverOpenPromises referrals={referrals} units={units} now={now} layout="page" />}
       {sheetOpen ? null : toolbar}
       {body}
-      {signBar}
       {!portrait ? (
         <Drawer
           open={drawerOpen && (wide ? (flowPanel ?? signOffPanel) : signOffPanel) !== null}

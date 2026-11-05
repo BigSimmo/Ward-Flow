@@ -11,20 +11,13 @@ import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 import { bedMapCards, wardCardName } from "./helpers/capacity-ward-table";
 
 /**
- * How many seeded stays carry a discharge record AND name a patient who exists, counted from the seed
- * itself rather than typed in: every seeded record now names a real patient (Josh, 25 Sept 2026), so
- * the old pinned "exactly two" no longer holds and would move again with every linked stay (R8, R18).
+ * Recorded (DC4, Josh, 3 Nov 2026) lists only departed stays whose leftAt falls in the last 7 days,
+ * counted from the seed rather than typed in.
  */
-function seededLinkedDischargeRecordCount(): number {
-  const seed = seedWardFlowState();
-  const patientIds = new Set(seed.patients.map((patient) => patient.id));
-  return seed.admissions.filter(
-    (admission) =>
-      (admission.expectedDischargeAt !== null ||
-        admission.dischargeConfirmedAt !== null ||
-        admission.leftAt !== null) &&
-      admission.patientId !== null &&
-      patientIds.has(admission.patientId),
+function seededRecentDepartureCount(): number {
+  const since = NOW_ANCHOR - 7 * 24 * 60;
+  return seedWardFlowState().admissions.filter(
+    (admission) => admission.state === "departed" && admission.leftAt !== null && admission.leftAt >= since,
   ).length;
 }
 
@@ -45,26 +38,23 @@ function renderDischarges({ controls = false }: { controls?: boolean } = {}) {
   );
 }
 
-function showAdmissionRecords() {
-  fireEvent.click(screen.getByRole("button", { name: /^History, admission records \d+$/u }));
+function showRecorded() {
+  fireEvent.click(screen.getByRole("button", { name: "Recorded, discharges in the last 7 days" }));
 }
 
-function showLinkedPatients() {
-  fireEvent.change(screen.getByRole("combobox", { name: "Patient link" }), { target: { value: "linked" } });
+/** A kit Menu radio picker: open its pill, then choose the option. */
+function pick(label: string, option: string) {
+  fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${label}: `, "u") }));
+  fireEvent.click(within(screen.getByRole("menu", { name: label })).getByRole("menuitemradio", { name: option }));
 }
 
-function openInesRecord() {
+/** Farah Davenporton (AD-LEFT-01, UM100010) is a linked patient who left within the last 7 days. */
+function openFarahRecord() {
   const opener = within(screen.getByRole("region", { name: "Discharge worklist" })).getByRole("button", {
-    name: "Marrowby, Ines",
+    name: "Davenporton, Farah",
   });
   fireEvent.click(opener);
   return opener;
-}
-
-function populationCount(button: HTMLElement): number {
-  const match = button.textContent?.match(/(\d+)\s*$/u);
-  expect(match, `population button has no count: ${button.textContent}`).not.toBeNull();
-  return Number(match![1]);
 }
 
 describe("Q004 Capacity and Discharges refinement journeys", () => {
@@ -93,7 +83,7 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     expect(card, `the bed map must draw ${ward.name}`).toBeDefined();
     fireEvent.click(card!);
     const drawer = within(screen.getByTestId("ward-capacity-ward-drawer"));
-    fireEvent.click(drawer.getByRole("radio", { name: /^Discharges/u }));
+    fireEvent.click(drawer.getByRole("tab", { name: /^Discharges/u }));
 
     const opener = drawer.getByRole("button", { name: /Marrowby, Ines/u });
     fireEvent.click(opener);
@@ -105,10 +95,9 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
 
   it("discards an opened identity and its old handle when the real scenario reset remounts the board", () => {
     renderDischarges({ controls: true });
-    showAdmissionRecords();
-    showLinkedPatients();
-    openInesRecord();
-    expect(screen.getByRole("region", { name: "Selected discharge details" })).toHaveTextContent("UMRN UM100003");
+    showRecorded();
+    openFarahRecord();
+    expect(screen.getByRole("region", { name: "Selected discharge details" })).toHaveTextContent("UMRN UM100010");
 
     // DA-10: Reset demo asks first; the reset happens on the dialog's own Reset demo button.
     fireEvent.click(screen.getByRole("button", { name: "Reset demo" }));
@@ -118,22 +107,19 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
 
     expect(screen.getByRole("button", { name: /^Now, \d+ to work now$/u })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByRole("heading", { name: "Record detail" })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Selected discharge details" })).not.toHaveTextContent("UM100003");
+    expect(screen.getByRole("region", { name: "Selected discharge details" })).not.toHaveTextContent("UM100010");
 
-    showAdmissionRecords();
-    showLinkedPatients();
-    openInesRecord();
-    expect(screen.getByRole("region", { name: "Selected discharge details" })).toHaveTextContent("UMRN UM100003");
+    showRecorded();
+    openFarahRecord();
+    expect(screen.getByRole("region", { name: "Selected discharge details" })).toHaveTextContent("UMRN UM100010");
   });
 
-  it("keeps bed releases and admission records as separate counted populations", () => {
+  it("keeps bed releases and recorded discharges as separate counted populations", () => {
     renderDischarges();
     // Discharges redesign (approved 31 Oct 2026): Now names the hero's figure, the releases listed to
-    // work now; History keeps its count of admission records.
+    // work now. DC4 (3 Nov 2026): Recorded is the last 7 days of discharges and carries no count.
     const releases = screen.getByRole("button", { name: /^Now, \d+ to work now$/u });
-    const records = screen.getByRole("button", { name: /^History, admission records \d+$/u });
-    const recordCount = populationCount(records);
-    expect(recordCount).toBeGreaterThan(0);
+    const recorded = screen.getByRole("button", { name: "Recorded, discharges in the last 7 days" });
     const groups = groupDischarges(bedReleases, NOW_ANCHOR, { heldUpAnyDate: true });
     const toWork = groups.blocked.length + groups.confirmed.length + groups.expected.length;
     expect(toWork).toBeGreaterThan(0);
@@ -142,51 +128,57 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     const open = bedReleases.filter((release) => release.state !== "discharged").length;
     expect(screen.getByRole("heading", { name: new RegExp(`^${toWork} to work now`, "u") })).toBeInTheDocument();
     expect(screen.getByTestId("ward-discharge-bed-days-past")).toHaveTextContent(new RegExp(`of ${open} open`, "u"));
-    // Josh, 30 Oct: there is no "all" total beside the hero's two; with no chip pressed every status shows.
-    const statusChips = () => within(screen.getByRole("group", { name: "Status" })).getAllByRole("button");
-    const noAllChip = () => {
-      expect(statusChips().some((chip) => /^All/u.test(chip.textContent ?? ""))).toBe(false);
-      expect(statusChips().every((chip) => chip.getAttribute("aria-pressed") === "false")).toBe(true);
-    };
-    noAllChip();
+    // DC2 (3 Nov 2026): the in-list status chip row is gone in both populations.
+    expect(screen.queryByRole("group", { name: "Status" })).toBeNull();
 
-    fireEvent.click(records);
-    noAllChip();
-    expect(screen.getByRole("heading", { name: /^\d+ admission records? open/u })).toBeInTheDocument();
+    fireEvent.click(recorded);
+    expect(recorded).toHaveAttribute("aria-pressed", "true");
+    expect(screen.queryByRole("group", { name: "Status" })).toBeNull();
+    const recent = seededRecentDepartureCount();
+    expect(recent, "the seed has no discharge in the last 7 days").toBeGreaterThan(0);
+    expect(
+      screen.getByRole("heading", { name: new RegExp(`^${recent} discharges? recorded`, "u") }),
+    ).toBeInTheDocument();
+    const worklist = screen.getByRole("region", { name: "Discharge worklist" });
+    expect(within(worklist).getAllByRole("button")).toHaveLength(recent);
+    // An open admission record (Ines Marrowby, held up or expected) stays on Now only.
+    expect(within(worklist).queryByRole("button", { name: "Marrowby, Ines" })).toBeNull();
   });
 
-  it("filters to the linked patients, opens one, and clears that identity on filter and population changes", () => {
+  it("filters Recorded by destination, opens one, and clears that identity on filter and population changes", () => {
     renderDischarges();
-    showAdmissionRecords();
-    showLinkedPatients();
+    showRecorded();
 
     const worklist = screen.getByRole("region", { name: "Discharge worklist" });
-    const recordButtons = within(worklist).getAllByRole("button");
-    const expected = seededLinkedDischargeRecordCount();
-    expect(expected, "the seed has fewer than two linked stays with a discharge record").toBeGreaterThanOrEqual(2);
-    expect(recordButtons, "one button per linked stay with a discharge record in the seed").toHaveLength(expected);
-    expect(recordButtons.map((button) => button.textContent)).toEqual(
-      // AD-LEFT-01 (RF-010) names PT-010, Farah Davenporton, since 53105ca6ea; it named Talia Halloway before.
-      expect.arrayContaining([
-        expect.stringContaining("Marrowby, Ines"),
-        expect.stringContaining("Davenporton, Farah"),
-      ]),
-    );
+    expect(within(worklist).getAllByRole("button")).toHaveLength(seededRecentDepartureCount());
+    // The identity filter was removed (DC2); Recorded offers Going to instead of Held up by, and no Sort.
+    expect(screen.queryByRole("button", { name: /^Patient link: /u })).toBeNull();
+    expect(screen.queryByRole("button", { name: /^Held up by: /u })).toBeNull();
+    expect(screen.queryByTestId("ward-discharges-sort")).toBeNull();
 
-    openInesRecord();
+    pick("Going to", "Discharged to the community");
+    const community = within(worklist).getAllByRole("button");
+    expect(community.map((button) => button.textContent)).toEqual(
+      // AD-LEFT-01 (RF-010) names PT-010, Farah Davenporton, since 53105ca6ea; it named Talia Halloway before.
+      expect.arrayContaining([expect.stringContaining("Davenporton, Farah")]),
+    );
+    expect(community.length).toBeLessThan(seededRecentDepartureCount());
+
+    openFarahRecord();
     const details = screen.getByRole("region", { name: "Selected discharge details" });
     // D-39: the admission number is no longer shown beside the person.
-    expect(details).not.toHaveTextContent("AD-RPHS-14");
-    expect(details).toHaveTextContent("UMRN UM100003");
+    expect(details).not.toHaveTextContent("AD-LEFT-01");
+    expect(details).toHaveTextContent("UMRN UM100010");
 
-    fireEvent.change(screen.getByRole("combobox", { name: "Patient link" }), {
-      target: { value: "missing" },
-    });
+    pick("Going to", "Left against advice");
     expect(screen.getByRole("heading", { name: "Record detail" })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Selected discharge details" })).not.toHaveTextContent("UM100003");
+    expect(screen.getByRole("region", { name: "Selected discharge details" })).not.toHaveTextContent("UM100010");
 
+    pick("Going to", "All");
+    openFarahRecord();
+    expect(screen.getByRole("region", { name: "Selected discharge details" })).toHaveTextContent("UMRN UM100010");
     fireEvent.click(screen.getByRole("button", { name: /^Now, \d+ to work now$/u }));
     expect(screen.getByRole("heading", { name: "Record detail" })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Selected discharge details" })).not.toHaveTextContent("UM100003");
+    expect(screen.getByRole("region", { name: "Selected discharge details" })).not.toHaveTextContent("UM100010");
   });
 });

@@ -1,7 +1,7 @@
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { activeCommunityTreatmentOrder } from "@/components/ward-management/ward-patients";
 import { useId, useState, type ReactNode } from "react";
-import { Clock, MapPin, MessageSquare, Scale } from "lucide-react";
+import { Clock, FileBadge, MapPin, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { Button, Card, CardHead, StatusGlyph, buttonClass, useIsPhone, type WfTone } from "@/components/wf";
 import { FORMS_HREF } from "@/components/ward-management/governance-shared";
@@ -227,13 +227,17 @@ export function PatientLegalNowCard({
           </button>
         </div>
         <ul className={styles.phList}>
-          <li className={styles.phItem}>
-            <StatusGlyph tone={status ? "info" : "neutral"} size={10} />
-            <span className={styles.phItemText}>
-              <strong>{status ?? "Legal status not recorded"}</strong>
-              <span>{statusNote}</span>
-            </span>
-          </li>
+          {/* PT1 (Josh, 3 Nov 2026): the status leads the band's at a glance row, so this list holds
+              the forms. The status stays here only when absence changes what it means. */}
+          {absent && onOrder ? (
+            <li className={styles.phItem}>
+              <StatusGlyph tone="info" size={10} />
+              <span className={styles.phItemText}>
+                <strong>{status}</strong>
+                <span>{statusNote}</span>
+              </span>
+            </li>
+          ) : null}
           {rows.map((row) => (
             <li key={row.code} className={styles.phItem}>
               <StatusGlyph tone={row.tone} size={10} />
@@ -255,6 +259,15 @@ export function PatientLegalNowCard({
               </span>
             </li>
           ))}
+          {rows.length === 0 && !movement && !(absent && onOrder) ? (
+            <li className={styles.phItem}>
+              <StatusGlyph tone="neutral" size={10} />
+              <span className={styles.phItemText}>
+                <strong>No form in force</strong>
+                <span>Earlier forms are in Forms</span>
+              </span>
+            </li>
+          ) : null}
           {!movement?.legalForm && movement ? (
             <li className={styles.phItem}>
               <StatusGlyph tone="neutral" size={10} />
@@ -275,7 +288,7 @@ export function PatientLegalNowCard({
     <Card data-testid="ward-patient-legal-now">
       <CardHead
         level={2}
-        icon={Scale}
+        icon={FileBadge}
         title="Legal now"
         action={
           <Button size="sm" variant="ghost" onClick={onAllForms}>
@@ -284,13 +297,16 @@ export function PatientLegalNowCard({
         }
       />
       <div className={styles.list}>
-        <div className={styles.item}>
-          <StatusGlyph tone={status ? "info" : "neutral"} size={10} />
-          <span className={styles.itemText}>
-            <strong>{status ?? "Legal status not recorded"}</strong>
-            <span>{absent && onOrder ? statusNote : "Legal status as recorded"}</span>
-          </span>
-        </div>
+        {/* PT1: the status leads the band; it stays here only when absence changes what it means. */}
+        {absent && onOrder ? (
+          <div className={styles.item}>
+            <StatusGlyph tone="info" size={10} />
+            <span className={styles.itemText}>
+              <strong>{status}</strong>
+              <span>{statusNote}</span>
+            </span>
+          </div>
+        ) : null}
         {rows.map((row) => (
           <div key={row.code} className={styles.item}>
             <StatusGlyph tone={row.tone} size={10} />
@@ -301,6 +317,17 @@ export function PatientLegalNowCard({
             {row.time ? <span className={styles.time}>{row.time}</span> : null}
           </div>
         ))}
+        {/* PT1 round 2: with the status in the band, an empty card would be a bare heading, so a
+            record with no form says so plainly. */}
+        {rows.length === 0 && !movement && !(absent && onOrder) ? (
+          <div className={styles.item}>
+            <StatusGlyph tone="neutral" size={10} />
+            <span className={styles.itemText}>
+              <strong>No form in force</strong>
+              <span>Earlier forms are in Forms</span>
+            </span>
+          </div>
+        ) : null}
         {!movement?.legalForm && movement ? (
           <div className={styles.item}>
             <StatusGlyph tone="neutral" size={10} />

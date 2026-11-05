@@ -170,6 +170,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^ACCEPT_SECOND_TAP_GUARD_MS$/,
   },
   {
+    id: "repeat-tap-window",
+    why: "How long the same action asked for again gets the first one's answer, so a double tap records once (Tier 1 item 2, Josh, 4 Nov 2026); a UI pause, not a limit.",
+    file: /^ward-repeat-tap-guard\.ts$/,
+    name: /^REPEAT_TAP_WINDOW_MS$/,
+  },
+  {
     id: "loading-note-slow-pause",
     why: "How long the first load waits for the page code before the loading note offers Reload (pre-launch review E2, Q274, 2 Nov 2026); a UI pause, not a limit.",
     file: /^shell\/ward-loading-note-early\.ts$/,
@@ -240,6 +246,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     why: "The Activity feed's server audit (P056, 27 Oct 2026): how often an open shell reads the desk's audit again, so another computer's change appears; network pacing, never shown, not a limit.",
     file: /^shell\/ward-desk-audit\.ts$/,
     name: /^ACTIVITY_AUDIT_REFRESH_MS$/,
+  },
+  {
+    id: "account-memory-save-delay",
+    why: "Help account memory (#1410, 4 Nov 2026): the 1 second pause before a change is saved; save delay, not a clinical time limit.",
+    file: /^help\/ward-help-account-memory\.tsx$/,
+    name: /^SEND_AFTER_MS$/,
   },
 ];
 

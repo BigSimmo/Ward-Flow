@@ -83,7 +83,9 @@ export function readKeptReferralDraft<T>(storageKey?: string): T | null {
   if (raw === null) {
     // Preserve the existing single-memory-draft ownership when another person opens a sheet.
     const scope = storageKey.slice(0, storageKey.lastIndexOf(":"));
-    return referralDraftMemory.keptStorageKey?.startsWith(scope + ":") ? (referralDraftMemory.kept as T | null) : null;
+    // A memory-only draft (no key) also belongs to this tab's single slot.
+    const owned = !referralDraftMemory.keptStorageKey || referralDraftMemory.keptStorageKey.startsWith(scope + ":");
+    return owned ? (referralDraftMemory.kept as T | null) : null;
   }
   try {
     const value: unknown = JSON.parse(raw);
@@ -148,6 +150,31 @@ export function discardReferralDraft(ownerVersion: number | null = referralDraft
   referralDraftMemory.kept = null;
   referralDraftMemory.keptAtMs = null;
   return true;
+}
+
+/**
+ * L12 (Josh, 4 Nov 2026): "Start a new referral" sets a named person's kept draft aside instead of
+ * deleting it, so it stays in the Profile drafts list and reopens from there. Memory lets go; the
+ * session copy stays under its own person's key.
+ */
+function setAsideReferralDraft(ownerVersion: number | null = referralDraftMemory.sessionVersion): boolean {
+  if (ownerVersion === null || ownerVersion !== referralDraftMemory.sessionVersion) return false;
+  referralDraftMemory.keptStorageKey = undefined;
+  referralDraftMemory.recoveryStorageKey = undefined;
+  referralDraftMemory.kept = null;
+  referralDraftMemory.keptAtMs = null;
+  return true;
+}
+
+/**
+ * "Start a new referral" (L12): a draft for someone other than the person this sheet opened for is
+ * set aside for the Profile list; the opened person's own draft, or an unnamed one, is discarded.
+ */
+export function restartReferralDraft(ownerVersion: number | null, openedKey: string): boolean {
+  const key = referralDraftMemory.keptStorageKey ?? referralDraftMemory.recoveryStorageKey;
+  return key && key !== openedKey && !key.endsWith(":new")
+    ? setAsideReferralDraft(ownerVersion)
+    : discardReferralDraft(ownerVersion);
 }
 
 /**

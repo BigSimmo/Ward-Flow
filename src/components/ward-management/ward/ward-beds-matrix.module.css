@@ -275,41 +275,89 @@
   gap: var(--wf-s-2);
 }
 
-/* Every bed: the figures strip. */
-.figures {
+/* Every bed: the count tiles (WH6). Raised cards on a tinted strip, as on Capacity: a small caps
+   label, one large figure, a quiet line. Each is a filter; the pressed one takes the accent. */
+.countStrip {
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-  margin: 0;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
   border-bottom: 1px solid var(--wf-line);
   background: var(--wf-surface-2);
 }
 
-.figures > div {
+.countTile {
   display: flex;
-  flex-direction: column-reverse;
-  gap: 2px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wf-s-1);
   min-width: 0;
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border-left: 1px solid var(--wf-line);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--wf-ink-1) 4%, transparent);
+  font: inherit;
+  color: var(--wf-ink-1);
+  text-align: start;
+  cursor: pointer;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    background 120ms ease;
 }
 
-.figures > div:first-child {
-  border-left: 0;
+.countTile:hover {
+  border-color: var(--wf-line-2);
+  box-shadow: 0 4px 14px -8px color-mix(in srgb, var(--wf-ink-1) 22%, transparent);
 }
 
-.figures dt {
+.countTile[aria-pressed="true"] {
+  border-color: var(--wf-accent);
+  background: var(--wf-accent-tint);
+  box-shadow: 0 0 0 1px var(--wf-accent);
+}
+
+.countTile:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.countLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
   overflow: hidden;
-  color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
+  font-weight: 650;
+  letter-spacing: var(--wf-tr-caps);
+  text-transform: uppercase;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--wf-ink-3);
 }
 
-.figures dd {
-  margin: 0;
-  color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-20) / 1.2 var(--wf-mono);
+.countFigure {
+  font: 600 var(--wf-fs-28) / 1 var(--wf-mono);
   font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-1);
+}
+
+.countTile[data-tone="danger"] .countFigure {
+  color: var(--wf-danger-ink);
+}
+
+.countNote {
+  max-width: 100%;
+  min-height: 1lh;
+  overflow: hidden;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--wf-ink-3);
 }
 
 .bedsControlsBar {
@@ -602,16 +650,8 @@
 }
 
 @media (max-width: 64rem) {
-  .figures {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-
-  .figures > div:nth-child(5) {
-    border-left: 0;
-  }
-
-  .figures > div:nth-child(n + 5) {
-    border-top: 1px solid var(--wf-line);
+  .countStrip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .handoverRow {
@@ -637,7 +677,25 @@
   }
 }
 
+/* Phone: one scrolling row of tiles, so the list starts on the first screen. */
+@media (max-width: 46.4375rem) {
+  .countStrip {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(9.5rem, 1fr);
+    padding: var(--wf-s-3);
+    overflow-x: auto;
+    scrollbar-width: none;
+    scroll-padding-inline: var(--wf-s-3);
+  }
+
+  .countFigure {
+    font-size: var(--wf-fs-20);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
+  .countTile,
   .segmentBtn,
   .bedRow {
     transition: none;

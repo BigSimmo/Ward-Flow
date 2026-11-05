@@ -40,7 +40,7 @@ describe("Live chip Stale needs a real gap (P167)", () => {
     expect(screen.getByRole("status")).toHaveTextContent(/^Demo$/);
     // Still no good refresh once shown for longer than the limit: that is a real gap.
     act(() => vi.advanceTimersByTime(2000));
-    expect(screen.getByRole("status")).toHaveTextContent("Stale, as at 10:26");
+    expect(screen.getByRole("status")).toHaveTextContent(/^Not updating since 10:26$/);
   });
 
   it("does not read Stale for one failed refresh while the last good one is recent", () => {
@@ -48,6 +48,6 @@ describe("Live chip Stale needs a real gap (P167)", () => {
     render(<LiveChip state="live" />);
     expect(screen.getByRole("status")).toHaveTextContent(/^Demo$/);
     act(() => vi.advanceTimersByTime(7000));
-    expect(screen.getByRole("status")).toHaveTextContent("Stale, as at 10:26");
+    expect(screen.getByRole("status")).toHaveTextContent(/^Not updating since 10:26$/);
   });
 });

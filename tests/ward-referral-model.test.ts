@@ -678,6 +678,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     RECORD_HOME_SERVICE_RETURN: false,
     // Closing-the-loop (package E): records that a directory entry was checked. Not a refusal.
     RECORD_DIRECTORY_CHECK: false,
+    // Out of area "Flag early" (3 Nov 2026): records that a return may come sooner. Not a refusal.
+    FLAG_RETURN_EARLY: false,
     SET_DISCHARGE_BARRIER: false,
     SET_DISCHARGE_CRITERIA: false,
     // D-34 cancels an accepted psychiatric allocation; it does not decline admission to ED.
@@ -687,6 +689,11 @@ describe("front-door contract — an ED may close to all admissions, never refus
     RECORD_LEGAL_FORM_WRITTEN: false,
     RECORD_LEGAL_FORM_CODE: false,
     RECORD_ED_PRESENTATION: false,
+    // Gap list items 3 to 7: paper details of a form already recorded. Fixed choices and a typed
+    // date only; it cannot decline or close anything.
+    RECORD_LEGAL_FORM_DETAILS: false,
+    // Gap list item 9: a done mark on a finished seclusion or restraint episode. Refuses no one.
+    RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP: false,
     RECORD_COUNTRY_EXTENSION: false,
     RECORD_LEGAL_FORM_CONTINUATION: false,
     EVALUATE_ARRIVAL_LATENESS: false,
@@ -741,6 +748,7 @@ describe("front-door contract — an ED may close to all admissions, never refus
     UNDO_LEGAL_FORM_RECORD: false,
     UNDO_SUPPORT_NOTIFICATION: false,
     UNDO_REPATRIATION: false,
+    UNDO_FLAG_RETURN_EARLY: false,
     UNDO_HANDOVER_SIGN_OFF: false,
     UNDO_ED_STEP: false,
     UNDO_TRANSPORT_STEP: false,
@@ -749,6 +757,10 @@ describe("front-door contract — an ED may close to all admissions, never refus
     // H-0150: takes back marking a bed meeting action done; refuses nobody.
     UNDO_BED_MEETING_ACTION: false,
     UNDO_SITE_HANDOVER_SIGN_OFF: false,
+    // Tier 1 item 6 (4 Nov 2026): Undo of a bed, release or record step; refuses nobody.
+    UNDO_BED_STEP: false,
+    UNDO_RELEASE_STEP: false,
+    UNDO_PATIENT_RECORD: false,
   };
 
   /**

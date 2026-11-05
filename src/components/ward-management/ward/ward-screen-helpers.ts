@@ -10,7 +10,6 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import type { Movement } from "@/components/ward-management/ward-model";
 import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
-import { communityOriginLabel, originName } from "@/components/ward-management/ward-movement-origin";
 
 /** What the Bed board is waiting to hear back from the engine after a place or an undo. */
 export type BoardCheck = {
@@ -107,11 +106,6 @@ export function shiftLine(now: Instant): string {
     `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
   const name = shift.name.charAt(0) + shift.name.slice(1).toLowerCase();
   return `${name} ${clock(shift.startMinute)} to ${clock(shift.endMinute)}`;
-}
-
-export function originPlaceLabel(movement: Pick<Movement, "originEdId" | "originCommunity">): string {
-  if (movement.originEdId === undefined) return communityOriginLabel(movement.originCommunity);
-  return originName(movement) ?? movement.originEdId;
 }
 
 export function arrivalIsLate(movement: Movement, now: Instant): boolean {

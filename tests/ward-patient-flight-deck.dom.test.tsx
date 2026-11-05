@@ -71,7 +71,8 @@ describe("unified Patient Now clinical flight deck", () => {
       "pntab-documents",
     ]);
     expect(screen.getByTestId("ward-patient-live-status")).toHaveAttribute("data-live", "true");
-    expect(screen.getByTestId("ward-patient-mode-pill")).toHaveTextContent("In placement");
+    // PT1 (3 Nov 2026): the state tag says where the person is; still at the ED until the bed is pulled.
+    expect(screen.getByTestId("ward-patient-mode-pill")).toHaveTextContent(/^In ED$/);
     // Device audit 11 Oct 2026 (owner pick A): the placement work left Now; its row opens it as a sheet.
     fireEvent.click(screen.getByTestId("ward-patient-destination-row"));
     expect(screen.getByRole("dialog", { name: "Destination and placement" })).toBeInTheDocument();
@@ -125,7 +126,8 @@ describe("unified Patient Now clinical flight deck", () => {
     );
     expect(screen.getByTestId("live-stage")).toHaveTextContent("arrived");
     expect(screen.getByTestId("ward-patient-live-status")).toHaveAttribute("data-live", "false");
-    expect(screen.getByTestId("ward-patient-mode-pill")).toHaveTextContent("On ward");
+    // PT1 (3 Nov 2026): the state tag reads Inpatient on the ward, with no finer words added.
+    expect(screen.getByTestId("ward-patient-mode-pill")).toHaveTextContent(/^Inpatient$/);
     expect(screen.queryByRole("button", { name: "Confirm arrival · receiving ward" })).not.toBeInTheDocument();
   });
   it("requires a step-back reason and preserves the reserved bed when correcting only the stage", () => {

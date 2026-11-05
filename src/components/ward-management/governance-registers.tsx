@@ -2,6 +2,7 @@
 
 import { ClipboardList, FileText, Fingerprint, History, ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useContext, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 
 import { OverrideRegister } from "@/components/ward-management/override-register";
@@ -47,6 +48,7 @@ import {
   useIsTabletPortrait,
 } from "@/components/wf";
 
+import { GovernanceRestrictiveRegister } from "./governance-restrictive-register";
 import thirdEdition from "./governance-third-edition.module.css";
 import { EventDetail, EventTable } from "./governance-event-detail";
 import { GovernancePhone } from "./governance-phone";
@@ -192,8 +194,11 @@ export function GovernanceWorkbench(props: WorkbenchProps) {
   const adminDesk = useEffectiveWardAccess().role === "admin";
   // The open tab survives a demo reset; everything else in the session starts again. It opens on
   // Review when something waits (v10 mockup), and on Gaps by site when the session holds nothing.
+  // GV1: Forms' seclusion view links here with `?tab=registers`.
+  const askedTab = useSearchParams()?.get("tab");
   const [tab, setTab] = useState<GovernanceTab>(() => {
     if (adminDesk) return "review";
+    if (askedTab === "registers") return "registers";
     const read = readGovernanceEvents(props.api);
     const waiting = read?.status === "allowed" && read.value.some((event) => event.category !== "review");
     return waiting ? "review" : "gaps";
@@ -236,6 +241,8 @@ function GovernanceSession({
   // `undefined` until someone chooses, so the pane opens on the newest event waiting; `null` once
   // they close it, so it stays closed.
   const [selection, setSelection] = useState<AuditEvent | null | undefined>(undefined);
+  // True while the selection is the one the desktop pane opened on by itself, not one the user chose.
+  const [autoOpened, setAutoOpened] = useState(false);
   const [siteId, setSiteId] = useState<string | null>(null);
   const [pending, setPending] = useState<{
     command: number;
@@ -258,7 +265,9 @@ function GovernanceSession({
   const [phoneSheet, setPhoneSheet] = useState(false);
   // Audit settings-4: after a phone review is confirmed, the sheet moves on to the next waiting event.
   const [phoneAdvance, setPhoneAdvance] = useState(false);
-  const [phoneMore, setPhoneMore] = useState<"registers" | "reports" | null>(null);
+  // GV1: the Forms link (`?tab=registers`) opens the Registers sheet on a phone too.
+  const askedRegisters = useSearchParams()?.get("tab") === "registers";
+  const [phoneMore, setPhoneMore] = useState<"registers" | "reports" | null>(askedRegisters ? "registers" : null);
   const isPhone = useIsPhone();
   // Discreet names on phone (audit settings-9): initials plus UMRN in the phone rows and sheet.
   const nameFor = usePatientNameDisplay();
@@ -308,7 +317,17 @@ function GovernanceSession({
       ? opening
       : null;
   // Pin the event the pane opened on, so a newer event arriving cannot retarget a review in progress.
-  if (selection === undefined && opening) setSelection(opening);
+  if (selection === undefined && opening) {
+    setSelection(opening);
+    setAutoOpened(true);
+  }
+  // Review 5 Nov 2026: a desktop browser at tablet width first renders with the server's "not a
+  // tablet" answer, so the pane auto-opened an event and the tablet then slid it over the page
+  // unasked. Once the layout is known to be phone or portrait tablet, an auto-opened event closes.
+  if (autoOpened && (isPhone || isTabletPortrait)) {
+    setAutoOpened(false);
+    setSelection(undefined);
+  }
   const history = selected ? historyFor(selected) : [];
   const reviewAttempt = pending
     ? [...events]
@@ -439,6 +458,7 @@ function GovernanceSession({
 
   const choose = (event: AuditEvent | null) => {
     reviewCommandRef.current += 1;
+    setAutoOpened(false);
     setSelection(event);
     setPending(null);
     if (event) setAnnouncement(`Selected ${actionLabels[event.action]}.`);
@@ -772,7 +792,11 @@ function GovernanceSession({
                   !reviewGate.allowed ? reviewGate.reason : selected === null ? "Choose an event first" : undefined
                 }
                 reasonDisplay="tooltip"
-                onClick={() => setEndorseOpen(true)}
+                onClick={() => {
+                  // Starting a review makes the event the user's own, so a rotation cannot close it.
+                  setAutoOpened(false);
+                  setEndorseOpen(true);
+                }}
               >
                 Record review
               </Button>
@@ -942,7 +966,11 @@ function GovernanceSession({
                               <span className={thirdEdition.stack}>
                                 <strong className={thirdEdition.clip}>{entry.name}</strong>
                                 <span className={thirdEdition.quietText}>
-                                  {entry.kind === "ed" ? "Emergency department" : "Ward"}
+                                  {entry.kind === "ed"
+                                    ? "Emergency department"
+                                    : entry.kind === "community"
+                                      ? "Community team"
+                                      : "Ward"}
                                 </span>
                               </span>
                             </button>
@@ -1176,16 +1204,10 @@ function GovernanceSession({
 
       {tab === "registers" ? (
         <div className={thirdEdition.stackGap}>
+          {/* GV1 (Josh, 3 Nov 2026): the after-the-fact record. Live episodes are in Forms. */}
+          <GovernanceRestrictiveRegister units={units} now={now} />
           <div className={thirdEdition.previewGrid}>
             {[
-              {
-                title: "Seclusion",
-                text: "Start, reviews, release and duration by ward.",
-              },
-              {
-                title: "Bodily restraint",
-                text: "Start, reviews, release and duration by ward.",
-              },
               {
                 title: "Notifiable incidents",
                 text: "Absent without leave, death and serious harm, with the time the Chief Psychiatrist was told.",

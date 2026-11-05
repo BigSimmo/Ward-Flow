@@ -67,6 +67,30 @@ it("names identified release rows and distinguishes aggregate copying from print
   }
 });
 
+it("copies Recorded's own seven-day figures, matching its headline (Codex review, #1374)", async () => {
+  const writeText = vi.fn().mockResolvedValue(undefined);
+  const originalClipboard = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+  Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText } });
+  try {
+    renderBoard();
+    fireEvent.click(screen.getByTestId("ward-discharge-history"));
+    const recorded = Number(
+      /^(\d+) discharges? recorded$/u.exec(
+        screen.getByRole("heading", { name: /discharges? recorded$/u }).textContent ?? "",
+      )?.[1],
+    );
+    fireEvent.click(screen.getByTestId("ward-discharge-copy"));
+    await waitFor(() => expect(writeText).toHaveBeenCalledOnce());
+    const copied = String(writeText.mock.calls[0][0]);
+    expect(copied).toMatch(/Recorded discharges, last 7 days, as of/u);
+    expect(copied).toContain(`${recorded} ${recorded === 1 ? "discharge" : "discharges"} recorded`);
+    expect(copied).not.toMatch(/held up|expected|UMRN|WF-|PT-|WR-/u);
+  } finally {
+    if (originalClipboard) Object.defineProperty(navigator, "clipboard", originalClipboard);
+    else Reflect.deleteProperty(navigator, "clipboard");
+  }
+});
+
 /**
  * Raises a real `FLAG_BED_RELEASE` reducer event — the same mechanism `ward-handover.dom.test.tsx`'s
  * `ClockAdvancer` uses to move shared state without reaching into the reducer directly — carrying
@@ -248,22 +272,25 @@ function timingColumn(key: ReleaseGroupKey): string[] {
  * release with an expected-and-blocked one — RPHS's own stuck confirmed discharge is the seed's
  * own "most load-bearing single occupant" case, authored specifically to keep this property real
  * (see `bedReleases`'s own doc comment in `ward-movements.ts`) — so this reads the mix straight off
- * the rendered Stage column instead of assuming which admission plays which role.
+ * the rendered board instead of assuming which admission plays which role.
  *
- * `within(cell).queryByText(stage)` rather than a raw `cell.textContent` comparison: a blocked
- * row's Stage/blocker cell always carries the release's blocker text alongside its stage badge (a
- * blocked release always has a non-null blocker, by construction), so the cell's own textContent
- * is never just "Confirmed" or "Expected" on its own — it is the badge's OWN text node that must
- * match exactly, not the cell's concatenation of badge-plus-blocker.
+ * CHANGED 3 Nov 2026 (Discharges redesign, approved by Josh): the desktop Stage column is gone. A
+ * held-up row now states its own stage ("Confirmed" or "Expected") as the line under its hold-up
+ * tag in the "Held up by" cell, after any waiting-on carrier ("<carrier> · Confirmed"). The match
+ * is anchored on that line's end, so the blocker text itself can never satisfy it.
  */
+function holdUpStageLine(cell: HTMLElement, stage: "Confirmed" | "Expected"): HTMLElement | null {
+  return within(cell).queryByText(new RegExp(`(^|· )${stage}$`));
+}
+
 function blockedRowByStage(stage: "Confirmed" | "Expected"): HTMLElement {
   const headers = tableHeaders(releaseWorklist());
   const rows = releaseRows("blocked");
-  assertRowsMatchHeaders(headers, rows, ["Stage"]);
-  const stageIndex = columnIndex(headers, "Stage");
+  assertRowsMatchHeaders(headers, rows, ["Held up by"]);
+  const holdUpIndex = columnIndex(headers, "Held up by");
   const row = rows.find((candidate) => {
-    const cell = within(candidate).getAllByRole("cell")[stageIndex];
-    return within(cell).queryByText(stage) !== null;
+    const cell = within(candidate).getAllByRole("cell")[holdUpIndex];
+    return cell !== undefined && holdUpStageLine(cell, stage) !== null;
   });
   if (!row) {
     throw new Error(`no blocked row shows stage "${stage}" — the mix this suite exists to prove is gone`);
@@ -384,9 +411,16 @@ describe("DischargeBoard", () => {
     const confirmedRow = blockedRowByStage("Confirmed");
     const expectedRow = blockedRowByStage("Expected");
     const headers = tableHeaders(releaseWorklist());
-    const stageIndex = columnIndex(headers, "Stage");
-    expect(within(confirmedRow).getAllByRole("cell")[stageIndex]).toHaveTextContent("Confirmed");
-    expect(within(expectedRow).getAllByRole("cell")[stageIndex]).toHaveTextContent("Expected");
+    // Redesign (3 Nov 2026): no Stage column; the stage is the line under the hold-up tag.
+    expect(headers).not.toContain("Stage");
+    const holdUpIndex = columnIndex(headers, "Held up by");
+    const confirmedCell = within(confirmedRow).getAllByRole("cell")[holdUpIndex];
+    const expectedCell = within(expectedRow).getAllByRole("cell")[holdUpIndex];
+    if (!confirmedCell || !expectedCell) throw new Error("blocked row has no Held up by cell");
+    expect(holdUpStageLine(confirmedCell, "Confirmed")).not.toBeNull();
+    expect(holdUpStageLine(confirmedCell, "Expected")).toBeNull();
+    expect(holdUpStageLine(expectedCell, "Expected")).not.toBeNull();
+    expect(holdUpStageLine(expectedCell, "Confirmed")).toBeNull();
   });
 
   /**

@@ -89,6 +89,22 @@ function cardSignal(bed: BedItem, isPastDate: boolean, isAwayAtEd: boolean): str
 
 type ShiftGroup = "all" | "due-out" | "off-ward" | "in-transit";
 
+/** The count tiles above the full bed list, each one a filter (WH6). */
+type BedListFilter = "all" | "needs-look" | "past-date" | "away" | "ready" | "nobody-due";
+
+function isPastTheirDate(bed: BedItem): boolean {
+  return bed.pastDate === true || (typeof bed.expectedDays === "number" && bed.expectedDays < 0);
+}
+
+/** Someone has arrived in the bed: a pulled bed's person is not here yet. */
+function isPerson(bed: BedItem): boolean {
+  return Boolean(bed.patientAlias) && bed.status !== "incoming" && bed.isPulled !== true;
+}
+
+function isAwayFromWard(bed: BedItem): boolean {
+  return bed.status === "leave" || bed.awayAtEdHours != null;
+}
+
 interface WardBedCardProps {
   bed: BedItem;
   isSelected: boolean;
@@ -146,8 +162,9 @@ const STAY_BAR_DAYS = 120;
 function leavingCell(bed: BedItem): { text: string; tone: "danger" | "warning" | "info" | null } | null {
   if (bed.status === "ready" || bed.patientAlias == null) return null;
   const overdue = typeof bed.expectedDays === "number" && bed.expectedDays < 0 ? Math.abs(bed.expectedDays) : null;
-  if (overdue) return { text: `${plural(overdue, "day", "days")} past`, tone: "danger" };
-  if (bed.pastDate === true) return { text: "Past the ward's date", tone: "danger" };
+  // Red is act now only (DESIGN-SYSTEM): past the date is amber, as on the bed tile and panel.
+  if (overdue) return { text: `${plural(overdue, "day", "days")} past`, tone: "warning" };
+  if (bed.pastDate === true) return { text: "Past the ward's date", tone: "warning" };
   if (typeof bed.expectedDays !== "number") return null;
   if (bed.expectedDays === 0) return { text: "Today", tone: "warning" };
   if (bed.expectedDays === 1) return { text: "Tomorrow", tone: "info" };
@@ -315,7 +332,7 @@ export function WardBedsMatrix({
   isMixed,
   now,
 }: WardBedsMatrixProps) {
-  const [activeFilter, setActiveFilter] = useState<"all" | "needs-look" | "ready" | "nobody-due">("all");
+  const [activeFilter, setActiveFilter] = useState<BedListFilter>("all");
   const [sortBy, setSortBy] = useState<"stay" | "room" | "attention">("stay");
   const [shiftGroup, setShiftGroup] = useState<ShiftGroup>("all");
 
@@ -332,21 +349,20 @@ export function WardBedsMatrix({
   );
 
   // Specific counts
-  const readyCount = useMemo(() => bedsList.filter((b) => b.status === "ready").length, [bedsList]);
   const lockedCount = useMemo(() => bedsList.filter((b) => b.podId === "locked").length, [bedsList]);
   const openCount = useMemo(() => bedsList.filter((b) => b.podId === "open").length, [bedsList]);
 
   const needsLookBeds = useMemo(
     () =>
+      // The same rule as Ward home's Needs a look chip, so the two counts on one page agree: a bed
+      // that is not free, past its date, away at an ED, or held up. On leave has its own tile.
       podFilteredBeds.filter(
         (b) =>
-          b.pastDate === true ||
-          (b.awayAtEdHours !== null && b.awayAtEdHours !== undefined) ||
-          b.isSpecialling === true ||
-          b.isHdu === true ||
-          b.status === "leave" ||
-          b.status === "incoming" ||
-          b.blockReason != null,
+          !(b.status === "ready" && b.preparing !== true) &&
+          (b.pastDate === true ||
+            (b.awayAtEdHours !== null && b.awayAtEdHours !== undefined) ||
+            Boolean(b.dischargeBarrier) ||
+            b.blockReason != null),
       ),
     [podFilteredBeds],
   );
@@ -361,6 +377,8 @@ export function WardBedsMatrix({
     if (activeFilter === "needs-look") return needsLookBeds;
     if (activeFilter === "ready") return podFilteredBeds.filter((b) => b.status === "ready");
     if (activeFilter === "nobody-due") return nobodyDueOutBeds;
+    if (activeFilter === "past-date") return podFilteredBeds.filter((b) => isPerson(b) && isPastTheirDate(b));
+    if (activeFilter === "away") return podFilteredBeds.filter(isAwayFromWard);
     return podFilteredBeds;
   }, [activeFilter, needsLookBeds, nobodyDueOutBeds, podFilteredBeds]);
 
@@ -461,7 +479,7 @@ export function WardBedsMatrix({
           badge: "In transit",
           badgeTone: "purple",
           tag: "Pulled earlier",
-          desc: `Pulled for ${person}; taken, not yet arrived.`,
+          desc: `Pulled for ${person}. Taken, not yet arrived.`,
           actions: [{ label: "See the move", primary: false }],
           borderTone: "purple",
         });
@@ -496,23 +514,65 @@ export function WardBedsMatrix({
     return items;
   }, [bedsList, unit.name]);
 
-  // The board in figures, for the strip above the list: what a coordinator asks first.
-  const figures = useMemo(() => {
-    const people = bedsList.filter((bed) => bed.patientAlias && bed.status !== "incoming" && bed.isPulled !== true);
+  // The count tiles (WH6): what a coordinator asks first, each count the beds its press shows.
+  const countTiles = useMemo(() => {
+    const beds = podFilteredBeds;
+    const people = beds.filter(isPerson);
     const stays = people.map((bed) => bed.stayDays).filter((days): days is number => typeof days === "number");
-    return {
-      occupied: people.length,
-      ready: bedsList.filter((bed) => bed.status === "ready").length,
-      away: bedsList.filter((bed) => bed.status === "leave" || bed.awayAtEdHours != null).length,
-      pulled: bedsList.filter((bed) => bed.status === "incoming" || bed.isPulled === true).length,
-      closed: bedsList.filter((bed) => bed.status === "closed" || bed.isClosed === true).length,
-      pastDate: people.filter(
-        (bed) => bed.pastDate === true || (typeof bed.expectedDays === "number" && bed.expectedDays < 0),
-      ).length,
-      median: stays.length > 0 ? [...stays].sort((x, y) => x - y)[Math.floor(stays.length / 2)] : null,
-      longest: stays.length > 0 ? Math.max(...stays) : null,
-    };
-  }, [bedsList]);
+    const median = stays.length > 0 ? [...stays].sort((x, y) => x - y)[Math.floor(stays.length / 2)] : null;
+    const longest = stays.length > 0 ? Math.max(...stays) : null;
+    const pulled = beds.filter((bed) => bed.status === "incoming" || bed.isPulled === true).length;
+    const closed = beds.filter((bed) => bed.status === "closed" || bed.isClosed === true).length;
+    const ready = beds.filter((bed) => bed.status === "ready");
+    const preparing = ready.filter((bed) => bed.preparing === true).length;
+    const atEd = beds.filter((bed) => bed.awayAtEdHours != null).length;
+    const tiles: Array<{ id: BedListFilter; label: string; count: number; note: string | null; tone: WfTone | null }> =
+      [
+        {
+          id: "all",
+          label: "All beds",
+          count: beds.length,
+          note: `${people.length} in, ${pulled} pulled, ${closed} closed`,
+          tone: null,
+        },
+        {
+          id: "needs-look",
+          label: "Needs a look",
+          count: needsLookBeds.length,
+          note: "Something to check",
+          tone: needsLookBeds.length > 0 ? "warning" : null,
+        },
+        {
+          id: "past-date",
+          label: "Past their date",
+          count: people.filter(isPastTheirDate).length,
+          note: longest === null ? "No stays recorded" : `Median ${median}d, longest ${longest}d`,
+          tone: people.some(isPastTheirDate) ? "danger" : null,
+        },
+        {
+          id: "away",
+          label: "Away or on leave",
+          count: beds.filter(isAwayFromWard).length,
+          note: atEd > 0 ? `${atEd} at an ED, own bed held` : "Own bed held for them",
+          tone: null,
+        },
+        {
+          id: "ready",
+          label: "Ready",
+          count: ready.length,
+          note: preparing > 0 ? `${preparing} being made ready` : "Free to offer now",
+          tone: ready.length > 0 ? "success" : null,
+        },
+        {
+          id: "nobody-due",
+          label: "Nobody due out",
+          count: nobodyDueOutBeds.length,
+          note: "No expected date set",
+          tone: null,
+        },
+      ];
+    return tiles;
+  }, [podFilteredBeds, needsLookBeds, nobodyDueOutBeds]);
 
   const dueOutCount = shiftItems.filter((item) => item.group === "due-out").length;
   const offWardCount = shiftItems.filter((item) => item.group === "off-ward").length;
@@ -616,9 +676,12 @@ export function WardBedsMatrix({
         <div className={styles.cardHead}>
           <div className={styles.headText}>
             <h2 className={styles.title}>Every bed, and who is in it</h2>
-            <span className={styles.subtitle}>
-              Showing {sortedBeds.length} of {unit.beds} beds
-            </span>
+            {/* Q6 (Josh, 4 Nov 2026): the line only shows while a filter or a pod narrows the list. */}
+            {activeFilter !== "all" || selectedPod !== "all" ? (
+              <span className={styles.subtitle}>
+                Showing {sortedBeds.length} of {unit.beds} beds
+              </span>
+            ) : null}
             <span className="sr-only">{pendingPreparation} still being made ready</span>
           </div>
 
@@ -646,115 +709,63 @@ export function WardBedsMatrix({
           </div>
         </div>
 
-        {/* The board in figures: one quiet strip, each figure a number over its word. */}
-        <dl className={styles.figures}>
-          <div>
-            <dt>Occupied</dt>
-            <dd>{figures.occupied}</dd>
-          </div>
-          <div>
-            <dt>Ready</dt>
-            <dd>{figures.ready}</dd>
-          </div>
-          <div>
-            <dt>Away or on leave</dt>
-            <dd>{figures.away}</dd>
-          </div>
-          <div>
-            <dt>Pulled</dt>
-            <dd>{figures.pulled}</dd>
-          </div>
-          <div>
-            <dt>Closed</dt>
-            <dd>{figures.closed}</dd>
-          </div>
-          <div>
-            <dt>Past their date</dt>
-            <dd>{figures.pastDate}</dd>
-          </div>
-          <div>
-            <dt>Median stay</dt>
-            <dd>{figures.median === null ? "–" : `${figures.median}d`}</dd>
-          </div>
-          <div>
-            <dt>Longest stay</dt>
-            <dd>{figures.longest === null ? "–" : `${figures.longest}d`}</dd>
-          </div>
-        </dl>
-
-        <div className={styles.bedsControlsBar}>
-          <div className={styles.segment} role="group" aria-label="Filter beds">
-            <button
-              type="button"
-              className={styles.segmentBtn}
-              aria-pressed={activeFilter === "all" && selectedPod === "all"}
-              onClick={() => {
-                setActiveFilter("all");
-                setSelectedPod("all");
-              }}
-            >
-              <span>All beds</span> <span className={styles.segmentCount}>{unit.beds}</span>
-            </button>
-
-            <button
-              type="button"
-              className={styles.segmentBtn}
-              aria-pressed={activeFilter === "needs-look"}
-              onClick={() => {
-                setActiveFilter("needs-look");
-              }}
-            >
-              <span>Needs a look</span> <span className={styles.segmentCount}>{needsLookBeds.length}</span>
-            </button>
-
-            <button
-              type="button"
-              className={styles.segmentBtn}
-              aria-pressed={activeFilter === "ready"}
-              onClick={() => {
-                setActiveFilter("ready");
-              }}
-            >
-              <span>Ready</span> <span className={styles.segmentCount}>{readyCount}</span>
-            </button>
-
-            <button
-              type="button"
-              className={styles.segmentBtn}
-              aria-pressed={activeFilter === "nobody-due"}
-              onClick={() => {
-                setActiveFilter("nobody-due");
-              }}
-            >
-              <span>Nobody due out</span> <span className={styles.segmentCount}>{nobodyDueOutBeds.length}</span>
-            </button>
-
-            {isMixed ? (
-              <>
-                <button
-                  type="button"
-                  className={styles.segmentBtn}
-                  aria-pressed={selectedPod === "locked"}
-                  onClick={() => {
-                    setSelectedPod("locked");
-                  }}
-                >
-                  <span>Locked</span> <span className={styles.segmentCount}>{lockedCount}</span>
-                </button>
-                <button
-                  type="button"
-                  className={styles.segmentBtn}
-                  aria-pressed={selectedPod === "open"}
-                  onClick={() => {
-                    setSelectedPod("open");
-                  }}
-                >
-                  <span>Open</span> <span className={styles.segmentCount}>{openCount}</span>
-                </button>
-              </>
-            ) : null}
-          </div>
+        {/* WH6 (Josh, 3 Nov 2026): the figures are the filters. Each raised tile counts the beds it
+            shows, so a press narrows the list to exactly that number; a second press shows every bed. */}
+        <div className={styles.countStrip} role="group" aria-label="Show beds" data-testid="ward-beds-count-strip">
+          {countTiles.map((tile) => {
+            const on = activeFilter === tile.id;
+            return (
+              <button
+                key={tile.id}
+                type="button"
+                className={styles.countTile}
+                aria-pressed={on}
+                data-tone={tile.tone ?? undefined}
+                aria-label={`${tile.label}, ${plural(tile.count, "bed", "beds")}${tile.note ? `. ${tile.note}` : ""}`}
+                onClick={() => {
+                  setActiveFilter(on && tile.id !== "all" ? "all" : tile.id);
+                }}
+              >
+                <span className={styles.countLabel} aria-hidden="true">
+                  {tile.tone ? <StatusGlyph tone={tile.tone} size={9} /> : null}
+                  {tile.label}
+                </span>
+                <span className={styles.countFigure} aria-hidden="true">
+                  {tile.count}
+                </span>
+                <span className={styles.countNote} aria-hidden="true">
+                  {tile.note ?? ""}
+                </span>
+              </button>
+            );
+          })}
         </div>
+
+        {isMixed ? (
+          <div className={styles.bedsControlsBar}>
+            <div className={styles.segment} role="group" aria-label="Locked or open beds">
+              {(
+                [
+                  ["all", "Locked and open", bedsList.length],
+                  ["locked", "Locked", lockedCount],
+                  ["open", "Open", openCount],
+                ] as const
+              ).map(([id, label, count]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={styles.segmentBtn}
+                  aria-pressed={selectedPod === id}
+                  onClick={() => {
+                    setSelectedPod(id);
+                  }}
+                >
+                  <span>{label}</span> <span className={styles.segmentCount}>{count}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
 
         <p className={styles.positionCaption} data-testid="ward-beds-position-caption">
           Bed numbers are board positions only.

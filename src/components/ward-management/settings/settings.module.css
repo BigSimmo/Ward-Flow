@@ -240,6 +240,13 @@
   align-items: start;
 }
 
+/* Demo tools (ST1, 3 Nov 2026): its cards and the feature switches, one column of blocks. */
+.demoStack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
 .column {
   display: flex;
   flex-direction: column;
@@ -704,7 +711,9 @@
 /* Cells come from the one canonical ward table rule set. */
 .table {
   composes: table from "../ward-table/ward-table.module.css";
-  min-width: 54rem;
+  /* Review 5 Nov 2026: 54rem ran past the card at tablet portrait (834) and cut "Set by" and "How"
+   * mid-word behind a scroll with no cue. 40rem fits the 744 card; the text cells wrap instead. */
+  min-width: 40rem;
 }
 
 .cellStrong {

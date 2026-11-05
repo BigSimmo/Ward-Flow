@@ -335,6 +335,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // view and the room status only (D-80).
   RECORD_RESTRICTIVE_PRACTICE_START: ["ward", "coordinator"],
   RECORD_RESTRICTIVE_PRACTICE_END: ["ward", "coordinator"],
+  // Gap list item 9 (Josh, 4 Nov 2026): the same desks that record the episode.
+  RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP: ["ward", "coordinator"],
   RECORD_WARD_INCIDENT: ["ward", "coordinator"],
   SET_SECLUSION_ROOM_STATUS: ["ward", "bed_manager", "coordinator"],
   // Closing the loop, package D (24 Oct 2026): records only. A ward for its own accepted move or
@@ -542,6 +544,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RECORD_LEGAL_FORM_CODE: ["ed", "coordinator", "ward"],
   // Q103 (Josh, 1 Nov 2026): the ED handover table's fixed presentation list.
   RECORD_ED_PRESENTATION: ["ed", "coordinator"],
+  // Gap list items 3 to 7 (Josh, 4 Nov 2026): the same desks that record the written form.
+  RECORD_LEGAL_FORM_DETAILS: ["ed", "coordinator", "ward"],
   RECORD_COUNTRY_EXTENSION: ["ed", "coordinator"],
   RECORD_LEGAL_FORM_CONTINUATION: ["ed", "coordinator", "ward", "community"],
   EVALUATE_ARRIVAL_LATENESS: ["coordinator", "ed", "ward"],
@@ -556,6 +560,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   RECORD_REPATRIATION: ["coordinator"],
   // Closing-the-loop (package E): the out-of-area return plan, the coordinator's tool as above.
   RECORD_HOME_SERVICE_RETURN: ["coordinator"],
+  // Out of area "Flag early" (Josh, 3 Nov 2026): the return plan, the coordinator's tool as above.
+  FLAG_RETURN_EARLY: ["coordinator"],
   // Closing-the-loop (package E): any desk with the on-call directory open may record a check.
   RECORD_DIRECTORY_CHECK: ["coordinator", "bed_manager", "ward", "ed", "community", "officer"],
   // The handover sheet is signed by whoever is handing over: the coordinator or the ward. Not yet the
@@ -613,6 +619,7 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   UNDO_LEGAL_FORM_RECORD: ["ed", "coordinator", "ward", "community"],
   UNDO_SUPPORT_NOTIFICATION: ["ward", "coordinator"],
   UNDO_REPATRIATION: ["coordinator"],
+  UNDO_FLAG_RETURN_EARLY: ["coordinator"],
   UNDO_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
   // Q75 (Josh, 31 Oct 2026): the statewide coordinator may sign a site sign-off as cover but
   // never undo one, so only the site bed manager takes a site sign-off back.
@@ -623,4 +630,8 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   UNDO_ABSENT_WITHOUT_LEAVE: ["ward", "coordinator"],
   // H-0150: whoever may mark a bed meeting action done may take that back.
   UNDO_BED_MEETING_ACTION: ["coordinator", "ward", "ed", "community", "bed_manager"],
+  // Tier 1 item 6 (Josh, 4 Nov 2026): whoever may take each listed step may take it back.
+  UNDO_BED_STEP: ["ward", "bed_manager", "coordinator"],
+  UNDO_RELEASE_STEP: ["coordinator", "ward", "ed", "community", "bed_manager"],
+  UNDO_PATIENT_RECORD: ["community", "coordinator"],
 };

@@ -353,7 +353,8 @@ describe("freeingCellText", () => {
    * "Not tracked here" cannot be confused for one another, where "0" and a blank can.
    */
   it("keeps a reported zero and an unreported figure distinguishable, and states the zero in words", () => {
-    expect(freeingCellText(0), "a known zero must read as the ward's answer, not as a digit").toBe("none");
+    // Capacity issue 5 (Josh, 3 Nov 2026): a known zero is the digit 0, still distinct from "Not tracked here".
+    expect(freeingCellText(0), "a known zero must read as the ward's answer").toBe("0");
     for (const value of [1, 3, 12, 100]) {
       expect(freeingCellText(value)).toBe(String(value));
     }
@@ -387,7 +388,7 @@ describe("freeingCellText", () => {
           "stopped deferring to the shared decision, so the three count columns can drift apart again",
       ).toBe(countCellText(value));
     }
-    expect(countCellText(0), "the shared decision must state a zero in words").toBe("none");
+    expect(countCellText(0), "the shared decision states a zero as the digit 0 (Josh, 3 Nov 2026)").toBe("0");
     for (const value of [1, 3, 12, 100]) {
       expect(countCellText(value), "a real count must still be the numeral").toBe(String(value));
     }

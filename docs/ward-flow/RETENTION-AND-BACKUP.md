@@ -4,7 +4,7 @@ _Updated 2026-10-26 - added the passing `pg_dump` restore drill of the hosted da
 
 _Updated 2026-10-24 - step 7 now names the migration runner and the 13, 12, 11 undo chain; Documentation owns._
 
-_Updated 2026-10-24 - table list and migration notes checked against `backend/ward-flow/migrations/` at `899b232e` (<!-- fact:migration-count -->16<!-- /fact --> migrations, latest <!-- fact:latest-migration -->016-forecast-history<!-- /fact -->); the dated drill below is unchanged; Documentation owns._
+_Updated 2026-10-24 - table list and migration notes checked against `backend/ward-flow/migrations/` at `899b232e` (<!-- fact:migration-count -->17<!-- /fact --> migrations, latest <!-- fact:latest-migration -->017-account-preferences<!-- /fact -->); the dated drill below is unchanged; Documentation owns._
 
 **Status:** Ward Flow is a prototype. It holds synthetic data only. This plan must be agreed and
 in place before any real patient data is entered. It is not legal advice. A WA Health records
@@ -35,6 +35,7 @@ All tables are in the `ward_flow` schema of the Supabase database named in
 | `session_sign_outs`     | Signed-out sign-ins, kept until the token would have expired anyway                                                                                     | Staff ID only                                           |
 | `forecast_snapshots`    | From migration 16, one forecast snapshot a demo day per desk: today's gap and tomorrow's low, likely and high counts                                    | No. Counts only                                         |
 | `forecast_miss_reasons` | From migration 16, the reason chosen for a missed forecast day, from a closed list, with the role and staff ID that chose it                            | Staff ID only. No patient content                       |
+| `account_preferences`   | From migration 17, each account's Help memory: desks whose tour is done, page tips seen, tips off, and What's new lines read                            | Staff ID only. Closed ids, no patient content           |
 | `migrations`            | Which database changes have been applied                                                                                                                | No                                                      |
 | Supabase Auth           | Staff sign-in accounts (email, password hash), held by Supabase outside `ward_flow`                                                                     | Staff only. Supabase's own log retention is unconfirmed |
 
@@ -45,6 +46,9 @@ Neither adds a table. Migration 14 adds `archived_records`, which keeps the live
 Migration 16 adds `forecast_snapshots` and `forecast_miss_reasons`, the shared forecast track
 record (proposal 013). They hold counts and closed-list values only; nothing in them is deleted
 automatically, and rows of an earlier demonstration world are no longer shown.
+Migration 17 adds `account_preferences`, Help remembered by account. It holds desk role ids,
+static Help topic ids, What's new entry ids and one yes or no per staff ID; nothing in it is
+deleted automatically.
 `audit`, `record_access` and `break_glass` are append-only. The database refuses any change or
 removal, including by the backend itself.
 
@@ -304,7 +308,7 @@ Do these in the Ward Flow project only, after checking the project name and ID m
 7. **Migration 11 and its grants (items 8 and 9).** Run the supported runner,
    `npm --prefix backend/ward-flow run migrate:supabase` (see
    [SETUP-SUPABASE.md](../../backend/ward-flow/SETUP-SUPABASE.md)). It applies every pending
-   migration through <!-- fact:latest-migration -->016-forecast-history<!-- /fact --> in one
+   migration through <!-- fact:latest-migration -->017-account-preferences<!-- /fact --> in one
    transaction and then reinstalls the runtime grants itself, so there is no separate grants step.
    Until then the backend keeps working, but opening a record is not logged and a sign-out takes
    effect only when its token expires. The undo runs one step at a time, newest first:

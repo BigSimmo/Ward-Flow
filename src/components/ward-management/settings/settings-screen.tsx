@@ -54,7 +54,9 @@ import {
   useActNowNotificationPreference,
   type NotificationSupport,
 } from "@/components/ward-management/shell/ward-act-now-notifications";
+import { phonePushRow } from "@/components/ward-management/shell/ward-phone-push";
 import { usePhonePush } from "@/components/ward-management/shell/ward-phone-push-switch";
+import { changeDeviceAlerts } from "@/components/ward-management/settings/settings-device-alerts";
 import {
   Avatar,
   Badge,
@@ -82,6 +84,7 @@ const WardHelpUsageCard = dynamic(() =>
   import("@/components/ward-management/help/ward-help-usage-card").then((m) => m.WardHelpUsageCard),
 );
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
 import { ROLE_SCREENS, type WardAccessRole } from "@/components/ward-management/ward-role-access";
 import { useConfigurationGate } from "@/components/ward-management/settings/settings-configuration-gate";
 import { AccessSettings, showsAccessTab } from "./access-settings";
@@ -99,6 +102,7 @@ import { publishedThresholds } from "@/components/ward-management/settings/setti
 
 import styles from "@/components/ward-management/settings/settings.module.css";
 import rx from "./settings-layout.module.css";
+import { SettingsDraftsCard } from "./settings-drafts-card";
 import { SettingsProfileCard } from "./settings-profile-card";
 import { SettingsSaveBar } from "./settings-save-bar";
 import {
@@ -109,8 +113,8 @@ import {
 } from "@/components/ward-management/settings/settings-screen-model";
 import { SettingsAlertsPane } from "./settings-alerts-check";
 import { SettingsDisplayPane } from "./settings-display-pane";
-import { SettingsDemoTools, SettingsHelpCard } from "./settings-help-and-demo";
-import { RULES_FOR_DESK, SettingsRulesSummary } from "./settings-rules-summary";
+import { openWardHelp } from "@/components/ward-management/help/ward-help-events";
+import { SettingsDataSection, SettingsDemoTools, SettingsRulesFileCard } from "./settings-help-and-demo";
 import { SettingsReferenceCard } from "./settings-reference-card";
 import { SettingsRestoreDialog, type RestoreScope } from "./settings-restore-dialog";
 import { SettingsReviewDialog } from "./settings-review-dialog";
@@ -119,6 +123,7 @@ import { SettingsRulesPane } from "./settings-rules-pane";
 import {
   SECTION_ICONS,
   SECTION_LABELS,
+  type SectionContext,
   findRedesignSettings,
   sectionForEntry,
   sectionFromHash,
@@ -187,40 +192,42 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       setDraftBase(configuration);
     }
   }, [configuration, draft, draftBase]);
-  // Settings by login (Josh, 31 Oct 2026, "yes to all"): one page of sections, each shown only to
-  // the desks that use it. The statewide coordinator edits the rules; every other desk that the rules
-  // touch reads a short "Rules that affect you"; the access admin opens on Access; only the
-  // coordinator and the access admin have the closed Demo tools.
+  // Settings by role (Josh, 3 Nov 2026, ST1, "yes to all"): every desk has You and Display, and
+  // Alerts where alerts reach it. The coordinator also has Rules, which it opens on; the access admin
+  // has Access and Data, and opens on Access. Demo tools show only on the demo site. A ward, ED or
+  // coordinator desk asks for cover for a second place from You. Help, the tour and shortcuts live
+  // in Help. Each desk's first section is the one it changes most.
   const access = useEffectiveWardAccess();
-  const role: WardAccessRole = source.kind === "executive" ? "executive" : access.role;
-  const accessOn = useWardFeatureFlag("role-access") && showsAccessTab(access);
+  const roleAccessOn = useWardFeatureFlag("role-access");
+  // Josh, 3 Nov 2026 (stress test, "yes to all"): with Role access off the access in force is the
+  // whole view, so Settings follows the desk being tried in the demo, as the rail's person does.
+  const personaRole = useShellPersonaRole();
+  const deskRole: WardAccessRole = !roleAccessOn && access.role === "coordinator" ? personaRole : access.role;
+  const role: WardAccessRole = source.kind === "executive" ? "executive" : deskRole;
+  const accessOn = roleAccessOn && showsAccessTab(access);
   const helpAskOn = useWardFeatureFlag("help-ask");
   const editsRules = role === "coordinator";
-  const rulesSummary = !editsRules && (RULES_FOR_DESK[role]?.length ?? 0) > 0;
   const alertsHere = role !== "admin" && role !== "executive";
-  const demoTools = role === "coordinator" || role === "admin";
+  const demoSite = !sharedEnabled;
   const governanceOpen = ROLE_SCREENS[role].governance !== undefined;
   const sections: SettingsSection[] =
     role === "admin"
-      ? [...(accessOn ? (["access"] as const) : []), "you", "device", "help", "demo"]
-      : [
-          ...(editsRules ? (["rules"] as const) : []),
-          "device",
-          ...(rulesSummary ? (["rules"] as const) : []),
-          ...(accessOn ? (["access"] as const) : []),
-          "you",
-          "help",
-          ...(demoTools ? (["demo"] as const) : []),
-        ];
+      ? [...(accessOn ? (["access"] as const) : []), "data", "display", "you"]
+      : [...(editsRules ? (["rules"] as const) : []), ...(alertsHere ? (["alerts"] as const) : []), "display", "you"];
+  if (demoSite) sections.push("demo");
+  const sectionContext: SectionContext = { editsRules, sections };
+  // Desktop: the section last jumped to, marked in the tabs that stay in view above the page.
+  const [activeSection, setActiveSection] = useState<SettingsSection>(sections[0]!);
+  const shownSection = sections.includes(activeSection) ? activeSection : sections[0]!;
   // On a phone the access admin's requests and roles sit open on the page, with no Access row.
   const accessInline = role === "admin";
-  const [demoOpen, setDemoOpen] = useState(false);
   // Phone only: the section whose tall sheet is open. The desktop never reads it.
   const isPhone = useIsPhone();
   const [phoneSheet, setPhoneSheet] = useState<SettingsSection | null>(null);
   const [isResetModalOpen, setIsResetModalOpen] = useState(false);
   const [isOperatorModalOpen, setIsOperatorModalOpen] = useState(false);
-  // "Switch login (demo)" (Josh, 31 Oct 2026): the demo's desk switcher, hidden once real sign-in is on.
+  // "Try another desk (demo)": the demo's desk switcher, which Find a setting still opens. Hidden once
+  // real sign-in is on; the account menu on the person button is its everyday home (DK1).
   const switchLogin = sharedEnabled
     ? undefined
     : () => {
@@ -235,6 +242,8 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   const [actNowNotifications] = useActNowNotificationPreference();
   const [notificationPermission, setNotificationPermission] = useState<NotificationSupport>("default");
   const [phonePush, setPhonePush] = usePhonePush();
+  // The latest on or off asked of the one Alerts switch (`changeDeviceAlerts`).
+  const alertsWanted = useRef<boolean | null>(null);
   useEffect(() => {
     const refresh = () => {
       setNotificationPermission(notificationSupport());
@@ -283,13 +292,22 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
 
   // Open the section named in the address (#device, or an old tab such as #alerts or #profile). On a
   // desktop it scrolls into view; on a phone its sheet opens; Demo tools opens its fold first.
+  // A jump holds its tab until the jump's scroll settles, and is released anyway if nothing scrolls.
+  const jumpLock = useRef(0);
+  const holdTab = () => {
+    window.clearTimeout(jumpLock.current);
+    jumpLock.current = window.setTimeout(() => {
+      jumpLock.current = 0;
+    }, 1200);
+  };
   const showSection = (section: SettingsSection) => {
     if (!sections.includes(section)) return;
-    if (section === "demo") setDemoOpen(true);
     if (isPhone) {
       setPhoneSheet(section);
       return;
     }
+    setActiveSection(section);
+    holdTab();
     window.requestAnimationFrame(() => {
       document.getElementById(`settings-section-${section}`)?.scrollIntoView?.({ block: "start" });
     });
@@ -306,6 +324,48 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
+
+  // The section tabs follow the page: the section nearest the top of the view is the current one.
+  const sectionKey = sections.join(" ");
+  // Measured live on every scroll: the last section whose top has passed under the sticky tabs, or the
+  // last section once the page is scrolled to its end. A jump holds its tab until that scroll settles.
+  useEffect(() => {
+    if (isPhone) return;
+    const ids = sectionKey.split(" ") as SettingsSection[];
+    let frame = 0;
+    let settle = 0;
+    const measure = (scroller: Element | null) => {
+      frame = 0;
+      if (jumpLock.current > 0) return;
+      const line = (document.querySelector(`.${rx.sectionBand}`)?.getBoundingClientRect().bottom ?? 120) + 24;
+      let current: SettingsSection | undefined = ids[0];
+      for (const id of ids) {
+        const top = document.getElementById(`settings-section-${id}`)?.getBoundingClientRect().top;
+        if (top !== undefined && top <= line) current = id;
+      }
+      if (scroller && scroller.scrollHeight - scroller.scrollTop - scroller.clientHeight < 4) current = ids.at(-1);
+      if (current) setActiveSection(current);
+    };
+    const onScroll = (event: Event) => {
+      const scroller = event.target instanceof Element ? event.target : document.scrollingElement;
+      if (scroller instanceof Element && !scroller.contains(document.getElementById(`settings-section-${ids[0]}`)))
+        return;
+      if (jumpLock.current > 0) {
+        window.clearTimeout(settle);
+        settle = window.setTimeout(() => {
+          jumpLock.current = 0;
+        }, 160);
+        return;
+      }
+      if (!frame) frame = window.requestAnimationFrame(() => measure(scroller));
+    };
+    document.addEventListener("scroll", onScroll, { capture: true, passive: true });
+    return () => {
+      document.removeEventListener("scroll", onScroll, { capture: true });
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(settle);
+    };
+  }, [isPhone, sectionKey]);
 
   // Keep document attributes in sync when Settings is mounted without the layout helper.
   useEffect(() => {
@@ -661,8 +721,13 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   const [reference, setReference] = useState<ReferenceTab>("thresholds");
   const findRef = useRef<HTMLInputElement>(null);
   // "Switch login (demo)" is hidden once real sign-in is on, so Find does not offer it either.
-  const results = findRedesignSettings(query, sections).filter(
-    (entry) => entry.id !== "go-to-desk" || switchLogin !== undefined,
+  const results = findRedesignSettings(query, sections, 7, editsRules).filter(
+    // The access rows exist only while Role access shows them (under You on a desk without Access).
+    (entry) =>
+      (entry.id !== "go-to-desk" || switchLogin !== undefined) &&
+      (entry.tab !== "access" || accessOn) &&
+      // A phone's Display sheet leaves out the keyboard shortcuts row.
+      !(isPhone && entry.id === "character-shortcuts"),
   );
 
   useEffect(() => {
@@ -705,8 +770,16 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       switchLogin();
       return;
     }
-    const section = sectionForEntry(entry);
-    if (section === "demo") setDemoOpen(true);
+    if (entry.id === "open-help") {
+      openWardHelp("tasks");
+      return;
+    }
+    const section = sectionForEntry(entry, sectionContext);
+    if (section === null) return;
+    if (!isPhone) {
+      setActiveSection(section);
+      holdTab();
+    }
     // Fixed defaults and Clinical values sit behind the reference card's tabs; show them first.
     if (entry.id === "fixed-defaults") setReference("defaults");
     if (entry.id === "clinical-values") setReference("clinical");
@@ -785,7 +858,9 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
                 onClick={() => jumpTo(entry)}
               >
                 <span className={styles.findLabel}>{entry.label}</span>
-                <span className={styles.findTab}>{SECTION_LABELS[sectionForEntry(entry)]}</span>
+                <span className={styles.findTab}>
+                  {SECTION_LABELS[sectionForEntry(entry, sectionContext) ?? "you"]}
+                </span>
               </li>
             ))
           )}
@@ -798,22 +873,29 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
   // only, with one line saying why, and no save bar. Every other desk reads "Rules that affect you".
   const readOnlyWords = configurationBlockReason ?? null;
 
+  // The rule editor, then the rules file and the reference tables that go with it.
   const rulesContent = editsRules ? (
-    <SettingsRulesPane
-      draft={draft}
-      configuration={configuration}
-      movements={operational?.movements ?? null}
-      now={now}
-      ruleChanges={ruleChanges}
-      setRule={setRule}
-      isSurge={isSurge}
-      onSurge={handleSurge}
-      blockReason={configurationBlockReason}
-      readOnlyWords={readOnlyWords}
-    />
-  ) : (
-    <SettingsRulesSummary role={role} configuration={configuration} />
-  );
+    <>
+      <SettingsRulesPane
+        draft={draft}
+        configuration={configuration}
+        movements={operational?.movements ?? null}
+        now={now}
+        ruleChanges={ruleChanges}
+        setRule={setRule}
+        isSurge={isSurge}
+        onSurge={handleSurge}
+        blockReason={configurationBlockReason}
+        readOnlyWords={readOnlyWords}
+      />
+      <SettingsRulesFileCard
+        onDownload={handleExport}
+        onLoad={handleImport}
+        loadUnavailable={configurationBlockReason}
+      />
+      <SettingsReferenceCard reference={reference} onReferenceChange={setReference} thresholds={thresholds} />
+    </>
+  ) : null;
 
   const testBuzz = () => {
     playSyntheticUrgentChime();
@@ -825,39 +907,16 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       phoneQuick={phoneQuick}
       notifications={actNowNotifications}
       permission={notificationPermission}
-      onNotificationsChange={(next) => {
-        if (!next) {
-          setActNowNotificationPreference(false);
-          showToast("Browser notifications off.");
-          return;
-        }
-        void enableActNowNotifications().then((answer) => {
-          setNotificationPermission(answer);
-          showToast(
-            answer === "granted"
-              ? "Browser notifications on for act-now alerts."
-              : answer === "unsupported"
-                ? "This browser cannot show notifications."
-                : "Notifications are blocked for this site in the browser.",
-          );
-        });
-      }}
       phonePush={phonePush}
-      onPhonePushChange={(next) => {
-        void setPhonePush(next).then((answer) => {
-          showToast(
-            answer === "on"
-              ? "Phone alerts on for this device."
-              : answer === "off"
-                ? "Phone alerts off for this device."
-                : answer === "denied"
-                  ? "Notifications are blocked for this site in the browser."
-                  : answer === "server-off"
-                    ? "Phone alerts are not set up on the server yet."
-                    : answer === "role"
-                      ? "Phone alerts are not part of your role."
-                      : "Phone alerts could not be changed. Try again.",
-          );
+      onAlertsChange={(next) => {
+        void changeDeviceAlerts(next, {
+          phone: phonePushRow(phonePush),
+          wanted: alertsWanted,
+          setBrowserPreference: setActNowNotificationPreference,
+          enableBrowser: enableActNowNotifications,
+          onPermission: setNotificationPermission,
+          setPhone: setPhonePush,
+          toast: showToast,
         });
       }}
       buzz={audioBuzz}
@@ -905,71 +964,63 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     />
   );
 
-  // This device (Josh, 31 Oct 2026): Display and Alerts on one card row. The transport officer's
-  // device is mostly for alerts, so its alerts come first; the access admin and the executive get no
-  // alerts here, so only Display.
-  const deviceContent = (phoneQuick: boolean) =>
-    alertsHere ? (
-      <div className={phoneQuick ? rx.accessStack : styles.columns}>
-        {role === "officer" ? (
-          <>
-            <div className={rx.accessStack}>{alertsContent(phoneQuick)}</div>
-            {displayContent(phoneQuick)}
-          </>
-        ) : (
-          <>
-            {displayContent(phoneQuick)}
-            <div className={rx.accessStack}>{alertsContent(phoneQuick)}</div>
-          </>
-        )}
-      </div>
-    ) : (
-      <div className={phoneQuick ? rx.accessStack : styles.columns}>{displayContent(phoneQuick)}</div>
-    );
+  // ST1 (Josh, 3 Nov 2026): every section but the rule editor is one readable column of cards.
+  const displayColumns = (phoneQuick: boolean) => <div className={rx.accessStack}>{displayContent(phoneQuick)}</div>;
+  const alertsColumns = (phoneQuick: boolean) =>
+    alertsHere ? <div className={rx.accessStack}>{alertsContent(phoneQuick)}</div> : null;
 
-  const youContent = <SettingsProfileCard now={now} onSwitchLogin={switchLogin} />;
-
-  const helpContent = (
-    <>
-      <SettingsHelpCard />
-      {helpAskOn ? <WardHelpUsageCard /> : null}
-    </>
-  );
-
-  const demoContent = demoTools ? (
-    <SettingsDemoTools
-      movementCount={operational?.movements.length ?? null}
-      eventCount={operational?.eventLog?.length ?? (operational ? 0 : null)}
-      shared={sharedEnabled}
-      auditAvailable={ruleChanges !== null}
-      governanceOpen={governanceOpen}
-      onDownload={handleExport}
-      onCopyDiagnostics={handleCopyDiagnostics}
-      onLoad={handleImport}
-      loadUnavailable={configurationBlockReason}
-      onClearSession={handleClearSession}
-      reference={
-        <SettingsReferenceCard reference={reference} onReferenceChange={setReference} thresholds={thresholds} />
-      }
-      open={demoOpen}
-      onOpenChange={setDemoOpen}
-    />
-  ) : null;
-
-  // Round 3: the Access tab adds the read-only Who can change what table under today's panels.
-  const accessContent = accessOn ? (
+  // Round 3: the Access pane adds the read-only Who can change what table under today's panels.
+  const accessPanels = accessOn ? (
     // Final round: the wrapper keeps the pane's card gap, which a plain block dropped (the cards touched).
     <div data-setting="access" className={rx.accessStack}>
       <AccessSettings />
       <SettingsWhoCan />
     </div>
   ) : null;
+  // The access admin's own section; a ward, ED or coordinator desk asks for cover from You.
+  const accessContent = role === "admin" ? accessPanels : null;
+
+  const youContent = (
+    <div className={rx.accessStack}>
+      <SettingsProfileCard now={now} />
+      {role === "executive" ? null : <SettingsDraftsCard />}
+      {role === "admin" ? null : accessPanels}
+    </div>
+  );
+
+  const about = { shared: sharedEnabled, auditAvailable: ruleChanges !== null, governanceOpen };
+  const dataContent =
+    role === "admin" ? (
+      <SettingsDataSection
+        onDownload={handleExport}
+        onCopyDiagnostics={handleCopyDiagnostics}
+        reference={
+          <SettingsReferenceCard reference={reference} onReferenceChange={setReference} thresholds={thresholds} />
+        }
+        about={about}
+      />
+    ) : null;
+
+  const demoContent = demoSite ? (
+    <>
+      <SettingsDemoTools
+        movementCount={operational?.movements.length ?? null}
+        eventCount={operational?.eventLog?.length ?? (operational ? 0 : null)}
+        onClearSession={handleClearSession}
+        onCopyDiagnostics={role === "admin" ? undefined : handleCopyDiagnostics}
+        about={role === "admin" ? undefined : about}
+      />
+      {helpAskOn ? <WardHelpUsageCard /> : null}
+    </>
+  ) : null;
 
   // The rule editor's save bar always shows, so where Save lives never moves. A desk that cannot
   // change the rules has no save bar, unless it lost that right with a draft open: then the bar stays,
   // Save greyed with the reason, so the draft can still be discarded.
   const saveBar =
-    editsRules && (readOnlyWords === null || hasUnsavedRules) ? (
+    // ST1 (3 Nov 2026): with the page split into sections, the bar shows while the rule editor is the
+    // section in view or a draft is open, never over the save-at-once Display or Alerts.
+    editsRules && (hasUnsavedRules || (readOnlyWords === null && shownSection === "rules")) ? (
       <SettingsSaveBar
         diffs={diffs}
         onRulesTab
@@ -1038,26 +1089,22 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
      its foot. */
   if (isPhone) {
     const areaSummary: Record<SettingsSection, string> = {
-      rules: editsRules
-        ? readOnlyWords === null
-          ? "ED and placement, form warnings, reply targets"
-          : "Read only"
-        : "Set by the bed coordinator",
-      device: alertsHere
-        ? `Alerts ${actNowNotifications ? "on" : "off"} · motion ${reducedMotion ? "reduced" : "on"}`
-        : `Sidebar, motion ${reducedMotion ? "reduced" : "on"}, contrast ${highContrast ? "high" : "standard"}`,
-      access: role === "admin" ? "Roles, approvals and requests" : "Cover for a second ward or ED",
+      rules: readOnlyWords === null ? "ED and placement, form warnings, reply targets" : "Read only",
+      alerts: `Alerts on this device ${actNowNotifications || phonePushRow(phonePush).checked ? "on" : "off"} · buzz ${audioBuzz ? "on" : "off"}`,
+      display: `Theme, density, motion ${reducedMotion ? "reduced" : "on"}, contrast ${highContrast ? "high" : "standard"}`,
+      access: "Roles, approvals and requests",
+      data: "Rules file, bug report copy, reference tables",
       you: `${deskProfile.role} · ${deskProfile.location}`,
-      help: "Help, the tour and shortcuts",
-      demo: "Rules file, diagnostics, feature switches",
+      demo: "Reset the demo, feature switches",
     };
     const sheetTab = phoneSheet;
     const sheetContent: Record<SettingsSection, ReactNode> = {
       rules: rulesContent,
-      device: deviceContent(true),
+      alerts: alertsColumns(true),
+      display: displayColumns(true),
       access: accessContent,
+      data: dataContent,
       you: youContent,
-      help: helpContent,
       demo: demoContent,
     };
     const roleIsName = deskProfile.name === deskProfile.role;
@@ -1156,7 +1203,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
                     as="li"
                     data-testid={`ward-settings-phone-area-${section}`}
                     leading={<Icon size={18} aria-hidden="true" className={styles.phoneAreaIcon} />}
-                    name={editsRules || section !== "rules" ? SECTION_LABELS[section] : "Rules that affect you"}
+                    name={SECTION_LABELS[section]}
                     meta={areaSummary[section]}
                     value={
                       section === "rules" && hasUnsavedRules ? (
@@ -1165,10 +1212,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
                         <ChevronRight size={16} aria-hidden="true" className={styles.phoneChevron} />
                       )
                     }
-                    onSelect={() => {
-                      if (section === "demo") setDemoOpen(true);
-                      setPhoneSheet(section);
-                    }}
+                    onSelect={() => setPhoneSheet(section)}
                   />
                 );
               })}
@@ -1210,15 +1254,13 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
             description={
               // Round 3: a desk that cannot save is never told "Save to apply".
               sheetTab === "rules"
-                ? !editsRules
-                  ? "Read only · set by the bed coordinator"
-                  : readOnlyWords !== null
-                    ? `Read only · ${readOnlyWords}`
-                    : "Changes wait for Save. Each save is recorded in the audit"
+                ? readOnlyWords !== null
+                  ? `Read only · ${readOnlyWords}`
+                  : "Changes wait for Save. Each save is recorded in the audit"
                 : sheetTab === "access"
                   ? "Each change asks for your password again"
-                  : sheetTab === "device"
-                    ? "Saves at once · this browser only"
+                  : sheetTab === "display" || sheetTab === "alerts"
+                    ? "Saves at once · this device only"
                     : undefined
             }
             primary={
@@ -1245,10 +1287,11 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
 
   const sectionContent: Record<SettingsSection, ReactNode> = {
     rules: rulesContent,
-    device: deviceContent(false),
+    alerts: alertsColumns(false),
+    display: displayColumns(false),
     access: accessContent,
+    data: dataContent,
     you: youContent,
-    help: helpContent,
     demo: demoContent,
   };
 
@@ -1257,8 +1300,10 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
       <main id="main-content" className={styles.main}>
         <h1 className={styles.srOnly}>Settings</h1>
 
+        {/* ST1 (Josh, 3 Nov 2026): a compact top. Who you are on the left, Find a setting on the
+            right; the section tabs sit below it and stay in view while a long section scrolls. */}
         <Hero
-          className={styles.band}
+          className={cx(styles.band, rx.bandCompact)}
           testId="ward-settings-profile"
           // A desk named by its role says the role once, in the title.
           eyebrow={
@@ -1286,27 +1331,30 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
             )
           }
           aside={findSetting}
-          bar={
-            // Settings by login: one page of sections; these jump to each, in this desk's order.
-            <nav className={rx.sectionNav} aria-label="Settings sections">
-              {sections.map((section) => {
-                const Icon = SECTION_ICONS[section];
-                return (
-                  <Button
-                    key={section}
-                    variant="onHero"
-                    icon={Icon}
-                    onClick={() => showSection(section)}
-                    data-testid={`ward-settings-jump-${section}`}
-                  >
-                    {editsRules || section !== "rules" ? SECTION_LABELS[section] : "Rules that affect you"}
-                    {section === "rules" && hasUnsavedRules ? <CountCircle n={unsavedCount} label="unsaved" /> : null}
-                  </Button>
-                );
-              })}
-            </nav>
-          }
         />
+
+        <div className={rx.sectionBand}>
+          <nav className={rx.sectionTabs} aria-label="Settings sections" data-testid="ward-settings-section-tabs">
+            {sections.map((section) => {
+              const Icon = SECTION_ICONS[section];
+              const current = section === shownSection;
+              return (
+                <button
+                  key={section}
+                  type="button"
+                  className={rx.sectionTab}
+                  aria-current={current ? "true" : undefined}
+                  onClick={() => showSection(section)}
+                  data-testid={`ward-settings-jump-${section}`}
+                >
+                  <Icon size={14} aria-hidden="true" />
+                  {SECTION_LABELS[section]}
+                  {section === "rules" && hasUnsavedRules ? <CountCircle n={unsavedCount} label="unsaved" /> : null}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
 
         {refusedLine}
 
@@ -1315,9 +1363,9 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
             <section
               key={section}
               id={`settings-section-${section}`}
-              className={rx.section}
+              className={cx(rx.section, section !== "rules" && rx.sectionNarrow)}
               // A8 (accessibility check, 2 Nov 2026): a card inside carries the bare name, so this one says Settings.
-              aria-label={`Settings, ${editsRules || section !== "rules" ? SECTION_LABELS[section] : "Rules that affect you"}`}
+              aria-label={`Settings, ${SECTION_LABELS[section]}`}
               data-pane={section}
             >
               {sectionContent[section]}

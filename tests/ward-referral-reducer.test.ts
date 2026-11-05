@@ -1087,7 +1087,9 @@ describe("seeding", () => {
     // `ward-model.ts` and `tests/ward-referral-referrer.test.ts`. Appended last because
     // `applyRulingsDemoOverlay` spreads its overlay rows after the base fixture, same discipline
     // as the Midland demonstration rows below.
-    expect(state.referrals).toHaveLength(31);
+    // 31 -> 36 (3 Nov 2026, S6 example data): RF-EX-001..005, appended last by
+    // `applyExampleListsOverlay`, one per group of wards whose inbox was otherwise empty.
+    expect(state.referrals).toHaveLength(36);
     expect(state.referrals.map((r) => r.id)).toEqual([
       "RF-001",
       "RF-002",
@@ -1149,6 +1151,12 @@ describe("seeding", () => {
       // The rulings demo overlay's own referral (`ward-rulings-demo.ts`), appended after the base
       // fixture by `applyRulingsDemoOverlay` — not part of the Midland demonstration rows above.
       "RF-RD06",
+      // S6 example data (`ward-demo-example-lists.ts`), appended after every other overlay.
+      "RF-EX-001",
+      "RF-EX-002",
+      "RF-EX-003",
+      "RF-EX-004",
+      "RF-EX-005",
     ]);
     expect(state.frontDoorReferralSequence).toBe(0);
   });
