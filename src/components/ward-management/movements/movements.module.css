@@ -2274,6 +2274,12 @@
   .boardTabCount {
     font-size: var(--wf-phone-pill-count-fs);
   }
+
+  /* Phone-first pass (4 Nov 2026): Open and Resolved take the kit's 40px phone option, as the kit
+   * Segmented does, now that the one-line toolbar lifts more rows into view. */
+  .boardTabs.boardTabs > .boardTab {
+    height: 40px;
+  }
 }
 
 /* ---------- Movements redesign (31 Oct 2026) ---------- */

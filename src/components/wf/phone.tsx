@@ -27,6 +27,7 @@ import { StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./phone.module.css";
 import foldStyles from "./phone-fold.module.css";
 import { useModalFocus } from "./use-modal-focus";
+import { useScrollRegionFocus } from "./use-scroll-region-focus";
 
 /*
  * v9 phone parts (design system v9 section 7, "Phone"). Phone is its own design at 390 by 844,
@@ -556,6 +557,8 @@ export function PhoneHero({
   const sectionRef = useRef<HTMLElement>(null);
   const isPhone = useIsPhone();
   useWfBandBleed(sectionRef, isPhone);
+  const figuresRef = useRef<HTMLUListElement>(null);
+  useScrollRegionFocus(figuresRef, shown.length);
   return (
     <section ref={sectionRef} className={cx(styles.hero, className)} aria-labelledby={titleId} data-testid={testId}>
       <div className={styles.heroTitleBlock}>
@@ -586,7 +589,7 @@ export function PhoneHero({
         ) : null}
       </div>
       {shown.length ? (
-        <ul className={styles.heroFigures} data-count={shown.length}>
+        <ul ref={figuresRef} className={styles.heroFigures} data-count={shown.length} aria-label="Figures">
           {shown.map((figure) => {
             const content = (
               <>

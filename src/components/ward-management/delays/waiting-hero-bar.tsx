@@ -16,6 +16,7 @@ import { ChevronRight, TimerReset } from "lucide-react";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { H8, OVER_8H, SILENT_MINUTES, ownerName, type BoardRow } from "./delays-board-model";
+import { SrOnly, useIsPhone } from "@/components/wf";
 import { TierKey } from "@/components/ward-management/tier-key";
 import { TYPED_TIME_KEY } from "./waiting-typed-time";
 import board from "./delays-board.module.css";
@@ -111,6 +112,22 @@ export function moveWord(owner: BoardRow["owner"]): string {
  * from the crowded title row) and the colour key for typed legal times, word for word.
  */
 export function WaitingKeyRow({ anyTypedTime }: { anyTypedTime: boolean }) {
+  const isPhone = useIsPhone();
+  if (isPhone) {
+    // Josh, 4 Nov 2026: on a phone the tier key and the typed-time caveat fold into one line. The
+    // caveat is a safety line, so it is shortened, never dropped, and read in full to a screen reader.
+    return (
+      <div className={`${waitingKeys.keyRow} ${styles.keyRow} ${styles.keyRowPhone}`}>
+        <TierKey compact />
+        {anyTypedTime ? (
+          <p className={waitingKeys.typedKey}>
+            <span aria-hidden="true">Times as typed, not legally checked</span>
+            <SrOnly>{TYPED_TIME_KEY}</SrOnly>
+          </p>
+        ) : null}
+      </div>
+    );
+  }
   return (
     <div className={`${waitingKeys.keyRow} ${styles.keyRow}`}>
       <TierKey />

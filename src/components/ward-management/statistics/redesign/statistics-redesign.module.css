@@ -821,3 +821,15 @@ button.link {
   text-transform: none;
   letter-spacing: 0;
 }
+
+/* Review 5 Nov 2026: on a phone the ED waits table ran past the card. The ED name and its opened time
+ * wrap, so the four columns fit without a sideways scroll. */
+@media (max-width: 46.4375rem) {
+  .edWaitsTable td:nth-child(2),
+  .edWaitsTable td:nth-child(2) * {
+    white-space: normal;
+  }
+  .edWaitsTable td:nth-child(2) .name {
+    min-width: 0;
+  }
+}
