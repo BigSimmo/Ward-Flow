@@ -11,6 +11,7 @@ import { WardDemoReset, demoDataReach } from "../demo-reset/ward-demo-reset";
 import { WardPracticeMode } from "../demo-reset/ward-practice-mode";
 import { formatInstant, formatInstantWithDay } from "../ward-clock";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
+import { WARD_FLOW_SCENARIO_FILE_MAX_BYTES } from "../ward-flow-scenario-file-limits";
 import { DEMO_CONTROLS_OFF, useDemoControlsAvailable, useWardRaise } from "../ward-flow-raise";
 import type { WardCommandOutcome } from "../ward-shared-client";
 import { DEMO_RESET_SCENARIOS, WARD_SCENARIOS, scenarioLabels, type WardScenario } from "../ward-scenarios";
@@ -207,6 +208,10 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
     input.value = "";
     if (!file || !loadScenarioFile) return;
     const owner = ++importOwner.current;
+    if (file.size > WARD_FLOW_SCENARIO_FILE_MAX_BYTES) {
+      setMessage("This scenario file is larger than 10 MiB, so nothing was loaded.");
+      return;
+    }
     const startedWorld = worldGeneration;
     const lifetime = captureCommandLifetime?.();
     const isCurrent = () =>
