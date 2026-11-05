@@ -175,14 +175,14 @@ export function MovementsScreen() {
   }, []);
 
   useEffect(() => {
-    function handlePopState() {
-      setDetailId(null);
+    function handlePopState(event: PopStateEvent) {
+      const state = event.state;
+      const id = state && Object.hasOwn(state, "wardMovementDetail") ? state.wardMovementDetail : null;
+      setDetailId(typeof id === "string" && movements.some((movement) => movement.id === id) ? id : null);
     }
     window.addEventListener("popstate", handlePopState);
-    return () => {
-      window.removeEventListener("popstate", handlePopState);
-    };
-  }, []);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [movements]);
 
   // Usability review, 24 Oct 2026: the tab lives in the address, so Back from a record returns to it.
   const [boardTab, setBoardTab] = useAddressTab("tab", MOVEMENT_BOARD_TABS, "every");

@@ -125,7 +125,7 @@ export function useSharedForecastHistory(generation: number) {
   const account = useContext(SharedAccessContext);
   const call = account?.api.forecastHistory;
   const access = useEffectiveWardAccess();
-  const scopeKey = JSON.stringify([account?.actorId, access.role, access.scope]);
+  const scopeKey = JSON.stringify([account?.workspaceId, account?.actorId, access.role, access.scope]);
   const identity = JSON.stringify([generation, scopeKey]);
   const owner = useRef<{ call: typeof call; generation: number; scopeKey: string } | null>({
     call,

@@ -5,7 +5,7 @@ import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { StatusGlyph, durMinutes } from "@/components/wf";
 
 import { rowTone, type HandoverColumn, type HandoverColumnId } from "./handover-columns";
-import { STAGE_LABEL, dueParts, nextStep } from "./handover-model";
+import { handoverStatusLabel, dueParts, nextStep } from "./handover-model";
 import styles from "./handover-refined.module.css";
 
 /**
@@ -29,8 +29,8 @@ export function screenColumnsFor(columns: HandoverColumn[], columnIds: readonly 
               <StatusGlyph tone={rowTone(row, cellCtx)} size={9} />
               <span className={styles.trunc}>{step.text}</span>
             </span>
-            <span className={`${styles.sub} ${styles.trunc}`} title={`${STAGE_LABEL[row.stage]} · ${row.ownerShort}`}>
-              {STAGE_LABEL[row.stage]} · <SpelledCodes text={row.ownerShort} />
+            <span className={`${styles.sub} ${styles.trunc}`} title={`${handoverStatusLabel(row)} · ${row.ownerShort}`}>
+              {handoverStatusLabel(row)} · <SpelledCodes text={row.ownerShort} />
             </span>
           </span>
         );

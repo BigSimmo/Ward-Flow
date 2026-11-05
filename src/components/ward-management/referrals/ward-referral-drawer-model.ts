@@ -527,6 +527,7 @@ export const yesNo = (value: boolean | undefined) => (value === undefined ? unde
 
 /** Everything a kept draft carries, so "Keep draft" can reopen exactly where the referrer stopped. */
 export type KeptDraft = {
+  submissionId?: string;
   activePatientKey: string;
   destType: DrawerCategory;
   activeSection: DrawerSection;

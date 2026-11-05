@@ -36,6 +36,25 @@ export function executedAssertionCount(report) {
   );
 }
 
+// Preserve named execution populations even when aggregate floors pass. Skips remain explicit;
+// policy-specific validators, rather than this inventory, decide which suites must execute.
+export function suiteExecutionSummary(report, root) {
+  return (report?.testResults ?? []).map((suite) => {
+    const assertions = suite.assertionResults ?? [];
+    const count = (...statuses) => assertions.filter((test) => statuses.includes(test.status)).length;
+    return {
+      file: relativeName(root, suite.name),
+      status: suite.status,
+      executed: count("passed", "failed"),
+      passed: count("passed"),
+      failed: count("failed"),
+      skipped: count("pending", "skipped"),
+      todo: count("todo"),
+      unknown: assertions.length - count("passed", "failed", "pending", "skipped", "todo"),
+    };
+  });
+}
+
 export function validatePolicyReport(report, expectedFiles, root) {
   const completeness = validateBatchReport(report, expectedFiles, root);
   if (!completeness.valid) return completeness;
@@ -90,6 +109,7 @@ export function withGateRunResult(report, files, root, runResult) {
     wardGateRuns: [
       {
         files,
+        suites: suiteExecutionSummary(report, root),
         status: runResult?.status ?? null,
         signal: runResult?.signal ?? null,
         error: runResult?.error ? String(runResult.error.message ?? runResult.error) : null,
@@ -248,7 +268,7 @@ export function runFullGateBatches({
     const check = validateBatchReport(report, files, root, validation);
     if (!check.valid) throw new Error(`saved batch ${index + 1} is invalid: ${check.reason}`);
     console.log(
-      `FULL batch ${index + 1}/${batches.length}: ${resumed ? "reused" : "ran"} ${files.length} files, ${report.numTotalTests} tests; failures: ${check.failing.length}.`,
+      `FULL batch ${index + 1}/${batches.length}: ${resumed ? "reused" : "ran"} ${files.length} files, ${report.numTotalTests} tests (${executedAssertionCount(report)} executed); failures: ${check.failing.length}.`,
     );
     testResults.push(...report.testResults);
     wardGateRuns.push(...report.wardGateRuns);

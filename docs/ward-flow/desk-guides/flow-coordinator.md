@@ -2,9 +2,7 @@
 
 <!-- last-checked: 2026-10-26 -->
 
-_Updated 2026-11-03 — departure instructions checked against current source; no new browser review claimed._
-
-_Updated 2026-10-30 — role wording checked against source at `b6aa5cde`; browser coverage above is unchanged._
+_Updated 2026-11-05 — queue order, recorded-time and departure guidance reconciled against source. Other screen prose was not browser-rechecked._
 
 You see the whole network (statewide) or your own health service. You decide referrals and keep
 patients moving from referral to arrival.
@@ -20,6 +18,22 @@ Your main menu: **Home, Capacity, Movements, Waiting, All EDs, Referrals, Handov
 
 On a phone, the bar at the bottom has **Home, Referrals, Create, Alerts, Activity**. **Create**
 holds **New referral**.
+
+## How lists and recorded times work
+
+Home's movement queue shows the longest wait first; equal waits use the record ID to keep a
+stable order. Waiting keeps longest waits first within the selected groups. The clinician's tier,
+an urgent flag and a recorded form time do not move a person ahead of a longer wait. Filtering a
+list changes which rows you see, so check the selected view when comparing lists.
+
+A form time is the time somebody typed from the paper, shown as **as typed** and **Not legally
+checked**. A due-soon highlight uses the configured warning window; it does not calculate or
+validate a Mental Health Act deadline. The long-wait reminder is an operational reminder, not a
+legal deadline or a finding that a standard was breached.
+
+Source: [Home queue order](../../../src/components/ward-management/ward-priority.ts),
+[Waiting list](../../../src/components/ward-management/delays/delays-board.tsx) and
+[operational reminders](../../../src/components/ward-management/ward-operational-defaults.ts).
 
 ## Jobs you do most
 

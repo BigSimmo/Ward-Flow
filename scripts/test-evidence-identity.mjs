@@ -23,6 +23,8 @@ export const OUTCOME_AFFECTING_ENV_VARS = [
   "WARD_GATE_SKIP_LEGAL_SWEEP",
   "WARD_PUBLIC_STANDALONE",
   "WARD_GATE_SHARD",
+  "WARD_STORAGE_VERDICTS_FULL",
+  "WARD_STORAGE_VERDICTS_RECORD",
 ];
 
 /** @param {Record<string,string|undefined>} [env] */

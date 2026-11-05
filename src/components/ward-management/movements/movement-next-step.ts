@@ -44,7 +44,7 @@ export function movementNextStep(movement: Movement): MovementNextStep | null {
         ? { label: "Ward answer", owner: "Receiving ward", kind: "wait" }
         : { label: "Pull the bed", owner: COORDINATOR_OWNER, kind: "pull" };
     case "pulled":
-      return { label: "Handover", owner: "ED team", kind: "wait" };
+      return { label: "Handover", owner: movement.originCommunity?.teamName ?? "ED team", kind: "wait" };
     case "handover_ready": {
       const leg = transportLeg(movement.transport);
       if (leg === undefined) {

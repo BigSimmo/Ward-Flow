@@ -47,6 +47,7 @@ type ActivityEvent = {
 };
 
 export type CommandActivity = {
+  auditFeed?: { hasOlder: boolean; loading: boolean; loadMore: () => void; error?: string };
   departments: EdPressure[];
   content: WardActivityContent;
   lastEventAt: Instant | undefined;

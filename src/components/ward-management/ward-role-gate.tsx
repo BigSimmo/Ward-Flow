@@ -5,12 +5,15 @@
  * `useRoleGate()` rather than reading `EVENT_ROLE` itself; the rule lives in
  * `ward-role-permissions.ts`, and the reducer remains the gate that actually refuses.
  */
-import { useCallback, useId, useSyncExternalStore, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useId, useSyncExternalStore, type ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { DisabledReason } from "@/components/wf";
 import { wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { useAccessShellRole, useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { dispatchPermission, type WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
+import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
+import { useIsBreakGlassRecord } from "@/components/ward-management/shell/ward-access";
+import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
 
 type DeskRoleOverride = {
   pathname: string;
@@ -40,6 +43,21 @@ export function setDeskRole(role: WardChromeRole, pathname = ""): void {
   for (const listener of deskRoleListeners) {
     listener();
   }
+}
+
+/** Shared accounts choose an authorised membership; only the local demo switches preview roles. */
+export function useDeskRoleSwitch() {
+  const session = useContext(SharedSessionContext);
+  const switchDesk = useCallback(
+    (role: WardChromeRole, pathname = "") => {
+      navigateWithDirtyGuard(() => {
+        if (session) session.switchRole?.();
+        else setDeskRole(role, pathname);
+      });
+    },
+    [session],
+  );
+  return { shared: session !== null, canSwitch: session === null || Boolean(session.switchRole), switchDesk };
 }
 
 const ROLE_DESK_LABELS: Record<WardChromeRole, string> = {
@@ -109,19 +127,36 @@ export type RoleGate = {
  * Returns `gate(eventType, key?)`. `key` keeps the reason's id unique when one screen shows two
  * controls for the same event at once (for example a row per ward).
  */
-export function useRoleGate(): (eventType: WardFlowEventType, key?: string) => RoleGate {
+const ReadOnlyRecordContext = createContext(false);
+export const ReadOnlyRecordActions = ReadOnlyRecordContext.Provider;
+
+export function useRoleGate(record?: {
+  patientId?: string | null;
+}): (eventType: WardFlowEventType, key?: string) => RoleGate {
   const pathname = usePathname() ?? "";
   const role = useRouteRole();
   // Audit RA-04: under role access a non-coordinator desk acts only as itself (`useRouteRole`), so
   // an in-page desk switch would change nothing. Offer it only where it works: a coordinator's desk,
   // or role access off (the effective access is then the statewide coordinator).
-  const canSwitchDesk = useEffectiveWardAccess().role === "coordinator";
+  const { shared: sharedDesk, canSwitch: sharedCanSwitch, switchDesk } = useDeskRoleSwitch();
+  const accessRole = useEffectiveWardAccess().role;
+  const canSwitchDesk = sharedDesk ? sharedCanSwitch : accessRole === "coordinator";
+  const isBreakGlass = useIsBreakGlassRecord();
+  const inheritedReadOnly = useContext(ReadOnlyRecordContext);
+  const readOnly = inheritedReadOnly || isBreakGlass(record);
   const baseId = useId();
   return useCallback(
     (eventType: WardFlowEventType, key?: string): RoleGate => {
+      const id = `${baseId}-${eventType}${key ? `-${key}` : ""}`;
+      if (readOnly)
+        return {
+          allowed: false,
+          reason: "Exceptional access is read only.",
+          buttonProps: { disabled: true, "aria-describedby": id },
+          note: <DisabledReason id={id}>Exceptional access is read only.</DisabledReason>,
+        };
       const permission = dispatchPermission(role, eventType);
       if (permission.allowed) return { allowed: true, buttonProps: {}, note: null };
-      const id = `${baseId}-${eventType}${key ? `-${key}` : ""}`;
       const required = requiredRoleForPermission(eventType, permission.reason);
       return {
         allowed: false,
@@ -136,10 +171,10 @@ export function useRoleGate(): (eventType: WardFlowEventType, key?: string) => R
                 <button
                   type="button"
                   className="lockline"
-                  onClick={() => setDeskRole(required.role, pathname)}
+                  onClick={() => switchDesk(required.role, pathname)}
                   data-testid={`ward-role-switch-${required.role}`}
                 >
-                  Switch to {required.label} desk →
+                  {sharedDesk ? "Choose a desk" : `Switch to ${required.label} desk`} →
                 </button>
               </>
             ) : null}
@@ -147,6 +182,6 @@ export function useRoleGate(): (eventType: WardFlowEventType, key?: string) => R
         ),
       };
     },
-    [role, baseId, pathname, canSwitchDesk],
+    [readOnly, role, baseId, pathname, canSwitchDesk, sharedDesk, switchDesk],
   );
 }

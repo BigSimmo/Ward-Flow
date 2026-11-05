@@ -13,7 +13,7 @@ import { type Patient } from "@/components/ward-management/ward-patients";
 import { absenceVoluntary, type PatientStatusContext } from "./patient-status-card";
 import type { LeaveKind, WardChangeForm } from "./patient-ward-change-card";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
-import { requiredRoleForPermission, setDeskRole } from "@/components/ward-management/ward-role-gate";
+import { requiredRoleForPermission, useDeskRoleSwitch } from "@/components/ward-management/ward-role-gate";
 import type { WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
 import { PatientLastSeenCard, PatientLeaveCard, PatientLegalNowCard, PatientWhyCard } from "./patient-now-cards";
 import { type PatientNowRecord, clock } from "./patient-now-records";
@@ -94,6 +94,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
   "use no memo";
   // Access audit (31 Oct 2026): New referral shows only where this desk can open the referral form.
   const canOpenHref = useCanOpenHref();
+  const deskSwitch = useDeskRoleSwitch();
   const {
     acceptingUnit,
     callTargets,
@@ -138,12 +139,13 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
     wardRefusal,
     wardSaveError,
   } = props;
+  const readOnlyRecord = clearanceGate.reason === "Exceptional access is read only.";
   const newReferralHref = livePatient ? raiseReferralHref({ patientId: livePatient.id }) : "/ward-flow/referrals/new";
   // Community clinician (redesign, 31 Oct 2026): the team follows its person on the ward but records
   // none of the ward's changes (leave, gone to ED, discharge date are ward or coordinator only), so the
   // Record a change card of greyed buttons and its "Switch to Ward desk" link are left out for this desk.
   const ownTeamDesk = useEffectiveWardAccess().role === "community";
-  const wardChangeOpen = !ownTeamDesk || gate("RECORD_LEAVE_BED").allowed;
+  const wardChangeOpen = !readOnlyRecord && (!ownTeamDesk || gate("RECORD_LEAVE_BED").allowed);
   const whyCard =
     isLiveBedflow && liveMovement ? (
       <PatientWhyCard
@@ -170,7 +172,8 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
   // so the two columns balance and the rail keeps the safety cards (Legal now, Who to call).
   const whyMovesLeft = !isPhone && (mode === "ward" || mode === "ed");
   const copyLabel = copied ? "Copied" : isLiveBedflow ? "Copy handover" : "Copy summary";
-  const referralMain = isPhone && (mode === "idle" || mode === "cto") && canOpenHref(newReferralHref);
+  const referralMain =
+    !readOnlyRecord && isPhone && (mode === "idle" || mode === "cto") && canOpenHref(newReferralHref);
   // Community clinician: with no ward change to record, the phone bar held only the copy icon in an
   // otherwise empty band. Copy takes the bar as its labelled main action instead, as Ask more wards
   // does on the coordinator's patient page.
@@ -288,7 +291,9 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
       why={whyMovesLeft ? null : whyCard}
       change={
         <>
-          {isLiveBedflow &&
+          {!readOnlyRecord &&
+          deskSwitch.canSwitch &&
+          isLiveBedflow &&
           liveMovement &&
           (!clearanceGate.allowed || (liveMovement.stage === "pulled" && !gate("HANDOVER_READY").allowed)) ? (
             <div className="lockline" data-testid="ward-patient-role-lockline">
@@ -302,10 +307,10 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
                   <button
                     type="button"
                     className="lockline"
-                    onClick={() => setDeskRole(req.role, pathname)}
+                    onClick={() => deskSwitch.switchDesk(req.role, pathname)}
                     data-testid={`ward-patient-role-switch-${req.role}`}
                   >
-                    Switch to {req.label} desk →
+                    {deskSwitch.shared ? "Choose a desk" : `Switch to ${req.label} desk`} →
                   </button>
                 );
               })()}
@@ -314,21 +319,23 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
           {whyMovesLeft ? whyCard : null}
           {mode === "ward" && wardChangeOpen ? (
             <>
-              {!gate("RECORD_LEAVE_BED").allowed ? (
+              {deskSwitch.canSwitch && !gate("RECORD_LEAVE_BED").allowed ? (
                 <div className="lockline">
                   <button
                     type="button"
                     className="lockline"
                     onClick={() =>
-                      setDeskRole(
+                      deskSwitch.switchDesk(
                         requiredRoleForPermission("RECORD_LEAVE_BED", gate("RECORD_LEAVE_BED").reason).role,
                         pathname,
                       )
                     }
                     data-testid="ward-patient-role-switch-ward"
                   >
-                    Switch to {requiredRoleForPermission("RECORD_LEAVE_BED", gate("RECORD_LEAVE_BED").reason).label}{" "}
-                    desk →
+                    {deskSwitch.shared
+                      ? "Choose a desk"
+                      : `Switch to ${requiredRoleForPermission("RECORD_LEAVE_BED", gate("RECORD_LEAVE_BED").reason).label} desk`}{" "}
+                    →
                   </button>
                 </div>
               ) : null}

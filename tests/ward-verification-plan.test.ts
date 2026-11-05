@@ -23,7 +23,7 @@ describe("actual Ward local verification plan", () => {
       expect(select(file)).toContain("test:e2e:ward-journeys");
     }
     expect(select("docs/ward-flow/old.md", "D")).toContain("test:e2e:ward-journeys");
-    expect(select("backend/ward-flow/backend.test.mjs")).toContain("test:backend");
+    expect(select("backend/ward-flow/backend.test.mjs")).toContain("test:backend:integration");
     for (const file of ["README.md", "AGENTS.md", "src/app/page.tsx", "backend/ward-flow/backend.test.mjs"])
       expect(() => validateSelectedScripts(select(file))).not.toThrow();
   });
@@ -32,7 +32,7 @@ describe("actual Ward local verification plan", () => {
     for (const file of ["src/app/page.tsx", "unrecognised", "tests/ward-waitlist.test.ts"]) {
       const selected = lean(file);
       expect(selected).toContain("test:related");
-      for (const heavy of ["check:ward-expected-reds", "build", "test:e2e:ward-journeys", "test:backend"])
+      for (const heavy of ["check:ward-expected-reds", "build", "test:e2e:ward-journeys", "test:backend:integration"])
         expect(selected).not.toContain(heavy);
       expect(() => validateSelectedScripts(selected)).not.toThrow();
     }
@@ -61,13 +61,13 @@ describe("actual Ward local verification plan", () => {
     for (const entries of [[{ file: "backend/ward-flow/command-schemas.ts", status: "M" }], []]) {
       const selected = selectedScripts({ entries }, false, { full: true });
       expect(selected).toContain("typecheck:backend");
-      expect(selected).toContain("test:backend");
+      expect(selected).toContain("test:backend:integration");
       expect(selected).toContain("check:ward-expected-reds");
-      expect(selected.indexOf("typecheck:backend")).toBeLessThan(selected.indexOf("test:backend"));
+      expect(selected.indexOf("typecheck:backend")).toBeLessThan(selected.indexOf("test:backend:integration"));
     }
     expect(
       selectedScripts({ entries: [{ file: "tests/ward-waitlist.test.ts", status: "M" }] }, false, { full: true }),
-    ).not.toContain("test:backend");
+    ).not.toContain("test:backend:integration");
   });
   it("selects production builds under --full for every executable scope and skips them for documents and policy", () => {
     for (const entries of [
@@ -84,7 +84,7 @@ describe("actual Ward local verification plan", () => {
   });
   it("keeps skipped database evidence visible when an earlier command fails", () => {
     expect(
-      summarizePrLocalRun(["typecheck:backend", "test:backend"], {
+      summarizePrLocalRun(["typecheck:backend", "test:backend:integration"], {
         failedScript: "typecheck:backend",
         failedExitCode: 1,
       }),

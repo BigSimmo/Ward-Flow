@@ -1,5 +1,5 @@
 import { cleanup, renderHook } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 /*
  * Audit F-05: the downtime pack's "last sync" is the shared workspace's last successful read, not
@@ -37,7 +37,11 @@ vi.mock("@/components/ward-management/reports/use-own-units", () => ({ useOwnUni
 import { forgetDowntimePack, lastDowntimeSyncAt } from "@/components/ward-management/reports/downtime-pack";
 import { useTakeDowntimePack } from "@/components/ward-management/reports/use-take-downtime-pack";
 
-const MINUTE = 60_000;
+const MINUTE = 1;
+const deviceNow = 60_000_000;
+beforeEach(() => {
+  vi.spyOn(Date, "now").mockReturnValue(deviceNow);
+});
 
 afterEach(() => {
   cleanup();
@@ -52,7 +56,7 @@ describe("downtime pack last sync (shared workspace)", () => {
     const { rerender } = renderHook(() => useTakeDowntimePack());
     // No read yet: nothing recorded, however long the browser is online.
     expect(lastDowntimeSyncAt(1)).toBeNull();
-    world.shared = { ...world.shared, receivedAt: 5 };
+    world.shared = { ...world.shared, receivedAt: deviceNow };
     rerender();
     expect(lastDowntimeSyncAt(1)).toBe(1_000_000);
     // The server drops; the browser still says online and the board still says ready until the next
@@ -63,9 +67,20 @@ describe("downtime pack last sync (shared workspace)", () => {
     rerender();
     expect(lastDowntimeSyncAt(1)).toBe(1_000_000);
     // The next successful read moves it on.
-    world.shared = { ...world.shared, receivedAt: 6 };
+    world.shared = { ...world.shared, receivedAt: deviceNow + 5 * 60_000 };
     rerender();
     expect(lastDowntimeSyncAt(1)).toBe(1_000_000 + 5 * MINUTE);
+  });
+
+  it("keeps a cached read's original minute across a remount", () => {
+    world.shared = { ...world.shared, receivedAt: deviceNow - 5 * 60_000 };
+    const first = renderHook(() => useTakeDowntimePack());
+    expect(lastDowntimeSyncAt(1)).toBe(999_995);
+    first.unmount();
+    world.now += 5;
+    vi.mocked(Date.now).mockReturnValueOnce(deviceNow + 5 * 60_000);
+    renderHook(() => useTakeDowntimePack());
+    expect(lastDowntimeSyncAt(1)).toBe(999_995);
   });
 
   it("does not record a read while the browser is offline or the board is not ready", () => {

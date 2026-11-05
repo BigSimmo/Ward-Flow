@@ -17,6 +17,7 @@ import { Lock } from "lucide-react";
 
 import { Dialog, Field, TextInput } from "@/components/wf";
 import { StepUpReauthContext } from "@/components/ward-management/shell/ward-step-up-context";
+import { WardAuthError } from "@/components/ward-management/ward-auth-link";
 
 import { lockTv, readLock, useTvLock, writeLock } from "./tv-lock-guard";
 import styles from "./tv-lock.module.css";
@@ -84,8 +85,15 @@ export function TvLockControl({ href, className, shared }: { href: string; class
         return;
       }
       close();
-    } catch {
-      if (ticket === attempt.current) setError("That password was not accepted. Try again.");
+    } catch (error) {
+      if (ticket === attempt.current)
+        setError(
+          error instanceof WardAuthError && error.kind === "credentials"
+            ? "That password was not accepted. Try again."
+            : error instanceof WardAuthError && error.kind === "session"
+              ? "Sign in again before unlocking this TV."
+              : "The sign-in service could not check your password. Try again when the connection is back.",
+        );
     } finally {
       if (ticket === attempt.current) {
         pending.current = false;
