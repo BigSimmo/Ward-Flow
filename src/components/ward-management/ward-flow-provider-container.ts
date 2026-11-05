@@ -86,6 +86,7 @@ export function wardFlowContainerReducer(
       world: action.world,
       typedTextSeen: true,
       typedTextFromFile: true,
+      typedTextEvents: undefined,
       restoredElapsed: action.restoredElapsed,
       eventLog: [],
       recoveryNotice: undefined,

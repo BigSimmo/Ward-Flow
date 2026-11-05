@@ -47,7 +47,7 @@ export function useWardFormSave(scope: string) {
   // Stable for one scope (it reads only refs, setters and the scope), so a caller's callbacks that
   // depend on this hook are not rebuilt on every render (PR #1326 review).
   const submit = useCallback(
-    (record: () => ReturnType<WardCommandDispatch> | undefined, onAccepted: () => void) => {
+    (record: () => ReturnType<WardCommandDispatch> | undefined, onAccepted: (outcome: WardCommandOutcome) => void) => {
       if (flights.current.has(key) || holding(held.current.get(key))) return;
       const flight: Flight = { key, scope: scopeToken, generation: generation.current };
       flights.current.set(key, flight);
@@ -58,7 +58,7 @@ export function useWardFormSave(scope: string) {
         if (currentScope.current !== flight.scope || generation.current !== flight.generation) return;
         if (outcome?.status === "accepted" && outcome.isCurrent?.() !== false) {
           setError(undefined);
-          onAccepted();
+          onAccepted(outcome);
         } else
           setError({
             scope: flight.scope,

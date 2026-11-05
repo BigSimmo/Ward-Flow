@@ -1,6 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useWardFormSave } from "../use-ward-form-save";
+import type { WardCommandDispatch } from "../ward-shared-client";
+import { useWardDraftAcceptance } from "../use-ward-draft-acceptance";
 
 import { Button, DateField, Field, ListPicker, parseTypedDate, Segmented } from "@/components/wf";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -79,7 +82,7 @@ export function LegalFormDetailsSection({
   dayZero: Date;
   /** Why this desk may not record details, if it may not. */
   unavailable?: string;
-  onSave: (details: LegalFormDetailsSave, onAccepted: () => void) => void;
+  onSave: (details: LegalFormDetailsSave, onAccepted: () => void) => ReturnType<WardCommandDispatch>;
 }) {
   const form = movement.legalForm;
   const [editing, setEditing] = useState(false);
@@ -91,6 +94,11 @@ export function LegalFormDetailsSection({
   // Text in the date box that is not yet a real day. It never counts as blank, so a typo cannot clear
   // a recorded review date.
   const [reviewUnread, setReviewUnread] = useState(false);
+  const command = useWardFormSave(`legal-details:${movement.id}`);
+  const acceptDraft = useWardDraftAcceptance(
+    JSON.stringify([madeBy, copyGiven, endedBy, consent, review, reviewUnread]),
+    editing,
+  );
   if (!form) return null;
 
   const is6B = form.code === "6B";
@@ -114,16 +122,21 @@ export function LegalFormDetailsSection({
   ];
 
   const save = () => {
-    if (reviewProblem || unavailable) return;
-    onSave(
-      {
-        madeBy: (madeBy as LegalFormMakerRole | null) ?? null,
-        copyGiven: copyGiven === "not_recorded" ? null : (copyGiven as LegalFormCopyState),
-        endedBy: (endedBy as LegalFormEnding | null) ?? null,
-        ...(is6B ? { consent: consent === "not_recorded" ? null : (consent as LegalFormConsentState) } : {}),
-        reviewBy: reviewAt,
-      },
-      () => setEditing(false),
+    if (reviewProblem || unavailable || command.pending) return;
+    const accepted = acceptDraft(() => setEditing(false));
+    command.submit(
+      () =>
+        onSave(
+          {
+            madeBy: (madeBy as LegalFormMakerRole | null) ?? null,
+            copyGiven: copyGiven === "not_recorded" ? null : (copyGiven as LegalFormCopyState),
+            endedBy: (endedBy as LegalFormEnding | null) ?? null,
+            ...(is6B ? { consent: consent === "not_recorded" ? null : (consent as LegalFormConsentState) } : {}),
+            reviewBy: reviewAt,
+          },
+          accepted,
+        ),
+      accepted,
     );
   };
 
@@ -222,13 +235,18 @@ export function LegalFormDetailsSection({
             options={Object.entries(ENDING_LABEL).map(([value, label]) => ({ value, label }))}
             testId="ward-legal-form-details-ended"
           />
+          {command.error ? (
+            <p className={styles.note} role="alert">
+              {command.error}
+            </p>
+          ) : null}
           <div className={styles.writtenFoot}>
             <p className={styles.note}>Recorded as typed. Not legally checked.</p>
             <Button
               variant="sec"
               size="sm"
               onClick={save}
-              disabledReason={unavailable ?? reviewProblem}
+              disabledReason={command.pending ? "Saving" : (unavailable ?? reviewProblem)}
               reasonDisplay="tooltip"
               data-testid="ward-legal-form-details-save"
             >

@@ -44,6 +44,7 @@ export function useReferralCommandCompletion({
   setPending,
   onError,
   onCommitted,
+  onRetired,
   onAccepted,
 }: {
   dispatch: WardCommandDispatch;
@@ -54,6 +55,8 @@ export function useReferralCommandCompletion({
   setPending: (pending: boolean) => void;
   onError: (message: string | null) => void;
   onCommitted: (intake: ReferralIntakeDetails) => void;
+  /** Durable draft cleanup; must not update component state. Runs even after unmount. */
+  onRetired?: (intake: ReferralIntakeDetails) => void;
   onAccepted: (referral: Referral, intake: ReferralIntakeDetails) => void;
 }) {
   const [openingGeneration] = useState(generation);
@@ -100,7 +103,11 @@ export function useReferralCommandCompletion({
       if (recoverableSubmissions.get(key) !== submitted || submitted.ownerVersion !== referralDraftSessionVersion())
         return;
       if (outcome?.status === "accepted" || outcome?.status === "refused" || outcome?.isCurrent?.() === false) {
+        const firstAcceptance = outcome.status === "accepted" && outcome.isCurrent?.() !== false && !submitted.outcome;
         submitted.outcome = outcome;
+        // Acceptance is definitive even when a scoped snapshot cannot show the new record.
+        // Retire recovery now so closing/reopening cannot turn the saved intake into another Send.
+        if (firstAcceptance) onRetired?.(submitted.intake);
       } else if (outcome?.status === "failed" && outcome.confirmation && !submitted.unconfirmed) {
         submitted.unconfirmed = outcome;
         void outcome.confirmation.then(
@@ -148,6 +155,7 @@ export function useReferralCommandCompletion({
       const saved = recoveryId ? referrals.find((referral) => referral.submissionId === id) : undefined;
       if (saved?.intake && delivered.current !== saved.id) {
         delivered.current = saved.id;
+        onRetired?.(saved.intake);
         onCommitted(saved.intake);
         onAccepted(saved, saved.intake);
         setPending(false);
@@ -206,6 +214,7 @@ export function useReferralCommandCompletion({
     recoveryId,
     onAccepted,
     onCommitted,
+    onRetired,
     onError,
     setPending,
   ]);

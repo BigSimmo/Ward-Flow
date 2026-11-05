@@ -621,7 +621,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
                   ) : (
                     <>
                       <strong>No arrival plan recorded</strong>
-                      <small>Setting one clears the pull clock</small>
+                      <small>Setting one records the mode and ward time, and keeps the existing pull time limit</small>
                     </>
                   )}
                   {isArrivalLate(liveMovement, now) ? (

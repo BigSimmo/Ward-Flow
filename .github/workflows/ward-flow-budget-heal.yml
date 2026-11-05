@@ -4,6 +4,8 @@ name: Ward Flow budget heal
 # its phone script budget, this opens one PR raising only those routes (budget-heal.mjs), with its
 # own docs/script-budget-history entry. The PR goes through the normal required checks, which this
 # dispatches on the PR branch because events made with the workflow token start no workflows.
+# New proposals are labelled hold before dispatch; their owner diagnoses the growth and tries
+# a safe trim before releasing that hold. The bot never arms an unexplained budget increase.
 # Meanwhile open PRs are not blocked: their build fails only routes they grew (budget-gate.mjs).
 # It runs main's own scripts only, never pull-request code, and uses free GitHub-hosted runners.
 on:

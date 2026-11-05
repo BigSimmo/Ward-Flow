@@ -1,9 +1,7 @@
 "use client";
 
 import { useWardFormSave } from "../use-ward-form-save";
-import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 import { resolveSubjectPatient } from "../ward-patient-resolver";
-import type { WardCommandDispatch, WardCommandOutcome } from "../ward-shared-client";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { patientChronologyHref } from "@/components/ward-management/reports/report-routes";
 import {
@@ -11,7 +9,6 @@ import {
   useContext,
   useCallback,
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -139,53 +136,6 @@ import { renderTransportSection } from "./patient-now-transport-section";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { originName as movementOriginName } from "@/components/ward-management/ward-movement-origin";
 
-// Both local and shared dispatches report an outcome. Keep the current draft until accepted,
-// and fence the completion so an old patient's save cannot dismiss another patient's form.
-function usePatientFormSave(scope: string) {
-  const scopeToken = useMemo(() => ({ id: scope }), [scope]);
-  const currentScope = useRef<object | null>(scopeToken);
-  useLayoutEffect(() => {
-    currentScope.current = scopeToken;
-    return () => {
-      currentScope.current = null;
-    };
-  }, [scopeToken]);
-  const inFlight = useRef(false);
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState<{ scope: object; message: string }>();
-  function submit(record: () => ReturnType<WardCommandDispatch>, onAccepted: () => void) {
-    if (inFlight.current) return;
-    inFlight.current = true;
-    setPending(true);
-    setError(undefined);
-    const submittedScope = scopeToken;
-    const finish = (outcome?: WardCommandOutcome | void) => {
-      inFlight.current = false;
-      setPending(false);
-      if (currentScope.current !== submittedScope) return;
-      if (outcome?.status === "accepted" && outcome.isCurrent?.() !== false) onAccepted();
-      else
-        setError({
-          scope: submittedScope,
-          message: outcome?.message ?? SAVE_NOT_CONFIRMED,
-        });
-    };
-    try {
-      const completion = record();
-      if (completion && "then" in completion) void completion.then(finish, () => finish());
-      else finish(completion);
-    } catch {
-      finish();
-    }
-  }
-  return {
-    pending,
-    error: error?.scope === scopeToken ? error.message : undefined,
-    clearError: () => setError(undefined),
-    submit,
-  };
-}
-
 interface PatientNowScreenProps {
   patientId?: string;
   movementId?: string;
@@ -312,8 +262,8 @@ export function PatientNowScreen({
   const readOnlyRecord = clearanceGate.reason === "Exceptional access is read only.";
   const liveMovement = resolved?.liveMovement ?? movements.find((m) => m.id === selectedId);
   const movementScope = `${worldGeneration}:${selectedId}:${liveMovement?.id ?? ""}`;
-  const transportSave = usePatientFormSave(movementScope);
-  const clearanceSave = usePatientFormSave(movementScope);
+  const transportSave = useWardFormSave(movementScope);
+  const clearanceSave = useWardFormSave(movementScope);
   const wardSave = useWardFormSave(`${worldGeneration}:${resolved?.liveAdmission?.id ?? selectedId}`);
   const [previousMovementScope, setPreviousMovementScope] = useState(movementScope);
   if (previousMovementScope !== movementScope) {
@@ -525,6 +475,7 @@ export function PatientNowScreen({
     setBookingRejectionStart(undefined);
     setTransportAnswers(BLANK_TRANSPORT_BOOKING);
     setTransportLegalReason("");
+    transportSave.forget();
     setShowTransportForm(true);
   }
 
@@ -827,6 +778,7 @@ export function PatientNowScreen({
       clearanceTriggerRef.current = event.currentTarget;
       setClearanceDraft("");
       setClearanceAttested(false);
+      clearanceSave.forget();
       setShowClearanceModal(true);
     },
     onBookTransport: () => {

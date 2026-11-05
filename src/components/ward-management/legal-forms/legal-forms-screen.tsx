@@ -1,5 +1,6 @@
 "use client";
 
+import { settledWardCommand } from "../ward-command-completion";
 import { useWardRaise } from "../ward-flow-raise";
 
 import { useSearchParams } from "next/navigation";
@@ -185,11 +186,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   const routeRole = useRouteRole();
   const raise = useWardRaise(routeRole);
   // v10 pass 3: a recorded form time and a Tell record each offer Undo on the toast.
-  const {
-    run: runStep,
-    runRecorded,
-    offer: offerStep,
-  } = useUndoableStep({
+  const { run: runStep, offer: offerStep } = useUndoableStep({
     dispatch,
     rejections,
     now,
@@ -510,39 +507,28 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
   };
 
   // The panel's form and the Add the time pop-up record the written time the same way.
-  const saveWritten = (target: Movement, { writtenAt, region, ageBand }: WrittenSave, onAccepted: () => void) => {
+  const saveWritten = (target: Movement, { writtenAt, region, ageBand }: WrittenSave) => {
     if (!recordGate.allowed) return;
     const formCode = target.legalForm?.code;
     if (!isOwnedLegalFormCode(formCode)) return;
     const movementId = target.id;
-    runRecorded(
-      () => {
-        const written = { movementId, formCode, writtenAt, ...(region ? { region } : {}), ageBand };
-        const completion = raise("RECORD_LEGAL_FORM_WRITTEN", written);
-        // The form closes only once the engine has accepted the time.
-        const closeIfAccepted = (outcome: Awaited<typeof completion>) =>
-          outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true) && onAccepted();
-        if (completion && "then" in completion) void completion.then(closeIfAccepted, () => undefined);
-        else closeIfAccepted(completion);
-        return completion;
-      },
+    const written = { movementId, formCode, writtenAt, ...(region ? { region } : {}), ageBand };
+    const completion = raise("RECORD_LEGAL_FORM_WRITTEN", written);
+    offerStep(
       {
         success: `Form time recorded for ${nameOf(target)}`,
         undo: (at) => ({ type: "UNDO_LEGAL_FORM_RECORD", role: routeRole, now: at, movementId }),
         undone: `Form time undone for ${nameOf(target)}.`,
       },
+      { completion },
     );
+    return completion;
   };
-  // Gap list items 3 to 7: details typed from the paper. The panel's edit closes once accepted.
-  const saveDetails = (target: Movement, details: LegalFormDetailsSave, onAccepted: () => void) => {
+  const saveDetails = (target: Movement, details: LegalFormDetailsSave) => {
     if (!recordGate.allowed) return;
     const formCode = target.legalForm?.code;
     if (!formCode) return;
-    const completion = raise("RECORD_LEGAL_FORM_DETAILS", { movementId: target.id, formCode, ...details });
-    const closeIfAccepted = (outcome: Awaited<typeof completion>) =>
-      outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true) && onAccepted();
-    if (completion && "then" in completion) void completion.then(closeIfAccepted, () => undefined);
-    else closeIfAccepted(completion);
+    return raise("RECORD_LEGAL_FORM_DETAILS", { movementId: target.id, formCode, ...details });
   };
   const addTimeTarget = rows.find((movement) => movement.id === addTimeId) ?? null;
   const addTimeRefusal = addTimeTarget
@@ -564,7 +550,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       onClose={() => setSelectedId(null)}
       focusGap={focusGap}
       refusal={lastWrittenRefusal?.reason}
-      onSaveWritten={(written, onAccepted) => saveWritten(selected, written, onAccepted)}
+      onSaveWritten={(written) => saveWritten(selected, written)}
       recordUnavailable={recordGate.reason}
       onMarkReceived={(receivedAt) => markReceived(selected, receivedAt)}
       receivedText={receivedTextOf(selected.id)}
@@ -573,7 +559,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
       onExtend={() => setExtendId(selected.id)}
       extendUnavailable={extendGate.reason}
       onRecordNext={() => openRecord(selected.id)}
-      onSaveDetails={(details, onAccepted) => saveDetails(selected, details, onAccepted)}
+      onSaveDetails={(details) => saveDetails(selected, details)}
       detailsUnavailable={recordGate.reason}
       onRequirements={(code) => setRequirementsCode(code)}
       onCopy={copySelectedSummary}
@@ -1223,7 +1209,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
             const movement = recordable.find((candidate) => candidate.id === movementId);
             if (!movement || (formCode === "3C" && movementRefuses3C(movement))) return false;
             const written = { movementId, formCode, writtenAt, ...(region ? { region } : {}) };
-            const completion = raise("RECORD_LEGAL_FORM_WRITTEN", written);
+            const completion = settledWardCommand(raise("RECORD_LEGAL_FORM_WRITTEN", written));
             const accepted = (outcome: Awaited<typeof completion>) => {
               offerStep(
                 {
@@ -1254,7 +1240,7 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
             recordUnavailable={recordGate.reason}
             refusal={addTimeRefusal?.reason}
             onClose={() => setAddTimeId(null)}
-            onSave={(written, onAccepted) => saveWritten(addTimeTarget, written, onAccepted)}
+            onSave={(written) => saveWritten(addTimeTarget, written)}
           />
         ) : null}
         <ExtendSheet
@@ -1270,7 +1256,9 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
           onExtendForm={(movement, dueAt) => {
             if (!extendGate.allowed) return false;
             if (!openMovements.some((candidate) => candidate.id === movement.id)) return false;
-            const completion = raise("RECORD_LEGAL_FORM_EXPIRY", { movementId: movement.id, dueAt });
+            const completion = settledWardCommand(
+              raise("RECORD_LEGAL_FORM_EXPIRY", { movementId: movement.id, dueAt }),
+            );
             const accepted = (outcome: Awaited<typeof completion>) => {
               offerStep(
                 {

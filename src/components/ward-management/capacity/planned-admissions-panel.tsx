@@ -718,7 +718,11 @@ export function PlannedAdmissionsPanel({
         }
       >
         {draft ? (
-          <div className={styles.form}>
+          <fieldset
+            className={styles.form}
+            disabled={save.pending}
+            style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+          >
             {form?.mode === "book" ? (
               <>
                 <Field label="Patient">
@@ -956,7 +960,7 @@ export function PlannedAdmissionsPanel({
                 {displayedRefusal}
               </p>
             ) : null}
-          </div>
+          </fieldset>
         ) : null}
       </Sheet>
 
@@ -982,7 +986,11 @@ export function PlannedAdmissionsPanel({
         }
       >
         {cancelling ? (
-          <div className={styles.form}>
+          <fieldset
+            className={styles.form}
+            disabled={save.pending}
+            style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}
+          >
             <p className={styles.formWho}>
               {whoText(cancelling)} · {unitName(cancelling.unitId)} ·{" "}
               {formatInstantWithDay(cancelling.expectedArrivalAt, now)}
@@ -1008,7 +1016,7 @@ export function PlannedAdmissionsPanel({
                 {displayedRefusal}
               </p>
             ) : null}
-          </div>
+          </fieldset>
         ) : null}
       </Sheet>
       <ArrivalIdentityDialog

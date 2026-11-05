@@ -9,7 +9,7 @@ import {
   URGENCY_OPTIONS,
 } from "@/components/ward-management/ed/ed-screen-model";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { wardCommandFailure } from "@/components/ward-management/ward/use-ward-command-completion";
+import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import type { Admission } from "@/components/ward-management/ward-admissions";
@@ -99,15 +99,27 @@ type Open = "urgency" | "legal" | null;
  * A form's submit, unavailable with its reason in full beside it until the form is complete. The
  * reason wraps rather than being cut short, since it says why nothing is chosen for the desk.
  */
-function Submit({ id, blocked, children }: { id: string; blocked: string | undefined; children: string }) {
+function Submit({
+  id,
+  blocked,
+  pending,
+  children,
+}: {
+  id: string;
+  blocked: string | undefined;
+  pending: boolean;
+  children: string;
+}) {
   return (
     <>
       <Button
         type="submit"
         variant="pri"
         size="sm"
+        loading={pending}
         className={styles.submit}
-        aria-disabled={blocked ? true : undefined}
+        // Saving stays focusable and explained like a blocked save; the submit handler ignores repeats.
+        aria-disabled={pending || blocked ? true : undefined}
         aria-describedby={blocked ? id : undefined}
       >
         {children}
@@ -125,46 +137,47 @@ function Submit({ id, blocked, children }: { id: string; blocked: string | undef
  *  ward, `SentReferralJourneyChanges` on the team's Sent list). */
 export function SentJourneyChanges({ movement, patientWho }: { movement: Movement; patientWho: string }) {
   const routeRole = useRouteRole();
-  const { dispatch } = useWardFlowSelect("dispatch");
+  const { dispatch, worldGeneration } = useWardFlowSelect("dispatch", "worldGeneration");
   const now = useWardFlowClock();
   const baseId = useId();
   const [open, setOpen] = useState<Open>(null);
   const [urgency, setUrgency] = useState<1 | 2 | 3>(movement.urgency);
+  // An unaccepted pick survives close and reopen. Without one, the picker opens on the current urgency.
+  const [urgencyEdited, setUrgencyEdited] = useState(false);
   const [urgencyReason, setUrgencyReason] = useState<UrgencyChangeReason | undefined>(undefined);
   const [legalStatus, setLegalStatus] = useState<LegalStatus | undefined>(undefined);
   const [legalReason, setLegalReason] = useState<LegalStatusChangeReason | undefined>(undefined);
-  const [message, setMessage] = useState<string | undefined>(undefined);
+  const save = useWardFormSave(`sent-journey:${movement.id}:${worldGeneration}`);
   // Audit CS3-01: an open form is checked against the board it opened on, so a legal status another
   // desk recorded meanwhile is reported, not overwritten.
   const heldScope = `movement:${movement.id}`;
   useHoldOpenForm(open !== null, heldScope);
 
   const raise = wardRaise(dispatch, routeRole, now);
-  const report = (result: ReturnType<typeof raise>) => {
-    void Promise.resolve(result).then((outcome) => setMessage(wardCommandFailure(outcome ?? undefined)));
-  };
 
-  // Each toggle opens one form with nothing chosen yet, so an earlier choice never stands in for a new one.
+  // Closing and reopening keeps an unaccepted selection recoverable.
   function toggle(next: Exclude<Open, null>) {
+    if (save.pending) return;
+    if (next === "urgency" && open !== "urgency" && !urgencyEdited) setUrgency(movement.urgency);
     setOpen((current) => (current === next ? null : next));
-    setUrgency(movement.urgency);
-    setUrgencyReason(undefined);
-    setLegalStatus(undefined);
-    setLegalReason(undefined);
-    setMessage(undefined);
   }
 
   function submitUrgency(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     // Finding 15 (Josh, 27 Oct 2026): the reason is sent when chosen and never required.
-    report(
-      raise("CHANGE_URGENCY", {
-        movementId: movement.id,
-        urgency,
-        ...(urgencyReason === undefined ? {} : { reason: urgencyReason }),
-      }),
+    save.submit(
+      () =>
+        raise("CHANGE_URGENCY", {
+          movementId: movement.id,
+          urgency,
+          ...(urgencyReason === undefined ? {} : { reason: urgencyReason }),
+        }),
+      () => {
+        setOpen(null);
+        setUrgencyReason(undefined);
+        setUrgencyEdited(false);
+      },
     );
-    setOpen(null);
   }
 
   // The new status first, then where the entry came from.
@@ -178,8 +191,15 @@ export function SentJourneyChanges({ movement, patientWho }: { movement: Movemen
   function submitLegalStatus(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (legalStatus === undefined || legalReason === undefined) return;
-    report(raise("CHANGE_LEGAL_STATUS", { movementId: movement.id, legalStatus, reason: legalReason }));
-    setOpen(null);
+    const change = { movementId: movement.id, legalStatus, reason: legalReason };
+    save.submit(
+      () => raise("CHANGE_LEGAL_STATUS", change),
+      () => {
+        setOpen(null);
+        setLegalStatus(undefined);
+        setLegalReason(undefined);
+      },
+    );
   }
 
   return (
@@ -195,6 +215,7 @@ export function SentJourneyChanges({ movement, patientWho }: { movement: Movemen
       <div className={styles.actions}>
         <Button
           size="sm"
+          disabled={save.pending}
           aria-expanded={open === "urgency"}
           data-testid="sent-journey-urgency-toggle"
           onClick={() => toggle("urgency")}
@@ -203,6 +224,7 @@ export function SentJourneyChanges({ movement, patientWho }: { movement: Movemen
         </Button>
         <Button
           size="sm"
+          disabled={save.pending}
           aria-expanded={open === "legal"}
           data-testid="sent-journey-legal-status-toggle"
           onClick={() => toggle("legal")}
@@ -214,7 +236,14 @@ export function SentJourneyChanges({ movement, patientWho }: { movement: Movemen
       {open === "urgency" ? (
         <form className={styles.form} onSubmit={submitUrgency} data-testid="sent-journey-urgency">
           <Field label={`Urgency tier for ${patientWho}`} id={`${baseId}-tier`}>
-            <Select value={urgency} onChange={(event) => setUrgency(Number(event.target.value) as 1 | 2 | 3)}>
+            <Select
+              disabled={save.pending}
+              value={urgency}
+              onChange={(event) => {
+                setUrgency(Number(event.target.value) as 1 | 2 | 3);
+                setUrgencyEdited(true);
+              }}
+            >
               {URGENCY_OPTIONS.map((option) => (
                 <option key={option} value={option}>
                   {urgencyTierLabel(option)}
@@ -224,6 +253,7 @@ export function SentJourneyChanges({ movement, patientWho }: { movement: Movemen
           </Field>
           <Field label="Reason" id={`${baseId}-urgency-reason`}>
             <Select
+              disabled={save.pending}
               value={urgencyReason ?? ""}
               onChange={(event) =>
                 setUrgencyReason(event.target.value === "" ? undefined : (event.target.value as UrgencyChangeReason))
@@ -237,7 +267,7 @@ export function SentJourneyChanges({ movement, patientWho }: { movement: Movemen
               ))}
             </Select>
           </Field>
-          <Submit id={`${baseId}-urgency-blocked`} blocked={undefined}>
+          <Submit pending={save.pending} id={`${baseId}-urgency-blocked`} blocked={undefined}>
             Record urgency change
           </Submit>
         </form>
@@ -247,6 +277,7 @@ export function SentJourneyChanges({ movement, patientWho }: { movement: Movemen
         <form className={styles.form} onSubmit={submitLegalStatus} data-testid="sent-journey-legal-status">
           <Field label={`Legal status for ${patientWho}`} id={`${baseId}-legal`}>
             <Select
+              disabled={save.pending}
               value={legalStatus ?? ""}
               onChange={(event) =>
                 setLegalStatus(event.target.value === "" ? undefined : (event.target.value as LegalStatus))
@@ -262,6 +293,7 @@ export function SentJourneyChanges({ movement, patientWho }: { movement: Movemen
           </Field>
           <Field label="Reason" id={`${baseId}-legal-reason`}>
             <Select
+              disabled={save.pending}
               required
               value={legalReason ?? ""}
               onChange={(event) =>
@@ -276,15 +308,15 @@ export function SentJourneyChanges({ movement, patientWho }: { movement: Movemen
               ))}
             </Select>
           </Field>
-          <Submit id={`${baseId}-legal-blocked`} blocked={legalBlocked}>
+          <Submit pending={save.pending} id={`${baseId}-legal-blocked`} blocked={legalBlocked}>
             Record legal status change
           </Submit>
         </form>
       ) : null}
 
-      {message ? (
+      {save.error ? (
         <p role="status" className={styles.message}>
-          {message}
+          {save.error}
         </p>
       ) : null}
     </section>

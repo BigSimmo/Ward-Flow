@@ -42,6 +42,7 @@ import { legalSweepTests } from "./ward-ci-public/legal-sweep-scope.mjs";
 import { fullGateInputIdentity } from "./test-evidence-identity.mjs";
 import { fileURLToPath } from "node:url";
 import {
+  approvedPlatformSkippedFiles,
   executedAssertionCount,
   mergeGateReports,
   planFullGateRecheck,
@@ -52,6 +53,7 @@ import {
 
 import { referencedTestChanges } from "./ward-flow/test-module-dependencies.mjs";
 import { readUnitDurations } from "./ward-flow/unit-durations.mjs";
+import { writeUnitShardSelection } from "./ward-flow/unit-shard-selection.mjs";
 
 export { readUnitDurations };
 
@@ -430,6 +432,21 @@ export function selectGateShard(population, { index, count }, durations = {}) {
 }
 
 /**
+ * Hosted coverage shards use an exact collection manifest instead of positional file filters.
+ * Bind its contents, not its temporary pathname, to reusable evidence identity.
+ * @param {{root:string,population:string[],stateDir:string,coverageBlobDir?:string,shard?:{index:number,count:number}|null}} options
+ */
+export function gateBatchTransport({ root, population, stateDir, coverageBlobDir = "", shard = null }) {
+  const selection = coverageBlobDir && shard ? writeUnitShardSelection(root, population, stateDir) : null;
+  return {
+    singleBatch: Boolean(selection),
+    selectionManifest: selection?.file ?? "",
+    identityArgs: selection ? ["ward-unit-selection:manifest-v1", selection.identity] : [],
+    childEnvironment: selection ? { WARD_UNIT_SHARD_SELECTION: selection.file } : {},
+  };
+}
+
+/**
  * The vitest arguments for one gate batch. Without a coverage blob directory this is the gate's
  * long-standing JSON-only run. In public CI each unit shard also records V8 coverage for its own files
  * and writes it to a Vitest blob report (WARD_COVERAGE_BLOB_DIR, set by .github/workflows/ward-flow.yml).
@@ -437,8 +454,16 @@ export function selectGateShard(population, { index, count }, durations = {}) {
  * applies the vitest.config.mts thresholds once, to the whole suite. vitest.config.mts drops the
  * thresholds while WARD_COVERAGE_BLOB_DIR is set, because one shard's slice can never meet
  * whole-suite floors. The JSON report this gate judges is written exactly as before.
+ * @param {{files:string[],batchReport:string,coverageBlobDir?:string,shard?:{index:number,count:number}|null,batchIndex?:number,selectionManifest?:string}} options
  */
-export function gateBatchArgs({ files, batchReport, coverageBlobDir, shard, batchIndex }) {
+export function gateBatchArgs({
+  files,
+  batchReport,
+  coverageBlobDir = "",
+  shard = null,
+  batchIndex = 0,
+  selectionManifest = "",
+}) {
   if (!coverageBlobDir) return ["run", "--pool=forks", "--reporter=json", `--outputFile=${batchReport}`, ...files];
   if (!shard) throw new Error("WARD_COVERAGE_BLOB_DIR is only supported together with WARD_GATE_SHARD.");
   const label = `shard-${shard.index}-of-${shard.count}-batch-${String(batchIndex + 1).padStart(3, "0")}`;
@@ -452,7 +477,7 @@ export function gateBatchArgs({ files, batchReport, coverageBlobDir, shard, batc
     "--coverage.enabled=true",
     "--coverage.reporter=text-summary",
     `--coverage.reportsDirectory=${path.join(coverageBlobDir, `coverage-${label}`)}`,
-    ...files,
+    ...(selectionManifest ? [] : files),
   ];
 }
 
@@ -633,11 +658,25 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
     };
     const coverageBlobDir = process.env.WARD_COVERAGE_BLOB_DIR || "";
     if (coverageBlobDir && !shard) fail(["WARD_COVERAGE_BLOB_DIR is only supported together with WARD_GATE_SHARD."]);
+    // Never inherit a launcher manifest into an ordinary local batch or bounded recheck.
+    delete gateEnvironment.WARD_UNIT_SHARD_SELECTION;
+    const transport = gateBatchTransport({ root: projectRoot, population, stateDir, coverageBlobDir, shard });
+    const platform = process.platform;
+    const approvedSkippedFiles = approvedPlatformSkippedFiles(population, platform);
     const environmentFingerprint = fullGateInputIdentity({
       root: projectRoot,
       env: gateEnvironment,
       population,
-      args: ["run", "--pool=forks", "--reporter=json", ...(coverageBlobDir ? ["--coverage", "--reporter=blob"] : [])],
+      args: [
+        "run",
+        "--pool=forks",
+        "--reporter=json",
+        ...(coverageBlobDir ? ["--coverage", "--reporter=blob"] : []),
+        ...transport.identityArgs,
+        "ward-platform-skip-contract:v1",
+        platform,
+        JSON.stringify(approvedSkippedFiles),
+      ],
     });
     const recheck = process.env.WARD_FULL_GATE_RECHECK;
     let report;
@@ -675,6 +714,8 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
         skippedTooling: skippedTooling.length > 0,
         environmentFingerprint,
         referencedByOtherTests,
+        platform,
+        approvedSkippedFiles,
       });
       if (!plan.eligible) fail([`Bounded recheck refused: ${plan.reason}. Run FULL on the stable corrected batch.`]);
       const args = [
@@ -697,13 +738,19 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
         projectRoot,
         runResult,
       );
-      const check = validateBatchReport(rerun, plan.selected, projectRoot, { requireProcessEvidence: true });
+      const check = validateBatchReport(rerun, plan.selected, projectRoot, {
+        requireProcessEvidence: true,
+        platform,
+        approvedSkippedFiles: approvedSkippedFiles.filter((file) => plan.selected.includes(file)),
+      });
       if (!check.valid) fail([`Bounded recheck incomplete: ${check.reason}`]);
       report = mergeGateReports({
         baseReport: receipt.report,
         rerunReport: rerun,
         selected: plan.selected,
         root: projectRoot,
+        platform,
+        approvedSkippedFiles,
       });
       console.log(
         `FULL recheck: ${plan.selected.length} corrected file(s) reran; ${population.length - plan.selected.length} complete earlier results reused from ${receipt.commit.slice(0, 10)}.`,
@@ -719,18 +766,28 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
         skippedTooling: skippedTooling.length > 0,
         environmentFingerprint,
         stateDir,
-        // A CI shard is one runner's whole share: one vitest process (still split by the command
-        // length limit) avoids a second start-up and a second slowest-file tail.
+        // The manifest keeps paths out of argv, so the entire hosted shard runs in one process.
+        // Local reproduction without coverage retains its previous command-length batching.
         ...(shard ? { maxFiles: Number.POSITIVE_INFINITY } : {}),
+        singleBatch: transport.singleBatch,
+        platform,
+        approvedSkippedFiles,
         runBatch: ({ files, index, reportPath: batchReport }) => {
-          const args = gateBatchArgs({ files, batchReport, coverageBlobDir, shard, batchIndex: index });
+          const args = gateBatchArgs({
+            files,
+            batchReport,
+            coverageBlobDir,
+            shard,
+            batchIndex: index,
+            selectionManifest: transport.selectionManifest,
+          });
           const runResult = spawnSync(
             process.execPath,
             [path.join(projectRoot, "node_modules", "vitest", "vitest.mjs"), ...args],
             {
               cwd: projectRoot,
               stdio: ["ignore", "ignore", "inherit"],
-              env: gateEnvironment,
+              env: { ...gateEnvironment, ...transport.childEnvironment },
             },
           );
           // A shard that recorded no coverage would leave the merged whole-suite coverage short, so a
@@ -818,6 +875,8 @@ if (invokedDirectly && process.env.WARD_OWNED_FULL_GATE !== "1") {
         population,
         skippedTooling: skippedTooling.length > 0,
         environmentFingerprint,
+        platform,
+        approvedSkippedFiles,
         problemFiles,
         report: {
           ...report,

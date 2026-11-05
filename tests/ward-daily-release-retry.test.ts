@@ -23,6 +23,9 @@ type State = {
   listFailures: number;
   compare: string;
   tagLookupFailures: number;
+  acceptance?: string;
+  acceptanceAnswers?: string[];
+  acceptanceFailures: number;
 };
 const directories: string[] = [];
 afterEach(() =>
@@ -52,9 +55,24 @@ const save = () => fs.writeFileSync(path, JSON.stringify(state));
 function finish(value) { save(); if (value !== undefined) console.log(typeof value === 'string' ? value : JSON.stringify(value)); }
 function fail(message) { save(); console.error(message); process.exit(1); }
 function inject(key) { if (state[key] > 0) { state[key]--; fail('synthetic ' + key); } }
+// Real gh refuses --slurp with --jq/-q or --template/-t before any request (gh 2.89.0).
+if (args.includes('--slurp') && args.some(value => ['--jq', '-q', '--template', '-t'].includes(value)))
+  fail('the --slurp option is not supported with --jq or --template');
 if (!endpoint.startsWith(root)) fail('Unexpected repository or command');
 const route = endpoint.slice(root.length);
-if (route.startsWith('actions/workflows/')) finish(state.target);
+if (route.startsWith('actions/workflows/')) {
+  if (route.includes('head_sha=')) {
+    if (!args.includes('--paginate') || !args.includes('--slurp')) fail('Acceptance history must include every page');
+    inject('acceptanceFailures');
+    // Answer with slurped run pages so the workflow's real jq query decides the verdict.
+    const answer = state.acceptanceAnswers?.shift() || state.acceptance || 'success';
+    const run = (conclusion, at) => ({ event: 'push', conclusion, updated_at: '2026-11-04T1' + at + ':00:00Z' });
+    const runs = answer === 'missing' ? []
+      : answer === 'ambiguous' ? [run('success', 1), run('failure', 1)]
+      : [run('failure', 0), run(answer, 1)];
+    finish(runs.length ? runs.map(item => ({ workflow_runs: [item] })) : [{ workflow_runs: [] }]);
+  } else finish(state.target);
+}
 else if (route === 'git/ref/heads/live') finish(state.current);
 else if (route.startsWith('compare/')) finish(args.includes('.status') ? state.compare : 'Merge pull request #42');
 else if (route === 'pulls/42') finish('fix: Synthetic release entry');
@@ -108,6 +126,7 @@ function harness(overrides: Partial<State> = {}) {
     listFailures: 0,
     compare: "ahead",
     tagLookupFailures: 0,
+    acceptanceFailures: 0,
     ...overrides,
   };
   writeFileSync(statePath, JSON.stringify(initial));
@@ -125,6 +144,8 @@ function harness(overrides: Partial<State> = {}) {
   writeFileSync(join(directory, "summary.md"), "");
   const read = (): State => JSON.parse(readFileSync(statePath, "utf8"));
   return {
+    directory,
+    statePath,
     read,
     change(update: Partial<State>) {
       writeFileSync(statePath, JSON.stringify({ ...read(), ...update }));
@@ -149,6 +170,92 @@ function harness(overrides: Partial<State> = {}) {
 }
 
 describe("daily release record and live-ref recovery", () => {
+  it("never pairs --slurp with --jq or --template, which real gh refuses", () => {
+    const h = harness();
+    const fake = spawnSync(
+      join(h.directory, "gh"),
+      ["api", "--paginate", "--slurp", "repos/BigSimmo/Ward-Flow/releases?per_page=100", "--jq", "."],
+      { encoding: "utf8", env: { ...process.env, RELEASE_TEST_STATE: h.statePath } },
+    );
+    expect(fake.status).not.toBe(0);
+    expect(fake.stderr).toContain("--slurp option is not supported");
+    const workflow = readFileSync(".github/workflows/daily-release.yml", "utf8");
+    for (const line of workflow.split("\n").filter((value) => value.includes("--slurp"))) {
+      expect(line).not.toMatch(/\s(--jq|-q|--template|-t)\s/u);
+    }
+  });
+
+  it("evaluates the real same-SHA query across paginated attempts and events", () => {
+    const workflow = readFileSync(".github/workflows/daily-release.yml", "utf8");
+    const query = /acceptance="\$\(gh api [\s\S]*?\| jq -r '([\s\S]*?)'\)"/u.exec(workflow)?.[1];
+    expect(query).toBeDefined();
+    if (!query) throw new Error("Same-SHA acceptance query is missing");
+    const green = { event: "push", conclusion: "success", updated_at: "2026-11-04T10:00:00Z" };
+    const failed = { event: "schedule", conclusion: "failure", updated_at: "2026-11-04T11:00:00Z" };
+    const judge = (pages: object[][]) => {
+      const result = spawnSync("jq", ["-r", query], {
+        input: JSON.stringify(pages.map((runs) => ({ workflow_runs: runs }))),
+        encoding: "utf8",
+      });
+      expect(result.status, result.stderr).toBe(0);
+      return result.stdout.trim();
+    };
+    expect(judge([[green], [failed]])).toBe("failure");
+    expect(
+      judge([[failed], [green, { ...green, event: "workflow_dispatch", updated_at: "2026-11-04T12:00:00Z" }]]),
+    ).toBe("success");
+    expect(judge([[green, { ...failed, conclusion: "cancelled" }]])).toBe("success");
+    expect(judge([[green, { ...failed, conclusion: "action_required" }]])).toBe("action_required");
+    expect(judge([[failed], [{ ...green, event: "pull_request", updated_at: "2026-11-04T12:00:00Z" }]])).toBe(
+      "failure",
+    );
+    expect(judge([[green], [{ ...failed, updated_at: green.updated_at }]])).toBe("ambiguous");
+    expect(judge([[green, { ...failed, updated_at: undefined }]])).toBe("ambiguous");
+    expect(judge([[green, { ...failed, updated_at: "invalid" }]])).toBe("ambiguous");
+    expect(judge([[]])).toBe("missing");
+  });
+
+  it.each(["failure", "timed_out", "startup_failure", "missing", "ambiguous", "action_required"])(
+    "vetoes release after %s acceptance on the same SHA",
+    (acceptance) => {
+      const h = harness({ acceptance });
+      expect(h.run().status).not.toBe(0);
+      expect(h.read().current).toBe(previous);
+      expect(h.read().calls).not.toContain("PATCH repos/BigSimmo/Ward-Flow/git/refs/heads/live");
+      h.change({ acceptance: "success" });
+      expect(h.run().status).toBe(0);
+      expect(h.read().current).toBe(target);
+    },
+  );
+
+  it("fails closed when the acceptance API is unavailable", () => {
+    const h = harness({ acceptanceFailures: 1 });
+    expect(h.run().status).not.toBe(0);
+    expect(h.read().current).toBe(previous);
+    expect(h.read().calls).not.toContain("PATCH repos/BigSimmo/Ward-Flow/git/refs/heads/live");
+  });
+
+  it("checks acceptance again immediately before advancing live", () => {
+    const h = harness({ acceptanceAnswers: ["success", "failure"] });
+    expect(h.run().status).not.toBe(0);
+    expect(h.read().current).toBe(previous);
+    expect(h.read().calls).not.toContain("PATCH repos/BigSimmo/Ward-Flow/git/refs/heads/live");
+  });
+
+  it("vetoes retained draft publication after acceptance fails without replacing its notes", () => {
+    const h = harness({ publishFailures: 1 });
+    expect(h.run().status).not.toBe(0);
+    const saved = h.read().records.find((record) => record.target_commitish === target)!;
+    expect(saved.draft).toBe(true);
+    h.change({ acceptance: "failure", calls: [] });
+    expect(h.run().status).not.toBe(0);
+    expect(h.read().records.find((record) => record.id === saved.id)).toEqual(saved);
+    expect(h.read().calls).not.toContain(`PATCH repos/BigSimmo/Ward-Flow/releases/${saved.id}`);
+    h.change({ acceptance: "success" });
+    expect(h.run().status).toBe(0);
+    expect(h.read().records.find((record) => record.id === saved.id)).toMatchObject({ body: saved.body, draft: false });
+  });
+
   it("does not advance live when preparing its durable record fails", () => {
     const h = harness({ createFailures: 1 });
     expect(h.run().status).not.toBe(0);
@@ -192,7 +299,7 @@ describe("daily release record and live-ref recovery", () => {
     expect(h.run().status).toBe(0);
     const calls = h.read().calls;
     const publication = calls.indexOf("PATCH repos/BigSimmo/Ward-Flow/releases/2");
-    const selection = calls.findIndex((call) => call.includes("actions/workflows/"));
+    const selection = calls.findIndex((call) => call.includes("event=push"));
     expect(publication).toBeGreaterThanOrEqual(0);
     expect(publication).toBeLessThan(selection);
     expect(h.read().records.filter((record) => !record.draft)).toHaveLength(3);

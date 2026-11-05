@@ -190,6 +190,15 @@ export class SharedWorkspaceClient {
     const { response, value } = await this.request(`/v1/workspace/receipt?commandId=${held.commandId}`);
     current();
     if (!response.ok) throw new Error("Receipt unavailable");
+    if (value.receipt === null) {
+      this.publish({
+        status: "unavailable",
+        boardCurrent: true,
+        recovery:
+          "The previous save is still unresolved. Saving remains disabled while its receipt is checked. Try checking again.",
+      });
+      return; // Absence cannot prove a request delayed before the write lock will never commit.
+    }
     const outcome = value.receipt?.outcome;
     if (value.receipt !== null && !["accepted", "partly", "refused"].includes(outcome)) throw new Error("Bad receipt");
     if (
@@ -214,9 +223,7 @@ export class SharedWorkspaceClient {
       recovery:
         outcome === "accepted" || outcome === "partly"
           ? `The previous uncertain save was ${outcome === "partly" ? "partially applied" : "accepted"}. Review the refreshed board before acting again.`
-          : outcome === "refused"
-            ? `The previous uncertain save was not applied. ${SAVE_PROBLEMS.refused[1]}`
-            : "No retained receipt was found for the previous uncertain save. Its outcome is unknown. Review the board before repeating any action.",
+          : `The previous uncertain save was not applied. ${SAVE_PROBLEMS.refused[1]}`,
     });
   }
 
@@ -627,8 +634,7 @@ export class SharedWorkspaceClient {
         this.archiveAsked = null;
         this.archiveEpoch++;
       }
-      // Keep the held object for every unchanged record, list and map (audit PS-06), so a change
-      // re-renders only what reads the changed records (`ward-shared-client-reuse.ts`).
+      // PS-06: reuse unchanged records and lists, including on permission-only full polls.
       if (!unchanged) this.rawPayload = reuseUnchangedPayload(this.rawPayload, snapshot.payload);
       const raw = this.rawPayload!;
       const payload = reuseUnchangedPayload(held?.payload, this.withArchive(raw, snapshot.accessContext));
@@ -1032,12 +1038,21 @@ export class SharedWorkspaceClient {
       });
     const roleSignal = this.roleLifetime.signal;
     const generation = this.viewGeneration;
+    const worldEpoch = this.worldEpoch;
+    const worldGeneration = this.view.snapshot.payload.state.worldGeneration;
+    const replacesWorld = event.type === "RESET_SCENARIO" || event.type === "SET_SCENARIO";
     const currentOutcome = (outcome: WardCommandOutcome): WardCommandOutcome => {
-      const worldEpoch = this.worldEpoch;
       return {
         ...outcome,
         isCurrent: () =>
-          !this.disposed && !roleSignal.aborted && generation === this.viewGeneration && this.worldEpoch === worldEpoch,
+          !this.disposed &&
+          !roleSignal.aborted &&
+          generation === this.viewGeneration &&
+          (this.worldEpoch === worldEpoch ||
+            (replacesWorld &&
+              outcome.status === "accepted" &&
+              this.worldEpoch === worldEpoch + 1 &&
+              this.view.snapshot?.payload.state.worldGeneration === worldGeneration + 1)),
         canUndo: () => !!this.view.snapshot && ["ready", "saving"].includes(this.view.status),
       };
     };
@@ -1399,17 +1414,10 @@ export class SharedWorkspaceClient {
     return this.change("/v1/workspace/access/cover", input);
   }
   decideRequest(requestId: string, decision: "approved" | "declined", expiresInMinutes: number) {
-    return this.change("/v1/workspace/access/decide", {
-      requestId,
-      decision,
-      expiresInMinutes,
-    });
+    return this.change("/v1/workspace/access/decide", { requestId, decision, expiresInMinutes });
   }
-  /**
-   * Open one record outside this desk's care, read only, for the set window. The server checks
-   * the reason (from the list, never typed text), records it, and answers with the board as the
-   * desk now sees it, so the record shows at once.
-   */
+  /** Open one out-of-care record read only for the window. The server checks and records the listed
+   *  reason (never typed text) and answers with the board, so the record shows at once. */
   async breakGlass(patientId: string, reason: string): Promise<SharedChangeResult> {
     if (!this.accessChangeAllowed())
       return "Opening records is unavailable. Reconnect and finish checking any uncertain save first.";
@@ -1470,10 +1478,7 @@ export class SharedWorkspaceClient {
     if (this.pending) await this.drain();
     else await this.refresh();
   };
-  /**
-   * P172 (Josh, 28 Oct 2026): the person reads the outcome of an uncertain save and dismisses it.
-   * Never while the receipt is still being checked, since that message tells the person the board is locked until the receipt is read.
-   */
+  /** P172: dismiss a read outcome, keeping an unresolved receipt's warning until it settles. */
   dismissRecovery = (shown?: string) => {
     if (this.disposed || this.view.recovering || this.view.recovery === undefined) return;
     // A newer outcome than the one the person read stays until they read it.
