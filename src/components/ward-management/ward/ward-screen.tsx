@@ -54,6 +54,7 @@ import {
 } from "@/components/ward-management/ward-derivations";
 import {
   useDueSoonThresholds,
+  useOptionalWardFlowSelect,
   useWardFlowClock,
   useWardFlowSelect,
 } from "@/components/ward-management/ward-flow-provider";
@@ -164,12 +165,13 @@ const WARD_FLOW_TABS: readonly WardFlowTab[] = ["referrals", "admissions", "disc
 const WARD_SHIFT_VIEWS: readonly WardShiftView[] = ["todo", "log"];
 
 export function WardScreen({ unitId, presentation = "overview", departurePlanning = false }: WardScreenProps) {
+  const generation = useOptionalWardFlowSelect("worldGeneration")?.worldGeneration ?? 0;
   if (presentation === "answer") {
     return <WardAnswerFromLink key={unitId} unitId={unitId} />;
   }
   return (
     <WardOverviewScreen
-      key={`${unitId}:${departurePlanning}`}
+      key={`${unitId}:${departurePlanning}:${generation}`}
       unitId={unitId}
       presentation={presentation}
       departurePlanning={departurePlanning}
