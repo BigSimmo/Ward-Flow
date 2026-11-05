@@ -26,7 +26,7 @@ describe("Help home resolution", () => {
       deskHome: expected,
     });
   });
-  it("keeps the access admin's Governance home as both tour home and desk home (WF-46)", () => {
+  it("keeps the access admin's Governance home as both tour and desk landing (WF-46)", () => {
     expect(
       resolveTourHome({
         ...input,

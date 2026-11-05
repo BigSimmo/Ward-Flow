@@ -219,7 +219,7 @@
     "tests/ward-wf-v10-pass2-parts.dom.test.tsx",
     "tests/ward-wf-v10-pass4.dom.test.tsx",
     "tests/ward-wf41-narrow-layout.test.ts",
-    "tests/ward-wf44-rail-occupancy-label.test.ts",
+    "tests/ward-wf46-governance-list.dom.test.tsx",
     "tests/ward-whats-new.dom.test.tsx",
     "tests/ward-withdrawal-reason-privacy.test.ts",
     "tests/ward-word-list.test.ts",

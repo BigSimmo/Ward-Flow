@@ -236,13 +236,14 @@ bar's Tools drawer. The rail's "clinical persona" popover is cosmetic.
 
 ## 3. Routes, shell and navigation
 
-### 3.1 Routes (56 `page.tsx` under `src/app/ward-flow/`, 60 total including sign-in and digest)
+### 3.1 Routes (54 `page.tsx` under `src/app/ward-flow/`, 56 total including sign-in and digest)
 
 Every page file is a server component that renders one client screen (or redirects).
 
 | URL under `/ward-flow`                                                                   | Screen (folder)                                                           |
 | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
 | `/` (home) and `/command` (redirect alias)                                               | `CoordinatorScreen` (coordinator)                                         |
+| `/activity`                                                                              | client redirect stub — opens Activity panel then `/ward-flow` (WF-42)     |
 | `/alerts`                                                                                | `AlertsScreen` (alerts)                                                   |
 | `/bed-meeting`                                                                           | `BedMeetingTvScreen` (bed-meeting) — flag `bed-meeting-tv`                |
 | `/bed-meeting/agenda`                                                                    | `BedMeetingAgendaScreen` (bed-meeting)                                    |
@@ -255,6 +256,7 @@ Every page file is a server component that renders one client screen (or redirec
 | `/ed/[edId]`                                                                             | `EdScreen` (ed)                                                           |
 | `/governance`                                                                            | `WardModeWorkspace` mode "governance" (root `ward-management-modes.tsx`)  |
 | `/handover`                                                                              | `HandoverPage` (handover)                                                 |
+| `/help`                                                                                  | client redirect stub — opens Help sheet then `/ward-flow` (WF-42)         |
 | `/hub`                                                                                   | `HubScreen` (hub) — "Search hub"                                          |
 | `/hub/catchments`                                                                        | `CommunityIndex` (community) — Places Catchments tab                      |
 | `/legal-forms`                                                                           | `LegalFormsScreen` (legal-forms)                                          |
@@ -280,7 +282,7 @@ Every page file is a server component that renders one client screen (or redirec
 | `/ward/[unitId]` and `/ward/[unitId]/answer`                                             | `WardScreen` (ward), two presentations                                    |
 | `/wards`                                                                                 | `WardIndex` (wards)                                                       |
 
-**Ten redirect stubs** under `/ward-flow/` keep old links and aliases working: `/command`, `/constellation` and `/network` (the Network screen, retired 19 Oct 2026) → `/ward-flow`, `/delays` (renamed Waiting, 19 Oct 2026) → `/waiting` with its query kept, `/escalation`, `/exceptions`, `/queue` → `/waiting` (no old-bookmark banner since 22 Oct 2026), `/transport` → `/transport/officer`, and WF-42 `/activity` / `/help` which open the Activity panel and Help sheet then replace to the desk home. (Note: `/ed` now renders `EdIndex` in `ed/ed-index.tsx` rather than redirecting.) Outside `/ward-flow/`, `/ward-flow-sign-in` renders `SignInScreen`, `/mockups/ward-flow-digest` serves the HTML digest, and root `/` (`src/app/page.tsx`) redirects to `/ward-flow`.
+**Ten redirect stubs** under `/ward-flow/` keep old links and aliases working: `/command`, `/constellation` and `/network` (the Network screen, retired 19 Oct 2026) → `/ward-flow`, `/activity` and `/help` (WF-42) open the Activity panel or Help sheet then replace to `/ward-flow`, `/delays` (renamed Waiting, 19 Oct 2026) → `/waiting` with its query kept, `/escalation`, `/exceptions`, `/queue` → `/waiting` (no old-bookmark banner since 22 Oct 2026), `/transport` → `/transport/officer`. (Note: `/ed` now renders `EdIndex` in `ed/ed-index.tsx` rather than redirecting.) Outside `/ward-flow/`, `/ward-flow-sign-in` renders `SignInScreen`, `/mockups/ward-flow-digest` serves the HTML digest, and root `/` (`src/app/page.tsx`) redirects to `/ward-flow`.
 
 **Error boundaries:** `error.tsx` at the root and a nearer one for `statistics/**`. A throw inside the provider's initialiser or at
 module load in `ward-movements.ts` is not caught by any of the three boundaries

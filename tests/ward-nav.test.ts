@@ -1401,7 +1401,7 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
       `${ROUTE_PREFIX}/ed`,
       // PL1 (3 Nov 2026): Community folded into Places; `community/page.tsx` redirects to Catchments.
       `${ROUTE_PREFIX}/community`,
-      // WF-42: typed URLs open shell panels, then replace to the desk home.
+      // WF-42: Activity/Help typed URLs open a shell panel then replace home (client stub, not a screen).
       `${ROUTE_PREFIX}/activity`,
       `${ROUTE_PREFIX}/help`,
     ]);

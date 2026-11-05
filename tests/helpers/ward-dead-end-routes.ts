@@ -101,7 +101,10 @@ export function scanWardFlowRoutes(): WardFlowRouteInfo[] {
     // D-39 (15 Oct 2026): a record page redirects an OLD raw-id link to its coded address and
     // otherwise renders a screen. Only a page that redirects and renders nothing is redirect-only.
     const rendersAScreen = /\breturn\s*\(?\s*</u.test(body);
-    const redirectOnly = /\bredirect\(\s*["'`]/u.test(body) && !rendersAScreen;
+    // WF-42: Activity/Help are client stubs that open a shell panel then replace home — not screens.
+    const clientPanelRedirect =
+      (route === "/ward-flow/activity" || route === "/ward-flow/help") && /\brouter\.replace\(/.test(body);
+    const redirectOnly = (/\bredirect\(\s*["'`]/u.test(body) && !rendersAScreen) || clientPanelRedirect;
     return { route, dynamic, redirectOnly };
   });
 }
