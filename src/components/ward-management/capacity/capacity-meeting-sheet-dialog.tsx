@@ -39,9 +39,9 @@ export function BedMeetingSheetDialog({
       sub: `${ed.overLongWait} waiting over 24 hours · ${ed.detained} detained`,
     },
     {
-      label: "Discharges due today",
-      value: discharges.confirmed + discharges.expected + discharges.heldUp,
-      sub: `${discharges.heldUp} held up`,
+      label: "Beds freeing today",
+      value: discharges.freeingToday,
+      sub: `${discharges.heldUpToday} held up`,
     },
     { label: "Pulled", value: capacity.pulled, sub: `${capacity.closed} closed` },
   ];
