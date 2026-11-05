@@ -234,13 +234,11 @@ export function HandoverPrintSheet({
     );
   }, [options.beds, options.holds, options.signatures, landscape, wards, held, paper.height, measurements]);
   const totalPages = pages.length + extraPages.length;
-  const [printAttempted, setPrintAttempted] = useState(false);
-  const overflow = measurements !== null && !handoverPaperFits(pages, extraPages, measurements);
-  const printUnavailable = overflow || (printAttempted && measurements === null);
+  // Only a measured layout that does not fit refuses printing. Without a measurement (layout not
+  // read yet, or no layout engine) the sheet prints its estimated pages, as it always has.
+  const printUnavailable = measurements !== null && !handoverPaperFits(pages, extraPages, measurements);
   const overflowMessage =
-    measurements === null
-      ? "Print layout is still loading. Wait for the preview before printing."
-      : "This layout does not fit the paper. Change orientation, select fewer columns or turn off ISBAR before printing.";
+    "This layout does not fit the paper. Change orientation, select fewer columns or turn off ISBAR before printing.";
 
   const rows = useMemo(() => {
     const seen = new Map<string, HandoverRow>();
@@ -647,11 +645,8 @@ export function HandoverPrintSheet({
   const preparePrint = () => {
     flushSync(() => onPrintPrepared(now));
     const next = readMeasurements();
-    flushSync(() => {
-      setMeasurements(next);
-      setPrintAttempted(true);
-    });
-    if (!next) return false;
+    if (!next) return true;
+    flushSync(() => setMeasurements(next));
     const nextPages = paginateHandoverItems(paperItems(groups, options, isHighlighted, anyHighlight), 0, 0, next);
     return handoverPaperFits(nextPages, extraPages, next);
   };
