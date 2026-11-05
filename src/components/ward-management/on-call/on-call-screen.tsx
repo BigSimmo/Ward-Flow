@@ -425,7 +425,7 @@ export function OnCallScreen() {
             : access.role === "officer"
               ? "Transport lines"
               : access.role === "bed_manager" && siteCode
-                ? `${siteCode} + statewide`
+                ? `${siteCode}${scope ? ` + ${SERVICE_META[scope].short}` : ""} + statewide`
                 : scope
                   ? `${SERVICE_META[scope].short} + statewide`
                   : "All services"

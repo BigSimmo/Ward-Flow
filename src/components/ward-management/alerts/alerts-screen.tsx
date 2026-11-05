@@ -984,7 +984,7 @@ function AlertsWorkspace() {
   const nothingNeedsYou = (
     <div className={styles.nothingEmpty} data-testid="ward-alerts-nothing">
       <StatusGlyph tone="success" size={16} />
-      <strong>{wardName !== undefined ? "Nothing in the network queue" : "Nothing needs you"}</strong>
+      <strong>{wardName !== undefined ? "Nothing late or blocked in the network queue" : "Nothing needs you"}</strong>
       <span>
         {wardName !== undefined ? (
           <>No late or blocked network alerts for {deskPlace}. Your ward&apos;s tasks stay on My ward.</>
