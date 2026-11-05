@@ -87,15 +87,6 @@ export function absoluteWallClockMinutes(): number {
   return Math.floor((Date.now() + PERTH_UTC_OFFSET_MS) / 60_000);
 }
 
-/** Actual print time, independently of the demonstration clock or the device's time zone. */
-export function currentPerthPrintMoment(): string {
-  const moment = new Date();
-  const midnight = demoDayZero(moment);
-  return formatSheetMoment(Math.floor((moment.getTime() - midnight.getTime()) / 60_000), midnight, {
-    includeYearAndZone: true,
-  });
-}
-
 /**
  * The calendar date that the demo's day 0 falls on - Perth midnight of the Perth day a session opened.
  *
