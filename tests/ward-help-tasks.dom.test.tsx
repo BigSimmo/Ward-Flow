@@ -84,7 +84,17 @@ describe("How do I… task list", () => {
     const answerOnly = HOW_TOS.filter((howTo) => !howTo.showMe?.length).map((howTo) => howTo.id);
     // Legal times are shown only as typed (D-70), Undo has no single control to point at, and the
     // paper downtime answer is for logins with no Handover screen to point at.
-    expect(answerOnly.toSorted()).toEqual(["downtime-paper", "mha-times", "undo"]);
+    expect(answerOnly.toSorted()).toEqual([
+      "book-transport-community",
+      "book-transport-ed",
+      "book-transport-ward",
+      "cancel-transport-community",
+      "cancel-transport-ed",
+      "cancel-transport-ward",
+      "downtime-paper",
+      "mha-times",
+      "undo",
+    ]);
   });
 
   it("lists only this desk's own tasks", () => {

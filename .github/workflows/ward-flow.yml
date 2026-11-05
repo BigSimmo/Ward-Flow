@@ -148,6 +148,9 @@ jobs:
         run: npm run docs:check-links
       - name: Check reference-pack integrity
         run: node scripts/ward-flow/maintain-docs-and-organisation.mjs --pack-only --check
+      - name: Check executable journey documentation
+        if: ${{ needs.plan.outputs.doc_contracts == 'true' }}
+        run: node docs/ward-flow/journey/verify.mjs --check
       - name: Check maintained document commands
         run: npm run docs:check-scripts
       - name: Check doc facts and retired terms
@@ -194,6 +197,9 @@ jobs:
         env:
           WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
         run: node scripts/install-locked-dependencies.mjs
+      - name: Check printable Help guides
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.doc_contracts == 'true' }}
+        run: node scripts/build-help-cheat-sheets.mjs --output public/help --check
       - name: Check generated site map
         if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.doc_contracts == 'true' }}
         run: npm run sitemap:check

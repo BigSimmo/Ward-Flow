@@ -51,7 +51,7 @@ const LIT: Record<"desk" | "phone", Record<string, readonly string[]>> = {
     ward: ["confirm-numbers", "answer-ward-referrals", "bed-board", "new-referral", "sign-off-handover", "tv"],
     ed: ["ed-raise", "new-referral", "find-bed", "search-patient"],
     officer: ["transport-job", "alerts"],
-    bed_manager: ["tv", "sign-off-handover", "statistics", "service-in-view"],
+    bed_manager: ["tv", "statistics", "service-in-view"],
   },
   phone: {
     coordinator: [

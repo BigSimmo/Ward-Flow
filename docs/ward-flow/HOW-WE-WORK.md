@@ -17,8 +17,9 @@ _Updated 2026-10-31 - section 6 brings the design rules up to date: 40px phone c
 1. Read [`README.md`](README.md), then the agreed task scope and existing task/checkpoint
    under [`../task-receipts.md`](../task-receipts.md). Use the ledger
    [`../ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) and relevant [`plans/`](plans/README.md)
-   to locate existing IDs and decisions. [`STATUS.md`](STATUS.md)'s decision table and "Waiting on Josh" list are the one
-   record of what is left; its older sections are dated history. Verify current source before reviving an old task.
+   to locate existing IDs and decisions. [`STATUS.md`](STATUS.md) preserves dated decision-state observations; check the latest
+   [decisions](decisions.md) and the task source identified by the receipt contract before treating
+   an old item as outstanding. Task metadata, owner decisions and verification evidence are separate.
 2. Check your folder: `git -C <worktree> status` and `git -C <worktree> log -5`. If files you did not
    touch are modified or staged, preserve them and resolve ownership before writes. Former
    Database fold-debt hooks are historical and are not part of this repository's startup.

@@ -1,3 +1,84 @@
+# Ward journey: current command models and selective route
+
+_Updated 2026-11-03 — model every current command, review route semantics and detect source drift; Documentation owns._
+
+**Audience:** engineers and reviewers tracing Ward Flow behaviour. Current implementation, tests
+and owner decisions establish behaviour. The route illustrates the central patient path; it does
+not draw every possible ordering of commands or certify a clinical workflow.
+
+The **Current events** tab accounts for every current `EVENT_ROLE` key. **Diagram-reviewed**
+entries have reviewed route/action notes. **Modelled** entries add before/after diagrams with
+payload, scope, guards, effects and relevant existing test references. The former 74 catalogue-only
+gaps now have these models. A before/after record update does not necessarily advance a patient
+stage. Event-level roles do not establish authenticated place scope. Source review and test
+references are separate from executed tests or end-to-end acceptance.
+
+## Read it
+
+```sh
+node docs/ward-flow/journey/serve.mjs
+```
+
+Open the printed loopback URL. The reader is `ward-journey-explorer.html`; no backend, credentials
+or provider calls are needed. Source paths refer to the recorded local checkout; publication of that revision is not verified. The source-contract
+fingerprint identifies extracted event identities, roles, source-reference paths/lines and notice
+kinds. It does not certify handler bodies or historical prose. Provenance also reports uncommitted
+inputs; it is distinct from the wrapper’s broader input-race fingerprint.
+
+## Verify and refresh safely
+
+```sh
+node docs/ward-flow/journey/verify.mjs --check
+node docs/ward-flow/journey/verify.mjs --prove
+node docs/ward-flow/journey/verify.mjs --write
+```
+
+These commands need plain Node, no installed packages. They run the build in a temporary tree.
+`--check` compares five reader outputs without writing the checkout. `--prove` runs mutation
+proofs only in that temporary tree. `--write` adopts reader outputs only after the full build
+succeeds and confirms the original input fingerprint is unchanged. Do not run the older direct
+`build.mjs --prove` command in a working checkout: those probes deliberately modify their inputs.
+
+The checked reader outputs are vocabulary, route layout, explorer HTML, BPMN and the flat
+inventory. Build-time/revision provenance is reported separately from content drift. Dated
+`WHAT-CHANGED.md`, `map-snapshot.json` and `refusal-coverage.json` are retained historical evidence,
+not regeneration gates. No new coverage execution is implied; missing/mismatched coverage is
+shown as unknown. The current event catalogue is not a count of separately supported staff jobs.
+
+## Sources and maintenance
+
+- `source-contracts.mjs` discovers the unique exported `EVENT_ROLE` and `NoticeKind` declarations.
+  Missing/ambiguous declarations and incomplete parses refuse; declaration moves are discovered.
+- `actions.json`, `machines.json` and `rebuild-map.mjs` contain the selective route, state machines,
+  gates, resource notes and gap descriptions. The source comparison covered all 97 original actions,
+  eleven machines, route nodes, gate rows and resource ledgers. Selected refusal examples are not
+  an exhaustive list of refusals or proof that a screen can reach every branch.
+- `event-dispositions.json` now contains the additional command models. Every model requires payload,
+  scope, guards, effects, before/after notes, existing test paths and reviewed source references.
+  A new event must have diagram action notes or a complete command model; no blanket exclusion or
+  catalogue-only placeholder clears the check. Obsolete and duplicate entries refuse.
+- Each action's `review`, each command model's `sources`, and the diagram's `review` record source
+  SHA256 digests. A cited source-file edit refuses generation until someone compares the changed
+  behaviour and updates the notes and review record. Whole-file digests are deliberately conservative:
+  an unrelated change in a cited file can also require review. Generation never refreshes these
+  digests automatically. A matching digest proves file identity, not that a reviewer was correct.
+- `explorer-template.html` renders the route and current models. `MAP-INVENTORY.md` records the
+  models, references and their digests in a text form reviewers can diff.
+
+When a source change trips the check, inspect the changed handler, payload, access boundary and
+relevant tests. Correct the affected notes, then record the reviewed source's digest (for example,
+`sha256sum src/components/ward-management/ward-flow-placement-events.ts`) in the corresponding
+review records. Do not bulk-refresh digests to silence the gate. For a new command, add its real
+transition or record effects and evidence; event names alone are insufficient. Run `--write`,
+`--check` and `--prove` after the settled owned change. CI runs the check, while the mutation proofs
+are an explicit local command. Provider state, backup/restore and physical-device acceptance remain
+separate checks. The guide below is retained historical evidence rather than current instructions.
+
+<details>
+<summary>Historical guide — September/October claims and original build instructions</summary>
+
+<!-- docs-script-refs:historical-start -->
+
 # The ward journey — the map of what Ward Flow can actually do
 
 🔴 **This is the master tool for mapping Ward Flow's flow and behaviour** (owner instruction,
@@ -92,3 +173,7 @@ stretch with no record at all, a screen whose buttons dispatch nothing — the m
 absence** rather than leaving a blank or filling it in with something plausible.
 
 Every person, ward and figure named anywhere in it is invented.
+
+<!-- docs-script-refs:historical-end -->
+
+</details>
