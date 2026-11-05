@@ -104,6 +104,12 @@
   scroll-margin-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* The chapter menu is a short stop: on a phone the card may grow over the lit control while it is
+   open (placeCard otherwise caps it to the room beside the control), so every chapter shows. */
+.layer[data-device="phone"] .card[data-menu] {
+  max-height: 72vh !important;
+}
+
 .layer[data-device="phone"] .canDo {
   grid-template-columns: minmax(0, 1fr);
 }

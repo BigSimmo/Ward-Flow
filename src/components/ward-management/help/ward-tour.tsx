@@ -225,6 +225,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
           id="ward-tour-card"
           data-testid="ward-tour-card"
           data-step={step.id}
+          data-menu={menu ? "" : undefined}
         >
           <div className={styles.head}>
             {welcome ? progress : <p className={styles.who}>{who}</p>}
