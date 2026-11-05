@@ -128,8 +128,9 @@ export function CommunityScreenDesktopHero({ view }: { view: CommunityScreenView
             <HeroStat
               inline
               command
-              value={midland ? f.referrals : waitingCount}
+              value={waitingCount}
               label="Referrals to answer"
+              // WF-01: the live waiting count, the same one the Referrals tab and menu badge read.
               tone={midland ? "neutral" : undefined}
               onToggle={() => openTeamSection("referrals")}
             />
@@ -277,7 +278,7 @@ export function CommunityScreenTabRow({
   } = view;
   const f = DEMO_FIGURES;
   const counts: Partial<Record<CommunityTeamSection, number>> = view.midlandDemo
-    ? { caseload: f.caseload, hospital: f.inHospital, referrals: f.referrals, clinicians: f.clinicians }
+    ? { caseload: f.caseload, hospital: f.inHospital, referrals: waitingCount, clinicians: f.clinicians }
     : {
         caseload: isDemoMode ? teamConfig.caseload : caseloadRows.length,
         hospital: isDemoMode ? teamConfig.inpatients : lists.currentlyAdmitted.length,

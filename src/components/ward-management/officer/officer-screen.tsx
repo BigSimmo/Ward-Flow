@@ -38,6 +38,7 @@ import {
   cx,
   durMinutes,
   phoneRows,
+  requestConfirm,
   tableClasses,
   useIsPhone,
   useIsTabletPortrait,
@@ -47,7 +48,7 @@ import {
 import { transportLeg } from "@/components/ward-management/ward-derivations";
 import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { formatDateOfBirth } from "@/components/ward-management/ward-patients";
-import { dayOf, formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -77,6 +78,8 @@ import { SYNTHETIC_COPY_LINE } from "@/components/ward-management/referrals/refe
 import {
   type HighlightPill,
   type HistoryTab,
+  arrivalsAxis,
+  deliveredSinceStartOfDay,
   type JobsTab,
   LEG_TONE,
   OFFICER_ACTION_REJECTION_LABELS,
@@ -428,12 +431,7 @@ export function OfficerScreen() {
       })),
   );
 
-  // Delivered today: closed jobs leave the live list and land here, newest first.
-  const deliveredToday = movements
-    .filter(
-      (movement) => movement.transport?.arrivedAt !== undefined && dayOf(movement.transport.arrivedAt) === dayOf(now),
-    )
-    .sort((a, b) => b.transport!.arrivedAt! - a.transport!.arrivedAt!);
+  const deliveredToday = deliveredSinceStartOfDay(movements, now);
 
   // Hero counts. Each label names exactly the population its count holds.
   const legCount = (leg: OfficerLeg) => jobs.filter((job) => job.transport && officerLeg(job.transport) === leg).length;
@@ -530,13 +528,22 @@ export function OfficerScreen() {
       `Patient collected for ${officerPatientName(movement)}. In transit.`,
       "Collection",
     );
-  const runDelivered = (movement: Movement) =>
-    reportOutcome(
+  // WF-22 (live test, 4 Nov 2026): arrival is confirmed first; the message after it offers Undo.
+  const runDelivered = async (movement: Movement) => {
+    const confirmed = await requestConfirm({
+      title: "Record arrival at the ward?",
+      message: `Record that ${officerPatientName(movement)} has arrived at the ward. You can undo it for a few seconds after.`,
+      confirmLabel: "Record arrival",
+      cancelLabel: "Not yet",
+    });
+    if (!confirmed) return;
+    return reportOutcome(
       movement.id,
       () => raise("PATIENT_ARRIVED", { movementId: movement.id }),
       `Arrival at ward recorded for ${officerPatientName(movement)}. The receiving ward confirms the arrival.`,
       "Arrived at ward",
     );
+  };
 
   /** The one action a job is waiting on, why it cannot be taken yet, and how to take it. */
   const nextStep = (movement: Movement) => withCrewLimit(officerStep(movement), booking.crewLimit);
@@ -653,12 +660,11 @@ export function OfficerScreen() {
     })
     .filter((item): item is { movement: Movement; eta: Instant; booked: boolean } => item !== undefined)
     .sort((a, b) => a.eta - b.eta);
-  const arrivalsStart = Math.min(now, ...arrivals.map((item) => item.eta));
-  const arrivalsEnd = Math.max(now, ...arrivals.map((item) => item.eta));
-  const arrivalsSpan = Math.max(arrivalsEnd - arrivalsStart, 1);
-  const arrivalsLeft = (at: Instant) => `${((at - arrivalsStart) / arrivalsSpan) * 100}%`;
-  const hourTicks: Instant[] = [];
-  for (let tick = Math.ceil(arrivalsStart / 60) * 60; tick <= arrivalsEnd; tick += 60) hourTicks.push(tick);
+  // Axis clamped to now +/-48h, at most a dozen labels: a job eight days late drew ~200 and likely crashed the tab.
+  const { left: arrivalsLeft, ticks: hourTicks } = arrivalsAxis(
+    now,
+    arrivals.map((item) => item.eta),
+  );
   const upcoming = arrivals.filter((item) => item.eta >= now).length;
   const firstUpcoming = arrivals.findIndex((item) => item.eta >= now);
 

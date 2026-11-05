@@ -37,6 +37,7 @@ import {
   shortName,
 } from "./midland-demo";
 import { ReferralPage, useAnswer } from "./team-referrals";
+import { openReferrals, useMidlandDecisions } from "./midland-decisions";
 import { useRegisterWardBarPlaceSwitch } from "@/components/ward-management/shell/ward-bar-place-switch";
 import p from "./midland-phone.module.css";
 
@@ -148,6 +149,9 @@ function HomeSection({
   const [allCms, setAllCms] = useState(false);
   const cms = STAFF.filter((s) => s.load);
   const duty = STAFF.find((s) => s.today === "duty")!;
+  // Same decision state as the Referrals tab (and the tablet home): once answered, it leaves Act now.
+  const decisions = useMidlandDecisions();
+  const sallowfieldOpen = openReferrals(REFERRALS, decisions).some(({ r }) => r.id === "r1");
   const actNow = [
     {
       id: "fu",
@@ -160,16 +164,20 @@ function HomeSection({
       act: true,
       run: onRecord,
     },
-    {
-      id: "ref",
-      what: "Referral past its answer time",
-      n: "Sallowfield, June",
-      u: "UM200322",
-      meta: "from GP · psychiatrist review",
-      when: "3d 1h",
-      action: "Answer",
-      run: () => go("referrals"),
-    },
+    ...(sallowfieldOpen
+      ? [
+          {
+            id: "ref",
+            what: "Referral past its answer time",
+            n: "Sallowfield, June",
+            u: "UM200322",
+            meta: "from GP · psychiatrist review",
+            when: "3d 1h",
+            action: "Answer",
+            run: () => go("referrals"),
+          },
+        ]
+      : []),
     {
       id: "book",
       what: "Leaving hospital, no follow-up booked",
@@ -508,6 +516,7 @@ function HospitalSection({ note, onRecord }: { note: (t: string) => void; onReco
 }
 
 function ReferralsSection({ open }: { open: (index: number) => void }) {
+  const decisions = useMidlandDecisions();
   const [pane, setPane] = useState<"q" | "s" | "h">("q");
   return (
     <>
@@ -518,16 +527,16 @@ function ReferralsSection({ open }: { open: (index: number) => void }) {
         value={pane}
         onChange={setPane}
         items={[
-          { id: "q", label: "To answer", count: REFERRALS.length },
+          { id: "q", label: "To answer", count: openReferrals(REFERRALS, decisions).length },
           { id: "s", label: "Sent", count: SENT.length },
-          { id: "h", label: "Answered", count: f.answeredThisMonth },
+          { id: "h", label: "Answered", count: f.answeredThisMonth + REFERRALS.filter((r) => decisions[r.id]).length },
         ]}
       />
       {pane === "q" ? (
         <Card>
           <GroupHead title="Oldest first" hint="answer within 3 days" />
           <ul className={p.rows}>
-            {REFERRALS.map((r, index) => (
+            {openReferrals(REFERRALS, decisions).map(({ r, index }) => (
               <li key={r.id} className={p.ref}>
                 <div className={p.refHead}>
                   <span>
@@ -572,7 +581,22 @@ function ReferralsSection({ open }: { open: (index: number) => void }) {
           <ul className={p.rows}>
             {(pane === "s"
               ? SENT.map((s) => ({ n: s.n, u: s.u, meta: s.to, value: s.state, time: s.when }))
-              : ANSWERED.map((a) => ({ n: a.n, u: a.u, meta: `${a.ask} · ${a.by}`, value: a.ans, time: a.when }))
+              : [
+                  // Answers saved on this device lead the list, as on the desktop view.
+                  ...REFERRALS.filter((r) => decisions[r.id]).map((r) => ({
+                    n: r.n,
+                    u: r.u,
+                    meta: `${r.ask} · You`,
+                    value: decisions[r.id]!.line,
+                    time: new Date(decisions[r.id]!.at).toLocaleString("en-AU", {
+                      weekday: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: false,
+                    }),
+                  })),
+                  ...ANSWERED.map((a) => ({ n: a.n, u: a.u, meta: `${a.ask} · ${a.by}`, value: a.ans, time: a.when })),
+                ]
             ).map((row) => (
               <PhoneListRow
                 key={row.u}
@@ -651,7 +675,7 @@ function ReferralSheet({
   openFull: () => void;
 }) {
   const r = index === null ? null : REFERRALS[index]!;
-  const { accept, say: note } = useAnswer(r?.n ?? "");
+  const { accept, say: note } = useAnswer(r?.n ?? "", r?.id);
   return (
     <PhoneSheet
       open={r !== null}

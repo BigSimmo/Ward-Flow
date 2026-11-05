@@ -1,6 +1,6 @@
 // Access test fixes (26 Oct 2026, #800, #801, #814): a desk is not offered an action its role cannot take.
 import "@testing-library/jest-dom/vitest";
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -119,8 +119,10 @@ describe("the roles list", () => {
     );
     const rows = await screen.findAllByTestId("ward-access-role-row");
     expect(rows).toHaveLength(2);
-    const remove = (index: number) => rows[index]!.querySelector("button")!;
-    expect(remove(0)).toHaveAttribute("aria-disabled", "true");
+    // WF-34: the admin's own row offers no Remove at all; another person's row does.
+    const remove = (index: number) => within(rows[index]!).queryByRole("button", { name: /Remove/ });
+    expect(remove(0)).toBeNull();
+    expect(remove(1)).not.toBeNull();
     expect(remove(1)).not.toHaveAttribute("aria-disabled", "true");
   });
 });

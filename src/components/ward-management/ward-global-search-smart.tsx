@@ -39,12 +39,25 @@ export function TryAsking({ census, onAsk }: { census: Census; onAsk: (phrase: s
     <div className={styles.askRow}>
       <span className={styles.group}>Try asking</span>
       <div className={styles.askChips}>
-        {TRY_ASKING.map(([label, phrase]) => (
-          <button key={phrase} type="button" className={styles.askChip} onClick={() => onAsk(phrase)}>
-            {label}
-            <span className={styles.kindCount}>{answerQuestion(phrase, census, 1)?.total ?? 0}</span>
-          </button>
-        ))}
+        {TRY_ASKING.map(([label, phrase]) => {
+          const total = answerQuestion(phrase, census, 1)?.total ?? 0;
+          // WF-29 (live test, 4 Nov 2026): the chip is read as "Waiting over 24 hours, 9", not the
+          // label and count run together.
+          return (
+            <button
+              key={phrase}
+              type="button"
+              className={styles.askChip}
+              aria-label={`${label}, ${total}`}
+              onClick={() => onAsk(phrase)}
+            >
+              {label}
+              <span className={styles.kindCount} aria-hidden="true">
+                {total}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

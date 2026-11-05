@@ -813,6 +813,15 @@ function OwnHomeRedirect({ href }: { href: string }) {
   );
 }
 
+/** WF-13 (live test, 4 Nov 2026): a closed page's tab names no ward, ED or team. */
+const CLOSED_TAB_TITLE = "Not part of your role — Ward Flow";
+function GenericClosedTitle() {
+  useEffect(() => {
+    document.title = CLOSED_TAB_TITLE;
+  });
+  return null;
+}
+
 function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: string }) {
   const { previewOf, switchFrom, signInLanding } = useWardAccessSnapshot();
   // A desk switch still on its way from this page (`markDeskSwitch`): say so, not "closed".
@@ -847,6 +856,7 @@ function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: s
   return (
     <WardGround>
       <main className={styles.closed} data-testid="ward-access-closed">
+        <GenericClosedTitle />
         <h1 tabIndex={-1} ref={headingRef}>
           Not part of your role
         </h1>

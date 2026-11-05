@@ -172,7 +172,8 @@ export function WardSharedSaveStatus({
                 Retry
               </button>
             )}
-            <button type="button" className={styles.action} onClick={connection.signOut}>
+            {/* WF-38 (live test, 4 Nov 2026): Sign out stands apart from Retry, so a slip does not end the session. */}
+            <button type="button" className={`${styles.action} ${styles.signOut}`} onClick={connection.signOut}>
               Sign out
             </button>
           </span>

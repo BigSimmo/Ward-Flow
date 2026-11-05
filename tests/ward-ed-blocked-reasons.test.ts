@@ -368,3 +368,9 @@ describe("community blocked reasons", () => {
     expect(cancelTransportBlockedReason(CANCEL_TRANSPORT_REASONS[0])).toBeUndefined();
   });
 });
+
+it("names moving patients as already on the way for both unavailable actions", () => {
+  const moving = movement({ stage: "moving", transport: job() });
+  expect(handoverBlockedReason(moving, "Synthetic person")).toBe("Synthetic person is already on the way.");
+  expect(bookTransportBlockedReason(moving, "Synthetic person")).toBe("Synthetic person is already on the way.");
+});

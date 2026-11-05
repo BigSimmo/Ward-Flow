@@ -18,23 +18,25 @@ export function WardRoleSwitcher(props: ComponentProps<typeof OperationalWardRol
   if (authority?.role !== "executive" && !reporting.executive) return <OperationalWardRoleSwitcher {...props} />;
   return (
     <div className={styles.switcher}>
-      <button
-        type="button"
-        className={styles.trigger}
-        data-words={props.withWords || undefined}
-        aria-haspopup="dialog"
-        aria-label="Change view"
-        title="Go to a desk"
-        disabled={!shell?.switchRole}
-        onClick={() => shell?.switchRole?.()}
-      >
-        <ArrowLeftRight aria-hidden="true" />
-        {props.withWords ? (
-          <span className={styles.triggerWords} aria-hidden="true">
-            Change view
-          </span>
-        ) : null}
-      </button>
+      {/* WF-21 (live test, 4 Nov 2026): an executive with no other desk is not offered a switch. */}
+      {shell?.switchRole ? (
+        <button
+          type="button"
+          className={styles.trigger}
+          data-words={props.withWords || undefined}
+          aria-haspopup="dialog"
+          aria-label="Change view"
+          title="Go to a desk"
+          onClick={() => shell.switchRole?.()}
+        >
+          <ArrowLeftRight aria-hidden="true" />
+          {props.withWords ? (
+            <span className={styles.triggerWords} aria-hidden="true">
+              Change view
+            </span>
+          ) : null}
+        </button>
+      ) : null}
       {props.nextStep && canOpen(props.nextStep.href) ? (
         <Link
           href={props.nextStep.href}

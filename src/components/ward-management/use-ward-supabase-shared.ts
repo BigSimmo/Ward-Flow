@@ -12,6 +12,16 @@ import { CLINICAL_VALUES } from "./ward-clinical-values";
 
 /** Every Ward Flow tab in this browser hears a deliberate sign-out (Audit 5 PS-08, Audit 4 A4-06). */
 const SESSION_CHANNEL = "ward-flow-session";
+const SESSION_ENDED_MESSAGE = "Your session ended. Sign in again to carry on.";
+
+/** Whether this tab still stores a sign-in; `null` when the browser blocks storage. */
+function storedSignIn(): boolean | null {
+  try {
+    return window.sessionStorage.getItem(WARD_AUTH_STORAGE_KEY) !== null;
+  } catch {
+    return null;
+  }
+}
 const IDLE_ACTIVITY = ["pointerdown", "keydown", "wheel", "touchstart"] as const;
 
 /**
@@ -369,6 +379,23 @@ export function useWardSupabaseShared(
           }
         },
       });
+      // A sign-in cleared from this tab's storage (another tool, or the browser) ends the session
+      // here too, instead of the page still looking signed in until a reload. Only a sign-in that
+      // was stored when connecting counts, so a browser that blocks storage keeps its in-memory one.
+      // Read before the first workspace read, so a removal while that read is pending still counts.
+      const storedAtConnect = storedSignIn() === true;
+      const sessionEnded = () => {
+        if (!storedAtConnect || storedSignIn() !== false) return false;
+        disconnect();
+        // Drop the in-memory sign-in as well, so a token refresh already on its way cannot store
+        // it again, and clear this tab's Ward Flow data as a sign-out here would. This tab only:
+        // the stored key went from this tab, so no server sign-out reaches another tab.
+        void instance.signOut(true).catch(() => {});
+        endWardFlowTabSession();
+        setForm((old) => ({ ...old, message: SESSION_ENDED_MESSAGE, messageKind: "info" }));
+        setView({ ...emptyView, status: "ready", error: SESSION_ENDED_MESSAGE });
+        return true;
+      };
       connection.current = client;
       try {
         await client.refresh();
@@ -376,6 +403,7 @@ export function useWardSupabaseShared(
         if (!closed && connection.current === client) setFirstRead(false);
       }
       if (closed || connection.current !== client) return;
+      if (sessionEnded()) return;
       void instance.token().then(
         (token) => !closed && connection.current === client && setEndsAt(sessionEndsAt(token)),
         () => {},
@@ -389,6 +417,7 @@ export function useWardSupabaseShared(
       });
       onVisibilityChange = () => {
         if (!closed && connection.current === client && document.visibilityState === "visible") {
+          if (sessionEnded()) return;
           void client.refresh();
         }
       };
@@ -398,6 +427,7 @@ export function useWardSupabaseShared(
       polling = startWardPolling({
         visible: () => typeof document === "undefined" || document.visibilityState !== "hidden",
         refresh: async () => {
+          if (sessionEnded()) return false;
           const before = lastRead;
           await client.refresh();
           return lastRead > before;

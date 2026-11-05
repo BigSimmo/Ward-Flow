@@ -18,6 +18,7 @@ import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components
 import { referralAgeBand } from "./referral-age-band";
 import { cleanReferralContact, cleanReferralFields, cleanReferralText } from "./referral-text-clean";
 import { referralDraftKeptOnScreen } from "./referral-draft-kept-check";
+import { noticeDraftKept } from "./referral-draft-saved-notice";
 import {
   URGENCY_LEVELS,
   HEALTH_SERVICES,
@@ -73,7 +74,7 @@ import { drawerFootStatus } from "./referral-drawer-foot-status";
 import { focusFirstInvalidField, referralInboxSummary } from "./referral-drawer-helpers";
 import * as fromRecord from "./referral-record-prefill";
 import { type ReferralTextInput } from "./referral-letter";
-import { useIsPhone, useModalFocus, type WfTone } from "@/components/wf";
+import { useIsPhone, useModalFocus, useOptionalToast, type WfTone } from "@/components/wf";
 import { usePathname } from "next/navigation";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { profileForChromeRole } from "@/components/ward-management/settings/settings-profile";
@@ -183,6 +184,7 @@ export function useWardReferralDrawerState({
   const { scenario, worldGeneration } = useWardFlowSelect("scenario", "worldGeneration");
   const now = useWardFlowClock();
   const { sendGate, sendingWard, senderMissing } = useSheetSender(gate, units, pathname, searchId);
+  const toast = useOptionalToast();
   const urlPrefill = useReferralUrlPrefill({
     initialOriginSiteCode,
     initialPatientId,
@@ -418,7 +420,6 @@ export function useWardReferralDrawerState({
   };
   const [openingDraft] = useState(() => (kept ? "" : draftFingerprint(draftNow)));
   const draftJson = draftFingerprint(draftNow);
-
   // The enclosing Sheet or useWardModalFocus owns the scroll lock: a second save/restore raced stacked sheets.
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
@@ -545,7 +546,7 @@ export function useWardReferralDrawerState({
     setGuardOpen(false);
     approveNextHistoryNavigation();
     onClose();
-    announceToWardShell(kept ? "Synthetic referral draft kept for this session." : "Draft not kept: signed in again.");
+    noticeDraftKept(toast, kept);
   }
   function handleDrawerClose() {
     if (isSearchOpen) {

@@ -1,12 +1,20 @@
 import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { OfficerScreen, isOfficerJob } from "@/components/ward-management/officer/officer-screen";
 import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
-afterEach(cleanup);
+// WF-22 (5 Nov 2026): Arrived at ward asks first; with no confirm host mounted it falls back to
+// window.confirm, answered yes here unless a test says otherwise.
+beforeEach(() => {
+  vi.spyOn(window, "confirm").mockReturnValue(true);
+});
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+});
 
 /**
  * Ward audit 2026-09-16, fix 1 (officer-screen.tsx): three families of copy/count corrections on
@@ -270,7 +278,7 @@ describe("officer screen's refusals region has its own accessible name", () => {
  * `PATIENT_ARRIVED`, and the receiving ward still confirms the arrival (A4-16).
  */
 describe("the officer's last step reads Arrived at ward", () => {
-  it("labels the arrival button Arrived at ward, never Delivered, and a click still dispatches PATIENT_ARRIVED", () => {
+  it("labels the arrival button Arrived at ward, never Delivered, and a click still dispatches PATIENT_ARRIVED", async () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <OfficerScreen />
@@ -289,12 +297,28 @@ describe("the officer's last step reads Arrived at ward", () => {
     expect(within(card).queryByRole("button", { name: /Delivered/ })).not.toBeInTheDocument();
     const button = within(card).getByRole("button", { name: "Mark arrived at ward" });
 
-    fireEvent.click(button);
+    await act(async () => fireEvent.click(button));
+    expect(window.confirm).toHaveBeenCalledTimes(1);
 
     // A successful PATIENT_ARRIVED removes the job from the officer's own list — `isOfficerJob`
     // excludes an arrived movement — the same proof the empty-state test above uses to show a
     // click really reached the reducer, not merely a relabelled button.
     expect(screen.queryByTestId("ward-officer-job-WF-006")).not.toBeInTheDocument();
+  });
+
+  it("asks before recording the arrival, and records nothing when told not yet (WF-22)", async () => {
+    vi.mocked(window.confirm).mockReturnValue(false);
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <OfficerScreen />
+      </WardFlowProvider>,
+    );
+    const selectButton = screen.queryByTestId("ward-officer-select-WF-006");
+    if (selectButton) fireEvent.click(selectButton);
+    const card = screen.getByTestId("ward-officer-detail");
+    await act(async () => fireEvent.click(within(card).getByRole("button", { name: "Mark arrived at ward" })));
+    expect(window.confirm).toHaveBeenCalledTimes(1);
+    expect(screen.getByTestId("ward-officer-job-WF-006")).toBeInTheDocument();
   });
 
   it("never renders 'Cannot confirm Arrived' on the screen", () => {

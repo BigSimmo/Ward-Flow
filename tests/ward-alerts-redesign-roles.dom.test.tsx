@@ -172,6 +172,23 @@ describe("Alerts redesign: nurse in charge (ROLE BRANCH ward)", () => {
     fireEvent.click(within(reminders).getByRole("button", { name: /^Done: Call back, Ward 3B/u }));
     expect(screen.getByTestId("ward-alerts-nothing")).toBeInTheDocument();
   });
+
+  it("keeps due reminders visible without a false quiet-ward all-clear", () => {
+    act(() => {
+      addReminder({
+        kind: "ward",
+        targetId: "w1",
+        targetLabel: "Ward 3B",
+        reason: "Call back",
+        dueAt: NOW_ANCHOR - 60,
+      });
+    });
+    renderAs({ role: "ward", scope: { kind: "ward", unitIds: [ward.id] } }, { quiet: true });
+    expect(screen.queryByTestId("ward-alerts-nothing")).not.toBeInTheDocument();
+    const reminders = screen.getByRole("region", { name: "Your reminders" });
+    fireEvent.click(within(reminders).getByRole("button", { name: /^Done: Call back, Ward 3B/u }));
+    expect(screen.getByTestId("ward-alerts-nothing")).toBeInTheDocument();
+  });
 });
 
 describe("Alerts redesign: transport officer (ROLE BRANCH officer)", () => {

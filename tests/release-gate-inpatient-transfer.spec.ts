@@ -268,6 +268,12 @@ test("Inpatient transfer: a stay on one ward is referred, accepted and held at a
     await expect(button).not.toHaveAttribute("aria-disabled", "true");
     await clearToasts(page);
     await button.click();
+    // WF-22: arrival cannot be undone, so the officer confirms it first.
+    if (stage === "arrive")
+      await page
+        .getByRole("alertdialog", { name: "Record arrival at the ward?" })
+        .getByRole("button", { name: "Record arrival", exact: true })
+        .click();
     // Collected warns and asks for a recorded reason when Form 4A or fit to travel is missing.
     if (stage === "collect") {
       const check = page.getByTestId("ward-officer-collect-check");

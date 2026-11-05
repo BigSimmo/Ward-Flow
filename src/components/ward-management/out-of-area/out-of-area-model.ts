@@ -10,6 +10,7 @@ import {
 import { travelBand, type TravelBand } from "@/components/ward-management/ward-distance";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import type {
+  Movement,
   HomeRegion,
   TransportLegalStatus,
   TransportProvider,
@@ -364,4 +365,15 @@ export function bedMeetingComparison(admissions: Admission[], units: Unit[], now
     return offset !== null && offset < 0;
   }).length;
   return { at, away: entries.length, passed };
+}
+
+/** Prefer the newest open return; retain the latest closed return for its recorded outcome. */
+export function currentReturnMovement(movements: readonly Movement[], admissionId: string): Movement | undefined {
+  return movements
+    .filter((movement) => movement.sourceAdmissionId === admissionId)
+    .reduce<Movement | undefined>((current, movement) => {
+      if (!current) return movement;
+      if (Boolean(current.closure) !== Boolean(movement.closure)) return movement.closure ? current : movement;
+      return movement.openedAt > current.openedAt ? movement : current;
+    }, undefined);
 }

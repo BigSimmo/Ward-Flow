@@ -52,7 +52,11 @@ function AccountDoor({
     return (
       <FrontDoorStatus
         title="Opening Ward Flow"
-        status={phase === "checking" ? "Checking your sign-in." : "Signed in. Opening your home page."}
+        status={
+          phase === "checking"
+            ? "Checking your sign-in. This usually takes a few seconds."
+            : "Signed in. Opening your home page."
+        }
       />
     );
   return (

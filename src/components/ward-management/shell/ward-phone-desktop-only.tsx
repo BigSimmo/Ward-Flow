@@ -12,6 +12,7 @@ import {
   WARD_HOME_HREF,
   resolveWardScreenTitle,
 } from "@/components/ward-management/ward-nav";
+import { useCanOpenHref } from "./ward-access";
 import { useRevealFocusedInRow } from "./use-reveal-focused-in-row";
 import styles from "./ward-phone-desktop-only.module.css";
 
@@ -40,7 +41,10 @@ export function WardPhoneDesktopOnly() {
   // H-0386: this shell piece mounts on every page, so it also carries the one listener that brings a
   // part-hidden chip in a sideways row fully into view on Tab.
   useRevealFocusedInRow();
-  if (!isPhoneDesktopOnlyPath(pathname) || shownPath === pathname) return null;
+  // WF-12 (live test, 4 Nov 2026): the role check comes first, so a desk the page is closed to sees
+  // "Not part of your role", never "needs a larger screen".
+  const canOpenHref = useCanOpenHref();
+  if (!isPhoneDesktopOnlyPath(pathname) || shownPath === pathname || !canOpenHref(pathname)) return null;
   const title = resolveWardScreenTitle(pathname, units);
 
   return (

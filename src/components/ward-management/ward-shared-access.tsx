@@ -633,7 +633,7 @@ function WardSharedWorkspaceContent({
         status={
           connection.signedIn
             ? "Signed in. Connecting to the shared workspace. This can take up to 15 seconds."
-            : "Checking your sign-in."
+            : "Checking your sign-in. This usually takes a few seconds."
         }
       >
         {stalled && (
