@@ -177,3 +177,23 @@ Every person, ward and figure named anywhere in it is invented.
 <!-- docs-script-refs:historical-end -->
 
 </details>
+
+## Follow-up honesty — 5 Nov 2026 (`fix/wf-followup`)
+
+Source digests for Alerts UI were re-reviewed after wording-only edits; event handlers and roles are unchanged.
+
+**WF-15 / WF-40 / WF-13 (access + Alerts chrome)**
+
+- Closed and wrong-role redirects share the tab title `Not part of your role — Ward Flow` (unknown ≈ forbidden); OwnHomeRedirect says the page is not part of the role before opening home.
+- Access admin Alerts empty copy names Access admin (not Executive) and says alerts are not part of that role.
+- Quiet-ward Alerts empty copy says "Nothing in the network queue" and points nurses to My ward instead of "Nothing needs you".
+
+**WF-16 / WF-45 / WF-28 (Capacity, Statistics, On-call, footer — Worker 2)**
+
+- Capacity hero chip: **Beds freeing today** (was "Discharges due today"); forecast note distinguishes that figure from next-24h discharges; mismatch axis **Spare that fit**.
+- Statistics Wards: occupancy column **In use %** with Occupied caption; Statistics Teams: **"teams that have someone in a bed"** / **"No team patients..."** empty copy.
+- On-call: site bed manager scoped to own site with **"{site} + statewide"** meta.
+- Shell footer: **Demo board clock · scenario set on {demo day}**.
+
+These are display-label honesty fixes. They do not change EVENT_ROLE handlers or journey graph edges.
+

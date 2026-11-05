@@ -1690,13 +1690,13 @@
         },
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
-          "line": 666,
-          "sha256": "5c27633ae1d053028c7643c3bca7dc66a0f4acca050c73290932aa99eca2dd5c"
+          "line": 672,
+          "sha256": "199641e4a792ba0fabaf8027f720e4af0b75898ab79c89becaa0304b51539a90"
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
-          "line": 728,
-          "sha256": "c331eed6d5e88ff5cd3b3f77e34a11f364dfc169e7c0a9741c76598e2d383a49"
+          "line": 727,
+          "sha256": "1d529252a0604557501648cf4e29ee30a1f8d561f3cf3052ed8645c8fcd1ae6b"
         },
         {
           "path": "src/components/ward-management/delays/delays-screen.tsx",
@@ -1968,8 +1968,8 @@
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
-          "line": 713,
-          "sha256": "c331eed6d5e88ff5cd3b3f77e34a11f364dfc169e7c0a9741c76598e2d383a49"
+          "line": 712,
+          "sha256": "1d529252a0604557501648cf4e29ee30a1f8d561f3cf3052ed8645c8fcd1ae6b"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
@@ -4763,13 +4763,13 @@
         },
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
-          "line": 423,
-          "sha256": "5c27633ae1d053028c7643c3bca7dc66a0f4acca050c73290932aa99eca2dd5c"
+          "line": 428,
+          "sha256": "199641e4a792ba0fabaf8027f720e4af0b75898ab79c89becaa0304b51539a90"
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
           "line": 667,
-          "sha256": "c331eed6d5e88ff5cd3b3f77e34a11f364dfc169e7c0a9741c76598e2d383a49"
+          "sha256": "1d529252a0604557501648cf4e29ee30a1f8d561f3cf3052ed8645c8fcd1ae6b"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
@@ -4826,7 +4826,7 @@
       "control": "Daily check completion; generic commitment action when supplied"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4840,8 +4840,8 @@
         },
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
-          "line": 427,
-          "sha256": "5c27633ae1d053028c7643c3bca7dc66a0f4acca050c73290932aa99eca2dd5c"
+          "line": 432,
+          "sha256": "199641e4a792ba0fabaf8027f720e4af0b75898ab79c89becaa0304b51539a90"
         },
         {
           "path": "src/components/ward-management/delays/daily-check-line.tsx",
@@ -4900,7 +4900,7 @@
       "control": "Generic completion-history reopening action when a completed commitment is supplied"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4914,8 +4914,8 @@
         },
         {
           "path": "src/components/ward-management/ward-tasks-drawer.tsx",
-          "line": 431,
-          "sha256": "5c27633ae1d053028c7643c3bca7dc66a0f4acca050c73290932aa99eca2dd5c"
+          "line": 436,
+          "sha256": "199641e4a792ba0fabaf8027f720e4af0b75898ab79c89becaa0304b51539a90"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
@@ -7010,8 +7010,8 @@
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
-          "line": 812,
-          "sha256": "c331eed6d5e88ff5cd3b3f77e34a11f364dfc169e7c0a9741c76598e2d383a49"
+          "line": 816,
+          "sha256": "1d529252a0604557501648cf4e29ee30a1f8d561f3cf3052ed8645c8fcd1ae6b"
         },
         {
           "path": "src/components/ward-management/alerts/ward-broadcast-reducer.ts",
@@ -7138,8 +7138,8 @@
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
-          "line": 837,
-          "sha256": "c331eed6d5e88ff5cd3b3f77e34a11f364dfc169e7c0a9741c76598e2d383a49"
+          "line": 850,
+          "sha256": "1d529252a0604557501648cf4e29ee30a1f8d561f3cf3052ed8645c8fcd1ae6b"
         },
         {
           "path": "src/components/ward-management/shell/ward-broadcast-banner.tsx",
