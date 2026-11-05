@@ -862,7 +862,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                       <div className={styles.sbarCard}>
                         {/* Patient Dossier Header */}
                         {isPhone ? (
-                          /* Phone (v10): "This patient" with the person tile; the facts below carry cohort and sex. */
+                          /* Phone (v10): the person's name and UMRN with the person tile; the facts below carry cohort and sex. */
                           <div className={styles.phonePatientHead}>
                             <span className={styles.phonePatientTile} aria-hidden="true">
                               <UserRound strokeWidth={1.75} size={18} aria-hidden="true" />
@@ -1273,7 +1273,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             open={phoneSheet === "accept" && !blocked}
                             onClose={() => setPhoneSheet(null)}
                             title="Accept in principle"
-                            description={`This patient · ${activeMovement.cohort}, ${activeMovement.security === "Secure" ? "locked" : "open"}`}
+                            description={`${resolvePatientIdentity(activeMovement).formalName} · ${activeMovement.cohort}, ${activeMovement.security === "Secure" ? "locked" : "open"}`}
                             secondary={{ label: "Cancel", onAction: () => setPhoneSheet(null) }}
                             primary={{
                               label: "Accept in principle",
@@ -1289,7 +1289,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                               <dl className={styles.phoneAcceptFacts}>
                                 <div>
                                   <dt>Patient</dt>
-                                  <dd>This patient</dd>
+                                  <dd>{resolvePatientIdentity(activeMovement).formalName}</dd>
                                 </div>
                                 <div>
                                   <dt>Ward</dt>

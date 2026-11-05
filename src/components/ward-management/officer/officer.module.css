@@ -2254,15 +2254,11 @@
     display: none;
   }
 
-  /* Forms read as dots only here, so the "0 of 3" figure is never cut; it stays for screen
-     readers and in the cell's title. */
+  /* Audit B1 (5 Nov 2026): the forms label ("Form 4A needed", "3 to upload") stays visible and
+     wraps under the dots. Hiding it left bare dots, and a title is no help on a touch iPad. It is
+     still a warning, never a block (WLQ-5). */
   .formsCell > span:last-child {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
+    white-space: normal;
   }
 }
 

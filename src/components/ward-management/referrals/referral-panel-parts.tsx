@@ -31,7 +31,7 @@ import { demographicLabel } from "./referral-board-model";
 import { ReferralWorkedOn } from "./referral-worked-on-note";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import { referralPresentation } from "@/components/ward-management/ward-partial-view-presenters";
-import { Button, Count, Icon, buttonClass, cx, durMinutes } from "@/components/wf";
+import { Button, Count, Icon, buttonClass, buttonCountClass, cx, durMinutes } from "@/components/wf";
 import { BED_MEETING_REFERRALS_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 
 import s from "./referral-panel.module.css";
@@ -237,7 +237,8 @@ export function HeroTools({
       >
         <Icon icon={ListOrdered} size={16} />
         <span>Bed meeting</span>
-        <Count n={meetingCount} />
+        {/* Audit A3: the button's own on-hero count style, so it reads like "Next overdue" beside it. */}
+        <Count n={meetingCount} className={buttonCountClass} />
       </Link>
     </div>
   );

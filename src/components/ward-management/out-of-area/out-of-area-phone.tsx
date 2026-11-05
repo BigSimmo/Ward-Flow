@@ -485,7 +485,8 @@ export function OutOfAreaPhone({
             className={styles.phoneBarMain}
             onClick={() => open(nextUp.entry.admission.id)}
           >
-            Plan next return <span className={styles.phoneBarName}>{nextUp.name.split(",")[0]}</span>
+            {/* Names in full (audit B5): the surname alone could match two people. */}
+            Plan next return <span className={styles.phoneBarName}>{nextUp.name}</span>
           </Button>
         ) : (
           <Button
