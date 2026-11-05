@@ -53,6 +53,7 @@ import styles from "./ward-global-search.module.css";
 import {
   needsYouMeta,
   censusRowItem,
+  recentViewItem,
   smartSearchGroups,
   closingFirst,
   type HelpPreviewSource,
@@ -477,6 +478,7 @@ export function WardGlobalSearch({
           const row = census?.rows.find((candidate) => candidate.kind === "admission" && candidate.key === recent.id);
           return row ? [censusRowItem(row)] : [];
         }
+        if (recent.kind === "view") return recentViewItem(recent.id, canOpenHref);
         let query = recent.id;
         if (recent.kind === "person") {
           const patient = patients.find((candidate) => candidate.id === recent.id);
@@ -519,6 +521,7 @@ export function WardGlobalSearch({
       now,
       plannedAdmissions,
       admissions,
+      canOpenHref,
     ],
   );
 
