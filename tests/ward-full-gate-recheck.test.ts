@@ -4,6 +4,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "no
 import { tmpdir } from "node:os";
 import {
   executedAssertionCount,
+  suiteExecutionSummary,
   mergeGateReports,
   planFullGateRecheck,
   runFullGateBatches,
@@ -68,6 +69,32 @@ describe("a bounded full gate recheck", () => {
     prior.report.numTotalTests = 2500;
     prior.report.testResults[0].assertionResults = [{ status: "pending" }];
     expect(planFullGateRecheck({ ...input(), receipt: prior }).eligible).toBe(false);
+  });
+
+  it("records executed and skipped populations separately for every named suite", () => {
+    const report = {
+      testResults: [
+        {
+          ...suite(names[0]),
+          assertionResults: [
+            { status: "passed" },
+            { status: "failed" },
+            { status: "skipped" },
+            { status: "todo" },
+            { status: "unknown" },
+          ],
+        },
+        { ...suite(names[1]), assertionResults: [{ status: "pending" }] },
+        { ...suite(names[2], "failed"), assertionResults: [] },
+      ],
+    };
+    const expected = [
+      { file: names[0], status: "passed", executed: 2, passed: 1, failed: 1, skipped: 1, todo: 1, unknown: 1 },
+      { file: names[1], status: "passed", executed: 0, passed: 0, failed: 0, skipped: 1, todo: 0, unknown: 0 },
+      { file: names[2], status: "failed", executed: 0, passed: 0, failed: 0, skipped: 0, todo: 0, unknown: 0 },
+    ];
+    expect(suiteExecutionSummary(report, root)).toEqual(expected);
+    expect(withGateRunResult(report, names, root, { status: 1 }).wardGateRuns[0].suites).toEqual(expected);
   });
 
   it("requires each selected policy suite to execute a passed assertion while permitting legitimate skips", () => {
