@@ -6820,7 +6820,7 @@
         {
           "path": "src/components/ward-management/out-of-area/out-of-area-board.tsx",
           "line": 406,
-          "sha256": "8b758fa4254f377c8f5f989f93d17884d9a9f4e3886efa5a514dc2ac0ef13c35"
+          "sha256": "90278816b4121ec457a572596a54b6d0a3bfefb6a1f875154651959e8e97a5d7"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
