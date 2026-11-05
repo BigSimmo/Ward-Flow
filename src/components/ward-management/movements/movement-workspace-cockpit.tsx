@@ -1904,7 +1904,7 @@ export function MovementWorkspaceCockpit({
                   </p>
                   {movement.admissionId !== undefined ? (
                     <p className={styles.actionSay} data-testid="ward-console-step-back-still-holding">
-                      This movement is still holding a ward bed. Correcting the stage leaves that bed pulled — use{" "}
+                      This movement still has a ward bed pulled. Correcting the stage leaves that bed pulled — use{" "}
                       <strong>Release the pulled bed</strong> if the ward should have it back.
                     </p>
                   ) : null}

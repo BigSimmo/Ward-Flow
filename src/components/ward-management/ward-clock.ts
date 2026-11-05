@@ -308,7 +308,11 @@ export function daysBetween(from: Instant, to: Instant): number {
  * own by switching to a day count; every other screen kept calling this and kept the defect. Fixing
  * it here is what makes a wait longer than a day readable everywhere at once.
  */
-export function splitDuration(totalMinutes: number) {
+export function splitDuration(rawMinutes: number) {
+  // Round first: an average (a total divided by a count) is rarely whole, and `% 60` passes the
+  // fraction straight through ("4h 57.88659793814435m"). Rounding before the split also means a
+  // value like 59.6 becomes "1h 00m", never "60m".
+  const totalMinutes = Math.round(rawMinutes);
   if (totalMinutes >= MINUTES_PER_DAY) {
     const days = Math.floor(totalMinutes / MINUTES_PER_DAY);
     const hours = Math.floor((totalMinutes % MINUTES_PER_DAY) / 60);

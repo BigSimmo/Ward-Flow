@@ -93,8 +93,8 @@ import { CommunityScreenWaitingTab } from "./community-screen-waiting-tab";
 import { CommunityScreenInBedTab } from "./community-screen-in-bed-tab";
 import { CommunityScreenBackTab } from "./community-screen-back-tab";
 import { CommunityScreenCaseloadTab } from "./community-screen-caseload-tab";
-import { MIDLAND_DEMO_TEAM } from "./team-2026/midland-demo";
-import { recordMidlandContact } from "./team-2026/midland-decisions";
+import { MIDLAND_DEMO_TEAM, REFERRALS as MIDLAND_REFERRALS } from "./team-2026/midland-demo";
+import { openReferrals, recordMidlandContact, useMidlandDecisions } from "./team-2026/midland-decisions";
 import { MidlandTeamSections } from "./team-2026/midland-sections";
 import {
   CommunityScreenTransportBookDialog,
@@ -447,6 +447,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   // The live Midland page carries the locked mock-up's demo team (Q126, Q132: Midland only). Supplied
   // records, and the older demonstration cohort, keep their own lists.
   const midlandDemo = !hasExplicitProps && !demonstration && MIDLAND_DEMO_TEAM.test(teamId);
+  const midlandDecisions = useMidlandDecisions();
 
   const { demoTeamReferrals, demoVisibleReferrals, demoVisibleInpatients, demoVisibleEgress, demoVisibleCaseload } =
     useCommunityScreenDemoLists({ teamId, triageFilter, inpatientFilter, egressFilter, caseloadFilter });
@@ -798,7 +799,14 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   // Use the same unfiltered queue as the rendered list. Priority chips narrow visible rows,
   // while the tab and urgent total continue to describe the whole queue.
   const usesDemoReferrals = isDemoMode && !hasAnyReferralsForTeam;
-  const waitingCount = usesDemoReferrals ? demoTeamReferrals.length : waitingReferrals.length;
+  // Audit B2 (5 Nov 2026): the Midland page lists the mock-up team's referrals, so its hero, tab and
+  // phone figures count those same open referrals, and a decision lowers every count at once.
+  const midlandToAnswer = openReferrals(MIDLAND_REFERRALS, midlandDecisions).length;
+  const waitingCount = midlandDemo
+    ? midlandToAnswer
+    : usesDemoReferrals
+      ? demoTeamReferrals.length
+      : waitingReferrals.length;
   const urgentAnswerCount = usesDemoReferrals
     ? demoTeamReferrals.filter((referral) => referral.urgency === 1 || referral.urgency === 2).length
     : urgentWaitingCount;

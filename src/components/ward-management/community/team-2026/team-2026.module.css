@@ -107,11 +107,16 @@ select.ctl {
 .sub .mono {
   color: var(--wf-ink-2);
 }
+/* Staff names in full, wrapping (DS §4 Names, Q226): the avatar keeps its size beside them. */
 .cm {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  white-space: nowrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cm > .av {
+  flex: none;
 }
 .av {
   width: 24px;
