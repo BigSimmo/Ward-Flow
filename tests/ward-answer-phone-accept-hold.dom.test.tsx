@@ -2,7 +2,7 @@
 // principle sheet's Pull time limit starts with neither choice pressed, and the sheet's Accept waits
 // for one and says why. Synthetic seed data only.
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/components/wf", async (importOriginal) => ({
@@ -59,5 +59,34 @@ describe("ward answer phone sheet: the pull time limit starts with nothing chose
     const accepts = dispatch.mock.calls.map(([event]) => event).filter((event) => event.type === "ACCEPT_IN_PRINCIPLE");
     expect(accepts).toHaveLength(1);
     expect(accepts[0]).toMatchObject({ movementId: id, extendedHold: true });
+  });
+
+  it("names the person being accepted in the sheet, as the desktop dialog does (audit D2)", () => {
+    const seen: { current?: ReturnType<typeof useWardFlow> } = {};
+    function Capture({ children }: { children: ReactNode }) {
+      const state = useWardFlow();
+      useEffect(() => {
+        seen.current = state;
+      });
+      return <>{children}</>;
+    }
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Capture>
+          <WardAnswerView unitId="sjgm-adult-open" />
+        </Capture>
+      </WardFlowProvider>,
+    );
+    const id = screen.getByTestId(/^ward-incoming-/).dataset.testid!.replace("ward-incoming-", "");
+    const movement = seen.current!.movements.find((candidate) => candidate.id === id)!;
+    const name = seen.current!.resolvePatientIdentity(movement).formalName;
+    fireEvent.click(screen.getByTestId(`ward-accept-${id}`));
+    const sheet = screen.getByTestId(`ward-accept-sheet-${id}`);
+    expect(sheet.textContent).not.toContain("This patient");
+    const fact = within(sheet).getByText("Patient").nextElementSibling;
+    expect(fact?.textContent).toBe(name);
+    expect(screen.getByRole("dialog", { name: "Accept in principle" })).toHaveAccessibleDescription(
+      expect.stringContaining(name),
+    );
   });
 });

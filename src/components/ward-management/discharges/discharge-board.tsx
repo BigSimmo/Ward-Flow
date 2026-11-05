@@ -984,7 +984,11 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                         </span>
                                       ) : (
                                         <span className={pageStyles.outBand}>
-                                          {BAND_LABELS[releaseBand(release, now) as ReleaseBand]}
+                                          {/* Audit A2 (5 Nov 2026): as in the list cell, a discharge that has
+                                              happened says "Left", never "Now". */}
+                                          {release.state === "discharged"
+                                            ? "Left"
+                                            : BAND_LABELS[releaseBand(release, now) as ReleaseBand]}
                                         </span>
                                       )}
                                       <span className={pageStyles.outWhen}>
