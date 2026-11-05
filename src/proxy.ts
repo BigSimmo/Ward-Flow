@@ -164,11 +164,35 @@ export async function proxy(request: NextRequest) {
   const door = await frontDoorVerdict(request);
   if (door) return withCsp(door);
 
+  // A1K-05 and H-0195 (Josh, 27 Oct 2026): a malformed Ward Flow address is a real 404. Next fails
+  // decoding a bad percent-encoding in a dynamic segment before the page runs (a bare 500), so
+  // render the app's not-found page here instead, while a status can still be set.
+  if (hasMalformedWardFlowEncoding(pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = MALFORMED_ADDRESS_REWRITE;
+    url.search = "";
+    return withCsp(NextResponse.rewrite(url, { status: 404, request: { headers: requestHeadersWithNonce() } }));
+  }
+
   if (shouldBlockProductionMockups(pathname)) {
     return withCsp(new NextResponse(null, { status: 404 }));
   }
 
   return withCsp(NextResponse.next({ request: { headers: requestHeadersWithNonce() } }));
+}
+
+/** No route answers this path, so a rewrite to it renders the app's not-found page with a 404. */
+const MALFORMED_ADDRESS_REWRITE = "/ward-flow-malformed-address";
+
+/** True for a /ward-flow path holding a percent-encoding that does not decode (for example `%E0%A4`). */
+export function hasMalformedWardFlowEncoding(pathname: string): boolean {
+  if (pathname !== "/ward-flow" && !pathname.startsWith("/ward-flow/")) return false;
+  try {
+    for (const segment of pathname.split("/")) decodeURIComponent(segment);
+    return false;
+  } catch {
+    return true;
+  }
 }
 
 /**
