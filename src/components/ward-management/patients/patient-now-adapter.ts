@@ -135,8 +135,8 @@ function movementNextSteps(
   if (movement.stage === "handover_ready") {
     return [
       {
-        w: "Book transport",
-        d: "Coordinate transport from the ED.",
+        w: "Send the patient",
+        d: "Transport is booked or not needed. Coordinate collection from the ED.",
         tone: "good" as const,
       },
     ];
