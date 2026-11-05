@@ -4975,8 +4975,8 @@
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
-          "line": 263,
-          "sha256": "f2e59032fd9c7ddd30ae2a082e4256e489946f42f1d3cfa355ddd3b3a1a76efc"
+          "line": 268,
+          "sha256": "002918ecd56f5d0f951247f9cbc1b96adccea94e8d024b3a82cb0ed46b6dbebc"
         },
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
@@ -5032,8 +5032,8 @@
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
-          "line": 196,
-          "sha256": "f2e59032fd9c7ddd30ae2a082e4256e489946f42f1d3cfa355ddd3b3a1a76efc"
+          "line": 197,
+          "sha256": "002918ecd56f5d0f951247f9cbc1b96adccea94e8d024b3a82cb0ed46b6dbebc"
         }
       ]
     }
@@ -5061,7 +5061,7 @@
     ],
     "screen": {
       "screen": "demo-reset/ward-demo-reset.tsx; tools/ward-demo-panel.tsx",
-      "control": "The scenario's own name"
+      "control": "Both pickers ask before replacing the synthetic world. The separate Demo reset waits for the command outcome, keeps choices unavailable while it is pending, and reports a current accepted replacement as complete. Failed, refused, cancelled or unknown completion is not reported as success, and obsolete or unmounted results do not announce into a replacement workspace."
     },
     "review": {
       "reviewedOn": "2026-11-05",
@@ -5078,13 +5078,13 @@
         },
         {
           "path": "src/components/ward-management/demo-reset/ward-demo-reset.tsx",
-          "line": 84,
-          "sha256": "d248fe079785d32b153a148d2cd444aa7c6170622e8f5bbedfe70aad1e8d0376"
+          "line": 131,
+          "sha256": "8e2f79f5ec7d9a3e37df33fde6bad92cafe4a8412191b49c10751dd2bf600c9e"
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
-          "line": 196,
-          "sha256": "f2e59032fd9c7ddd30ae2a082e4256e489946f42f1d3cfa355ddd3b3a1a76efc"
+          "line": 197,
+          "sha256": "002918ecd56f5d0f951247f9cbc1b96adccea94e8d024b3a82cb0ed46b6dbebc"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
