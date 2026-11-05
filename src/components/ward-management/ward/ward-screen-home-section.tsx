@@ -3,6 +3,7 @@
 // The ward screen's Home tab section. Split out of `ward-screen.tsx` (18 October 2026) to keep that
 // file under the line cap.
 
+import { Clock, LayoutPanelLeft } from "lucide-react";
 import { capacityConfirmer } from "@/components/ward-management/capacity/capacity-confirmer";
 import type { FormEvent } from "react";
 import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
@@ -350,10 +351,7 @@ export function WardScreenHomeSection({
             <div className={styles.commandHeader} data-ward-primitive="panel-header">
               <div className={styles.commandTitleGroup}>
                 <h2 className={styles.commandMainTitle}>
-                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                    <rect x="2" y="3" width="12" height="10" rx="1" />
-                    <path d="M6 3v10M2 8h4" />
-                  </svg>
+                  <LayoutPanelLeft size={16} strokeWidth={1.75} aria-hidden="true" />
                   <span>Ward figures, right now</span>
                 </h2>
                 <span className={styles.commandSubTitle}>Bed distribution · {unit.beds} Staffed Beds</span>
@@ -437,10 +435,7 @@ export function WardScreenHomeSection({
 
               {pendingPreparation > 0 ? (
                 <div className={styles.pendingCleanBanner} data-testid="ward-unit-beds-pending">
-                  <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="8" cy="8" r="6" />
-                    <path d="M8 5v3.5l2 1" />
-                  </svg>
+                  <Clock size={16} strokeWidth={1.75} aria-hidden="true" />
                   <span>
                     <strong>
                       {pendingPreparation} ready {pendingPreparation === 1 ? "bed" : "beds"} at {unit.name}{" "}

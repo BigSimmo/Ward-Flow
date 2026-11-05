@@ -469,7 +469,7 @@
 
 .notice {
   margin-top: 0.75rem;
-  border-left: 0.1875rem solid var(--ward-blue);
+  border-radius: var(--radius-sm);
   background: var(--ward-blue-soft);
   padding: var(--ward-space-10) var(--ward-space-12);
   color: var(--ward-text);

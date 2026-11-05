@@ -271,37 +271,7 @@
   color: var(--wf-ink-2);
 }
 
-.svcDot {
-  --svc: var(--wf-svc-statewide);
-  width: 8px;
-  height: 8px;
-  border-radius: var(--wf-r-pill);
-  background: var(--svc);
-}
-
-.svcDot[data-service="north"] {
-  --svc: var(--wf-svc-north);
-}
-
-.svcDot[data-service="south"] {
-  --svc: var(--wf-svc-south);
-}
-
-.svcDot[data-service="east"] {
-  --svc: var(--wf-svc-east);
-}
-
-.svcDot[data-service="wachs"] {
-  --svc: var(--wf-svc-wachs);
-}
-
-.svcDot[data-service="cahs"] {
-  --svc: var(--wf-svc-cahs);
-}
-
-.svcDot[data-service="private"] {
-  --svc: var(--wf-svc-private);
-}
+/* Design audit 4 (D20): no health-service colour dots in this list; service colours are for maps and legends. */
 
 .site {
   border: 1px solid var(--wf-line-2);

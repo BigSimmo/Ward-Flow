@@ -1,5 +1,6 @@
 "use client";
 
+import { Clock, ArrowRight } from "lucide-react";
 import React from "react";
 import { Button, Dialog } from "@/components/wf";
 import styles from "./ward-arrivals-corridor.module.css";
@@ -286,9 +287,7 @@ export function WardArrivalsCorridor({
                     {patientInfo.umrn ? <span className={styles.patientUmrn}>UMRN: {patientInfo.umrn}</span> : null}
                   </div>
                   <div className={styles.patientOrigin}>
-                    <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M2 8h12M10 4l4 4-4 4" />
-                    </svg>
+                    <ArrowRight size={13} strokeWidth={1.75} aria-hidden="true" />
                     <span>
                       Origin: <strong>{originPlaceLabel(movement)}</strong>
                     </span>
@@ -389,10 +388,7 @@ export function WardArrivalsCorridor({
                     />
                   </div>
                   <div className={styles.corridorSubtext}>
-                    <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="8" cy="8" r="6" />
-                      <path d="M8 5v3.5l2 1" />
-                    </svg>
+                    <Clock size={12} strokeWidth={1.75} aria-hidden="true" />
                     <span>
                       {movement.stage === "pulled" && movement.pullExpiresAt !== undefined
                         ? `Bed pull ${formatRemaining(minutesUntil(movement.pullExpiresAt, now))}`
