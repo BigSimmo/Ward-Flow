@@ -392,8 +392,9 @@
   margin-left: auto;
 }
 
+/* Review 5 Nov 2026: 12.5rem cut the placeholder to "Name, UMRN or war". */
 .searchBox {
-  width: 12.5rem;
+  width: 14.5rem;
 }
 
 .hlLine {

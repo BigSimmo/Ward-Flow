@@ -80,6 +80,17 @@ export const WARD_ADMISSIONS_ANCHOR: Instant = 10 * 60 + 42;
 const PULL_TO_ARRIVAL_MINUTES = 5 * 60;
 
 /**
+ * Review 5 Nov 2026: one fixed gap made Statistics read "average, shortest and longest 5h 00m" across
+ * every record, which looks like a broken measure. Each arrived record now takes its own invented gap,
+ * 2h to 8h in 15 minute steps, picked from its id so the seed stays the same on every load.
+ */
+function seededPullToArrivalMinutes(key: string): number {
+  let hash = 0;
+  for (const char of key) hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  return 120 + (hash % 25) * 15;
+}
+
+/**
  * A part-day offset added to every arrival so a stay of `n` days lands squarely inside day `n`
  * rather than on the boundary. Exactly-on-the-boundary arrivals would make the band a seeded stay
  * falls into depend on rounding, and `STAY_BANDS`'s ceilings are exclusive.
@@ -332,7 +343,7 @@ function unitOccupants(
       homeRegion,
       tentativeDiagnosis,
       state: "occupied",
-      pulledAt: arrivedAt - PULL_TO_ARRIVAL_MINUTES,
+      pulledAt: arrivedAt - seededPullToArrivalMinutes(suffix),
       arrivedAt,
       awayAtEmergencyDepartmentSince:
         extras?.awayAtEdHoursAgo === undefined ? null : WARD_ADMISSIONS_ANCHOR - extras.awayAtEdHoursAgo * 60,
@@ -422,7 +433,7 @@ function departed(departure: Departure): Admission {
     homeRegion: departure.homeRegion,
     tentativeDiagnosis: departure.tentativeDiagnosis,
     state: "departed",
-    pulledAt: arrivedAt - PULL_TO_ARRIVAL_MINUTES,
+    pulledAt: arrivedAt - seededPullToArrivalMinutes(departure.id),
     arrivedAt,
     awayAtEmergencyDepartmentSince: null,
     expectedDischargeAt: leftAt,

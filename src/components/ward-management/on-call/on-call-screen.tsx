@@ -23,6 +23,7 @@ import {
   Icon,
   LiveChip,
   Menu,
+  PhoneFilterFold,
   PillTabs,
   SearchField,
   Sheet,
@@ -665,6 +666,22 @@ export function OnCallScreen() {
                 menu beside it rather than as two large buttons above it. */}
             <div className={styles.phoneSearchRow}>
               {search}
+              {/* Josh review (4 Nov 2026): By role, Answering and Has email fold into one Filter
+                  button on the search line, so the directory starts a row higher. */}
+              <PhoneFilterFold
+                count={
+                  (groupBy === "role" && tab === "hospitals" ? 1 : 0) +
+                  (highlight === "now" || highlight === "email" ? 1 : 0)
+                }
+                title="Show"
+                description="Highlights never hide a line."
+                data-testid="ward-on-call-filter-fold"
+              >
+                <div className={styles.phoneChips}>
+                  {groupByChip}
+                  {phoneHighlightChips}
+                </div>
+              </PhoneFilterFold>
               <Menu
                 label="On-call tools"
                 align="end"
@@ -693,10 +710,6 @@ export function OnCallScreen() {
                 onChange={setTab}
                 fill
               />
-            </div>
-            <div className={styles.phoneChips}>
-              {groupByChip}
-              {phoneHighlightChips}
             </div>
           </div>
           <PhoneDirectory

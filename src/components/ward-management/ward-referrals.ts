@@ -287,13 +287,18 @@ export function referralDestinationLabel(destination: ReferralDestination): stri
     // these lines with their own em dash — "Also refused — <label>: <reason>" — so a dash here
     // produced "Also refused — Emergency department — For psychiatric review: ...", where the
     // two dashes carry different meanings and the reader has to guess which clause is which.
-    return `${referralDestinationKindLabel(destination.kind)} (${referralPurposeLabel(destination.purpose)})`;
+    return `${referralDestinationKindLabel(destination.kind)} (${inParentheses(referralPurposeLabel(destination.purpose))})`;
   }
   // D-74: a community arm says what it is for too, so a follow-up is never read as an admission ask.
   if (destination.kind === "community_team") {
-    return `${referralDestinationKindLabel(destination.kind)} (${communityReferralPurposeLabel(communityPurposeOf(destination))})`;
+    return `${referralDestinationKindLabel(destination.kind)} (${inParentheses(communityReferralPurposeLabel(communityPurposeOf(destination)))})`;
   }
   return referralDestinationKindLabel(destination.kind);
+}
+
+/** Review 5 Nov 2026: a purpose read mid-line takes a small first letter: "(for psychiatric review)". */
+function inParentheses(label: string): string {
+  return label.charAt(0).toLowerCase() + label.slice(1);
 }
 
 /** D-74: a community arm's purpose; an arm saved before D-74 reads as follow-up. */

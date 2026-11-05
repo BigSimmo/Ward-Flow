@@ -88,10 +88,12 @@ import { ArrangeSwitch, type ArrangeBy } from "./alerts-view-switch";
 import homeStyles from "@/components/ward-management/coordinator/home-list.module.css";
 import { alertChecks } from "./alerts-checks";
 import { useAlertsHistory } from "./alerts-history";
-import { AlertsHero, type HeroPill } from "./alerts-hero";
+import { AlertsHero } from "./alerts-hero";
 import { AcceptedPullRows, useAcceptedPull } from "@/components/ward-management/coordinator/accepted-pull-rows";
+import { AlertPullPhoneRows } from "./alerts-pull-phone-rows";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
-import { groupSameKind, KindGroup, OwnerMenu } from "./alerts-queue-groups";
+import { groupSameKind, KindGroup } from "./alerts-queue-groups";
+import { PhoneOwnerMenu } from "./alerts-phone-owner";
 import { AlertsSidePanelEmpty, CheckingList, ChecksCard, ChecksChip, ownWardName } from "./alerts-checking";
 import {
   AlertsBroadcastsPanel,
@@ -279,7 +281,6 @@ function AlertsWorkspace() {
   const [tab, setTab] = useState<AlertsTab>("now");
   useAlertsHashTab(setTab);
   const [arrangeBy, setArrangeBy] = useState<ArrangeBy>("urgency");
-  const [pill, setPill] = useState<HeroPill | null>(null);
   const [ownerHighlight, setOwnerHighlight] = useState<string | null>(null);
   const [watchHighlight, setWatchHighlight] = useState<AlertKind | null>(null);
   const [chosenId, setChosenId] = useState<string | undefined>(undefined);
@@ -378,7 +379,14 @@ function AlertsWorkspace() {
       if (draft.audience) setBroadcastAudience(draft.audience);
       setBroadcastModalOpen(true);
     },
-    [setBroadcastAudience, setBroadcastTitle, setBroadcastMessage, setBroadcastSeverity, setBroadcastDurationMinutes],
+    [
+      setBroadcastAudience,
+      setBroadcastTitle,
+      setBroadcastMessage,
+      setBroadcastSeverity,
+      setBroadcastDurationMinutes,
+      setBroadcastModalOpen,
+    ],
   );
   const { clearDraft: clearBroadcastDraft } = useDirtyStateGuard({
     key: "alerts-broadcast-directive",
@@ -494,14 +502,11 @@ function AlertsWorkspace() {
   );
   const isHighlighted = useCallback(
     (entry: Omit<QueueEntry, "highlighted">) =>
-      (pill === "act" && entry.group === "act") ||
-      (pill === "wait" && entry.group === "wait") ||
-      (pill === "mine" && entry.mine) ||
       (ownerHighlight !== null && entry.owner === ownerHighlight) ||
       (watchHighlight !== null && alertKindOf(entry.item.id) === watchHighlight),
-    [pill, ownerHighlight, watchHighlight],
+    [ownerHighlight, watchHighlight],
   );
-  const highlightOn = pill !== null || ownerHighlight !== null || watchHighlight !== null;
+  const highlightOn = ownerHighlight !== null || watchHighlight !== null;
   const toEntries = useCallback(
     (items: InboxItem[], snoozed: boolean): QueueEntry[] =>
       items
@@ -538,16 +543,25 @@ function AlertsWorkspace() {
   const { actNow: actCount, outstanding } = alertsNowFigures(inbox, toPull.length); // Q260: as the bell and Menu
   const pull = useAcceptedPull();
   const pullRows =
-    toPull.length > 0 ? (
-      <AcceptedPullRows
+    toPull.length === 0 ? null : isPhone ? (
+      // Visual review: on a phone these rows take the act-now alert row's layout and its action.
+      <AlertPullPhoneRows
         toPull={toPull}
         now={now}
-        phone={isPhone}
         testId="ward-alerts-accepted-to-pull"
         pulling={pull.pulling}
         setPulling={pull.setPulling}
       />
-    ) : null;
+    ) : (
+      <AcceptedPullRows
+        toPull={toPull}
+        now={now}
+        phone={false}
+        testId="ward-alerts-accepted-to-pull"
+        pulling={pull.pulling}
+        setPulling={pull.setPulling}
+      />
+    );
   const highlightedCount = allEntries.filter((entry) => entry.highlighted).length;
   const anyHighlight = highlightOn;
   const maxAge = Math.max(
@@ -647,7 +661,7 @@ function AlertsWorkspace() {
         return { ...request, logSequence: prevPending ? Math.max(tail, prev.logSequence + 1) : tail };
       });
     },
-    [state.eventLog],
+    [state.eventLog, setBroadcastRequest, setBroadcastSuccessNotice, setActionRequest],
   );
   const nameOf = useCallback(
     (item: InboxItem) => allEntries.find((entry) => entry.item.id === item.id)?.subject.displayName ?? "this patient",
@@ -890,9 +904,7 @@ function AlertsWorkspace() {
     );
   };
 
-  const togglePill = (next: HeroPill) => setPill((current) => (current === next ? null : next));
   const clearHighlights = () => {
-    setPill(null);
     setOwnerHighlight(null);
     setWatchHighlight(null);
   };
@@ -1202,15 +1214,10 @@ function AlertsWorkspace() {
   ];
   const shownTab: AlertsTab = tab === "broadcasts" && !showBroadcasts ? "now" : tab;
 
-  // Audit 1 (CS-15, Josh 20 Oct): an alert shown because it is first in line, not because somebody
-  // chose it, says so above its actions.
+  // Josh review (4 Nov 2026): the panel opens on the patient header. The CS-15 "First in line, not
+  // chosen yet" line above it is gone; the row stays marked in the list.
   const selectedPanel = selected ? (
     <>
-      {chosen ? null : (
-        <p className={styles.confirmNote} data-testid="ward-alerts-first-in-line">
-          First in line, not chosen yet. Check the name before you act.
-        </p>
-      )}
       <AlertDetail
         key={selected.item.id}
         item={selected.item}
@@ -1252,6 +1259,15 @@ function AlertsWorkspace() {
     setWatchHighlight((current) => (current === kind ? null : (kind ?? null)));
   };
   // A quiet ward's checks sit under "Checked for <ward>" or in the Checking sheet, already titled.
+  const phoneOwner = (
+    <PhoneOwnerMenu
+      owners={namedOwners}
+      coordDesk={coordDesk}
+      value={ownerHighlight}
+      onChange={setOwnerHighlight}
+      entries={allEntries}
+    />
+  );
   const checkingList = (
     <CheckingList checks={checks} watchHighlight={watchHighlight} onWatch={onWatch} showLabel={!quietWard} />
   );
@@ -1259,19 +1275,16 @@ function AlertsWorkspace() {
   const checkingFoot = quietWard ? undefined : <ChecksChip checks={checks}>{checkingList}</ChecksChip>;
   // Alerts redesign (1 Nov 2026): on a desktop the Today track and the at-a-glance line sit in the
   // band, in place of the Today card, the band's broadcast button and the Checking row.
-  const liveUntil = activeBroadcast ? activeBroadcast.expiresAt : undefined;
   const todayBand =
     isPhone || quietWard ? undefined : (
       <TodayBand
         now={now}
         selectedId={selected?.item.id}
         onPick={pickToday}
-        raised={today.raised}
-        acted={today.acted}
-        broadcasts={today.broadcasts}
+        {...today}
         noTimeCount={countedActive.filter((entry) => entry.raised === undefined).length}
         checking={<div className={styles.checkingFootWide}>{checkingFoot}</div>}
-        liveBroadcast={liveUntil !== undefined ? { until: liveUntil } : undefined}
+        liveBroadcast={activeBroadcast ? { until: activeBroadcast.expiresAt } : undefined}
         onOpenBroadcast={openLiveBroadcast}
       />
     );
@@ -1290,8 +1303,6 @@ function AlertsWorkspace() {
           live={live}
           actCount={actCount}
           waitEntries={waitEntries}
-          pill={pill}
-          togglePill={togglePill}
           yoursCount={yoursCount}
           handleNext={handleNext}
           broadcastTriggerRef={broadcastTriggerRef}
@@ -1343,26 +1354,15 @@ function AlertsWorkspace() {
 
               {shownTab === "now" ? (
                 <TabPanel idPrefix="alerts" id="now">
-                  {quietWard ? null : <OpenFilters lens={lens} />}
+                  {quietWard ? null : (
+                    <OpenFilters lens={lens} end={isPhone && wardName === undefined ? phoneOwner : undefined} />
+                  )}
                   {/* Nurse in charge: one ward needs no arrange-by or owner lens (Josh, 31 Oct 2026, answer 17). */}
                   {wardName !== undefined || !anyHighlight ? null : (
                     <HighlightNote count={highlightedCount} of={allEntries.length} onClear={clearHighlights} />
                   )}
                   {isPhone ? (
                     <>
-                      {/* The desktop's owner menu, not a row of chips that ran off the screen. Yours is a
-                          hero figure on phone, so the menu lists the other owners. */}
-                      {wardName === undefined && namedOwners.some((owner) => ownerShort(owner, coordDesk) !== "You") ? (
-                        <div className={parts.phoneOwner}>
-                          <OwnerMenu
-                            owners={namedOwners.filter((owner) => ownerShort(owner, coordDesk) !== "You")}
-                            value={ownerHighlight}
-                            onChange={setOwnerHighlight}
-                            labelFor={(owner) => ownerShort(owner, coordDesk)}
-                            countFor={(owner) => allEntries.filter((entry) => entry.owner === owner).length}
-                          />
-                        </div>
-                      ) : null}
                       <div className={styles.phoneList}>
                         {filteredNothing ? <FilteredEmpty lens={lens} /> : urgencyView}
                       </div>

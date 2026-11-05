@@ -327,7 +327,7 @@ async function settledSweep(page: Page): Promise<Finding[]> {
 const PHONE_TARGET_BASELINE: Readonly<Record<string, number>> = {
   "/ward-flow": 11,
   "/ward-flow/waiting": 2,
-  "/ward-flow/movements": 5,
+  "/ward-flow/movements": 4,
   "/ward-flow/ward/rph-adult-secure": 1,
   "/ward-flow/board/rph-adult-secure": 2,
   "/ward-flow/discharges": 2,

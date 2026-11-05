@@ -471,6 +471,17 @@
   color: var(--wf-ink-2);
 }
 
+/* A missing UMRN reads as words, not in the mono ID style. */
+.umrnMissing {
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  color: var(--wf-on-hero-ink);
+}
+
+.umrnQuietMissing {
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-2);
+}
+
 /* One line on a wide screen: the controls shrink, then a crowded tablet bar wraps whole controls. */
 .filterBar {
   display: flex;

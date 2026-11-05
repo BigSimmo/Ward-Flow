@@ -105,7 +105,9 @@ export function PatientChronologySearch({
               }}
             >
               <span className={start.personName}>{nameOf(patient)}</span>
-              <span className={start.personUmrn}>{patient.umrn || "UMRN not recorded"}</span>
+              <span className={patient.umrn ? start.personUmrn : start.personUmrnMissing}>
+                {patient.umrn || "UMRN not recorded"}
+              </span>
               {patient.id === chosenId ? <Check size={16} aria-label="Open now" /> : null}
             </li>
           ))}

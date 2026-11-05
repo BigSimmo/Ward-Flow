@@ -381,7 +381,7 @@ function EdsIndexView({
               tone={positive(over24) ? "warning" : undefined}
             />
             <HeroStat value={shown(unplaced)} label="No ward yet" />
-            <HeroStat value={shown(urgent)} label="Urgent" />
+            <HeroStat value={shown(urgent)} label="Flagged urgent" />
           </>
         ),
       }}

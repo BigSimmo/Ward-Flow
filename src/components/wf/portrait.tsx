@@ -43,6 +43,8 @@ export type PortraitGroup = {
   tone?: WfTone;
   /** One short reason line, e.g. "Ward to clear". */
   note?: string;
+  /** Start folded, as the page's desktop and phone layouts fold the same group (e.g. Waiting's "Under 8 hours"). */
+  folded?: boolean;
   rows: PortraitRowData[];
 };
 
@@ -57,9 +59,10 @@ export function PortraitList({
   label: string;
   footer?: ReactNode;
 }) {
-  const [folded, setFolded] = useState<ReadonlySet<string>>(() => new Set());
+  // The ids the person has toggled; a group's fold is its default, flipped once per toggle.
+  const [toggled, setToggled] = useState<ReadonlySet<string>>(() => new Set());
   const toggle = (id: string) =>
-    setFolded((current) => {
+    setToggled((current) => {
       const next = new Set(current);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -70,7 +73,7 @@ export function PortraitList({
     <section className={styles.list} aria-label={label} data-testid="wf-portrait-list">
       {groups.map((group) => {
         if (group.rows.length === 0) return null;
-        const isFolded = folded.has(group.id);
+        const isFolded = toggled.has(group.id) !== Boolean(group.folded);
         return (
           <div key={group.id} className={styles.group}>
             <button

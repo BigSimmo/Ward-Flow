@@ -4,7 +4,6 @@
 // file under the line cap.
 
 import { capacityConfirmer } from "@/components/ward-management/capacity/capacity-confirmer";
-import { Search } from "lucide-react";
 import type { FormEvent } from "react";
 import { absentOnOrder } from "@/components/ward-management/ward-absence-tasks";
 import { BED_STATE_DETAILS, BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
@@ -12,7 +11,7 @@ import { formatInstant } from "@/components/ward-management/ward-clock";
 import { BED_RELEASES_HELD_UP_ANY_DATE_LABEL, unitCapacity } from "@/components/ward-management/ward-derivations";
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import type { DeclineReason, Rejection } from "@/components/ward-management/ward-model";
-import { TextInput } from "@/components/wf";
+import { WardPhoneFind } from "./ward-phone-find";
 import styles from "./ward.module.css";
 import type { WaitingReferral } from "./ward-bed-board";
 import type { BoardPick } from "./ward-bed-board-logic";
@@ -252,25 +251,7 @@ export function WardScreenHomeSection({
           ) : undefined
         }
         phoneFiguresSummary="Shift, roster, legal status and feeds"
-        phoneFind={
-          isPhone ? (
-            <TextInput
-              type="search"
-              icon={Search}
-              boxClassName={styles.phoneFindBox}
-              aria-label="Find a bed or person on this ward"
-              placeholder="Find bed or person"
-              value={bedQuery}
-              onChange={(event) => {
-                setBedQuery(event.target.value);
-              }}
-              onClear={() => {
-                setBedQuery("");
-              }}
-              data-testid="ward-find-input"
-            />
-          ) : undefined
-        }
+        phoneFind={isPhone ? <WardPhoneFind value={bedQuery} onChange={setBedQuery} /> : undefined}
         unit={unit}
         onAcceptInPrinciple={handleAcceptInPrinciple}
         answerBlockedReason={answerBlockedReason}
