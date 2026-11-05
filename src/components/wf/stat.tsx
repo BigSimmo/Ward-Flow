@@ -40,7 +40,8 @@ export function Meter({
   className,
 }: MeterProps) {
   const ratio = max > 0 ? Math.min(1, Math.max(0, value / max)) : 0;
-  const pct = `${(ratio * 100).toFixed(1)}%`;
+  // Whole percent, the one rule for every percentage (Josh, 5 Nov 2026, CL-9).
+  const pct = `${Math.round(ratio * 100)}%`;
   const text = valueText === undefined ? pct : valueText;
   return (
     <div className={cx(styles.meterWrap, className)}>

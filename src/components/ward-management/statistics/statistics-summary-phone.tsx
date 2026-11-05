@@ -346,7 +346,7 @@ function StatisticsSummaryPhoneView({
           sub={`Prototype, invented records${beingMadeReady > 0 ? ` · ${beingMadeReady} being made ready` : ""}`}
           figures={[
             // Phone review F-26: the big figure says what it counts, with its share beside it.
-            { id: "occupied", value: occupied, label: `Beds in use, ${occupiedPct.toFixed(1)}%` },
+            { id: "occupied", value: occupied, label: `Beds in use, ${Math.round(occupiedPct)}%` },
             // Role view (executive): with both people counts held back, one figure stood alone in a
             // row of three; every bed (exact, like all bed counts) sits beside it.
             ...(totalBeds !== undefined && held(waitingInEd) && held(endedToday)
