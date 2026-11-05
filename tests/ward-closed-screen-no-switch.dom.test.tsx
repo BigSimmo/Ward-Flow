@@ -5,7 +5,7 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const nav = vi.hoisted(() => ({ pathname: "/ward-flow/statistics" }));
+const nav = vi.hoisted(() => ({ pathname: "/ward-flow/governance" }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => nav.pathname,
@@ -47,14 +47,14 @@ describe("the closed screen", () => {
         <WardAccessScope>
           <ToastProvider>
             <WardAccessGate>
-              <p>Statistics</p>
+              <p>Governance</p>
             </WardAccessGate>
           </ToastProvider>
         </WardAccessScope>
       </WardFlowProvider>,
     );
     expect(screen.getByText("Not part of your role")).toBeInTheDocument();
-    expect(screen.queryByText("Statistics")).toBeNull();
+    expect(screen.queryByText("Governance")).toBeNull();
     expect(screen.getByTestId("ward-access-home")).toHaveTextContent("Go to your home");
     expect(screen.queryByTestId("ward-access-switch")).toBeNull();
     expect(screen.queryByRole("button", { name: "Switch desk" })).toBeNull();

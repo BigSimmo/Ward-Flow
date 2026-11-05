@@ -242,14 +242,26 @@ describe("2. Find a bed and Key figures link only to pages the desk may open", (
     return screen.getByTestId("ward-stats-drawer-content");
   }
 
+  // WF-42: ED/ward may open bare /statistics (redirects to their own place). Officer still cannot.
+  it.each([["officer", officer]])(
+    "offers the %s no See all on Statistics link, as it cannot open statistics",
+    (_name, access) => {
+      useDesk(access);
+      const figures = renderFigures();
+      expect(within(figures).queryByRole("link", { name: /See all on Statistics/u })).toBeNull();
+    },
+  );
+
   it.each([
     ["ED desk", edDesk],
     ["ward desk", { role: "ward", scope: { kind: "ward", unitIds: ["finder-1"] } } as WardAccess],
-    ["officer", officer],
-  ])("offers the %s no See all on Statistics link, as it cannot open the statistics hub", (_name, access) => {
+  ])("offers the %s See all on Statistics (WF-42 own-place redirect)", (_name, access) => {
     useDesk(access);
     const figures = renderFigures();
-    expect(within(figures).queryByRole("link", { name: /See all on Statistics/u })).toBeNull();
+    expect(within(figures).getByRole("link", { name: /See all on Statistics/u })).toHaveAttribute(
+      "href",
+      "/ward-flow/statistics",
+    );
   });
 
   it.each([

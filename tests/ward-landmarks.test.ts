@@ -188,6 +188,9 @@ const REDIRECT_ONLY_ROUTES = new Set<string>([
   `${ROUTE_PREFIX}/ed`,
   // PL1 (3 Nov 2026): Community folded into Places; `community/page.tsx` redirects to Catchments.
   `${ROUTE_PREFIX}/community`,
+  // WF-42: typed URLs open shell panels, then replace to the desk home.
+  `${ROUTE_PREFIX}/activity`,
+  `${ROUTE_PREFIX}/help`,
 ]);
 
 type RouteRender = { route: string; render: () => ReactNode };
