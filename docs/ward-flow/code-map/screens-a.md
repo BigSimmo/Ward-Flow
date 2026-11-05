@@ -2,6 +2,23 @@
 
 _Updated 2026-10-23 — ED examination save confirmation and recovery; Documentation owns._
 
+## Referral and transport recovery — 4 November 2026
+
+Local repair branch from main `559f225892b27b6c42bd7e9a6fa81f3ef81e62ec`:
+`referrals/referral-match.tsx` constructs ward and ED decisions with the acting desk's role;
+ward decisions name a ward from its access scope. Server authority and placement checks remain
+unchanged. The recoverable draft carries an opaque submission identity. The draft-session memory
+owns pending commands across drawer mounts, and the completion hook reconciles acceptance on
+reopening without sending another intake. Session cleanup clears that memory. A restored draft
+can also reconcile its identity against the authoritative referral snapshot.
+
+Transport close prompts distinguish unsent answers, refusal and uncertain saves. Initial saves
+still block closing; a delayed discard answer cannot close another booking. Sent-referral links
+use the existing scoped board address. Regression evidence is in
+`tests/ward-consolidated-{recipient-authority,recovery}.dom.test.tsx` and
+`tests/ward-transport-close-recovery.dom.test.tsx`. Local checks do not establish hosted acceptance
+or deployment.
+
 ## Current-tree check — 24 October 2026
 
 Checked against `main` at `899b232e`. These census entries name files that are no longer in the

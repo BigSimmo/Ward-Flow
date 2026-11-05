@@ -2,6 +2,7 @@ import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell
 import { patientRegistrationScope } from "../ward-patient-registration";
 import {
   useReferralCommandCompletion,
+  submissionId,
   useReferralPatientRegistration,
   useReferralRegistrationDraft,
 } from "./use-referral-command-completion";
@@ -124,9 +125,7 @@ import {
 } from "./ward-referral-drawer-model";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { NO_SENDING_WARD, useReferralUrlPrefill, useSheetSender } from "./use-referral-sheet-sender";
-
 export { NO_SENDING_WARD };
-
 /**
  * All of the referral slide-out's state, effects and handlers, moved unchanged and in their
  * original order from `ward-referral-drawer.tsx`. The sections read the result as `s`.
@@ -183,7 +182,6 @@ export function useWardReferralDrawerState({
   const { scenario, worldGeneration } = useWardFlowSelect("scenario", "worldGeneration");
   const now = useWardFlowClock();
   const { sendGate, sendingWard, senderMissing } = useSheetSender(gate, units, pathname, searchId);
-
   const urlPrefill = useReferralUrlPrefill({
     initialOriginSiteCode,
     initialPatientId,
@@ -192,7 +190,6 @@ export function useWardReferralDrawerState({
   });
   const effectiveInitialPatientId = initialPatientId ?? urlPrefill?.personId;
   const effectiveInitialOriginSiteCode = initialOriginSiteCode ?? urlPrefill?.site;
-
   const [prefillKey] = useState(() =>
     effectiveInitialPatientId ? patientKeyFor(effectiveInitialPatientId, { movements, patients, referrals }) : null,
   );
@@ -210,6 +207,7 @@ export function useWardReferralDrawerState({
     prefillKey,
     `${PATIENT_KEY_PREFIX}${effectiveInitialPatientId}`,
   );
+  const [recoveryId] = useState(() => kept?.submissionId ?? submissionId());
   const fromEntryPoint = kept === null && prefillKey !== null;
   // A2-3 (audit 13 Oct 2026): opened with no named person, the sheet starts on nobody, not another site's.
   const initialPatientKey = kept?.activePatientKey ?? prefillKey ?? NO_PATIENT_KEY;
@@ -252,7 +250,6 @@ export function useWardReferralDrawerState({
   // v10 phone: the four steps are a list, and the chosen step opens as a tall sheet over it.
   const isPhone = useIsPhone();
   const [phoneStepOpen, setPhoneStepOpen] = useState(false);
-
   const sampleProfiles = useMemo(
     () =>
       Object.fromEntries(
@@ -378,6 +375,7 @@ export function useWardReferralDrawerState({
   const sectionIds = sectionIdsFor(destType);
   const [edNeeds, setEdNeeds] = useState<EdNeeds>(kept?.edNeeds ?? {});
   const draftNow: KeptDraft & { needsChartReattachment: boolean } = {
+    submissionId: recoveryId,
     needsChartReattachment: draftNeedsChartReattachment(kept, documentation.charts),
     activePatientKey,
     destType,
@@ -458,6 +456,7 @@ export function useWardReferralDrawerState({
     referrals,
     generation: worldGeneration,
     draftOwnerVersion,
+    recoveryId,
     setPending: setSendPending,
     onError: setFlowError,
     onCommitted(intake) {

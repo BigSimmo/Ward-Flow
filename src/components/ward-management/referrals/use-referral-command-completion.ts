@@ -1,3 +1,4 @@
+import { referralDraftMemory } from "./referral-draft-lifecycle";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { WardFlowEvent } from "../ward-flow-events";
 import type { Patient, Gender } from "../ward-patients";
@@ -11,7 +12,7 @@ import { referralDraftSessionVersion } from "./referral-draft-cache";
 import type { ReferralIntakeDetails } from "./referral-submission";
 
 /** Opaque submission identity, including HTTP browsers without randomUUID. No patient data. */
-function submissionId(): string {
+export function submissionId(): string {
   if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
   const bytes = crypto.getRandomValues(new Uint8Array(16));
   bytes[6] = (bytes[6]! & 0x0f) | 0x40;
@@ -29,12 +30,17 @@ type PendingReferralSubmission = {
   outcome?: WardCommandOutcome;
   unconfirmed?: WardCommandOutcome;
 };
-/** A snapshot is confirmation only after this command accepts and its opaque identity matches. */
+// The recoverable draft owns the task, not a particular drawer mount. Never write intake to disk here.
+const recoverableSubmissions = referralDraftMemory.submissions as Map<string, PendingReferralSubmission>;
+const submissionListeners = new Set<() => void>();
+const publishSubmission = () => submissionListeners.forEach((listener) => listener());
+
 export function useReferralCommandCompletion({
   dispatch,
   referrals,
   generation,
   draftOwnerVersion,
+  recoveryId,
   setPending,
   onError,
   onCommitted,
@@ -44,77 +50,76 @@ export function useReferralCommandCompletion({
   referrals: readonly Referral[];
   generation: number;
   draftOwnerVersion: number;
+  recoveryId?: string;
   setPending: (pending: boolean) => void;
-  onError: (message: string) => void;
+  onError: (message: string | null) => void;
   onCommitted: (intake: ReferralIntakeDetails) => void;
   onAccepted: (referral: Referral, intake: ReferralIntakeDetails) => void;
 }) {
-  const submissionRef = useRef<PendingReferralSubmission | null>(null);
+  const [openingGeneration] = useState(generation);
+  const [id] = useState(() => recoveryId ?? submissionId());
+  const key = `${draftOwnerVersion}/${generation}/${id}`;
+  const submissionRef = useRef<PendingReferralSubmission | null>(recoverableSubmissions.get(key) ?? null);
   const [completion, setCompletion] = useState(0);
-  const [submissionAwaitingRecord, setSubmissionAwaitingRecord] = useState(false);
-  const currentGeneration = useRef(generation);
-  const mounted = useRef(false);
+  const recovering = recoverableSubmissions.get(key);
+  const submissionAwaitingRecord =
+    recovering?.outcome?.status === "accepted" &&
+    recovering.outcome.isCurrent?.() !== false &&
+    recovering.unconfirmed?.isCurrent?.() !== false &&
+    draftOwnerVersion === referralDraftSessionVersion() &&
+    openingGeneration === generation &&
+    !referrals.some((referral) => referral.submissionId === id);
+  const retired = useRef<PendingReferralSubmission | null>(null);
+  const delivered = useRef<string | null>(null);
   useEffect(() => {
-    currentGeneration.current = generation;
-  }, [generation]);
-  useEffect(() => {
-    mounted.current = true;
+    const listener = () => setCompletion((value) => value + 1);
+    submissionListeners.add(listener);
+    // Includes an answer that arrived between render and subscribing.
+    listener();
     return () => {
-      mounted.current = false;
+      submissionListeners.delete(listener);
     };
   }, []);
-  const changedMessage = "The workspace changed. Check the Referrals board before sending again.";
   function submitReferral(event: ReferralCommand) {
-    if (submissionRef.current) return;
+    if (
+      recoverableSubmissions.has(key) ||
+      openingGeneration !== generation ||
+      draftOwnerVersion !== referralDraftSessionVersion()
+    )
+      return;
     const submitted: PendingReferralSubmission = {
-      id: submissionId(),
+      id,
       intake: event.intake,
       generation,
       ownerVersion: draftOwnerVersion,
     };
+    recoverableSubmissions.set(key, submitted);
     submissionRef.current = submitted;
     setPending(true);
     const settle = (outcome?: WardCommandOutcome) => {
-      if (!mounted.current || submissionRef.current !== submitted) return;
-      if (
-        submitted.generation !== currentGeneration.current ||
-        submitted.ownerVersion !== referralDraftSessionVersion() ||
-        submitted.unconfirmed?.isCurrent?.() === false ||
-        outcome?.isCurrent?.() === false
-      ) {
-        submissionRef.current = null;
-        onError(changedMessage);
-        setPending(false);
-      } else if (outcome?.status === "accepted") {
-        submissionRef.current = { ...submitted, outcome };
-        // Acceptance is definitive even when a scoped snapshot cannot show the new record.
-        // Retire recovery now so closing/reopening cannot turn the saved intake into another Send.
-        onCommitted(submitted.intake);
-        setSubmissionAwaitingRecord(true);
-        setPending(false);
-        setCompletion((value) => value + 1);
-      } else if (outcome?.status === "failed" && (outcome.confirmation || submitted.unconfirmed)) {
-        onError(outcome.message ?? "Referral could not be confirmed. Check the Referrals board before trying again.");
-        setPending(true);
-        if (submitted.unconfirmed || !outcome.confirmation) return;
+      if (recoverableSubmissions.get(key) !== submitted || submitted.ownerVersion !== referralDraftSessionVersion())
+        return;
+      if (outcome?.status === "accepted" || outcome?.status === "refused" || outcome?.isCurrent?.() === false) {
+        submitted.outcome = outcome;
+      } else if (outcome?.status === "failed" && outcome.confirmation && !submitted.unconfirmed) {
         submitted.unconfirmed = outcome;
-        // A status-bar Retry confirms this same command; another Send must not mint a new intake.
         void outcome.confirmation.then(
           (confirmed) => {
             if (confirmed.commandId === outcome.commandId) settle(confirmed);
           },
-          () => {
-            // A rejected confirmation still does not establish whether the command committed.
-          },
-        );
-      } else {
-        submissionRef.current = null;
-        onError(outcome?.message ?? "Referral could not be confirmed. Check the Referrals board before trying again.");
-        setPending(false);
+          () => {},
+        ); // A lost confirmation is still uncertain, so retain the same identity.
+      } else if (!submitted.unconfirmed) {
+        submitted.outcome = outcome ?? {
+          status: "failed",
+          commandId: id,
+          message: "Referral could not be confirmed. Check the Referrals board before trying again.",
+        };
       }
+      publishSubmission();
     };
     try {
-      const result = dispatch({ ...event, type: "RECEIVE_REFERRAL", submissionId: submitted.id });
+      const result = dispatch({ ...event, type: "RECEIVE_REFERRAL", submissionId: id });
       if (result && "then" in result) void result.then(settle, () => settle());
       else settle(result ?? undefined);
     } catch {
@@ -122,27 +127,88 @@ export function useReferralCommandCompletion({
     }
   }
   useEffect(() => {
-    const submitted = submissionRef.current;
-    if (!submitted) return;
-    if (
-      submitted.generation !== generation ||
-      (submitted.outcome ?? submitted.unconfirmed)?.isCurrent?.() === false ||
-      submitted.ownerVersion !== referralDraftSessionVersion()
-    ) {
+    if (openingGeneration !== generation || draftOwnerVersion !== referralDraftSessionVersion()) {
       submissionRef.current = null;
-      setSubmissionAwaitingRecord(false);
       setPending(false);
-      onError(changedMessage);
+      onError("The workspace changed. Check the Referrals board before sending again.");
       return;
     }
-    if (!submitted.outcome) return;
-    const created = referrals.find((referral) => referral.submissionId === submitted.id);
-    if (!created) return;
-    submissionRef.current = { ...submitted, outcome: undefined };
-    setSubmissionAwaitingRecord(false);
-    onAccepted(created, submitted.intake);
-    setPending(false);
-  }, [completion, referrals, generation, draftOwnerVersion, onAccepted, onError, setPending]);
+    const submitted = recoverableSubmissions.get(key);
+    if (!submitted) {
+      if (
+        submissionRef.current &&
+        (submissionRef.current.generation !== generation ||
+          submissionRef.current.ownerVersion !== referralDraftSessionVersion())
+      ) {
+        setPending(false);
+        onError("The workspace changed. Check the Referrals board before sending again.");
+      }
+      submissionRef.current = null;
+      // A refreshed recoverable draft can reconcile from the authoritative snapshot too.
+      const saved = recoveryId ? referrals.find((referral) => referral.submissionId === id) : undefined;
+      if (saved?.intake && delivered.current !== saved.id) {
+        delivered.current = saved.id;
+        onCommitted(saved.intake);
+        onAccepted(saved, saved.intake);
+        setPending(false);
+      }
+      return;
+    }
+    submissionRef.current = submitted;
+    const outcome = submitted.outcome;
+    if (
+      submitted.ownerVersion !== referralDraftSessionVersion() ||
+      submitted.unconfirmed?.isCurrent?.() === false ||
+      outcome?.isCurrent?.() === false
+    ) {
+      recoverableSubmissions.delete(key);
+      submissionRef.current = null;
+      setPending(false);
+      onError("The workspace changed. Check the Referrals board before sending again.");
+      return;
+    }
+    if (outcome?.status === "accepted") {
+      if (retired.current !== submitted) {
+        retired.current = submitted;
+        onCommitted(submitted.intake);
+      }
+      const created = referrals.find((referral) => referral.submissionId === id);
+      setPending(false);
+      onError(null);
+      if (created && delivered.current !== created.id) {
+        delivered.current = created.id;
+        // Keep the accepted identity until this opening ends, including scoped snapshots with no record.
+        onAccepted(created, submitted.intake);
+        submissionRef.current = null;
+        recoverableSubmissions.delete(key);
+      }
+    } else if (outcome) {
+      recoverableSubmissions.delete(key);
+      submissionRef.current = null;
+      setPending(false);
+      onError(outcome.message ?? "Referral could not be confirmed. Check the Referrals board before trying again.");
+    } else {
+      setPending(true);
+      if (submitted.unconfirmed)
+        onError(
+          submitted.unconfirmed.message ??
+            "Referral save is not confirmed. Check the Referrals board before trying again.",
+        );
+    }
+  }, [
+    completion,
+    referrals,
+    generation,
+    openingGeneration,
+    draftOwnerVersion,
+    key,
+    id,
+    recoveryId,
+    onAccepted,
+    onCommitted,
+    onError,
+    setPending,
+  ]);
   return { submissionRef, submitReferral, submissionAwaitingRecord };
 }
 

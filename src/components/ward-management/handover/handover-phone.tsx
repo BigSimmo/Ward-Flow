@@ -82,6 +82,7 @@ export type HandoverPhoneProps = {
   onCloseDrawer: () => void;
   flowPanel: ReactNode | null;
   signOffPanel: ReactNode;
+  journeyUnavailable?: boolean;
   /** Act-now patients the scope leaves out, so narrowing never hides them from the handover. */
   outsideAct: HandoverRow[];
   /** The patient whose ISBAR is open, if any. */
@@ -430,6 +431,7 @@ export function HandoverPhone({
   onCloseDrawer,
   flowPanel,
   signOffPanel,
+  journeyUnavailable,
   outsideAct,
   selected,
   onCopyIsbar,
@@ -799,7 +801,7 @@ export function HandoverPhone({
         <Drawer
           open={drawerOpen && !flowPanel}
           onClose={onCloseDrawer}
-          title="Sign off"
+          title={journeyUnavailable ? "Journey no longer open" : "Sign off"}
           testId="ward-handover-phone-drawer"
         >
           {signOffPanel}
