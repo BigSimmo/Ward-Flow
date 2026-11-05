@@ -17,7 +17,10 @@
  * first and clamps a stale index to the tour's length (`ward-tour.tsx`). The new ids start "more-"
  * and must stay stable for the same reason.
  */
+import { ROLE_SCREENS, type WardScreenId } from "@/components/ward-management/ward-role-access";
+
 import {
+  forTablet,
   tourMinutes,
   tourSteps,
   type TourDevice,
@@ -35,6 +38,7 @@ type Chapter = TourStep["chapter"];
  */
 type MoreStep = { readonly step: TourStep; readonly after?: string; readonly before?: string };
 
+/** The first-run tour's chapters, in order. "Go further" is not one of them (`goFurtherSteps`). */
 const CHAPTERS: readonly Chapter[] = ["Your desk", "Your daily work", "Finding your way", "What you can do"];
 
 /** No desk's whole tour is longer than this, the opening step and the last one included. */
@@ -73,21 +77,27 @@ function more(
  * test keeps this in step with). Written out so the tour does not load the how-to list with it.
  */
 export const TOUR_CHECKLISTS: Readonly<Record<TourRole, readonly string[]>> = {
-  coordinator: ["Start of shift", "Handover", "Bed meeting", "If Ward Flow is down"],
-  ward: ["Handover", "If Ward Flow is down"],
-  ed: ["Handover", "If Ward Flow is down"],
-  community: ["If Ward Flow is down"],
-  officer: ["If Ward Flow is down"],
-  bed_manager: ["Handover", "If Ward Flow is down"],
-  executive: [],
-  admin: [],
+  coordinator: ["Getting started", "Start of shift", "Handover", "Bed meeting", "If Ward Flow is down"],
+  ward: ["Getting started", "Handover", "If Ward Flow is down"],
+  ed: ["Getting started", "Handover", "If Ward Flow is down"],
+  community: ["Getting started", "If Ward Flow is down"],
+  officer: ["Getting started", "If Ward Flow is down"],
+  bed_manager: ["Getting started", "Handover", "If Ward Flow is down"],
+  // The executive and the access admin record no shift work, so they have no shift lists.
+  executive: ["Getting started", "If Ward Flow is down"],
+  admin: ["Getting started", "If Ward Flow is down"],
 };
 
 /** Desks with ward work of their own to practise: a bed request through to arrival. */
 const PRACTISES: ReadonlySet<TourRole> = new Set(["coordinator", "ward", "ed", "community"]);
 
-/** Desks that learn from checklists. The executive and the access admin record no shift work. */
-const CHECKS: ReadonlySet<TourRole> = new Set(["coordinator", "ward", "ed", "community", "officer", "bed_manager"]);
+/** "Checklists has Getting started for your first week, then Handover and If Ward Flow is down." */
+function checklistWords(role: TourRole): string {
+  const [first, ...rest] = TOUR_CHECKLISTS[role];
+  if (!first) return "";
+  const lead = first === "Getting started" ? "Getting started for your first week" : first;
+  return `Checklists has ${lead}${rest.length ? `, then ${joinAnd(rest)}` : ""}.`;
+}
 
 function joinAnd(parts: readonly string[]): string {
   if (parts.length <= 1) return parts.join("");
@@ -99,12 +109,11 @@ function joinAnd(parts: readonly string[]): string {
  * one introduces Help and says the tour can be replayed from it.
  */
 function learnStep(role: TourRole, device: TourDevice, alone: boolean): MoreStep {
-  const where = device === "phone" ? "Help, in the menu," : "Help";
-  const checklists = CHECKS.has(role) ? TOUR_CHECKLISTS[role] : [];
+  const where = device === "desk" ? "Help" : "Help, in the menu,";
   const body = [
     alone ? `${where} explains the screen you are on.` : "",
     `How to lists your jobs, many with a Show me, and Show me around this screen walks you round a screen that has one.`,
-    checklists.length ? `Checklists has ${joinAnd(checklists)}.` : "",
+    checklistWords(role),
     PRACTISES.has(role) ? "Practise a placement follows a bed request to arrival, on synthetic data." : "",
     alone ? "Replay this tour from Help or Settings." : "",
   ]
@@ -113,7 +122,7 @@ function learnStep(role: TourRole, device: TourDevice, alone: boolean): MoreStep
   return more(
     "Finding your way",
     "learn",
-    device === "phone" ? PHONE_MENU : RAIL_HELP,
+    device === "desk" ? RAIL_HELP : PHONE_MENU,
     alone ? "Help is always here" : "Learn as you go",
     body,
   );
@@ -165,7 +174,13 @@ const BOARD_TIME_STEP = more(
   "Every figure in Ward Flow is synthetic, from a demo. The clock in the header is the demo's own board time.",
 );
 
-function deskMore(role: TourRole): MoreStep[] {
+/** The desktop's extra steps, or a tablet's, where the side menu is behind the bar's Menu button. */
+function deskMore(role: TourRole, device: "desk" | "tablet"): MoreStep[] {
+  const steps = deskMoreSteps(role, device);
+  return device === "tablet" ? steps.map((each) => ({ ...each, step: forTablet(each.step) })) : steps;
+}
+
+function deskMoreSteps(role: TourRole, device: "desk" | "tablet"): MoreStep[] {
   switch (role) {
     case "coordinator":
       return [
@@ -184,7 +199,7 @@ function deskMore(role: TourRole): MoreStep[] {
           "Waiting, in your menu, groups everyone still waiting for a bed by the cause. All EDs, below it, lists each emergency department's waits.",
         ),
         { ...ACTIVITY_STEP, after: "tasks" },
-        learnStep(role, "desk", false),
+        learnStep(role, device, false),
       ];
     case "ward":
       return [
@@ -197,7 +212,7 @@ function deskMore(role: TourRole): MoreStep[] {
         ),
         DESK_SEARCH,
         alertsStep("your ward"),
-        learnStep(role, "desk", true),
+        learnStep(role, device, true),
       ];
     case "ed":
       return [
@@ -210,7 +225,7 @@ function deskMore(role: TourRole): MoreStep[] {
         ),
         DESK_SEARCH,
         alertsStep("your ED"),
-        learnStep(role, "desk", true),
+        learnStep(role, device, true),
       ];
     case "community":
       return [
@@ -223,7 +238,7 @@ function deskMore(role: TourRole): MoreStep[] {
         ),
         DESK_SEARCH,
         alertsStep("your team"),
-        learnStep(role, "desk", true),
+        learnStep(role, device, true),
       ];
     case "officer":
       return [
@@ -235,7 +250,7 @@ function deskMore(role: TourRole): MoreStep[] {
           "On-call, under More, shows who answers each on-call line now, for hospitals, teams and state lines.",
         ),
         ACTIVITY_STEP,
-        learnStep(role, "desk", true),
+        learnStep(role, device, true),
       ];
     case "bed_manager":
       return [
@@ -260,7 +275,7 @@ function deskMore(role: TourRole): MoreStep[] {
           "Discharges",
           "Discharges, under More, lists your site's planned discharges, held-up discharges first.",
         ),
-        learnStep(role, "desk", false),
+        learnStep(role, device, false),
       ];
     case "executive":
       return [
@@ -272,7 +287,7 @@ function deskMore(role: TourRole): MoreStep[] {
           "Capacity, in your menu, shows each ward's confirmed beds and what is ready, pulled or closed, as counts with no patient names.",
         ),
         BOARD_TIME_STEP,
-        learnStep(role, "desk", true),
+        learnStep(role, device, true),
       ];
     case "admin":
       return [
@@ -282,10 +297,10 @@ function deskMore(role: TourRole): MoreStep[] {
           RAIL_SETTINGS,
           "Settings",
           "Your name at the foot of the menu opens your account menu. Choose Settings there. It starts on Access, where you give, check and remove roles.",
-          "review",
+          "record-review",
         ),
         BOARD_TIME_STEP,
-        learnStep(role, "desk", true),
+        learnStep(role, device, true),
       ];
   }
 }
@@ -385,7 +400,11 @@ function phoneMore(role: TourRole): MoreStep[] {
 
 /** The steps this file adds for one desk on one kind of screen, before they are joined. */
 export function moreTourSteps(role: TourRole, device: TourDevice): readonly TourStep[] {
-  return (device === "phone" ? phoneMore(role) : deskMore(role)).map((each) => each.step);
+  return moreFor(role, device).map((each) => each.step);
+}
+
+function moreFor(role: TourRole, device: TourDevice): MoreStep[] {
+  return device === "phone" ? phoneMore(role) : deskMore(role, device);
 }
 
 /** Where a step goes: after its `after` step, else at the end of its chapter. */
@@ -404,7 +423,7 @@ function insertAt(steps: readonly TourStep[], { step, after, before }: MoreStep)
 export function fullTourSteps(role: TourRole, device: TourDevice, facts: TourFacts): readonly TourStep[] {
   const base = tourSteps(role, device, facts);
   const steps = [...base];
-  for (const extra of device === "phone" ? phoneMore(role) : deskMore(role)) {
+  for (const extra of moreFor(role, device)) {
     if (steps.some((each) => each.id === extra.step.id)) continue;
     steps.splice(insertAt(steps, extra), 0, extra.step);
   }
@@ -413,4 +432,290 @@ export function fullTourSteps(role: TourRole, device: TourDevice, facts: TourFac
   if (!first || first.id !== "welcome" || !first.body.endsWith(was)) return steps;
   const now = ` This takes ${tourMinutes(steps.length, device)}.`;
   return [{ ...first, body: `${first.body.slice(0, -was.length)}${now}` }, ...rest];
+}
+
+/* ── Go further ───────────────────────────────────────────────────────────────────────────── */
+
+/**
+ * GO FURTHER (Help and tour extension, 5 Nov 2026): up to `MAX_GO_FURTHER` optional steps the player
+ * offers once the first-run tour ends. They visit the desk's other screens the first-run tour did not
+ * reach, the same way: the tour stays on the home screen and lights where each screen is. A step whose
+ * screen the desk's access table (`ROLE_SCREENS`) does not open is left out, so the tour never shows a
+ * door the guard would shut. The first-run tour keeps its own cap (`MAX_TOUR_STEPS`).
+ */
+export const MAX_GO_FURTHER = 8;
+
+/**
+ * Where a screen sits on a desktop: in the desk's own menu (by the end of its address), under More,
+ * in the account menu (the person at the foot of the menu) or in the header.
+ */
+type DeskPlace = { readonly menu: string } | "more" | "account" | "header";
+
+type Further = {
+  readonly id: string;
+  /** The screen the step is about. A step about the header itself names none. */
+  readonly screen?: WardScreenId;
+  readonly desk: DeskPlace;
+  /** The end of its address in the phone's tab bar, when it is there. Otherwise it is in Menu. */
+  readonly dock?: string;
+  readonly title: string;
+  /** The words, given where the screen is: "in your menu", "under More", "in the tab bar". */
+  readonly body: (where: string) => string;
+  readonly tryIt?: string;
+};
+
+// The landscape tablet (1001px to 1200px) draws the icon rail, whose More has its own test id.
+const ANY_MORE: TourTarget = { sel: '[data-testid="ward-rail-more"], [data-testid="ward-rail-tablet-more"]' };
+
+const movementsBody = (who: string) => (where: string) =>
+  `Movements, ${where}, follows ${who} moving to a bed, by stage, from referral to arrival. Rows marked Act now are due now or overdue.`;
+
+const WAITING: Further = {
+  id: "waiting",
+  screen: "delays",
+  desk: "more",
+  title: "Who is waiting and why",
+  body: (where) => `Waiting, ${where}, groups the people still waiting for a bed by the cause.`,
+};
+const LEGAL_FORMS: Further = {
+  id: "legal-forms",
+  screen: "legal-forms",
+  desk: "more",
+  title: "Legal forms",
+  body: (where) =>
+    `Legal forms, ${where}, lists every open movement with a legal form. Times are as typed from the paper form, and Ward Flow does not work out legal periods.`,
+};
+const handover = (desk: DeskPlace): Further => ({
+  id: "handover",
+  screen: "handover",
+  desk,
+  title: "Handover",
+  body: (where) =>
+    `Handover, ${where}, is the sheet for the next shift. Read Act now first, check Before you sign, then choose Sign off.`,
+});
+const ownStatistics = (place: string): Further => ({
+  id: "statistics",
+  screen: "statistics",
+  desk: "more",
+  title: "Your figures",
+  body: (where) => `Statistics, ${where}, shows ${place}'s own figures, as counts.`,
+});
+const ON_CALL: Further = {
+  id: "on-call",
+  screen: "on-call",
+  desk: "more",
+  title: "On-call",
+  body: (where) => `On-call, ${where}, shows who answers each on-call line now, for hospitals, teams and state lines.`,
+  tryIt: "Star a line to keep it under Mine, at the top of the page.",
+};
+const ACTIVITY_FURTHER: Further = {
+  id: "activity",
+  desk: "header",
+  title: "What has changed",
+  body: () => "Activity, in the header, lists the events recorded in this demo session, newest first.",
+};
+const SETTINGS: Further = {
+  id: "settings",
+  screen: "settings",
+  desk: "account",
+  title: "Make it yours",
+  body: (where) =>
+    `Settings, ${where}, has Display, for the theme, and Alerts, to turn on alerts on this device. Both change this device only.`,
+};
+const TRY_A_DESK: Further = {
+  id: "other-desk",
+  screen: "settings",
+  desk: "account",
+  title: "See another desk",
+  body: (where) =>
+    `In the demo, Try another desk (demo), ${where}, shows Ward Flow as another role sees it. Switch back the same way.`,
+};
+
+const FURTHER: Readonly<Record<TourRole, readonly Further[]>> = {
+  coordinator: [
+    {
+      id: "movements",
+      screen: "movements",
+      desk: { menu: "/movements" },
+      title: "Every move to a bed",
+      body: movementsBody("every patient"),
+      tryIt: "Open a movement to see its bed, transport and legal form in one place.",
+    },
+    {
+      id: "referrals",
+      screen: "referrals",
+      desk: { menu: "/referrals" },
+      dock: "/referrals",
+      title: "Referrals",
+      body: (where) =>
+        `Referrals, ${where}, holds the referrals waiting for an answer and those decided recently. Open one to see each destination's answer.`,
+    },
+    {
+      id: "eds",
+      screen: "ed",
+      desk: { menu: "/ed" },
+      title: "All EDs",
+      body: (where) =>
+        `All EDs, ${where}, lists every emergency department with the people there waiting for a mental health bed. Past target finds EDs with someone past the access target.`,
+    },
+    {
+      id: "discharges",
+      screen: "discharges",
+      desk: "more",
+      title: "Discharges",
+      body: (where) => `Discharges, ${where}, lists planned discharges, held-up discharges first.`,
+    },
+    LEGAL_FORMS,
+    {
+      id: "places",
+      screen: "hub",
+      desk: "more",
+      title: "Places",
+      body: (where) =>
+        `Places, ${where}, lists every ward, ED and community team. Catchments, on its band, finds the team that covers a suburb.`,
+    },
+    SETTINGS,
+    TRY_A_DESK,
+  ],
+  ward: [
+    {
+      id: "referrals",
+      screen: "referrals",
+      desk: { menu: "/referrals" },
+      dock: "/referrals",
+      title: "Referrals to answer",
+      body: (where) =>
+        `Referrals to answer, ${where}, lists the referrals sent to your ward. Accept, or decline with a reason.`,
+    },
+    handover({ menu: "/handover" }),
+    {
+      id: "discharges",
+      screen: "discharges",
+      desk: "more",
+      title: "Discharges",
+      body: (where) => `Discharges, ${where}, lists your ward's planned discharges, held-up discharges first.`,
+    },
+    WAITING,
+    LEGAL_FORMS,
+    ownStatistics("your ward"),
+    ON_CALL,
+    SETTINGS,
+  ],
+  ed: [
+    {
+      id: "movements",
+      screen: "movements",
+      desk: "more",
+      title: "Where your patients are",
+      body: movementsBody("each person you referred"),
+    },
+    WAITING,
+    LEGAL_FORMS,
+    handover("more"),
+    ownStatistics("your ED"),
+    ON_CALL,
+    SETTINGS,
+    TRY_A_DESK,
+  ],
+  community: [
+    {
+      id: "movements",
+      screen: "movements",
+      desk: "more",
+      dock: "/movements",
+      title: "Where your people are",
+      body: movementsBody("your team's people"),
+    },
+    WAITING,
+    LEGAL_FORMS,
+    ownStatistics("your team"),
+    ON_CALL,
+    SETTINGS,
+    TRY_A_DESK,
+  ],
+  officer: [SETTINGS, TRY_A_DESK],
+  bed_manager: [
+    {
+      id: "wards",
+      screen: "wards",
+      desk: { menu: "/wards" },
+      dock: "/wards",
+      title: "Your wards",
+      body: (where) => `Wards, ${where}, lists your site's wards. Open one for its beds, arrivals and discharges.`,
+      tryIt: "Open one of your wards, then come back.",
+    },
+    {
+      id: "referrals",
+      screen: "referrals",
+      desk: { menu: "/referrals" },
+      title: "Referrals to your site",
+      body: (where) =>
+        `Referrals, ${where}, shows the referrals coming to your site's wards. It is read only: each ward answers its own.`,
+    },
+    handover({ menu: "/handover" }),
+    {
+      id: "patients",
+      screen: "search",
+      desk: "more",
+      title: "Patients",
+      body: (where) =>
+        `Patients, ${where}, is the register of everyone at your site, found by record number, place, stage or owner.`,
+    },
+    {
+      id: "statistics",
+      screen: "statistics",
+      desk: "more",
+      title: "Statistics",
+      body: (where) => `Statistics, ${where}, shows counts and waits, with no patient names.`,
+    },
+    ON_CALL,
+    SETTINGS,
+    TRY_A_DESK,
+  ],
+  executive: [ACTIVITY_FURTHER, SETTINGS, TRY_A_DESK],
+  admin: [ACTIVITY_FURTHER, SETTINGS, TRY_A_DESK],
+};
+
+/** Where the step lights, and the words for where that is, on this kind of screen. */
+function placeOf(each: Further, device: TourDevice): { target: TourTarget; where: string } {
+  if (each.desk === "header") return { target: ACTIVITY, where: "in the header" };
+  if (device === "phone" && each.dock) return { target: dockLink(each.dock), where: "in the tab bar" };
+  // The phone's Menu, and the tablet's, which opens the side menu and its More together.
+  if (device !== "desk") {
+    return { target: PHONE_MENU, where: each.desk === "account" ? "in the menu, under your name" : "in the menu" };
+  }
+  if (each.desk === "account") return { target: RAIL_SETTINGS, where: "in your account menu" };
+  if (each.desk === "more") return { target: ANY_MORE, where: "under More" };
+  return { target: railLink(each.desk.menu), where: "in your menu" };
+}
+
+function furtherFor(role: TourRole): readonly Further[] {
+  return FURTHER[role]
+    .filter((each) => each.screen === undefined || ROLE_SCREENS[role][each.screen] !== undefined)
+    .slice(0, MAX_GO_FURTHER);
+}
+
+/** The screens one desk's Go further steps are about, after the access check (for the tests). */
+export function goFurtherScreens(role: TourRole): readonly WardScreenId[] {
+  return furtherFor(role).flatMap((each) => (each.screen ? [each.screen] : []));
+}
+
+/**
+ * The optional steps after one desk's first-run tour: its other screens, in the "Go further" chapter.
+ * `facts` matches the other tour builders, so the player calls each the same way; no step needs a
+ * figure yet.
+ */
+export function goFurtherSteps(role: TourRole, device: TourDevice, facts: TourFacts): readonly TourStep[] {
+  void facts;
+  return furtherFor(role).map((each) => {
+    const { target, where } = placeOf(each, device);
+    const step: TourStep = {
+      id: `further-${each.id}`,
+      chapter: "Go further",
+      target,
+      title: each.title,
+      body: each.body(where),
+    };
+    return each.tryIt ? { ...step, tryIt: each.tryIt } : step;
+  });
 }
