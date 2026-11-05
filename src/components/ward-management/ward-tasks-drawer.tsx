@@ -192,7 +192,7 @@ const ROLE_LABELS: Partial<Record<WardFlowRole, string>> = {
 function rowIcon(item: InboxItem) {
   if (/transport/i.test(item.title)) return item.icon;
   if (/legal/i.test(item.title)) return FileText;
-  if (/bed pull/i.test(item.title)) return BedDouble;
+  if (/bed pull|pulls? expired/i.test(item.title)) return BedDouble;
   if (/destination/i.test(item.title)) return TriangleAlert;
   return item.icon;
 }
@@ -209,7 +209,7 @@ function rowTiming(
   now: Instant,
   waitWord: string,
 ): { value?: string; word?: string; state: string; tone: WfTone; stateTone?: WfTone } {
-  if (movement && /bed pull/i.test(item.title) && movement.pullExpiresAt !== undefined) {
+  if (movement && /bed pull|pulls? expired/i.test(item.title) && movement.pullExpiresAt !== undefined) {
     // pop-alerts (Josh, 31 Oct 2026): "Past pull limit", because "overdue" means form times.
     return {
       value: durMinutes(now - movement.pullExpiresAt),
@@ -262,7 +262,7 @@ function rowDetail(
   units: readonly Unit[] | undefined,
   now: Instant,
 ): string {
-  if (movement && /bed pull/i.test(item.title) && movement.pullExpiresAt !== undefined) {
+  if (movement && /bed pull|pulls? expired/i.test(item.title) && movement.pullExpiresAt !== undefined) {
     const unit = units?.find((candidate) => candidate.id === movement.acceptedUnitId);
     return `${unit?.name ?? "The pulled bed"}: the pull time limit passed at ${formatInstantWithDay(movement.pullExpiresAt, now)}`;
   }
