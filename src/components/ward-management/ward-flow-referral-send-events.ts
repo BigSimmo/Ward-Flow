@@ -268,6 +268,12 @@ export function reduceReferralSendEvent(
       ) {
         return reject(state, event, "RAISE_REFERRAL names a different patient from the one this referral is for");
       }
+      // A draft may outlive an unused patient record, and older referrals may carry a stale link.
+      // Resolve either source now; an absent identity remains a supported unidentified journey.
+      const patientId = event.patientId ?? raisedFrom?.patientId;
+      if (patientId !== undefined && !state.patients.some((patient) => patient.id === patientId)) {
+        return reject(state, event, "RAISE_REFERRAL patientId must name a patient this system already holds");
+      }
       /**
        * WT-04 and WT-30 (walk-through, 26 Oct 2026): a journey started from an ED referral a ward
        * accepted opens when the person was recorded in the department, or else when the referral was
@@ -297,7 +303,7 @@ export function reduceReferralSendEvent(
               ...(raisedFrom!.transportNeeded ? {} : { transportNeed: { needed: false, at: event.now } }),
             }),
         openedAt,
-        patientId: event.patientId ?? raisedFrom?.patientId,
+        patientId,
         // `undefined` when nobody referred this person, a real answer. Never a manufactured id: the
         // guard above refuses anything that does not resolve.
         referralId: raisedFrom?.id ?? event.referralId,

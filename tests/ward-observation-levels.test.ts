@@ -190,7 +190,7 @@ describe("RECORD_OBSERVATION_LEVEL is the only way a level changes", () => {
     expect(remainingSpeciallingCapacity(unitIn(state), state.admissions)).toBe(0);
   });
 
-  it("saves only observation facts and optional accepted order, so a change row cannot carry typed text", () => {
+  it("saves bounded acceptance order with history, and refuses extra typed text", () => {
     const seed = JSON.parse(JSON.stringify(seedWardFlowState())) as WardFlowState;
     const row = { at: NOW, from: GENERAL_OBSERVATION, to: observationAt("within_sight") };
     const withChange = (change: object) => ({
@@ -201,7 +201,9 @@ describe("RECORD_OBSERVATION_LEVEL is the only way a level changes", () => {
     });
     expect(isValidStoredWardFlowState(withChange(row))).toBe(true);
     expect(isValidStoredWardFlowState(withChange({ ...row, sequence: 1 }))).toBe(true);
-    expect(isValidStoredWardFlowState(withChange({ ...row, sequence: -1 }))).toBe(false);
+    for (const sequence of [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
+      expect(isValidStoredWardFlowState(withChange({ ...row, sequence }))).toBe(false);
+    }
     expect(isValidStoredWardFlowState(withChange({ ...row, sequence: 1, note: "x" }))).toBe(false);
     expect(isValidStoredWardFlowState(withChange({ ...row, note: "x" }))).toBe(false);
   });

@@ -33,8 +33,29 @@ export type Observation = {
   reviewAt: Instant | null;
 };
 
-/** One entry per change after intake, oldest first. Written only by `RECORD_OBSERVATION_LEVEL`. */
-export type ObservationChange = { at: Instant; from: Observation; to: Observation; sequence?: number };
+/** Recorded observation edits and arrival reconciliations after intake, oldest first. */
+export type ObservationChange = {
+  at: Instant;
+  from: Observation;
+  to: Observation;
+  /** Accepted reducer order, shared across journeys and stays. Absent in older saves. */
+  sequence?: number;
+};
+
+/** New accepted changes follow legacy history even when the caller's minute has not advanced.
+ * Without sequence metadata the historical timestamp rule remains the compatibility fallback;
+ * an exact old tie has no recoverable actor order and keeps the journey's value. */
+export function journeyObservationWins(
+  journey: readonly ObservationChange[] | undefined,
+  stay: readonly ObservationChange[] | undefined,
+): boolean {
+  const lastJourney = journey?.at(-1);
+  const lastStay = stay?.at(-1);
+  if (lastJourney?.sequence !== undefined || lastStay?.sequence !== undefined) {
+    return (lastJourney?.sequence ?? -1) >= (lastStay?.sequence ?? -1);
+  }
+  return (lastJourney?.at ?? Number.NEGATIVE_INFINITY) >= (lastStay?.at ?? Number.NEGATIVE_INFINITY);
+}
 
 /** The ordinary state: General, with no review time recorded. */
 export const GENERAL_OBSERVATION: Observation = Object.freeze({
