@@ -294,8 +294,10 @@ describe("tasks drawer: ownership and snooze", () => {
   });
 });
 
-describe("phone tasks: act now, then oldest, and a Seen marker (remaining-pages audit ops-8, ops-9)", () => {
-  it("orders by the age each row shows and marks acknowledged rows Seen", () => {
+// Josh, 4 Nov 2026: the phone drawer is the desktop drawer, fitted to the width. It no longer keeps
+// its own compact list, so it shows the same status switch and the same acknowledged line.
+describe("phone tasks drawer matches the desktop drawer (4 Nov 2026)", () => {
+  it("shows the status switch and says who acknowledged a row", () => {
     vi.stubGlobal(
       "matchMedia",
       vi.fn((query: string) => ({
@@ -306,30 +308,24 @@ describe("phone tasks: act now, then oldest, and a Seen marker (remaining-pages 
       })),
     );
     try {
-      const review = (id: string, since?: number): InboxItem => ({
+      const recent: InboxItem = {
         ...red,
-        id: `review-${id}`,
+        id: "review-recent",
         kind: "fact",
         tone: "warning",
         icon: CircleAlert,
-        title: `Row ${id}`,
+        title: "Row recent",
         detail: "Synthetic row",
-        since,
+        since: NOW_ANCHOR - 15,
         dueAt: undefined,
-      });
-      const recent = review("recent", NOW_ANCHOR - 15);
-      const oldest = review("oldest", NOW_ANCHOR - 72);
+      };
       renderDrawer({
-        items: [recent, review("untimed"), oldest, red],
+        items: [recent, red],
         acknowledgements: { [recent.id]: [{ at: NOW_ANCHOR, by: "Bed coordinator" }] },
       });
-      const titles = screen
-        .getAllByRole("button", { name: /^(Row (recent|oldest|untimed)|.*expired.*)$/iu })
-        .map((node) => node.textContent);
-      expect(titles).toEqual([red.title, "Row oldest", "Row recent", "Row untimed"]);
-      expect(screen.getAllByText("1h 12m").length).toBeGreaterThan(0);
-      expect(screen.getByTestId(`ward-task-seen-${recent.id}`)).toHaveTextContent("Seen");
-      expect(screen.queryByTestId(`ward-task-seen-${oldest.id}`)).toBeNull();
+      expect(screen.getByRole("group", { name: /^Filter .* by status$/u })).toBeInTheDocument();
+      expect(screen.getByTestId(`ward-task-ack-${recent.id}`)).toHaveTextContent(/Acknowledged by Bed coordinator/u);
+      expect(screen.queryByTestId(`ward-task-ack-${red.id}`)).toBeNull();
     } finally {
       vi.unstubAllGlobals();
     }

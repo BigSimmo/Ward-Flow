@@ -858,6 +858,8 @@ export function DelaysBoard({
             title: band.title,
             tone: band.tone,
             note: [bandIncludes(list), band.note].filter(Boolean).join(" · "),
+            // As on the desktop table and the phone: a band with no first-load rows ("Under 8 hours") starts folded.
+            folded: !wardShort && band.limit === 0,
             rows: list.map(portraitRow),
           };
         }).filter((group) => group.rows.length > 0)
@@ -871,7 +873,7 @@ export function DelaysBoard({
             rows: list.map(portraitRow),
           };
         });
-  }, [portrait, flat, shown, groups, units, now, dayZero, selectedId, patientOf, desk, edDesk]);
+  }, [portrait, flat, shown, groups, units, now, dayZero, selectedId, patientOf, desk, edDesk, wardShort]);
   // Role view (nurse in charge): the registers are the coordinator's, so a ward desk has no rail.
   const portraitRail =
     portrait && !wardDesk ? (

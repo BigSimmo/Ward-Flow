@@ -20,27 +20,26 @@ export function PlacementPrompt({
   return (
     <Card data-testid="home-placement-prompt" aria-labelledby="home-placement-title">
       <CardHead id="home-placement-title" title="Placement" />
-      <div className={styles.promptBody}>
-        <MousePointerClick size={20} aria-hidden="true" />
-        <div>
-          <p>Choose someone from the list.</p>
-          {next ? (
-            <div className={styles.nextUp}>
-              {/* Final check: the words stack in one column so Open keeps its full name, not "Open …". */}
-              <span className={styles.nextText}>
-                <span className={styles.kicker}>Oldest alert to place</span>
-                <b>{next.subject.displayName}</b>
-                <span className={styles.muted}>
-                  {next.item.title} · {next.subject.from}
-                </span>
-              </span>
-              <Button size="sm" variant="sec" className={styles.nextOpen} onClick={() => onOpen(next)}>
-                Open {next.subject.displayName}
-              </Button>
-            </div>
-          ) : null}
+      {/* Visual review (5 Nov 2026): the icon sits on the line with its words, one composed empty state. */}
+      <p className={styles.promptBody}>
+        <MousePointerClick size={16} aria-hidden="true" className={styles.promptIcon} />
+        <span>Choose someone from the list.</span>
+      </p>
+      {next ? (
+        <div className={styles.nextUp}>
+          {/* Final check: the words stack in one column so Open keeps its full name, not "Open …". */}
+          <span className={styles.nextText}>
+            <span className={styles.kicker}>Oldest alert to place</span>
+            <b>{next.subject.displayName}</b>
+            <span className={styles.muted}>
+              {next.item.title} · {next.subject.from}
+            </span>
+          </span>
+          <Button size="sm" variant="sec" className={styles.nextOpen} onClick={() => onOpen(next)}>
+            Open {next.subject.displayName}
+          </Button>
         </div>
-      </div>
+      ) : null}
     </Card>
   );
 }

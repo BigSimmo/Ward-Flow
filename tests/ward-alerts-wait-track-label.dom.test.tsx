@@ -40,4 +40,17 @@ describe("Recorded times track labels", () => {
     expect(first.y).toBe(10);
     expect(second.y).toBe(46);
   });
+
+  // Visual review (5 Nov 2026): "Pull ended" a few minutes ago crossed the Now line.
+  it("keeps a label off the Now line, on its mark's side", () => {
+    const [placed] = placeTrackLabels([{ x: 340, label: "Pull ended" }], 366, 344);
+    expect(placed.anchor).toBe("end");
+    expect(placed.x).toBeLessThanOrEqual(344 - 6);
+  });
+
+  it("puts a label after Now when its mark is after Now", () => {
+    const [placed] = placeTrackLabels([{ x: 190, label: "Expected" }], 366, 183);
+    expect(placed.anchor).toBe("start");
+    expect(placed.x).toBeGreaterThanOrEqual(183 + 6);
+  });
 });

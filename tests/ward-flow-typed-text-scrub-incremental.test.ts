@@ -36,7 +36,20 @@ import { TYPED_TEXT_FIXTURES } from "./helpers/ward-typed-text-fixtures";
 const worlds: FixtureWorlds = (offsetMinutes = 0) =>
   WARD_SCENARIOS.map((scenario) => seedWardFlowStateAt(offsetMinutes, scenario));
 
-/** The pre-P-1 algorithm, frozen: replay every event, then a linear ledger scan for each string. */
+// The zero-offset seeds and their normalized strings are immutable inputs. Prepare this oracle's
+// own string set once; keep its behavioral algorithm independent of production's cached matcher.
+const oracleFixtureStrings: ReadonlySet<string> = (() => {
+  const fixture = new Set<string>();
+  const visit = (value: unknown): void => {
+    if (typeof value === "string") fixture.add(normaliseTypedText(value));
+    else if (Array.isArray(value)) value.forEach(visit);
+    else if (value && typeof value === "object") Object.values(value).forEach(visit);
+  };
+  worlds().forEach(visit);
+  return fixture;
+})();
+
+/** Frozen pre-P-1 behavior: replay every event, then a linear ledger scan for each string. */
 function oldDeviceCopy(
   state: WardFlowState,
   events: readonly WardFlowEvent[],
@@ -48,14 +61,9 @@ function oldDeviceCopy(
     if (typed === null) return null;
     ledger.push(...typed);
   }
-  const fixture = new Set<string>();
-  const visit = (value: unknown): void => {
-    if (typeof value === "string") fixture.add(normaliseTypedText(value));
-    else if (Array.isArray(value)) value.forEach(visit);
-    else if (value && typeof value === "object") Object.values(value).forEach(visit);
-  };
-  worlds().forEach(visit);
-  const typed = [...new Set(ledger.map(normaliseTypedText))].filter((value) => value !== "" && !fixture.has(value));
+  const typed = [...new Set(ledger.map(normaliseTypedText))].filter(
+    (value) => value !== "" && !oracleFixtureStrings.has(value),
+  );
   const matches = (value: string) => {
     const normalised = normaliseTypedText(value);
     return typed.some(

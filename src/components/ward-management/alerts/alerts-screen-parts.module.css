@@ -40,8 +40,7 @@
 }
 
 .ownerMenu.ownerMenu {
-  width: auto;
-  min-width: 12rem;
+  flex: none;
 }
 
 .kindGroup {
@@ -116,9 +115,6 @@
 /* Phone: the owner highlight is the desktop's menu, full width under the tabs. */
 .phoneOwner {
   padding: var(--wf-s-2) var(--wf-s-4) 0;
-}
-.phoneOwner .ownerMenu {
-  width: 100%;
 }
 
 /* A missing UMRN reads as words, not as a number. */

@@ -7,6 +7,8 @@ import { describe, expect, it } from "vitest";
 
 import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
+import { journeyObservationWins, observationAt } from "@/components/ward-management/ward-observation";
+import { isValidStoredWardFlowState } from "@/components/ward-management/ward-flow-storage-validation";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 const NOW = NOW_ANCHOR + 5;
@@ -97,4 +99,72 @@ describe("audit S-2: the journey and its held bed record one observation level",
       to: movement.observation,
     });
   });
+});
+
+describe("WF-DOM-001: accepted observation order survives legacy arrival", () => {
+  it.each([
+    [false, 0],
+    [true, 0],
+    [false, -1],
+    [true, -1],
+  ])("keeps accepted order (ward first: %s, clock offset: %s)", (wardFirst, clockOffset) => {
+    let state = seedWardFlowState();
+    const { movement, admission } = joinedOnlyByMovement(state, "WF-011");
+    state = {
+      ...state,
+      movements: state.movements.map((row) =>
+        row.id === movement.id ? { ...row, transportNeed: { needed: false, at: NOW - 10 } } : row,
+      ),
+    };
+    const targets = {
+      movement: { kind: "movement", movementId: movement.id },
+      admission: { kind: "admission", admissionId: admission.id, actingUnitId: admission.unitId },
+    };
+    let clock = NOW;
+    for (const kind of (wardFirst ? ["admission", "movement"] : ["movement", "admission"]) as (
+      "movement" | "admission"
+    )[]) {
+      const row =
+        kind === "movement"
+          ? state.movements.find((r) => r.id === movement.id)!
+          : state.admissions.find((r) => r.id === admission.id)!;
+      const before = state;
+      state = apply(state, {
+        now: clock,
+        type: "RECORD_OBSERVATION_LEVEL",
+        role: kind === "movement" ? "ed" : "ward",
+        target: targets[kind],
+        observation: kind === "movement" ? { ...ARMS_LENGTH, level: "two_staff" } : ARMS_LENGTH,
+        expected: observationEditingToken(kind, row.id, row.observation, row.observationChanges?.length ?? 0),
+      });
+      expect(state.rejections).toEqual(before.rejections);
+      clock += clockOffset;
+    }
+    expect(isValidStoredWardFlowState(JSON.parse(JSON.stringify(state)))).toBe(true);
+    const arrived = apply(state, {
+      type: "PATIENT_ARRIVED",
+      role: "ward",
+      movementId: movement.id,
+      actingUnitId: admission.unitId,
+    });
+    expect(arrived.rejections).toEqual(state.rejections);
+    expect(arrived.admissions.find((r) => r.id === admission.id)?.observation.level).toBe(
+      wardFirst ? "two_staff" : "arms_length",
+    );
+  });
+});
+
+it("keeps legacy timestamp order and the documented fallback for an unknowable old tie", () => {
+  const change = (at: number, sequence?: number) => ({
+    at,
+    from: observationAt("general"),
+    to: ARMS_LENGTH,
+    ...(sequence === undefined ? {} : { sequence }),
+  });
+  expect(journeyObservationWins([change(5)], [change(6)])).toBe(false);
+  expect(journeyObservationWins([change(6)], [change(5)])).toBe(true);
+  expect(journeyObservationWins([change(5)], [change(5)])).toBe(true);
+  expect(journeyObservationWins(undefined, undefined)).toBe(true);
+  expect(journeyObservationWins([change(99)], [change(1, 1)])).toBe(false);
+  expect(journeyObservationWins([change(1, 1)], [change(99)])).toBe(true);
 });

@@ -428,9 +428,9 @@ export function WeeklyBody(props: WeeklyBodyProps) {
           ) : edWaits.rows.length === 0 ? (
             <p className={s.empty}>No wait first passed {targetText} in this week.</p>
           ) : (
-            <div data-testid="ward-weekly-ed-table">
+            <div data-testid="ward-weekly-ed-table" className={s.edWaitsTable}>
               <DataTable
-                cols={["Admission", "Emergency department", ">Waited", "Now"]}
+                cols={["Admission", "ED", ">Waited", "Now"]}
                 caption={`ED waits first passing ${targetText} in the week, synthetic`}
                 rows={edWaits.rows.map((row) => ({
                   key: row.id,

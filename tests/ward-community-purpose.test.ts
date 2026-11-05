@@ -50,7 +50,7 @@ describe("community referral purpose (D-74)", () => {
     const state = referToTeam(seedWardFlowState(), "assess_for_admission");
     const arm = communityArms(state).find((destination) => destination.purpose === "assess_for_admission");
     expect(arm).toBeDefined();
-    expect(referralDestinationLabel(arm!)).toBe("Community team (Assess for admission)");
+    expect(referralDestinationLabel(arm!)).toBe("Community team (assess for admission)");
   });
 
   it("keeps the purpose on the closed ED record and in the team's notice", () => {
@@ -75,7 +75,7 @@ describe("community referral purpose (D-74)", () => {
     expect(communityPurposeOf({})).toBe("follow_up");
     expect(communityReferralPurposeLabel(communityPurposeOf({}))).toBe("Community follow-up");
     expect(referralDestinationLabel({ kind: "community_team", teamName: team })).toBe(
-      "Community team (Community follow-up)",
+      "Community team (community follow-up)",
     );
   });
 

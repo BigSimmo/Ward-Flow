@@ -120,6 +120,13 @@
   font-size: var(--wf-fs-12);
 }
 
+/* A missing UMRN reads as muted words, not in the mono ID style. */
+.personUmrnMissing {
+  flex: none;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
 .personGo {
   flex: none;
   color: var(--wf-ink-3);
