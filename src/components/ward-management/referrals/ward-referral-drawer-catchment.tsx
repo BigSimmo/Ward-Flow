@@ -152,11 +152,7 @@ export function ReferralCatchmentCard({ s, addressLine }: { s: WardReferralDrawe
                 }}
               />
             </Field>
-            <Field
-              label="Community team"
-              htmlFor={`${sectionId}-team`}
-              error={patientShowErrors && !catchmentTeam.trim() ? "Choose the catchment" : null}
-            >
+            <Field label="Community team" htmlFor={`${sectionId}-team`}>
               <input
                 id={`${sectionId}-team`}
                 className={styles.fieldInput}
@@ -193,12 +189,7 @@ export function ReferralCatchmentCard({ s, addressLine }: { s: WardReferralDrawe
         {showFields ? (
           <>
             <div className={styles.fieldGrid}>
-              <Field
-                label="Home region"
-                htmlFor={`${sectionId}-region`}
-                required
-                error={patientShowErrors && !homeRegion ? "Choose the home region" : null}
-              >
+              <Field label="Home region" htmlFor={`${sectionId}-region`}>
                 <SelectBox>
                   <select
                     id={`${sectionId}-region`}

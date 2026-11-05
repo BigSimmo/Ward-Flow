@@ -33,6 +33,7 @@ import { NO_SENDING_WARD, type WardReferralDrawerState } from "./use-ward-referr
 import { COMMUNITY_REFERRAL_PURPOSES } from "@/components/ward-management/ward-model-referral-parts";
 import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
 import { DocumentationPanel, documentationProblems } from "./referral-flow-panels";
+import { LEGAL_STATUS_NOT_YET_RECORDED, LEGAL_STATUS_UNANSWERED } from "./referral-send-warnings";
 
 const COMMUNITY_PURPOSE_LABELS = {
   follow_up: communityReferralPurposeLabel("follow_up"),
@@ -152,7 +153,6 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
     edNeeds,
     setEdNeeds,
     toggleRisk,
-    originValid,
     sendingWard,
     senderMissing,
     reasonRoom,
@@ -165,7 +165,6 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
     storyError,
   } = s;
   const community = destType === "community";
-  const fromAsked = !sendingWard && !senderMissing;
   const genderUnanswered = destType === "ward" && referralGender === "";
   // The step's faults in the order the step shows them, for the error summary.
   const problems: ErrorSummaryItem[] = attempted.referral
@@ -176,17 +175,15 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
         ...(community && !communityNeeds.firstContact
           ? [{ id: `${sectionId}-first-contact`, text: "Choose when the team should first make contact" }]
           : []),
-        ...(fromAsked && !originValid ? [{ id: `${sectionId}-origin`, text: "Choose the location of referral" }] : []),
-        ...(fromAsked && sourceKind === "community" && !sendingTeam.trim()
-          ? [{ id: `${sectionId}-sending`, text: "Record the referring community service" }]
+        // FORM-REF (Josh, 5 Nov 2026): the location, referring service and reason warn in Before you
+        // send, so only what blocks is listed here.
+        ...(legalStatus === ""
+          ? [{ id: `${sectionId}-refLegalSelect`, text: LEGAL_STATUS_UNANSWERED.replace(/\.$/u, "") }]
           : []),
         ...(!community && !URGENCY_LEVELS.some((tier) => String(tier) === urgency)
           ? [{ id: `${sectionId}-urgency`, text: "Choose the referral urgency" }]
           : []),
         ...(community ? documentationProblems(documentation, `${sectionId}-refdocs`, true) : []),
-        ...(reasonNoteRequired && !doctorNote.trim()
-          ? [{ id: "refDocInput", text: "Give the reason for referral" }]
-          : []),
         ...(doctorNote.length > reasonRoom
           ? [{ id: "refDocInput", text: `Shorten the reason for referral to ${reasonRoom} characters or fewer` }]
           : []),
@@ -253,8 +250,6 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
               <Field
                 label={sourceKind === "ed" ? "Referring emergency department" : "Referring service location"}
                 htmlFor={`${sectionId}-origin`}
-                required
-                error={attempted.referral && !originValid ? "Choose the location of referral" : null}
               >
                 <SelectBox>
                   <select
@@ -275,13 +270,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                 </SelectBox>
               </Field>
               {sourceKind === "community" && (
-                <Field
-                  label="Referring community service"
-                  htmlFor={`${sectionId}-sending`}
-                  required
-                  wide
-                  error={attempted.referral && !sendingTeam.trim() ? "Record the referring community service" : null}
-                >
+                <Field label="Referring community service" htmlFor={`${sectionId}-sending`} wide>
                   <input
                     id={`${sectionId}-sending`}
                     className={styles.fieldInput}
@@ -308,7 +297,12 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
         </CardHead>
         <div className={styles.cardBody}>
           <div className={styles.fieldGrid} data-layout={community ? undefined : "wide-narrow"}>
-            <Field label="Legal status" htmlFor={`${sectionId}-refLegalSelect`} required>
+            <Field
+              label="Legal status"
+              htmlFor={`${sectionId}-refLegalSelect`}
+              required
+              error={attempted.referral && legalStatus === "" ? LEGAL_STATUS_UNANSWERED.replace(/\.$/u, "") : null}
+            >
               <SelectBox>
                 <select
                   className={styles.fieldSelect}
@@ -316,9 +310,18 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                   value={legalStatus}
                   onChange={(e) => setLegalStatus(e.target.value)}
                 >
+                  {/* LEGAL-REF (Josh, 5 Nov 2026): unanswered until someone chooses, and "Not yet
+                      recorded" counts as an answer. */}
+                  {legalStatus === "" ? (
+                    <option value="" disabled>
+                      Choose legal status
+                    </option>
+                  ) : null}
                   {/* The record's own status stays selectable even when it is not one of the usual
                               choices, so the select never shows a different status from the one recorded. */}
-                  {legalStatus !== "Voluntary" &&
+                  {legalStatus !== "" &&
+                  legalStatus !== "Voluntary" &&
+                  legalStatus !== LEGAL_STATUS_NOT_YET_RECORDED &&
                   !LEGAL_STATUS_FORM_CODES.some((code) => legalStatus === `Form ${code}`) ? (
                     <option value={legalStatus}>
                       {legalStatus.startsWith("Form ") ? legalStatusOptionLabel(legalStatus.slice(5)) : legalStatus}
@@ -330,6 +333,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                     </option>
                   ))}
                   <option value="Voluntary">Voluntary</option>
+                  <option value={LEGAL_STATUS_NOT_YET_RECORDED}>{LEGAL_STATUS_NOT_YET_RECORDED}</option>
                 </select>
               </SelectBox>
             </Field>
@@ -446,15 +450,8 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
             <Field
               label="Reason for referral"
               htmlFor="refDocInput"
-              required={reasonNoteRequired}
               hint={reasonNoteRequired ? undefined : "optional"}
-              error={
-                doctorNote.length > reasonRoom
-                  ? `Shorten to ${reasonRoom} characters or fewer`
-                  : attempted.referral && reasonNoteRequired && !doctorNote.trim()
-                    ? "Give the reason for referral"
-                    : null
-              }
+              error={doctorNote.length > reasonRoom ? `Shorten to ${reasonRoom} characters or fewer` : null}
             >
               <input
                 type="text"

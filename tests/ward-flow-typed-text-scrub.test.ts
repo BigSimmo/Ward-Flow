@@ -126,7 +126,7 @@ describe("device copy of a session holding typed text", () => {
     expect(undone.referrals.find((referral) => referral.id === event.referralId)).toEqual(JSON.parse(stored(original)));
   });
 
-  it("removes unholdable typed intake from both live referrals and decision snapshots without losing undo", () => {
+  it("keeps typed intake out of live referrals and decision snapshots without losing undo", () => {
     const fixture = TYPED_TEXT_FIXTURES.find((entry) => entry.label === "ACCEPT_REFERRAL with reassessmentNote")!;
     const { before, event } = fixture.build(seedWardFlowState());
     if (event.type !== "ACCEPT_REFERRAL") throw new Error("Expected a referral acceptance fixture");
@@ -134,7 +134,8 @@ describe("device copy of a session holding typed text", () => {
     const intake = changed.referrals.find((referral) => referral.id === event.referralId)!.intake!;
     const email = "typed-undo-contact-4bd1@example.invalid";
     // Finding 44 (Josh, 27 Oct 2026): the email is no longer pattern checked, so the placeholder can
-    // stand in for it. The referrer's phone still is, so a typed phone makes the intake unholdable.
+    // stand in for it. Form rule (design audit FORM-REF, 5 Nov 2026): nor is the referrer's phone, so
+    // the placeholder stands in for a typed phone too and the intake is kept. The typed text is not.
     const phone = "Synthetic typed phone 4bd1";
     const chartText = "Synthetic uploaded chart marker-undo-4bd1";
     const chartBytes = Buffer.from(chartText);
@@ -147,9 +148,11 @@ describe("device copy of a session holding typed text", () => {
     expect(copy).not.toBeNull();
     const decision = copy!.undoRecords?.find((entry) => entry.kind === "referral-decision");
     if (decision?.kind !== "referral-decision") throw new Error("Expected a referral decision snapshot");
-    expect(copy!.referrals.find((referral) => referral.id === event.referralId)!.intake).toBeUndefined();
-    expect(decision.before.intake).toBeUndefined();
-    expect(decision.after.intake).toBeUndefined();
+    const live = copy!.referrals.find((referral) => referral.id === event.referralId)!.intake!;
+    expect(live.referrer.phone).toBe(TYPED_TEXT_NOT_KEPT);
+    expect(live.referrer.email).toBe(TYPED_TEXT_NOT_KEPT);
+    for (const snapshot of [decision.before.intake, decision.after.intake])
+      if (snapshot) expect(snapshot.referrer.phone).toBe(TYPED_TEXT_NOT_KEPT);
     for (const marker of [email, phone, chartText, chartBytes.toString("base64"), ...fixture.markers])
       expect(stored(copy)).not.toContain(marker);
     expect(isValidStoredWardFlowState(copy)).toBe(true);
@@ -160,7 +163,7 @@ describe("device copy of a session holding typed text", () => {
       referralId: event.referralId,
     });
     expect(undone.rejections).toEqual([]);
-    expect(undone.referrals.find((referral) => referral.id === event.referralId)!.intake).toBeUndefined();
+    expect(stored(undone)).not.toContain(phone);
   });
 
   it("keeps an intake whose only typed contact is the email, with the placeholder in its place", () => {

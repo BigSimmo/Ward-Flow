@@ -299,7 +299,7 @@ export function reduceReferralSendEvent(
             // The team's own transport answer carries over, so a carer-brought patient can arrive
             // without a booking. A needed vehicle is booked on the journey as for any other.
             {
-              originCommunity: { siteCode: raisedFrom!.originSiteCode, teamName: raisedFrom!.sendingTeamName },
+              originCommunity: { siteCode: raisedFrom!.originSiteCode ?? "", teamName: raisedFrom!.sendingTeamName },
               ...(raisedFrom!.transportNeeded ? {} : { transportNeed: { needed: false, at: event.now } }),
             }),
         openedAt,

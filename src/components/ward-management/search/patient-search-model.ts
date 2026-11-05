@@ -117,7 +117,7 @@ export function getPatientPresence(
   if (movement) return { key: "live", label: "On this board" };
   const referral = referrals.find((r) => matchesPatient(r, patient.id) && referralState(r) === "queued");
   if (referral) {
-    if (referral.originSiteCode.includes("CMHT") || referral.originSiteCode.includes("Clinic")) {
+    if ((referral.originSiteCode ?? "").includes("CMHT") || (referral.originSiteCode ?? "").includes("Clinic")) {
       return { key: "community", label: "Community / Home" };
     }
     return { key: "live", label: "On this board" };

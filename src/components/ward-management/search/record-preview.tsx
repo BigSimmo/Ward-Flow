@@ -1,6 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
+import { HOME_REGION_NOT_RECORDED, ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { useEffect, useMemo, useState } from "react";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { formTitleForCode } from "@/lib/form-register";
@@ -44,7 +45,7 @@ function settingLabel(setting: string): string {
       ? "Emergency department"
       : setting === "inpatient"
         ? "Inpatient ward"
-        : "Location not recorded";
+        : ORIGIN_NOT_RECORDED;
 }
 
 export type PreviewSelection =
@@ -115,7 +116,7 @@ export function buildReferralSummary(referral: Referral): ReferralSummary {
   return {
     id: referral.id,
     originLine: withSendingTeam(
-      `Referral from ${referral.originSiteCode} · ${referral.ageBand} · ${referral.homeRegion}`,
+      `Referral from ${referral.originSiteCode ?? ORIGIN_NOT_RECORDED} · ${referral.ageBand} · ${referral.homeRegion ?? HOME_REGION_NOT_RECORDED}`,
       referral,
     ),
     declineNote,
@@ -362,7 +363,7 @@ export function RecordPreview({
       disposition = withdrawn ? "Withdrawn" : declined ? "Declined" : NOT_RECORDED;
       targetWard = "Not admitted";
       currentStage = withdrawn ? "Withdrawn" : declined ? "Declined" : "No open movement";
-      originSite = referral.originSiteCode;
+      originSite = referral.originSiteCode ?? ORIGIN_NOT_RECORDED;
       urgency = `Tier ${referral.urgency}`;
     } else if (referral) {
       const isComm = isCommunityReferral(referral);
@@ -373,7 +374,7 @@ export function RecordPreview({
         disposition = "Community management";
         targetWard = "Not admitted";
         currentStage = "Outpatient";
-        originSite = referral.originSiteCode;
+        originSite = referral.originSiteCode ?? ORIGIN_NOT_RECORDED;
         urgency = `Tier ${referral.urgency}`;
       } else {
         presenceStatus = "live";
@@ -768,7 +769,7 @@ export function RecordPreview({
             </div>
             <div className={styles.quickMetricCard}>
               <span className={styles.metricLabel}>Home region</span>
-              <span className={styles.metricVal}>{referral.homeRegion}</span>
+              <span className={styles.metricVal}>{referral.homeRegion ?? HOME_REGION_NOT_RECORDED}</span>
             </div>
             <div className={styles.quickMetricCard}>
               <span className={styles.metricLabel}>Age cohort</span>

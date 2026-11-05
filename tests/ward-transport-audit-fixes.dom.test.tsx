@@ -64,7 +64,7 @@ function Booked({ id }: { id: string }) {
 }
 
 describe("Log booking (A4-7, A4-6, A4-2, A4-5)", () => {
-  it("shows Legal now to check against, warns a late ETA, and says why an empty ETA is not saved", () => {
+  it("shows Legal now to check against, warns a late ETA, and warns on an empty ETA", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <PatientNowScreen movementId="WF-011" />
@@ -85,15 +85,12 @@ describe("Log booking (A4-7, A4-6, A4-2, A4-5)", () => {
     fireEvent.click(within(form).getByTestId("ward-patient-legal-involuntary"));
     fireEvent.click(within(form).getByTestId("ward-patient-transport-estimated-day-today"));
 
-    // A4-6: Save with no ETA says what is left and records nothing.
+    // W32 (Josh's card 3, 5 Nov 2026, replacing A4-6): with no ETA every answer is in and the blank
+    // time warns instead of blocking Save.
     fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-SYN-7" } });
-    fireEvent.click(within(form).getByTestId("ward-patient-confirm-transport-btn"));
-    expect(within(form).getByTestId("ward-patient-book-transport-left")).toHaveTextContent(
-      "1 answer left: estimated time",
-    );
-    expect(within(form).getByTestId("ward-patient-confirm-transport-btn")).toHaveAttribute(
-      "title",
-      expect.stringMatching(/enter the estimated time/),
+    expect(within(form).getByTestId("ward-patient-book-transport-left")).toHaveTextContent("Every answer given");
+    expect(within(form).getByTestId("ward-patient-book-transport-left-warnings")).toHaveTextContent(
+      "Not recorded: estimated time. You can still save.",
     );
     expect(screen.getByTestId("booked-job")).toHaveTextContent("none");
 

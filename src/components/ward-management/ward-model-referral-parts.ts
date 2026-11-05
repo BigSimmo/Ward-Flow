@@ -145,6 +145,10 @@ export const HOME_REGIONS = [
   "Kimberley",
 ] as const;
 export type HomeRegion = (typeof HOME_REGIONS)[number];
+/** FORM-REF (Josh, 5 Nov 2026): the words for a referral sent with no home region chosen. */
+export const HOME_REGION_NOT_RECORDED = "Home region not recorded";
+/** FORM-REF: the words for a referral sent with no location of referral recorded. */
+export const ORIGIN_NOT_RECORDED = "Location not recorded";
 
 /**
  * Where a referral is ADDRESSED, and the criteria that destination can answer.

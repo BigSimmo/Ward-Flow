@@ -464,34 +464,29 @@ export function formatDob(value: string): string {
 export function documentationNeeded(draft: DocumentationDraft): number {
   let needed = 0;
   if (!draft.medical) needed += 1;
-  if (draft.medical === "no") {
-    if (!draft.expectedAt) needed += 1;
-    if (!draft.contactName.trim()) needed += 1;
-    if (!draft.contactPhone.trim()) needed += 1;
-  }
+  // FORM-REF (Josh, 5 Nov 2026): the expected clearance time and contact warn, never block.
   if (draft.additional === "yes" && !draft.charts.some((chart) => chart.kind === "other")) needed += 1;
   return needed;
 }
 
 /** Every answer the Documents step asks for, the denominator `documentationNeeded` counts against. */
 export function documentationItems(draft: DocumentationDraft): number {
-  return 1 + (draft.medical === "no" ? 3 : 0) + (draft.additional === "yes" ? 1 : 0);
+  return 1 + (draft.additional === "yes" ? 1 : 0);
 }
 
 /**
- * The contact fields asked at Send (`contactFieldErrors` checks each one), counted as items. Finding
- * 44 (Josh, 27 Oct 2026): the email is asked but never blocks, so it is not counted.
+ * Per-field contact warnings for display. FORM-REF (Josh, 5 Nov 2026): none of them blocks a send,
+ * and the email (finding 44) is never named.
  */
-export const CONTACT_FIELD_COUNT = 4;
-
-/** Per-field contact messages for display; `referralContactError` stays the gate. */
 export function contactFieldErrors(contact: ReferralContact): Partial<Record<keyof ReferralContact, string>> {
   const errors: Partial<Record<keyof ReferralContact, string>> = {};
-  if (!contact.name.trim()) errors.name = "Enter your name";
+  if (!contact.name.trim()) errors.name = "Name not recorded. You can still send.";
   if (!/^[+\d\s().-]+$/.test(contact.phone) || contact.phone.replace(/\D/g, "").length < 8)
-    errors.phone = "Enter a valid phone number";
-  if (!contact.role.trim()) errors.role = "Enter your role";
-  if (!contact.location.trim()) errors.location = "Enter your location or service";
+    errors.phone = contact.phone.trim()
+      ? "This phone number cannot be rung. You can still send."
+      : "Phone number not recorded. You can still send.";
+  if (!contact.role.trim()) errors.role = "Role not recorded. You can still send.";
+  if (!contact.location.trim()) errors.location = "Location or service not recorded. You can still send.";
   return errors;
 }
 

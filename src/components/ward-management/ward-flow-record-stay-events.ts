@@ -514,16 +514,18 @@ export function reduceRecordedStayEvent(
       if (!(REPATRIATION_MODES as readonly string[]).includes(event.mode)) {
         return reject(state, event, `RECORD_REPATRIATION mode must be chosen from REPATRIATION_MODES`);
       }
-      if (!(TRANSPORT_PROVIDERS as readonly string[]).includes(event.provider)) {
+      // Form rule (design audit W13, Josh's card 3, 5 Nov 2026): the provider and depart time warn
+      // and may be absent, and a blank CAD is "CAD to follow". Each one given is still checked.
+      if (event.provider !== undefined && !(TRANSPORT_PROVIDERS as readonly string[]).includes(event.provider)) {
         return reject(state, event, `RECORD_REPATRIATION provider must be chosen from TRANSPORT_PROVIDERS`);
       }
-      if (typeof event.cadNumber !== "string" || event.cadNumber.trim().length === 0) {
-        return reject(state, event, `RECORD_REPATRIATION cadNumber must be answered, and it has no default`);
+      if (typeof event.cadNumber !== "string") {
+        return reject(state, event, `RECORD_REPATRIATION cadNumber must be typed text or left blank`);
       }
       // The same CAD rule as BOOK_TRANSPORT and the return plan form (HAZ-03). The receiving ward's
       // agreement re-sends the plan's number, which a device may hold only as the typed-text
       // placeholder, so a number the record already carries is not checked again.
-      if (event.cadNumber.trim() !== existingRecord?.cadNumber) {
+      if (event.cadNumber.trim() !== "" && event.cadNumber.trim() !== existingRecord?.cadNumber) {
         const cadProblem = cadNumberProblem(event.cadNumber);
         if (cadProblem !== undefined) {
           return reject(state, event, `RECORD_REPATRIATION cadNumber refused: ${cadProblem}`);
@@ -536,8 +538,11 @@ export function reduceRecordedStayEvent(
           `RECORD_REPATRIATION transportLegalStatus must be chosen from TRANSPORT_LEGAL_STATUSES`,
         );
       }
-      if (typeof event.estimatedAt !== "number" || !Number.isFinite(event.estimatedAt)) {
-        return reject(state, event, `RECORD_REPATRIATION estimatedAt must be answered, and it has no default`);
+      if (
+        event.estimatedAt !== undefined &&
+        (typeof event.estimatedAt !== "number" || !Number.isFinite(event.estimatedAt))
+      ) {
+        return reject(state, event, `RECORD_REPATRIATION estimatedAt must be a real time when it is given`);
       }
       // Audit S-4: the return journey's legal status is read against the stay's own record. A
       // "Voluntary" return for a patient recorded as involuntary would open unauthorised wards to
@@ -580,10 +585,10 @@ export function reduceRecordedStayEvent(
         receivingWardAgreed: event.receivingWardAgreed,
         ...(event.receivingWardAgreed && existingRecord ? { agreedAt: event.now, agreedBy: event.role } : {}),
         mode: event.mode,
-        provider: event.provider,
+        ...(event.provider === undefined ? {} : { provider: event.provider }),
         cadNumber: event.cadNumber.trim(),
         transportLegalStatus: event.transportLegalStatus,
-        estimatedAt: event.estimatedAt,
+        ...(event.estimatedAt === undefined ? {} : { estimatedAt: event.estimatedAt }),
         ...(form4CReceived === undefined ? {} : { form4CReceived }),
         ...(escortRequired === undefined ? {} : { escortRequired }),
       };

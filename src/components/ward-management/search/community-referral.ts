@@ -9,8 +9,8 @@ import type { Referral } from "@/components/ward-management/ward-model";
  */
 export function isCommunityReferral(referral: Pick<Referral, "originSiteCode" | "source">): boolean {
   return (
-    referral.originSiteCode.includes("CMHT") ||
-    referral.originSiteCode.includes("Clinic") ||
+    (referral.originSiteCode ?? "").includes("CMHT") ||
+    (referral.originSiteCode ?? "").includes("Clinic") ||
     referral.source === "community"
   );
 }

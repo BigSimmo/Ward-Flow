@@ -1,4 +1,5 @@
 import type { Admission } from "@/components/ward-management/ward-admissions";
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import type { EligibilityGate } from "@/components/ward-management/ward-eligibility";
 import {
@@ -117,7 +118,7 @@ export function referralAsked(referral: Referral, units: readonly Unit[]): strin
 
 /** Where a referral came from: the sending site, and its team when one is named. */
 export function referralFrom(referral: Referral): string {
-  return withSendingTeam(referral.originSiteCode, referral);
+  return withSendingTeam(referral.originSiteCode ?? ORIGIN_NOT_RECORDED, referral);
 }
 
 /** Phone: brings the first fit row into view and focuses it, so the person picks the ward. */

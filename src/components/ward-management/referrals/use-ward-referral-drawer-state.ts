@@ -44,13 +44,7 @@ import {
 import { edById, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 import { catchmentRoutingDestinations, lookupCatchment } from "../ward-catchment";
 import { suburbOptions } from "./referral-destination-options";
-import {
-  clearanceItems,
-  clearanceNeeded,
-  communityPurposeRow,
-  communityReferralError,
-  communityUrgency,
-} from "./community-short-form";
+import { clearanceNeeded, communityPurposeRow, communityReferralError, communityUrgency } from "./community-short-form";
 import { isTentativeDiagnosisBlock } from "../ward-diagnosis";
 import { documentationError, intakeCharts, type DocumentationDraft } from "./referral-flow-panels";
 import { UNIDENTIFIED_REFERRAL_PREFIX } from "./referral-inbox";
@@ -74,7 +68,7 @@ import { drawerFootStatus } from "./referral-drawer-foot-status";
 import { focusFirstInvalidField, referralInboxSummary } from "./referral-drawer-helpers";
 import * as fromRecord from "./referral-record-prefill";
 import { type ReferralTextInput } from "./referral-letter";
-import { useIsPhone, useModalFocus, useOptionalToast, type WfTone } from "@/components/wf";
+import { useIsPhone, useModalFocus, useOptionalToast } from "@/components/wf";
 import { usePathname } from "next/navigation";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { profileForChromeRole } from "@/components/ward-management/settings/settings-profile";
@@ -82,7 +76,7 @@ import { createReadmissionIndex, priorDischargeWithinWindow } from "@/components
 import {
   CLEARANCE_CHECKS,
   REFERRAL_RISK_FLAGS,
-  referralContactError,
+  referralContactLimitError,
   referralIntakeError,
   REFERRAL_REASON_MAX_CHARACTERS,
   type ClearanceChecklist,
@@ -91,6 +85,7 @@ import {
   clearanceChecklistWords,
   referralNeedsWords,
 } from "./referral-submission";
+import * as warn from "./referral-send-warnings";
 import {
   type MockPatientProfile,
   NOT_RECORDED,
@@ -109,7 +104,6 @@ import {
   RISK_FLAG_LABELS,
   documentationNeeded,
   documentationItems,
-  CONTACT_FIELD_COUNT,
   contactFieldErrors,
   communityDestinations,
   singleRecipientLabel,
@@ -337,14 +331,17 @@ export function useWardReferralDrawerState({
   const [highAcuity, setHighAcuity] = useState(kept?.highAcuity ?? false);
   const [arrivalEta, setArrivalEta] = useState(kept?.arrivalEta ?? "");
   const [destType, setDestType] = useState<DrawerCategory>(initialDestination ?? kept?.destType ?? "ward");
-  const [legalStatus, setLegalStatus] = useState(
-    kept?.legalStatus ??
-      urlPrefill?.legal ??
-      // The record's status, or "Not recorded": never a default (owner rule, 19 Oct 2026).
-      (defaultPatient.legalStatus.startsWith("Form")
-        ? defaultPatient.legalStatus.split(" ").slice(0, 2).join(" ")
-        : defaultPatient.legalStatus),
+  // The record's status, or unanswered: never a default (owner rule, 19 Oct 2026; LEGAL-REF).
+  const [legalStatus, setLegalStatus] = useState(() =>
+    warn.legalStatusAnswer(
+      kept?.legalStatus ??
+        urlPrefill?.legal ??
+        (defaultPatient.legalStatus.startsWith("Form")
+          ? defaultPatient.legalStatus.split(" ").slice(0, 2).join(" ")
+          : defaultPatient.legalStatus),
+    ),
   );
+  const sentLegal = warn.sentLegalStatus(legalStatus);
   const [urgency, setUrgency] = useState(
     kept?.urgency ??
       (urlPrefill?.ats ? (urlPrefill.ats <= 2 ? "1" : urlPrefill.ats === 3 ? "2" : "3") : defaultPatient.urgency),
@@ -665,7 +662,7 @@ export function useWardReferralDrawerState({
 
     // Synchronize all form fields with selected patient profile
     const baseLegal = p.legalStatus.startsWith("Form") ? p.legalStatus.split(" ").slice(0, 2).join(" ") : p.legalStatus;
-    setLegalStatus(baseLegal);
+    setLegalStatus(warn.legalStatusAnswer(baseLegal));
     setUrgency(p.urgency);
     setAtsCategory(undefined);
     setSecurity(p.security.toLowerCase().includes("secure") ? "Secure" : "Open");
@@ -736,7 +733,7 @@ export function useWardReferralDrawerState({
           sex: referralSex,
           gender: referralGender,
           security,
-          legalStatus,
+          legalStatus: sentLegal,
           highAcuity,
         })
       : !selectedRecipient
@@ -786,32 +783,21 @@ export function useWardReferralDrawerState({
     if (sendingWard && notOnSendingWard && !notOnWardReason)
       return `This person is not in a bed on ${sendingWard.name}. Choose why the ward is referring them.`;
     if (!effectiveCohort) return "Choose the age band.";
-    if (!catchmentAnswered) return "Confirm the patient's catchment before continuing.";
     if (catchmentNotKnown && destType === "community")
       return "A community team referral needs a team. Choose the community team, or send to a ward or ED.";
-    if (!homeRegion) return "Choose the patient's home region.";
     return null;
   }
   // WS-01: a ward referral answers gender before Send ("Not yet recorded" counts as an answer).
   const genderUnanswered = destType === "ward" && referralGender === "";
+  // FORM-REF: the location, referring service and reason warn (`sendWarnings`); these block.
   function referralError() {
     if (senderMissing) return NO_SENDING_WARD;
-    if (
-      !sendingWard &&
-      (!originSiteCode ||
-        !siteDirectory.some(
-          (site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment),
-        ))
-    )
-      return "Choose the location of referral.";
-    if (!sendingWard && sourceKind === "community" && !sendingTeam.trim())
-      return "Record the referring community service.";
+    if (legalStatus === "") return warn.LEGAL_STATUS_UNANSWERED;
     if (!URGENCY_LEVELS.some((tier) => String(tier) === shownUrgency))
       return community ? "Choose when the team should first make contact." : "Choose the referral urgency.";
     if (genderUnanswered) return GENDER_UNANSWERED;
     const shortForm = community ? communityReferralError(communityPurpose, documentation) : null;
     if (shortForm) return shortForm;
-    if (reasonNoteRequired && !doctorNote.trim()) return "Give the reason for referral.";
     if (cleanReferralText(doctorNote).length > reasonRoom)
       return `Shorten the reason for referral to ${reasonRoom} characters or fewer.`;
     return null;
@@ -828,16 +814,14 @@ export function useWardReferralDrawerState({
     patient: [
       (!patientRecord && !unidentified?.trim()) || (notOnSendingWard && (!!heldBedUnitId || !notOnWardReason)),
       !effectiveCohort,
-      !catchmentAnswered || (catchmentNotKnown && destType === "community"),
-      !homeRegion,
+      catchmentNotKnown && destType === "community",
     ].filter(Boolean).length,
     referral:
       [
-        !originValid,
-        needsSendingTeam && !sendingTeam.trim(),
+        legalStatus === "",
         !URGENCY_LEVELS.some((tier) => String(tier) === shownUrgency),
         community && !communityPurpose,
-        (reasonNoteRequired && !doctorNote.trim()) || doctorNote.length > reasonRoom,
+        doctorNote.length > reasonRoom,
         genderUnanswered,
       ].filter(Boolean).length + (community ? clearanceNeeded(documentation) : 0),
     documentation: community ? 0 : documentationNeeded(documentation),
@@ -845,14 +829,8 @@ export function useWardReferralDrawerState({
   };
   const totalNeeded = needed.patient + needed.referral + needed.documentation + needed.placement;
   // L1 (review 12 Oct 2026): ONE count. "N of M ready", "Items left" and each step's "N needed" add up.
-  // A2-9 (audit 13 Oct 2026): Send's contact details are items too, so the hero never reads "0 items left".
-  const itemsTotal =
-    4 +
-    (needsSendingTeam ? 3 : 2) +
-    (destType === "ward" ? 1 : 0) +
-    (community ? 1 + clearanceItems(documentation) : documentationItems(documentation)) +
-    1 +
-    CONTACT_FIELD_COUNT;
+  // FORM-REF (5 Nov 2026): only blocking items count; contact and the rest warn (`sendWarnings`).
+  const itemsTotal = 4 + (destType === "ward" ? 1 : 0) + (community ? 2 : documentationItems(documentation)) + 1;
   // D-77: the community short form has no Documents step, so its checks skip triage and charts.
   const docsError = () => (community ? null : documentationError(documentation));
   // The saved history carries the unidentified label ahead of the patient story, so the two together
@@ -933,7 +911,7 @@ export function useWardReferralDrawerState({
       referralError() ??
       storyError() ??
       docsError() ??
-      referralContactError(cleanReferralContact(contact));
+      referralContactLimitError(cleanReferralContact(contact));
     if (validation) {
       setFlowError(validation);
       setAttempted((current) => ({ ...current, contact: true }));
@@ -944,18 +922,18 @@ export function useWardReferralDrawerState({
     const intake: ReferralIntakeDetails = cleanReferralFields({
       catchment: catchmentNotKnown
         ? { teamName: "", confirmed: true, notKnown: true }
-        : { teamName: catchmentTeam.trim(), service: catchmentService || undefined, confirmed: true },
+        : { teamName: catchmentTeam.trim(), service: catchmentService || undefined, confirmed: catchmentAnswered },
       reasonForReferral: referralReason,
-      legalStatus,
+      legalStatus: sentLegal,
       riskFlags: REFERRAL_RISK_FLAGS.filter((flag) => riskFlags[flag]),
       medicalClearance: {
         cleared: isMedicalCleared,
         ...(isMedicalCleared
           ? {}
           : {
-              expectedAt: `${documentation.expectedAt}+08:00`,
-              contactName: documentation.contactName,
-              contactPhone: documentation.contactPhone,
+              ...(documentation.expectedAt ? { expectedAt: `${documentation.expectedAt}+08:00` } : {}),
+              ...(documentation.contactName.trim() ? { contactName: documentation.contactName } : {}),
+              ...(documentation.contactPhone.trim() ? { contactPhone: documentation.contactPhone } : {}),
             }),
       },
       triageAndRampCompleted: !community && documentation.triage === "yes",
@@ -977,7 +955,7 @@ export function useWardReferralDrawerState({
     }
     const cohort = effectiveCohort || undefined;
     const tier = URGENCY_LEVELS.find((level) => String(level) === shownUrgency);
-    if (!cohort || !tier || !homeRegion || !selectedDestinations.length) {
+    if (!cohort || !tier || !selectedDestinations.length) {
       setFlowError("Check the patient, urgency and selected recipients.");
       return;
     }
@@ -988,13 +966,13 @@ export function useWardReferralDrawerState({
       now,
       patientId: patientRecord?.id,
       ageBand: cohort,
-      homeRegion,
+      homeRegion: homeRegion || undefined,
       suburb: suburbKnown ? { kind: "named", name: catchmentSuburb } : { kind: "unknown", reason: "not_known" },
       destinations: selectedDestinations,
       source: sendingWard ? "psychiatric_ward" : sourceKind === "ed" ? "ed_medical" : "community",
-      originSiteCode: sendingWard?.siteCode ?? originSiteCode,
+      originSiteCode: sendingWard?.siteCode ?? (originValid ? originSiteCode : undefined),
       ...(sendingWard ? { originUnitId: sendingWard.id, actingUnitId: sendingWard.id } : {}),
-      sendingTeamName: needsSendingTeam ? cleanReferralText(sendingTeam) : undefined,
+      sendingTeamName: needsSendingTeam && sendingTeam.trim() ? cleanReferralText(sendingTeam) : undefined,
       urgency: tier,
       ...(atsCategory === undefined ? {} : { atsCategory }),
       transportNeeded: destType === "ward" && transport !== "carer" && transport !== "Family or carer",
@@ -1011,15 +989,20 @@ export function useWardReferralDrawerState({
   const recordedFlags = (Object.keys(RISK_FLAG_LABELS) as (keyof typeof RISK_FLAG_LABELS)[]).filter(
     (key) => riskFlags[key],
   );
-  const clearance: { label: string; tone: WfTone } =
-    documentation.medical === "yes"
-      ? { label: "Cleared", tone: "success" }
-      : documentation.medical === "no"
-        ? { label: "Pending", tone: "warning" }
-        : { label: "Not answered", tone: "neutral" };
-  const contactErrors = attempted.contact ? contactFieldErrors(contact) : {};
-  const contactNeeded = Object.keys(contactFieldErrors(contact)).length;
-  const itemsLeft = totalNeeded + contactNeeded;
+  const clearance = warn.clearanceLabel(documentation.medical);
+  // FORM-REF: the referrer's contact warns, never blocks, so each blank field is named as it is.
+  const contactErrors = contactFieldErrors(contact);
+  const contactNeeded = Object.keys(contactErrors).length;
+  const sendWarnings = warn.referralSendWarnings({
+    catchmentAnswered,
+    homeRegion,
+    originValid,
+    sendingTeamMissing: needsSendingTeam && !sendingTeam.trim(),
+    reasonMissing: reasonNoteRequired && !doctorNote.trim(),
+    documentation,
+    contact,
+  });
+  const itemsLeft = totalNeeded;
   const itemsReady = itemsTotal - itemsLeft;
   const patientShowErrors = attempted.patient && activeSection === "patient";
   // No "Unknown Patient" referral: with no person on file, the referrer describes who it is for.
@@ -1083,11 +1066,15 @@ export function useWardReferralDrawerState({
           : catchmentTeam.trim()
             ? `${catchmentTeam.trim()}, suggested`
             : "To confirm",
-      state: catchmentAnswered ? "done" : "needed",
+      state: catchmentAnswered ? "done" : "follow",
     },
-    { label: "From", value: originLabel || "Needed", state: originValid ? "done" : "needed" },
+    { label: "From", value: originLabel || "Not recorded", state: originValid ? "done" : "follow" },
     ...(community ? [communityPurposeRow(communityPurpose)] : []),
-    { label: "Legal status", value: legalStatus, state: legalStatus === NOT_RECORDED ? "follow" : "done" },
+    {
+      label: "Legal status",
+      value: legalStatus === "" ? "Needed" : sentLegal,
+      state: legalStatus === "" ? "needed" : sentLegal === NOT_RECORDED ? "follow" : "done",
+    },
     ...(community
       ? []
       : [{ label: "Urgency", value: tier === undefined ? "Needed" : `Tier ${tier}`, state: tierState } as const]),
@@ -1104,8 +1091,8 @@ export function useWardReferralDrawerState({
     },
     {
       label: "Your contact",
-      value: contactNeeded ? `${contactNeeded} to fill at Send` : contact.name,
-      state: contactNeeded ? "needed" : "done",
+      value: contactNeeded ? `${contactNeeded} not recorded` : contact.name,
+      state: contactNeeded ? "follow" : "done",
     },
     { label: destination.places, value: placeRow, state: selectedDestinations.length ? "done" : "needed" },
   ];
@@ -1125,7 +1112,7 @@ export function useWardReferralDrawerState({
     from: originLabel,
     recipients: recipientLabels,
     urgency: tier === undefined ? "" : tierLabel,
-    legalStatus,
+    legalStatus: sentLegal,
     reason: referralReason,
     history: unidentifiedHistory,
     risks: recordedFlags.map((key) => RISK_FLAG_LABELS[key]),
@@ -1172,7 +1159,7 @@ export function useWardReferralDrawerState({
     contactNeeded,
     itemsLeft,
     itemsTotal,
-    contactAttempted: !!attempted.contact,
+    warningCount: sendWarnings.length,
   });
 
   // v10 phone: which of the four phone layouts shows. The list holds the steps; the sheet holds one
@@ -1198,7 +1185,7 @@ export function useWardReferralDrawerState({
     }
     if (id === "referral") {
       return originValid
-        ? [originLabel, legalStatus, tier === undefined ? "urgency" : `Tier ${tier}`].join(" · ")
+        ? [originLabel, sentLegal, tier === undefined ? "urgency" : `Tier ${tier}`].join(" · ")
         : "Source · legal status · urgency";
     }
     if (id === "documentation") {
@@ -1463,6 +1450,7 @@ export function useWardReferralDrawerState({
     clearance,
     contactErrors,
     contactNeeded,
+    sendWarnings,
     itemsLeft,
     itemsReady,
     patientShowErrors,

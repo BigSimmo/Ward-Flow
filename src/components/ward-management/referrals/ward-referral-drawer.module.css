@@ -1172,6 +1172,7 @@
 }
 
 .fieldError,
+.fieldWarning,
 .flowError {
   display: flex;
   align-items: center;
@@ -2295,6 +2296,17 @@ details.refCard > summary {
 .railCount {
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
+}
+
+/* FORM-REF: what is not recorded, in amber words. Send still goes ahead. */
+.railWarnings {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0;
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
 }
 
 /* Autosaved draft and its age: tab memory only (D-18). */

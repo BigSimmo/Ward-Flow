@@ -9,6 +9,7 @@
 // Openable from anywhere through `openReferralRecord` (referral-sheet-bus.ts).
 
 import { useState } from "react";
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { ClipboardCopy, TriangleAlert } from "lucide-react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -103,7 +104,7 @@ export function ReferralSummarySheet({
   const intake = referral.intake;
   const text = isbarText(referral, name, umrn, demographics, now, recorded);
   const { waited, due, overdue } = waitWords(referral, now);
-  const site = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode;
+  const site = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode ?? ORIGIN_NOT_RECORDED;
   const legal = recorded.legalStatus?.trim();
   const letterLegal = intake?.legalStatus?.trim();
   const legalMissing = !legal || /^not recorded$/i.test(legal);

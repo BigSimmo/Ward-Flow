@@ -336,8 +336,9 @@ describe("transportAnswersBlockedReason (shared by ED and community)", () => {
         NOW,
       ),
     ).toBe(
-      // CAD to follow (Josh, 27 Oct 2026): a blank CAD number is not a missing answer.
-      "Before booking, choose who is collecting the patient, enter the estimated time, answer the escort question, state whether the transport is voluntary or involuntary.",
+      // CAD to follow (Josh, 27 Oct 2026): a blank CAD number is not a missing answer. W32 (Josh's
+      // card 3, 5 Nov 2026): nor is a blank estimated time, which warns; a half-typed one still blocks.
+      "Before booking, choose who is collecting the patient, answer the escort question, state whether the transport is voluntary or involuntary.",
     );
     expect(transportAnswersBlockedReason({ ...answered, estimatedTime: "14:3" }, NOW)).toBe(
       "Before booking, enter the estimated time.",

@@ -693,8 +693,13 @@ export function reduceTransportEvent(
       if (!TRANSPORT_LEGAL_STATUSES.includes(event.transportLegalStatus)) {
         return reject(state, event, `BOOK_TRANSPORT transportLegalStatus must be chosen from TRANSPORT_LEGAL_STATUSES`);
       }
-      if (typeof event.estimatedAt !== "number" || !Number.isFinite(event.estimatedAt)) {
-        return reject(state, event, `BOOK_TRANSPORT estimatedAt must be answered, and it has no default`);
+      // Form rule (design audit W32, Josh's card 3, 5 Nov 2026): the estimated time warns and may be
+      // absent. One that is given must be a real time.
+      if (
+        event.estimatedAt !== undefined &&
+        (typeof event.estimatedAt !== "number" || !Number.isFinite(event.estimatedAt))
+      ) {
+        return reject(state, event, `BOOK_TRANSPORT estimatedAt must be a real time when it is given`);
       }
       // WLQ-11 (owner): a `ward` booker must state its unit now, so `CANCEL_TRANSPORT` can later
       // tell the booking ward from any other.
@@ -806,7 +811,7 @@ export function reduceTransportEvent(
             ? { cadNumber: event.cadNumber }
             : {}),
           transportLegalStatus: event.transportLegalStatus,
-          estimatedAt: event.estimatedAt,
+          ...(event.estimatedAt === undefined ? {} : { estimatedAt: event.estimatedAt }),
           ...(bookingException ? { exceptions: [bookingException] } : {}),
           // Carried forward from RECORD_TRANSPORT_NEED so the "no transport needed" branches read a
           // runtime-booked job as they read a seeded one.

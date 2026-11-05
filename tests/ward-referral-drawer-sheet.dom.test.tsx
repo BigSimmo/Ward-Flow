@@ -116,9 +116,10 @@ describe("referral slide-out, option B", () => {
       .map((match) => Number(match[1]))
       .reduce((sum, n) => sum + n, 0);
     expect(stepNeeds).toBeGreaterThan(0);
-    // A2-9 (audit 13 Oct 2026): the contact details asked at Send are counted too, on their own row.
-    const contactNeeds = Number(/(\d+) to fill at Send/u.exec(rail.textContent ?? "")?.[1] ?? 0);
-    expect(Number(left)).toBe(stepNeeds + contactNeeds);
+    // Form rule (design audit FORM-REF, 5 Nov 2026, replacing A2-9): the contact details warn and are
+    // not counted, so the steps' needs are the whole count.
+    expect(rail).not.toHaveTextContent("to fill at Send");
+    expect(Number(left)).toBe(stepNeeds);
   });
 
   it("closes straight away when nothing was entered", () => {

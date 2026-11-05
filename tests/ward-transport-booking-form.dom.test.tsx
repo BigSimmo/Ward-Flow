@@ -88,14 +88,31 @@ describe("the one transport booking form", () => {
     // The answers left sit at the top of the form, announced as they change.
     const left = screen.getByTestId(id("left"));
     expect(left).toHaveAttribute("role", "status");
-    expect(left).toHaveTextContent(
-      "5 answers left: provider, estimated time, today or tomorrow, escort answer, legal status",
-    );
+    // W32 (Josh's card 3, 5 Nov 2026): a blank estimated time warns and never blocks, so it is not
+    // one of the answers left; the day is asked once a time is typed.
+    expect(left).toHaveTextContent("3 answers left: provider, escort answer, legal status");
     expect(left.parentElement?.firstElementChild).toBe(left);
+    expect(screen.getByTestId(`${id("left")}-warnings`)).toHaveTextContent(
+      "Not recorded: estimated time. You can still save.",
+    );
     expect(screen.getByTestId(id("confirm"))).toHaveAttribute(
       "title",
-      expect.stringContaining("choose today or tomorrow"),
+      expect.stringContaining("choose who is collecting the patient"),
     );
+  });
+
+  it("saves with a blank estimated time, with the warning in view (W32)", () => {
+    const onSubmit = vi.fn();
+    render(<Harness record={INVOLUNTARY} onSubmit={onSubmit} />);
+    fireEvent.change(screen.getByTestId(id("provider")), { target: { value: "Ambulance (St John)" } });
+    fireEvent.click(screen.getByTestId(id("escort", "no")));
+    fireEvent.click(screen.getByTestId(id("legal", "involuntary")));
+    expect(screen.getByTestId(id("time"))).toHaveValue("");
+    expect(screen.getByTestId(id("left"))).toHaveTextContent("Every answer given. Check them, then save.");
+    expect(screen.getByTestId(`${id("left")}-warnings`)).toHaveTextContent("Not recorded: estimated time.");
+    fireEvent.click(screen.getByTestId(id("confirm")));
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0]![0]).not.toHaveProperty("estimatedAt");
   });
 
   it("asks for the day as its own answer, and its link moves to Today", () => {

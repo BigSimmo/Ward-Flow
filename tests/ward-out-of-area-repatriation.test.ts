@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { BLANK_REPAT_DRAFT, type RepatDraft } from "@/components/ward-management/out-of-area/out-of-area-model";
+import {
+  BLANK_REPAT_DRAFT,
+  planWarningsLine,
+  type RepatDraft,
+} from "@/components/ward-management/out-of-area/out-of-area-model";
 import {
   canSendReturnPlan,
   returnPlanBlockReason,
@@ -26,16 +30,55 @@ const COMPLETE_SEND_DRAFT: RepatDraft = {
 };
 
 describe("out-of-area repatriation — return plan gate and reducer transitions", () => {
+  // Form rule (design audit W13, Josh's card 3, 5 Nov 2026): the provider and depart time warn and a
+  // blank CAD is "CAD to follow", so only the hospital, road or flight and legal status block.
   it("blocks sending an incomplete return plan and names the remaining count", () => {
-    expect(canSendReturnPlan(BLANK_REPAT_DRAFT, NOW_ANCHOR)).toBe(false);
-    expect(returnPlanMissingToSend(BLANK_REPAT_DRAFT, NOW_ANCHOR)).toHaveLength(6);
-    expect(returnPlanBlockReason(BLANK_REPAT_DRAFT, NOW_ANCHOR)).toBe("Answer the 6 left first.");
+    expect(canSendReturnPlan(BLANK_REPAT_DRAFT)).toBe(false);
+    expect(returnPlanMissingToSend(BLANK_REPAT_DRAFT)).toEqual([
+      "receiving hospital",
+      "road or flight",
+      "legal status",
+    ]);
+    expect(returnPlanBlockReason(BLANK_REPAT_DRAFT)).toBe("Answer the 3 left first.");
+  });
+
+  it("sends with no provider, no depart time and CAD to follow, and warns about each", () => {
+    const sparse: RepatDraft = { ...COMPLETE_SEND_DRAFT, provider: undefined, cadNumber: "", estimatedTime: "" };
+    expect(canSendReturnPlan(sparse)).toBe(true);
+    expect(planWarningsLine(sparse, NOW_ANCHOR)).toBe(
+      "Not recorded: provider, depart time. CAD to follow. You can still record.",
+    );
+    // A typed placeholder is a wrong answer, not a blank one, and still blocks (HAZ-03, #430).
+    expect(returnPlanMissingToSend({ ...sparse, cadNumber: "TBC" })).toEqual(["CAD number"]);
+  });
+
+  it("records a return with no provider, depart time or CAD, and the record says so", () => {
+    const seeded = seedWardFlowState();
+    const { entries } = outOfAreaLedger(wardAdmissions, allUnits(), NOW_ANCHOR);
+    const admissionId = entries[0]!.admission.id;
+    const after = wardFlowReducer(seeded, {
+      type: "RECORD_REPATRIATION",
+      role: "coordinator",
+      now: NOW_ANCHOR,
+      admissionId,
+      homeHospital: "RPH",
+      receivingWardAgreed: false,
+      mode: "road",
+      cadNumber: "",
+      transportLegalStatus: "voluntary",
+    });
+    expect(after.rejections.length).toBe(seeded.rejections.length);
+    const record = after.repatriations?.find((row) => row.admissionId === admissionId);
+    expect(record).toMatchObject({ cadNumber: "", mode: "road" });
+    expect(record && "provider" in record).toBe(false);
+    expect(record && "estimatedAt" in record).toBe(false);
   });
 
   it("allows sending the return plan once hospital, transport, and dispatch are answered, before ward agreement", () => {
-    expect(canSendReturnPlan(COMPLETE_SEND_DRAFT, NOW_ANCHOR)).toBe(true);
-    expect(returnPlanMissingToSend(COMPLETE_SEND_DRAFT, NOW_ANCHOR)).toEqual([]);
-    expect(returnPlanBlockReason(COMPLETE_SEND_DRAFT, NOW_ANCHOR)).toBeUndefined();
+    expect(canSendReturnPlan(COMPLETE_SEND_DRAFT)).toBe(true);
+    expect(returnPlanMissingToSend(COMPLETE_SEND_DRAFT)).toEqual([]);
+    expect(returnPlanBlockReason(COMPLETE_SEND_DRAFT)).toBeUndefined();
+    expect(planWarningsLine(COMPLETE_SEND_DRAFT, NOW_ANCHOR)).toBe("");
   });
 
   it("records a pending repatriation on Send to ward and opens the return movement when Mark ward agreed runs", () => {
