@@ -1,6 +1,7 @@
 import { useEffect, type RefObject } from "react";
 import { WARD_FLOW_DEMO_STORAGE_KEY } from "./ward-flow-demo-storage";
 import { broadcastDispatchEvent, getOrCreateBroadcastInstanceId } from "./ward-flow-provider-helpers";
+import { markOtherTabChangedDay } from "./shell/ward-other-tab-day";
 
 /**
  * Design audit DA-01: opening a new demo tab must not reset the day in the tabs already open.
@@ -11,11 +12,15 @@ import { broadcastDispatchEvent, getOrCreateBroadcastInstanceId } from "./ward-f
  * saved copy as an ordinary `SYNC_SAVED_STATE`, which the new tab adopts through the provider's
  * existing sync path. With no other tab open nothing answers and the seed day stays. `enabled` is
  * false for a pinned clock, in shared mode and whenever this tab is not saving on the device.
+ *
+ * SD-03 (audit, 5 Nov 2026): a tab that owns its day (`ownsDayRef`) never takes a peer's save. When
+ * a peer saves a different day, the shell now says the tabs have split (`ward-other-tab-day.tsx`).
  */
 export function useOpenTabsDay(
   enabled: boolean,
   freshSeedRef: RefObject<boolean>,
   instanceIdRef: { current: string },
+  ownsDayRef?: RefObject<boolean>,
 ): void {
   useEffect(() => {
     if (!enabled || typeof window.BroadcastChannel === "undefined") return;
@@ -27,8 +32,12 @@ export function useOpenTabsDay(
       return;
     }
     channel.onmessage = ({ data }) => {
-      if (data?.type !== "WARD_FLOW_DISPATCH" || data.eventType !== "REQUEST_SAVED_STATE") return;
-      if (data.senderId === instanceId || freshSeedRef.current) return;
+      if (data?.type !== "WARD_FLOW_DISPATCH" || data.senderId === instanceId) return;
+      if (data.eventType === "SYNC_SAVED_STATE" && ownsDayRef?.current && typeof data.payload === "string") {
+        if (otherTabDayDiffers(data.payload)) markOtherTabChangedDay();
+        return;
+      }
+      if (data.eventType !== "REQUEST_SAVED_STATE" || freshSeedRef.current) return;
       try {
         const raw = window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
         if (raw) broadcastDispatchEvent("SYNC_SAVED_STATE", instanceId, raw);
@@ -38,7 +47,21 @@ export function useOpenTabsDay(
     };
     if (freshSeedRef.current) broadcastDispatchEvent("REQUEST_SAVED_STATE", instanceId);
     return () => channel.close();
-  }, [enabled, freshSeedRef, instanceIdRef]);
+  }, [enabled, freshSeedRef, instanceIdRef, ownsDayRef]);
+}
+
+/** True when a peer's saved day is not this tab's own saved day (both stored without refusals). */
+function otherTabDayDiffers(peerPayload: string): boolean {
+  try {
+    const own = window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
+    if (!own) return false;
+    const peer = JSON.parse(peerPayload) as { dayZero?: unknown; state?: unknown };
+    const mine = JSON.parse(own) as { dayZero?: unknown; state?: unknown };
+    // A save for another calendar day is refused by the restore fence anyway; it is not a split.
+    return peer.dayZero === mine.dayZero && JSON.stringify(peer.state) !== JSON.stringify(mine.state);
+  } catch {
+    return false;
+  }
 }
 
 /** The sender id a save is broadcast under, or none when it must not reach other tabs (`skip`). */

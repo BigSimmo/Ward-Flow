@@ -22,8 +22,9 @@ import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-bro
 import { WardOfflineBanner, WardPracticeLine } from "@/components/ward-management/shell/ward-offline-banner";
 import { WardDowntimePackLine } from "@/components/ward-management/shell/ward-downtime-pack-line";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
-import { WardDemoNotSavedNote } from "@/components/ward-management/shell/ward-demo-saving";
+import { WardDemoNotSavedNote, WardDemoTypedTextNote } from "@/components/ward-management/shell/ward-demo-saving";
 import { WardRecoveryNotice } from "@/components/ward-management/shell/ward-recovery-notice";
+import { WardOtherTabDayNote } from "@/components/ward-management/shell/ward-other-tab-day";
 import { WardFeatureFlagLink } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardOfflineLinks } from "@/components/ward-management/shell/ward-offline-links";
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
@@ -257,14 +258,17 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                 (ward-flow-layout.module.css), so a lower note never hides a higher one. A pull-now broadcast
                 comes first, so a recovery note waiting to be closed never hides it. Keep this order. */}
                   <div className={styles.bannerHolder} data-wf-bar-notes="">
+                    {/* SD-02 (Josh, 5 Nov 2026): lost device saving outranks every other note. */}
+                    <WardDemoNotSavedNote />
                     <WardBroadcastBanner />
                     <WardRecoveryNotice />
+                    <WardOtherTabDayNote />
                     <WardOfflineBanner practice={false} />
                     {/* Fix plan item 9: retakes the downtime pack hourly and at shift change, and offers it to print or save. */}
                     <WardDowntimePackLine />
                     <WardAccessBanner />
                     <WardPracticeLine />
-                    <WardDemoNotSavedNote />
+                    <WardDemoTypedTextNote />
                   </div>
                   <WardPhoneDesktopOnly />
                   {/* A closed screen replaces the whole ground, which it draws itself (shell/ward-access.tsx).

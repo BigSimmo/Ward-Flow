@@ -68,6 +68,7 @@ import {
   deviceCopyOf,
   deviceSaveUnchanged,
   type DeviceSaveInputs,
+  keepLastSafeDemoSave,
   loadTypedTextScrub,
   readDemoStateLater,
   STORAGE_UNAVAILABLE,
@@ -978,7 +979,7 @@ function WardFlowWorld({
   // Local saving runs only in the unpinned local demonstration, until storage fails or a typed-text
   // copy cannot be made safely. Shared mode does not save actions on this device.
   const savingOnDevice = !shared.enabled && initialNow === undefined && !typedTextLocked && !storageUnavailable;
-  useOpenTabsDay(savingOnDevice && container.sessionAdopted === true, freshSeedRef, broadcastInstanceIdRef);
+  useOpenTabsDay(savingOnDevice && !!container.sessionAdopted, freshSeedRef, broadcastInstanceIdRef, ownsLocalDayRef);
   const demoControlsAvailable = !shared.enabled || shared.snapshot?.demoControls !== false;
   useEffect(() => {
     if (!savingOnDevice) savesOnDeviceRef.current = false;
@@ -1097,12 +1098,13 @@ function WardFlowWorld({
       savesOnDeviceRef.current = commandsRef.current.world === state;
       return;
     }
-    // D-18, option A (Josh, 21 Oct 2026): once typed text is DISPATCHED, accepted or refused, only a
-    // copy with every typed value replaced is written, or nothing until a reseed when no safe copy can
-    // be made (`deviceCopyOf`). Read from the COMMITTED container on every run, exactly as `state` is.
+    // D-18, option A (Josh, 21 Oct 2026): once typed text is DISPATCHED, accepted or refused, only a copy with
+    // every typed value replaced is written, or nothing until a reseed when no safe copy can be made
+    // (`deviceCopyOf`): the last safe save then stays (SD-01, SD-07). Read from the COMMITTED container.
     savesOnDeviceRef.current = false;
     const deviceCopy = deviceCopyOf(state, container, typedTextLocked, fixtureWorlds);
     if (deviceCopy === undefined) {
+      keepLastSafeDemoSave();
       void loadTypedTextScrub().then(
         () => setDeviceCopyCheck("loaded"),
         () => setDeviceCopyCheck(state.worldGeneration),
@@ -1112,7 +1114,7 @@ function WardFlowWorld({
     if (!deviceCopy) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- display the outcome of the external storage operation
       setDeviceCopyCheck(state.worldGeneration);
-      if (!clearWardFlowDemoState()) setStorageUnavailable(true);
+      if (!keepLastSafeDemoSave()) setStorageUnavailable(true);
       return;
     }
     const isFromRemoteBroadcast = lastAdoptedBroadcastWorldRef.current === state;
@@ -1142,9 +1144,7 @@ function WardFlowWorld({
     shared.enabled,
   ]);
 
-  // Audit finding ISSUE-P1-83, defect 3e: `useCallback`, not a fresh function every render — this
-  // sits in the `value` useMemo's own dependency array below, so an unstable reference defeated that
-  // memo on every render regardless of whether anything the memo actually reads had changed.
+  // ISSUE-P1-83 3e: stable, as the `value` useMemo below depends on it. Reset also clears Midland decisions (SD-06).
   const resetDemoState = useCallback(() => {
     if (!shared.enabled) clearWardFlowDemoState();
     lastDeviceSaveRef.current = undefined;

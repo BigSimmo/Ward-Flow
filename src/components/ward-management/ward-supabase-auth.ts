@@ -46,6 +46,8 @@ export type WardBrowserAuthAdapter = {
   readonly userId: string | null;
   /** The signed-in account's email, from the provider's own answer. Memory only. */
   readonly accountEmail: string | null;
+  /** True while this tab's sign-in is held in memory only because the browser refused to store it. */
+  readonly storageLost?: boolean;
   reauthenticate(password: string): Promise<void>;
   restore(recovery?: ReturnType<typeof consumeRecoveryFragment>): Promise<void>;
   signUp(email: string, password: string, redirectTo?: string): Promise<void>;
@@ -65,6 +67,9 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
   private refreshTask: Promise<void> | null = null;
   /** The signed-in account's email, for the step-up sign-in. Memory only, never stored. */
   private email: string | null = null;
+  /** A saved sign-in this adapter wrote or read, so a later removal by anyone else is not undone. */
+  private stored = false;
+  private lost = false;
   constructor(
     private readonly options: {
       url: string;
@@ -96,6 +101,9 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
   get accountEmail() {
     return this.email;
   }
+  get storageLost() {
+    return this.lost;
+  }
   private assert(generation: number) {
     if (this.disposed || generation !== this.generation)
       throw new WardAuthError("cancelled", "Sign-in request cancelled.");
@@ -109,6 +117,7 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
     }
     this.session = null;
     this.email = null;
+    this.stored = this.lost = false;
     let removed: boolean;
     try {
       this.options.storage?.removeItem(WARD_AUTH_STORAGE_KEY);
@@ -129,14 +138,22 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
   private save(session: Session) {
     this.session = session;
     try {
+      // TE-09 (audit, 5 Nov 2026): a saved sign-in removed from this tab since (another tool, or a
+      // sign-out) is not written back by a refresh, so the next poll still ends the session here.
+      if (this.stored && this.options.storage && this.options.storage.getItem(WARD_AUTH_STORAGE_KEY) === null) return;
       const saved: SavedSession = {
         refresh_token: session.refresh_token,
         recovery: session.recovery,
         user: session.user,
       };
       this.options.storage?.setItem(WARD_AUTH_STORAGE_KEY, JSON.stringify(saved));
+      this.stored = this.options.storage !== undefined;
+      this.lost = false;
     } catch {
-      // Keep rotated credentials in memory. Remove an older saved session when possible.
+      // Keep rotated credentials in memory. Remove an older saved session when possible. SD-05: the
+      // removal is this adapter's own, so `storageLost` tells the app it is not a sign-out elsewhere.
+      this.stored = false;
+      this.lost = true;
       try {
         this.options.storage?.removeItem(WARD_AUTH_STORAGE_KEY);
       } catch {
@@ -273,6 +290,7 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
       const parsed = readSavedSession(JSON.parse(saved));
       if (!parsed) throw new Error();
       this.session = parsed;
+      this.stored = true;
     } catch {
       this.clear();
       throw new WardAuthError("session", "Your session has expired. Sign in again.");
@@ -478,6 +496,7 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
     if (thisTabOnly) {
       this.session = null;
       this.email = null;
+      this.stored = this.lost = false;
       try {
         this.options.storage?.removeItem(WARD_AUTH_STORAGE_KEY);
       } catch {
