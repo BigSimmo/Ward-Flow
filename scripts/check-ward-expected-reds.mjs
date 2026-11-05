@@ -437,8 +437,16 @@ export function selectGateShard(population, { index, count }, durations = {}) {
  * applies the vitest.config.mts thresholds once, to the whole suite. vitest.config.mts drops the
  * thresholds while WARD_COVERAGE_BLOB_DIR is set, because one shard's slice can never meet
  * whole-suite floors. The JSON report this gate judges is written exactly as before.
+ * @param {{files:string[],batchReport:string,coverageBlobDir?:string,shard?:{index:number,count:number}|null,batchIndex?:number,selectionManifest?:string}} options
  */
-export function gateBatchArgs({ files, batchReport, coverageBlobDir, shard, batchIndex }) {
+export function gateBatchArgs({
+  files,
+  batchReport,
+  coverageBlobDir = "",
+  shard = null,
+  batchIndex = 0,
+  selectionManifest = "",
+}) {
   if (!coverageBlobDir) return ["run", "--pool=forks", "--reporter=json", `--outputFile=${batchReport}`, ...files];
   if (!shard) throw new Error("WARD_COVERAGE_BLOB_DIR is only supported together with WARD_GATE_SHARD.");
   const label = `shard-${shard.index}-of-${shard.count}-batch-${String(batchIndex + 1).padStart(3, "0")}`;
@@ -452,7 +460,7 @@ export function gateBatchArgs({ files, batchReport, coverageBlobDir, shard, batc
     "--coverage.enabled=true",
     "--coverage.reporter=text-summary",
     `--coverage.reportsDirectory=${path.join(coverageBlobDir, `coverage-${label}`)}`,
-    ...files,
+    ...(selectionManifest ? [] : files),
   ];
 }
 
