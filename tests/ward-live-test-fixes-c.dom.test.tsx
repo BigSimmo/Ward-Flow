@@ -50,3 +50,17 @@ describe("WF-47 saved-at toast", () => {
     expect(clockTime(at)).toMatch(/^09:07$/);
   });
 });
+
+describe("WF-18 draft saved points to the Drafts list", () => {
+  it("offers View drafts on the saved toast", async () => {
+    const { noticeDraftKept } = await import("@/components/ward-management/referrals/referral-draft-saved-notice");
+    const push = vi.fn(() => "t");
+    noticeDraftKept({ push }, true, new Date(2026, 10, 5, 9, 7));
+    expect(push).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: "Draft saved at 09:07",
+        nextStep: { label: "View drafts", href: "/ward-flow/settings#drafts-title" },
+      }),
+    );
+  });
+});
