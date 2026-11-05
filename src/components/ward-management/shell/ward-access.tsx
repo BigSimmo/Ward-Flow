@@ -14,7 +14,17 @@
  */
 import { useWardAccessEnabled, useWardShellPublic } from "./ward-shell-public-context";
 import { ExecutiveStatisticsUnavailable } from "../statistics/statistics-small-numbers";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -798,27 +808,37 @@ function samePath(a: string, b: string): boolean {
   return a.replace(/\/+$/, "") === b.replace(/\/+$/, "");
 }
 
+/** WF-13 (live test, 4 Nov 2026): a closed page's tab names no ward, ED or team. Unknown and forbidden share it. */
+const CLOSED_TAB_TITLE = "Not part of your role — Ward Flow";
+
 /** Replaces the address with the desk's own home, so Back does not return to the closed one (DR-06). */
 function OwnHomeRedirect({ href }: { href: string }) {
   const router = useRouter();
+  // WF-40: say why we moved, so a deep link for another role does not flash then vanish silently.
+  useLayoutEffect(() => {
+    document.title = CLOSED_TAB_TITLE;
+  }, []);
   useEffect(() => {
     router.replace(href);
   }, [router, href]);
   return (
     <WardGround>
       <main className={styles.closed} data-testid="ward-access-own-home">
+        <p>That page is not part of your role.</p>
         <p role="status">Opening your home</p>
       </main>
     </WardGround>
   );
 }
 
-/** WF-13 (live test, 4 Nov 2026): a closed page's tab names no ward, ED or team. */
-const CLOSED_TAB_TITLE = "Not part of your role — Ward Flow";
 function GenericClosedTitle() {
-  useEffect(() => {
+  // useLayoutEffect: overwrite the route metadata title before paint so a forbidden ward/ED/team
+  // never flashes its real name in the tab (WF-13). Unknown and forbidden then share one title.
+  // Re-run on each route change: the gate stays mounted across client navigation (PR #1470 review).
+  const pathname = usePathname();
+  useLayoutEffect(() => {
     document.title = CLOSED_TAB_TITLE;
-  });
+  }, [pathname]);
   return null;
 }
 

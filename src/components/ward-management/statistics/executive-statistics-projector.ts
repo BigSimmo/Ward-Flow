@@ -3,7 +3,6 @@ import { bedStates, readyBedsNow } from "../ward-bed-states";
 import { CLINICAL_VALUES } from "../ward-clinical-values";
 import { dayOf, type Instant } from "../ward-clock";
 import type { WardFlowState } from "../ward-flow-reducer";
-import { wardBedsInUse } from "../ward-occupancy";
 import { accessIsValid, edInScope, unitInScope, type PlaceLookup, type WardAccess } from "../ward-role-access";
 import { allEmergencyDepartments, siteDirectory } from "../ward-sites";
 import { smallNumberParts, smallNumberText } from "../ward-access-scope";
@@ -111,8 +110,9 @@ export function projectExecutiveNetworkStatistics(
         ready: states.ready,
         pulled: states.pulled,
         closed: states.closed,
+        // WF-16: Occupied and In use from the same bedStates boxes (wardBedUseFigures).
         occupied: states.occupied,
-        inUse: wardBedsInUse(unit, scoped.admissions, scoped.bedReleases),
+        inUse: states.occupied + states.pulled,
         beingMadeReady: states.beingMadeReady,
         onLeave: states.onLeave,
       },

@@ -91,7 +91,11 @@ export function PhoneFocal({
   onOpen: (id: string) => void;
 }) {
   const [focalId, setFocalId] = useState<string>("sw-bfc");
-  const entry = entries.find((item) => item.id === focalId) ?? entries[0]!;
+  // Offer only the bed flow lines this list holds (a site manager's may lack some; PR #1470 review).
+  const choices = FOCAL.filter(([id]) => entries.some((item) => item.id === id));
+  // No bed flow line for this viewer (an officer's transport-only list): no bed flow card.
+  const entry = entries.find((item) => item.id === focalId) ?? entries.find((item) => item.id === choices[0]?.[0]);
+  if (entry === undefined) return null;
   const crisis = entries.find((item) => item.id === "sw-mherl");
   const now = availability(entry, actions.minute);
   const number = numberAt(entry, actions.minute);
@@ -107,8 +111,8 @@ export function PhoneFocal({
     <div className={styles.focalWrap} id="ward-reach-bed" tabIndex={-1}>
       <div className={styles.focal}>
         <RadioGroup className={styles.focalSeg} aria-label="Bed flow for">
-          {FOCAL.map(([id, label]) => (
-            <button key={id} type="button" role="radio" aria-checked={focalId === id} onClick={() => setFocalId(id)}>
+          {choices.map(([id, label]) => (
+            <button key={id} type="button" role="radio" aria-checked={entry.id === id} onClick={() => setFocalId(id)}>
               {label}
             </button>
           ))}
