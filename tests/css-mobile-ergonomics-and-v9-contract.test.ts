@@ -194,6 +194,22 @@ describe("states", () => {
     expect(css).toMatch(/\.banner \{\s*bottom: calc\(var\(--wf-dock-clear/u);
   });
 
+  it("ST8 (PR #1474 review): on paper the offline note prints in the page's flow, not fixed", () => {
+    const globals = read("src/app/globals.css");
+    const print = globals.slice(globals.indexOf("@media print {\n  [data-wf-offline-note] {"));
+    const rule = print.slice(0, print.indexOf("}"));
+    expect(rule).toContain("position: static !important");
+    expect(rule).toContain("transform: none !important");
+    const layout = read("src/app/ward-flow/ward-flow-layout.module.css");
+    const paper = layout.slice(layout.lastIndexOf("@media print {"));
+    expect(paper).toMatch(/\[data-wf-offline-slot\]:first-child\)::after \{\s*display: none;/u);
+  });
+
+  it("K11 (PR #1474 review): a refused select takes no taps", () => {
+    const css = read("src/components/wf/form.module.css");
+    expect(block(css, ".refusedSelect")).toContain("pointer-events: none");
+  });
+
   it("ST8 (PR #1474 review): the offline note lets taps through and the page ends with room for it", () => {
     const css = read("src/components/ward-management/shell/ward-offline-banner.module.css");
     expect(block(css, ".banner")).toContain("pointer-events: none");

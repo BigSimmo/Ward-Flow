@@ -84,6 +84,12 @@
   border-style: dashed;
 }
 
+/* A refused select takes no taps (iOS Safari opens its picker even when the press is cancelled). It
+   keeps its tab stop, and its reason is plain text beside it, so nothing here needs a press. */
+.refusedSelect {
+  pointer-events: none;
+}
+
 .control {
   flex: 1 1 auto;
   /* Fills the box's height (it has a floor, not a fixed height, so a percentage would not resolve). */

@@ -15,7 +15,14 @@ import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
 import styles from "./ward-referral-drawer.module.css";
 import { TENTATIVE_DIAGNOSIS_BLOCKS } from "../ward-diagnosis";
-import { ErrorSummary, StatusGlyph, TimeField, type ErrorSummaryItem } from "@/components/wf";
+import {
+  ErrorSummary,
+  StatusGlyph,
+  TIME_FIELD_ERROR,
+  TimeField,
+  parseTypedTime,
+  type ErrorSummaryItem,
+} from "@/components/wf";
 import { ED_ARRIVAL_MODES, FIRST_CONTACT_TARGETS } from "./referral-submission";
 import {
   GENDER_UNANSWERED,
@@ -151,6 +158,8 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
     riskFlags,
     edNeeds,
     setEdNeeds,
+    edArrivalWrong,
+    setEdArrivalWrong,
     toggleRisk,
     originValid,
     sendingWard,
@@ -192,6 +201,9 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
           : []),
         ...(storyError() ? [{ id: `${sectionId}-refSummaryText`, text: storyError()!.replace(/\.$/u, "") }] : []),
         ...(genderUnanswered ? [{ id: `${sectionId}-gender`, text: GENDER_UNANSWERED.replace(/\.$/u, "") }] : []),
+        ...(destType === "ed" && edArrivalWrong
+          ? [{ id: `${sectionId}-ed-arrival`, text: `${TIME_FIELD_ERROR}, for the expected arrival, or clear it` }]
+          : []),
       ]
     : [];
   // WS-01: said before Send, so the referrer knows the ward cannot accept until a coordinator reviews.
@@ -600,11 +612,25 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                 value={yesNo(edNeeds.medicalReviewFirst)}
                 onChange={(v) => setEdNeeds((n) => ({ ...n, medicalReviewFirst: v === "Yes" }))}
               />
-              <Field label="Expected arrival, AWST" htmlFor={`${sectionId}-ed-arrival`}>
+              <Field
+                label="Expected arrival, AWST"
+                htmlFor={`${sectionId}-ed-arrival`}
+                hint="HH:MM"
+                error={attempted.referral && edArrivalWrong ? TIME_FIELD_ERROR : null}
+              >
                 <TimeField
                   id={`${sectionId}-ed-arrival`}
+                  // A kit control: the drawer Field links only native ones, so name the hint and error here.
+                  aria-describedby={
+                    attempted.referral && edArrivalWrong
+                      ? `${sectionId}-ed-arrival-hint ${sectionId}-ed-arrival-error`
+                      : `${sectionId}-ed-arrival-hint`
+                  }
+                  invalid={attempted.referral && edArrivalWrong}
                   value={edNeeds.expectedArrival ?? ""}
                   onValueChange={(time) => setEdNeeds((n) => ({ ...n, expectedArrival: time || undefined }))}
+                  // PR #1474 review: typed but not a real time blocks Send until fixed or cleared (empty stays optional).
+                  onTextChange={(text) => setEdArrivalWrong(text.trim() !== "" && parseTypedTime(text) === null)}
                 />
               </Field>
             </div>

@@ -512,4 +512,9 @@
   .bannerHolder {
     position: static;
   }
+
+  /* The room left for the offline note at the foot is screen only. */
+  .shellContent:has(> .bannerHolder > [data-wf-offline-slot]:first-child)::after {
+    display: none;
+  }
 }

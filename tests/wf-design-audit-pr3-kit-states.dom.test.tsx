@@ -124,6 +124,29 @@ describe("K11: kit controls that cannot be changed now carry their reason", () =
     expect(described(select)).toContain(REASON);
   });
 
+  it("Select: refuses only the keys that change it, lets shortcuts through, and takes no taps", () => {
+    render(
+      <Select aria-label="Ward" defaultValue="a" disabledReason={REASON}>
+        <option value="a">Synthetic ward A</option>
+        <option value="b">Synthetic ward B</option>
+      </Select>,
+    );
+    const select = screen.getByRole("combobox", { name: "Ward" });
+    // fireEvent returns false when the handler cancelled the key.
+    const passes = (init: KeyboardEventInit) => fireEvent.keyDown(select, init);
+    for (const key of ["ArrowDown", "ArrowUp", "Home", "End", "PageUp", "PageDown", " ", "Enter", "b"])
+      expect(passes({ key }), key).toBe(false);
+    expect(passes({ key: "ArrowDown", altKey: true }), "Alt+ArrowDown opens the picker").toBe(false);
+    for (const key of ["Tab", "Escape", "F1", "F5", "F12", "Shift"]) expect(passes({ key }), key).toBe(true);
+    expect(passes({ key: "r", ctrlKey: true }), "Ctrl+R").toBe(true);
+    expect(passes({ key: "l", metaKey: true }), "Cmd+L").toBe(true);
+    expect(passes({ key: "d", altKey: true }), "Alt+D").toBe(true);
+    // Taps never reach the select (iOS Safari); the reason stays as text beside it.
+    expect(select.className).toMatch(/refusedSelect/u);
+    expect(screen.getByText(REASON)).toBeVisible();
+    expect(described(select)).toContain(REASON);
+  });
+
   it("Checkbox, Radio and Switch: refuse the change and name the reason", () => {
     const onCheckedChange = vi.fn();
     render(

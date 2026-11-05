@@ -1742,6 +1742,20 @@ html[data-motion="reduced"] *::after {
  * While the sheet is open its module hides every other <body> child; this clears the page
  * itself so a dark screen theme does not print a dark edge around the sheet. Kept here
  * because a CSS module may not style <html> or <body> without a local class. */
+/* Ward Flow's offline note (ST8) is drawn into the body and pinned to the window's foot on screen.
+ * On paper it prints in the page's flow, as the pinned notes do, never fixed over a printed page.
+ * `!important` beats the inline placement a full-screen view gives it. */
+@media print {
+  [data-wf-offline-note] {
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    max-inline-size: none !important;
+    margin: 0.5rem 0 !important;
+    box-shadow: none !important;
+  }
+}
+
 @media print {
   html.ward-bed-meeting-printing,
   html.ward-bed-meeting-printing body {

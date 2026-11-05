@@ -135,6 +135,8 @@ export type TimeFieldProps = Omit<TextInputProps, "value" | "defaultValue" | "on
   value: string;
   /** Called with "HH:MM" when the typed text is a real 24-hour time, otherwise with "". */
   onValueChange: (time: string) => void;
+  /** Called with the text as typed, so a caller can tell an empty box from an unfinished or wrong one. */
+  onTextChange?: (text: string) => void;
 };
 
 /**
@@ -156,6 +158,7 @@ export function TimeField({
   invalid,
   placeholder = "HH:MM",
   onBlur,
+  onTextChange,
   ...inputProps
 }: TimeFieldProps) {
   const [typed, setTyped] = useState(value);
@@ -185,6 +188,7 @@ export function TimeField({
       onChange={(event) => {
         const text = event.target.value;
         setTyped(text);
+        onTextChange?.(text);
         const next = parseTypedTime(text) ?? "";
         setLastValue(next);
         onValueChange(next);
