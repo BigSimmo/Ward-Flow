@@ -82,7 +82,7 @@ export function withheldBar(value: number, shown: number | string): { value: num
 
 /** In place of a list of people on the executive desk. */
 /** WF-17: the one small-number rule every Statistics figure follows, in words. */
-export const SMALL_NUMBER_RULE_TEXT =
+const SMALL_NUMBER_RULE_TEXT =
   'Small counts of people are held back ("fewer than" or "not shown"); bed counts and times are always exact.';
 
 export function PeopleNotListed({ testId = "ward-statistics-people-not-listed" }: { testId?: string }) {
