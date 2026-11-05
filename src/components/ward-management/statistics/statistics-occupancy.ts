@@ -1,6 +1,5 @@
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
-import { wardBedsInUse } from "@/components/ward-management/ward-occupancy";
 import type { BedRelease, LeaveBed, Unit } from "@/components/ward-management/ward-model";
 
 /**
@@ -20,14 +19,17 @@ export function occupiedBeds(
   bedReleases: BedRelease[],
   leaveBeds: readonly LeaveBed[],
 ): { beds: number; occupied: number; pulled: number; inUse: number } {
+  // WF-16: Occupied, Pulled and In use come from one bedStates call per ward (same boxes as
+  // wardBedUseFigures / wardBedsInUse). Leave is only a marker inside Occupied.
   return units.reduce(
     (sum, unit) => {
       const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+      const inUse = states.occupied + states.pulled;
       return {
         beds: sum.beds + unit.beds,
         occupied: sum.occupied + states.occupied,
         pulled: sum.pulled + states.pulled,
-        inUse: sum.inUse + wardBedsInUse(unit, admissions, bedReleases),
+        inUse: sum.inUse + inUse,
       };
     },
     { beds: 0, occupied: 0, pulled: 0, inUse: 0 },

@@ -29,7 +29,13 @@ import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/
 import { bedIsOccupied } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { BED_STATE_LABELS, bedStates } from "@/components/ward-management/ward-bed-states";
-import { wardBedsInUse } from "@/components/ward-management/ward-occupancy";
+import {
+  IN_USE_CAPTION,
+  IN_USE_NOUN,
+  OCCUPIED_CAPTION,
+  OCCUPIED_NOUN,
+  wardBedsInUse,
+} from "@/components/ward-management/ward-occupancy";
 import { MINUTES_PER_DAY } from "@/components/ward-management/ward-clock";
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import type { HealthService } from "@/components/ward-management/ward-model";
@@ -530,15 +536,19 @@ function WardsIndexView({
             <div className={redesign.tableWrap} tabIndex={0} role="region" aria-label="Every ward, scrollable">
               <table className={cx(tableClasses.table, redesign.table)} data-testid="ward-statistics-wards-table">
                 <caption className={styles.srOnly}>
-                  Every inpatient ward: occupancy, occupied of beds, ready, being made ready, pulled, closed, blocked
-                  discharges and the longest current stay
+                  Every inpatient ward: in-use percent (occupied or pulled), occupied (in a bed, leave included), ready,
+                  being made ready, pulled, closed, blocked, and the longest current stay
                 </caption>
                 <thead>
                   <tr>
                     <th scope="col">Ward</th>
-                    <th scope="col">Occupancy</th>
+                    <th scope="col" title={IN_USE_CAPTION}>
+                      {IN_USE_NOUN} %
+                    </th>
+                    <th scope="col" className={redesign.r} title={OCCUPIED_CAPTION}>
+                      {OCCUPIED_NOUN}
+                    </th>
                     {[
-                      "Occupied",
                       BED_STATE_LABELS.ready,
                       "Making ready",
                       BED_STATE_LABELS.pulled,
