@@ -23,8 +23,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 1121,
-          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
+          "line": 1120,
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -325,18 +325,19 @@
         "Valid observation; target exists; movement open or admission bed occupied",
         "New value must differ; token must match and linked records must agree; missing token refused after first recorded change",
         "Seeded links without matching observations stay unlinked rather than silently overwriting the other record",
-        "Accepted edits require a safe retained sequence allocator below Number.MAX_SAFE_INTEGER; exhaustion refuses before writing."
+        "Accepted edits require a safe retained sequence allocator below Number.MAX_SAFE_INTEGER; exhaustion refuses before writing.",
+        "Accepted observation sequence is reducer-generated from retained movement/admission history, independent of the audit counter; restore permits missing legacy metadata or positive safe integers and refuses zero, fractions and unsafe values."
       ],
       "effects": [
         "Updates observation and appends {at,sequence,from,to} on each linked record",
         "No new placement or capacity allocation; staffing eligibility remains a separate pull check",
-        "Accepted observation history entries also carry sequence=max(auditSequence, all retained movement/admission observation sequences)+1; an agreeing linked counterpart receives that same edit sequence. PATIENT_ARRIVED uses retained accepted order before legacy minute timestamps. Genuinely unordered legacy ties retain the previous fallback; no historical order is invented."
+        "Accepted observation history entries also carry sequence=max(all retained movement/admission observation sequences,0)+1; an agreeing linked counterpart receives that same edit sequence. PATIENT_ARRIVED uses retained accepted order before legacy minute timestamps. Genuinely unordered legacy ties retain the previous fallback; no historical order is invented."
       ],
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-observation-events.ts",
           "line": 32,
-          "sha256": "5663be9a4f49a1d7774eb1e082a0f0cb87a9947266cfee1c23a88a342eb5aa99"
+          "sha256": "b710d406227a810c4020dadb7ffeb75bb6c7e790d3911dd26895d771de5041b1"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -346,12 +347,17 @@
         {
           "path": "src/components/ward-management/ward-flow-observation-events.ts",
           "line": 32,
-          "sha256": "5663be9a4f49a1d7774eb1e082a0f0cb87a9947266cfee1c23a88a342eb5aa99"
+          "sha256": "b710d406227a810c4020dadb7ffeb75bb6c7e790d3911dd26895d771de5041b1"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
           "line": 655,
           "sha256": "83b5ed2c9c4d152bab9160d291cd95fd69463c60ea11ff290a10e50845cdc96a"
+        },
+        {
+          "path": "src/components/ward-management/ward-observation.ts",
+          "line": 48,
+          "sha256": "b714525f0d4c6d18d050f9a3600f38c8de4e9a013595a77844c5c492fbdc2e3c"
         }
       ],
       "tests": [
@@ -2655,8 +2661,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 97,
-          "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+          "line": 98,
+          "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
@@ -2788,8 +2794,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 133,
-          "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+          "line": 134,
+          "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -2825,7 +2831,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "The complete proposed inverse must keep every leave attached to an occupied same-ward stay, with only one leave per stay; any restored or changed retained UMRN must have no other current owner. Blank, privacy-placeholder and UMRN not recorded values carry no retained identity claim."
       ],
       "effects": [
         "Applies only saved before/after patches for REFER_TO_UNITS; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -2834,8 +2841,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+          "line": 261,
+          "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -2876,7 +2883,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "The complete proposed inverse must keep every leave attached to an occupied same-ward stay, with only one leave per stay; any restored or changed retained UMRN must have no other current owner. Blank, privacy-placeholder and UMRN not recorded values carry no retained identity claim."
       ],
       "effects": [
         "Applies only saved before/after patches for ACCEPT_IN_PRINCIPLE; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -2885,8 +2893,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+          "line": 261,
+          "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -2929,7 +2937,8 @@
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
         "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
         "The legitimate legal-form Undo payload omits actingUnitId: reducer role consistency falls back to the saved record.unitId, while shared authenticated scope independently compares that original ward with the caller's scope.",
-        "The original ward is recorded on the source legal-form step even when its legitimate caller omitted actingUnitId: receipt provenance uses the sending stay or ward referral, while other form entries use the receiving stay. Another eligible ward cannot substitute for that original ward; coordinator and original-role rules otherwise remain."
+        "The original ward is recorded on the source legal-form step even when its legitimate caller omitted actingUnitId: receipt provenance uses the sending stay or ward referral, while other form entries use the receiving stay. Another eligible ward cannot substitute for that original ward; coordinator and original-role rules otherwise remain.",
+        "The complete proposed inverse must keep every leave attached to an occupied same-ward stay, with only one leave per stay; any restored or changed retained UMRN must have no other current owner. Blank, privacy-placeholder and UMRN not recorded values carry no retained identity claim."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_LEGAL_FORM_WRITTEN, RECORD_LEGAL_FORM_CODE, RECORD_LEGAL_FORM_RECEIVED or RECORD_LEGAL_FORM_EXPIRY; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -2938,8 +2947,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+          "line": 261,
+          "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -2986,7 +2995,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "The complete proposed inverse must keep every leave attached to an occupied same-ward stay, with only one leave per stay; any restored or changed retained UMRN must have no other current owner. Blank, privacy-placeholder and UMRN not recorded values carry no retained identity claim."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_SUPPORT_NOTIFICATION; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -2995,8 +3005,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+          "line": 261,
+          "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3037,7 +3047,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "The complete proposed inverse must keep every leave attached to an occupied same-ward stay, with only one leave per stay; any restored or changed retained UMRN must have no other current owner. Blank, privacy-placeholder and UMRN not recorded values carry no retained identity claim."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_REPATRIATION; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3046,8 +3057,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+          "line": 261,
+          "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3091,7 +3102,8 @@
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
         "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
-        "Shared scoped callers cannot resolve a missing unitId to the whole-network sign-off; an ordinary in-scope ward target remains allowed."
+        "Shared scoped callers cannot resolve a missing unitId to the whole-network sign-off; an ordinary in-scope ward target remains allowed.",
+        "The complete proposed inverse must keep every leave attached to an occupied same-ward stay, with only one leave per stay; any restored or changed retained UMRN must have no other current owner. Blank, privacy-placeholder and UMRN not recorded values carry no retained identity claim."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_HANDOVER_SIGN_OFF; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3100,8 +3112,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+          "line": 261,
+          "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3142,7 +3154,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "The complete proposed inverse must keep every leave attached to an occupied same-ward stay, with only one leave per stay; any restored or changed retained UMRN must have no other current owner. Blank, privacy-placeholder and UMRN not recorded values carry no retained identity claim."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_SITE_HANDOVER_SIGN_OFF; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3151,8 +3164,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+          "line": 261,
+          "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3176,8 +3189,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 282,
-          "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+          "line": 283,
+          "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
         }
       ],
       "tests": ["tests/ward-undo-steps.test.ts", "tests/ward-site-handover-sign-off.test.ts"]
@@ -3200,7 +3213,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "The complete proposed inverse must keep every leave attached to an occupied same-ward stay, with only one leave per stay; any restored or changed retained UMRN must have no other current owner. Blank, privacy-placeholder and UMRN not recorded values carry no retained identity claim."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_ARRIVED_IN_DEPARTMENT, RECORD_EXAMINATION, RECORD_MEDICAL_CLEARANCE, RECORD_TRANSPORT_NEED, RECORD_ED_PRESENTATION or HANDOVER_READY; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3209,8 +3223,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+          "line": 261,
+          "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3251,7 +3265,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "The complete proposed inverse must keep every leave attached to an occupied same-ward stay, with only one leave per stay; any restored or changed retained UMRN must have no other current owner. Blank, privacy-placeholder and UMRN not recorded values carry no retained identity claim."
       ],
       "effects": [
         "Applies only saved before/after patches for TRANSPORT_ACCEPTED, TRANSPORT_EN_ROUTE, PATIENT_COLLECTED or PATIENT_ARRIVED; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3260,8 +3275,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+          "line": 261,
+          "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3284,7 +3299,7 @@
           "sha256": "83b5ed2c9c4d152bab9160d291cd95fd69463c60ea11ff290a10e50845cdc96a"
         }
       ],
-      "tests": ["tests/ward-undo-steps.test.ts"]
+      "tests": ["tests/ward-undo-steps.test.ts", "tests/ward-undo-dependent-records.test.ts"]
     }
   },
   {
@@ -3302,7 +3317,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "The complete proposed inverse must keep every leave attached to an occupied same-ward stay, with only one leave per stay; any restored or changed retained UMRN must have no other current owner. Blank, privacy-placeholder and UMRN not recorded values carry no retained identity claim."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_LEAVING or RECORD_PATIENT_DISCHARGE; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3311,8 +3327,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+          "line": 261,
+          "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3353,7 +3369,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "The complete proposed inverse must keep every leave attached to an occupied same-ward stay, with only one leave per stay; any restored or changed retained UMRN must have no other current owner. Blank, privacy-placeholder and UMRN not recorded values carry no retained identity claim."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_ABSENT_WITHOUT_LEAVE; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3362,8 +3379,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+          "line": 261,
+          "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3406,7 +3423,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "The complete proposed inverse must keep every leave attached to an occupied same-ward stay, with only one leave per stay; any restored or changed retained UMRN must have no other current owner. Blank, privacy-placeholder and UMRN not recorded values carry no retained identity claim."
       ],
       "effects": [
         "Applies only saved before/after patches for COMPLETE_BED_MEETING_ACTION or RECORD_BED_MEETING_ACTION (Chase Undo); removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3415,8 +3433,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+          "line": 261,
+          "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3561,7 +3579,8 @@
       "guards": [
         "A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.",
         "The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.",
-        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number."
+        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.",
+        "The complete proposed inverse must keep every leave attached to an occupied same-ward stay, with only one leave per stay; any restored or changed retained UMRN must have no other current owner. Blank, privacy-placeholder and UMRN not recorded values carry no retained identity claim."
       ],
       "effects": [
         "Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.",
@@ -3575,8 +3594,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 265,
-          "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+          "line": 266,
+          "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
         }
       ],
       "tests": ["tests/ward-return-early.test.ts"]
@@ -3596,7 +3615,8 @@
       "guards": [
         "A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.",
         "The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.",
-        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number."
+        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.",
+        "The complete proposed inverse must keep every leave attached to an occupied same-ward stay, with only one leave per stay; any restored or changed retained UMRN must have no other current owner. Blank, privacy-placeholder and UMRN not recorded values carry no retained identity claim."
       ],
       "effects": [
         "Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.",
@@ -3610,11 +3630,11 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 273,
-          "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+          "line": 274,
+          "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
         }
       ],
-      "tests": ["tests/ward-tier1-undo.test.ts"]
+      "tests": ["tests/ward-tier1-undo.test.ts", "tests/ward-undo-dependent-records.test.ts"]
     }
   },
   {
@@ -3631,7 +3651,8 @@
       "guards": [
         "A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.",
         "The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.",
-        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number."
+        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.",
+        "The complete proposed inverse must keep every leave attached to an occupied same-ward stay, with only one leave per stay; any restored or changed retained UMRN must have no other current owner. Blank, privacy-placeholder and UMRN not recorded values carry no retained identity claim."
       ],
       "effects": [
         "Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.",
@@ -3645,8 +3666,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 274,
-          "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+          "line": 275,
+          "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
         }
       ],
       "tests": ["tests/ward-tier1-undo.test.ts"]
@@ -3666,7 +3687,8 @@
       "guards": [
         "A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.",
         "The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.",
-        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number."
+        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.",
+        "The complete proposed inverse must keep every leave attached to an occupied same-ward stay, with only one leave per stay; any restored or changed retained UMRN must have no other current owner. Blank, privacy-placeholder and UMRN not recorded values carry no retained identity claim."
       ],
       "effects": [
         "Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.",
@@ -3680,11 +3702,16 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 275,
-          "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+          "line": 276,
+          "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
+        },
+        {
+          "path": "src/components/ward-management/ward-retained-umrn.ts",
+          "line": 25,
+          "sha256": "7968243f077b9d5c9a6fe6a56385f48ff6a97aa39cfdeec8fe97f05919693d80"
         }
       ],
-      "tests": ["tests/ward-tier1-undo.test.ts"]
+      "tests": ["tests/ward-tier1-undo.test.ts", "tests/ward-retained-umrn.test.ts"]
     }
   }
 ]
