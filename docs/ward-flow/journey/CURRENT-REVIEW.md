@@ -101,6 +101,15 @@ Main `29f61f0b59ea1ce8179ca11bd1027d54d8a87935` merged #1430 after the previous 
 | `src/components/ward-management/ward-observation.ts`               | Compared against6e97: ObservationChange retains optional sequence and now documents actual arrival-reconciliation entries too. Export journeyObservationWins canonicalizes prior inline comparator: when either latest entry has sequence, compare that order (missing older); otherwise compare legacy timestamps with journey winning equal/absent times. For accepted positive safe sequences this matches our former-Infinity fallback. The helper does not invent legacy actor order. Main transport integration additionally copies the winning journey sequence into reconciled stay history, reviewed and hashed separately by runtime reviewer.                                                                                                                                                                                                                                                  |
 | `src/components/ward-management/ward-retained-umrn.ts`             | Root reviewed all33lines: normalized retained identity excludes empty/privacy/missing-number sentinels; current-owner duplicate import and restored-record conflict checks share this rule.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 
-## WF-07 (5 Nov 2026)
+## 5 November 2026 — design audit 2 wording (branch `design/pr2-one-word`)
 
-`planned-admissions-reducer.ts` + panel: BOOK_PLANNED_ADMISSION initials refusal names the real cause via `plannedInitialsRefusal`; sticky client refusal cleared on draft change; Book disabled for invalid initials. Digest refreshed.
+Sixteen reviewed source files changed only in on-screen words (DESIGN-SYSTEM §6 "One word for each thing"),
+against main `60d2e6f0`. Each diff was read line by line: no handler, payload, guard, place scope or dispatch
+changed, so their whole-file review digests in `actions.json`, `event-dispositions.json` and `machines.json`
+were refreshed. Files: `alerts/ward-broadcast-model.ts`, `alerts/ward-broadcast-reducer.ts` (Broadcast says
+"desks", not units), `board/ward-board-blocker-dialog.tsx`, `board/ward-board-detail-panel.tsx`,
+`capacity/capacity-ward-drawer.tsx`, `delays/delays-screen.tsx`, `discharges/discharge-board.tsx`,
+`movements/movement-drawer.tsx`, `patients/add-patient.tsx`, `patients/patient-now-screen.tsx`,
+`shell/ward-broadcast-banner.tsx`, `ward-derivations.ts` (the inbox title "Pull expired, bed still pulled"; its
+two readers on Home were changed with it), `ward-global-search.tsx`, `ward-tasks-drawer.tsx`,
+`ward/ward-answer-view.tsx` and `ward/ward-screen.tsx`, all under `src/components/ward-management/`.

@@ -255,7 +255,7 @@ export function stayStatus(
     return { tone: "warning", word: "Long stay", text: `Long-stay reason: ${bedItem.dischargeBarrier}.` };
   if (bedItem.status === "incoming") return { tone: "neutral", word: "Arriving", text: "Not on the ward yet." };
   if (bedItem.dischargeConfirmed === true || (bedItem.expectedDays != null && bedItem.expectedDays <= 0))
-    return { tone: "info", word: "Due out", text: `Due to leave. Expected: ${expectedPlan}.` };
+    return { tone: "info", word: "Discharge due", text: `Due to leave. Expected: ${expectedPlan}.` };
   // A stay with no plan to leave says what to do, not that nothing is known.
   if (hasNoLeavingDate(bedItem))
     return { tone: "neutral", word: "On the ward", text: "No leaving date yet. Set one under Leaving." };

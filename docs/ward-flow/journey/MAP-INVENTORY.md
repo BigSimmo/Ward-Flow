@@ -1469,8 +1469,8 @@ Source-contract SHA256: 0feda23d2e7de9fa3ee4f7d35bbf3f45b2d75ac98e4e84a9161c6b45
   guards: Alert exists and is active at now; stood-down or expired alerts cannot be revived by extension.
   effects: Adds 30 minutes (current default) to stored durationMinutes and to existing expiresAt; preserves recipients, replies and acknowledgements.
   tests: tests/ward-top25-broadcast-extend.dom.test.tsx
-  Reviewed source: src/components/ward-management/alerts/ward-broadcast-reducer.ts:228; SHA256 a7131d92e1c22e1528a56069204992bb9a2fc59e2eef48b9b450f2c3f4589703
-  Reviewed source: src/components/ward-management/alerts/ward-broadcast-reducer.ts:461; SHA256 a7131d92e1c22e1528a56069204992bb9a2fc59e2eef48b9b450f2c3f4589703
+  Reviewed source: src/components/ward-management/alerts/ward-broadcast-reducer.ts:228; SHA256 cd46a2fc3599a4dbc092b05eda177f7da454de1cd8642597fa17bf3281a11907
+  Reviewed source: src/components/ward-management/alerts/ward-broadcast-reducer.ts:461; SHA256 cd46a2fc3599a4dbc092b05eda177f7da454de1cd8642597fa17bf3281a11907
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2368; SHA256 cc194f8c311719c50ea9d0fa4216f884b439ef3f4020bbab7106c278cbffaeff
   Reviewed source: src/components/ward-management/ward-access-state.ts:704; SHA256 83b5ed2c9c4d152bab9160d291cd95fd69463c60ea11ff290a10e50845cdc96a
 - ADD_BROADCAST_ALERT_UNITS — modelled; event roles: coordinator, bed_manager
@@ -1489,7 +1489,7 @@ Source-contract SHA256: 0feda23d2e7de9fa3ee4f7d35bbf3f45b2d75ac98e4e84a9161c6b45
   effects: Resolves previous scope into an explicit targetUnitIds list, appends only new ids and recomputes targetScopeLabel.
   effects: Does not reset expiry or clear previous replies/acknowledgements.
   tests: tests/ward-broadcast-add-units.test.ts
-  Reviewed source: src/components/ward-management/alerts/ward-broadcast-reducer.ts:243; SHA256 a7131d92e1c22e1528a56069204992bb9a2fc59e2eef48b9b450f2c3f4589703
+  Reviewed source: src/components/ward-management/alerts/ward-broadcast-reducer.ts:243; SHA256 cd46a2fc3599a4dbc092b05eda177f7da454de1cd8642597fa17bf3281a11907
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2378; SHA256 cc194f8c311719c50ea9d0fa4216f884b439ef3f4020bbab7106c278cbffaeff
   Reviewed source: src/components/ward-management/ward-access-state.ts:704; SHA256 83b5ed2c9c4d152bab9160d291cd95fd69463c60ea11ff290a10e50845cdc96a
 - RAISE_PULL_NOW — modelled; event roles: coordinator
@@ -1508,8 +1508,8 @@ Source-contract SHA256: 0feda23d2e7de9fa3ee4f7d35bbf3f45b2d75ac98e4e84a9161c6b45
   effects: Prepends an active critical pull_now alert, increments broadcastSequence and records answerBy/expiry and movement stage-change count at dispatch.
   effects: Recipients are accepting ward, else real referred wards. Does not itself pull a bed, move the patient or change movement stage.
   tests: tests/ward-global-alerts.test.ts
-  Reviewed source: src/components/ward-management/alerts/ward-broadcast-reducer.ts:293; SHA256 a7131d92e1c22e1528a56069204992bb9a2fc59e2eef48b9b450f2c3f4589703
-  Reviewed source: src/components/ward-management/alerts/ward-broadcast-model.ts:317; SHA256 ca825efbf912ff347f813ab20258ee58f529e247c51d90a37a6d5dfa5369d2da
+  Reviewed source: src/components/ward-management/alerts/ward-broadcast-reducer.ts:293; SHA256 cd46a2fc3599a4dbc092b05eda177f7da454de1cd8642597fa17bf3281a11907
+  Reviewed source: src/components/ward-management/alerts/ward-broadcast-model.ts:317; SHA256 e1a3636630af9d8a68e9e0b166d4d1985ba755f0553a0a955857ce1b03970e91
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2389; SHA256 cc194f8c311719c50ea9d0fa4216f884b439ef3f4020bbab7106c278cbffaeff
   Reviewed source: src/components/ward-management/ward-access-state.ts:725; SHA256 83b5ed2c9c4d152bab9160d291cd95fd69463c60ea11ff290a10e50845cdc96a
 - REPLY_BROADCAST_ALERT — modelled; event roles: ward, bed_manager, coordinator
@@ -1530,7 +1530,7 @@ Source-contract SHA256: 0feda23d2e7de9fa3ee4f7d35bbf3f45b2d75ac98e4e84a9161c6b45
   effects: Answers are reported capacity statements, not bed allocation or automatic movement transitions.
   tests: tests/ward-global-alerts.test.ts
   tests: tests/ward-broadcast-audience-bed-call-wards.test.ts
-  Reviewed source: src/components/ward-management/alerts/ward-broadcast-reducer.ts:348; SHA256 a7131d92e1c22e1528a56069204992bb9a2fc59e2eef48b9b450f2c3f4589703
+  Reviewed source: src/components/ward-management/alerts/ward-broadcast-reducer.ts:348; SHA256 cd46a2fc3599a4dbc092b05eda177f7da454de1cd8642597fa17bf3281a11907
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2399; SHA256 cc194f8c311719c50ea9d0fa4216f884b439ef3f4020bbab7106c278cbffaeff
   Reviewed source: src/components/ward-management/ward-access-state.ts:655; SHA256 83b5ed2c9c4d152bab9160d291cd95fd69463c60ea11ff290a10e50845cdc96a
 - BOOK_PLANNED_ADMISSION — modelled; event roles: coordinator, bed_manager, ward

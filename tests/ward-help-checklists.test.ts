@@ -23,7 +23,7 @@ describe("guided checklists (Josh, 2 Nov 2026, approved word for word)", () => {
         "Start of shift",
         [
           "Open Home and work down My list: Act now first, then referrals to decide.",
-          "Open Alerts or Tasks in the header for everything addressed to this desk.",
+          "Open Alerts in the header for everything addressed to this desk.",
           "On Capacity, ask for an update when a ward's figure is old.",
           "On Waiting, use Due soon or on you, Form due and For handover.",
           "Check “Is it saved?”: a short message after each action says it was recorded.",

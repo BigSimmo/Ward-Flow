@@ -482,22 +482,22 @@ export function searchExecutiveCatalogue(query: string, report: ExecutiveSearchC
 }
 
 /**
- * Matches action inbox tasks by summary/detail, title, id, or keyword "task".
+ * Matches action inbox tasks by summary/detail, title, id, or keyword "task" or "alert" (the
+ * inbox is named Alerts on screen).
  */
+/** The words that ask for the inbox by name. Alerts is its name on screen; task is the older word. */
+const TASK_KEYWORDS = ["task", "tasks", "alert", "alerts"];
+
 function searchTasks(query: string, tasks: readonly InboxItem[]): TaskSearchResult[] {
   const needle = query.trim().toLowerCase();
   if (!needle) return [];
 
-  const isTaskKeyword = needle === "task" || needle === "tasks";
+  const isTaskKeyword = TASK_KEYWORDS.includes(needle);
 
   return tasks
     .filter((task) => {
       if (isTaskKeyword) return true;
-      return matchesSearchWords(
-        query,
-        [task.title, task.detail, task.movementId, task.id, task.owner],
-        ["task", "tasks"],
-      );
+      return matchesSearchWords(query, [task.title, task.detail, task.movementId, task.id, task.owner], TASK_KEYWORDS);
     })
     .map((task) => ({
       task,
@@ -514,7 +514,7 @@ function searchTasks(query: string, tasks: readonly InboxItem[]): TaskSearchResu
  */
 export type SearchIntent = "person" | "identifier" | "place" | "form" | "view" | "task" | "general";
 
-export type SearchIntentLabel = "People" | "Movements" | "Places" | "Forms" | "Views" | "Tasks" | "All";
+export type SearchIntentLabel = "People" | "Movements" | "Places" | "Forms" | "Views" | "Alerts" | "All";
 
 const SEARCH_GROUP_ORDER = [
   "people",
@@ -583,7 +583,7 @@ export function detectSearchIntent(query: string): SearchIntent {
   if (/\b(?:delays?|movements?|capacity|command|network|transport|horizon|governance)\b/i.test(trimmed)) {
     return "view";
   }
-  if (/\btasks?\b/i.test(trimmed)) return "task";
+  if (/\b(?:tasks?|alerts?)\b/i.test(trimmed)) return "task";
   if (/^[\p{L}][\p{L}\s'’-]*$/u.test(trimmed)) return "person";
   return "general";
 }
@@ -602,7 +602,7 @@ export function searchIntentLabel(intent: SearchIntent, query = ""): SearchInten
     case "view":
       return "Views";
     case "task":
-      return "Tasks";
+      return "Alerts";
     default:
       return "All";
   }
@@ -781,7 +781,7 @@ export function normaliseCommaNameQuery(query: string): string {
 }
 
 /**
- * Words the inbox titles are written in ("Bed pull expired", "Transport awaiting departure", ...).
+ * Words the inbox titles are written in ("Pull expired, bed still pulled", "Transport awaiting departure", ...).
  * A query that is the start of one of them can match a task title, whatever intent it was given:
  * "bed" reads as a name and "transport" as a view, and deriving no tasks for either hid the real
  * action from every search surface (PR #285 review). Names are not caught by this: only a typed
@@ -819,7 +819,7 @@ export function shouldDeriveSearchTasks(query: string): boolean {
     intent === "task" ||
     intent === "general" ||
     intent === "identifier" ||
-    /\b(tasks?|actions?|inbox|pending|overdue)\b/i.test(typed) ||
+    /\b(tasks?|alerts?|actions?|inbox|pending|overdue)\b/i.test(typed) ||
     queryStartsATaskTitleWord(typed)
   );
 }

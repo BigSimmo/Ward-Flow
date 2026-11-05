@@ -68,7 +68,7 @@ export const HANDOVER_GROUPS = [
   { id: "obs", title: "Constant observation" },
   { id: "arrivals", title: "Arriving or new today" },
   { id: "going", title: "Going home today" },
-  { id: "stuck", title: "Held up or past their date" },
+  { id: "stuck", title: "Held up or overdue" },
 ] as const;
 type HandoverGroup = (typeof HANDOVER_GROUPS)[number]["id"];
 
