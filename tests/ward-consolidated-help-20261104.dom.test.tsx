@@ -101,7 +101,7 @@ describe("Help request identity and eligibility", () => {
       setWardFeatureFlagOnDevice("help-ask", false);
       setWardFeatureFlagOnDevice("role-access", false);
     });
-    const preferences = vi.fn(async (_body?: unknown) => ({
+    const preferences = vi.fn<NonNullable<SharedAccessApi["preferences"]>>(async () => ({
       shared: true,
       tours: [],
       tips: [],
