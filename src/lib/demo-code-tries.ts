@@ -63,7 +63,14 @@ export function reserveDemoTry(address: string, now: number): (() => void) | nul
   return () => {
     if (released) return;
     released = true;
-    if (entry && wrongTries.get(address) === entry) entry.count = Math.max(0, entry.count - 1);
-    if (allWrongTries === total) total.count = Math.max(0, total.count - 1);
+    // A released slot holds no attempt, so drop an emptied entry and reset an emptied window.
+    if (entry && wrongTries.get(address) === entry) {
+      entry.count = Math.max(0, entry.count - 1);
+      if (entry.count === 0) wrongTries.delete(address);
+    }
+    if (allWrongTries === total) {
+      total.count = Math.max(0, total.count - 1);
+      if (total.count === 0) allWrongTries = { count: 0, since: 0 };
+    }
   };
 }
