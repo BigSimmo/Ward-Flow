@@ -1,5 +1,8 @@
-# 2026-11-05 PR #1467 Movement budget lowered
+# 2026-11-05 PR #1467 Movement budget lowered, RPH ward nudged
 
-A local production build of this PR (based on main e87bc995) measured Movement `/ward-flow/movements/WF-001` at 580.6 KB, down from 620.1 KB on main. The budget is lowered from 620.3 to 582.0.
+CI run 42013669125 measured this PR merged with main e87bc995 (main alone from main's saved measurements):
 
-The movement page imported its not-found view through `ward-management-console.tsx`, which pulled the movement cockpit chunk into first load. The page now imports the view from its own module. The other four screens did not move beyond build noise, so their budgets are unchanged.
+- Movement `/ward-flow/movements/WF-001`: 580.6 KB (main alone 620.1 KB). Budget 620.3 lowered to 582.0.
+- RPH ward `/ward-flow/ward/rph-adult-secure`: 592.3 KB (main alone 591.7 KB). Budget 592.0 raised to 592.5.
+
+The movement page imported its not-found view through `ward-management-console.tsx`, which pulled the movement cockpit chunk into first load. The page now imports the view from its own module. Moving those modules out of the shared chunks regroups webpack's split chunks, which costs the RPH ward 0.6 KB; a local build reproduced the same 0.6 KB, so it is not noise. Net saving across the five screens is about 39 KB. The other three screens did not move.
