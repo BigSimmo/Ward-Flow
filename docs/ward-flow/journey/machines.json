@@ -286,7 +286,7 @@
           "to": "moving",
           "action": "PATIENT_COLLECTED",
           "route": "straight",
-          "guard": "refused while a revoked examination still holds the bed"
+          "guard": "refused while a revoked examination still holds the bed, or while restrictive practice is still recorded as in use for the patient at the sending ward"
         },
         {
           "from": "moving",
@@ -661,7 +661,8 @@
           "from": "enroute",
           "to": "collected",
           "action": "PATIENT_COLLECTED",
-          "route": "straight"
+          "route": "straight",
+          "guard": "refused while restrictive practice is still recorded as in use for the patient at the sending ward"
         },
         {
           "from": "collected",
@@ -1230,7 +1231,7 @@
           "kind": "exit"
         }
       ],
-      "note": "Acknowledgement, ownership, snoozing and completion are separate histories. Real fact rows are never completed by COMPLETE_INBOX_ITEM. The daily check uses a day-shaped identifier rather than a movement; bed-meeting actions use COMPLETE_BED_MEETING_ACTION. Completion validates category and day syntax, not whether the day is the current day."
+      "note": "Acknowledgement, ownership, snoozing and completion are separate histories. Real fact rows are never completed by COMPLETE_INBOX_ITEM. The daily check uses a day-shaped identifier rather than a movement; bed-meeting actions use COMPLETE_BED_MEETING_ACTION. CANCEL_TRANSPORT appends a returned snooze and a released ownership entry to the job's awaiting-departure and booking-estimate-passed rows. Completion validates category and day syntax, not whether the day is the current day."
     },
     {
       "id": "legalform",
@@ -1256,7 +1257,7 @@
           "w": 260,
           "h": 90,
           "label": "Recorded as received",
-          "sub": "Any of the nine forms with a legal clock, not only 1A. A second receipt is refused."
+          "sub": "Any of the nine forms with a legal clock, not only 1A. A second receipt is refused. A typed received time is kept as typed and cannot be later than now."
         },
         {
           "id": "expiry",
@@ -1491,7 +1492,7 @@
       "title": "Placement and held-destination checks outside the label table",
       "blurb": "These checks answer physical reservations, staffing and record consistency at their actual handlers. They are not all evaluated on every path; an already-held restoration has its own checks and physical arrival has a separate record-first path.",
       "items": [
-        "A new pull needs a Ready bed, including closed-ward and closed-bed adjustments. An arrival into zero empty capacity is recorded as a capacity conflict.",
+        "A new pull needs a Ready bed, including closed-ward and closed-bed adjustments and live pulled admissions; when beds are being made ready it needs more Ready beds than pending ones (planned arrivals likewise). An arrival into zero empty capacity is recorded as a capacity conflict.",
         "Every free bed still being prepared prevents a new pull.",
         "Current observation staff and high-acuity capacity are checked at placement; supported exceptions need their recorded facts and acuity also needs nurse unit manager consultation.",
         "A Secure request using an open bed requires the supported recorded reason; naming an unavailable numbered reservation still refuses.",
@@ -1524,33 +1525,33 @@
     "sources": [
       {
         "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
-        "line": 578,
-        "sha256": "d7a94c3b1b7004022a50cbe10a3ffa3af4679a38af84f41ea7996c95e750210c"
+        "line": 581,
+        "sha256": "448d7f6e084c37776896bfc2bb9020b1c25cea6b31676a87421b1a8c76280ba4"
       },
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
         "line": 1,
-        "sha256": "726a3d08c0ba840819da7072839b8d61793a7cb70bb22688c735440755490482"
+        "sha256": "6703e1255f7cc2a19c990d10888db8e8e9f0f1c2b77e18eb78d2482c4b3f6b08"
       },
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-sheets.tsx",
-        "line": 317,
-        "sha256": "a30c1476085d149f66338fde5651fba86d1719142a3ec2e079fe2a5f3c0ba06f"
+        "line": 325,
+        "sha256": "27df537ac83a872ea00232428181c9a2813084619af38c707c899bcd5e754da2"
       },
       {
         "path": "src/components/ward-management/patients/add-patient.tsx",
-        "line": 77,
-        "sha256": "da3b5a2c28dae0aeb941236375df76deda3d21d9a5177f6e176c758401f21723"
+        "line": 84,
+        "sha256": "0145c077d008426106bc4aa6eeeebbc56cf27d84039c9e42cba372520da87e47"
       },
       {
         "path": "src/components/ward-management/patients/patient-now-screen.tsx",
         "line": 1,
-        "sha256": "a38e81535c2c7d48614671ed33e79a144d95b92cd0e15f443af92ac0069b7b7c"
+        "sha256": "c06200eaf5901fe508502db34626ff6aa31ff3adf74650aa606aed75d264e3ff"
       },
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner-body.tsx",
         "line": 1,
-        "sha256": "6b446cc89c091a1441233bb38c47b33a186056a44dc72ad1a7248c5d558e917c"
+        "sha256": "a96ae00d184b52341105eb90f8a0438f5f5561f787c2522f97e0e7ea62e87178"
       },
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner.tsx",
@@ -1580,7 +1581,7 @@
       {
         "path": "src/components/ward-management/ward-derivations.ts",
         "line": 1,
-        "sha256": "4f9ed973a3480cfd14314e1226693fa89359b670f6170f9fb3e2f7646dc1a928"
+        "sha256": "ead1e4f2bc330d458ccb28355d656d484fa1d547eec4f920f91544215c123e00"
       },
       {
         "path": "src/components/ward-management/ward-duplicate-bed-requests.ts",
@@ -1594,38 +1595,38 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-bed-events.ts",
-        "line": 634,
-        "sha256": "efcbf755ba71bc140598f46f3826ffa1a9f1319fa1c73ef6c9b8475337ebe390"
+        "line": 613,
+        "sha256": "be15f220d53a6c3f4304453e9cb29128c063ddd8d13b93e20a317dbc0e527574"
       },
       {
         "path": "src/components/ward-management/ward-flow-event-roles.ts",
         "line": 1,
-        "sha256": "0da41bd80faabeec9d93b67de978cbe08587dcbed39e127274c7ecdf40f66c8f"
+        "sha256": "3eb41a56cb181aefe22ddccbbc6a1c684a25cad9aace23506f1288dcd7a833cc"
       },
       {
         "path": "src/components/ward-management/ward-flow-events.ts",
         "line": 1,
-        "sha256": "3790d143d8bfa7ea874962119bfff3a0c45631e66f3bc54b5cf76e1feb96be2e"
+        "sha256": "cc194f8c311719c50ea9d0fa4216f884b439ef3f4020bbab7106c278cbffaeff"
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
-        "line": 416,
-        "sha256": "6a40beb3dd61cf86853c5a2a59270e22684556c862a725746d6972ab9abedc0d"
+        "line": 419,
+        "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
       },
       {
         "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
         "line": 1,
-        "sha256": "59176670ff0aceb0a73a9306f0d06134f6d77e31249e09d5c7204e1ba59d5267"
+        "sha256": "1ae21de095af6c797544a45a71fa0bf8513930e9cfd66974fe85e9a9e5aed856"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-events.ts",
-        "line": 623,
-        "sha256": "5ce3f4f9e6eba390ba62617e4f822577ae0a8c4557cd0476e1a4b7deb051bac6"
+        "line": 630,
+        "sha256": "a29e705c2433c4c003f57fa88308339aeeeee7376952a5c82b7e6723f64856c5"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
-        "line": 44,
-        "sha256": "238a6007aa6bdea003d467826c83148daaa316cf9040bdffcc24787416a8f105"
+        "line": 51,
+        "sha256": "e821cf3a8a08b764d868debdf6568a5705ea0e4629dd77d851ed0dc81d39f770"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
@@ -1634,8 +1635,8 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-reducer.ts",
-        "line": 1142,
-        "sha256": "19dd144055f6edae7c5d202ae63cb1626a557c2f51ace286016930371ca5bc57"
+        "line": 1157,
+        "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
@@ -1644,23 +1645,23 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-        "line": 1241,
-        "sha256": "a42642792d73b0da01d97e0c3260c132dd0a4859613bd2d9373d767fef1042f9"
+        "line": 1242,
+        "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
       },
       {
         "path": "src/components/ward-management/ward-flow-storage-validation.ts",
         "line": 469,
-        "sha256": "c673188b03b657a4e93c6dc4431a8694589ff844dd4de45e36102c004f240f56"
+        "sha256": "6808a0ac8a98836388fd66286e12ac4f66957ad552aec218f4f931f5c9387660"
       },
       {
         "path": "src/components/ward-management/ward-flow-transport-events.ts",
-        "line": 83,
-        "sha256": "6a159e0a46049e7dac6548c19fb8d2b19040bc3f086276e63cf06003615b5c30"
+        "line": 85,
+        "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
       },
       {
         "path": "src/components/ward-management/ward-flow-undo-events.ts",
-        "line": 254,
-        "sha256": "a89a714caf7879e36f6f1f04eed69f8436ae886a2f56de615f57b0443e35da43"
+        "line": 269,
+        "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
       },
       {
         "path": "src/components/ward-management/ward-inbox-reducer.ts",
@@ -1685,22 +1686,22 @@
       {
         "path": "src/components/ward-management/ward-model.ts",
         "line": 1,
-        "sha256": "e3d23616b7da2a24c3cb6d465b77b9bd89837a73f6d0b7effe68561a0ca2ff2b"
+        "sha256": "a3cc74d2e58defab0f62c04ceca9403bf7ac4538b2a25711dd27f460dbf444c1"
       },
       {
         "path": "src/components/ward-management/ward-patient-registration-reducer.ts",
         "line": 77,
-        "sha256": "a1212f53e3ac9f8d1c15428e317067777e818e65be834ebfe1b2cc0ddcbecce2"
+        "sha256": "36297e83737f7e5f2eb1db69fc4e64deac2be5d4793500b11f838dfc34da2629"
       },
       {
         "path": "src/components/ward-management/ward-ready-beds.ts",
         "line": 1,
-        "sha256": "a097b5463bdddc3145b383a733003943ea7806f1a0766e23d2eea6be35b6ccbd"
+        "sha256": "489095566f42be24921c7ba289b59a13514c656bf4846cf9cf94fad5a5aeb13c"
       },
       {
         "path": "src/components/ward-management/ward-undo.ts",
         "line": 1,
-        "sha256": "ac5ce146a1d18421514e24be4217ec7e5c071252da58018ebee2039bf2e9fa14"
+        "sha256": "ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6"
       }
     ]
   }
