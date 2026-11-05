@@ -183,6 +183,16 @@ export function CapacityHero({
                 align="end"
                 items={[
                   { id: "sheet", label: "Print the meeting sheet", icon: Printer, onSelect: onSheet },
+                  ...(tvHref && canOpen(tvHref)
+                    ? [
+                        {
+                          id: "tv",
+                          label: "Open on TV",
+                          icon: Presentation,
+                          onSelect: () => (router ? router.push(tvHref) : window.location.assign(tvHref)),
+                        },
+                      ]
+                    : []),
                   // Only when this desk may open the agenda (access audit, 31 Oct 2026).
                   ...(canOpen(BED_MEETING_AGENDA_HREF)
                     ? [
@@ -209,15 +219,6 @@ export function CapacityHero({
                   </button>
                 )}
               />
-              {tvHref && canOpen(tvHref) ? (
-                <Link
-                  href={tvHref}
-                  className={buttonClass({ variant: "onHero" })}
-                  data-testid="capacity-bed-meeting-tv"
-                >
-                  <Presentation size={16} strokeWidth={1.75} aria-hidden="true" /> Open on TV
-                </Link>
-              ) : null}
             </>
           )}
         </>

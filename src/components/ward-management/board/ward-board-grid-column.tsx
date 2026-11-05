@@ -89,6 +89,11 @@ export function WardBoardGridColumn({
   const countText = (filter: BoardFilter) => (filterCounts[filter] === 0 ? "none" : filterCounts[filter]);
   // Final polish (31 Oct 2026): the kit's select, as the other redesigned pages, in place of the
   // browser's own. Same id, name and spoken label.
+  const BOARD_ORDER_SHORT: Record<BoardOrder, string> = {
+    stay: "Longest stay",
+    leaving: "Soonest to leave",
+    recorded: "Bed order",
+  };
   const orderOptions = BOARD_ORDERS.map((order) => (
     <option key={order} value={order}>
       {BOARD_ORDER_LABELS[order]}
@@ -164,19 +169,13 @@ export function WardBoardGridColumn({
               count: countText(filter),
             }))}
           />
-          <label className={redesign.order} htmlFor="ward-board-order-select">
-            <span>Order</span>
-            <Select
-              id="ward-board-order-select"
-              name="wardBoardOrder"
-              value={bedOrder}
-              onChange={(event) => setBedOrder(event.target.value as BoardOrder)}
-              aria-label="Order the beds"
-              boxClassName={redesign.orderBox}
-            >
-              {orderOptions}
-            </Select>
-          </label>
+          <Segmented<BoardOrder>
+            label="Order the beds"
+            size="sm"
+            value={bedOrder}
+            onChange={setBedOrder}
+            items={BOARD_ORDERS.map((order) => ({ id: order, label: BOARD_ORDER_SHORT[order] }))}
+          />
         </div>
       )}
       {/* The legend explains the shades. It is not what makes the board readable without colour —

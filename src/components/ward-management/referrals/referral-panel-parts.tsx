@@ -7,8 +7,10 @@
 // with one compact row under the header: previous and next with "n of N", then Summary and Patient.
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   BedSingle,
+  Ellipsis,
   ChevronLeft,
   ChevronRight,
   Clock3,
@@ -31,7 +33,7 @@ import { demographicLabel } from "./referral-board-model";
 import { ReferralWorkedOn } from "./referral-worked-on-note";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import { referralPresentation } from "@/components/ward-management/ward-partial-view-presenters";
-import { Button, Count, Icon, buttonClass, cx, durMinutes } from "@/components/wf";
+import { Button, Count, Icon, Menu, buttonClass, cx, durMinutes } from "@/components/wf";
 import { BED_MEETING_REFERRALS_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 
 import s from "./referral-panel.module.css";
@@ -229,17 +231,39 @@ export function HeroTools({
       >
         Next overdue
       </Button>
-      <Link
-        href={BED_MEETING_REFERRALS_HREF}
-        className={buttonClass({ variant: "onHero", size: "sm" })}
-        title="Bed meeting agenda (M)"
-        data-testid="ward-referral-meeting"
-      >
-        <Icon icon={ListOrdered} size={16} />
-        <span>Bed meeting</span>
-        <Count n={meetingCount} />
-      </Link>
+      <HeroMoreMenu meetingCount={meetingCount} />
     </div>
+  );
+}
+
+/** Mock-up (design audit H1): the hero's one action stays; the rest sit under "...". */
+function HeroMoreMenu({ meetingCount }: { meetingCount: number }) {
+  const router = useRouter();
+  return (
+    <Menu
+      label="More referral actions"
+      align="end"
+      items={[
+        {
+          id: "meeting",
+          label: "Bed meeting agenda",
+          icon: ListOrdered,
+          meta: meetingCount > 0 ? String(meetingCount) : undefined,
+          onSelect: () => router.push(BED_MEETING_REFERRALS_HREF),
+        },
+      ]}
+      trigger={(props) => (
+        <button
+          type="button"
+          {...props}
+          className={buttonClass({ variant: "onHero", size: "sm" })}
+          data-testid="ward-referral-meeting"
+        >
+          <Icon icon={Ellipsis} size={16} />
+          <span className="sr-only">More referral actions</span>
+        </button>
+      )}
+    />
   );
 }
 
