@@ -123,6 +123,7 @@ export function markWhatsNewSeen(
   fromAccount = false,
 ): void {
   if (ids.length === 0) return;
+  shownThisVisit = null;
   try {
     const held = whatsNewSeenIds(window.localStorage.getItem(WHATS_NEW_STORAGE_KEY));
     window.localStorage.setItem(WHATS_NEW_STORAGE_KEY, JSON.stringify([...new Set([...ids, ...held])].slice(0, 200)));
@@ -134,6 +135,25 @@ export function markWhatsNewSeen(
 }
 
 const NONE: readonly WhatsNewEntry[] = [];
+/** The note as first shown on this visit, kept until it is closed (WF-25: show once). */
+let shownThisVisit: readonly WhatsNewEntry[] | null = null;
+
+/**
+ * Records the shown changes as seen without closing the note, so it stays for this visit but a
+ * reload or another tab never shows it again.
+ */
+function recordWhatsNewShown(entries: readonly WhatsNewEntry[]): void {
+  shownThisVisit = entries;
+  try {
+    const held = whatsNewSeenIds(window.localStorage.getItem(WHATS_NEW_STORAGE_KEY));
+    // Every current change, as Got it records, so the older ones the card had no room for do not
+    // bring it back on the next page.
+    const ids = WHATS_NEW.map((entry) => entry.id);
+    window.localStorage.setItem(WHATS_NEW_STORAGE_KEY, JSON.stringify([...new Set([...ids, ...held])].slice(0, 200)));
+  } catch {
+    // Unreadable storage shows nothing anyway.
+  }
+}
 let cached: { key: string; value: readonly WhatsNewEntry[] } = { key: "", value: NONE };
 
 /**
@@ -141,6 +161,7 @@ let cached: { key: string; value: readonly WhatsNewEntry[] } = { key: "", value:
  * repeated reads return the same list, as `useSyncExternalStore` needs.
  */
 function readUnseen(): readonly WhatsNewEntry[] {
+  if (shownThisVisit) return shownThisVisit;
   try {
     const storage = window.localStorage;
     if (storage.getItem(TOUR_AUTO_DONE_STORAGE_KEY) === null) return NONE;
@@ -159,6 +180,27 @@ const subscribeSeen = (onChange: () => void) => {
   return () => window.removeEventListener(WHATS_NEW_SEEN_EVENT, onChange);
 };
 const readNone = () => NONE;
+
+const MODAL_SELECTOR = '[role="dialog"][aria-modal="true"], dialog[open]';
+
+/** Whether a modal dialog or drawer is on screen, watched only while the note would show. */
+function useModalOpen(watch: boolean): boolean {
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!watch || typeof MutationObserver === "undefined") return;
+    const check = () => setOpen(document.querySelector(MODAL_SELECTOR) !== null);
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["open", "aria-modal"],
+    });
+    return () => observer.disconnect();
+  }, [watch]);
+  return watch && open;
+}
 
 /**
  * The note itself: a small card in the corner, never a dialog, so it blocks nothing on screen. It is
@@ -179,9 +221,24 @@ export function WardWhatsNew() {
     markWhatsNewSeen();
     setClosed(true);
   };
+  // WF-25 (live test, 4 Nov 2026): the note shows once. It is recorded as seen when it first shows,
+  // so a reload or the next page never brings it back, and it steps aside while a dialog or drawer
+  // is open so it never covers that dialog's Send or Cancel.
+  const showing = unseen.length > 0 && !closed;
+  // Declared before the record below, so a remount (Strict Mode) records the visit again.
+  useEffect(
+    () => () => {
+      shownThisVisit = null;
+    },
+    [],
+  );
+  useEffect(() => {
+    if (showing) recordWhatsNewShown(unseen);
+  }, [showing, unseen]);
+  const modalOpen = useModalOpen(showing);
   // Escape is "Got it".
   useCornerCardEscape(unseen.length > 0 && !closed, close);
-  if (unseen.length === 0 || closed) return null;
+  if (unseen.length === 0 || closed || modalOpen) return null;
   return (
     <OverlayPortal layer="overlay" name="ward-whats-new">
       <section className={styles.card} aria-labelledby="ward-whats-new-title" data-testid="ward-whats-new">

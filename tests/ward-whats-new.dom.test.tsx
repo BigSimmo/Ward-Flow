@@ -179,3 +179,31 @@ describe("what's new list", () => {
     }
   });
 });
+
+describe("What's new stays out of the way (WF-25)", () => {
+  it("shows once: leaving without Got it does not bring it back", () => {
+    window.localStorage.setItem(TOUR_AUTO_DONE, "yes");
+    const { unmount } = render(<WardWhatsNew />);
+    expect(screen.getByTestId("ward-whats-new")).toBeTruthy();
+    unmount();
+    render(<WardWhatsNew />);
+    expect(screen.queryByTestId("ward-whats-new")).toBeNull();
+  });
+
+  it("steps aside while a dialog is open, and comes back when it closes", async () => {
+    window.localStorage.setItem(TOUR_AUTO_DONE, "yes");
+    render(<WardWhatsNew />);
+    expect(screen.getByTestId("ward-whats-new")).toBeTruthy();
+    const dialog = document.createElement("div");
+    dialog.setAttribute("role", "dialog");
+    dialog.setAttribute("aria-modal", "true");
+    await act(async () => {
+      document.body.append(dialog);
+    });
+    expect(screen.queryByTestId("ward-whats-new")).toBeNull();
+    await act(async () => {
+      dialog.remove();
+    });
+    expect(screen.getByTestId("ward-whats-new")).toBeTruthy();
+  });
+});
