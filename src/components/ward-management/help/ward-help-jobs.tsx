@@ -25,6 +25,7 @@ import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
 import { Button, buttonClass, foldLimit, ShowMoreRow, useIsPhone } from "@/components/wf";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 import { readTourStep, type WardTourRole } from "./ward-help-store";
@@ -71,7 +72,12 @@ export function canShowTask(
   showMeOn: boolean,
   pathname: string = typeof window === "undefined" ? "" : window.location.pathname,
 ): boolean {
-  return showMeOn && showMeAvailable(task, role, home, phone) && walkPlaysHere(task, pathname);
+  return (
+    showMeOn &&
+    showMeAvailable(task, role, home, phone) &&
+    walkPlaysHere(task, pathname) &&
+    showMeSteps(task, phone ? "phone" : "desk", role, pathname).length > 0
+  );
 }
 
 /** The small play mark that says Show me can walk a job. `label` names it where no words sit beside it. */
@@ -192,12 +198,21 @@ function TaskRow({
 }) {
   const id = useId();
   const phone = useIsPhone();
-  const href = howToHref(task.go, role, home);
+  const access = useEffectiveWardAccess();
+  const mayChangeRules = task.id !== "rules" || access.scope.kind === "statewide";
+  const href = mayChangeRules ? howToHref(task.go, role, home) : undefined;
   // Another Settings tab is still somewhere to go, even while Help is open on Settings.
   const goThere = href && (href.includes("#") || href !== pathname) ? href : undefined;
-  const showMe = canShowTask(task, role, home, phone, showMeOn, pathname);
+  const showMe = mayChangeRules && canShowTask(task, role, home, phone, showMeOn, pathname);
   const computerOnly = phone && task.computerOnly;
-  const steps = showMeSteps(task, phone ? "phone" : "desk");
+  const steps = mayChangeRules
+    ? showMeSteps(
+        task,
+        phone ? "phone" : "desk",
+        role,
+        typeof window === "undefined" ? undefined : window.location.pathname,
+      )
+    : [];
   return (
     <li className={s.task} data-testid={`ward-help-task-answer-${task.id}`}>
       <button

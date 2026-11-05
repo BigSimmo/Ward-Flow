@@ -49,7 +49,7 @@ const QUESTIONS: readonly QuestionDefinition[] = [
   {
     id: "found",
     heading: "Accepted",
-    phrases: /^(?:accepted|bed found|beds found|bed reserved|reserved beds?)$/,
+    phrases: /^(?:accepted|bed found|beds found)$/,
     test: (row) => row.group === "found",
   },
   {
@@ -153,7 +153,8 @@ export function questionFor(query: string): SearchQuestion | undefined {
   return QUESTIONS.find((question) => question.phrases.test(text)) ?? formQuestion(text);
 }
 
-/** `rows` holds at most the caller's limit; `total` counts every row that answers the question. */
+/** One representative per person; `total` counts distinct people before the presentation limit.
+ * The census retains every request; previews expose the person's other open requests. */
 export type SearchAnswer = { question: SearchQuestion; rows: CensusRow[]; total: number };
 
 /**
@@ -171,7 +172,13 @@ export function answerQuestion(
   if (!question) return undefined;
   // Never "0 on leave" from a census that was not told who is on leave.
   if (question.needs === "leave" && !census.leaveKnown) return undefined;
-  const rows = sortCensusRows(census.rows.filter(question.test), "wait", () => false);
+  const seen = new Set<string>();
+  const rows = sortCensusRows(census.rows.filter(question.test), "wait", () => false).filter((row) => {
+    const key = row.patientRecordId ?? row.key;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
   return { question, rows: rows.slice(0, limit), total: rows.length };
 }
 
@@ -185,12 +192,18 @@ export function censusRowsByPatient(census: Census | null | undefined): Readonly
 }
 
 /** "Dabakarn · Royal Perth Hospital": where the census says the person is now. */
-export function whereNowLine(row: Pick<CensusRow, "where" | "whereSub">): string {
-  return [row.where, row.whereSub].filter((part) => part.trim().length > 0).join(" · ");
+export function whereNowLine(row: Pick<CensusRow, "where" | "whereSub" | "onLeave" | "absentWithoutLeave">): string {
+  return [
+    row.absentWithoutLeave ? "Absent without leave" : row.onLeave ? "On leave" : undefined,
+    row.onLeave || row.absentWithoutLeave ? `${row.where} bed kept` : row.where,
+    row.whereSub,
+  ]
+    .filter((part) => part && part.trim().length > 0)
+    .join(" · ");
 }
 
 /** "Find a bed · Bed desk", or `undefined` when the census records no step to take. */
 export function nextStepLine(row: Pick<CensusRow, "next" | "nextWho" | "group">): string | undefined {
   if (row.group === "off" || row.next.trim().length === 0 || row.next === "On ward") return undefined;
-  return [row.next, row.nextWho].filter((part) => part.trim().length > 0).join(" · ");
+  return [row.next, row.nextWho].filter((part) => part && part.trim().length > 0).join(" · ");
 }

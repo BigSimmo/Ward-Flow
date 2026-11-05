@@ -28,6 +28,7 @@ import {
   CORE_SEARCH_VIEWS,
   searchIntentLabel,
   searchWardFlow,
+  isExactRecordedIdentity,
 } from "@/components/ward-management/search/ward-smart-search";
 import { GlobalSearchPreview } from "@/components/ward-management/search/global-search-preview";
 import { buildCensus } from "@/components/ward-management/search/patient-census";
@@ -52,6 +53,7 @@ import {
   needsYouMeta,
   censusRowItem,
   smartSearchGroups,
+  searchOptionsKey,
   closingFirst,
   type HelpPreviewSource,
   type HelpSearchRows,
@@ -389,14 +391,15 @@ export function WardGlobalSearch({
             units,
             referrals,
             now,
-            limitPerGroup: FULL_RESULTS_PER_GROUP,
+            limitPerGroup: Number.POSITIVE_INFINITY,
             plannedAdmissions,
             admissions: wardFlow?.admissions,
           }),
     [trimmed, patients, movements, units, referrals, now, plannedAdmissions, wardFlow?.admissions],
   );
 
-  const refusal = trimmed.length === 0 ? undefined : refusalFor(trimmed);
+  const exactPerson = isExactRecordedIdentity(patients, trimmed);
+  const refusal = trimmed.length === 0 || exactPerson ? undefined : refusalFor(trimmed);
   const help = useMemo(
     () => (!findHelp || refusal || trimmed.length === 0 ? NO_HELP : findHelp(trimmed)),
     [findHelp, refusal, trimmed],
@@ -443,7 +446,7 @@ export function WardGlobalSearch({
     ],
   );
   const answer = useMemo(
-    () => (trimmed.length === 0 || refusal ? undefined : answerQuestion(trimmed, census, FULL_RESULTS_PER_GROUP)),
+    () => (trimmed.length === 0 || refusal ? undefined : answerQuestion(trimmed, census)),
     [trimmed, refusal, census],
   );
 
@@ -492,7 +495,7 @@ export function WardGlobalSearch({
           now,
           plannedAdmissions,
           admissions,
-          limitPerGroup: FULL_RESULTS_PER_GROUP,
+          limitPerGroup: Number.POSITIVE_INFINITY,
         });
         const item = smartSearchGroups(current, query, units, lookup)
           .flatMap((group) => group.items)
@@ -516,22 +519,21 @@ export function WardGlobalSearch({
     ],
   );
 
-  // Groups cut at the full limit: the engine's, plus the answer group when more rows answer it.
-  const truncatedGroups = useMemo(() => {
-    const engine = smartResults?.truncatedGroups ?? [];
-    return answer && answer.total > answer.rows.length ? [...engine, "answers"] : engine;
-  }, [smartResults, answer]);
-
-  /** Every matched group in full (up to the full limit), in the engine's intent order. */
-  const allGroups = useMemo(
+  // Scope the complete candidates before counting or applying the presentation cap.
+  const permittedGroups = useMemo(
     () =>
       (!smartResults || refusal ? [] : smartSearchGroups(smartResults, trimmed, units, lookup, answer, help.items))
-        .map((group) => ({
-          ...group,
-          items: group.items.flatMap(permittedResult),
-        }))
+        .map((group) => ({ ...group, items: group.items.flatMap(permittedResult) }))
         .filter((group) => group.items.length > 0),
     [smartResults, refusal, trimmed, units, lookup, answer, help, permittedResult],
+  );
+  const truncatedGroups = useMemo(
+    () => permittedGroups.filter((group) => group.items.length > FULL_RESULTS_PER_GROUP).map((group) => group.key),
+    [permittedGroups],
+  );
+  const allGroups = useMemo(
+    () => permittedGroups.map((group) => ({ ...group, items: group.items.slice(0, FULL_RESULTS_PER_GROUP) })),
+    [permittedGroups],
   );
 
   const kindCounts = useMemo(() => {
@@ -646,7 +648,7 @@ export function WardGlobalSearch({
    * list is painted with a stale row still marked active, and on a control whose Enter key
    * navigates, that frame is the one where Enter would go to a record nobody is looking at.
    */
-  const optionsKey = useMemo(() => JSON.stringify(options.map(({ kind, id, href }) => [kind, id, href])), [options]);
+  const optionsKey = searchOptionsKey(trimmed, options);
   const [seenOptionsKey, setSeenOptionsKey] = useState(optionsKey);
   // The Go to row is active without anyone choosing it: Enter opens it, but Home, End and Tab keep
   // their editing and group jobs until the arrows have moved (search audit, 3 Nov 2026).
@@ -668,7 +670,13 @@ export function WardGlobalSearch({
    * own Open buttons. Screens, places and actions still open straight away.
    */
   const [sheetItem, setSheetItem] = useState<SearchResultItem | undefined>(undefined);
-  const phoneSheetItem = isPhone && sheetItem && options.includes(sheetItem) ? sheetItem : undefined;
+  const phoneSheetItem =
+    isPhone && sheetItem
+      ? options.find(
+          (option) => option.kind === sheetItem.kind && option.id === sheetItem.id && option.href === sheetItem.href,
+        )
+      : undefined;
+  if (sheetItem && resultsCurrent && !phoneSheetItem) setSheetItem(undefined);
 
   /*
    * D1-style fix, same reason `PatientTypeahead` carries it: the list clips with its own scrollbar,

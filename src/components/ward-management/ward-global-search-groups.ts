@@ -262,7 +262,7 @@ export function smartSearchGroups(
       key: "teams",
       heading: "Community",
       items: smartResults.communityTeams.map((c) => ({
-        kind: "community",
+        kind: "team",
         kindLabel: "Community",
         id: c.team.id,
         title: c.team.name,
@@ -366,4 +366,9 @@ export function smartSearchGroups(
     .map((group) => ({ ...group, items: group.items.filter((item) => !shown.has(item.href)) }))
     .filter((group) => group.items.length > 0);
   return [{ key: "answers", heading: answer.question.heading, items: answered }, ...rest];
+}
+
+/** The settled query also determines automatic activation when the same destination survives. */
+export function searchOptionsKey(query: string, items: readonly SearchResultItem[]): string {
+  return JSON.stringify([query, items.map(({ kind, id, href }) => [kind, id, href])]);
 }

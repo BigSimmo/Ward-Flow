@@ -17,9 +17,10 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+const navigation = vi.hoisted(() => ({ push: vi.fn(), pathname: "/ward-flow/discharges" }));
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/ward-flow/discharges",
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  usePathname: () => navigation.pathname,
+  useRouter: () => ({ push: navigation.push, replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => new URLSearchParams(),
 }));
 
@@ -48,6 +49,7 @@ import {
   parseHelpFeedback,
   recordHelpFeedback,
 } from "@/components/ward-management/help/ward-help-feedback";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardHelpHost } from "@/components/ward-management/help/ward-help-host";
 import { HOW_TO_IDS } from "@/components/ward-management/help/ward-help-howto";
 import { SCREEN_HELP } from "@/components/ward-management/help/ward-help-content";
@@ -58,6 +60,9 @@ import { WardHelpUsageCard } from "@/components/ward-management/help/ward-help-u
 import { installMatchMediaStub } from "./setup/jsdom.setup";
 
 afterEach(() => {
+  delete (window as typeof window & { __wardFlowConfirmNavigation?: unknown }).__wardFlowConfirmNavigation;
+  navigation.push.mockReset();
+  navigation.pathname = "/ward-flow/discharges";
   phone.on = false;
   copy.text = "";
   copy.fail = false;
@@ -207,4 +212,46 @@ describe("printable guides from Help", () => {
     );
     expect(screen.getByTestId("ward-help-desk-print").getAttribute("href")).toMatch(/^\/help\/[a-z_]+\.html$/);
   });
+});
+
+describe("Help Show me dirty-work continuity", () => {
+  it.each([false, true])("retains the selected Help answer while navigation is pending (leave=%s)", async (leave) => {
+    setWardFeatureFlagOnDevice("help-ask", true);
+    let resume: (() => void) | undefined;
+    const confirm = vi.fn((proceed?: () => void) => {
+      resume = proceed;
+      return false;
+    });
+    (window as typeof window & { __wardFlowConfirmNavigation?: typeof confirm }).__wardFlowConfirmNavigation = confirm;
+    render(<WardHelpHost />);
+    act(() =>
+      window.dispatchEvent(new CustomEvent("ward-flow-open-help", { detail: { view: "tasks", task: "theme" } })),
+    );
+    const answer = await screen.findByTestId("ward-help-task-answer-theme");
+    fireEvent.click(within(answer).getByTestId("ward-help-task-show-me"));
+    await waitFor(() => expect(confirm).toHaveBeenCalledTimes(1));
+    expect(within(answer).getByRole("button", { expanded: true })).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-show-me-card")).toBeNull();
+    expect(navigation.push).not.toHaveBeenCalled();
+    if (leave) {
+      act(() => resume!());
+      await waitFor(() => expect(navigation.push).toHaveBeenCalledWith("/ward-flow/settings#display"));
+      expect(confirm).toHaveBeenCalledTimes(1);
+    }
+  });
+});
+
+it("closes Help for a harmless same-page Settings fragment without a dirty-work prompt", () => {
+  navigation.pathname = "/ward-flow/settings";
+  const confirm = vi.fn(() => false);
+  (window as typeof window & { __wardFlowConfirmNavigation?: typeof confirm }).__wardFlowConfirmNavigation = confirm;
+  const onClose = vi.fn();
+  render(<WardHelpSheet view="screen" onView={vi.fn()} onClose={onClose} onTour={vi.fn()} onShowMe={vi.fn()} />);
+  fireEvent.change(screen.getByRole("combobox", { name: "Search Help" }), { target: { value: "high contrast" } });
+  fireEvent.click(
+    within(screen.getByRole("region", { name: "Screens" })).getByRole("button", { name: /^High contrast/ }),
+  );
+  expect(confirm).not.toHaveBeenCalled();
+  expect(navigation.push).not.toHaveBeenCalled();
+  expect(onClose).toHaveBeenCalledTimes(1);
 });

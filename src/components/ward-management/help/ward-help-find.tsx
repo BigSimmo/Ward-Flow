@@ -13,6 +13,8 @@ import {
   Sparkles,
   Wand2,
 } from "lucide-react";
+import { useTourRole } from "./ward-help-store";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import type { ReactNode } from "react";
 
 import { Button, useIsPhone } from "@/components/wf";
@@ -182,16 +184,21 @@ function BestAnswer({
   onShowMe: (id: string) => void;
   onChoose: (result: HelpSearchResult) => void;
 }) {
+  const role = useTourRole();
+  const access = useEffectiveWardAccess();
   const group = groupOf(result);
   const Icon = ICON[group];
   const howToId = result.key.startsWith("howto:") ? result.key.slice("howto:".length) : undefined;
   const device = useIsPhone() ? "phone" : "desk";
-  const steps = howToId
-    ? showMeSteps(
-        HOW_TOS.find((howTo) => howTo.id === howToId),
-        device,
-      )
-    : [];
+  const steps =
+    howToId && (howToId !== "rules" || access.scope.kind === "statewide")
+      ? showMeSteps(
+          HOW_TOS.find((howTo) => howTo.id === howToId),
+          device,
+          role,
+          typeof window === "undefined" ? undefined : window.location.pathname,
+        )
+      : [];
   const showMe = howToId && steps.length && canShow(howToId) ? howToId : undefined;
   const alike = group === "Words" ? relatedTerms(result.title) : [];
   // A guide with nowhere to go is read here; it offers no button that would do nothing.

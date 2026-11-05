@@ -8,7 +8,9 @@ import type { WardTourRole } from "./ward-help-store";
  * and any screen it opens is one this desk may open (else it could only say "not on the screen").
  */
 export function showMeAvailable(howTo: HowTo, role: WardTourRole, home: string | undefined, phone: boolean): boolean {
-  return canShowMe(howTo, phone) && (!howTo.go || howToHref(howTo.go, role, home) !== undefined);
+  return (
+    howToFor(howTo, role) && canShowMe(howTo, phone) && (!howTo.go || howToHref(howTo.go, role, home) !== undefined)
+  );
 }
 
 /**

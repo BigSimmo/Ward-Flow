@@ -741,3 +741,17 @@ export function walkPlaysHere(howTo: HowTo, pathname: string): boolean {
   const page = howTo.around ? AROUND.find((each) => each.screen === howTo.around)?.page : undefined;
   return !page || page.path.test(pathname.replace(/\/+$/u, ""));
 }
+
+/** The retained bed-manager page has room/ward summaries, rather than the Forms workspace. */
+export const LEGACY_SECLUSION_STEPS: readonly ShowMeStep[] = [
+  {
+    target: id("seclusion-scope-note"),
+    title: "An operational view",
+    body: "Recorded operational facts only; no legal register.",
+  },
+  {
+    target: id("seclusion-wards"),
+    title: "Ward summaries",
+    body: "Recorded room status and ward incidents for the wards your desk can see.",
+  },
+];

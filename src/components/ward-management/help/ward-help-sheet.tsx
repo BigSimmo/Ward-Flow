@@ -2,6 +2,7 @@
 
 import { BookOpen, CircleHelp, Keyboard, Library, Search, Sparkles, UserRound, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+import { confirmHelpNavigation } from "./ward-help-navigation";
 import { useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 
 import { TabPanel, Tabs, useIsPhone } from "@/components/wf";
@@ -17,6 +18,7 @@ import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statis
 import { ADMIN_SETTINGS_HELP, glossaryForSites, screenHelpFor, type GlossaryTerm } from "./ward-help-content";
 import type { HelpView } from "./ward-help-events";
 import { findInHelp, foundRows, HelpFindResults, HelpTryAsking } from "./ward-help-find";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { howToLogins } from "./ward-help-access";
 import { HOW_TO_IDS, HOW_TOS } from "./ward-help-howto";
 import { aroundId } from "./ward-help-screen-tours";
@@ -170,6 +172,7 @@ function WardHelpSheetView({
   const router = useRouter();
   const pathname = usePathname() ?? "";
   const role = useTourRole();
+  const access = useEffectiveWardAccess();
   const { home, deskHome } = useTourFacts(role);
   const deskHref = deskHome ?? home;
   const phone = useIsPhone();
@@ -192,7 +195,8 @@ function WardHelpSheetView({
     return entries.find((entry) => entry.href === path)?.label ?? "that screen";
   };
 
-  const [query, setQuery] = useState(ask ?? "");
+  const selectedWalk = HOW_TOS.find((each) => each.id === openTask && each.around);
+  const [query, setQuery] = useState(ask || selectedWalk?.title || "");
   const [literal, setLiteral] = useState(false);
   const [focused, setFocused] = useState(false);
   const [active, setActive] = useState(0);
@@ -225,7 +229,11 @@ function WardHelpSheetView({
   const completion = showList ? suggested.completion : undefined;
   const canShow = (id: string) => {
     const each = HOW_TOS.find((howTo) => howTo.id === id);
-    return Boolean(each && canShowTask(each, role, deskHref, phone, showMeOn, pathname));
+    return Boolean(
+      (id !== "rules" || access.scope.kind === "statewide") &&
+      each &&
+      canShowTask(each, role, deskHref, phone, showMeOn, pathname),
+    );
   };
 
   // Questions to try (2 Nov 2026): the desk's jobs most used on this device (else its first two),
@@ -308,7 +316,17 @@ function WardHelpSheetView({
   const choose = (result: HelpSearchResult) => {
     // Accepting a result ends suggestion mode so the chosen answer shows straight away.
     setFocused(false);
-    const mine = !result.desks || result.desks.includes(role);
+    const mine =
+      (!result.desks || result.desks.includes(role)) &&
+      (result.key !== "howto:rules" || access.scope.kind === "statewide");
+    const selected = result.key.startsWith("howto:")
+      ? HOW_TOS.find((each) => each.id === result.key.slice("howto:".length))
+      : undefined;
+    if (selected?.around) {
+      setQuery(selected.title);
+      setLiteral(true);
+      return;
+    }
     if (result.key.startsWith("howto:") && mine) {
       setQuery("");
       setTask(result.key.slice("howto:".length));
@@ -332,12 +350,16 @@ function WardHelpSheetView({
     }
     const href = mine ? howToHref(result.go, role, deskHref) : undefined;
     if (href) {
-      onClose();
       const [path, tab] = href.split("#");
       // A tab on this screen goes by native fragment navigation, which Settings listens for.
       if (tab && path === pathname) {
+        onClose();
         if (window.location.hash !== `#${tab}`) window.location.hash = tab;
-      } else router.push(href);
+      } else
+        confirmHelpNavigation(() => {
+          onClose();
+          router.push(href);
+        });
     }
   };
 

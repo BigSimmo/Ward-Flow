@@ -682,7 +682,11 @@ function searchReferrals(
         " ",
       ),
     );
-    return words.includes(needle) ? [{ referral, formalName: info.formalName, umrn: info.umrn }] : [];
+    const identifier = (value: string) => foldPatientSearchText(value).replace(/\s+/gu, "");
+    const exactIdentifier = [info.umrn, referral.id].some((value) => identifier(value) === identifier(query));
+    return words.includes(needle) || exactIdentifier
+      ? [{ referral, formalName: info.formalName, umrn: info.umrn }]
+      : [];
   });
 }
 
@@ -992,4 +996,14 @@ export function searchWardFlow(input: SmartSearchInput): SmartSearchResults {
     truncatedGroups,
     intent,
   };
+}
+
+/** Strict full identity only: this exception never interprets a scoring request. */
+export function isExactRecordedIdentity(patients: readonly Patient[], query: string): boolean {
+  const exact = query.trim().toLocaleLowerCase();
+  return patients.some((patient) =>
+    [patient.umrn, `${patient.givenName} ${patient.familyName}`, `${patient.familyName}, ${patient.givenName}`].some(
+      (value) => value.trim().toLocaleLowerCase() === exact,
+    ),
+  );
 }

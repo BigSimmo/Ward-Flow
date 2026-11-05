@@ -57,6 +57,7 @@ import { recordSearch, type AccessEntry } from "./access-record";
 import { handOffTypedPatientQuery, isNewTabClick, takeHandedOffPatientSearchText } from "./patient-query-handoff";
 import { RecordPreview, type PreviewSelection } from "./record-preview";
 import { refusalFor } from "./search-refusals";
+import { isExactRecordedIdentity } from "./ward-smart-search";
 import { movementOriginService, movementSearchState, referralOriginService } from "./search-operational-state";
 import {
   LEGAL_FILTER_OPTIONS,
@@ -74,6 +75,7 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 
 import {
   CENSUS_HIGHLIGHTS,
+  CENSUS_GROUPS,
   buildCensus,
   censusLine,
   parseDob,
@@ -116,6 +118,14 @@ import { rememberReturnRow, rowWithAttribute, useReturnedView, useReturnToPlace 
 
 // Moved to `patient-search-sections.tsx`; re-exported so existing importers keep working.
 export { ResultsSection };
+
+/** Count people independently of the number of legitimate active request rows. */
+const peopleCount = (rows: readonly CensusRow[]) => new Set(rows.map((row) => row.patientRecordId ?? row.key)).size;
+function peopleByGroup(rows: readonly CensusRow[]) {
+  const counts = countGroups(rows);
+  for (const group of CENSUS_GROUPS) counts[group.id] = peopleCount(rows.filter((row) => row.group === group.id));
+  return counts;
+}
 
 const PATIENTS_ROUTE = "/ward-flow/search";
 /**
@@ -399,7 +409,10 @@ export function PatientSearchPage() {
     admissions,
   ]);
 
-  const refusal = useMemo(() => refusalFor(text), [text]);
+  const refusal = useMemo(
+    () => (isExactRecordedIdentity(patients, text) ? undefined : refusalFor(text)),
+    [patients, text],
+  );
 
   const people = useMemo(() => {
     if (isChip) {
@@ -716,9 +729,25 @@ export function PatientSearchPage() {
     highlight,
   ]);
 
+  // One state per person: prefer an occupied stay, then placement, then ED over inactive records.
+  // Search narrows the people shown, not their state; preserve every matching request row.
+  const stateOrder = { off: 0, community: 1, ed: 2, placement: 3, inpatient: 4 };
+  const personStates = new Map<string, ReturnType<typeof patientStateOf>>();
+  for (const row of census.rows) {
+    const key = row.patientRecordId ?? row.key;
+    const state = patientStateOf(row);
+    const previous = personStates.get(key);
+    if (previous === undefined || stateOrder[state] > stateOrder[previous]) personStates.set(key, state);
+  }
+  const visiblePeople = new Set(visibleRows.map((row) => row.patientRecordId ?? row.key));
   const stateCounts = countPatientStates(visibleRows);
+  stateCounts.all = visiblePeople.size;
+  for (const state of PATIENT_STATES)
+    stateCounts[state.id] = [...visiblePeople].filter((key) => personStates.get(key) === state.id).length;
   const stateRows =
-    patientState === "all" ? visibleRows : visibleRows.filter((row) => patientStateOf(row) === patientState);
+    patientState === "all"
+      ? visibleRows
+      : visibleRows.filter((row) => personStates.get(row.patientRecordId ?? row.key) === patientState);
   const stateItems = [
     { id: "all" as const, label: "Everyone", count: stateCounts.all },
     ...PATIENT_STATES.map((state) => ({ id: state.id, label: state.label, count: stateCounts[state.id] })),
@@ -746,14 +775,14 @@ export function PatientSearchPage() {
     />
   );
 
-  const groupTotals = countGroups(census.rows);
-  const groupMatches = countGroups(visibleRows);
-  const liveCount = census.rows.length - groupTotals.off;
+  const groupTotals = peopleByGroup(census.rows);
+  const groupMatches = peopleByGroup(visibleRows);
+  const liveCount = peopleCount(census.rows.filter((row) => row.group !== "off"));
   // shell-16: the highlight chips count what the search and filters leave, as the tiles do.
   const countedRows =
     searching || legacyNarrowing || settingFilter !== "all" || presenceFilter !== "all" ? visibleRows : census.rows;
   const highlightCounts = Object.fromEntries(
-    CENSUS_HIGHLIGHTS.map((chip) => [chip.id, countedRows.filter(chip.test).length]),
+    CENSUS_HIGHLIGHTS.map((chip) => [chip.id, peopleCount(countedRows.filter(chip.test))]),
   ) as Record<CensusHighlight, number>;
 
   // A search that finds exactly one person opens them; otherwise the panel shows this shift until a
@@ -922,8 +951,8 @@ export function PatientSearchPage() {
           count={
             searching && !refusal
               ? {
-                  shown: visibleRows.length,
-                  total: needle === "" ? visibleRows.length : census.rows.length,
+                  shown: peopleCount(visibleRows),
+                  total: needle === "" ? peopleCount(visibleRows) : peopleCount(census.rows),
                   noun: "people",
                 }
               : undefined
@@ -1015,7 +1044,7 @@ export function PatientSearchPage() {
           <Hero
             className={cx(cs.censusHero, isPhone && cs.heroPhone)}
             eyebrow="Patient register · Statewide"
-            title={`${census.rows.length} people`}
+            title={`${peopleCount(census.rows)} ${peopleCount(census.rows) === 1 ? "person" : "people"}`}
             titleMeta={isPhone ? flowLine : undefined}
             aside={
               <>
@@ -1326,7 +1355,7 @@ export function PatientSearchPage() {
             <CensusTable
               rows={refusal ? [] : stateRows}
               narrowed={patientState !== "all"}
-              totalPeople={census.rows.length}
+              totalPeople={peopleCount(census.rows)}
               searching={searching}
               needle={needle}
               sort={censusSort}
@@ -1344,7 +1373,7 @@ export function PatientSearchPage() {
               onSelect={selectRow}
               tab={tab}
               onTab={setTab}
-              liveCount={patientState === "all" ? liveCount : stateRows.length}
+              liveCount={patientState === "all" ? liveCount : peopleCount(stateRows)}
               historyCount={historyCount}
               history={history}
               onCopyList={copyList}

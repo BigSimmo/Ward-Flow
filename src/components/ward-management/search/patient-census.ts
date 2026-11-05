@@ -3,7 +3,7 @@
  * direction A with search bar 1).
  *
  * The old Patients list showed open movements and queued referrals only, so the people on a ward
- * and the people with nothing open were never in the visible list. This builds one row per person
+ * and the people with nothing open were never in the visible list. This preserves each active request link and counts distinct people in the views
  * across all four records the engine holds:
  *
  *   - an open movement (Waiting for a bed, Bed found or Moving),
@@ -34,7 +34,7 @@ import {
   type Instant,
   MINUTES_PER_DAY,
 } from "@/components/ward-management/ward-clock";
-import { isOpen } from "@/components/ward-management/ward-derivations";
+import { acceptedReferralAwaitingMovement, isOpen } from "@/components/ward-management/ward-derivations";
 import type { LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
 import { foldPatientSearchText, patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
@@ -274,6 +274,11 @@ export function buildCensus(state: {
         ? communityOriginLabel(movement.originCommunity)
         : "ED not recorded";
     const source = operational.sourceAdmission ? unitOf.get(operational.sourceAdmission.unitId) : undefined;
+    const sourceStay = !moving && !lost ? operational.sourceAdmission : undefined;
+    const sourceAway = sourceStay?.awayAtEmergencyDepartmentSince != null;
+    const sourceLeave = sourceStay ? leaveByAdmission.get(sourceStay.id) : undefined;
+    const transportNotBooked =
+      movement.stage === "handover_ready" && movement.transportNeed?.needed !== false && !movement.transport && !lost;
     const waited = Math.max(0, now - movement.openedAt);
     const form = movement.legalForm;
     const declines = movement.declines?.length ?? 0;
@@ -304,7 +309,15 @@ export function buildCensus(state: {
       service: movementOriginService(movement),
       transport: operational.transportStatus,
       escort: Boolean(movement.transport?.escortRequired),
-      where: moving ? "In transit" : lost ? "Location not recorded" : source ? source.name : edText,
+      where: moving
+        ? "In transit"
+        : lost
+          ? "Location not recorded"
+          : sourceAway
+            ? "At ED"
+            : source
+              ? source.name
+              : edText,
       whereSub: moving
         ? `From ${edText}`
         : lost
@@ -320,8 +333,12 @@ export function buildCensus(state: {
         : declines > 0
           ? `${declines} declined`
           : "",
-      next,
-      transportNotBooked: next === "Book transport",
+      next:
+        transportNotBooked &&
+        (cause === undefined || cause === "awaiting_coordinator" || cause === "awaiting_transport")
+          ? "Book transport"
+          : next,
+      transportNotBooked,
       nextWho: cause ? OWNER_WORDS[ownerOf(cause)] : "Bed desk",
       glyph,
       // A movement with no legal status of its own shows the person's recorded status, not "Not recorded".
@@ -336,19 +353,14 @@ export function buildCensus(state: {
       timeSub: "waiting",
       longWait: waited >= LONG_WAIT_MINUTES,
       pastExpected: false,
-      awayAtEd: false,
+      awayAtEd: sourceAway,
+      onLeave: sourceLeave !== undefined && sourceLeave.absentWithoutLeave === undefined,
+      absentWithoutLeave: sourceLeave?.absentWithoutLeave !== undefined,
       reservedTimePassed: cause === "bed_pull_expired",
       acceptedUnitName: accepted?.name ?? null,
       timeline: timeline.sort((a, b) => b.at - a.at),
       placeText: foldPatientSearchText(`${edText} ${ed?.name ?? ""} ${accepted?.name ?? ""} ${source?.name ?? ""}`),
     });
-  }
-
-  // Everyone who has held a ward record, discharged included.
-  const admitted = new Set<string>();
-  for (const admission of admissions) {
-    const occupant = resolve(admission).patient;
-    if (occupant) admitted.add(occupant.id);
   }
 
   for (const referral of referrals) {
@@ -360,12 +372,26 @@ export function buildCensus(state: {
     if (accepted === undefined && (outcome !== "queued" || awaiting.length === 0)) continue;
     const linked = resolve(referral).patient;
     if (linked && busy.has(linked.id)) continue;
-    // An accepted referral is finished once its person has held a ward record; only a known person
-    // with none is still waiting for the move.
-    if (accepted && (!linked || admitted.has(linked.id))) continue;
+    // Only the referral's own linked journey or ward admission settles its placement.
+    if (accepted && !acceptedReferralAwaitingMovement(referral, movements, admissions)) continue;
     const who = person(referral);
     const community = isCommunityReferral(referral);
-    const where = community ? `${referral.originSiteCode} Community` : `${referral.originSiteCode} ED`;
+    const stay = admissions.find(
+      (admission) =>
+        linked !== undefined && admission.state === "occupied" && resolve(admission).patient?.id === linked.id,
+    );
+    const stayUnit = stay ? unitOf.get(stay.unitId) : undefined;
+    const leave = stay ? leaveByAdmission.get(stay.id) : undefined;
+    const away = stay?.awayAtEmergencyDepartmentSince != null;
+    const where = away
+      ? "At ED"
+      : stay
+        ? (stayUnit?.name ?? "Ward not recorded")
+        : referral.source === "ed_medical"
+          ? `${referral.originSiteCode} ED`
+          : community
+            ? `${referral.originSiteCode} Community`
+            : "Location not recorded";
     const waited = Math.max(0, now - referral.raisedAt);
     const wards = awaiting.filter((arm) => arm.destination.kind === "psychiatric_ward").length;
     const others = awaiting.length - wards;
@@ -381,7 +407,7 @@ export function buildCensus(state: {
       transport: null,
       escort: false,
       where,
-      whereSub: referralOriginService(referral.originSiteCode),
+      whereSub: stayUnit ? `${stayUnit.name} bed kept` : "Current whereabouts",
       to: accepted
         ? (acceptedUnit?.name ?? "Accepted")
         : wards > 0 && others === 0
@@ -401,7 +427,9 @@ export function buildCensus(state: {
       timeSub: "waiting",
       longWait: waited >= LONG_WAIT_MINUTES,
       pastExpected: false,
-      awayAtEd: false,
+      awayAtEd: away,
+      onLeave: leave !== undefined && leave.absentWithoutLeave === undefined,
+      absentWithoutLeave: leave?.absentWithoutLeave !== undefined,
       reservedTimePassed: false,
       acceptedUnitName: acceptedUnit?.name ?? null,
       timeline: [{ at: referral.raisedAt, glyph: "wait", text: `Referral raised at ${where}` }],

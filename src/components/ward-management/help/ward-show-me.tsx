@@ -2,12 +2,15 @@
 
 import { Info, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+import { confirmHelpNavigation } from "./ward-help-navigation";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
 import { OverlayPortal, useIsPhone, useModalFocus } from "@/components/wf";
 import { hasOpenSheet, subscribeToSheetStack, topSheetRoot } from "@/components/wf/sheet-focus";
 import { PHONE_QUICK_SETTINGS } from "@/components/ward-management/settings/settings-screen-model";
 
+import { canShowTask } from "./ward-help-jobs";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { howToHref } from "./ward-help-href";
 import { HOW_TOS, showMeSteps } from "./ward-help-howto";
 import { useTourRole } from "./ward-help-store";
@@ -22,18 +25,19 @@ import styles from "./ward-tour.module.css";
  * tour's card and spotlight (`ward-spotlight.ts`). It presses nothing: the person does the job.
  * Back to Help, on the first and last steps, returns to Help with this task open.
  */
-export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () => void; onBack: () => void }) {
+type ShowMeProps = { id: string; onClose: () => void; onBack: () => void; navigationConfirmed?: boolean };
+function ShowMePlayer({ id, onClose, onBack, navigationConfirmed }: ShowMeProps) {
   const role = useTourRole();
   const device: TourDevice = useIsPhone() ? "phone" : "desk";
+  const pathname = usePathname() ?? "";
   const { home, deskHome } = useTourFacts(role);
   const howTo = HOW_TOS.find((candidate) => candidate.id === id);
   // Steps marked for the other device are skipped, so a phone never walks to a computer-only part.
-  const steps = useMemo(() => showMeSteps(howTo, device), [howTo, device]);
+  const steps = useMemo(() => showMeSteps(howTo, device, role, pathname), [howTo, device, role, pathname]);
   const [stepIndex, setIndex] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const spotRef = useRef<HTMLDivElement>(null);
-  const pathname = usePathname() ?? "";
   const router = useRouter();
   // A computer and a phone walk different steps, so a window narrowed mid-walk (or a tablet
   // turned) keeps the walk on its last step rather than running past the end and vanishing.
@@ -55,9 +59,11 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
     if (went.current || !href) return;
     went.current = true;
     const [path, tab] = href.split("#");
-    if (pathname !== path) router.push(href);
-    else if (tab && window.location.hash !== `#${tab}`) window.location.hash = tab;
-  }, [href, pathname, router]);
+    if (pathname !== path) {
+      if (navigationConfirmed) router.push(href);
+      else confirmHelpNavigation(() => router.push(href));
+    } else if (tab && window.location.hash !== `#${tab}`) window.location.hash = tab;
+  }, [href, pathname, router, navigationConfirmed]);
 
   // A step names its desktop control first and a phone stand-in after it; the first on screen is lit.
   const target = step?.target;
@@ -244,4 +250,69 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
       </div>
     </OverlayPortal>
   );
+}
+
+/** Eligibility and navigation are resolved inside the lazy guide chunk. */
+function useGuideAdmission(id: string) {
+  const role = useTourRole();
+  const access = useEffectiveWardAccess();
+  const phone = useIsPhone();
+  const pathname = usePathname() ?? "";
+  const { home, deskHome } = useTourFacts(role);
+  const task = HOW_TOS.find((each) => each.id === id);
+  const allowed = Boolean(
+    task &&
+    canShowTask(task, role, deskHome ?? home, phone, true, pathname) &&
+    (id !== "rules" || access.scope.kind === "statewide"),
+  );
+  const destination = howToHref(task?.go, role, deskHome ?? home);
+  const href =
+    phone && PHONE_QUICK_SETTINGS.has(id) && destination?.startsWith("/ward-flow/settings#")
+      ? destination.split("#")[0]
+      : destination;
+  return { allowed, href, pathname };
+}
+
+/** Keep the current Help sheet mounted while the shared dirty-work decision is pending. */
+export function WardShowMeAdmission({
+  id,
+  onAdmit,
+  onReject,
+}: {
+  id: string;
+  onAdmit: (id: string) => void;
+  onReject: (id: string) => void;
+}) {
+  const { allowed, href, pathname } = useGuideAdmission(id);
+  const alive = useRef(false);
+  const attempted = useRef<string | undefined>(undefined);
+  const current = `${id}|${href}|${allowed}|${pathname}`;
+  const latest = useRef(current);
+  useEffect(() => {
+    latest.current = current;
+    alive.current = true;
+    if (!allowed) onReject(id);
+    else if (attempted.current !== current) {
+      attempted.current = current;
+      const proceed = () => {
+        if (alive.current && latest.current === current) onAdmit(id);
+      };
+      if (href && href.split("#")[0] !== pathname) confirmHelpNavigation(proceed);
+      else proceed();
+    }
+    return () => {
+      alive.current = false;
+    };
+  }, [id, allowed, current, href, pathname, onAdmit, onReject]);
+  return null;
+}
+
+/** Direct callers receive the same page/device/role checks as normal Help. */
+export function WardShowMe(props: ShowMeProps) {
+  const { allowed } = useGuideAdmission(props.id);
+  const { onBack } = props;
+  useEffect(() => {
+    if (!allowed) onBack();
+  }, [allowed, onBack]);
+  return allowed ? <ShowMePlayer {...props} /> : null;
 }
