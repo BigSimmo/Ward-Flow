@@ -81,8 +81,10 @@ export function PortraitList({
         if (group.rows.length === 0) return null;
         const isFolded = toggled.has(group.id) !== Boolean(group.folded);
         const limit = full.has(group.id) ? group.rows.length : foldLimit(group.rows.length, PORTRAIT_GROUP_LIMIT);
-        // The open row stays on screen past the fold, so choosing it never hides it.
-        const shown = group.rows.filter((row, index) => index < limit || row.selected);
+        // The open row stays on screen past the fold, so choosing it never hides it. While a
+        // highlight is on (some rows dimmed), the highlighted rows stay on screen too.
+        const highlighting = group.rows.some((row) => row.dim);
+        const shown = group.rows.filter((row, index) => index < limit || row.selected || (highlighting && !row.dim));
         const hidden = group.rows.length - shown.length;
         return (
           <div key={group.id} className={styles.group}>

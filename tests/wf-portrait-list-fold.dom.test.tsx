@@ -44,4 +44,16 @@ describe("PortraitList fold", () => {
     expect(within(list).getAllByRole("listitem")).toHaveLength(9 + 9);
     expect(screen.getByRole("button", { name: "Show 3 more" })).toBeTruthy();
   });
+
+  it("keeps highlighted rows shown past the fold while a highlight is on", () => {
+    const highlighted = rows(12).map((row, index) => ({ ...row, dim: index !== 10 }));
+    render(
+      <PortraitList label="Test list" onOpen={() => {}} groups={[{ id: "a", title: "Group A", rows: highlighted }]} />,
+    );
+    const list = screen.getByTestId("wf-portrait-list");
+    // Eight rows, plus the one highlighted row past the fold.
+    expect(within(list).getAllByRole("listitem")).toHaveLength(9);
+    expect(within(list).getByText("Testperson, Synthetic 11")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Show 3 more" })).toBeTruthy();
+  });
 });
