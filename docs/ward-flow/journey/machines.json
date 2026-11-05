@@ -1520,8 +1520,8 @@
     }
   ],
   "review": {
-    "reviewedOn": "2026-11-03",
-    "basis": "Source comparison of eleven machines, route nodes, gates, resources and current gap notes; not runtime or clinical acceptance.",
+    "reviewedOn": "2026-11-05",
+    "basis": "Source comparison of eleven machines, route nodes, gates, resources and current gap notes; not runtime or clinical acceptance. 5 November follow-up: explicit handler, payload, authority and caller review reconciled the consolidated audit repairs. Accepted observation sequence and legacy-tie fallback, current place/Undo provenance, safe world reset/import identity, return retry, meeting occurrence metadata and UI draft/completion ownership qualify existing transitions; they add no clinical decision or new physical transport stage. See CURRENT-REVIEW.md for the source-by-source review scope and reused versus fresh evidence.",
     "sources": [
       {
         "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
@@ -1546,7 +1546,7 @@
       {
         "path": "src/components/ward-management/patients/patient-now-screen.tsx",
         "line": 1,
-        "sha256": "c06200eaf5901fe508502db34626ff6aa31ff3adf74650aa606aed75d264e3ff"
+        "sha256": "4be7d03fb08af5af0c56027c0c1384d47e38cce8c1e1ed354c187306e473bb55"
       },
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner-body.tsx",
@@ -1611,7 +1611,7 @@
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
         "line": 419,
-        "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+        "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
       },
       {
         "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
@@ -1630,38 +1630,38 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-        "line": 370,
-        "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+        "line": 373,
+        "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
       },
       {
         "path": "src/components/ward-management/ward-flow-reducer.ts",
-        "line": 1157,
-        "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+        "line": 1160,
+        "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-        "line": 387,
-        "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+        "line": 386,
+        "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-        "line": 1242,
-        "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+        "line": 1244,
+        "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
       },
       {
         "path": "src/components/ward-management/ward-flow-storage-validation.ts",
-        "line": 469,
-        "sha256": "6808a0ac8a98836388fd66286e12ac4f66957ad552aec218f4f931f5c9387660"
+        "line": 453,
+        "sha256": "a1895a85269e896b14cd6448ad0e219463b3618e15f453974f7aeee403fac5f6"
       },
       {
         "path": "src/components/ward-management/ward-flow-transport-events.ts",
         "line": 85,
-        "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+        "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
       },
       {
         "path": "src/components/ward-management/ward-flow-undo-events.ts",
         "line": 269,
-        "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+        "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
       },
       {
         "path": "src/components/ward-management/ward-inbox-reducer.ts",

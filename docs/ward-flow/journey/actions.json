@@ -20,7 +20,7 @@
     ],
     "roles": ["community", "ed", "ward", "coordinator"],
     "does": "Creates a front-door referral to the chosen destinations, bounded by the configured parallel-referral cap. Distinct named wards may be asked together; duplicate recipients and a broad ward arm mixed with named ward arms are refused.",
-    "needs": "A known patient and source, valid destination/intake answers and a unique submission id when supplied. An ED uses ed_medical; a ward uses psychiatric_ward and its own origin ward.",
+    "needs": "A known patient and source, valid destination/intake answers and a unique submission id when supplied. An ED uses ed_medical; a ward uses psychiatric_ward and its own origin ward. The originSiteCode must resolve in the world's state.scenario network, including a fictional-network scenario.",
     "changes": "Creates the referral with every destination set to waiting.",
     "reasons": [
       "COHORTS",
@@ -37,7 +37,7 @@
         "message": "RECEIVE_REFERRAL needs at least one destination",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 381
+          "line": 380
         }
       },
       {
@@ -45,7 +45,7 @@
         "message": "RECEIVE_REFERRAL may address at most ${state.configuration.parallelReferralCap} destinations, not ${event.destinations.length}",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 387
+          "line": 386
         }
       },
       {
@@ -53,7 +53,7 @@
         "message": "RECEIVE_REFERRAL cannot address the same destination kind twice",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 405
+          "line": 404
         }
       },
       {
@@ -61,7 +61,7 @@
         "message": "RECEIVE_REFERRAL edId must resolve to a real emergency department",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 419
+          "line": 418
         }
       },
       {
@@ -69,7 +69,7 @@
         "message": "RECEIVE_REFERRAL raised as role ed must carry source ed_medical, not ${event.source}",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 482
+          "line": 481
         }
       },
       {
@@ -77,7 +77,7 @@
         "message": "RECEIVE_REFERRAL source ed_medical requires an origin site with an emergency department",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 546
+          "line": 545
         }
       }
     ],
@@ -86,7 +86,7 @@
       "control": "Send referral"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -95,8 +95,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 357,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 356,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/referrals/use-ward-referral-drawer-state.ts",
@@ -105,33 +105,33 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 381,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 380,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 387,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 386,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 405,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 404,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 419,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 418,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 482,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 481,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 546,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 545,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         }
       ]
     }
@@ -318,7 +318,7 @@
     ],
     "roles": ["ward", "coordinator", "ed", "community"],
     "does": "A ward, emergency department or community team says yes to the destination addressed to it. The first yes automatically cancels every other destination still waiting — except a community arm, which never competes for the bed.",
-    "needs": "The destination was addressed to the acting desk and has not been withdrawn. Normally it is queued. An explicit reassessment can turn a decline into acceptance; updates on an already accepted arm add history rather than accepting twice. Ward eligibility and bed criteria still apply.",
+    "needs": "The destination was addressed to the acting desk and has not been withdrawn. Normally it is queued. An explicit reassessment can turn a decline into acceptance; updates on an already accepted arm add history rather than accepting twice. Ward eligibility and bed criteria still apply. At the shared authenticated boundary, a scoped caller must be authorised for the stored receiving ED or community team (including a community team in its scoped service); outbound visibility alone does not authorise the answer. The statewide coordinator retains whole-network authority.",
     "changes": "Marks that destination accepted, cancels the other waiting non-community destinations, notifies the referrer and the receiving ward. No bed is pulled and no movement is created.",
     "reasons": ["GENDER_PLACEMENT_REASONS", "OVERRIDE_REASONS"],
     "override": true,
@@ -328,7 +328,7 @@
         "message": "referral ${referral.id} was not addressed to ${event.destinationKind.replace(/_/g, \" \")}",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 790
+          "line": 789
         }
       },
       {
@@ -336,7 +336,7 @@
         "message": "referral ${referral.id} has already been accepted elsewhere",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 821
+          "line": 820
         }
       },
       {
@@ -344,7 +344,7 @@
         "message": "${event.destinationKind.replace(/_/g, \" \")} has already answered referral ${referral.id} (${addressing.state})",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 837
+          "line": 836
         }
       },
       {
@@ -352,7 +352,7 @@
         "message": "referral ${referral.id} was withdrawn by its referrer, so ${event.destinationKind.replace(/_/g, \" \")} cannot accept it",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 848
+          "line": 847
         }
       },
       {
@@ -360,7 +360,7 @@
         "message": "referral ${referral.id} already has an open movement (${openLinkedMovement.id}); it cannot also be accepted into a ward while that movement is open",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 926
+          "line": 925
         }
       },
       {
@@ -368,7 +368,7 @@
         "message": "ACCEPT_REFERRAL into a psychiatric ward must name a unit",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 931
+          "line": 930
         }
       }
     ],
@@ -377,7 +377,7 @@
       "control": "Accept at the named ward"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -386,8 +386,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 722,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 721,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/community/community-screen.tsx",
@@ -396,8 +396,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1319,
-          "sha256": "3a938a0d4e964a9e148a9b8e673989c04bb587fc393960fd7bede424675b72f7"
+          "line": 1322,
+          "sha256": "b6efe63f9db4a64516c71a74cae73cc83483aa708c29c14f9e685b82fc4a75a9"
         },
         {
           "path": "src/components/ward-management/referrals/referral-match.tsx",
@@ -406,33 +406,33 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 790,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 789,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 821,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 820,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 837,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 836,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 848,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 847,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 926,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 925,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 931,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 930,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         }
       ]
     }
@@ -445,7 +445,7 @@
     "nodes": ["wardAnswers", "wardDeclined", "cmhtAnswers", "cmhtDeclined", "edAnswers", "edDeclined", "cmhtNothing"],
     "roles": ["ward", "coordinator", "ed", "community"],
     "does": "Records the destination’s answer. A substantive decline closes that arm; bed-unavailable reasons on a ward arm waitlist it and keep it live. Gender mismatch is not a decline reason.",
-    "needs": "A known addressed destination, matching desk kind/place and a valid reason. Re-answering a decided arm requires the documented reassessment path.",
+    "needs": "A known addressed destination, matching desk kind/place and a valid reason. Re-answering a decided arm requires the documented reassessment path. At the shared authenticated boundary, a scoped caller must be authorised for the stored receiving ED or community team (including a community team in its scoped service); outbound visibility alone does not authorise the answer. The statewide coordinator retains whole-network authority.",
     "changes": "Records a decline or waitlist history entry and the corresponding notices, retaining other arms.",
     "reasons": ["REFERRAL_DECLINE_REASONS", "COMMUNITY_DECLINE_REASONS"],
     "refuses": [
@@ -454,7 +454,7 @@
         "message": "referral ${referral.id} has already been accepted elsewhere",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 1172
+          "line": 1171
         }
       },
       {
@@ -462,7 +462,7 @@
         "message": "referral ${referral.id} was withdrawn by its referrer, so ${event.destinationKind.replace(/_/g, \" \")} cannot decline it",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 1187
+          "line": 1186
         }
       },
       {
@@ -470,7 +470,7 @@
         "message": "DECLINE_REFERRAL reason must be chosen from ${declineReasonListName[event.destinationKind]}, the vocabulary for ${event.destinationKind.replace(/_/g, \" \")} destinations",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 1212
+          "line": 1211
         }
       }
     ],
@@ -479,7 +479,7 @@
       "control": "Decline referral"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -488,8 +488,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 1118,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 1117,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/community/community-screen.tsx",
@@ -508,18 +508,18 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 1172,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 1171,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 1187,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 1186,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 1212,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 1211,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         }
       ]
     }
@@ -649,7 +649,7 @@
         "message": "ADD_REFERRAL_CORRECTION note must say something — a blank is not a correction",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1181
+          "line": 1183
         }
       },
       {
@@ -657,7 +657,7 @@
         "message": "ADD_REFERRAL_CORRECTION note is ${note.length} characters and the limit is ${REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS} — it is refused rather than shortened",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1189
+          "line": 1191
         }
       }
     ],
@@ -666,7 +666,7 @@
       "control": "Add a correction"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -675,8 +675,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1147,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 1149,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/referrals/referral-history-corrections.tsx",
@@ -685,13 +685,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1182,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 1184,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1190,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 1192,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         }
       ]
     }
@@ -777,7 +777,7 @@
         "message": "RAISE_REFERRAL referralId must name a referral this system already holds, and ${event.referralId} names none",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 160
+          "line": 159
         }
       },
       {
@@ -785,7 +785,7 @@
         "message": "referral ${referral.id} was never addressed to ${department?.name ?? \"this ward\"}, so a journey raised there did not come from it",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 204
+          "line": 203
         }
       },
       {
@@ -793,7 +793,7 @@
         "message": "referral ${referral.id} was withdrawn by its referrer, so no journey can be raised from it",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 216
+          "line": 215
         }
       },
       {
@@ -801,7 +801,7 @@
         "message": "${department?.name ?? \"This ward\"} declined referral ${referral.id}, so no journey can be raised from it",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 226
+          "line": 225
         }
       },
       {
@@ -809,7 +809,7 @@
         "message": "referral ${referral.id} already has a linked movement (${blockingLinkedMovement.id}) that did not close as \"did not proceed\"; a second journey cannot be raised while it stands",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 245
+          "line": 244
         }
       }
     ],
@@ -818,7 +818,7 @@
       "control": "Ask for a bed"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -827,8 +827,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 94,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 93,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward/ward-accepted-referral-placement-form.tsx",
@@ -847,28 +847,28 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 160,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 159,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 204,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 203,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 216,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 215,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 226,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 225,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 245,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 244,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         }
       ]
     }
@@ -891,7 +891,7 @@
         "message": "no movement found for id ${event.movementId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 682
+          "line": 681
         }
       },
       {
@@ -899,7 +899,7 @@
         "message": "cannot refer a closed movement (${movement.closure.reason})",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 684
+          "line": 683
         }
       },
       {
@@ -907,7 +907,7 @@
         "message": "cannot refer a movement at its current stage (${stageCopy[movement.stage].label})",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 704
+          "line": 703
         }
       },
       {
@@ -915,7 +915,7 @@
         "message": "no unit found for id ${unknown}",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 709
+          "line": 708
         }
       }
     ],
@@ -924,7 +924,7 @@
       "control": "Refer"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -933,8 +933,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 681,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 680,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/capacity/step-down-board.tsx",
@@ -953,23 +953,23 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 683,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 682,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 685,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 684,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 705,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 704,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 710,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 709,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         }
       ]
     }
@@ -992,7 +992,7 @@
         "message": "cannot accept a closed movement (${movement.closure.reason})",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 114
+          "line": 113
         }
       },
       {
@@ -1000,7 +1000,7 @@
         "message": "movement ${movement.id} is already accepted at ${already?.name ?? movement.acceptedUnitId}; the referral to ${attemptedUnit?.name ?? event.unitId} was withdrawn",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 122
+          "line": 121
         }
       },
       {
@@ -1008,7 +1008,7 @@
         "message": "cannot accept a movement at its current stage (${stageCopy[movement.stage].label})",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 129
+          "line": 128
         }
       },
       {
@@ -1016,7 +1016,7 @@
         "message": "${event.unitId} does not hold a live referral for movement ${movement.id}",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 133
+          "line": 132
         }
       }
     ],
@@ -1025,7 +1025,7 @@
       "control": "Accept in principle"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1034,13 +1034,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 108,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 107,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1283,
-          "sha256": "3a938a0d4e964a9e148a9b8e673989c04bb587fc393960fd7bede424675b72f7"
+          "line": 1286,
+          "sha256": "b6efe63f9db4a64516c71a74cae73cc83483aa708c29c14f9e685b82fc4a75a9"
         },
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
@@ -1054,23 +1054,23 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 114,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 113,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 122,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 121,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 129,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 128,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 133,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 132,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         }
       ]
     }
@@ -1092,7 +1092,7 @@
         "message": "cannot decline at the movement's current stage (${stageCopy[movement.stage].label})",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 254
+          "line": 253
         }
       },
       {
@@ -1100,7 +1100,7 @@
         "message": "${event.unitId} does not hold a live referral for movement ${movement.id}",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 258
+          "line": 257
         }
       },
       {
@@ -1108,7 +1108,7 @@
         "message": "DECLINE reason must be chosen from DECLINE_REASONS",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 309
+          "line": 308
         }
       }
     ],
@@ -1117,7 +1117,7 @@
       "control": "Confirm decline"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1126,13 +1126,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 240,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 239,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1372,
-          "sha256": "3a938a0d4e964a9e148a9b8e673989c04bb587fc393960fd7bede424675b72f7"
+          "line": 1375,
+          "sha256": "b6efe63f9db4a64516c71a74cae73cc83483aa708c29c14f9e685b82fc4a75a9"
         },
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
@@ -1141,18 +1141,18 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 254,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 253,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 258,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 257,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 309,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 308,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         }
       ]
     }
@@ -1174,7 +1174,7 @@
         "message": "${event.unitId} does not hold a live referral for movement ${movement.id}",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1104
+          "line": 1106
         }
       },
       {
@@ -1182,7 +1182,7 @@
         "message": "WITHDRAW_WARD_REQUEST reason must be chosen from WARD_REQUEST_WITHDRAWAL_REASONS",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1107
+          "line": 1109
         }
       }
     ],
@@ -1191,7 +1191,7 @@
       "control": "Withdraw this request"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1200,8 +1200,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1092,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 1094,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/coordinator/shortlist-panel.tsx",
@@ -1210,13 +1210,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1105,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 1107,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1108,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 1110,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         }
       ]
     }
@@ -1230,7 +1230,7 @@
     "roles": ["coordinator"],
     "does": "Withdraws an acceptance before handover, including a pulled bed or a movement stepped back while retaining its held admission. A matching bed is released in the same act.",
     "needs": "An open movement at accepted_awaiting_bed, pulled, or an earlier stepped-back stage with a held admission, plus a listed correction reason. Cancel a live booking first; collection refuses withdrawal.",
-    "changes": "Clears the accepting ward and time and any released hold fields, appends withdrawal/release history and notices. Ordinarily returns to destination_review; an earlier stepped-back stage stays as found. It does not re-refer the ward.",
+    "changes": "Clears the accepting ward and time and any released hold fields, appends withdrawal/release history and notices. Ordinarily returns to destination_review; an earlier stepped-back stage stays as found. It does not re-refer the ward. For an agreed return identified by sourceAdmissionId, the bed-release notice goes to that source stay's sending ward rather than its ED alias.",
     "reasons": ["STEP_BACK_REASONS"],
     "refuses": [
       {
@@ -1238,7 +1238,7 @@
         "message": "movement ${movement.id}'s patient has been collected; use STOP_TRANSPORT",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 1314
+          "line": 1313
         }
       },
       {
@@ -1246,7 +1246,7 @@
         "message": "movement ${movement.id} has a transport job booked; cancel it (CANCEL_TRANSPORT) before withdrawing the acceptance",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 1320
+          "line": 1319
         }
       },
       {
@@ -1254,7 +1254,7 @@
         "message": "movement ${movement.id}'s pulled bed matches no releasable reservation",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 1330
+          "line": 1329
         }
       }
     ],
@@ -1263,7 +1263,7 @@
       "control": "Withdraw the acceptance"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1272,8 +1272,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 1274,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 1273,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
@@ -1282,18 +1282,18 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 1314,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 1313,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 1320,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 1319,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-          "line": 1330,
-          "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+          "line": 1329,
+          "sha256": "de03cf8ca197c8a6c69801a09c3db8fb26ea89246d1e9f0caa86a3ecd74beaf2"
         }
       ]
     }
@@ -1306,7 +1306,7 @@
     "nodes": ["sAbandoned"],
     "roles": ["ed", "community", "ward", "coordinator"],
     "does": "Cancels the search outright — either pulling it from every ward still being asked, or, once accepted, revoking the acceptance and giving back any held bed.",
-    "needs": "An open movement and the recorded sending desk/place or coordinator. After acceptance this path is restricted to the originating ED or coordinator and refuses after collection; other sending desks cannot revoke an accepted movement here.",
+    "needs": "An open movement and the recorded sending desk/place or coordinator. After acceptance this path is restricted to the originating ED or coordinator and refuses after collection; other sending desks cannot revoke an accepted movement here. Execution uses canonical actingPlaceId, or a ward's actingUnitId, before the legacy placeId fallback; a supplied legacy alias that disagrees with the canonical claim is refused. Shared scope validates legacy placeId as an authority claim too.",
     "changes": "Closes the movement as “did not proceed”, releases any held bed, cancels any live transport.",
     "reasons": [],
     "refuses": [
@@ -1315,7 +1315,7 @@
         "message": "movement ${movement.id} has already closed and cannot be withdrawn",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 894
+          "line": 893
         }
       },
       {
@@ -1323,7 +1323,7 @@
         "message": "movement ${movement.id} has already been accepted by ${movement.acceptedUnitId}; only the referrer or the coordinator may revoke it now",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 962
+          "line": 964
         }
       },
       {
@@ -1331,7 +1331,7 @@
         "message": "movement ${movement.id}'s patient has already been collected; use STOP_TRANSPORT to stop the journey instead of withdrawing the referral",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 971
+          "line": 973
         }
       },
       {
@@ -1339,7 +1339,7 @@
         "message": "movement ${movement.id} holds no live referral to withdraw",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1037
+          "line": 1039
         }
       }
     ],
@@ -1348,7 +1348,7 @@
       "control": "Withdraw referral"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1357,8 +1357,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 889,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 888,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward-flow-raise.ts",
@@ -1377,23 +1377,23 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 895,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 894,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 963,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 965,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 972,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 974,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1038,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 1040,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         }
       ]
     }
@@ -1407,7 +1407,7 @@
     "roles": ["ed", "coordinator"],
     "does": "Instead of admitting, refers the patient straight to a named community team — ends the bed search, creates or reuses a real community referral, and tells everybody involved.",
     "needs": "The record is open and transport has not collected the patient. If they are on a legal form, a conclusive examination outcome must already be recorded.",
-    "changes": "Gives back any held bed, cancels transport, withdraws live ward requests, closes the movement, and raises or reuses the community arm.",
+    "changes": "Gives back any held bed, cancels transport, withdraws live ward requests, closes the movement, and raises or reuses the community arm. When creating a new community referral, the movement's origin ED site is looked up within state.scenario, preserving the fictional-network origin when available; queued-arm reuse is unchanged.",
     "reasons": [],
     "refuses": [
       {
@@ -1415,7 +1415,7 @@
         "message": "cannot refer a closed movement (${movement.closure.reason})",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 462
+          "line": 461
         }
       },
       {
@@ -1423,7 +1423,7 @@
         "message": "team \"${event.team}\" is not a valid community mental health team",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 465
+          "line": 464
         }
       },
       {
@@ -1431,7 +1431,7 @@
         "message": "movement ${movement.id}'s patient has already been collected; use STOP_TRANSPORT to stop the journey instead of referring to a community team",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 475
+          "line": 474
         }
       },
       {
@@ -1439,7 +1439,7 @@
         "message": "movement ${movement.id} is on a legal form; a conclusive examination outcome must be recorded before referring to a community team",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 488
+          "line": 487
         }
       }
     ],
@@ -1448,7 +1448,7 @@
       "control": "Confirm CMHT referral"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1457,8 +1457,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 459,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 458,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ed/ed-screen-row-forms.tsx",
@@ -1467,23 +1467,23 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 463,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 462,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 466,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 465,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 476,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 475,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 489,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 488,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         }
       ]
     }
@@ -1737,7 +1737,7 @@
       "control": "Correct the record"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1747,7 +1747,7 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 694,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
@@ -1762,12 +1762,12 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 701,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 716,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         }
       ]
     }
@@ -1839,7 +1839,7 @@
       "control": "Pull a bed"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1849,12 +1849,12 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 73,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1417,
-          "sha256": "3a938a0d4e964a9e148a9b8e673989c04bb587fc393960fd7bede424675b72f7"
+          "line": 1420,
+          "sha256": "b6efe63f9db4a64516c71a74cae73cc83483aa708c29c14f9e685b82fc4a75a9"
         },
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
@@ -1869,32 +1869,32 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 92,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 154,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 167,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 213,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 231,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 252,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         }
       ]
     }
@@ -1908,7 +1908,7 @@
     "roles": ["coordinator", "ward"],
     "does": "A ward gives back a bed it was holding before the patient arrived. The admission record is deleted outright — nobody was ever in this bed.",
     "needs": "An open movement at pulled, a listed release reason, an authorised holding ward/coordinator and no physical collection. Cancel a live booking first. An Undo carrying expectedPull must still name this exact pull.",
-    "changes": "Returns the bed to the ward, deletes the admission, sends the record back to “accepted, awaiting bed”, and tells the department.",
+    "changes": "Returns the bed to the ward, deletes the admission, sends the record back to “accepted, awaiting bed”, and tells the department. For a return movement with sourceAdmissionId, the in-app release/withdrawal notice targets the actual sending stay ward. Ordinary ED/community origins retain their existing recipient paths; no external-provider delivery is implied.",
     "reasons": ["RELEASE_PULL_REASONS"],
     "refuses": [
       {
@@ -1941,7 +1941,7 @@
       "control": "Release the pulled bed"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1951,7 +1951,7 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 441,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
@@ -1960,8 +1960,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1797,
-          "sha256": "3a938a0d4e964a9e148a9b8e673989c04bb587fc393960fd7bede424675b72f7"
+          "line": 1800,
+          "sha256": "b6efe63f9db4a64516c71a74cae73cc83483aa708c29c14f9e685b82fc4a75a9"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -1971,17 +1971,17 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 486,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 495,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 504,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         }
       ]
     }
@@ -2028,7 +2028,7 @@
       "control": "Release the held bed"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -2038,7 +2038,7 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 562,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
@@ -2053,17 +2053,17 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 576,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 586,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 594,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         }
       ]
     }
@@ -2140,7 +2140,7 @@
     "nodes": ["booked"],
     "roles": ["ed", "ward", "community", "coordinator"],
     "does": "Logs an already arranged booking: provider, explicit escort and transport-legal-status answers, estimate, and optional typed CAD number. It calls no transport service.",
-    "needs": "An open movement at pulled or handover_ready with an accepted destination or admission and no live booking. Desk/place must match sender or coordinator; global medical-clearance/deterioration guards apply. A blank CAD is permitted for later recording.",
+    "needs": "An open movement at pulled or handover_ready with an accepted destination or admission and no live booking. Desk/place must match sender or coordinator; global medical-clearance/deterioration guards apply. A blank CAD is permitted for later recording. In the patient workspace, an exceptional record opening is read only: patient-scoped UI gates do not offer this mutation. An ordinary authorised caller retains its own route role and the relevant stay/receiving-ward claim; a desk-switch hint grants no authority.",
     "changes": "Creates the transport job and records who booked it — which decides who may later cancel it.",
     "reasons": ["TRANSPORT_PROVIDERS", "TRANSPORT_LEGAL_STATUSES"],
     "refuses": [
@@ -2149,7 +2149,7 @@
         "message": "cannot book transport at the movement's current stage (${stageCopy[movement.stage].label})",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 649
+          "line": 654
         }
       },
       {
@@ -2157,7 +2157,7 @@
         "message": "transport for movement ${movement.id} is already booked",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 655
+          "line": 660
         }
       },
       {
@@ -2165,7 +2165,7 @@
         "message": "BOOK_TRANSPORT escortRequired must be answered, and it has no default",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 664
+          "line": 669
         }
       },
       {
@@ -2173,7 +2173,7 @@
         "message": "BOOK_TRANSPORT estimatedAt must be answered, and it has no default",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 685
+          "line": 690
         }
       },
       {
@@ -2181,7 +2181,7 @@
         "message": "BOOK_TRANSPORT raised as ward must state its actingUnitId, and it has no default",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 690
+          "line": 695
         }
       },
       {
@@ -2189,16 +2189,16 @@
         "message": "BOOK_TRANSPORT raised as community must state its actingPlaceId, and it has no default",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 728
+          "line": 733
         }
       }
     ],
     "screen": {
       "screen": "officer/officer-needs-transport.tsx; community/use-community-screen-overlays.ts; ed/ed-screen-actions.ts; patients/patient-transit-operations.tsx; patients/patient-now-screen.tsx",
-      "control": "Transport booked"
+      "control": "Transport booked The officer booking form guards entered answers and pending saves on outer close or job change. Keep editing retains the draft; only an accepted current save clears the booking without a discard question. A held uncertain command stays owned for same-command recovery rather than sending a duplicate."
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -2207,13 +2207,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 645,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 650,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/officer/officer-needs-transport.tsx",
-          "line": 340,
-          "sha256": "3dd49fbe827ab0c7fae315830d0dc155eda8417432cb81b635f2f7a2c7c5376b"
+          "line": 347,
+          "sha256": "d4a0554d6a26fd420e10c5fd241503ace5969207aca9d1d071068704b326c357"
         },
         {
           "path": "src/components/ward-management/community/use-community-screen-overlays.ts",
@@ -2232,38 +2232,38 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
-          "line": 541,
-          "sha256": "c06200eaf5901fe508502db34626ff6aa31ff3adf74650aa606aed75d264e3ff"
+          "line": 544,
+          "sha256": "4be7d03fb08af5af0c56027c0c1384d47e38cce8c1e1ed354c187306e473bb55"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 657,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 662,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 663,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 668,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 672,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
-        },
-        {
-          "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 693,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 677,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 698,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 736,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 703,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
+        },
+        {
+          "path": "src/components/ward-management/ward-flow-transport-events.ts",
+          "line": 741,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         }
       ]
     }
@@ -2302,7 +2302,7 @@
       "control": "Mark handover ready"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -2312,7 +2312,7 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 85,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2322,12 +2322,12 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 99,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 109,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         }
       ]
     }
@@ -2366,7 +2366,7 @@
       "control": "Accepted"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -2376,12 +2376,12 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 128,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 494,
-          "sha256": "02d12062654de09eb2c979d42f699e939130cbc5ce1754275b9944852a8b32da"
+          "line": 502,
+          "sha256": "db8fdb04f643cb3d5d9e91653a40cad10c1105e86e33cbe2e86a0954160cfe94"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2391,12 +2391,12 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 132,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 160,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         }
       ]
     }
@@ -2435,7 +2435,7 @@
       "control": "En route"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -2445,12 +2445,12 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 178,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 501,
-          "sha256": "02d12062654de09eb2c979d42f699e939130cbc5ce1754275b9944852a8b32da"
+          "line": 509,
+          "sha256": "db8fdb04f643cb3d5d9e91653a40cad10c1105e86e33cbe2e86a0954160cfe94"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2460,12 +2460,12 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 182,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 218,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         }
       ]
     }
@@ -2512,7 +2512,7 @@
       "control": "Collected"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -2522,12 +2522,12 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 229,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 517,
-          "sha256": "02d12062654de09eb2c979d42f699e939130cbc5ce1754275b9944852a8b32da"
+          "line": 525,
+          "sha256": "db8fdb04f643cb3d5d9e91653a40cad10c1105e86e33cbe2e86a0954160cfe94"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2537,12 +2537,12 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 233,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 248,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         }
       ]
     }
@@ -2556,7 +2556,7 @@
     "roles": ["officer", "ward", "coordinator"],
     "does": "The officer records delivery of the transport leg only. The receiving ward or coordinator confirms physical arrival, occupies the reserved bed and closes the movement. Physical arrival is irreversible.",
     "needs": "An open movement with collection recorded at moving, or no transport needed and no live job at pulled/handover_ready. The receiving ward must identify itself. Ward arrival additionally checks the matching reservation, identity, bed eligibility and any source stay.",
-    "changes": "Officer: stamps transport.arrivedAt and leaves moving open. Ward/coordinator: occupies the held admission, adjusts bed figures and closes arrived; a linked source stay is departed on transfer arrival.",
+    "changes": "Officer: stamps transport.arrivedAt and leaves moving open. Ward/coordinator: occupies the held admission, adjusts bed figures and closes arrived; a linked source stay is departed on transfer arrival. When linked journey/stay observation levels diverge, retained accepted-edit sequence decides which is later, including same-minute edits and new edits against legacy history. If neither entry has sequence, the existing timestamp fallback remains (journey wins ties); a winning journey level appends reconciliation history to the stay.",
     "reasons": [],
     "refuses": [
       {
@@ -2589,7 +2589,7 @@
       "control": "Confirm Arrival"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -2599,12 +2599,12 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 315,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 528,
-          "sha256": "02d12062654de09eb2c979d42f699e939130cbc5ce1754275b9944852a8b32da"
+          "line": 536,
+          "sha256": "db8fdb04f643cb3d5d9e91653a40cad10c1105e86e33cbe2e86a0954160cfe94"
         },
         {
           "path": "src/components/ward-management/tools/ward-tool-feed.tsx",
@@ -2624,17 +2624,17 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 354,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 361,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 380,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         }
       ]
     }
@@ -2656,7 +2656,7 @@
         "message": "cannot cancel transport for movement ${movement.id} — the patient has arrived",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 830
+          "line": 835
         }
       },
       {
@@ -2664,7 +2664,7 @@
         "message": "cannot cancel transport for movement ${movement.id} — the patient has departed",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 833
+          "line": 838
         }
       },
       {
@@ -2672,7 +2672,7 @@
         "message": "CANCEL_TRANSPORT raised as ward acting as ${event.actingUnitId} may only cancel transport it booked for movement ${movement.id}",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 852
+          "line": 857
         }
       },
       {
@@ -2680,7 +2680,7 @@
         "message": "CANCEL_TRANSPORT raised as ED acting as ${event.actingPlaceId} may only cancel transport it booked for movement ${movement.id}",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 876
+          "line": 881
         }
       },
       {
@@ -2688,7 +2688,7 @@
         "message": "CANCEL_TRANSPORT reason must be chosen from CANCEL_TRANSPORT_REASONS",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 885
+          "line": 890
         }
       }
     ],
@@ -2697,7 +2697,7 @@
       "control": "Cancel transport"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -2706,8 +2706,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 825,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 830,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
@@ -2721,28 +2721,28 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 838,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 843,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 841,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 846,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 860,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 865,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 884,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 889,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 893,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 898,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         }
       ]
     }
@@ -2764,7 +2764,7 @@
         "message": "movement ${movement.id}'s transport has not been collected yet; use CANCEL_TRANSPORT instead",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 986
+          "line": 991
         }
       },
       {
@@ -2772,7 +2772,7 @@
         "message": "movement ${movement.id}'s patient has already arrived",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 992
+          "line": 997
         }
       },
       {
@@ -2780,7 +2780,7 @@
         "message": "STOP_TRANSPORT whereabouts must be chosen from TRANSPORT_WHEREABOUTS",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 1011
+          "line": 1016
         }
       }
     ],
@@ -2789,7 +2789,7 @@
       "control": "Stop transport"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -2798,8 +2798,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 1003,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 1008,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
@@ -2808,18 +2808,18 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 1016,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 1021,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 1022,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 1027,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 1041,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 1046,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         }
       ]
     }
@@ -2969,7 +2969,7 @@
         "message": "cannot change legal status for a closed movement (${movement.closure.reason})",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1249
+          "line": 1251
         }
       },
       {
@@ -2977,7 +2977,7 @@
         "message": "CHANGE_LEGAL_STATUS reason must be chosen from LEGAL_STATUS_CHANGE_REASONS",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1257
+          "line": 1259
         }
       }
     ],
@@ -2986,7 +2986,7 @@
       "control": "Record legal status change"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -2995,8 +2995,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1242,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 1244,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/movements/sent-journey-changes.tsx",
@@ -3005,13 +3005,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1250,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 1252,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1258,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 1260,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         }
       ]
     }
@@ -3118,7 +3118,7 @@
         "message": "cannot correct a legal form receipt for a closed movement (${movement.closure.reason})",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 422
+          "line": 421
         }
       },
       {
@@ -3126,7 +3126,7 @@
         "message": "movement ${movement.id} has no recorded legal form receipt to correct",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 426
+          "line": 425
         }
       }
     ],
@@ -3135,7 +3135,7 @@
       "control": "Save correction"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -3144,8 +3144,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 411,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 410,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ed/use-ed-record-save.ts",
@@ -3154,13 +3154,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 422,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 421,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 426,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 425,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         }
       ]
     }
@@ -3328,7 +3328,7 @@
         "message": "RECORD_LEAVING was raised acting as unit ${event.actingUnitId} but admission ${admission.id} belongs to unit ${admission.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 131
+          "line": 134
         }
       },
       {
@@ -3336,7 +3336,7 @@
         "message": "admission ${admission.id} has already left",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 137
+          "line": 140
         }
       },
       {
@@ -3344,16 +3344,16 @@
         "message": "admission ${admission.id} is ${admission.state}, and only somebody occupying a bed can leave one",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 145
+          "line": 148
         }
       }
     ],
     "screen": {
       "screen": "ward-board.tsx (+1 other)",
-      "control": "Record that they have left"
+      "control": "Record that they have left The ward departure caller retains one pending subject through an uncertain failed outcome that carries confirmation, follows only the same command receipt and scopes Undo to the receipt-created departure step. Old-world completions must not free a replacement world command or advertise stale Undo; ordinary reset keeps the screen DOM so opener focus can be restored."
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -3362,18 +3362,18 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 119,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 122,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         },
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
-          "line": 1231,
-          "sha256": "bed1d97368a5437bd6f4bc2a1dc18e094eff69b4b3a2e9580e9842c83f0f8145"
+          "line": 1233,
+          "sha256": "3441f8c4ef4ceb9727d68edb344a765272758165e654dd6ee2ccd3752b4f9fa6"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1701,
-          "sha256": "3a938a0d4e964a9e148a9b8e673989c04bb587fc393960fd7bede424675b72f7"
+          "line": 1704,
+          "sha256": "b6efe63f9db4a64516c71a74cae73cc83483aa708c29c14f9e685b82fc4a75a9"
         },
         {
           "path": "src/components/ward-management/tools/ward-tool-feed.tsx",
@@ -3392,18 +3392,18 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 131,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 134,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 137,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 140,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 145,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 148,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         }
       ]
     }
@@ -3416,7 +3416,7 @@
     "nodes": ["dAway"],
     "roles": ["ward", "coordinator"],
     "does": "Notes that an admitted patient has gone to an emergency department for a medical problem, while the ward keeps their bed.",
-    "needs": "An occupied stay on the named acting ward, no existing ED absence, and no simultaneous leave or absence-without-leave record.",
+    "needs": "An occupied stay on the named acting ward, no existing ED absence, and no simultaneous leave or absence-without-leave record. In the patient workspace, an exceptional record opening is read only: patient-scoped UI gates do not offer this mutation. An ordinary authorised caller retains its own route role and the relevant stay/receiving-ward claim; a desk-switch hint grants no authority.",
     "changes": "Stamps the absence. No bed figure moves at all.",
     "reasons": [],
     "refuses": [
@@ -3425,7 +3425,7 @@
         "message": "admission ${admission.id} is already recorded as away at an emergency department",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 226
+          "line": 229
         }
       },
       {
@@ -3433,7 +3433,7 @@
         "message": "admission ${admission.id} is ${heldBed.absentWithoutLeave ? \"absent without leave\" : \"on leave\"} (${heldBed.id}); record the return first",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 235
+          "line": 238
         }
       }
     ],
@@ -3442,7 +3442,7 @@
       "control": "Record that they have gone to an emergency department"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -3451,8 +3451,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 205,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 208,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen-overlays.tsx",
@@ -3471,18 +3471,18 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
-          "line": 726,
-          "sha256": "c06200eaf5901fe508502db34626ff6aa31ff3adf74650aa606aed75d264e3ff"
+          "line": 729,
+          "sha256": "4be7d03fb08af5af0c56027c0c1384d47e38cce8c1e1ed354c187306e473bb55"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 226,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 229,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 235,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 238,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         }
       ]
     }
@@ -3495,7 +3495,7 @@
     "nodes": ["dAway"],
     "roles": ["ward", "coordinator"],
     "does": "Notes that a patient who went to an emergency department is back on the ward, in the bed that was kept for them.",
-    "needs": "The named acting ward owns the stay and it is recorded away at ED. The handler does not additionally require occupied state, so a recorded absence can be cleared.",
+    "needs": "The named acting ward owns the stay and it is recorded away at ED. The handler does not additionally require occupied state, so a recorded absence can be cleared. In the patient workspace, an exceptional record opening is read only: patient-scoped UI gates do not offer this mutation. An ordinary authorised caller retains its own route role and the relevant stay/receiving-ward claim; a desk-switch hint grants no authority.",
     "changes": "Clears the absence.",
     "reasons": [],
     "refuses": [
@@ -3504,7 +3504,7 @@
         "message": "no admission found for id ${event.admissionId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 243
+          "line": 246
         }
       },
       {
@@ -3512,7 +3512,7 @@
         "message": "admission ${admission.id} is not recorded as away at an emergency department",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 254
+          "line": 257
         }
       }
     ],
@@ -3521,7 +3521,7 @@
       "control": "Record that they are back on the ward"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -3530,8 +3530,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 241,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 244,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen-overlays.tsx",
@@ -3550,18 +3550,18 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
-          "line": 742,
-          "sha256": "c06200eaf5901fe508502db34626ff6aa31ff3adf74650aa606aed75d264e3ff"
+          "line": 745,
+          "sha256": "4be7d03fb08af5af0c56027c0c1384d47e38cce8c1e1ed354c187306e473bb55"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 243,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 246,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 254,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 257,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         }
       ]
     }
@@ -3574,7 +3574,7 @@
     "nodes": ["dAway"],
     "roles": ["ward", "coordinator"],
     "does": "Records that a bed is held for somebody on approved leave, with an expected return. It does not go back into circulation while they are away.",
-    "needs": "A real occupied admission on the named acting ward, no existing leave/absence and no current ED absence.",
+    "needs": "A real occupied admission on the named acting ward, no existing leave/absence and no current ED absence. In the patient workspace, an exceptional record opening is read only: patient-scoped UI gates do not offer this mutation. An ordinary authorised caller retains its own route role and the relevant stay/receiving-ward claim; a desk-switch hint grants no authority.",
     "changes": "Creates the leave record.",
     "reasons": [],
     "refuses": [
@@ -3583,7 +3583,7 @@
         "message": "RECORD_LEAVE_BED was raised acting as unit ${event.actingUnitId} but targets unit ${event.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 311
+          "line": 314
         }
       },
       {
@@ -3591,7 +3591,7 @@
         "message": "RECORD_LEAVE_BED names admission ${onLeave.id} on unit ${onLeave.unitId}, not unit ${event.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 323
+          "line": 326
         }
       }
     ],
@@ -3600,7 +3600,7 @@
       "control": "Leave recording through the patient workspace; command dispatch is present"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -3609,23 +3609,23 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 304,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 307,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
-          "line": 705,
-          "sha256": "c06200eaf5901fe508502db34626ff6aa31ff3adf74650aa606aed75d264e3ff"
+          "line": 708,
+          "sha256": "4be7d03fb08af5af0c56027c0c1384d47e38cce8c1e1ed354c187306e473bb55"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 311,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 314,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 323,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 326,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         }
       ]
     }
@@ -3638,7 +3638,7 @@
     "nodes": ["dAway"],
     "roles": ["ward", "coordinator"],
     "does": "Ends a bed's recorded leave period.",
-    "needs": "The leave record exists and belongs to this ward.",
+    "needs": "The leave record exists and belongs to this ward. In the patient workspace, an exceptional record opening is read only: patient-scoped UI gates do not offer this mutation. An ordinary authorised caller retains its own route role and the relevant stay/receiving-ward claim; a desk-switch hint grants no authority.",
     "changes": "Removes the leave record. The step can be taken back by UNDO_BED_STEP within the Undo window.",
     "reasons": [],
     "refuses": [
@@ -3664,7 +3664,7 @@
       "control": "Ended"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -3678,8 +3678,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1720,
-          "sha256": "3a938a0d4e964a9e148a9b8e673989c04bb587fc393960fd7bede424675b72f7"
+          "line": 1723,
+          "sha256": "b6efe63f9db4a64516c71a74cae73cc83483aa708c29c14f9e685b82fc4a75a9"
         },
         {
           "path": "src/components/ward-management/board/ward-board.tsx",
@@ -3688,8 +3688,8 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
-          "line": 648,
-          "sha256": "c06200eaf5901fe508502db34626ff6aa31ff3adf74650aa606aed75d264e3ff"
+          "line": 651,
+          "sha256": "4be7d03fb08af5af0c56027c0c1384d47e38cce8c1e1ed354c187306e473bb55"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
@@ -3797,7 +3797,7 @@
       "control": "Confirm"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -3811,8 +3811,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1642,
-          "sha256": "3a938a0d4e964a9e148a9b8e673989c04bb587fc393960fd7bede424675b72f7"
+          "line": 1645,
+          "sha256": "b6efe63f9db4a64516c71a74cae73cc83483aa708c29c14f9e685b82fc4a75a9"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
@@ -4010,7 +4010,7 @@
       "control": "No longer held up"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4024,8 +4024,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1659,
-          "sha256": "3a938a0d4e964a9e148a9b8e673989c04bb587fc393960fd7bede424675b72f7"
+          "line": 1662,
+          "sha256": "b6efe63f9db4a64516c71a74cae73cc83483aa708c29c14f9e685b82fc4a75a9"
         },
         {
           "path": "src/components/ward-management/discharges/discharge-board.tsx",
@@ -4143,7 +4143,7 @@
       "control": "Confirm capacity"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4157,8 +4157,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1560,
-          "sha256": "3a938a0d4e964a9e148a9b8e673989c04bb587fc393960fd7bede424675b72f7"
+          "line": 1563,
+          "sha256": "b6efe63f9db4a64516c71a74cae73cc83483aa708c29c14f9e685b82fc4a75a9"
         },
         {
           "path": "src/components/ward-management/ward/ward-answer-view.tsx",
@@ -4315,7 +4315,7 @@
         "message": "CHANGE_URGENCY urgency must be chosen from URGENCY_LEVELS",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1211
+          "line": 1213
         }
       },
       {
@@ -4323,7 +4323,7 @@
         "message": "CHANGE_URGENCY reason must be chosen from URGENCY_CHANGE_REASONS",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1220
+          "line": 1222
         }
       }
     ],
@@ -4332,7 +4332,7 @@
       "control": "Record urgency change"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4341,8 +4341,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1201,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 1203,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/movements/sent-journey-changes.tsx",
@@ -4351,13 +4351,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1212,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 1214,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1221,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "line": 1223,
+          "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
         }
       ]
     }
@@ -4379,7 +4379,7 @@
         "message": "movement ${movement.id} is already flagged urgent",
         "source": {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2044
+          "line": 2060
         }
       },
       {
@@ -4387,7 +4387,7 @@
         "message": "FLAG_MOVEMENT_URGENT reason must be chosen from URGENT_MARK_REASONS",
         "source": {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2047
+          "line": 2063
         }
       }
     ],
@@ -4396,7 +4396,7 @@
       "control": "Flag this patient as urgent"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4405,8 +4405,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2061,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2077,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/movements/movement-drawer.tsx",
@@ -4420,13 +4420,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2069,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2085,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2072,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2088,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         }
       ]
     }
@@ -4448,7 +4448,7 @@
         "message": "no movement found for id ${event.movementId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2062
+          "line": 2078
         }
       },
       {
@@ -4456,7 +4456,7 @@
         "message": "movement ${movement.id} is not flagged urgent",
         "source": {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2066
+          "line": 2082
         }
       }
     ],
@@ -4465,7 +4465,7 @@
       "control": "Remove the urgent flag"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4474,8 +4474,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2085,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2101,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/movements/movement-drawer.tsx",
@@ -4489,13 +4489,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2087,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2103,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2091,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2107,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         }
       ]
     }
@@ -4581,7 +4581,7 @@
         "message": "no movement found for id ${event.movementId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2098
+          "line": 2114
         }
       },
       {
@@ -4589,7 +4589,7 @@
         "message": "movement ${movement.id} already records that nothing is holding it up",
         "source": {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2127
+          "line": 2143
         }
       }
     ],
@@ -4598,7 +4598,7 @@
       "control": "Clear — nothing is holding this up"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4607,8 +4607,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2121,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2137,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
@@ -4617,13 +4617,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2123,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2139,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2152,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2168,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         }
       ]
     }
@@ -4662,7 +4662,7 @@
       "control": "Mark as read"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4686,8 +4686,8 @@
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1071,
-          "sha256": "3a938a0d4e964a9e148a9b8e673989c04bb587fc393960fd7bede424675b72f7"
+          "line": 1074,
+          "sha256": "b6efe63f9db4a64516c71a74cae73cc83483aa708c29c14f9e685b82fc4a75a9"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
@@ -4926,7 +4926,7 @@
     "roles": ["demo"],
     "does": "Adds a finite nonnegative simulation offset to the app clock. Ordinary provider time follows wall time, refreshing at minute boundaries while visible and catching up on return; initialNow pins deterministic test/render time.",
     "needs": "The demo role and finite nonnegative minutes; coordinator is not in this event’s permission list.",
-    "changes": "Increases clockOffsetMinutes; it does not itself create a legal expiry or resolve a timed task.",
+    "changes": "Increases clockOffsetMinutes; it does not itself create a legal expiry or resolve a timed task. In the local provider, command acceptance precedes device durability: the saved-on-device flag remains false until the matching committed safe copy is written, and owned unsaved work is protected on unload. These persistence indicators do not add an engine transition.",
     "reasons": [],
     "refuses": [
       {
@@ -4934,16 +4934,16 @@
         "message": "ADVANCE_CLOCK minutes must be a finite, non-negative number",
         "source": {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 1780
+          "line": 1796
         }
       }
     ],
     "screen": {
       "screen": "ward-global-search.tsx; tools/ward-demo-panel.tsx",
-      "control": "+1 hour"
+      "control": "Global Search offers Advance demo clock (+15m), dispatching minutes=15 under role demo; the Demo panel also offers +15 min and +1 hour. Imperative search navigation and desk switching first consult the composed unsaved-work guard."
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4952,13 +4952,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 1799,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 1815,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/ward-global-search.tsx",
-          "line": 1261,
-          "sha256": "82771d54a67b2ca3dab017894d711034f09b4b13491cbafe539995b1bb6bec0f"
+          "line": 1265,
+          "sha256": "325cea2acd55bff130272df8152b2277bff932c0c9306b465311e160fc5d0dff"
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
@@ -4967,18 +4967,18 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
-          "line": 438,
-          "sha256": "bed1d97368a5437bd6f4bc2a1dc18e094eff69b4b3a2e9580e9842c83f0f8145"
+          "line": 437,
+          "sha256": "3441f8c4ef4ceb9727d68edb344a765272758165e654dd6ee2ccd3752b4f9fa6"
         },
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
-          "line": 880,
-          "sha256": "bed1d97368a5437bd6f4bc2a1dc18e094eff69b4b3a2e9580e9842c83f0f8145"
+          "line": 870,
+          "sha256": "3441f8c4ef4ceb9727d68edb344a765272758165e654dd6ee2ccd3752b4f9fa6"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 1803,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 1819,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         }
       ]
     }
@@ -4992,7 +4992,7 @@
     "roles": ["demo"],
     "does": "Restores the currently loaded recognised scenario, falling back to standard for a damaged scenario value.",
     "needs": "Nothing.",
-    "changes": "Re-seeds all board state around the current visible time and clears the simulation offset, preserving the visible clock rather than always selecting the standard scenario.",
+    "changes": "Re-seeds all board state around the current visible time and clears the simulation offset, preserving the visible clock rather than always selecting the standard scenario. A genuine accepted reseed advances worldGeneration exactly once; wrong-role/rejected reseeds do not. A non-safe or exhausted generation refuses replacement by retaining the old state, so generation is never wrapped or reused. Reset also invalidates older asynchronous local scenario-file import requests. A newer import, reset, changed world generation or retired provider lifetime prevents an older read from replacing the current day. Imported local state is not reported durable before its device copy is written.",
     "reasons": [],
     "refuses": [],
     "screen": {
@@ -5000,7 +5000,7 @@
       "control": "Reset scenario"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -5009,13 +5009,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 1781,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 1797,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
-          "line": 1158,
-          "sha256": "bed1d97368a5437bd6f4bc2a1dc18e094eff69b4b3a2e9580e9842c83f0f8145"
+          "line": 1151,
+          "sha256": "3441f8c4ef4ceb9727d68edb344a765272758165e654dd6ee2ccd3752b4f9fa6"
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
@@ -5034,7 +5034,7 @@
     "roles": ["demo"],
     "does": "Switches to a different pre-built simulated night, resetting every patient, ward and record.",
     "needs": "A recognised scenario.",
-    "changes": "Replaces the whole state.",
+    "changes": "Replaces the whole state. A genuine accepted reseed advances worldGeneration exactly once; wrong-role/rejected reseeds do not. A non-safe or exhausted generation refuses replacement by retaining the old state, so generation is never wrapped or reused.",
     "reasons": ["WARD_SCENARIOS"],
     "refuses": [
       {
@@ -5042,7 +5042,7 @@
         "message": "SET_SCENARIO scenario must be chosen from WARD_SCENARIOS",
         "source": {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 1771
+          "line": 1787
         }
       }
     ],
@@ -5051,7 +5051,7 @@
       "control": "The scenario's own name"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -5060,8 +5060,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 1789,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 1805,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/demo-reset/ward-demo-reset.tsx",
@@ -5075,8 +5075,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 1794,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 1810,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         }
       ]
     }
@@ -5098,7 +5098,7 @@
       "control": "Save Configuration"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -5107,8 +5107,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 1810,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 1826,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/settings/settings-screen.tsx",
@@ -5144,7 +5144,7 @@
       "control": "Record departure through the discharge record context"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -5158,8 +5158,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
-          "line": 1250,
-          "sha256": "bed1d97368a5437bd6f4bc2a1dc18e094eff69b4b3a2e9580e9842c83f0f8145"
+          "line": 1252,
+          "sha256": "3441f8c4ef4ceb9727d68edb344a765272758165e654dd6ee2ccd3752b4f9fa6"
         },
         {
           "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
@@ -5186,7 +5186,7 @@
       "control": "Open the discharge record through its audited context"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -5200,8 +5200,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
-          "line": 1279,
-          "sha256": "bed1d97368a5437bd6f4bc2a1dc18e094eff69b4b3a2e9580e9842c83f0f8145"
+          "line": 1281,
+          "sha256": "3441f8c4ef4ceb9727d68edb344a765272758165e654dd6ee2ccd3752b4f9fa6"
         }
       ]
     }
@@ -5298,10 +5298,10 @@
     ],
     "screen": {
       "screen": "officer/officer-job-detail.tsx (via use-officer-diversion-save.ts); movements/movement-workspace-cockpit.tsx",
-      "control": "Divert"
+      "control": "Divert Diversion reason/place and pending save are guarded against outer dismissal. Draft and completion belong to the same access lifetime, movement and transport job; another job is not recorded or dismissed by an old completion."
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -5315,8 +5315,8 @@
         },
         {
           "path": "src/components/ward-management/officer/use-officer-diversion-save.ts",
-          "line": 60,
-          "sha256": "d2c18ad2548983f14a02d786c9087d918e4c8cec8233393c7b052eec29608a3c"
+          "line": 66,
+          "sha256": "bd611831cda3c81a8e99cf89c4d375acbb2e9e95948890a8880e7a9b4425b77b"
         },
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
@@ -5393,7 +5393,7 @@
       "control": "Release the diverted bed"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -5403,7 +5403,7 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 630,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
@@ -5423,17 +5423,17 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 637,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 643,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 649,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         }
       ]
     }
@@ -5455,7 +5455,7 @@
         "message": "no movement found for id ${event.movementId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 1127
+          "line": 1132
         }
       },
       {
@@ -5463,16 +5463,16 @@
         "message": "cannot update arrival details on closed movement",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 1129
+          "line": 1134
         }
       }
     ],
     "screen": {
       "screen": "arrival-time-modal.tsx",
-      "control": "Set arrival details"
+      "control": "Set arrival details The arrival dialog names the patient and record, keeps edited answers on Keep editing, requires explicit Discard details before an unsaved close, and blocks dismissal while pending. A delayed discard only closes the unchanged current mounted draft; saving closes only on a current accepted outcome."
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -5481,23 +5481,23 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 1155,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 1160,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/referrals/arrival-time-modal.tsx",
-          "line": 151,
-          "sha256": "61781453f3446d27d093cc50fb4f4e7789723929ebd0c687cee2374629c41604"
+          "line": 172,
+          "sha256": "a281743a9d099b55322529b1e5e25e95ffabe59ec3b2c69e214616561804b551"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 1157,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 1162,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 1159,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 1164,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         }
       ]
     }
@@ -5519,7 +5519,7 @@
         "message": "no movement found for id ${event.movementId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 1212
+          "line": 1217
         }
       },
       {
@@ -5527,7 +5527,7 @@
         "message": "This movement is closed.",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 1213
+          "line": 1218
         }
       }
     ],
@@ -5536,7 +5536,7 @@
       "control": "Review late arrival"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -5545,8 +5545,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 1240,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 1245,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/movements/movement-workflow-actions.tsx",
@@ -5555,13 +5555,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 1242,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 1247,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 1243,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 1248,
+          "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
         }
       ]
     }
@@ -5707,7 +5707,7 @@
     "nodes": ["rkDischargePlan"],
     "roles": ["ward", "coordinator"],
     "does": "Sets when this admission is expected to leave. Moving a date already set counts as one more move.",
-    "needs": "An admission that has not already left. A ward can only set it for its own patients.",
+    "needs": "An admission that has not already left. A ward can only set it for its own patients. In the patient workspace, an exceptional record opening is read only: patient-scoped UI gates do not offer this mutation. An ordinary authorised caller retains its own route role and the relevant stay/receiving-ward claim; a desk-switch hint grants no authority.",
     "changes": "Sets the expected time, increments date-move count only when an existing date differs, and stamps when. A ward setter is Nurse in charge; coordinator setter is null. Pending linked bed-release dates follow; completed release dates stay historical.",
     "reasons": [],
     "refuses": [
@@ -5749,7 +5749,7 @@
       "control": "Update expected departure"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -5773,8 +5773,8 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
-          "line": 759,
-          "sha256": "c06200eaf5901fe508502db34626ff6aa31ff3adf74650aa606aed75d264e3ff"
+          "line": 762,
+          "sha256": "4be7d03fb08af5af0c56027c0c1384d47e38cce8c1e1ed354c187306e473bb55"
         },
         {
           "path": "src/components/ward-management/discharges/discharge-detail-panes.tsx",
@@ -5846,7 +5846,7 @@
       "control": "Record care fact"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -5860,8 +5860,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 1729,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 1745,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/ward/ward-leave-paper-authority.tsx",
@@ -5903,7 +5903,7 @@
       "control": "Record follow-up"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -5917,8 +5917,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 1730,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 1746,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/discharges/discharge-follow-up.tsx",
@@ -5936,7 +5936,7 @@
     "nodes": ["rkClearance"],
     "roles": ["ed", "coordinator"],
     "does": "Records clearance on a movement and synchronises its matching linked referral. Fresh positive clearance resumes a recorded deterioration pause.",
-    "needs": "An existing movement, ED/coordinator role, finite recording time and boolean answer; positive re-clearance must follow the recorded deterioration.",
+    "needs": "An existing movement, ED/coordinator role, finite recording time and boolean answer; positive re-clearance must follow the recorded deterioration. In the patient workspace, an exceptional record opening is read only: patient-scoped UI gates do not offer this mutation. An ordinary authorised caller retains its own route role and the relevant stay/receiving-ward claim; a desk-switch hint grants no authority.",
     "changes": "Replaces clearance on the movement, matching linked referral and matching sibling movements. Positive fresh clearance records resumedAt for satisfied pauses; it does not restore released resources.",
     "reasons": [],
     "refuses": [
@@ -5962,7 +5962,7 @@
       "control": "Medically cleared"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -5981,8 +5981,8 @@
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
-          "line": 1408,
-          "sha256": "c06200eaf5901fe508502db34626ff6aa31ff3adf74650aa606aed75d264e3ff"
+          "line": 1415,
+          "sha256": "4be7d03fb08af5af0c56027c0c1384d47e38cce8c1e1ed354c187306e473bb55"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -6288,7 +6288,7 @@
         "message": "no movement found for id ${event.movementId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2196
+          "line": 2212
         }
       },
       {
@@ -6296,7 +6296,7 @@
         "message": "no unit found for id ${event.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2199
+          "line": 2215
         }
       }
     ],
@@ -6305,7 +6305,7 @@
       "control": "Flag current legal placement mismatch"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -6314,8 +6314,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2219,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2235,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/movements/movement-workflow-actions.tsx",
@@ -6324,13 +6324,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2221,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2237,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2224,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2240,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         }
       ]
     }
@@ -6352,7 +6352,7 @@
         "message": "This movement is closed.",
         "source": {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2175
+          "line": 2191
         }
       },
       {
@@ -6360,7 +6360,7 @@
         "message": "movement ${movement.id} already has an open expect flag",
         "source": {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2177
+          "line": 2193
         }
       }
     ],
@@ -6369,7 +6369,7 @@
       "control": "Raise expectation review flag"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -6378,8 +6378,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2197,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2213,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/movements/movement-workflow-actions.tsx",
@@ -6388,13 +6388,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2200,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2216,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2202,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2218,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         }
       ]
     }
@@ -6416,7 +6416,7 @@
         "message": "no movement found for id ${event.movementId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2160
+          "line": 2176
         }
       },
       {
@@ -6424,7 +6424,7 @@
         "message": "movement ${movement.id} has no open expect flag to clear",
         "source": {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2163
+          "line": 2179
         }
       }
     ],
@@ -6433,7 +6433,7 @@
       "control": "Clear expectation review flag"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -6442,8 +6442,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2183,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2199,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/movements/movement-workflow-actions.tsx",
@@ -6452,13 +6452,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2185,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2201,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2188,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2204,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         }
       ]
     }
@@ -6472,7 +6472,7 @@
     "roles": ["coordinator", "ward"],
     "does": "Releases the held bed AND puts the movement back into the bed search together, rather than as two separate steps.",
     "needs": "An open movement at pulled or accepted_awaiting_bed, a listed release reason and no live booking; a ward must match the accepting ward. A bed need not already be held on the accepted-only branch.",
-    "changes": "Returns any matching held bed, clears acceptance/hold/requests/transport and moves to placement_requested. Logs pull release when held, otherwise acceptance withdrawal.",
+    "changes": "Returns any matching held bed, clears acceptance/hold/requests/transport and moves to placement_requested. Logs pull release when held, otherwise acceptance withdrawal. For a return movement with sourceAdmissionId, the in-app release/withdrawal notice targets the actual sending stay ward. Ordinary ED/community origins retain their existing recipient paths; no external-provider delivery is implied.",
     "reasons": ["RELEASE_PULL_REASONS"],
     "refuses": [
       {
@@ -6513,7 +6513,7 @@
       "control": "Release held bed and reopen search"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -6523,7 +6523,7 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 756,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/movements/movement-workflow-actions.tsx",
@@ -6533,22 +6533,22 @@
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 760,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 766,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 777,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         },
         {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 783,
-          "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+          "sha256": "ce9dfeea673a1c70385316a6883e2a3f0b17cc3e2de6a722f23e491df5b7cd22"
         }
       ]
     }
@@ -6570,7 +6570,7 @@
         "message": "no unit found for id ${event.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2219
+          "line": 2235
         }
       },
       {
@@ -6578,7 +6578,7 @@
         "message": "CONFIRM_MORNING_ROLLUP was raised acting as unit ${event.actingUnitId} but targets unit ${event.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2229
+          "line": 2245
         }
       }
     ],
@@ -6587,7 +6587,7 @@
       "control": "Confirm the morning rollup"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -6596,23 +6596,23 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2242,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2258,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
-          "line": 1051,
-          "sha256": "3a938a0d4e964a9e148a9b8e673989c04bb587fc393960fd7bede424675b72f7"
+          "line": 1054,
+          "sha256": "b6efe63f9db4a64516c71a74cae73cc83483aa708c29c14f9e685b82fc4a75a9"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2244,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2260,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2254,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2270,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         }
       ]
     }
@@ -6634,7 +6634,7 @@
         "message": "Choose a valid ward refresh message.",
         "source": {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2253
+          "line": 2269
         }
       },
       {
@@ -6642,7 +6642,7 @@
         "message": "no unit found for id ${event.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2255
+          "line": 2271
         }
       }
     ],
@@ -6651,7 +6651,7 @@
       "control": "Request ward capacity review"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -6660,8 +6660,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2273,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2289,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/movements/movement-workflow-actions.tsx",
@@ -6670,13 +6670,13 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2278,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2294,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
-          "line": 2280,
-          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+          "line": 2296,
+          "sha256": "0fa5f4c8caef21b3e2604d5ffe8f91b2493d256a048de0a21233333042068527"
         }
       ]
     }
@@ -6726,8 +6726,8 @@
     "nodes": ["dRepat"],
     "roles": ["coordinator"],
     "does": "Logs a repatriation already arranged off the system: the home hospital, whether its ward agreed, road or flight, the provider, the CAD or tracking number, voluntary or involuntary, and an estimated time. It books nothing.",
-    "needs": "A non-departed admission with valid home hospital, mode, provider, CAD, legal status and finite estimate. An unanswered prior plan may later be agreed once; an agreed plan cannot be agreed again. An involuntary stay cannot be logged as a voluntary return.",
-    "changes": "Creates or updates the telephone plan. First agreement creates an open placement_requested return movement linked to the source stay; it does not itself book transport or transfer the patient.",
+    "needs": "A non-departed admission with valid home hospital, mode, provider, CAD, legal status and finite estimate. An unanswered prior plan may later be agreed once; an agreed plan cannot be agreed again while its return remains open; after a did_not_proceed closure a distinct new attempt may be agreed. An involuntary stay cannot be logged as a voluntary return. Any still-open return for the source stay refuses another plan. A retained agreed plan may start a distinct new attempt only after its linked return closed did_not_proceed; this retry qualification does not allow duplicate live returns or duplicate agreement of an active plan.",
+    "changes": "Creates or updates the telephone plan. Each distinct plan’s first agreement creates an open placement_requested return movement linked to the source stay; it does not itself book transport or transfer the patient. A retry preserves its prior closed journey and a flat earlier plan snapshot while replacing the single current plan for that stay. Agreed return origin site/ED lookup follows the saved scenario network. Local restore validates flat prior records and retains typed CAD values only as the redaction placeholder.",
     "reasons": ["TRANSPORT_PROVIDERS", "TRANSPORT_LEGAL_STATUSES"],
     "refuses": [
       {
@@ -6735,7 +6735,7 @@
         "message": "no admission found for id ${event.admissionId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 468
+          "line": 471
         }
       },
       {
@@ -6743,7 +6743,7 @@
         "message": "admission ${admission.id} already has a repatriation record",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 481
+          "line": 496
         }
       },
       {
@@ -6751,7 +6751,7 @@
         "message": "RECORD_REPATRIATION homeHospital ${event.homeHospital} does not name a real site",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 484
+          "line": 499
         }
       },
       {
@@ -6759,7 +6759,7 @@
         "message": "RECORD_REPATRIATION receivingWardAgreed must be answered, and it has no default",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 487
+          "line": 502
         }
       },
       {
@@ -6767,7 +6767,7 @@
         "message": "RECORD_REPATRIATION mode must be chosen from REPATRIATION_MODES",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 490
+          "line": 505
         }
       },
       {
@@ -6775,16 +6775,16 @@
         "message": "RECORD_REPATRIATION provider must be chosen from TRANSPORT_PROVIDERS",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 493
+          "line": 508
         }
       }
     ],
     "screen": {
       "screen": "out-of-area-board.tsx",
-      "control": "Record repatriation"
+      "control": "Record repatriation After the latest linked return journey is closed did_not_proceed, the Out of area screen reopens the return-plan form rather than treating the older agreed plan as still active. Historical records remain; retry acceptance and creation of another journey remain engine decisions."
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -6793,43 +6793,43 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 465,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 468,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         },
         {
           "path": "src/components/ward-management/out-of-area/out-of-area-board.tsx",
-          "line": 399,
-          "sha256": "f81a1e7167e03c335ec574e4fca70b8b37f536a599680bd79be6466331300568"
+          "line": 405,
+          "sha256": "c8be551a6f798c7d8a20a0ccf83ef6facc45859964198b372d49637faae2d677"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 468,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 471,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 481,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 496,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 484,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 499,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 487,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 502,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 490,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 505,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 493,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 508,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         }
       ]
     }
@@ -6851,7 +6851,7 @@
         "message": "no ward found for id ${event.unitId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 449
+          "line": 452
         }
       },
       {
@@ -6859,16 +6859,16 @@
         "message": "a sign-off names one ward or the whole network, not both",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 452
+          "line": 455
         }
       }
     ],
     "screen": {
       "screen": "handover/handover-scope-rules.ts",
-      "control": "Sign off the handover"
+      "control": "Sign off the handover The handover being reviewed retains outgoing ward journeys through the linked source stay or referral origin and outgoing community journeys through their originating team. Display inclusion does not widen the desk allowed to sign off."
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -6877,23 +6877,23 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 444,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 447,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         },
         {
           "path": "src/components/ward-management/handover/handover-scope-rules.ts",
-          "line": 98,
-          "sha256": "02a4980de27e80b81a740d95e475f30db1b6f03d13f3d8ae1b50a16cbb20924b"
-        },
-        {
-          "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 449,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 107,
+          "sha256": "e1ed0adf09ce552ed2f143dbdffa2243aa2ab3c418188cb8df81390b4ead0cf1"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 452,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
+        },
+        {
+          "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
+          "line": 455,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         }
       ]
     }
@@ -6915,7 +6915,7 @@
         "message": "RECORD_CLINICAL_CONTACT teamId ${event.teamId} does not name a real team",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 627
+          "line": 648
         }
       }
     ],
@@ -6924,7 +6924,7 @@
       "control": "Contacted"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-05",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -6933,8 +6933,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 623,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 644,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         },
         {
           "path": "src/components/ward-management/community/use-community-contact-save.ts",
@@ -6943,8 +6943,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 627,
-          "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+          "line": 648,
+          "sha256": "bddfbfbd5f19ffe6c142bb27b209897cb5d8538bfe73e701b03b8d34c0d35096"
         }
       ]
     }
