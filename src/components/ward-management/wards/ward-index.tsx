@@ -526,7 +526,8 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           title={
             <>
               <SrOnly>{"All wards, "}</SrOnly>
-              {`${readyNow} ${readyNow === 1 ? "bed" : "beds"} ready${isPhone ? "" : " now"}`}
+              {/* One title at every width (design audit B28, 5 Nov 2026): the phone's shorter answer. */}
+              {`${readyNow} ${readyNow === 1 ? "bed" : "beds"} ready`}
             </>
           }
           titleMeta={
