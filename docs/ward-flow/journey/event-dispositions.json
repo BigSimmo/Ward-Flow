@@ -3418,5 +3418,245 @@
       ],
       "tests": ["tests/ward-bed-meeting-undo.test.ts"]
     }
+  },
+  {
+    "event": "RECORD_RESTRICTIVE_PRACTICE_FOLLOW_UP",
+    "status": "modelled",
+    "reason": "Reviewed command model: marks or clears one follow-up task on an ended restrictive-practice episode.",
+    "source": "src/components/ward-management/ward-flow-reducer.ts",
+    "model": {
+      "subject": "One restrictive-practice episode on a ward",
+      "before": "Episode ended, with its follow-up tasks marked so far",
+      "after": "The chosen follow-up task marked done or cleared",
+      "payload": ["unitId; episodeId; task from RESTRICTIVE_PRACTICE_FOLLOW_UP_TASKS; done (boolean); now; role."],
+      "scope": "ward or coordinator in the role table; authenticated reference scope applies.",
+      "guards": [
+        "The episode exists on the ward.",
+        "The episode has an end time recorded.",
+        "task is a listed follow-up task and done is a boolean."
+      ],
+      "effects": ["Sets or removes the task in the episode's followUp; an empty followUp is removed."],
+      "sources": [
+        {
+          "path": "src/components/ward-management/ward-flow-reducer.ts",
+          "line": 1934,
+          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+        },
+        {
+          "path": "src/components/ward-management/ward-flow-restrictive-practice-events.ts",
+          "line": 109,
+          "sha256": "5e2f0d1e4b5e3a3415d5114400ba622bb5e83a84787491e7a93f4f5a3c7f935b"
+        }
+      ],
+      "tests": ["tests/ward-legal-form-gap-items.test.ts"]
+    }
+  },
+  {
+    "event": "RECORD_LEGAL_FORM_DETAILS",
+    "status": "modelled",
+    "reason": "Reviewed command model: records the written legal form's typed details on the movement's current form.",
+    "source": "src/components/ward-management/ward-flow-record-events.ts",
+    "model": {
+      "subject": "The current legal form on one movement",
+      "before": "Form recorded, details as last typed",
+      "after": "Form carries the typed maker, copy given, ending, consent and review-by values",
+      "payload": [
+        "movementId; formCode; optional madeBy, copyGiven, endedBy, consent, reviewBy (omitted keeps, null clears); now; role."
+      ],
+      "scope": "ed, coordinator or ward in the role table; a ward only for a person admitted to its own bed.",
+      "guards": [
+        "The movement exists; a closed movement only when admitted and not ED.",
+        "formCode matches the movement's current form.",
+        "Each detail is from its list; reviewBy is a finite time; consent only for a Form 6B."
+      ],
+      "effects": ["Replaces the form's details with the merged values; other form fields are unchanged."],
+      "sources": [
+        {
+          "path": "src/components/ward-management/ward-flow-record-events.ts",
+          "line": 94,
+          "sha256": "a29e705c2433c4c003f57fa88308339aeeeee7376952a5c82b7e6723f64856c5"
+        },
+        {
+          "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
+          "line": 215,
+          "sha256": "e821cf3a8a08b764d868debdf6568a5705ea0e4629dd77d851ed0dc81d39f770"
+        }
+      ],
+      "tests": ["tests/ward-legal-form-gap-items.test.ts"]
+    }
+  },
+  {
+    "event": "FLAG_RETURN_EARLY",
+    "status": "modelled",
+    "reason": "Reviewed command model: the coordinator flags an out-of-area stay as ready to return early to a home hospital.",
+    "source": "src/components/ward-management/ward-flow-reducer.ts",
+    "model": {
+      "subject": "One current out-of-area stay",
+      "before": "No early-return flag on the stay",
+      "after": "An early-return flag naming the home hospital, time and role",
+      "payload": ["admissionId; homeHospital (listed site code); now; role."],
+      "scope": "coordinator in the role table.",
+      "guards": [
+        "The stay exists and has not departed.",
+        "homeHospital is a listed site.",
+        "The stay is not already flagged."
+      ],
+      "effects": [
+        "Appends a returnEarlyFlags record; the home ward site, community and officer desks see an alert while the stay is current."
+      ],
+      "sources": [
+        {
+          "path": "src/components/ward-management/ward-flow-reducer.ts",
+          "line": 404,
+          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+        },
+        {
+          "path": "src/components/ward-management/out-of-area/return-early.ts",
+          "line": 70,
+          "sha256": "28c9ec25e8d1fc5808db7af91d11f76ce64b235c292fdddfa60d1423ac2eedb3"
+        }
+      ],
+      "tests": ["tests/ward-return-early.test.ts"]
+    }
+  },
+  {
+    "event": "UNDO_FLAG_RETURN_EARLY",
+    "status": "modelled",
+    "reason": "Reviewed command model: takes back the newest early-return flag on a stay within the Undo window.",
+    "source": "src/components/ward-management/ward-flow-reducer.ts",
+    "model": {
+      "subject": "The newest FLAG_RETURN_EARLY on one stay",
+      "before": "Stay flagged early by that step",
+      "after": "Stay as it was before the flag",
+      "payload": ["admissionId; now; role; optional recordSeq."],
+      "scope": "coordinator in the role table.",
+      "guards": [
+        "A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.",
+        "The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.",
+        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number."
+      ],
+      "effects": [
+        "Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.",
+        "The audit evidence of the step and of the Undo stays."
+      ],
+      "sources": [
+        {
+          "path": "src/components/ward-management/ward-flow-reducer.ts",
+          "line": 1496,
+          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+        },
+        {
+          "path": "src/components/ward-management/ward-flow-undo-events.ts",
+          "line": 265,
+          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+        }
+      ],
+      "tests": ["tests/ward-return-early.test.ts"]
+    }
+  },
+  {
+    "event": "UNDO_BED_STEP",
+    "status": "modelled",
+    "reason": "Reviewed command model: takes back a bed closed or reopened, or a return from leave, within the Undo window.",
+    "source": "src/components/ward-management/ward-flow-reducer.ts",
+    "model": {
+      "subject": "One bed (unitId and bedNumber) or one leave bed record",
+      "before": "Bed as the SET_BED_CLOSED or END_LEAVE_BED step left it",
+      "after": "Bed or leave record restored to before that step",
+      "payload": ["now; role; optional recordSeq; actingUnitId when ward; leaveBedId, or unitId and bedNumber."],
+      "scope": "ward, bed_manager or coordinator in the role table.",
+      "guards": [
+        "A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.",
+        "The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.",
+        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number."
+      ],
+      "effects": [
+        "Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.",
+        "The audit evidence of the step and of the Undo stays."
+      ],
+      "sources": [
+        {
+          "path": "src/components/ward-management/ward-flow-reducer.ts",
+          "line": 1504,
+          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+        },
+        {
+          "path": "src/components/ward-management/ward-flow-undo-events.ts",
+          "line": 273,
+          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+        }
+      ],
+      "tests": ["tests/ward-tier1-undo.test.ts"]
+    }
+  },
+  {
+    "event": "UNDO_RELEASE_STEP",
+    "status": "modelled",
+    "reason": "Reviewed command model: takes back a released bed, cancelled transport, withdrawn ward request or cancelled planned admission.",
+    "source": "src/components/ward-management/ward-flow-reducer.ts",
+    "model": {
+      "subject": "One movement, or one planned admission",
+      "before": "As the release, cancel or withdraw step left it",
+      "after": "Restored to before that step",
+      "payload": ["now; role; optional recordSeq; actingUnitId when ward; movementId or plannedAdmissionId."],
+      "scope": "coordinator, ward, ed, community or bed_manager in the role table.",
+      "guards": [
+        "A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.",
+        "The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.",
+        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number."
+      ],
+      "effects": [
+        "Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.",
+        "The audit evidence of the step and of the Undo stays."
+      ],
+      "sources": [
+        {
+          "path": "src/components/ward-management/ward-flow-reducer.ts",
+          "line": 1505,
+          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+        },
+        {
+          "path": "src/components/ward-management/ward-flow-undo-events.ts",
+          "line": 274,
+          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+        }
+      ],
+      "tests": ["tests/ward-tier1-undo.test.ts"]
+    }
+  },
+  {
+    "event": "UNDO_PATIENT_RECORD",
+    "status": "modelled",
+    "reason": "Reviewed command model: takes back a community treatment order recorded or ended, or a record archived in error.",
+    "source": "src/components/ward-management/ward-flow-reducer.ts",
+    "model": {
+      "subject": "One patient record",
+      "before": "As the CTO or archive step left it",
+      "after": "Patient record restored to before that step",
+      "payload": ["patientId; now; role; optional recordSeq."],
+      "scope": "community or coordinator in the role table.",
+      "guards": [
+        "A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.",
+        "The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.",
+        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number."
+      ],
+      "effects": [
+        "Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.",
+        "The audit evidence of the step and of the Undo stays."
+      ],
+      "sources": [
+        {
+          "path": "src/components/ward-management/ward-flow-reducer.ts",
+          "line": 1506,
+          "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+        },
+        {
+          "path": "src/components/ward-management/ward-flow-undo-events.ts",
+          "line": 275,
+          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+        }
+      ],
+      "tests": ["tests/ward-tier1-undo.test.ts"]
+    }
   }
 ]
