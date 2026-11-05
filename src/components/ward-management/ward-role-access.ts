@@ -287,7 +287,8 @@ function homeScreenFor(role: WardAccessRole): WardScreenId {
     case "executive":
       return "statistics";
     case "admin":
-      return "settings";
+      // WF-46: Access admin lands on Governance (roles and review), not the long Settings form.
+      return "governance";
   }
 }
 
@@ -311,6 +312,8 @@ export function homeHrefFor(access: WardAccess, slugForTeam: (teamName: string) 
       return `${BASE}/transport/officer`;
     case "statistics":
       return `${BASE}/statistics`;
+    case "governance":
+      return `${BASE}/governance`;
     default:
       return `${BASE}/settings`;
   }
@@ -339,6 +342,9 @@ const REDIRECT_TARGETS: Readonly<Record<string, WardScreenId>> = {
   transport: "movements",
   // B4 step 3 (19 Oct 2026): the Delays screen's address since it was renamed Waiting.
   waiting: "delays",
+  // WF-42: Activity and Help are shell panels, not pages; their typed URLs use home access then open the panel.
+  activity: "home",
+  help: "home",
 };
 
 /**
@@ -517,8 +523,15 @@ export function screenDecision(
       return { open: false, why: "place" };
   }
   const ownSection = OWN_STATISTICS_SECTION[access.role];
-  if (address.screen === "statistics" && ownSection !== undefined && address.statisticsSection !== ownSection)
-    return { open: false, why: "place" };
+  if (address.screen === "statistics" && ownSection !== undefined) {
+    // WF-42: bare /statistics has no section. Let the page redirect to the desk's own place
+    // instead of showing "Not part of your role" while the scoped link still works.
+    if (address.statisticsSection === undefined) {
+      /* open — StatisticsOwnRedirect replaces to ownStatisticsHrefFor */
+    } else if (address.statisticsSection !== ownSection) {
+      return { open: false, why: "place" };
+    }
+  }
   // A desk held to one ED or one team never opens the index of every ED or team (review on PR #330).
   if (address.screen === "ed" && address.edId === undefined && scope.kind === "ed")
     return { open: false, why: "place" };

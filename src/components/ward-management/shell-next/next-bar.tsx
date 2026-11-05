@@ -624,9 +624,19 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
   // Arriving on the slide-out route (a typed URL, a new tab, a router push) opens the slide-out once,
   // over the Referrals board, with what the query asks for. No history entry: Back leaves the page.
   const routeReferralOpenedRef = useRef(false);
+  // WF-42: Back onto /referrals/new (from a detail, or after a close that left the URL) must not reopen.
+  const skipNextRouteReferralOpenRef = useRef(false);
   useEffect(() => {
     if (!isReferralSheetPath(pathname)) {
       routeReferralOpenedRef.current = false;
+      return undefined;
+    }
+    if (skipNextRouteReferralOpenRef.current) {
+      skipNextRouteReferralOpenRef.current = false;
+      routeReferralOpenedRef.current = true;
+      startTransition(() => {
+        router.replace(REFERRAL_BOARD_HREF);
+      });
       return undefined;
     }
     // The page's own access gate answers a desk that may not open the intake; no slide-out over it.
@@ -647,15 +657,25 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
       // Not yet opened (a Strict Mode re-run, say): let the next run open it. Once open, never again.
       if (!opened) routeReferralOpenedRef.current = false;
     };
-  }, [canOpenReferral, pathname, roleCategory]);
+  }, [canOpenReferral, pathname, roleCategory, router]);
 
   // Once the slide-out has closed, arriving on its route again (browser Forward) must open it again.
   const referralWasOpenRef = useRef(false);
   useEffect(() => {
     const open = openPanel === "referral";
-    if (referralWasOpenRef.current && !open) routeReferralOpenedRef.current = false;
+    if (referralWasOpenRef.current && !open) {
+      routeReferralOpenedRef.current = false;
+      // WF-42: a close that left the intake URL must settle on the board, not reopen the drawer.
+      if (isReferralSheetPath(pathname) && window.history.state?.wardDrawer !== "referral") {
+        skipNextRouteReferralOpenRef.current = true;
+        routeReferralOpenedRef.current = true;
+        startTransition(() => {
+          router.replace(REFERRAL_BOARD_HREF);
+        });
+      }
+    }
     referralWasOpenRef.current = open;
-  }, [openPanel]);
+  }, [openPanel, pathname, router]);
 
   // Every link to the slide-out route — the patient page's Refer, the board's New referral, a search
   // preview, the rail — opens the slide-out in place instead of leaving the page. Capture phase on
@@ -699,6 +719,15 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
     }
     function onPopState() {
       const closing = closingViaHistoryRef.current;
+      // WF-42: Back onto the intake URL (for example from a referral detail) must not reopen New referral.
+      if (
+        isReferralSheetPath(window.location.pathname) &&
+        window.history.state?.wardDrawer !== "referral" &&
+        openPanel !== "referral" &&
+        closing === null
+      ) {
+        skipNextRouteReferralOpenRef.current = true;
+      }
       if (closing !== null) {
         // Only the drawer that initiated Back may be closed by its delayed event, and it keeps
         // the caller's choice not to announce (a service pick announces its own confirmation).

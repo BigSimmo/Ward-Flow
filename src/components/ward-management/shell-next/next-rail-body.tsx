@@ -330,7 +330,10 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const toggleRef = useRef<HTMLButtonElement>(null);
   const moreTriggerRef = useRef<HTMLButtonElement | null>(null);
   const firstMoreLinkRef = useRef<HTMLAnchorElement & HTMLButtonElement>(null);
-  const [moreOpen, setMoreOpen] = useState(false);
+  // WF-42: More stays tied to the path it opened on, so a route change closes it without an effect.
+  const [moreOpenPath, setMoreOpenPath] = useState<string | null>(null);
+  const moreOpen = moreOpenPath === pathname;
+  const setMoreOpen = (open: boolean) => setMoreOpenPath(open ? pathname : null);
   // B1: the rail's More shows only the rest; the bar's Menu (tablet portrait, no rail) shows it all.
   const [sheetShowsMain, setSheetShowsMain] = useState(false);
   const [deskModalOpen, setDeskModalOpen] = useState(false);
