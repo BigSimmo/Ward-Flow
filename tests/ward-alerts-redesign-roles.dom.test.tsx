@@ -127,7 +127,9 @@ describe("Alerts redesign: nurse in charge (ROLE BRANCH ward)", () => {
     renderAs({ role: "ward", scope: { kind: "ward", unitIds: [ward.id] } }, { quiet: true });
     expect(screen.getByRole("heading", { level: 1, name: `No alert for ${ward.name}` })).toBeInTheDocument();
     // Q184: one calm empty state in place of the two empty groups.
-    expect(screen.getByTestId("ward-alerts-nothing")).toHaveTextContent(`Nothing is late or blocked for ${ward.name}.`);
+    expect(screen.getByTestId("ward-alerts-nothing")).toHaveTextContent(
+      `No late or blocked network alerts for ${ward.name}.`,
+    );
     const checked = screen.getByRole("region", { name: `Checked for ${ward.name}` });
     expect(within(checked).getByRole("list", { name: "Conditions checked" })).toBeInTheDocument();
     // The checks show once: not also as the hero's chip.

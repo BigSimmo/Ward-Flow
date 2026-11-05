@@ -51,6 +51,8 @@ import {
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import type { WardConfiguration } from "./ward-configuration";
 import { WARD_FLOW_ROLE_LABELS } from "./ward-flow-roles";
+import { useDeskRoleLabel, useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { decisionTargetReading } from "./ward-decision-targets";
 import { alertActionFor, alertGroupOf, resolveAlertSubject } from "./alerts/alerts-model";
 import { DUE_SORT_OPTIONS, sortDueFirst, type DueSortMode } from "./ward-due-sort";
@@ -296,6 +298,9 @@ export function WardTasksDrawer({
   // A2-20: a row's name follows Discreet names (initials plus UMRN).
   const nameFor = usePatientNameDisplay();
   const sectionId = useId();
+  // WF-15: Access admin borrows executive chrome but must be named for itself (useDeskRoleLabel).
+  const deskRoleLabel = useDeskRoleLabel(role as WardChromeRole);
+  const access = useEffectiveWardAccess();
 
   /** A discharge notification row opens its stay on the discharges board; every other row opens
    *  its movement. */
@@ -1051,7 +1056,7 @@ export function WardTasksDrawer({
           <div className={styles.headerText}>
             <h2 className={styles.heading}>{words.name}</h2>
             <p className={styles.headerNote}>
-              {ROLE_LABELS[role] ?? words.name}
+              {ROLE_LABELS[role] ?? deskRoleLabel}
               {/* A phone keeps the desk only, so the line is never cut. */}
               <span className={styles.headerNoteTail}> · synthetic movements</span>
             </p>
@@ -1169,7 +1174,7 @@ export function WardTasksDrawer({
               </span>
               <h3>
                 {role !== "coordinator"
-                  ? `Nothing for ${WARD_FLOW_ROLE_LABELS[role]}`
+                  ? `Nothing for ${deskRoleLabel}`
                   : snoozedItems.length > 0
                     ? "Nothing active"
                     : "No outstanding work"}
@@ -1177,7 +1182,9 @@ export function WardTasksDrawer({
               <p>
                 {role === "coordinator"
                   ? `New ${words.plural} appear here`
-                  : `${words.name} here is worked by the bed coordinator.`}
+                  : access.role === "admin"
+                    ? "Alerts are not part of your role."
+                    : `${words.name} here is worked by the bed coordinator.`}
               </p>
             </div>
           ) : filteredItems.length === 0 ? (

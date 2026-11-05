@@ -129,9 +129,9 @@ describe("PhoneFocal, the hero's bed flow card", () => {
     expect(screen.getByText("24 hours")).toBeInTheDocument();
   });
 
-  it("falls back to the first entry when the State desk is missing, and copies email from the crisis row", () => {
+  it("falls back to the first bed flow line present when the State desk is missing, and copies email from the crisis row", () => {
     const first = synthetic({
-      id: "first-line",
+      id: "nmhs-bfc",
       name: "First line",
       lines: [{ label: "Desk", number: "08 0000 9001", window: null }],
     });
@@ -144,6 +144,16 @@ describe("PhoneFocal, the hero's bed flow card", () => {
     expect(within(screen.getByRole("button", { name: /^MHERL crisis line/u })).getByText("Not recorded")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Copy email for Crisis inbox" }));
     expect(actions.onCopy).toHaveBeenCalledWith("crisis@example.invalid", "Email copied");
+    // Only the bed flow lines the list holds are offered (PR #1470 review).
+    expect(screen.getAllByRole("radio").map((radio) => radio.textContent)).toEqual(["NMHS"]);
+  });
+
+  it("shows no bed flow card when the list holds no bed flow line (an officer's transport lines)", () => {
+    const transport = synthetic({ id: "transport-line", name: "Transport desk" });
+    const { container } = render(
+      <PhoneFocal entries={[transport]} actions={makeActions({ entries: [transport] })} onOpen={vi.fn()} />,
+    );
+    expect(container).toBeEmptyDOMElement();
   });
 });
 
