@@ -149,7 +149,8 @@ export function useOpenFilter(quiet: boolean, figures: OpenFilterFigures) {
 type OpenFilterLens = ReturnType<typeof useOpenFilter>;
 
 /** The row of filter chips over the Open view: one pressed at a time, All when none is. */
-export function OpenFilters({ lens }: { lens: OpenFilterLens }) {
+/** `end` sits at the row's end, after the chips (the phone's owner menu). */
+export function OpenFilters({ lens, end }: { lens: OpenFilterLens; end?: ReactNode }) {
   const ids = ["all" as const, ...(Object.keys(FILTER_LABEL) as OpenFilter[]).filter((id) => id !== "all")].filter(
     (id) => id === "all" || lens.counts[id] !== undefined,
   );
@@ -167,6 +168,7 @@ export function OpenFilters({ lens }: { lens: OpenFilterLens }) {
           </FilterChip>
         ))}
       </ChipGroup>
+      {end ? <span className={log.filterEnd}>{end}</span> : null}
     </div>
   );
 }

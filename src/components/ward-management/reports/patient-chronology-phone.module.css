@@ -18,6 +18,13 @@
     "tnum" 1;
 }
 
+/* A missing UMRN reads as muted words, not in the mono ID style. */
+.umrnMissing {
+  color: var(--wf-ink-2);
+  font-family: var(--wf-font);
+  font-weight: 400;
+}
+
 /* The hero title as a button: the name and a chevron, on the band. */
 .who {
   display: inline-flex;

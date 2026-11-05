@@ -231,6 +231,12 @@ button.strip:disabled {
 .keyRow > p {
   padding: 0;
 }
+/* Phone: one line, the tier ends then the typed-time caveat, wrapping only if it must. */
+.keyRowPhone {
+  justify-content: flex-start;
+  column-gap: var(--wf-s-3);
+  row-gap: 2px;
+}
 .wlegend {
   margin-left: 0;
 }

@@ -1270,8 +1270,8 @@ describe("ReferralBoard — an acceptance does not erase a refusal", () => {
     // into one undifferentiated run, would still "contain" every fragment below.
     const refusals = screen.getByTestId(`ward-referral-board-decided-refusals-${referralId}`);
     expect(refusals.textContent).toBe(
-      `Also refused — Emergency department (For psychiatric review): ${DECLINE_REASON_LABELS.belongs_to_another_service}` +
-        ` · Community team (Community follow-up): ${COMMUNITY_DECLINE_REASON_LABELS.outside_the_teams_catchment}`,
+      `Also refused — Emergency department (for psychiatric review): ${DECLINE_REASON_LABELS.belongs_to_another_service}` +
+        ` · Community team (community follow-up): ${COMMUNITY_DECLINE_REASON_LABELS.outside_the_teams_catchment}`,
     );
     // The refusals come AFTER the outcome, never before it — a coordinator scanning this column
     // reads what happened first.
@@ -1294,7 +1294,7 @@ describe("ReferralBoard — an acceptance does not erase a refusal", () => {
     // The non-ward branch: the destination itself is the whole answer, and saying "Unit not
     // recorded" here would invent a gap. That choice is preserved, refusals or no refusals.
     const detail = screen.getByTestId(`ward-referral-board-decided-detail-${referralId}`);
-    expect(detail.firstElementChild?.textContent).toBe("Emergency department (For psychiatric review)");
+    expect(detail.firstElementChild?.textContent).toBe("Emergency department (for psychiatric review)");
     expect(detail.textContent).not.toContain("Unit not recorded");
 
     expect(screen.getByTestId(`ward-referral-board-decided-refusals-${referralId}`).textContent).toBe(
@@ -1388,7 +1388,7 @@ describe("ReferralBoard — a cancelled destination is shown, worded so it canno
       "Emergency department",
     );
     expect(refusals.textContent).toBe(
-      `Also refused — Community team (Community follow-up): ${COMMUNITY_DECLINE_REASON_LABELS.outside_the_teams_catchment}`,
+      `Also refused — Community team (community follow-up): ${COMMUNITY_DECLINE_REASON_LABELS.outside_the_teams_catchment}`,
     );
 
     // The cancellation: ED only, worded with the one reused sentence — never "Declined", and never
@@ -1416,7 +1416,7 @@ describe("ReferralBoard — a cancelled destination is shown, worded so it canno
       "Also refused",
     );
     expect(cancelled.textContent).toBe(
-      "Also cancelled — Emergency department (For psychiatric review): Cancelled — this referral was accepted somewhere else.",
+      "Also cancelled — Emergency department (for psychiatric review): Cancelled — this referral was accepted somewhere else.",
     );
 
     // All three parts sit on the row, in this order, and nowhere else — the same exactness the
@@ -1465,7 +1465,7 @@ describe("ReferralBoard — a refusal shows on the board while the referral is s
       tableRefusalsText,
       "a coordinator ringing round must be able to see this destination has already refused, or they may ring a service that has already said no",
     ).toBe(
-      `Already refused — Emergency department (For psychiatric review): ${DECLINE_REASON_LABELS.belongs_to_another_service}`,
+      `Already refused — Emergency department (for psychiatric review): ${DECLINE_REASON_LABELS.belongs_to_another_service}`,
     );
 
     // The referral is still queued, not decided — this ruling is about the state where nothing
@@ -1514,8 +1514,8 @@ describe("ReferralBoard — a refusal shows on the board while the referral is s
     fireEvent.click(screen.getByTestId("harness-refuse-community"));
 
     expect(screen.getByTestId(`ward-referral-board-refusals-${referralId}`).textContent).toBe(
-      `Already refused — Emergency department (For psychiatric review): ${DECLINE_REASON_LABELS.belongs_to_another_service}` +
-        ` · Community team (Community follow-up): ${COMMUNITY_DECLINE_REASON_LABELS.outside_the_teams_catchment}`,
+      `Already refused — Emergency department (for psychiatric review): ${DECLINE_REASON_LABELS.belongs_to_another_service}` +
+        ` · Community team (community follow-up): ${COMMUNITY_DECLINE_REASON_LABELS.outside_the_teams_catchment}`,
     );
   });
 

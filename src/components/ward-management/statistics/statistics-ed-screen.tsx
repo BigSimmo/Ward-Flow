@@ -595,7 +595,7 @@ function EdPresentation({
           ["In transit or recorded departure", inTransitShown],
           ["Longest wait", longestWaitMinutes !== null ? splitDuration(longestWaitMinutes) : "none"],
           ["Median wait", median === null ? "none" : splitDuration(Math.round(median))],
-          ["Urgent", small(urgent)],
+          ["Flagged urgent", small(urgent)],
           [`Over ${longHours}h`, small(over24h)],
           ["No ward yet", small(unplaced)],
         ],
@@ -605,7 +605,7 @@ function EdPresentation({
           (site ? `${department.siteCode} · ${site.service}` : department.siteCode) +
           (edCountsDesk ? " · Counts only" : ""),
         title: `${shortName(department.name)} ED`,
-        sub: `Median ${median === null ? "none" : splitDuration(Math.round(median))} · ${small(urgent)} urgent`,
+        sub: `Median ${median === null ? "none" : splitDuration(Math.round(median))} · ${small(urgent)} flagged urgent`,
         stats: (
           <>
             <HeroStat
@@ -647,7 +647,7 @@ function EdPresentation({
             }
           />
           <HeroStat value={median === null ? "none" : splitDuration(Math.round(median))} label="Median" />
-          <HeroStat value={small(urgent)} label="Urgent" />
+          <HeroStat value={small(urgent)} label="Flagged urgent" />
           {/* Role view (as ED clinician): marked as Longest is, since it counts the same long waits. */}
           <HeroStat
             value={small(over24h)}
@@ -1069,7 +1069,7 @@ function Waits({
               onChange={setFilter}
               items={[
                 { id: "all", label: "All", count: counts.all },
-                { id: "urgent", label: "Urgent", count: counts.urgent },
+                { id: "urgent", label: "Flagged urgent", count: counts.urgent },
                 { id: "unplaced", label: "No ward", count: counts.unplaced },
               ]}
             />

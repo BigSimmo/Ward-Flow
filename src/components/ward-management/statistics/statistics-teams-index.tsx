@@ -194,6 +194,9 @@ function TeamsIndexView({
         y = exact(b.inBed);
       return x === null ? (y === null ? a.team.name.localeCompare(b.team.name) : 1) : y === null ? -1 : y - x;
     });
+  // Review 5 Nov 2026: the foot counts the rows the list shows. The service totals count a clinic with
+  // several ruled names once (Q223), so "57 have nobody" sat against "1 of 64" with 6 rows unexplained.
+  const emptyRows = teams.filter((entry) => exact(entry.inBed) === 0).length;
   const groups = GROUPS.map((option) => ({
     option,
     service: CODE_SERVICE[option.value],
@@ -444,7 +447,7 @@ function TeamsIndexView({
             >
               {unknown > 0
                 ? `${unknown} ${plural(unknown, "team", "teams")} show a dash: a referral on record cannot be found.`
-                : `${emptyTeams} ${plural(emptyTeams, "team has", "teams have")} nobody in a bed`}
+                : `${emptyRows} ${plural(emptyRows, "team has", "teams have")} nobody in a bed`}
             </Foot>
           </StatCard>
         </>

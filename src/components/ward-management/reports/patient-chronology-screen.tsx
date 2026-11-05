@@ -264,6 +264,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
   // Owner rule D-83: surname first, as the resolver's formalName reads ("Family, Given").
   const name = chronology?.patient ? nameFor(pickerName(chronology.patient), chronology.patient.umrn) : null;
   const umrn = chronology?.patient?.umrn || "UMRN not recorded";
+  // Visual review: a missing UMRN reads as muted words, not in the mono ID style as if it were a code.
+  const umrnMissing = !chronology?.patient?.umrn;
   const recordCount = chronology
     ? chronology.recordIds.movements.length +
       chronology.recordIds.referrals.length +
@@ -368,7 +370,9 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                 data-testid="ward-chronology-start-patient"
               >
                 <span className={start.personName}>{nameFor(pickerName(patient), patient.umrn)}</span>
-                <span className={start.personUmrn}>{patient.umrn || "UMRN not recorded"}</span>
+                <span className={patient.umrn ? start.personUmrn : start.personUmrnMissing}>
+                  {patient.umrn || "UMRN not recorded"}
+                </span>
                 <ChevronRight size={16} aria-hidden="true" className={start.personGo} />
               </button>
             </li>
@@ -509,7 +513,8 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
             sub={
               chronology ? (
                 <>
-                  <b className={phone.mono}>{umrn}</b> · synthetic demo data, not a clinical record
+                  {umrnMissing ? <span>{umrn}</span> : <b className={phone.mono}>{umrn}</b>} · synthetic demo data, not
+                  a clinical record
                 </>
               ) : (
                 "Synthetic demo data"
@@ -638,7 +643,11 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                   leading={patient.id === patientId ? <Check size={16} aria-hidden="true" /> : undefined}
                   name={nameFor(pickerName(patient), patient.umrn)}
                   aria-label={`${nameFor(pickerName(patient), patient.umrn)}${patient.id === patientId ? ", chosen" : ""}`}
-                  value={<span className={phone.mono}>{patient.umrn || "UMRN not recorded"}</span>}
+                  value={
+                    <span className={patient.umrn ? phone.mono : phone.umrnMissing}>
+                      {patient.umrn || "UMRN not recorded"}
+                    </span>
+                  }
                   onSelect={() => {
                     choosePatient(patient.id);
                     setPickerOpen(false);
@@ -780,7 +789,9 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
           level={1}
           eyebrow="Reports · PIR chronology"
           title={name ?? "Patient chronology"}
-          titleMeta={chronology ? <span className={styles.umrn}>{umrn}</span> : undefined}
+          titleMeta={
+            chronology ? <span className={umrnMissing ? styles.umrnMissing : styles.umrn}>{umrn}</span> : undefined
+          }
           aside={
             chronology ? (
               <span className={styles.heroActions} data-print-hide>
@@ -983,7 +994,7 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
                   <CardHead
                     id={`${baseId}-summary-title`}
                     title="Summary"
-                    aside={<span className={styles.umrnQuiet}>{umrn}</span>}
+                    aside={<span className={umrnMissing ? styles.umrnQuietMissing : styles.umrnQuiet}>{umrn}</span>}
                   />
                   <div className={styles.sideBody}>
                     <FactGrid

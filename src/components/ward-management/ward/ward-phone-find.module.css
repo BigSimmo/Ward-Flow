@@ -1,0 +1,19 @@
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-height: 40px;
+}
+
+.box {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 40px;
+  border-radius: var(--wf-r-ctl);
+}
+
+.box input::-webkit-search-cancel-button {
+  appearance: none;
+  display: none;
+}

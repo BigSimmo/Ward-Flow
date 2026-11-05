@@ -8,6 +8,7 @@ import { cx } from "./cx";
 import { HeroCondensedLine } from "./phone-fold";
 import { SrOnly } from "./primitives";
 import { StatusGlyph, type WfTone } from "./status-glyph";
+import { useScrollRegionFocus } from "./use-scroll-region-focus";
 import styles from "./hero.module.css";
 
 /**
@@ -172,6 +173,8 @@ export function Hero({
   const titleId = useId();
   const sectionRef = useRef<HTMLElement>(null);
   useWfBandBleed(sectionRef, band && !quiet);
+  const statsRef = useRef<HTMLDivElement>(null);
+  useScrollRegionFocus(statsRef, stats);
   const Heading = `h${level}` as ElementType;
   return (
     <section
@@ -199,7 +202,16 @@ export function Hero({
             {titleMeta ? <span className={styles.titleMeta}>{titleMeta}</span> : null}
           </div>
         </div>
-        {stats ? <div className={cx(styles.stats, statsAlign === "end" && styles.statsEnd)}>{stats}</div> : null}
+        {stats ? (
+          <div
+            ref={statsRef}
+            className={cx(styles.stats, statsAlign === "end" && styles.statsEnd)}
+            role="group"
+            aria-label="Figures"
+          >
+            {stats}
+          </div>
+        ) : null}
         {aside ? <div className={styles.aside}>{aside}</div> : null}
       </div>
       {next ? <HeroNext next={next} /> : null}
