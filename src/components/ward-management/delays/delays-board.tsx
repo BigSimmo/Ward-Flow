@@ -1079,16 +1079,12 @@ export function DelaysBoard({
               : "Waiting"
         }
         title={heroTitle}
+        // The footer carries the synthetic notice on every width; the phone hero no longer repeats it
+        // (design audit A36, 5 Nov 2026).
         titleMeta={
-          isPhone ? (
-            <>
-              Prototype data, invented records · <b>{breached}</b> {formsPast}
-            </>
-          ) : (
-            <>
-              <b>{breached}</b> {formsPast}
-            </>
-          )
+          <>
+            <b>{breached}</b> {formsPast}
+          </>
         }
         testId="delays-hero"
         className={styles.delaysHero}
