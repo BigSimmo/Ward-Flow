@@ -353,7 +353,10 @@ export function useWardSupabaseShared(
                   return;
                 const access = accessStore.parseStoredAccess(JSON.stringify(next.access));
                 if (!access || !next.snapshot) return;
-                const wanted = screen.takeScreenReturn() ?? window.location.pathname;
+                // Only a remembered sign-out return moves the page. The page the person actually loaded,
+                // including a record address, query or fragment, is never rewritten here.
+                const wanted = screen.takeScreenReturn();
+                if (!wanted) return;
                 const target = screen.authorisedScreenReturn(
                   wanted,
                   access,
