@@ -1206,7 +1206,7 @@ export function DelaysBoard({
               tabIndex={-1}
             >
               <div className={`${styles.chead} ${wardPin.pinnedSwitch} ${polish.tableHead}`}>
-                <h2>{flat ? "Waiting" : "Waiting by blocker"}</h2>
+                <h2>{flat ? "Waiting" : "Waiting by reason"}</h2>
                 <span
                   className={styles.meta}
                   data-testid="delays-shown-count"

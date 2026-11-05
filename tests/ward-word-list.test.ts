@@ -53,7 +53,7 @@ const BANNED: readonly Banned[] = [
     instead: "the waiting list",
   },
   // Wording audit, 26 Oct 2026 (D-85 and plain words).
-  { id: "beds held by blockers", pattern: /\bbeds held by blockers?\b/i, instead: "Beds held up" },
+  { id: "beds held by blockers", pattern: /\bbeds held by blockers?\b/i, instead: "Discharges held up" },
   { id: "was held until", pattern: /\bwas held until\b/i, instead: "the pull time limit passed at" },
   { id: "not held", pattern: /^\s*not held\s*$/i, instead: "Not recorded" },
   { id: "involuntary-capable", pattern: /\binvoluntary-capable\b/i, instead: "Authorised hospital" },

@@ -200,7 +200,7 @@ Held is only for a patient's own leave or away bed (D-85). Held up is for delays
 
 | Say                            | Do not say                              |
 | ------------------------------ | --------------------------------------- |
-| Beds held up                   | beds held by blockers                   |
+| Discharges held up             | beds held by blockers                   |
 | the pull time limit passed at  | was held until (for a pulled bed)       |
 | Not recorded                   | not held (for a missing number or time) |
 | record                         | dossier                                 |

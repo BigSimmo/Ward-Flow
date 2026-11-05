@@ -938,8 +938,8 @@
         },
         {
           "path": "src/components/ward-management/capacity/step-down-board.tsx",
-          "line": 43,
-          "sha256": "a073852080fd021dbebebdf5d736355bce66d0aca7ba0b520cf07087d850461c"
+          "line": 44,
+          "sha256": "5d749d6131941ed54b7594f359c17e5eca3faa8749539f77678b25dda3cc14dc"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",

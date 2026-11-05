@@ -33,7 +33,7 @@ const GROUP_LABELS: Record<AudienceGroupId, string> = {
   metro: "Metro adult wards",
   older: "Older adult wards",
   youth: "Youth and CAMHS",
-  secure: "Secure and forensic",
+  secure: "Locked and forensic",
   regional: "Regional (WACHS)",
   ed: "ED desks",
   other: "Other wards",

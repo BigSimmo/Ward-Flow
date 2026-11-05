@@ -87,6 +87,12 @@ describe("This shift card: bed counts confirmed", () => {
     expect(section.getByText("Every open ward has confirmed since the shift began")).toBeInTheDocument();
     expect(section.queryByRole("button")).toBeNull();
   });
+
+  it("says no discharge is held up when none is, without the word blocker (#1476 review)", () => {
+    render(<ShiftChecks model={shiftModel([confirmedAt(a!, since)])} onAskWard={vi.fn()} />);
+    expect(screen.getByText("No discharge is recorded as held up.")).toBeInTheDocument();
+    expect(screen.queryByText(/blocker/iu)).toBeNull();
+  });
 });
 
 describe("This shift card: the same number confirmed shift after shift (Josh, 31 Oct 2026)", () => {

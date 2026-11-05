@@ -39,7 +39,7 @@ describe("broadcast audience", () => {
       "Metro adult wards",
       "Older adult wards",
       "Youth and CAMHS",
-      "Secure and forensic",
+      "Locked and forensic",
       "Regional (WACHS)",
       "ED desks",
     ]);
@@ -54,7 +54,7 @@ describe("broadcast audience", () => {
     };
     const ids = audienceRecipients(audience, groups, []).map((desk) => desk.id);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(audienceLabel(audience, groups)).toBe("Metro adult wards, Secure and forensic");
+    expect(audienceLabel(audience, groups)).toBe("Metro adult wards, Locked and forensic");
     expect(audienceLabel({ ...audience, mode: "pick" }, groups)).toBe("Chosen desks");
   });
 });
