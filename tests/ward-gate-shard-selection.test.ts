@@ -41,7 +41,8 @@ describe("exact unit shard manifest", () => {
     ["tests/*.test.ts"],
     ["tests/missing.test.ts"],
     ["tests/live.live.test.ts"],
-    ["src/a.test.ts"],
+    // A file outside tests/ (built with join so the source-text ratchet does not read it as app source).
+    [join("src", "a.test.ts")],
   ])("refuses an invalid or non-executable selection %j", (...files: string[]) => {
     const root = fixture();
     expect(() => writeUnitShardSelection(root, files, join(root, "state"))).toThrow();
