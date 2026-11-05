@@ -5,7 +5,7 @@
     "reason": "Source-reviewed command model: Same job carrying a trimmed CAD number and cadAdded time/role.",
     "source": "src/components/ward-management/ward-flow-transport-events.ts",
     "model": {
-      "subject": "A movement’s current transport job",
+      "subject": "A movement\u2019s current transport job",
       "before": "Live, unarrived, uncancelled transport with no nonblank CAD number",
       "after": "Same job carrying a trimmed CAD number and cadAdded time/role",
       "payload": [
@@ -15,7 +15,7 @@
       "scope": "ED, ward, community, coordinator or officer in EVENT_ROLE. Ward acts only for the sending stay/ward; shared scope also restricts ED to origin ED and community to the sending team. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": [
         "Existing open movement and live job; no existing nonblank CAD number",
-        "Reject blank or placeholder CAD values; ward’s actingUnitId must identify the sending ward"
+        "Reject blank or placeholder CAD values; ward\u2019s actingUnitId must identify the sending ward"
       ],
       "effects": [
         "Updates only movement.transport.cadNumber and cadAdded; does not dispatch, accept or advance the job"
@@ -24,7 +24,7 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 1116,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -54,7 +54,7 @@
       "subject": "An occupied admission and its held leave-bed record",
       "before": "Occupied stay, not away at ED, with no recorded absence",
       "after": "Leave-bed record carries absentWithoutLeave {since,steps:[]}; stay remains occupied",
-      "payload": ["admissionId; actingUnitId must match the stay’s ward; role and now"],
+      "payload": ["admissionId; actingUnitId must match the stay\u2019s ward; role and now"],
       "scope": "Ward or coordinator; every caller supplies the admission ward claim. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": [
         "Stay must exist and be occupied",
@@ -99,7 +99,7 @@
       "before": "Absence has no record of this listed missing-person step",
       "after": "Same absence with one timed step appended",
       "payload": ["admissionId; actingUnitId; step from ABSENCE_STEPS; role and now"],
-      "scope": "Ward or coordinator; actingUnitId must equal the absence record’s unit. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
+      "scope": "Ward or coordinator; actingUnitId must equal the absence record\u2019s unit. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": [
         "An absence record must exist for the admission",
         "Step must be listed, not already recorded, and not earlier than absence.since"
@@ -138,7 +138,7 @@
     "reason": "Source-reviewed command model: Form 5A recorded with time and desk label; any ended order retained in earlier history.",
     "source": "src/components/ward-management/ward-flow-record-legal-events.ts",
     "model": {
-      "subject": "A patient’s recorded community treatment order",
+      "subject": "A patient\u2019s recorded community treatment order",
       "before": "Patient exists with no current order, no occupied stay and no open non-arrived placement",
       "after": "Form 5A recorded with time and desk label; any ended order retained in earlier history",
       "payload": ["patientId; role and now; no user-supplied lapse time"],
@@ -183,7 +183,7 @@
     "reason": "Source-reviewed command model: Same order retained with endedAt=now.",
     "source": "src/components/ward-management/ward-flow-bed-events.ts",
     "model": {
-      "subject": "A patient’s current community treatment order",
+      "subject": "A patient\u2019s current community treatment order",
       "before": "Order exists and has no endedAt",
       "after": "Same order retained with endedAt=now",
       "payload": ["patientId; role and now"],
@@ -268,7 +268,7 @@
     "reason": "Source-reviewed command model: Admission blockReason=null; clearance retained on matching pending release or admission.",
     "source": "src/components/ward-management/ward-flow-bed-events.ts",
     "model": {
-      "subject": "An admission’s current discharge blocker",
+      "subject": "An admission\u2019s current discharge blocker",
       "before": "Admission carries a non-null blockReason",
       "after": "Admission blockReason=null; clearance retained on matching pending release or admission",
       "payload": ["admissionId; actingUnitId; optional reason from DISCHARGE_DELAY_CLEAR_REASONS; role and now"],
@@ -334,7 +334,7 @@
         {
           "path": "src/components/ward-management/ward-flow-observation-events.ts",
           "line": 32,
-          "sha256": "b89db758e87f6c00be73e1b44c5fcf56864633c0cae56e7c51fcd83b26be7092"
+          "sha256": "b710d406227a810c4020dadb7ffeb75bb6c7e790d3911dd26895d771de5041b1"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -344,7 +344,7 @@
         {
           "path": "src/components/ward-management/ward-flow-observation-events.ts",
           "line": 32,
-          "sha256": "b89db758e87f6c00be73e1b44c5fcf56864633c0cae56e7c51fcd83b26be7092"
+          "sha256": "b710d406227a810c4020dadb7ffeb75bb6c7e790d3911dd26895d771de5041b1"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
@@ -365,14 +365,14 @@
     "reason": "Source-reviewed command model: Same movement carries {unitId,flaggedAt,source}; no bed is promised.",
     "source": "src/components/ward-management/ward-flow-reducer.ts",
     "model": {
-      "subject": "A waiting movement’s receiving-unit preference",
+      "subject": "A waiting movement\u2019s receiving-unit preference",
       "before": "Waiting unplaced movement with an open suitable ward request and current turnaround source",
       "after": "Same movement carries {unitId,flaggedAt,source}; no bed is promised",
       "payload": ["movementId; unitId; optional source cld or departure; finite now; role"],
       "scope": "Coordinator only, within its shared authorised scope. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": [
         "Unit and target must exist; current source must be CLD-ready occupied criteria with feature enabled, or confirmed unblocked departure on an occupied stay",
-        "Clinical/legal gates must pass (allocation/freshness and the helper’s locked-bed security exception are separate); open request must match selected unit",
+        "Clinical/legal gates must pass (allocation/freshness and the helper\u2019s locked-bed security exception are separate); open request must match selected unit",
         "Movement must be open, not arrived and unaccepted",
         "Same unit/source preference already recorded is refused"
       ],
@@ -416,14 +416,14 @@
     "reason": "Source-reviewed command model: Same referral carries {unitId,flaggedAt,source}; no bed is promised.",
     "source": "src/components/ward-management/ward-flow-reducer.ts",
     "model": {
-      "subject": "A waiting referral’s receiving-unit preference",
+      "subject": "A waiting referral\u2019s receiving-unit preference",
       "before": "Waiting unplaced referral with an open suitable ward request and current turnaround source",
       "after": "Same referral carries {unitId,flaggedAt,source}; no bed is promised",
       "payload": ["referralId; unitId; optional source cld or departure; finite now; role"],
       "scope": "Coordinator only, within its shared authorised scope. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": [
         "Unit and target must exist; current source must be CLD-ready occupied criteria with feature enabled, or confirmed unblocked departure on an occupied stay",
-        "Clinical/legal gates must pass (allocation/freshness and the helper’s locked-bed security exception are separate); open request must match selected unit",
+        "Clinical/legal gates must pass (allocation/freshness and the helper\u2019s locked-bed security exception are separate); open request must match selected unit",
         "Referral must still be queued with an unwithdrawn ward request; no linked movement may exist",
         "Same unit/source preference already recorded is refused"
       ],
@@ -467,7 +467,7 @@
     "reason": "Source-reviewed command model: Same copy has openedAt=now; answer state unchanged.",
     "source": "src/components/ward-management/ward-flow-referral-followup-events.ts",
     "model": {
-      "subject": "One addressed ward’s copy of a referral",
+      "subject": "One addressed ward\u2019s copy of a referral",
       "before": "Ward copy exists without openedAt",
       "after": "Same copy has openedAt=now; answer state unchanged",
       "payload": ["referralId; unitId; actingUnitId; role and now"],
@@ -508,12 +508,12 @@
     "reason": "Source-reviewed command model: New listed needs appended; existing open needs retained without duplication.",
     "source": "src/components/ward-management/ward-flow-referral-followup-events.ts",
     "model": {
-      "subject": "One awaiting ward copy’s information checklist",
+      "subject": "One awaiting ward copy\u2019s information checklist",
       "before": "Ward copy queued and unwithdrawn",
       "after": "New listed needs appended; existing open needs retained without duplication",
       "payload": [
         "referralId; unitId; needs is a nonempty list from REFERRAL_INFORMATION_NEEDS",
-        "actingUnitId optional in type but required for ward’s own-unit check; role and now"
+        "actingUnitId optional in type but required for ward\u2019s own-unit check; role and now"
       ],
       "scope": "Ward for its own copy or coordinator; named copy preferred over unnamed. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": [
@@ -609,7 +609,7 @@
       "scope": "Coordinator may assign any listed owner desk; ED/community may take only for their own role. Not a lock on other permitted actions. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": [
         "Referral must exist and not be accepted or fully withdrawn; the follow-up helper does not require a queued arm",
-        "Owner must be listed; reject another desk’s self-assignment and same current owner"
+        "Owner must be listed; reject another desk\u2019s self-assignment and same current owner"
       ],
       "effects": ["Appends {owner,at,by}; destinations, answers and decision clock unchanged"],
       "sources": [
@@ -648,7 +648,7 @@
     "reason": "Source-reviewed command model: New checked contact/outcome entry appended.",
     "source": "src/components/ward-management/ward-flow-referral-owner-events.ts",
     "model": {
-      "subject": "A front-door referral’s call log",
+      "subject": "A front-door referral\u2019s call log",
       "before": "Referral not accepted or fully withdrawn, with prior contact history or none",
       "after": "New checked contact/outcome entry appended",
       "payload": [
@@ -700,7 +700,7 @@
     "reason": "Source-reviewed command model: Checked step/promise/callback entry appended without answering referral.",
     "source": "src/components/ward-management/ward-flow-referral-commitment-events.ts",
     "model": {
-      "subject": "One awaiting ward copy’s response commitment",
+      "subject": "One awaiting ward copy\u2019s response commitment",
       "before": "Open referral awaiting this ward, commitment absent or not resolved",
       "after": "Checked step/promise/callback entry appended without answering referral",
       "payload": [
@@ -759,7 +759,7 @@
     "reason": "Source-reviewed command model: Additional named wards queued, preserving existing destinations.",
     "source": "src/components/ward-management/ward-flow-referral-ask-events.ts",
     "model": {
-      "subject": "An open community referral’s addressed wards",
+      "subject": "An open community referral\u2019s addressed wards",
       "before": "Open community referral has named ward request(s) with reusable bed requirements",
       "after": "Additional named wards queued, preserving existing destinations",
       "payload": ["referralId; nonempty distinct unitIds named by coordinator; role and now"],
@@ -810,7 +810,7 @@
     "reason": "Source-reviewed command model: isClosed=true with admissionsClosure reason/time/desk and optional expected reopening.",
     "source": "src/components/ward-management/ward-flow-ward-closure-events.ts",
     "model": {
-      "subject": "A ward’s admissions closure",
+      "subject": "A ward\u2019s admissions closure",
       "before": "Known ward open to admissions",
       "after": "isClosed=true with admissionsClosure reason/time/desk and optional expected reopening",
       "payload": ["unitId; reason from WARD_CLOSURE_REASONS; optional until", "actingUnitId for ward; role and now"],
@@ -854,7 +854,7 @@
     "reason": "Source-reviewed command model: isClosed=false; admissionsClosure removed.",
     "source": "src/components/ward-management/ward-flow-ward-closure-events.ts",
     "model": {
-      "subject": "A ward’s admissions closure",
+      "subject": "A ward\u2019s admissions closure",
       "before": "Known ward marked closed",
       "after": "isClosed=false; admissionsClosure removed",
       "payload": ["unitId; actingUnitId for ward; role and now"],
@@ -862,7 +862,7 @@
       "guards": ["Ward must exist and be closed"],
       "effects": [
         "Removes closure record rather than advancing any waiting move; changes no bed count",
-        "Reopening is a person’s action; old closure-linked review/transition records are no longer current"
+        "Reopening is a person\u2019s action; old closure-linked review/transition records are no longer current"
       ],
       "sources": [
         {
@@ -895,7 +895,7 @@
     "reason": "Source-reviewed command model: closed=true appends a mark; closed=false stamps active mark reopenedAt.",
     "source": "src/components/ward-management/ward-flow-bed-closure-events.ts",
     "model": {
-      "subject": "One exact numbered bed’s closure mark",
+      "subject": "One exact numbered bed\u2019s closure mark",
       "before": "Empty offerable bed is open, or numbered bed has active closed mark",
       "after": "closed=true appends a mark; closed=false stamps active mark reopenedAt",
       "payload": [
@@ -942,7 +942,7 @@
     "reason": "Source-reviewed command model: meetingActions appended with chosen task, owner and due time.",
     "source": "src/components/ward-management/ward-flow-bed-meeting-events.ts",
     "model": {
-      "subject": "A movement or admission’s agreed meeting task",
+      "subject": "A movement or admission\u2019s agreed meeting task",
       "before": "Subject exists and has no open action of this kind",
       "after": "meetingActions appended with chosen task, owner and due time",
       "payload": [
@@ -998,7 +998,7 @@
         "Subject and open listed action must exist",
         "Caller must be coordinator or correct owning role/place"
       ],
-      "effects": ["Retains task and stamps completion; does not enact the action or change subject’s stage"],
+      "effects": ["Retains task and stamps completion; does not enact the action or change subject\u2019s stage"],
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-bed-meeting-events.ts",
@@ -1030,7 +1030,7 @@
     "reason": "Source-reviewed command model: New episode with typed start and recording metadata appended.",
     "source": "src/components/ward-management/ward-flow-restrictive-practice-events.ts",
     "model": {
-      "subject": "A ward’s operational restrictive-practice episodes",
+      "subject": "A ward\u2019s operational restrictive-practice episodes",
       "before": "Occupied stay on this ward with no open same-practice episode",
       "after": "New episode with typed start and recording metadata appended",
       "payload": [
@@ -1077,7 +1077,7 @@
     "reason": "Source-reviewed command model: Same episode stamped with typed endedAt.",
     "source": "src/components/ward-management/ward-flow-restrictive-practice-events.ts",
     "model": {
-      "subject": "One ward’s open restrictive-practice episode",
+      "subject": "One ward\u2019s open restrictive-practice episode",
       "before": "Episode exists without endedAt",
       "after": "Same episode stamped with typed endedAt",
       "payload": [
@@ -1124,7 +1124,7 @@
     "reason": "Source-reviewed command model: New category/time incident appended.",
     "source": "src/components/ward-management/ward-flow-restrictive-practice-events.ts",
     "model": {
-      "subject": "A ward’s operational incident list",
+      "subject": "A ward\u2019s operational incident list",
       "before": "Known ward with existing or empty incident history",
       "after": "New category/time incident appended",
       "payload": [
@@ -1168,7 +1168,7 @@
     "reason": "Source-reviewed command model: seclusionRoom replaced with status, time and desk label.",
     "source": "src/components/ward-management/ward-flow-restrictive-practice-events.ts",
     "model": {
-      "subject": "A ward’s recorded seclusion-room availability",
+      "subject": "A ward\u2019s recorded seclusion-room availability",
       "before": "Room status absent or different",
       "after": "seclusionRoom replaced with status, time and desk label",
       "payload": ["unitId; status from SECLUSION_ROOM_STATUS_IDS; actingUnitId for ward; role and now"],
@@ -1206,12 +1206,12 @@
   {
     "event": "MARK_CANCELLED_MOVE_CHECK",
     "status": "modelled",
-    "reason": "Source-reviewed command model: Selected item’s mark replaced with addressed/not_applicable and time/desk.",
+    "reason": "Source-reviewed command model: Selected item\u2019s mark replaced with addressed/not_applicable and time/desk.",
     "source": "src/components/ward-management/ward-flow-loop-check-events.ts",
     "model": {
-      "subject": "A cancelled move’s follow-up checklist",
+      "subject": "A cancelled move\u2019s follow-up checklist",
       "before": "Move is cancelled, with prior mark or no mark for selected item",
-      "after": "Selected item’s mark replaced with addressed/not_applicable and time/desk",
+      "after": "Selected item\u2019s mark replaced with addressed/not_applicable and time/desk",
       "payload": [
         "movementId; item from CANCELLED_MOVE_CHECK_ITEMS; mark from CANCELLED_MOVE_CHECK_MARKS",
         "actingUnitId for ward; role and now"
@@ -1253,7 +1253,7 @@
     "reason": "Source-reviewed command model: New condition appended tied to acceptedUnitId and acceptedAt.",
     "source": "src/components/ward-management/ward-flow-loop-check-events.ts",
     "model": {
-      "subject": "A standing acceptance’s operational conditions",
+      "subject": "A standing acceptance\u2019s operational conditions",
       "before": "Open accepted move without this current condition",
       "after": "New condition appended tied to acceptedUnitId and acceptedAt",
       "payload": [
@@ -1301,7 +1301,7 @@
     "reason": "Source-reviewed command model: Condition retained with met {at,by}.",
     "source": "src/components/ward-management/ward-flow-loop-check-events.ts",
     "model": {
-      "subject": "A current acceptance’s unmet condition",
+      "subject": "A current acceptance\u2019s unmet condition",
       "before": "Open accepted move has this current condition not met",
       "after": "Condition retained with met {at,by}",
       "payload": ["movementId; listed condition; actingUnitId for ward; role and now"],
@@ -1339,7 +1339,7 @@
     "reason": "Source-reviewed command model: One current review for restriction recorded/replaced.",
     "source": "src/components/ward-management/ward-flow-loop-check-events.ts",
     "model": {
-      "subject": "A ward’s active restriction review reminder",
+      "subject": "A ward\u2019s active restriction review reminder",
       "before": "Restriction currently active, with prior review or none",
       "after": "One current review for restriction recorded/replaced",
       "payload": [
@@ -1386,7 +1386,7 @@
     "reason": "Source-reviewed command model: Closure transitionMarks appended with current derived item and recording metadata.",
     "source": "src/components/ward-management/ward-flow-loop-check-events.ts",
     "model": {
-      "subject": "A closed ward’s current handover checklist",
+      "subject": "A closed ward\u2019s current handover checklist",
       "before": "Ward has admissionsClosure and selected still-pointing record is unmarked",
       "after": "Closure transitionMarks appended with current derived item and recording metadata",
       "payload": [
@@ -1482,7 +1482,7 @@
     "reason": "Source-reviewed command model: Same arm carries chosen heldBedNumber.",
     "source": "src/components/ward-management/ward-flow-referral-answer-events.ts",
     "model": {
-      "subject": "An accepted ward arm’s exact numbered bed hold",
+      "subject": "An accepted ward arm\u2019s exact numbered bed hold",
       "before": "Current accepted, unwithdrawn ward arm without started bed journey; old numbered hold may exist",
       "after": "Same arm carries chosen heldBedNumber",
       "payload": ["referralId; unitId; actingUnitId; bedNumber; role and now"],
@@ -1524,14 +1524,14 @@
   {
     "event": "TAKE_INBOX_ITEM_OWNERSHIP",
     "status": "modelled",
-    "reason": "Source-reviewed command model: Ownership history appended; current owner is acting role’s label.",
+    "reason": "Source-reviewed command model: Ownership history appended; current owner is acting role\u2019s label.",
     "source": "src/components/ward-management/ward-inbox-events.ts",
     "model": {
       "subject": "A coordinator inbox row and its occurrence-specific history",
       "before": "Real current inbox row not already owned by this desk",
-      "after": "Ownership history appended; current owner is acting role’s label",
+      "after": "Ownership history appended; current owner is acting role\u2019s label",
       "payload": ["inboxItemId trimmed before lookup; role and now"],
-      "scope": "Coordinator role only; shared authenticated scope must also permit the row’s subject. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
+      "scope": "Coordinator role only; shared authenticated scope must also permit the row\u2019s subject. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": ["Row must exist; same current owner for this occurrence refused"],
       "effects": ["Appends {at,by} to inboxOwnership; underlying row/fact and its visibility unchanged"],
       "sources": [
@@ -1571,12 +1571,12 @@
     "source": "src/components/ward-management/ward-inbox-events.ts",
     "model": {
       "subject": "A coordinator inbox row and its occurrence-specific history",
-      "before": "Ownership history’s current entry belongs to acting role, applying a current-row start when available",
+      "before": "Ownership history\u2019s current entry belongs to acting role, applying a current-row start when available",
       "after": "Ownership history appended with kind=released; ownership relinquished",
       "payload": ["inboxItemId trimmed before lookup; role and now"],
-      "scope": "Coordinator role only; shared authenticated scope must also permit the row’s subject. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
+      "scope": "Coordinator role only; shared authenticated scope must also permit the row\u2019s subject. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": [
-        "Current owner must match acting role after filtering entries older than the row’s current occurrence, if a start is available; this branch does not independently require row existence"
+        "Current owner must match acting role after filtering entries older than the row\u2019s current occurrence, if a start is available; this branch does not independently require row existence"
       ],
       "effects": ["Appends released history entry; does not delete prior ownership, resolve fact or hide row"],
       "sources": [
@@ -1619,7 +1619,7 @@
       "before": "Real current inbox row visible or previously snoozed",
       "after": "Latest snoozed entry hides row until chosen return time while fact remains",
       "payload": ["inboxItemId; reason from SNOOZE_REASON_IDS; finite until after now; role and now"],
-      "scope": "Coordinator role only; shared authenticated scope must also permit the row’s subject. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
+      "scope": "Coordinator role only; shared authenticated scope must also permit the row\u2019s subject. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": [
         "Real row and listed reason",
         "until within SNOOZE_MAX_MINUTES (currently24h); act-now row limited by RED_ROW_SNOOZE_CAP_MINUTES (currently60min)"
@@ -1668,7 +1668,7 @@
       "before": "History has an active snooze, applying a current-row start when available",
       "after": "Snooze history appended with kind=returned; active snooze ends now",
       "payload": ["inboxItemId trimmed before lookup; role and now"],
-      "scope": "Coordinator role only; shared authenticated scope must also permit the row’s subject. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
+      "scope": "Coordinator role only; shared authenticated scope must also permit the row\u2019s subject. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": [
         "Active snooze must exist after occurrence filtering; expired or older-occurrence entry refused; this branch does not independently require row existence"
       ],
@@ -1978,7 +1978,7 @@
       "subject": "An on-call directory entry identifier",
       "before": "Seeded check metadata or a previously recorded check",
       "after": "Latest {entryId, at, by} check for that identifier",
-      "payload": ["entryId matching the 1–80 character slug pattern; now; role."],
+      "payload": ["entryId matching the 1\u201380 character slug pattern; now; role."],
       "scope": "coordinator, bed_manager, ward, ed, community or officer. This reducer validates identifier shape, not membership in the seeded directory; authenticated access remains separate.",
       "guards": ["entryId must be a string matching the directory-entry slug grammar."],
       "effects": [
@@ -2246,7 +2246,7 @@
         "Ward caller must name its actingUnitId and all affected wards must be that unit.",
         "Admission authorisation gate needs a listed override reason when applicable; other placement gates are rechecked on conversion.",
         "Ward must be open to new admissions. Sex and ageBand are listed.",
-        "Linked patient exists, has no occupied/pulled bed or existing booked planned admission; recorded birth date matches cohort on arrival date. Initials-only requires 1–3 letters."
+        "Linked patient exists, has no occupied/pulled bed or existing booked planned admission; recorded birth date matches cohort on arrival date. Initials-only requires 1\u20133 letters."
       ],
       "effects": [
         "Appends a booked plan and increments plannedAdmissionSequence; linked gender comes from patient record, never event.",
@@ -2644,7 +2644,7 @@
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
           "line": 97,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
@@ -2777,7 +2777,7 @@
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
           "line": 133,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -2823,7 +2823,7 @@
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
           "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -2874,7 +2874,7 @@
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
           "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -2925,7 +2925,7 @@
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
           "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -2978,7 +2978,7 @@
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
           "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3029,7 +3029,7 @@
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
           "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3082,7 +3082,7 @@
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
           "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3133,7 +3133,7 @@
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
           "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3158,7 +3158,7 @@
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
           "line": 282,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         }
       ],
       "tests": ["tests/ward-undo-steps.test.ts", "tests/ward-site-handover-sign-off.test.ts"]
@@ -3191,7 +3191,7 @@
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
           "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3242,7 +3242,7 @@
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
           "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3293,7 +3293,7 @@
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
           "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3344,7 +3344,7 @@
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
           "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3397,7 +3397,7 @@
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
           "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3557,7 +3557,7 @@
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
           "line": 265,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         }
       ],
       "tests": ["tests/ward-return-early.test.ts"]
@@ -3592,7 +3592,7 @@
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
           "line": 273,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         }
       ],
       "tests": ["tests/ward-tier1-undo.test.ts"]
@@ -3627,7 +3627,7 @@
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
           "line": 274,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         }
       ],
       "tests": ["tests/ward-tier1-undo.test.ts"]
@@ -3662,7 +3662,7 @@
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
           "line": 275,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         }
       ],
       "tests": ["tests/ward-tier1-undo.test.ts"]
