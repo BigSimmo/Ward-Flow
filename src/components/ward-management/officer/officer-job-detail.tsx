@@ -342,7 +342,9 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
           })()
         : null}
 
-      {pastWardEta(movement, now) && movement.arrivalDetails ? (
+      {/* Lateness is measured against a ward ETA only, as in the job list and Arrivals card: the
+          time typed at booking is the provider's estimate, never an overdue arrival. */}
+      {eta !== undefined && transport.arrivedAt === undefined && !movement.closure && pastWardEta(movement, now) ? (
         <div
           className={styles.overdue}
           role="alert"
@@ -352,7 +354,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
           <StatusGlyph tone="warning" size={9} />
           <span>
             <strong>Arrival overdue.</strong> More than {LATE_ARRIVAL_GRACE_MINUTES}m past the ward ETA (
-            {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST).
+            {formatInstantWithDay(eta, now)} AWST).
           </span>
         </div>
       ) : null}
@@ -468,7 +470,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
                 <b>
                   {packOpen} {packOpen === 1 ? "form" : "forms"} to upload
                 </b>{" "}
-                before collection
+                {transport.collectedAt === undefined ? "before collection" : "still outstanding"}
               </span>
               <span className={styles.formsLineGo}>View</span>
             </button>

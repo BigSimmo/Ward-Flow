@@ -6,7 +6,11 @@ import type { GlobalSearchPreviewItem } from "@/components/ward-management/searc
 import type { CensusRow } from "@/components/ward-management/search/patient-census";
 import type { SearchAnswer } from "@/components/ward-management/search/search-answers";
 import { wardFactsLine } from "@/components/ward-management/search/search-places";
-import { searchGroupOrder, type SmartSearchResults } from "@/components/ward-management/search/ward-smart-search";
+import {
+  CORE_SEARCH_VIEWS,
+  searchGroupOrder,
+  type SmartSearchResults,
+} from "@/components/ward-management/search/ward-smart-search";
 import { referralBoardHref } from "@/components/ward-management/ed/ed-bed-search-step";
 import { destinationUnit, stageCopy, type InboxItem } from "@/components/ward-management/ward-derivations";
 import { movementHref, patientHref, unitHref } from "@/components/ward-management/shell/ward-facade";
@@ -366,4 +370,22 @@ export function smartSearchGroups(
     .map((group) => ({ ...group, items: group.items.filter((item) => !shown.has(item.href)) }))
     .filter((group) => group.items.length > 0);
   return [{ key: "answers", heading: answer.question.heading, items: answered }, ...rest];
+}
+
+/** Recent screens resolve directly from the current catalogue. A caller that applies own-place
+ * destinations afterwards (Search's permittedResult) leaves `canOpenHref` to that later gate. */
+export function recentViewItem(id: string, canOpenHref: (href: string) => boolean = () => true): SearchResultItem[] {
+  const view = CORE_SEARCH_VIEWS.find((candidate) => candidate.key === id);
+  return view && canOpenHref(view.href)
+    ? [
+        {
+          kind: "view",
+          kindLabel: "View",
+          id: view.key,
+          title: view.title,
+          meta: view.description ?? "View",
+          href: view.href,
+        },
+      ]
+    : [];
 }

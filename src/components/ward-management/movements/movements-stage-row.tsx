@@ -18,7 +18,7 @@ import { standingSuffix, typedTimeStanding } from "@/components/ward-management/
 import { LegalLimitsNotChecked } from "@/components/ward-management/legal-limits-not-checked";
 import { useDueSoonThresholds } from "@/components/ward-management/ward-flow-provider";
 import type { WardChipLevel } from "@/components/ward-management/ward-chip";
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { edById } from "@/components/ward-management/ward-sites";
 import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
@@ -70,24 +70,36 @@ export function HighlightStat({
   pressed: boolean;
   onToggle: () => void;
 }) {
+  // The persistent highlight is spoken too, not only drawn (it is no longer a pressed toggle). The
+  // note sits outside the button, so the button's name stays "Tier 1 18".
+  const highlightedNoteId = useId();
   return (
     // `data-testid` for D-b/D-f coverage: these whole-network figures must read the same with and
     // without a chosen service. The DOM reads label then value ("Tier 1 18"); CSS draws the number first.
-    <button
-      type="button"
-      className={flow.highlight}
-      aria-pressed={pressed}
-      onClick={onToggle}
-      data-testid="movements-day-metric"
-    >
-      <span className={flow.highlightFigure}>
-        <span className={flow.highlightLabel}>
-          {tone && value > 0 ? <StatusGlyph tone={tone} size={9} /> : null}
-          {label}
+    <>
+      <button
+        type="button"
+        className={flow.highlight}
+        aria-haspopup="dialog"
+        data-highlighted={pressed ? "true" : undefined}
+        aria-describedby={pressed ? highlightedNoteId : undefined}
+        onClick={onToggle}
+        data-testid="movements-day-metric"
+      >
+        <span className={flow.highlightFigure}>
+          <span className={flow.highlightLabel}>
+            {tone && value > 0 ? <StatusGlyph tone={tone} size={9} /> : null}
+            {label}
+          </span>
+          <strong className={flow.highlightValue}>{value}</strong>
         </span>
-        <strong className={flow.highlightValue}>{value}</strong>
-      </span>
-    </button>
+      </button>
+      {pressed ? (
+        <span id={highlightedNoteId} className="sr-only">
+          Highlighted in worklist
+        </span>
+      ) : null}
+    </>
   );
 }
 

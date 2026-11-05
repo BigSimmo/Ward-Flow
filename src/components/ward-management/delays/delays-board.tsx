@@ -5,6 +5,7 @@
  * the table by blocker, a registers rail that becomes the person's panel, and graphs under it.
  * Figures come from `delays-board-model.ts`; the one write is Escalate, which the screen dispatches.
  */
+import { edById } from "@/components/ward-management/ward-sites";
 import { deskPlaceLabel } from "@/components/ward-management/shell/ward-bar-desk-place";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
@@ -18,6 +19,7 @@ import { activeActNowItems } from "@/components/ward-management/ward-act-now-ite
 import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { patientAgeText } from "@/components/ward-management/ward-patients";
 import { type Movement, type Unit } from "@/components/ward-management/ward-model";
 import { bandIncludes, originCode, tightHours, WAIT_BANDS, windowText, type WaitBandId } from "./wait-bands";
 import { FormalName, ShowMoreRow } from "@/components/wf";
@@ -174,7 +176,8 @@ export function DelaysBoard({
     movements: allMovements,
     configuration,
     inboxSnoozes,
-  } = useWardFlowSelect("referrals", "movements", "configuration", "inboxSnoozes");
+    dayZero,
+  } = useWardFlowSelect("referrals", "movements", "configuration", "inboxSnoozes", "dayZero");
   const actNowIds = useMemo(
     () =>
       new Set(
@@ -434,6 +437,14 @@ export function DelaysBoard({
         set({ owner: null });
       },
     });
+  if (filters.edId != null)
+    chips.push({
+      key: "ed",
+      label: edById(filters.edId)?.name ?? filters.edId,
+      clear: () => {
+        set({ edId: null });
+      },
+    });
   if (filters.origin !== null)
     chips.push({
       key: "origin",
@@ -549,8 +560,16 @@ export function DelaysBoard({
               {/* Josh, 30 Oct 2026: on a phone the ED leads, so a form shown first never cuts it off.
                   Role view (as ED clinician): every row is this ED's, so its code is left off. */}
               {(isPhone
-                ? [edDesk ? undefined : originCode(movement), transitNote(movement, now), patient.umrn]
-                : [patient.umrn, transitNote(movement, now), edDesk ? undefined : originCode(movement)]
+                ? [
+                    edDesk ? undefined : originCode(movement),
+                    transitNote(movement, now),
+                    `${patient.umrn}${patientAgeText(patient.patient, dayZero, now)}`,
+                  ]
+                : [
+                    `${patient.umrn}${patientAgeText(patient.patient, dayZero, now)}`,
+                    transitNote(movement, now),
+                    edDesk ? undefined : originCode(movement),
+                  ]
               )
                 .filter(Boolean)
                 .join(" · ")}
@@ -561,7 +580,17 @@ export function DelaysBoard({
           <span className={styles.wcell}>
             <span className={`${styles.wt} ${styles.num}`} data-ward-type-floor="delays-wait">
               <Glyph tone={waitTone(row.waited)} />
-              {splitDuration(row.waited)}
+              {row.sinceReferral !== undefined ? (
+                <>
+                  {splitDuration(row.sinceReferral)}
+                  <span className={styles.lg}>{` since referral · ${splitDuration(row.waited)} in ED`}</span>
+                </>
+              ) : (
+                <>
+                  {splitDuration(row.waited)}
+                  <span className={styles.lg}> in ED</span>
+                </>
+              )}
             </span>
             <WaitBar row={row} />
           </span>
@@ -809,10 +838,17 @@ export function DelaysBoard({
       return {
         id: row.movement.id,
         name: patient.formalName,
-        sub: [patient.umrn, transitNote(row.movement, now), edDesk ? undefined : originCode(row.movement)]
+        sub: [
+          `${patient.umrn}${patientAgeText(patient.patient, dayZero, now)}`,
+          transitNote(row.movement, now),
+          edDesk ? undefined : originCode(row.movement),
+        ]
           .filter(Boolean)
           .join(" · "),
-        figure: splitDuration(row.waited),
+        figure:
+          row.sinceReferral !== undefined
+            ? `${splitDuration(row.sinceReferral)} since referral · ${splitDuration(row.waited)} in ED`
+            : `${splitDuration(row.waited)} in ED`,
         figureNote: phoneUpdate(row),
         tone: waitTone(row.waited),
         next: flat ? desk.causeTitle(row.cause) : ward.text,
@@ -846,7 +882,7 @@ export function DelaysBoard({
             rows: list.map(portraitRow),
           };
         });
-  }, [portrait, flat, shown, groups, units, now, selectedId, patientOf, desk, edDesk, wardShort]);
+  }, [portrait, flat, shown, groups, units, now, dayZero, selectedId, patientOf, desk, edDesk, wardShort]);
   // Role view (nurse in charge): the registers are the coordinator's, so a ward desk has no rail.
   const portraitRail =
     portrait && !wardDesk ? (

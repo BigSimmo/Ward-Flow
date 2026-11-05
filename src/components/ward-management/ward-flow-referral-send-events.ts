@@ -35,8 +35,7 @@ import {
   type Referral,
   type ReferralCorrection,
 } from "@/components/ward-management/ward-model";
-import { siteByCode } from "@/components/ward-management/ward-sites";
-import { scenarioEmergencyDepartments } from "@/components/ward-management/ward-scenarios";
+import { scenarioEmergencyDepartments, scenarioSite } from "@/components/ward-management/ward-scenarios";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import type { ReferralSendEventHelpers, WardFlowState } from "./ward-flow-reducer";
 import { isCommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
@@ -501,7 +500,7 @@ export function reduceReferralSendEvent(
       );
       const linkedReferral = withoutPulledBed.referrals.find((r) => r.id === movement.referralId);
       const originEd = scenarioEmergencyDepartments(state.scenario).find((d) => d.id === movement.originEdId);
-      const originSite = originEd ? siteByCode(originEd.siteCode) : undefined;
+      const originSite = originEd ? scenarioSite(state.scenario, originEd.siteCode) : undefined;
 
       // Reuse a queued arm to this exact team rather than asking the same team twice. Settled arms
       // are not reused.
@@ -908,8 +907,11 @@ export function reduceReferralSendEvent(
         actingPlaceId?: string;
         actingUnitId?: string;
       };
-      const callerPlaceId =
-        caller.placeId ?? caller.actingPlaceId ?? (caller.role === "ward" ? caller.actingUnitId : undefined);
+      const canonicalPlaceId = caller.actingPlaceId ?? (caller.role === "ward" ? caller.actingUnitId : undefined);
+      if (caller.placeId !== undefined && canonicalPlaceId !== undefined && caller.placeId !== canonicalPlaceId) {
+        return reject(state, event, "Withdrawal place fields disagree. Reopen the record.");
+      }
+      const callerPlaceId = canonicalPlaceId ?? caller.placeId;
       const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
       // Verified senders: a transfer from a recorded stay is the sending ward's alone. Otherwise
       // the ED that raised the journey (`originEdId`) owns it, and for a ward-sent referral the

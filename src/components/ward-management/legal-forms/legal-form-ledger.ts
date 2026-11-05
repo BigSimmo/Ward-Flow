@@ -32,12 +32,16 @@ export function extensionsOfCurrentForm(movement: Movement): number {
   const earlier = movement.legalForm?.earlierForms;
   const replaced = earlier && earlier.length > 0 ? earlier[earlier.length - 1] : undefined;
   const since = replaced ? replaced.at : Number.NEGATIVE_INFINITY;
-  // The clock moves in whole minutes, so an extension and a replacement can share a minute. An
+  // New writes identify the form instance exactly. For older untagged history only,
+  // the clock moves in whole minutes, so an extension and a replacement can share a minute. An
   // extension in that same minute belongs to the replaced form when it typed the replaced form's
   // last expiry, which the replacement kept as history.
   return (movement.legalFormExpiryHistory ?? []).filter(
     (entry) =>
-      entry.basis === "extension" && (entry.at > since || (entry.at === since && entry.dueAt !== replaced?.dueAt)),
+      entry.basis === "extension" &&
+      (entry.formInstance !== undefined
+        ? entry.formInstance === (earlier?.length ?? 0)
+        : entry.at > since || (entry.at === since && entry.dueAt !== replaced?.dueAt)),
   ).length;
 }
 

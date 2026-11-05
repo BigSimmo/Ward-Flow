@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { NextRequest } from "next/server";
 
 import {
@@ -97,11 +98,17 @@ export async function POST(request: NextRequest) {
   if (!frontDoorRequired()) return answer(204);
   const secret = frontDoorSecret();
   if (!secret) return answer(503, "Sign-in is not set up on this server yet. Tell the Ward Flow coordinator.");
-  let body: { token?: unknown; demoCode?: unknown };
+  let body: { token?: string; demoCode?: string };
   try {
     const parsed: unknown = await request.json();
-    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return answer(400, "Sign in again.");
-    body = parsed as typeof body;
+    const checked = z
+      .union([
+        z.object({ token: z.string().min(1).max(8192) }).strict(),
+        z.object({ demoCode: z.string().min(1).max(256) }).strict(),
+      ])
+      .safeParse(parsed);
+    if (!checked.success) return answer(400, "Sign in again.");
+    body = checked.data;
   } catch {
     return answer(400, "Sign in again.");
   }

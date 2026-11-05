@@ -80,7 +80,7 @@
 }
 
 /* Phone sizes: 40px faces, 48px tap areas that meet without overlapping. */
-@media (max-width: 48rem) {
+@media (max-width: 46.4375rem) {
   .list {
     gap: 8px;
     padding-block: 8px;

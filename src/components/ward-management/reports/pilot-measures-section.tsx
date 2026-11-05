@@ -6,6 +6,7 @@ import { useSmallNumber } from "@/components/ward-management/shell/ward-access";
 import { splitDuration } from "@/components/ward-management/ward-clock";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import type { Unit } from "@/components/ward-management/ward-model";
+import { SMALL_NUMBER_NOT_SHOWN } from "@/components/ward-management/ward-access-scope-records";
 
 import type { ExecutiveReportingWeek } from "../statistics/executive-statistics-contract";
 import {
@@ -47,7 +48,7 @@ export type DurationFigure = {
 };
 
 function durationFigure(summary: ReportDuration, what: string, empty = `No ${what} this week`): DurationFigure {
-  const sample = `from ${reportCount(summary.sampleSize)} of ${reportCount(summary.population)} ${what}`;
+  const sample = durationSampleText(summary.sampleSize, summary.population, what);
   if (summary.median == null || summary.p90 == null) {
     // "from 0 of 0 beds pulled" read as a broken figure, so an empty week says so plainly.
     const note = exactCount(summary.population) === 0 ? empty : `${sample}, not enough data to publish`;
@@ -59,6 +60,21 @@ function durationFigure(summary: ReportDuration, what: string, empty = `No ${wha
     minutes: summary.median,
     note: sample,
   };
+}
+
+/**
+ * WF-17 (live test, 5 Nov 2026): the sample line under a typical time. A held-back count reads
+ * "not shown", so splicing it into "from X of Y" gave "from not shown of not shown finished".
+ * One rule: when either count is held back the line says so, and never splices the placeholder in.
+ */
+export function durationSampleText(sampleSize: ReportCount, population: ReportCount, what: string): string {
+  const sample = reportCount(sampleSize);
+  const of = reportCount(population);
+  if (sample === SMALL_NUMBER_NOT_SHOWN && of === SMALL_NUMBER_NOT_SHOWN)
+    return `${what} count held back (small numbers)`;
+  if (sample === SMALL_NUMBER_NOT_SHOWN) return `of ${of} ${what}; sample held back (small numbers)`;
+  if (of === SMALL_NUMBER_NOT_SHOWN) return `from ${sample} ${what}; total held back (small numbers)`;
+  return `from ${sample} of ${of} ${what}`;
 }
 
 /** A window from the clinical values, in whole hours where it is one ("2h"), never typed here. */

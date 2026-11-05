@@ -1,0 +1,3 @@
+{
+  "line": "Saves recover after a dropped connection, keep the form filled until the save is confirmed, and refuse less often."
+}

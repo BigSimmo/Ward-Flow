@@ -2,6 +2,7 @@ import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell
 import { patientRegistrationScope } from "../ward-patient-registration";
 import {
   useReferralCommandCompletion,
+  submissionId,
   useReferralPatientRegistration,
   useReferralRegistrationDraft,
 } from "./use-referral-command-completion";
@@ -17,6 +18,7 @@ import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components
 import { referralAgeBand } from "./referral-age-band";
 import { cleanReferralContact, cleanReferralFields, cleanReferralText } from "./referral-text-clean";
 import { referralDraftKeptOnScreen } from "./referral-draft-kept-check";
+import { noticeDraftKept } from "./referral-draft-saved-notice";
 import {
   URGENCY_LEVELS,
   HEALTH_SERVICES,
@@ -54,6 +56,7 @@ import { documentationError, intakeCharts, type DocumentationDraft } from "./ref
 import { UNIDENTIFIED_REFERRAL_PREFIX } from "./referral-inbox";
 import {
   discardReferralDraft,
+  retireAcceptedReferralDraft,
   draftFingerprint,
   draftNeedsChartReattachment,
   keepReferralDraft,
@@ -71,7 +74,7 @@ import { drawerFootStatus } from "./referral-drawer-foot-status";
 import { focusFirstInvalidField, referralInboxSummary } from "./referral-drawer-helpers";
 import * as fromRecord from "./referral-record-prefill";
 import { type ReferralTextInput } from "./referral-letter";
-import { useIsPhone, useModalFocus, type WfTone } from "@/components/wf";
+import { useIsPhone, useModalFocus, useOptionalToast, type WfTone } from "@/components/wf";
 import { usePathname } from "next/navigation";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { profileForChromeRole } from "@/components/ward-management/settings/settings-profile";
@@ -124,9 +127,7 @@ import {
 } from "./ward-referral-drawer-model";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { NO_SENDING_WARD, useReferralUrlPrefill, useSheetSender } from "./use-referral-sheet-sender";
-
 export { NO_SENDING_WARD };
-
 /**
  * All of the referral slide-out's state, effects and handlers, moved unchanged and in their
  * original order from `ward-referral-drawer.tsx`. The sections read the result as `s`.
@@ -183,7 +184,7 @@ export function useWardReferralDrawerState({
   const { scenario, worldGeneration } = useWardFlowSelect("scenario", "worldGeneration");
   const now = useWardFlowClock();
   const { sendGate, sendingWard, senderMissing } = useSheetSender(gate, units, pathname, searchId);
-
+  const toast = useOptionalToast();
   const urlPrefill = useReferralUrlPrefill({
     initialOriginSiteCode,
     initialPatientId,
@@ -192,7 +193,6 @@ export function useWardReferralDrawerState({
   });
   const effectiveInitialPatientId = initialPatientId ?? urlPrefill?.personId;
   const effectiveInitialOriginSiteCode = initialOriginSiteCode ?? urlPrefill?.site;
-
   const [prefillKey] = useState(() =>
     effectiveInitialPatientId ? patientKeyFor(effectiveInitialPatientId, { movements, patients, referrals }) : null,
   );
@@ -210,8 +210,9 @@ export function useWardReferralDrawerState({
     prefillKey,
     `${PATIENT_KEY_PREFIX}${effectiveInitialPatientId}`,
   );
+  const [recoveryId] = useState(() => kept?.submissionId ?? submissionId());
+  // An unnamed opening starts on nobody, not another site's.
   const fromEntryPoint = kept === null && prefillKey !== null;
-  // A2-3 (audit 13 Oct 2026): opened with no named person, the sheet starts on nobody, not another site's.
   const initialPatientKey = kept?.activePatientKey ?? prefillKey ?? NO_PATIENT_KEY;
   const [activePatientKey, setActivePatientKey] = useState<string>(initialPatientKey);
   const [extraPatientKeys, setExtraPatientKeys] = useState<string[]>(
@@ -252,7 +253,6 @@ export function useWardReferralDrawerState({
   // v10 phone: the four steps are a list, and the chosen step opens as a tall sheet over it.
   const isPhone = useIsPhone();
   const [phoneStepOpen, setPhoneStepOpen] = useState(false);
-
   const sampleProfiles = useMemo(
     () =>
       Object.fromEntries(
@@ -378,6 +378,7 @@ export function useWardReferralDrawerState({
   const sectionIds = sectionIdsFor(destType);
   const [edNeeds, setEdNeeds] = useState<EdNeeds>(kept?.edNeeds ?? {});
   const draftNow: KeptDraft & { needsChartReattachment: boolean } = {
+    submissionId: recoveryId,
     needsChartReattachment: draftNeedsChartReattachment(kept, documentation.charts),
     activePatientKey,
     destType,
@@ -419,7 +420,6 @@ export function useWardReferralDrawerState({
   };
   const [openingDraft] = useState(() => (kept ? "" : draftFingerprint(draftNow)));
   const draftJson = draftFingerprint(draftNow);
-
   // The enclosing Sheet or useWardModalFocus owns the scroll lock: a second save/restore raced stacked sheets.
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartY.current = e.touches[0].clientY;
@@ -434,7 +434,6 @@ export function useWardReferralDrawerState({
     }
   };
   const drawerRef = useRef<HTMLDivElement>(null);
-
   const referralDirty = !sentReferralId && draftJson !== openingDraft;
   const dirty = referralDirty || newPatientDirty;
   const [initialKept] = useState(() => (kept ? { at: readKeptReferralDraftAt(), json: draftFingerprint(kept) } : null));
@@ -458,13 +457,16 @@ export function useWardReferralDrawerState({
     referrals,
     generation: worldGeneration,
     draftOwnerVersion,
+    recoveryId,
     setPending: setSendPending,
     onError: setFlowError,
-    onCommitted(intake) {
+    onRetired(intake) {
+      retireAcceptedReferralDraft(draftNow, liveDraftKey, draftOwnerVersion);
+      rememberReferrerContact(intake.referrer, draftOwnerVersion);
+    },
+    onCommitted() {
       setFlowError(null);
       stopDraftAutosave();
-      discardReferralDraft(draftDiscardOwner);
-      rememberReferrerContact(intake.referrer, draftOwnerVersion);
       announceToWardShell("Referral saved. Check the Referrals board for its record before sending again.");
     },
     onAccepted(created) {
@@ -544,9 +546,8 @@ export function useWardReferralDrawerState({
     setGuardOpen(false);
     approveNextHistoryNavigation();
     onClose();
-    announceToWardShell(kept ? "Synthetic referral draft kept for this session." : "Draft not kept: signed in again.");
+    noticeDraftKept(toast, kept);
   }
-
   function handleDrawerClose() {
     if (isSearchOpen) {
       setIsSearchOpen(false);
@@ -555,7 +556,6 @@ export function useWardReferralDrawerState({
       requestClose();
     }
   }
-
   // The enclosing Sheet owns focus when embedded. Register a modal only when this drawer has its own backdrop.
   useWardModalFocus(withBackdrop, drawerRef, handleDrawerClose);
 

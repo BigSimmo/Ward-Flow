@@ -7,6 +7,8 @@
  * here invents a time limit or a status. The 8, 12 and 24 hour bands are the same named waits the
  * rest of the screen uses (see `delays-view-model.ts`), not new clinical limits.
  */
+import { placeDisplayName } from "@/components/ward-management/ward-place-names";
+import { minutesInEd, minutesSinceReferral } from "@/components/ward-management/ward-shared-figures";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
@@ -80,8 +82,10 @@ export type BoardRow = {
   cause: DelayCause;
   owner: DelayOwnerId;
   severe: boolean;
-  /** Minutes since the journey opened (arrival in the department). */
+  /** Minutes in ED from `openedAt` — timeline and quiet bars stay on this clock. */
   waited: number;
+  /** WF-02: minutes since referral when known; the main figure on the row. */
+  sinceReferral: number | undefined;
   /** The most recent recorded event after arrival, or undefined when nothing has been recorded. */
   activity: { at: Instant; what: string } | undefined;
   /** Minutes since that event, or the whole wait when nothing has been recorded. */
@@ -99,7 +103,8 @@ export type BoardRow = {
 export function boardRows(groups: readonly DelayGroup[], now: Instant, actNowIds?: ReadonlySet<string>): BoardRow[] {
   return groups.flatMap((group) =>
     group.movements.map((movement) => {
-      const waited = Math.max(0, now - movement.openedAt);
+      const waited = minutesInEd(movement, now);
+      const sinceReferral = minutesSinceReferral(movement, now);
       const recorded = lastRecordedActivity(movement, now);
       // A ward acceptance is a recorded event too; the shared helper predates it, so it is folded in here.
       const accepted =
@@ -116,6 +121,7 @@ export function boardRows(groups: readonly DelayGroup[], now: Instant, actNowIds
         owner: ownerOf(group.cause),
         severe: SEVERE_CAUSES.includes(group.cause),
         waited,
+        sinceReferral,
         activity,
         quiet,
         silent: quiet >= SILENT_MINUTES,
@@ -216,6 +222,8 @@ export const WAIT_THRESHOLD_LABELS = ["All", "8h+", "12h+", "24h+"] as const;
 type WaitThreshold = 0 | 1 | 2 | 3;
 
 export type BoardFilters = {
+  /** A figure link may open the waiting list for one ED. */
+  edId?: string | null;
   owner: DelayOwnerId | null;
   origin: CatchmentOrigin | null;
   cause: DelayCause | null;
@@ -233,6 +241,7 @@ export type BoardFilters = {
 };
 
 export const NO_FILTERS: BoardFilters = {
+  edId: null,
   owner: null,
   origin: null,
   cause: null,
@@ -249,6 +258,7 @@ export const NO_FILTERS: BoardFilters = {
 
 export function hasFilters(filters: BoardFilters): boolean {
   return (
+    filters.edId != null ||
     filters.owner !== null ||
     filters.origin !== null ||
     filters.cause !== null ||
@@ -300,6 +310,7 @@ function rowMatchesFilters(
   const binIds = filters.bin === null ? null : (bins[filters.bin]?.ids ?? new Set<string>());
   const needle = filters.search.trim().toLowerCase();
   return (
+    (filters.edId == null || (row.movement.originEdId === filters.edId && isWaitingInEd(row.movement))) &&
     (filters.owner === null || row.owner === filters.owner) &&
     (filters.origin === null || row.origin === filters.origin) &&
     (filters.cause === null || row.cause === filters.cause) &&
@@ -402,7 +413,7 @@ export const SPREAD_TICKS: readonly [number, string][] = [
 /* ---------- ward answers and the person's own record ---------- */
 
 function unitName(units: readonly Unit[], unitId: string): string {
-  return units.find((unit) => unit.id === unitId)?.name ?? unitId;
+  return placeDisplayName(unitId, units);
 }
 
 export type WardLine = {

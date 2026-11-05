@@ -540,6 +540,33 @@ it("keeps a deliberate sign-out quiet when remote logout fails", async () => {
   expect(result.current.farewell).toBe(SIGNED_OUT_NOTICE);
   expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
 });
+it("keeps a reloaded record address, query and fragment when no sign-out return is remembered", async () => {
+  const auth = mutableAuth();
+  const state = seedWardFlowStateAt(0);
+  const access = { role: "coordinator", scope: { kind: "statewide" } };
+  const snapshot = {
+    dataMode: "prototype",
+    revision: 1,
+    now: 642,
+    payload: { version: 1, state, dayZero: "2026-10-24T00:00:00Z", startedAt: "2026-10-24T00:00:00Z" },
+  };
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => Response.json({ actorId: user.id, access, accessUntil: Date.now() + 120_000, snapshot })),
+  );
+  const loaded = "/ward-flow/people/PT-SYNTHETIC?tab=history#timeline";
+  window.history.replaceState({}, "", loaded);
+  const replace = vi.spyOn(window.history, "replaceState");
+  const hook = renderHook(() => useWardSupabaseShared(true, async () => auth.adapter));
+  await waitFor(() => expect(hook.result.current.snapshot).toBeTruthy());
+  // The landing check imports its helpers lazily, so give it time to run.
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  });
+  expect(replace).not.toHaveBeenCalled();
+  expect(window.location.pathname + window.location.search + window.location.hash).toBe(loaded);
+  hook.unmount();
+});
 it("stops polling and signs out the view when the workspace refuses access", async () => {
   const fetcher = vi.fn(async (url: string | URL | Request) =>
     String(url).includes("/v1/workspace")
@@ -549,7 +576,7 @@ it("stops polling and signs out the view when the workspace refuses access", asy
         : Response.json({ access_token: "access", refresh_token: "refresh", expires_in: 3600, user }),
   );
   vi.stubGlobal("fetch", fetcher);
-  const interval = vi.spyOn(globalThis, "setInterval");
+  const interval = vi.spyOn(globalThis, "setTimeout");
   const clearAppBadge = stubAppBadge();
   const { result } = renderHook(() => useWardShared(true));
   await waitFor(() => expect(result.current.status).toBe("ready"));
@@ -618,15 +645,15 @@ it("pauses 3-second polling while document is hidden and refreshes immediately w
         : Response.json({ access_token: "access", refresh_token: "refresh", expires_in: 3600, user }),
   );
   vi.stubGlobal("fetch", fetcher);
-  const realSetInterval = globalThis.setInterval;
+  const realSetTimeout = globalThis.setTimeout;
   let pollTick: (() => void) | undefined;
-  vi.spyOn(globalThis, "setInterval").mockImplementation(((fn: TimerHandler, ms?: number) => {
+  vi.spyOn(globalThis, "setTimeout").mockImplementation(((fn: TimerHandler, ms?: number) => {
     if (ms === 3000 && typeof fn === "function") {
       pollTick = fn as () => void;
-      return 0 as unknown as ReturnType<typeof setInterval>;
+      return 0 as unknown as ReturnType<typeof setTimeout>;
     }
-    return realSetInterval(fn, ms);
-  }) as typeof setInterval);
+    return realSetTimeout(fn, ms);
+  }) as typeof setTimeout);
   const { result, unmount } = renderHook(() => useWardShared(true));
   await waitFor(() => expect(result.current.status).toBe("ready"));
   await act(async () => {

@@ -7,11 +7,21 @@ import type { SharedView, SharedWorkspaceClient } from "./ward-shared-client";
 import { endWardFlowBrowserSession, endWardFlowTabSession, onWardSessionEnd } from "./ward-browser-data";
 import { setDraftAccount } from "./ward-session-drafts";
 import { clearReferralDraftSession } from "./referrals/referral-draft-lifecycle";
-import { SHARED_REFRESH_MS } from "./ward-operational-defaults";
+import { startWardPolling } from "./ward-shared-polling";
 import { CLINICAL_VALUES } from "./ward-clinical-values";
 
 /** Every Ward Flow tab in this browser hears a deliberate sign-out (Audit 5 PS-08, Audit 4 A4-06). */
 const SESSION_CHANNEL = "ward-flow-session";
+const SESSION_ENDED_MESSAGE = "Your session ended. Sign in again to carry on.";
+
+/** Whether this tab still stores a sign-in; `null` when the browser blocks storage. */
+function storedSignIn(): boolean | null {
+  try {
+    return window.sessionStorage.getItem(WARD_AUTH_STORAGE_KEY) !== null;
+  } catch {
+    return null;
+  }
+}
 const IDLE_ACTIVITY = ["pointerdown", "keydown", "wheel", "touchstart"] as const;
 
 /**
@@ -199,6 +209,7 @@ export function useWardSupabaseShared(
     setForm({ open: false, recovery: false, busy: false, message: null });
   }
   const connection = useRef<SharedWorkspaceClient | null>(null);
+  const publishedEpoch = useRef<number | undefined>(undefined);
   const actions = useRef<{
     signUp: (email: string, password: string) => Promise<void>;
     signIn: (email: string, password: string) => Promise<void>;
@@ -214,7 +225,8 @@ export function useWardSupabaseShared(
     // P191: set once Try again is pressed, so the quiet startup retries stop and cannot restore (and
     // reconnect) a second time over a connection the manual retry has already opened.
     let manualRetryTook = false;
-    let timer: ReturnType<typeof setInterval> | undefined;
+    let polling: ReturnType<typeof startWardPolling> | undefined;
+    let lastRead = 0;
     let onVisibilityChange: (() => void) | undefined;
     let auth: WardBrowserAuthAdapter | null = null;
     let connectedActorId: string | null = null;
@@ -245,14 +257,15 @@ export function useWardSupabaseShared(
       // Invalidate outgoing autosaves before React unmounts the old account's drawers.
       if (forgetDrafts) clearReferralDraftSession();
       connectedActorId = null;
-      if (timer) clearInterval(timer);
-      timer = undefined;
+      polling?.stop();
+      polling = undefined;
       if (onVisibilityChange && typeof document !== "undefined") {
         document.removeEventListener("visibilitychange", onVisibilityChange);
       }
       onVisibilityChange = undefined;
       connection.current?.dispose();
       connection.current = null;
+      publishedEpoch.current = undefined;
       if (!closed) {
         setOwnership((owner) => (owner ? { ...owner, view: null, client: null, actorId: null } : null));
         setSignedIn(false);
@@ -293,6 +306,8 @@ export function useWardSupabaseShared(
       setForm({ open: false, recovery: false, busy: false, message: null });
       const baseUrl = process.env.NEXT_PUBLIC_WARD_API_BASE_URL!;
       const instance = auth;
+      let landed = false;
+      let latestEpoch: number | undefined;
       const client = new SharedWorkspaceClient({
         baseUrl: baseUrl.replace(/\/$/, ""),
         token: (options) => instance.token(options),
@@ -325,8 +340,62 @@ export function useWardSupabaseShared(
           // An effect that clears the previous account after rendering would be one frame too late.
           setOwnership({ auth: instance, view: next, client, actorId });
           setView(next);
+          if (next.receivedAt > lastRead) {
+            lastRead = next.receivedAt;
+            polling?.refreshed();
+          }
+          latestEpoch = next.viewEpoch;
+          publishedEpoch.current = next.viewEpoch;
+          if (!landed && next.status === "ready" && next.snapshot && next.access) {
+            landed = true;
+            void Promise.all([
+              import("./ward-screen-return"),
+              import("./shell/ward-access-store"),
+              import("./ward-access-places"),
+            ])
+              .then(([screen, accessStore, places]) => {
+                if (
+                  closed ||
+                  connection.current !== client ||
+                  instance.userId !== actorId ||
+                  latestEpoch !== next.viewEpoch
+                )
+                  return;
+                const access = accessStore.parseStoredAccess(JSON.stringify(next.access));
+                if (!access || !next.snapshot) return;
+                // Only a remembered sign-out return moves the page. The page the person actually loaded,
+                // including a record address, query or fragment, is never rewritten here.
+                const wanted = screen.takeScreenReturn();
+                if (!wanted) return;
+                const target = screen.authorisedScreenReturn(
+                  wanted,
+                  access,
+                  places.wardPlaceLookup(next.snapshot.payload.state.units),
+                );
+                if (window.location.pathname !== target || window.location.search || window.location.hash)
+                  window.history.replaceState(window.history.state, "", target);
+              })
+              .catch(() => {});
+          }
         },
       });
+      // A sign-in cleared from this tab's storage (another tool, or the browser) ends the session
+      // here too, instead of the page still looking signed in until a reload. Only a sign-in that
+      // was stored when connecting counts, so a browser that blocks storage keeps its in-memory one.
+      // Read before the first workspace read, so a removal while that read is pending still counts.
+      const storedAtConnect = storedSignIn() === true;
+      const sessionEnded = () => {
+        if (!storedAtConnect || storedSignIn() !== false) return false;
+        disconnect();
+        // Drop the in-memory sign-in as well, so a token refresh already on its way cannot store
+        // it again, and clear this tab's Ward Flow data as a sign-out here would. This tab only:
+        // the stored key went from this tab, so no server sign-out reaches another tab.
+        void instance.signOut(true).catch(() => {});
+        endWardFlowTabSession();
+        setForm((old) => ({ ...old, message: SESSION_ENDED_MESSAGE, messageKind: "info" }));
+        setView({ ...emptyView, status: "ready", error: SESSION_ENDED_MESSAGE });
+        return true;
+      };
       connection.current = client;
       try {
         await client.refresh();
@@ -334,6 +403,7 @@ export function useWardSupabaseShared(
         if (!closed && connection.current === client) setFirstRead(false);
       }
       if (closed || connection.current !== client) return;
+      if (sessionEnded()) return;
       void instance.token().then(
         (token) => !closed && connection.current === client && setEndsAt(sessionEndsAt(token)),
         () => {},
@@ -347,16 +417,22 @@ export function useWardSupabaseShared(
       });
       onVisibilityChange = () => {
         if (!closed && connection.current === client && document.visibilityState === "visible") {
+          if (sessionEnded()) return;
           void client.refresh();
         }
       };
       if (typeof document !== "undefined") {
         document.addEventListener("visibilitychange", onVisibilityChange);
       }
-      timer = setInterval(() => {
-        if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
-        void client.refresh();
-      }, SHARED_REFRESH_MS);
+      polling = startWardPolling({
+        visible: () => typeof document === "undefined" || document.visibilityState !== "hidden",
+        refresh: async () => {
+          if (sessionEnded()) return false;
+          const before = lastRead;
+          await client.refresh();
+          return lastRead > before;
+        },
+      });
     };
     const run = async (action: () => Promise<void>) => {
       if (closed || !auth) return;
@@ -457,6 +533,7 @@ export function useWardSupabaseShared(
           },
           // `reason` is shown on the sign-in screen; a deliberate sign-out (no reason) ends every tab.
           signOut: async (reason, everyTab = reason === undefined, askOtherTabs = false) => {
+            const returnPath = window.location.pathname;
             if (askOtherTabs) {
               disconnect();
               // Another tab is in use: only this tab signs out, and the shared session stays.
@@ -517,6 +594,8 @@ export function useWardSupabaseShared(
                   messageKind: "warning",
                 });
             });
+            const { rememberScreenReturn } = await import("./ward-screen-return");
+            rememberScreenReturn(returnPath);
           },
           retry: () =>
             run(async () => {
@@ -634,11 +713,22 @@ export function useWardSupabaseShared(
     signOut: (reason?: unknown) => {
       // A reason means an idle sign-out (the only caller), which first asks the other tabs.
       const why = typeof reason === "string" ? reason : undefined;
-      void actions.current?.signOut(why, undefined, why !== undefined);
+      const owner = connection.current;
+      const epoch = view.viewEpoch;
+      const finish = () => {
+        if (connection.current === owner && publishedEpoch.current === epoch)
+          void actions.current?.signOut(why, undefined, why !== undefined);
+      };
+      if (why === undefined && view.unconfirmedSave) {
+        void import("./ward-sign-out-guard")
+          .then(({ allowWardSignOut }) => allowWardSignOut(true, false))
+          .then((allowed) => {
+            if (allowed) finish();
+          })
+          .catch(() => {});
+      } else finish();
     },
-    retry: () => {
-      void actions.current?.retry();
-    },
+    retry: () => actions.current?.retry(),
     /** P172: clear the outcome of an uncertain save once it has been read. */
     dismissRecovery: (shown?: string) => connection.current?.dismissRecovery(shown),
     /** Work as one of this account's roles, when it holds more than one. */

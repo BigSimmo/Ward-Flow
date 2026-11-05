@@ -4,11 +4,18 @@ import { appName, localProjectId, stableProjectPort } from "../src/lib/local-ser
 
 const projectRoot = path.resolve(__dirname, "..");
 const ensureScript = path.join(projectRoot, "scripts", "ensure-local-server.mjs");
-const localUrlPattern = /^http:\/\/(?:localhost|127\.0\.0\.1):\d+$/;
+const localUrlPattern = /^https?:\/\/(?:localhost|127\.0\.0\.1):\d+$/;
 const identityScript = `
 const http = require("node:http");
+const https = require("node:https");
+const fs = require("node:fs");
 const url = process.argv[1] + "/api/local-project-id";
-const request = http.get(url, { timeout: 15000 }, (response) => {
+const secure = new URL(url).protocol === "https:";
+// Trust only the runner's explicit fixture CA for this probe. Certificate and hostname
+// verification stay enabled; neither Node's global roots nor its TLS policy are changed.
+const options = { timeout: 15000, ...(secure && process.env.PLAYWRIGHT_LOCAL_CA_CERT
+  ? { ca: fs.readFileSync(process.env.PLAYWRIGHT_LOCAL_CA_CERT) } : {}) };
+const request = (secure ? https : http).get(url, options, (response) => {
   let body = "";
   response.setEncoding("utf8");
   response.on("data", (chunk) => { body += chunk; });

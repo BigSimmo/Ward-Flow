@@ -729,7 +729,7 @@ function OperationalWardAccessGate({ children }: { children: ReactNode }) {
   if (!on || accessIsWholeNetwork(access))
     return (
       <>
-        {logged ? <WardRecordViewLog {...logged} /> : null}
+        {logged ? <WardRecordViewLog {...logged} generation={unscoped.worldGeneration} /> : null}
         {children}
       </>
     );
@@ -738,7 +738,7 @@ function OperationalWardAccessGate({ children }: { children: ReactNode }) {
   if (!decision.open) return <ClosedScreen access={access} />;
   if (address?.movementId !== undefined && !scoped.movements.some((movement) => movement.id === address.movementId))
     return <ClosedScreen access={access} />;
-  const subject = address?.patientId;
+  const subject = address?.patientId ?? address?.movementId;
   if (subject === undefined) return <>{children}</>;
   // The patient page takes a person id or a movement id (`people/[patientId]/page.tsx`).
   const seen =
@@ -752,7 +752,7 @@ function OperationalWardAccessGate({ children }: { children: ReactNode }) {
   if (!seen) return <ClosedScreen access={access} patientId={person ?? subject} />;
   return (
     <>
-      {logged ? <WardRecordViewLog {...logged} /> : null}
+      {logged ? <WardRecordViewLog {...logged} generation={unscoped.worldGeneration} /> : null}
       {person && glass.has(person) ? <WardBreakGlassNote patientId={person} /> : null}
       {children}
     </>
@@ -778,11 +778,19 @@ export function recordViewFor(
  * logged on the server, who and as which desk, in a log nobody can change. Logged once on opening,
  * and again only when the page shows someone else. Nothing in the local demo.
  */
-function WardRecordViewLog({ patientId, surface }: { patientId: string; surface: "patient" | "movement" }) {
+function WardRecordViewLog({
+  patientId,
+  surface,
+  generation,
+}: {
+  patientId: string;
+  surface: "patient" | "movement";
+  generation: number;
+}) {
   const session = useContext(SharedSessionContext);
   useEffect(() => {
     session?.logRecordView(patientId, surface);
-  }, [session, patientId, surface]);
+  }, [session, patientId, surface, generation]);
   return null;
 }
 
@@ -803,6 +811,15 @@ function OwnHomeRedirect({ href }: { href: string }) {
       </main>
     </WardGround>
   );
+}
+
+/** WF-13 (live test, 4 Nov 2026): a closed page's tab names no ward, ED or team. */
+const CLOSED_TAB_TITLE = "Not part of your role — Ward Flow";
+function GenericClosedTitle() {
+  useEffect(() => {
+    document.title = CLOSED_TAB_TITLE;
+  });
+  return null;
 }
 
 function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: string }) {
@@ -839,6 +856,7 @@ function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: s
   return (
     <WardGround>
       <main className={styles.closed} data-testid="ward-access-closed">
+        <GenericClosedTitle />
         <h1 tabIndex={-1} ref={headingRef}>
           Not part of your role
         </h1>

@@ -1,3 +1,9 @@
+import {
+  observationSummary,
+  sameObservation,
+  type Observation,
+  type ObservationChange,
+} from "@/components/ward-management/ward-observation";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import type { AuditEvent } from "@/components/ward-management/ward-audit";
 import {
@@ -170,6 +176,8 @@ type RowDraft = Omit<ChronologyRow, "key" | "source" | "before" | "after" | "rea
   Partial<Pick<ChronologyRow, "before" | "after" | "reason" | "occurredAt">> & {
     /** The event types that write this row, so a session-log entry for the same act is not repeated. */
     eventTypes?: readonly string[];
+    matchingRecords?: readonly string[];
+    observationAccepted?: boolean;
   };
 
 /** Every reducer case that appends to `Movement.stageChanges` (`ward-flow-reducer.ts`). */
@@ -242,6 +250,55 @@ const ACTION_EVENT_TYPES: ReadonlyMap<string, readonly string[]> = new Map<strin
     "Left the ward": ["RECORD_LEAVING", "RECORD_PATIENT_DISCHARGE"],
   }),
 );
+
+/** Preserve typed review changes as well as level changes. */
+function observationText(observation: Observation, dayZero: Date): string {
+  return `${observationSummary(observation)}; review ${observation.reviewAt === null ? "not recorded" : formatSheetMoment(observation.reviewAt, dayZero, { includeYearAndZone: true })}`;
+}
+
+function observationRows(movements: readonly Movement[], admissions: readonly Admission[], dayZero: Date): RowDraft[] {
+  const rows: RowDraft[] = [];
+  const sameChange = (a: ObservationChange, b: ObservationChange) =>
+    a.at === b.at && sameObservation(a.from, b.from) && sameObservation(a.to, b.to);
+  const add = (record: string, change: ObservationChange, matchingRecords: string[] = [record]) =>
+    rows.push({
+      record,
+      matchingRecords,
+      recordedAt: finite(change.at),
+      who: NOT_RECORDED,
+      action: "Observation level changed",
+      before: observationText(change.from, dayZero),
+      after: observationText(change.to, dayZero),
+      eventTypes: ["RECORD_OBSERVATION_LEVEL"],
+    });
+  for (const movement of movements) {
+    for (const change of movement.observationChanges ?? []) add(`Movement ${movement.id}`, change);
+  }
+  for (const admission of admissions) {
+    const movement = movements.find(
+      (candidate) => candidate.admissionId === admission.id || admission.movementId === candidate.id,
+    );
+    // Pair mirrored entries one for one. Equal transitions repeated in one minute remain separate changes.
+    const unmatched = [...(movement?.observationChanges ?? [])];
+    for (const change of admission.observationChanges ?? []) {
+      const index = unmatched.findIndex((candidate) => sameChange(candidate, change));
+      if (index < 0 || !movement) add(`Admission ${admission.id}`, change);
+      else {
+        unmatched.splice(index, 1);
+        const row = rows.find(
+          (candidate) =>
+            candidate.record === `Movement ${movement.id}` &&
+            candidate.recordedAt === change.at &&
+            candidate.before === observationText(change.from, dayZero) &&
+            candidate.after === observationText(change.to, dayZero) &&
+            !candidate.matchingRecords?.includes(`Admission ${admission.id}`),
+        );
+        if (row) row.matchingRecords = [...(row.matchingRecords ?? []), `Admission ${admission.id}`];
+      }
+    }
+  }
+  return rows;
+}
 
 function movementRows(movement: Movement, units: readonly Unit[], dayZero: Date): RowDraft[] {
   const unitName = (id: string | undefined) => (id ? (units.find((unit) => unit.id === id)?.name ?? id) : "");
@@ -651,8 +708,16 @@ function auditRecord(event: AuditEvent): string | null {
   return null;
 }
 
-function auditBeforeAfter(event: AuditEvent): Pick<ChronologyRow, "before" | "after" | "reason"> {
+function auditBeforeAfter(event: AuditEvent, dayZero: Date): Pick<ChronologyRow, "before" | "after" | "reason"> {
   switch (event.category) {
+    case "patient-record":
+      return event.action === "RECORD_OBSERVATION_LEVEL"
+        ? {
+            before: event.details.before ? observationText(event.details.before, dayZero) : "",
+            after: event.details.after ? observationText(event.details.after, dayZero) : "",
+            reason: "",
+          }
+        : { before: "", after: "", reason: "" };
     case "legal-status":
       return {
         before: event.details.before ?? "",
@@ -687,6 +752,7 @@ function auditRows(
   events: readonly AuditEvent[],
   recordKeys: Set<string>,
   wardOfRecord: (record: string) => string | undefined,
+  dayZero: Date,
 ): RowDraft[] {
   const rows: RowDraft[] = [];
   for (const event of events) {
@@ -703,7 +769,8 @@ function auditRows(
       who: whoLabel(event.actor.role),
       action: `${wording}${outcome}`,
       eventTypes: [dedupeType(event.action, event.actor.role)],
-      ...auditBeforeAfter(event),
+      ...(event.action === "RECORD_OBSERVATION_LEVEL" ? { observationAccepted: event.outcome === "accepted" } : {}),
+      ...auditBeforeAfter(event, dayZero),
     });
   }
   return rows;
@@ -746,6 +813,11 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
     ...pick(input.referrals, recordIds.referrals).flatMap((referral) => referralRows(referral, units)),
     ...pick(input.movements, recordIds.movements).flatMap((movement) => movementRows(movement, units, input.dayZero)),
     ...pick(input.admissions, recordIds.admissions).flatMap((admission) => admissionRows(admission, units)),
+    ...observationRows(
+      pick(input.movements, recordIds.movements),
+      pick(input.admissions, recordIds.admissions),
+      input.dayZero,
+    ),
   ].map((draft) => ({ draft, source: "Record" as const }));
 
   const recordKeys = new Set([
@@ -754,22 +826,65 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
     ...recordIds.admissions.map((id) => `Admission ${id}`),
   ]);
   if (input.auditEvents) {
-    for (const draft of auditRows(input.auditEvents, recordKeys, wardOfRecord)) drafts.push({ draft, source: "Audit" });
+    const attributed = new Set<RowDraft>();
+    for (const draft of auditRows(input.auditEvents, recordKeys, wardOfRecord, input.dayZero)) {
+      const mirrored =
+        draft.action === "Observation level changed"
+          ? drafts.find(
+              ({ draft: record }) =>
+                !attributed.has(record) &&
+                record.action === draft.action &&
+                record.matchingRecords?.includes(draft.record) &&
+                record.recordedAt === draft.recordedAt &&
+                record.before === draft.before &&
+                record.after === draft.after,
+            )
+          : undefined;
+      if (mirrored) {
+        mirrored.draft.who = draft.who;
+        attributed.add(mirrored.draft);
+      } else drafts.push({ draft, source: "Audit" });
+    }
   }
 
   // A session act already shown on the same record, at the same moment, as the same act is not
   // repeated. A different act in the same minute keeps its own row.
   const seen = new Set(
-    drafts.flatMap(({ draft }) =>
-      (draft.eventTypes ?? ACTION_EVENT_TYPES.get(draft.action) ?? []).map(
-        (type) => `${draft.record}@${draft.recordedAt ?? draft.occurredAt}@${type}`,
+    drafts
+      .filter(({ draft }) => draft.observationAccepted !== false)
+      .flatMap(({ draft }) =>
+        (draft.eventTypes ?? ACTION_EVENT_TYPES.get(draft.action) ?? []).flatMap((type) =>
+          (draft.matchingRecords ?? [draft.record]).map(
+            (record) => `${record}@${draft.recordedAt ?? draft.occurredAt}@${type}`,
+          ),
+        ),
       ),
-    ),
   );
+  // Refused observation attempts are evidence too. Pair the two session sources one for one;
+  // an accepted change in the same minute is never evidence of a refused attempt.
+  const refusalKey = (record: string, at: Instant | null, role: string | null | undefined) =>
+    JSON.stringify([record, at, role ?? null]);
+  const auditedRefusals = new Map<string, number>();
+  for (const event of input.auditEvents ?? []) {
+    if (event.action !== "RECORD_OBSERVATION_LEVEL" || (event.outcome !== "denied" && event.outcome !== "stale"))
+      continue;
+    const record = auditRecord(event);
+    if (record === null || !recordKeys.has(record)) continue;
+    const key = refusalKey(record, finite(event.at), event.actor.role);
+    auditedRefusals.set(key, (auditedRefusals.get(key) ?? 0) + 1);
+  }
   for (const entry of input.eventLog) {
     const record = logRecord(entry, recordIds, units);
     const at = finite(entry.now);
     if (record === null) continue;
+    if (entry.type === "RECORD_OBSERVATION_LEVEL" && !entry.accepted) {
+      const key = refusalKey(record, at, entry.role);
+      const count = auditedRefusals.get(key) ?? 0;
+      if (count > 0) {
+        auditedRefusals.set(key, count - 1);
+        continue;
+      }
+    }
     if (entry.accepted && seen.has(`${record}@${at}@${dedupeType(entry.type, entry.role)}`)) continue;
     const wording = eventHistoryWording(entry.type, entry.role, wardOfRecord(record)) ?? entry.type;
     const action = entry.accepted ? wording : `${wording} (refused)`;
@@ -784,19 +899,41 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
     });
   }
 
+  // Identity follows the recorded event, so inserting an unrelated row cannot retarget an open
+  // detail. Identical repeated entries retain separate keys without depending on other rows.
+  const occurrences = new Map<string, number>();
   const rows = drafts
-    .map(({ draft, source }, index) => ({
-      key: `${source}-${index}`,
-      occurredAt: draft.occurredAt ?? draft.recordedAt,
-      recordedAt: draft.recordedAt,
-      who: draft.who,
-      action: draft.action,
-      record: draft.record.split(" ")[0] ?? draft.record,
-      before: draft.before ?? "",
-      after: draft.after ?? "",
-      reason: draft.reason ?? "",
-      source,
-    }))
+    .map(({ draft, source }) => {
+      const identity = JSON.stringify([
+        source,
+        draft.record,
+        draft.occurredAt,
+        draft.recordedAt,
+        draft.who,
+        draft.action,
+        draft.before,
+        draft.after,
+        draft.reason,
+      ]);
+      const occurrence = occurrences.get(identity) ?? 0;
+      occurrences.set(identity, occurrence + 1);
+      // Keep internal record identifiers and free text out of the rendered row key.
+      let hash = 14695981039346656037n;
+      for (let index = 0; index < identity.length; index += 1)
+        hash = BigInt.asUintN(64, (hash ^ BigInt(identity.charCodeAt(index))) * 1099511628211n);
+      return {
+        key: `${source}-${hash.toString(16)}-${occurrence}`,
+        occurredAt: draft.occurredAt ?? draft.recordedAt,
+        recordedAt: draft.recordedAt,
+        who: draft.who,
+        action: draft.action,
+        record: draft.record.split(" ")[0] ?? draft.record,
+        before: draft.before ?? "",
+        after: draft.after ?? "",
+        reason: draft.reason ?? "",
+        source,
+      };
+    })
     .map((row, index) => ({ row, index }))
     .sort((a, b) => sortInstant(a.row) - sortInstant(b.row) || a.index - b.index)
     .map(({ row }) => row);

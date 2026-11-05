@@ -67,7 +67,7 @@ export function renderEdRowFacts(row: EdBoardRowModel, ctx: EdScreenContext) {
       <span className="sr-only" data-testid={`ward-ed-gender-${movement.id}`}>
         Gender: {movement.gender ?? "Not yet recorded"}
       </span>
-      {movement.transportNeed?.needed === false ? (
+      {!movement.transport && movement.transportNeed?.needed === false ? (
         <span className={styles.sub} data-testid={`ward-ed-no-transport-badge-${movement.id}`}>
           No transport needed
         </span>

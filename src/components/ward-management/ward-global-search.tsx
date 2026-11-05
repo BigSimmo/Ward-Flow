@@ -1,5 +1,7 @@
 "use client";
 
+import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
+
 import { lockPageScroll } from "@/components/wf/sheet-focus";
 import { isGlobalSearchShortcut } from "@/components/ward-management/search/search-shortcut";
 import { revealWardOption } from "@/components/ward-management/ward-scroll";
@@ -39,18 +41,19 @@ import { usePatientNameDisplay } from "@/components/ward-management/settings/dis
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import { WARD_ADD_PERSON_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
-import { setDeskRole } from "@/components/ward-management/ward-role-gate";
+import { useDeskRoleSwitch } from "@/components/ward-management/ward-role-gate";
 import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { DEMO_CONTROLS_OFF } from "@/components/ward-management/ward-flow-raise";
 import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/persona-sync";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
-import { type Patient } from "@/components/ward-management/ward-patients";
+import { foldPatientSearchText, type Patient } from "@/components/ward-management/ward-patients";
 import { ChevronRight, Search, X } from "lucide-react";
 
 import styles from "./ward-global-search.module.css";
 import {
   needsYouMeta,
   censusRowItem,
+  recentViewItem,
   smartSearchGroups,
   closingFirst,
   type HelpPreviewSource,
@@ -60,8 +63,10 @@ import {
 } from "./ward-global-search-groups";
 import { SearchOptionBody } from "./ward-global-search-option-body";
 import { WardSearchCommands } from "./ward-global-search-commands";
+import { WardSearchKeyHints } from "./ward-global-search-key-hints";
 import { askWardHelp, looksLikeHelpQuestion } from "./help/ward-help-events";
 import { useWardFeatureFlag } from "./shell/ward-feature-flag-store";
+import { useAccessNavFilter } from "./shell/ward-access";
 import { recentsLifetimeNow, rememberRecent, useSessionRecents } from "./ward-global-search-recents";
 import {
   EmptyTry,
@@ -85,17 +90,9 @@ export { clearGlobalSearchRecents } from "./ward-global-search-recents";
 export { permittedSearchResult } from "./ward-global-search-smart";
 
 /**
- * WARD FLOW'S GLOBAL SEARCH — one control, mounted once in the header of every ward route.
- *
- * OWNER RULING: this is the one part of the chrome that does NOT adapt between roles. Same
- * position, same width, same keyboard shortcut everywhere a coordinator, an ED psychiatrist or a
- * ward manager works, so a habit learned in one role works in every other. The only thing that may
- * differ is a small "scope" chip — and that difference belongs to the CALLER, not to this file.
- *
- * ⚠️ THIS COMPONENT CONTAINS NO ROLE LOGIC AT ALL. It takes `scope` as a plain `ReactNode` and
- * renders whatever it is given, unexamined. It does not know what a role is, does not branch on
- * one, and does not read `WardRole` from `ward-derivations.ts`. Whoever wires this into a header
- * decides what the chip says; this file only reserves the slot.
+ * Global search keeps its position, width and keyboard shortcut across desks (owner ruling).
+ * Callers supply the scope chip. Shared catalogue matches use the menu's own-place destination
+ * adaptation followed by the caller's permission checks.
  *
  * PALETTE (Josh, 8 Oct 2026, option B of the global search mockups). The field stays where it is in
  * the header. Focusing it opens a glass palette under the bar, over a soft scrim: kind chips with
@@ -119,15 +116,9 @@ export { permittedSearchResult } from "./ward-global-search-smart";
  * census while the palette is open (`search/search-answers.ts`), and the preview takes each
  * person's "where now" and next step from the same census, so the two screens never disagree.
  *
- * NAVIGATION: every real link is a `next/link` `<Link>`, so a plain click, a middle click and a
- * ctrl/cmd-click all behave exactly as a browser link should — nothing here intercepts those.
- * `onNavigate` exists only so a test can observe which record a click or an Enter-key selection
- * was headed for without needing a router in the tree; when it is supplied, a plain unmodified left
- * click and a keyboard selection call it instead of letting the anchor navigate for real. When it
- * is absent (real usage), a plain click on a result falls through to the anchor's own navigation
- * untouched, and a keyboard Enter selection uses `next/navigation`'s router — the one path that has
- * no anchor of its own to fall back on, because the option the keyboard has moved to is named by
- * `aria-activedescendant`, not by the browser's own focus.
+ * NAVIGATION: real links preserve plain, middle and modified clicks. `onNavigate` lets tests observe
+ * their destination. Keyboard selection uses the router because aria-activedescendant keeps focus
+ * on the textbox; imperative transitions ask the composed unsaved-work guard first.
  *
  * KEYBOARD: the input keeps focus throughout, per the ARIA textbox-with-listbox-popup pattern this
  * codebase already uses for `PatientTypeahead` — ArrowDown/ArrowUp move the active row,
@@ -351,13 +342,19 @@ export function WardGlobalSearch({
   const rootRef = useRef<HTMLDivElement | null>(null);
   const paletteRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
+  const deskSwitch = useDeskRoleSwitch();
   const nameFor = usePatientNameDisplay();
   const wardFlow = useOptionalWardFlow();
   const demoOff = wardFlow?.demoControlsAvailable === false;
   const preparing = wardFlow?.sessionAdopted === false;
+  const accessNav = useAccessNavFilter();
   const permittedResult = useCallback(
-    (item: SearchResultItem) => permittedSearchResult(item, canOpenHref, canRunAction),
-    [canOpenHref, canRunAction],
+    (item: SearchResultItem) => {
+      // Match the catalogue first, then apply the menu's own-place destination and gate.
+      const adapted = item.kind === "view" ? accessNav([{ ...item, label: item.title }]) : [item];
+      return adapted.flatMap((shown) => permittedSearchResult(shown, canOpenHref, canRunAction));
+    },
+    [accessNav, canOpenHref, canRunAction],
   );
 
   const [query, setQuery] = useState(initialQuery);
@@ -389,14 +386,22 @@ export function WardGlobalSearch({
             units,
             referrals,
             now,
-            limitPerGroup: FULL_RESULTS_PER_GROUP,
+            limitPerGroup: Number.POSITIVE_INFINITY,
             plannedAdmissions,
             admissions: wardFlow?.admissions,
           }),
     [trimmed, patients, movements, units, referrals, now, plannedAdmissions, wardFlow?.admissions],
   );
 
-  const refusal = trimmed.length === 0 ? undefined : refusalFor(trimmed);
+  const literalPerson = patients.some((patient) =>
+    [
+      patient.givenName,
+      patient.familyName,
+      `${patient.givenName} ${patient.familyName}`,
+      `${patient.familyName}, ${patient.givenName}`,
+    ].some((name) => foldPatientSearchText(name) === foldPatientSearchText(trimmed)),
+  );
+  const refusal = trimmed.length === 0 || literalPerson ? undefined : refusalFor(trimmed);
   const help = useMemo(
     () => (!findHelp || refusal || trimmed.length === 0 ? NO_HELP : findHelp(trimmed)),
     [findHelp, refusal, trimmed],
@@ -471,6 +476,9 @@ export function WardGlobalSearch({
           const row = census?.rows.find((candidate) => candidate.kind === "admission" && candidate.key === recent.id);
           return row ? [censusRowItem(row)] : [];
         }
+        // The catalogue row only: the start groups' permittedResult pass applies the menu's own-place
+        // destination and then the caller's route permission, so a revoked screen still drops out.
+        if (recent.kind === "view") return recentViewItem(recent.id);
         let query = recent.id;
         if (recent.kind === "person") {
           const patient = patients.find((candidate) => candidate.id === recent.id);
@@ -492,7 +500,7 @@ export function WardGlobalSearch({
           now,
           plannedAdmissions,
           admissions,
-          limitPerGroup: FULL_RESULTS_PER_GROUP,
+          limitPerGroup: Number.POSITIVE_INFINITY,
         });
         const item = smartSearchGroups(current, query, units, lookup)
           .flatMap((group) => group.items)
@@ -516,22 +524,29 @@ export function WardGlobalSearch({
     ],
   );
 
-  // Groups cut at the full limit: the engine's, plus the answer group when more rows answer it.
-  const truncatedGroups = useMemo(() => {
-    const engine = smartResults?.truncatedGroups ?? [];
-    return answer && answer.total > answer.rows.length ? [...engine, "answers"] : engine;
-  }, [smartResults, answer]);
-
-  /** Every matched group in full (up to the full limit), in the engine's intent order. */
-  const allGroups = useMemo(
+  // Apply navigation permission before the display limit: inaccessible catalogue rows must
+  // never consume the only slot in which a permitted team could appear.
+  const permittedGroups = useMemo(
     () =>
       (!smartResults || refusal ? [] : smartSearchGroups(smartResults, trimmed, units, lookup, answer, help.items))
-        .map((group) => ({
-          ...group,
-          items: group.items.flatMap(permittedResult),
-        }))
+        .map((group) => ({ ...group, items: group.items.flatMap(permittedResult) }))
         .filter((group) => group.items.length > 0),
     [smartResults, refusal, trimmed, units, lookup, answer, help, permittedResult],
+  );
+  const truncatedGroups = useMemo(
+    () => [
+      ...permittedGroups.filter((group) => group.items.length > FULL_RESULTS_PER_GROUP).map((group) => group.key),
+      ...(answer && answer.total > answer.rows.length ? ["answers"] : []),
+    ],
+    [permittedGroups, answer],
+  );
+  const allGroups = useMemo(
+    () =>
+      permittedGroups.map((group) => ({
+        ...group,
+        items: group.items.slice(0, FULL_RESULTS_PER_GROUP),
+      })),
+    [permittedGroups],
   );
 
   const kindCounts = useMemo(() => {
@@ -549,12 +564,13 @@ export function WardGlobalSearch({
 
   /** The four common screens: the start screen's Go to, and the empty state's Try. */
   const startViews = useMemo(() => {
+    const views = accessNav(CORE_SEARCH_VIEWS.map((view) => ({ ...view, id: view.key, label: view.title })));
     const usual = START_VIEW_KEYS.flatMap((key) => {
-      const view = CORE_SEARCH_VIEWS.find((candidate) => candidate.key === key);
+      const view = views.find((candidate) => candidate.key === key);
       return view && canOpenHref(view.href) ? [view] : [];
     });
-    return usual.length ? usual : CORE_SEARCH_VIEWS.filter((view) => canOpenHref(view.href)).slice(0, 4);
-  }, [canOpenHref]);
+    return usual.length ? usual : views.filter((view) => canOpenHref(view.href)).slice(0, 4);
+  }, [accessNav, canOpenHref]);
 
   /** What someone sees before typing: live work, recent records, common screens and actions. */
   const startGroups = useMemo(() => {
@@ -646,7 +662,10 @@ export function WardGlobalSearch({
    * list is painted with a stale row still marked active, and on a control whose Enter key
    * navigates, that frame is the one where Enter would go to a record nobody is looking at.
    */
-  const optionsKey = useMemo(() => JSON.stringify(options.map(({ kind, id, href }) => [kind, id, href])), [options]);
+  const optionsKey = useMemo(
+    () => JSON.stringify([trimmed, options.map(({ kind, id, href }) => [kind, id, href])]),
+    [options, trimmed],
+  );
   const [seenOptionsKey, setSeenOptionsKey] = useState(optionsKey);
   // The Go to row is active without anyone choosing it: Enter opens it, but Home, End and Tab keep
   // their editing and group jobs until the arrows have moved (search audit, 3 Nov 2026).
@@ -670,7 +689,10 @@ export function WardGlobalSearch({
    * own Open buttons. Screens, places and actions still open straight away.
    */
   const [sheetItem, setSheetItem] = useState<SearchResultItem | undefined>(undefined);
-  const phoneSheetItem = isPhone && sheetItem && options.includes(sheetItem) ? sheetItem : undefined;
+  const phoneSheetItem =
+    isPhone && sheetItem
+      ? options.find((item) => item.kind === sheetItem.kind && item.id === sheetItem.id && item.href === sheetItem.href)
+      : undefined;
 
   /*
    * D1-style fix, same reason `PatientTypeahead` carries it: the list clips with its own scrollbar,
@@ -814,64 +836,52 @@ export function WardGlobalSearch({
     }
   }
 
-  /**
-   * Leaving the page can unmount a form with unsaved fields. Ask the composed leave guard first
-   * (it prompts once if ANY mounted guard is dirty) and stay put when the answer is no.
-   */
-  function confirmLeave(): boolean {
-    const confirmNavigation = (window as typeof window & { __wardFlowConfirmNavigation?: () => boolean })
-      .__wardFlowConfirmNavigation;
-    return !confirmNavigation || confirmNavigation();
-  }
-
   /** P141 (Josh, 27 Oct 2026, 10:12 PM AWST): the search box clears after a result opens. */
   function clearAfterOpen() {
     setQuery("");
     close();
   }
 
-  /** `confirmed` is true when the caller has already asked, so the person is never asked twice. */
-  /** A Help row runs Show me or opens Help instead of a page, when its caller says so. */
+  /** Help choices share the same unsaved-work decision as route navigation. */
   function openedAsHelp(item: SearchResultItem | undefined): boolean {
-    if (item?.kind !== "help" || !onHelpResult || !onHelpResult(item.id)) return false;
-    clearAfterOpen();
+    if (item?.kind !== "help" || !onHelpResult) return false;
+    navigateWithDirtyGuard(() => {
+      if (accessLifetime === null || recentsLifetimeNow() !== accessLifetime) return;
+      if (onHelpResult(item.id)) clearAfterOpen();
+      else if (item.href !== "") select(item.href, true);
+    });
     return true;
   }
 
   function select(href: string, confirmed = false) {
     if (accessLifetime === null || recentsLifetimeNow() !== accessLifetime) return;
-    if (!confirmed && !confirmLeave()) return;
-    if (recentsLifetimeNow() !== accessLifetime) return;
-    remember(href);
-    clearAfterOpen();
-    if (onNavigate) onNavigate(href);
-    else router.push(href);
+    const go = () => {
+      if (recentsLifetimeNow() !== accessLifetime) return;
+      remember(href);
+      clearAfterOpen();
+      if (onNavigate) onNavigate(href);
+      else router.push(href);
+    };
+    if (confirmed) go();
+    else navigateWithDirtyGuard(go);
   }
 
-  /**
-   * Only intercepts when a test has supplied `onNavigate`, and only for the plain click a real
-   * anchor would otherwise have handled itself. A modified click (middle button, ctrl/cmd, shift)
-   * on a current row is left completely alone in every case, real or tested, because that is the browser's own
-   * "open in a new tab/window" gesture and this control has no business overriding it.
-   */
+  /** Test routing intercepts plain clicks only; modified clicks retain the browser's link behaviour. */
   function onOptionClick(event: MouseEvent<HTMLAnchorElement>, href: string) {
     if (event.defaultPrevented || event.button !== 0) return;
     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     if (!onNavigate) {
-      // A real link navigates itself; the palette only closes behind it and keeps the record.
       remember(href);
       clearAfterOpen();
       return;
     }
     event.preventDefault();
-    // A real anchor click was already confirmed by the dirty-state guard's own click handler.
     select(href, true);
   }
 
   /** A preview action is a plain link too, with the same modified-click rule as a row. */
   function onPreviewOpen(event: MouseEvent<HTMLAnchorElement>, href: string) {
-    // Preview actions use real links too, so apply the stale-result guard before remembering or
-    // allowing plain, modified, or assistive-technology activation to leave this page.
+    // Guard stale previews before any browser or keyboard activation.
     if (!resultsCurrent || accessLifetime === null || recentsLifetimeNow() !== accessLifetime) {
       event.preventDefault();
       event.stopPropagation();
@@ -898,7 +908,6 @@ export function WardGlobalSearch({
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    // Enter/Escape/arrows may still belong to an input method's candidate chooser (including Safari's 229).
     if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
     if (event.shiftKey || event.ctrlKey || event.metaKey || event.altKey) return;
     if (event.key === "Escape") {
@@ -934,12 +943,10 @@ export function WardGlobalSearch({
       setHoverIndex(-1);
       setActiveIndex(options.length - 1);
     } else if (event.key === "Enter") {
-      // No active row means nobody has been pointed at yet — Enter belongs to whatever else might
-      // want it (a surrounding form), and must never be turned into a navigation nobody chose.
+      // Enter opens only an explicitly selected result.
       if (activeIndex >= 0) {
         event.preventDefault();
         const active = options[activeIndex];
-        // A Help row with nowhere to go never navigates.
         if (!openedAsHelp(active) && active.href !== "") select(active.href);
       }
     } else if (event.key === "Tab" && !event.shiftKey && !isStart && groups.length > 1) {
@@ -1262,10 +1269,15 @@ export function WardGlobalSearch({
                   close();
                 }}
                 onSwitchDesk={(role, href) => {
-                  if (!confirmLeave()) return;
-                  setDeskRole(role, href);
-                  dispatchPersonaSyncForRole(role, undefined, href);
-                  select(href, true);
+                  navigateWithDirtyGuard(() => {
+                    if (deskSwitch.shared) {
+                      if (deskSwitch.canSwitch) deskSwitch.switchDesk(role, href);
+                      return;
+                    }
+                    deskSwitch.switchDesk(role, href);
+                    dispatchPersonaSyncForRole(role, undefined, href);
+                    select(href, true);
+                  });
                 }}
                 onHandover={() => select("/ward-flow/handover")}
               />
@@ -1313,27 +1325,7 @@ export function WardGlobalSearch({
         ) : null}
 
         <div className={styles.resultsFooter} data-testid="ward-global-search-footer">
-          <div className={styles.footerHints} aria-hidden="true" data-kbd-hint="">
-            <span className={styles.hintItem}>
-              <kbd className={styles.hintKbd}>↑</kbd>
-              <kbd className={styles.hintKbd}>↓</kbd>
-              <span className={styles.hintLabel}>Navigate</span>
-            </span>
-            <span className={styles.hintItem}>
-              <kbd className={styles.hintKbd}>↵</kbd>
-              <span className={styles.hintLabel}>Select</span>
-            </span>
-            {isStart ? null : (
-              <span className={styles.hintItem}>
-                <kbd className={styles.hintKbd}>Tab</kbd>
-                <span className={styles.hintLabel}>Next group</span>
-              </span>
-            )}
-            <span className={styles.hintItem}>
-              <kbd className={styles.hintKbd}>Esc</kbd>
-              <span className={styles.hintLabel}>Dismiss</span>
-            </span>
-          </div>
+          <WardSearchKeyHints isStart={isStart} />
           {canOpenHref(PATIENT_SEARCH_HREF) ? (
             <Link
               href={PATIENT_SEARCH_HREF}

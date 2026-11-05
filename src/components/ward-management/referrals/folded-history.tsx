@@ -1,19 +1,12 @@
 "use client";
 
-import { createContext, useContext, useId, type ComponentProps, type ReactNode } from "react";
+import { useContext, useId, type ComponentProps, type ReactNode } from "react";
+
+import { HistoryFoldContext } from "./folded-history-context";
 
 import { ReferralHistoryAndCorrections } from "./referral-history-corrections";
 
 import styles from "./referral-page.module.css";
-
-type Fold = { open: boolean; onToggle: () => void };
-
-/** Present only where the decision pane folds the history; without it the history shows in full. */
-const HistoryFoldContext = createContext<Fold | null>(null);
-
-export function HistoryFoldProvider({ value, children }: { value: Fold; children: ReactNode }) {
-  return <HistoryFoldContext.Provider value={value}>{children}</HistoryFoldContext.Provider>;
-}
 
 /**
  * The decision pane's other show-more controls ("Submitted documentation", "Referrer cancelled?")

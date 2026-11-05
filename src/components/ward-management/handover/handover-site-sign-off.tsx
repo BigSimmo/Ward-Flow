@@ -8,6 +8,7 @@
  * unsigned ward never blocks the site's sign-off (Q62). The logic lives in
  * `site-sign-off/site-handover-sign-off.ts`; this file only shows it and sends the two events.
  */
+import { placeDisplayName } from "@/components/ward-management/ward-place-names";
 import Link from "next/link";
 import { useId } from "react";
 import { Check } from "lucide-react";
@@ -19,7 +20,6 @@ import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-managemen
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { useUndoableStep } from "@/components/ward-management/use-undoable-step";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
-import { siteByCode } from "@/components/ward-management/ward-sites";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 import { BED_MEETING_AGENDA_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import {
@@ -141,8 +141,8 @@ export function HandoverSiteSignOff({
   // The site signs the next handover only: the reducer refuses any other.
   const shiftId = defaultHandoverShift(now);
   const shiftAt = handoverAt(shiftId, now);
-  const siteName = siteByCode(siteCode)?.name ?? siteCode;
-  const wardName = (unitId: string) => units.find((unit) => unit.id === unitId)?.name ?? unitId;
+  const siteName = placeDisplayName(siteCode);
+  const wardName = (unitId: string) => placeDisplayName(unitId, units);
 
   // The React compiler memoises this component, so the derivations below are plain.
   const wards = siteWardSignOffs(units, handoverSignOffs, siteCode, shiftAt);

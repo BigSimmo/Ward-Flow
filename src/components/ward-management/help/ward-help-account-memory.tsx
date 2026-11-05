@@ -5,8 +5,8 @@
  * recommendations"). A signed-in account keeps the desks whose tour is done, the page tips already
  * seen, whether tips are turned off and the What's new lines already read on the server (migration
  * 17), so a new phone, PC or browser does not show them all again. At sign-in the account's memory
- * and this device's are combined: seen on either counts as seen. Later marks are sent as they are
- * made. The device keeps its own copy, so Help works the same when the server cannot be reached,
+ * is applied to this device. Only marks made while this account is signed in are sent back;
+ * existing device marks may belong to someone else on a shared desk. The device keeps its own copy, so Help works the same when the server cannot be reached,
  * before migration 17 (`shared: false`) and on the demo site, which has no account and keeps device
  * memory only. Desk role ids, static Help topic ids and What's new entry ids only.
  */
@@ -106,6 +106,8 @@ export function WardHelpAccountMemory() {
   useEffect(() => {
     if (!call || !actorId) return;
     let live = true;
+    // Existing marks have no account provenance; never import them into a signed-in account.
+    const beforeSignIn = deviceHelpMemory();
     // What the account is known to hold, so a save sends only what is new to it.
     let account: AccountHelpMemory | null = null;
     let applying = false;
@@ -114,7 +116,13 @@ export function WardHelpAccountMemory() {
     const send = () => {
       timer = undefined;
       if (!live || !account) return;
-      const body: Record<string, unknown> = { ...missingFromAccount(deviceHelpMemory(), account) };
+      const madeHere = missingFromAccount(deviceHelpMemory(), beforeSignIn);
+      const body: Record<string, unknown> = {
+        ...missingFromAccount(
+          { tours: madeHere?.tours ?? [], tips: madeHere?.tips ?? [], whatsNew: madeHere?.whatsNew ?? [] },
+          account,
+        ),
+      };
       if (tipsChanged) {
         const choice = helpTipsChoice();
         if (choice !== null && choice !== account.tipsOff) body.tipsOff = choice;
@@ -127,7 +135,7 @@ export function WardHelpAccountMemory() {
           if (live && held) account = held;
         },
         () => {
-          // The device keeps its own copy, and the next mark or sign-in sends it again.
+          // The device keeps its copy; another mark during this account session retries the save.
         },
       );
     };
@@ -149,8 +157,6 @@ export function WardHelpAccountMemory() {
           applying = false;
         }
         account = held;
-        // A choice made on this device before the account had one is kept.
-        if (held.tipsOff === null && helpTipsChoice() !== null) tipsChanged = true;
         send();
       },
       () => {

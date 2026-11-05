@@ -539,7 +539,7 @@ type OutstandingItem = { kind: "handover" | "transport" | "examination" | "form"
  */
 export function outstandingItem(movement: Movement): OutstandingItem {
   if (movement.stage === "pulled") {
-    if (movement.transportNeed?.needed === false) {
+    if (!movement.transport && movement.transportNeed?.needed === false) {
       return {
         kind: "handover",
         label: "Handover",

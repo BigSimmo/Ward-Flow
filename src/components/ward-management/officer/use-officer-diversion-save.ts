@@ -2,6 +2,7 @@
 
 import { useState, type SetStateAction } from "react";
 import { useWardShellPublic } from "../shell/ward-shell-public-context";
+import { useDirtyStateGuard } from "../use-dirty-state-guard";
 import { useHoldOpenForm } from "../use-hold-open-form";
 import { useWardFormSave } from "../use-ward-form-save";
 import type { DiversionReason, TransportWhereabouts } from "../ward-change-reasons";
@@ -22,6 +23,11 @@ export function useOfficerDiversionSave(
   const draft: Draft = view.scope === scope ? view.draft : { open: false };
   const save = useWardFormSave(`diversion:${scope}`);
   useHoldOpenForm(draft.open);
+  useDirtyStateGuard({
+    isDirty: save.pending || (draft.open && (draft.reason !== undefined || draft.place !== undefined)),
+    value: JSON.stringify([scope, draft]),
+    confirmMessage: "The diversion has unsaved answers. Leave without recording them?",
+  });
   function set<K extends keyof Draft>(field: K, next: SetStateAction<Draft[K]>) {
     setView((current) => {
       const before: Draft = current.scope === scope ? current.draft : { open: false };

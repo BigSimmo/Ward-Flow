@@ -60,6 +60,14 @@ const REGISTER: Record<string, { cover: Cover; why?: string; formIn?: string }> 
   "handover/handover-page.tsx": { cover: "popup" },
   "hub/hub-screen.tsx": { cover: "popup" },
   "legal-forms/legal-forms-screen.tsx": { cover: "popup", why: "Record a form opens in a sheet." },
+  "legal-forms/legal-form-details.tsx": {
+    cover: "popup",
+    why: "Form details sit in the focus panel, which opens only in the form Drawer (phone: PhoneSheet).",
+  },
+  "legal-forms/legal-forms-panel.tsx": {
+    cover: "popup",
+    why: "The focus panel opens only in the form Drawer (phone: PhoneSheet), which the board already holds.",
+  },
   "loop-checks/ward-closure-loop-checks.tsx": { cover: "held" },
   "movements/movement-drawer.tsx": {
     cover: "popup",

@@ -1,4 +1,4 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
@@ -37,6 +37,35 @@ describe("declared source-reading dependency selection", () => {
     write("src/reexport.ts", 'export { value } from "./value.js";');
     write("tests/c.test.ts", 'import { value } from "../src/reexport";');
     expect(selectRelatedTests({ root, changed: ["src/value.ts"] }).selected).toContain("tests/c.test.ts");
+  });
+  it("follows the real shared HTTP contract's immutable variable imports", () => {
+    const { root, write } = fixture();
+    write(
+      "tests/ward-shared-backend-contract.test.ts",
+      readFileSync(new URL("./ward-shared-backend-contract.test.ts", import.meta.url), "utf8"),
+    );
+    write("backend/ward-flow/shared-http.mjs", "export function createSharedHandler() {};");
+    write("backend/ward-flow/viewer.test-support.mjs", "export function bootstrapViewer() {};");
+    const selection = selectRelatedTests({ root, changed: ["backend/ward-flow/shared-http.mjs"] });
+    expect(selection.selected).toContain("tests/ward-shared-backend-contract.test.ts");
+  });
+  it("follows constant dynamic imports and marks unresolved or shadowed loads incomplete", () => {
+    const { root, write } = fixture();
+    write("tests/constant.test.ts", 'const modulePath = "../src/value"; await import(modulePath);');
+    expect(selectRelatedTests({ root, changed: ["src/value.ts"] }).selected).toContain("tests/constant.test.ts");
+    write("tests/dynamic.test.ts", "const modulePath = process.env.MODULE_PATH; await import(modulePath);");
+    const uncertain = selectRelatedTests({ root, changed: ["src/value.ts"] });
+    expect(uncertain.partial).toBe(true);
+    expect(uncertain.note).toContain("unresolved module loads");
+    write(
+      "tests/dynamic.test.ts",
+      'const modulePath = "../src/value"; function load(modulePath) { return import(modulePath); }',
+    );
+    expect(selectRelatedTests({ root, changed: ["src/value.ts"] }).partial).toBe(true);
+  });
+  it("keeps directly changed tests selected without scanning unrelated modules", () => {
+    const { root } = fixture();
+    expect(selectRelatedTests({ root, changed: ["tests/a.test.ts"] }).selected).toEqual(["tests/a.test.ts"]);
   });
   it("refuses paths outside the checkout", () => {
     const { root } = fixture();

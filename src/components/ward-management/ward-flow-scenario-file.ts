@@ -4,6 +4,7 @@ import { checkSyntheticPayload } from "@/lib/synthetic-data-guard";
 import {
   isValidStoredWardFlowState,
   migrateStoredWardFlowState,
+  storedStateRestoreProblem,
   WARD_FLOW_STORED_STATE_VERSION,
   withInboxStreamADefaults,
 } from "./ward-flow-storage-validation";
@@ -137,8 +138,14 @@ export function readScenarioFile(text: string, stateVersion: number): ScenarioFi
         : null;
   if (stored === null) return { ok: false, reason: WRONG_VERSION };
   const now = file.now;
-  if (typeof now !== "number" || !Number.isFinite(now) || !isValidStoredWardFlowState(stored))
-    return { ok: false, reason: DAMAGED };
+  if (typeof now !== "number" || !Number.isFinite(now)) return { ok: false, reason: DAMAGED };
+  if (!isValidStoredWardFlowState(stored)) {
+    const problem = storedStateRestoreProblem(stored);
+    return {
+      ok: false,
+      reason: problem === undefined ? DAMAGED : `This scenario could not be restored: ${problem}. Nothing was loaded.`,
+    };
+  }
   const state = withInboxStreamADefaults(stored);
   // The provider also refuses a clock earlier than the scenario anchor: only a named few files may
   // read that constant (`tests/ward-flow-single-source.test.ts`).

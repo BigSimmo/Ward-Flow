@@ -37,6 +37,7 @@ import { recordDetailOf, withoutRecordDetail } from "./record-detail.mjs";
 import { forecastHistoryStore } from "./forecast-history.mjs";
 import { accountPreferencesStore } from "./account-preferences.mjs";
 import { deskAuditPage } from "./desk-audit.mjs";
+import { ownCommandReceipt } from "./own-command-receipt.mjs";
 
 /**
  * One run of `task` at a time. A call while one is out joins it and asks for one more pass, so
@@ -464,7 +465,7 @@ export function createWorkspaceStore(
     const covers = new Map();
     if (holders.length) {
       const { rows } = await client.query(
-        "SELECT actor_id, role, scope FROM ward_flow.memberships WHERE workspace_id=$1 AND kind='cover' AND role='ward' AND revoked_at IS NULL AND expires_at > $2 AND actor_id = ANY($3::uuid[])",
+        `SELECT actor_id, role, scope FROM ward_flow.memberships WHERE workspace_id=$1 AND kind='cover' AND role='ward' AND revoked_at IS NULL AND expires_at > $2 AND granted_at > $2::timestamptz - ${MAX_TERM} AND actor_id = ANY($3::uuid[])`,
         [workspaceId, at, holders],
       );
       for (const row of rows) {
@@ -608,6 +609,9 @@ export function createWorkspaceStore(
       await client.query("COMMIT");
       return result;
     } catch (error) {
+      // An uncommitted candidate is never evidence for a later writer's matching revision/time.
+      // Invalidate before awaiting rollback, including when COMMIT's reply itself was lost.
+      pending = null;
       forgetVersionOnMissing(error);
       try {
         await client.query("ROLLBACK");
@@ -1176,7 +1180,7 @@ export function createWorkspaceStore(
       let last = null;
       for (;;) {
         const { rows: desks } = await client.query(
-          `SELECT DISTINCT m.id, m.actor_id, m.role, m.scope, m.kind FROM ward_flow.push_subscriptions s JOIN ward_flow.memberships m ON m.id = s.membership_id WHERE s.workspace_id=$1 AND s.revoked_at IS NULL AND m.revoked_at IS NULL AND m.expires_at > $2 AND ${inUse("$3")}${last ? " AND m.id > $4" : ""} ORDER BY m.id LIMIT ${DESK_PAGE}`,
+          `SELECT DISTINCT m.id, m.actor_id, m.role, m.scope, m.kind FROM ward_flow.push_subscriptions s JOIN ward_flow.memberships m ON m.id = s.membership_id WHERE s.workspace_id=$1 AND s.revoked_at IS NULL AND m.revoked_at IS NULL AND m.expires_at > $2 AND m.granted_at > $2::timestamptz - ${MAX_TERM} AND ${inUse("$3")}${last ? " AND m.id > $4" : ""} ORDER BY m.id LIMIT ${DESK_PAGE}`,
           [workspaceId, at, unusedBefore(at), ...(last ? [last] : [])],
         );
         if (!desks.length) break;
@@ -1238,10 +1242,11 @@ export function createWorkspaceStore(
       );
       const due = "d.status='pending' AND d.attempts < $3 AND (d.last_attempt_at IS NULL OR d.last_attempt_at <= $4)";
       // A bootstrap coordinator's device while it is still named; from 9 also a device held by a
-      // role that is still active and still in use, as the viewer counts it.
+      // role that is still active and still in use, as the viewer counts it. Pre-ceiling grants
+      // can carry later expiry dates: their maximum lifetime still ends at granted_at + MAX_TERM.
       const byRole = (await schemaVersion()) >= ACCESS_COVER_MIGRATION;
       const listener = byRole
-        ? `((s.membership_id IS NULL AND s.actor_id = ANY($2::uuid[])) OR EXISTS (SELECT 1 FROM ward_flow.memberships m WHERE m.id = s.membership_id AND m.revoked_at IS NULL AND m.expires_at > $5 AND ${inUse("$8")}))`
+        ? `((s.membership_id IS NULL AND s.actor_id = ANY($2::uuid[])) OR EXISTS (SELECT 1 FROM ward_flow.memberships m WHERE m.id = s.membership_id AND m.revoked_at IS NULL AND m.expires_at > $5 AND m.granted_at > $5::timestamptz - ${MAX_TERM} AND ${inUse("$8")}))`
         : "s.actor_id = ANY($2::uuid[])";
       // The desk a device was turned on from, so a retry is checked against that desk's place.
       const desk = byRole ? ", s.membership_id AS desk_id" : "";
@@ -1273,17 +1278,20 @@ export function createWorkspaceStore(
         const unseen = { ids: [], items: [] };
         /** @type {{ ids: string[], items: string[] }} */
         const outside = { ids: [], items: [] };
+        // Recheck membership after claiming and reading the world. A removal committed between
+        // those awaits must not lend its old scope to an already queued delivery.
         const deskIds = [...new Set(rows.map((row) => row.desk_id).filter(Boolean))];
+        const membershipAt = clock();
         const accesses = deskIds.length
           ? await deskAccesses(
               pool,
               (
                 await pool.query(
-                  "SELECT id, actor_id, role, scope, kind FROM ward_flow.memberships WHERE id = ANY($1::uuid[])",
-                  [deskIds],
+                  `SELECT id, actor_id, role, scope, kind FROM ward_flow.memberships m WHERE id = ANY($1::uuid[]) AND m.workspace_id=$2 AND m.revoked_at IS NULL AND m.expires_at > $3 AND m.granted_at > $3::timestamptz - ${MAX_TERM} AND ${inUse("$4")}`,
+                  [deskIds, workspaceId, membershipAt, unusedBefore(membershipAt)],
                 )
               ).rows,
-              at,
+              membershipAt,
             )
           : new Map();
         const scoped = new Map();
@@ -1327,7 +1335,46 @@ export function createWorkspaceStore(
             "DELETE FROM ward_flow.push_deliveries d USING unnest($1::bigint[], $2::text[]) AS u(id, item) WHERE d.subscription_id = u.id AND d.item_id = u.item AND d.status='pending' AND d.last_attempt_at=$3",
             [outside.ids, outside.items, at],
           );
-        const list = [...devices.values()];
+        // Scope loading can await another query. Re-read eligibility at a fresh time immediately
+        // before sending, so a max-term boundary crossed during those awaits never lends an old
+        // membership to the pending delivery. Bootstrap recipients were checked against config.
+        const pendingDevices = [...devices.values()];
+        const pendingDesks = [...new Set(pendingDevices.map((device) => device.desk_id).filter(Boolean))];
+        const sendingAt = clock();
+        const eligibleDesks = pendingDesks.length
+          ? (
+              await pool.query(
+                `SELECT id, actor_id, role, scope, kind FROM ward_flow.memberships m WHERE id = ANY($1::uuid[]) AND m.workspace_id=$2 AND m.revoked_at IS NULL AND m.expires_at > $3 AND m.granted_at > $3::timestamptz - ${MAX_TERM} AND ${inUse("$4")}`,
+                [pendingDesks, workspaceId, sendingAt, unusedBefore(sendingAt)],
+              )
+            ).rows
+          : [];
+        // Rejoin covers at this same fresh authority time. Rechecking just the base membership
+        // would keep an expired cover's earlier scope while the base desk remains active.
+        const sendingAccesses = await deskAccesses(pool, eligibleDesks, sendingAt);
+        const sendingItems = new Map();
+        for (const [deskId, access] of sendingAccesses)
+          sendingItems.set(deskId, new Set(engine.scopedActNowAlerts(world, access, sendingAt).map((item) => item.id)));
+        /** @type {{ ids: string[], items: string[] }} */
+        const noLongerAllowed = { ids: [], items: [] };
+        const list = pendingDevices.flatMap((device) => {
+          if (!device.desk_id) return [device];
+          const allowed = sendingItems.get(device.desk_id);
+          const items = device.items.filter((item) => {
+            if (allowed?.has(item.id)) return true;
+            noLongerAllowed.ids.push(device.id);
+            noLongerAllowed.items.push(item.id);
+            return false;
+          });
+          return items.length ? [{ ...device, items }] : [];
+        });
+        // Device-level delivery outcomes apply only to the items actually sent. Remove omitted
+        // claims first, or a mixed own/expired-cover batch would falsely mark the latter sent.
+        if (noLongerAllowed.ids.length)
+          await pool.query(
+            "DELETE FROM ward_flow.push_deliveries d USING unnest($1::bigint[], $2::text[]) AS u(id, item) WHERE d.subscription_id = u.id AND d.item_id = u.item AND d.status='pending' AND d.last_attempt_at=$3",
+            [noLongerAllowed.ids, noLongerAllowed.items, at],
+          );
         const sender = /** @type {WorkspacePush} */ (push);
         const results = await Promise.all(list.map((device) => sender.send(device, sender.payload(device.items))));
         /** @type {Record<"sent" | "expired" | "retry" | "rejected", string[]>} */
@@ -1466,8 +1513,8 @@ export function createWorkspaceStore(
       const { rows } = await connection
         .query(
           covers
-            ? `SELECT id, role, scope, kind, last_used_at, expires_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $4) ORDER BY granted_at, id LIMIT 20`
-            : `SELECT id, role, scope, expires_at, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} ORDER BY granted_at, id LIMIT 20`,
+            ? `SELECT id, role, scope, kind, last_used_at, expires_at FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} AND (kind = 'cover' OR coalesce(last_used_at, granted_at) > $4) ORDER BY granted_at, id`
+            : `SELECT id, role, scope, expires_at, 'role' AS kind FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} ORDER BY granted_at, id`,
           covers ? [workspaceId, actorId, at, unusedBefore(at)] : [workspaceId, actorId, at],
         )
         .catch((error) => {
@@ -1555,7 +1602,7 @@ export function createWorkspaceStore(
         });
     if (chosen.membershipId) {
       const { rows } = await connection.query(
-        `SELECT patient_id, opened_at, until FROM ward_flow.break_glass WHERE workspace_id=$1 AND actor_id=$2 AND membership_id=$3 AND until > $4 ORDER BY until DESC LIMIT ${GRANT_LIST_LIMIT}`,
+        `SELECT patient_id, opened_at, until FROM ward_flow.break_glass b WHERE workspace_id=$1 AND actor_id=$2 AND membership_id=$3 AND until > $4 AND EXISTS (SELECT 1 FROM ward_flow.audit a JOIN ward_flow.workspaces w ON w.id=a.workspace_id AND w.data_mode='prototype' WHERE a.workspace_id=b.workspace_id AND a.actor_id=b.actor_id AND a.action='BREAK_GLASS' AND a.outcome='accepted' AND a.changes->>'membershipId'=b.membership_id::text AND a.changes->>'patientId'=b.patient_id AND a.changes->>'reason'=b.reason AND a.changes->>'until'=to_char(b.until AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') AND coalesce(a.changes->'worldGeneration', '0'::jsonb)=w.payload->'state'->'worldGeneration') ORDER BY until DESC LIMIT ${GRANT_LIST_LIMIT}`,
         [workspaceId, actorId, chosen.membershipId, new Date(at.getTime() - GRANT_SETTLE_MS)],
       );
       const nowMs = at.getTime();
@@ -1697,6 +1744,22 @@ export function createWorkspaceStore(
   }
   /** Inside the workspace lock: a new role for a person until a set time, audited. */
   async function insertGrant(client, row, view, { actorId, access, expiresAt, kind = "role" }, at, action) {
+    if (kind === "role") {
+      const { rows: existing } = await client.query(
+        `SELECT * FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND role=$3 AND scope=$4::jsonb AND granted_by=$5 AND expires_at=$6 AND revoked_at IS NULL${view.version >= ACCESS_COVER_MIGRATION ? " AND kind='role'" : ""} AND granted_at > $7::timestamptz - ${MAX_TERM}${view.version >= ACCESS_COVER_MIGRATION ? " AND coalesce(last_used_at, granted_at) > $8" : ""} ORDER BY granted_at, id LIMIT 1`,
+        [
+          workspaceId,
+          actorId,
+          access.role,
+          JSON.stringify(access.scope),
+          view.actorId,
+          expiresAt,
+          at,
+          ...(view.version >= ACCESS_COVER_MIGRATION ? [unusedBefore(at)] : []),
+        ],
+      );
+      if (existing.length) return existing[0];
+    }
     const id = randomUUID();
     const { rows } = await client.query(
       kind === "cover"
@@ -1747,20 +1810,26 @@ export function createWorkspaceStore(
     let before = cursor;
     for (let page = 0; page < 10; page++) {
       const { rows } = await pool.query(
-        `SELECT sequence, actor_id, actor_role${scoped}, data_mode, action, outcome, prior_revision, revision, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype'${whole ? "" : " AND action LIKE 'ACCESS\\_%'"}${before === null ? "" : " AND sequence < $2::bigint"} ORDER BY sequence DESC LIMIT 200`,
+        `SELECT sequence, actor_id, command_id, actor_role${scoped}, data_mode, action, outcome, prior_revision, revision, changes, committed_at FROM ward_flow.audit WHERE workspace_id=$1 AND data_mode='prototype'${whole ? "" : " AND action LIKE 'ACCESS\\_%'"}${before === null ? "" : " AND sequence < $2::bigint"} ORDER BY sequence DESC LIMIT 200`,
         before === null ? [workspaceId] : [workspaceId, before],
       );
       for (const row of rows) {
         before = row.sequence;
         const access = statewide ? null : engine.parseAccess(row.changes?.role, row.changes?.scope);
-        if (statewide || (access && engine.scopeWithin(payload, access.scope, view.access.scope))) selected.push(row);
+        if (statewide || (access && engine.scopeWithin(payload, access.scope, view.access.scope))) {
+          const { command_id, ...event } = row;
+          selected.push({
+            ...event,
+            ...(view?.actorId === row.actor_id && typeof command_id === "string" ? { ownCommandId: command_id } : {}),
+          });
+        }
         if (selected.length === 200) return { events: selected, complete: false, nextCursor: String(before) };
       }
       if (rows.length < 200) return { events: selected, complete: true, nextCursor: null };
     }
     return { events: selected, complete: false, nextCursor: String(before) };
   }
-  return {
+  const store = {
     pushEnabled: !!push,
     async ready() {
       const { rows } = await pool.query("SELECT max(version) AS version FROM ward_flow.migrations");
@@ -2047,21 +2116,21 @@ export function createWorkspaceStore(
       }),
     // Legacy callers keep their array result; HTTP uses auditPage's explicit continuation.
     async audit(view, cursor = null) {
-      return (await auditPage(view, cursor)).events;
+      return (await store.auditPage(view, cursor)).events;
     },
-    /** Receipt lookup reveals only the authenticated actor's outcome, never stored request text. */
-    async receipt(actorId, commandId) {
+    /** Receipt lookup reveals only the authenticated actor's outcome, never stored request text.
+     * @param {string} actorId @param {string} commandId @param {any} [view]
+     */
+    async receipt(actorId, commandId, view = null) {
       const { rows } = await pool.query(
         "SELECT status, result FROM ward_flow.commands WHERE workspace_id=$1 AND actor_id=$2 AND command_id=$3",
         [workspaceId, actorId, commandId],
       );
-      const row = rows[0];
-      return row
-        ? {
-            outcome: row.status === 200 ? (row.result.outcome === "partly" ? "partly" : "accepted") : "refused",
-            commandRevision: row.result.commandRevision,
-          }
-        : null;
+      return ownCommandReceipt(
+        rows[0],
+        view?.access?.role === "executive" ? null : accessContext(clock(), view).accessContext,
+        !!view && view.actorId === actorId,
+      );
     },
     /**
      * Every active or waiting role and cover inside the access admin's own place, with when each
@@ -2160,7 +2229,7 @@ export function createWorkspaceStore(
         if (!giver) return refused(403, "Cover cannot be passed on. Ask the ward's nurse in charge or a coordinator.");
         // D-80: only a colleague who already holds a ward or ED role, still in use, may be given cover.
         const { rows: held } = await client.query(
-          "SELECT role FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND kind='role' AND revoked_at IS NULL AND expires_at > $3 AND coalesce(last_used_at, granted_at) > $4 AND role IN ('ward','ed') LIMIT 1",
+          `SELECT role FROM ward_flow.memberships WHERE workspace_id=$1 AND data_mode='prototype' AND actor_id=$2 AND kind='role' AND revoked_at IS NULL AND expires_at > $3 AND granted_at > $3::timestamptz - ${MAX_TERM} AND coalesce(last_used_at, granted_at) > $4 AND role IN ('ward','ed') LIMIT 1`,
           [workspaceId, request.actorId, at, unusedBefore(at)],
         );
         const refusal = engine.coverRefusal(
@@ -2400,7 +2469,16 @@ export function createWorkspaceStore(
           const patient = state.patients.find((candidate) => candidate.id === opened);
           const sent = (logged) => ({
             status: 200,
-            body: { logged, ...(patient ? { opened: patient.id, detail: recordDetailOf(patient) } : {}) },
+            body: {
+              logged,
+              ...(patient
+                ? {
+                    opened: patient.id,
+                    detail: recordDetailOf(patient),
+                    generation: stored.payload.state.worldGeneration,
+                  }
+                : {}),
+            },
           });
           if (lockedRecent[0]?.repeated) return sent(false);
           const { rowCount } = await client
@@ -2630,7 +2708,15 @@ export function createWorkspaceStore(
           outcome: "accepted",
           priorRevision: revision,
           revision,
-          changes: { patientId, reason, until: until.toISOString(), membershipId: view.membershipId, pattern },
+          changes: {
+            patientId,
+            reason,
+            until: until.toISOString(),
+            membershipId: view.membershipId,
+            pattern,
+            worldGeneration: row.payload.state.worldGeneration,
+            openedAt: at.toISOString(),
+          },
         });
         const opened = { ...view, grants: [...view.grants, { patientId, until }] };
         await prepareReviewAuthority(client, row, opened);
@@ -3017,4 +3103,28 @@ export function createWorkspaceStore(
       return response;
     },
   };
+  // These readers project against the initial request's authority. Recheck before returning
+  // their result, under the same workspace SHARE boundary used by detail and archive reads.
+  // Keep the potentially pooled reads outside that lock: initialization may need an UPDATE.
+  for (const name of [
+    "auditPage",
+    "deskAuditPage",
+    "listAccess",
+    "listCovers",
+    "recordViews",
+    "breakGlassOpenings",
+    "forecastHistory",
+  ]) {
+    const readProtected = store[name].bind(store);
+    store[name] = async (view, ...args) => {
+      const originalScope = JSON.stringify(view?.access);
+      const result = await readProtected(view, ...args);
+      if (!view?.membershipId) return result;
+      return currentRecordRead(view, async (_client, _at, current) => {
+        if (JSON.stringify(current.access) !== originalScope) throw new Error("role-ended");
+        return result;
+      });
+    };
+  }
+  return store;
 }

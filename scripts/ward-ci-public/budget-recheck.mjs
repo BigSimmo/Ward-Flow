@@ -18,13 +18,42 @@ import { pathToFileURL } from "node:url";
 
 const BUILD_JOB = "Ward Flow production build";
 const WORKFLOW = "ward-flow.yml";
+const MEASURED_MAIN_STEP = "Record the measured main";
+const MEASURED_MAIN_TITLE = "Ward budget main";
+const isSha = (value) => typeof value === "string" && /^[0-9a-f]{40}$/u.test(value);
+
+/** One complete, unambiguous notice from this build attempt, or no exact evidence. */
+export function budgetMainFromAnnotations(annotations) {
+  if (!Array.isArray(annotations) || annotations.length >= 100) return null;
+  const notices = annotations.filter(
+    (annotation) => annotation?.title === MEASURED_MAIN_TITLE && annotation?.annotation_level === "notice",
+  );
+  if (notices.length !== 1 || typeof notices[0].message !== "string") return null;
+  const sha = notices[0].message.trim();
+  return isSha(sha) ? sha : null;
+}
+
+/** Read only the latest build's own executed producer, never an earlier attempt's annotations. */
+export async function withBudgetMainReceipt(jobs, api) {
+  const builds = jobs.filter((job) => job.name === BUILD_JOB);
+  if (builds.length !== 1) return jobs;
+  const [build] = builds;
+  const producers = (build.steps ?? []).filter((step) => step.name === MEASURED_MAIN_STEP);
+  if (producers.length !== 1 || producers[0].conclusion !== "success") return jobs;
+  if (!Number.isInteger(build.id) || build.id < 1) throw new Error("Measured-main build has no valid check-run ID");
+  // A full page cannot prove that a conflicting annotation is not on the next page. Keep the
+  // legacy timestamp fallback instead of adding unbounded API fanout for optional deduplication.
+  const annotations = await api(`/check-runs/${build.id}/annotations?per_page=100`);
+  return jobs.map((job) => (job === build ? { ...job, budgetMainSha: budgetMainFromAnnotations(annotations) } : job));
+}
 
 /**
  * Decides what to do for one pull request from its latest CI run and that run's latest-attempt jobs.
- * `since` is when main moved (ms); a build that started after it already fetched the new main.
+ * Exact measured-main identity wins over timing. Without it, retain the legacy `since` cutoff:
+ * a build that started after main moved already fetched the new main.
  * Returns { action: "rerun", jobId } | { action: "wait" } | { action: "skip", reason }.
  */
-export function decide(pr, run, jobs, since) {
+export function decide(pr, run, jobs, since, mainSha = "") {
   if (pr.draft) return { action: "skip", reason: "draft" };
   if (!pr.auto_merge) return { action: "skip", reason: "auto-merge not armed" };
   if (!run) return { action: "skip", reason: "no Ward Flow CI run on the head yet" };
@@ -32,10 +61,14 @@ export function decide(pr, run, jobs, since) {
   if (run.head_sha && pr.head?.sha && run.head_sha !== pr.head.sha)
     return { action: "skip", reason: "run is for an older head" };
   const build = jobs.find((job) => job.name === BUILD_JOB);
+  const exactMain = isSha(mainSha) && isSha(build?.budgetMainSha);
+  if (exactMain && build.budgetMainSha === mainSha)
+    return { action: "skip", reason: "build already measured the current main" };
   const started = build?.started_at ? Date.parse(build.started_at) : NaN;
-  if (build && started > since) return { action: "skip", reason: "build started after main moved" };
+  if (build && !exactMain && started > since) return { action: "skip", reason: "build started after main moved" };
   if (run.status !== "completed") {
-    if (!build || !build.started_at) return { action: "skip", reason: "build not started; it will fetch the new main" };
+    if (!build || (!exactMain && !build.started_at))
+      return { action: "skip", reason: "build not started; it will fetch the new main" };
     return { action: "wait" };
   }
   if (!build) return { action: "skip", reason: "no production build job in the run" };
@@ -76,12 +109,14 @@ async function main() {
     const run = runs.sort((a, b) => Date.parse(b.created_at) - Date.parse(a.created_at))[0];
     if (!run) return { run: undefined, jobs: [] };
     const { jobs } = await api(`/actions/runs/${run.id}/jobs?filter=latest&per_page=100`);
-    return { run, jobs };
+    return { run, jobs: pr.draft || !pr.auto_merge ? jobs : await withBudgetMainReceipt(jobs, api) };
   };
 
   // On a push this job starts seconds after main moved; a build that started just before it is
   // re-run once more. When auto-merge is armed, main last moved when its head commit was committed.
-  const since = only ? Date.parse((await api("/commits/main")).commit.committer.date) : Date.now();
+  const main = await api("/commits/main");
+  if (!isSha(main.sha)) throw new Error("Current main has no valid commit identity");
+  const since = only ? Date.parse(main.commit.committer.date) : Date.now();
   const prs = only
     ? [await api(`/pulls/${only}`)].filter((pr) => pr.state === "open" && pr.base.ref === "main")
     : await listOpenPullRequests(api);
@@ -100,7 +135,7 @@ async function main() {
           continue;
         }
         const { run, jobs } = await latest(pr);
-        const verdict = decide(pr, run, jobs, since);
+        const verdict = decide(pr, run, jobs, since, main.sha);
         if (verdict.action === "wait") next.push(pr);
         else if (verdict.action === "skip") console.log(`#${pr.number}: skipped (${verdict.reason})`);
         else {

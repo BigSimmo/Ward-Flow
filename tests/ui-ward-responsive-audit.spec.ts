@@ -524,11 +524,27 @@ test.describe("@mockup Ward scroll geometry", () => {
     await page.waitForLoadState("networkidle");
     const column = page.locator("[data-wf-scroller]");
     await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", /ink|light/);
-    await column.evaluate((element) => {
-      element.scrollTop = 420;
-    });
+    // The census now owns a bounded row scroller. Exercise each owner within its real range.
+    const outerTop = await column.evaluate((element) => Math.min(420, element.scrollHeight - element.clientHeight));
+    expect(outerTop).toBeGreaterThan(0);
+    await column.evaluate((element, top) => {
+      element.scrollTop = top;
+    }, outerTop);
     await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", "light");
-    await expect.poll(() => column.evaluate((element) => element.scrollTop)).toBe(420);
+    await expect.poll(() => column.evaluate((element) => element.scrollTop)).toBe(outerTop);
+    const census = page.getByRole("region", { name: "Patient census rows" });
+    const innerTop = await census.evaluate((element) => Math.min(300, element.scrollHeight - element.clientHeight));
+    expect(innerTop).toBeGreaterThan(0);
+    const innerLeft = await census.evaluate((element) => Math.min(100, element.scrollWidth - element.clientWidth));
+    await census.evaluate(
+      (element, position) => {
+        element.scrollTop = position.top;
+        element.scrollLeft = position.left;
+      },
+      { top: innerTop, left: innerLeft },
+    );
+    await expect.poll(() => census.evaluate((element) => element.scrollTop)).toBe(innerTop);
+    await expect.poll(() => census.evaluate((element) => element.scrollLeft)).toBe(innerLeft);
     // Click at the painted sticky control. Playwright's auto-scroll for Locator.click()
     // moves the header back to its original in-flow position before clicking it.
     const trigger = await page.getByTestId("ward-bar-tasks-trigger").boundingBox();
@@ -544,11 +560,14 @@ test.describe("@mockup Ward scroll geometry", () => {
     await expect.poll(() => column.evaluate((element) => element.style.overflowY)).toBe("");
     await page.setViewportSize({ width: 1440, height: 900 });
     await expect(column).toHaveCSS("overflow-y", "hidden");
-    expect(await column.evaluate((element) => element.scrollTop)).toBe(420);
+    expect(await column.evaluate((element) => element.scrollTop)).toBe(outerTop);
     await page.keyboard.press("Escape");
     await expect(page.getByTestId("ward-bar-tasks-sheet")).toBeHidden();
     await expect(column).toHaveCSS("overflow-y", "auto");
-    expect(await column.evaluate((element) => element.scrollTop)).toBe(420);
+    expect(await column.evaluate((element) => element.scrollTop)).toBe(outerTop);
+    // The phone census replaced the desktop table; its previous row position must return too.
+    await expect.poll(() => census.evaluate((element) => element.scrollTop)).toBe(innerTop);
+    await expect.poll(() => census.evaluate((element) => element.scrollLeft)).toBe(innerLeft);
   });
 
   test("desktop Back returns to the previous position in the patient list", async ({ page }) => {
@@ -560,11 +579,27 @@ test.describe("@mockup Ward scroll geometry", () => {
     await page.waitForLoadState("networkidle");
     const column = page.locator("[data-wf-scroller]");
     await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", /ink|light/);
-    await column.evaluate((element) => {
-      element.scrollTop = 420;
-    });
+    // The census now owns a bounded row scroller. Exercise each owner within its real range.
+    const outerTop = await column.evaluate((element) => Math.min(420, element.scrollHeight - element.clientHeight));
+    expect(outerTop).toBeGreaterThan(0);
+    await column.evaluate((element, top) => {
+      element.scrollTop = top;
+    }, outerTop);
     await expect(page.getByTestId("ward-bar")).toHaveAttribute("data-band", "light");
-    await expect.poll(() => column.evaluate((element) => element.scrollTop)).toBe(420);
+    await expect.poll(() => column.evaluate((element) => element.scrollTop)).toBe(outerTop);
+    const census = page.getByRole("region", { name: "Patient census rows" });
+    const innerTop = await census.evaluate((element) => Math.min(300, element.scrollHeight - element.clientHeight));
+    expect(innerTop).toBeGreaterThan(0);
+    const innerLeft = await census.evaluate((element) => Math.min(100, element.scrollWidth - element.clientWidth));
+    await census.evaluate(
+      (element, position) => {
+        element.scrollTop = position.top;
+        element.scrollLeft = position.left;
+      },
+      { top: innerTop, left: innerLeft },
+    );
+    await expect.poll(() => census.evaluate((element) => element.scrollTop)).toBe(innerTop);
+    await expect.poll(() => census.evaluate((element) => element.scrollLeft)).toBe(innerLeft);
     // B1 (19 Oct 2026): Capacity is on the coordinator's own rail menu; Wards is now under More.
     await page.locator('nav a[href="/ward-flow/capacity"]').first().click();
     await expect(page).toHaveURL(/\/capacity$/);
@@ -574,7 +609,31 @@ test.describe("@mockup Ward scroll geometry", () => {
     await expect(page.locator('div[hidden][id^="S:"]')).toHaveCount(0, { timeout: 15_000 });
     await expect(page.getByTestId("ward-patient-search")).toBeVisible();
     await page.waitForLoadState("networkidle");
-    await expect.poll(() => column.evaluate((element) => element.scrollTop)).toBe(420);
+    await expect.poll(() => column.evaluate((element) => element.scrollTop)).toBe(outerTop);
+    await expect.poll(() => census.evaluate((element) => element.scrollTop)).toBe(innerTop);
+    await expect.poll(() => census.evaluate((element) => element.scrollLeft)).toBe(innerLeft);
+  });
+
+  test("phone query changes retire the hidden desktop census position", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/ward-flow/search", { waitUntil: "domcontentloaded" });
+    const census = page.getByRole("region", { name: "Patient census rows" });
+    await expect(census).toBeVisible();
+    await page.waitForLoadState("networkidle");
+    await census.evaluate((element) => {
+      element.scrollTop = 300;
+    });
+    await expect.poll(() => census.evaluate((element) => element.scrollTop)).toBe(300);
+    await page.setViewportSize({ width: 390, height: 900 });
+    await expect(census).toHaveCount(0);
+    const field = page.getByTestId("ward-patient-typeahead-input");
+    await field.fill("zzzxqv");
+    await expect(page.getByText(/^No patient matches/u)).toBeVisible();
+    await field.fill("");
+    await expect(page.getByText(/^No patient matches/u)).toHaveCount(0);
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await expect(census).toBeVisible();
+    await expect.poll(() => census.evaluate((element) => element.scrollTop)).toBe(0);
   });
 });
 

@@ -163,6 +163,12 @@ function DeskSearch(props: WardGlobalSearchProps) {
     <>
       {Loaded ? <Loaded {...props} initialQuery={draft} takeFocusFrom={fieldRef} /> : null}
       {field}
+      {failed ? (
+        <p role="alert">
+          Search did not load. Check the connection, then tap the search field to try again. Your text is kept on this
+          page.
+        </p>
+      ) : null}
     </>
   );
 }

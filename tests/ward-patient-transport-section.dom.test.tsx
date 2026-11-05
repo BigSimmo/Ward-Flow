@@ -38,7 +38,7 @@ function ControlledCommands({
   control,
 }: {
   children: ReactNode;
-  control: { deferred?: boolean; refuse?: boolean; calls: WardFlowEvent[]; finish?: () => void };
+  control: { deferred?: boolean; uncertain?: boolean; refuse?: boolean; calls: WardFlowEvent[]; finish?: () => void };
 }) {
   const flow = useWardFlow();
   const dispatch = (event: WardFlowEvent) => {
@@ -47,13 +47,20 @@ function ControlledCommands({
     control.calls.push(event);
     const record = () => flow.dispatch(control.refuse ? { ...event, movementId: "WF-SYNTHETIC-MISSING" } : event);
     if (!control.deferred) return record();
-    return new Promise<WardCommandOutcome>((resolve) => {
+    const confirmation = new Promise<WardCommandOutcome>((resolve) => {
       control.finish = () => {
         void Promise.resolve(record()).then((outcome) => {
           if (outcome) resolve(outcome);
         });
       };
     });
+    return control.uncertain
+      ? {
+          commandId: "recovered-patient",
+          status: "failed" as const,
+          confirmation: confirmation.then((answer) => ({ ...answer, commandId: "recovered-patient" })),
+        }
+      : confirmation;
   };
   return <WardFlowOverride value={{ ...flow, dispatch }}>{children}</WardFlowOverride>;
 }
@@ -275,12 +282,13 @@ describe("Patient Transport & Transfer Coordination section", () => {
     expect(screen.queryByTestId("ward-patient-transport-form")).not.toBeInTheDocument();
   });
 
-  it.each([false, true])(
-    "keeps the transport draft until the real deferred command completes (refused=%s)",
-    async (refuse) => {
+  it.each([false, true].flatMap((refuse) => [false, true].map((uncertain) => ({ refuse, uncertain }))))(
+    "keeps the transport draft through recovery ($refuse, $uncertain)",
+    async ({ refuse, uncertain }) => {
       const control = {
         calls: [] as WardFlowEvent[],
         deferred: true,
+        uncertain,
         refuse,
         finish: undefined as (() => void) | undefined,
       };
@@ -300,13 +308,17 @@ describe("Patient Transport & Transfer Coordination section", () => {
       pressSave(form);
       pressSave(form);
       expect(control.calls).toHaveLength(1);
+      await act(async () => {
+        await Promise.resolve();
+      });
       expect(form).toHaveAttribute("aria-busy", "true");
       expect(within(form).getByTestId("ward-patient-confirm-transport-btn")).toHaveAttribute("aria-disabled", "true");
       // The answers-left line at the top is a status too (redesign, Josh 31 Oct 2026), so the saving
       // line is found by its words and checked for its role.
-      expect(
-        within(screen.getByTestId("ward-patient-transport-section")).getByText(/Saving transport booking/),
-      ).toHaveAttribute("role", "status");
+      if (!uncertain)
+        expect(
+          within(screen.getByTestId("ward-patient-transport-section")).getByText(/Saving transport booking/),
+        ).toHaveAttribute("role", "status");
       await act(async () => {
         control.finish!();
       });
@@ -325,12 +337,13 @@ describe("Patient Transport & Transfer Coordination section", () => {
     },
   );
 
-  it.each([false, true])(
-    "keeps the clearance draft until the real deferred command completes (refused=%s)",
-    async (refuse) => {
+  it.each([false, true].flatMap((refuse) => [false, true].map((uncertain) => ({ refuse, uncertain }))))(
+    "keeps the clearance draft through recovery ($refuse, $uncertain)",
+    async ({ refuse, uncertain }) => {
       const control = {
         calls: [] as WardFlowEvent[],
         deferred: true,
+        uncertain,
         refuse,
         finish: undefined as (() => void) | undefined,
       };
@@ -351,8 +364,11 @@ describe("Patient Transport & Transfer Coordination section", () => {
       fireEvent.click(save);
       fireEvent.click(save);
       expect(control.calls).toHaveLength(1);
+      await act(async () => {
+        await Promise.resolve();
+      });
       expect(save).toHaveAttribute("aria-disabled", "true");
-      expect(within(dialog).getByRole("status")).toHaveTextContent("Saving clearance outcome");
+      if (!uncertain) expect(within(dialog).getByRole("status")).toHaveTextContent("Saving clearance outcome");
       await act(async () => {
         control.finish!();
       });

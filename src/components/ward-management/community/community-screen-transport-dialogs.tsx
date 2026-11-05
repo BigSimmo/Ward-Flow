@@ -70,6 +70,8 @@ export function CommunityScreenTransportBookDialog({ view }: { view: CommunitySc
     answers: transportDraft,
     legalReason,
     pending: saving,
+    uncertain: save.uncertain,
+    refused: !!save.error && !save.uncertain,
     onClose: closeTransportBook,
   });
   // Keep the page's panel ref aligned; the kit Dialog owns the booking's focus lifecycle.

@@ -1,5 +1,6 @@
 "use client";
 
+import { placeDisplayName } from "@/components/ward-management/ward-place-names";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { useId, useMemo, useRef } from "react";
@@ -67,7 +68,7 @@ export function WardOffersTable({
   const recordAction = useBedMeetingRecord("coordinator");
   const chasedFocus = useRef<string | null>(null);
   if (offers.length === 0) return null;
-  const wardName = (unitId: string) => (units.find((unit) => unit.id === unitId)?.name ?? unitId).split(" — ")[0];
+  const wardName = (unitId: string) => placeDisplayName(unitId, units).split(" — ")[0];
   return (
     <section className={styles.offers} data-testid="ward-referral-board-ward-offers" aria-labelledby={titleId}>
       <h2 id={titleId} className={styles.offersTitle}>

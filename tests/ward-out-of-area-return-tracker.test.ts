@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { returnStepsDone } from "@/components/ward-management/out-of-area/out-of-area-return-tracker";
-import { BLANK_REPAT_DRAFT } from "@/components/ward-management/out-of-area/out-of-area-model";
+import { BLANK_REPAT_DRAFT, currentReturnMovement } from "@/components/ward-management/out-of-area/out-of-area-model";
 import type { RepatriationRecord } from "@/components/ward-management/ward-flow-reducer";
 import type { Movement } from "@/components/ward-management/ward-model";
 
@@ -24,6 +24,27 @@ describe("returnStepsDone", () => {
     const arrived = { outcome: "arrived" } as Movement["closure"];
     expect(returnStepsDone(BLANK_REPAT_DRAFT, agreed, { transport, closure: arrived })).toBe(4);
     const stopped = { outcome: "did_not_proceed" } as Movement["closure"];
-    expect(returnStepsDone(BLANK_REPAT_DRAFT, agreed, { transport, closure: stopped })).toBe(3);
+    expect(returnStepsDone(BLANK_REPAT_DRAFT, agreed, { transport, closure: stopped })).toBe(2);
   });
+});
+
+it("does not count a cancelled or stopped transport as booked", () => {
+  for (const state of [{ cancelledAt: 10 }, { stoppedAt: 10 }]) {
+    expect(
+      returnStepsDone(BLANK_REPAT_DRAFT, agreed, { transport: { ...transport!, ...state }, closure: undefined }),
+    ).toBe(2);
+  }
+});
+
+it("prefers the newest open return over older closed or open movements", () => {
+  const make = (id: string, openedAt: number, closure?: Movement["closure"]) =>
+    ({ id, openedAt, sourceAdmissionId: "synthetic-admission", closure }) as Movement;
+  const stopped = make("stopped", 1, { outcome: "did_not_proceed" } as Movement["closure"]);
+  const old = make("old-open", 2);
+  const current = make("current-open", 3);
+  expect(currentReturnMovement([stopped, old, current], "synthetic-admission")).toBe(current);
+  expect(currentReturnMovement([current, stopped, old], "synthetic-admission")).toBe(current);
+  expect(currentReturnMovement([stopped, old], "other-admission")).toBeUndefined();
+  const arrived = make("arrived", 4, { outcome: "arrived" } as Movement["closure"]);
+  expect(currentReturnMovement([stopped, arrived], "synthetic-admission")).toBe(arrived);
 });

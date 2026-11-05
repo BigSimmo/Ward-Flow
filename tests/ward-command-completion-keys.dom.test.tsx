@@ -53,6 +53,42 @@ describe("ward command keys (review: gitar)", () => {
     expect(again).toHaveBeenCalledTimes(1);
   });
 
+  it("retains departure ownership until its same-command recovery confirms", async () => {
+    const say = vi.fn();
+    const { result } = renderHook(() => useWardCommandCompletion(say));
+    const recovery = pendingSave();
+    const settled = vi.fn();
+    const repeat = vi.fn();
+    const failed: WardCommandOutcome = { commandId: "departure-1", status: "failed", confirmation: recovery.record() };
+    act(() => result.current("departure:ADM-1", () => failed, settled));
+    expect(settled).toHaveBeenCalledWith(failed);
+    act(() => result.current("departure:ADM-1", repeat, settled));
+    expect(repeat).not.toHaveBeenCalled();
+    const accepted: WardCommandOutcome = {
+      commandId: "departure-1",
+      status: "accepted",
+      undoStep: { undoType: "UNDO_DEPARTURE", subjectId: "ADM-1", seq: 7 },
+    };
+    await act(async () => recovery.answer(accepted));
+    expect(settled).toHaveBeenLastCalledWith(accepted);
+    expect(settled).toHaveBeenCalledTimes(2);
+  });
+
+  it("ignores a different command's recovery receipt", async () => {
+    const { result } = renderHook(() => useWardCommandCompletion());
+    const recovery = pendingSave();
+    const settled = vi.fn();
+    act(() =>
+      result.current(
+        "departure:ADM-1",
+        () => ({ commandId: "one", status: "failed", confirmation: recovery.record() }),
+        settled,
+      ),
+    );
+    await act(async () => recovery.answer({ commandId: "two", status: "accepted" }));
+    expect(settled).toHaveBeenCalledTimes(1);
+  });
+
   it("keeps a departure, its Undo, an acceptance Undo and a referral on separate keys", () => {
     const keys = [
       wardCommandKey("departure", "ADM-1"),

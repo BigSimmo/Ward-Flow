@@ -1,4 +1,4 @@
-import { perthCalendarDay, type Instant } from "@/components/ward-management/ward-clock";
+import { calendarDateOf, perthCalendarDay, type Instant } from "@/components/ward-management/ward-clock";
 /**
  * A person, as distinct from a request for a bed or a stay in one.
  *
@@ -680,4 +680,18 @@ function commaNameAsGivenFamily(query: string): string {
 
 function fold(value: string): string {
   return foldPatientSearchText(value);
+}
+
+/**
+ * WF-03 (live test, 5 Nov 2026): two people can share a name, so a row shows the age beside the
+ * UMRN. " · 42y", or "" when the person, the date of birth or the board's day zero is unknown.
+ */
+export function patientAgeText(
+  patient: Pick<Patient, "dateOfBirth"> | undefined,
+  dayZero: Date | undefined,
+  now: Instant,
+): string {
+  if (!patient?.dateOfBirth || dayZero === undefined) return "";
+  const years = patientAgeYears(patient, calendarDateOf(now, dayZero));
+  return Number.isFinite(years) && years >= 0 ? ` · ${years}y` : "";
 }

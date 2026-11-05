@@ -1,6 +1,10 @@
 import { createServer } from "node:http";
+import { mkdtempSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { gzipSync } from "node:zlib";
 import { describe, expect, it, vi } from "vitest";
+import { removePathSync } from "../scripts/retryable-fs.mjs";
 
 import {
   LEGACY_MOVEMENT_REDIRECT,
@@ -14,6 +18,63 @@ import { movementHref } from "../src/components/ward-management/shell/ward-facad
 import { encodeRecordAddress } from "../src/components/ward-management/shell/ward-record-address";
 
 type Fixture = { status?: number; type?: string; body?: string; location?: string; stall?: boolean };
+
+async function strictBudgetGate(measuredStatus: number, event = "push", treeError = false) {
+  const directory = mkdtempSync(join(tmpdir(), "ward-strict-budget-"));
+  const tree = "a".repeat(40);
+  const log = vi.spyOn(console, "log").mockImplementation(() => {});
+  const error = vi.spyOn(console, "error").mockImplementation(() => {});
+  vi.doMock("node:child_process", () => ({
+    execFileSync: vi.fn((_command: string, args: string[]) => {
+      if (treeError && args.includes("HEAD^{tree}")) throw new Error("Synthetic unreadable tree");
+      return args.includes("HEAD^{tree}") ? tree : "b".repeat(40);
+    }),
+    spawnSync: vi.fn((_command: string, args: string[]) => ({
+      // No subprocess is started. The inherited-overage path has a successful judgement,
+      // but deliberately mismatched dependency inputs prevent a second build.
+      status: args.includes("--write") ? measuredStatus : args.includes("--judge") ? 0 : 1,
+    })),
+  }));
+  vi.resetModules();
+  try {
+    const { gate } = await import("../scripts/ward-ci-public/budget-gate.mjs");
+    const status = gate({ root: process.cwd(), event, outDir: directory });
+    return { status, tree, notices: log.mock.calls.map((call) => call.join(" ")) };
+  } finally {
+    vi.doUnmock("node:child_process");
+    vi.resetModules();
+    log.mockRestore();
+    error.mockRestore();
+    removePathSync(directory, { recursive: true, force: true });
+  }
+}
+
+describe("strict budget evidence producer", () => {
+  it.each(["push", "pull_request", "workflow_dispatch"])(
+    "records strict tree compliance only after a clean %s measurement",
+    async (event) => {
+      const result = await strictBudgetGate(0, event);
+      expect(result.status).toBe(0);
+      expect(result.notices).toContain(`::notice title=Ward strict budget tree::${result.tree}`);
+    },
+  );
+
+  it("does not turn an inherited-overage PR warning into strict compliance evidence", async () => {
+    const result = await strictBudgetGate(2, "pull_request");
+    expect(result.status).toBe(0);
+    expect(result.notices.some((notice) => notice.includes("Ward strict budget tree"))).toBe(false);
+  });
+
+  it.each([1, 2])("emits no strict receipt after measurement failure %s", async (status) => {
+    const result = await strictBudgetGate(status);
+    expect(result.status).toBe(status);
+    expect(result.notices.some((notice) => notice.includes("Ward strict budget tree"))).toBe(false);
+  });
+
+  it("fails closed when a successful measurement cannot identify its tree", async () => {
+    await expect(strictBudgetGate(0, "push", true)).rejects.toThrow("Synthetic unreadable tree");
+  });
+});
 
 async function withPages(
   fixtures: Record<string, Fixture>,

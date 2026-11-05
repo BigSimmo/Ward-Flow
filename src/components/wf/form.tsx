@@ -110,11 +110,20 @@ export function TextInput({
   className,
   boxClassName,
   readOnly,
+  onChange,
   "aria-describedby": describedBy,
   ...rest
 }: TextInputProps) {
   const fieldProps = useFieldProps(id, describedBy, invalid);
   const hasValue = rest.value != null && String(rest.value).length > 0;
+  // WF-30 (live test, 4 Nov 2026): a capped input says so as it nears the cap, and says plainly when
+  // the cap is reached, instead of silently dropping what is typed or pasted. An uncontrolled input
+  // counts from its default value and what is typed, as `Textarea` does.
+  const max = typeof rest.maxLength === "number" && rest.maxLength > 0 ? rest.maxLength : null;
+  const [uncontrolledLength, setUncontrolledLength] = useState(() => String(rest.defaultValue ?? "").length);
+  const typed = rest.value != null ? String(rest.value).length : uncontrolledLength;
+  const showsCount = max !== null && max >= 20;
+  const nearCap = showsCount && typed >= Math.floor(max * 0.8);
   return (
     <div className={cx(styles.in, fieldProps["aria-invalid"] && styles.invalid, locked && styles.locked, boxClassName)}>
       {icon ? <Icon icon={icon} size={16} className={styles.adorn} /> : null}
@@ -125,10 +134,26 @@ export function TextInput({
         data-gramm="false"
         data-gramm_editor="false"
         data-enable-grammarly="false"
+        onChange={(event) => {
+          setUncontrolledLength(event.target.value.length);
+          onChange?.(event);
+        }}
         {...fieldProps}
         {...rest}
       />
       {trailing ? <span className={styles.adorn}>{trailing}</span> : null}
+      {nearCap ? (
+        <span className={cx(styles.adorn, styles.counter)} data-testid="wf-input-limit" aria-hidden="true">
+          {typed}/{max}
+        </span>
+      ) : null}
+      {/* Mounted empty once the count shows, before the cap, so a screen reader hears the message
+          when the cap is reached. */}
+      {nearCap ? (
+        <span className={styles.limitNote} role="status">
+          {typed >= max ? `Limit of ${max} characters reached` : ""}
+        </span>
+      ) : null}
       {locked ? (
         <span className={styles.adorn}>
           <Icon icon={Lock} size={14} />

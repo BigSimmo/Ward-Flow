@@ -4,7 +4,11 @@ import {
   type SharedSnapshot,
   type SharedView,
 } from "../src/components/ward-management/ward-shared-client";
-import { parseRecordDetail, withRecordDetail } from "../src/components/ward-management/ward-shared-record-detail";
+import {
+  parseRecordDetail,
+  RecordDetailHold,
+  withRecordDetail,
+} from "../src/components/ward-management/ward-shared-record-detail";
 import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow-reducer";
 
 // H-0731 (Josh, 27 Oct 2026): the shared board carries no address or interpreter language. The
@@ -64,6 +68,7 @@ describe("record detail from a logged opening", () => {
           return Response.json({
             logged: true,
             opened: withAddress.id,
+            generation: seed.worldGeneration,
             detail: { address: "No. 7, Ashfield" },
           });
         }
@@ -92,4 +97,177 @@ describe("record detail from a logged opening", () => {
       client.dispose();
     }
   });
+  it("drops cached detail and pending opening replies when the authoritative world generation changes", () => {
+    const hold = new RecordDetailHold();
+    const initial = payloadOf(sentState());
+    hold.apply(initial, "same-desk");
+    const pendingView = hold.view;
+    expect(
+      hold.take(
+        {
+          opened: withAddress.id,
+          generation: initial.state.worldGeneration,
+          detail: { address: "Synthetic address A" },
+        },
+        pendingView,
+      ),
+    ).toBe(true);
+    expect(
+      hold.apply(initial, "same-desk").state.patients.find((patient) => patient.id === withAddress.id)?.address,
+    ).toBe("Synthetic address A");
+    const replacement = payloadOf({ ...sentState(), worldGeneration: initial.state.worldGeneration + 1 });
+    expect(
+      hold.apply(replacement, "same-desk").state.patients.find((patient) => patient.id === withAddress.id)?.address,
+    ).toBeUndefined();
+    expect(
+      hold.take(
+        {
+          opened: withAddress.id,
+          generation: initial.state.worldGeneration,
+          detail: { address: "Synthetic stale detail" },
+        },
+        pendingView,
+      ),
+    ).toBe(false);
+    expect(
+      hold.take(
+        {
+          opened: withAddress.id,
+          generation: replacement.state.worldGeneration,
+          detail: { address: "Synthetic address B" },
+        },
+        hold.view,
+      ),
+    ).toBe(true);
+    expect(
+      hold.apply(replacement, "same-desk").state.patients.find((patient) => patient.id === withAddress.id)?.address,
+    ).toBe("Synthetic address B");
+  });
+
+  it.each([false, true])(
+    "rejects cross-generation opening replies when the reset snapshot arrived: %s",
+    async (refreshed) => {
+      let view: SharedView | undefined;
+      let generation = seed.worldGeneration;
+      let revision = 0;
+      let finish: ((response: Response) => void) | undefined;
+      const client = new SharedWorkspaceClient({
+        baseUrl: "https://example.test",
+        token: async () => "test",
+        changed: (next) => {
+          view = next;
+        },
+        fetch: async (input) => {
+          if (new URL(String(input)).pathname === "/v1/workspace/record-access")
+            return new Promise<Response>((resolve) => {
+              finish = resolve;
+            });
+          return Response.json({
+            snapshot: {
+              dataMode: "prototype",
+              revision: ++revision,
+              now: 642,
+              accessContext: "c".repeat(64),
+              payload: payloadOf({ ...sentState(), worldGeneration: generation }),
+            },
+          });
+        },
+      });
+      try {
+        await client.refresh();
+        const pending = client.logRecordView(withAddress.id, "patient");
+        await vi.waitFor(() => expect(finish).toBeDefined());
+        generation++;
+        if (refreshed) await client.refresh();
+        finish!(
+          Response.json({
+            opened: withAddress.id,
+            generation: refreshed ? generation - 1 : generation,
+            detail: { address: "Synthetic cross-world detail" },
+          }),
+        );
+        expect(await pending).toBe(false);
+        expect(
+          view?.snapshot?.payload.state.patients.find((patient) => patient.id === withAddress.id)?.address,
+        ).toBeUndefined();
+      } finally {
+        client.dispose();
+      }
+    },
+  );
+  it("refuses detail without an authoritative generation", () => {
+    const hold = new RecordDetailHold();
+    const payload = payloadOf(sentState());
+    hold.apply(payload, "same-desk");
+    expect(
+      hold.take({ opened: withAddress.id, detail: { address: "Synthetic missing-generation detail" } }, hold.view),
+    ).toBe(false);
+  });
+});
+
+it("drops cached and delayed detail when a replacement world reuses a patient ID", async () => {
+  let worldGeneration = 0;
+  let revision = 1;
+  let view: SharedView | undefined;
+  let release: ((reply: Response) => void) | undefined;
+  let delayed = false;
+  const client = new SharedWorkspaceClient({
+    baseUrl: "https://example.test",
+    token: async () => "synthetic",
+    manageDrafts: false,
+    changed: (next) => {
+      view = next;
+    },
+    fetch: async (input) => {
+      if (new URL(String(input)).pathname === "/v1/workspace/record-access") {
+        if (delayed)
+          return new Promise<Response>((resolve) => {
+            release = resolve;
+          });
+        return Response.json({
+          logged: true,
+          opened: withAddress.id,
+          detail: { address: "Synthetic old detail" },
+          generation: worldGeneration,
+        });
+      }
+      return Response.json({
+        snapshot: {
+          dataMode: "prototype",
+          revision,
+          now: 642,
+          accessContext: "a".repeat(64),
+          payload: payloadOf({ ...sentState(), worldGeneration }),
+        },
+      });
+    },
+  });
+  const shown = () => view?.snapshot?.payload.state.patients.find((patient) => patient.id === withAddress.id);
+  try {
+    await client.refresh();
+    await client.logRecordView(withAddress.id, "patient");
+    expect(shown()?.address).toBe("Synthetic old detail");
+    delayed = true;
+    const oldOpening = client.logRecordView(withAddress.id, "patient");
+    await vi.waitFor(() => expect(release).toBeDefined());
+    worldGeneration = 1;
+    revision = 2;
+    await client.refresh();
+    expect(shown()?.address).toBeUndefined();
+    release!(
+      Response.json({
+        logged: true,
+        opened: withAddress.id,
+        detail: { address: "Synthetic delayed detail" },
+        generation: 0,
+      }),
+    );
+    expect(await oldOpening).toBe(false);
+    expect(shown()?.address).toBeUndefined();
+    delayed = false;
+    expect(await client.logRecordView(withAddress.id, "patient")).toBe(true);
+    expect(shown()?.address).toBe("Synthetic old detail");
+  } finally {
+    client.dispose();
+  }
 });

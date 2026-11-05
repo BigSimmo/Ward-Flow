@@ -8,6 +8,7 @@ import { useAccessShellRole } from "./ward-access-store";
 
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { WARD_ALERTS_HREF } from "@/components/ward-management/ward-nav";
 
 import {
@@ -106,7 +107,7 @@ export function WardActNowNotifier() {
     previous.current = { generation: worldGeneration, ids: new Set(actNow.map((item) => item.id)) };
     if (prior === null || prior.generation !== worldGeneration || !enabled) return;
     showActNowNotification(newActNowItems(prior.ids, actNow), () => {
-      router.push(WARD_ALERTS_HREF);
+      navigateWithDirtyGuard(() => router.push(WARD_ALERTS_HREF));
     });
   }, [actNow, enabled, router, sessionAdopted, worldGeneration]);
 

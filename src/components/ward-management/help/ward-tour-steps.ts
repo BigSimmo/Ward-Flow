@@ -301,7 +301,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           { sel: "#bed-capacity" },
           "Every bed",
           "One tile per bed with who is in it, the length of stay and any flag. Filter to Needs a look, Due out or Ready.",
-          "Select a bed to record a discharge, move the date or record a blocker.",
+          "Select a bed to record a discharge, move the date or Record hold-up.",
         ),
         step(
           "Your daily work",

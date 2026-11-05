@@ -174,7 +174,7 @@ describe("RECORD_LEGAL_FORM_EXPIRY — typed expiries and extensions after the i
     const updated = recorded.movements.find((movement) => movement.id === movementId)!;
     expect(updated.legalForm?.dueAt).toBe(NOW + 500);
     expect(updated.legalFormExpiryHistory).toEqual([
-      { at: NOW + 10, by: "ed", dueAt: NOW + 500, basis: "written_on_form" },
+      { at: NOW + 10, by: "ed", dueAt: NOW + 500, basis: "written_on_form", formInstance: 0 },
     ]);
   });
 
@@ -200,8 +200,8 @@ describe("RECORD_LEGAL_FORM_EXPIRY — typed expiries and extensions after the i
     const updated = extended.movements.find((movement) => movement.id === movementId)!;
     expect(updated.legalForm?.dueAt, "dueAt must equal the LAST history entry, not the first").toBe(NOW + 900);
     expect(updated.legalFormExpiryHistory).toEqual([
-      { at: NOW + 10, by: "ed", dueAt: NOW + 500, basis: "written_on_form" },
-      { at: NOW + 600, by: "coordinator", dueAt: NOW + 900, basis: "extension" },
+      { at: NOW + 10, by: "ed", dueAt: NOW + 500, basis: "written_on_form", formInstance: 0 },
+      { at: NOW + 600, by: "coordinator", dueAt: NOW + 900, basis: "extension", formInstance: 0 },
     ]);
   });
 
@@ -236,7 +236,7 @@ describe("RECORD_LEGAL_FORM_EXPIRY — typed expiries and extensions after the i
     expect(updated.legalForm?.dueAt, "dueAt must be the extension, the LAST history entry").toBe(NOW + 660);
     expect(updated.legalFormExpiryHistory, "both entries must survive, in order").toEqual([
       { at: NOW, by: "ed", dueAt: NOW + 585, basis: "written_on_form" },
-      { at: NOW + 700, by: "coordinator", dueAt: NOW + 660, basis: "extension" },
+      { at: NOW + 700, by: "coordinator", dueAt: NOW + 660, basis: "extension", formInstance: 0 },
     ]);
   });
 

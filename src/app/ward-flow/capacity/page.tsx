@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
+import { CapacityRoute } from "@/components/ward-management/capacity/capacity-route";
 
 /**
  * MERGE 02 (owner-approved 2026-09-05, `docs/superpowers/specs/2026-09-05-ward-flow-merges-1-3-design-lock.md`
@@ -15,5 +15,5 @@ export const metadata: Metadata = {
 };
 
 export default function WardCapacityPage() {
-  return <CapacityScreen />;
+  return <CapacityRoute />;
 }

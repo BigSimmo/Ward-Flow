@@ -25,7 +25,7 @@ import {
   OVERDUE_AFTER_MINUTES_BY_TIER,
 } from "@/components/ward-management/ward-operational-defaults";
 import { REFERRAL_SOURCE_WORDS, isOverdue, openArms, referralTimeline, wardArm } from "./referral-board-parts";
-import { CLEARANCE_CHECKS, CLEARANCE_CHECK_LABELS, CLEARANCE_STATUS_LABELS } from "./referral-submission";
+import { CLEARANCE_CHECKS, CLEARANCE_CHECK_LABELS, CLEARANCE_STATUS_LABELS } from "./referral-clearance-checks";
 import { ReferralOwnerAndCalls } from "./referral-owner-and-calls-lazy";
 import { ReferralCommitments } from "./referral-commitments-lazy";
 import { ReferralInformationNeedsPanel } from "./referral-information-needs-lazy";

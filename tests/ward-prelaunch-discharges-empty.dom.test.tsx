@@ -17,7 +17,7 @@ import { useWardFlow, WardFlowOverride, WardFlowProvider } from "@/components/wa
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import type { BedRelease } from "@/components/ward-management/ward-model-bed-release";
 
-const DAY_MS = 24 * 60 * 60 * 1000;
+const DAY_MINUTES = 24 * 60;
 
 /* Q277 (pre-launch review E5, 2 Nov 2026): with no discharges and every filter on All, the list says
    plainly that there is nothing, instead of blaming filters nobody set. */
@@ -52,7 +52,7 @@ describe("Q277: Discharges says plainly when nothing is open", () => {
         .map((release) => ({
           ...release,
           state: "expected" as const,
-          expectedAt: NOW_ANCHOR + 5 * DAY_MS,
+          expectedAt: NOW_ANCHOR + 5 * DAY_MINUTES,
           waitingOn: null,
           blocker: null,
           blockedBy: null,
