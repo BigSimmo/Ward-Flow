@@ -1,3 +1,5 @@
+import { inboxOwnerRoles } from "../ward-act-now-items";
+import type { WardChromeRole } from "../ward-chrome-role";
 /**
  * The handover sheet's rows, read from the engine (refined Handover A, 9 Oct 2026).
  *
@@ -389,7 +391,7 @@ export function handoverGroups(cutoff: Instant, now: Instant) {
       why: "Movement stopped after collection; the bed is still pulled",
     },
     { id: "bed", title: "Finding a ward", why: "Placement requested or a ward is reviewing" },
-    { id: "acc", title: "Accepted, bed not ready", why: "Ward accepted, bed not yet free" },
+    { id: "acc", title: "Accepted, awaiting move", why: "Ward accepted; check the bed and transport status" },
     { id: "mov", title: "Moving", why: "Transport accepted or collected" },
   ] as const satisfies readonly { id: HandoverGroupId; title: string; why: string }[];
 }
@@ -618,15 +620,18 @@ export function isbarText(row: HandoverRow, now: Instant, readyBeds: (unitId: st
 export type HandoverPill = "act" | "urg" | "due" | "bed" | "mov" | "new";
 export type HandoverChip = "spec" | "form" | "dec" | "day" | "mine" | "esc";
 
-export const HANDOVER_CHIPS: { id: HandoverChip; label: string; test: (row: HandoverRow, now: Instant) => boolean }[] =
-  [
-    { id: "spec", label: "Constant obs", test: (row) => isConstantObservation(row.movement.observation) },
-    { id: "form", label: "Form recorded", test: (row) => row.formCode !== undefined },
-    { id: "dec", label: "Declined", test: (row) => row.declines.length > 0 },
-    { id: "day", label: "Over a day", test: (row, now) => now - row.openedAt >= MINUTES_PER_DAY },
-    { id: "mine", label: "Mine", test: (row) => row.owner === HANDOVER_ME },
-    { id: "esc", label: "Escalated", test: (row) => row.escalated },
-  ];
+export const HANDOVER_CHIPS: {
+  id: HandoverChip;
+  label: string;
+  test: (row: HandoverRow, now: Instant, role?: WardChromeRole) => boolean;
+}[] = [
+  { id: "spec", label: "Constant obs", test: (row) => isConstantObservation(row.movement.observation) },
+  { id: "form", label: "Form recorded", test: (row) => row.formCode !== undefined },
+  { id: "dec", label: "Declined", test: (row) => row.declines.length > 0 },
+  { id: "day", label: "Over a day", test: (row, now) => now - row.openedAt >= MINUTES_PER_DAY },
+  { id: "mine", label: "Mine", test: (row, _now, role = "coordinator") => inboxOwnerRoles(row.owner).includes(role) },
+  { id: "esc", label: "Escalated", test: (row) => row.escalated },
+];
 
 export function pillTest(pill: HandoverPill, row: HandoverRow, now: Instant, cutoff: Instant, newSince: Instant) {
   switch (pill) {

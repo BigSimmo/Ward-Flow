@@ -1,5 +1,19 @@
 # Screens B: board, capacity, movements, delays, handover, patients and the rest
 
+## Handover completion and ownership — 4 November 2026
+
+Local repair branch from main `559f225892b27b6c42bd7e9a6fa81f3ef81e62ec`:
+Handover's Mine chip and its counts use the existing desk-owner vocabulary for the current role;
+rows remain visible. The accepted group says "Accepted, awaiting move" for both waiting-bed and
+pulled-bed rows, preserving hold expiry, priority and Move by instructions. When an open selected
+journey leaves the population, desktop, phone and portrait panels explain its absence instead of
+substituting Sign off. The notice takes focus, or the replacement sheet's close control retains it.
+Movements opens the selected journey through the existing record-address builder.
+
+`tests/ward-consolidated-handover.test.ts` and
+`tests/ward-consolidated-handover-transition.dom.test.tsx` cover those model and rendered
+transitions. They use synthetic snapshots; no hosted cross-desk result is implied.
+
 ## Regression repair notes — 28 October 2026
 
 The local repair branch based on `aca285b8` guards the closure conflict's read-only recovery
