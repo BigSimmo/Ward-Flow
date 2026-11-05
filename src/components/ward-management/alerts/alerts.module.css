@@ -1063,11 +1063,10 @@ button.check[aria-pressed="true"] {
 }
 
 .detailName {
+  /* Names in full, wrapping, never cut (DS §4 Names). */
   margin: 0;
-  overflow: hidden;
   font: 600 var(--wf-fs-16) / var(--wf-lh-16) var(--wf-font);
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  overflow-wrap: anywhere;
 }
 
 .detailSub {
@@ -1787,12 +1786,11 @@ button.check[aria-pressed="true"] {
 }
 
 .phWhoName {
+  /* Names in full, wrapping, never cut (DS §4 Names). */
   margin: 0;
-  overflow: hidden;
   color: var(--wf-ink-2);
   font: 400 var(--wf-fs-13) / 18px var(--wf-font);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .phChips {

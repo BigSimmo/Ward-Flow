@@ -88,3 +88,63 @@ it("does not offer a late update after registration has unmounted", async () => 
   expect(screen.queryByText("New version of Ward Flow ready")).not.toBeInTheDocument();
   expect(worker.postMessage).not.toHaveBeenCalled();
 });
+
+it.each(["activated", "redundant"])(
+  "an explicit Reload still works after another tab leaves the offered worker %s",
+  async (state) => {
+    const { worker, container, registration } = existingInstallation();
+    const reload = vi.fn();
+    vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, reload } as Location);
+    render(
+      <ToastProvider>
+        <WardPwaRegistration />
+      </ToastProvider>,
+    );
+    await waitFor(() => expect(container.register).toHaveBeenCalledTimes(1));
+    act(() => worker.finish());
+    const button = await screen.findByRole("button", { name: "Reload" });
+
+    // Another tab activated this offered update; a later update may have superseded it too.
+    worker.state = state;
+    const controller = state === "activated" ? worker : { state: "activated" };
+    registration.active = controller;
+    Object.assign(container, { controller });
+    act(() => container.dispatchEvent(new Event("controllerchange")));
+    expect(reload).not.toHaveBeenCalled();
+
+    fireEvent.click(button);
+
+    expect(reload).toHaveBeenCalledTimes(1);
+    expect(worker.postMessage).not.toHaveBeenCalled();
+    act(() => {
+      container.dispatchEvent(new Event("controllerchange"));
+      container.dispatchEvent(new Event("controllerchange"));
+    });
+    expect(reload).toHaveBeenCalledTimes(1);
+  },
+);
+
+it("ignores a retained update action after registration unmounts", async () => {
+  const { worker, container } = existingInstallation();
+  const reload = vi.fn();
+  vi.spyOn(window, "location", "get").mockReturnValue({ ...window.location, reload } as Location);
+  const view = render(
+    <ToastProvider>
+      <WardPwaRegistration />
+    </ToastProvider>,
+  );
+  await waitFor(() => expect(container.register).toHaveBeenCalledTimes(1));
+  act(() => worker.finish());
+  const button = await screen.findByRole("button", { name: "Reload" });
+  // Keep the toast mounted after removing only its registration owner.
+  view.rerender(
+    <ToastProvider>
+      <span>App remains open</span>
+    </ToastProvider>,
+  );
+
+  fireEvent.click(button);
+
+  expect(worker.postMessage).not.toHaveBeenCalled();
+  expect(reload).not.toHaveBeenCalled();
+});
