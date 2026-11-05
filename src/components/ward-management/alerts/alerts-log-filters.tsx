@@ -121,7 +121,7 @@ type OpenFilterFigures = {
  * Snoozed only while there are some. A quiet ward has no chips. A chosen filter whose chip goes
  * (its last reminder done, say) falls back to All.
  */
-export function useOpenFilter(quiet: boolean, figures: OpenFilterFigures, desk?: { role: string; scopeKey?: string }) {
+export function useOpenFilter(quiet: boolean, figures: OpenFilterFigures) {
   const counts: OpenFilterCounts = {};
   if (!quiet) {
     counts.act = figures.act;
@@ -132,26 +132,7 @@ export function useOpenFilter(quiet: boolean, figures: OpenFilterFigures, desk?:
     if (figures.snoozed > 0) counts.snoozed = figures.snoozed;
     if (figures.yours !== undefined) counts.yours = figures.yours;
   }
-  const key = desk?.scopeKey ? `wardflow:alert-filter-v1:${desk.scopeKey}` : null;
-  const initial = (): OpenFilter => {
-    try {
-      const saved = key ? localStorage.getItem(key) : null;
-      if (saved && Object.hasOwn(FILTER_LABEL, saved)) return saved as OpenFilter;
-    } catch {
-      /* Memory-only choice. */
-    }
-    return desk && desk.role !== "coordinator" ? "yours" : "all";
-  };
-  const [held, setHeld] = useState(() => ({ key, chosen: initial() }));
-  const chosen = held.key === key ? held.chosen : initial();
-  const setFilter = (chosen: OpenFilter) => {
-    setHeld({ key, chosen });
-    try {
-      if (key) localStorage.setItem(key, chosen);
-    } catch {
-      /* Keep the in-memory choice. */
-    }
-  };
+  const [chosen, setFilter] = useState<OpenFilter>("all");
   const filter: OpenFilter = chosen === "all" || counts[chosen] !== undefined ? chosen : "all";
   return {
     filter,
@@ -159,10 +140,9 @@ export function useOpenFilter(quiet: boolean, figures: OpenFilterFigures, desk?:
     counts,
     label: FILTER_LABEL[filter],
     /** Whether the group with this key shows under the filter. */
-    shows: (section: string) => section === "act" || filter === "all" || FILTER_SECTIONS[filter].includes(section),
+    shows: (section: string) => filter === "all" || FILTER_SECTIONS[filter].includes(section),
     /** The rows of a list that stay under the filter, in their order. */
-    pick: (list: readonly QueueEntry[]) =>
-      filter === "all" ? [...list] : list.filter((e) => e.group === "act" || keepsEntry(filter, e)),
+    pick: (list: readonly QueueEntry[]) => (filter === "all" ? [...list] : list.filter((e) => keepsEntry(filter, e))),
   };
 }
 
@@ -175,7 +155,6 @@ export function OpenFilters({ lens }: { lens: OpenFilterLens }) {
   );
   return (
     <div className={log.filterRow} data-testid="ward-alerts-filters">
-      {lens.filter !== "all" && <span role="status">Act-now alerts remain visible.</span>}
       <ChipGroup label="Show open alerts" className={log.filterChips}>
         {ids.map((id) => (
           <FilterChip

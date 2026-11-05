@@ -1,16 +1,15 @@
 "use client";
 
-import { SharedAccessContext } from "../shell/ward-shared-access-context";
-
 import { useWardFormSave } from "../use-ward-form-save";
 
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
-import { useState, useRef, useEffect, useMemo, useCallback, useContext, type ReactNode } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback, type ReactNode } from "react";
 import { AlarmClock } from "lucide-react";
 import { isOpen } from "@/components/ward-management/ward-derivations";
 import { taskItems } from "@/components/ward-management/ward-act-now-items";
 import {
+  activeSnooze,
   currentInboxOwner,
   isSnoozeReason,
   partitionSnoozed,
@@ -23,6 +22,7 @@ import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
+import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { ESCALATION_CONTACTS, type ReleasePullReason } from "@/components/ward-management/ward-change-reasons";
@@ -54,11 +54,17 @@ import {
   type BroadcastDraft,
 } from "./broadcast-draft";
 import {
+  alertActionFor,
+  alertGroupOf,
   alertKindOf,
   alertsOrderLine,
   byOldest,
   escalationAppliesTo,
+  effectiveOwner,
   isQueueItem,
+  admissionIdOfInboxId,
+  raisedAt,
+  resolveAlertSubject,
   shownAgeFrom,
   type AlertKind,
   alertsNowFigures,
@@ -72,7 +78,6 @@ import {
   type QueueEntry,
   type QueueHandlers,
 } from "./alerts-queue";
-import { createAlertEntryBuilder } from "./alerts-queue-entry";
 import { groupLinkedAlerts, type LinkedQueueItem } from "./alert-linked-groups";
 import { LinkedAlertItem } from "./alert-linked-group";
 import { AlertDetail, type AlertDetailHandlers } from "./alert-detail";
@@ -450,15 +455,42 @@ function AlertsWorkspace() {
       broadcastTriggerRef.current?.focus();
     }
   }, [broadcastAccepted, broadcastRequest]);
-  const entryFor = useMemo(
-    () =>
-      createAlertEntryBuilder(
+  const entryFor = useCallback(
+    (item: InboxItem, snoozed: boolean): Omit<QueueEntry, "highlighted"> => {
+      const movement = movements.find((candidate: Movement) => candidate.id === item.movementId);
+      const booking = item.plannedAdmission
+        ? { planned: item.plannedAdmission, personLabel: item.personLabel }
+        : undefined;
+      const dischargeAdmissionId = admissionIdOfInboxId(item.id);
+      const admission =
+        dischargeAdmissionId !== undefined ? admissions.find((stay) => stay.id === dischargeAdmissionId) : undefined;
+      const subject = resolveAlertSubject(
+        movement,
+        item.movementId,
         umrnLookup,
-        { admissions, units, inboxOwnership, inboxAcknowledgements, inboxSnoozes },
-        deskRole,
-        now,
-      ),
-    [umrnLookup, admissions, units, inboxOwnership, inboxAcknowledgements, inboxSnoozes, deskRole, now],
+        units,
+        booking,
+        admission,
+        item.personId,
+      );
+      const recorded = effectiveOwner(item, inboxOwnership[item.id]);
+      // #801: only the coordinator takes alerts, so other desks see its rows by its desk name, never "You".
+      const owner = recorded === COORDINATOR && !coordDesk ? CHROME_ROLE_LABELS.coordinator : recorded;
+      return {
+        item,
+        movement,
+        subject,
+        group: alertGroupOf(item),
+        owner,
+        mine: coordDesk && recorded === COORDINATOR,
+        raised: raisedAt(item, movement),
+        seen: inboxAcknowledgements[item.id]?.at(-1),
+        ownedSince: currentInboxOwner(inboxOwnership[item.id], item.since)?.at,
+        snooze: snoozed ? activeSnooze(inboxSnoozes[item.id], now, item.since) : undefined,
+        action: alertActionFor(item, subject),
+      };
+    },
+    [movements, admissions, umrnLookup, units, inboxOwnership, inboxAcknowledgements, inboxSnoozes, now, coordDesk],
   );
   const isHighlighted = useCallback(
     (entry: Omit<QueueEntry, "highlighted">) =>
@@ -538,21 +570,16 @@ function AlertsWorkspace() {
   const forecastDesk = access.role === "coordinator" || access.role === "bed_manager";
   const forecastCount = useForecastAlerts(now).length;
   const dueReminders = useDueReminderCount(now);
-  const preferenceScope = useContext(SharedAccessContext)?.scopeKey;
-  const lens = useOpenFilter(
-    quietWard,
-    {
-      act: actCount,
-      wait: waitEntries.length,
-      forecast: forecastDesk ? forecastCount : undefined,
-      reminders: dueReminders,
-      notices: unreadNotices.length,
-      snoozed: snoozedEntries.length,
-      // The Yours chip counts every row its filter shows: running and snoozed rows and beds to pull too.
-      yours: allEntries.filter((entry) => entry.mine).length + toPull.length,
-    },
-    { role: access.role, scopeKey: preferenceScope },
-  );
+  const lens = useOpenFilter(quietWard, {
+    act: actCount,
+    wait: waitEntries.length,
+    forecast: forecastDesk ? forecastCount : undefined,
+    reminders: dueReminders,
+    notices: unreadNotices.length,
+    snoozed: snoozedEntries.length,
+    // The Yours chip counts every row its filter shows: running and snoozed rows and beds to pull too.
+    yours: coordDesk ? allEntries.filter((entry) => entry.mine).length + toPull.length : undefined,
+  });
 
   // "Next alert": act now before waiting, yours first, unacknowledged only, oldest first.
   const nextQueue = useMemo(() => {

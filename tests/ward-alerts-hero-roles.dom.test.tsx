@@ -1,4 +1,4 @@
-import { act, cleanup, render, screen, within } from "@testing-library/react";
+import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
@@ -8,8 +8,7 @@ import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/w
 import { NOW_ANCHOR, allUnits } from "@/components/ward-management/ward-sites";
 
 // Alerts redesign role views (Josh, 31 Oct 2026, "Yes to all"): a desk that can never broadcast
-// is not shown a greyed Broadcast. The officer has no taken-alert hero figure; Open's role-owned
-// Yours filter is independent and may show waiting work addressed to transport.
+// is not shown a greyed Broadcast, and the transport officer, who never takes an alert, has no "Yours".
 afterEach(() => {
   cleanup();
   act(() => {
@@ -42,9 +41,9 @@ describe("Alerts hero role branches", () => {
     expect(screen.queryByRole("button", { name: "Broadcast alert" })).not.toBeInTheDocument();
   });
 
-  it("leaves Broadcast and the taken-alert hero figure out for the transport officer", () => {
+  it("leaves Broadcast and Yours out for the transport officer", () => {
     renderAs({ role: "officer", scope: { kind: "jobs" } });
     expect(screen.queryByRole("button", { name: "Broadcast alert" })).not.toBeInTheDocument();
-    expect(within(screen.getByRole("group", { name: "Alert summary" })).queryByText("Yours")).not.toBeInTheDocument();
+    expect(screen.queryByText("Yours")).not.toBeInTheDocument();
   });
 });
