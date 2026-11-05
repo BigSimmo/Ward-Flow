@@ -31,10 +31,8 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Button, buttonClass, foldLimit, ShowMoreRow, useIsPhone } from "@/components/wf";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
-import { readTourStep, type WardTourRole } from "./ward-help-store";
-import { type TourDevice } from "./ward-tour-steps";
-import { fullTourSteps } from "./ward-tour-more-steps";
-import { useTourFacts } from "./ward-tour-facts";
+import { type WardTourRole } from "./ward-help-store";
+import { TourRow } from "./ward-help-tour-row";
 import type { ScreenHelp } from "./ward-help-content";
 
 import { howToHref } from "./ward-help-href";
@@ -322,37 +320,6 @@ function PracticeWhenLive({
   return useOptionalWardFlowSelect("scenario") ? (
     <WardHelpPracticeCard role={role} onShowMe={onShowMe} showMeOn={showMeOn} />
   ) : null;
-}
-
-/** The tour as one row: where this desk stopped, and Start or Resume. */
-function TourRow({ role, onTour }: { role: WardTourRole; onTour: () => void }) {
-  const device: TourDevice = useIsPhone() ? "phone" : "desk";
-  const { facts } = useTourFacts(role);
-  const total = useMemo(() => fullTourSteps(role, device, facts).length, [role, device, facts]);
-  // The tour's own saved place (`ward-help-store`), read once when Help opens.
-  const [at] = useState(() => Math.min(readTourStep(role), Math.max(0, total - 1)));
-  const minutes = Math.max(1, Math.round(((total - at) * (device === "phone" ? 12 : 15)) / 60));
-  return (
-    <div className={`${s.card} ${s.tour}`} data-testid="ward-help-tour-row">
-      <span className={s.tourIcon} aria-hidden="true">
-        <Compass aria-hidden="true" strokeWidth={1.75} />
-      </span>
-      <div className={s.tourText}>
-        <b>Tour of your desk</b>
-        <span>
-          {at > 0 ? `Stopped at ${at + 1} of ${total}` : `${total} short steps`} · about {minutes} min
-        </span>
-        <span className={s.segments} aria-hidden="true">
-          {Array.from({ length: total }, (_, index) => (
-            <i key={index} data-done={index < at ? "" : undefined} />
-          ))}
-        </span>
-      </div>
-      <Button variant="sec" onClick={onTour} data-testid="ward-help-view-tour">
-        {at > 0 ? "Resume" : "Start"}
-      </Button>
-    </div>
-  );
 }
 
 /**

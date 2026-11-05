@@ -1,16 +1,15 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
-
-import { Button, OverlayPortal, useIsPhone } from "@/components/wf";
+import { useEffect, useRef, useState } from "react";
 
 import { parseTourSeen, useTourRole, useTourSeen, type WardTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
-import { fullTourSteps } from "./ward-tour-more-steps";
-import { tourMinutes, type TourDevice } from "./ward-tour-steps";
-import { useCornerCardEscape } from "./use-corner-card-escape";
-import styles from "./ward-tour-offer.module.css";
+
+// The welcome cards, their words and the tour length they quote load only when the offer shows,
+// so this file (on every signed-in page) stays small.
+const WardTourWelcome = dynamic(() => import("./ward-tour-welcome").then((m) => m.WardTourWelcome), { ssr: false });
 
 export const TOUR_AUTO_DONE_STORAGE_KEY = "ward_flow_choice_tour_auto_done";
 // Heard by the what's new note (`ward-whats-new.tsx`), written out so neither loads the other: the
@@ -79,14 +78,15 @@ const TOUR_SETTLE_MS = 500;
  * reload or a role that settles late never shows it again; a switch to another desk whose tour has
  * not been offered yet does not (G3, once per device). After that, Help (with its "New" marker for a desk
  * whose tour is unseen) and Settings are the way in.
+ *
+ * Nov 2026 (Help extension): the small card became three welcome cards (`ward-tour-welcome.tsx`):
+ * what Ward Flow is, that it holds made-up data only, and where Help is, then "Start the tour" or
+ * "Not now". Same once-per-device rule and storage; the cards load only when offered.
  */
 export function WardTourAutoStart({ onStart }: { onStart: () => void }) {
   const role = useTourRole();
   const seen = useTourSeen(role);
-  const { home, deskHome, facts } = useTourFacts(role);
-  const device: TourDevice = useIsPhone() ? "phone" : "desk";
-  // The offer says how long this desk's tour takes on this device, as its first step does.
-  const minutes = useMemo(() => tourMinutes(fullTourSteps(role, device, facts).length, device), [role, device, facts]);
+  const { home, deskHome } = useTourFacts(role);
   const pathname = usePathname() ?? "";
   const started = useRef<WardTourRole | null>(null);
   // The offer remembers the desk and page it was raised on, so a desk switch cannot leave a card
@@ -104,29 +104,15 @@ export function WardTourAutoStart({ onStart }: { onStart: () => void }) {
     return () => window.clearTimeout(timer);
   }, [deskHome, home, pathname, role, seen]);
   const showing = Boolean(offered && offered.role === role && offered.pathname === pathname);
-  // Escape is "Not now".
-  useCornerCardEscape(showing, () => setOffered(null));
   if (!showing) return null;
+  // Escape is "Not now" (the welcome's own modal contract).
   return (
-    <OverlayPortal layer="overlay" name="ward-tour-offer">
-      <section className={styles.offer} aria-label="Tour" data-testid="ward-tour-offer">
-        <p className={styles.text}>Want a quick tour? It takes {minutes}.</p>
-        <div className={styles.actions}>
-          <Button
-            variant="pri"
-            size="sm"
-            onClick={() => {
-              setOffered(null);
-              onStart();
-            }}
-          >
-            Start the tour
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setOffered(null)}>
-            Not now
-          </Button>
-        </div>
-      </section>
-    </OverlayPortal>
+    <WardTourWelcome
+      onStart={() => {
+        setOffered(null);
+        onStart();
+      }}
+      onClose={() => setOffered(null)}
+    />
   );
 }
