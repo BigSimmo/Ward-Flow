@@ -1,3 +1,4 @@
+import { readAccessDirectory } from "./ward-access-directory";
 import { recoverCommandReceipts } from "./ward-command-recovery-run";
 import {
   COMMAND_RECOVERY_KEY,
@@ -1357,12 +1358,11 @@ export class SharedWorkspaceClient {
   }
   /** Roles and open requests inside this access admin's own place. */
   async listAccess(): Promise<{ memberships: SharedMembership[]; requests: SharedAccessRequest[] }> {
-    const { response, value } = await this.request("/v1/workspace/access");
-    if (!response.ok) throw new Error(typeof value?.error === "string" ? value.error : "Roles could not be read");
-    return {
-      memberships: Array.isArray(value.memberships) ? value.memberships : [],
-      requests: Array.isArray(value.requests) ? value.requests : [],
-    };
+    const lifetime = this.roleLifetime;
+    return readAccessDirectory(
+      (path) => this.request(path),
+      () => lifetime === this.roleLifetime && !lifetime.signal.aborted,
+    );
   }
   /** D-80: newest openings; only statewide coordinator and access admin may read them. */
   async listRecordViews(): Promise<SharedRecordView[]> {

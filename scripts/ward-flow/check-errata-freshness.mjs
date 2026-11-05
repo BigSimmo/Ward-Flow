@@ -114,9 +114,11 @@ const CLAIMS = [
     // 2026-11-04: twenty-five. Capacity C3 (#1360) adds tests/ward-capacity-day-bars-focus.dom.test.tsx
     // and tests/ward-capacity-heat-map-roving.dom.test.tsx for keyboard and tap forecast detail;
     // require both named additions too.
+    // 2026-11-05: twenty-six. The demo world-generation fix (#1463) adds
+    // tests/ward-capacity-world-generation.dom.test.tsx; require it by name.
     claim:
-      "tests/ward-capacity-* was FOURTEEN files when the plan claimed fifteen; twenty-five now for unrelated " +
-      "reasons (D9 added one on 2026-09-12, the WF-27 controls test one on 2026-09-16, C1 service-scope on 2026-09-17, Ward capacity-confirmation form on 2026-10-01, capacity review on 2026-10-06, v10 Capacity table view on 2026-10-10, one CSS-text pin retired on 2026-10-18, scroll-performance regression on 2026-10-24, bed-map links on 2026-10-27, refresh receipt and scroll-motion regressions on 2026-11-02, two forecast-detail tests on 2026-11-04), which does not make the plan's figure right",
+      "tests/ward-capacity-* was FOURTEEN files when the plan claimed fifteen; twenty-six now for unrelated " +
+      "reasons (D9 added one on 2026-09-12, the WF-27 controls test one on 2026-09-16, C1 service-scope on 2026-09-17, Ward capacity-confirmation form on 2026-10-01, capacity review on 2026-10-06, v10 Capacity table view on 2026-10-10, one CSS-text pin retired on 2026-10-18, scroll-performance regression on 2026-10-24, bed-map links on 2026-10-27, refresh receipt and scroll-motion regressions on 2026-11-02, two forecast-detail tests on 2026-11-04, demo world-generation on 2026-11-05), which does not make the plan's figure right",
     check: () => {
       const n = existsSync(p("tests"))
         ? readdirSync(p("tests")).filter((f) => f.startsWith("ward-capacity")).length
@@ -133,10 +135,11 @@ const CLAIMS = [
       const scrollMotion = existsSync(p("tests/ward-capacity-scroll-motion.dom.test.tsx"));
       const dayBarsFocus = existsSync(p("tests/ward-capacity-day-bars-focus.dom.test.tsx"));
       const heatMapRoving = existsSync(p("tests/ward-capacity-heat-map-roving.dom.test.tsx"));
+      const worldGeneration = existsSync(p("tests/ward-capacity-world-generation.dom.test.tsx"));
       // Every half, so this cannot pass by a DIFFERENT file arriving or a named one being renamed.
       return {
         ok:
-          n === 25 &&
+          n === 26 &&
           absorbed &&
           controls &&
           serviceScope &&
@@ -148,8 +151,9 @@ const CLAIMS = [
           refreshSave &&
           scrollMotion &&
           dayBarsFocus &&
-          heatMapRoving,
-        saw: `${n} files, D9 addition ${absorbed ? "present" : "ABSENT"}, WF-27 addition ${controls ? "present" : "ABSENT"}, C1 addition ${serviceScope ? "present" : "ABSENT"}, capacity-confirmation form addition ${capacityForm ? "present" : "ABSENT"}, review addition ${review ? "present" : "ABSENT"}, table-view addition ${tableView ? "present" : "ABSENT"}, scroll-performance addition ${scrollPerformance ? "present" : "ABSENT"}, bed-map links addition ${bedMapLinks ? "present" : "ABSENT"}, refresh receipt addition ${refreshSave ? "present" : "ABSENT"}, scroll-motion addition ${scrollMotion ? "present" : "ABSENT"}, day-bars focus addition ${dayBarsFocus ? "present" : "ABSENT"}, heat-map roving addition ${heatMapRoving ? "present" : "ABSENT"}`,
+          heatMapRoving &&
+          worldGeneration,
+        saw: `${n} files, D9 addition ${absorbed ? "present" : "ABSENT"}, WF-27 addition ${controls ? "present" : "ABSENT"}, C1 addition ${serviceScope ? "present" : "ABSENT"}, capacity-confirmation form addition ${capacityForm ? "present" : "ABSENT"}, review addition ${review ? "present" : "ABSENT"}, table-view addition ${tableView ? "present" : "ABSENT"}, scroll-performance addition ${scrollPerformance ? "present" : "ABSENT"}, bed-map links addition ${bedMapLinks ? "present" : "ABSENT"}, refresh receipt addition ${refreshSave ? "present" : "ABSENT"}, scroll-motion addition ${scrollMotion ? "present" : "ABSENT"}, day-bars focus addition ${dayBarsFocus ? "present" : "ABSENT"}, heat-map roving addition ${heatMapRoving ? "present" : "ABSENT"}, world-generation addition ${worldGeneration ? "present" : "ABSENT"}`,
       };
     },
   },
