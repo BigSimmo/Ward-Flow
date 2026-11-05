@@ -291,3 +291,9 @@ it("gives the network ED median to the minute, the same figure All EDs shows (de
   // 60 and 120 minutes: the median is 1h 30m, not rounded to "2h".
   expect(row.cells[medianColumn].textContent).toBe("1h 30m");
 });
+
+it("says a scope with no beds is empty, with no Clear filters when no filter is on (design audit C18)", () => {
+  render(<StatisticsCapacityChart units={[]} bedReleases={[]} />);
+  expect(screen.getByText("No inpatient beds here.")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Clear filters" })).toBeNull();
+});
