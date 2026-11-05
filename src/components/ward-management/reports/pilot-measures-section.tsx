@@ -70,7 +70,8 @@ function durationFigure(summary: ReportDuration, what: string, empty = `No ${wha
 export function durationSampleText(sampleSize: ReportCount, population: ReportCount, what: string): string {
   const sample = reportCount(sampleSize);
   const of = reportCount(population);
-  if (sample === SMALL_NUMBER_NOT_SHOWN && of === SMALL_NUMBER_NOT_SHOWN) return `${what} count held back (small numbers)`;
+  if (sample === SMALL_NUMBER_NOT_SHOWN && of === SMALL_NUMBER_NOT_SHOWN)
+    return `${what} count held back (small numbers)`;
   if (sample === SMALL_NUMBER_NOT_SHOWN) return `of ${of} ${what}; sample held back (small numbers)`;
   if (of === SMALL_NUMBER_NOT_SHOWN) return `from ${sample} ${what}; total held back (small numbers)`;
   return `from ${sample} of ${of} ${what}`;
