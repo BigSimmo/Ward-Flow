@@ -15,14 +15,14 @@ Ward Flow holds synthetic data only. Nothing here authorises real patient data.
 
 ## What runs where
 
-| Part                 | Where                                        | Name                | Notes                                                                                |
-| -------------------- | -------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------ |
-| Public demo app      | Railway, project **Ward Flow**, `production` | `ward-flow`         | Local mode only. No database, no sign-in. Health: `/api/health`                      |
-| Signed-in site       | Same Railway project and environment         | `ward-flow-shared`  | Shared mode. Sleeps when idle. Health: `/api/health`                                 |
-| Shared backend       | Same Railway project and environment         | `ward-flow-backend` | Node server. `/healthz` (no sign-in), `/readyz` (signed in). Never sleeps            |
-| Database and sign-in | Supabase project **Ward Flow**, Sydney       | schema `ward_flow`  | Backend logs in as the restricted `wardflow_backend` role, never the administrator   |
-| Uptime check         | GitHub Actions, `backend-uptime.yml`         | backend uptime      | Every 30 minutes asks `/healthz`. Opens a `backend-down` issue that emails the owner |
-| Source               | GitHub `BigSimmo/Ward-Flow`, branch `live`   | -                   | Railway follows `live`; the daily release moves it from CI-passed `main`             |
+| Part                 | Where                                        | Name                | Notes                                                                                                                    |
+| -------------------- | -------------------------------------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Public demo app      | Railway, project **Ward Flow**, `production` | `ward-flow`         | Local mode only. No database, no sign-in. Health: `/api/health`                                                          |
+| Signed-in site       | Same Railway project and environment         | `ward-flow-shared`  | Shared mode. Sleeps when idle. Health: `/api/health`                                                                     |
+| Shared backend       | Same Railway project and environment         | `ward-flow-backend` | Node server. `/healthz` (no sign-in), `/readyz` (signed in). Never sleeps                                                |
+| Database and sign-in | Supabase project **Ward Flow**, Sydney       | schema `ward_flow`  | Backend logs in as the restricted `wardflow_backend` role, never the administrator                                       |
+| Uptime check         | GitHub Actions, `backend-uptime.yml`         | backend uptime      | Every 10 minutes asks `/healthz` and loads `/v1/workspace` signed in. Opens a `backend-down` issue that emails the owner |
+| Source               | GitHub `BigSimmo/Ward-Flow`, branch `live`   | -                   | Railway follows `live`; the daily release moves it from CI-passed `main`                                                 |
 
 Railway runs in Singapore, so this hosting is offshore and synthetic-only. Addresses and resource
 IDs are in [hosting.md](../hosting.md). The Supabase project ID and how to pick the right connector

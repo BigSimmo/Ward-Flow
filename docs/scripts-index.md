@@ -61,7 +61,8 @@ before the production build measures the phone script budget) and `budget-rechec
 `.github/workflows/ward-flow-budget-recheck.yml` to re-measure armed pull requests when main moves).
 The other workflows need no script here: `release-tag.yml` tags each CI-passed main commit
 `release-YYYY-MM-DD-<sha>`, and `backend-uptime.yml` checks the hosted backend's `/healthz` every
-30 minutes and opens an issue for the owner when it stays down. CI also runs
+10 minutes, signs in as the synthetic monitor account to load `/v1/workspace`, and opens an issue
+for the owner when either stays down. CI also runs
 `check-script-budget.mjs` (phone first-load script budgets in `script-budget.json`),
 `check-knip-baseline.mjs` (`npm run check:knip`), `ward-flow/related-tests.mjs`,
 `ward-flow/gate-tsc.mjs` and `ward-flow/selected-baseline-verdict.mjs`.
