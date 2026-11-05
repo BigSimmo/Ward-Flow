@@ -35,6 +35,12 @@ describe("how-to list", () => {
     }
   });
 
+  it("holds the desk jobs added on 5 Nov 2026, 25 or more beyond the 65 before", () => {
+    expect(HOW_TOS.length).toBeGreaterThanOrEqual(90);
+    // Every job but the three with nothing on screen to point at has Show me.
+    expect(HOW_TOS.filter((howTo) => !howTo.showMe?.length).map((howTo) => howTo.id)).toHaveLength(3);
+  });
+
   it("points every Show me step at a test id or setting the screens still carry", () => {
     for (const howTo of HOW_TOS) {
       for (const step of howTo.showMe ?? []) {

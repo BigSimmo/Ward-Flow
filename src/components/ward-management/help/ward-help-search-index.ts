@@ -13,7 +13,12 @@ import { GLOSSARY, KEYBOARD_SHORTCUTS, SCREEN_HELP, shortcutsForDesk, type Gloss
 import { DESK_GUIDES, SAVED_OR_NOT, WHEN_IT_IS_DOWN } from "./ward-help-guide";
 import { correctedQuestionWords, HOW_TOS, ownTwinOf, questionWords } from "./ward-help-howto";
 import { COLOUR_LEGEND, COLOUR_LEGEND_NOTE } from "./ward-help-legend";
-import { ACCESSIBILITY_HELP, COMMON_QUESTIONS, INTERACTIONS_HELP } from "../help-content/ward-help-reference";
+import {
+  ACCESSIBILITY_HELP,
+  COMMON_QUESTIONS,
+  INTERACTIONS_HELP,
+  TOUCH_HELP,
+} from "../help-content/ward-help-reference";
 import { SAVE_HELP_TERMS } from "../help-content/ward-help-glossary";
 import { ROLE_REFERENCE } from "./ward-help-roles";
 import type { WardTourRole } from "./ward-help-store";
@@ -207,6 +212,15 @@ function buildIndex(glossary: readonly GlossaryTerm[]): readonly Entry[] {
       entry(
         { key: `accessibility:${item.title}`, group: "Guides", title: item.title, detail: item.text },
         `${item.title} accessibility`,
+        item.text,
+      ),
+    );
+  // Touch and gestures (5 Nov 2026): found by the gesture's own words, such as swipe or pinch.
+  for (const item of TOUCH_HELP)
+    entries.push(
+      entry(
+        { key: `gesture:${item.title}`, group: "Guides", title: item.title, detail: item.text },
+        `${item.title} touch gesture`,
         item.text,
       ),
     );
