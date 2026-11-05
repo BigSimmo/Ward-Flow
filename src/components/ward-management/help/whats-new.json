@@ -1,10 +1,5 @@
 [
   {
-    "id": "2026-10-31-redesign-referrals",
-    "date": "2026-10-31",
-    "line": "Referrals and Ward answer are tidier: rows wrap in full, and Accept and Decline sit in a bar at the foot."
-  },
-  {
     "id": "2026-10-31-redesign-records",
     "date": "2026-10-31",
     "line": "Waiting, Alerts, Legal forms, Patients, Movements and the patient record have a new look for each desk."
@@ -98,5 +93,10 @@
     "id": "2026-11-03-one-page-scroll",
     "date": "2026-11-03",
     "line": "Pages scroll as one, with headings pinned under the top bar, and a click outside a drawer now closes it."
+  },
+  {
+    "id": "2026-11-03-navigation-recovery",
+    "date": "2026-11-03",
+    "line": "Referral links open the requested record, search follows your desk, and Forward restores movement details."
   }
 ]

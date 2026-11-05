@@ -96,3 +96,7 @@ _Ward Flow is a prototype on synthetic data. Not for real patients._
   patient's own bed while they are on leave or absent.
 - Avoid counts that change. Point to the screen instead.
 - If a step changes, update the matching [desk guide](desk-guides/README.md) too.
+
+## Preserved app announcement
+
+- 2026-10-31 (`2026-10-31-redesign-referrals`): Referrals and Ward answer are tidier: rows wrap in full, and Accept and Decline sit in a bar at the foot.

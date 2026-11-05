@@ -62,6 +62,7 @@ import { SearchOptionBody } from "./ward-global-search-option-body";
 import { WardSearchCommands } from "./ward-global-search-commands";
 import { askWardHelp, looksLikeHelpQuestion } from "./help/ward-help-events";
 import { useWardFeatureFlag } from "./shell/ward-feature-flag-store";
+import { useAccessNavFilter } from "./shell/ward-access";
 import { recentsLifetimeNow, rememberRecent, useSessionRecents } from "./ward-global-search-recents";
 import {
   EmptyTry,
@@ -355,9 +356,14 @@ export function WardGlobalSearch({
   const wardFlow = useOptionalWardFlow();
   const demoOff = wardFlow?.demoControlsAvailable === false;
   const preparing = wardFlow?.sessionAdopted === false;
+  const accessNav = useAccessNavFilter();
   const permittedResult = useCallback(
-    (item: SearchResultItem) => permittedSearchResult(item, canOpenHref, canRunAction),
-    [canOpenHref, canRunAction],
+    (item: SearchResultItem) => {
+      // Match the catalogue first, then apply the menu's own-place destination and gate.
+      const adapted = item.kind === "view" ? accessNav([{ ...item, label: item.title }]) : [item];
+      return adapted.flatMap((shown) => permittedSearchResult(shown, canOpenHref, canRunAction));
+    },
+    [accessNav, canOpenHref, canRunAction],
   );
 
   const [query, setQuery] = useState(initialQuery);
@@ -549,12 +555,13 @@ export function WardGlobalSearch({
 
   /** The four common screens: the start screen's Go to, and the empty state's Try. */
   const startViews = useMemo(() => {
+    const views = accessNav(CORE_SEARCH_VIEWS.map((view) => ({ ...view, id: view.key, label: view.title })));
     const usual = START_VIEW_KEYS.flatMap((key) => {
-      const view = CORE_SEARCH_VIEWS.find((candidate) => candidate.key === key);
+      const view = views.find((candidate) => candidate.key === key);
       return view && canOpenHref(view.href) ? [view] : [];
     });
-    return usual.length ? usual : CORE_SEARCH_VIEWS.filter((view) => canOpenHref(view.href)).slice(0, 4);
-  }, [canOpenHref]);
+    return usual.length ? usual : views.filter((view) => canOpenHref(view.href)).slice(0, 4);
+  }, [accessNav, canOpenHref]);
 
   /** What someone sees before typing: live work, recent records, common screens and actions. */
   const startGroups = useMemo(() => {
