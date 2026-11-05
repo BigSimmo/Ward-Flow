@@ -472,6 +472,7 @@ export function PatientNowScreen({
     setBookingRejectionStart(undefined);
     setTransportAnswers(BLANK_TRANSPORT_BOOKING);
     setTransportLegalReason("");
+    transportSave.forget();
     setShowTransportForm(true);
   }
 
@@ -774,6 +775,7 @@ export function PatientNowScreen({
       clearanceTriggerRef.current = event.currentTarget;
       setClearanceDraft("");
       setClearanceAttested(false);
+      clearanceSave.forget();
       setShowClearanceModal(true);
     },
     onBookTransport: () => {

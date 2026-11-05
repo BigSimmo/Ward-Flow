@@ -239,12 +239,75 @@ export function planSave(stored, world, revision, storedCore = null) {
   return { core, upserts, deletes };
 }
 
-/** Every text value anywhere in a command, so the records it names can be found. */
-function namedValues(value, found = new Set()) {
-  if (typeof value === "string") found.add(value);
-  else if (Array.isArray(value)) for (const entry of value) namedValues(entry, found);
-  else if (isPlainObject(value)) for (const entry of Object.values(value)) namedValues(entry, found);
+/** Reference fields in command payloads. Prose is content even when it equals a record id. */
+const REFERENCE_FIELDS = new Set([
+  "id",
+  "movementId",
+  "referralId",
+  "patientId",
+  "admissionId",
+  "plannedAdmissionId",
+  "unitId",
+  "unitIds",
+  "acceptedUnitId",
+  "actingUnitId",
+  "actingPlaceId",
+  "actingTeamId",
+  "originUnitId",
+  "originEdId",
+  "ownerUnitId",
+  "wardUnitId",
+  "edId",
+  "teamId",
+  "placeId",
+  "bedId",
+  "leaveBedId",
+  "nextLeaveBedId",
+  "releaseId",
+  "alertId",
+  "eventId",
+  "reviewId",
+  "inboxItemId",
+  "noticeId",
+  "transportId",
+  "submissionId",
+  "episodeId",
+  "subjectId",
+  "sourceAdmissionId",
+  "referralSourceAdmissionId",
+  "nextReferralId",
+  "referredUnitIds",
+  "targetUnitIds",
+  "triedUnitIds",
+  "waitlistedUnitIds",
+]);
+function namedValues(value, found = new Set(), reference = false) {
+  if (typeof value === "string") {
+    if (reference) found.add(value);
+  } else if (Array.isArray(value)) for (const entry of value) namedValues(entry, found, reference);
+  else if (isPlainObject(value))
+    for (const [field, entry] of Object.entries(value)) namedValues(entry, found, REFERENCE_FIELDS.has(field));
   return found;
+}
+
+/** Only the oldest receipt removed by the ordinary bounded-history append is maintenance.
+ * Explicit Undo and replacement of a subject remain semantic dependencies.
+ */
+function retentionEviction(before, after, event) {
+  const was = before.state.undoRecords;
+  const now = after.state.undoRecords;
+  if (
+    typeof event?.type !== "string" ||
+    event.type.startsWith("UNDO_") ||
+    !Array.isArray(was) ||
+    !Array.isArray(now) ||
+    was.length !== 50 ||
+    now.length !== 50 ||
+    !same(was.slice(1), now.slice(0, -1))
+  )
+    return null;
+  const added = undoRecordId(now.at(-1));
+  return added && !was.some((row) => undoRecordId(row) === added) ? undoRecordId(was[0]) : null;
 }
 
 /**
@@ -265,7 +328,9 @@ function commandRecords(before, after, event) {
   const now = after === before ? was : splitWorld(after).parts;
   /** @type {Map<string, Part>} */
   const records = new Map();
+  const evicted = retentionEviction(before, after, event);
   for (const [key, part] of was) {
+    if (part.collection === "undoRecords" && part.recordId === evicted) continue;
     const next = now.get(key);
     if (!next || !same(next.body, part.body)) records.set(key, part);
   }

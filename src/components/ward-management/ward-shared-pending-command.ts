@@ -38,7 +38,8 @@ export function sheetBasis(sheetSeen: WeakMap<object, SheetSeen>, sheets: readon
   if (!seen.length) return undefined;
   const revision = Math.min(...seen.map((entry) => entry.revision));
   const records: Record<string, number> = {};
-  for (const token of seen[0].records.keys()) {
+  const candidates = new Set(seen.flatMap((entry) => [...entry.records.keys()]));
+  for (const token of candidates) {
     const at = Math.min(...seen.map((entry) => entry.records.get(token) ?? entry.revision));
     if (at > revision) records[token] = at;
   }

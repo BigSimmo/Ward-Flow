@@ -93,10 +93,13 @@ export function WardDrawerDischargeDate({
         <span>Day</span>
         <Stepper
           noun="discharge day"
+          unavailable={save.pending}
           value={day}
           min={0}
           max={DISCHARGE_DAYS.length - 1}
-          onChange={setDay}
+          onChange={(value) => {
+            if (!save.pending) setDay(value);
+          }}
           display={dayOptionLabel(day, now, dayZero)}
           valueText={dayOptionLabel(day, now, dayZero)}
           valueTestId="ward-drawer-discharge-day"
@@ -104,7 +107,7 @@ export function WardDrawerDischargeDate({
       </div>
       <label>
         Expected discharge time
-        <input type="time" value={time} onChange={(event) => setTime(event.target.value)} />
+        <input disabled={save.pending} type="time" value={time} onChange={(event) => setTime(event.target.value)} />
       </label>
       <p className={styles.hint} aria-live="polite">
         {parsed === undefined
