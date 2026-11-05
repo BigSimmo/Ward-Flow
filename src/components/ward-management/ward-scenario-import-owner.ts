@@ -10,13 +10,20 @@ export type ScenarioFileLoader = (
 export async function readOwnedScenario(
   text: string | Promise<string>,
   sequence: { current: number },
-  owner: { current: { world: object; active: boolean } },
+  owner: { current: { world: { worldGeneration: number }; sequence: number; active: boolean } },
   isCurrent: () => boolean,
 ) {
   const selected = ++sequence.current;
-  const startedWorld = owner.current.world;
+  // Newer work is a command dispatched after this import began, or a reset or replaced world. Adopting
+  // the saved session, and settling a command dispatched before the import began, are not newer work.
+  const startedCommand = owner.current.sequence;
+  const startedGeneration = owner.current.world.worldGeneration;
   const current = () =>
-    selected === sequence.current && owner.current.active && owner.current.world === startedWorld && isCurrent();
+    selected === sequence.current &&
+    owner.current.active &&
+    owner.current.sequence === startedCommand &&
+    owner.current.world.worldGeneration === startedGeneration &&
+    isCurrent();
   const obsolete = { ok: false as const, reason: "The demo changed while the file was loading. Nothing was loaded." };
   let source: string;
   try {

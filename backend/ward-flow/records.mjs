@@ -295,6 +295,9 @@ function namedValues(value, found = new Set(), reference = false) {
 /** Only the oldest receipt removed by the ordinary bounded-history append is maintenance.
  * Explicit Undo and replacement of a subject remain semantic dependencies.
  */
+// Mirrors UNDO_RECORD_LIMIT in src/components/ward-management/ward-undo.ts. The "real held command"
+// tests in audit-conflict-boundaries.test.mjs run the built engine at this limit, so drift fails them.
+const UNDO_RECORD_LIMIT = 50;
 function retentionEviction(before, after, event) {
   const was = before.state.undoRecords;
   const now = after.state.undoRecords;
@@ -303,8 +306,8 @@ function retentionEviction(before, after, event) {
     event.type.startsWith("UNDO_") ||
     !Array.isArray(was) ||
     !Array.isArray(now) ||
-    was.length !== 50 ||
-    now.length !== 50 ||
+    was.length !== UNDO_RECORD_LIMIT ||
+    now.length !== UNDO_RECORD_LIMIT ||
     !same(was.slice(1), now.slice(0, -1))
   )
     return null;

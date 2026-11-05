@@ -114,11 +114,12 @@ function Submit({
     <>
       <Button
         type="submit"
-        disabled={pending}
         variant="pri"
         size="sm"
+        loading={pending}
         className={styles.submit}
-        aria-disabled={!pending && blocked ? true : undefined}
+        // Saving stays focusable and explained like a blocked save; the submit handler ignores repeats.
+        aria-disabled={pending || blocked ? true : undefined}
         aria-describedby={blocked ? id : undefined}
       >
         {children}
@@ -141,6 +142,8 @@ export function SentJourneyChanges({ movement, patientWho }: { movement: Movemen
   const baseId = useId();
   const [open, setOpen] = useState<Open>(null);
   const [urgency, setUrgency] = useState<1 | 2 | 3>(movement.urgency);
+  // An unaccepted pick survives close and reopen. Without one, the picker opens on the current urgency.
+  const [urgencyEdited, setUrgencyEdited] = useState(false);
   const [urgencyReason, setUrgencyReason] = useState<UrgencyChangeReason | undefined>(undefined);
   const [legalStatus, setLegalStatus] = useState<LegalStatus | undefined>(undefined);
   const [legalReason, setLegalReason] = useState<LegalStatusChangeReason | undefined>(undefined);
@@ -155,6 +158,7 @@ export function SentJourneyChanges({ movement, patientWho }: { movement: Movemen
   // Closing and reopening keeps an unaccepted selection recoverable.
   function toggle(next: Exclude<Open, null>) {
     if (save.pending) return;
+    if (next === "urgency" && open !== "urgency" && !urgencyEdited) setUrgency(movement.urgency);
     setOpen((current) => (current === next ? null : next));
   }
 
@@ -171,6 +175,7 @@ export function SentJourneyChanges({ movement, patientWho }: { movement: Movemen
       () => {
         setOpen(null);
         setUrgencyReason(undefined);
+        setUrgencyEdited(false);
       },
     );
   }
@@ -234,7 +239,10 @@ export function SentJourneyChanges({ movement, patientWho }: { movement: Movemen
             <Select
               disabled={save.pending}
               value={urgency}
-              onChange={(event) => setUrgency(Number(event.target.value) as 1 | 2 | 3)}
+              onChange={(event) => {
+                setUrgency(Number(event.target.value) as 1 | 2 | 3);
+                setUrgencyEdited(true);
+              }}
             >
               {URGENCY_OPTIONS.map((option) => (
                 <option key={option} value={option}>

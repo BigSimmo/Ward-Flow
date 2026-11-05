@@ -214,11 +214,12 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
 
         <form onSubmit={handleSubmit} className={styles.form}>
           <fieldset disabled={saving} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+            <legend className="sr-only">Arrival plan</legend>
             <div className={styles.note}>
               <ShieldCheck size={18} className={styles.noteIcon} aria-hidden="true" />
               <span>
-                Saving keeps the existing {pullHoldLabel} pull time limit. Over {LATE_ARRIVAL_GRACE_MINUTES} minutes late (
-                {OPERATIONAL_DEFAULT_LABEL}), a late notice goes to the referrer and accepting ward.
+                Saving keeps the existing {pullHoldLabel} pull time limit. Over {LATE_ARRIVAL_GRACE_MINUTES} minutes
+                late ({OPERATIONAL_DEFAULT_LABEL}), a late notice goes to the referrer and accepting ward.
               </span>
             </div>
 

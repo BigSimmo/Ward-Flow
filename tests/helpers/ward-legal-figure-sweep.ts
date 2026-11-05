@@ -245,12 +245,24 @@ export function candidateEvents(
   now: number,
   supplyDueAt = true,
 ): WardFlowEvent[] {
+  return candidatesForMovements(type, state, now, supplyDueAt);
+}
+
+function candidatesForMovements(
+  type: WardFlowEvent["type"],
+  state: WardFlowState,
+  now: number,
+  supplyDueAt: boolean,
+  matchesMovement: (id: string) => boolean = () => true,
+): WardFlowEvent[] {
   // `EVENT_ROLE[type]` is a non-empty list of permitted roles (widened this task, spec D2); any
   // one of them is refused by the role check identically to any other, so the first is enough to
   // get past the gate and exercise the reducer body — the coverage this sweep is checking never
   // depends on which of two permitted roles raised the event.
   const role = EVENT_ROLE[type][0];
-  const movementIds = state.movements.map((movement) => movement.id);
+  // Narrow event construction, never the world the candidates and reducer inspect. The public
+  // candidateEvents API leaves this unrestricted for exhaustive independent refusal controls.
+  const movementIds = state.movements.map((movement) => movement.id).filter(matchesMovement);
   const unitIds = state.units.map((unit) => unit.id);
   // Exhaustive controls keep native eager arrays; only short-circuit consumers use the iterator.
   const pairs = () => movementIds.flatMap((movementId) => unitIds.map((unitId) => ({ movementId, unitId })));
@@ -2047,9 +2059,10 @@ function* pairCandidates(
 }
 
 /**
- * Consumer iterator: avoids constructing unused Cartesian candidates. Other variants keep their
- * eager construction, including registration of every supplied-deadline sentinel. The public
- * candidateEvents array API still enumerates every candidate for independent refusal controls.
+ * Consumer iterator: avoids constructing unused Cartesian and movement-id candidates. Deadline
+ * writers keep their eager construction, including registration of every supplied-deadline
+ * sentinel. The public candidateEvents array API still enumerates every candidate for independent
+ * refusal controls.
  */
 export function* iterateCandidateEvents(
   type: WardFlowEvent["type"],
@@ -2069,7 +2082,17 @@ export function* iterateCandidateEvents(
     code === undefined || !MOVEMENT_TARGETED_EVENTS.has(type) || targetCodes.get(id) === code;
   const candidates = PAIR_EVENT_TYPES.has(type)
     ? pairCandidates(type, state, now, matchesMovement)
-    : preparationProfile.measure("eagerGeneration", () => candidateEvents(type, state, now, supplyDueAt));
+    : preparationProfile.measure("eagerGeneration", () =>
+        candidatesForMovements(
+          type,
+          state,
+          now,
+          supplyDueAt,
+          // Preserve sentinel registration even when this form has no matching movement. Other
+          // deadline writers iterate the original state directly and remain eager as before.
+          type === "RECORD_LEGAL_FORM_EXPIRY" ? undefined : matchesMovement,
+        ),
+      );
   if (Array.isArray(candidates)) preparationProfile.count("eagerCandidatesConstructed", candidates.length);
   for (const event of candidates) {
     if (code !== undefined && MOVEMENT_TARGETED_EVENTS.has(type)) {

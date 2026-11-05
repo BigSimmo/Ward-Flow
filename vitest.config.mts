@@ -1,6 +1,12 @@
 import { vitestCacheDirectory } from "./scripts/test-cache-path.mjs";
 import { COVERAGE_INCLUDE_GLOBS, COVERAGE_EXCLUDE_GLOBS } from "./scripts/coverage-contract.mjs";
-import { NODE_UNIT_TEST_GLOBS, DOM_UNIT_TEST_GLOBS, LIVE_UNIT_TEST_GLOBS } from "./scripts/unit-test-population.mjs";
+import {
+  NODE_UNIT_TEST_GLOBS,
+  DOM_UNIT_TEST_GLOBS,
+  LIVE_UNIT_TEST_GLOBS,
+  offlineUnitTestProject,
+} from "./scripts/unit-test-population.mjs";
+import { readUnitShardSelection } from "./scripts/ward-flow/unit-shard-selection.mjs";
 import { UnitDurationSequencer } from "./scripts/ward-flow/unit-durations.mjs";
 import { readWhatsNewEntries } from "./scripts/ward-flow/whats-new-list.mjs";
 
@@ -10,6 +16,12 @@ const liveProviderTests = process.env.ALLOW_PROVIDER_TESTS === "true";
 // one repository-relative path per line. Vitest 4's CLI --exclude does not reach `projects`, so the
 // gate hands its skip list over here instead of naming every other file on the command line.
 const gateExcludedFiles = (process.env.WARD_GATE_EXCLUDE_FILES ?? "").split("\n").filter(Boolean);
+const shardSelection = readUnitShardSelection(process.cwd(), process.env.WARD_UNIT_SHARD_SELECTION);
+// This is launcher transport, not test input. Workers that inspect/reload the ordinary config
+// must not inherit a shard's private collection manifest.
+delete process.env.WARD_UNIT_SHARD_SELECTION;
+if (shardSelection && (liveProviderTests || shardSelection.some((file) => gateExcludedFiles.includes(file))))
+  throw new Error("An offline unit shard manifest cannot enable providers or include excluded files");
 
 const config = {
   // What's new, combined from its entry files as the build does (next.config.ts). Vite writes the
@@ -118,5 +130,18 @@ const config = {
 // coverage job merges every shard's blob report and applies the thresholds above, unchanged, to the
 // whole suite. Every other run, including `npm run test:coverage`, applies them as before.
 if (process.env.WARD_COVERAGE_BLOB_DIR) delete (config.test.coverage as { thresholds?: unknown }).thresholds;
+
+// Keep the canonical project globs above visible to the full-population inventory guard. Hosted
+// shards narrow each project explicitly; an empty intersection must never inherit the root glob.
+if (shardSelection)
+  config.test.projects = config.test.projects
+    .map((project) => ({
+      ...project,
+      test: {
+        ...project.test,
+        include: shardSelection.filter((file) => offlineUnitTestProject(file) === project.test.name),
+      },
+    }))
+    .filter((project) => project.test.include.length > 0);
 
 export default config;
