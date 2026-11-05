@@ -251,6 +251,7 @@ export function ReturnPlan({
   const returnMovement = useOptionalWardFlowSelect("movements")?.movements.find(
     (movement) => movement.id === returnMovementId,
   );
+  const endedAttempt = returnMovement?.closure !== undefined && returnMovement.closure.outcome !== "arrived";
   const isAir = entry.band === "air_transport_only";
   const optionCodes = new Set(options.map((option) => option.siteCode));
   const groups = hospitalGroups();
@@ -259,8 +260,11 @@ export function ReturnPlan({
   return (
     <>
       {header}
+      {endedAttempt ? (
+        <p role="status">The previous return journey is closed. Record a new plan to arrange another return.</p>
+      ) : null}
       <ReturnTracker
-        done={returnStepsDone(draft, record, returnMovement)}
+        done={returnStepsDone(draft, record, endedAttempt ? undefined : returnMovement)}
         who={move.who}
         what={move.what}
         testId="ward-out-of-area-subject-caveat"

@@ -26,6 +26,8 @@ import type { RepatriationRecord } from "@/components/ward-management/ward-flow-
 import type { TransportExceptionReason } from "@/components/ward-management/ward-model";
 import type { TransportBookingAnswers } from "@/components/ward-management/ward-transport-checks";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
+import { useTransportBookingClose } from "@/components/ward-management/transport/use-transport-booking-close";
+import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { useWardRaise, type WardRaise } from "@/components/ward-management/ward-flow-raise";
 import { communityTeamById, communityTeamSlug } from "@/components/ward-management/community/community-derivations";
@@ -312,6 +314,16 @@ export function OfficerBookingPanel({
   const [answers, setAnswers] = useState<TransportBookingAnswers>(() => returnPlanBooking(plan, now));
   const [legalReason, setLegalReason] = useState<TransportExceptionReason | "">("");
   const save = useWardFormSave(movement.id);
+  const saving = save.pending && !save.error;
+  const requestClose = useTransportBookingClose({
+    scope: movement.id,
+    answers,
+    legalReason,
+    pending: saving,
+    onClose,
+  });
+  // This host owns the phone focus lifecycle too, so Escape follows the same draft guard as X.
+  useWardModalFocus(isPhone, sideRef, requestClose);
   // Held from opening, so a change by another desk is reported before this booking is accepted.
   useHoldOpenForm(true, movement.id);
   useOfficerPanelHeight("ward-officer-booking", isPhone, movement.id);
@@ -341,7 +353,7 @@ export function OfficerBookingPanel({
           () => onSaved(name),
         )
       }
-      onCancel={onClose}
+      onCancel={requestClose}
     />
   );
   // TR4 (3 Nov 2026): on desktop and tablet Log booking is a centred dialog with the providers'
@@ -350,7 +362,7 @@ export function OfficerBookingPanel({
     return (
       <Sheet
         open
-        onClose={onClose}
+        onClose={requestClose}
         title={`Log booking for ${name}`}
         description={`${umrn ? `${umrn} · ` : ""}${route}`}
         closeLabel="Close booking"
@@ -373,7 +385,7 @@ export function OfficerBookingPanel({
   }
   return (
     <div ref={sideRef} className={styles.side} data-panel="booking">
-      <div className={styles.scrim} aria-hidden="true" onClick={onClose} />
+      <div className={styles.scrim} aria-hidden="true" onClick={requestClose} />
       <Card
         className={`${styles.detail} ${styles.bookingCard}`}
         role="dialog"
@@ -400,7 +412,17 @@ export function OfficerBookingPanel({
               {route}
             </>
           }
-          aside={<Button variant="ghost" size="sm" iconOnly icon={X} onClick={onClose} aria-label="Close booking" />}
+          aside={
+            <Button
+              variant="ghost"
+              size="sm"
+              iconOnly
+              icon={X}
+              onClick={requestClose}
+              disabled={saving}
+              aria-label="Close booking"
+            />
+          }
         />
         <div className={cxBody(styles.detailScroll, styles.bookingBody)}>
           {plan ? callout : null}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { AlarmClock } from "lucide-react";
@@ -13,6 +14,7 @@ import { Button, Count, StatusGlyph, buttonClass, type WfTone } from "@/componen
 
 import { typedTimeLine } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import {
+  alertKindOf,
   extractOverdue,
   legalTypedEnd,
   minutesText,
@@ -93,6 +95,7 @@ function stateLine(entry: QueueEntry, now: Instant): string | undefined {
 }
 
 function RowAction({ entry, handlers, size = "sm" }: { entry: QueueEntry; handlers: QueueHandlers; size?: "sm" }) {
+  const deskRole = useEffectiveWardAccess().role;
   // Only the first-in-line row's action is filled; with no first in line, the row keeps its usual look.
   const variant =
     handlers.firstInLineId === undefined
@@ -111,6 +114,13 @@ function RowAction({ entry, handlers, size = "sm" }: { entry: QueueEntry; handle
       >
         Return now
       </Button>
+    );
+  }
+  if (deskRole === "ward" && alertKindOf(entry.item.id) === "planned") {
+    return (
+      <span className={styles.quiet}>
+        Ask the coordinator to review this booking and record the arrival, change or cancellation.
+      </span>
     );
   }
   if (entry.action.kind === "release") {

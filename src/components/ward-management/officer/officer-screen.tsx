@@ -210,9 +210,10 @@ export function OfficerScreen() {
       : "No accepted destination recorded";
   const originLabelFor = (movement: Movement) => {
     const originEd = edById(movement.originEdId);
-    return movementOriginLabel(movement, originEd && `${originEd.name} (${originEd.siteCode})`);
+    return movementOriginLabel(movement, originEd && `${originEd.name} (${originEd.siteCode})`, { admissions, units });
   };
-  const originShortFor = (movement: Movement) => originSiteCode(movement) ?? originLabelFor(movement);
+  const originShortFor = (movement: Movement) =>
+    originSiteCode(movement, { admissions, units }) ?? originLabelFor(movement);
 
   // Highlights (Josh, 9 Oct 2026, page A): a pill, chip, provider or search lights rows up. Nothing
   // here hides a job, so the officer never loses a job behind a filter they forgot was on.
@@ -853,7 +854,7 @@ export function OfficerScreen() {
   // times) says nothing; the hero's "Jobs need forms" and the job sheet still carry the count.
   const formsVary =
     jobs.length < 2 || new Set(jobs.map((movement) => (packRequired(movement) ? packCount(movement) : -1))).size > 1;
-  useWardModalFocus(isPhone && panelOpen, sideRef, closeJob);
+  useWardModalFocus(isPhone && panelOpen && !bookingMovement, sideRef, closeJob);
   // Redesign: the count only. The stage chips below already split it, and "waiting" means an ED wait elsewhere.
   const jobsLine = `${jobs.length} ${jobs.length === 1 ? "job" : "jobs"} open`;
 

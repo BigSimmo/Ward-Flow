@@ -55,6 +55,31 @@ function withHistory(state: WardFlowState): WardFlowState {
 }
 
 describe("PIR chronology: one person's records", () => {
+  it("keeps typed expiry row identity when a new earlier-category history is added", () => {
+    let state = seedWardFlowState();
+    state = wardFlowReducer(state, {
+      type: "RECORD_LEGAL_FORM_EXPIRY",
+      role: "ed",
+      now: NOW_ANCHOR + 10,
+      movementId: MOVEMENT,
+      dueAt: NOW_ANCHOR + 900,
+    });
+    expect(state.rejections).toEqual([]);
+    const before = patientChronology(inputFor(state)).rows;
+    state = wardFlowReducer(state, {
+      type: "CHANGE_LEGAL_STATUS",
+      role: "coordinator",
+      now: NOW_ANCHOR + 11,
+      movementId: MOVEMENT,
+      legalStatus: "Voluntary",
+      reason: "recorded_by_treating_team",
+    });
+    expect(state.rejections).toEqual([]);
+    const after = patientChronology(inputFor(state)).rows;
+    expect(after.length).toBeGreaterThan(before.length);
+    for (const row of before) expect(after.find((candidate) => candidate.key === row.key)).toEqual(row);
+  });
+
   it("joins a person only to their own records, through the resolver", () => {
     const state = seedWardFlowState();
     expect(patientRecordIds(PERSON, state.patients, state.movements, state.referrals, state.admissions)).toEqual({

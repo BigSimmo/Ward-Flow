@@ -23,6 +23,12 @@ const COORDINATOR_OWNER = "Coordinator";
 
 export function movementNextStep(movement: Movement): MovementNextStep | null {
   if (movement.closure !== undefined) return null;
+  const sender =
+    movement.sourceAdmissionId !== undefined
+      ? "Sending ward"
+      : movement.originCommunity !== undefined
+        ? "Community team"
+        : "ED team";
   switch (movement.stage) {
     case "placement_requested":
       return { label: "Ask wards", owner: COORDINATOR_OWNER, kind: "refer" };
@@ -43,19 +49,25 @@ export function movementNextStep(movement: Movement): MovementNextStep | null {
       return movement.acceptedUnitId === undefined
         ? { label: "Ward answer", owner: "Receiving ward", kind: "wait" }
         : { label: "Pull the bed", owner: COORDINATOR_OWNER, kind: "pull" };
-    case "pulled":
-      return { label: "Handover", owner: "ED team", kind: "wait" };
+    case "pulled": {
+      if (!movement.transport || transportLeg(movement.transport) === "Cancelled") {
+        if (transportNeedState(movement) === "not_needed")
+          return { label: "Arrival", owner: "Receiving ward", kind: "wait" };
+        return { label: movement.transport ? "Rebook transport" : "Book transport", owner: sender, kind: "wait" };
+      }
+      return { label: "Handover", owner: sender, kind: "wait" };
+    }
     case "handover_ready": {
       const leg = transportLeg(movement.transport);
       if (leg === undefined) {
         return transportNeedState(movement) === "not_needed"
           ? { label: "Arrival", owner: "Receiving ward", kind: "wait" }
-          : { label: "Book transport", owner: "ED or ward", kind: "wait" };
+          : { label: "Book transport", owner: sender, kind: "wait" };
       }
       if (leg === "Requested") return { label: "Transport accept", owner: movement.transport!.provider, kind: "wait" };
       if (leg === "Accepted") return { label: "Crew en route", owner: "Transport", kind: "wait" };
       if (leg === "En route") return { label: "Collect", owner: "Transport", kind: "wait" };
-      if (leg === "Cancelled") return { label: "Rebook transport", owner: "ED or ward", kind: "wait" };
+      if (leg === "Cancelled") return { label: "Rebook transport", owner: sender, kind: "wait" };
       return { label: "Arrival", owner: "Receiving ward", kind: "wait" };
     }
     case "moving":

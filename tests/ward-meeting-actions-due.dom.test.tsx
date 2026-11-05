@@ -268,3 +268,60 @@ describe("bed meeting actions due on a record", () => {
     expect(screen.queryByRole("button", { name: /Mark done/ })).not.toBeInTheDocument();
   });
 });
+
+// WF-J13: an owning ward follows its retained task after an admission-only departure.
+function DepartMeetingStay({ id, unitId }: { id: string; unitId: string }) {
+  const { dispatch, rejections } = useWardFlowSelect("dispatch", "rejections");
+  return (
+    <>
+      <button
+        onClick={() => {
+          dispatch({
+            type: "RECORD_BED_MEETING_ACTION",
+            role: "coordinator",
+            now: NOW_ANCHOR,
+            subject: { kind: "admission", id },
+            action: "family_meeting",
+            owner: "ward",
+            unitId,
+            dueAt: NOW_ANCHOR + 240,
+          });
+          dispatch({
+            type: "RECORD_LEAVING",
+            role: "ward",
+            now: NOW_ANCHOR,
+            admissionId: id,
+            actingUnitId: unitId,
+            leavingDestination: "discharged-to-the-community",
+          });
+        }}
+      >
+        Depart synthetic meeting stay
+      </button>
+      <span data-testid="departure-refusals">{rejections.length}</span>
+    </>
+  );
+}
+it("keeps the departed admission's task available to its owning ward on the person route", async () => {
+  const stay = seed.admissions.find(
+    (a) =>
+      a.state === "occupied" &&
+      a.patientId &&
+      !seed.movements.some((m) => m.patientId === a.patientId || m.admissionId === a.id),
+  )!;
+  expect(stay).toBeDefined();
+  asDesk({ role: "ward", scope: { kind: "ward", unitIds: [stay.unitId] } });
+  render(
+    <ToastProvider>
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <DepartMeetingStay id={stay.id} unitId={stay.unitId} />
+        <PatientNowScreen patientId={stay.patientId!} />
+      </WardFlowProvider>
+    </ToastProvider>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Depart synthetic meeting stay" }));
+  expect(screen.getByTestId("departure-refusals")).toHaveTextContent("0");
+  fireEvent.click(await screen.findByRole("button", { name: "Mark done: Arrange family meeting" }));
+  expect(screen.getByTestId("departure-refusals")).toHaveTextContent("0");
+  expect(await screen.findByText("Marked done: Arrange family meeting.")).toBeInTheDocument();
+});

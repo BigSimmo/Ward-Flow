@@ -208,9 +208,19 @@ export function PatientSearchPage() {
     units,
     patients,
     admissions,
+    leaveBeds,
     plannedAdmissions = [],
     dayZero,
-  } = useWardFlowSelect("movements", "referrals", "units", "patients", "admissions", "plannedAdmissions", "dayZero");
+  } = useWardFlowSelect(
+    "movements",
+    "referrals",
+    "units",
+    "patients",
+    "admissions",
+    "leaveBeds",
+    "plannedAdmissions",
+    "dayZero",
+  );
   const now = useWardFlowClock();
   // shell-6: a "Person not found" page can hand a UMRN over in memory, never in the address.
   const [text, setText] = useState(() => takeHandedOffPatientSearchText() ?? "");
@@ -332,8 +342,19 @@ export function PatientSearchPage() {
 
   const census = useMemo(
     () =>
-      buildCensus({ movements, referrals, units, patients, admissions, plannedAdmissions, now, thresholds, dayZero }),
-    [movements, referrals, units, patients, admissions, plannedAdmissions, now, dayZero, thresholds],
+      buildCensus({
+        movements,
+        referrals,
+        units,
+        patients,
+        admissions,
+        leaveBeds,
+        plannedAdmissions,
+        now,
+        thresholds,
+        dayZero,
+      }),
+    [movements, referrals, units, patients, admissions, leaveBeds, plannedAdmissions, now, dayZero, thresholds],
   );
 
   const baseResults = useMemo(() => {

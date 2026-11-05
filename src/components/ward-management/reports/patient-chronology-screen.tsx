@@ -3,7 +3,7 @@
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { downloadBlob } from "@/components/ward-management/ward-download";
 
-import { useId, useMemo, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import {
   Check,
@@ -273,6 +273,10 @@ export function PatientChronologyScreen({ initialPatientId }: { initialPatientId
 
   const openIndex = rows.findIndex((row) => row.key === openKey);
   const open = openIndex >= 0 ? rows[openIndex] : null;
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- A retained selection closes when its source event disappears.
+    if (openKey !== null && !sourceRows.some((row) => row.key === openKey)) setOpenKey(null);
+  }, [openKey, sourceRows]);
   const portraitTablet = useIsTabletPortrait();
   // The side panel opens the event, except on a portrait tablet, where a drawer does.
   const sideEvent = portraitTablet ? null : open;

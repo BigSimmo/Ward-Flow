@@ -1,5 +1,9 @@
 "use client";
 
+import type { Movement } from "../ward-model";
+
+import { returnAttemptEnded, returnAttemptMovement } from "../ward-return-attempt";
+
 import { wardRaise } from "../ward-flow-raise";
 
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
@@ -131,6 +135,7 @@ const STATUS_TONE: Record<ReturnStatus, WfTone> = {
   started: "neutral",
   not_agreed: "neutral",
   agreed: "neutral",
+  closed: "closed",
 };
 
 function isTyping(target: EventTarget | null): boolean {
@@ -225,9 +230,9 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     people.get(entry.admission.id) ?? resolveSubjectPatient(entry.admission, { patients, referrals, movements });
   const recordOf = (id: string) => repatriations.find((record) => record.admissionId === id);
   const statusOf = (entry: OutOfAreaEntry) =>
-    returnStatus(recordOf(entry.admission.id), drafts[entry.admission.id], now);
+    returnStatus(recordOf(entry.admission.id), drafts[entry.admission.id], now, movements);
   const offsetOf = (entry: OutOfAreaEntry) => dischargeOffsetDays(entry, now);
-  const returnMovementOf = (id: string) => movements.find((movement) => movement.sourceAdmissionId === id)?.id;
+  const returnMovementOf = (id: string) => returnAttemptMovement(recordOf(id), movements)?.id;
 
   // Device audit 11 Oct 2026: a Return column where every row reads the same says nothing the
   // Checking line has not; it shows only when the plan state differs between people.
@@ -250,7 +255,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     if (key === "due") return offset !== null && offset < 0;
     if (key === "air") return entry.band === "air_transport_only";
     if (key === "road") return entry.band === "three_hours_or_more";
-    if (key === "noplan") return status === "none";
+    if (key === "noplan") return status === "none" || status === "closed";
     if (key === "notagreed") return status === "not_agreed";
     if (key === "bed") return status === "agreed";
     return inDaysAwayGroup(entry, now, key.slice(4) as DaysAwayGroupId);
@@ -544,7 +549,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         if (!repatSave.pending) updateDraft(entry.admission.id, update);
       }}
       pending={repatSave.pending}
-      record={recordOf(entry.admission.id)}
+      record={returnAttemptEnded(recordOf(entry.admission.id), movements) ? undefined : recordOf(entry.admission.id)}
       returnMovementId={returnMovementOf(entry.admission.id)}
       options={closerBedOptions(entry, units, now)}
       notice={repatSave.error ?? repatNotice}
@@ -616,7 +621,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   /* ---- right column rows ---- */
   const shiftStart = currentShiftStart(now);
   const shiftReturns: ShiftReturnRow[] = repatriations
-    .filter((record) => record.at >= shiftStart)
+    .filter((record) => record.at >= shiftStart && !returnAttemptEnded(record, movements))
     .map((record) => {
       const entry = entries.find((candidate) => candidate.admission.id === record.admissionId);
       return { record, entry };
@@ -631,7 +636,9 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       time: formatInstant(record.estimatedAt),
       day: departureDayLabel(record, now),
     }));
-  const leavingToday = repatriations.filter((record) => leavesToday(record, now) && record.estimatedAt >= now);
+  const leavingToday = repatriations.filter(
+    (record) => !returnAttemptEnded(record, movements) && leavesToday(record, now) && record.estimatedAt >= now,
+  );
   const dueSoon = entries.filter((entry) => {
     const offset = offsetOf(entry);
     return offset === 0 || offset === 1;
@@ -666,7 +673,8 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   if (isPhone) {
     const phonePeople: PhonePerson[] = sorted.map((entry) => {
       const info = patientOf(entry);
-      const record = recordOf(entry.admission.id);
+      const previous = recordOf(entry.admission.id);
+      const record = returnAttemptEnded(previous, movements) ? undefined : previous;
       return {
         entry,
         // F-06 (phone review, Oct 2026): family name first, as on the census.
@@ -937,7 +945,13 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                 id="ward-out-of-area-view-panel-history"
                 aria-labelledby="ward-out-of-area-view-tab-history"
               >
-                <HistoryList records={repatriations} entries={entries} patientOf={patientOf} now={now} />
+                <HistoryList
+                  records={repatriations}
+                  entries={entries}
+                  patientOf={patientOf}
+                  now={now}
+                  movements={movements}
+                />
               </div>
             ) : (
               <div role="tabpanel" id="ward-out-of-area-view-panel-now" aria-labelledby="ward-out-of-area-view-tab-now">
@@ -1196,6 +1210,7 @@ function ReturnCell({
   record: RepatriationRecord | undefined;
   left: number;
 }) {
+  if (status === "closed") return <span className={styles.status}>Return closed · Plan again</span>;
   if (status === "none") {
     return (
       <span className={cx(styles.status, styles.quiet)}>
@@ -1268,7 +1283,9 @@ function HistoryList({
   entries,
   patientOf,
   now,
+  movements,
 }: {
+  movements: readonly Movement[];
   records: RepatriationRecord[];
   entries: OutOfAreaEntry[];
   patientOf: (entry: OutOfAreaEntry) => ResolvedPatientInfo;
@@ -1296,7 +1313,11 @@ function HistoryList({
                 <b>{name}</b>
                 <span>
                   {siteByCode(record.homeHospital)?.name ?? record.homeHospital} ·{" "}
-                  {record.receivingWardAgreed ? "ward agreed" : "ward not yet agreed"}
+                  {returnAttemptEnded(record, movements)
+                    ? "return closed"
+                    : record.receivingWardAgreed
+                      ? "ward agreed"
+                      : "ward not yet agreed"}
                 </span>
               </span>
               <span className={styles.sub}>Coordinator</span>

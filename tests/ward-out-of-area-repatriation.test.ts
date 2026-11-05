@@ -38,6 +38,51 @@ describe("out-of-area repatriation — return plan gate and reducer transitions"
     expect(returnPlanBlockReason(COMPLETE_SEND_DRAFT, NOW_ANCHOR)).toBeUndefined();
   });
 
+  it("allows a new agreed return after the previous attempt was withdrawn, retaining its closed journey", () => {
+    const seed = seedWardFlowState();
+    const admissionId = outOfAreaLedger(wardAdmissions, allUnits(), NOW_ANCHOR).entries[0]!.admission.id;
+    const event = {
+      type: "RECORD_REPATRIATION" as const,
+      role: "coordinator" as const,
+      now: NOW_ANCHOR,
+      admissionId,
+      homeHospital: "RPH",
+      receivingWardAgreed: true,
+      mode: "road" as const,
+      provider: "Ambulance service" as const,
+      cadNumber: "CAD-4410",
+      transportLegalStatus: "voluntary" as const,
+      estimatedAt: NOW_ANCHOR + 120,
+    };
+    let state = wardFlowReducer(seed, event);
+    expect(state.rejections).toEqual([]);
+    const attempt = state.movements.at(-1)!;
+    state = {
+      ...state,
+      movements: state.movements.map((movement) =>
+        movement.id === attempt.id ? { ...movement, referredUnitIds: [state.units[0]!.id] } : movement,
+      ),
+    };
+    state = wardFlowReducer(state, {
+      type: "WITHDRAW_REFERRAL",
+      role: "coordinator",
+      now: NOW_ANCHOR + 1,
+      movementId: attempt.id,
+    });
+    expect(state.rejections).toEqual([]);
+    const ended = state.movements.find((movement) => movement.id === attempt.id)!;
+    expect(ended.closure?.outcome).toBe("did_not_proceed");
+    state = wardFlowReducer(state, { ...event, now: NOW_ANCHOR + 2 });
+    expect(state.rejections).toEqual([]);
+    const retry = state.movements.at(-1)!;
+    expect(retry.id).not.toBe(attempt.id);
+    expect(retry.closure).toBeUndefined();
+    expect(state.movements.find((movement) => movement.id === attempt.id)).toEqual(ended);
+    expect(state.repatriations.find((record) => record.admissionId === admissionId)?.at).toBe(NOW_ANCHOR + 2);
+    const refused = wardFlowReducer(state, { ...event, now: NOW_ANCHOR + 3 });
+    expect(refused.rejections.length).toBe(state.rejections.length + 1);
+  });
+
   it("records a pending repatriation on Send to ward and opens the return movement when Mark ward agreed runs", () => {
     const seeded = seedWardFlowState();
     const { entries } = outOfAreaLedger(wardAdmissions, allUnits(), NOW_ANCHOR);

@@ -63,6 +63,7 @@ const STATUS_TONE: Record<ReturnStatus, WfTone> = {
   started: "neutral",
   not_agreed: "neutral",
   agreed: "neutral",
+  closed: "closed",
 };
 
 /**

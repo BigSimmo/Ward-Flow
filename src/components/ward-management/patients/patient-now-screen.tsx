@@ -1243,9 +1243,10 @@ export function PatientNowScreen({
             >
               {/* Overall review, 20 Oct 2026: the owner of a bed meeting action marks it done here. */}
               <MeetingActionsDue subject={liveMovement && { kind: "movement", id: liveMovement.id }} />
-              <MeetingActionsDue
-                subject={resolved.liveAdmission && { kind: "admission", id: resolved.liveAdmission.id }}
-              />
+              {/* Retained tasks keep their exact stay subject after departure, even when a newer stay exists. */}
+              {(resolved.stays ?? (resolved.liveAdmission ? [resolved.liveAdmission] : [])).map((stay) => (
+                <MeetingActionsDue key={stay.id} subject={{ kind: "admission", id: stay.id }} />
+              ))}
               {nowPanel}
             </div>
 

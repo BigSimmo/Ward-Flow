@@ -199,6 +199,37 @@ describe("ward command feedback follows its own completion", () => {
     expect(record.mock.calls[1][0]).toMatchObject({ type: "UNDO_DEPARTURE", admissionId, recordSeq: 12 });
   });
 
+  it("follows a departure's later receipt after an unconfirmed save and offers its own Undo", async () => {
+    const reply = deferred();
+    const confirmation = deferred();
+    const { occupied, record } = renderWard(reply);
+    fireEvent.click(occupied);
+    fireEvent.click(screen.getByRole("button", { name: /^Record that they have left/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Record discharge" }));
+    const admissionId = record.mock.calls[0][0] as string;
+    await act(async () =>
+      reply.resolve({
+        commandId: "departure",
+        status: "failed",
+        message: "Save not confirmed",
+        confirmation: confirmation.promise,
+      }),
+    );
+    expect(screen.getByText("Save not confirmed")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /^Undo/ })).not.toBeInTheDocument();
+    await act(async () =>
+      confirmation.resolve({
+        commandId: "departure",
+        status: "accepted",
+        undoStep: { undoType: "UNDO_DEPARTURE", subjectId: admissionId, seq: 19 },
+      }),
+    );
+    expect(screen.queryByRole("button", { name: /^Record that they have left/ })).not.toBeInTheDocument();
+    expect(record).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: /^Undo/ }));
+    expect(record.mock.calls[1][0]).toMatchObject({ type: "UNDO_DEPARTURE", admissionId, recordSeq: 19 });
+  });
+
   it("offers placement success only after acceptance, suppresses repeat clicks, and waits for Undo completion", async () => {
     const reply = deferred();
     const undoReply = deferred();
@@ -309,5 +340,29 @@ describe("ward command feedback follows its own completion", () => {
     unmount();
     await act(async () => abandoned.resolve({ commandId: "two", status: "accepted" }));
     expect(settled).not.toHaveBeenCalled();
+  });
+
+  it.each(["other-command", "stale", "unmounted"])("ignores a %s later confirmation", async (condition) => {
+    const confirmation = deferred();
+    const settled = vi.fn();
+    const { result, unmount } = renderHook(useWardCommandCompletion);
+    act(() =>
+      result.current(
+        "departure:synthetic",
+        () => ({ commandId: "departure", status: "failed", confirmation: confirmation.promise }),
+        settled,
+        { followConfirmation: true },
+      ),
+    );
+    expect(settled).toHaveBeenCalledTimes(1);
+    if (condition === "unmounted") unmount();
+    await act(async () =>
+      confirmation.resolve({
+        commandId: condition === "other-command" ? "other" : "departure",
+        status: "accepted",
+        isCurrent: () => condition !== "stale",
+      }),
+    );
+    expect(settled).toHaveBeenCalledTimes(1);
   });
 });

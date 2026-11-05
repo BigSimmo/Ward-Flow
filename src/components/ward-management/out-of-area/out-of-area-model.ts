@@ -1,3 +1,5 @@
+import { returnAttemptEnded } from "../ward-return-attempt";
+import type { Movement } from "../ward-model";
 import { bedIsOccupied, daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
 import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import {
@@ -166,13 +168,15 @@ export function involuntaryReturnAnswers(draft: RepatDraft): { form4CReceived?: 
  * Return status, from the recorded repatriation first and the page's own draft second.
  * ------------------------------------------------------------------------------------------- */
 
-export type ReturnStatus = "none" | "started" | "not_agreed" | "agreed";
+export type ReturnStatus = "none" | "started" | "not_agreed" | "agreed" | "closed";
 
 export function returnStatus(
   record: RepatriationRecord | undefined,
   draft: RepatDraft | undefined,
   now: Instant,
+  movements: readonly Movement[] = [],
 ): ReturnStatus {
+  if (returnAttemptEnded(record, movements)) return "closed";
   if (record) return record.receivingWardAgreed ? "agreed" : "not_agreed";
   if (draft && missingAnswers(draft, now).length < PLAN_ANSWER_COUNT) return "started";
   return "none";
@@ -183,6 +187,7 @@ export const RETURN_STATUS_SHORT: Record<ReturnStatus, string> = {
   started: "Plan started",
   not_agreed: "Ward not agreed",
   agreed: "Agreed, bed to place",
+  closed: "Return closed, plan again",
 };
 
 /* ------------------------------------------------------------------------------------------- *

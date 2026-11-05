@@ -465,16 +465,21 @@ export function buildCensus(state: {
     const unit = unitOf.get(admission.unitId);
     const past = isPastExpectedDischarge(admission, now);
     const away = admission.awayAtEmergencyDepartmentSince !== null;
-    const [next, glyph]: [string, CensusGlyph] = away
-      ? ["At ED for review", "move"]
-      : admission.blockReason
-        ? [admission.blockReason.replace(/^Awaiting /, "Waiting on "), past ? "risk" : "wait"]
-        : past
-          ? ["Past expected date", "risk"]
-          : ["On ward", "done"];
+    const leave = leaveByAdmission.get(admission.id);
+    const absent = leave?.absentWithoutLeave !== undefined;
+    const [next, glyph]: [string, CensusGlyph] = absent
+      ? ["Review recorded absence steps", "act"]
+      : leave
+        ? [leave.expectedReturn < now ? "Check overdue return" : "Record return when back", "wait"]
+        : away
+          ? ["At ED for review", "move"]
+          : admission.blockReason
+            ? [admission.blockReason.replace(/^Awaiting /, "Waiting on "), past ? "risk" : "wait"]
+            : past
+              ? ["Past expected date", "risk"]
+              : ["On ward", "done"];
     const edd = admission.expectedDischargeAt;
     const since = admission.arrivedAt !== null ? Math.max(0, now - admission.arrivedAt) : null;
-    const leave = leaveByAdmission.get(admission.id);
     rows.push({
       key: `adm:${admission.id}`,
       kind: "admission",
@@ -487,8 +492,14 @@ export function buildCensus(state: {
       transport: null,
       escort: false,
       // At ED for review the person is in ED while the ward keeps their bed.
-      where: away ? "At ED" : (unit?.name ?? "Ward not recorded"),
-      whereSub: away ? `${unit?.name ?? "Ward"} bed kept` : siteName(unit?.siteCode),
+      where: absent
+        ? "Absent without leave"
+        : leave
+          ? "On leave"
+          : away
+            ? "At ED"
+            : (unit?.name ?? "Ward not recorded"),
+      whereSub: leave || away ? `${unit?.name ?? "Ward"} bed kept` : siteName(unit?.siteCode),
       to:
         edd === null
           ? "No date set"
@@ -505,7 +516,7 @@ export function buildCensus(state: {
       formDueAt: null,
       waitMinutes: null,
       timeText: since === null ? "Not recorded" : since < MINUTES_PER_DAY ? durMinutes(since) : daysText(since),
-      timeSub: "on ward",
+      timeSub: leave || away ? "since ward admission" : "on ward",
       longWait: false,
       pastExpected: past,
       awayAtEd: away,

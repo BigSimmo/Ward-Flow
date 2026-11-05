@@ -203,7 +203,7 @@ describe("role screens dispatch only what their route's role may take", () => {
             : readFileSync(join(root, file), "utf8");
       // A raw `dispatch({ type, role, ... })`, or a named `raise("TYPE", ...)` from `useWardRaise(role)`.
       const types = [
-        ...source.matchAll(/type: "([A-Z_]+)",?\s*role:/g),
+        ...source.matchAll(/type: "([A-Z_]+)",?\s*role\s*(?::|[,}])/g),
         ...source.matchAll(/\braise\(\s*"([A-Z_]+)"/g),
       ].map((match) => match[1] as EventType);
       // A screen raises as its own route's desk.

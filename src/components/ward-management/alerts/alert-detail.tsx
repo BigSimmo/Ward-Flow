@@ -145,7 +145,9 @@ export function AlertDetail({
   // Transport officer: the desk opens only its own jobs, Alerts, On-call and Settings (ROLE_SCREENS).
   // The coordinator's forward link (a movement, a patient, the bed search) is a page this desk cannot
   // open, so every alert's one action opens the officer's job list instead, and Patient is left out.
-  const officerDesk = useEffectiveWardAccess().role === "officer";
+  const deskRole = useEffectiveWardAccess().role;
+  const officerDesk = deskRole === "officer";
+  const plannedHandover = deskRole === "ward" && alertKindOf(item.id) === "planned";
   const action: ReturnType<typeof alertActionFor> = officerDesk
     ? { kind: "link", label: "Open my jobs", href: officerHref() }
     : alertActionFor(item, subject);
@@ -188,7 +190,9 @@ export function AlertDetail({
       : kind === "nobed"
         ? "Escalate when the bed search is exhausted. It records that the state desk was rung."
         : kind === "planned"
-          ? "Record the arrival, or open the booking to change the time or cancel it."
+          ? plannedHandover
+            ? "The coordinator records planned-booking changes in Capacity."
+            : "Record the arrival, or open the booking to change the time or cancel it."
           : kind === "transport"
             ? enRoute
               ? "Chase opens the booking with the provider's number."
@@ -537,7 +541,11 @@ export function AlertDetail({
               Patient
             </Link>
           ) : null}
-          {snoozedUntil ? null : action.kind === "link" ? (
+          {snoozedUntil ? null : plannedHandover ? (
+            <p className={styles.quiet}>
+              Ask the coordinator to review this booking and record the arrival, change or cancellation.
+            </p>
+          ) : action.kind === "link" ? (
             <Link className={buttonClass({ variant: "pri" })} href={action.href}>
               {action.label}
             </Link>
@@ -736,6 +744,10 @@ export function AlertDetail({
       <div className={`${styles.detailActions} ${rd.foot}`}>
         {snoozedUntil ? (
           <p className={styles.quiet}>{snoozedLine(snoozedUntil, now)}</p>
+        ) : plannedHandover ? (
+          <p className={styles.quiet}>
+            Ask the coordinator to review this booking and record the arrival, change or cancellation.
+          </p>
         ) : action.kind === "link" ? (
           <Link
             className={buttonClass({ variant: "pri", className: `${styles.wide} ${rd.primary}` })}

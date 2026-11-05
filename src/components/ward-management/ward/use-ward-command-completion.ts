@@ -130,6 +130,7 @@ export function useWardCommandCompletion(say?: (message: string) => void) {
     key: string,
     record: () => ReturnType<WardCommandDispatch>,
     settled: (outcome?: WardCommandOutcome) => void,
+    options?: { followConfirmation?: boolean },
   ): false | undefined => {
     if (pending.current.has(key)) {
       if (say) say(WARD_STILL_SAVING);
@@ -140,14 +141,28 @@ export function useWardCommandCompletion(say?: (message: string) => void) {
     const startedRow = typeof document === "undefined" ? null : document.activeElement?.closest("li");
     commandOrigin = startedRow ? { key, row: startedRow } : null;
     const commandGeneration = generationRef.current;
-    const finish = (outcome?: WardCommandOutcome) => {
-      pending.current.delete(key);
+    const publish = (outcome?: WardCommandOutcome) => {
       if (
         mounted.current &&
         commandGeneration === generationRef.current &&
         (!outcome?.isCurrent || outcome.isCurrent())
       )
         settled(outcome);
+    };
+    const finish = (outcome?: WardCommandOutcome) => {
+      if (options?.followConfirmation && outcome?.status === "failed" && outcome.confirmation) {
+        publish(outcome);
+        void outcome.confirmation.then(
+          (terminal) => {
+            pending.current.delete(key);
+            if (terminal.commandId === outcome.commandId && terminal.status !== "failed") publish(terminal);
+          },
+          () => pending.current.delete(key),
+        );
+      } else {
+        pending.current.delete(key);
+        publish(outcome);
+      }
     };
     const failed = () => finish({ commandId: "", status: "failed" });
     try {

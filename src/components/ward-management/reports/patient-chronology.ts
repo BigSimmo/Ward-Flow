@@ -784,24 +784,51 @@ export function patientChronology(input: ChronologyInput): PatientChronology {
     });
   }
 
+  const occurrences = new Map<string, number>();
   const rows = drafts
-    .map(({ draft, source }, index) => ({
-      key: `${source}-${index}`,
-      occurredAt: draft.occurredAt ?? draft.recordedAt,
-      recordedAt: draft.recordedAt,
-      who: draft.who,
-      action: draft.action,
-      record: draft.record.split(" ")[0] ?? draft.record,
-      before: draft.before ?? "",
-      after: draft.after ?? "",
-      reason: draft.reason ?? "",
-      source,
-    }))
+    .map(({ draft, source }) => {
+      // Row identity belongs to the event facts, not its position among unrelated categories.
+      // Keep record IDs out of rendered keys, and distinguish repeated identical retained events.
+      const identity = chronologyEventKey(
+        JSON.stringify([
+          source,
+          draft.record,
+          draft.action,
+          draft.recordedAt,
+          draft.occurredAt ?? draft.recordedAt,
+          draft.who,
+          draft.before ?? "",
+          draft.after ?? "",
+          draft.reason ?? "",
+        ]),
+      );
+      const occurrence = occurrences.get(identity) ?? 0;
+      occurrences.set(identity, occurrence + 1);
+      return {
+        key: `${source}-${identity}-${occurrence}`,
+        occurredAt: draft.occurredAt ?? draft.recordedAt,
+        recordedAt: draft.recordedAt,
+        who: draft.who,
+        action: draft.action,
+        record: draft.record.split(" ")[0] ?? draft.record,
+        before: draft.before ?? "",
+        after: draft.after ?? "",
+        reason: draft.reason ?? "",
+        source,
+      };
+    })
     .map((row, index) => ({ row, index }))
     .sort((a, b) => sortInstant(a.row) - sortInstant(b.row) || a.index - b.index)
     .map(({ row }) => row);
 
   return { patient, recordIds, rows, auditIncluded: input.auditEvents !== null };
+}
+
+/** Stable opaque event fingerprint; no record identifiers or typed facts appear in DOM keys. */
+function chronologyEventKey(value: string): string {
+  let hash = 14695981039346656037n;
+  for (const character of value) hash = BigInt.asUintN(64, (hash ^ BigInt(character.codePointAt(0)!)) * 1099511628211n);
+  return hash.toString(16);
 }
 
 /** A time for paper or a spreadsheet: weekday, date and clock face, or "Not recorded". */

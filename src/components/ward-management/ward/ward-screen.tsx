@@ -552,6 +552,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
                     };
                     setDischargeToken((token) => token + 1);
                   },
+                  { followConfirmation: true },
                 );
               },
             },
@@ -1708,6 +1709,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         setDischargeToken((token) => token + 1);
         if (!outcome || outcome.status === "accepted") closeBedDrawer();
       },
+      { followConfirmation: true },
     );
   }
 

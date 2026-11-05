@@ -1,3 +1,4 @@
+import { returnAttemptEnded } from "./ward-return-attempt";
 // The RECORD_* events about a person's stay on the ward: leaving, trips to an emergency department,
 // discharge blockers, leave, absence, handover, repatriation, clinical contact and support
 // notifications. Moved out of `ward-flow-record-events.ts` unchanged, which hands these events here.
@@ -476,7 +477,20 @@ export function reduceRecordedStayEvent(
         return reject(state, event, `cannot initiate repatriation for closed movement ${movement.id}`);
       }
       const existing = Array.isArray(state.repatriations) ? state.repatriations : [];
-      const existingRecord = existing.find((record) => record.admissionId === admission.id);
+      const previousRecord = existing.find((record) => record.admissionId === admission.id);
+      const restarting = returnAttemptEnded(previousRecord, state.movements);
+      // A terminal return is retained on its closed movement and audit history. A fresh plan
+      // starts with fresh answers, and cannot duplicate another live journey from this stay.
+      if (
+        restarting &&
+        state.movements.some(
+          (candidate) =>
+            candidate.sourceAdmissionId === admission.id && !candidate.closure && candidate.stage !== "arrived",
+        )
+      ) {
+        return reject(state, event, "A return journey is already open for this stay.");
+      }
+      const existingRecord = restarting ? undefined : previousRecord;
       if (existingRecord && (existingRecord.receivingWardAgreed || event.receivingWardAgreed !== true)) {
         return reject(state, event, `admission ${admission.id} already has a repatriation record`);
       }
@@ -612,7 +626,7 @@ export function reduceRecordedStayEvent(
       }
       return {
         ...state,
-        repatriations: existingRecord
+        repatriations: previousRecord
           ? existing.map((record) => (record.admissionId === admission.id ? recorded : record))
           : [...existing, recorded],
         movements: nextMovements,
