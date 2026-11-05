@@ -281,12 +281,14 @@ const REFERENCE_FIELDS = new Set([
   "triedUnitIds",
   "waitlistedUnitIds",
 ]);
+/** Any *Id or *Ids field names a record, so a newly added reference field is checked by default. */
+const isReferenceField = (field) => REFERENCE_FIELDS.has(field) || /[a-z]Ids?$/.test(field);
 function namedValues(value, found = new Set(), reference = false) {
   if (typeof value === "string") {
     if (reference) found.add(value);
   } else if (Array.isArray(value)) for (const entry of value) namedValues(entry, found, reference);
   else if (isPlainObject(value))
-    for (const [field, entry] of Object.entries(value)) namedValues(entry, found, REFERENCE_FIELDS.has(field));
+    for (const [field, entry] of Object.entries(value)) namedValues(entry, found, isReferenceField(field));
   return found;
 }
 
