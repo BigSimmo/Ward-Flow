@@ -41,7 +41,18 @@ test("prose equal to another id never creates a dependency, but actual reference
   after.state.movements[0].value = 2;
   assert.equal(check(before, after, { type: "RECORD_BLOCKER", movementId: "A", reason: "B" }), null);
   assert.equal(check(before, after, { type: "RECORD_BLOCKER", movementId: "A", reason: "mention B here" }), null);
-  for (const reference of [{ movementId: "B" }, { unitIds: ["B"] }, { payload: { sourceAdmissionId: "B" } }])
+  for (const reference of [
+    { movementId: "B" },
+    { unitIds: ["B"] },
+    { payload: { sourceAdmissionId: "B" } },
+    // Review of #1437: fields outside the explicit list still name records.
+    { receivingUnitId: "B" },
+    { noticeIds: ["B"] },
+    { exceptMovementId: "B" },
+    { requestId: "B" },
+    { contactId: "B" },
+    { serviceId: "B" },
+  ])
     assert.equal(check(before, after, { type: "TEST", ...reference }), "movements");
   const staleTarget = structuredClone(before);
   staleTarget.state.movements[1].value = 5;

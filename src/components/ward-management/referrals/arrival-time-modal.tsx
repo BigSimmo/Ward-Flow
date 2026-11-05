@@ -217,7 +217,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
             <div className={styles.note}>
               <ShieldCheck size={18} className={styles.noteIcon} aria-hidden="true" />
               <span>
-                Saving clears the {pullHoldLabel} pull clock. Over {LATE_ARRIVAL_GRACE_MINUTES} minutes late (
+                Saving keeps the existing {pullHoldLabel} pull time limit. Over {LATE_ARRIVAL_GRACE_MINUTES} minutes late (
                 {OPERATIONAL_DEFAULT_LABEL}), a late notice goes to the referrer and accepting ward.
               </span>
             </div>
