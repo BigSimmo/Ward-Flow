@@ -1,5 +1,5 @@
 import type { Unit } from "@/components/ward-management/ward-model";
-import { edById, siteByCode, unitById } from "@/components/ward-management/ward-sites";
+import { activeWardNetwork, edById, siteByCode } from "@/components/ward-management/ward-sites";
 
 /**
  * WF-26 / WF-27 (live test, 5 Nov 2026): one display name for a ward, ED or site everywhere. A
@@ -12,7 +12,10 @@ export function placeDisplayName(id: string | undefined, units: readonly Pick<Un
   if (!id) return PLACE_NOT_RECORDED;
   return (
     units.find((unit) => unit.id === id)?.name ??
-    unitById(id)?.name ??
+    // Name only: never read capacity off the network catalogue (single-source guard).
+    activeWardNetwork()
+      .sites.flatMap((site) => site.units)
+      .find((unit) => unit.id === id)?.name ??
     siteByCode(id)?.name ??
     edById(id)?.name ??
     PLACE_NOT_RECORDED
