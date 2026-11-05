@@ -16,7 +16,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { DisabledReason } from "@/components/wf";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import styles from "./community.module.css";
-import { referralOriginLabel } from "./community-screen-helpers";
+import { originIsEdOrCrisis, referralOriginLabel } from "./community-screen-helpers";
 import { communityAttentionItems } from "./community-screen-panels";
 import type { CommunityScreenView } from "./community-screen";
 
@@ -141,14 +141,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                   >
                     <span>ED Liaison &amp; Crisis</span>
                     <span className={styles.badgePill} id="chipEdBadge">
-                      {
-                        demoTeamReferrals.filter(
-                          (r) =>
-                            r.origin.toLowerCase().includes("ed") ||
-                            r.origin.toLowerCase().includes("crisis") ||
-                            r.origin.toLowerCase().includes("resus"),
-                        ).length
-                      }
+                      {demoTeamReferrals.filter((r) => originIsEdOrCrisis(r.origin, true)).length}
                     </span>
                   </button>
                 </div>

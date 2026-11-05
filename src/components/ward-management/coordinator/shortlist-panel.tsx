@@ -112,6 +112,7 @@ import { FIT_LABEL, fitGroups, type FitKind } from "./home-fit";
 import { NextWardAfterRefusal } from "./next-ward-after-refusal";
 import { PreMatchCleaningNote } from "./prematch-cleaning-note";
 import { TIER_TARGETS_NOTE, queueWaitThresholds } from "./priority-queue";
+import { plural } from "@/components/ward-management/ward-plural";
 import {
   capacityLine,
   Fact,
@@ -1677,7 +1678,7 @@ export function ShortlistPanel({
               <div className={shortlistStyles.candidateHeading}>
                 <h4 className={styles.shortlistSectionHeading}>Candidates</h4>
                 <span className={`${shortlistStyles.candidateState} ${shortlistStyles.tabularNum}`}>
-                  {shortlist.length} wards
+                  {plural(shortlist.length, "ward", "wards")}
                 </span>
               </div>
               <span className={shortlistStyles.toggleChevron}>

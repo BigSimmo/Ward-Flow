@@ -39,6 +39,7 @@ import type { EmergencyDepartment, LegalForm, Movement, Referral, Unit } from "@
 import { createPatientResolver, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import {
   findPatients,
+  foldPatientSearchHaystack,
   foldPatientSearchText,
   patientDisplayName,
   type Patient,
@@ -688,7 +689,7 @@ function searchReferrals(
       admissions !== undefined && acceptedReferralAwaitingMovement(referral, lookup.movements, admissions);
     if (!waiting && !awaitingMovement) return [];
     const info = resolveSubjectPatient(referral, lookup);
-    const words = foldPatientSearchText(
+    const words = foldPatientSearchHaystack(
       [info.displayName, info.formalName, info.umrn, referral.id, referral.originSiteCode, referral.homeRegion].join(
         " ",
       ),
@@ -704,7 +705,7 @@ function searchReferrals(
 function matchTier(fields: readonly (string | undefined)[], needle: string): number {
   const q = foldPatientSearchText(needle);
   if (q.length === 0) return 0;
-  const haystacks = fields.filter((field): field is string => Boolean(field)).map(foldPatientSearchText);
+  const haystacks = fields.filter((field): field is string => Boolean(field)).map(foldPatientSearchHaystack);
   const terms = q.split(" ");
   const words = haystacks.flatMap((hay) => hay.split(/[^\p{L}\p{N}]+/u));
   if (haystacks.some((hay) => hay.startsWith(q)) || terms.every((term) => words.some((word) => word.startsWith(term))))

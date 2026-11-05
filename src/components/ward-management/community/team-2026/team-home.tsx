@@ -10,8 +10,9 @@ import { useState } from "react";
 import { ArrowLeftRight, List, Phone, Users } from "lucide-react";
 import { Button, Card, CardHead, Count, Segmented, SrOnly, StatusGlyph, type WfTone } from "@/components/wf";
 import home from "@/components/ward-management/ward/ward-home-tab.module.css";
-import { CLIENTS, DEMO_FIGURES, REFERRALS, SENT, STAFF, shortName } from "./midland-demo";
-import { clockTime } from "@/components/ward-management/ward-saved-at-toast";
+import { DEMO_FIGURES, SENT, shortName } from "./midland-demo";
+import { useMidlandDay, useMidlandDemo } from "./use-midland-demo";
+import { perthClockTime } from "@/components/ward-management/ward-clock";
 import { openReferrals, recordMidlandContact, todaysMidlandContacts, useMidlandDecisions } from "./midland-decisions";
 import { Initials } from "./parts";
 import t from "./team-2026.module.css";
@@ -67,17 +68,18 @@ function ListRow(props: {
   primary?: boolean;
   go: () => void;
 }) {
+  const day = useMidlandDay();
   return (
     <li className={`${t.lr}${props.tone === "danger" ? ` ${t.urgent}` : ""}`}>
       <StatusGlyph tone={props.tone} size={12} />
       <span className={t.lrMain}>
         <span className={t.lrTitle}>{props.title}</span>
         <span className={t.lrDetail}>
-          <b>{props.name}</b> <span className={t.mono}>{props.umrn}</span> · {props.detail}
+          <b>{props.name}</b> <span className={t.mono}>{props.umrn}</span> · {day(props.detail)}
         </span>
       </span>
       <span className={t.lrWhen}>
-        <b className={t.mono}>{props.when}</b>
+        <b className={t.mono}>{day(props.when)}</b>
         <span>{props.whenSub}</span>
       </span>
       <Button variant={props.primary ? "pri" : "sec"} size="sm" onClick={props.go}>
@@ -112,15 +114,16 @@ const TODAY_LOG = [
 ] as const;
 
 function FlowRow(props: { title: string; detail: string; when: string; tone: WfTone; action: string; go: () => void }) {
+  const day = useMidlandDay();
   return (
     <li className={home.flowRow}>
       <StatusGlyph tone={props.tone} size={10} />
       <span className={home.flowMain}>
         <span className={home.flowTitleLine}>
           <span className={home.flowTitle}>{props.title}</span>
-          <span className={home.flowWhen}>{props.when}</span>
+          <span className={home.flowWhen}>{day(props.when)}</span>
         </span>
-        <span className={home.flowDetail}>{props.detail}</span>
+        <span className={home.flowDetail}>{day(props.detail)}</span>
       </span>
       <Button size="sm" onClick={props.go}>
         {props.action}
@@ -151,6 +154,8 @@ const ADMITTED_THIS_WEEK = [
 ];
 
 export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
+  const { CLIENTS, REFERRALS, STAFF } = useMidlandDemo();
+  const day = useMidlandDay();
   const decisions = useMidlandDecisions();
   // Today's recorded contacts lead Today's log, with time and desk role; the Act-now row shows it is
   // done. A contact from an earlier day is not today's, so the follow-up comes back the next day.
@@ -163,7 +168,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
     ...contacts.map(
       (c) =>
         [
-          clockTime(new Date(c.at)),
+          perthClockTime(new Date(c.at)),
           "Contact recorded",
           `${c.about === "a" ? "Thornbury, Cleo" : "Team contact"} · by Community`,
         ] as const,
@@ -284,7 +289,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                       tone={cleoContact ? "success" : "danger"}
                       title={
                         cleoContact
-                          ? `Contact recorded at ${clockTime(new Date(cleoContact.at))}`
+                          ? `Contact recorded at ${perthClockTime(new Date(cleoContact.at))}`
                           : "7-day follow-up due today"
                       }
                       name="Thornbury, Cleo"
@@ -387,7 +392,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                     <span className={`${t.mono} ${t.logT}`}>{when}</span>
                     <span className={t.person}>
                       <span className={t.logA}>{what}</span>
-                      <span className={t.sub}>{detail}</span>
+                      <span className={t.sub}>{day(detail)}</span>
                     </span>
                   </li>
                 ))}
