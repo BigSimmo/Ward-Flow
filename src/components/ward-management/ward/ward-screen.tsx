@@ -77,7 +77,7 @@ import { wardOccupancy } from "@/components/ward-management/ward-occupancy";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
 import { LEAVE_BED_OPEN_WARNING_MINUTES, UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
 import { wardTransferNeedsCoordinator } from "@/components/ward-management/ward-referrals";
-import { setDeskRole, useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { useDeskRoleSwitch, useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { roleLimitReason } from "@/components/ward-management/ward-role-permissions";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
@@ -131,6 +131,7 @@ import {
   WardConfirmBedsDialog,
   WardDailySheetDialog,
   WardDischargeNotices,
+  WardPlannedAdmissionsPanel,
 } from "./ward-screen-lazy";
 import { WardScreenReferralsTab } from "./ward-screen-referrals-tab";
 import { moveBetweenWardTabs, WardScreenTopBar } from "./ward-screen-top-bar";
@@ -351,6 +352,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const searchParams = useOptionalSearchParams();
   // A link from another screen asks for the board with `?tab=board`, the same key as the tab's own
   // address state (H-0186). Followed when the request arrives, as before.
+  const bookingsRequested = searchParams?.get("bookings") === "1";
   const boardTabRequested = searchParams?.get("tab") === "board";
   useEffect(() => {
     if (boardTabRequested) setActiveTab("board");
@@ -384,15 +386,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const toast = useOptionalToast();
   const pathname = usePathname() ?? "";
   const raiseAsRouteRole = useWardRaise(routeRole);
+  const { shared: sharedDesk, canSwitch: canSwitchDesk, switchDesk } = useDeskRoleSwitch();
   const setRole = useCallback(
     (nextRole: "ward") => {
-      setDeskRole(nextRole, pathname);
+      switchDesk(nextRole, pathname);
     },
-    [pathname],
+    [pathname, switchDesk],
   );
   const wardRoleLockNote =
     // A bed manager cannot switch desks, and each button it may not use says so itself.
-    routeRole !== "ward" && routeRole !== "bed_manager" ? (
+    canSwitchDesk && routeRole !== "ward" && routeRole !== "bed_manager" ? (
       <span className="lockline" data-testid="ward-role-lockline">
         Viewing as {routeRole} desk (ward actions are read-only) &middot;{" "}
         <button
@@ -403,7 +406,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
           }}
           data-testid="ward-switch-to-ward-desk-btn"
         >
-          Switch to Ward desk
+          {sharedDesk ? "Choose a desk" : "Switch to Ward desk"}
         </button>
       </span>
     ) : null;
@@ -2226,6 +2229,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             bedsList={bedsList}
           />
         )}
+        {bookingsRequested ? <WardPlannedAdmissionsPanel now={now} unitId={unit.id} /> : null}
         {isPhone && !phoneCardOpen ? (
           /* Phone (v10): the two views pin under the header as one segmented control, outside the
              ward card so they stay in place while the page scrolls. */

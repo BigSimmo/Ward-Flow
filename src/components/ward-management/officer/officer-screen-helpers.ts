@@ -253,6 +253,16 @@ export function arrivedSinceStartOfDay(arrivedAt: Instant, now: Instant): boolea
   return dayOf(arrivedAt) >= dayOf(now);
 }
 
+/** Delivered today: closed jobs leave the live list and land in History, newest first. */
+export function deliveredSinceStartOfDay(movements: readonly Movement[], now: Instant): Movement[] {
+  return movements
+    .filter(
+      (movement) =>
+        movement.transport?.arrivedAt !== undefined && arrivedSinceStartOfDay(movement.transport.arrivedAt, now),
+    )
+    .sort((a, b) => b.transport!.arrivedAt! - a.transport!.arrivedAt!);
+}
+
 /** the Arrivals card's time axis, clamped to now +/-48h, with a bounded number of hour ticks. */
 export function arrivalsAxis(now: Instant, etas: readonly Instant[], reachHours = 48, maxTicks = 12) {
   const reach = reachHours * 60;

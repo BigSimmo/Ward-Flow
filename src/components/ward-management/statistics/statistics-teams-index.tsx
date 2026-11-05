@@ -4,7 +4,16 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronRight, Search } from "lucide-react";
 
-import { HeroStat, PhoneListRow, Segmented, TextInput, cx, tableClasses, useIsPhone } from "@/components/wf";
+import {
+  HeroStat,
+  PhoneListRow,
+  Segmented,
+  TextInput,
+  buttonClass,
+  cx,
+  tableClasses,
+  useIsPhone,
+} from "@/components/wf";
 import { communityStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { COMMUNITY_SERVICE_OPTIONS } from "@/components/ward-management/community/community-index";
 import {
@@ -281,7 +290,24 @@ function TeamsIndexView({
             ]}
           />
           {phoneTeams.length === 0 ? (
-            <p className={phone.note}>{needle ? "No team matches this name." : "No team has anyone in a bed."}</p>
+            <div className={phone.note}>
+              <p>
+                {phoneView === "active"
+                  ? needle
+                    ? "No team with patients in a bed matches this name."
+                    : "No team has anyone in a bed."
+                  : "No team matches this name."}
+              </p>
+              {phoneView === "active" ? (
+                <button
+                  type="button"
+                  className={buttonClass({ variant: "sec", size: "sm" })}
+                  onClick={() => setPhoneView("all")}
+                >
+                  Show all teams
+                </button>
+              ) : null}
+            </div>
           ) : (
             <PhoneList label={phoneView === "active" ? "Teams with patients in a bed" : "All teams"}>
               {phoneShown.map((entry) => {

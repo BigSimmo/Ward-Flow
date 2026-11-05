@@ -238,10 +238,10 @@ describe("the as-at stamp — DB-10's safeguard, and DB-12's rule that it cannot
 
     renderWardBoard(wardWithNobodyAway!.unitId);
     // The group became a line on 2026-08-30 ("remove the away column"), so his "Just say none."
-    // now reads as "Off the ward: none." rather than a bare cell. The word he chose survives; the
+    // now reads as "At an emergency department: none." rather than a bare cell. The word he chose survives; the
     // container it sat in did not.
     const line = screen.getByTestId("ward-daily-sheet-away");
-    expect(line.textContent).toMatch(/off the ward:\s*none\./i);
+    expect(line.textContent).toMatch(/at an emergency department:\s*none\./i);
   });
 
   it("says on the PAPER that a patient is at an emergency department, not only on the screen", () => {

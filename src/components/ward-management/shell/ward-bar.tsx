@@ -1197,6 +1197,7 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
           open={activityOpen}
           onClose={() => closePopover("activity")}
           initialTab={activityRequest.tab}
+          initialCommandId={activityRequest.commandId}
           now={activityRequest.now}
           figureChecks={publishedChecks}
           returnFocusRef={activityReturnTarget}

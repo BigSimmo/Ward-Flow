@@ -32,7 +32,8 @@ const releaseGateSpecPattern =
 // Shared mode (audit F-16): two signed-in desks against a real local backend and PostgreSQL. It needs
 // the stack `tests/support/ward-shared-mode-run.mjs` starts (shared-mode production `next start`, the backend, a
 // fake sign-in service), so the project exists only inside that runner, never in the offline gates.
-const sharedModeSpecPattern = /.*ward-shared-mode\.spec\.ts/;
+const sharedModeSpecPattern = /.*ward-shared-(?:mode|recovery|performance)\.spec\.ts/;
+const sharedPhoneSpecPattern = /.*ward-shared-recovery\.spec\.ts/;
 const sharedModeRunner = Boolean(process.env.WARD_E2E_ACCOUNTS);
 
 // Ward Flow fold gate (Josh, 25 September 2026): the known-failing journeys still run every gate, but
@@ -44,7 +45,7 @@ const knownFailurePattern = knownFailurePatternFromEnvironment();
 export default defineConfig({
   testDir: "./tests",
   testMatch:
-    /.*(?:release-gate-journeys|release-gate-axe-sweep|ward-shared-mode|api-csrf-proxy|ui-ward-(?:native-history-print|management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds|responsive-audit|tour-targets|help-show-me|design-sweep))\.spec\.ts/,
+    /.*(?:release-gate-journeys|release-gate-axe-sweep|ward-shared-(?:mode|recovery|performance)|api-csrf-proxy|ui-ward-(?:native-history-print|management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds|responsive-audit|tour-targets|help-show-me|design-sweep))\.spec\.ts/,
   timeout: 60_000,
   retries: 0,
   // Fail the run if a stray `test.only` is committed: otherwise it silently
@@ -182,6 +183,16 @@ export default defineConfig({
               ignoreHTTPSErrors: true,
               viewport: { width: 1600, height: 1100 },
               ...(chromiumExecutablePath ? { launchOptions: { executablePath: chromiumExecutablePath } } : {}),
+            },
+          },
+          {
+            name: "ward-shared-phone",
+            testMatch: sharedPhoneSpecPattern,
+            timeout: 120_000,
+            retries: 0,
+            use: {
+              ...devices["iPhone 13"],
+              ignoreHTTPSErrors: true,
             },
           },
         ]

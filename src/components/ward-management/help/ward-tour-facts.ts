@@ -10,7 +10,6 @@ import { hubEntries } from "@/components/ward-management/hub/hub-derivations";
 import { isOfficerJob } from "@/components/ward-management/officer/officer-jobs";
 import { usePersonaDeskId } from "@/components/ward-management/settings/persona-sync";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { edHref, teamHref, unitHref } from "@/components/ward-management/shell/ward-facade";
 import { wardNavCounts } from "@/components/ward-management/ward-nav-counts";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -20,20 +19,12 @@ import { useServiceScope } from "../shell/ward-service-store";
 import { scenarioWardNetwork } from "../ward-scenarios";
 import { dueSoonThresholdsOf } from "../ward-clock";
 import { wardPlaceIdFor } from "@/components/ward-management/ward-place";
-import { homeHrefFor } from "@/components/ward-management/ward-role-access";
 import { edById, edShortName, siteByCode } from "@/components/ward-management/ward-sites";
 
 import type { TourFacts, TourRole } from "./ward-tour-steps";
+import { resolveTourHome } from "./ward-tour-home";
 
 const COMMUNITY_ROUTE = /\/ward-flow\/community\/([^/?#]+)/;
-const FIXED_HOMES: Partial<Record<TourRole, string>> = {
-  coordinator: "/ward-flow",
-  officer: "/ward-flow/transport/officer",
-  bed_manager: "/ward-flow/capacity",
-  executive: "/ward-flow/statistics",
-  // The access admin's home is Settings, but the review screen is what the tour walks through.
-  admin: "/ward-flow/governance",
-};
 
 /**
  * The signed-in desk's place and the figures its home screen shows, for the tour's words, and the
@@ -65,6 +56,14 @@ export function useTourFacts(role: TourRole): {
   const service = useServiceScope();
 
   return useMemo(() => {
+    const homes = resolveTourHome({
+      role,
+      access,
+      pathname,
+      deskId,
+      units: flow?.units,
+      executive: reporting.executive,
+    });
     if (reporting.executive) {
       const exact = (value: { kind: string; value?: number } | undefined) =>
         value?.kind === "exact" ? value.value : undefined;
@@ -75,11 +74,10 @@ export function useTourFacts(role: TourRole): {
           openMovements: exact(report?.network.people.stillOpen),
           openEdJourneys: exact(report?.network.people.waitingInEd),
         },
-        home: FIXED_HOMES.executive,
-        deskHome: FIXED_HOMES.executive,
+        ...homes,
       };
     }
-    if (!flow) return { facts: {}, home: FIXED_HOMES[role], deskHome: FIXED_HOMES[role] };
+    if (!flow) return { facts: {}, ...homes };
     const { movements, units, bedReleases, admissions, leaveBeds, configuration, now, referrals, scenario } = flow;
     const network = scenarioWardNetwork(scenario);
     const counts = wardNavCounts({
@@ -104,14 +102,17 @@ export function useTourFacts(role: TourRole): {
       referralsWaiting: counts.referrals?.value,
       waitingInEd: counts.delays?.value,
     };
-    let home = FIXED_HOMES[role];
 
     if (role === "coordinator") {
       const top = edOpenSummaries(movements, now)
         .filter((summary) => summary.waiting > 0)
         .toSorted((a, b) => b.longestWaitMinutes - a.longestWaitMinutes || b.waiting - a.waiting)[0];
       if (top)
-        facts.topEd = { name: edShortName(top.ed), waiting: top.waiting, longest: durMinutes(top.longestWaitMinutes) };
+        facts.topEd = {
+          name: edShortName(top.ed),
+          waiting: top.waiting,
+          longest: durMinutes(top.longestWaitMinutes),
+        };
     }
 
     if (role === "ward") {
@@ -121,9 +122,14 @@ export function useTourFacts(role: TourRole): {
         const site = siteByCode(unit.siteCode);
         facts.placeName = unit.name;
         facts.place = site ? `${unit.name} at ${site.name}` : unit.name;
-        const entry = hubEntries({ units, sites: network.sites, bedReleases, admissions, leaveBeds, now }).find(
-          (candidate) => candidate.id === unit.id,
-        );
+        const entry = hubEntries({
+          units,
+          sites: network.sites,
+          bedReleases,
+          admissions,
+          leaveBeds,
+          now,
+        }).find((candidate) => candidate.id === unit.id);
         if (entry?.beds !== undefined) {
           facts.ward = {
             beds: entry.beds,
@@ -132,7 +138,6 @@ export function useTourFacts(role: TourRole): {
             confirmedAt: entry.confirmedAt === undefined ? undefined : formatInstantWithDay(entry.confirmedAt, now),
           };
         }
-        home = unitHref(unit.id);
       }
     }
 
@@ -149,7 +154,6 @@ export function useTourFacts(role: TourRole): {
           longest: summary && summary.waiting > 0 ? durMinutes(summary.longestWaitMinutes) : undefined,
           targetHours: Math.round(configuration.edAccessTargetMinutes / 60),
         };
-        home = edHref(ed.id);
       }
     }
 
@@ -160,7 +164,6 @@ export function useTourFacts(role: TourRole): {
       if (team) {
         facts.placeName = team.name;
         facts.place = `the ${team.name} team`;
-        home = teamHref(team.id);
       }
     }
 
@@ -174,11 +177,6 @@ export function useTourFacts(role: TourRole): {
 
     if (role === "officer") facts.activeJobs = movements.filter(isOfficerJob).length;
 
-    // A signed-in desk's own home, as the access table names it, wins over a guess from the page.
-    // The page the app opens for this desk. The tour starts there too, then walks to its own home
-    // when they differ (the access admin lands on Settings; the tour shows Governance).
-    const deskHome = access.role === role ? homeHrefFor(access, communityTeamSlug) : home;
-    if (access.role === role && role !== "admin" && role !== "coordinator") home = deskHome;
-    return { facts, home, deskHome };
+    return { facts, ...homes };
   }, [role, access, pathname, deskId, flow, report, reporting.executive, shell, service]);
 }

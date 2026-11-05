@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Button, Card, CardBody, CardHead, useToast } from "@/components/wf";
 import { UNDO_TOAST_MS, UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-operational-defaults";
@@ -44,7 +44,7 @@ export function PatientArchivePanel({ patientId, displayName }: { patientId: Pat
   );
   const [reason, setReason] = useState<PatientArchiveReason | null>(null);
   const [confirming, setConfirming] = useState(false);
-  const [refused, setRefused] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
   if (!gate("ARCHIVE_PATIENT").allowed) return null;
   // The screen's own read of the lists it holds. The engine reads every list and stays the authority.
   if (patientArchiveProblem(state as Parameters<typeof patientArchiveProblem>[0], patientId) !== undefined) return null;
@@ -64,22 +64,26 @@ export function PatientArchivePanel({ patientId, displayName }: { patientId: Pat
                 checked={reason === option}
                 onChange={() => {
                   setReason(option);
-                  setRefused(false);
+                  setProblem(null);
                 }}
               />{" "}
               {PATIENT_ARCHIVE_REASON_LABELS[option]}
             </label>
           ))}
         </fieldset>
-        {refused ? <p role="alert">The record was not archived. It may have care recorded against it now.</p> : null}
+        {problem ? <p role="alert">{problem}</p> : null}
         {confirming && reason !== null ? (
           <ArchiveConfirm
             patientId={patientId}
             displayName={displayName}
             reason={reason}
-            onRefused={() => {
-              setRefused(true);
-              setConfirming(false);
+            onProblem={(outcome) => {
+              setProblem(
+                outcome?.status === "refused"
+                  ? `The record was not archived. ${outcome.message ?? "It may have care recorded against it now."}`
+                  : (outcome?.message ??
+                      "Archive is not confirmed. Keep this page open and press Retry in the save status before making it again."),
+              );
             }}
             onKeep={() => setConfirming(false)}
           />
@@ -103,18 +107,27 @@ function ArchiveConfirm({
   patientId,
   displayName,
   reason,
-  onRefused,
+  onProblem,
   onKeep,
 }: {
   patientId: PatientId;
   displayName: string;
   reason: PatientArchiveReason;
-  onRefused: () => void;
+  onProblem: (outcome?: WardCommandOutcome) => void;
   onKeep: () => void;
 }) {
   const raise = useWardRaise(useRouteRole());
   const router = useRouter();
   const toast = useOptionalToast();
+  const pending = useRef(false);
+  const [saving, setSaving] = useState(false);
+  const mounted = useRef(true);
+  useEffect(() => {
+    mounted.current = true;
+    return () => {
+      mounted.current = false;
+    };
+  }, []);
   // Tier 1 item 6 (Josh, 4 Nov 2026): a record archived by mistake comes back from the toast's Undo.
   // The toast is the layout's, so it outlives this page as the coordinator lands on Search.
   const offerUndo = (outcome: WardCommandOutcome) => {
@@ -161,23 +174,53 @@ function ArchiveConfirm({
     });
   };
   const settle = (outcome: WardCommandOutcome | void) => {
+    if (!mounted.current || (outcome?.isCurrent && !outcome.isCurrent())) return;
     if (outcome?.status === "accepted") {
       offerUndo(outcome);
       router.replace("/ward-flow/search");
-    } else onRefused();
+    } else {
+      onProblem(outcome || undefined);
+      if (outcome?.status === "failed" && outcome.confirmation) {
+        void outcome.confirmation.then(
+          (terminal) => {
+            if (terminal.commandId === outcome.commandId && terminal.status !== "failed") settle(terminal);
+          },
+          () => {},
+        );
+        return;
+      }
+    }
+    pending.current = false;
+    setSaving(false);
   };
   const archive = () => {
-    const completion = raise("ARCHIVE_PATIENT", { patientId, reason });
-    if (completion && "then" in completion) void completion.then(settle, () => settle());
-    else settle(completion);
+    if (pending.current) return;
+    pending.current = true;
+    setSaving(true);
+    try {
+      const completion = raise("ARCHIVE_PATIENT", { patientId, reason });
+      if (completion && "then" in completion) void completion.then(settle, () => settle());
+      else settle(completion);
+    } catch {
+      settle();
+    }
   };
   return (
     <div role="group" aria-label="Confirm archive">
       <p>Archive {displayName}&apos;s record? It leaves every list. Only the audit trail will show it.</p>
-      <Button variant="pri" onClick={archive} data-testid="ward-patient-archive-confirm">
+      <Button
+        variant="pri"
+        disabledReason={saving ? "Archive is still awaiting confirmation" : undefined}
+        onClick={archive}
+        data-testid="ward-patient-archive-confirm"
+      >
         Archive record
       </Button>{" "}
-      <Button variant="sec" onClick={onKeep}>
+      <Button
+        variant="sec"
+        disabledReason={saving ? "Archive is still awaiting confirmation" : undefined}
+        onClick={onKeep}
+      >
         Keep as is
       </Button>
     </div>

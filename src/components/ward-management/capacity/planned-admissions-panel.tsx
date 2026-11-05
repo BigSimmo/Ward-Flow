@@ -145,10 +145,13 @@ export function PlannedAdmissionsPanel({
   now,
   titleSlot,
   compactActions = false,
+  unitId,
   title = "Planned admissions",
   listSlot,
 }: {
   now: Instant;
+  /** Optional ward destination: restrict the list and offered ward choices to this ward. */
+  unitId?: string;
   /** Replaces the panel title and count, such as the Capacity page's Planned / Step down switch. */
   titleSlot?: ReactNode;
   /** Arrived stays a button; Change and Cancel move into a More menu, so each booking is two lines. */
@@ -159,7 +162,7 @@ export function PlannedAdmissionsPanel({
   listSlot?: (api: PlannedListApi) => ReactNode;
 }) {
   const {
-    units,
+    units: availableUnits,
     patients,
     admissions,
     movements,
@@ -177,10 +180,18 @@ export function PlannedAdmissionsPanel({
     "plannedAdmissions",
     "rejections",
   );
-  const plannedAdmissions = useMemo(() => plannedFromContext ?? [], [plannedFromContext]);
+  const units = useMemo(
+    () => (unitId ? availableUnits.filter((unit) => unit.id === unitId) : availableUnits),
+    [availableUnits, unitId],
+  );
+  const plannedAdmissions = useMemo(
+    () => (plannedFromContext ?? []).filter((booking) => !unitId || booking.unitId === unitId),
+    [plannedFromContext, unitId],
+  );
   // Josh, 27 Oct 2026: a desk sees the bookings for its own wards, and offers only the steps its role
   // may take. The executive reads them as counts, with nobody named.
   const role = useRouteRole();
+  const wardActor = (actingUnitId: string) => (role === "ward" ? { actingUnitId } : {});
   const selectedIdentityId = useId();
   const canBook = dispatchPermission(role, "BOOK_PLANNED_ADMISSION").allowed;
   const canChange = dispatchPermission(role, "CHANGE_PLANNED_ADMISSION").allowed;
@@ -189,6 +200,8 @@ export function PlannedAdmissionsPanel({
   const patientOf = usePatientOf();
   const [form, setForm] = useState<FormState>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
+  // Day choices belong to the calendar on which this form opened, even across midnight.
+  const [formOpenedAt, setFormOpenedAt] = useState(now);
   // Audit 1 (WP-12, Josh 20 Oct): no reason is chosen for the coordinator; one must be picked.
   const [cancelReason, setCancelReason] = useState<PlannedAdmissionCancelReason | "">("");
   const [refusal, setRefusal] = useState<string | null>(null);
@@ -197,7 +210,7 @@ export function PlannedAdmissionsPanel({
   const [arrivalCheck, setArrivalCheck] = useState<PlannedAdmission | null>(null);
   const save = useWardFormSave(`planned-admission:${JSON.stringify(form)}`);
   // Tier 1 item 6 (Josh, 4 Nov 2026): a booking cancelled by mistake comes back from its toast.
-  const { offer: offerUndo } = useUndoableStep({ dispatch, rejections, now, routeRole: "coordinator" });
+  const { offer: offerUndo } = useUndoableStep({ dispatch, rejections, now, routeRole: role });
 
   useDirtyStateGuard(form !== null);
 
@@ -206,23 +219,25 @@ export function PlannedAdmissionsPanel({
 
   // Patients free to book: no live stay, no open movement and no booking already waiting. The
   // reducer refuses the same people, so this list only spares a coordinator a refusal.
-  const getBookablePatients = () => bookablePatientsFor(patients, admissions, movements, plannedAdmissions);
+  const getBookablePatients = () => bookablePatientsFor(patients, admissions, movements, plannedFromContext ?? []);
 
   const displayedRefusal = refusal ?? save.error ?? null;
 
   // A calendar date needs the provider's day zero; a screen given none still labels each day by
   // its distance from today rather than failing to render.
   function calendarDay(dayOffset: number, options: Intl.DateTimeFormatOptions): string {
-    if (!(dayZero instanceof Date)) return dayOffset < 0 ? `${-dayOffset}d ago` : `+${dayOffset}d`;
-    return calendarDateOf((dayOf(now) + dayOffset) * MINUTES_PER_DAY, dayZero).toLocaleDateString("en-AU", {
+    const fromToday = dayOf(formOpenedAt) + dayOffset - dayOf(now);
+    if (!(dayZero instanceof Date)) return fromToday < 0 ? `${-fromToday}d ago` : `+${fromToday}d`;
+    return calendarDateOf((dayOf(formOpenedAt) + dayOffset) * MINUTES_PER_DAY, dayZero).toLocaleDateString("en-AU", {
       ...options,
       timeZone: "Australia/Perth",
     });
   }
 
   function dayLabel(dayOffset: number): string {
-    if (dayOffset === 0) return "Today";
-    if (dayOffset === 1) return "Tomorrow";
+    const fromToday = dayOf(formOpenedAt) + dayOffset - dayOf(now);
+    if (fromToday === 0) return "Today";
+    if (fromToday === 1) return "Tomorrow";
     return calendarDay(dayOffset, { weekday: "short", day: "numeric", month: "short" });
   }
 
@@ -243,6 +258,7 @@ export function PlannedAdmissionsPanel({
   const changing = form?.mode === "change" ? plannedAdmissions.find((planned) => planned.id === form.id) : undefined;
 
   function openBook() {
+    setFormOpenedAt(now);
     const bookablePatients = getBookablePatients();
     setRefusal(null);
     save.forget();
@@ -267,6 +283,7 @@ export function PlannedAdmissionsPanel({
   }
 
   function openChange(planned: PlannedAdmission) {
+    setFormOpenedAt(now);
     setRefusal(null);
     save.forget();
     setDraft({
@@ -308,7 +325,7 @@ export function PlannedAdmissionsPanel({
     if (draftMissing || overrideReasonMissing) return;
     const { reason, legalStatus } = draft;
     if (reason === "" || legalStatus === "") return;
-    const timing = draftTiming(draft, now);
+    const timing = draftTiming(draft, formOpenedAt);
     if (!timing.ok) {
       setRefusal(timing.refusal);
       return;
@@ -356,7 +373,8 @@ export function PlannedAdmissionsPanel({
         () =>
           dispatch({
             type: "BOOK_PLANNED_ADMISSION",
-            role: "coordinator",
+            role,
+            ...wardActor(draft.unitId),
             now,
             ...(draft.who === "patient"
               ? { patientId: draft.patientId as PatientId }
@@ -378,7 +396,8 @@ export function PlannedAdmissionsPanel({
         () =>
           dispatch({
             type: "CHANGE_PLANNED_ADMISSION",
-            role: "coordinator",
+            role,
+            ...wardActor(changing?.unitId ?? draft.unitId),
             now,
             plannedAdmissionId: form.id,
             ...(draft.who === "initials" && draft.gender !== undefined ? { gender: draft.gender } : {}),
@@ -397,13 +416,14 @@ export function PlannedAdmissionsPanel({
 
   function submitCancel() {
     if (!form || form.mode !== "cancel" || !cancelling || cancelReason === "") return;
-    const cancelled = { id: cancelling.id, label: whoText(cancelling) };
+    const cancelled = { id: cancelling.id, unitId: cancelling.unitId, label: whoText(cancelling) };
     let completion: ReturnType<typeof dispatch> | undefined;
     save.submit(
       () =>
         (completion = dispatch({
           type: "CANCEL_PLANNED_ADMISSION",
-          role: "coordinator",
+          role,
+          ...wardActor(cancelling.unitId),
           now,
           plannedAdmissionId: cancelling.id,
           unitId: cancelling.unitId,
@@ -416,7 +436,8 @@ export function PlannedAdmissionsPanel({
             success: `Planned admission cancelled for ${cancelled.label}.`,
             undo: (at) => ({
               type: "UNDO_RELEASE_STEP",
-              role: "coordinator",
+              role,
+              ...wardActor(cancelled.unitId),
               now: at,
               plannedAdmissionId: cancelled.id,
             }),
@@ -433,7 +454,8 @@ export function PlannedAdmissionsPanel({
       () =>
         dispatch({
           type: "CONVERT_PLANNED_ADMISSION",
-          role: "coordinator",
+          role,
+          ...wardActor(planned.unitId),
           now,
           plannedAdmissionId: planned.id,
           unitId: planned.unitId,

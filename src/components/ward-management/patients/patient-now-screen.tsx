@@ -106,8 +106,9 @@ import { formProgression } from "@/components/ward-management/legal-forms/legal-
 import { formTimeLeft } from "@/components/ward-management/legal-forms/legal-form-time-left";
 import {
   requiredRoleForPermission,
-  setDeskRole,
+  useDeskRoleSwitch,
   useRoleGate,
+  ReadOnlyRecordActions,
   useRouteRole,
 } from "@/components/ward-management/ward-role-gate";
 import { usePathname } from "next/navigation";
@@ -190,16 +191,17 @@ export function PatientNowScreen({
   // D-65: the held bed review warning is paused behind its own flag until the hold time is reviewed.
   const awolHoldReview = useWardFeatureFlag("awol-bed-hold-review");
   // Feature 11: actions follow the route's role (`ward-role-permissions.ts`, cross-role pairs listed there).
-  const gate = useRoleGate();
-  // WF-21 (live test, 4 Nov 2026): as in `useRoleGate`, only a coordinator's desk can switch desks.
-  const canSwitchDesk = useEffectiveWardAccess().role === "coordinator";
+  const deskSwitch = useDeskRoleSwitch();
+  // WF-21 (live test, 4 Nov 2026): as in `useRoleGate`, only a coordinator's desk can switch desks
+  // (a shared session offers its own desk chooser instead).
+  const accessRole = useEffectiveWardAccess().role;
+  const canSwitchDesk = deskSwitch.shared ? deskSwitch.canSwitch : accessRole === "coordinator";
   // A CTO is logged under the viewer's own role, never borrowed as the community team's.
   const routeRole = useRouteRole();
   // Access audit (31 Oct 2026): a link this desk cannot open is left off, never a dead end.
   const canOpenHref = useCanOpenHref();
   const openable = (href: string | undefined) => (href !== undefined && canOpenHref(href) ? href : undefined);
   const pathname = usePathname() ?? "";
-  const clearanceGate = gate("RECORD_MOVEMENT_MEDICAL_CLEARANCE");
   // Audit A3-10 (13 Oct 2026): Mark absent offers the standard toast with Undo, as other moves do.
   const { run: runStep } = useUndoableStep({ dispatch, rejections, now, routeRole });
 
@@ -260,6 +262,9 @@ export function PatientNowScreen({
   const resolved = useMemo(() => {
     return resolvePatientNowRecord(selectedId, patients, movements, referrals, admissions, units, now);
   }, [selectedId, patients, movements, referrals, admissions, units, now]);
+  const gate = useRoleGate({ patientId: resolved?.livePatient?.id });
+  const clearanceGate = gate("RECORD_MOVEMENT_MEDICAL_CLEARANCE");
+  const readOnlyRecord = clearanceGate.reason === "Exceptional access is read only.";
   const liveMovement = resolved?.liveMovement ?? movements.find((m) => m.id === selectedId);
   const movementScope = `${worldGeneration}:${selectedId}:${liveMovement?.id ?? ""}`;
   const transportSave = useWardFormSave(movementScope);
@@ -1105,7 +1110,7 @@ export function PatientNowScreen({
     </div>
   );
 
-  return (
+  const content = (
     <main
       id="main-content"
       className={styles.screen}
@@ -1116,6 +1121,9 @@ export function PatientNowScreen({
       data-patient-mode={mode}
       data-active-tab={activeTab}
     >
+      {readOnlyRecord ? (
+        <p role="status">Exceptional access is read only. Clinical and record changes are unavailable.</p>
+      ) : null}
       <div className={styles.v6Page}>
         {/* Gate board (9 Oct 2026): the hero names the mode, the stages show only while a placement is
             open, and the header stays the mode's header on every tab. */}
@@ -1259,7 +1267,7 @@ export function PatientNowScreen({
                     type="button"
                     className="lockline"
                     onClick={() =>
-                      setDeskRole(
+                      deskSwitch.switchDesk(
                         requiredRoleForPermission(
                           "RECORD_COMMUNITY_TREATMENT_ORDER",
                           gate("RECORD_COMMUNITY_TREATMENT_ORDER").reason,
@@ -1269,14 +1277,15 @@ export function PatientNowScreen({
                     }
                     data-testid="ward-patient-role-switch-community"
                   >
-                    Switch to{" "}
-                    {
-                      requiredRoleForPermission(
-                        "RECORD_COMMUNITY_TREATMENT_ORDER",
-                        gate("RECORD_COMMUNITY_TREATMENT_ORDER").reason,
-                      ).label
-                    }{" "}
-                    desk →
+                    {deskSwitch.shared
+                      ? "Choose a desk"
+                      : `Switch to ${
+                          requiredRoleForPermission(
+                            "RECORD_COMMUNITY_TREATMENT_ORDER",
+                            gate("RECORD_COMMUNITY_TREATMENT_ORDER").reason,
+                          ).label
+                        } desk`}{" "}
+                    →
                   </button>
                 </div>
               ) : null}
@@ -1418,4 +1427,5 @@ export function PatientNowScreen({
       <WardPrototypeFooter testId="ward-patient-now-governance" />
     </main>
   );
+  return <ReadOnlyRecordActions value={readOnlyRecord}>{content}</ReadOnlyRecordActions>;
 }

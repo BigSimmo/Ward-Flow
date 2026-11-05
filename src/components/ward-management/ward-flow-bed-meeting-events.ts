@@ -3,6 +3,7 @@ import {
   BED_MEETING_ACTION_KIND_IDS,
   BED_MEETING_ACTION_OWNERS,
   openMeetingAction,
+  meetingActionInboxId,
   type BedMeetingAction,
 } from "./bed-meeting/bed-meeting-actions";
 import type { WardFlowEvent } from "./ward-flow-events";
@@ -66,6 +67,29 @@ export function reduceBedMeetingEvent(
       }
       if (event.dueAt <= event.now) return reject(state, event, "The due time must be later than now");
       if (open) return reject(state, event, `This ${subject.kind} already has that action open`);
+      // A stable row id is reused for the next occurrence. Append explicit boundaries so an
+      // earlier owner's claim or snooze cannot leak across a same-minute replacement.
+      const rowId = meetingActionInboxId(subject, event.action);
+      const by = WARD_FLOW_ROLE_LABELS[event.role];
+      const snoozes = state.inboxSnoozes[rowId];
+      const owners = state.inboxOwnership[rowId];
+      if (snoozes?.length || owners?.length)
+        state = {
+          ...state,
+          ...(snoozes?.length
+            ? {
+                inboxSnoozes: { ...state.inboxSnoozes, [rowId]: [...snoozes, { at: event.now, by, kind: "returned" }] },
+              }
+            : {}),
+          ...(owners?.length
+            ? {
+                inboxOwnership: {
+                  ...state.inboxOwnership,
+                  [rowId]: [...owners, { at: event.now, by, kind: "released" }],
+                },
+              }
+            : {}),
+        };
       next = [
         ...actions,
         {

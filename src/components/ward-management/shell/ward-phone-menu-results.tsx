@@ -25,7 +25,7 @@ import { useHeaderHelp } from "@/components/ward-management/ward-global-search-h
 import { Chevron, MenuSearching, type PageRowRender, Section } from "./ward-phone-menu-parts";
 import styles from "./ward-phone-menu.module.css";
 import type { RailEntry } from "./ward-rail-entries";
-import { useCanOpenHref } from "./ward-access";
+import { useAccessNavFilter, useCanOpenHref } from "./ward-access";
 
 /*
  * The phone menu's search results, split out of `ward-phone-menu.tsx` (16 October 2026) so the
@@ -45,6 +45,7 @@ const MENU_RESULTS_FULL = 40;
  */
 function useMenuSearch(query: string, entries: RailEntry[], findHelp: ReturnType<typeof useHeaderHelp>["findHelp"]) {
   const canOpenHref = useCanOpenHref();
+  const accessNav = useAccessNavFilter();
   const { movements, patients, units, referrals, plannedAdmissions, admissions, leaveBeds, dayZero, configuration } =
     useWardFlowSelect(
       "movements",
@@ -65,7 +66,7 @@ function useMenuSearch(query: string, entries: RailEntry[], findHelp: ReturnType
   return useMemo(() => {
     if (!needle || isPending) return null;
     const refusal = refusalFor(needle);
-    const results = searchWardFlow({
+    const matches = searchWardFlow({
       query: needle,
       patients,
       movements,
@@ -76,6 +77,11 @@ function useMenuSearch(query: string, entries: RailEntry[], findHelp: ReturnType
       plannedAdmissions,
       admissions,
     });
+    // Preserve engine keyword matches, then use the same destinations as the role menu.
+    const views = accessNav(
+      matches.views.map(({ view, href }) => ({ ...view, href, id: view.key, label: view.title })),
+    );
+    const results = { ...matches, views: views.map((view) => ({ view, href: view.href })) };
     // A common question ("over 24 hours") is answered from the Patients page's census, built only
     // when the text is one of those questions (search-answers.ts), as the header palette does.
     const answer =
@@ -151,6 +157,7 @@ function useMenuSearch(query: string, entries: RailEntry[], findHelp: ReturnType
     configuration,
     now,
     canOpenHref,
+    accessNav,
     findHelp,
   ]);
 }

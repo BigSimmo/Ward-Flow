@@ -1,5 +1,12 @@
 import { HEALTH_SERVICES, TRAVEL_MODES, type HealthService, type ReferralGender, type TravelMode } from "../ward-model";
 import { isSyntheticReferralTimelineBase } from "../ward-referral-seed-time";
+import {
+  CLEARANCE_CHECKS,
+  CLEARANCE_CHECK_LABELS,
+  CLEARANCE_STATUSES,
+  CLEARANCE_STATUS_LABELS,
+  type ClearanceChecklist,
+} from "./referral-clearance-checks";
 
 /**
  * WS-01 (workflow speed audit, 26 Oct 2026): the gender picker's explicit "Not yet recorded"
@@ -34,32 +41,13 @@ export type ReferralChart = {
   base64?: string;
 };
 
-/** Medical clearance, item by item (ward referrals). Each item is answered or left unrecorded. */
-export const CLEARANCE_CHECKS = [
-  "examination",
-  "bloods",
-  "ecg",
-  "drugScreen",
-  "breathAlcohol",
-  "observations",
-] as const;
-export type ClearanceCheck = (typeof CLEARANCE_CHECKS)[number];
-export const CLEARANCE_CHECK_LABELS: Record<ClearanceCheck, string> = {
-  examination: "Physical examination",
-  bloods: "Bloods",
-  ecg: "ECG",
-  drugScreen: "Urine drug screen",
-  breathAlcohol: "Breath alcohol",
-  observations: "Observations stable",
+export {
+  CLEARANCE_CHECKS,
+  CLEARANCE_CHECK_LABELS,
+  CLEARANCE_STATUSES,
+  CLEARANCE_STATUS_LABELS,
+  type ClearanceChecklist,
 };
-export const CLEARANCE_STATUSES = ["done", "to_follow", "not_done"] as const;
-export type ClearanceStatus = (typeof CLEARANCE_STATUSES)[number];
-export const CLEARANCE_STATUS_LABELS: Record<ClearanceStatus, string> = {
-  done: "Done",
-  to_follow: "To follow",
-  not_done: "Not done",
-};
-export type ClearanceChecklist = Partial<Record<ClearanceCheck, ClearanceStatus>>;
 
 /** What a community team or an ED needs to know before the person reaches them. All optional. */
 export const FIRST_CONTACT_TARGETS = ["24 hours", "72 hours", "7 days"] as const;

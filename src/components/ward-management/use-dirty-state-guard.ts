@@ -39,7 +39,7 @@ const DEFAULT_LEAVE_MESSAGE = "You have unsaved changes. Are you sure you want t
 /** Shells may release a pending close only after a cancelled traversal has settled. */
 export const WARD_HISTORY_TRAVERSAL_CANCELLED = "ward-flow-history-traversal-cancelled";
 
-type NavigationGuardEntry = { isDirty: boolean; message: string; approvedForHistory: boolean };
+type NavigationGuardEntry = { isDirty: boolean; message: string; approvedForHistory: boolean; revision: number };
 const navigationGuards = new Set<NavigationGuardEntry>();
 let suppressNextPopState = false;
 let lastHistoryIndex: number | null = null;
@@ -166,8 +166,17 @@ function confirmNavigationAcrossGuards(approved?: ReadonlySet<NavigationGuardEnt
   const entry = firstDirtyGuard(approved);
   if (!entry) return true;
   if (proceed && hasConfirmHost()) {
+    const captured = new Map(
+      [...navigationGuards].filter((guard) => guard.isDirty).map((guard) => [guard, guard.revision]),
+    );
     void requestConfirm(leaveRequest(entry.message)).then((confirmed) => {
       if (!confirmed) return;
+      // An edit or newly mounted dirty form belongs to a new decision, even while this dialog was open.
+      const changed = [...navigationGuards].some((guard) => guard.isDirty && captured.get(guard) !== guard.revision);
+      if (changed) {
+        if (confirmNavigationAcrossGuards(undefined, proceed)) proceed();
+        return;
+      }
       navigationApprovedOnce = true;
       try {
         proceed();
@@ -178,6 +187,29 @@ function confirmNavigationAcrossGuards(approved?: ReadonlySet<NavigationGuardEnt
     return false;
   }
   return window.confirm(entry.message);
+}
+
+/** Runs an imperative route change only after every mounted unsaved-work guard permits it. */
+export function navigateWithDirtyGuard(proceed: () => void): void {
+  const approved = () => {
+    const previous = navigationApprovedOnce;
+    navigationApprovedOnce = true;
+    try {
+      proceed();
+    } finally {
+      navigationApprovedOnce = previous;
+    }
+  };
+  if (typeof window === "undefined" || replayingLinkClick !== null || navigationApprovedOnce) {
+    approved();
+    return;
+  }
+  const guard = (
+    window as typeof window & {
+      __wardFlowConfirmNavigation?: (proceed?: () => void) => boolean;
+    }
+  ).__wardFlowConfirmNavigation;
+  if (!guard || guard(approved)) approved();
 }
 
 /**
@@ -372,6 +404,7 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
       isDirty: false,
       message: DEFAULT_LEAVE_MESSAGE,
       approvedForHistory: false,
+      revision: 0,
     };
     navigationGuardRef.current = entry;
     navigationGuards.add(entry);
@@ -386,6 +419,7 @@ export function useDirtyStateGuard(options: DirtyStateGuardOptions | boolean) {
   useEffect(() => {
     const entry = navigationGuardRef.current;
     if (!entry) return;
+    entry.revision += 1;
     entry.isDirty = isDirty;
     entry.message = confirmMessage ?? DEFAULT_LEAVE_MESSAGE;
     entry.approvedForHistory = false;

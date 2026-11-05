@@ -15,5 +15,5 @@ export const WardScreenDecisionJobs = dynamic(
 );
 export const OverrideRegister = dynamic(
   () => import("@/components/ward-management/override-register").then((m) => m.OverrideRegister),
-  { ssr: false },
+  { ssr: false, loading: () => <p role="status">Loading overrides…</p> },
 );

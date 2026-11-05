@@ -22,8 +22,9 @@ const KNOWN: Record<string, { dateBoxes?: number; confirms?: number }> = {
 
 const SRC = join(process.cwd(), "src");
 // Any JSX spelling: spaces round `=`, either quote, bare or in braces (`type = "date"`, `type={'date'}`).
-const DATE_BOX = /\btype\s*=\s*\{?\s*(["'`])(?:date|time|datetime-local|month|week)\1\s*\}?/g;
-const CONFIRM = /window\.confirm\(/g;
+// Only the real `type` attribute: start or whitespace before it, so `data-type="date"` is not one.
+const DATE_BOX = /(?<=^|\s)type\s*=\s*\{?\s*(["'`])(?:date|time|datetime-local|month|week)\1\s*\}?/g;
+const CONFIRM = /\b(?:window|globalThis)\.confirm\s*\(/g;
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
@@ -54,6 +55,14 @@ describe("the date-box pattern", () => {
       expect(spelling.match(DATE_BOX), spelling).not.toBeNull();
     expect(`type="text"`.match(DATE_BOX)).toBeNull();
     expect(`inputType="datetime"`.match(DATE_BOX)).toBeNull();
+    expect(`data-type="date"`.match(DATE_BOX)).toBeNull();
+    expect(`data-type={'date'}`.match(DATE_BOX)).toBeNull();
+  });
+
+  it("matches every spelling of a native confirm call", () => {
+    for (const spelling of [`window.confirm("Go?")`, `window.confirm ("Go?")`, `globalThis.confirm("Go?")`])
+      expect(spelling.match(CONFIRM), spelling).not.toBeNull();
+    expect(`requestConfirm({})`.match(CONFIRM)).toBeNull();
   });
 });
 

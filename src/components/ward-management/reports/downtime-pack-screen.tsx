@@ -490,7 +490,7 @@ export function DowntimePackScreen() {
             </tbody>
             <tfoot>
               <tr className={styles.total}>
-                <th scope="row">All wards</th>
+                <th scope="row">Wards in this snapshot</th>
                 <td className={styles.num}>{pack.totals.beds}</td>
                 <td className={styles.num} data-testid="ward-downtime-total-ready">
                   {pack.totals.ready > 0 ? <span className={tabsStyles.readyChip}>{pack.totals.ready}</span> : 0}
@@ -812,7 +812,7 @@ export function DowntimePackScreen() {
                     as="li"
                     name={line.person}
                     meta={<span className={styles.phoneMetaWrap}>{`${line.from} to ${line.to}`}</span>}
-                    value={line.plannedAt === null ? "None" : formatInstantWithDay(line.plannedAt, now)}
+                    value={line.plannedAt === null ? NOT_RECORDED : formatInstantWithDay(line.plannedAt, now)}
                     time="planned"
                     onSelect={() =>
                       setSheet({
@@ -841,7 +841,7 @@ export function DowntimePackScreen() {
                         className={styles.phoneMetaWrap}
                       >{`${line.form || NOT_RECORDED} · ${line.legalStatus}`}</span>
                     }
-                    value={line.madeAt === null ? "None" : formatInstantWithDay(line.madeAt, now)}
+                    value={line.madeAt === null ? NOT_RECORDED : formatInstantWithDay(line.madeAt, now)}
                     time="made"
                     onSelect={() =>
                       setSheet({

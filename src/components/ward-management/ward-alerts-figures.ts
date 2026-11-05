@@ -53,6 +53,8 @@ export function alertsNowFigures(activeItems: readonly { id: string }[], awaitin
   let waiting = 0;
   let running = 0;
   for (const item of activeItems) {
+    // Meeting actions open their owner destination and are not members of the Alerts queue.
+    if (item.id.startsWith(INBOX_CATEGORIES.bed_meeting_action.idPrefix)) continue;
     const group = alertGroupOfId(item.id);
     if (group === "act") act += 1;
     else if (group === "wait") waiting += 1;

@@ -389,6 +389,8 @@ export type LegalFormExpiryMetadata = {
     by: WardFlowRole;
     dueAt: Instant;
     basis: "written_on_form" | "extension" | "correction";
+    /** Zero-based recorded form instance (earlierForms.length), independent of minute/expiry ties. */
+    formInstance?: number;
   }[];
   /** Checked paper corrections preserve both recorded values separately from extensions. */
   legalFormExpiryCorrections?: {

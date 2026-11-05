@@ -47,6 +47,7 @@ export function Field({
   required = false,
   hint,
   error,
+  warning,
   children,
   wide = false,
 }: {
@@ -55,12 +56,15 @@ export function Field({
   required?: boolean;
   hint?: string;
   error?: string | null;
+  /** Advice under the field that never blocks saving (for example, a very long name). */
+  warning?: string;
   children: React.ReactNode;
   wide?: boolean;
 }) {
   const hintId = hint ? `${htmlFor}-hint` : undefined;
   const errorId = error ? `${htmlFor}-error` : undefined;
-  const describedBy = [hintId, errorId].filter(Boolean).join(" ");
+  const warningId = warning ? `${htmlFor}-warning` : undefined;
+  const describedBy = [hintId, errorId, warningId].filter(Boolean).join(" ");
   return (
     <div className={`${styles.formField} ${wide ? styles.fieldWide : ""}`} data-invalid={error ? true : undefined}>
       <div className={styles.fieldLabelRow}>
@@ -78,6 +82,12 @@ export function Field({
         <p id={errorId} className={styles.fieldError}>
           <StatusGlyph tone="danger" size={9} />
           {error}
+        </p>
+      ) : null}
+      {warning ? (
+        <p id={warningId} className={styles.fieldError}>
+          <StatusGlyph tone="warning" size={9} />
+          {warning}
         </p>
       ) : null}
     </div>

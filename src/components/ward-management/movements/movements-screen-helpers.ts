@@ -68,7 +68,7 @@ export const CAUSES: CauseDefinition[] = [
     key: "no_eligible_bed",
     rank: 3,
     title: "No eligible bed",
-    note: "every ward asked has declined",
+    note: "no ward currently has an eligible bed",
     sev: "nobed",
     mark: "Severe",
   },

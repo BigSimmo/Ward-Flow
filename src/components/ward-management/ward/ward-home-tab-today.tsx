@@ -12,7 +12,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { wardStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import type { WardFlowTab } from "./ward-home-tab-model";
-import { nameParts } from "./ward-bed-board";
+import { nameParts } from "./ward-bed-board-logic";
 import {
   outlookHeadline,
   outlookOpenWork,

@@ -10,6 +10,9 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react"
 import { OverlayPortal, useIsPhone, useModalFocus } from "@/components/wf";
 import { hasOpenSheet, subscribeToSheetStack, topSheetRoot } from "@/components/wf/sheet-focus";
 import { PHONE_QUICK_SETTINGS } from "@/components/ward-management/settings/settings-screen-model";
+import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
+import { showMeAvailable } from "./ward-help-task-list";
+import { walkPlaysHere } from "./ward-help-screen-tours";
 
 import { howToHref } from "./ward-help-href";
 import { HOW_TOS, showMeSteps } from "./ward-help-howto";
@@ -31,14 +34,21 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
   const device: TourDevice = useIsPhone() ? "phone" : "desk";
   const { home, deskHome } = useTourFacts(role);
   const howTo = HOW_TOS.find((candidate) => candidate.id === id);
-  // Steps marked for the other device are skipped, so a phone never walks to a computer-only part.
-  const permitted = Boolean(howTo && howToFor(howTo, role, access));
-  const steps = useMemo(() => (permitted ? showMeSteps(howTo, device) : []), [howTo, device, permitted]);
+  const capabilityAllowed = Boolean(howTo && howToFor(howTo, role, access));
   const [stepIndex, setIndex] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
   const spotRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname() ?? "";
+  const permitted = Boolean(
+    howTo &&
+    capabilityAllowed &&
+    showMeAvailable(howTo, role, deskHome ?? home, device === "phone", access) &&
+    walkPlaysHere(howTo, pathname),
+  );
+  // Keep the desk's own steps and skip unsupported devices before a walk can navigate.
+  const steps = useMemo(() => (permitted ? showMeSteps(howTo, device, role) : []), [howTo, device, role, permitted]);
+  const restricted = Boolean(howTo && !capabilityAllowed);
   const router = useRouter();
   // A computer and a phone walk different steps, so a window narrowed mid-walk (or a tablet
   // turned) keeps the walk on its last step rather than running past the end and vanishing.
@@ -57,12 +67,17 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
       : destination;
   const went = useRef(false);
   useEffect(() => {
-    if (went.current || !href) return;
-    went.current = true;
+    if (!permitted || went.current || !href) return;
     const [path, tab] = href.split("#");
-    if (pathname !== path) router.push(href);
-    else if (tab && window.location.hash !== `#${tab}`) window.location.hash = tab;
-  }, [href, pathname, router]);
+    navigateWithDirtyGuard(() => {
+      went.current = true;
+      if (pathname !== path) router.push(href);
+      else if (tab && window.location.hash !== `#${tab}`) window.location.hash = tab;
+    });
+  }, [href, pathname, router, permitted]);
+  useEffect(() => {
+    if (!permitted && !restricted) onBack();
+  }, [permitted, restricted, onBack]);
 
   // A step names its desktop control first and a phone stand-in after it; the first on screen is lit.
   const target = step?.target;
@@ -102,7 +117,6 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
   }, [ownsFocus, howTo, step, onClose]);
 
   // The restricted notice has no steps, so the admit effect never runs; it owns focus as soon as it shows.
-  const restricted = Boolean(howTo && !permitted);
   const { rootRef } = useModalFocus({
     open: ownsFocus || restricted,
     onClose,
@@ -126,7 +140,7 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
     }
   }
 
-  if (howTo && !permitted)
+  if (howTo && restricted)
     return (
       <OverlayPortal layer="modal" name="ward-show-me">
         <div ref={rootRef} className={styles.layer} data-testid="ward-show-me-restricted">
@@ -146,7 +160,7 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
         </div>
       </OverlayPortal>
     );
-  if (!howTo || !step) return null;
+  if (!permitted || !howTo || !step) return null;
 
   return (
     <OverlayPortal key={ownsFocus ? "ready" : "waiting"} layer="modal" name="ward-show-me">

@@ -858,3 +858,107 @@ describe("search limit guidance", () => {
     if (count > 40) expect(screen.getByText(guidance)).toBeInTheDocument();
   });
 });
+
+// Ported from #1440 (WF-SEARCH-UI-02): a referral preview opens the selected referral, never a sibling.
+describe("consolidated search continuity", () => {
+  it.each([false, true])("opens the selected referral rather than its sibling (reverse=%s)", async (reverse) => {
+    const { GlobalSearchPreview } = await import("@/components/ward-management/search/global-search-preview");
+    const seed = seedWardFlowState();
+    const source = seed.referrals.find((ref) => resolveSubjectPatient(ref, seed).patient !== undefined)!;
+    const patient = resolveSubjectPatient(source, seed).patient!;
+    const older = { ...source, id: "REF-HISTORY" };
+    const selected = { ...source, id: "REF-SELECTED" };
+    const referrals = reverse ? [selected, older] : [older, selected];
+    render(
+      <GlobalSearchPreview
+        item={{
+          kind: "referral",
+          id: selected.id,
+          personId: patient.id,
+          title: "Referral",
+          meta: "",
+          href: referralBoardHref(selected.id),
+        }}
+        patients={seed.patients}
+        referrals={referrals}
+        movements={[]}
+        units={seed.units}
+        onOpen={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId("ward-global-search-preview-open-referral")).toHaveAttribute(
+      "href",
+      referralBoardHref(selected.id),
+    );
+  });
+  it("does not substitute a sibling after the selected referral disappears", async () => {
+    const { GlobalSearchPreview } = await import("@/components/ward-management/search/global-search-preview");
+    const seed = seedWardFlowState();
+    const source = seed.referrals.find((ref) => resolveSubjectPatient(ref, seed).patient !== undefined)!;
+    const patient = resolveSubjectPatient(source, seed).patient!;
+    render(
+      <GlobalSearchPreview
+        item={{
+          kind: "referral",
+          id: "REF-MISSING",
+          personId: patient.id,
+          title: "Referral",
+          meta: "",
+          href: referralBoardHref("REF-MISSING"),
+        }}
+        patients={seed.patients}
+        referrals={[source]}
+        movements={[]}
+        units={seed.units}
+        onOpen={vi.fn()}
+      />,
+    );
+    expect(screen.queryByTestId("ward-global-search-preview-open-referral")).toBeNull();
+  });
+  it("does not promote a sibling referral's movement into the selected referral preview", async () => {
+    const { GlobalSearchPreview } = await import("@/components/ward-management/search/global-search-preview");
+    const seed = seedWardFlowState();
+    const source = seed.referrals.find((ref) => resolveSubjectPatient(ref, seed).patient)!;
+    const patient = resolveSubjectPatient(source, seed).patient!;
+    const selected = { ...source, id: "REF-EXACT-PREVIEW" };
+    const sibling = { ...seed.movements.find(isOpen)!, patientId: patient.id, referralId: source.id };
+    const { buildCensus } = await import("@/components/ward-management/search/patient-census");
+    const { DEFAULT_DUE_SOON_THRESHOLDS } = await import("@/components/ward-management/ward-clock");
+    const census = buildCensus({
+      ...seed,
+      movements: [sibling],
+      referrals: [source, selected],
+      now: 10000,
+      thresholds: DEFAULT_DUE_SOON_THRESHOLDS,
+      dayZero: new Date("2026-10-01T00:00:00Z"),
+    });
+    render(
+      <GlobalSearchPreview
+        item={{
+          kind: "referral",
+          id: selected.id,
+          personId: patient.id,
+          title: "Referral",
+          meta: "",
+          href: referralBoardHref(selected.id),
+        }}
+        patients={seed.patients}
+        referrals={[source, selected]}
+        movements={[sibling]}
+        units={seed.units}
+        census={census}
+        onOpen={vi.fn()}
+      />,
+    );
+    expect(screen.getByTestId("ward-global-search-preview-open-referral")).toHaveAttribute(
+      "href",
+      referralBoardHref(selected.id),
+    );
+    expect(screen.queryByRole("link", { name: /^Open movement$/ })).toBeNull();
+    expect(screen.queryByTestId("ward-global-search-preview-next")).toBeNull();
+    expect(screen.getByRole("link", { name: `Open other request ${sibling.id}` })).toHaveAttribute(
+      "href",
+      movementHref(sibling.id),
+    );
+  });
+});

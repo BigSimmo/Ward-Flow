@@ -28,6 +28,7 @@ import type { Highlight } from "./capacity-bed-map-cards";
 import { isConfirmationFresh } from "./capacity-gap-words";
 import type { CapacityModel } from "./capacity-model";
 import { gapWords } from "./capacity-range-line";
+import { waitingHref } from "../delays/waiting-href";
 import type { SiteEdWaiting } from "./capacity-site-ed";
 import styles from "./capacity-page.module.css";
 
@@ -95,7 +96,7 @@ export function CapacityHero({
                 <FigureLink
                   value={edWaiting.waiting}
                   label={`waiting in ${edWaiting.short}`}
-                  owner={PAGE_OWNERS.waiting}
+                  owner={{ ...PAGE_OWNERS.waiting, route: waitingHref(undefined, edWaiting.edId) }}
                   onHero
                   canOpen={canOpen(PAGE_OWNERS.waiting.route)}
                   data-testid="capacity-hero-ed-waiting-link"

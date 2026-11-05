@@ -5,6 +5,7 @@ import {
   RELEASE_GATE_PARTS,
   RELEASE_GATE_PROJECTS,
   releaseGateCases,
+  releaseGateCheckCases,
   releaseGatePartArgsProblem,
   releaseGatePartFor,
   releaseGateProjectFor,
@@ -14,7 +15,7 @@ import {
 describe("complete release gate and shared-build browser selection", () => {
   it("requires all seven operational journeys on both device projects only for the full preset", () => {
     expect(releaseGateCases(false)).toEqual([]);
-    const cases = releaseGateCases(true);
+    const cases = releaseGateCases(true).filter((entry) => entry.file !== "release-gate-axe-sweep.spec.ts");
     expect(cases).toHaveLength(14);
     for (const project of ["release-gate-desktop", "release-gate-phone"]) {
       expect(cases.filter((entry) => entry.project === project).map((entry) => entry.title.split(":")[0])).toEqual([
@@ -41,7 +42,7 @@ describe("complete release gate and shared-build browser selection", () => {
     expect(RELEASE_GATE_PROJECTS).toEqual(["release-gate-desktop", "release-gate-phone"]);
     for (const project of RELEASE_GATE_PROJECTS) {
       const leg = releaseGateCases(true, project);
-      expect(leg).toHaveLength(7);
+      expect(leg.filter((entry) => entry.file !== "release-gate-axe-sweep.spec.ts")).toHaveLength(7);
       expect(new Set(leg.map((entry) => entry.project))).toEqual(new Set([project]));
       expect(leg).toEqual(releaseGateCases(true).filter((entry) => entry.project === project));
     }
@@ -72,8 +73,10 @@ describe("complete release gate and shared-build browser selection", () => {
         "Legal form",
       ]);
       // Together the parts still require all seven journeys on each device, each exactly once.
-      expect([...journeys, ...referrals]).toEqual(releaseGateCases(true, project));
-      expect(releaseGateCases(true, project, "checks")).toEqual([]);
+      expect([...journeys, ...referrals, ...releaseGateCases(true, project, "checks")]).toEqual(
+        releaseGateCases(true, project),
+      );
+      expect(releaseGateCases(true, project, "checks")).toEqual(releaseGateCheckCases(project));
     }
     expect(() => releaseGateCases(true, "release-gate-phone", "smoke")).toThrow(/WARD_RELEASE_GATE_PART/);
   });
@@ -87,12 +90,25 @@ describe("complete release gate and shared-build browser selection", () => {
       expect(releaseGatePartArgsProblem([...preset, option]), option).toMatch(/test-selection option/);
   });
 
-  it("requires all six production shared-mode journeys", () => {
+  it("keeps the six shared journeys and requires four new recovery journeys on desktop and phone", () => {
     const cases = sharedModeCases();
-    expect(cases).toHaveLength(6);
-    const source = readFileSync("tests/ward-shared-mode.spec.ts", "utf8");
-    for (const entry of cases) expect(source).toContain(JSON.stringify(entry.title));
-    expect(new Set(cases.map((entry) => entry.project))).toEqual(new Set(["ward-shared-mode"]));
+    expect(cases).toHaveLength(14);
+    for (const entry of cases)
+      expect(readFileSync(`tests/${entry.file}`, "utf8"), entry.title).toContain(JSON.stringify(entry.title));
+    expect(cases.filter((entry) => entry.file === "ward-shared-mode.spec.ts")).toHaveLength(6);
+    expect(cases.filter((entry) => entry.project === "ward-shared-mode")).toHaveLength(10);
+    const phone = cases.filter((entry) => entry.project === "ward-shared-phone");
+    expect(phone).toHaveLength(4);
+    expect(phone.map((entry) => entry.title.split(":")[0])).toEqual([
+      "offline recovery",
+      "stale board",
+      "Activity Undo",
+      "sign-out return",
+    ]);
+    const config = readFileSync("playwright.config.ts", "utf8");
+    expect(config).toMatch(/name: "ward-shared-phone",\s+testMatch: sharedPhoneSpecPattern/u);
+    const runner = readFileSync("tests/support/ward-shared-mode-run.mjs", "utf8");
+    expect(runner).toContain('"--project=ward-shared-phone"');
   });
 
   it("adds the CSRF project and file only to the first CI group without changing its Ward selection", () => {

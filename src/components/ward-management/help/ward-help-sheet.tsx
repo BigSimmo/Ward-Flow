@@ -5,6 +5,7 @@ import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { BookOpen, CircleHelp, Keyboard, Library, Search, Sparkles, UserRound, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
+import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
 
 import { TabPanel, Tabs, useIsPhone } from "@/components/wf";
 import { Sheet } from "@/components/wf/sheet";
@@ -200,6 +201,16 @@ function WardHelpSheetView({
   const [focused, setFocused] = useState(false);
   const [active, setActive] = useState(0);
   const [task, setTask] = useState(openTask);
+  const [previousOpenTask, setPreviousOpenTask] = useState(openTask);
+  if (previousOpenTask !== openTask) {
+    setPreviousOpenTask(openTask);
+    if (openTask !== undefined) setTask(openTask);
+  }
+  const [previousAsk, setPreviousAsk] = useState(ask);
+  if (previousAsk !== ask) {
+    setPreviousAsk(ask);
+    if (ask !== undefined) setQuery(ask);
+  }
   const [checklist, setChecklist] = useState<string>();
   const [unread, setUnread] = useState(readUnread);
   const field = useRef<HTMLInputElement>(null);
@@ -338,12 +349,14 @@ function WardHelpSheetView({
     }
     const href = mine ? howToHref(result.go, role, deskHref) : undefined;
     if (href) {
-      onClose();
-      const [path, tab] = href.split("#");
-      // A tab on this screen goes by native fragment navigation, which Settings listens for.
-      if (tab && path === pathname) {
-        if (window.location.hash !== `#${tab}`) window.location.hash = tab;
-      } else router.push(href);
+      navigateWithDirtyGuard(() => {
+        onClose();
+        const [path, tab] = href.split("#");
+        // A tab on this screen goes by native fragment navigation, which Settings listens for.
+        if (tab && path === pathname) {
+          if (window.location.hash !== `#${tab}`) window.location.hash = tab;
+        } else router.push(href);
+      });
     }
   };
 

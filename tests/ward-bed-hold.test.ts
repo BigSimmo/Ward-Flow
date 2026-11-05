@@ -81,7 +81,15 @@ describe("Movement detail (A4-1)", () => {
 
 describe("Handover (A4-3, A4-4)", () => {
   const row = (pullExpiresAt: number) =>
-    ({ stage: "pulled", pullExpiresAt, urgent: false, asked: [], declines: [] }) as unknown as HandoverRow;
+    ({
+      stage: "pulled",
+      pullExpiresAt,
+      urgent: false,
+      asked: [],
+      declines: [],
+      // A row always carries its movement (HandoverRow.movement); #1432 reads it for delivered rows.
+      movement: { stage: "pulled" },
+    }) as unknown as HandoverRow;
 
   it("words a lapsed hold the same way and keeps it in Act now", () => {
     expect(isActNow(row(NOW - 10), NOW)).toBe(true);

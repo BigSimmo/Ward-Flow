@@ -7,6 +7,7 @@ export const referralDraftMemory: {
   recoveryStorageKey: string | undefined;
   recoverySaved: boolean;
   kept: unknown;
+  submissions: Map<string, unknown>;
   keptAtMs: number | null;
   sessionVersion: number;
   lastReferrer: unknown;
@@ -15,6 +16,7 @@ export const referralDraftMemory: {
   recoveryStorageKey: undefined,
   recoverySaved: true,
   kept: null,
+  submissions: new Map(),
   keptAtMs: null,
   sessionVersion: 0,
   lastReferrer: null,
@@ -33,6 +35,7 @@ export function bindReferralDraftAccessContext(context: string): void {
 
 function clearReferralDraftMemory(): void {
   referralDraftMemory.sessionVersion += 1;
+  referralDraftMemory.submissions.clear();
   referralDraftMemory.keptStorageKey = undefined;
   referralDraftMemory.recoveryStorageKey = undefined;
   referralDraftMemory.kept = null;

@@ -11,6 +11,8 @@ export function useTransportBookingClose({
   answers,
   legalReason,
   pending,
+  uncertain = false,
+  refused = false,
   onClose,
 }: {
   scope: string | undefined;
@@ -18,6 +20,8 @@ export function useTransportBookingClose({
   legalReason: string;
   /** True while a save is in flight and has not yet shown an error (a held command may then close). */
   pending: boolean;
+  uncertain?: boolean;
+  refused?: boolean;
   onClose: () => void;
 }) {
   // Every answer starts blank. `false` is an answered escort question, not an empty answer.
@@ -31,19 +35,24 @@ export function useTransportBookingClose({
       current.current = null;
     };
   }, [opening, value, pending]);
+  const message = uncertain
+    ? "The transport save is not confirmed. It may already be recorded. Closing does not cancel it. Check the board before logging it again."
+    : refused
+      ? "The transport save was not confirmed. Keep editing to review the error before trying again."
+      : "These transport booking answers have not been recorded. Keep editing to finish the booking.";
   useDirtyStateGuard({
     isDirty: scope !== undefined && dirty,
     value,
-    confirmMessage: "The transport booking has unsaved answers. Leave without recording them?",
+    confirmMessage: message,
   });
 
   return () => {
     if (pending || scope === undefined) return;
     if (!dirty) return onClose();
     void requestConfirm({
-      title: "Discard transport answers?",
-      message: "These transport booking answers have not been recorded. Keep editing to finish the booking.",
-      confirmLabel: "Discard answers",
+      title: uncertain ? "Close unconfirmed transport booking?" : "Discard transport answers?",
+      message,
+      confirmLabel: uncertain ? "Close booking" : "Discard answers",
       cancelLabel: "Keep editing",
     }).then((discard) => {
       const latest = current.current;

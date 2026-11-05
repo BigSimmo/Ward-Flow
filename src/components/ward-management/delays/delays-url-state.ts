@@ -1,3 +1,4 @@
+import { edById } from "@/components/ward-management/ward-sites";
 import { HEALTH_SERVICES } from "@/components/ward-management/ward-model-vocabulary";
 
 import { NO_FILTERS, type BoardFilters } from "./delays-board-model";
@@ -17,7 +18,7 @@ const ORIGINS: readonly CatchmentOrigin[] = [...HEALTH_SERVICES, "unrecorded"];
 
 /** Every query key the board reads and writes. `show=severe` is the Menu's link (shell-9). */
 type DelaysQueryKey =
-  "owner" | "origin" | "blocker" | "wait" | "locked" | "quiet" | "due" | "passed" | "show" | "view" | "order";
+  "ed" | "owner" | "origin" | "blocker" | "wait" | "locked" | "quiet" | "due" | "passed" | "show" | "view" | "order";
 
 /** The filters an address asks for. Unknown or malformed values are ignored, never guessed at. */
 export function filtersFromSearch(search: string): BoardFilters {
@@ -29,6 +30,7 @@ export function filtersFromSearch(search: string): BoardFilters {
   const wait = params.get("wait");
   return {
     ...NO_FILTERS,
+    edId: edById(params.get("ed") ?? undefined)?.id ?? null,
     owner: pick("owner", OWNERS),
     origin: pick("origin", ORIGINS),
     cause: pick<DelayCause>("blocker", DELAY_CAUSE_ORDER),
@@ -46,6 +48,7 @@ export function filtersFromSearch(search: string): BoardFilters {
 export function filtersToParams(filters: BoardFilters): Record<Exclude<DelaysQueryKey, "order">, string | null> {
   const wait = (Object.keys(WAITS) as (keyof typeof WAITS)[]).find((key) => WAITS[key] === filters.threshold);
   return {
+    ed: filters.edId ?? null,
     owner: filters.owner,
     origin: filters.origin,
     blocker: filters.cause,

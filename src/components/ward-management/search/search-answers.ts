@@ -49,8 +49,14 @@ const QUESTIONS: readonly QuestionDefinition[] = [
   {
     id: "found",
     heading: "Accepted",
-    phrases: /^(?:accepted|bed found|beds found|bed reserved|reserved beds?)$/,
+    phrases: /^(?:accepted|bed found|beds found)$/,
     test: (row) => row.group === "found",
+  },
+  {
+    id: "reserved",
+    heading: "Bed reserved",
+    phrases: /^(?:bed reserved|reserved beds?)$/,
+    test: (row) => row.bedReserved === true,
   },
   {
     id: "move",
@@ -153,7 +159,8 @@ export function questionFor(query: string): SearchQuestion | undefined {
   return QUESTIONS.find((question) => question.phrases.test(text)) ?? formQuestion(text);
 }
 
-/** `rows` holds at most the caller's limit; `total` counts every row that answers the question. */
+/** One representative per person; `total` counts distinct people before the presentation limit.
+ * The census retains every request; previews expose the person's other open requests. */
 export type SearchAnswer = { question: SearchQuestion; rows: CensusRow[]; total: number };
 
 /**
@@ -171,7 +178,13 @@ export function answerQuestion(
   if (!question) return undefined;
   // Never "0 on leave" from a census that was not told who is on leave.
   if (question.needs === "leave" && !census.leaveKnown) return undefined;
-  const rows = sortCensusRows(census.rows.filter(question.test), "wait", () => false);
+  const seen = new Set<string>();
+  const rows = sortCensusRows(census.rows.filter(question.test), "wait", () => false).filter((row) => {
+    const key = row.patientRecordId ?? row.key;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
   return { question, rows: rows.slice(0, limit), total: rows.length };
 }
 

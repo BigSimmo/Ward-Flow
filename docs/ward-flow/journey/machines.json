@@ -63,7 +63,7 @@
           "y": 270,
           "w": 220,
           "h": 96,
-          "label": "Withdrawn \u2014 a flag, not a state",
+          "label": "Withdrawn — a flag, not a state",
           "sub": "Stamped on every destination still waiting. The arm stays waiting; it does not end."
         }
       ],
@@ -144,7 +144,7 @@
           "w": 230,
           "h": 86,
           "label": "Destination review",
-          "sub": "Wards can be asked from here too \u2014 and only from these two."
+          "sub": "Wards can be asked from here too — and only from these two."
         },
         {
           "id": "accepted_awaiting_bed",
@@ -203,7 +203,7 @@
           "y": 420,
           "w": 310,
           "h": 90,
-          "label": "Closed \u2014 did not proceed",
+          "label": "Closed — did not proceed",
           "sub": "Not a stage. The stage it closed at is still recorded."
         }
       ],
@@ -373,7 +373,7 @@
           "offset": 80,
           "kind": "back",
           "label": "to ANY strictly earlier stage",
-          "guard": "refused once arrived; touches nothing but the stage \u2014 no bed given back, no transport cancelled"
+          "guard": "refused once arrived; touches nothing but the stage — no bed given back, no transport cancelled"
         }
       ],
       "note": "STEP_BACK_STAGE records a strictly earlier stage with a reason, leaving bed and transport intact. It refuses a closure, an arrived stage or a delivered transport leg. WITHDRAW_ACCEPTANCE can release an uncollected hold atomically after cancelling a live job. The separate scoped UNDO_TRANSPORT_STEP route may reverse the latest recorded arrival while its time-window, unchanged-snapshot, actor and restored-bed checks pass."
@@ -431,8 +431,8 @@
           "y": 250,
           "w": 300,
           "h": 86,
-          "label": "Removed \u2014 not a state",
-          "sub": "There is no \u201cdeleted\u201d among the four admission states. The record itself is taken away."
+          "label": "Removed — not a state",
+          "sub": "There is no “deleted” among the four admission states. The record itself is taken away."
         },
         {
           "id": "waitlisted",
@@ -492,7 +492,7 @@
           "action": "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
           "route": "self",
           "offset": 0,
-          "label": "away at an ED \u2014 bed untouched"
+          "label": "away at an ED — bed untouched"
         },
         {
           "from": "occupied",
@@ -704,7 +704,7 @@
           "kind": "exit"
         }
       ],
-      "note": "Cancel and stop are not two names for one thing. Cancel deletes a job before collection and leaves the bed held; stop ends a journey already underway, closes the movement, and also leaves the bed held \u2014 but only stop demands to know where the patient is."
+      "note": "Cancel and stop are not two names for one thing. Cancel deletes a job before collection and leaves the bed held; stop ends a journey already underway, closes the movement, and also leaves the bed held — but only stop demands to know where the patient is."
     },
     {
       "id": "bedrelease",
@@ -730,7 +730,7 @@
           "w": 210,
           "h": 76,
           "label": "Expected",
-          "sub": "Carries what it is waiting on \u2014 one of seven."
+          "sub": "Carries what it is waiting on — one of seven."
         },
         {
           "id": "confirmed",
@@ -759,7 +759,7 @@
           "y": 250,
           "w": 280,
           "h": 86,
-          "label": "Stuck \u2014 a flag, not a stage",
+          "label": "Stuck — a flag, not a stage",
           "sub": "One of nine reasons. Sits on top of expected or confirmed."
         },
         {
@@ -769,7 +769,7 @@
           "y": 250,
           "w": 300,
           "h": 86,
-          "label": "Being made ready \u2014 a flag",
+          "label": "Being made ready — a flag",
           "sub": "Cleaning or repair is a separate flag. It does not rewrite the ward count, but a new pull refuses when every free bed is still being prepared."
         }
       ],
@@ -856,7 +856,7 @@
     },
     {
       "id": "expects",
-      "name": "The front door \u2014 an expect becomes a referral",
+      "name": "The front door — an expect becomes a referral",
       "subject": "A door the earlier drawing missed entirely. A referral that has been triaged but whose patient has not arrived sits on a separate list; marking them present is what moves it.",
       "width": 2011,
       "height": 240,
@@ -897,7 +897,7 @@
           "y": 60,
           "w": 280,
           "h": 90,
-          "label": "Medically cleared \u2014 or not",
+          "label": "Medically cleared — or not",
           "sub": "Three answers, not two: unrecorded, cleared, and explicitly not cleared."
         }
       ],
@@ -923,7 +923,7 @@
           "kind": "side"
         }
       ],
-      "note": "The owner's own words for this, quoted in the model: \u201cWhen expects arrive and are marked as arrived, they become referrals.\u201d Being marked present is the only door between the two lists."
+      "note": "The owner's own words for this, quoted in the model: “When expects arrive and are marked as arrived, they become referrals.” Being marked present is the only door between the two lists."
     },
     {
       "id": "legalstatus",
@@ -1204,7 +1204,7 @@
           "route": "straight",
           "label": "the situation becomes true",
           "kind": "side",
-          "guard": "nothing raises a row \u2014 it is derived, and appears on its own"
+          "guard": "nothing raises a row — it is derived, and appears on its own"
         },
         {
           "from": "showing",
@@ -1299,7 +1299,7 @@
   ],
   "resources": {
     "title": "A ward's two bed counts",
-    "blurb": "The illustrated routes below show the principal stored-count changes; the current event models also cover planned admissions, direct placement and undo. A normal departure completes the named live release and raises empty/allocatable once. A departure resolving an arrival-capacity conflict clears that conflict instead of inventing another bed. Ready capacity also excludes closed wards and individually closed beds.",
+    "blurb": "The illustrated routes below show the principal stored-count changes; the current event models also cover planned admissions, direct placement and undo. A normal departure completes the named live release and raises empty/allocatable once. A departure resolving an arrival-capacity conflict clears that conflict instead of inventing another bed. Ready capacity also excludes closed wards, individually closed beds and other journeys' pending numbered reservations.",
     "counts": [
       {
         "name": "Allocatable",
@@ -1307,7 +1307,7 @@
         "moves": [
           {
             "action": "PULL_PATIENT",
-            "effect": "\u2212 1"
+            "effect": "− 1"
           },
           {
             "action": "RELEASE_PULL",
@@ -1344,7 +1344,7 @@
           },
           {
             "action": "RECORD_ADMISSION_CARE",
-            "effect": "+ 1 on the ward they leave, \u2212 1 on the ward they arrive at",
+            "effect": "+ 1 on the ward they leave, − 1 on the ward they arrive at",
             "note": "only a transfer recorded as arrived; the source ward's live bed release is completed in the same write"
           },
           {
@@ -1360,7 +1360,7 @@
         "moves": [
           {
             "action": "PATIENT_ARRIVED",
-            "effect": "Usually \u22121, floored at zero; a pre-counted seeded pull is not decremented twice. Arrival into no empty bed is recorded as a capacity conflict."
+            "effect": "Usually −1, floored at zero; a pre-counted seeded pull is not decremented twice. Arrival into no empty bed is recorded as a capacity conflict."
           },
           {
             "action": "RECORD_LEAVING",
@@ -1369,7 +1369,7 @@
           },
           {
             "action": "RECORD_ADMISSION_CARE",
-            "effect": "+ 1 on the ward they leave, \u2212 1 on the ward they arrive at",
+            "effect": "+ 1 on the ward they leave, − 1 on the ward they arrive at",
             "note": "only a transfer recorded as arrived"
           }
         ]
@@ -1393,14 +1393,14 @@
         "override": true,
         "referral": true,
         "movement": false,
-        "asks": "The same question, asked at the front door instead \u2014 is an authorised bed needed, and does this ward have one?"
+        "asks": "The same question, asked at the front door instead — is an authorised bed needed, and does this ward have one?"
       },
       {
         "gate": "Cohort",
         "override": true,
         "referral": false,
         "movement": true,
-        "asks": "Does the ward's cohort match the patient's \u2014 adult, older adult, or youth?"
+        "asks": "Does the ward's cohort match the patient's — adult, older adult, or youth?"
       },
       {
         "gate": "Age",
@@ -1521,12 +1521,12 @@
   ],
   "review": {
     "reviewedOn": "2026-11-05",
-    "basis": "Source comparison of eleven machines, route nodes, gates, resources and current gap notes; not runtime or clinical acceptance.",
+    "basis": "Source comparison of eleven machines, route nodes, gates, resources and current gap notes; not runtime or clinical acceptance. 5 November follow-up: explicit handler, payload, authority and caller review reconciled the consolidated audit repairs. Accepted observation sequence and legacy-tie fallback, current place/Undo provenance, safe world reset/import identity, return retry, meeting occurrence metadata and UI draft/completion ownership qualify existing transitions; they add no clinical decision or new physical transport stage. See CURRENT-REVIEW.md for the source-by-source review scope and reused versus fresh evidence. Main29f61/domain1430 reconciliation: accepted observation order is max(retained history,0)+1 with positive-safe restore metadata and sequence preserved through arrival; legacy ties retain compatibility fallback. Import and archive Undo share normalized retained identity, excluding explicit missing/privacy sentinels. Complete inverses preserve occupied-stay/leave consistency. No transition geometry or clinical rule changed; see CURRENT-REVIEW.md. #1447 consolidation, 5 November: other journeys' pending numbered bed reservations come off Ready and the free locked/open counts in the pull and planned-arrival gates; a pull release clears its held bed number and refuses a release matching no reservation; a coordinator transfer recorded as arrived needs a Ready bed; restore refuses a save whose live absences, active stays or numbered beds have more than one owner and names the broken rule. No transition geometry or clinical rule changed.",
     "sources": [
       {
         "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
-        "line": 581,
-        "sha256": "448d7f6e084c37776896bfc2bb9020b1c25cea6b31676a87421b1a8c76280ba4"
+        "line": 584,
+        "sha256": "61ad20c2605a7461ce59b5fd80350ebbc3555aefe361eaa620eaa8904d713893"
       },
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
@@ -1546,7 +1546,7 @@
       {
         "path": "src/components/ward-management/patients/patient-now-screen.tsx",
         "line": 1,
-        "sha256": "581310c008462c5d11d11ccc86e3fe4dee3069968297baaa6726d8971c147d12"
+        "sha256": "f1f46f6ac7772b5c14ac446f123c236ea8156ff74524b18d80595a6e3645eb27"
       },
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner-body.tsx",
@@ -1610,13 +1610,13 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
-        "line": 419,
-        "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+        "line": 421,
+        "sha256": "11f1c9df8f0154239a42edf9a246cab8bc5cabb791fd86977843a67f567fa460"
       },
       {
         "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
         "line": 1,
-        "sha256": "1ae21de095af6c797544a45a71fa0bf8513930e9cfd66974fe85e9a9e5aed856"
+        "sha256": "8b3f5fac10eff9018aefb9cf83a8cfdd06fb5f97ca040a5176507e70b96c700b"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -1626,32 +1626,32 @@
       {
         "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
         "line": 51,
-        "sha256": "e821cf3a8a08b764d868debdf6568a5705ea0e4629dd77d851ed0dc81d39f770"
+        "sha256": "1ea8f3c4f644456cfff2f29b16085917696fb2b118a50d08a9acdf056a18e04e"
       },
       {
         "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-        "line": 380,
-        "sha256": "8e99076c978c4e9fc6d05082a4c48c336fb11ecc2930749ede7ebf85f2bbf934"
+        "line": 376,
+        "sha256": "c5f1bf077a95e7863b2df7291cd9617f4181194752d1e9d5938df369de6bdce5"
       },
       {
         "path": "src/components/ward-management/ward-flow-reducer.ts",
-        "line": 1157,
-        "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+        "line": 1160,
+        "sha256": "8e056e60e9ae556496e92a26fc4f9d9dd32e68d3f1fc16358889fe6442e826c8"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
-        "line": 387,
-        "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+        "line": 386,
+        "sha256": "f9ec8f13505e04398caa83f2bcacb04e4eb212fa967ea92da1132d6c46527bd2"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-        "line": 1248,
-        "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
+        "line": 1250,
+        "sha256": "303cd38cbcd3d1f3e3de3d24f56f3e8e608b90fc44f736f86ccc06be032d949d"
       },
       {
         "path": "src/components/ward-management/ward-flow-storage-validation.ts",
-        "line": 470,
-        "sha256": "dac8756404eb271cdd5b28f19e7cf216414620df477a21cb1c064781b526efa3"
+        "line": 455,
+        "sha256": "82734c9b8e1bba4d3a4db0ec034da639536cd8dabc86858509191e6821c0088b"
       },
       {
         "path": "src/components/ward-management/ward-flow-transport-events.ts",
@@ -1661,7 +1661,7 @@
       {
         "path": "src/components/ward-management/ward-flow-undo-events.ts",
         "line": 270,
-        "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
+        "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
       },
       {
         "path": "src/components/ward-management/ward-inbox-reducer.ts",
@@ -1702,6 +1702,16 @@
         "path": "src/components/ward-management/ward-undo.ts",
         "line": 1,
         "sha256": "ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6"
+      },
+      {
+        "path": "src/components/ward-management/ward-observation.ts",
+        "line": 48,
+        "sha256": "b714525f0d4c6d18d050f9a3600f38c8de4e9a013595a77844c5c492fbdc2e3c"
+      },
+      {
+        "path": "src/components/ward-management/ward-retained-umrn.ts",
+        "line": 13,
+        "sha256": "7968243f077b9d5c9a6fe6a56385f48ff6a97aa39cfdeec8fe97f05919693d80"
       }
     ]
   }
