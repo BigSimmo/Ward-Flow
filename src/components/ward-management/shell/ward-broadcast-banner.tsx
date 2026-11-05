@@ -163,7 +163,7 @@ function ControlledBroadcastBanner({
           ) : null}
           {onClear ? (
             <Button size="sm" variant="ghost" onClick={onClear}>
-              Stand Down — Resolved
+              Stand down
             </Button>
           ) : null}
         </div>

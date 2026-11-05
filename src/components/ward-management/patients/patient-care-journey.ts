@@ -94,7 +94,7 @@ export function patientCareJourney(input: CareJourneyInput): CareStep[] {
     },
     {
       id: "bed",
-      label: "Bed found",
+      label: "Bed agreed",
       state: stateOf(1),
       detail: movement?.stage === "pulled" ? "Bed pulled" : movement?.acceptedAt ? day(movement.acceptedAt) : undefined,
     },

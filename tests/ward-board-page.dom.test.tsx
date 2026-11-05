@@ -68,14 +68,14 @@ function boardFilter(label: string): HTMLElement {
 }
 
 describe("ward board page", () => {
-  it("Nobody due out shows only arrived occupants with no expected departure", () => {
+  it("No discharge due shows only arrived occupants with no expected departure", () => {
     const { container } = renderWardBoard(UNIT_ID);
     const expected = occupantsFor(UNIT_ID).filter(
       (admission) => daysInBed(admission, WARD_ADMISSIONS_ANCHOR) !== null && admission.expectedDischargeAt === null,
     );
     expect(expected.length).toBeGreaterThan(0);
-    const filter = boardFilter("Nobody due out");
-    expect(filter).toHaveTextContent(`Nobody due out${expected.length}`);
+    const filter = boardFilter("No discharge due");
+    expect(filter).toHaveTextContent(`No discharge due${expected.length}`);
     fireEvent.click(filter);
     const visibleTiles = [...container.querySelectorAll<HTMLElement>("[data-bed-kind]")].filter((tile) => !tile.hidden);
     expect(visibleTiles).toHaveLength(expected.length);

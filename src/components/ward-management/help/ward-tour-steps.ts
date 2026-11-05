@@ -300,7 +300,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "beds",
           { sel: "#bed-capacity" },
           "Every bed",
-          "One tile per bed with who is in it, the length of stay and any flag. Filter to Needs a look, Due out or Ready.",
+          "One tile per bed with who is in it, the length of stay and any flag. Filter to Needs a look, Discharge due or Ready.",
           "Select a bed to record a discharge, move the date or Record hold-up.",
         ),
         step(
@@ -549,7 +549,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "hero",
           HERO,
           "Beds ready",
-          "How many beds are ready, with locked beds counted within the total. Beds pulled and beds due out today sit beside them.",
+          "How many beds are ready, with locked beds counted within the total. Beds pulled and discharges due today sit beside them.",
         ),
         step(
           "Your daily work",
@@ -922,7 +922,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "This session",
           "Hourly counts of referrals, decisions, arrivals and departures recorded since the demo started.",
         ),
-        phoneDock("Statistics, Tasks and Activity."),
+        phoneDock("Statistics, Alerts and Activity."),
         PHONE_HELP,
       ];
     case "admin":
@@ -939,7 +939,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "Overrides, refused actions and record access checks. Review next opens the next item when there is one.",
         ),
         ...ACCESS_STEPS,
-        phoneDock("Tasks and Activity."),
+        phoneDock("Alerts and Activity."),
         PHONE_HELP,
       ];
   }

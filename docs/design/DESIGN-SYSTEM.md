@@ -201,24 +201,26 @@ Short labels win. Josh rejected "For you / With other desks" as too wordy (Q179)
 - Screen-reader labels say what the screen shows (Q271).
 - Browser tab: the sidebar name + " — Ward Flow" (Q272).
 
-One word for each thing:
+One word for each thing (the full list and the banned phrases are in [word-list.md](../ward-flow/word-list.md), which `tests/ward-word-list.test.ts` reads; change both together):
 
-| Say                    | Not                                                     |
-| ---------------------- | ------------------------------------------------------- |
-| Alerts                 | Tasks                                                   |
-| movement               | journey                                                 |
-| held up (a state)      | barrier, blocker (Releases held up stays on Ward, Q305) |
-| discharge (the event)  | release, departure, due out                             |
-| Bed board              | Stays and discharges, Bed Board, board                  |
-| New referral           | Raise referral                                          |
-| Add patient            | Add a patient, New patient                              |
-| desks                  | units, areas, screens (in Broadcast)                    |
-| Locked                 | Secure (except inside ward names)                       |
-| Board time             | Demo time                                               |
-| Synthetic numbers      | Mock numbers                                            |
-| Community team         | team, Community teams (as a page)                       |
-| Needs you, Flow (Home) | Open, Waiting, Queue (Waiting is the ED count)          |
-| Later today            | Planned                                                 |
+| Say                                            | Not                                                                            |
+| ---------------------------------------------- | ------------------------------------------------------------------------------ |
+| Alerts                                         | Tasks                                                                          |
+| movement                                       | journey                                                                        |
+| held up (a state)                              | barrier, blocker (Releases held up stays on Ward, Q305)                        |
+| discharge (the event)                          | release, departure, due out                                                    |
+| Bed board                                      | Stays and discharges, Bed Board, board                                         |
+| New referral                                   | Raise referral                                                                 |
+| Add patient                                    | Add a patient, New patient                                                     |
+| desks                                          | units, areas, screens (in Broadcast)                                           |
+| Locked, Locked bed                             | Secure, Secure bed (except inside ward names; Josh, 5 Nov 2026)                |
+| Board time                                     | Demo time (the live pill "Demo 10:42" stays: Josh, 5 Nov 2026, HOW-WE-WORK §6) |
+| Synthetic numbers                              | Mock numbers                                                                   |
+| Community team                                 | team, Community teams (as a page)                                              |
+| Needs you, Flow (Home)                         | Open, Waiting, Queue (Waiting is the ED count)                                 |
+| Later today                                    | Planned                                                                        |
+| Needs a bed, Bed agreed, Ready to move, Moving | other stage names; the detailed steps are sub-labels only (Josh, 5 Nov 2026)   |
+| Nobody                                         | No one (empty lines; a whole sentence ends with a full stop)                   |
 
 States: empty pages say what is empty without a Clear button ("No patients yet."). Offline: "You're offline. Tap again once you're back online." Slow: "Still loading. Check the connection." with Reload after about 15 seconds.
 

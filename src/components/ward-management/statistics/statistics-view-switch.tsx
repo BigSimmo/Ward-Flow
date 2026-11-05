@@ -140,7 +140,7 @@ export function StatisticsViewSwitch({
         label="Summary view"
         items={[
           { id: "board" as StatisticsView, label: "Bed board" },
-          { id: "journey" as StatisticsView, label: "Journey" },
+          { id: "journey" as StatisticsView, label: "Movement" },
           { id: "map" as StatisticsView, label: "Map" },
         ]}
         value={view}

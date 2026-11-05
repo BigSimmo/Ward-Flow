@@ -221,7 +221,7 @@ export function ReferralPatientStep({
     >
       <ErrorSummary items={problems} action="before the next step" />
       <section className={styles.refCard}>
-        <CardHead icon={newPatientOpen ? UserPlus : User} title={newPatientOpen ? "New patient" : "Patient"}>
+        <CardHead icon={newPatientOpen ? UserPlus : User} title={newPatientOpen ? "Add patient" : "Patient"}>
           {/* RF3 (Current Issues, 3 Nov 2026): while a new patient is being added, the card is only that
               form, with its own close; the search and the chosen person come back when it closes. */}
           <button
@@ -649,11 +649,11 @@ export function ReferralPatientStep({
             <div className={styles.suggestion} data-testid="ward-referral-open-journey">
               <StatusGlyph tone="warning" size={9} />
               <span className={styles.suggestionText}>
-                <strong>Already on an open ED journey at {journeyElsewhere.edName}</strong>
+                <strong>Already on an open ED movement at {journeyElsewhere.edName}</strong>
                 <small>
                   {originName
-                    ? `Sending from ${originName} starts a second journey.`
-                    : "Sending starts a second journey."}
+                    ? `Sending from ${originName} starts a second movement.`
+                    : "Sending starts a second movement."}
                 </small>
               </span>
               <button

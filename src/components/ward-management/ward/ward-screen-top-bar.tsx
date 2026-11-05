@@ -291,7 +291,7 @@ export function WardScreenTopBar({
         </>
       ) : null}
       {isPhone ? null : (
-        <nav className={styles.tabBarWrap} aria-label="Ward Operational Tabs">
+        <nav className={styles.tabBarWrap} aria-label="Ward tabs">
           <ul
             className={styles.tabList}
             role="tablist"

@@ -40,7 +40,7 @@ export const WAITING_STAGES: readonly WaitingStageDefinition[] = [
   {
     id: "awaiting_bed_preparation",
     stage: "pulled",
-    label: "Departure awaiting bed preparation",
+    label: "Awaiting bed preparation",
     span: "Bed pulled to bed and paperwork ready",
   },
   {
