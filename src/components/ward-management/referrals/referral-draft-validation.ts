@@ -51,6 +51,7 @@ export function isRecoverableReferralDraft(value: unknown): value is KeptDraft {
   if (
     !only(value, [
       ...textFields,
+      "submissionId",
       "destType",
       "activeSection",
       "ageBand",
@@ -78,6 +79,10 @@ export function isRecoverableReferralDraft(value: unknown): value is KeptDraft {
   )
     return false;
   if (
+    !optional(
+      value.submissionId,
+      (id) => typeof id === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id),
+    ) ||
     !oneOf(value.destType, ["ward", "ed", "community"]) ||
     !oneOf(value.activeSection, ["patient", "referral", "documentation", "placement"]) ||
     !oneOf(value.ageBand, ["", ...COHORTS]) ||

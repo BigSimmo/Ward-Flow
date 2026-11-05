@@ -286,7 +286,15 @@ export function reduceUndoEvent(
       const roleRefusal =
         event.type === "UNDO_SITE_HANDOVER_SIGN_OFF"
           ? null
-          : undoRoleRefusal(record, event.role, "actingUnitId" in event ? event.actingUnitId : undefined);
+          : undoRoleRefusal(
+              record,
+              event.role,
+              "actingUnitId" in event
+                ? event.actingUnitId
+                : event.type === "UNDO_LEGAL_FORM_RECORD"
+                  ? (record.unitId ?? undefined)
+                  : undefined,
+            );
       const refusal =
         roleRefusal ??
         undoWindowRefusal(record.at, event.now) ??

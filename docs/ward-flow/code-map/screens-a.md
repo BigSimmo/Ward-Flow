@@ -1,6 +1,41 @@
 # Screens A: coordinator, ED, ward, referrals, community, search, statistics
 
+## Output repair contract — 4 November 2026
+
+Local repairs based on `559f225892b27b6c42bd7e9a6fa81f3ef81e62ec` keep the ward bed-list
+print available synchronously with its route. Its table wraps long fields, repeats column headings
+across paper pages and uses a light print colour scheme. A table that has not completed its own hydration
+prints a loading notice rather than a partial copy. This supports printing a loaded page offline;
+it does not establish cold offline application availability.
+
+Observation changes in patient chronology read the retained movement and admission histories,
+collapse only mirrored linked changes one for one, and preserve separate attempts in the same minute.
+The domain audit records the writer's explicit verdict; the session log retains the nested target.
+A denied audit row and its session entry count once. Authoritative database auditing is unchanged.
+
+DI-7 caller completion (5 November 2026): the separation-review download passes the provider's
+calendar anchor to `separationHandoff`. Its version 2 payload retains the minute offset and includes
+the origin, Perth timezone and absolute departure timestamp, so the file can be understood later.
+Mounted download checks cover midnight, the next midnight and the preceding minute.
+
 _Updated 2026-10-23 — ED examination save confirmation and recovery; Documentation owns._
+
+## Referral and transport recovery — 4 November 2026
+
+Local repair branch from main `559f225892b27b6c42bd7e9a6fa81f3ef81e62ec`:
+`referrals/referral-match.tsx` constructs ward and ED decisions with the acting desk's role;
+ward decisions name a ward from its access scope. Server authority and placement checks remain
+unchanged. The recoverable draft carries an opaque submission identity. The draft-session memory
+owns pending commands across drawer mounts, and the completion hook reconciles acceptance on
+reopening without sending another intake. Session cleanup clears that memory. A restored draft
+can also reconcile its identity against the authoritative referral snapshot.
+
+Transport close prompts distinguish unsent answers, refusal and uncertain saves. Initial saves
+still block closing; a delayed discard answer cannot close another booking. Sent-referral links
+use the existing scoped board address. Regression evidence is in
+`tests/ward-consolidated-{recipient-authority,recovery}.dom.test.tsx` and
+`tests/ward-transport-close-recovery.dom.test.tsx`. Local checks do not establish hosted acceptance
+or deployment.
 
 ## Current-tree check — 24 October 2026
 

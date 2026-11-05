@@ -6,6 +6,8 @@ import {
   removeCommandRecovery,
   type RecoveryEntry,
 } from "./ward-command-recovery";
+import * as activityAudit from "./ward-shared-activity-audit";
+import type { SharedActivityAuditEvent } from "./ward-shared-activity-audit";
 import { forecastHistoryFailure } from "./forecast/forecast-history-response";
 import {
   anySignal,
@@ -60,8 +62,7 @@ import {
 } from "./ward-shared-pending-command";
 export type { SharedAccessRequest, SharedMembership } from "./ward-shared-access-types";
 
-// The shared state schema loads with the first request rather than with every phone page (Josh,
-// 21 Oct 2026: no script budget raises). Until it has loaded, `adopt` refuses every snapshot.
+// Lazy schema keeps the phone budget; adopt refuses snapshots until validation has loaded.
 let isValidSharedState: ((value: unknown) => boolean) | undefined;
 let bindSharedPartialView: typeof import("./ward-partial-view-contract").bindWardPartialView | undefined;
 let mergeSharedPartialView: typeof import("./ward-partial-view-contract").mergeArchivedWardPartialView | undefined;
@@ -96,13 +97,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_SHARED_EVENT_LOG_ENTRIES = 1000;
 const NO_ROLE = "No Ward Flow role is assigned to this account";
 /** P056: one audit row as a desk's Activity reads it; nothing in it names a patient or a person. */
-export type SharedActivityAuditEvent = {
-  sequence: string;
-  action: string;
-  outcome: string;
-  committed_at: string;
-  ownCommandId?: string;
-};
+export type { SharedActivityAuditEvent, SharedActivityAuditPage } from "./ward-shared-activity-audit";
 /** A member desk reads its part of the workspace in full at least this often (audit F-04). */
 const FULL_READ_EVERY_MS = 60_000;
 
@@ -252,7 +247,18 @@ export class SharedWorkspaceClient {
       this.settle(this.pending.commandId, "failed", saveProblem("roleChangedWhileSaving"));
     this.cancelAll(saveProblem("roleChanged"), saveProblem("roleChangedWhileSaving"));
   }
-  /** Only this command's own refusal is definitive; an unrelated session end leaves a sent save uncertain. */
+  /** End the working view before replacing a role or authoritative workspace. */
+  private retireWorkingView() {
+    this.cancelForRoleChange();
+    this.clearRecovery();
+    forgetDowntimePack();
+    this.roleLifetime.abort();
+    this.roleLifetime = new AbortController();
+    this.viewGeneration += 1;
+    this.headRevision = 0;
+    this.sheetSeen = new WeakMap();
+  }
+  /** Only this command's own refusal is definite; a session ending after send leaves its outcome uncertain. */
   private settleForSessionEnd(body: unknown, message: string, answered: boolean) {
     const pending = this.pending;
     if (!pending) return;
@@ -279,7 +285,7 @@ export class SharedWorkspaceClient {
   private workingAsOverride: string | null | undefined;
   /** The revision this tab's own accepted revision-only commands reached, ahead of its snapshot. */
   private headRevision = 0;
-  /** CS-19: saves use the popup's opening revision, so intervening changes are refused. */
+  /** CS-19: popup opening revisions let the server refuse stale edits after another desk changed the record. */
   private sheetSeen = new WeakMap<object, SheetSeen>();
   /** The popups the command in flight was asked for from, while it is in flight. */
   private pendingSheets: readonly object[] | undefined;
@@ -350,11 +356,7 @@ export class SharedWorkspaceClient {
     const tracked = () => new Set([...openSheetHandles(), ...this.queue.flatMap((queued) => queued.sheets ?? [])]);
     markOwnSave(this.sheetSeen, tracked, from, to, sheets, covered);
   }
-  /**
-   * History's archived records for this desk and world generation, as the server last sent them.
-   * They are put back beside the live records of every snapshot this tab publishes, so History,
-   * reports and the patient record still show a closed record after it leaves the live workspace.
-   */
+  /** Server archive for this desk and world; restored beside live records for History and reports. */
   private archive: {
     count: number;
     generation: number;
@@ -496,6 +498,7 @@ export class SharedWorkspaceClient {
       // A dropped desk has no inherited access deadline. Preserve an explicit replacement.
       update = {
         executiveSnapshot: null,
+        workspaceId: undefined,
         accessUntil: undefined,
         recovery: undefined,
         recoveryResults: undefined,
@@ -860,6 +863,23 @@ export class SharedWorkspaceClient {
       if (generation !== this.viewGeneration || grantGeneration !== this.grantGeneration || epoch !== this.roleEpoch)
         return;
       if (!response.ok) throw new Error("Workspace unavailable");
+      const workspaceId =
+        typeof value.workspaceId === "string" && value.workspaceId.trim() ? value.workspaceId : undefined;
+      if (this.view.snapshot && workspaceId !== this.view.workspaceId) {
+        // The endpoint may have been rebound to another workspace at the same revision. Retire
+        // its commands, openings and receipt before asking for that workspace's full board.
+        this.retireWorkingView();
+        this.publish({
+          snapshot: null,
+          workspaceId,
+          eventLog: [],
+          access: undefined,
+          actorId: null,
+          status: "loading",
+          error: null,
+        });
+        return;
+      }
       const bound = await bindWorkspaceReply(
         {
           ...this.bindingHost(),
@@ -907,6 +927,7 @@ export class SharedWorkspaceClient {
             }
           : { status: "ready" as const, error: this.view.status === "unavailable" ? null : this.view.error }),
         access: actualAccess,
+        workspaceId,
         workingAs: typeof value.workingAs === "string" ? value.workingAs : null,
         actorId: typeof value.actorId === "string" ? value.actorId : null,
         canSwitch: !!this.workingAs(),
@@ -1219,7 +1240,7 @@ export class SharedWorkspaceClient {
   pushSubscribe = (subscription: push.PushSubscriptionShape) => push.pushSubscribe(this.ask, subscription);
   pushStatus = (endpoint: string) => push.pushStatus(this.ask, endpoint);
   pushUnsubscribe = (endpoint: string) => push.pushUnsubscribe(this.ask, endpoint);
-  /** D-80: log the opening (deduplicated within a minute); true once H-0731 detail is shown. */
+  /** D-80: log an opening best-effort; true only once its H-0731 detail was adopted. */
   async logRecordView(patientId: string, surface: RecordViewSurface): Promise<boolean> {
     if (this.view.executiveSnapshot || !this.view.snapshot) return false;
     const asked = this.recordDetail.view; // H-0731: a logged opening also sends that record's detail.
@@ -1243,21 +1264,31 @@ export class SharedWorkspaceClient {
       openings: Array.isArray(value?.openings) ? value.openings : [],
     };
   }
-  /** P056: the newest audit page this desk may read, for the Activity feed (/v1/workspace/audit). */
-  async readActivityAudit(): Promise<SharedActivityAuditEvent[]> {
+  /**
+   * Audit pages keep completeness and the permitted continuation cursor. P056: rows are reduced to
+   * the Activity contract (with this actor's own command id) and refused if the desk changed meanwhile.
+   */
+  readActivityAuditPage = async (before?: string) => {
     const generation = this.viewGeneration;
     const context = this.view.snapshot?.accessContext;
-    const { response, value } = await this.request("/v1/workspace/audit");
+    const page = await activityAudit.readActivityAuditPage(this.ask, before);
+    return { ...page, events: await this.ownActivityEvents(page.events, generation, context) };
+  };
+  /** Compatibility for callers that only need the newest permitted audit page. */
+  readActivityAudit = async () => {
+    const generation = this.viewGeneration;
+    const context = this.view.snapshot?.accessContext;
+    return this.ownActivityEvents(await activityAudit.readActivityAudit(this.ask), generation, context);
+  };
+  private async ownActivityEvents(
+    events: SharedActivityAuditEvent[],
+    generation: number,
+    context: string | undefined,
+  ): Promise<SharedActivityAuditEvent[]> {
     const { activityAuditEvents } = await import("./ward-own-command-receipt");
-    if (
-      !response.ok ||
-      !Array.isArray(value?.events) ||
-      this.disposed ||
-      generation !== this.viewGeneration ||
-      context !== this.view.snapshot?.accessContext
-    )
+    if (this.disposed || generation !== this.viewGeneration || context !== this.view.snapshot?.accessContext)
       throw new Error("Activity could not be read");
-    return activityAuditEvents(value.events);
+    return activityAuditEvents(events);
   }
   /** An outcome belongs to this actor; Undo attribution additionally belongs to this exact desk. */
   async readOwnCommand(commandId: string) {
@@ -1282,10 +1313,7 @@ export class SharedWorkspaceClient {
       throw new Error("The workspace or working role changed. Review the current board.");
     return ownCommandReceipt(value?.receipt);
   }
-  /**
-   * Readiness review item 8: ends this sign-in on the server, so its token is refused at once
-   * rather than when it expires. True when the server recorded it.
-   */
+  /** End the server sign-in immediately; true only when the server recorded it. */
   async signOutServer(): Promise<boolean> {
     const { response, value } = await this.request("/v1/workspace/sign-out", {});
     return response.ok && value?.signedOut === true;
@@ -1293,14 +1321,7 @@ export class SharedWorkspaceClient {
   /** Work as one of this account's roles (`choose-role`), then read the board again. */
   chooseRole = (workingAs: string) => {
     if (workingAs !== "bootstrap" && !UUID.test(workingAs)) return;
-    this.cancelForRoleChange();
-    this.clearRecovery();
-    forgetDowntimePack();
-    this.roleLifetime.abort();
-    this.roleLifetime = new AbortController();
-    this.viewGeneration += 1;
-    this.headRevision = 0;
-    this.sheetSeen = new WeakMap();
+    this.retireWorkingView();
     this.workingAsOverride = workingAs;
     this.options.workingAs?.set(workingAs);
     this.publish({ snapshot: null, eventLog: [], status: "loading", choices: undefined, error: null });
@@ -1308,12 +1329,7 @@ export class SharedWorkspaceClient {
   };
   /** Forget the role worked as, so the server lists this account's roles again. */
   switchRole = () => {
-    this.cancelForRoleChange();
-    this.clearRecovery();
-    forgetDowntimePack();
-    this.roleLifetime.abort();
-    this.roleLifetime = new AbortController();
-    this.viewGeneration += 1;
+    this.retireWorkingView();
     this.workingAsOverride = null;
     this.options.workingAs?.set(null);
     this.publish({ snapshot: null, eventLog: [], status: "loading", error: null });
@@ -1348,10 +1364,7 @@ export class SharedWorkspaceClient {
       requests: Array.isArray(value.requests) ? value.requests : [],
     };
   }
-  /**
-   * The newest record openings for the Access log (D-80 item 14). Only the statewide coordinator
-   * and the access admin are answered; anyone else is refused.
-   */
+  /** D-80: newest openings; only statewide coordinator and access admin may read them. */
   async listRecordViews(): Promise<SharedRecordView[]> {
     const { response, value } = await this.request("/v1/workspace/record-access");
     if (!response.ok)
@@ -1392,17 +1405,10 @@ export class SharedWorkspaceClient {
     return this.change("/v1/workspace/access/cover", input);
   }
   decideRequest(requestId: string, decision: "approved" | "declined", expiresInMinutes: number) {
-    return this.change("/v1/workspace/access/decide", {
-      requestId,
-      decision,
-      expiresInMinutes,
-    });
+    return this.change("/v1/workspace/access/decide", { requestId, decision, expiresInMinutes });
   }
-  /**
-   * Open one record outside this desk's care, read only, for the set window. The server checks
-   * the reason (from the list, never typed text), records it, and answers with the board as the
-   * desk now sees it, so the record shows at once.
-   */
+  /** Open one out-of-care record read only for the window. The server checks and records the listed
+   *  reason (never typed text) and answers with the board, so the record shows at once. */
   async breakGlass(patientId: string, reason: string): Promise<SharedChangeResult> {
     if (!this.accessChangeAllowed())
       return "Opening records is unavailable. Reconnect and finish checking any uncertain save first.";

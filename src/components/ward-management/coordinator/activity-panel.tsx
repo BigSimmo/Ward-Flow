@@ -14,6 +14,9 @@ import {
 } from "@/components/ward-management/shell/ward-bar-model";
 import { deriveCommandActivity } from "@/components/ward-management/shell/ward-command-activity";
 import { useActivityFromAudit } from "@/components/ward-management/shell/ward-desk-audit";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { accessIsWholeNetwork, edInScope } from "@/components/ward-management/ward-role-access";
+import { wardPlaceLookup } from "@/components/ward-management/ward-access-places";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { edHref } from "@/components/ward-management/shell/ward-facade";
 import type { ActivityPanelTab } from "@/components/ward-management/shell/ward-activity-panel-store";
@@ -129,6 +132,7 @@ function OpenActivityPanel({
   }, [open, initialTab, live.length, capture]);
   const isPhone = useIsPhone();
   const network = useWardNetwork();
+  const access = useEffectiveWardAccess();
   const thresholds = useDueSoonThresholds();
   const {
     movements,
@@ -189,7 +193,15 @@ function OpenActivityPanel({
     ],
   );
   // P056: the bar's feed, with its events from the server audit once read (`ward-desk-audit.ts`).
-  const activity = useActivityFromAudit(derivedActivity, now);
+  const auditedActivity = useActivityFromAudit(derivedActivity, now);
+  const activity = useMemo(() => {
+    if (accessIsWholeNetwork(access)) return auditedActivity;
+    const places = wardPlaceLookup(units);
+    return {
+      ...auditedActivity,
+      departments: auditedActivity.departments.filter((row) => edInScope(access.scope, row.ed.id, places)),
+    };
+  }, [auditedActivity, access, units]);
   const deskNotices = useMemo(
     () =>
       notices
@@ -234,7 +246,7 @@ function OpenActivityPanel({
       id={id}
       open={open}
       onClose={onClose}
-      title="Activity · Statewide"
+      title={accessIsWholeNetwork(access) ? "Activity · Statewide" : "Activity · Your desk"}
       testId={testId}
       returnFocusRef={returnFocusRef}
       bodyTabIndex={bodyTabIndex}
@@ -256,7 +268,13 @@ function OpenActivityPanel({
         <ChangesBody review={review} now={now} links={links} />
       </TabPanel>
       <TabPanel idPrefix="home-activity" id="recent" hidden={tab !== "recent"}>
-        <RecentBody events={events} tones={activity.tones} links={links} commandId={initialCommandId} />
+        <RecentBody
+          events={events}
+          tones={activity.tones}
+          links={links}
+          commandId={initialCommandId}
+          auditFeed={activity.auditFeed}
+        />
       </TabPanel>
       <TabPanel idPrefix="home-activity" id="notices" hidden={tab !== "notices"}>
         <NoticesBody notices={noticeViews} now={now} onMarkRead={markRead} />
@@ -490,7 +508,9 @@ function RecentBody({
   tones,
   links,
   commandId,
+  auditFeed,
 }: {
+  auditFeed?: Activity["auditFeed"];
   events: Activity["content"]["changes"];
   tones: Activity["tones"];
   links: Links;
@@ -572,6 +592,17 @@ function RecentBody({
           </li>
         ))}
       </ol>
+      {auditFeed?.error ? <p role="status">{auditFeed.error}</p> : null}
+      {auditFeed?.hasOlder ? (
+        <Button
+          variant="sec"
+          size="sm"
+          onClick={auditFeed.loadMore}
+          disabledReason={auditFeed.loading ? "Loading older activity" : undefined}
+        >
+          {auditFeed.loading ? "Loading older activity…" : "Load older activity"}
+        </Button>
+      ) : null}
     </>
   );
 }

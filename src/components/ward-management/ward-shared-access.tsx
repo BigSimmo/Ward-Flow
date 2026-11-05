@@ -359,9 +359,23 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
             api: connected && !connection.recovering && accessApi ? accessApi : unavailableAccessApi,
             actorId,
             scopeKey: connection.snapshot?.accessContext,
+            workspaceId: connection.workspaceId
+              ? JSON.stringify([
+                  process.env.NEXT_PUBLIC_WARD_API_BASE_URL?.replace(/\/$/u, "") ?? "",
+                  connection.workspaceId,
+                ])
+              : undefined,
           }
         : null,
-    [connection.enabled, connection.recovering, connected, accessApi, actorId, connection.snapshot?.accessContext],
+    [
+      connection.enabled,
+      connection.recovering,
+      connection.workspaceId,
+      connected,
+      accessApi,
+      actorId,
+      connection.snapshot?.accessContext,
+    ],
   );
   // The header holds the Prototype pill, so the only strip above the app is the account strip
   // (`WardSharedSaveStatus`), which publishes its own height as --wf-data-bar-height.

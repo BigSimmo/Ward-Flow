@@ -117,7 +117,7 @@ export const MAIN_TOLERANCE_KB = 1.5;
  * Decides a pull request whose merged result is over budget, given what main alone measured.
  * A route fails when the PR pushed it over (main was within budget) or grew it further than
  * MAIN_TOLERANCE_KB past an already-over main. A route that was over only because main already was
- * is reported and passes: main's own breakage is fixed by the budget heal PR, not by every other PR.
+ * is reported and passes: main's own breakage is tracked by the budget trim issue, not pinned on every other PR.
  * No main measurement (main failed to build or measure) fails every over route, as before.
  */
 export function judgeAgainstMain(prMeasured, mainMeasured, budgets) {
@@ -147,7 +147,7 @@ function judge(prFile, mainFile) {
   const { failing, inherited } = judgeAgainstMain(pr.measured, main?.measured, budgets);
   for (const { route, kb, limit, main: mainKb } of inherited)
     console.log(
-      `::warning::${route} is ${kb.toFixed(1)} KB against a ${limit} KB budget, but main alone is already ${mainKb.toFixed(1)} KB. Not this PR's growth; the budget heal PR raises it.`,
+      `::warning::${route} is ${kb.toFixed(1)} KB against a ${limit} KB budget, but main alone is already ${mainKb.toFixed(1)} KB. Not this PR's growth; the budget trim issue tracks it.`,
     );
   for (const { route, kb, limit, main: mainKb } of failing)
     console.error(

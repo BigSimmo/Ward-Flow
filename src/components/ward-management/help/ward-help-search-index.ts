@@ -54,7 +54,7 @@ const CLINICAL =
   /\b(dose|dosage|dosing|mg|medicat\w*|prescri\w*|(what|which) (\w+ )?(diagnosis|treatment)|(diagnosis|treatment) (for|of)|side effects?|symptoms?|suicid\w*|self[- ]harm|overdose|sedat\w*|safe (to|for) transfer|should (i|we) (admit|discharge|transfer|section|detain|restrain|seclude|give|treat|diagnose))\b/iu;
 
 export function isClinicalQuestion(query: string): boolean {
-  return CLINICAL.test(query);
+  return CLINICAL.test(query.replace(/\s+/gu, " ").trim());
 }
 
 type Entry = HelpSearchResult & {

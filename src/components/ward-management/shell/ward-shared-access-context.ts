@@ -31,4 +31,6 @@ export const SharedAccessContext = createContext<{
   api: SharedAccessApi;
   actorId: string | null;
   scopeKey?: string;
+  /** Stable, non-secret identity of the configured shared API workspace. */
+  workspaceId?: string;
 } | null>(null);

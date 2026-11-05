@@ -32,6 +32,7 @@ import {
 } from "./handover-model";
 import {
   extraEntryKey,
+  handoverPaperFits,
   paperItemKey,
   paginateHandoverItems,
   paginateHandoverExtras,
@@ -233,6 +234,11 @@ export function HandoverPrintSheet({
     );
   }, [options.beds, options.holds, options.signatures, landscape, wards, held, paper.height, measurements]);
   const totalPages = pages.length + extraPages.length;
+  // Only a measured layout that does not fit refuses printing. Without a measurement (layout not
+  // read yet, or no layout engine) the sheet prints its estimated pages, as it always has.
+  const printUnavailable = measurements !== null && !handoverPaperFits(pages, extraPages, measurements);
+  const overflowMessage =
+    "This layout does not fit the paper. Change orientation, select fewer columns or turn off ISBAR before printing.";
 
   const rows = useMemo(() => {
     const seen = new Map<string, HandoverRow>();
@@ -401,18 +407,22 @@ export function HandoverPrintSheet({
           <b>Act now outside this scope:</b> {outsideText}
         </p>
       ) : null}
-      <table>
-        {tableHead}
-        <tbody>
-          {items.length === 0 ? (
-            <tr>
-              <td colSpan={columns.length}>No open patients in this scope</td>
-            </tr>
-          ) : (
-            items.map(renderItem)
-          )}
-        </tbody>
-      </table>
+      {items.length > 0 || pages.length === 1 ? (
+        <table>
+          {tableHead}
+          <tbody>
+            {items.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length}>
+                  {pages.length > 1 ? "Patients continue on the next page" : "No open patients in this scope"}
+                </td>
+              </tr>
+            ) : (
+              items.map(renderItem)
+            )}
+          </tbody>
+        </table>
+      ) : null}
       {footer}
     </article>
   ));
@@ -567,6 +577,9 @@ export function HandoverPrintSheet({
     const summary = first.querySelector<HTMLElement>("[data-paper-summary]");
     const outside = first.querySelector<HTMLElement>("[data-paper-outside]");
     return {
+      contentOverflows: Array.from(stack.querySelectorAll<HTMLElement>("article")).some(
+        (node) => node.scrollHeight > node.clientHeight + 1,
+      ),
       mainBudget: extraBudget - heightOf("article > table > thead"),
       extraBudget,
       firstPageCost: (summary ? summary.offsetHeight + gap : 0) + (outside ? outside.offsetHeight + gap : 0),
@@ -628,23 +641,28 @@ export function HandoverPrintSheet({
     measure.schedule();
   });
 
-  /* Audit 24-7 (CT-11): a browser print (Ctrl+P) must stamp the rows it prints, not an older Print-button time. */
-  const latestPrepare = useRef(() => onPrintPrepared(now));
-  latestPrepare.current = () => onPrintPrepared(now);
+  /* Native browser printing and the button must validate the same current, stamped layout. */
+  const preparePrint = () => {
+    flushSync(() => onPrintPrepared(now));
+    const next = readMeasurements();
+    if (!next) return true;
+    flushSync(() => setMeasurements(next));
+    const nextPages = paginateHandoverItems(paperItems(groups, options, isHighlighted, anyHighlight), 0, 0, next);
+    return handoverPaperFits(nextPages, extraPages, next);
+  };
+  const latestPrepare = useRef(preparePrint);
+  latestPrepare.current = preparePrint;
   useEffect(() => {
-    const onBeforePrint = () => flushSync(() => latestPrepare.current());
+    const onBeforePrint = () => {
+      latestPrepare.current();
+    };
     window.addEventListener("beforeprint", onBeforePrint);
     return () => window.removeEventListener("beforeprint", onBeforePrint);
   }, []);
 
   const print = () => {
-    flushSync(() => onPrintPrepared(now));
-    // Read synchronously as well: a quick click or a changed header must use its actual new size.
-    const next = readMeasurements();
-    if (next) flushSync(() => setMeasurements(next));
-    window.print();
+    if (preparePrint()) window.print();
   };
-
   const set = <K extends keyof PrintOptions>(key: K, value: PrintOptions[K]) =>
     onOptionsChange({ ...options, [key]: value });
 
@@ -696,9 +714,20 @@ export function HandoverPrintSheet({
           {highlightControls}
         </section>
         <div className={styles.opt}>
-          <Button variant="pri" icon={Printer} onClick={print} className={styles.printButton}>
+          <Button
+            variant="pri"
+            icon={Printer}
+            onClick={print}
+            className={styles.printButton}
+            disabled={printUnavailable}
+          >
             Print or save PDF
           </Button>
+          {printUnavailable ? (
+            <p role="alert" className={styles.sub}>
+              {overflowMessage}
+            </p>
+          ) : null}
           {preparedAt !== null ? (
             <span className={styles.sub}>Last copy prepared {formatInstantWithDay(preparedAt, now)}</span>
           ) : null}
@@ -711,7 +740,13 @@ export function HandoverPrintSheet({
             Live sheet, <b>{pageWord(totalPages)}</b> at {formatInstant(now)}.
           </span>
         </p>
-        <div ref={stackRef} className={styles.stack} data-wf-print-stack="">
+        <div
+          ref={stackRef}
+          className={styles.stack}
+          data-wf-print-stack=""
+          data-print-overflow={printUnavailable ? "" : undefined}
+        >
+          <p className={styles.printWarning}>Handover was not printed. {overflowMessage}</p>
           {pageNodes.map((node, index) => (
             <div
               key={index}

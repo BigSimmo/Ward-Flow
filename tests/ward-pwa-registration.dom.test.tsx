@@ -170,6 +170,25 @@ describe("WardPwaRegistration", () => {
     expect(screen.queryByRole("button", { name: "Reload" })).not.toBeInTheDocument();
   });
 
+  it("consumes a requested reload even when navigation leaves the current page mounted", async () => {
+    const worker = fakeWorker();
+    const browser = installServiceWorker({ waiting: worker });
+    renderRegistration();
+    fireEvent.click(await screen.findByRole("button", { name: "Reload" }));
+    // A native unsaved-work cancellation leaves the current page and handler alive.
+    // Intercept only the reload operation, after the real update action has requested it.
+    const originalWindow = window;
+    const reload = vi.fn();
+    vi.stubGlobal("window", { location: { reload } });
+    try {
+      browser.emit("controllerchange");
+      browser.emit("controllerchange");
+      expect(reload).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.stubGlobal("window", originalWindow);
+    }
+  });
+
   it("opens the Ward Flow page a tapped alert asks for, and nothing outside Ward Flow", async () => {
     const browser = installServiceWorker();
     renderRegistration();

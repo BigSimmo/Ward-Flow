@@ -169,6 +169,7 @@ const ROLE_SCREENS: Record<string, WardChromeRole> = {
   "movements/movement-workflow-actions.tsx": "coordinator",
   "alerts/alerts-screen.tsx": "coordinator",
   "capacity/capacity-screen.tsx": "coordinator",
+  // Shared panel: this row checks its coordinator route; real-provider tests cover ward and bed manager.
   "capacity/planned-admissions-panel.tsx": "coordinator",
   "delays/delays-screen.tsx": "coordinator",
   "discharges/discharge-board.tsx": "coordinator",
@@ -203,9 +204,13 @@ describe("role screens dispatch only what their route's role may take", () => {
             : readFileSync(join(root, file), "utf8");
       // A raw `dispatch({ type, role, ... })`, or a named `raise("TYPE", ...)` from `useWardRaise(role)`.
       const types = [
-        ...source.matchAll(/type: "([A-Z_]+)",?\s*role:/g),
+        ...source.matchAll(/type: "([A-Z_]+)",?\s*role(?:\s*:|\s*,)/g),
         ...source.matchAll(/\braise\(\s*"([A-Z_]+)"/g),
       ].map((match) => match[1] as EventType);
+      if (file === "capacity/planned-admissions-panel.tsx") {
+        expect(source).toMatch(/const role = useRouteRole\(\)/);
+        expect([...source.matchAll(/type: "[A-Z_]+",?\s*role:\s*"[a-z_]+"/g)]).toHaveLength(0);
+      }
       // A screen raises as its own route's desk.
       for (const [, raisedAs] of source.matchAll(/useWardRaise\(\s*"([a-z_]+)"/g)) expect(raisedAs, file).toBe(role);
       expect(types.length, "no dispatch found; update this list if the screen moved").toBeGreaterThan(0);

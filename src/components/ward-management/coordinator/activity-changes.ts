@@ -197,7 +197,7 @@ function changeLines(changes: ChangesSinceLastLook, context: LineContext): Chang
 }
 
 /** What the open panel shows: the lines captured when it opened, and the picture taken then. */
-type Capture = { snapshot: LastLookSnapshot; lines: readonly ChangeLine[] };
+type Capture = { snapshot: LastLookSnapshot; lines: readonly ChangeLine[]; reviewedAt?: Instant; shiftStart: Instant };
 
 /**
  * Home's changes since the coordinator's last review, read from the store, so the hero chip and the
@@ -279,7 +279,7 @@ export function useHomeChanges(now: Instant) {
   );
   /** Lines awaiting review right now (the hero chip's count). */
   const live = useMemo(() => linesFor(stored), [linesFor, stored]);
-  return { live, linesFor, reviewedAt, shiftStart, stored, current, save: saveReview };
+  return { live, linesFor, reviewedAt, shiftStart, stored, current, validReview: usable, save: saveReview };
 }
 
 /**
@@ -293,20 +293,26 @@ export function useExplicitReview(now: Instant) {
   const [lastReviewed, setLastReviewed] = useState<
     { count: number; at: Instant; previous: LastLookSnapshot | undefined } | undefined
   >(undefined);
-  const { live, linesFor, stored, current, save } = changes;
+  const { live, linesFor, stored, current, save, validReview, shiftStart } = changes;
   const capturedIds = useMemo(() => new Set(capture?.lines.map((line) => line.id)), [capture]);
   const arrived = capture ? live.filter((line) => !capturedIds.has(line.id)) : [];
   const recapture = useCallback(
-    (basis: LastLookSnapshot | undefined) => setCapture({ snapshot: current, lines: linesFor(basis) }),
-    [current, linesFor],
+    (basis: LastLookSnapshot | undefined) =>
+      setCapture({
+        snapshot: current,
+        lines: linesFor(basis),
+        reviewedAt: validReview(basis) ? basis.at : undefined,
+        shiftStart,
+      }),
+    [current, linesFor, validReview, shiftStart],
   );
 
   return {
     live,
     shown: capture?.lines ?? live,
     arrived,
-    reviewedAt: changes.reviewedAt,
-    shiftStart: changes.shiftStart,
+    reviewedAt: capture ? capture.reviewedAt : changes.reviewedAt,
+    shiftStart: capture ? capture.shiftStart : changes.shiftStart,
     lastReviewed,
     /** Called when the panel opens: the lines it shows are fixed until Show or a review. */
     capture: () => {

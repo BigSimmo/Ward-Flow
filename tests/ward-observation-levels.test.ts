@@ -186,7 +186,7 @@ describe("RECORD_OBSERVATION_LEVEL is the only way a level changes", () => {
     expect(after.observationChanges).toEqual([{ at: NOW + 5, from: GENERAL_OBSERVATION, to: next, sequence: 1 }]);
     const movement = state.movements.find((candidate) => candidate.id === "WF-OBS-0")!;
     expect(movement.observation).toEqual(next);
-    expect(movement.observationChanges).toHaveLength(1);
+    expect(movement.observationChanges).toEqual(after.observationChanges);
     expect(remainingSpeciallingCapacity(unitIn(state), state.admissions)).toBe(0);
   });
 
@@ -204,6 +204,7 @@ describe("RECORD_OBSERVATION_LEVEL is the only way a level changes", () => {
     for (const sequence of [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
       expect(isValidStoredWardFlowState(withChange({ ...row, sequence }))).toBe(false);
     }
+    expect(isValidStoredWardFlowState(withChange({ ...row, sequence: 1, note: "x" }))).toBe(false);
     expect(isValidStoredWardFlowState(withChange({ ...row, note: "x" }))).toBe(false);
   });
 

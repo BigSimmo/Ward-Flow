@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
-import { useTourRole } from "./ward-help-store";
 import { howToFor } from "./ward-help-access";
 
 import {
@@ -172,6 +171,7 @@ function Marked({ text, query }: { text: string; query: string }): ReactNode {
 
 /** The best answer, open: the answer itself, the steps and Show me, or a word's meaning and its look-alikes. */
 function BestAnswer({
+  role,
   result,
   query,
   active,
@@ -179,6 +179,7 @@ function BestAnswer({
   onShowMe,
   onChoose,
 }: {
+  role: WardTourRole;
   result: HelpSearchResult;
   query: string;
   active: boolean;
@@ -187,20 +188,13 @@ function BestAnswer({
   onChoose: (result: HelpSearchResult) => void;
 }) {
   const access = useEffectiveWardAccess();
-  const role = useTourRole();
   const group = groupOf(result);
   const Icon = ICON[group];
   const howToId = result.key.startsWith("howto:") ? result.key.slice("howto:".length) : undefined;
   const device = useIsPhone() ? "phone" : "desk";
   const howTo = HOW_TOS.find((each) => each.id === howToId);
   const permitted = howTo ? howToFor(howTo, role, access) : true;
-  const steps =
-    howToId && permitted
-      ? showMeSteps(
-          HOW_TOS.find((howTo) => howTo.id === howToId),
-          device,
-        )
-      : [];
+  const steps = permitted ? showMeSteps(howTo, device, role) : [];
   const showMe = howToId && steps.length && canShow(howToId) ? howToId : undefined;
   const alike = group === "Words" ? relatedTerms(result.title) : [];
   // A guide with nowhere to go is read here; it offers no button that would do nothing.
@@ -369,6 +363,7 @@ export function HelpFindResults({
       {found.closest ? <p className={s.note}>Nothing matches every word. These are the closest.</p> : null}
       {found.best ? (
         <BestAnswer
+          role={role}
           result={found.best}
           query={marks}
           active={active === 0}
