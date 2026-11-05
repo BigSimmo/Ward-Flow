@@ -18,10 +18,23 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .capacityHead > :last-child {
   margin-left: 0;
+}
+
+/* D7 (design audit, 5 Nov 2026): a long tag ("2 at or over 85% full") pushed the round chevron out
+   of the card and over the sidebar's edge on every 1440 page. The tag (the head's middle part) now
+   shrinks and wraps its words inside the card, so the chevron stays in the card's padding. */
+.capacityHead > :nth-child(2) {
+  min-width: 0;
+  height: auto;
+  min-height: var(--wf-h-chip);
+  padding-block: 0.125rem;
+  line-height: var(--wf-lh-12);
+  white-space: normal;
 }
 
 .capacityRows {

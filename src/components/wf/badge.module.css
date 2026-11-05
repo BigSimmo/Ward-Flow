@@ -6,10 +6,11 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  height: var(--wf-h-chip);
+  /* K3 (design audit, 5 Nov 2026): a floor, so large text grows the tag instead of cutting it. */
+  min-height: var(--wf-h-chip);
   max-width: 100%;
   min-width: 0;
-  padding: 0 8px 0 7px;
+  padding: 2px 8px 2px 7px;
   box-sizing: border-box;
   border-radius: var(--wf-r-tag);
   font: 600 var(--wf-fs-12) / 1 var(--wf-font);
@@ -23,7 +24,7 @@
 /* `pointer:coarse` lifts the chip token to 32px; badges are not targets, so keep them compact. */
 @media (pointer: coarse) {
   .bd {
-    height: 22px;
+    min-height: 22px;
   }
 }
 
@@ -34,9 +35,9 @@
 }
 
 .sm {
-  height: 20px;
+  min-height: 20px;
   font-size: var(--wf-fs-12);
-  padding: 0 6px;
+  padding: 2px 6px;
 }
 
 /* In table rows and running text the chip drops away. */

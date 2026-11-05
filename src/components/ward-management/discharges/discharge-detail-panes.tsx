@@ -13,7 +13,7 @@ import type { DischargeRecord } from "@/components/ward-management/ward-discharg
 import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
-import { Badge, Button, EmptyState, PillTabs, StatusGlyph, TextInput, buttonClass, durMinutes } from "@/components/wf";
+import { Badge, Button, EmptyState, PillTabs, StatusGlyph, TimeField, buttonClass, durMinutes } from "@/components/wf";
 import { DischargeFollowUp } from "./discharge-follow-up";
 import { ReadyToLeave } from "./discharge-ready-to-leave";
 import { SupportNotificationChecklist } from "../movements/support-notification-checklist";
@@ -331,15 +331,14 @@ export function DischargeRecordDetail({
                   }
                 }}
               >
-                <TextInput
+                <TimeField
                   id="ward-discharge-new-time-input"
                   name="newExpectedDischargeTime"
-                  type="time"
                   aria-label="New expected discharge time"
                   data-testid="ward-discharge-new-time-input"
                   disabled={datePending}
                   value={newTimeDraft}
-                  onChange={(e) => setNewTimeDraft(e.target.value)}
+                  onValueChange={setNewTimeDraft}
                   required
                 />
                 <Button

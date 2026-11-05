@@ -11,7 +11,7 @@
 .sheetScrim {
   position: fixed;
   inset: 0;
-  z-index: var(--z-modal, 100);
+  z-index: var(--wf-z-modal);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -284,7 +284,7 @@
 .tabBar {
   position: sticky;
   bottom: 0;
-  z-index: var(--z-chrome, 60);
+  z-index: var(--wf-z-chrome);
   box-sizing: border-box;
   padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   border-top: 1px solid var(--wf-line-2);

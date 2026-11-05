@@ -15,7 +15,7 @@ import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
 import styles from "./ward-referral-drawer.module.css";
 import { TENTATIVE_DIAGNOSIS_BLOCKS } from "../ward-diagnosis";
-import { ErrorSummary, StatusGlyph, type ErrorSummaryItem } from "@/components/wf";
+import { ErrorSummary, StatusGlyph, TimeField, type ErrorSummaryItem } from "@/components/wf";
 import { ED_ARRIVAL_MODES, FIRST_CONTACT_TARGETS } from "./referral-submission";
 import {
   GENDER_UNANSWERED,
@@ -601,12 +601,10 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                 onChange={(v) => setEdNeeds((n) => ({ ...n, medicalReviewFirst: v === "Yes" }))}
               />
               <Field label="Expected arrival, AWST" htmlFor={`${sectionId}-ed-arrival`}>
-                <input
+                <TimeField
                   id={`${sectionId}-ed-arrival`}
-                  type="time"
-                  className={styles.fieldInput}
                   value={edNeeds.expectedArrival ?? ""}
-                  onChange={(e) => setEdNeeds((n) => ({ ...n, expectedArrival: e.target.value || undefined }))}
+                  onValueChange={(time) => setEdNeeds((n) => ({ ...n, expectedArrival: time || undefined }))}
                 />
               </Field>
             </div>

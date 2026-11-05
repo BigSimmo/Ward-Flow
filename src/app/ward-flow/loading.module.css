@@ -22,8 +22,9 @@
   font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
 
-/* Q275: the "taking longer than usual" line and its Try again button stay hidden (not read out, not
-   focusable) until the placeholder has shown for 10 seconds. */
+/* Q275: the "Still loading" line and its Reload button stay hidden (not read out, not focusable)
+   until the placeholder has shown for 15 seconds, the first-load note's WARD_LOADING_SLOW_MS
+   (design audit card 8, 5 Nov 2026). */
 .status {
   flex-wrap: wrap;
 }
@@ -34,7 +35,7 @@
   align-items: center;
   gap: var(--wf-s-2);
   visibility: hidden;
-  animation: wardLoadingSlowShow 0s 10s forwards;
+  animation: wardLoadingSlowShow 0s 15s forwards;
 }
 
 @keyframes wardLoadingSlowShow {
@@ -48,7 +49,7 @@
    for ever. The reveal is a zero-length step after a wait, not motion, so it is kept here; this
    selector outranks that rule. */
 :global(html[data-reduced-motion]) .main .slow {
-  animation: wardLoadingSlowShow 0s 10s forwards !important;
+  animation: wardLoadingSlowShow 0s 15s forwards !important;
 }
 
 .retry {

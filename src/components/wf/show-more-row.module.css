@@ -4,13 +4,14 @@
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 40px;
+  /* K3 (design audit, 5 Nov 2026): a floor, so large text grows the row instead of cutting it. */
+  min-height: 40px;
   padding: 0 var(--wf-s-4);
   border: 0;
   border-top: 1px solid var(--wf-line);
   background: none;
   color: var(--wf-accent-ink);
-  font: 600 var(--wf-fs-13) / 18px var(--wf-font);
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   text-align: center;
   cursor: pointer;
 }

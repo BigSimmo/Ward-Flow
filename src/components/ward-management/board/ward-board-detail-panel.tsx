@@ -6,7 +6,7 @@
 // the ward's recording controls. Split out of ward-board.tsx to keep that file under the line cap;
 // WardBoard still owns every value and passes it in.
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
-import { Button, Field, Select, TextInput, buttonClass, cx } from "@/components/wf";
+import { Button, Field, Select, TimeField, buttonClass, cx } from "@/components/wf";
 import { X } from "lucide-react";
 import {
   LEAVING_DESTINATIONS,
@@ -300,13 +300,12 @@ export function WardBoardDetailPanel({
                             <option value="tomorrow">Tomorrow</option>
                           </Select>
                         </Field>
-                        <Field label="Expected discharge time">
-                          <TextInput
+                        <Field label="Expected discharge time" hint="HH:MM">
+                          <TimeField
                             aria-label="Expected discharge time"
-                            type="time"
                             required
                             value={dateEdit.time}
-                            onChange={(event) => setDateEdit({ ...dateEdit, time: event.target.value })}
+                            onValueChange={(time) => setDateEdit({ ...dateEdit, time })}
                           />
                         </Field>
                         <button type="submit" className={SEC_BUTTON}>

@@ -113,6 +113,60 @@ export function parseTypedTime(text: string): string | null {
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
+/** Looks finished (four digits typed), so a failed parse is an error, not typing. */
+function timeLooksFinished(text: string): boolean {
+  return (text.match(/\d/gu)?.length ?? 0) >= 4;
+}
+
+export type TimeFieldProps = Omit<TextInputProps, "value" | "defaultValue" | "onChange" | "type"> & {
+  /** "HH:MM" (24-hour), or "" for none. */
+  value: string;
+  /** Called with "HH:MM" when the typed text is a real 24-hour time, otherwise with "". */
+  onValueChange: (time: string) => void;
+};
+
+/**
+ * THE KIT'S TYPED TIME BOX (W14, design audit 5 Nov 2026): one HH:MM (24-hour) text box in place of
+ * the browser's `<input type="time">`, whose picker showed am/pm in en-AU Chrome. The person types
+ * "14:30", "1430", "14.30" or "9:05"; the caller's value stays "HH:MM" (or "" while unfinished or not
+ * a real time), the shape `type="time"` gave, so reducers and checks are unchanged. Nothing is filled
+ * in for the person (D5, D-70). A finished entry that is not a real time (25:00) is marked invalid.
+ *
+ *     <Field label="Arrival time" hint="HH:MM">
+ *       <TimeField value={time} onValueChange={setTime} />
+ *     </Field>
+ */
+export function TimeField({ value, onValueChange, invalid, placeholder = "HH:MM", ...inputProps }: TimeFieldProps) {
+  const [typed, setTyped] = useState(value);
+  // A new value from the caller (a reset, or a record loaded) replaces the typed text; the person's
+  // own unfinished typing (value "") is left alone.
+  const [lastValue, setLastValue] = useState(value);
+  if (value !== lastValue) {
+    setLastValue(value);
+    if (value !== (parseTypedTime(typed) ?? "")) setTyped(value);
+  }
+  const wrong = timeLooksFinished(typed) && parseTypedTime(typed) === null;
+  return (
+    <TextInput
+      {...inputProps}
+      type="text"
+      inputMode="numeric"
+      autoComplete="off"
+      maxLength={5}
+      placeholder={placeholder}
+      value={typed}
+      invalid={invalid || wrong}
+      onChange={(event) => {
+        const text = event.target.value;
+        setTyped(text);
+        const next = parseTypedTime(text) ?? "";
+        setLastValue(next);
+        onValueChange(next);
+      }}
+    />
+  );
+}
+
 /** "2026-10-31T14:30" split into its date and time parts; "" parts when it is not one. */
 function splitDateTime(value: string): { date: string; time: string } {
   const match = /^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/u.exec(value);

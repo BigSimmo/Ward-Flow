@@ -3,8 +3,10 @@
 import { useEffect, useRef } from "react";
 import { RefreshCw, TriangleAlert } from "lucide-react";
 
-import { cn, primaryControl } from "@/components/ui-primitives";
+import { Button } from "@/components/wf";
 import { isChunkLoadError, useReloadWhenOnline } from "@/components/ward-management/ward-chunk-load-error";
+
+import styles from "./ward-flow-error-panel.module.css";
 
 /**
  * THE RECOVERY PANEL EVERY WARD FLOW `error.tsx` RENDERS, WRITTEN ONCE.
@@ -17,8 +19,12 @@ import { isChunkLoadError, useReloadWhenOnline } from "@/components/ward-managem
  * header says an eighth entry is a decision to be argued rather than a number to be re-baselined.
  * Buying a boundary with a permanent widening of the extraction seam is not a trade this task gets
  * to make on its own, so the panel is duplicated here instead — deliberately, and at the cost of
- * two copies of the same markup drifting apart. `@/components/ui-primitives` IS on the approved
- * list, so the buttons still come from the repository's own controls.
+ * two copies of the same markup drifting apart.
+ *
+ * ST6 (design audit, 5 Nov 2026): the panel is drawn from Ward Flow's own kit (`@/components/wf`
+ * buttons and `--wf-*` tokens), not the host's Tailwind classes and tokens, so a route error looks
+ * like the kit's own error state beside it, in both themes. The kit is Ward Flow's own module, so
+ * this does not touch the seam.
  *
  * ⚠️ **IT MUST NOT SWALLOW THE ERROR.** A boundary that renders "something went wrong" and logs
  * nothing turns a loud failure into a silent one, which is worse than the blanked page it replaces
@@ -63,7 +69,7 @@ export function WardFlowErrorPanel({
   // the connection message, and the page reloads once by itself when the connection returns.
   const chunkFailure = isChunkLoadError(error);
   const online = useReloadWhenOnline(chunkFailure);
-  const shownTitle = chunkFailure ? (online ? "Part of this page did not load" : "You are offline") : title;
+  const shownTitle = chunkFailure ? (online ? "Part of this page did not load" : "You're offline") : title;
   const shownDescription = !chunkFailure
     ? description
     : online
@@ -82,39 +88,26 @@ export function WardFlowErrorPanel({
   const showDetail = process.env.NODE_ENV !== "production";
 
   return (
-    <div
-      className="flex min-h-full flex-col items-center justify-center gap-4 bg-[color:var(--surface-lux)] px-4 py-8 font-sans text-[color:var(--text)]"
-      data-testid={testId}
-    >
-      <p
-        className="w-full max-w-2xl rounded-lg border border-[color:var(--border)] bg-[color:var(--surface-subtle)] p-3 text-center text-xs text-[color:var(--text-muted)]"
-        data-testid="ward-flow-error-synthetic-notice"
-      >
+    <div className={styles.panel} data-testid={testId}>
+      <p className={styles.notice} data-testid="ward-flow-error-synthetic-notice">
         This is a synthetic prototype. Check recent saves before repeating an action.
       </p>
 
-      <div className="w-full max-w-2xl rounded-2xl border border-[color:var(--border)] bg-[color:var(--surface-raised)] p-6 text-center shadow-[var(--shadow-elevated)]">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[color:var(--danger-soft)] text-[color:var(--danger)]">
-          <TriangleAlert aria-hidden="true" className="h-6 w-6" />
-        </div>
+      <div className={styles.card}>
+        <span className={styles.mark} aria-hidden="true">
+          <TriangleAlert aria-hidden="true" size={24} strokeWidth={1.75} />
+        </span>
 
-        <h1
-          ref={headingRef}
-          tabIndex={-1}
-          className="mt-4 text-lg font-semibold tracking-tight text-[color:var(--text-heading)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--focus)]"
-        >
+        <h1 ref={headingRef} tabIndex={-1} className={styles.title}>
           {shownTitle}
         </h1>
 
-        <p role="alert" className="mt-2 text-sm leading-relaxed text-[color:var(--text-muted)]">
+        <p role="alert" className={styles.description}>
           {shownDescription}
         </p>
 
         {/* The message itself outside production; there, the console and the digest carry it. */}
-        <pre
-          className="mt-4 overflow-x-auto rounded-lg bg-[color:var(--surface-subtle)] p-3 text-left font-mono text-xs whitespace-pre-wrap text-[color:var(--text)]"
-          data-testid="ward-flow-error-message"
-        >
+        <pre className={styles.message} data-testid="ward-flow-error-message">
           {showDetail
             ? error.message || "The error carried no message."
             : `Details are hidden so nothing from a record shows here. ${
@@ -125,41 +118,25 @@ export function WardFlowErrorPanel({
         </pre>
 
         {error.digest && (
-          <p className="mt-2 font-mono text-xs text-[color:var(--text-muted)]" data-testid="ward-flow-error-digest">
+          <p className={styles.digest} data-testid="ward-flow-error-digest">
             Error reference: {error.digest}
           </p>
         )}
 
         {showDetail && error.stack && (
-          <details className="mt-3 text-left" data-testid="ward-flow-error-stack">
-            <summary className="cursor-pointer text-xs text-[color:var(--text-muted)]">
-              Stack trace (development only)
-            </summary>
-            <pre className="mt-2 max-h-64 overflow-auto rounded-lg bg-[color:var(--surface-subtle)] p-3 font-mono text-xs whitespace-pre-wrap text-[color:var(--text-muted)]">
-              {error.stack}
-            </pre>
+          <details className={styles.stack} data-testid="ward-flow-error-stack">
+            <summary>Stack trace (development only)</summary>
+            <pre>{error.stack}</pre>
           </details>
         )}
 
-        <div className="mt-6 flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={() => retry()}
-            className={cn(primaryControl, "flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium")}
-            data-testid="ward-flow-error-retry"
-          >
-            <RefreshCw aria-hidden="true" className="h-4 w-4" />
+        <div className={styles.actions}>
+          <Button variant="pri" icon={RefreshCw} onClick={() => retry()} data-testid="ward-flow-error-retry">
             Try again
-          </button>
-
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="flex items-center justify-center gap-2 rounded-lg border border-[color:var(--border)] bg-[color:var(--surface)] px-4 py-2 text-sm font-medium text-[color:var(--text)] transition hover:bg-[color:var(--surface-subtle)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[color:var(--focus)]"
-            data-testid="ward-flow-error-reload"
-          >
+          </Button>
+          <Button variant="sec" onClick={() => window.location.reload()} data-testid="ward-flow-error-reload">
             Reload page
-          </button>
+          </Button>
         </div>
       </div>
     </div>

@@ -1113,9 +1113,13 @@ select {
      inset offset plus solid `--focus` read as a default browser ring and, on
      transparent inputs nested in a rounded search shell, drew a sharp box
      around the text while the icon sat outside it. */
+  /* K2 (design audit, 5 Nov 2026; Q298): the old 1px hairline measured about 2.2:1 in light, under
+     the 3:1 minimum. Fields outside the kit now take the kit's own ring: a 2px solid focus ring with
+     a 2px gap (DESIGN-SYSTEM §2 Focus). Kit fields and any field with its own focus rule keep theirs,
+     since this rule has no weight. Still one outline, no second halo. */
   box-shadow: var(--shadow-inset);
-  outline: 1px solid color-mix(in srgb, var(--clinical-accent) 32%, var(--border-strong));
-  outline-offset: 0;
+  outline: 2px solid var(--wf-focus-ring, var(--focus));
+  outline-offset: 2px;
 }
 
 /* Nested search: the rounded shell owns focus. Inner `outline-none` utilities

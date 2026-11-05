@@ -62,7 +62,8 @@ function openFutureDepartureEditor() {
   // The record already opens on the first bed that needs a look (redesign point 16), so press only a closed tile.
   if (tile.getAttribute("aria-pressed") !== "true") fireEvent.click(tile);
   fireEvent.click(screen.getByRole("button", { name: "Move the date" }));
-  expect(screen.getByLabelText("Expected discharge time")).toHaveAttribute("type", "time");
+  // W14 (design audit, 5 Nov 2026): the kit typed HH:MM box, not the browser time picker.
+  expect(screen.getByLabelText("Expected discharge time")).toHaveAttribute("type", "text");
   expect(screen.getByLabelText("Expected discharge time")).toHaveValue("14:07");
   expect(screen.getByRole("combobox", { name: "Discharge day" })).toHaveValue("recorded");
   return probe;

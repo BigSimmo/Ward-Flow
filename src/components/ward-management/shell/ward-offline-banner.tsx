@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore, type ReactElement } from "react";
 import { createPortal } from "react-dom";
 import { usePracticeRunning } from "@/components/ward-management/demo-reset/ward-practice-session";
 import { lastDowntimePack, subscribeDowntimePack } from "@/components/ward-management/reports/downtime-pack";
@@ -77,6 +77,24 @@ export function WardOfflineBanner({ practice = true }: { practice?: boolean } = 
   );
 }
 
+/**
+ * ST7 and ST8 (design audit, 5 Nov 2026; DESIGN-SYSTEM §3 and §6, Q276): the offline note rests at the
+ * foot of the window, above the dock, never pushing the page down or covering the title, and every
+ * offline line starts "You're offline." The note is drawn into the body, because the pinned notes
+ * holder contains its own layout and would pin a fixed note to itself. A hidden marker stays in the
+ * holder so the lower notes still wait while the device is offline (one note at a time).
+ */
+function placeNote(banner: ReactElement, fullscreenElement: Element | null) {
+  if (fullscreenElement) return createPortal(banner, fullscreenElement);
+  if (typeof document === "undefined") return null;
+  return (
+    <>
+      <span hidden data-wf-offline-slot="" />
+      {createPortal(banner, document.body)}
+    </>
+  );
+}
+
 function ExecutiveOfflineNotice() {
   const online = useOnlineStatus();
   const fullscreenElement = useFullscreenElement();
@@ -88,10 +106,10 @@ function ExecutiveOfflineNotice() {
       data-testid="ward-offline-banner"
       style={fullscreenElement ? FULLSCREEN_PLACEMENT : undefined}
     >
-      Offline. This report is not updating until the connection returns.
+      {"You're offline. This report is not updating."}
     </p>
   );
-  return fullscreenElement ? createPortal(banner, fullscreenElement) : banner;
+  return placeNote(banner, fullscreenElement);
 }
 
 function WardOfflineNotice() {
@@ -108,11 +126,13 @@ function WardOfflineNotice() {
       data-testid="ward-offline-banner"
       style={fullscreenElement ? FULLSCREEN_PLACEMENT : undefined}
     >
-      Offline. This screen keeps working from this session, but nothing is updating until the connection returns.{" "}
-      {lastPackAt === null
-        ? "If it stops, use the latest printed or saved downtime pack."
-        : `If it stops, use the downtime pack taken at ${formatInstantWithDay(lastPackAt, now)}, printed or saved as a PDF.`}
+      {"You're offline. This screen keeps working, but nothing is updating. "}
+      <span className={styles.bannerPack}>
+        {lastPackAt === null
+          ? "If it stops, use the latest printed or saved downtime pack."
+          : `If it stops, use the downtime pack taken at ${formatInstantWithDay(lastPackAt, now)}, printed or saved as a PDF.`}
+      </span>
     </p>
   );
-  return fullscreenElement ? createPortal(banner, fullscreenElement) : banner;
+  return placeNote(banner, fullscreenElement);
 }

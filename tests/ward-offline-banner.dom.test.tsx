@@ -23,7 +23,7 @@ describe("WardOfflineBanner", () => {
       setOnline(false);
       window.dispatchEvent(new Event("offline"));
     });
-    expect(screen.getByRole("status").textContent).toMatch(/^Offline\./);
+    expect(screen.getByRole("status").textContent).toMatch(/^You're offline\./u);
     act(() => {
       setOnline(true);
       window.dispatchEvent(new Event("online"));

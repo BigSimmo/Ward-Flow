@@ -336,7 +336,7 @@
 .handover[data-enlarged="true"] {
   position: fixed !important;
   inset: 0;
-  z-index: var(--z-overlay, 60);
+  z-index: var(--wf-z-overlay);
   margin: 0 !important;
   max-width: none !important;
   border-radius: 0 !important;
