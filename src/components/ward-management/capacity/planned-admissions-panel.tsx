@@ -67,6 +67,7 @@ import { plannedAdmissionAgenda } from "./planned-admissions";
 import {
   applyDraftPatch,
   authorisationReasonNeeded,
+  plannedInitialsRefusal,
   clockInputValue,
   draftTiming,
   plannedDayOffsets,
@@ -221,7 +222,7 @@ export function PlannedAdmissionsPanel({
   // reducer refuses the same people, so this list only spares a coordinator a refusal.
   const getBookablePatients = () => bookablePatientsFor(patients, admissions, movements, plannedFromContext ?? []);
 
-  const displayedRefusal = refusal ?? save.error ?? null;
+  const displayedRefusal = save.error ?? refusal ?? null;
 
   // A calendar date needs the provider's day zero; a screen given none still labels each day by
   // its distance from today rather than failing to render.
@@ -351,7 +352,7 @@ export function PlannedAdmissionsPanel({
       if (draft.who === "initials") {
         initials = normalisePlannedAdmissionInitials(draft.initials);
         if (initials === null) {
-          setRefusal("Initials are one to three letters.");
+          setRefusal(plannedInitialsRefusal(draft.initials) ?? "Initials are one to three letters.");
           return;
         }
       } else {
@@ -369,6 +370,8 @@ export function PlannedAdmissionsPanel({
               : patientCohort(patient.dateOfBirth, arrivalDay);
         }
       }
+      setRefusal(null);
+      save.clearError();
       save.submit(
         () =>
           dispatch({
@@ -480,13 +483,17 @@ export function PlannedAdmissionsPanel({
     ? undefined
     : form?.mode === "book" && draft.who === "patient" && draft.patientId === ""
       ? "Choose the patient first"
-      : draft.reason === ""
-        ? "Choose a reason first"
-        : draft.unitId === ""
-          ? "Choose a ward first"
-          : draft.legalStatus === ""
-            ? "Choose a legal status first"
-            : undefined;
+      : form?.mode === "book" &&
+          draft.who === "initials" &&
+          normalisePlannedAdmissionInitials(draft.initials) === null
+        ? plannedInitialsRefusal(draft.initials) ?? "Enter one to three letters for the initials."
+        : draft.reason === ""
+          ? "Choose a reason first"
+          : draft.unitId === ""
+            ? "Choose a ward first"
+            : draft.legalStatus === ""
+              ? "Choose a legal status first"
+              : undefined;
 
   const draftIdentity =
     role !== "executive" && draft?.who === "patient" && draft.patientId !== ""
@@ -494,6 +501,9 @@ export function PlannedAdmissionsPanel({
       : undefined;
   const booked = agenda.length;
   const update = (patch: Partial<Draft>) => {
+    // WF-07: a prior initials refusal must not stick after the draft changes, or it masks a later
+    // server error (displayedRefusal preferred save.error, but Book stayed enabled for bad initials).
+    setRefusal(null);
     setDraft((current) => applyDraftPatch(current, patch));
   };
 
@@ -770,8 +780,17 @@ export function PlannedAdmissionsPanel({
                         value={draft.initials}
                         maxLength={5}
                         autoComplete="off"
+                        spellCheck={false}
+                        inputMode="text"
+                        aria-invalid={
+                          draft.initials.trim() !== "" &&
+                          normalisePlannedAdmissionInitials(draft.initials) === null
+                        }
                         onChange={(event) => {
-                          update({ initials: event.target.value });
+                          // Letters, spaces and dots only (normalise strips spaces/dots). Digits and
+                          // other marks never reach the command payload as a silent partial match.
+                          const next = event.target.value.replace(/[^A-Za-z.\s]/g, "").slice(0, 5);
+                          update({ initials: next });
                         }}
                         data-testid="ward-planned-initials"
                       />

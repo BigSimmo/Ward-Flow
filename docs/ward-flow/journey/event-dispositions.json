@@ -2265,7 +2265,7 @@
         "Ward caller must name its actingUnitId and all affected wards must be that unit.",
         "Admission authorisation gate needs a listed override reason when applicable; other placement gates are rechecked on conversion.",
         "Ward must be open to new admissions. Sex and ageBand are listed.",
-        "Linked patient exists, has no occupied/pulled bed or existing booked planned admission; recorded birth date matches cohort on arrival date. Initials-only requires 1–3 letters."
+        "Linked patient exists, has no occupied/pulled bed or existing booked planned admission; recorded birth date matches cohort on arrival date. Initials-only requires 1–3 letters; a refusal names the real cause (digits, length, empty) rather than only a generic line."
       ],
       "effects": [
         "Appends a booked plan and increments plannedAdmissionSequence; linked gender comes from patient record, never event.",
@@ -2275,12 +2275,12 @@
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
           "line": 299,
-          "sha256": "61ad20c2605a7461ce59b5fd80350ebbc3555aefe361eaa620eaa8904d713893"
+          "sha256": "53825491a317fe91efc6f7870b7df31ad6a06ddb5171dc43fe29ea8ed6dd6594"
         },
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
           "line": 263,
-          "sha256": "61ad20c2605a7461ce59b5fd80350ebbc3555aefe361eaa620eaa8904d713893"
+          "sha256": "53825491a317fe91efc6f7870b7df31ad6a06ddb5171dc43fe29ea8ed6dd6594"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -2326,12 +2326,12 @@
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
           "line": 383,
-          "sha256": "61ad20c2605a7461ce59b5fd80350ebbc3555aefe361eaa620eaa8904d713893"
+          "sha256": "53825491a317fe91efc6f7870b7df31ad6a06ddb5171dc43fe29ea8ed6dd6594"
         },
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
           "line": 263,
-          "sha256": "61ad20c2605a7461ce59b5fd80350ebbc3555aefe361eaa620eaa8904d713893"
+          "sha256": "53825491a317fe91efc6f7870b7df31ad6a06ddb5171dc43fe29ea8ed6dd6594"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -2373,7 +2373,7 @@
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
           "line": 459,
-          "sha256": "61ad20c2605a7461ce59b5fd80350ebbc3555aefe361eaa620eaa8904d713893"
+          "sha256": "53825491a317fe91efc6f7870b7df31ad6a06ddb5171dc43fe29ea8ed6dd6594"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -2415,7 +2415,7 @@
         {
           "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
           "line": 483,
-          "sha256": "61ad20c2605a7461ce59b5fd80350ebbc3555aefe361eaa620eaa8904d713893"
+          "sha256": "53825491a317fe91efc6f7870b7df31ad6a06ddb5171dc43fe29ea8ed6dd6594"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
