@@ -657,6 +657,12 @@
   outline-offset: 1px;
 }
 
+/* A strip that scrolls joins the tab order (use-scroll-region-focus.ts); show where focus is. */
+.heroFigures:focus-visible {
+  outline: 2px solid var(--wf-hero-ink);
+  outline-offset: 1px;
+}
+
 /* One row, equal columns, hairlines between. Never wraps. */
 .heroFigures {
   display: grid;
