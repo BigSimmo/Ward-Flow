@@ -18,8 +18,14 @@ import { ROLE_SCREENS, type WardScreenId } from "@/components/ward-management/wa
 
 /** The tour's own idea of a desk: the chrome roles, plus the access admin, who has no clinical chrome. */
 export type TourRole = WardChromeRole | "admin";
-export type TourDevice = "desk" | "phone";
-type TourChapter = "Your desk" | "Your daily work" | "Finding your way" | "What you can do";
+/**
+ * The kind of screen the tour plays on. "tablet" is 746px to 1000px wide, where the side menu folds
+ * away and the bar's Menu button opens it as a sheet: the desktop's words, with the rail's parts
+ * swapped for that button (`tabletSteps`).
+ */
+export type TourDevice = "desk" | "tablet" | "phone";
+/** "Go further" holds the optional steps offered after the first-run tour (`goFurtherSteps`). */
+export type TourChapter = "Your desk" | "Your daily work" | "Finding your way" | "What you can do" | "Go further";
 
 /** The first element matching `sel` that is shown, holds `text` when given, then `up` parents up. */
 export type TourTarget = { readonly sel: string; readonly text?: string; readonly up?: number };
@@ -92,7 +98,7 @@ function count(value: number, one: string, many: string): string {
   return `${value} ${value === 1 ? one : many}`;
 }
 
-/** "about 3 minutes", from the number of steps: about 15 seconds a step on a desktop, 12 on a phone. */
+/** "about 3 minutes", from the number of steps: about 15 seconds a step on a desktop or tablet, 12 on a phone. */
 export function tourMinutes(steps: number, device: TourDevice): string {
   const minutes = Math.max(1, Math.round((steps * (device === "phone" ? 12 : 15)) / 60));
   return minutes === 1 ? "about a minute" : `about ${minutes} minutes`;
@@ -229,6 +235,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           { sel: '[data-testid="ward-global-search"]' },
           "Find anyone or anything",
           "Press / from anywhere to search patients by name or UMRN, and wards, EDs and pages by name.",
+          "Press / and type the name of a ward.",
         ),
         step(
           "Finding your way",
@@ -236,13 +243,14 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           { sel: '[data-testid="ward-bar-tasks-trigger"]' },
           "Alerts and tasks",
           "The bell holds the alerts and tasks addressed to your desk. Act-now items come first.",
+          "Open the bell, then press Escape to close it.",
         ),
         step(
           "Finding your way",
           "tools",
           { sel: '[data-testid="ward-bar-tools-trigger"]' },
           "Tools",
-          "Find a bed, catchment lookup, on-call, form times and the bed summary for the executive on-call email.",
+          "Find a bed, the catchment lookup, on-call, form times and the bed summary for the executive on-call email.",
         ),
         step(
           "Finding your way",
@@ -318,6 +326,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           { sel: "#tabBtn-return" },
           "Decisions due",
           "Decisions gathers the ward's calls for today: who is ready to leave, leave requests and patients coming in.",
+          "Open Decisions, then go back to Ward home.",
         ),
         step(
           "Your daily work",
@@ -376,6 +385,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           ED_ROW,
           "One row per person",
           "Tier, time in ED, bay, form, destination and the next step. T1 is most urgent. A red triangle marks a wait past its step target.",
+          "Select a person's name to open their record.",
         ),
         step(
           "Your daily work",
@@ -405,6 +415,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           { sel: '[data-testid="ward-rail-bed-finder"]' },
           "Find a bed",
           "Lists the wards that meet the checks you choose, with their ready beds, A to Z by name. It is a quick filter, not a suggestion. The referral still checks every rule.",
+          "Open Find a bed and choose one check.",
         ),
       ];
     }
@@ -430,6 +441,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           HERO,
           "Your caseload",
           "The people on your team's caseload. The chips open Referrals and In hospital, and the tabs below split the page into Team home, Caseload, In hospital, Referrals and Clinicians.",
+          "Open the In hospital tab, then go back to Team home.",
         ),
         step(
           "Your daily work",
@@ -464,7 +476,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "raise",
           PRIMARY,
           "New referral",
-          "Start a referral to a ward from anywhere in Ward Flow.",
+          "New referral, at the top, starts a referral to a ward from any screen.",
         ),
         step(
           "Finding your way",
@@ -503,13 +515,14 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           { sel: '[data-testid="ward-officer-joblist"]' },
           "Each job",
           "Patient, route from and to, stage and forms. Sort by next action or by longest wait, or search by name, UMRN, ED, ward or CAD number.",
+          "Select a job to see its pickup, destination and booking.",
         ),
         step(
           "Your daily work",
           "next",
           { sel: '[data-testid^="ward-officer-next-"]' },
           "Record the next step",
-          "Next is the one step to record now, such as En route or Arrived at ward.",
+          "Next is the one step to record now, such as En route or Arrived at ward. It is recorded with the time.",
         ),
         step(
           "Your daily work",
@@ -519,11 +532,33 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "The dots fill as the job moves from accepted to collected. The stage name sits beside them.",
         ),
         step(
+          "Your daily work",
+          "booking",
+          { sel: '[data-testid="ward-officer-hero-log-booking"]' },
+          "Log a booking",
+          "Log booking shows while a job still needs transport booked. It opens the booking for the first of them.",
+        ),
+        step(
+          "Your daily work",
+          "history",
+          { sel: "#ward-officer-jobs-tab-history" },
+          "Today's closed jobs",
+          "History, beside Jobs, lists today's closed records: Arrived today, Refused and Cancelled.",
+          "Open History, then go back to Jobs.",
+        ),
+        step(
+          "Finding your way",
+          "copy",
+          { sel: '[aria-label="Copy handover"]' },
+          "Hand over your jobs",
+          "Copy handover copies a plain text summary of the open jobs, ready to paste for the next shift.",
+        ),
+        step(
           "Finding your way",
           "alerts",
           { sel: '[data-testid="ward-rail-role-menu"] a[href$="/alerts"]' },
           "Alerts",
-          "Alerts that concern your jobs.",
+          "Alerts, in your menu, lists what is addressed to you about your jobs.",
         ),
       ];
     case "bed_manager":
@@ -549,7 +584,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "hero",
           HERO,
           "Beds ready",
-          "How many beds are ready, with locked beds counted within the total. Beds pulled and discharges due today sit beside them.",
+          "How many beds are ready, with locked beds counted within the total. Beds pulled and discharges due today sit beside them. A figure you can select opens the list behind it.",
         ),
         step(
           "Your daily work",
@@ -566,11 +601,20 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "Bed meeting prints the meeting sheet and opens the agenda. Open on TV puts it on the meeting room screen.",
         ),
         step(
+          "Your daily work",
+          "planned",
+          { sel: '[data-testid="capacity-planned-moves"]' },
+          "Planned moves",
+          "Booked admissions and step downs, in four lanes: Today, Tomorrow, Later and Step down. Each row opens the person's move.",
+          "Choose Today to narrow the list, then choose it again to see them all.",
+        ),
+        step(
           "Finding your way",
           "map",
           { sel: "#capacity-bed-map" },
           "Bed map",
           "Every ward with ready, occupied and closed beds. Switch between Grid and Rows.",
+          "Switch the bed map to Rows.",
         ),
         step(
           "Finding your way",
@@ -590,6 +634,20 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           `${signedInAs(role, f, "for the whole state")} You see figures as counts, never patient names.`,
         ),
         step(
+          "Your desk",
+          "menu",
+          ROLE_MENU,
+          "Your menu",
+          "Statistics is your home. Capacity sits beside it. Both show counts, never patient names.",
+        ),
+        step(
+          "Your desk",
+          "service",
+          { sel: '[data-testid="ward-bar-service-trigger"]' },
+          "Service in view",
+          "Choose the whole state or one health service. It changes what the screens show, not your access.",
+        ),
+        step(
           "Your daily work",
           "hero",
           HERO,
@@ -601,14 +659,15 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "tabs",
           STATS_NAV,
           "Views",
-          "Network, Compare, Services, Wards, EDs, Teams and Weekly each answer one question about the system.",
+          "Network, Compare, Services, Wards, EDs, Teams and Weekly each answer one question about the system. Each figure has a note on what it counts and what it leaves out.",
+          "Choose Compare, then go back to Network.",
         ),
         step(
           "Finding your way",
           "export",
           { sel: '[data-testid="ward-statistics-export"]' },
           "Take the figures with you",
-          "Export the figures is there when you need them for a report or briefing.",
+          "Export the figures downloads the figures at the top of the page as a spreadsheet, for a report or briefing.",
         ),
         step(
           "Finding your way",
@@ -632,7 +691,15 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "review",
           HERO,
           "What is waiting for review",
-          "Overrides, refused or stale actions, record access and follow-ups. The tabs hold gaps by site, the audit trail, registers and reports.",
+          "Overrides, refused or stale actions, record access and follow-ups. The ring beside it counts how many are reviewed.",
+        ),
+        step(
+          "Your daily work",
+          "record-review",
+          { sel: '[aria-label="Governance views"]' },
+          "Review and Audit trail",
+          "Choose an event under Review, then Record review. Audit trail, beside Review, lists what this session captured.",
+          "Open Audit trail, then go back to Review.",
         ),
         ...ACCESS_STEPS,
       ];
@@ -755,6 +822,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           { sel: "#mainTabList" },
           "Three views",
           "Ward home is today's summary. Decisions has the calls due today and Bed board shows every bed.",
+          "Tap Bed board, then go back to Ward home.",
         ),
         step(
           "Your daily work",
@@ -792,7 +860,14 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
               }`
             : "Who is waiting, who has no bed yet, who is under a form and the longest wait against the target.",
         ),
-        step("Your daily work", "row", ED_ROW, "One row per person", "Tier, bay, time in ED and the next step."),
+        step(
+          "Your daily work",
+          "row",
+          ED_ROW,
+          "One row per person",
+          "Tier, bay, time in ED and the next step.",
+          "Tap a row to see that person's details.",
+        ),
         phoneCreate("New referral, Log a delay and Add patient"),
         phoneDock("My ED, Referrals, Alerts and Find a bed."),
         step(
@@ -829,6 +904,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           { sel: '[aria-label="Team lists"]' },
           "Who is where",
           "Waiting, In bed, Back and CTOs. Back counts the people expected back with the team.",
+          "Tap In bed to see who is in a bed now.",
         ),
         step(
           "Your daily work",
@@ -864,6 +940,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           { sel: 'section[aria-label="Jobs"]' },
           "Each job",
           "Patient, route and stage. The dots fill as the job moves from accepted to collected.",
+          "Tap a job to see its pickup, destination and booking.",
         ),
         phoneDock("My jobs, Alerts, On-call and Activity."),
         PHONE_HELP,
@@ -884,6 +961,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           { sel: '[aria-label="Capacity view"]' },
           "Overview, Wards and Planned",
           "Overview is the summary. Wards lists every ward and Planned holds booked admissions.",
+          "Tap Wards, then go back to Overview.",
         ),
         step(
           "Your daily work",
@@ -945,13 +1023,54 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
   }
 }
 
+/**
+ * A tablet (746px to 1000px) shows the desktop's screens, but folds the side menu away: the bar's
+ * Menu button, at the left of the header, opens the same menu as a sheet (`ward-rail.module.css`).
+ * So a step that lights a part of the side menu lights Menu instead, and keeps its words, which say
+ * what is in the menu. The steps below also say where the menu is, or swap a key press for a tap.
+ */
+const IN_SIDE_MENU = /ward-rail|ward-my-wards-pin/u;
+const TABLET_MENU = "Menu, at the left of the header, opens the side menu";
+const TABLET_SEARCH_BODY = "The magnifier finds a patient by name or UMRN, or a ward, ED or page by name.";
+const TABLET_WORDS: Readonly<
+  Record<string, { readonly title?: string; readonly body: string; readonly tryIt?: string }>
+> = {
+  shift: {
+    body: `${TABLET_MENU}. Handover there opens the sheet you pass to the next shift.`,
+    tryIt: "Open Menu, then Handover.",
+  },
+  you: { title: "Your side menu", body: `${TABLET_MENU}: your screens, Help, and your name and role at its foot.` },
+  help: {
+    title: "Help is in the menu",
+    body: `${HELP_BODY} ${TABLET_MENU}. Replay this tour from Help or Settings.`,
+  },
+  search: { body: TABLET_SEARCH_BODY, tryIt: "Tap the magnifier and type the name of a ward." },
+  "more-search": { body: `${TABLET_SEARCH_BODY} Type a question and Help's answers show too.` },
+};
+
+/** One desktop step as a tablet shows it (see `TABLET_WORDS`). */
+export function forTablet(step: TourStep): TourStep {
+  const { target, ...rest } = step;
+  const inMenu = target !== undefined && IN_SIDE_MENU.test(target.sel);
+  // A welcome that lit the person in the side menu opens in the middle instead.
+  const lit = inMenu ? (step.id === "welcome" ? undefined : PHONE_MENU) : target;
+  return { ...rest, ...TABLET_WORDS[step.id], ...(lit ? { target: lit } : {}) };
+}
+
 /** One desk's tour on one kind of screen, ending with what the desk can do. */
 export function tourSteps(role: TourRole, device: TourDevice, facts: TourFacts): readonly TourStep[] {
-  const steps = [...(device === "phone" ? phoneSteps(role, facts) : deskSteps(role, facts)), canDoStep(role)];
-  // The welcome says how long the tour takes, which depends on how many steps it has.
+  const home =
+    device === "phone"
+      ? phoneSteps(role, facts)
+      : device === "tablet"
+        ? deskSteps(role, facts).map(forTablet)
+        : deskSteps(role, facts);
+  const steps = [...home, canDoStep(role)];
+  // The welcome says how long the tour takes, which depends on how many steps it has. The phone's
+  // welcome stays short.
   const [first, ...rest] = steps;
   const length = ` This takes ${tourMinutes(steps.length, device)}.`;
-  return first && first.id === "welcome" && device === "desk"
+  return first && first.id === "welcome" && device !== "phone"
     ? [{ ...first, body: `${first.body}${length}` }, ...rest]
     : steps;
 }

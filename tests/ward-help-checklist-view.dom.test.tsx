@@ -94,6 +94,33 @@ describe("a guided checklist in Help", () => {
     expect(onBack).toHaveBeenCalled();
   });
 
+  it("shows a desk's Getting started list with its first-week line and links (5 Nov 2026)", () => {
+    const onShowMe = vi.fn();
+    render(
+      <WardHelpChecklistView
+        id="getting-started-coordinator"
+        role="coordinator"
+        home="/ward-flow"
+        onBack={vi.fn()}
+        onClose={vi.fn()}
+        onShowMe={onShowMe}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "Getting started" })).toBeInTheDocument();
+    expect(
+      screen.getByText("For your first week. Reminders only. Ticking a step records nothing."),
+    ).toBeInTheDocument();
+    expect(screen.getAllByRole("checkbox")).toHaveLength(6);
+    expect(screen.getByTestId("ward-help-checklist-go-getting-started-coordinator:3")).toHaveAttribute(
+      "href",
+      "/ward-flow/movements",
+    );
+    fireEvent.click(screen.getByTestId("ward-help-checklist-show-getting-started-coordinator:2"));
+    expect(onShowMe).toHaveBeenCalledWith("around-capacity");
+    fireEvent.click(screen.getByTestId("ward-help-checklist-tick-getting-started-coordinator:0"));
+    expect(window.sessionStorage.getItem(CHECKLIST_TICKS_STORAGE_KEY)).toBe("getting-started-coordinator:0");
+  });
+
   it("says so for a checklist that is not this desk's", () => {
     render(
       <WardHelpChecklistView
