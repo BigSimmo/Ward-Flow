@@ -114,11 +114,11 @@ function Submit({
     <>
       <Button
         type="submit"
-        disabled={pending}
         variant="pri"
         size="sm"
         className={styles.submit}
-        aria-disabled={!pending && blocked ? true : undefined}
+        // Saving stays focusable and explained like a blocked save; the submit handler ignores repeats.
+        aria-disabled={pending || blocked ? true : undefined}
         aria-describedby={blocked ? id : undefined}
       >
         {children}
