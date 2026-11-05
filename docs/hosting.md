@@ -73,13 +73,18 @@ tested. Two services were added to the same Ward Flow project and environment, S
 both following `BigSimmo/Ward-Flow` `main` at the time (now `live`). The open public demo (`ward-flow`) is unchanged and
 stays in local mode, because shared mode puts a sign-in screen in front of every page.
 
-| Item     | Backend                                                                                                | Signed-in site                                              |
-| -------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| Service  | `ward-flow-backend` (`e61d6afa-0fe0-48d4-af02-6db904423f97`)                                           | `ward-flow-shared` (`e6b96cb4-a904-4f83-a10c-0a2ee9608457`) |
-| Address  | https://ward-flow-backend-production.up.railway.app                                                    | https://ward-flow-shared-production.up.railway.app          |
-| Port     | 8080                                                                                                   | 8080                                                        |
-| Health   | `/healthz` (no sign-in; always 200, with `database` "ok" or "unavailable", checked at most every 30 s) | `/api/health`                                               |
-| Sleeping | Off                                                                                                    | On                                                          |
+| Item     | Backend                                                                                                                 | Signed-in site                                              |
+| -------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Service  | `ward-flow-backend` (`e61d6afa-0fe0-48d4-af02-6db904423f97`)                                                            | `ward-flow-shared` (`e6b96cb4-a904-4f83-a10c-0a2ee9608457`) |
+| Address  | https://ward-flow-backend-production.up.railway.app                                                                     | https://ward-flow-shared-production.up.railway.app          |
+| Port     | 8080                                                                                                                    | 8080                                                        |
+| Health   | `/healthz` (anonymous process liveness; database status only with the monitor token; see backend health contract below) | `/api/health`                                               |
+| Sleeping | Off                                                                                                                     | On                                                          |
+
+Current source contract, checked 3 November 2026: anonymous `/healthz` does not reveal or check
+its database. The [backend health contract](../backend/ward-flow/README.md#health-and-monitor-configuration)
+explains protected monitoring with `WARD_FLOW_UPTIME_TOKEN` and signed `/readyz`. This corrects the
+old health description; it does not re-verify the dated hosted settings in this section.
 
 Backend settings (Railway dashboard):
 
