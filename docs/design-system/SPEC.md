@@ -606,6 +606,12 @@ treatment (type-level: `AnswerCard` requires `AnswerState`; `no_answer` is unrep
 **Numbers.** Tabular wherever a number can change or align. Ranges use an unspaced en dash.
 **Never a bare decimal without a leading zero** — a dropped leading zero is a documented
 ten-fold dosing error.
+**Percentages are whole numbers** everywhere: 86%, never 85.7% (Josh, 5 Nov 2026, CL-9).
+Round only for display; thresholds and alerts compare the unrounded figure.
+
+**Written days.** A written day has no comma after the weekday: "Wed 4 Nov", and in a printed moment
+"Fri 25 Sep 2026, 17:00 AWST" (the comma before the time stays). Use `perthDayLabel`,
+`perthDateText` or `formatSheetMoment` in `ward-clock.ts` (Josh, 5 Nov 2026, CL-4).
 
 **Dates.** Machine ISO; display `en-AU`, `Australia/Perth`, via `DateDisplay` only. Relative
 only beside the absolute. Review and expiry dates always absolute. Unknown stated explicitly.

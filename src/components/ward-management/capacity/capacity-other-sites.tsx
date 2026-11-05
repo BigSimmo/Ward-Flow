@@ -13,7 +13,7 @@ import { siteByCode } from "@/components/ward-management/ward-sites";
 import type { CapacityModel } from "./capacity-model";
 import styles from "./capacity-other-sites.module.css";
 
-const percent = (inUse: number, beds: number) => (beds > 0 ? `${((inUse / beds) * 100).toFixed(1)}%` : "No beds");
+const percent = (inUse: number, beds: number) => (beds > 0 ? `${Math.round((inUse / beds) * 100)}%` : "No beds");
 
 /**
  * The rest of the network for a site desk: one row per health service with its ready beds, closed

@@ -60,7 +60,7 @@ export function wardOccupancy(
   return { inUse, beds, percent: beds > 0 ? roundOneDecimal((inUse / beds) * 100) : null };
 }
 
-/** Occupancy as printed: "85.2%", or `fallback` when there are no beds. */
+/** Occupancy as printed: "85%" (whole percent, CL-9), or `fallback` when there are no beds. */
 export function formatWardOccupancy(figure: OccupancyFigure, fallback = "Not recorded"): string {
-  return figure.percent === null ? fallback : `${figure.percent.toFixed(1)}%`;
+  return figure.percent === null ? fallback : `${Math.round(figure.percent)}%`;
 }
