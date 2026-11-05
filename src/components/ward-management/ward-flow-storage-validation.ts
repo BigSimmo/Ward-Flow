@@ -1,4 +1,5 @@
 import { validDischargeRequestNamespace } from "./ward-discharge-records";
+import { placementInvariantProblem, storedPlacementInvariants } from "./ward-flow-storage-invariants";
 import { hasDuplicateRetainedUmrns } from "./ward-retained-umrn";
 import {
   RESTRICTIVE_PRACTICE_IDS,
@@ -10,6 +11,7 @@ import * as z from "zod/mini";
 import { validCareJourney, validCareChange } from "./ward-care-journey";
 import type { WardFlowState } from "./ward-flow-reducer";
 import {
+  type Admission,
   isDischargeBarrier,
   isLeavingDestination,
   isPlannedAdmissionCancelReason,
@@ -1229,6 +1231,8 @@ function consistent(state: StoredState, value: RecordValue): boolean {
     )
       return false;
   }
+  // Identity keys stay in this approved restore-only reader; the helper receives placement facts.
+  const patientStays = new Map<string, Pick<Admission, "id" | "unitId" | "state">[]>();
   for (const admission of state.admissions) {
     const ward = stateUnitById.get(admission.unitId);
     if (!ward || (admission.bedNumber !== undefined && admission.bedNumber > ward.beds)) return false;
@@ -1238,6 +1242,11 @@ function consistent(state: StoredState, value: RecordValue): boolean {
       !reference(admission.movementId, movementIds)
     )
       return false;
+    if (admission.patientId !== null && (admission.state === "occupied" || admission.state === "pulled")) {
+      const stays = patientStays.get(admission.patientId) ?? [];
+      stays.push({ id: admission.id, unitId: admission.unitId, state: admission.state });
+      patientStays.set(admission.patientId, stays);
+    }
   }
 
   const samePatient = (left: { patientId?: string | null }, right: { patientId?: string | null } | undefined) =>
@@ -1414,7 +1423,27 @@ function consistent(state: StoredState, value: RecordValue): boolean {
 
   for (const key of Object.keys(state.dischargeRevisions)) if (!admissionIds.has(key)) return false;
   for (const key of Object.keys(state.morningRollupConfirmations)) if (!unitIds.has(key)) return false;
-  return true;
+  // H-IMPORT (#1455): live absence, active stays and numbered beds must each have one owner.
+  return storedPlacementInvariants(value as unknown as WardFlowState, [...patientStays.values()]);
+}
+
+/**
+ * Why a refused restore was refused, in plain words, when the save is well formed but breaks a
+ * record-ownership rule. `undefined` means only the generic refusal can be given. Fixed sentences
+ * only: never the save's own content (D-18).
+ */
+export function storedStateRestoreProblem(value: unknown): string | undefined {
+  if (!object(value) || !nested(value) || !storedState.safeParse(value).success) return undefined;
+  const state = value as unknown as WardFlowState;
+  if (hasDuplicateRetainedUmrns(state.patients)) return "two patients hold the same record number";
+  const patientStays = new Map<string, Pick<Admission, "id" | "unitId" | "state">[]>();
+  for (const admission of state.admissions) {
+    if (admission.patientId === null || (admission.state !== "occupied" && admission.state !== "pulled")) continue;
+    const stays = patientStays.get(admission.patientId) ?? [];
+    stays.push({ id: admission.id, unitId: admission.unitId, state: admission.state });
+    patientStays.set(admission.patientId, stays);
+  }
+  return placementInvariantProblem(state, [...patientStays.values()]) ?? undefined;
 }
 
 export function isValidStoredWardFlowState(value: unknown): value is WardFlowState {

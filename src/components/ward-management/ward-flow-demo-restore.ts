@@ -11,6 +11,7 @@ import type { DemoRead, WardFlowDemoPayload } from "./ward-flow-demo-storage";
 import {
   isValidStoredWardFlowState,
   migrateStoredWardFlowState,
+  storedStateRestoreProblem,
   withInboxStreamADefaults,
 } from "./ward-flow-storage-validation";
 
@@ -38,6 +39,14 @@ const SAVE_FROM_EARLIER_DAY =
 
 const SAVE_REJECTED =
   "The saved demonstration could not be restored safely. A fresh synthetic demonstration has started.";
+
+/** The refusal, naming the broken rule when one is known (consolidation, 5 Nov 2026). */
+function saveRejected(state: unknown): string {
+  const problem = storedStateRestoreProblem(state);
+  return problem === undefined
+    ? SAVE_REJECTED
+    : `The saved demonstration could not be restored safely: ${problem}. A fresh synthetic demonstration has started.`;
+}
 
 /** Apply supported version and legacy observation migrations before validating a save.
  * Unsupported versions are returned unchanged, so the version check below still refuses them. */
@@ -69,8 +78,9 @@ export function tryReadDemoState(dayZero: Date, mountedAtAbsolute: number, rawOv
       parsed.dayZero < dayZero.getTime()
     )
       return { recoveryNotice: SAVE_FROM_EARLIER_DAY };
+    if (!isValidDemoPayload(parsed))
+      return { recoveryNotice: saveRejected(isPlainObject(parsed) ? parsed.state : undefined) };
     if (
-      !isValidDemoPayload(parsed) ||
       parsed.version !== WARD_FLOW_DEMO_STORAGE_VERSION ||
       parsed.dayZero !== dayZero.getTime() ||
       parsed.worldGeneration !== parsed.state.worldGeneration ||
