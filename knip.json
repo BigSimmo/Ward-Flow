@@ -21,5 +21,5 @@
     }
   },
   "ignoreDependencies": ["@axe-core/playwright", "playwright-core", "rimraf", "tsx"],
-  "ignoreBinaries": ["pgrep", "openssl"]
+  "ignoreBinaries": ["pgrep", "openssl", "jq"]
 }

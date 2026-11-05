@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { gateBatchArgs } from "../scripts/check-ward-expected-reds.mjs";
+import { gateBatchArgs, gateBatchTransport } from "../scripts/check-ward-expected-reds.mjs";
+import { fullGateInputIdentity } from "../scripts/test-evidence-identity.mjs";
 import { afterEach } from "vitest";
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { removePathSync } from "../scripts/retryable-fs.mjs";
@@ -69,6 +70,41 @@ describe("exact unit shard manifest", () => {
 });
 
 describe("hosted unit shard selection transport", () => {
+  it("selects one exact manifest only for coverage-backed shards and binds its content identity", () => {
+    const root = fixture();
+    const options = {
+      root,
+      population: ["tests/a.test.ts", "tests/b.dom.test.tsx"],
+      stateDir: join(root, "state"),
+      coverageBlobDir: join(root, "blobs"),
+      shard: { index: 1, count: 4 },
+    };
+    const transport = gateBatchTransport(options);
+    expect(transport.singleBatch).toBe(true);
+    expect(readUnitShardSelection(root, transport.selectionManifest)).toEqual(options.population);
+    expect(transport.childEnvironment).toEqual({ WARD_UNIT_SHARD_SELECTION: transport.selectionManifest });
+    const fingerprint = (identityArgs: string[]) =>
+      fullGateInputIdentity({
+        root,
+        population: options.population,
+        env: {},
+        dependencyIdentity: "synthetic-immutable-dependencies",
+        args: ["run", ...identityArgs],
+      });
+    const same = gateBatchTransport({ ...options, stateDir: join(root, "another-state-directory") });
+    expect(same.selectionManifest).not.toBe(transport.selectionManifest);
+    expect(fingerprint(same.identityArgs)).toBe(fingerprint(transport.identityArgs));
+    expect(fingerprint([])).not.toBe(fingerprint(transport.identityArgs));
+    const changed = gateBatchTransport({ ...options, population: ["tests/a.test.ts"] });
+    expect(fingerprint(changed.identityArgs)).not.toBe(fingerprint(transport.identityArgs));
+    for (const local of [
+      gateBatchTransport({ ...options, coverageBlobDir: "" }),
+      gateBatchTransport({ ...options, shard: null }),
+    ]) {
+      expect(local).toEqual({ singleBatch: false, selectionManifest: "", identityArgs: [], childEnvironment: {} });
+    }
+  });
+
   it("restricts both actual Vitest projects to their exact manifest intersections", async () => {
     const directory = fixture();
     const files = ["tests/ward-ci-scope.test.ts", "tests/ward-release-accessibility.dom.test.tsx"];
