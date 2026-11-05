@@ -1161,7 +1161,8 @@ function referralMatches(referral: Referral, needle: string): boolean {
     referral.source,
     referral.urgency,
   ];
-  return haystack.some((value) => String(value).toLowerCase().includes(needle));
+  // FORM-REF: an absent region or location is not the word "undefined" to search.
+  return haystack.some((value) => value !== undefined && String(value).toLowerCase().includes(needle));
 }
 
 /**

@@ -550,8 +550,8 @@ export function reduceReferralSendEvent(
       const referralId = existingQueuedArm && linkedReferral ? linkedReferral.id : nextFrontDoorReferralId(sequence);
 
       // F6: with no linked referral, the suburb is a stated absence (`{ kind: "unknown", reason:
-      // "not_known" }`), never a hospital's name. `HOME_REGIONS` has no unknown member, so
-      // `homeRegion` keeps its "Perth Metropolitan" fallback.
+      // "not_known" }`), never a hospital's name. Form rule (FORM-REF, 5 Nov 2026): the home region
+      // is optional, so with none recorded it stays absent rather than an invented region.
       //
       // `undefined` when reusing an existing queued arm.
       const newReferral: Referral | undefined = existingQueuedArm
@@ -560,7 +560,7 @@ export function reduceReferralSendEvent(
             id: referralId,
             patientId: linkedReferral?.patientId ?? movement.patientId,
             ageBand: movement.cohort,
-            homeRegion: linkedReferral?.homeRegion ?? "Perth Metropolitan",
+            ...(linkedReferral?.homeRegion === undefined ? {} : { homeRegion: linkedReferral.homeRegion }),
             suburb: linkedReferral?.suburb ?? { kind: "unknown", reason: "not_known" },
             source: "ed_medical",
             originSiteCode: originSite?.code ?? "ARM",

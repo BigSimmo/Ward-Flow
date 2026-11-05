@@ -118,13 +118,14 @@ it("keeps an untouched discharge date unchanged across midnight", () => {
   );
   const view = render(element);
   fireEvent.click(screen.getByTestId("ward-drawer-discharge-date-open"));
-  expect(screen.getByRole("button", { name: "Save date" })).toBeDisabled();
+  expect(screen.getByRole("button", { name: "Save date" })).toHaveAttribute("aria-disabled", "true");
   clock.now = 1440;
   view.rerender(
     <WardFlowProvider initialNow={1439}>
       <WardDrawerDischargeDate admissionId="AD-SYNTHETIC" unitId="rph-adult-open" recordedAt={recordedAt} />
     </WardFlowProvider>,
   );
-  expect(screen.getByRole("button", { name: "Save date" })).toBeDisabled();
+  // Kit rule: unavailable with a reason (aria-disabled), never a bare native disabled.
+  expect(screen.getByRole("button", { name: "Save date" })).toHaveAttribute("aria-disabled", "true");
   expect(screen.getByTestId("ward-drawer-discharge-date")).toHaveTextContent("Change the day or time to save");
 });

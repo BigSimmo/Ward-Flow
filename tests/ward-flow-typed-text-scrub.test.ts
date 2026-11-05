@@ -156,8 +156,10 @@ describe("device copy of a session holding typed text", () => {
     const live = copy!.referrals.find((referral) => referral.id === event.referralId)!.intake!;
     expect(live.referrer.phone).toBe(TYPED_TEXT_NOT_KEPT);
     expect(live.referrer.email).toBe(TYPED_TEXT_NOT_KEPT);
-    for (const snapshot of [decision.before.intake, decision.after.intake])
-      if (snapshot) expect(snapshot.referrer.phone).toBe(TYPED_TEXT_NOT_KEPT);
+    for (const snapshot of [decision.before.intake, decision.after.intake]) {
+      expect(snapshot).toBeDefined();
+      expect(snapshot!.referrer.phone).toBe(TYPED_TEXT_NOT_KEPT);
+    }
     for (const marker of [email, phone, chartText, chartBytes.toString("base64"), ...fixture.markers])
       expect(stored(copy)).not.toContain(marker);
     expect(isValidStoredWardFlowState(copy)).toBe(true);

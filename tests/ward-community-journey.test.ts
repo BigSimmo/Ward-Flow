@@ -12,6 +12,9 @@ import { GENERAL_OBSERVATION } from "@/components/ward-management/ward-observati
 import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import { matchesSetting } from "@/components/ward-management/search/search-filters";
+import { buildCensus } from "@/components/ward-management/search/patient-census";
+import { demoDayZero, dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
+import { searchPatients } from "@/components/ward-management/ward-derivations";
 
 /**
  * D-76 item 1 (fix plan item 15): an accepted community referral starts a full journey at the
@@ -266,6 +269,42 @@ describe("a journey from an accepted community referral (D-76)", () => {
     // A referral that records its ED still starts only there.
     const elsewhere = wardFlowReducer(state, { ...event, role: "coordinator", actingUnitId: undefined, edId: ed.id });
     expect(elsewhere.movements).toEqual(state.movements);
+  });
+
+  it("names a missing location in Patients and never matches a search for undefined", () => {
+    let state = seedWardFlowState();
+    state = apply(state, {
+      type: "RECEIVE_REFERRAL",
+      role: "community",
+      now,
+      ageBand: "Adult",
+      source: "community",
+      destinations: [
+        {
+          kind: "psychiatric_ward",
+          unitId: UNIT_ID,
+          sex: "Female",
+          gender: "Female",
+          secureBedNeeded: false,
+          involuntaryBedNeeded: false,
+          highAcuityNursingNeeded: false,
+        },
+      ],
+      suburb: { kind: "unknown", reason: "not_known" },
+      urgency: 2,
+      transportNeeded: true,
+      ...FIXTURE_HISTORY,
+    });
+    const sent = state.referrals.at(-1)!;
+    const census = buildCensus({
+      ...state,
+      now,
+      thresholds: dueSoonThresholdsOf(state.configuration),
+      dayZero: demoDayZero(new Date("2026-10-19T00:00:00Z")),
+    });
+    expect(JSON.stringify(census)).not.toContain("undefined");
+    const query = { text: "undef" } as Parameters<typeof searchPatients>[3];
+    expect(searchPatients(state.movements, [sent], state.units, query)).toEqual([]);
   });
 
   it("refuses an ED on a community referral's start", () => {

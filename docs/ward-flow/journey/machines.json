@@ -1581,7 +1581,7 @@
       {
         "path": "src/components/ward-management/ward-derivations.ts",
         "line": 1,
-        "sha256": "ead1e4f2bc330d458ccb28355d656d484fa1d547eec4f920f91544215c123e00"
+        "sha256": "f01a19da74c6b0f065ddf45b5376661065a6108d31e48fbb4a596d81c71879a0"
       },
       {
         "path": "src/components/ward-management/ward-duplicate-bed-requests.ts",
@@ -1646,7 +1646,7 @@
       {
         "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
         "line": 1276,
-        "sha256": "9d801af9c31001a3afcb5a1a424f4cb64f093cb6d23f7f9d6759408f338b247f"
+        "sha256": "2d2c36bd0440c173443da1dabdd6b36dd5054d09962f689c629dd3fa6fa54911"
       },
       {
         "path": "src/components/ward-management/ward-flow-storage-validation.ts",

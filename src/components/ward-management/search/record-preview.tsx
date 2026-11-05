@@ -384,7 +384,7 @@ export function RecordPreview({
         disposition = "Unplaced";
         targetWard = "Pending allocation";
         currentStage = "Referred";
-        originSite = `${referral.originSiteCode} ED`;
+        originSite = referral.originSiteCode === undefined ? ORIGIN_NOT_RECORDED : `${referral.originSiteCode} ED`;
         urgency = `Tier ${referral.urgency}`;
       }
     }
@@ -765,7 +765,7 @@ export function RecordPreview({
           <div className={styles.quickMetricsStrip}>
             <div className={styles.quickMetricCard}>
               <span className={styles.metricLabel}>Origin site</span>
-              <span className={styles.metricVal}>{referral.originSiteCode}</span>
+              <span className={styles.metricVal}>{referral.originSiteCode ?? ORIGIN_NOT_RECORDED}</span>
             </div>
             <div className={styles.quickMetricCard}>
               <span className={styles.metricLabel}>Home region</span>
@@ -860,7 +860,7 @@ export function RecordPreview({
                   <span className={styles.timelineMonoTime}>{formatInstantWithDay(referral.raisedAt, now)} AWST</span>
                 </div>
                 <span className={styles.timelineEventText}>
-                  Record active from origin site ({referral.originSiteCode})
+                  Record active from origin site ({referral.originSiteCode ?? ORIGIN_NOT_RECORDED})
                 </span>
               </div>
             </div>
