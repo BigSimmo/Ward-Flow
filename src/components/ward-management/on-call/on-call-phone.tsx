@@ -94,9 +94,7 @@ export function PhoneFocal({
   // Offer only the bed flow lines this list holds (a site manager's may lack some; PR #1470 review).
   const choices = FOCAL.filter(([id]) => entries.some((item) => item.id === id));
   const entry =
-    entries.find((item) => item.id === focalId) ??
-    entries.find((item) => item.id === choices[0]?.[0]) ??
-    entries[0]!;
+    entries.find((item) => item.id === focalId) ?? entries.find((item) => item.id === choices[0]?.[0]) ?? entries[0]!;
   const crisis = entries.find((item) => item.id === "sw-mherl");
   const now = availability(entry, actions.minute);
   const number = numberAt(entry, actions.minute);
