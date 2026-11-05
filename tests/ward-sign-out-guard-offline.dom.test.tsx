@@ -19,6 +19,13 @@ vi.mock("../src/components/ward-management/shell/ward-phone-push", async (origin
 });
 
 const user = { id: "12345678-1234-1234-1234-123456789abc" };
+/** The connection's client, which the hook returns beside the public connection type. */
+const clientOf = (connection: object) =>
+  (
+    connection as {
+      client: { current: import("../src/components/ward-management/ward-shared-client").SharedWorkspaceClient };
+    }
+  ).client.current;
 
 beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", "supabase");
@@ -76,7 +83,7 @@ it("signs out and says so when the unconfirmed-changes question cannot load", as
     unitId: "ward-test",
   } as WardFlowEvent;
   act(() => {
-    void result.current.client.current!.dispatch(event);
+    void clientOf(result.current).dispatch(event);
   });
   await waitFor(() => expect(result.current.unconfirmedSave).toBe(true));
 

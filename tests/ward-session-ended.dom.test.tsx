@@ -9,6 +9,13 @@ vi.mock("../src/components/ward-management/shell/ward-phone-push", async (origin
 });
 
 const user = { id: "12345678-1234-1234-1234-123456789abc" };
+/** The connection's client, which the hook returns beside the public connection type. */
+const clientOf = (connection: object) =>
+  (
+    connection as {
+      client: { current: import("../src/components/ward-management/ward-shared-client").SharedWorkspaceClient };
+    }
+  ).client.current;
 
 beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_WARD_AUTH_PROVIDER", "supabase");
@@ -231,7 +238,7 @@ it("does not let a token refresh before the next poll bring a cleared sign-in ba
   sessionStorage.removeItem(WARD_AUTH_STORAGE_KEY);
   // A read outside the poll (coming back online does this) refreshes the short-lived token.
   await act(async () => {
-    await result.current.client.current!.refresh();
+    await clientOf(result.current).refresh();
   });
   expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
   await act(async () => {
