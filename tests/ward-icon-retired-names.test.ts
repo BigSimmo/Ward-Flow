@@ -22,20 +22,8 @@ const RETIRED: Record<string, string> = {
   MoreHorizontal: "Ellipsis",
 };
 
-const LEGACY_FILES = new Set<string>([
-  "src/components/ward-management/coordinator/shortlist-panel.tsx",
-  "src/components/ward-management/help/ward-help-jobs.tsx",
-  "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
-  "src/components/ward-management/patients/patient-history-tab.tsx",
-  "src/components/ward-management/referrals/upload-forms-modal.tsx",
-  "src/components/ward-management/reports/patient-chronology-screen.tsx",
-  "src/components/ward-management/statistics/statistics-capacity-chart.tsx",
-  "src/components/ward-management/statistics/statistics-journey-view.tsx",
-  "src/components/ward-management/statistics/statistics-service-screen.tsx",
-  "src/components/ward-management/statistics/statistics-ward-screen.tsx",
-  "src/components/ward-management/tools/ward-tools-sheet.tsx",
-  "src/components/ward-management/ward-tasks-drawer.tsx",
-]);
+// Design audit 4 (5 Nov 2026) swapped the last twelve, so the list is empty. Never add a file.
+const LEGACY_FILES = new Set<string>([]);
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {

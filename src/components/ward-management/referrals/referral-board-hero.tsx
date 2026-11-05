@@ -3,12 +3,12 @@
 // The Referrals board's desktop hero words and highlight pills, one place for every desk's
 // branches (Josh, 31 Oct 2026): the coordinator, the nurse in charge (ward), the ED clinician, the
 // community clinician and the site bed manager. Moved out of `referral-board.tsx` for its line cap.
-import { TriangleAlert, X } from "lucide-react";
+import { X } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { dayOf, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Referral } from "@/components/ward-management/ward-model";
-import { cx, durMinutes } from "@/components/wf";
+import { StatusGlyph, cx, durMinutes } from "@/components/wf";
 
 import { communityEyebrow, communityQueueTitle, type CommunityDesk } from "./referral-community-desk";
 import { EdHeroMeta } from "./referral-ed-raised-section";
@@ -123,7 +123,7 @@ export function HighlightPills<K extends string>({
             onClick={() => onToggle(key)}
           >
             <span className={a.pillCount}>{count}</span>
-            {key === "overdue" ? <TriangleAlert size={12} aria-hidden="true" /> : null}
+            {key === "overdue" ? <StatusGlyph tone="danger" size={12} /> : null}
             {label}
             {highlight === key ? (
               <span className={panel.pillX} aria-hidden="true">

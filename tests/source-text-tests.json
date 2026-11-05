@@ -113,7 +113,6 @@
     "tests/ward-handover-no-typed-patient-rows.test.ts",
     "tests/ward-handover.dom.test.tsx",
     "tests/ward-hub-route.test.ts",
-    "tests/ward-icon-retired-names.test.ts",
     "tests/ward-inbox-classification.test.ts",
     "tests/ward-inline-form-holds.test.ts",
     "tests/ward-inp-responsiveness-and-deferred-rendering.dom.test.tsx",

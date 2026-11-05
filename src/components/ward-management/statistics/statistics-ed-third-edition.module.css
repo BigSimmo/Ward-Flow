@@ -439,7 +439,6 @@
   font-family: var(--body);
   box-shadow: var(--float);
   z-index: 99999;
-  border-left: 4px solid var(--gilt);
 }
 
 /* Responsive */

@@ -202,6 +202,7 @@ function BedStrip({ unit, map, countsOnly }: { unit: Unit; map: BedMap; countsOn
       <ul className={phone.bedLegend} aria-label="Beds by state">
         {BED_LEGEND.map((entry) => (
           <li key={entry.label}>
+            <i className={beds.swatch} data-kind={entry.kinds[0]} aria-hidden="true" />
             {entry.label}
             <b>{entry.kinds.reduce((sum, kind) => sum + map.counts[kind], 0)}</b>
           </li>

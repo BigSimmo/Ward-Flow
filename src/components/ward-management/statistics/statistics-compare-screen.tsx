@@ -482,7 +482,7 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
                   ...comparisonBar(value, wardMetricFormat(wardMetric)),
                   flag:
                     flagAbove !== null && exactValue(value) !== null && exactValue(value)! > flagAbove
-                      ? "warning"
+                      ? "neutral"
                       : undefined,
                 }))}
                 mean={wardMean ?? undefined}
@@ -500,10 +500,10 @@ function ComparePhone({ wardRows, edRows }: { wardRows: WardRow[]; edRows: EdCom
               />
               <p className={phone.note}>
                 <span className={phone.flagged}>
-                  <StatusGlyph tone="warning" size={9} />
+                  <StatusGlyph tone="neutral" size={9} />
                   {wardReferenceProtected
                     ? "Some counts are hidden, so bars, order and network reference are not shown."
-                    : "Amber dot: over 1 SD above the mean. Wards differ in case mix."}
+                    : "Ring: over 1 SD above the mean. Wards differ in case mix."}
                 </span>
               </p>
             </>
@@ -698,7 +698,7 @@ function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
     sub: row.unit.siteCode,
     labelText: row.unit.name,
     ...comparisonBar(value, wardMetricFormat(metric)),
-    flag: flagAbove !== null && exactValue(value) !== null && exactValue(value)! > flagAbove ? "warning" : undefined,
+    flag: flagAbove !== null && exactValue(value) !== null && exactValue(value)! > flagAbove ? "neutral" : undefined,
   }));
 
   const counts = { all: rows.length } as Record<WardGroup | "all", number>;
@@ -817,7 +817,7 @@ function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
           "Some counts are hidden, so bars, order and network reference are not shown · wards differ in case mix"
         ) : (
           <>
-            <Glyph tone="warning" /> Over 1 SD above the mean · wards differ in case mix
+            <Glyph tone="neutral" /> Over 1 SD above the mean · wards differ in case mix
           </>
         )}
       </Foot>
@@ -881,7 +881,7 @@ function EdComparison({ rows, asAt }: { rows: EdCompareRow[]; asAt: string }) {
         ? () => durMinutes(entry.longestMinutes!)
         : undefined,
     ),
-    flag: flagAbove !== null && exactValue(value) !== null && exactValue(value)! > flagAbove ? "warning" : undefined,
+    flag: flagAbove !== null && exactValue(value) !== null && exactValue(value)! > flagAbove ? "neutral" : undefined,
   }));
 
   function exportCsv() {
@@ -964,7 +964,7 @@ function EdComparison({ rows, asAt }: { rows: EdCompareRow[]; asAt: string }) {
           "Some counts are hidden, so bars, order and network reference are not shown."
         ) : (
           <>
-            <Glyph tone="warning" /> Over 1 SD above the mean
+            <Glyph tone="neutral" /> Over 1 SD above the mean
           </>
         )}
       </Foot>
@@ -1092,7 +1092,7 @@ function CompareTwoWards({
                       <SrOnly>{`${heads[index]}: `}</SrOnly>
                       {above ? (
                         <>
-                          <StatusGlyph tone="warning" size={9} />
+                          <StatusGlyph tone="neutral" size={9} />
                           <SrOnly>above network, </SrOnly>
                         </>
                       ) : null}
@@ -1117,7 +1117,7 @@ function CompareTwoWards({
       </ul>
       <p className={phone.note}>
         <span className={phone.flagged}>
-          <StatusGlyph tone="warning" size={9} />
+          <StatusGlyph tone="neutral" size={9} />
           Above the network mean of wards
         </span>
       </p>
@@ -1233,7 +1233,7 @@ function PinnedWards({ rows }: { rows: WardRow[] }) {
                             <span className={styles.flagged}>
                               {above ? (
                                 <>
-                                  <StatusGlyph tone="warning" size={9} />
+                                  <StatusGlyph tone="neutral" size={9} />
                                   <SrOnly>above network, </SrOnly>
                                 </>
                               ) : null}
@@ -1267,7 +1267,7 @@ function PinnedWards({ rows }: { rows: WardRow[] }) {
           }
         >
           <span className={styles.flagged}>
-            <StatusGlyph tone="warning" size={9} />
+            <StatusGlyph tone="neutral" size={9} />
             <span className={compare.footNote}>Above network</span>
           </span>
         </CardFoot>

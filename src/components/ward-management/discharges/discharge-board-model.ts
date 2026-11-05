@@ -28,7 +28,8 @@ export const PHONE_GROUP_TONES: Record<GroupKey, WfTone> = {
   blocked: "warning",
   confirmed: "success",
   expected: "neutral",
-  "discharged-today": "closed",
+  // Design audit 4 (A18): a completed discharge is done (the tick), not declined or closed (the cross).
+  "discharged-today": "success",
 };
 
 /**

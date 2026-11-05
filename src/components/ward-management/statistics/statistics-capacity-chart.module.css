@@ -148,7 +148,9 @@
 .axis {
   height: 32px;
   border-bottom: 1px solid var(--wf-line);
-  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+  /* Axes in Geist with tabular digits (DESIGN-SYSTEM §4 Charts; mono is for figures). */
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  font-variant-numeric: tabular-nums;
   color: var(--wf-ink-3);
 }
 

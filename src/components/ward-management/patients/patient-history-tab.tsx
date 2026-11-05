@@ -12,7 +12,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import {
   ArrowUpRight,
-  BedDouble,
+  BedSingle,
   CalendarDays,
   ChevronDown,
   ChevronRight,
@@ -130,7 +130,7 @@ type EpisodeRow = {
 };
 
 const KIND: Record<EpisodeKind, { icon: LucideIcon; word: string }> = {
-  admission: { icon: BedDouble, word: "Admission" },
+  admission: { icon: BedSingle, word: "Admission" },
   ed: { icon: Siren, word: "ED only" },
   community: { icon: Users, word: "Community care" },
 };
@@ -598,7 +598,7 @@ function StatRow({
         detail={[current ? "incl. now" : undefined, edOnly > 0 ? `${edOnly} ED only` : undefined]}
       />
       <Stat
-        icon={BedDouble}
+        icon={BedSingle}
         n={admissions.length + (admittedNow ? 1 : 0)}
         label="Admissions"
         sub={window}
@@ -771,7 +771,7 @@ function StayRow({
   return (
     <li className={s.stay}>
       <span className={s.kind} aria-hidden="true">
-        <BedDouble size={14} aria-hidden="true" />
+        <BedSingle size={14} aria-hidden="true" />
       </span>
       <div className={s.stayMain}>
         <strong>{unitName(stay.unitId) ?? "Ward not recorded"}</strong>
