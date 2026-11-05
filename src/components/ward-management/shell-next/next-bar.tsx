@@ -626,9 +626,13 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
   const routeReferralOpenedRef = useRef(false);
   // WF-42: Back onto /referrals/new (from a detail, or after a close that left the URL) must not reopen.
   const skipNextRouteReferralOpenRef = useRef(false);
+  // History index for popstate direction (Navigation API when present).
+  const historyIndexRef = useRef<number | null>(null);
   useEffect(() => {
     if (!isReferralSheetPath(pathname)) {
       routeReferralOpenedRef.current = false;
+      // Close/replace left the intake URL; drop a stale skip so a later real open still works.
+      skipNextRouteReferralOpenRef.current = false;
       return undefined;
     }
     if (skipNextRouteReferralOpenRef.current) {
@@ -720,7 +724,15 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
     function onPopState() {
       const closing = closingViaHistoryRef.current;
       // WF-42: Back onto the intake URL (for example from a referral detail) must not reopen New referral.
+      // Forward to the same bare intake should still open (CodeRabbit on PR #1471).
+      const navEntry = (window as Window & { navigation?: { currentEntry?: { index?: number } } }).navigation
+        ?.currentEntry;
+      const currentIndex = typeof navEntry?.index === "number" ? navEntry.index : null;
+      const previousIndex = historyIndexRef.current;
+      const isBack = currentIndex === null || previousIndex === null ? true : currentIndex < previousIndex;
+      if (currentIndex !== null) historyIndexRef.current = currentIndex;
       if (
+        isBack &&
         isReferralSheetPath(window.location.pathname) &&
         window.history.state?.wardDrawer !== "referral" &&
         openPanel !== "referral" &&
@@ -742,6 +754,9 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
       // Announce in the event, outside React's state updater/render phase.
       announceToWardShell("Closed.");
     }
+    const navEntry = (window as Window & { navigation?: { currentEntry?: { index?: number } } }).navigation
+      ?.currentEntry;
+    if (typeof navEntry?.index === "number") historyIndexRef.current = navEntry.index;
     window.addEventListener(WARD_HISTORY_TRAVERSAL_CANCELLED, onHistoryTraversalCancelled);
     window.addEventListener("popstate", onPopState);
     return () => {

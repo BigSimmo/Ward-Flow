@@ -633,6 +633,15 @@ export function NextPhoneMenu({
   const setOpen = useCallback((next: boolean) => setOpenPath(next ? pathname : null), [pathname]);
   const setCreateOpen = useCallback((next: boolean) => setCreatePath(next ? pathname : null), [pathname]);
   const setSwitcherOpen = useCallback((next: boolean) => setSwitcherPath(next ? pathname : null), [pathname]);
+  // Drop a path-tied open once the route leaves, so Forward to the old path does not reopen the sheet.
+  // Adjust during render when pathname changes (React "adjusting state when a prop changes").
+  const [sheetPathEpoch, setSheetPathEpoch] = useState(pathname);
+  if (sheetPathEpoch !== pathname) {
+    setSheetPathEpoch(pathname);
+    if (openPath !== null) setOpenPath(null);
+    if (createPath !== null) setCreatePath(null);
+    if (switcherPath !== null) setSwitcherPath(null);
+  }
   // The sheets mount on the first open, not on page load: mounting the dynamic component would fetch
   // its chunk straight away instead of when the browser is idle.
   const [sheetsMounted, setSheetsMounted] = useState(false);

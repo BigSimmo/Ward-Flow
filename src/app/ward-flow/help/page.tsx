@@ -12,8 +12,13 @@ import { openWardHelp } from "@/components/ward-management/help/ward-help-events
 export default function WardHelpRedirectPage() {
   const router = useRouter();
   useEffect(() => {
+    // Same order as Activity: settle the URL before Help opens, so Back does not return here.
+    const home = "/ward-flow";
+    if (typeof window !== "undefined") {
+      window.history.replaceState(window.history.state, "", home);
+    }
     openWardHelp("tasks");
-    router.replace("/ward-flow");
+    router.replace(home);
   }, [router]);
   return (
     <main>

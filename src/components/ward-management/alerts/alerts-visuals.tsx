@@ -322,7 +322,8 @@ export function placeTrackLabels(marks: { x: number; label: string }[], width: n
 export function WaitTrack({ points, now }: { points: TrackPoint[]; now: Instant }) {
   const [frameRef, width] = useFrameWidth(366);
   // WF-35: room for a third label row (y=62) when two rows are already full.
-  const height = 72;
+  // PR #1471: keep a full 12px line between y=62 labels and the time axis (height - 4).
+  const height = 84;
   const sorted = [...points].sort((a, b) => a.at - b.at);
   const start = sorted[0]?.at ?? now;
   const from = Math.floor((Math.min(start, now) - 10) / 30) * 30;

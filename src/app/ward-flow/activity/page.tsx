@@ -12,8 +12,14 @@ import { openActivityPanel } from "@/components/ward-management/shell/ward-activ
 export default function WardActivityRedirectPage() {
   const router = useRouter();
   useEffect(() => {
+    // Replace the typed URL before the bar pushes a drawer history entry, so closing Activity
+    // does not Back onto this page and reopen the panel (CodeRabbit on PR #1471).
+    const home = "/ward-flow";
+    if (typeof window !== "undefined") {
+      window.history.replaceState(window.history.state, "", home);
+    }
     openActivityPanel({ tab: "notices" });
-    router.replace("/ward-flow");
+    router.replace(home);
   }, [router]);
   return (
     <main>

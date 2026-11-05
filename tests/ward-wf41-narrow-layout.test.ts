@@ -13,9 +13,12 @@ describe("WF-41 narrow layout CSS", () => {
       "utf8",
     );
     expect(css).toMatch(/WF-41/);
-    expect(css).toMatch(/max-width:\s*80rem/);
-    expect(css).toMatch(/edPressureTable/);
-    expect(css).toMatch(/\.halves:has\(table\[id="edPressureTable"\]\)/);
+    expect(css).toMatch(
+      /@media\s*\(\s*max-width:\s*80rem\s*\)\s*\{[\s\S]*?\.halves:has\(table\[id="edPressureTable"\]\)[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\)/,
+    );
+    expect(css).toMatch(
+      /@media\s*\(\s*max-width:\s*80rem\s*\)\s*\{[\s\S]*?\.tableWrap:has\(>\s*table\[id="edPressureTable"\]\)[\s\S]*?overflow-x:\s*auto/,
+    );
   });
 
   it("unsticks the phone segment under 44rem tall", () => {
@@ -24,8 +27,9 @@ describe("WF-41 narrow layout CSS", () => {
       "utf8",
     );
     expect(css).toMatch(/WF-41/);
-    expect(css).toMatch(/max-height:\s*44rem/);
-    expect(css).toMatch(/\.segPinned\s*\{[\s\S]*?position:\s*static/);
+    expect(css).toMatch(
+      /@media\s*\(\s*max-height:\s*44rem\s*\)\s*\{[\s\S]*?\.segPinned\s*\{[\s\S]*?position:\s*static/,
+    );
   });
 
   it("keeps a v6 overflow fallback for pressure tableWraps under 64rem", () => {
@@ -34,6 +38,7 @@ describe("WF-41 narrow layout CSS", () => {
       "utf8",
     );
     expect(css).toMatch(/WF-41/);
-    expect(css).toMatch(/overflow-x:\s*auto/);
+    // Base .tableWrap keeps overflow-x: auto (the narrow-viewport fallback named in WF-41).
+    expect(css).toMatch(/\.tableWrap\s*\{[\s\S]*?overflow-x:\s*auto/);
   });
 });

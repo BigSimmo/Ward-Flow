@@ -51,8 +51,8 @@ export function setStatisticsSamples(enabled: boolean) {
   // WF-42: say what changed — invented charts appear or hide below, which is easy to miss.
   announceToWardShell(
     enabled
-      ? "Example history on. Invented 30-day charts are shown below."
-      : "Example history off. Invented charts are hidden.",
+      ? "Example history on, with invented 30-day charts shown below."
+      : "Example history off, with invented charts hidden.",
   );
 }
 /**

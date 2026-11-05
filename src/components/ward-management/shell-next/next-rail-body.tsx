@@ -81,6 +81,7 @@ import {
   RailLiveClock,
   RailReadyLine,
   usePinnedPages,
+  compactOccupancyLabel,
 } from "@/components/ward-management/shell-next/next-rail-parts";
 import railParts from "@/components/ward-management/shell-next/next-rail.module.css";
 import { useAccessNavFilter, useCanOpenHref, useDeskHomeHref } from "@/components/ward-management/shell/ward-access";
@@ -334,6 +335,11 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const [moreOpenPath, setMoreOpenPath] = useState<string | null>(null);
   const moreOpen = moreOpenPath === pathname;
   const setMoreOpen = useCallback((open: boolean) => setMoreOpenPath(open ? pathname : null), [pathname]);
+  const [morePathEpoch, setMorePathEpoch] = useState(pathname);
+  if (morePathEpoch !== pathname) {
+    setMorePathEpoch(pathname);
+    if (moreOpenPath !== null) setMoreOpenPath(null);
+  }
   // B1: the rail's More shows only the rest; the bar's Menu (tablet portrait, no rail) shows it all.
   const [sheetShowsMain, setSheetShowsMain] = useState(false);
   const [deskModalOpen, setDeskModalOpen] = useState(false);
@@ -891,7 +897,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
           >
             <button
               type="button"
-              className={styles.compactAlertPip}
+              className={`${styles.compactAlertPip} ${railParts.compactPipFit}`}
               data-alert={overLine.over > 0 ? "true" : undefined}
               data-testid="ward-rail-compact-alert-pip"
               aria-label={capacityCardLabel}
@@ -906,7 +912,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
             >
               {overLine.over > 0 ? <Dot tone="warning" /> : null}
               <span className={styles.compactAlertVal}>
-                {firstRow?.percent == null ? "—" : `${Math.round(firstRow.percent)}%`}
+                {compactOccupancyLabel(firstRow?.name, firstRow?.percent ?? null)}
               </span>
             </button>
           </Tooltip>
