@@ -1,0 +1,9 @@
+# 2026-11-05 PR #1480 design audit 6 (layout and heroes) budget raise
+
+CI run 42130161831 measured this PR merged with main 07d6dfb2:
+
+- Referrals `/ward-flow/referrals`: 556.0 KB (main alone 552.1 KB). Budget 551.8 raised to 556.5.
+
+Diagnosis: the growth is the kit `Menu` that MU1 adds to the Referrals hero, so the bed meeting agenda sits under "..." beside the one Next overdue button. The Referrals screen did not load the menu before. A trim by lazy-loading the menu was considered and not done: the hero's More button would appear late on a phone while its chunk loads. The raise is 3.9 KB over main alone plus 0.5 KB margin, under the 5 KB per screen allowance.
+
+The RPH ward and Movement screens are over their budgets on main alone (587.7 and 583.8 KB), which is not this PR's growth. The budget trim issue tracks that.
