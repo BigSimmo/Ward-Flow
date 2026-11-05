@@ -23,6 +23,7 @@ import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
+import { ACCESS_ROLE_LABELS } from "@/components/ward-management/ward-role-access";
 import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -156,6 +157,9 @@ function AlertsWorkspace() {
   usePrintableDisclosures();
   const access = useEffectiveWardAccess();
   const deskRole = access.role === "admin" ? "executive" : access.role;
+  // WF-15: admin borrows executive chrome for gating, but owner/sender labels name Access admin.
+  const deskRoleLabel =
+    access.role === "admin" ? ACCESS_ROLE_LABELS.admin : WARD_FLOW_ROLE_LABELS[deskRole];
   const coordDesk = access.role === "coordinator";
   const actionDisabledReason = coordDesk ? undefined : "Only the coordinator can change alerts.";
   // Broadcasting is for the coordinator and the site bed manager (`EVENT_ROLE.DISPATCH_BROADCAST_ALERT`).
@@ -818,7 +822,7 @@ function AlertsWorkspace() {
           category: broadcastCategory,
           ...audienceState.target,
           durationMinutes: broadcastDurationMinutes,
-          dispatchedByName: coordDesk ? "State Mental Health Bed Desk Coordinator" : WARD_FLOW_ROLE_LABELS[deskRole],
+          dispatchedByName: coordDesk ? "State Mental Health Bed Desk Coordinator" : deskRoleLabel,
           kind: broadcastType === "bed_call" ? "bed_call" : "directive",
         }),
       () => {
@@ -986,11 +990,19 @@ function AlertsWorkspace() {
     </section>
   );
   // Q184 (Josh, 1 Nov 2026): a desk with nothing late or blocked gets one calm empty state.
+  // WF-15 (nurse): a quiet ward has an empty network queue; ward tasks stay on My ward — do not
+  // claim "Nothing needs you" as if the ward itself is clear.
   const nothingNeedsYou = (
     <div className={styles.nothingEmpty} data-testid="ward-alerts-nothing">
       <StatusGlyph tone="success" size={16} />
-      <strong>Nothing needs you</strong>
-      <span>Nothing is late or blocked for {deskPlace}. You&apos;ll be told when that changes.</span>
+      <strong>{wardName !== undefined ? "Nothing in the network queue" : "Nothing needs you"}</strong>
+      <span>
+        {wardName !== undefined ? (
+          <>No late or blocked network alerts for {deskPlace}. Your ward&apos;s tasks stay on My ward.</>
+        ) : (
+          <>Nothing is late or blocked for {deskPlace}. You&apos;ll be told when that changes.</>
+        )}
+      </span>
     </div>
   );
   const urgencyLabels = ["Act now", "Waiting", "Targets running"] as const;
@@ -1488,7 +1500,7 @@ function AlertsWorkspace() {
               handleCloseBroadcastModal();
               openLiveBroadcast();
             }}
-            senderName={coordDesk ? "Bed coordinator" : WARD_FLOW_ROLE_LABELS[deskRole]}
+            senderName={coordDesk ? "Bed coordinator" : deskRoleLabel}
             now={now}
             onSend={handleDispatchBroadcast}
           />
