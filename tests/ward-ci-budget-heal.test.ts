@@ -3,13 +3,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import { judgeAgainstMain, MAIN_TOLERANCE_KB } from "../scripts/check-script-budget.mjs";
-import {
-  AUTO_MERGE_MAX_KB,
-  canAutoMerge,
-  historyEntry,
-  perthDate,
-  planRaise,
-} from "../scripts/ward-ci-public/budget-heal.mjs";
+import { issueBody, newlyWorse, overBudget, readReport } from "../scripts/ward-ci-public/budget-heal.mjs";
 import { decideRun } from "../scripts/ward-ci-public/ci-tidy.mjs";
 
 const budgets = { "/a": 500, "/b": 571.7 };
@@ -42,34 +36,37 @@ describe("budget gate: a PR is failed only for growth it caused", () => {
   });
 });
 
-describe("budget heal: what the bot PR raises", () => {
-  it("raises only over routes, to the measured size plus 1 KB, rounded up to 0.1 KB", () => {
-    const { budgets: next, raises } = planRaise({ "/a": 480, "/b": 572.73 }, budgets);
-    expect(next).toEqual({ "/a": 500, "/b": 573.8 });
-    expect(raises).toEqual([{ route: "/b", from: 571.7, to: 573.8, kb: 572.7 }]);
+describe("budget over issue: the bot asks for a trim and never raises a budget", () => {
+  it("lists only over routes, with the measured size and how far over", () => {
+    expect(overBudget({ "/a": 480, "/b": 572.73 }, budgets)).toEqual([{ route: "/b", limit: 571.7, kb: 572.7, by: 1 }]);
   });
 
-  it("does nothing when main is within budget or a measurement is missing", () => {
-    expect(planRaise({ "/a": 500, "/b": 571.7 }, budgets).raises).toEqual([]);
-    expect(planRaise({}, budgets).raises).toEqual([]);
+  it("reports nothing when main is within budget or a measurement is missing", () => {
+    expect(overBudget({ "/a": 500, "/b": 571.7 }, budgets)).toEqual([]);
+    expect(overBudget({}, budgets)).toEqual([]);
   });
 
-  it(`arms auto-merge only when every raise is within ${AUTO_MERGE_MAX_KB} KB`, () => {
-    expect(canAutoMerge([{ route: "/b", from: 571.7, to: 576.7, kb: 575.7 }])).toBe(true);
-    expect(canAutoMerge([{ route: "/b", from: 571.7, to: 576.8, kb: 575.8 }])).toBe(false);
-    expect(canAutoMerge([])).toBe(false);
+  it("comments again only for a newly over route or growth past the last report", () => {
+    const previous = [{ route: "/b", kb: 572.7 }];
+    expect(newlyWorse([{ route: "/b", limit: 571.7, kb: 574.2, by: 2.5 }], previous)).toEqual([]);
+    expect(newlyWorse([{ route: "/b", limit: 571.7, kb: 574.3, by: 2.6 }], previous)).toHaveLength(1);
+    expect(newlyWorse([{ route: "/a", limit: 500, kb: 501, by: 1 }], previous)).toHaveLength(1);
   });
 
-  it("writes a one-paragraph history entry naming the PR and each raise", () => {
-    const text = historyEntry({
-      date: "2026-11-04",
-      pr: 1410,
-      raises: [{ route: "/b", from: 571.7, to: 573.8, kb: 572.7 }],
-      sha: "cdbd78ff0000",
-    });
-    expect(text).toMatch(/^2026-11-04, PR #1410 \(budget heal bot\)\. Main cdbd78f /);
-    expect(text).toContain("`/b` 571.7 to 573.8 KB (main measured 572.7 KB)");
-    expect(perthDate(new Date("2026-11-04T17:00:00Z"))).toBe("2026-11-05");
+  it("asks for a trim, says a person decides any raise, and round-trips its measurements", () => {
+    const over = [{ route: "/b", limit: 571.7, kb: 572.7, by: 1 }];
+    const body = issueBody({ over, sha: "cdbd78ff0000", runUrl: "https://example.invalid/run/1" });
+    expect(body).toMatch(/^Main cdbd78f measured over/);
+    expect(body).toContain("`/b`: 572.7 KB gzipped against 571.7 KB (1 KB over)");
+    expect(body).toContain("This bot never raises");
+    expect(body).not.toMatch(/\n\n\n/);
+    expect(readReport(body)).toEqual([{ route: "/b", kb: 572.7 }]);
+    expect(readReport("no marker")).toEqual([]);
+  });
+
+  it("never writes script-budget.json, a branch or a pull request", () => {
+    const code = readFileSync(new URL("../scripts/ward-ci-public/budget-heal.mjs", import.meta.url), "utf8");
+    expect(code).not.toMatch(/writeFileSync|child_process|\/pulls|\/git\/|dispatches|enablePullRequestAutoMerge/);
   });
 });
 
@@ -107,4 +104,11 @@ describe("heal and tidy workflows never run pull-request code", () => {
       expect([...code.matchAll(/runs-on: (.+)$/gm)].map((match) => match[1])).toEqual(["ubuntu-24.04"]);
     });
   }
+
+  it("the budget over workflow can write issues only", () => {
+    const yml = readFileSync(new URL("../.github/workflows/ward-flow-budget-heal.yml", import.meta.url), "utf8");
+    const block = yml.match(/^permissions:\n((?:  .+\n)+)/m)?.[1] ?? "";
+    const granted = [...block.matchAll(/^  ([a-z-]+): (\w+)/gm)].map((match) => `${match[1]}: ${match[2]}`);
+    expect(granted).toEqual(["contents: read", "issues: write", "actions: read"]);
+  });
 });

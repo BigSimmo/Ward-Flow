@@ -188,15 +188,18 @@ required production build red until someone raised the limit by hand. Three part
   builds and measures main alone in a separate worktree and fails only routes the PR pushed over,
   or grew more than 1.5 KB (build noise) past an already-over main. Inherited overage is a warning. This second
   build runs only when the merged result is over.
-- **Automatic heal.** Main's build saves its measurements as the `script-budget-measured` artifact.
-  When a main run fails and those show a route over budget, `ward-flow-budget-heal.yml` opens one PR
-  raising only those routes to the measured size plus 1 KB, with its own
-  `docs/script-budget-history/` entry, and closes any older heal PR. Workflow-token events start no
-  workflows, so it dispatches `Ward Flow CI`, `Ward Flow bot-author policy` and `Ward Flow hold` on
-  the heal branch; those report the required checks on its head. It arms auto-merge only when every
-  raise is within 5 KB (D-82); a bigger raise waits for Josh. The repository setting "Allow GitHub
-  Actions to create and approve pull requests" must be on. A merge made by the workflow token starts
-  no main run, so main is re-measured on the next merge.
+- **Trim issue, never an automatic raise.** Main's build saves its measurements as the
+  `script-budget-measured` artifact. When a main run fails and those show a route over budget,
+  `ward-flow-budget-heal.yml` opens one issue, "Phone script budget: main is over, trim needed",
+  or rewrites the open one with the latest sizes. It comments only when a route newly goes over or
+  grows more than 1.5 KB past the last report. It has issue permission only and never edits
+  `script-budget.json`: a person decides any raise in a PR with its own history file (Josh,
+  5 November 2026; until then the bot opened a PR raising the limit, a one-way ratchet).
+- **Finding what to trim.** Build with `ANALYZE=true` and the usual production build command, then
+  open `.next/analyze/client.html`. Look first at what every Ward Flow page loads (the root and
+  `ward-flow` layouts and their shared chunks), then at the route's own page chunk. Lazy-load
+  panels a phone does not draw on first paint, and keep demo seed data and large tables out of
+  the shared chunks.
 
 `ward-flow-ci-tidy.yml` frees runner slots on PR close and hourly (no longer on each PR push). It
 cancels runs for merged or closed PRs, and other workflows' runs for an older head of an open PR

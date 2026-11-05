@@ -3,7 +3,7 @@
  *
  * It measures the built app with `scripts/check-script-budget.mjs --write`. On main (and manual runs)
  * an over-budget route fails the step exactly as before, and the measurements are saved for the
- * budget heal workflow (`ward-flow-budget-heal.yml`), which opens a PR raising the budget.
+ * budget over workflow (`ward-flow-budget-heal.yml`), which opens an issue asking for a trim.
  *
  * On a pull request the build is already this PR merged with the latest main
  * (`merge-latest-main.mjs`). When that is over budget, this builds and measures main alone in a
