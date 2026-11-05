@@ -1,4 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
+import { DEMONSTRATION_DAY_LABEL } from "@/components/ward-management/ward-sites";
 import styles from "./ward-prototype-footer.module.css";
 
 export interface WardPrototypeFooterProps {
@@ -25,7 +26,10 @@ const PHONE_TAIL = (
   </span>
 );
 const AUTHORITY_PILL = (
-  <span className={styles.authorityPill} title="Ward Flow prototype · synthetic demonstration data only">
+  <span
+    className={styles.authorityPill}
+    title={`Ward Flow prototype · demo data as of ${DEMONSTRATION_DAY_LABEL} · synthetic only`}
+  >
     <svg
       className={styles.authorityIcon}
       viewBox="0 0 16 16"
@@ -41,13 +45,13 @@ const AUTHORITY_PILL = (
       <path d="M8 1.5l5.5 2.5v4c0 3.5-2.5 6-5.5 7-3-1-5.5-3.5-5.5-7V4L8 1.5z" />
       <path d="M5.5 8l2 2 3.5-3.5" />
     </svg>
-    <span>Ward Flow prototype · Synthetic data only</span>
+    <span>{`Demo data as of ${DEMONSTRATION_DAY_LABEL} · synthetic only`}</span>
   </span>
 );
 
 export function WardPrototypeFooter({
   testId,
-  note = "All records are synthetic demonstration figures · Not approved for clinical use",
+  note = `Demo data as of ${DEMONSTRATION_DAY_LABEL} · synthetic demonstration figures · Not approved for clinical use`,
   extra,
   style,
   className,

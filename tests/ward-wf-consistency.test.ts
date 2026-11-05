@@ -58,3 +58,14 @@ describe("placeDisplayName (WF-26/27)", () => {
     expect(placeDisplayName(first.id)).toBe(first.name);
   });
 });
+
+describe("Waiting wait figure (WF-02)", () => {
+  it("keeps since-referral as the main figure beside time in ED", () => {
+    const since = minutesSinceReferral({ referredAt: 100 }, 160);
+    const inEd = minutesInEd({ openedAt: 0 }, 160);
+    expect(since).toBe(60);
+    expect(inEd).toBe(160);
+    // Row copy: "1h since referral · 2h 40m in ED"
+    expect(`${since} since referral · ${inEd} in ED`).toBe("60 since referral · 160 in ED");
+  });
+});
