@@ -8,6 +8,7 @@
  */
 
 "use client";
+import { placeDisplayName } from "@/components/ward-management/ward-place-names";
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { MovementWorkflowActions } from "./movement-workflow-actions";
 import {
@@ -205,7 +206,7 @@ export function MovementWorkspaceCockpit({
   const open = isOpen(patient);
   const destinationRestriction = destination ? restrictionNotice(patient, destination) : undefined;
   const blockerIsActive = !BLOCKERS_MEANING_NOTHING_IS_BLOCKING.some((inactive) => inactive === patient.blocker.trim());
-  const unitName = (unitId: string) => units.find((unit) => unit.id === unitId)?.name ?? unitId;
+  const unitName = (unitId: string) => placeDisplayName(unitId, units);
   const originEd = allEmergencyDepartments().find((department) => department.id === patient.originEdId);
   const service = movementHealthService(patient);
   const destinationService = destination ? siteByCode(destination.siteCode)?.service : undefined;

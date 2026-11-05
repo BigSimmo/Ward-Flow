@@ -22,6 +22,7 @@ import type { Patient } from "@/components/ward-management/ward-patients";
 import { createReadmissionIndex, referralReadmissionFlag } from "@/components/ward-management/ward-readmission";
 import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-flag";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { patientAgeText } from "@/components/ward-management/ward-patients";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import { siteByCode } from "@/components/ward-management/ward-sites";
@@ -145,7 +146,10 @@ export function QueuedSection({
   isDimmed = () => false,
   searchMiss = false,
   filterMiss = false,
+  dayZero,
 }: {
+  /** WF-03: the board's calendar day zero, so each row can show the person's age beside the UMRN. */
+  dayZero?: Date;
   progressUnavailable?: boolean;
   queued: Referral[];
   /** The phone's chip filter, not the search, narrowed the queue to nothing. */
@@ -280,7 +284,8 @@ export function QueuedSection({
                           {nameFor(patientInfo.formalName, patientInfo.umrn)}
                         </button>
                         <span className={a.sub}>
-                          <span className={a.mono}>{patientInfo.umrn}</span> · {personLine(referral)}
+                          <span className={a.mono}>{patientInfo.umrn}</span>
+                          {patientAgeText(patientInfo.patient, dayZero, now)} · {personLine(referral)}
                         </span>
                       </span>
                       <ReadmissionFlag

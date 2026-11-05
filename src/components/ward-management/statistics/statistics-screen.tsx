@@ -1,5 +1,6 @@
 "use client";
 
+import { placeDisplayName } from "@/components/ward-management/ward-place-names";
 import { readDeclinesByReason } from "./statistics-decline-reporting";
 import { useMemo, useState } from "react";
 import dynamic from "next/dynamic";
@@ -302,7 +303,7 @@ function OperationalStatisticsScreen({
   // every site as counts. A `counts` grant, so cards that list journeys or people are left out.
   const access = useEffectiveWardAccess();
   const siteCode = access.role === "bed_manager" && access.scope.kind === "site" ? access.scope.siteCode : undefined;
-  const siteName = siteCode === undefined ? undefined : (siteByCode(siteCode)?.name ?? siteCode);
+  const siteName = siteCode === undefined ? undefined : placeDisplayName(siteCode);
   const siteUnits = siteCode === undefined ? units : units.filter((unit) => unit.siteCode === siteCode);
   const countsOnly = countsOnlyGrant || siteCode !== undefined;
   const OverviewCards = siteCode === undefined ? NetworkOverviewCards : SiteOverviewCards;

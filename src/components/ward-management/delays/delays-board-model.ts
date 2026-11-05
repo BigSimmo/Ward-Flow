@@ -7,6 +7,7 @@
  * here invents a time limit or a status. The 8, 12 and 24 hour bands are the same named waits the
  * rest of the screen uses (see `delays-view-model.ts`), not new clinical limits.
  */
+import { placeDisplayName } from "@/components/ward-management/ward-place-names";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import type { DueSoonThresholds, Instant } from "@/components/ward-management/ward-clock";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
@@ -402,7 +403,7 @@ export const SPREAD_TICKS: readonly [number, string][] = [
 /* ---------- ward answers and the person's own record ---------- */
 
 function unitName(units: readonly Unit[], unitId: string): string {
-  return units.find((unit) => unit.id === unitId)?.name ?? unitId;
+  return placeDisplayName(unitId, units);
 }
 
 export type WardLine = {

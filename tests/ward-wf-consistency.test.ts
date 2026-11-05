@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { durationSampleText } from "@/components/ward-management/reports/pilot-measures-section";
+import { PLACE_NOT_RECORDED, placeDisplayName } from "@/components/ward-management/ward-place-names";
+import { allUnits } from "@/components/ward-management/ward-sites";
+import { patientAgeText } from "@/components/ward-management/ward-patients";
 
 import { minutesInEd, minutesSinceReferral } from "@/components/ward-management/ward-shared-figures";
 
@@ -30,5 +33,28 @@ describe("durationSampleText (WF-17)", () => {
   });
   it("keeps exact counts as before", () => {
     expect(durationSampleText(7, 9, "finished")).toBe("from 7 of 9 finished");
+  });
+});
+
+describe("patientAgeText (WF-03)", () => {
+  const dayZero = new Date("2026-11-05T00:00:00+08:00");
+  it("shows whole years beside the UMRN", () => {
+    expect(patientAgeText({ dateOfBirth: "1984-01-01" }, dayZero, 0)).toBe(" · 42y");
+  });
+  it("is empty when unknown", () => {
+    expect(patientAgeText(undefined, dayZero, 0)).toBe("");
+    expect(patientAgeText({ dateOfBirth: "1984-01-01" }, undefined, 0)).toBe("");
+  });
+});
+
+describe("placeDisplayName (WF-26/27)", () => {
+  it("never prints an internal id", () => {
+    expect(placeDisplayName("no-such-ward-slug")).toBe(PLACE_NOT_RECORDED);
+    expect(placeDisplayName(undefined)).toBe(PLACE_NOT_RECORDED);
+  });
+  it("prefers the caller's units, then the network catalogue", () => {
+    expect(placeDisplayName("x", [{ id: "x", name: "Ward X" }])).toBe("Ward X");
+    const first = allUnits()[0];
+    expect(placeDisplayName(first.id)).toBe(first.name);
   });
 });
