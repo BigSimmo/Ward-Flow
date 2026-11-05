@@ -1520,7 +1520,7 @@
     }
   ],
   "review": {
-    "reviewedOn": "2026-11-03",
+    "reviewedOn": "2026-11-05",
     "basis": "Source comparison of eleven machines, route nodes, gates, resources and current gap notes; not runtime or clinical acceptance.",
     "sources": [
       {
@@ -1541,7 +1541,7 @@
       {
         "path": "src/components/ward-management/patients/add-patient.tsx",
         "line": 84,
-        "sha256": "93e5b0e427d0554117f8bbefe76483e3b3b469da33313b2b72e9601d70890e12"
+        "sha256": "fc42f2bb17c3364000ad43fac454f4cab876b206c82358252be32b6b5f3654e4"
       },
       {
         "path": "src/components/ward-management/patients/patient-now-screen.tsx",
@@ -1595,8 +1595,8 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-bed-events.ts",
-        "line": 613,
-        "sha256": "be15f220d53a6c3f4304453e9cb29128c063ddd8d13b93e20a317dbc0e527574"
+        "line": 616,
+        "sha256": "31b1bdbaa0257e84eb6eea40ef6ddad44dcfebdfd0356c6f7f495fc69ff59d2b"
       },
       {
         "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1630,8 +1630,8 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-        "line": 370,
-        "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+        "line": 378,
+        "sha256": "cb74dd708b5adda8702ecd46b94f0aea9bb7fad4ab528a6715d458b1de26fa51"
       },
       {
         "path": "src/components/ward-management/ward-flow-reducer.ts",
@@ -1650,8 +1650,8 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-storage-validation.ts",
-        "line": 469,
-        "sha256": "068cf77a21948ab5323eed99b19305894e6a33677a000000eab6a1f9fddcda00"
+        "line": 470,
+        "sha256": "8b7a2dfb74906bb23ff39105294b9a67ef77c7e6d43941538bd7120b048a614d"
       },
       {
         "path": "src/components/ward-management/ward-flow-transport-events.ts",
@@ -1660,7 +1660,7 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-undo-events.ts",
-        "line": 269,
+        "line": 270,
         "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
       },
       {
