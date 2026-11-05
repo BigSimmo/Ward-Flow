@@ -966,6 +966,7 @@ export function AddPatientForm() {
                     autoCapitalize="words"
                     spellCheck={false}
                     enterKeyHint="done"
+                    maxLength={100}
                     value={draft.familyName}
                     onChange={(event) => setDraftField("familyName")(event.target.value)}
                   />
@@ -983,6 +984,7 @@ export function AddPatientForm() {
                     autoCapitalize="words"
                     spellCheck={false}
                     enterKeyHint="done"
+                    maxLength={100}
                     value={draft.givenName}
                     onChange={(event) => setDraftField("givenName")(event.target.value)}
                   />
@@ -1064,6 +1066,7 @@ export function AddPatientForm() {
                     autoCapitalize="words"
                     spellCheck={false}
                     enterKeyHint="done"
+                    maxLength={100}
                     value={extras.suburb}
                     onChange={(event) => setExtra("suburb")(event.target.value)}
                   />
