@@ -255,6 +255,12 @@ type WardBarProps = {
   onServiceChange?: (service: HealthService | null) => void;
 };
 
+function navHistoryIndex(): number | null {
+  const index = (window as Window & { navigation?: { currentEntry?: { index?: number } } }).navigation?.currentEntry
+    ?.index;
+  return typeof index === "number" ? index : null;
+}
+
 function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarProps) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
@@ -725,9 +731,7 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
       const closing = closingViaHistoryRef.current;
       // WF-42: Back onto the intake URL (for example from a referral detail) must not reopen New referral.
       // Forward to the same bare intake should still open (CodeRabbit on PR #1471).
-      const navEntry = (window as Window & { navigation?: { currentEntry?: { index?: number } } }).navigation
-        ?.currentEntry;
-      const currentIndex = typeof navEntry?.index === "number" ? navEntry.index : null;
+      const currentIndex = navHistoryIndex();
       const previousIndex = historyIndexRef.current;
       const isBack = currentIndex === null || previousIndex === null ? true : currentIndex < previousIndex;
       if (currentIndex !== null) historyIndexRef.current = currentIndex;
@@ -754,9 +758,8 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
       // Announce in the event, outside React's state updater/render phase.
       announceToWardShell("Closed.");
     }
-    const navEntry = (window as Window & { navigation?: { currentEntry?: { index?: number } } }).navigation
-      ?.currentEntry;
-    if (typeof navEntry?.index === "number") historyIndexRef.current = navEntry.index;
+    const currentIndex = navHistoryIndex();
+    if (currentIndex !== null) historyIndexRef.current = currentIndex;
     window.addEventListener(WARD_HISTORY_TRAVERSAL_CANCELLED, onHistoryTraversalCancelled);
     window.addEventListener("popstate", onPopState);
     return () => {

@@ -29,6 +29,7 @@ import { useShellPersonaRole } from "@/components/ward-management/settings/perso
 import { useSettingsDeskProfile } from "@/components/ward-management/settings/settings-desk-profile";
 import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
 import { useNextNavCounts } from "@/components/ward-management/shell-next/next-nav-counts";
+import { usePathTiedOpen } from "@/components/ward-management/shell-next/use-path-tied-open";
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { CHROME_ROLE_LABELS, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
@@ -331,15 +332,8 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const toggleRef = useRef<HTMLButtonElement>(null);
   const moreTriggerRef = useRef<HTMLButtonElement | null>(null);
   const firstMoreLinkRef = useRef<HTMLAnchorElement & HTMLButtonElement>(null);
-  // WF-42: More stays tied to the path it opened on, so a route change closes it without an effect.
-  const [moreOpenPath, setMoreOpenPath] = useState<string | null>(null);
-  const moreOpen = moreOpenPath === pathname;
-  const setMoreOpen = useCallback((open: boolean) => setMoreOpenPath(open ? pathname : null), [pathname]);
-  const [morePathEpoch, setMorePathEpoch] = useState(pathname);
-  if (morePathEpoch !== pathname) {
-    setMorePathEpoch(pathname);
-    if (moreOpenPath !== null) setMoreOpenPath(null);
-  }
+  // WF-42: More stays tied to the path it opened on.
+  const [moreOpen, setMoreOpen] = usePathTiedOpen(pathname);
   // B1: the rail's More shows only the rest; the bar's Menu (tablet portrait, no rail) shows it all.
   const [sheetShowsMain, setSheetShowsMain] = useState(false);
   const [deskModalOpen, setDeskModalOpen] = useState(false);

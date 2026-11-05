@@ -91,19 +91,16 @@ export function dispatchPermission(role: WardFlowRole, eventType: WardFlowEventT
   return { allowed: false, reason: rolesOnlyReason(EVENT_ROLE[eventType]) };
 }
 
-/**
- * WF-20 (Josh, 5 Nov 2026, "fix and build the final parts"): who to ask when a step is locked to
- * another role. Text only: there is no "ask" command, so nothing is sent. The bed coordinator is
- * named whenever they may take the step; otherwise the owning roles are. Undefined when allowed.
- */
+/** WF-20: who to ask when a step is locked (text only; nothing is sent). */
 export function roleOwnerHint(role: WardFlowRole, eventType: WardFlowEventType): string | undefined {
+  if (canDispatch(role, eventType)) return undefined;
   const owners = EVENT_ROLE[eventType].filter((owner) => owner !== "demo" && owner !== role);
-  if (canDispatch(role, eventType) || !owners.length) return undefined;
+  if (!owners.length) return undefined;
   const named = owners.includes("coordinator") ? "Bed coordinator" : rolesOnlyReason(owners).slice(0, -5);
   return `Ask the ${named[0].toLowerCase()}${named.slice(1)} to do this.`;
 }
 
-/** "Ward or coordinator only. Ask the bed coordinator to do this." The reason alone when nobody else owns it. */
+/** Appends roleOwnerHint when someone else owns the step. */
 export function withOwnerHint(reason: string, role: WardFlowRole, eventType: WardFlowEventType): string {
   const hint = roleOwnerHint(role, eventType);
   return hint ? `${reason}. ${hint}` : reason;

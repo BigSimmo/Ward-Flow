@@ -117,7 +117,7 @@ describe("withdrawing a referral from the emergency department", () => {
     const collectedToggle = toggleFor(collected!.id);
     expect(collectedToggle.getAttribute("aria-disabled")).toBe("true");
     const title = collectedToggle.getAttribute("title") ?? "";
-    expect(title).toContain("Only the bed coordinator can stop the journey now, so ask them to stop transport");
+    expect(title).toContain("Ask the bed coordinator to stop transport");
     expect(title).not.toContain("STOP_TRANSPORT");
   });
 
