@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { howToFor } from "./ward-help-access";
+
 import { Info, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
@@ -8,8 +11,6 @@ import { OverlayPortal, useIsPhone, useModalFocus } from "@/components/wf";
 import { hasOpenSheet, subscribeToSheetStack, topSheetRoot } from "@/components/wf/sheet-focus";
 import { PHONE_QUICK_SETTINGS } from "@/components/ward-management/settings/settings-screen-model";
 import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
-import { useEffectiveWardAccess } from "../shell/ward-access-store";
-import { howToFor } from "./ward-help-access";
 import { showMeAvailable } from "./ward-help-task-list";
 import { walkPlaysHere } from "./ward-help-screen-tours";
 
@@ -33,8 +34,7 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
   const device: TourDevice = useIsPhone() ? "phone" : "desk";
   const { home, deskHome } = useTourFacts(role);
   const howTo = HOW_TOS.find((candidate) => candidate.id === id);
-  // Steps marked for the other device are skipped, so a phone never walks to a computer-only part.
-  const steps = useMemo(() => showMeSteps(howTo, device, role), [howTo, device, role]);
+  const capabilityAllowed = Boolean(howTo && howToFor(howTo, role, access));
   const [stepIndex, setIndex] = useState(0);
   const cardRef = useRef<HTMLDivElement>(null);
   const nextRef = useRef<HTMLButtonElement>(null);
@@ -42,10 +42,13 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
   const pathname = usePathname() ?? "";
   const permitted = Boolean(
     howTo &&
-    howToFor(howTo, role, access.scope) &&
-    showMeAvailable(howTo, role, deskHome ?? home, device === "phone") &&
+    capabilityAllowed &&
+    showMeAvailable(howTo, role, deskHome ?? home, device === "phone", access) &&
     walkPlaysHere(howTo, pathname),
   );
+  // Keep the desk's own steps and skip unsupported devices before a walk can navigate.
+  const steps = useMemo(() => (permitted ? showMeSteps(howTo, device, role) : []), [howTo, device, role, permitted]);
+  const restricted = Boolean(howTo && !capabilityAllowed);
   const router = useRouter();
   // A computer and a phone walk different steps, so a window narrowed mid-walk (or a tablet
   // turned) keeps the walk on its last step rather than running past the end and vanishing.
@@ -55,7 +58,7 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
 
   // Open the screen the job is done on, once, when Show me starts somewhere else. Already on that
   // screen, a different Settings tab is opened through the hash, which Settings listens for.
-  const destination = howToHref(howTo?.go, role, deskHome ?? home);
+  const destination = permitted ? howToHref(howTo?.go, role, deskHome ?? home) : undefined;
   // Phone quick settings live on the page. Their old desktop section hashes open a device
   // sheet which deliberately omits these controls, covering the very target we need to light.
   const href =
@@ -73,8 +76,8 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
     });
   }, [href, pathname, router, permitted]);
   useEffect(() => {
-    if (!permitted) onBack();
-  }, [permitted, onBack]);
+    if (!permitted && !restricted) onBack();
+  }, [permitted, restricted, onBack]);
 
   // A step names its desktop control first and a phone stand-in after it; the first on screen is lit.
   const target = step?.target;
@@ -113,8 +116,9 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
     return () => window.removeEventListener("keydown", onKey);
   }, [ownsFocus, howTo, step, onClose]);
 
+  // The restricted notice has no steps, so the admit effect never runs; it owns focus as soon as it shows.
   const { rootRef } = useModalFocus({
-    open: ownsFocus,
+    open: ownsFocus || restricted,
     onClose,
     panelRef: cardRef,
     initialFocusRef: nextRef,
@@ -136,6 +140,26 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
     }
   }
 
+  if (howTo && restricted)
+    return (
+      <OverlayPortal layer="modal" name="ward-show-me">
+        <div ref={rootRef} className={styles.layer} data-testid="ward-show-me-restricted">
+          <div ref={cardRef} className={styles.card} role="dialog" aria-modal="true" aria-label={howTo.title}>
+            <p>
+              {howTo.requiresWholeNetwork
+                ? "Only the statewide coordinator may change global settings."
+                : "This task is not available to your desk."}
+            </p>
+            <button ref={nextRef} type="button" onClick={onBack}>
+              Back to Help
+            </button>
+            <button type="button" onClick={onClose}>
+              Close
+            </button>
+          </div>
+        </div>
+      </OverlayPortal>
+    );
   if (!permitted || !howTo || !step) return null;
 
   return (

@@ -78,7 +78,7 @@ A dated summary of merge commits after `90e92444`, through `main` at `d1e61c1` (
 
 ## Decision status (D-numbers)
 
-**This table, with the "Waiting on Josh" list after it, is the one place for what is left** (Josh, 24 October 2026). Record a new owner question here, and his answer in decisions.md or a dated `owner-answers-*.md` file. [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) is historical.
+**Dated decision-state summary, not the current task backlog.** The 24 October direction below has been reconciled with later recorded answers on 3 November. Current task metadata follows [task-receipts](../task-receipts.md); original answers belong in decisions.md or a dated `owner-answers-*.md` file. Verify implementation and deployment separately. [OPEN-QUESTIONS.md](OPEN-QUESTIONS.md) is historical.
 
 Status of every decision in [decisions.md](decisions.md), D-1 to D-81, read from its text, a source search and merge titles at `d1e61c1` on 24 October 2026; D-15, D-21, D-23, D-26, D-30, D-45, D-48, D-50 and D-51 re-checked against source at `899b232e` the same day. No runtime check was run. "Unverified" means the source search could not confirm the state. D-81 was added on 24 October 2026 with #680; the next free number is in [FACTS.md](../FACTS.md) (`next-decision`).
 
@@ -166,9 +166,23 @@ Status of every decision in [decisions.md](decisions.md), D-1 to D-81, read from
 | D-80 | Role access plan version 2                    | Partly built          | PRs 1 to 4 merged; PR 5 in part; item 14 mock-ups and item 17 (pilot) pending |
 | D-81 | Pulled, with a pull time limit                | Built                 | #680 (wording across screens and docs)                                        |
 
+### Later recorded decisions: source reconciliation, 3 November 2026
+
+These rows record decisions, not a new assertion that their implementation is complete or live.
+
+| Decisions | Recorded disposition                                                                                          | Verification boundary                                                                        |
+| --------- | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| D-82      | A per-screen phone budget increase of at most 5 KB per PR is allowed after diagnosis and a safe trim attempt. | Measure the actual candidate; permission is not a passing budget check.                      |
+| D-83–D-85 | Full synthetic names; existing hosting retained; incoming beds described as pulled.                           | Names question answered. Real-data reviews and any provider changes remain separate.         |
+| D-86      | No second approver for role grants; earlier grant safeguards remain.                                          | Supersedes that part of D-80.                                                                |
+| D-87      | Real-data gate replaces overstated D-36/D-37 readiness claims.                                                | No institutional approval or real-data authority inferred.                                   |
+| D-88      | Demo-code front door permitted once approved for switching on.                                                | Runtime switch/provider state not checked here.                                              |
+| D-89–D-91 | Scoped mock-up line cap; Help tasks/walkthroughs and expansion decisions.                                     | Read original decision boundaries and relevant current source.                               |
+| D-92–D-94 | Later prototype interface decisions are recorded in [decisions.md](decisions.md).                             | Consult each original ruling; this summary supplies no implementation or deployment verdict. |
+
 ### Waiting on Josh
 
-As recorded in project notes on 24 October 2026; not re-verified against providers. Remove a line when it is answered.
+Historical questions from 24 October 2026, except the source-verified resolution recorded below. Provider-dependent items remain unverified; do not treat this list as current clearance or a request to repeat completed work.
 
 - Approve or change the access log mock-up (D-80 item 14).
 - In Supabase, turn off "Allow new users to sign up", so only invited test accounts can register.
@@ -178,7 +192,6 @@ As recorded in project notes on 24 October 2026; not re-verified against provide
 - In Supabase, turn off the Ward Flow organisation's AI SQL, log and data options (Q391, yes 3 Nov 2026).
 - Set limits on who can grant administrator access.
 - Name the privacy officer and the clinical safety owner.
-- Decide the D-71 names question.
 - Turn on Dependabot security updates in GitHub settings.
 - Arrange the clinician trial.
 - Before any real data (deferred by Josh): work through the [real-data go/no-go checklist](governance/REAL-DATA-GO-NO-GO.md), including point-in-time backup, paid Supabase plan, invite-only sign-up and a TV privacy review.

@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+
 import { BookOpen, CircleHelp, Keyboard, Library, Search, Sparkles, UserRound, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
@@ -18,7 +20,6 @@ import { useExecutiveStatistics, useExecutiveStatisticsControl } from "../statis
 import { ADMIN_SETTINGS_HELP, glossaryForSites, screenHelpFor, type GlossaryTerm } from "./ward-help-content";
 import type { HelpView } from "./ward-help-events";
 import { findInHelp, foundRows, HelpFindResults, HelpTryAsking } from "./ward-help-find";
-import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import { howToFor } from "./ward-help-access";
 import { HOW_TO_IDS, HOW_TOS } from "./ward-help-howto";
 import { aroundId } from "./ward-help-screen-tours";
@@ -238,15 +239,13 @@ function WardHelpSheetView({
   const completion = showList ? suggested.completion : undefined;
   const canShow = (id: string) => {
     const each = HOW_TOS.find((howTo) => howTo.id === id);
-    return Boolean(
-      each && howToFor(each, role, access.scope) && canShowTask(each, role, deskHref, phone, showMeOn, pathname),
-    );
+    return Boolean(each && canShowTask(each, role, deskHref, phone, showMeOn, pathname, access));
   };
 
   // Questions to try (2 Nov 2026): the desk's jobs most used on this device (else its first two),
   // this screen's walk round and its own questions, then a word people mix up. At most five.
   const examples = useMemo(() => {
-    const desk = tasksForDesk(role, access.scope);
+    const desk = tasksForDesk(role, access);
     const mostUsed = used.flatMap((entry) => desk.filter((task) => task.id === entry.id));
     const jobs = [...mostUsed, ...desk]
       .filter((task, index, all) => all.indexOf(task) === index)
@@ -257,7 +256,7 @@ function WardHelpSheetView({
     return [
       ...new Set([...jobs, ...(around ? [around] : []), ...asked, "What does Held up mean?", "Is my change saved?"]),
     ].slice(0, 5);
-  }, [role, screen, used, access.scope]);
+  }, [access, role, screen, used]);
 
   const tab = tabFor(view);
   const QuestionsIcon = QUESTIONS_ICON;
@@ -323,9 +322,10 @@ function WardHelpSheetView({
   const choose = (result: HelpSearchResult) => {
     // Accepting a result ends suggestion mode so the chosen answer shows straight away.
     setFocused(false);
-    const foundTask = HOW_TOS.find((entry) => entry.id === result.howToId);
-    const mine =
-      (!result.desks || result.desks.includes(role)) && (!foundTask || howToFor(foundTask, role, access.scope));
+    const howTo = result.key.startsWith("howto:")
+      ? HOW_TOS.find((each) => each.id === result.key.slice("howto:".length))
+      : undefined;
+    const mine = howTo ? howToFor(howTo, role, access) : !result.desks || result.desks.includes(role);
     if (result.key.startsWith("howto:") && mine) {
       setQuery("");
       setTask(result.key.slice("howto:".length));
@@ -377,7 +377,7 @@ function WardHelpSheetView({
     }
     // A walk round that cannot play here falls through to its answer in search (How to never
     // lists walk rounds, so it could not show it there).
-    if (id && howTo && suggestion.kind !== "walk" && howToFor(howTo, role, access.scope)) {
+    if (id && howTo && suggestion.kind !== "walk" && howToFor(howTo, role, access)) {
       setFocused(false);
       setQuery("");
       setTask(id);

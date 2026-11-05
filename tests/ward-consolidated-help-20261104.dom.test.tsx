@@ -78,18 +78,23 @@ describe("Help request identity and eligibility", () => {
       ).toBeTruthy(),
     );
   });
-  it("offers Rules only to statewide coordinators", () => {
-    expect(tasksForDesk("coordinator", { kind: "site", siteCode: "RPH" }).some((task) => task.id === "rules")).toBe(
-      false,
-    );
-    expect(tasksForDesk("coordinator", { kind: "statewide" }).some((task) => task.id === "rules")).toBe(true);
-    const row = headerHelpRows("change pull time limit", "coordinator", { kind: "site", siteCode: "RPH" }).items.find(
+  it("offers Rules only to statewide coordinators, including visible header steps", () => {
+    const service = { role: "coordinator", scope: { kind: "service", service: "North Metro" } } as const;
+    const statewide = { role: "coordinator", scope: { kind: "statewide" } } as const;
+    expect(tasksForDesk("coordinator", service).some((task) => task.id === "rules")).toBe(false);
+    expect(tasksForDesk("coordinator", statewide).some((task) => task.id === "rules")).toBe(true);
+    const row = headerHelpRows("change pull time limit", "coordinator", service).items.find(
       (item) => item.id === "howto:rules",
     )!;
     expect(row.href).toBe("");
-    expect(
-      helpPreviewAnswer(row.id, "coordinator", true, false, "/ward-flow", { kind: "site", siteCode: "RPH" })?.showMe,
-    ).toBe(false);
+    const scoped = helpPreviewAnswer(row.id, "coordinator", true, false, "/ward-flow", service);
+    expect(scoped?.showMe).toBe(false);
+    expect(scoped?.steps).toEqual([]);
+    headerHelpRows("change pull time limit", "coordinator", statewide);
+    const allowed = helpPreviewAnswer(row.id, "coordinator", true, false, "/ward-flow", statewide);
+    expect(allowed?.showMe).toBe(true);
+    expect(allowed?.steps.length).toBeGreaterThan(0);
+    expect(helpPreviewAnswer(row.id, "coordinator", true, false, "/ward-flow", service)?.steps).toEqual([]);
   });
   it("omits the ward-only arrival control from a bed-manager Capacity walk", () => {
     const walk = HOW_TOS.find((task) => task.id === "around-capacity")!;

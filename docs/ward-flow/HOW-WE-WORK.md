@@ -17,8 +17,9 @@ _Updated 2026-10-31 - section 6 brings the design rules up to date: 40px phone c
 1. Read [`README.md`](README.md), then the agreed task scope and existing task/checkpoint
    under [`../task-receipts.md`](../task-receipts.md). Use the ledger
    [`../ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) and relevant [`plans/`](plans/README.md)
-   to locate existing IDs and decisions. [`STATUS.md`](STATUS.md)'s decision table and "Waiting on Josh" list are the one
-   record of what is left; its older sections are dated history. Verify current source before reviving an old task.
+   to locate existing IDs and decisions. [`STATUS.md`](STATUS.md) preserves dated decision-state observations; check the latest
+   [decisions](decisions.md) and the task source identified by the receipt contract before treating
+   an old item as outstanding. Task metadata, owner decisions and verification evidence are separate.
 2. Check your folder: `git -C <worktree> status` and `git -C <worktree> log -5`. If files you did not
    touch are modified or staged, preserve them and resolve ownership before writes. Former
    Database fold-debt hooks are historical and are not part of this repository's startup.
@@ -66,11 +67,10 @@ mockup only after Josh explicitly approves that mockup. See the [recorded decisi
   An unreadable claims folder still blocks. Isolated Cloud work follows
   [Cloud ownership](../agents/cloud-ownership.md): establish actual checkout/file ownership and
   record the environment boundary, unavailable other-host state and checkpoint before editing.
-  A local log never proves desktop/global clearance. An overlap needs the other owner's release or Josh's explicit scoped
-  takeover approval. For a takeover, record each exact file as
+  A local log never proves desktop/global clearance. An overlap needs the other owner's release or applicable scoped takeover authority. Josh's standing document permission covers routine exact-file handoffs within an authorised task's project, purpose and audience; a claimed document alone needs no renewed approval. Prefer task-owned [draft copies](../agents/document-drafts.md) and follow the [handoff procedure](../agents/cloud-ownership.md#routine-document-handoffs). When an existing optional log is used, record each exact taken-over file as
   `path/to/file (approved takeover by Josh: <scope>)` on your own line, preserve the other session's
   edits and reconcile them through the authorised integration process. A folder-wide marker does not grant a takeover.
-  Once the exact task ownership is handed back or integrated, append `RELEASED <date> | <owner> | <branch> | <reason>; repo=BigSimmo/Ward-Flow` to the shared
+  When the optional log was used and the exact task ownership is handed back or integrated, append `RELEASED <date> | <owner> | <branch> | <reason>; repo=BigSimmo/Ward-Flow` to the shared
   append-only log. That releases every claim on the branch; to release only some files, add a `files=<path>, <path>` field before the reason. The single-user interactive exception (`SKIP_SIGNOUT_GUARD=1`, an explicit per-commit opt-in) is defined in [AGENTS.md hard rule 7](../../AGENTS.md#hard-rules).
 - Reuse dependencies only from a trusted checkout of the same Ward Flow commit and lockfile.
   Never link to the old Database checkout; follow the current repository setup instructions.

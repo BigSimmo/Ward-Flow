@@ -16,7 +16,7 @@ import { useIsPhone } from "@/components/wf";
 
 import { useTourHome } from "./help/ward-tour-home";
 import { useEffectiveWardAccess } from "./shell/ward-access-store";
-import type { WardAccessScope } from "./ward-role-access";
+import type { WardAccess } from "./ward-role-access";
 import { howToFor } from "./help/ward-help-access";
 import { HOW_TOS, showMeSteps } from "./help/ward-help-howto";
 import { walkPlaysHere } from "./help/ward-help-screen-tours";
@@ -40,14 +40,14 @@ const HEADER_HELP_LIMIT = 3;
 /** The answers last listed, so choosing one runs the right Help action. Module memory only. */
 const listed = new Map<string, HelpSearchResult>();
 
-function isDeskJob(result: HelpSearchResult, role: WardTourRole, scope?: WardAccessScope): boolean {
+function isDeskJob(result: HelpSearchResult, role: WardTourRole, access?: WardAccess): boolean {
   const howTo = HOW_TOS.find((entry) => entry.id === result.howToId);
-  if (howTo && !howToFor(howTo, role, scope)) return false;
+  if (howTo && !howToFor(howTo, role, access)) return false;
   return !result.desks || result.desks.includes(role);
 }
 
 /** Help's answers as header search rows. Exported for tests. */
-export function headerHelpRows(query: string, role: WardTourRole, scope?: WardAccessScope): HelpSearchRows {
+export function headerHelpRows(query: string, role: WardTourRole, access?: WardAccess): HelpSearchRows {
   const typed = query.trim();
   if (typed.length < 3) return { items: [] };
   const answer = searchHelp(typed, role, HEADER_HELP_LIMIT);
@@ -55,13 +55,13 @@ export function headerHelpRows(query: string, role: WardTourRole, scope?: WardAc
   if (answer.kind !== "results") return { items: [] };
   const items = answer.results.map((result): SearchResultItem => {
     listed.set(result.key, result);
-    const href = isDeskJob(result, role, scope) ? howToHref(result.go, role, undefined) : undefined;
+    const href = isDeskJob(result, role, access) ? howToHref(result.go, role, undefined) : undefined;
     return {
       kind: "help",
       kindLabel: "Help",
       id: result.key,
       title: result.title,
-      meta: isDeskJob(result, role, scope) ? result.detail : `Done by another desk · ${result.detail}`,
+      meta: isDeskJob(result, role, access) ? result.detail : `Done by another desk · ${result.detail}`,
       // An answer with nowhere to go opens in Help itself (see `openHelpResult`).
       href: href ?? "",
     };
@@ -79,17 +79,17 @@ export function openHelpResult(
   showMeOn: boolean,
   phone = false,
   home: string | undefined = "/ward-flow",
-  scope?: WardAccessScope,
+  access?: WardAccess,
 ): boolean {
   const result = listed.get(id);
   if (!result) return false;
-  if (result.howToId && helpPreviewAnswer(id, role, showMeOn, phone, home, scope)?.showMe) {
+  if (result.howToId && helpPreviewAnswer(id, role, showMeOn, phone, home, access)?.showMe) {
     showWardHowTo(result.howToId);
     return true;
   }
-  if (isDeskJob(result, role, scope) && howToHref(result.go, role, undefined)) return false;
+  if (isDeskJob(result, role, access) && howToHref(result.go, role, undefined)) return false;
   // Without Show me, Help's Ask box is off too, so the desk's own task opens in How do I… instead.
-  if (!showMeOn && result.howToId && isDeskJob(result, role, scope)) {
+  if (!showMeOn && result.howToId && isDeskJob(result, role, access)) {
     openWardHelp("tasks", result.howToId);
     return true;
   }
@@ -107,18 +107,19 @@ export function helpPreviewAnswer(
   showMeOn: boolean,
   phone = false,
   home: string | undefined = "/ward-flow",
-  scope?: WardAccessScope,
+  access?: WardAccess,
 ): HelpPreviewAnswer | undefined {
   const result = listed.get(id);
   if (!result) return undefined;
   const howTo = result.howToId ? HOW_TOS.find((candidate) => candidate.id === result.howToId) : undefined;
-  const steps = showMeSteps(howTo, phone ? "phone" : "desk", role);
+  const mine = isDeskJob(result, role, access);
+  const steps = mine ? showMeSteps(howTo, phone ? "phone" : "desk", role) : [];
   // A page walk round (one ward, one ED board) plays only on its own page.
   const here = !howTo || typeof window === "undefined" || walkPlaysHere(howTo, window.location.pathname);
   return {
     steps,
     showMe: Boolean(
-      showMeOn && howTo && showMeAvailable(howTo, role, home, phone) && here && isDeskJob(result, role, scope),
+      showMeOn && howTo && showMeAvailable(howTo, role, home, phone, access) && here && isDeskJob(result, role, access),
     ),
   };
 }
@@ -133,25 +134,25 @@ function openListedInHelp(id: string): void {
 export function useHeaderHelp() {
   const role = useTourRole();
   const phone = useIsPhone();
-  const scope = useEffectiveWardAccess().scope;
+  const access = useEffectiveWardAccess();
   const homes = useTourHome(role);
   const home = homes.deskHome ?? homes.home;
   const showMeOn = useWardFeatureFlag("help-ask");
-  const findHelp = useCallback((query: string) => headerHelpRows(query, role, scope), [role, scope]);
+  const findHelp = useCallback((query: string) => headerHelpRows(query, role, access), [role, access]);
   const onHelpResult = useCallback(
-    (id: string) => openHelpResult(id, role, showMeOn, phone, home, scope),
-    [role, showMeOn, phone, home, scope],
+    (id: string) => openHelpResult(id, role, showMeOn, phone, home, access),
+    [role, showMeOn, phone, home, access],
   );
   const helpPreview = useMemo<HelpPreviewSource>(
     () => ({
-      answerFor: (id) => helpPreviewAnswer(id, role, showMeOn, phone, home, scope),
+      answerFor: (id) => helpPreviewAnswer(id, role, showMeOn, phone, home, access),
       showMe: (id) => {
         const howToId = listed.get(id)?.howToId;
-        if (howToId && helpPreviewAnswer(id, role, showMeOn, phone, home, scope)?.showMe) showWardHowTo(howToId);
+        if (howToId && helpPreviewAnswer(id, role, showMeOn, phone, home, access)?.showMe) showWardHowTo(howToId);
       },
       openInHelp: openListedInHelp,
     }),
-    [role, showMeOn, phone, home, scope],
+    [role, showMeOn, phone, home, access],
   );
   return { findHelp, onHelpResult, helpPreview };
 }

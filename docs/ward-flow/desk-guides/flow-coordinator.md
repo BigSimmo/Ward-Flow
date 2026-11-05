@@ -2,7 +2,7 @@
 
 <!-- last-checked: 2026-10-26 -->
 
-_Updated 2026-11-04 — queue order and recorded-time guidance checked against source at `559f2258`; Documentation owns. Other screen prose was not browser-rechecked._
+_Updated 2026-11-05 — queue order, recorded-time and departure guidance reconciled against source. Other screen prose was not browser-rechecked._
 
 You see the whole network (statewide) or your own health service. You decide referrals and keep
 patients moving from referral to arrival.
@@ -47,14 +47,16 @@ Source: [Home queue order](../../../src/components/ward-management/ward-priority
    **Cancel transport** before **Release the pulled bed** if plans change.
 5. **Log a call.** On a referral, use **Log a call** so the next person can see who was rung.
 6. **Hand over.** Open **Handover** to see what the next shift needs, then **Sign off**.
+7. **Record departure.** On **Discharges**, use **Record departure** for a confirmed discharge.
 
 ## What you cannot do
 
 - You cannot place a patient automatically. A person always chooses.
 - The app does not work out Mental Health Act times. It shows only times someone typed from the
   paper form, marked "Not legally checked".
-- Ward acceptance, admission and discharge belong to the ward. You can override only with a
-  recorded reason.
+- Ward acceptance and admission remain with the ward unless an authorised override is recorded.
+- On **Discharges**, you can record departure for a confirmed discharge with **Record departure**.
+  This records that the patient has left; it does not choose or approve their clinical discharge.
 
 ## Saved, or not
 

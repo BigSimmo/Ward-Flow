@@ -4,7 +4,7 @@
 
 Written 24 October 2026 from repository docs and config; not tested against the live services.
 
-_Updated 2026-11-04 — health diagnostics corrected against `backend/ward-flow/server.mjs` at `559f2258`; Documentation owns. No live service check was performed._
+_Updated 2026-11-05 — health diagnostics and release identities reconciled against source; Documentation owns. No live service check was performed._
 
 **Who this is for:** whoever looks after the hosted synthetic prototype. **Status:** current
 guidance, pulled together from the dated records linked below. Those records hold the detail and
@@ -88,15 +88,19 @@ Weekly, or before a demonstration. All read-only.
    commit. Do not mistake a WAITING or SKIPPED entry for the live one. Method:
    [RAILWAY-OPERATIONS.md, read the four states](RAILWAY-OPERATIONS.md#read-the-four-states-separately).
 3. **Health.** `/api/health` on the two sites should give HTTP 200 and `{"status":"ok"}`.
-   An ordinary backend `/healthz` call returns HTTP 200 with `service: ward-flow-backend` and
-   `status: ok`; it reports process liveness and gives no database result. The uptime monitor
-   supplies the `x-ward-flow-uptime-token` header using `WARD_FLOW_UPTIME_TOKEN` and receives
-   `database: ok`, `unavailable` or `not_configured`. The database result is cached for up to
-   30 seconds, and `/healthz` still returns HTTP 200 during a database outage. Use the configured
-   secret binding; never copy its value into logs or tickets. The configured backend's signed-in `/readyz` returns
-   `database: ready` on success or HTTP 503 when the database is unavailable. Neither check
-   proves shared saving, reload or conflict handling works. Source:
-   [health and readiness routes](../../backend/ward-flow/server.mjs).
+
+   Anonymous backend `/healthz` returns HTTP 200 with `service: ward-flow-backend` and
+   `status: ok`; it reports process liveness without a database check. The uptime monitor
+   supplies `x-ward-flow-uptime-token` through the configured `WARD_FLOW_UPTIME_TOKEN` binding
+   and receives `database: ok`, `unavailable` or `not_configured`. The result is cached for up
+   to 30 seconds; `/healthz` still returns HTTP 200 during a database outage. Inspect the
+   executed workflow step: **Database not checked** means monitor configuration is missing or
+   mismatched, even if the run is green. Signed-in `/readyz` reports `database: ready` on success
+   or HTTP 503 when the database is unavailable. Follow the
+   [backend health contract](../../backend/ward-flow/README.md#health-and-monitor-configuration)
+   for names-only provisioning; never copy secret values into logs or tickets. Neither check
+   proves shared saving, reload or conflict handling works.
+
 4. **Supabase.** In the dashboard (right project, checked against DATABASE.md): project healthy,
    database size and usage against the plan limit, newest backup date.
 5. **Receipts.** Command receipts older than 7 days are pruned every Monday at 03:00 Perth by
@@ -113,6 +117,7 @@ Weekly, or before a demonstration. All read-only.
      token-authorised `/healthz` diagnostics should then report `database: unavailable`, or signed-in
      `/readyz` should fail. An ordinary `/healthz` call still reports process liveness. Shared saves
      cannot complete while the database is unavailable. Restoring it is done in
+
      the Supabase dashboard and is a live change, so it needs Josh's yes. The current plan is not
      recorded in the repo; on a paid plan this does not happen.
 
@@ -171,14 +176,14 @@ The daily release changes the app under staff who are using it. Josh agreed on 2
 Start every incident by writing down the time, the service and what users see. Read before you
 change anything. Do not paste tokens, passwords or record contents anywhere.
 
-| What you see                    | First steps                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **App down**                    | Check `/api/health` (site) or `/healthz` (backend). The signed-in site sleeps, so a slow first load is normal. In Railway, read the latest deployment's state and logs. FAILED or CRASHED: read the failed stage. Use the state table in [RAILWAY-OPERATIONS.md](RAILWAY-OPERATIONS.md#act-on-the-actual-state).                                                                                                                      |
-| **Sign-in failing**             | Check Supabase Auth status and the backend's `/healthz`. Then check the site's build settings point at the right backend and Supabase project, and the backend's allowed origin names the site. A user with no membership row is refused by design (backend README, roles and places).                                                                                                                                                |
-| **Saves failing, Retry banner** | The banner reads "Connection unavailable — changes are disabled." with a Retry button. Ask the user to stay on the page and press Retry, not reload, or the unconfirmed action is lost. Then check token-authorised backend `/healthz` diagnostics or signed-in `/readyz`; `database: unavailable` points at database reachability. An ordinary `/healthz` call has no database result. HTTP 409 is a normal conflict, not an outage. |
-| **Database at limit**           | In Supabase, check database size and usage against the plan. Prune old command receipts (routine check 5, needs approval). Moving to a bigger plan or compute is billable and needs spending approval. The plan's exact limits are **not recorded in the repo**.                                                                                                                                                                      |
-| **Board size alert**            | From PR #870 the backend logs `ward_backend_workspace_size_alert` at most once an hour once the live board passes 6 MiB. Past that point, closed records archive after 7 days instead of 30. Check the board size and that archiving is working (the History archive count rises). Then follow **Database at limit**. Saves fail at the 8 MiB limit.                                                                                  |
-| **Bad migration**               | Stop further migrations. The backend accepts schema versions 5 up to the latest, so the app may keep running. With Josh's yes, run the matching rollback script in one stop-on-error transaction, newest first, from `backend/ward-flow/infra/` (order in [SETUP-SUPABASE.md](../../backend/ward-flow/SETUP-SUPABASE.md)). Then re-run the runtime role grants.                                                                       |
+| What you see                    | First steps                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **App down**                    | Check `/api/health` (site) or `/healthz` (backend). The signed-in site sleeps, so a slow first load is normal. In Railway, read the latest deployment's state and logs. FAILED or CRASHED: read the failed stage. Use the state table in [RAILWAY-OPERATIONS.md](RAILWAY-OPERATIONS.md#act-on-the-actual-state).                                                                                                                                             |
+| **Sign-in failing**             | Check Supabase Auth status and backend process liveness; a successful anonymous `/healthz` does not verify Auth or the database. Then check the site's build settings point at the right backend and Supabase project, and the backend's allowed origin names the site. A user with no membership row is refused by design (backend README, roles and places).                                                                                               |
+| **Saves failing, Retry banner** | Read the recovery message, stay on the page and use Retry for the pending action; check its outcome before entering it a second time. Then inspect the protected uptime result (not anonymous liveness): `database: unavailable` points at the database connection. A missing database field means the monitor did not authenticate; use the backend health contract to distinguish it from a database outage. HTTP 409 is a normal conflict, not an outage. |
+| **Database at limit**           | In Supabase, check database size and usage against the plan. Prune old command receipts (routine check 5, needs approval). Moving to a bigger plan or compute is billable and needs spending approval. The plan's exact limits are **not recorded in the repo**.                                                                                                                                                                                             |
+| **Board size alert**            | From PR #870 the backend logs `ward_backend_workspace_size_alert` at most once an hour once the live board passes 6 MiB. Past that point, closed records archive after 7 days instead of 30. Check the board size and that archiving is working (the History archive count rises). Then follow **Database at limit**. Saves fail at the 8 MiB limit.                                                                                                         |
+| **Bad migration**               | Stop further migrations. The backend accepts schema versions 5 up to the latest, so the app may keep running. With Josh's yes, run the matching rollback script in one stop-on-error transaction, newest first, from `backend/ward-flow/infra/` (order in [SETUP-SUPABASE.md](../../backend/ward-flow/SETUP-SUPABASE.md)). Then re-run the runtime role grants.                                                                                              |
 
 The backend logs carry only request IDs, route categories, status and timings. They never carry
 tokens, user IDs or payloads ([observability.md](../observability.md)). Sentry error reporting
