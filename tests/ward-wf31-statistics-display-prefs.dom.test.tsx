@@ -4,16 +4,8 @@
  */
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import {
-  enterDisplayPrefScope,
-  resetDisplayPrefScopeForTests,
-  displayPrefScopeActive,
-} from "@/lib/display-pref-scope";
-import {
-  readStoredThemePreference,
-  resetThemePreferenceForTests,
-  setThemePreference,
-} from "@/lib/theme-client";
+import { enterDisplayPrefScope, resetDisplayPrefScopeForTests, displayPrefScopeActive } from "@/lib/display-pref-scope";
+import { readStoredThemePreference, resetThemePreferenceForTests, setThemePreference } from "@/lib/theme-client";
 import { THEME_STORAGE_KEY } from "@/lib/theme";
 import { RAIL_OPEN_STORAGE_KEY } from "@/components/ward-management/shell/ward-rail-early";
 import { setRailOpenPreference } from "@/components/ward-management/shell/ward-rail-preferences";

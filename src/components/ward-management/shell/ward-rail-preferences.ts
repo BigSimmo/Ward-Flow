@@ -77,7 +77,6 @@ export function setRailOpenPreference(open: boolean) {
   window.dispatchEvent(new Event(railOpenChangeEvent));
 }
 
-
 /**
  * Keeps the page's rail, theme and glare attributes in step with the stored preferences, and
  * returns the three values for the rail's own controls.

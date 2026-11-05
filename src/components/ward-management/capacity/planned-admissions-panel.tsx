@@ -483,10 +483,8 @@ export function PlannedAdmissionsPanel({
     ? undefined
     : form?.mode === "book" && draft.who === "patient" && draft.patientId === ""
       ? "Choose the patient first"
-      : form?.mode === "book" &&
-          draft.who === "initials" &&
-          normalisePlannedAdmissionInitials(draft.initials) === null
-        ? plannedInitialsRefusal(draft.initials) ?? "Enter one to three letters for the initials."
+      : form?.mode === "book" && draft.who === "initials" && normalisePlannedAdmissionInitials(draft.initials) === null
+        ? (plannedInitialsRefusal(draft.initials) ?? "Enter one to three letters for the initials.")
         : draft.reason === ""
           ? "Choose a reason first"
           : draft.unitId === ""
@@ -783,8 +781,7 @@ export function PlannedAdmissionsPanel({
                         spellCheck={false}
                         inputMode="text"
                         aria-invalid={
-                          draft.initials.trim() !== "" &&
-                          normalisePlannedAdmissionInitials(draft.initials) === null
+                          draft.initials.trim() !== "" && normalisePlannedAdmissionInitials(draft.initials) === null
                         }
                         onChange={(event) => {
                           // Letters, spaces and dots only (normalise strips spaces/dots). Digits and

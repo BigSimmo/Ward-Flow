@@ -1,10 +1,7 @@
 /**
  * WF-31 helpers for statistics routes: snapshot + enter a display-pref scope, restore on leave.
  */
-import {
-  enterDisplayPrefScope,
-  type DisplayPrefBaseline,
-} from "@/lib/display-pref-scope";
+import { enterDisplayPrefScope, type DisplayPrefBaseline } from "@/lib/display-pref-scope";
 import {
   readStoredGlarePreference,
   readStoredThemePreference,

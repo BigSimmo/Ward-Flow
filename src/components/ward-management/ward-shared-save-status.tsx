@@ -191,18 +191,18 @@ export function WardSharedSaveStatus({
           {connection.error && <span> {connection.error}</span>}
         </span>
         {showReloadWarning && (
-        <p className={styles.warning} data-testid="ward-shared-reload-warning">
-          {RELOAD_WARNING}{" "}
-          <button
-            type="button"
-            className={styles.action}
-            onClick={() => setReloadWarningDismissed(true)}
-            data-testid="ward-shared-reload-warning-dismiss"
-          >
-            Dismiss
-          </button>
-        </p>
-      )}
+          <p className={styles.warning} data-testid="ward-shared-reload-warning">
+            {RELOAD_WARNING}{" "}
+            <button
+              type="button"
+              className={styles.action}
+              onClick={() => setReloadWarningDismissed(true)}
+              data-testid="ward-shared-reload-warning-dismiss"
+            >
+              Dismiss
+            </button>
+          </p>
+        )}
         {problem && (
           <span className={styles.end}>
             {!retrying && (connection.status === "unavailable" || late || stale) && (

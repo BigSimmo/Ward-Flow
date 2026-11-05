@@ -134,7 +134,6 @@ export function setThemePreference(preference: ThemePreference): ResolvedTheme {
   return resolved;
 }
 
-
 export function subscribeThemePreference(onChange: () => void): () => void {
   if (typeof window === "undefined") return () => undefined;
   let media: MediaQueryList | null = null;
@@ -210,7 +209,6 @@ export function setGlarePreference(on: boolean) {
   applyGlareToDocument(on);
   window.dispatchEvent(new Event(GLARE_CHANGE_EVENT));
 }
-
 
 export function subscribeGlarePreference(onChange: () => void): () => void {
   if (typeof window === "undefined") return () => undefined;

@@ -6,7 +6,10 @@
 import { describe, expect, it } from "vitest";
 
 import { EVENT_ROLE } from "@/components/ward-management/ward-flow-event-roles";
-import { normalisePlannedAdmissionInitials, plannedInitialsRefusal } from "@/components/ward-management/ward-admissions";
+import {
+  normalisePlannedAdmissionInitials,
+  plannedInitialsRefusal,
+} from "@/components/ward-management/ward-admissions";
 
 describe("WF-07 bed manager BOOK_PLANNED_ADMISSION initials", () => {
   it("lets bed_manager take BOOK_PLANNED_ADMISSION", () => {

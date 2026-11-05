@@ -305,7 +305,6 @@ it("distinguishes existing patients by record number and carries the selected id
   expect(screen.getByTestId("ward-planned-submit")).toHaveAccessibleDescription(/UM\d{6}/);
 });
 
-
 describe("WF-07 planned initials refusal", () => {
   it("clears a sticky over-long initials message when the draft is fixed to TH", () => {
     renderPanel();

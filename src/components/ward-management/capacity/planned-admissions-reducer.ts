@@ -337,8 +337,7 @@ export function reducePlannedAdmissionEvent(
       } else {
         initials = normalisePlannedAdmissionInitials(event.initials);
         if (initials === null) {
-          const detail =
-            typeof event.initials === "string" ? plannedInitialsRefusal(event.initials) : null;
+          const detail = typeof event.initials === "string" ? plannedInitialsRefusal(event.initials) : null;
           return reject(
             state,
             event,

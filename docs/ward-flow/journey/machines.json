@@ -1526,7 +1526,7 @@
       {
         "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
         "line": 584,
-        "sha256": "53825491a317fe91efc6f7870b7df31ad6a06ddb5171dc43fe29ea8ed6dd6594"
+        "sha256": "1cd788df73b108a100be1657071d300d5f9b622a2c72b100f8c6f155ccbaeefe"
       },
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
