@@ -209,7 +209,7 @@ describe("the Capacity screen", () => {
     }
   });
 
-  it("shows a non-negative gap as 'exactly enough' or 'N spare' in words, never the word 'short'", () => {
+  it("shows a non-negative gap as 'exactly enough' or 'N spare that fit' in words, never the word 'short'", () => {
     const nonNegativeRows = gapRows.filter((row) => row.gap >= 0);
     expect(nonNegativeRows.length, "the fixture has no non-negative row — this guard proved nothing").toBeGreaterThan(
       0,
@@ -218,7 +218,7 @@ describe("the Capacity screen", () => {
     for (const row of nonNegativeRows) {
       const now = tileNow(mismatchTile(row.need));
       expect(now, `tile ${row.id}`).not.toMatch(/short/iu);
-      expect(now, `tile ${row.id}`).toBe(row.gap === 0 ? "exactly enough" : `${row.gap} spare`);
+      expect(now, `tile ${row.id}`).toBe(row.gap === 0 ? "exactly enough" : `${row.gap} spare that fit`);
     }
   });
 
@@ -363,7 +363,7 @@ describe("the Capacity screen", () => {
   });
 
   /**
-   * The total half of the same property, now the hero's "Discharges due today" chip (the "Beds freeing"
+   * The total half of the same property, now the hero's "Beds freeing today" chip (the "Beds freeing"
    * tab that used to carry it went with the redesign). Asserts the FIGURE, and the two fabrications
    * `NetworkWardRow.freeing`'s own doc comment names — the literal word "undefined", and a bare `0`
    * presented as the total when nothing is tracked.
@@ -372,7 +372,7 @@ describe("the Capacity screen", () => {
     const tracked = networkRows.map((row) => row.freeing).filter((value): value is number => value !== undefined);
     const total = tracked.reduce((sum, value) => sum + value, 0);
     renderScreen();
-    const chip = heroChips().getByText("Discharges due today").parentElement as HTMLElement;
+    const chip = heroChips().getByText("Beds freeing today").parentElement as HTMLElement;
     const value = chip.firstElementChild?.textContent ?? "";
     if (tracked.length === 0) {
       expect(value, "nothing is tracked, so the hero must not print a bare 0 as the total").not.toMatch(/^\s*0\s*$/u);

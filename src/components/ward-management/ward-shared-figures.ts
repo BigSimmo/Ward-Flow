@@ -7,7 +7,12 @@
  * and list counts agree on the seed.
  *
  * The other shared figures live beside the data they read and are not restated here:
- * - occupancy: `wardOccupancy` / `wardBedsInUse` (`ward-occupancy.ts`), Occupied + Pulled;
+ * - occupancy (WF-16): `wardOccupiedBeds` / `wardBedsInUse` / `wardBedUseFigures` (`ward-occupancy.ts`) —
+ *   Occupied / On the ward vs In use (Occupied + Pulled); percentage always uses In use;
+ * - beds freeing today vs forecast discharges (WF-16): `releasesFreeingToday` / `bedsFreeingTodayTotal`
+ *   vs forecast next-24h sources (`capacity-derivations.ts` / `beds-forecast-sources.ts`);
+ * - ready vs spare that fit (WF-16): `readyBedsNow` / `totalReadyBedsNow` vs `bedKindGaps(...).gap`
+ *   (`ward-bed-states.ts` / `capacity-derivations.ts`);
  * - tasks and act now: `taskItems`, `activeTaskItems`, `activeActNowItems` (`ward-act-now-items.ts`);
  * - beds ready now: `wardNavCounts(...).capacity` (`ward-nav-counts.ts`);
  * - since you looked: `changesSinceLastLook` / `changesSinceInstant` (`coordinator/since-last-look.ts`).

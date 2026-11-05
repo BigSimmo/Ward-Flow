@@ -201,9 +201,9 @@ export function forecastByKind(
   return { hours: days * 24, until, kinds, total };
 }
 
-/** "4 short", "3 spare" or "even": one end of a range, in the mismatch table's words. */
+/** "4 short", "3 spare that fit" or "even": one end of a range, in the mismatch table's words (WF-16). */
 export function kindRangeWord(value: number): string {
   if (value < 0) return `${-value} short`;
-  if (value > 0) return `${value} spare`;
+  if (value > 0) return `${value} spare that fit`;
   return "even";
 }

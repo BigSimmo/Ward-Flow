@@ -32,6 +32,7 @@ import {
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
+import { IN_USE_NOUN } from "@/components/ward-management/ward-occupancy";
 import type {
   BedRelease,
   EmergencyDepartment,
@@ -315,7 +316,7 @@ const lensStatus = (site: PresentedSiteFigures, lens: MapLens): WaMapNode["statu
 const lensAria = (site: PresentedSiteFigures, lens: MapLens): string => {
   if (!applies(site, lens)) return `${site.name}, ${lens === "ed" ? "no ED" : "no ward"}`;
   if (lens === "beds")
-    return `${site.name}: ${site.ready} ready beds, ${site.pct}% occupied${site.wardsOverLine ? `, ${site.wardsOverLine} ${site.wardsOverLine === 1 ? "ward" : "wards"} at or over ${BED_ALERT_THRESHOLD_PERCENT}%` : ""}`;
+    return `${site.name}: ${site.ready} ready beds, ${site.pct}% in use${site.wardsOverLine ? `, ${site.wardsOverLine} ${site.wardsOverLine === 1 ? "ward" : "wards"} at or over ${BED_ALERT_THRESHOLD_PERCENT}%` : ""}`;
   if (lens === "ed") {
     // WF-17: times stay exact, but do not pair an exact longest wait with a withheld people count.
     const waitingExact = exactStatisticsCount(site.edWaiting) !== null;
@@ -545,7 +546,7 @@ function MapPresentation({
             value: String(network.ready),
             label: network.preparing > 0 ? `Ready beds, ${network.preparing} being made ready` : "Ready beds",
           },
-          { value: `${network.pct}%`, label: "Occupied" },
+          { value: `${network.pct}%`, label: IN_USE_NOUN },
           {
             value: String(network.wardsOverLine),
             label: `Wards at or over ${BED_ALERT_THRESHOLD_PERCENT}%`,
@@ -1053,7 +1054,7 @@ function BelowMap({
                 row.service
               ),
               labelText: row.service,
-              sub: `${row.pct}% occupied · ${row.wards} ${row.wards === 1 ? "ward" : "wards"}`,
+              sub: `${row.pct}% in use · ${row.wards} ${row.wards === 1 ? "ward" : "wards"}`,
               value: row.ready,
               fill: "ready",
             }))}
