@@ -43,7 +43,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
     summary:
       "You see the whole network or your own health service, decide referrals and keep patients moving to a bed.",
     startsAt:
-      "Home opens My list: Act now, Since you last looked and Referrals to decide. Your menu holds Home, Capacity, Movements, Waiting, All EDs, Referrals and Handover. On a desktop, Open on TV on Capacity puts the bed meeting figures on the meeting room screen.",
+      "Home opens My list: Act now, Since you last looked and Referrals to decide. Your menu holds Home, Capacity, Movements, Waiting, All EDs, Referrals and Handover. On a desktop, Open on TV on Capacity puts the bed meeting figures on the meeting room screen. On Discharges, use Record departure for a confirmed discharge. It records that the patient has left; it does not choose or approve their clinical discharge.",
     jobs: [
       {
         job: "Decide a referral",

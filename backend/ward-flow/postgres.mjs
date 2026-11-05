@@ -34,6 +34,7 @@ import { logFailure } from "./error-report.mjs";
 import { LruCache, registerPart } from "./reply-cache.mjs";
 import { recordDetailOf, withoutRecordDetail } from "./record-detail.mjs";
 import { forecastHistoryStore } from "./forecast-history.mjs";
+import { accountPreferencesStore } from "./account-preferences.mjs";
 import { deskAuditPage } from "./desk-audit.mjs";
 import { ownCommandReceipt } from "./own-command-receipt.mjs";
 
@@ -1088,8 +1089,20 @@ export function createWorkspaceStore(
       row = await lockedWorld(client, "UPDATE", false);
     }
     at.setTime(clock().getTime());
-    if (row?.data_mode !== "prototype") throw new Error("Workspace data mode mismatch");
-    if (!engine.validWorld(row.payload)) throw new Error("Stored workspace is incompatible");
+    const refusal =
+      row?.data_mode !== "prototype"
+        ? "Workspace data mode mismatch"
+        : engine.validWorld(row.payload)
+          ? null
+          : "Stored workspace is incompatible";
+    if (refusal) {
+      // Incident 4 Nov 2026: the cached rows can be what made this world invalid (read part way
+      // through a hand edit, or corrected later without a revision bump), and a cache hit would
+      // serve them until a restart. Forget them, so the next request reads every row again.
+      confirmed = null;
+      pending = null;
+      throw new Error(refusal);
+    }
     // A selected ward desk can include several cover memberships. Resolve all of them again
     // under the same workspace lock as revocation, using the time after any lock wait. Checking
     // only the selected/base membership would leave ended cover in the request's write scope.
@@ -1910,6 +1923,8 @@ export function createWorkspaceStore(
       return { notModified: false, snapshot: await read(actorId, view) };
     },
     viewer,
+    // Migration 17: each signed-in account's Help memory.
+    ...accountPreferencesStore({ pool, workspaceId, schemaVersion, forgetVersionOnMissing }),
     // Proposal 013 (migration 16): each desk's shared forecast snapshots and miss reasons.
     ...forecastHistoryStore({
       pool,

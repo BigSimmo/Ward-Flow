@@ -53,7 +53,7 @@ describe("smart timers", () => {
     renderWith([{ title: "Bed released", tone: "success" }]);
     const card = screen.getByTestId("toast");
     act(() => {
-      vi.advanceTimersByTime(4000);
+      vi.advanceTimersByTime(3000);
     });
     fireEvent.pointerEnter(card);
     expect(card).toHaveAttribute("data-paused", "true");
@@ -106,11 +106,11 @@ describe("smart timers", () => {
     const push = screen.getByRole("button", { name: "Push notices" });
     fireEvent.click(push);
     act(() => {
-      vi.advanceTimersByTime(5000);
+      vi.advanceTimersByTime(4000);
     });
     fireEvent.click(push);
     act(() => {
-      vi.advanceTimersByTime(5000);
+      vi.advanceTimersByTime(4000);
     });
     expect(screen.getByTestId("toast")).toBeInTheDocument();
     act(() => {

@@ -95,4 +95,5 @@ questions and constraints, not a new notes schema or handover feature.
 - [ ] Confirm contacts, reporting configuration and synthetic alert delivery through authorised tools.
 - [ ] Complete NVDA, VoiceOver and physical-device acceptance.
 - Deferred by the owner on 5 November 2026: unnamed Tier 4 items 19–23 and 25 need descriptions before assessment.
-- [ ] Authorise publication/release separately when the local candidate is ready.
+- [x] Draft PR publication authorised on 5 November 2026; automatic Railway PR environments confirmed disabled.
+- [ ] Authorise release separately after remaining acceptance.

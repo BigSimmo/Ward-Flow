@@ -29,7 +29,8 @@ export default function NotFound() {
           <ContextualBackLink
             fallbackHref="/ward-flow"
             // Q197 (Josh, 1 Nov 2026): the accent button of the in-app not-found card, not the black one.
-            className="flex min-h-10 items-center justify-center gap-2 rounded-[var(--wf-r-ctl)] bg-[color:var(--wf-accent)] px-4 py-2 text-sm font-semibold text-[color:var(--wf-on-accent)] no-underline"
+            // Drawn as the kit filled button (pri gradient, on-pri ink): white on the dark-mode accent failed 4.5:1.
+            className="flex min-h-10 items-center justify-center gap-2 rounded-[var(--wf-r-ctl)] bg-[linear-gradient(180deg,var(--wf-pri-1),var(--wf-pri-2))] px-4 py-2 text-sm font-semibold text-[color:var(--wf-on-pri)] no-underline"
           >
             <ArrowLeft aria-hidden="true" className="h-4 w-4" />
             Back to Ward Flow

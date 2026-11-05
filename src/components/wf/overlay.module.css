@@ -156,6 +156,18 @@
   color: var(--wf-ink-3);
 }
 
+/* GEN1 (Josh, 3 Nov 2026): one toast place for the whole app. Tablet and desktop stack toasts
+   top right, just under the header, where they never cover a page's own foot bar or pinned
+   actions. Phone keeps the pill above the dock (below). Every toast has its close button. */
+@media (min-width: 46.5rem) {
+  .toastRegion {
+    top: calc(var(--wf-header-height, 3.75rem) + var(--wf-s-2));
+    bottom: auto;
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+}
+
 /* Toast: glass, one line, glyph first, actions stay until dismissed. */
 .toast {
   display: flex;
@@ -194,6 +206,14 @@
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
+}
+
+/* A toast that must be read whole (`wrap`) keeps every word instead of an ellipsis. */
+.toast[data-wrap="true"] .toastTitle,
+.toast[data-wrap="true"] .toastBody {
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .toastMeta {
@@ -271,7 +291,7 @@
 /* Phone toast (v10 all-pages mockup, .toast and .frame.phone > .toasts): a dark pill, not glass,
    left and right 12px and 92px up, text may wrap. The tip colours are the tooltip's own recipe
    (ui/tooltip.module.css): ink on light, track in dark with the line-2 ring. Desktop and tablet
-   keep the glass card above. A toast that closes itself (Undo or timed) shows no X, as drawn. */
+   keep the glass card above. Every toast keeps its X (GEN1, 3 Nov 2026). */
 @media (max-width: 46.4375rem) {
   /* F-15: above the dock's top (--wf-dock-clear, which counts the home indicator), not a fixed
      92px that the dock overlapped on Face ID iPhones. Pages without the dock use the same sum. The gap
@@ -382,10 +402,6 @@
     content: "";
     position: absolute;
     inset: -10px -4px;
-  }
-
-  .toast[data-auto-dismiss="true"] .toastClose {
-    display: none;
   }
 
   .undoBar {

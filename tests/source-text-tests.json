@@ -83,8 +83,10 @@
     "tests/ward-desktop-wheel-chaining.test.ts",
     "tests/ward-directory-legal-metadata.test.ts",
     "tests/ward-discharge-blocked-emphasis.dom.test.tsx",
+    "tests/ward-doc-facts-history.test.ts",
     "tests/ward-docs-maintain-pipeline.test.ts",
     "tests/ward-documentation-boundaries.test.ts",
+    "tests/ward-documentation-maintenance.test.ts",
     "tests/ward-downtime-pack-bed-units-and-page.test.ts",
     "tests/ward-downtime-pack-line.dom.test.tsx",
     "tests/ward-dynamic-island-rollout.contract.test.tsx",
@@ -227,6 +229,7 @@
     "tests/wf-phone-parts.dom.test.tsx",
     "tests/wf-primitives.dom.test.tsx",
     "tests/wf-segmented-text-spacing.dom.test.tsx",
-    "tests/wf-title-wrap.test.ts"
+    "tests/wf-title-wrap.test.ts",
+    "tests/wf-triangle-guard.test.ts"
   ]
 }

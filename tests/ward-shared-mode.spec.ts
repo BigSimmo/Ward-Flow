@@ -1,4 +1,4 @@
-import { expect, test } from "playwright/test";
+import { expect, test, type Page } from "playwright/test";
 import {
   accounts,
   openDesk,
@@ -32,6 +32,18 @@ import {
  * the state it starts from instead of assuming the seed (`--repeat-each` must pass too). Synthetic
  * data only.
  */
+
+/** The revision a desk holds, as its next background poll names it (`since`). */
+async function heldRevision(page: Page): Promise<number> {
+  const poll = await page.waitForRequest(
+    (request) =>
+      request.method() === "GET" &&
+      new URL(request.url()).pathname.endsWith("/v1/workspace") &&
+      new URL(request.url()).searchParams.has("since"),
+    { timeout: 15_000 },
+  );
+  return Number(new URL(poll.url()).searchParams.get("since"));
+}
 
 test.describe.configure({ mode: "serial" });
 
@@ -162,6 +174,14 @@ test("different records at once: two desks change different records from the sam
   const tierTwo = await openUrgencyForm(two.page, other);
   for (const movement of [MOVEMENT, other])
     await expect.poll(() => shownTier(two.page, movement)).toBe(await shownTier(one.page, movement));
+  // Matching tiers do not prove matching revisions: an earlier save elsewhere may not have reached
+  // one desk yet. Wait until both desks' polls name the same revision before holding desk two.
+  await expect
+    .poll(async () => {
+      const [held1, held2] = await Promise.all([heldRevision(one.page), heldRevision(two.page)]);
+      return held1 === held2;
+    }, POLL)
+    .toBe(true);
   // Desk two holds its revision (its poll cannot fire) so it cannot pick up desk one's save first.
   await two.page.waitForLoadState("networkidle");
   await two.page.clock.pauseAt(Date.now() + 1_000);

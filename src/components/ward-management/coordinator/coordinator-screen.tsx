@@ -66,6 +66,7 @@ import {
   Sheet,
   SrOnly,
   StatusGlyph,
+  type HeroNextStep,
 } from "@/components/wf";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { useHomeChanges } from "./activity-changes";
@@ -600,6 +601,8 @@ export function CoordinatorScreen() {
     });
   }, [actionInbox, movements, isInServiceScope]);
   const actNowCount = alertsNowFigures(scopedActionInbox, toPull.length).actNow;
+  // Plan item 2i: the hero's Act now is main's service-scoped Act now figure.
+  const heroActNow = actNowCount;
   const chosenAlert = selectedAlertId ? alertEntries.find((entry) => entry.item.id === selectedAlertId) : undefined;
   const releaseAlert = releaseAlertId ? alertEntries.find((entry) => entry.item.id === releaseAlertId) : undefined;
   const waitEntries = alertEntries.filter((entry) => entry.group === "wait");
@@ -655,6 +658,9 @@ export function CoordinatorScreen() {
       : `${changeCount === 1 ? "change" : "changes"} since ${
           changes.reviewedAt !== undefined ? `your review at ${reviewClock}` : reviewClock
         } · Review`;
+  // Plan item 2i (proposal): the change feed is the whole network's, so with a service chosen the
+  // chip says so. `service` is read here directly; the shared word is defined further down.
+  const changesChipText = service === null ? changesChipLabel : `${changesChipLabel} · Network-wide`;
   const changesChipOpen = (event?: { currentTarget: EventTarget | null }) =>
     openActivity(changeCount > 0 ? "changes" : "recent", event?.currentTarget);
   const plannedRows = usePlannedRows(now);
@@ -681,6 +687,9 @@ export function CoordinatorScreen() {
     () => openEdJourneys(isInServiceScope ? movements.filter(isInServiceScope) : movements, now),
     [now, movements, isInServiceScope],
   );
+  // The bed figures (beds ready, occupancy) and the bed-count checks stay network-wide on purpose
+  // (a placement may use any ward), so with a service chosen they say so beside the figure.
+  const networkWord = service === null ? "" : " network-wide";
   // The queue may also contain ward/community origins, so its population is broader than ED journeys.
   const notWaitingMeta = (
     <span data-testid="ward-home-ed-population">
@@ -753,8 +762,9 @@ export function CoordinatorScreen() {
     .toLowerCase();
   const heroTitle = (
     <>
-      <span className={styles.heroNum}>{edJourneys.total}</span> open ED movements,{" "}
-      <span className={styles.heroNum}>{bedsReady}</span> {bedsReady === 1 ? "bed" : "beds"} ready
+      <span className={styles.heroNum}>{edJourneys.total}</span> open ED movements
+      {service === null ? "" : ` in ${service}`}, <span className={styles.heroNum}>{bedsReady}</span>{" "}
+      {bedsReady === 1 ? "bed" : "beds"} ready{networkWord}
     </>
   );
   // The four registers: a strip under the hero on desktop (opened from its Exceptions count), and
@@ -825,6 +835,68 @@ export function CoordinatorScreen() {
     />
   ) : null;
 
+  // Plan item 2i (proposal): the hero's next step, from the same figures as the hero's toggles.
+  // Act now first, then referrals to decide, then past-target waits in the flow; one at a time.
+  const actPressed = shownView === "needs" && needsFocus === "act";
+  const decidePressed = shownView === "needs" && needsFocus === "decide";
+  const overduePressed = shownView === "queue" && highlight === "overdue";
+  const showOverdue = () => {
+    showView("queue");
+    setFlowStage(undefined);
+    chooseNeedsFocus("all");
+    // CodeRabbit (#1380): set from what is shown, so a retained highlight from Needs you is not cleared.
+    setHighlight(overduePressed ? undefined : "overdue");
+  };
+  // Scope: with a service chosen, the step counts only that service's work, never statewide: the
+  // hero's own scoped Act now (`heroActNow`), and the scoped referral queue and flow queue Home shows.
+  const nextActCount = heroActNow;
+  // Josh, 4 Nov 2026 (2i question 2): on tablet and desktop the hero chip that repeats the step's own
+  // figure is left out, since the step's button does the same toggle.
+  const nextKind: "act" | "decide" | "overdue" | null =
+    nextActCount > 0 ? "act" : referralQueue.length > 0 ? "decide" : chips.overdueInQueue > 0 ? "overdue" : null;
+  const nextScope = service === null ? "" : ` in ${service}`;
+  const heroNext: HeroNextStep =
+    nextActCount > 0
+      ? {
+          answer: `${nextActCount} ${nextActCount === 1 ? "needs" : "need"} a person now${nextScope}`,
+          action: {
+            label: actPressed ? "Show all" : "Show act now",
+            pressed: actPressed,
+            testId: "home-next-action",
+            onClick: () => toggleFocus("act"),
+          },
+        }
+      : referralQueue.length > 0
+        ? {
+            answer: `${referralQueue.length} ${referralQueue.length === 1 ? "referral" : "referrals"} to decide${nextScope}`,
+            action: {
+              label: decidePressed ? "Show all" : "Show to decide",
+              pressed: decidePressed,
+              testId: "home-next-action",
+              onClick: () => toggleFocus("decide"),
+            },
+          }
+        : chips.overdueInQueue > 0
+          ? {
+              answer: `Nothing to act on now${nextScope} · ${chips.overdueInQueue} past target in the flow`,
+              action: {
+                label: overduePressed ? "Show all" : "Show past target",
+                pressed: overduePressed,
+                testId: "home-next-action",
+                onClick: showOverdue,
+              },
+            }
+          : { answer: `Nothing needs you now${nextScope}` };
+  // Josh, 4 Nov 2026 (2i question 5): the phone hero folds its foot away, but keeps the Checking line
+  // under the step whenever a bed count is stale or a ward is not reporting.
+  const phoneChecking =
+    isPhone && staleBedCounts + wardsNotReporting > 0 ? (
+      <span data-testid="home-next-checking">
+        Checking: {staleBedCounts} stale bed {staleBedCounts === 1 ? "count" : "counts"}, {wardsNotReporting}{" "}
+        {wardsNotReporting === 1 ? "ward" : "wards"} not reporting
+      </span>
+    ) : undefined;
+
   return (
     <div className={`${styles.screen} ${activity.glyphScope}`} data-testid="ward-coordinator" data-ward-design="v6">
       <main id="main-content" className={styles.main}>
@@ -841,6 +913,7 @@ export function CoordinatorScreen() {
               isPhone ? `Modelled network · ${shiftWord}` : `Modelled network · mental health beds · ${shiftWord}`
             }
             title={heroTitle}
+            next={phoneChecking ? { ...heroNext, owner: phoneChecking } : heroNext}
             // Redesign (Josh, 30 Oct 2026): the synthetic disclosure lives in the app bar and the footer, so
             // the hero keeps only its facts; on a phone they fold to one line.
             titleMeta={
@@ -848,6 +921,7 @@ export function CoordinatorScreen() {
                 <span data-testid="ward-home-ed-population">
                   {edJourneys.stillInEd} still in ED · {edJourneys.inTransit} in transit
                   {occupancyLink}
+                  {occupancyLink ? networkWord : null}
                 </span>
               ) : (
                 <>
@@ -860,9 +934,9 @@ export function CoordinatorScreen() {
               isPhone ? (
                 <>
                   <HeroStat
-                    value={actNowCount}
+                    value={heroActNow}
                     label="Act now"
-                    tone={actNowCount > 0 ? "danger" : undefined}
+                    tone={heroActNow > 0 ? "danger" : undefined}
                     pressed={shownView === "needs" && needsFocus === "act"}
                     onToggle={() => toggleFocus("act")}
                   />
@@ -903,41 +977,47 @@ export function CoordinatorScreen() {
                     onClick={changesChipOpen}
                     data-testid="home-changes-chip"
                   >
-                    {changeCount > 0 ? <b>{changeCount}</b> : null} {changesChipLabel}
+                    {changeCount > 0 ? <b>{changeCount}</b> : null} {changesChipText}
                   </Button>
                 </div>
               ) : (
                 <div className={styles.heroToggles}>
-                  <HeroStat
-                    inline
-                    value={actNowCount}
-                    label="Act now"
-                    tone={actNowCount > 0 ? "danger" : undefined}
-                    pressed={shownView === "needs" && needsFocus === "act"}
-                    onToggle={() => toggleFocus("act")}
-                  />
-                  <HeroStat
-                    inline
-                    value={referralQueue.length}
-                    label="To decide"
-                    tone={referralQueue.length > 0 ? "info" : undefined}
-                    pressed={shownView === "needs" && needsFocus === "decide"}
-                    onToggle={() => toggleFocus("decide")}
-                  />
-                  <HeroStat
-                    inline
-                    value={chips.overdueInQueue}
-                    label={overdueWord}
-                    tone={chips.overdueInQueue > 0 ? "warning" : undefined}
-                    pressed={shownView === "queue" && highlight === "overdue"}
-                    onToggle={() => {
-                      showView("queue");
-                      // A hero count covers the whole queue, so it clears any chosen stage.
-                      setFlowStage(undefined);
-                      chooseNeedsFocus("all");
-                      toggleHighlight("overdue");
-                    }}
-                  />
+                  {nextKind === "act" ? null : (
+                    <HeroStat
+                      inline
+                      value={heroActNow}
+                      label="Act now"
+                      tone={heroActNow > 0 ? "danger" : undefined}
+                      pressed={shownView === "needs" && needsFocus === "act"}
+                      onToggle={() => toggleFocus("act")}
+                    />
+                  )}
+                  {nextKind === "decide" ? null : (
+                    <HeroStat
+                      inline
+                      value={referralQueue.length}
+                      label="To decide"
+                      tone={referralQueue.length > 0 ? "info" : undefined}
+                      pressed={shownView === "needs" && needsFocus === "decide"}
+                      onToggle={() => toggleFocus("decide")}
+                    />
+                  )}
+                  {nextKind === "overdue" ? null : (
+                    <HeroStat
+                      inline
+                      value={chips.overdueInQueue}
+                      label={overdueWord}
+                      tone={chips.overdueInQueue > 0 ? "warning" : undefined}
+                      pressed={shownView === "queue" && highlight === "overdue"}
+                      onToggle={() => {
+                        showView("queue");
+                        // A hero count covers the whole queue, so it clears any chosen stage.
+                        setFlowStage(undefined);
+                        chooseNeedsFocus("all");
+                        toggleHighlight("overdue");
+                      }}
+                    />
+                  )}
                   <HeroStat
                     inline
                     value={chips.tierOneInQueue}
@@ -967,7 +1047,7 @@ export function CoordinatorScreen() {
                         {staleBedCounts + wardsNotReporting > 0 ? (
                           <StatusGlyph tone="warning" size={10} className={activity.dotGlyph} />
                         ) : null}
-                        to check
+                        to check{networkWord}
                       </>
                     }
                     expanded={checksOpen}
@@ -983,7 +1063,7 @@ export function CoordinatorScreen() {
                   inline
                   command
                   value={changeCount > 0 ? changeCount : null}
-                  label={changesChipLabel}
+                  label={changesChipText}
                   // No glyph: the info glyph reads "to decide" on this page, which a change is not.
                   onToggle={changesChipOpen}
                   className={styles.changesChip}
@@ -1004,20 +1084,9 @@ export function CoordinatorScreen() {
                 <LiveChip state={paused ? "paused" : "live"} onHero onTogglePause={togglePause} />
               )
             }
-            foot={
-              isPhone ? (
-                // P109 (27 Oct 2026): a phone keeps the Checking strip, collapsed, so stale counts still show.
-                <details className={styles.checkingPhone}>
-                  <summary>
-                    Checking: {staleBedCounts} stale bed {staleBedCounts === 1 ? "count" : "counts"},{" "}
-                    {wardsNotReporting} {wardsNotReporting === 1 ? "ward" : "wards"} not reporting
-                  </summary>
-                  {checkingFoot}
-                </details>
-              ) : checksOpen ? (
-                checkingFoot
-              ) : undefined
-            }
+            // A phone folds the hero to its title and next step, so the foot is not drawn there; the
+            // stale counts stay visible as the Checking line under the step (2i question 5).
+            foot={!isPhone && checksOpen ? checkingFoot : undefined}
           />
 
           {heroPanel && !isPhone ? (

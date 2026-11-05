@@ -241,6 +241,8 @@ function GovernanceSession({
   // `undefined` until someone chooses, so the pane opens on the newest event waiting; `null` once
   // they close it, so it stays closed.
   const [selection, setSelection] = useState<AuditEvent | null | undefined>(undefined);
+  // True while the selection is the one the desktop pane opened on by itself, not one the user chose.
+  const [autoOpened, setAutoOpened] = useState(false);
   const [siteId, setSiteId] = useState<string | null>(null);
   const [pending, setPending] = useState<{
     command: number;
@@ -315,7 +317,17 @@ function GovernanceSession({
       ? opening
       : null;
   // Pin the event the pane opened on, so a newer event arriving cannot retarget a review in progress.
-  if (selection === undefined && opening) setSelection(opening);
+  if (selection === undefined && opening) {
+    setSelection(opening);
+    setAutoOpened(true);
+  }
+  // Review 5 Nov 2026: a desktop browser at tablet width first renders with the server's "not a
+  // tablet" answer, so the pane auto-opened an event and the tablet then slid it over the page
+  // unasked. Once the layout is known to be phone or portrait tablet, an auto-opened event closes.
+  if (autoOpened && (isPhone || isTabletPortrait)) {
+    setAutoOpened(false);
+    setSelection(undefined);
+  }
   const history = selected ? historyFor(selected) : [];
   const reviewAttempt = pending
     ? [...events]
@@ -446,6 +458,7 @@ function GovernanceSession({
 
   const choose = (event: AuditEvent | null) => {
     reviewCommandRef.current += 1;
+    setAutoOpened(false);
     setSelection(event);
     setPending(null);
     if (event) setAnnouncement(`Selected ${actionLabels[event.action]}.`);
@@ -779,7 +792,11 @@ function GovernanceSession({
                   !reviewGate.allowed ? reviewGate.reason : selected === null ? "Choose an event first" : undefined
                 }
                 reasonDisplay="tooltip"
-                onClick={() => setEndorseOpen(true)}
+                onClick={() => {
+                  // Starting a review makes the event the user's own, so a rotation cannot close it.
+                  setAutoOpened(false);
+                  setEndorseOpen(true);
+                }}
               >
                 Record review
               </Button>

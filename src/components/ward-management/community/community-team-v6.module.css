@@ -38,6 +38,8 @@
   background: color-mix(in srgb, var(--wf-hero-ink) 6%, transparent);
   color: var(--wf-hero-ink);
   cursor: pointer;
+  /* Review 5 Nov 2026: at 834 "Switch team" broke onto two lines beside the headline. */
+  white-space: nowrap;
 }
 
 .heroMenuButton:hover {
@@ -647,6 +649,20 @@ div.workspace > .side {
  * Record contact and More drop to their own line after them, so the tabs never run into the find
  * box. The find box then takes the free width of that line. */
 @media (min-width: 46.5rem) and (max-width: 64rem) {
+  /* Review 5 Nov 2026: without wrap on the row itself the full-width tab list could not push the
+   * tools down, and Find sat over "Referrals" and "Clinicians" at 834. */
+  /* Doubled so it outranks the ward tab bar's own nowrap, whichever sheet loads last. */
+  .tabRow.tabRow {
+    flex-wrap: wrap;
+  }
+
+  /* Review 5 Nov 2026: the subline before it does not wrap, so the button takes its own line. */
+  .heroMenuButton {
+    display: flex;
+    width: max-content;
+    margin: var(--wf-s-2) 0 0;
+  }
+
   .tabRow > [role="tablist"] {
     flex: 1 0 100%;
   }

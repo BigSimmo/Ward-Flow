@@ -245,3 +245,45 @@ No push, PR, merge, release, credentials or deployment change was made.
 Native assistive technology, physical devices/printers, observed monitoring/collector delivery,
 owner licence/downtime review and the separately authorised publication stages remain outstanding.
 The six undescribed Tier 4 references are deferred by the owner; other held features remain held.
+
+## Draft PR preparation, 5 November
+
+The owner authorised a draft PR and confirmed that automatic Railway PR environments are
+disabled. GitHub metadata identifies `BigSimmo/Ward-Flow` as public; its checked-in workflows use
+standard Ubuntu GitHub-hosted runners. GitHub's published Actions billing documentation states
+that standard runners in public repositories are free. The approved publication scope is the
+feature branch and a draft PR into `main`, with no release, provider settings change or paid preview.
+
+The target `main` advanced to `3099a5fab4a5a2ae9f343c500d61bbe3dd081e5d`. A local merge preview
+found four actual conflicts, so it was merged into this feature branch without rewriting history.
+Resolutions preserve Help preferences alongside own-command review, the peer's two-desk revision
+synchronisation, protected-health guidance and metadata-only recovery. The generated inventory now
+records 154 scripts and 87 npm commands. The protected ward screen, shortlist and script budgets
+are unchanged by this task relative to that target. The original checkout remains untouched.
+
+Before reconciliation, `verify:pr-local` passed 642 related cases across 84 files and all selected
+static/document gates. After reconciliation it passed 1,457 related cases across 138 files, full
+ESLint, frontend/backend TypeScript, lock parity and the selected document/integrity gates.
+The focused conflict checks passed another 16 cases across three files. These are selected local
+checks; the full unit suite and hosted CI remain separate. Earlier browser/PDF/budget results above
+are evidence for `c57ca5b91`, not fresh results for the integrated candidate.
+
+### Read-only hosted configuration findings
+
+The working Railway connection verified the exact Ward Flow project and production environment
+listed in the hosting record. All three services have source `BigSimmo/Ward-Flow`, branch `live`,
+and no staged changes. Backend/public app deployment metadata reports success; the signed-in
+frontend reports sleeping. These are metadata observations, not authenticated save or delivery tests.
+
+The backend's variable-name inventory contains `ARD_FLOW_UPTIME_TOKEN` but no
+`WARD_FLOW_UPTIME_TOKEN`. The server reads only the latter. This name mismatch prevents the
+configured token from enabling the protected database-health result. Correct the key in the approved
+secret interface, preserve its value, and verify it matches the repository Actions secret before a
+controlled backend deployment and protected health check. No secret value was read, copied or
+printed, and no live setting or deployment was changed here.
+
+`SENTRY_DSN` is present by name on the backend and signed-in frontend. The frontend's variable-name
+inventory does not contain either browser-reporting opt-in switch. Presence of a DSN is not proof of
+working collection, and the new browser relay remains opt-in. Synthetic collector/email delivery,
+licence/downtime review and native-device acceptance remain unverified. Live configuration changes
+and any chargeable deployment/test run require their own bounded authority and spending admission.

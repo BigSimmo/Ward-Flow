@@ -247,6 +247,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     file: /^shell\/ward-desk-audit\.ts$/,
     name: /^ACTIVITY_AUDIT_REFRESH_MS$/,
   },
+  {
+    id: "account-memory-save-delay",
+    why: "Help account memory (#1410, 4 Nov 2026): the 1 second pause before a change is saved; save delay, not a clinical time limit.",
+    file: /^help\/ward-help-account-memory\.tsx$/,
+    name: /^SEND_AFTER_MS$/,
+  },
 ];
 
 export const BREACH = /\bbreach(?:es|ed|ing)?\b/i;

@@ -26,12 +26,12 @@ function database(version) {
   return { pool: { connect: async () => client }, queries, current: () => current, released: () => released };
 }
 
-for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]) {
-  const expected = Array.from({ length: 16 - (from ?? 0) }, (_, index) => (from ?? 0) + index + 1);
-  test(`migration runner advances ${from ?? "fresh"} to version 16 in order`, async () => {
+for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]) {
+  const expected = Array.from({ length: 17 - (from ?? 0) }, (_, index) => (from ?? 0) + index + 1);
+  test(`migration runner advances ${from ?? "fresh"} to version 17 in order`, async () => {
     const db = database(from);
     await migrate(db.pool);
-    assert.equal(db.current(), 16);
+    assert.equal(db.current(), 17);
     assert.deepEqual(
       db.queries.flatMap((sql) => {
         const match = /INSERT INTO ward_flow\.migrations\(version\) VALUES\((\d+)\)/.exec(sql);
@@ -47,7 +47,7 @@ for (const from of [null, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 }
 
 test("unknown migration versions fail closed and roll back", async () => {
-  for (const version of [0, 17, "5"]) {
+  for (const version of [0, 18, "5"]) {
     const db = database(version);
     await assert.rejects(migrate(db.pool), /Unsupported database migration version/);
     assert.equal(db.queries.at(-1), "ROLLBACK");

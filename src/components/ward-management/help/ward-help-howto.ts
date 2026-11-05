@@ -13,7 +13,7 @@
  * on leave or away (D-81). Show me targets use test ids, ids, `data-setting` and accessible text,
  * never class names; `tests/ward-help-howto.test.ts` fails when a test id leaves the source.
  */
-import type { WardScreenId } from "@/components/ward-management/ward-role-access";
+import type { WardAccess, WardScreenId } from "@/components/ward-management/ward-role-access";
 
 import { ASK_WARDS_WINDOW_TEXT } from "@/components/ward-management/ward-operational-defaults";
 import { deskOpens, EVERY_LOGIN, howToFor, type WardEventType } from "./ward-help-access";
@@ -68,6 +68,8 @@ export type HowTo = {
    * the task as its own (audit finding 11, Josh 31 Oct 2026).
    */
   readonly acts?: readonly WardEventType[];
+  /** Global rules need the statewide coordinator; absent scope never grants the walkthrough. */
+  readonly requiresWholeNetwork?: true;
   /** A screen the task needs that `go` does not name, such as Alerts or Search. */
   readonly needs?: WardScreenId;
   readonly showMe?: readonly ShowMeStep[];
@@ -151,6 +153,9 @@ const JOBS: readonly HowTo[] = [
           { sel: "#main-content button", text: "Release pulled bed" },
           // A phone's list opens each row in a sheet; the hero's Act now count stands in.
           { sel: "#main-content button", text: "Act now" },
+          // A phone's hero folds its counts away and keeps the next step row (plan item 2i), used only
+          // when that step is Act now; otherwise the tour says the target is not on screen.
+          { sel: "#main-content [data-wf-hero-next]", text: "a person now" },
         ],
         title: "Pulls past their limit are in Act now",
         body: "Release pulled bed opens the movement at the release step. You decide whether to release it or keep it.",
@@ -184,6 +189,9 @@ const JOBS: readonly HowTo[] = [
           { sel: "#main-content button", text: "To decide" },
           // A ward's phone keeps its referrals under the Decisions tab.
           { sel: "#main-content button", text: "Decisions" },
+          // A phone's hero folds its counts away and keeps the next step row (plan item 2i), used only
+          // when that step is the referrals to decide.
+          { sel: "#main-content [data-wf-hero-next]", text: " to decide" },
         ],
         title: "Referrals to decide",
         body: "They stay in wait order, oldest first. Press Decide to open one.",
@@ -265,6 +273,72 @@ const JOBS: readonly HowTo[] = [
         body: "Record the booking, or that none is needed. The officer sees it on their jobs list.",
       },
     ],
+  },
+  {
+    id: "book-transport-ed",
+    topic: "Transport",
+    title: "Book transport",
+    keywords: "ambulance car transfer move patient escort",
+    answer:
+      "On My ED board, open the patient's actions and choose Log transport booking. Record the booking made by phone. Ward Flow records it; it does not order a vehicle.",
+    desks: ["ed"],
+    acts: ["BOOK_TRANSPORT"],
+    go: "home",
+  },
+  {
+    id: "book-transport-community",
+    topic: "Transport",
+    title: "Book transport",
+    keywords: "ambulance car transfer move patient escort",
+    answer:
+      "On My team, open the patient's journey and choose Log transport booking. On a phone the action may read Log transport. Record the booking made by phone for your team's journey; Ward Flow does not order a vehicle.",
+    desks: ["community"],
+    acts: ["BOOK_TRANSPORT"],
+    go: "home",
+  },
+  {
+    id: "book-transport-ward",
+    topic: "Transport",
+    title: "Book transport",
+    keywords: "ambulance car transfer move patient escort",
+    answer:
+      "Open the patient from Coming and going, then use Record transport booking on the journey. You may record a booking for a journey your ward sent. Ward Flow records the booking; it does not order a vehicle.",
+    desks: ["ward"],
+    acts: ["BOOK_TRANSPORT"],
+    go: "movements",
+  },
+  {
+    id: "cancel-transport-ed",
+    topic: "Transport",
+    title: "Cancel transport",
+    keywords: "stop ambulance unbook transfer orphaned no bed pulled",
+    answer:
+      "On Movements, open a referral your ED sent. Under Transport booked with no bed pulled, choose a reason, then Cancel the transport job. This control handles orphaned jobs only; ask the coordinator about ordinary bookings. No cancellation is possible after collection.",
+    desks: ["ed"],
+    acts: ["CANCEL_TRANSPORT"],
+    go: "movements",
+  },
+  {
+    id: "cancel-transport-ward",
+    topic: "Transport",
+    title: "Cancel transport",
+    keywords: "stop ambulance unbook transfer orphaned no bed pulled sending ward booker",
+    answer:
+      "On Coming and going, open the movement. Under Transport booked with no bed pulled, choose a reason, then Cancel the transport job. Only the sending ward recorded as booker may cancel; receiving the patient is not enough. Ask the coordinator about ordinary bookings. No cancellation is possible after collection.",
+    desks: ["ward"],
+    acts: ["CANCEL_TRANSPORT"],
+    go: "movements",
+  },
+  {
+    id: "cancel-transport-community",
+    topic: "Transport",
+    title: "Cancel transport",
+    keywords: "stop ambulance unbook transfer",
+    answer:
+      "On My team, use Cancel this team's booking for your own team's active transport job, then record the reason. You cannot cancel another team's booking or a job after collection. Ask the bed coordinator when those limits apply.",
+    desks: ["community"],
+    acts: ["CANCEL_TRANSPORT"],
+    go: "home",
   },
   {
     id: "cancel-transport",
@@ -737,9 +811,10 @@ const JOBS: readonly HowTo[] = [
     title: "Change the pull time limit or ED target",
     keywords: "rules settings pull time limit ed target wards asked morning count warning surge",
     answer:
-      "Settings, Rules. Change the value, then Save to apply. Each save is recorded in the audit and changes what every screen shows. Surge switches all timings to the busy-day set.",
+      "Only the statewide coordinator may change global settings. In Settings, Rules, change the value, then Save to apply. Each save is recorded in the audit and changes what every screen shows. Surge switches all timings to the busy-day set.",
     desks: ["coordinator"],
     acts: ["SET_CONFIGURATION"],
+    requiresWholeNetwork: true,
     go: "settings#rules",
     showMe: [
       {
@@ -989,9 +1064,9 @@ export type HowToMatch = { readonly howTo: HowTo; readonly forThisDesk: boolean 
  * This login's own how-to with the same title as `howTo` (the downtime pair), else `howTo` itself.
  * A question that only matches the twin this login cannot follow still gets the answer it can.
  */
-export function ownTwinOf(howTo: HowTo, role: WardTourRole): HowTo {
-  if (howToFor(howTo, role)) return howTo;
-  return HOW_TOS.find((other) => other.title === howTo.title && howToFor(other, role)) ?? howTo;
+export function ownTwinOf(howTo: HowTo, role: WardTourRole, access?: WardAccess): HowTo {
+  if (howToFor(howTo, role, access)) return howTo;
+  return HOW_TOS.find((other) => other.title === howTo.title && howToFor(other, role, access)) ?? howTo;
 }
 
 /** Each how-to once, keeping its first (best-ranked) place. */
@@ -1006,7 +1081,7 @@ function onceEach<T extends HowToMatch>(sorted: readonly T[]): T[] {
  * or keywords hold the words (three times a word in the answer). Ties keep the list's own order,
  * so the same words always give the same answers. Answers scoring under half the best are dropped.
  */
-export function askHelp(query: string, role: WardTourRole, limit = 6): readonly HowToMatch[] {
+export function askHelp(query: string, role: WardTourRole, limit = 6, access?: WardAccess): readonly HowToMatch[] {
   const words = correctedQuestionWords(query);
   if (words.length === 0) return [];
   const needed = Math.max(1, Math.ceil(words.length / 2));
@@ -1024,8 +1099,8 @@ export function askHelp(query: string, role: WardTourRole, limit = 6): readonly 
       }
     }
     if (hits < needed) return [];
-    const own = ownTwinOf(howTo, role);
-    return [{ howTo: own, forThisDesk: howToFor(own, role), hits, score, order }];
+    const own = ownTwinOf(howTo, role, access);
+    return [{ howTo: own, forThisDesk: howToFor(own, role, access), hits, score, order }];
   });
   // An answer far weaker than the best (one shared word such as "bed") is noise, not a lead.
   const best = Math.max(0, ...scored.map((entry) => entry.score));
@@ -1049,7 +1124,12 @@ export function askHelp(query: string, role: WardTourRole, limit = 6): readonly 
  * When nothing answers (P9): up to `limit` how-tos sharing any one question word, most shared first,
  * this desk's own before others, then list order. Empty when no word is shared at all.
  */
-export function closestHowTos(query: string, role: WardTourRole, limit = 3): readonly HowToMatch[] {
+export function closestHowTos(
+  query: string,
+  role: WardTourRole,
+  limit = 3,
+  access?: WardAccess,
+): readonly HowToMatch[] {
   const words = correctedQuestionWords(query);
   if (words.length === 0) return [];
   const scored = HOW_TOS.flatMap((howTo, order) => {
@@ -1057,8 +1137,8 @@ export function closestHowTos(query: string, role: WardTourRole, limit = 3): rea
     if (howTo.around) return [];
     const { strong, weak } = wordsOf(howTo);
     const score = words.reduce((sum, word) => sum + (strong.has(word) ? 3 : weak.has(word) ? 1 : 0), 0);
-    const own = ownTwinOf(howTo, role);
-    return score ? [{ howTo: own, forThisDesk: howToFor(own, role), score, order }] : [];
+    const own = ownTwinOf(howTo, role, access);
+    return score ? [{ howTo: own, forThisDesk: howToFor(own, role, access), score, order }] : [];
   });
   const ranked = scored.sort(
     (a, b) => b.score - a.score || Number(b.forThisDesk) - Number(a.forThisDesk) || a.order - b.order,

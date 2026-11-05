@@ -1,6 +1,6 @@
 # Ward Flow backend
 
-_Updated 2026-10-24 - local-mode saving brought into line with D-72; Documentation owns._
+_Updated 2026-11-03 - distinguish liveness, protected monitoring and signed readiness against source at `a6d8a0fd`; no hosted acceptance; Documentation owns._
 
 > [!IMPORTANT]
 > Synthetic data only. The current database and sign-in provider, and how to change it, are
@@ -8,13 +8,39 @@ _Updated 2026-10-24 - local-mode saving brought into line with D-72; Documentati
 > must never connect to PsychSift's Supabase or Railway resources.
 
 This package is the optional shared synthetic workspace. It is a plain Node HTTP server
-(`server.mjs`) that serves `/healthz`, `/readyz` and `/v1/workspace*`. `/healthz` needs no sign-in,
-always answers 200 while the server runs, and reports `database` as `ok` or `unavailable` (never the
-reason) from a check it repeats at most every 30 seconds; the uptime workflow alerts on either. The provider is chosen by
+(`server.mjs`) that serves `/healthz`, `/readyz` and `/v1/workspace*`. Anonymous
+`GET /healthz` returns HTTP 200 with `{service:"ward-flow-backend",status:"ok"}` while the process
+runs; it does not check or report database readiness. With the matching monitor token it instead
+reports `database` as `ok` or `unavailable` (never the reason), cached for at most 30 seconds.
+See [Health and monitor configuration](#health-and-monitor-configuration) for the separate contracts.
+The provider is chosen by
 `WARD_DATABASE_PROVIDER` and `WARD_AUTH_PROVIDER` (see DATABASE.md). Runtime never migrates the
 database and never substitutes an administrator login. Shared readiness requires migrations `001`
-to `005` and accepts later versions through <!-- fact:latest-migration -->016-forecast-history<!-- /fact -->.
+to `005` and accepts later versions through <!-- fact:latest-migration -->017-account-preferences<!-- /fact -->.
 These source files do not establish a current hosted connection or deployment.
+
+## Health and monitor configuration
+
+_Source checked 3 November 2026 at `a6d8a0fd`; no hosted configuration or notification delivery checked._
+
+- **Process liveness:** anonymous `GET /healthz` returns HTTP 200 without a `database` field.
+  Railway can use this for startup liveness. A database outage must not restart a healthy process.
+- **Protected monitor:** configure `WARD_FLOW_UPTIME_TOKEN` privately on the Ward Flow backend
+  and the same value as the Ward Flow repository's Actions secret `WARD_FLOW_UPTIME_TOKEN`.
+  The monitor sends it in `x-ward-flow-uptime-token`. Provisioning or rotation is an authorised
+  settings change; never paste its value into commands, tickets, logs, documentation or chat.
+  An absent/mismatched token gets the ordinary liveness response, not a database answer.
+  `backend-uptime.yml` then warns **Database not checked**; a green run with that warning is not
+  database monitoring acceptance. Check the executed step and intended notification delivery
+  separately. `database: unavailable` is an outage diagnostic even though HTTP status remains 200.
+- **Signed readiness:** `GET /readyz` requires a valid authorised sign-in bearer token. In shared
+  mode HTTP 200 with `database: ready` confirms the store's readiness check; storage failure is
+  HTTP 503. HTTP 401 means sign-in was denied, HTTP 429 is verifier rate limiting, and a verifier
+  outage is HTTP 503. A non-shared server can return HTTP 200 with an empty object: that is not
+  shared-database acceptance. Readiness still does not prove a user's save/reload/conflict journey.
+
+Use only authorised private tooling to send credentials. Synthetic local endpoint tests establish
+these source contracts; they do not establish the deployed token, database or alert configuration.
 
 ## How the UI connects
 
@@ -127,7 +153,7 @@ These source files do not establish a current hosted connection or deployment.
   Use migration 11 or later when server-side sign-out and access-history guarantees are required;
   older schemas remain rollback compatibility, not evidence that those capabilities are present.
 - Browser settings template: `infra/frontend.env.example`.
-- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->016-forecast-history<!-- /fact -->):
+- Migrations (`/readyz` needs 1 to 5, and accepts later versions through <!-- fact:latest-migration -->017-account-preferences<!-- /fact -->):
   - `001-shared-workspace.sql`: `ward_flow` schema, migrations, workspaces, commands and append-only audit.
   - `002-workspace-data-mode.sql`: `data_mode` column and a trigger that blocks reclassification.
   - `003-push-subscriptions.sql`: push subscriptions, baselines and deliveries.
@@ -216,7 +242,16 @@ These source files do not establish a current hosted connection or deployment.
     through `GET` and `POST /v1/workspace/forecast-history`; before 16 that route answers
     `shared: false` and each browser keeps its own history. `infra/rollback-016-forecast-history.sql`
     drops both tables. Reapply runtime grants after 16.
-    The backend accepts versions 5 to 16.
+  - `017-account-preferences.sql`: Help remembered by account (Josh, 4 Nov 2026, eight
+    suggestions item 3). `account_preferences` keeps, per signed-in account, the desks whose tour
+    is done, the page tips already seen, whether tips are turned off and the What's new lines
+    already read. Desk role ids, static Help topic ids and What's new entry ids only, each checked
+    against a closed shape by the route and the table: no patient detail, no paths and no typed
+    text. Read and written through `GET` and `POST /v1/workspace/preferences`; a save adds to the
+    account's lists, so seen on any device counts as seen. Before 17 that route answers
+    `shared: false` and each browser keeps its own Help memory.
+    `infra/rollback-017-account-preferences.sql` drops the table. Reapply runtime grants after 17.
+    The backend accepts versions 5 to 17.
 - `WARD_COORDINATOR_UNTIL` (optional, `YYYY-MM-DD`, at most a year ahead) ends the
   `WARD_COORDINATOR_USER_IDS` bootstrap coordinators at the end of that Perth day, without a
   restart (H-0057). Unset, they keep working and the shared server warns at startup.

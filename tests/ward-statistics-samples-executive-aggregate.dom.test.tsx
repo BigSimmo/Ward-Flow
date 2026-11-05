@@ -75,6 +75,8 @@ describe("executive sample chart data boundary", () => {
     expect(current.operational).not.toHaveBeenCalled();
   });
   it("does not mount operational providers while Samples is off", () => {
+    // Example history is on by default in the demo (S6, 3 Nov 2026), so this turns it off.
+    setStatisticsSamples(false);
     samples();
     expect(screen.queryByTestId("statistics-sample-figures")).toBeNull();
     expect(current.operational).not.toHaveBeenCalled();

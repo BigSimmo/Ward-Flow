@@ -94,6 +94,10 @@ DO $$ BEGIN
     GRANT SELECT, INSERT ON ward_flow.forecast_snapshots TO wardflow_backend;
     GRANT SELECT, INSERT, UPDATE ON ward_flow.forecast_miss_reasons TO wardflow_backend;
   END IF;
+  -- Migration 17: an account's Help memory is added once, read, and updated as more is seen.
+  IF to_regclass('ward_flow.account_preferences') IS NOT NULL THEN
+    GRANT SELECT, INSERT, UPDATE ON ward_flow.account_preferences TO wardflow_backend;
+  END IF;
 END $$;
 -- Remove explicit per-schema browser defaults for future tables/sequences.
 -- After each migration repeat the explicit REVOKE ALL ON ALL FUNCTIONS above and

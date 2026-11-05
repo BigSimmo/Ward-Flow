@@ -47,7 +47,9 @@ describe("K1 — seedWardFlowState() referral census (2026-09-17 pin)", () => {
     // added, six already-decided referrals, none queued.
     // 30 -> 31 (2026-09-25 seed growth, audit follow-up): RF-RD06 added, a new queued referral
     // sourced psychiatric_ward (a new source with no prior referral of this kind).
-    expect(referrals.length).toBe(31);
+    // 31 -> 36 (3 Nov 2026, S6 example data): RF-EX-001..005, one per group of wards whose inbox
+    // was empty, each declined by every ward it names (`ward-demo-example-lists.ts`).
+    expect(referrals.length).toBe(36);
   });
 
   it("counts referrals by source", () => {
@@ -71,13 +73,15 @@ describe("K1 — seedWardFlowState() referral census (2026-09-17 pin)", () => {
     // 10 Oct 2026 (Josh: "Remove police"): police is no longer a referral source. RF-004, RF-006,
     // RF-013 and RF-018 moved to crisis_service (3->7). Not ed_medical: Broome and Geraldton hold no
     // ED, and RF-004 is declined, which would owe Peel ED a notice this seed does not raise.
+    // 3 Nov 2026 (S6 example data): RF-EX-001..005 add gp 2, crisis_service 1, inter_hospital 1 and
+    // community 1. None is ed_medical.
     expect(bySource).toEqual<Record<ReferralSource, number>>({
-      community: 12, // includes all nine Midland demonstration rows, whose `source` is "community"
-      crisis_service: 7,
+      community: 13, // includes all nine Midland demonstration rows, whose `source` is "community"
+      crisis_service: 8,
       ambulance: 6,
-      inter_hospital: 4, // includes RF-010 (the Inner City Clinic referral)
+      inter_hospital: 5, // includes RF-010 (the Inner City Clinic referral)
       ed_medical: 0,
-      gp: 1, // RF-016, this fixture's first
+      gp: 3, // RF-016, this fixture's first, and RF-EX-001 and RF-EX-005
       psychiatric_ward: 1, // RF-RD06, this fixture's first
     });
     // Anti-vacuity: every referral was bucketed exactly once, none dropped and none double-counted.
@@ -106,10 +110,11 @@ describe("K1 — seedWardFlowState() referral census (2026-09-17 pin)", () => {
     // new rows), declined 1->2 (RF-018, the one new decline). queued is UNCHANGED at 6: K3's own
     // brief requires "none queued", so the queue this file's own next test pins is untouched.
     // 2026-09-25: queued 6->7 (RF-RD06, the new referral, is queued).
+    // 3 Nov 2026 (S6 example data): declined 2 -> 7, the five example referrals. Queued unchanged.
     expect(byState).toEqual({
       queued: 7,
       accepted: 22, // includes all nine Midland rows and RF-010, each accepted to its one community team
-      declined: 2,
+      declined: 7,
     });
     // Anti-vacuity: the three states partition every referral with none left over.
     expect(byState.queued + byState.accepted + byState.declined).toBe(referrals.length);
@@ -204,7 +209,8 @@ describe("K1 — seedWardFlowState() referral census (2026-09-17 pin)", () => {
       // untouched.
       // 30 -> 31 (2026-09-25): RF-RD06 joins the searched population; no admission references it,
       // so the other three figures stay untouched.
-      referralsSearchedCount: 31, // the full seeded referral population, i.e. this file's own total above
+      // 31 -> 36 (3 Nov 2026): the five example referrals; no admission references them.
+      referralsSearchedCount: 36, // the full seeded referral population, i.e. this file's own total above
     });
     expect(join.referralsSearchedCount).toBe(referrals.length); // ties this figure to the census total, not a second hand-typed 24
     expect(join.withReferralIdCount).toBeGreaterThan(0); // anti-vacuity
