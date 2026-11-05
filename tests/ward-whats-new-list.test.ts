@@ -9,7 +9,7 @@ import { readWhatsNewEntries, WHATS_NEW_DIR } from "../scripts/ward-flow/whats-n
 
 const roots: string[] = [];
 afterEach(() => {
-  roots.splice(0).forEach((root) => rmSync(root, { recursive: true, force: true }));
+  roots.splice(0).forEach((root) => rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
   vi.restoreAllMocks();
 });
 const git = (root: string, ...args: string[]) =>
