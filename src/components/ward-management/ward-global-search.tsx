@@ -404,12 +404,8 @@ export function WardGlobalSearch({
     [findHelp, refusal, trimmed],
   );
 
-  /*
-   * The Patients page's census, built only while the palette is open: it answers the common
-   * questions ("over 24 hours") and gives the preview each person's "where now" and next step, so
-   * the header and the Patients page cannot disagree. Outside a provider (tests) there is none, and
-   * search simply has no answers and no "where now" line.
-   */
+  // Reuse the Patients census while open, so answers and previews agree with that page.
+  // Outside a provider there are no census answers or "where now" lines.
   const admissions = wardFlow?.admissions;
   const leaveBeds = wardFlow?.leaveBeds;
   const configuration = wardFlow?.configuration;
@@ -644,12 +640,7 @@ export function WardGlobalSearch({
   const showPopup = open;
   const resultsCurrent = deferredQuery === query;
 
-  /*
-   * THE ACTIVE ROW RESETS WHENEVER THE OPTION LIST CHANGES IDENTITY — same render-phase adjustment
-   * `PatientTypeahead` uses and the same reason: an effect would leave one frame where a changed
-   * list is painted with a stale row still marked active, and on a control whose Enter key
-   * navigates, that frame is the one where Enter would go to a record nobody is looking at.
-   */
+  // Reset during render when option keys change, so Enter cannot open an obsolete row.
   const optionsKey = useMemo(() => JSON.stringify(options.map(({ kind, id, href }) => [kind, id, href])), [options]);
   const [seenOptionsKey, setSeenOptionsKey] = useState(optionsKey);
   // The Go to row is active without anyone choosing it: Enter opens it, but Home, End and Tab keep
