@@ -148,6 +148,8 @@ export function reduceReferralSendEvent(
        */
       let raisedFrom: Referral | undefined;
       let continuedAcceptance: Referral["destinations"][number] | undefined;
+      // FORM-REF: the referring service and location a community referral was sent without.
+      let recordedOrigin: { siteCode: string; teamName: string } | undefined;
       if (event.acceptedUnitId !== undefined && event.referralId === undefined)
         return reject(state, event, "Starting an accepted placement requires its referral");
       if (event.referralId !== undefined) {
@@ -161,16 +163,40 @@ export function reduceReferralSendEvent(
         }
         const referral = raisedFrom;
         const directContinuation = event.acceptedUnitId !== undefined;
+        if ((event.teamId !== undefined || event.siteCode !== undefined) && (department || !directContinuation))
+          return reject(state, event, "A referring service or location is recorded only to start a community journey");
         if (directContinuation) {
+          // FORM-REF (Josh, 5 Nov 2026): a detail the referral was sent without is recorded here,
+          // never one it already holds, and only from the offered team and site lists.
+          const teamName =
+            event.teamId === undefined
+              ? referral.sendingTeamName
+              : referral.sendingTeamName === undefined
+                ? communityTeamOptions().find((name) => communityTeamSlug(name) === event.teamId)
+                : undefined;
+          const siteCode =
+            event.siteCode === undefined
+              ? referral.originSiteCode
+              : referral.originSiteCode === undefined && scenarioSite(state.scenario, event.siteCode)
+                ? event.siteCode
+                : undefined;
           if (
             (event.role !== "ward" && event.role !== "coordinator") ||
             (event.role === "ward" && event.actingUnitId !== event.acceptedUnitId) ||
             (department
-              ? referral.source !== "ed_medical" || department.siteCode !== referral.originSiteCode
-              : referral.source !== "community" || referral.sendingTeamName === undefined) ||
+              ? referral.source !== "ed_medical" ||
+                (referral.originSiteCode !== undefined && department.siteCode !== referral.originSiteCode)
+              : referral.source !== "community") ||
             !findUnit(state, event.acceptedUnitId!)
           )
             return reject(state, event, "Only the accepting ward or coordinator can start this direct ED placement");
+          if (!department && (teamName === undefined || siteCode === undefined))
+            return reject(
+              state,
+              event,
+              `Record the referring ${teamName === undefined ? "community service" : "service location"} to start this journey`,
+            );
+          if (!department) recordedOrigin = { siteCode: siteCode!, teamName: teamName! };
           continuedAcceptance = referral.destinations.find(
             (candidate) =>
               candidate.destination.kind === "psychiatric_ward" &&
@@ -299,7 +325,7 @@ export function reduceReferralSendEvent(
             // The team's own transport answer carries over, so a carer-brought patient can arrive
             // without a booking. A needed vehicle is booked on the journey as for any other.
             {
-              originCommunity: { siteCode: raisedFrom!.originSiteCode ?? "", teamName: raisedFrom!.sendingTeamName },
+              originCommunity: recordedOrigin!,
               ...(raisedFrom!.transportNeeded ? {} : { transportNeed: { needed: false, at: event.now } }),
             }),
         openedAt,

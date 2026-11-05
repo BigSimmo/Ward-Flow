@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { Button, DisabledReason, Field, Select, useOptionalToast } from "@/components/wf";
 
+import { COMMUNITY_TEAM_PAGES } from "../community/community-derivations";
 import { movementHref } from "../shell/ward-facade";
 import { usePatientNameDisplay } from "../settings/discreet-names";
 import { useWardCommandCompletion, wardCommandFailure } from "../ward/use-ward-command-completion";
@@ -25,10 +26,13 @@ import {
 import { usePatientOf } from "../ward-patient-name";
 import { acceptedAddressing } from "../ward-referrals";
 import { useRoleGate, useRouteRole } from "../ward-role-gate";
-import { allEmergencyDepartments } from "../ward-sites";
+import { allEmergencyDepartments, siteDirectory } from "../ward-sites";
 import { LEGAL_STATUSES, recordedPullDetails, type AcceptedAwaitingPull } from "./accepted-ward-referral";
 
 import styles from "./pull-accepted-referral.module.css";
+
+/** Hint on a choice the referral was sent without (FORM-REF). */
+const NOT_ON_REFERRAL = "Not recorded on the referral";
 
 /** The form's own "No form" answer, kept apart from "not answered yet" (""). */
 const NO_FORM = "none";
@@ -72,6 +76,14 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
   // True once the journey alone was started after a refusal; its link then opens it.
   const [journeyStarted, setJourneyStarted] = useState(false);
   const [message, setMessage] = useState<string | undefined>();
+  // Form rule (FORM-REF, Josh, 5 Nov 2026): a referral may be sent without where it came from. The
+  // patient cannot be moved without it, so what was not recorded is chosen here, from the same lists.
+  const needsEd = referral.source === "ed_medical" && referral.originSiteCode === undefined;
+  const needsTeam = referral.source === "community" && !referral.sendingTeamName;
+  const needsSite = referral.source === "community" && referral.originSiteCode === undefined;
+  const [edChoice, setEdChoice] = useState("");
+  const [teamChoice, setTeamChoice] = useState("");
+  const [siteChoice, setSiteChoice] = useState("");
 
   const journeyId = journeyStarted
     ? movements.find((movement) => movement.referralId === referral.id && !movement.closure)?.id
@@ -79,9 +91,11 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
   const accepted = acceptedAddressing(referral);
   const destination = accepted?.destination.kind === "psychiatric_ward" ? accepted.destination : undefined;
   const ed =
-    referral.source === "ed_medical"
-      ? allEmergencyDepartments().find((place) => place.siteCode === referral.originSiteCode)
-      : undefined;
+    referral.source !== "ed_medical"
+      ? undefined
+      : needsEd
+        ? allEmergencyDepartments().find((place) => place.id === edChoice)
+        : allEmergencyDepartments().find((place) => place.siteCode === referral.originSiteCode);
   const mismatch =
     destination && legalStatus !== ""
       ? legalStatusMismatchWarning(destination.involuntaryBedNeeded, legalStatus)
@@ -97,12 +111,12 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
     (role === "coordinator" ? undefined : "Coordinator only") ??
     gate("RAISE_REFERRAL").reason ??
     gate("PULL_PATIENT").reason ??
-    (!destination || (referral.source === "ed_medical" && !ed)
+    (!destination || (referral.source === "ed_medical" && !ed && !needsEd)
       ? "This referral has no accepted ward place to pull from"
       : undefined) ??
-    (referral.source === "community" && !referral.sendingTeamName
-      ? "This community referral has no referring team recorded"
-      : undefined) ??
+    (needsEd && !ed ? "Choose the emergency department" : undefined) ??
+    (needsTeam && !teamChoice ? "Choose the referring community service" : undefined) ??
+    (needsSite && !siteChoice ? "Choose the referring service location" : undefined) ??
     (referral.ageBand === undefined ? "This referral has no age band recorded" : undefined) ??
     (legalStatus === "" ? "Choose the legal status" : undefined) ??
     (legalForm === "" ? "Choose a legal form or no form" : undefined) ??
@@ -132,6 +146,8 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
       () =>
         raise("RAISE_REFERRAL", {
           ...(ed ? { edId: ed.id } : {}),
+          ...(needsTeam ? { teamId: teamChoice } : {}),
+          ...(needsSite ? { siteCode: siteChoice } : {}),
           referralId: referral.id,
           acceptedUnitId: unitId,
           ...(pullBed ? { pullBed: true } : {}),
@@ -178,6 +194,57 @@ export function PullAcceptedReferral({ item, onDone }: { item: AcceptedAwaitingP
       <p className={styles.lead}>
         {`${unitName} has accepted ${name}. Pulling the bed starts the movement and keeps the bed for this patient.`}
       </p>
+      {needsEd ? (
+        <Field label="Emergency department" hint={NOT_ON_REFERRAL}>
+          <Select
+            value={edChoice}
+            onChange={(event) => setEdChoice(event.target.value)}
+            data-testid="ward-pull-accepted-ed"
+            disabled={journeyStarted}
+          >
+            <option value="">Choose the emergency department</option>
+            {allEmergencyDepartments().map((place) => (
+              <option key={place.id} value={place.id}>
+                {place.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      ) : null}
+      {needsTeam ? (
+        <Field label="Referring community service" hint={NOT_ON_REFERRAL}>
+          <Select
+            value={teamChoice}
+            onChange={(event) => setTeamChoice(event.target.value)}
+            data-testid="ward-pull-accepted-team"
+            disabled={journeyStarted}
+          >
+            <option value="">Choose the referring community service</option>
+            {COMMUNITY_TEAM_PAGES.map((team) => (
+              <option key={team.id} value={team.id}>
+                {team.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      ) : null}
+      {needsSite ? (
+        <Field label="Referring service location" hint={NOT_ON_REFERRAL}>
+          <Select
+            value={siteChoice}
+            onChange={(event) => setSiteChoice(event.target.value)}
+            data-testid="ward-pull-accepted-site"
+            disabled={journeyStarted}
+          >
+            <option value="">Choose location</option>
+            {siteDirectory.map((site) => (
+              <option key={site.code} value={site.code}>
+                {site.name}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      ) : null}
       <Field label="Legal status" hint={recorded.legalStatus ? (source ?? "From the referral") : undefined}>
         <Select
           value={legalStatus}

@@ -18,6 +18,8 @@ import { acceptedReferralsAwaitingPull } from "@/components/ward-management/refe
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
+import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
+import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 import { ToastProvider } from "@/components/wf";
 
 /**
@@ -106,6 +108,90 @@ describe("Pull the bed in one step", () => {
       fireEvent.click(screen.getByTestId("ward-pull-accepted-confirm"));
     });
     expect(current!.movements.some((movement) => movement.referralId === referral.id)).toBe(false);
+  });
+});
+
+/** The first awaiting pull for a community referral sent with no referring service or location. */
+function PullSparse() {
+  const value = useWardFlow();
+  const [item] = acceptedReferralsAwaitingPull(value.referrals, value.units, value.movements).filter(
+    ({ referral }) => referral.source === "community" && !referral.sendingTeamName && !referral.originSiteCode,
+  );
+  // Not held: the row leaves the list once the journey starts, and the test then reads the state.
+  return item ? <PullAcceptedReferral item={item} onDone={() => {}} /> : <p>Nothing to pull</p>;
+}
+
+describe("Pull the bed: a referral sent without where it came from (FORM-REF)", () => {
+  beforeEach(() => {
+    window.sessionStorage.clear();
+    current = undefined;
+  });
+
+  it("asks for the referring service and location, and starts the journey from them", async () => {
+    render(
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <Capture />
+          <PullSparse />
+        </WardFlowProvider>
+      </ToastProvider>,
+    );
+    const unitId = "scgh-adult-open";
+    act(() => {
+      current!.dispatch({
+        type: "RECEIVE_REFERRAL",
+        role: "community",
+        now: current!.now,
+        ageBand: "Adult",
+        source: "community",
+        destinations: [
+          {
+            kind: "psychiatric_ward",
+            unitId,
+            sex: "Female",
+            gender: "Female",
+            secureBedNeeded: false,
+            involuntaryBedNeeded: false,
+            highAcuityNursingNeeded: false,
+          },
+        ],
+        suburb: { kind: "unknown", reason: "not_known" },
+        urgency: 2,
+        transportNeeded: true,
+        ...FIXTURE_HISTORY,
+      });
+    });
+    const referral = current!.referrals.at(-1)!;
+    act(() => {
+      current!.dispatch({
+        type: "ACCEPT_REFERRAL",
+        role: "coordinator",
+        now: current!.now,
+        referralId: referral.id,
+        destinationKind: "psychiatric_ward",
+        unitId,
+      });
+    });
+    const form = await screen.findByTestId(`ward-pull-accepted-${referral.id}`);
+    expect(within(form).queryByTestId("ward-pull-accepted-ed")).toBeNull();
+    fireEvent.change(screen.getByTestId("ward-pull-accepted-legal-status"), { target: { value: "Voluntary" } });
+    fireEvent.change(screen.getByTestId("ward-pull-accepted-legal-form"), { target: { value: "none" } });
+    fireEvent.change(screen.getByTestId("ward-pull-accepted-observation"), { target: { value: "general" } });
+    const confirm = screen.getByTestId("ward-pull-accepted-confirm");
+    expect(confirm).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText("Choose the referring community service", { selector: "[id$='-why']" })).toBeVisible();
+    const team = COMMUNITY_TEAM_PAGES[0];
+    fireEvent.change(screen.getByTestId("ward-pull-accepted-team"), { target: { value: team.id } });
+    expect(screen.getByText("Choose the referring service location", { selector: "[id$='-why']" })).toBeVisible();
+    fireEvent.change(screen.getByTestId("ward-pull-accepted-site"), { target: { value: "RPH" } });
+    expect(confirm).not.toHaveAttribute("aria-disabled");
+    await act(async () => {
+      fireEvent.click(confirm);
+    });
+    expect(current!.rejections.map((rejection) => rejection.reason)).toEqual([]);
+    const journey = current!.movements.find((movement) => movement.referralId === referral.id);
+    expect(journey?.originCommunity).toEqual({ siteCode: "RPH", teamName: team.name });
+    expect(journey?.acceptedUnitId).toBe(unitId);
   });
 });
 
