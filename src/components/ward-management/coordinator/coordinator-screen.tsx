@@ -709,8 +709,8 @@ export function CoordinatorScreen() {
   // v10 hero: the one ring on the page is statewide occupancy, from the one shared count
   // (`ward-occupancy.ts`) every page and the rail read, against the sidebar's alert line.
   const statewideOccupancy = useMemo(
-    () => wardOccupancy(units, admissions, bedReleases).percent,
-    [units, admissions, bedReleases],
+    () => wardOccupancy(units, admissions, bedReleases, [...referrals, ...movements]).percent,
+    [units, admissions, bedReleases, referrals, movements],
   );
   // Josh, 3 Nov 2026 (appraisal 4): Capacity owns the gauge, so Home says the figure in words
   // and links there instead of drawing a second ring.
