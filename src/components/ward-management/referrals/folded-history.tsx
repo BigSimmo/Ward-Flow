@@ -2,13 +2,11 @@
 
 import { useContext, useId, type ComponentProps, type ReactNode } from "react";
 
-import { HistoryFoldContext, HistoryFoldProvider } from "./folded-history-context";
+import { HistoryFoldContext } from "./folded-history-context";
 
 import { ReferralHistoryAndCorrections } from "./referral-history-corrections";
 
 import styles from "./referral-page.module.css";
-
-export { HistoryFoldProvider };
 
 /**
  * The decision pane's other show-more controls ("Submitted documentation", "Referrer cancelled?")

@@ -5,9 +5,7 @@ import {
   CLEARANCE_CHECK_LABELS,
   CLEARANCE_STATUSES,
   CLEARANCE_STATUS_LABELS,
-  type ClearanceCheck,
   type ClearanceChecklist,
-  type ClearanceStatus,
 } from "./referral-clearance-checks";
 
 /**
@@ -48,9 +46,7 @@ export {
   CLEARANCE_CHECK_LABELS,
   CLEARANCE_STATUSES,
   CLEARANCE_STATUS_LABELS,
-  type ClearanceCheck,
   type ClearanceChecklist,
-  type ClearanceStatus,
 };
 
 /** What a community team or an ED needs to know before the person reaches them. All optional. */

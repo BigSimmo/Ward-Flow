@@ -2,7 +2,7 @@
 export const COMMAND_RECOVERY_KEY = "wardflow:pending-commands-v2";
 export const LEGACY_COMMAND_RECOVERY_KEY = "wardflow:pending-command-v1";
 export type RecoveryEntry = { commandId: string; receiptScope: string; expiresAt: number; phase: "queued" | "sent" };
-export { RECOVERY_OUTCOME_WORDS, type RecoveryResult } from "./ward-command-recovery-words";
+export { type RecoveryResult } from "./ward-command-recovery-words";
 type RecoveryStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_ENTRIES = 256;
