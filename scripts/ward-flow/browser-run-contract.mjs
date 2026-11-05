@@ -125,6 +125,7 @@ export function includeGroupCsrf(args, group) {
 }
 
 export const REQUIRED_SHARED_JOURNEYS = Object.freeze([
+  "a restricted ward saves through delay, refusal, uncertain recovery and a role change",
   "two signed-in desks share one workspace: a save on one reaches the other on its next poll",
   "a clash: two desks change the same record from the same revision, and the second is refused",
   "a workflow refusal from the server's engine reaches the screen as the engine's own reason",

@@ -93,9 +93,9 @@ describe("complete release gate and shared-build browser selection", () => {
       expect(releaseGatePartArgsProblem([...preset, option]), option).toMatch(/test-selection option/);
   });
 
-  it("requires all six production shared-mode journeys", () => {
+  it("requires all seven production shared-mode journeys", () => {
     const cases = sharedModeCases();
-    expect(cases).toHaveLength(6);
+    expect(cases).toHaveLength(7);
     const source = readFileSync("tests/ward-shared-mode.spec.ts", "utf8");
     for (const entry of cases) expect(source).toContain(JSON.stringify(entry.title));
     expect(new Set(cases.map((entry) => entry.project))).toEqual(new Set(["ward-shared-mode"]));

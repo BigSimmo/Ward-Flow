@@ -2,7 +2,7 @@ import { expect, test, type Browser, type BrowserContext, type Locator, type Pag
 import { homeFlowCard, showAllFlowRows, showEveryoneWaitingOn } from "./helpers/ward-home-page";
 
 /**
- * Shared mode end to end (audit F-16): two coordinator desks, each signed in in its own browser
+ * Shared mode end to end (audits F-16 and CG-02): coordinator and restricted ward desks, each signed in in its own browser
  * context, working on one shared workspace through the real local backend and PostgreSQL.
  *
  * Run it with `tests/support/ward-shared-mode-run.mjs`, which starts that stack and passes the
@@ -35,7 +35,12 @@ type Desk = { context: BrowserContext; page: Page };
  * Supabase origin is fixed in the client and its CSP, so its sign-in calls are answered by the
  * fake service the runner started; everything else is refused, so nothing leaves the machine.
  */
-async function openDesk(browser: Browser, account: { email: string; password: string }, clock = false) {
+async function openDesk(
+  browser: Browser,
+  account: { email: string; password: string },
+  clock = false,
+  wardName?: string,
+) {
   // The runner creates a self-signed certificate only for its loopback HTTPS backend.
   const context = await browser.newContext({ ignoreHTTPSErrors: true });
   await context.route(
@@ -62,7 +67,10 @@ async function openDesk(browser: Browser, account: { email: string; password: st
   await page.getByLabel("Email").fill(account.email);
   await page.getByLabel("Password", { exact: true }).fill(account.password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(sharedStatus(page)).toContainText(READY, { timeout: 30_000 });
+  if (wardName) {
+    await page.getByTestId("ward-role-picker").getByRole("button").filter({ hasText: wardName }).click();
+  }
+  await expect(sharedStatus(page)).toContainText(wardName ? "shared synthetic workspace" : READY, { timeout: 30_000 });
   return { context, page } satisfies Desk;
 }
 
@@ -195,7 +203,7 @@ let one: Desk;
 let two: Desk;
 
 test.beforeAll(async ({ browser }) => {
-  expect(accounts, "run this spec through tests/support/ward-shared-mode-run.mjs").toHaveLength(2);
+  expect(accounts, "run this spec through tests/support/ward-shared-mode-run.mjs").toHaveLength(3);
   one = await openDesk(browser, accounts[0]!);
   two = await openDesk(browser, accounts[1]!, true);
 });
@@ -311,6 +319,13 @@ test("keyboard focus: after a shared save the activated control still has focus"
 });
 
 test("different records at once: two desks change different records from the same revision, and both saves land on both desks", async () => {
+  // The previous capacity save advances the global revision without changing urgency labels.
+  // Reload both boards before opening forms: equal labels alone do not prove equal save bases.
+  await Promise.all([
+    one.page.reload({ waitUntil: "domcontentloaded" }),
+    two.page.reload({ waitUntil: "domcontentloaded" }),
+  ]);
+  for (const desk of [one, two]) await expect(sharedStatus(desk.page)).toHaveText(new RegExp(`^${READY}`, "u"), POLL);
   const other = await anotherMovement(two.page);
   for (const desk of [one, two]) for (const movement of [MOVEMENT, other]) await revealRow(desk.page, movement);
   // Desk one changes the movement, desk two a different one, both from the board they hold now.
@@ -393,4 +408,94 @@ test("a desk that loses its network says it is not connected, then catches up wi
   await expect(queueRow(one.page)).toContainText(chosen, POLL);
   expect(await placementInert(one.page)).toBe(false);
   await expectNoReloadSince(one.page, "the network dropping and returning");
+});
+
+test("a restricted ward saves through delay, refusal, uncertain recovery and a role change", async ({ browser }) => {
+  const wards: { id: string; name: string }[] = JSON.parse(process.env.WARD_E2E_RESTRICTED_WARDS ?? "[]");
+  expect(wards).toHaveLength(2);
+  const desk = await openDesk(browser, accounts[2], false, wards[0].name);
+  const { page, context } = desk;
+  const status = page.getByTestId("ward-shared-status-bar");
+  let mode: "delay" | "refuse" | "lose" | "pass" | "scope" = "delay";
+  let release!: () => void;
+  let gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const ids: string[] = [];
+  let reached = false;
+  await context.route("**/v1/workspace/commands", async (route) => {
+    const body = route.request().postDataJSON();
+    ids.push(body.commandId);
+    reached = true;
+    if (mode === "delay" || mode === "scope") await gate;
+    if (mode === "scope") {
+      await route.abort();
+      return;
+    }
+    if (mode === "refuse") {
+      // Exercise the real server's place authorisation, with a command outside this membership.
+      const response = await route.fetch({
+        postData: JSON.stringify({ ...body, event: { ...body.event, unitId: wards[1].id, actingUnitId: wards[1].id } }),
+      });
+      expect(response.status()).toBeGreaterThanOrEqual(400);
+      await route.fulfill({ response });
+      return;
+    }
+    if (mode === "lose") {
+      const response = await route.fetch();
+      expect(response.ok()).toBe(true); // The real save committed before its acknowledgement was lost.
+      await route.abort();
+      return;
+    }
+    await route.continue();
+  });
+  const ready = () => expect(status).toContainText("shared synthetic workspace", { timeout: 30_000 });
+  const confirm = () => page.getByTestId("ward-capacity-submit").click();
+  try {
+    await page.goto(`/ward-flow/ward/${wards[0].id}/answer`, { waitUntil: "domcontentloaded" });
+    await ready();
+    await confirm();
+    await expect.poll(() => reached).toBe(true);
+    await expect(status).toContainText("Saving shared changes");
+    release();
+    await ready();
+
+    mode = "refuse";
+    await confirm();
+    await expect(status).toContainText(
+      /not part|not available|not permitted|not in|another ward|outside|refused|cannot/iu,
+    );
+    const retry = status.getByRole("button", { name: "Retry", exact: true });
+    if (await retry.isVisible()) {
+      mode = "pass";
+      await retry.click();
+    }
+    await ready();
+
+    mode = "lose";
+    await confirm();
+    await expect(status.getByRole("button", { name: "Retry", exact: true })).toBeVisible();
+    const original = ids.at(-1);
+    mode = "pass";
+    await status.getByRole("button", { name: "Retry", exact: true }).click();
+    await ready();
+    expect(ids.at(-1)).toBe(original);
+
+    mode = "scope";
+    reached = false;
+    gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await confirm();
+    await expect.poll(() => reached).toBe(true);
+    await page.getByTestId("ward-rail-persona-trigger").click();
+    await page.getByRole("menuitem", { name: "Switch desk", exact: true }).click();
+    await page.getByTestId("ward-role-picker").getByRole("button").filter({ hasText: wards[1].name }).click();
+    release();
+    await ready();
+    await expect(status).toContainText(wards[1].name);
+  } finally {
+    release();
+    if (!page.isClosed()) await context.close();
+  }
 });

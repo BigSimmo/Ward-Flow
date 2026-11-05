@@ -8,7 +8,7 @@
  * WARD_E2E_DATABASE_URL is an ADMINISTRATOR URL for a throwaway loopback cluster (CI's postgres:16
  * service, or one started by hand). This creates its own database on it, migrates it with the
  * backend's own migration and runtime-role SQL, and drops it at the end. Extra arguments go to
- * `playwright test`; the full gate still requires all four cases exactly once.
+ * `playwright test`; the full gate still requires all seven cases exactly once.
  *
  * What is real: the browser, `next build` / `next start`, the backend's HTTP handler, workspace store, engine and
  * runtime-role check, its Supabase token verifier (signatures checked against published keys), and
@@ -61,13 +61,14 @@ if (!adminUrl || !LOOPBACK.has(new URL(adminUrl).hostname)) {
   process.exit(2);
 }
 
-/** Two synthetic coordinator desks. Both are bootstrap statewide coordinators (WARD_COORDINATOR_USER_IDS). */
-const accounts = ["one", "two"].map((name) => ({
+/** Two bootstrap coordinators and one account with two restricted ward memberships. */
+const accounts = ["one", "two", "restricted-ward"].map((name) => ({
   id: randomUUID(),
   email: `e2e.coordinator.${name}@example.invalid`,
   password: randomBytes(18).toString("base64url"),
 }));
 
+const restrictedWards = [];
 const cleanups = [];
 async function cleanup() {
   for (const step of cleanups.reverse().splice(0)) {
@@ -260,7 +261,10 @@ async function startBackend({ databaseUrl, authOrigin, appOrigin, engineUrl }) {
     WARD_WORKSPACE_ID: randomUUID(),
     WARD_DATABASE_PROVIDER: "postgres",
     WARD_POSTGRES_DATABASE_URL: databaseUrl,
-    WARD_COORDINATOR_USER_IDS: accounts.map((account) => account.id).join(","),
+    WARD_COORDINATOR_USER_IDS: accounts
+      .slice(0, 2)
+      .map((account) => account.id)
+      .join(","),
     WARD_SUPABASE_PROJECT_REF: "zakzoemeedfepxcstsou",
     WARD_SUPABASE_URL: SUPABASE_ORIGIN,
     WARD_SUPABASE_PUBLISHABLE_KEY: PUBLISHABLE_KEY,
@@ -284,6 +288,23 @@ async function startBackend({ databaseUrl, authOrigin, appOrigin, engineUrl }) {
     },
     engine: () => import(engineUrl),
   });
+  // Provision two real restricted memberships in this throwaway database. The account
+  // is deliberately absent from the bootstrap coordinator list.
+  const initial = await store.sharedStore.read(accounts[0].id);
+  for (const unit of initial.payload.state.units.slice(0, 2)) {
+    const membershipId = randomUUID();
+    await store.pool.query(
+      "INSERT INTO ward_flow.memberships(id, workspace_id, actor_id, role, scope, granted_by, granted_at, expires_at) VALUES ($1,$2,$3,'ward',$4,$5,now(),now()+interval '1 hour')",
+      [
+        membershipId,
+        config.workspaceId,
+        accounts[2].id,
+        JSON.stringify({ kind: "ward", unitIds: [unit.id] }),
+        accounts[0].id,
+      ],
+    );
+    restrictedWards.push({ id: unit.id, name: unit.name, membershipId });
+  }
   const server = listen(createHandler({ ...store, log: () => {} }), config);
   cleanups.push(async () => {
     await new Promise((done) => server.close(() => done(undefined)));
@@ -439,6 +460,7 @@ try {
         PLAYWRIGHT_BASE_URL: baseUrl,
         WARD_E2E_SUPABASE_ORIGIN: SUPABASE_ORIGIN,
         WARD_E2E_AUTH_ORIGIN: authOrigin,
+        WARD_E2E_RESTRICTED_WARDS: JSON.stringify(restrictedWards),
         WARD_E2E_ACCOUNTS: JSON.stringify(accounts.map(({ email, password }) => ({ email, password }))),
       },
     },
