@@ -43,6 +43,24 @@ docs/ward-flow/control/work-claims.md
 # enforced the match were retired on 18 October 2026; the files stay unformatted to avoid churn.
 design/prototypes/
 
+# Third-edition design drawings are historical HTML artefacts (hashed in
+# design/third-edition-mockups/MANIFEST.json; screen-map / screen-verification / digest route still
+# read them in place). A whole-tree format pass reflows 11k-16k-line embedded CSS/HTML and churns
+# those hashes without changing product code. Kit checker scripts (*.mjs) beside them stay
+# formatted — ignore only the drawing HTML. Files stay in this folder on purpose: relocating them
+# would break the manifest fingerprints and the references above. Deletion needs owner approval.
+design/third-edition-mockups/**/*.html
+design/third-edition-mockups/*.html
+
+# Older design-system HTML boards (v7/v8) and the Oct 2026 core-pages review sheet are the same
+# class of artefact: large static HTML, not shipped app source.
+design/v7/**/*.html
+design/v7/*.html
+design/v8/**/*.html
+design/v8/*.html
+design/core-pages-review-2026-10/**/*.html
+design/core-pages-review-2026-10/*.html
+
 # The ward journey map's GENERATED output. `npm run ward:journey` rewrites each of these from
 # `src/components/ward-management/`, so a whole-tree format pass and the generator reformat the
 # same file two different ways and the pre-push format guard flip-flops between them. The
