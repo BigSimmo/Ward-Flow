@@ -649,7 +649,7 @@
         "message": "ADD_REFERRAL_CORRECTION note must say something \u2014 a blank is not a correction",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1181
+          "line": 1187
         }
       },
       {
@@ -657,7 +657,7 @@
         "message": "ADD_REFERRAL_CORRECTION note is ${note.length} characters and the limit is ${REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS} \u2014 it is refused rather than shortened",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1189
+          "line": 1195
         }
       }
     ],
@@ -675,7 +675,7 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1147,
+          "line": 1153,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
@@ -685,12 +685,12 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1182,
+          "line": 1188,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1190,
+          "line": 1196,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         }
       ]
@@ -768,7 +768,7 @@
     "nodes": ["seam", "placement", "edRaise"],
     "roles": ["ed", "community", "ward", "coordinator"],
     "does": "Creates the movement that tracks placement. An ED journey may link its addressed referral; an accepting ward or coordinator may continue an accepted direct ED/community referral. pullBed requests an atomic raise-and-pull through both ordinary checks.",
-    "needs": "Valid draft facts and a real ED unless continuing an accepted direct community referral. A linked referral and destination must match, be live and fund no other open movement; direct continuation has its own accepting-ward checks.",
+    "needs": "Valid draft facts, a patient this system holds when one is named, and a real ED unless continuing an accepted direct community referral. A linked referral and destination must match, be live and fund no other open movement; direct continuation has its own accepting-ward checks.",
     "changes": "Creates a placement_requested movement, or accepted_awaiting_bed for a valid direct continuation. Captures typed legal-paper facts; pullBed also reserves the bed only when both steps succeed.",
     "reasons": ["REFERRAL_GENDERS"],
     "refuses": [
@@ -810,6 +810,14 @@
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 245
+        }
+      },
+      {
+        "when": "Guard: patientId !== undefined && !state.patients.some((patient) => patient.id === patientId)",
+        "message": "RAISE_REFERRAL patientId must name a patient this system already holds",
+        "source": {
+          "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
+          "line": 276
         }
       }
     ],
@@ -891,7 +899,7 @@
         "message": "no movement found for id ${event.movementId}",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 682
+          "line": 688
         }
       },
       {
@@ -899,7 +907,7 @@
         "message": "cannot refer a closed movement (${movement.closure.reason})",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 684
+          "line": 690
         }
       },
       {
@@ -907,7 +915,7 @@
         "message": "cannot refer a movement at its current stage (${stageCopy[movement.stage].label})",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 704
+          "line": 710
         }
       },
       {
@@ -915,7 +923,7 @@
         "message": "no unit found for id ${unknown}",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 709
+          "line": 715
         }
       }
     ],
@@ -933,7 +941,7 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 681,
+          "line": 687,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
@@ -953,22 +961,22 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 683,
+          "line": 689,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 685,
+          "line": 691,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 705,
+          "line": 711,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 710,
+          "line": 716,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         }
       ]
@@ -1174,7 +1182,7 @@
         "message": "${event.unitId} does not hold a live referral for movement ${movement.id}",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1104
+          "line": 1110
         }
       },
       {
@@ -1182,7 +1190,7 @@
         "message": "WITHDRAW_WARD_REQUEST reason must be chosen from WARD_REQUEST_WITHDRAWAL_REASONS",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1107
+          "line": 1113
         }
       }
     ],
@@ -1200,7 +1208,7 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1092,
+          "line": 1098,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
@@ -1210,12 +1218,12 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1105,
+          "line": 1111,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1108,
+          "line": 1114,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         }
       ]
@@ -1315,7 +1323,7 @@
         "message": "movement ${movement.id} has already closed and cannot be withdrawn",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 894
+          "line": 900
         }
       },
       {
@@ -1323,7 +1331,7 @@
         "message": "movement ${movement.id} has already been accepted by ${movement.acceptedUnitId}; only the referrer or the coordinator may revoke it now",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 962
+          "line": 968
         }
       },
       {
@@ -1331,7 +1339,7 @@
         "message": "movement ${movement.id}'s patient has already been collected; use STOP_TRANSPORT to stop the journey instead of withdrawing the referral",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 971
+          "line": 977
         }
       },
       {
@@ -1339,7 +1347,7 @@
         "message": "movement ${movement.id} holds no live referral to withdraw",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1037
+          "line": 1043
         }
       }
     ],
@@ -1357,7 +1365,7 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 889,
+          "line": 895,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
@@ -1377,22 +1385,22 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 895,
+          "line": 901,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 963,
+          "line": 969,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 972,
+          "line": 978,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1038,
+          "line": 1044,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         }
       ]
@@ -1415,7 +1423,7 @@
         "message": "cannot refer a closed movement (${movement.closure.reason})",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 462
+          "line": 468
         }
       },
       {
@@ -1423,7 +1431,7 @@
         "message": "team \"${event.team}\" is not a valid community mental health team",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 465
+          "line": 471
         }
       },
       {
@@ -1431,7 +1439,7 @@
         "message": "movement ${movement.id}'s patient has already been collected; use STOP_TRANSPORT to stop the journey instead of referring to a community team",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 475
+          "line": 481
         }
       },
       {
@@ -1439,7 +1447,7 @@
         "message": "movement ${movement.id} is on a legal form; a conclusive examination outcome must be recorded before referring to a community team",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 488
+          "line": 494
         }
       }
     ],
@@ -1457,7 +1465,7 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 459,
+          "line": 465,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
@@ -1467,22 +1475,22 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 463,
+          "line": 469,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 466,
+          "line": 472,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 476,
+          "line": 482,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 489,
+          "line": 495,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         }
       ]
@@ -2556,7 +2564,7 @@
     "roles": ["officer", "ward", "coordinator"],
     "does": "The officer records delivery of the transport leg only, after confirming Record arrival at the ward (WF-22). The receiving ward or coordinator confirms physical arrival, occupies the reserved bed and closes the movement. Physical arrival is irreversible.",
     "needs": "An open movement with collection recorded at moving, or no transport needed and no live job at pulled/handover_ready. The receiving ward must identify itself. Ward arrival additionally checks the matching reservation, identity, bed eligibility and any source stay.",
-    "changes": "Officer: stamps transport.arrivedAt and leaves moving open. Ward/coordinator: occupies the held admission, adjusts bed figures and closes arrived; a linked source stay is departed on transfer arrival.",
+    "changes": "Officer: stamps transport.arrivedAt and leaves moving open. Ward/coordinator: occupies the held admission, adjusts bed figures and closes arrived; a linked source stay is departed on transfer arrival. When the journey and held-bed observation still disagree, acceptance sequence wins before the legacy timestamp fallback, and the stay keeps the reconciliation in its history.",
     "reasons": [],
     "refuses": [
       {
@@ -2969,7 +2977,7 @@
         "message": "cannot change legal status for a closed movement (${movement.closure.reason})",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1249
+          "line": 1255
         }
       },
       {
@@ -2977,7 +2985,7 @@
         "message": "CHANGE_LEGAL_STATUS reason must be chosen from LEGAL_STATUS_CHANGE_REASONS",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1257
+          "line": 1263
         }
       }
     ],
@@ -2995,7 +3003,7 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1242,
+          "line": 1248,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
@@ -3005,12 +3013,12 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1250,
+          "line": 1256,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1258,
+          "line": 1264,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         }
       ]
@@ -3118,7 +3126,7 @@
         "message": "cannot correct a legal form receipt for a closed movement (${movement.closure.reason})",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 422
+          "line": 428
         }
       },
       {
@@ -3126,7 +3134,7 @@
         "message": "movement ${movement.id} has no recorded legal form receipt to correct",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 426
+          "line": 432
         }
       }
     ],
@@ -3144,7 +3152,7 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 411,
+          "line": 417,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
@@ -3154,12 +3162,12 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 422,
+          "line": 428,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 426,
+          "line": 432,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         }
       ]
@@ -4315,7 +4323,7 @@
         "message": "CHANGE_URGENCY urgency must be chosen from URGENCY_LEVELS",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1211
+          "line": 1217
         }
       },
       {
@@ -4323,7 +4331,7 @@
         "message": "CHANGE_URGENCY reason must be chosen from URGENCY_CHANGE_REASONS",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1220
+          "line": 1226
         }
       }
     ],
@@ -4341,7 +4349,7 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1201,
+          "line": 1207,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
@@ -4351,12 +4359,12 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1212,
+          "line": 1218,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-          "line": 1221,
+          "line": 1227,
           "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         }
       ]

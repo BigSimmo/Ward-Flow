@@ -420,18 +420,18 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   Reviewed source: src/components/ward-management/ward-flow-events.ts:1839; SHA256 cc194f8c311719c50ea9d0fa4216f884b439ef3f4020bbab7106c278cbffaeff
   Reviewed source: src/components/ward-management/ward-access-state.ts:652; SHA256 57c3e6555702e92d7e985f8943cb335859fda46abb757b898812c99dc184eb9d
 - RECORD_OBSERVATION_LEVEL — modelled; event roles: ed, ward, coordinator
-  Source-reviewed command model: Named target and any agreeing linked open counterpart carry the new observation and append from/to history.
+  Source-reviewed command model: Named target and any agreeing linked open counterpart carry the new observation and append sequenced from/to history.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:238
   Event/dispatch reference: src/components/ward-management/ward-flow-observation-events.ts:32
   Event/dispatch reference: src/components/ward-management/ward-flow-reducer.ts:1882
   Subject: An open movement or occupied admission and its agreeing live counterpart
   Before: Target has its recorded observation and retained change-count token
-  After: Named target and any agreeing linked open counterpart carry the new observation and append from/to history
+  After: Named target and any agreeing linked open counterpart carry the new observation and append { at, from, to, sequence } history, sequenced across movements and admissions
   Scope: EVENT_ROLE applies. Ward movement updates require its accepted ward; admission target requires its ward claim and refuses ED callers. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.
   payload: target is {kind:movement,movementId,actingUnitId?} or {kind:admission,admissionId,actingUnitId}
   payload: observation is a valid Observation; expected editing token required once the target has prior changes; role and now
   guards: Valid observation; target exists; movement open or admission bed occupied
-  guards: New value must differ; token must match and linked records must agree; missing token refused after first recorded change
+  guards: New value must differ; token must match and linked records must agree; missing token refused after first recorded change; sequence is one past the highest retained observation change and refuses when the next sequence is not a safe integer
   guards: Seeded links without matching observations stay unlinked rather than silently overwriting the other record
   effects: Updates observation and appends {at,from,to} on each linked record
   effects: No new placement or capacity allocation; staffing eligibility remains a separate pull check
@@ -1808,6 +1808,8 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.
+  guards: Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo.
   effects: Applies only saved before/after patches for REFER_TO_UNITS; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-undo-steps.test.ts
@@ -1830,6 +1832,8 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.
+  guards: Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo.
   effects: Applies only saved before/after patches for ACCEPT_IN_PRINCIPLE; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-undo-steps.test.ts
@@ -1852,6 +1856,8 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.
+  guards: Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo.
   effects: Applies only saved before/after patches for RECORD_LEGAL_FORM_WRITTEN, RECORD_LEGAL_FORM_CODE, RECORD_LEGAL_FORM_RECEIVED or RECORD_LEGAL_FORM_EXPIRY; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-audit-legal-group.test.ts
@@ -1875,6 +1881,8 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.
+  guards: Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo.
   effects: Applies only saved before/after patches for RECORD_SUPPORT_NOTIFICATION; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-undo-steps.test.ts
@@ -1898,6 +1906,8 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.
+  guards: Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo.
   effects: Applies only saved before/after patches for RECORD_REPATRIATION; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-out-of-area-repatriation.test.ts
@@ -1919,6 +1929,8 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.
   guards: The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.
   guards: The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.
+  guards: Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.
+  guards: Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo.
   effects: Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.
   effects: The audit evidence of the step and of the Undo stays.
   tests: tests/ward-return-early.test.ts
@@ -1938,6 +1950,8 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.
+  guards: Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo.
   effects: Applies only saved before/after patches for RECORD_HANDOVER_SIGN_OFF; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-undo-steps.test.ts
@@ -1960,6 +1974,8 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.
+  guards: Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo.
   effects: Applies only saved before/after patches for RECORD_SITE_HANDOVER_SIGN_OFF; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-undo-steps.test.ts
@@ -1984,6 +2000,8 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.
+  guards: Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo.
   effects: Applies only saved before/after patches for RECORD_ARRIVED_IN_DEPARTMENT, RECORD_EXAMINATION, RECORD_MEDICAL_CLEARANCE, RECORD_TRANSPORT_NEED, RECORD_ED_PRESENTATION or HANDOVER_READY; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-ed-examination-save.dom.test.tsx
@@ -2007,6 +2025,8 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.
+  guards: Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo.
   effects: Applies only saved before/after patches for TRANSPORT_ACCEPTED, TRANSPORT_EN_ROUTE, PATIENT_COLLECTED or PATIENT_ARRIVED; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-undo-steps.test.ts
@@ -2029,6 +2049,8 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.
+  guards: Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo.
   effects: Applies only saved before/after patches for RECORD_LEAVING or RECORD_PATIENT_DISCHARGE; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-departure-undo-integrity.test.ts
@@ -2051,6 +2073,8 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.
+  guards: Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo.
   effects: Applies only saved before/after patches for RECORD_ABSENT_WITHOUT_LEAVE; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-engine-safety.test.ts
@@ -2073,6 +2097,8 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.
+  guards: Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo.
   effects: Applies only saved before/after patches for COMPLETE_BED_MEETING_ACTION or RECORD_BED_MEETING_ACTION (Chase Undo); removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-bed-meeting-undo.test.ts
@@ -2095,6 +2121,8 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.
   guards: The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.
   guards: The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.
+  guards: Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.
+  guards: Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo.
   effects: Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.
   effects: The audit evidence of the step and of the Undo stays.
   tests: tests/ward-tier1-undo.test.ts
@@ -2113,6 +2141,8 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.
   guards: The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.
   guards: The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.
+  guards: Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.
+  guards: Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo.
   effects: Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.
   effects: The audit evidence of the step and of the Undo stays.
   tests: tests/ward-tier1-undo.test.ts
@@ -2131,6 +2161,8 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.
   guards: The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.
   guards: The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.
+  guards: Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.
+  guards: Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo.
   effects: Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.
   effects: The audit evidence of the step and of the Undo stays.
   tests: tests/ward-tier1-undo.test.ts

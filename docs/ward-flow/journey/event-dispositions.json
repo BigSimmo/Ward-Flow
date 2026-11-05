@@ -310,12 +310,12 @@
   {
     "event": "RECORD_OBSERVATION_LEVEL",
     "status": "modelled",
-    "reason": "Source-reviewed command model: Named target and any agreeing linked open counterpart carry the new observation and append from/to history.",
+    "reason": "Source-reviewed command model: Named target and any agreeing linked open counterpart carry the new observation and append sequenced from/to history.",
     "source": "src/components/ward-management/ward-flow-observation-events.ts",
     "model": {
       "subject": "An open movement or occupied admission and its agreeing live counterpart",
       "before": "Target has its recorded observation and retained change-count token",
-      "after": "Named target and any agreeing linked open counterpart carry the new observation and append from/to history",
+      "after": "Named target and any agreeing linked open counterpart carry the new observation and append { at, from, to, sequence } history, sequenced across movements and admissions",
       "payload": [
         "target is {kind:movement,movementId,actingUnitId?} or {kind:admission,admissionId,actingUnitId}",
         "observation is a valid Observation; expected editing token required once the target has prior changes; role and now"
@@ -323,7 +323,7 @@
       "scope": "EVENT_ROLE applies. Ward movement updates require its accepted ward; admission target requires its ward claim and refuses ED callers. Shared authenticated command scope additionally checks the permitted place and stored record; EVENT_ROLE alone is not place authority.",
       "guards": [
         "Valid observation; target exists; movement open or admission bed occupied",
-        "New value must differ; token must match and linked records must agree; missing token refused after first recorded change",
+        "New value must differ; token must match and linked records must agree; missing token refused after first recorded change; sequence is one past the highest retained observation change and refuses when the next sequence is not a safe integer",
         "Seeded links without matching observations stay unlinked rather than silently overwriting the other record"
       ],
       "effects": [
@@ -2813,7 +2813,9 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.",
+        "Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo."
       ],
       "effects": [
         "Applies only saved before/after patches for REFER_TO_UNITS; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -2864,7 +2866,9 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.",
+        "Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo."
       ],
       "effects": [
         "Applies only saved before/after patches for ACCEPT_IN_PRINCIPLE; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -2915,7 +2919,9 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.",
+        "Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_LEGAL_FORM_WRITTEN, RECORD_LEGAL_FORM_CODE, RECORD_LEGAL_FORM_RECEIVED or RECORD_LEGAL_FORM_EXPIRY; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -2968,7 +2974,9 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.",
+        "Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_SUPPORT_NOTIFICATION; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3019,7 +3027,9 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.",
+        "Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_REPATRIATION; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3072,7 +3082,9 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.",
+        "Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_HANDOVER_SIGN_OFF; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3123,7 +3135,9 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.",
+        "Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_SITE_HANDOVER_SIGN_OFF; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3181,7 +3195,9 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.",
+        "Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_ARRIVED_IN_DEPARTMENT, RECORD_EXAMINATION, RECORD_MEDICAL_CLEARANCE, RECORD_TRANSPORT_NEED, RECORD_ED_PRESENTATION or HANDOVER_READY; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3232,7 +3248,9 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.",
+        "Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo."
       ],
       "effects": [
         "Applies only saved before/after patches for TRANSPORT_ACCEPTED, TRANSPORT_EN_ROUTE, PATIENT_COLLECTED or PATIENT_ARRIVED; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3283,7 +3301,9 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.",
+        "Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_LEAVING or RECORD_PATIENT_DISCHARGE; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3334,7 +3354,9 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.",
+        "Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_ABSENT_WITHOUT_LEAVE; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3387,7 +3409,9 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.",
+        "Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo."
       ],
       "effects": [
         "Applies only saved before/after patches for COMPLETE_BED_MEETING_ACTION or RECORD_BED_MEETING_ACTION (Chase Undo); removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3542,7 +3566,9 @@
       "guards": [
         "A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.",
         "The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.",
-        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number."
+        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.",
+        "Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.",
+        "Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo."
       ],
       "effects": [
         "Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.",
@@ -3577,7 +3603,9 @@
       "guards": [
         "A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.",
         "The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.",
-        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number."
+        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.",
+        "Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.",
+        "Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo."
       ],
       "effects": [
         "Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.",
@@ -3612,7 +3640,9 @@
       "guards": [
         "A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.",
         "The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.",
-        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number."
+        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.",
+        "Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.",
+        "Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo."
       ],
       "effects": [
         "Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.",
@@ -3647,7 +3677,9 @@
       "guards": [
         "A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.",
         "The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.",
-        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number."
+        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.",
+        "Restoring leave beds must still name an occupied stay on that ward with only one active leave; a newer leave or absence refuses Undo.",
+        "Restoring a patient whose record number (UMRN) now belongs to another patient refuses Undo."
       ],
       "effects": [
         "Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.",
