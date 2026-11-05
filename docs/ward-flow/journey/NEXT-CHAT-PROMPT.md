@@ -1,3 +1,7 @@
+> **Historical record.** This retained handover predates the current event catalogue repair.
+> Use [the maintained journey guide](README.md) and current source; old gaps and completion claims
+> do not establish present behaviour or commission work.
+
 # Prompt for the next Journey Explorer chat
 
 > **Historical prompt; do not use as instructions.** It predates the 27 September source review,

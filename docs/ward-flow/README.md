@@ -99,9 +99,9 @@ npm run typecheck                                # when changed source or types 
 ```
 
 `node scripts/ward-flow/gate-tsc.mjs` is the faster incremental type check, but its cache defaults
-to `D:/Repos/ward-flow-logs/tsc-cache`. On macOS or Linux that writes a literal `D:` folder into
-the checkout, so set `WARD_TSC_CACHE_DIR` to a folder outside the repository first, or use
-`npm run typecheck`.
+outside the checkout: `D:/Repos/ward-flow-logs/tsc-cache` on Windows and
+`~/ward-flow-logs/tsc-cache` elsewhere. `WARD_TSC_CACHE_DIR` overrides it for this run.
+Use `npm run typecheck` for the selected full type check.
 
 Vitest positional arguments filter test filenames; they do not select importers of source files.
 `test:related` follows imports from changed sources and reports its fan-out cap and fallback scope.

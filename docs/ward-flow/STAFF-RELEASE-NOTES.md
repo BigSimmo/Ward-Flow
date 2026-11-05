@@ -7,6 +7,22 @@ Newest first. The [desk guides](desk-guides/README.md) show each desk's steps in
 
 _Ward Flow is a prototype on synthetic data. Not for real patients._
 
+## Source changes since 24 October 2026
+
+These describe implemented source behaviour checked on 3 November. Check the live release before
+assuming a change is available on the hosted board.
+
+- The coordinator menu includes **Home**, **Waiting** and **All EDs**.
+- Coordinators can use **Record departure** for a confirmed discharge on **Discharges**.
+- Help includes searchable instructions and printable desk guides. Its task instructions distinguish
+  the desks that can perform each job; global rule changes belong to the statewide coordinator.
+
+## Keeping this history
+
+This page is the enduring staff history. The app's **What's new** list is a shorter, capped display;
+older entries are retained in the dated history below. When a visible step changes, update this page and the
+matching desk guide in the same change. A source entry is not proof of a live release.
+
 ## Earlier announcements retained on 3 November 2026
 
 - 2026-10-31 (2026-10-31-redesign-ed-transport): The ED board, All EDs, Transport and Out of area have a new look, with a simpler actions menu on the ED board.
@@ -102,3 +118,11 @@ _Ward Flow is a prototype on synthetic data. Not for real patients._
   patient's own bed while they are on leave or absent.
 - Avoid counts that change. Point to the screen instead.
 - If a step changes, update the matching [desk guide](desk-guides/README.md) too.
+
+## Retained app announcements
+
+These entries moved from the capped app source list into this history on 3 November 2026. Their
+text and identity are retained here; this is not evidence of a live release.
+
+- 2026-10-31 (`2026-10-31-redesign-capacity`): Capacity has a new look: beds ready first, the bed forecast, a bed map of every ward and this shift's checks.
+- 2026-10-31 (`2026-10-31-redesign-referrals`): Referrals and Ward answer are tidier: rows wrap in full, and Accept and Decline sit in a bar at the foot.
