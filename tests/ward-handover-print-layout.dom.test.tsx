@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
-import { afterEach, expect, it, vi } from "vitest";
+import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { useState } from "react";
 import { HandoverPage } from "@/components/ward-management/handover/handover-page";
 import { HandoverPrintSheet, DEFAULT_PRINT_OPTIONS } from "@/components/ward-management/handover/handover-print-sheet";
@@ -83,4 +83,77 @@ it("does not refuse native browser printing before layout measurements are avail
   expect(screen.queryAllByRole("alert").some((alert) => /does not fit the paper/.test(alert.textContent ?? ""))).toBe(
     false,
   );
+});
+
+// Print journey flake (5 Nov 2026): an overflow read from pages cut by the previous measurement
+// latched the refusal. On paper the refusal hides the pages, so nothing could measure them again.
+describe("measured overflow", () => {
+  let overflowing = true;
+  let frames: FrameRequestCallback[] = [];
+  const restore: (() => void)[] = [];
+  function stubGetter(name: "offsetHeight" | "scrollHeight" | "clientHeight", read: (node: HTMLElement) => number) {
+    const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, name);
+    Object.defineProperty(HTMLElement.prototype, name, {
+      configurable: true,
+      get(this: HTMLElement) {
+        return read(this);
+      },
+    });
+    restore.push(() => {
+      if (original) Object.defineProperty(HTMLElement.prototype, name, original);
+    });
+  }
+  function flushFrames() {
+    for (let round = 0; round < 10 && frames.length > 0; round += 1) {
+      const due = frames;
+      frames = [];
+      act(() => due.forEach((frame) => frame(0)));
+    }
+  }
+  function openSheet() {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <HandoverPage />
+      </WardFlowProvider>,
+    );
+    fireEvent.keyDown(window, { key: "p" });
+  }
+  beforeEach(() => {
+    frames = [];
+    vi.stubGlobal("requestAnimationFrame", (frame: FrameRequestCallback) => frames.push(frame));
+    vi.stubGlobal("cancelAnimationFrame", () => undefined);
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+      },
+    );
+    // On paper a refused layout hides its pages (`.stack[data-print-overflow] .frame`), so they measure 0.
+    const shown = (node: HTMLElement) => node.closest("[data-print-overflow]") === null;
+    stubGetter("offsetHeight", (node) => (!shown(node) ? 0 : node.tagName === "ARTICLE" ? 794 : 20));
+    stubGetter("clientHeight", (node) => (node.tagName === "ARTICLE" ? 794 : 20));
+    stubGetter("scrollHeight", (node) => (node.tagName === "ARTICLE" && overflowing ? 900 : 794));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    restore.splice(0).forEach((undo) => undo());
+  });
+
+  it("measures the re-cut pages before refusing a layout that fits once cut again", () => {
+    overflowing = true;
+    openSheet();
+    act(() => frames.splice(0).forEach((frame) => frame(0)));
+    overflowing = false;
+    flushFrames();
+    expect(document.querySelector("[data-wf-print-stack]")).not.toHaveAttribute("data-print-overflow");
+  });
+
+  it("still refuses a measured layout that does not fit", () => {
+    overflowing = true;
+    openSheet();
+    flushFrames();
+    expect(document.querySelector("[data-wf-print-stack]")).toHaveAttribute("data-print-overflow");
+  });
 });
