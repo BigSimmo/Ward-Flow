@@ -263,6 +263,10 @@ export function createWorkspaceStore(
    * @type {LruCache<{ payload: any, partial: any }>}
    */
   const scopedReplies = new LruCache(SCOPED_REPLY_CACHE_ENTRIES);
+  /** The committed row whose scoped boards this cache currently holds. @type {string | null} */
+  let scopedReplyStamp = null;
+  // A read crossing an incompatible-row refusal must not repopulate this cache.
+  let scopedReplyEpoch = 0;
   /** Full public reports only, from committed locked reads; never a candidate save. */
   const executiveReplies = new LruCache(SCOPED_REPLY_CACHE_ENTRIES);
   async function executiveSnapshot(connection, row, at, view, stamp) {
@@ -371,23 +375,31 @@ export function createWorkspaceStore(
       ),
     });
     if (typeof stamp !== "string") return build();
+    // A different committed row replaces old boards; in-flight replies keep their own immutable parts.
+    if (stamp !== scopedReplyStamp) {
+      scopedReplies.clear();
+      scopedReplyStamp = stamp;
+    }
+    const wholeNetwork = !view || engine.wholeNetwork(view.access);
     const now = engine.worldNow(row.payload, at);
     const key = createHash("sha256")
       .update(
         JSON.stringify(
           canonical({
             stamp,
-            now,
+            // Statewide projection returns the world unchanged; only its reply clock moves.
+            now: wholeNetwork ? null : now,
             senderView,
             reviewable,
             access: view ? view.access : null,
             // As the engine turns them into workspace minutes (engine.ts `worldGrants`).
-            grants: view
-              ? (view.grants ?? []).map((grant) => [
-                  grant.patientId,
-                  now + Math.max(0, Math.ceil((new Date(grant.until).getTime() - at.getTime()) / 60_000)),
-                ])
-              : null,
+            grants:
+              view && !wholeNetwork
+                ? (view.grants ?? []).map((grant) => [
+                    grant.patientId,
+                    now + Math.max(0, Math.ceil((new Date(grant.until).getTime() - at.getTime()) / 60_000)),
+                  ])
+                : null,
           }),
         ),
       )
@@ -1103,6 +1115,9 @@ export function createWorkspaceStore(
       // serve them until a restart. Forget them, so the next request reads every row again.
       confirmed = null;
       pending = null;
+      scopedReplies.clear();
+      scopedReplyStamp = null;
+      scopedReplyEpoch += 1;
       throw new Error(refusal);
     }
     // A selected ward desk can include several cover memberships. Resolve all of them again
@@ -1367,6 +1382,7 @@ export function createWorkspaceStore(
     }
   }
   async function read(actorId, view) {
+    const replyEpoch = scopedReplyEpoch;
     if (view?.access?.role === "executive" && !view.membershipId) throw new Error("role-ended");
     if (view?.membershipId) return scopedRead(actorId, view);
     const at = clock();
@@ -1375,7 +1391,7 @@ export function createWorkspaceStore(
     if (stored && engine.validWorld(stored.payload)) {
       stored.archived = await archivedCount(pool, stored.payload, stored.revision);
       await prepareReviewAuthority(pool, stored, view);
-      return snapshot(stored, at, view, stored.stamp);
+      return snapshot(stored, at, view, replyEpoch === scopedReplyEpoch ? stored.stamp : undefined);
     }
     return transaction(async (client, now) => {
       const row = await lock(client, actorId, now, view);
@@ -1391,6 +1407,7 @@ export function createWorkspaceStore(
    * one another. An uninitialised or incompatible workspace falls back to the locked write path.
    */
   async function scopedRead(actorId, view) {
+    const replyEpoch = scopedReplyEpoch;
     const version = await schemaVersion();
     const ready = await transaction(async (client, at) => {
       const row = await lockedWorld(client, "SHARE", true, { copy: false });
@@ -1402,7 +1419,7 @@ export function createWorkspaceStore(
       Object.assign(view, current);
       row.archived = await archivedCount(client, row.payload, row.revision);
       await prepareReviewAuthority(client, row, current);
-      return snapshot(row, at, current, row.stamp, client);
+      return snapshot(row, at, current, replyEpoch === scopedReplyEpoch ? row.stamp : undefined, client);
     });
     if (ready) return ready;
     const current = await viewer(actorId, { workingAs: view.membershipId });

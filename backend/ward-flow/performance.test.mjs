@@ -185,6 +185,208 @@ test("PS-05: a full read reuses the scoped board per revision and access, and ne
   }
 });
 
+test("an unchanged statewide board is serialised once across minutes while clocks and committed revisions stay fresh", async () => {
+  const world = engine.seedWorld(start);
+  let serialisations = 0;
+  const counting = {
+    ...engine,
+    scopeWorld: (...args) => {
+      // Strip detail before installing the probe: the store's identical filter then returns
+      // this object without spreading it, so only body serialisation reads the getter.
+      const scoped = withoutRecordDetail(engine.scopeWorld(...args));
+      return {
+        ...scoped,
+        get version() {
+          serialisations += 1;
+          return scoped.version;
+        },
+      };
+    },
+  };
+  const { store, tick } = storeFor(world, { engine: counting });
+  await store.viewer(actorId, {}).catch(() => {});
+  const view = { actorId, membershipId: null, access: engine.STATEWIDE, grants: [] };
+  const expectedPayload = withoutRecordDetail(engine.scopeWorld(world, view.access, start));
+  let latest = await store.read(actorId, view);
+  const initialReply = jsonResponse({ snapshot: latest }, { status: 200, headers: {} });
+  assert.equal(serialisations, 0, "building an unread response must not read the serialisation probe");
+  let decoded = await initialReply.json();
+  assert.equal(serialisations, 1, "consuming the first body reads the serialisation probe once");
+  const initialNow = decoded.snapshot.now;
+  assert.deepEqual(decoded.snapshot.payload, expectedPayload);
+  for (let minute = 1; minute <= 20; minute++) {
+    tick(60_000);
+    latest = await store.read(actorId, view);
+    decoded = await jsonResponse({ snapshot: latest }, { status: 200, headers: {} }).json();
+    assert.equal(decoded.snapshot.now, initialNow + minute);
+    assert.deepEqual(decoded.snapshot.payload, expectedPayload);
+  }
+  const unchangedSerialisations = serialisations;
+  const retained = jsonResponse({ snapshot: latest }, { status: 200, headers: {} });
+  const saved = await store.command(actorId, crypto.randomUUID(), latest.revision, refresh(world.state.units[0].id), {
+    revisionOnly: true,
+  });
+  assert.equal(saved.status, 200);
+  tick(60_000);
+  const next = await store.read(actorId, view);
+  const nextDecoded = await jsonResponse({ snapshot: next }, { status: 200, headers: {} }).json();
+  assert.equal(nextDecoded.snapshot.revision, latest.revision + 1);
+  assert.equal(nextDecoded.snapshot.now, initialNow + 21);
+  assert.notEqual(next.payload, latest.payload, "a committed revision rebuilds its board");
+  const repeated = await store.read(actorId, view);
+  assert.deepEqual(
+    (await jsonResponse({ snapshot: repeated }, { status: 200, headers: {} }).json()).snapshot.payload,
+    nextDecoded.snapshot.payload,
+  );
+  assert.deepEqual((await retained.json()).snapshot, decoded.snapshot, "an older response keeps its original board");
+  assert.equal(
+    unchangedSerialisations,
+    1,
+    "an unchanged statewide board must not allocate a new JSON part each minute",
+  );
+  assert.equal(serialisations, 2, "the new committed board is serialised once and then reused");
+});
+
+test("an incompatible read drops a serialized statewide board before a same-stamp repair", async () => {
+  const world = engine.seedWorld(start);
+  const { db, store, tick } = storeFor(world);
+  await store.viewer(actorId, {}).catch(() => {});
+  const view = { actorId, membershipId: null, access: engine.STATEWIDE, grants: [] };
+  const first = await store.read(actorId, view);
+  const initial = await jsonResponse({ snapshot: first }, { status: 200, headers: {} }).json();
+  const retained = jsonResponse({ snapshot: first }, { status: 200, headers: {} });
+  const revision = db.revision;
+  const updatedAt = db.updatedAt.getTime();
+  const version = db.core.version;
+  db.core = { ...db.core, version: 0 };
+  await assert.rejects(store.read(actorId, view), /Stored workspace is incompatible/);
+
+  // A synthetic hand repair does not change the committed revision or update time.
+  db.core = { ...db.core, version };
+  const unit = [...db.records.values()].find((row) => row.collection === "units");
+  assert.ok(unit);
+  assert.ok(unit.body && typeof unit.body === "object" && "name" in unit.body && typeof unit.body.name === "string");
+  unit.body = { ...unit.body, name: "SYN-CACHE-REPAIRED" };
+  tick(61_000);
+  const repaired = await store.read(actorId, view);
+  const decoded = await jsonResponse({ snapshot: repaired }, { status: 200, headers: {} }).json();
+  assert.equal(db.revision, revision);
+  assert.equal(db.updatedAt.getTime(), updatedAt);
+  assert.equal(decoded.snapshot.revision, first.revision);
+  assert.equal(decoded.snapshot.now, initial.snapshot.now + 1);
+  assert.equal(
+    decoded.snapshot.payload.state.units.find((row) => row.id === unit.record_id)?.name,
+    "SYN-CACHE-REPAIRED",
+    "a valid repair after a refusal must replace the previously serialized board",
+  );
+  assert.notEqual(repaired.payload, first.payload);
+  assert.deepEqual((await retained.json()).snapshot, initial.snapshot, "an older response remains immutable");
+  assert.equal((await store.read(actorId, view)).payload, repaired.payload, "the repaired board is cached again");
+});
+
+test("a read crossing an incompatible refusal cannot repopulate the repaired statewide board cache", async () => {
+  const world = engine.seedWorld(start);
+  const { db, pool } = memoryDatabase(world);
+  let at = new Date(start);
+  let archiveReached = () => {};
+  let resumeArchive = () => {};
+  const archiveStarted = new Promise((resolve) => {
+    archiveReached = () => resolve(undefined);
+  });
+  const archiveGate = new Promise((resolve) => {
+    resumeArchive = () => resolve(undefined);
+  });
+  const query = pool.query;
+  let holdArchive = true;
+  pool.query = async (sql, params = []) => {
+    const result = await query(sql, params);
+    if (holdArchive && /count\(\*\)::integer AS archived FROM ward_flow\.archived_records/.test(sql)) {
+      holdArchive = false;
+      archiveReached();
+      await archiveGate;
+    }
+    return result;
+  };
+  const store = createWorkspaceStore(pool, {
+    workspaceId,
+    engine,
+    clock: () => new Date(at),
+    log: () => {},
+    alert: () => {},
+    demoEvents: true,
+  });
+  await store.viewer(actorId, {}).catch(() => {});
+  const view = { actorId, membershipId: null, access: engine.STATEWIDE, grants: [] };
+  const earlierRead = store.read(actorId, view);
+  await archiveStarted;
+  const revision = db.revision;
+  const updatedAt = db.updatedAt.getTime();
+  const version = db.core.version;
+  const unit = [...db.records.values()].find((row) => row.collection === "units");
+  assert.ok(unit);
+  assert.ok(unit.body && typeof unit.body === "object" && "name" in unit.body && typeof unit.body.name === "string");
+  const originalName = unit.body.name;
+  try {
+    db.core = { ...db.core, version: 0 };
+    await assert.rejects(store.read(actorId, view), /Stored workspace is incompatible/);
+    db.core = { ...db.core, version };
+    unit.body = { ...unit.body, name: "SYN-CACHE-RACE-REPAIRED" };
+    at = new Date(start.getTime() + 61_000);
+  } finally {
+    resumeArchive();
+  }
+  // The old read captured its own world before the refusal and finishes after the repair.
+  const earlier = await earlierRead;
+  const olderReply = jsonResponse({ snapshot: earlier }, { status: 200, headers: {} });
+  const repaired = await store.read(actorId, view);
+  const decoded = await jsonResponse({ snapshot: repaired }, { status: 200, headers: {} }).json();
+  assert.equal(db.revision, revision);
+  assert.equal(db.updatedAt.getTime(), updatedAt);
+  assert.equal(decoded.snapshot.revision, earlier.revision);
+  assert.equal(decoded.snapshot.now, earlier.now + 1);
+  assert.equal(
+    decoded.snapshot.payload.state.units.find((row) => row.id === unit.record_id)?.name,
+    "SYN-CACHE-RACE-REPAIRED",
+    "a read crossing a refusal must not seed the repaired workspace's cache",
+  );
+  assert.equal(
+    (await olderReply.json()).snapshot.payload.state.units.find((row) => row.id === unit.record_id)?.name,
+    originalName,
+    "the crossing read keeps its own immutable board",
+  );
+  assert.notEqual(repaired.payload, earlier.payload);
+  assert.equal((await store.read(actorId, view)).payload, repaired.payload);
+});
+
+test("a scoped board drops an expired opening when the workspace minute changes", async () => {
+  const world = engine.seedWorld(start);
+  const view = wardView(world.state.units[0].id);
+  const own = new Set(engine.scopeWorld(world, view.access, start).state.patients.map((patient) => patient.id));
+  const foreign = world.state.patients.find((patient) => !own.has(patient.id));
+  assert.ok(foreign);
+  const granted = { ...view, grants: [{ patientId: foreign.id, until: new Date(start.getTime() + 60_000) }] };
+  const { store, tick } = storeFor(world);
+  await store.viewer(actorId, {}).catch(() => {});
+  const before = await jsonResponse(
+    { snapshot: await store.read(actorId, granted) },
+    { status: 200, headers: {} },
+  ).json();
+  assert.equal(
+    before.snapshot.payload.state.patients.some((patient) => patient.id === foreign.id),
+    true,
+  );
+  tick(61_000);
+  const after = await jsonResponse(
+    { snapshot: await store.read(actorId, granted) },
+    { status: 200, headers: {} },
+  ).json();
+  assert.equal(after.snapshot.now, before.snapshot.now + 1);
+  assert.equal(
+    after.snapshot.payload.state.patients.some((patient) => patient.id === foreign.id),
+    false,
+  );
+});
+
 test("PS-05: replies built from parts match plain JSON, and their spliced gzip decodes", async () => {
   const big = { rows: Array.from({ length: 3000 }, (_, index) => ({ id: `SYN-${index}`, note: 'é "}' })) };
   registerPart(big);
@@ -217,6 +419,125 @@ test("PS-05: replies built from parts match plain JSON, and their spliced gzip d
   lru.get("a");
   lru.set("c", 3);
   assert.deepEqual([...lru.entries.keys()], ["a", "c"], "the least recently used entry goes first");
+});
+
+test("full replies defer serialising cached parts until their body is read", async () => {
+  let serialisations = 0;
+  const payload = registerPart({
+    get value() {
+      serialisations += 1;
+      return 12345;
+    },
+  });
+  const body = { snapshot: { payload } };
+  const reply = jsonResponse(body, { status: 200, headers: {} });
+  assert.equal(serialisations, 0, "constructing an unused reply must not allocate its full JSON body");
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(serialisations, 0, "an unread response must stay lazy after stream scheduling");
+  assert.equal((await reply.json()).snapshot.payload.value, 12345);
+  assert.equal(serialisations, 1);
+  assert.equal((await jsonResponse(body, { status: 200, headers: {} }).json()).snapshot.payload.value, 12345);
+  assert.equal(serialisations, 1, "later readers reuse the registered JSON part");
+});
+
+test("a response body reader cannot change a later reply's cached parts", async () => {
+  const payload = registerPart({ value: 12345 });
+  const body = { snapshot: { payload } };
+  const reply = jsonResponse(body, { status: 200, headers: {} });
+  assert.ok(reply.body);
+  const reader = reply.body.getReader();
+  for (;;) {
+    const chunk = await reader.read();
+    if (chunk.done) break;
+    chunk.value.fill(0);
+  }
+  reader.releaseLock();
+  assert.equal((await jsonResponse(body, { status: 200, headers: {} }).json()).snapshot.payload.value, 12345);
+});
+
+test("segmented replies preserve uncompressed output and the listener's gzip threshold", async () => {
+  const large = { snapshot: { payload: registerPart({ value: "é".repeat(1500) }) } };
+  const small = { snapshot: { payload: registerPart({ value: 12345 }) } };
+  const plain = { value: "é".repeat(1500) };
+  const bodies = new Map(
+    /** @type {Array<[string, unknown]>} */ ([
+      ["/large", large],
+      ["/small", small],
+      ["/plain", plain],
+    ]),
+  );
+  const server = listen(
+    async (request) =>
+      jsonResponse(bodies.get(new URL(request.url).pathname), { status: 200, headers: { vary: "Origin" } }),
+    { port: 0, host: "127.0.0.1", trustedProxyAddresses: [] },
+  );
+  await once(server, "listening");
+  try {
+    const address = /** @type {import("node:net").AddressInfo} */ (server.address());
+    for (const { path, encoding, expected, compressed } of [
+      { path: "/large", encoding: "identity", expected: large, compressed: false },
+      { path: "/large", encoding: "gzip;q=0", expected: large, compressed: false },
+      { path: "/small", encoding: "gzip", expected: small, compressed: false },
+      { path: "/plain", encoding: "gzip", expected: plain, compressed: true },
+    ]) {
+      const reply = await fetch(`http://127.0.0.1:${address.port}${path}`, {
+        headers: { "accept-encoding": encoding },
+      });
+      assert.equal(reply.status, 200);
+      assert.equal(reply.headers.get("content-encoding"), compressed ? "gzip" : null);
+      assert.equal(reply.headers.get("vary"), compressed ? "Origin, Accept-Encoding" : "Origin");
+      assert.deepEqual(await reply.json(), expected);
+      if (!compressed)
+        assert.equal(Number(reply.headers.get("content-length")), Buffer.byteLength(JSON.stringify(expected)));
+    }
+  } finally {
+    server.close();
+    await once(server, "close");
+  }
+});
+
+test("gzip sends cached parts without consuming a whole uncompressed response body", async () => {
+  const payload = registerPart({ value: "é".repeat(1500) });
+  let fullBodyReads = 0;
+  let sequence = 0;
+  const responses = [];
+  const server = listen(
+    async () => {
+      const response = jsonResponse({ sequence: ++sequence, payload }, { status: 200, headers: { vary: "Origin" } });
+      const originalRead = response.arrayBuffer.bind(response);
+      response.arrayBuffer = () => {
+        fullBodyReads += 1;
+        return originalRead();
+      };
+      responses.push(response);
+      return response;
+    },
+    { port: 0, host: "127.0.0.1", trustedProxyAddresses: [] },
+  );
+  await once(server, "listening");
+  try {
+    const address = /** @type {import("node:net").AddressInfo} */ (server.address());
+    for (let index = 1; index <= 2; index++) {
+      const reply = await fetch(`http://127.0.0.1:${address.port}/v1/workspace`, {
+        headers: { "accept-encoding": "gzip" },
+      });
+      assert.equal(reply.status, 200);
+      assert.equal(reply.headers.get("content-encoding"), "gzip");
+      assert.equal(reply.headers.get("vary"), "Origin, Accept-Encoding");
+      const value = await reply.json();
+      assert.equal(value.sequence, index, "per-request fields stay fresh while the part is reused");
+      assert.equal(value.payload.value, payload.value);
+    }
+    assert.equal(fullBodyReads, 0, "compressed cached parts must not allocate a full uncompressed response body");
+    assert.equal(
+      responses.every((response) => response.bodyUsed),
+      true,
+      "the unused body is cancelled",
+    );
+  } finally {
+    server.close();
+    await once(server, "close");
+  }
 });
 
 test("PS-11: the archive count is read once per revision and carried across this server's saves", async () => {
