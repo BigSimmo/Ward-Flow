@@ -1,27 +1,9 @@
-/* FormalName (formal-name.tsx): the surname gives way before the given name does. Nothing is cut
-   while the whole name fits. Once it does not, only the surname shrinks; the given name is cut only
-   when it alone is wider than the whole space. */
+/* FormalName (formal-name.tsx): a name is always shown in full and wraps (DS §4 Names, §5 Q327).
+   Nothing is cut and nothing ends in "…". A very long surname may break mid-word rather than push
+   the row sideways. */
 .name {
-  display: inline-flex;
-  max-width: 100%;
+  display: inline;
   min-width: 0;
-  white-space: nowrap;
-}
-
-.family,
-.given {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.family {
-  flex: 0 1 auto;
-}
-
-.given {
-  flex: 0 0 auto;
-  max-width: 100%;
-  /* Keeps the space after the comma at the start of this box. */
-  white-space: pre;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }

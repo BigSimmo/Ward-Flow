@@ -17,8 +17,8 @@ import {
   dayOf,
   formatInstant,
   formatInstantWithDay,
-  formatRemaining,
   minutesUntil,
+  splitDuration,
 } from "@/components/ward-management/ward-clock";
 import { deliveredAwaitingWard } from "@/components/ward-management/ward-stage-copy";
 import { tentativeDiagnosisPhrase } from "@/components/ward-management/ward-diagnosis";
@@ -481,7 +481,8 @@ export function wardLiveFormAlerts({
       key: `leave-${leaveBed.id}`,
       tone: "info" as const,
       title: `Leave bed open more than ${LEAVE_BED_OPEN_WARNING_MINUTES / 60} hours (${OPERATIONAL_DEFAULT_LABEL})`,
-      countdown: formatRemaining(now - leaveBed.confirmedAt),
+      // Elapsed time on a leave bed, not a deadline: never the countdown formatter ("5h 10m left").
+      countdown: `Open ${splitDuration(Math.max(now - leaveBed.confirmedAt, 0))}`,
       text: leaveBed.absentWithoutLeave
         ? `A bed held for an absence without leave at ${unit.name} is still recorded. Absent since ${formatInstantWithDay(leaveBed.absentWithoutLeave.since, now)}.`
         : `A bed on leave at ${unit.name} is still recorded. Expected return ${formatInstant(leaveBed.expectedReturn)}.`,

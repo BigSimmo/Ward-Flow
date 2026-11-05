@@ -341,11 +341,11 @@
   font-weight: 600;
 }
 
+/* Names in full, TV too (Q285, DS §4): wrap, never cut. */
 .groupWho {
-  overflow: hidden;
+  min-width: 0;
   font-weight: 700;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .groupWhat {

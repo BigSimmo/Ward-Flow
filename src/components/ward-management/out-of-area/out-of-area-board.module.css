@@ -1554,8 +1554,17 @@ fieldset.formRow {
   justify-content: center;
 }
 
+/* The full name may take a second line: the button grows rather than cutting it (doubled class:
+   beats the kit button's own height). */
+.phoneBarMain.phoneBarMain {
+  height: auto;
+  min-height: var(--wf-h-md);
+  padding-block: 4px;
+}
+
 .phoneBarName {
   font-weight: 400;
+  overflow-wrap: anywhere;
 }
 
 .phoneToast {

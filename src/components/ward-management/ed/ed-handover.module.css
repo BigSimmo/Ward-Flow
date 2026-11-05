@@ -111,15 +111,11 @@
 .handoverTable [class*="a2Patient"] {
   white-space: normal;
 }
-/* Q286 (pre-launch check D8, 2 Nov 2026): a long name was cut mid-word on one line and then kept
-   wrapping. It now takes at most two lines and ends in an ellipsis, as the other tables do. */
+/* Names in full, wrapping (DS §4 Names, §5 "Long data"): the two-line clamp of Q286 is for other
+   long text, not a person's name, so the name is never cut here. */
 .handoverTable [class*="a2Name"] {
-  display: -webkit-box;
   white-space: normal;
   overflow-wrap: anywhere;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
 }
 .handoverTable [class*="a2Patient"] [class*="a2Sub"] {
   display: block;

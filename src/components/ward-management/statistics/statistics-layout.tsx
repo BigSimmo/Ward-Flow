@@ -6,8 +6,7 @@ import styles from "./statistics-layout.module.css";
 
 /**
  * One row of statistics cards, ending flush. `lead2` and `lead3` give the first column the room,
- * `halves` and `thirds` split it evenly. Mark the column that may run long with `<Follow>`: it then
- * scrolls inside at the height its neighbours set, rather than leaving blank space under them.
+ * `halves` and `thirds` split it evenly. A column marked `<Follow>` grows with its content (D-95).
  */
 export function FlushRow({
   layout = "halves",
@@ -32,8 +31,9 @@ export function FlushStack({ className, children, ...rest }: ComponentPropsWitho
 }
 
 /**
- * The column that does not set the row's height. One card: its header stays and its body scrolls.
- * `stack`: several cards that scroll as one column. On one-column widths it shows everything again.
+ * A column of one card or several (`stack`) that grows with its content at every width: D-95 keeps
+ * one page scroll, so it never scrolls inside (audit C5, 5 Nov 2026). Its last card fills any spare
+ * height so the row still ends flush.
  */
 export function Follow({
   stack = false,
