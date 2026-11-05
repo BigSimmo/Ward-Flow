@@ -320,7 +320,7 @@ export function placeTrackLabels(marks: { x: number; label: string }[], width: n
 /** One line from the first recorded time to now, with what happened on it. */
 export function WaitTrack({ points, now }: { points: TrackPoint[]; now: Instant }) {
   const [frameRef, width] = useFrameWidth(366);
-  const height = 84; // WF-35 third label row
+  const height = 84;
   const sorted = [...points].sort((a, b) => a.at - b.at);
   const start = sorted[0]?.at ?? now;
   const from = Math.floor((Math.min(start, now) - 10) / 30) * 30;

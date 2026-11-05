@@ -777,13 +777,7 @@ export function PlannedAdmissionsPanel({
                         value={draft.initials}
                         maxLength={5}
                         autoComplete="off"
-                        aria-invalid={
-                          draft.initials.trim() !== "" && normalisePlannedAdmissionInitials(draft.initials) === null
-                        }
-                        onChange={(event) => {
-                          const next = event.target.value.replace(/[^A-Za-z.\s]/g, "").slice(0, 5);
-                          update({ initials: next });
-                        }}
+                        onChange={(event) => update({ initials: event.target.value })}
                         data-testid="ward-planned-initials"
                       />
                     </Field>

@@ -96,8 +96,8 @@ export function roleOwnerHint(role: WardFlowRole, eventType: WardFlowEventType):
   if (canDispatch(role, eventType)) return;
   const owners = EVENT_ROLE[eventType].filter((o) => o !== "demo" && o !== role);
   if (!owners.length) return;
-  const named = owners.includes("coordinator") ? "Bed coordinator" : rolesOnlyReason(owners).slice(0, -5);
-  return `Ask the ${named[0].toLowerCase()}${named.slice(1)} to do this.`;
+  const named = owners.includes("coordinator") ? "bed coordinator" : rolesOnlyReason(owners).slice(0, -5).toLowerCase();
+  return `Ask the ${named} to do this.`;
 }
 
 export function withOwnerHint(reason: string, role: WardFlowRole, eventType: WardFlowEventType): string {

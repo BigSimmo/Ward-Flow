@@ -623,7 +623,6 @@ export function NextPhoneMenu({
   const { counts, shellRole } = useNextNavCounts();
   const deskRoleLabel = useDeskRoleLabel(shellRole);
   const accessAdmin = useEffectiveWardAccess().role === "admin";
-  // WF-42: path-tied open — render adjust clears on route change (no setState-in-effect).
   const [openPath, setOpenPath] = useState<string | null>(null);
   const [createPath, setCreatePath] = useState<string | null>(null);
   const [switcherPath, setSwitcherPath] = useState<string | null>(null);

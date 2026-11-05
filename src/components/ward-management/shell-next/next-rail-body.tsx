@@ -330,10 +330,9 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const toggleRef = useRef<HTMLButtonElement>(null);
   const moreTriggerRef = useRef<HTMLButtonElement | null>(null);
   const firstMoreLinkRef = useRef<HTMLAnchorElement & HTMLButtonElement>(null);
-  // WF-42: path-tied More — render adjust clears on route change (no setState-in-effect).
   const [moreOpenPath, setMoreOpenPath] = useState<string | null>(null);
   const moreOpen = moreOpenPath === pathname;
-  const setMoreOpen = useCallback((open: boolean) => setMoreOpenPath(open ? pathname : null), [pathname]);
+  const setMoreOpen = useCallback((o: boolean) => setMoreOpenPath(o ? pathname : null), [pathname]);
   const [moreEpoch, setMoreEpoch] = useState(pathname);
   if (moreEpoch !== pathname) {
     setMoreEpoch(pathname);

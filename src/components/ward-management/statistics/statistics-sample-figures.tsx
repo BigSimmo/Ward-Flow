@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { communityTeamById } from "../community/community-derivations";
 import { edById, siteByCode } from "../ward-sites";
@@ -15,19 +14,6 @@ import type { WardScenario } from "../ward-scenarios";
 import styles from "./statistics-samples.module.css";
 
 export function StatisticsSampleFigures() {
-  // WF-31: restore theme/rail/glare on leave. Lives here (already in the statistics layout) so the
-  // app router layout does not gain a new import that reshuffles the shared phone script chunk.
-  useEffect(() => {
-    let leave: (() => void) | undefined;
-    let left = false;
-    void import("../shell/ward-statistics-display-pref-session").then((session) => {
-      if (!left) leave = session.enterStatisticsDisplayPrefScope();
-    });
-    return () => {
-      left = true;
-      leave?.();
-    };
-  }, []);
   const enabled = useStatisticsSamples();
   const pathname = usePathname() || "";
   const control = useExecutiveStatisticsControl();
