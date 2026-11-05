@@ -130,13 +130,16 @@
    the right. The right edge is drawn while there is more to the right, the same scroll-driven
    edge as the shared ward table (ward-table.module.css): a border, never a fade, and nothing on a
    table that fits. */
+/* Review 5 Nov 2026: the 2px edge alone was too faint at tablet width, so a soft inner shade joins it. */
 @keyframes statsMoreRight {
   from,
   97% {
     border-right-color: var(--wf-ink-3);
+    box-shadow: inset -14px 0 12px -12px color-mix(in srgb, var(--wf-ink-1) 32%, transparent);
   }
   to {
     border-right-color: transparent;
+    box-shadow: none;
   }
 }
 

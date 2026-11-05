@@ -361,6 +361,7 @@ function BedMeetingAgenda() {
                 href={bedMeetingTvHref()}
                 className={`${buttonClass({ variant: "light", size: "sm" })} ${phoneRows.heroPill}`}
                 data-testid="agenda-start-meeting"
+                data-primary="true"
               >
                 Start meeting
               </Link>

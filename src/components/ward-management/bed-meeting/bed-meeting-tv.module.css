@@ -904,7 +904,9 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .panel[data-wide] {
+  .panel[data-wide],
+  /* Review 5 Nov 2026: the Brief below spans the row, so Beds that fit sat alone at half width. */
+  .panels > [data-area="fit"] {
     grid-column: 1 / -1;
   }
 }

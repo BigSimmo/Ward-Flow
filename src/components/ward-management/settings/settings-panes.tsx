@@ -135,7 +135,8 @@ export function AlertsPane({
                 onClick={onTestBuzz}
               >
                 <Play size={14} aria-hidden="true" />
-                Test
+                {/* Review 5 Nov 2026: "Test" read as a second test alert beside "Send a test alert". */}
+                Play sound
               </button>
               <RowSwitch name="Buzz sound" checked={buzz} onCheckedChange={onBuzzChange} />
             </SettingRow>
