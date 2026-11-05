@@ -19,8 +19,8 @@ type PanelBoundaryState = { failed: boolean; resetKey: unknown };
  * again. The page, its header and every other panel keep working. The route `error.tsx` boundaries
  * still catch anything outside a panel.
  *
- * The console line is fixed and includes a recognised error class only, never the message, which
- * can carry record content. Render throws only: handlers and async work report their own errors.
+ * The console line names the section and the error type only, never the message, which can carry
+ * record content. Render throws only: event handlers and async work still report their own errors.
  */
 export class PanelBoundary extends Component<PanelBoundaryProps, PanelBoundaryState> {
   state: PanelBoundaryState = { failed: false, resetKey: this.props.resetKey };
@@ -35,15 +35,7 @@ export class PanelBoundary extends Component<PanelBoundaryProps, PanelBoundarySt
 
   componentDidCatch(error: unknown) {
     const type = error instanceof Error ? error.name : typeof error;
-    console.error("Ward Flow panel failed", {
-      type: ["Error", "TypeError", "RangeError", "ReferenceError", "SyntaxError", "ChunkLoadError"].includes(type)
-        ? type
-        : "Error",
-    });
-    if (process.env.NEXT_PUBLIC_WARD_CLIENT_ERROR_REPORTING === "true")
-      void import("../ward-management/ward-client-errors")
-        .then(({ reportBrowserError }) => reportBrowserError(error))
-        .catch(() => {});
+    console.error(`Ward Flow panel failed: ${this.props.label ?? "section"} (${type})`);
   }
 
   private retry = () => this.setState({ failed: false });

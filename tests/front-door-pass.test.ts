@@ -282,19 +282,15 @@ describe("POST /api/session", () => {
 });
 
 describe("DELETE /api/session", () => {
-  it("clears the pass", async () => {
-    const response = await DELETE(
-      new NextRequest(new URL("https://ward.example.test/api/session"), { method: "DELETE" }),
-    );
+  it("clears the pass", () => {
+    const response = DELETE(new NextRequest(new URL("https://ward.example.test/api/session"), { method: "DELETE" }));
     expect(response.status).toBe(204);
     expect(response.headers.get("set-cookie")).toMatch(/^wf_pass=; Path=\/; Max-Age=0;.*HttpOnly; Secure$/);
   });
 
-  it("marks the cookie Secure in production even when the app sees plain http behind the edge", async () => {
+  it("marks the cookie Secure in production even when the app sees plain http behind the edge", () => {
     vi.stubEnv("NODE_ENV", "production");
-    const response = await DELETE(
-      new NextRequest(new URL("http://ward.example.test/api/session"), { method: "DELETE" }),
-    );
+    const response = DELETE(new NextRequest(new URL("http://ward.example.test/api/session"), { method: "DELETE" }));
     expect(response.headers.get("set-cookie")).toMatch(/HttpOnly; Secure$/);
   });
 });

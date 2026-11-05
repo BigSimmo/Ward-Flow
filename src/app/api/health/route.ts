@@ -1,4 +1,3 @@
-import { withRequestLog } from "@/lib/api-request-log";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
@@ -10,7 +9,7 @@ export const runtime = "nodejs";
  * and was marked failed (28 September 2026). It reads nothing and calls nothing: Ward Flow runs on
  * synthetic data, so "the server is up and routing" is the whole of its health.
  */
-function getHealth() {
+export function GET() {
   return Response.json(
     { status: "ok" },
     {
@@ -21,5 +20,3 @@ function getHealth() {
     },
   );
 }
-
-export const GET = withRequestLog(getHealth);

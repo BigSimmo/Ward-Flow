@@ -45,7 +45,6 @@ governs appearance; current engine/source/tests govern behaviour. Start with the
 
 ## Ward API routes
 
-- `/api/client-error`: private opt-in browser diagnostic relay under `src/app/api/client-error/`; bounded class/build-coordinate payloads only, no messages or page addresses.
 - `/api/health`: liveness only, returning `{status:"ok"}`; no backend readiness assertion.
 - `/api/local-project-id`: local checkout/runtime identity before attaching to a preview server.
 - `/api/session`: sets and ends the front door's pass under `src/app/api/session/`; does nothing while the switch is off.

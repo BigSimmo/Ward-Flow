@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { withRequestLog } from "@/lib/api-request-log";
 import type { NextRequest } from "next/server";
 
 import {
@@ -95,7 +94,7 @@ function withPass(request: NextRequest, value: string, maxAge: number) {
   return response;
 }
 
-async function postSession(request: NextRequest) {
+export async function POST(request: NextRequest) {
   if (!frontDoorRequired()) return answer(204);
   const secret = frontDoorSecret();
   if (!secret) return answer(503, "Sign-in is not set up on this server yet. Tell the Ward Flow coordinator.");
@@ -143,7 +142,7 @@ async function postSession(request: NextRequest) {
   return withPass(request, pass.value, pass.maxAge);
 }
 
-function deleteSession(request: NextRequest) {
+export function DELETE(request: NextRequest) {
   const response = answer(204);
   const secure = secureCookie(request) ? "; Secure" : "";
   response.headers.append(
@@ -152,6 +151,3 @@ function deleteSession(request: NextRequest) {
   );
   return response;
 }
-
-export const POST = withRequestLog(postSession);
-export const DELETE = withRequestLog(deleteSession);

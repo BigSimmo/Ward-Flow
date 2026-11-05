@@ -1,4 +1,3 @@
-import { withRequestLog } from "@/lib/api-request-log";
 import { localProjectRequestIdentityPayload } from "@/lib/local-project-guard";
 
 export const dynamic = "force-dynamic";
@@ -9,7 +8,7 @@ export const runtime = "nodejs";
  * site, or a local server reached through a non-loopback Host) it answers 404, so the project hash
  * and port range are never published.
  */
-function getLocalProjectIdentity(request: Request) {
+export function GET(request: Request) {
   const payload = localProjectRequestIdentityPayload(request);
   if (payload.localServer.currentUrl === null || payload.reason === "non-local-host")
     return Response.json(
@@ -29,5 +28,3 @@ function getLocalProjectIdentity(request: Request) {
     },
   });
 }
-
-export const GET = withRequestLog(getLocalProjectIdentity);

@@ -189,13 +189,8 @@ The [tier operations draft](plans/2026-11-04-tier-operations.md) records downtim
 release and reviewed-revert checks, environment meanings and Josh's email alert ownership.
 It is a prototype exercise draft; hospital escalation wording needs local approval.
 
-Browser error reporting is opt-in: build with `NEXT_PUBLIC_WARD_CLIENT_ERROR_REPORTING=true`,
-and configure private `WARD_CLIENT_ERROR_REPORTING=true` plus `SENTRY_DSN` on the app server.
-Keep the DSN private. The same-origin relay accepts only recognised error classes and compiled
-asset coordinates, caps requests at 16 KiB and throttles each class for five minutes on both ends.
-It excludes messages, typed content, user details and page addresses. A 202 response confirms
-acceptance only; verify synthetic delivery and the owner's email rule separately before relying
-on it. The [implementation evidence](evidence/2026-11-04-tier-improvements.md) records local proof
+The browser error relay, Sentry frame scrubbing and request log from that draft are not part of
+this change; they wait for separate review. The [implementation evidence](evidence/2026-11-04-tier-improvements.md) records local proof
 and remaining acceptance. This document does not activate monitoring or authorise provider use.
 
 ## Backup and restore

@@ -6,7 +6,14 @@
 // weight. Every event is scrubbed to error type, stack frames and the
 // allow-listed tags below. Messages, request data, users, breadcrumbs and
 // extras are dropped, so typed text and record content cannot leave the server.
-import type { BaseTransportOptions, ClientOptions, Log, Transport, TransportMakeRequestResponse } from "@sentry/core";
+import type {
+  BaseTransportOptions,
+  ClientOptions,
+  ErrorEvent,
+  Log,
+  Transport,
+  TransportMakeRequestResponse,
+} from "@sentry/core";
 import {
   createStackParser,
   createTransport,
@@ -18,8 +25,9 @@ import {
 import { nodeStackLineParser, ServerRuntimeClient } from "@sentry/core/server";
 import { registerSentryLogForwarder } from "./logger";
 
-import { scrubSentryEvent } from "./sentry-scrub";
-export { scrubSentryEvent } from "./sentry-scrub";
+const REDACTED = "[redacted]";
+const ALLOWED_TAGS = new Set(["incidentId", "method", "routerKind", "routeType"]);
+const ALLOWED_CONTEXTS = new Set(["runtime", "os", "app"]);
 
 type Env = Record<string, string | undefined>;
 
@@ -40,6 +48,42 @@ export function serverSentrySettings(env: Env): ServerSentrySettings | null {
     release: env.SENTRY_RELEASE?.trim() || env.RAILWAY_GIT_COMMIT_SHA?.trim() || undefined,
     enableLogs: env.SENTRY_ENABLE_LOGS !== "false",
   };
+}
+
+/** Reduce an event to error types, stack frames and allow-listed tags. */
+export function scrubSentryEvent(event: ErrorEvent): ErrorEvent {
+  const tags = Object.fromEntries(Object.entries(event.tags ?? {}).filter(([key]) => ALLOWED_TAGS.has(key)));
+  const contexts = Object.fromEntries(
+    Object.entries(event.contexts ?? {}).filter(([key]) => ALLOWED_CONTEXTS.has(key)),
+  );
+  const values = event.exception?.values?.map((value) => ({
+    type: value.type,
+    value: value.value === undefined ? undefined : REDACTED,
+    mechanism: value.mechanism,
+    stacktrace: value.stacktrace && {
+      frames: value.stacktrace.frames?.map((frame) => ({
+        filename: frame.filename,
+        module: frame.module,
+        function: frame.function,
+        lineno: frame.lineno,
+        colno: frame.colno,
+        in_app: frame.in_app,
+      })),
+    },
+  }));
+  return {
+    type: event.type,
+    event_id: event.event_id,
+    timestamp: event.timestamp,
+    platform: event.platform,
+    level: event.level,
+    environment: event.environment,
+    release: event.release,
+    sdk: event.sdk,
+    tags,
+    contexts,
+    ...(values ? { exception: { values } } : {}),
+  } as ErrorEvent;
 }
 
 /** Logs arrive already redacted by logger.ts; keep only the event name and those attributes. */
@@ -139,20 +183,4 @@ export function captureServerFailure(error: unknown, tags: Record<string, string
   const scope = getCurrentScope().clone();
   scope.setTags(tags);
   client.captureException(error, undefined, scope);
-}
-
-/** The same scrub and throttle protect the browser relay; acceptance is not delivery proof. */
-export function captureBrowserFailure(event: {
-  type: string;
-  frames: { filename: string; lineno: number; colno: number }[];
-}) {
-  if (!client || !allowServerReport(`browser:${event.type}`)) return;
-  client.captureEvent(
-    scrubSentryEvent({
-      type: undefined,
-      level: "error",
-      platform: "javascript",
-      exception: { values: [{ type: event.type, stacktrace: { frames: event.frames } }] },
-    }),
-  );
 }

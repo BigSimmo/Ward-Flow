@@ -124,15 +124,15 @@ describe("the ward flow error panel refuses to swallow the error", () => {
     }
   });
 
-  it("logs a recognised error class without putting messages or stacks in the console", () => {
+  it("logs the error OBJECT, so the stack is reachable in the console in every environment", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     const { error } = renderPanel();
 
     const ourCalls = consoleError.mock.calls.filter((call) => call[0] === "A log label:");
     expect(ourCalls).toHaveLength(1);
-    expect(ourCalls[0][1]).toEqual({ type: "Error" });
-    expect(JSON.stringify(ourCalls)).not.toContain(error.message);
-    expect(ourCalls[0][1]).not.toBe(error);
+    // Asserting identity, not a string: logging `error.message` would satisfy a looser check while
+    // throwing the stack away, which is most of what the console entry is for.
+    expect(ourCalls[0][1]).toBe(error);
   });
 
   it("puts the stack on screen outside production", () => {

@@ -43,15 +43,7 @@ export function RouteErrorBoundary({
   const { copied, copyFailed, copyDiagnostics } = useCopyDiagnostics(error);
 
   useEffect(() => {
-    console.error(logLabel, {
-      type: ["Error", "TypeError", "RangeError", "ReferenceError", "SyntaxError", "ChunkLoadError"].includes(error.name)
-        ? error.name
-        : "Error",
-    });
-    if (process.env.NEXT_PUBLIC_WARD_CLIENT_ERROR_REPORTING === "true")
-      void import("@/components/ward-management/ward-client-errors")
-        .then(({ reportBrowserError }) => reportBrowserError(error))
-        .catch(() => {});
+    console.error(logLabel, error);
     headingRef.current?.focus({ preventScroll: true });
   }, [error, logLabel]);
 
