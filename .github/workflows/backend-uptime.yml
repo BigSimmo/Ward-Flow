@@ -1,26 +1,38 @@
 name: Ward Flow backend uptime
 
 # Audit F-06 (approved by Josh, 19 October 2026; database check and test alert approved 20 October).
-# Every 30 minutes, asks the hosted shared backend whether it is up and can reach its database.
-# When either stays down across three tries, opens one "backend down" issue that @mentions the
-# owner, so GitHub emails him; when both answer again, comments and closes that issue. An issue is
-# used because GitHub sends a failed scheduled run's own email only to whoever last edited the
-# schedule, which may not be the owner. Only the backend is checked: the signed-in site sleeps when
-# idle, and a check every 30 minutes would keep it awake. `/healthz` needs no sign-in; sent the
-# WARD_FLOW_UPTIME_TOKEN repo secret (audit P177), it reports `database` as "ok" or "unavailable"
-# from a check it repeats at most every 30 seconds. A missing or wrong token hides `database`: that
-# counts as up and shows a warning on the run, not a "database down" issue (`/readyz`
-# needs a sign-in). Run it by hand with "Send one test alert" ticked to check the email arrives: it
-# opens and at once closes one clearly labelled test issue and skips the real check.
+# Every 10 minutes, asks the hosted shared backend whether it is up and can reach its database,
+# then signs in as the synthetic monitor account and loads the shared workspace, as a desk would.
+# When any of these stays down across three tries, opens one "backend down" issue that @mentions
+# the owner, so GitHub emails him; when all answer again, comments and closes that issue. An issue
+# is used because GitHub sends a failed scheduled run's own email only to whoever last edited the
+# schedule, which may not be the owner. Only the backend and Supabase sign-in are called: the
+# signed-in site sleeps when idle, and a check every 10 minutes would keep it awake. `/healthz`
+# needs no sign-in; sent the WARD_FLOW_UPTIME_TOKEN repo secret (audit P177), it reports `database`
+# as "ok" or "unavailable" from a check it repeats at most every 30 seconds. A missing or wrong
+# token hides `database`: that counts as up and shows a warning on the run, not a "database down"
+# issue (`/readyz` needs a sign-in). Run it by hand with "Send one test alert" ticked to check the
+# email arrives: it opens and at once closes one clearly labelled test issue and skips the checks.
+#
+# Signed-in workspace check (bird's eye review, Josh 5 November 2026). The 4 November outage was
+# silent: `/healthz` and the database answered while every `/v1/workspace` read failed with 503.
+# The monitor signs in with WARD_FLOW_MONITOR_EMAIL and WARD_FLOW_MONITOR_PASSWORD (a synthetic
+# account holding the executive role, which sees counts only and whose reads write no record-access
+# log entries) through Supabase with WARD_FLOW_SUPABASE_PUBLISHABLE_KEY, loads `/v1/workspace`, then
+# signs that session out. No secret, token or reply body is printed. Missing secrets skip this
+# check with a notice, so `/healthz` alone decides. A refused sign-in, a missing role or a second
+# step the account cannot do is a set-up problem: it warns and leaves any open issue alone, as the
+# hidden database does. Sign-in that does not answer, or a workspace that does not load, raises
+# the issue.
 # Public repository: free. GitHub turns scheduled workflows off after 60 days without repository
 # activity.
 on:
   schedule:
-    - cron: "7,37 * * * *"
+    - cron: "3-59/10 * * * *"
   workflow_dispatch:
     inputs:
       test_alert:
-        description: Send one test alert (opens and closes a labelled test issue; skips the real check)
+        description: Send one test alert (opens and closes a labelled test issue; skips the real checks)
         type: boolean
         default: false
 
@@ -36,9 +48,10 @@ jobs:
   uptime:
     name: Ward Flow backend uptime
     runs-on: ubuntu-24.04
-    timeout-minutes: 5
+    timeout-minutes: 9
     env:
       BACKEND_URL: https://ward-flow-backend-production.up.railway.app
+      SUPABASE_URL: https://zakzoemeedfepxcstsou.supabase.co
       GH_TOKEN: ${{ github.token }}
       GH_REPO: ${{ github.repository }}
       LABEL: backend-down
@@ -81,26 +94,108 @@ jobs:
           done
           echo "state=$state" >> "$GITHUB_OUTPUT"
           echo "Backend state: $state"
+      - name: Sign in as the monitor account and load the shared workspace
+        if: ${{ !inputs.test_alert }}
+        id: workspace
+        env:
+          MONITOR_EMAIL: ${{ secrets.WARD_FLOW_MONITOR_EMAIL }}
+          MONITOR_PASSWORD: ${{ secrets.WARD_FLOW_MONITOR_PASSWORD }}
+          PUBLISHABLE_KEY: ${{ secrets.WARD_FLOW_SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          finish() { echo "state=$1" >> "$GITHUB_OUTPUT"; echo "detail=$2" >> "$GITHUB_OUTPUT"; echo "Workspace state: $1 $2"; exit 0; }
+          if [ -z "$MONITOR_EMAIL" ] || [ -z "$MONITOR_PASSWORD" ] || [ -z "$PUBLISHABLE_KEY" ]; then
+            echo "::notice::Signed-in workspace not checked: the monitor account secrets are not set."
+            finish skipped ""
+          fi
+          reply=$(mktemp)
+          trap 'rm -f "$reply"' EXIT
+          # Sign in. The password goes on stdin, never the command line; the reply is never printed.
+          token=""
+          for attempt in 1 2 3; do
+            code=$(jq -n --arg email "$MONITOR_EMAIL" --arg password "$MONITOR_PASSWORD" '{email: $email, password: $password}' \
+              | curl --silent --max-time 20 --output "$reply" --write-out '%{http_code}' \
+                  --header "apikey: $PUBLISHABLE_KEY" --header "content-type: application/json" \
+                  --data @- "$SUPABASE_URL/auth/v1/token?grant_type=password") || code=000
+            if [ "$code" = "200" ]; then
+              token=$(jq -r '.access_token // empty' "$reply" 2>/dev/null) || token=""
+              if [ -n "$token" ]; then echo "::add-mask::$token"; break; fi
+              code=bad-reply
+            fi
+            case "$code" in
+              400|401|403|422)
+                echo "::warning::Signed-in workspace not checked: Supabase refused the monitor account's sign-in (HTTP $code). Check WARD_FLOW_MONITOR_EMAIL, WARD_FLOW_MONITOR_PASSWORD and WARD_FLOW_SUPABASE_PUBLISHABLE_KEY."
+                finish unknown "sign-in refused, HTTP $code" ;;
+              429)
+                echo "::warning::Signed-in workspace not checked: Supabase is limiting sign-ins (HTTP 429)."
+                finish unknown "sign-in rate limited" ;;
+            esac
+            [ "$attempt" -lt 3 ] && sleep 31
+          done
+          [ -n "$token" ] || finish signin "HTTP $code"
+          # Load the workspace as a desk would. Only the HTTP status and the reply's fixed code are kept.
+          state=workspace
+          detail=""
+          for attempt in 1 2 3; do
+            code=$(curl --silent --max-time 20 --output "$reply" --write-out '%{http_code}' \
+              --header "authorization: Bearer $token" "$BACKEND_URL/v1/workspace") || code=000
+            reason=$(jq -r '.code // empty' "$reply" 2>/dev/null | tr -cd 'a-z-' | head -c 40) || reason=""
+            if [ "$code" = "200" ] && jq -e '.data.source == "synthetic" and (.snapshot | type == "object")' "$reply" >/dev/null 2>&1; then
+              state=up; detail=""; break
+            fi
+            # The account itself is not set up to read: warn, never alarm.
+            if [ "$code" = "401" ] || [ "$code" = "403" ] || [ "$code" = "409" ]; then
+              if [ "$reason" != "auth-denied" ] || [ "$attempt" = 3 ]; then
+                echo "::warning::Signed-in workspace not checked: the monitor account cannot read the workspace (HTTP $code ${reason:-no code}). It needs one executive role and no second step."
+                state=unknown; detail="account not set up, HTTP $code $reason"; break
+              fi
+            fi
+            if [ "$code" = "429" ]; then
+              echo "::warning::Signed-in workspace not checked: the backend is limiting sign-in checks (HTTP 429)."
+              state=unknown; detail="backend rate limited"; break
+            fi
+            detail="HTTP $code${reason:+ $reason}"
+            [ "$attempt" -lt 3 ] && sleep 31
+          done
+          # End this monitor session so the account does not collect a sign-in every 10 minutes.
+          curl --silent --max-time 10 --output /dev/null --header "apikey: $PUBLISHABLE_KEY" \
+            --header "authorization: Bearer $token" --data '' "$SUPABASE_URL/auth/v1/logout?scope=local" || true
+          finish "$state" "$detail"
       - name: Raise or close the backend-down issue
         if: ${{ !inputs.test_alert }}
+        env:
+          HEALTH: ${{ steps.check.outputs.state }}
+          WORKSPACE: ${{ steps.workspace.outputs.state }}
+          WORKSPACE_DETAIL: ${{ steps.workspace.outputs.detail }}
         run: |
           open=$(gh issue list --label "$LABEL" --state open --json number --jq '.[0].number // empty')
           run="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-          if [ "${{ steps.check.outputs.state }}" = "up" ]; then
+          # A failure anywhere wins. Up needs the health check up and the workspace up, or not set up.
+          if [ "$HEALTH" = "down" ] || [ "$HEALTH" = "database" ]; then state=$HEALTH
+          elif [ "$WORKSPACE" = "signin" ] || [ "$WORKSPACE" = "workspace" ]; then state=$WORKSPACE
+          elif [ "$HEALTH" = "up" ] && { [ "$WORKSPACE" = "up" ] || [ "$WORKSPACE" = "skipped" ]; }; then state=up
+          else state=unknown
+          fi
+          echo "Overall state: $state"
+          if [ "$state" = "up" ]; then
             if [ -n "$open" ]; then
-              gh issue comment "$open" --body "@$OWNER The shared backend and its database are answering again ($run)."
+              gh issue comment "$open" --body "@$OWNER The shared backend, its database and the signed-in workspace are answering again ($run)."
               gh issue close "$open"
             fi
             exit 0
           fi
-          # Hidden database: the backend answered but its database was not checked, so neither raise nor close.
-          if [ "${{ steps.check.outputs.state }}" = "unknown" ]; then exit 0; fi
+          # Hidden database or a monitor account that is not set up: neither raise nor close.
+          if [ "$state" = "unknown" ]; then exit 0; fi
           if [ -z "$open" ]; then
             gh label create "$LABEL" --color B60205 --description "Hosted backend not answering" --force
-            if [ "${{ steps.check.outputs.state }}" = "database" ]; then
-              gh issue create --label "$LABEL" --title "Shared backend cannot reach its database" --body "@$OWNER The hosted Ward Flow backend answered, but reported its database unavailable three times in a row ($BACKEND_URL/healthz, $run). Shared mode will not load or save until the database is back. Check the Supabase project and the ward-flow-backend service in Railway. This issue closes itself when both answer again."
-            else
-              gh issue create --label "$LABEL" --title "Shared backend is not answering" --body "@$OWNER The hosted Ward Flow backend ($BACKEND_URL/healthz) did not answer three times in a row ($run). Shared mode will not load or save until it is back. Check the ward-flow-backend service in Railway. This issue closes itself when the backend answers again."
-            fi
+            case "$state" in
+              database)
+                gh issue create --label "$LABEL" --title "Shared backend cannot reach its database" --body "@$OWNER The hosted Ward Flow backend answered, but reported its database unavailable three times in a row ($BACKEND_URL/healthz, $run). Shared mode will not load or save until the database is back. Check the Supabase project and the ward-flow-backend service in Railway. This issue closes itself when both answer again." ;;
+              workspace)
+                gh issue create --label "$LABEL" --title "Signed-in staff cannot load the shared workspace" --body "@$OWNER The hosted Ward Flow backend's health check answered, but the synthetic monitor account signed in and could not load the shared workspace three times in a row ($BACKEND_URL/v1/workspace, last answer $WORKSPACE_DETAIL, $run). Signed-in desks will not load or save. Check the ward-flow-backend service logs in Railway for the request's storage error. This issue closes itself when the workspace loads again." ;;
+              signin)
+                gh issue create --label "$LABEL" --title "Ward Flow sign-in is not answering" --body "@$OWNER Supabase sign-in did not answer the synthetic monitor account three times in a row (last answer $WORKSPACE_DETAIL, $run). Staff cannot sign in to shared mode. Check the Supabase project's Auth status. This issue closes itself when sign-in and the workspace answer again." ;;
+              *)
+                gh issue create --label "$LABEL" --title "Shared backend is not answering" --body "@$OWNER The hosted Ward Flow backend ($BACKEND_URL/healthz) did not answer three times in a row ($run). Shared mode will not load or save until it is back. Check the ward-flow-backend service in Railway. This issue closes itself when the backend answers again." ;;
+            esac
           fi
           exit 1

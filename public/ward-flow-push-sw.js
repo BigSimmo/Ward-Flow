@@ -46,6 +46,9 @@ const OFFLINE_URL = "/ward-flow-offline.html";
 const PRECACHE_OPTIONAL = ["/icon.svg", "/icons/icon-192", "/icons/maskable-192"];
 // Old build files pile up across deploys; keep the newest few hundred.
 const STATIC_CACHE_LIMIT = 300;
+// A connection can stall without rejecting. Share one deadline across preload and fetch so the
+// static recovery page remains reachable; this is a response-header budget, not a body deadline.
+const NAVIGATION_TIMEOUT_MS = 15_000;
 
 /** Ward Flow itself or a page under it; not a sibling such as /mockups/ward-flow-digest. */
 function insideWardFlow(pathname) {
@@ -143,15 +146,42 @@ async function store(request, response, rule) {
 }
 
 async function fromNetworkFirst(event) {
-  try {
+  const controller = new AbortController();
+  // Supplying a deadline signal must preserve cancellation by the original navigation, including
+  // after headers arrive. Both signals belong to this request; abort removes the listener.
+  const sourceSignal = event.request.signal;
+  if (sourceSignal?.aborted) controller.abort();
+  else sourceSignal?.addEventListener("abort", () => controller.abort(), { once: true, signal: controller.signal });
+  let expired = false;
+  let timer;
+  const deadline = new Promise((resolve) => {
+    timer = setTimeout(() => {
+      expired = true;
+      controller.abort();
+      resolve(null);
+    }, NAVIGATION_TIMEOUT_MS);
+  });
+  const network = (async () => {
     const preloaded = await event.preloadResponse;
-    if (preloaded) return preloaded;
-    return await fetch(event.request);
+    // Navigation preload is browser-owned and cannot be aborted with this controller. If its
+    // headers arrive after the deadline, release its body and never start a duplicate fetch.
+    const response = expired ? preloaded : preloaded || (await fetch(event.request, { signal: controller.signal }));
+    if (expired) {
+      void response?.body?.cancel().catch(() => undefined);
+      return null;
+    }
+    return response;
+  })();
+  try {
+    const response = await Promise.race([network, deadline]);
+    if (response) return response;
   } catch {
-    // Only a network failure lands here: a server error page is shown as the server sent it.
-    const offline = await caches.match(OFFLINE_URL, { cacheName: STATIC_CACHE });
-    return offline || Response.error();
+    // A rejection or the deadline opens recovery; HTTP error pages still pass through unchanged.
+  } finally {
+    clearTimeout(timer);
   }
+  const offline = await caches.match(OFFLINE_URL, { cacheName: STATIC_CACHE });
+  return offline || Response.error();
 }
 
 async function fromCacheFirst(event) {
