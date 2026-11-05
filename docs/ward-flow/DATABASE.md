@@ -2,7 +2,7 @@
 
 <!-- last-checked: 2026-10-24 -->
 
-_Updated 2026-10-26 - runtime compatibility runs to the latest migration named below; migration grants commit with the schema; Documentation owns._
+_Updated 2026-11-03 - migration capabilities and recovery references checked against source at `a6d8a0fd`; historical hosted-schema observations remain unreconciled; Documentation owns._
 
 **Current database and sign-in: Supabase** (decision [D-55](decisions.md), 15 October 2026).
 
@@ -82,7 +82,7 @@ guidance. Fresh tool metadata and the verified project take precedence over a re
 
 ## Migrations the app expects
 
-The backend accepts a database at migration 5 through <!-- fact:latest-migration -->017-account-preferences<!-- /fact -->, but each screen's behaviour depends on how far the live database has got. Migrations 6 to 14 are applied to the hosted database by hand, separately from a deploy, so the hosted schema can sit behind the code. Check `ward_flow.migrations` (read only) before assuming a feature works live.
+The backend accepts a database at migration 5 through <!-- fact:latest-migration -->017-account-preferences<!-- /fact -->, but each screen's behaviour depends on how far the live database has got. Pending migrations are applied with the authorised migration runner, separately from a deploy, so the hosted schema can sit behind the code. Check `ward_flow.migrations` (read only) before assuming a feature works live.
 
 | Migration | What the app needs it for                                | If it is missing                                                                 |
 | --------- | -------------------------------------------------------- | -------------------------------------------------------------------------------- |
@@ -95,8 +95,16 @@ The backend accepts a database at migration 5 through <!-- fact:latest-migration
 | 12        | Foreign-key indexes                                      | Nothing behaves differently                                                      |
 | 13        | Referral full detail is logged as a record view          | Opening that detail is not logged                                                |
 | 14        | Closed records older than 30 days move to an archive     | Live workspace keeps growing toward its 8 MB limit, so loads and saves slow down |
+| 15        | Whole-list and TV reads are recorded in access history   | List and TV opens are not logged by that feature                                 |
+| 16        | Forecast snapshots and miss reasons shared between desks | Each browser keeps its own forecast history                                      |
 
-As of the 26 October 2026 access test the hosted database stopped at migration 12, so 13 and 14 were not yet applied there. Applying them is a separate, approved step (see Railway and Supabase operations); this page does not apply anything.
+**Historical observation, not current schema:** the 26 October 2026 access-test note recorded
+migration 12. The [26 October restore drill](RETENTION-AND-BACKUP.md) separately recorded a live
+ledger through 13. Their ordering is not established by the retained notes; neither establishes
+current hosted schema. Reconcile original receipt timestamps before treating one as later evidence.
+The table above was checked against source at `a6d8a0fd` on 3 November 2026. Applying migrations is
+separately approved work; this page applies nothing. The canonical [setup and rollback procedure](../../backend/ward-flow/SETUP-SUPABASE.md)
+contains the ordered undo chain and its data-loss/refusal conditions.
 
 ## Settings
 

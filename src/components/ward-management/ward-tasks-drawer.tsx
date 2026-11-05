@@ -30,7 +30,7 @@ import { acceptedPullReferralId, isAcceptedPullRow } from "@/components/ward-man
 import { TasksQuickJumps } from "./ward-tasks-quick-jumps";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
-import { StatusGlyph, buttonClass, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
+import { StatusGlyph, buttonClass, durMinutes, type WfTone } from "@/components/wf";
 import { typedClock } from "@/components/ward-management/legal-forms/legal-time-as-typed";
 import { callRows, type CallRow, type CallTarget } from "./patients/patient-call-list";
 import { edHealthService } from "./ward-service-scope";
@@ -189,11 +189,6 @@ const ROLE_LABELS: Partial<Record<WardFlowRole, string>> = {
   community: "Community team",
 };
 
-/** A standing fact whose own time has already passed: the legal due time or the bed pull. */
-function isOverdue(item: InboxItem) {
-  return item.tone === "danger" && /due time passed|expired/i.test(item.title);
-}
-
 function rowIcon(item: InboxItem) {
   if (/transport/i.test(item.title)) return item.icon;
   if (/legal/i.test(item.title)) return FileText;
@@ -260,17 +255,6 @@ function rowTiming(
     : { state: waitWord, tone: "warning" };
 }
 
-/**
- * Phone order, as Alerts orders its queue: act now first, then the longest waiting. A row's wait
- * runs from its due time, or from when it started where it records no due time, so the age each
- * row shows is the age it is sorted by. Rows with neither keep their order and go last.
- */
-function sortOldestFirst(items: readonly InboxItem[]): InboxItem[] {
-  return sortDueFirst(items, (item) => item.dueAt ?? item.since).sort(
-    (a, b) => (a.tone === "danger" ? 0 : 1) - (b.tone === "danger" ? 0 : 1),
-  );
-}
-
 /** The row's one sentence, from the movement's own recorded times where it holds them. */
 function rowDetail(
   item: InboxItem,
@@ -309,9 +293,7 @@ export function WardTasksDrawer({
 }: WardTasksDrawerProps) {
   const drawerRef = useRef<HTMLElement>(null);
   const words = alertsScreenOpen && alertsQueueForDesk ? ALERTS_WORDS : TASKS_WORDS;
-  // Phone (v10 Tasks sheet): a plain list, act now then oldest. A row opens in place to show its actions.
-  const isPhone = useIsPhone();
-  // A2-20: the phone row's name follows Discreet names (initials plus UMRN).
+  // A2-20: a row's name follows Discreet names (initials plus UMRN).
   const nameFor = usePatientNameDisplay();
   const sectionId = useId();
 
@@ -463,27 +445,19 @@ export function WardTasksDrawer({
 
   // Snoozed rows leave the active list and come back by themselves when their time passes.
   const { active: activeItems, snoozed: snoozedItems } = partitionSnoozed(allItems, snoozes, now);
-  const items = isPhone
-    ? sortOldestFirst(activeItems)
-    : sortMode === "due-first"
-      ? sortDueFirst(activeItems, (item) => item.dueAt)
-      : activeItems;
+  const items = sortMode === "due-first" ? sortDueFirst(activeItems, (item) => item.dueAt) : activeItems;
 
   const isComplete = (item: InboxItem) =>
     item.kind === "commitment" && inboxItemCompletionState(completions[item.id]) === "complete";
-  const facts = items.filter((item) => item.kind === "fact");
-  const criticalFactsCount = facts.filter((item) => item.tone === "danger").length;
-  const overdueCount = facts.filter(isOverdue).length;
   // Q260 review (#1296): as the bell counts, a running countdown (not yet late) is listed, not counted.
   const openCount = items.filter(
     (item) => !isComplete(item) && !(words === ALERTS_WORDS && alertGroupOf(item) === "running"),
   ).length;
 
-  const acknowledgedFactsCount = facts.filter((item) => acknowledgements[item.id]?.length).length;
-  const unacknowledged = facts.filter((item) => !acknowledgements[item.id]?.length);
   const alertsQueue = words === ALERTS_WORDS;
-  // Change 7: the desktop Alerts drawer gives each row one action. Phone has its own Alerts screen.
-  const oneAction = alertsQueue && !isPhone;
+  // Change 7: the Alerts drawer gives each row one action. Josh, 4 Nov 2026: the phone opens the same
+  // drawer, with the same rows and actions, so it is no longer a separate compact list.
+  const oneAction = alertsQueue;
   const filteredItems = items.filter((item) => {
     const group = alertsQueue ? alertGroupOf(item) : item.tone === "danger" ? "act" : "wait";
     if (taskFilter === "critical" && group !== "act") return false;
@@ -505,12 +479,7 @@ export function WardTasksDrawer({
     (item) => item.tone !== "danger" && !acknowledgements[item.id]?.length,
   );
   // One row at a time shows its full detail; the first visible row until someone picks another.
-  // Phone: nothing is open until a row is tapped, so the sheet reads as a plain list first.
-  const expanded = filteredItems.some((item) => item.id === expandedId)
-    ? expandedId
-    : isPhone
-      ? null
-      : (filteredItems[0]?.id ?? null);
+  const expanded = filteredItems.some((item) => item.id === expandedId) ? expandedId : (filteredItems[0]?.id ?? null);
 
   // pop-alerts (Josh, 31 Oct 2026): the drawer's one filled button belongs to its most urgent row,
   // the first one shown.
@@ -854,11 +823,11 @@ export function WardTasksDrawer({
         }
       : rowTiming(item, movement, now, words.wait);
     const isExpanded = expanded === item.id;
-    const severity: WfTone = item.tone === "danger" ? "danger" : "warning";
-    const detail = rowDetail(item, movement, records?.units, now);
-    const phoneName = patient
+    const shownName = patient
       ? nameFor(patient.formalName, patient.patient ? patient.umrn : null)
       : "Patient not linked";
+    const severity: WfTone = item.tone === "danger" ? "danger" : "warning";
+    const detail = rowDetail(item, movement, records?.units, now);
 
     return (
       // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- the row click is a pointer shortcut, and focus does the same for the keyboard
@@ -870,50 +839,27 @@ export function WardTasksDrawer({
         data-done={done}
         onClick={(event) => {
           if ((event.target as HTMLElement).closest("button, input, form, a")) return;
-          setExpandedId(isPhone && isExpanded ? null : item.id);
+          setExpandedId(item.id);
         }}
         // On a desktop, tabbing into a row shows its detail, the same as clicking it.
-        onFocus={isPhone ? undefined : () => setExpandedId(item.id)}
+        onFocus={() => setExpandedId(item.id)}
       >
         <div className={styles.rowHead}>
           <span className={styles.rowIcon} aria-hidden="true">
-            {isPhone ? (
-              <StatusGlyph tone={done ? "success" : item.tone === "danger" ? "danger" : "neutral"} size={10} />
-            ) : (
-              <Icon aria-hidden="true" />
-            )}
+            <Icon aria-hidden="true" />
           </span>
           <div className={styles.rowText}>
             <button
               type="button"
               data-testid={`ward-task-${item.id}`}
               className={styles.rowTitle}
-              aria-expanded={isPhone ? isExpanded : undefined}
               onClick={() => {
-                // Phone: the title opens the row's actions (Open is one of them).
-                if (isPhone) setExpandedId(isExpanded ? null : item.id);
-                else openItem(item);
+                openItem(item);
               }}
             >
               {item.title}
             </button>
-            {isPhone ? (
-              <p className={styles.rowMeta}>
-                <span className={styles.rowWho}>
-                  {phoneName}
-                  {/* Audit A1-15: name plus UMRN, matching the Exceptions sheet. Discreet names
-                      already carry the UMRN, so it is not repeated. */}
-                  {patient?.patient && phoneName === patient.formalName ? ` · ${patient.umrn}` : ""}
-                </span>
-                {latestAck && !isExpanded ? (
-                  <span className={styles.rowSeen} data-testid={`ward-task-seen-${item.id}`}>
-                    <StatusGlyph tone="info" size={8} />
-                    Seen
-                  </span>
-                ) : null}
-              </p>
-            ) : null}
-            <p className={styles.rowMeta} data-phone-hidden={isPhone || undefined}>
+            <p className={styles.rowMeta}>
               <StatusGlyph tone={severity} size={9} />
               <span>
                 {alertsQueue && alertGroupOf(item) === "running"
@@ -923,8 +869,9 @@ export function WardTasksDrawer({
                     : words.wait}
               </span>
               <span aria-hidden="true">·</span>
-              <strong>{patient?.formalName ?? "Patient not linked"}</strong>
-              {patient?.patient ? (
+              {/* A2-20: the name follows Discreet names (initials plus UMRN), which already carry the UMRN. */}
+              <strong>{shownName}</strong>
+              {patient?.patient && shownName === patient.formalName ? (
                 <>
                   <span aria-hidden="true">·</span>
                   <span className={styles.mono}>{patient.umrn}</span>
@@ -932,14 +879,7 @@ export function WardTasksDrawer({
               ) : null}
             </p>
           </div>
-          {isPhone ? (
-            <span className={styles.rowDue} data-tone={timing.stateTone}>
-              {timing.value !== undefined && timing.word === "wards"
-                ? `${timing.value} declined`
-                : (timing.value ?? (item.tone === "danger" && !done ? "Now" : timing.state))}
-            </span>
-          ) : null}
-          <div className={styles.rowWhen} data-phone-hidden={isPhone || undefined}>
+          <div className={styles.rowWhen}>
             {timing.value ? (
               <span className={styles.rowValue}>
                 {timing.tone !== "neutral" ? <StatusGlyph tone={timing.tone} size={9} /> : null}
@@ -975,114 +915,112 @@ export function WardTasksDrawer({
           </div>
         ) : null}
 
-        {isPhone && !isExpanded ? null : (
-          <>
-            {latestAck ? (
-              <p className={styles.ackStatus} data-testid={`ward-task-ack-${item.id}`}>
-                <StatusGlyph tone="info" size={8} />
-                Acknowledged by {latestAck.by} at {formatInstantWithDay(latestAck.at, now)}
-                {ackHistory.length > 1 ? ` · ${ackHistory.length} times` : ""}, still open
-              </p>
-            ) : null}
-            <InboxRowStatus
-              className={styles.ackStatus}
-              ownership={ownership?.[item.id]}
-              since={item.since}
-              target={movement && configuration ? decisionTargetReading(movement, now, configuration) : undefined}
-              now={now}
-            />
-            {latestCompletion ? (
-              <p className={styles.ackStatus} data-testid={`ward-task-done-${item.id}`}>
-                <StatusGlyph tone="success" size={9} />
-                Done by {latestCompletion.by} · {formatInstantWithDay(latestCompletion.at, now)}
-              </p>
-            ) : null}
+        <>
+          {latestAck ? (
+            <p className={styles.ackStatus} data-testid={`ward-task-ack-${item.id}`}>
+              <StatusGlyph tone="info" size={8} />
+              Acknowledged by {latestAck.by} at {formatInstantWithDay(latestAck.at, now)}
+              {ackHistory.length > 1 ? ` · ${ackHistory.length} times` : ""}, still open
+            </p>
+          ) : null}
+          <InboxRowStatus
+            className={styles.ackStatus}
+            ownership={ownership?.[item.id]}
+            since={item.since}
+            target={movement && configuration ? decisionTargetReading(movement, now, configuration) : undefined}
+            now={now}
+          />
+          {latestCompletion ? (
+            <p className={styles.ackStatus} data-testid={`ward-task-done-${item.id}`}>
+              <StatusGlyph tone="success" size={9} />
+              Done by {latestCompletion.by} · {formatInstantWithDay(latestCompletion.at, now)}
+            </p>
+          ) : null}
 
-            <div className={styles.rowActions}>
-              {oneAction || isAcceptedPullRow(item.id) ? (
-                renderOneAction(item, movement)
-              ) : isFact ? (
-                <button
-                  type="button"
-                  className={`${styles.btn} ${isExpanded && !latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
-                  onClick={() => {
-                    acknowledge(item.id);
-                  }}
-                >
-                  <UserCheck aria-hidden="true" />
-                  Acknowledge
-                </button>
-              ) : done ? (
-                /* One control, not two: the reducer refuses COMPLETE on a row that is already complete and
-               REOPEN on one that is not, so rendering both would always leave one of them dead. */
-                <button
-                  type="button"
-                  data-testid={`ward-task-reopen-${item.id}`}
-                  className={styles.btn}
-                  onClick={() => {
-                    reopen(item.id);
-                  }}
-                >
-                  <RotateCcw aria-hidden="true" />
-                  Reopen
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  data-testid={`ward-task-complete-${item.id}`}
-                  className={`${styles.btn} ${isExpanded ? styles.btnPrimary : ""}`}
-                  onClick={() => {
-                    complete(item.id);
-                  }}
-                >
-                  <CheckCircle2 aria-hidden="true" />
-                  Mark done
-                </button>
-              )}
+          <div className={styles.rowActions}>
+            {oneAction || isAcceptedPullRow(item.id) ? (
+              renderOneAction(item, movement)
+            ) : isFact ? (
               <button
                 type="button"
-                className={`${styles.btn} ${!oneAction && isExpanded && isFact && latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
-                aria-label={item.plannedAdmission ? "Open planned admission in Capacity" : "Open patient"}
+                className={`${styles.btn} ${isExpanded && !latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
                 onClick={() => {
-                  openItem(item);
+                  acknowledge(item.id);
                 }}
               >
-                <ArrowUpRight aria-hidden="true" />
-                Open
+                <UserCheck aria-hidden="true" />
+                Acknowledge
               </button>
-              {!oneAction &&
-              role === "coordinator" &&
-              currentInboxOwner(ownership?.[item.id], item.since)?.by !== WARD_FLOW_ROLE_LABELS[role] ? (
-                <button
-                  type="button"
-                  data-testid={`ward-task-own-${item.id}`}
-                  className={styles.btn}
-                  onClick={() => {
-                    takeOwnership(item.id);
-                  }}
-                >
-                  <UserRound aria-hidden="true" />
-                  Take
-                </button>
-              ) : null}
-              {!oneAction && role === "coordinator" && !done ? (
-                <InboxSnoozeControl
-                  subject={`${item.title}, ${patient?.formalName ?? "patient not linked"}`}
-                  actNow={inboxItemIsActNow(item.id)}
-                  now={now}
-                  onSnooze={(until, reason) => {
-                    const snooze = () =>
-                      dispatch({ type: "SNOOZE_INBOX_ITEM", role, now, inboxItemId: item.id, until, reason });
-                    if (escalating === item.id && !discardEscalation(snooze)) return;
-                    snooze();
-                  }}
-                />
-              ) : null}
-              {oneAction ? null : renderMovementActions(item, movement)}
-            </div>
-          </>
-        )}
-        {!isPhone || isExpanded ? renderContacts(item, movement) : null}
+            ) : done ? (
+              /* One control, not two: the reducer refuses COMPLETE on a row that is already complete and
+               REOPEN on one that is not, so rendering both would always leave one of them dead. */
+              <button
+                type="button"
+                data-testid={`ward-task-reopen-${item.id}`}
+                className={styles.btn}
+                onClick={() => {
+                  reopen(item.id);
+                }}
+              >
+                <RotateCcw aria-hidden="true" />
+                Reopen
+              </button>
+            ) : (
+              <button
+                type="button"
+                data-testid={`ward-task-complete-${item.id}`}
+                className={`${styles.btn} ${isExpanded ? styles.btnPrimary : ""}`}
+                onClick={() => {
+                  complete(item.id);
+                }}
+              >
+                <CheckCircle2 aria-hidden="true" />
+                Mark done
+              </button>
+            )}
+            <button
+              type="button"
+              className={`${styles.btn} ${!oneAction && isExpanded && isFact && latestAck && escalating !== item.id ? styles.btnPrimary : ""}`}
+              aria-label={item.plannedAdmission ? "Open planned admission in Capacity" : "Open patient"}
+              onClick={() => {
+                openItem(item);
+              }}
+            >
+              <ArrowUpRight aria-hidden="true" />
+              Open
+            </button>
+            {!oneAction &&
+            role === "coordinator" &&
+            currentInboxOwner(ownership?.[item.id], item.since)?.by !== WARD_FLOW_ROLE_LABELS[role] ? (
+              <button
+                type="button"
+                data-testid={`ward-task-own-${item.id}`}
+                className={styles.btn}
+                onClick={() => {
+                  takeOwnership(item.id);
+                }}
+              >
+                <UserRound aria-hidden="true" />
+                Take
+              </button>
+            ) : null}
+            {!oneAction && role === "coordinator" && !done ? (
+              <InboxSnoozeControl
+                subject={`${item.title}, ${patient?.formalName ?? "patient not linked"}`}
+                actNow={inboxItemIsActNow(item.id)}
+                now={now}
+                onSnooze={(until, reason) => {
+                  const snooze = () =>
+                    dispatch({ type: "SNOOZE_INBOX_ITEM", role, now, inboxItemId: item.id, until, reason });
+                  if (escalating === item.id && !discardEscalation(snooze)) return;
+                  snooze();
+                }}
+              />
+            ) : null}
+            {oneAction ? null : renderMovementActions(item, movement)}
+          </div>
+        </>
+        {renderContacts(item, movement)}
         {renderEscalation(item, movement)}
       </li>
     );
@@ -1113,9 +1051,9 @@ export function WardTasksDrawer({
           <div className={styles.headerText}>
             <h2 className={styles.heading}>{words.name}</h2>
             <p className={styles.headerNote}>
-              {isPhone
-                ? `${openCount} open · act now, then oldest`
-                : `${ROLE_LABELS[role] ?? words.name} · synthetic movements`}
+              {ROLE_LABELS[role] ?? words.name}
+              {/* A phone keeps the desk only, so the line is never cut. */}
+              <span className={styles.headerNoteTail}> · synthetic movements</span>
             </p>
           </div>
           <span className={styles.headingCount} data-testid="ward-tasks-drawer-count">
@@ -1139,29 +1077,6 @@ export function WardTasksDrawer({
         <div className={styles.controls}>
           {/* Ops-22 (13 Oct 2026): on desktop the counts sit in the header and the All filter only;
               the stats row repeated them. Phone keeps its one quiet line. */}
-          {isPhone ? (
-            <div className={styles.summary}>
-              <div className={styles.stat}>
-                <strong>{overdueCount}</strong>
-                <span>
-                  {overdueCount > 0 ? <StatusGlyph tone="danger" size={9} /> : null}
-                  Overdue
-                </span>
-              </div>
-              <div className={styles.stat}>
-                <strong>{criticalFactsCount}</strong>
-                <span>Critical facts</span>
-              </div>
-              <div className={styles.stat}>
-                <strong>{unacknowledged.length}</strong>
-                <span>To acknowledge</span>
-              </div>
-              <div className={styles.stat}>
-                <strong>{acknowledgedFactsCount}</strong>
-                <span>Acknowledged</span>
-              </div>
-            </div>
-          ) : null}
 
           <div className={styles.filterBar}>
             <div className={styles.segmented} role="group" aria-label={`Filter ${words.plural} by status`}>
@@ -1295,7 +1210,7 @@ export function WardTasksDrawer({
             <>
               {filteredFacts.length > 0 ? (
                 <section className={styles.section} aria-labelledby={`${sectionId}-facts`}>
-                  <div className={styles.sectionHead} data-phone-quiet={isPhone || undefined}>
+                  <div className={styles.sectionHead}>
                     <ShieldCheck aria-hidden="true" />
                     <h3 id={`${sectionId}-facts`} className={styles.sectionTitle}>
                       Needs attention
@@ -1309,7 +1224,7 @@ export function WardTasksDrawer({
 
               {filteredCommitments.length > 0 ? (
                 <section className={styles.section} aria-labelledby={`${sectionId}-commitments`}>
-                  <div className={styles.sectionHead} data-phone-quiet={isPhone || undefined}>
+                  <div className={styles.sectionHead}>
                     <ListChecks aria-hidden="true" />
                     <h3 id={`${sectionId}-commitments`} className={styles.sectionTitle}>
                       Commitments

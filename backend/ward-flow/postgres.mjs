@@ -1091,8 +1091,20 @@ export function createWorkspaceStore(
       row = await lockedWorld(client, "UPDATE", false);
     }
     at.setTime(clock().getTime());
-    if (row?.data_mode !== "prototype") throw new Error("Workspace data mode mismatch");
-    if (!engine.validWorld(row.payload)) throw new Error("Stored workspace is incompatible");
+    const refusal =
+      row?.data_mode !== "prototype"
+        ? "Workspace data mode mismatch"
+        : engine.validWorld(row.payload)
+          ? null
+          : "Stored workspace is incompatible";
+    if (refusal) {
+      // Incident 4 Nov 2026: the cached rows can be what made this world invalid (read part way
+      // through a hand edit, or corrected later without a revision bump), and a cache hit would
+      // serve them until a restart. Forget them, so the next request reads every row again.
+      confirmed = null;
+      pending = null;
+      throw new Error(refusal);
+    }
     // A selected ward desk can include several cover memberships. Resolve all of them again
     // under the same workspace lock as revocation, using the time after any lock wait. Checking
     // only the selected/base membership would leave ended cover in the request's write scope.

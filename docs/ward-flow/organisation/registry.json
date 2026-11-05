@@ -760,9 +760,9 @@
     },
     {
       "id": "source-tasks",
-      "path": "docs/ward-flow-task-ledger.md",
+      "path": "docs/task-receipts.md",
       "reference": "docs/ward-flow-task-ledger.md",
-      "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+      "reviewedBy": "Codex documentation ecosystem repair, 2026-11-03: task authority contract; local ledger retains dated detail"
     },
     {
       "id": "source-decisions",

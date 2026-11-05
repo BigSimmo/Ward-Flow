@@ -1484,20 +1484,25 @@
   font-size: var(--wf-fs-12);
   white-space: nowrap;
 }
+/* Visual review (5 Nov 2026): when the line wraps, no divider starts or ends a line. Each divider
+   sits in the gap before its item, and the line's clip hides the ones left of the first column
+   while keeping room for a focus ring on every side. */
 .glance {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 4px 0;
+  gap: 4px 28px;
   width: 100%;
+  clip-path: inset(-16px -16px -16px -8px);
 }
 .gl {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
   min-width: 0;
   min-height: 28px;
-  padding: 2px 14px 2px 0;
+  padding: 2px 0;
   border: 0;
   border-radius: 0;
   background: none;
@@ -1507,9 +1512,14 @@
   text-align: left;
   white-space: nowrap;
 }
-.gl + .gl {
-  padding-left: 14px;
-  border-left: 1px solid var(--wf-on-hero-div);
+.gl + .gl::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -15px;
+  width: 1px;
+  background: var(--wf-on-hero-div);
 }
 button.gl {
   cursor: pointer;

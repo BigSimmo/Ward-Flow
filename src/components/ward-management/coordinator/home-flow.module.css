@@ -194,3 +194,12 @@
     border-top: 0;
   }
 }
+
+/* Phone-first proposal (4 Nov 2026, local mock-up): the Flow stage tabs show only on Flow, so
+ * Needs you opens straight onto Act now. */
+@media (max-width: 46.4375rem) {
+  .stageGroup:not([data-active="true"]),
+  .stageGroup:not([data-active="true"]) + * + .navRule {
+    display: none;
+  }
+}

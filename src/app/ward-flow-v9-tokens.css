@@ -532,8 +532,9 @@
   --wf-fit-edge: light-dark(rgba(47, 138, 95, 0.32), rgba(76, 179, 131, 0.36));
   --wf-hold-tint: light-dark(rgba(172, 114, 10, 0.07), rgba(217, 164, 65, 0.09));
   --wf-hold-edge: light-dark(rgba(172, 114, 10, 0.34), rgba(217, 164, 65, 0.36));
-  /* Approved attention: inset rounded coral marker and a quiet theme-aware tint. */
-  --wf-act-tint: light-dark(rgba(196, 81, 63, 0.06), rgba(226, 122, 104, 0.07));
+  /* Approved attention: inset rounded coral marker and a quiet theme-aware tint. Review 5 Nov 2026:
+     dark rose from 0.07 to 0.11 because 7% coral on navy read as grey, not red. */
+  --wf-act-tint: light-dark(rgba(196, 81, 63, 0.06), rgba(226, 122, 104, 0.11));
   --wf-neutral-ink: light-dark(#414953, #bcc8d4);
   /* A remainder that is never the only mark of a value (the old light data step). */
   --wf-data-rest: light-dark(#c9d3dd, #2a3a4b);

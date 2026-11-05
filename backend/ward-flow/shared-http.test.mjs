@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { test } from "node:test";
 import { createHandler } from "./server.mjs";
-import { storageFailure } from "./shared-http.mjs";
+import { failureDetail, storageFailure } from "./shared-http.mjs";
 import { readConfig } from "./config.mjs";
 import { APPROVED_SUPABASE_PROJECT, APPROVED_SUPABASE_URL } from "./supabase-config.mjs";
 import { syntheticDatabaseUrl } from "./synthetic-database-url.test-support.mjs";
@@ -287,14 +287,31 @@ test("a database outage is a 503 and a code fault is a 500, and both are logged"
   /** @type {Array<[Error, number, string, Record<string, string>]>} */
   const failures = [
     [outage, 503, "storage_unavailable", { errorName: "Error", errorCode: "57P01" }],
-    [new Error("Connection terminated unexpectedly"), 503, "storage_unavailable", { errorName: "Error" }],
+    [
+      new Error("Connection terminated unexpectedly"),
+      503,
+      "storage_unavailable",
+      { errorName: "Error", errorMessage: "Connection terminated" },
+    ],
+    // Incident 4 Nov 2026: a data fault the store reports with a fixed message is named in the log.
+    [
+      new Error("Stored workspace is incompatible"),
+      503,
+      "storage_unavailable",
+      { errorName: "Error", errorMessage: "Stored workspace is incompatible" },
+    ],
     [
       Object.assign(new Error("canceling statement due to lock timeout"), { code: "55P03" }),
       503,
       "storage_unavailable",
       { errorName: "Error", errorCode: "55P03" },
     ],
-    [new Error("Query read timeout"), 503, "storage_unavailable", { errorName: "Error" }],
+    [
+      new Error("Query read timeout"),
+      503,
+      "storage_unavailable",
+      { errorName: "Error", errorMessage: "Query read timeout" },
+    ],
     [fault, 500, "server_error", { errorName: "TypeError" }],
     [
       Object.assign(new Error('column "secret value" does not exist'), { code: "42703" }),
@@ -311,7 +328,7 @@ test("a database outage is a 503 and a code fault is a 500, and both are logged"
     });
     const response = await handler(request("/commands", body));
     assert.equal(response.status, status);
-    const { durationMs, requestId, ...entry } = logs[0];
+    const { durationMs, requestId, errorStack, ...entry } = logs[0];
     assert.ok(Number.isInteger(durationMs));
     assert.equal(requestId, response.headers.get("x-request-id"));
     assert.deepEqual(entry, {
@@ -322,7 +339,27 @@ test("a database outage is a 503 and a code fault is a 500, and both are logged"
       outcome,
       ...fields,
     });
+    // Where it was thrown: stack frames only, never the message, which can quote stored values.
+    assert.match(errorStack, /^at /);
+    assert.ok(errorStack.split(" | ").length <= 6);
+    assert.doesNotMatch(JSON.stringify(logs), /secret value|reading 'state'/);
   }
+});
+test("a failure's log names only a fixed storage message, never a database message", () => {
+  const multiline = Object.assign(
+    new Error("duplicate key value violates unique constraint\nKey (id)=(secret value)"),
+    {
+      code: "23505",
+    },
+  );
+  const detail = failureDetail(multiline);
+  assert.equal(detail.errorMessage, undefined);
+  assert.doesNotMatch(detail.errorStack, /secret value|duplicate key/);
+  assert.deepEqual(failureDetail({ message: "Shared schema unavailable" }), {
+    errorMessage: "Shared schema unavailable",
+  });
+  assert.deepEqual(failureDetail(undefined), {});
+  assert.deepEqual(failureDetail("Connection terminated"), {});
 });
 test("storage failures are told apart from code faults", () => {
   assert.equal(storageFailure(Object.assign(new Error("x"), { code: "ECONNREFUSED" })), true);

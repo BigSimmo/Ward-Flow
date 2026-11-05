@@ -538,3 +538,21 @@
 .sectionNarrow {
   max-width: 54rem;
 }
+
+/* Review 5 Nov 2026: on desktop every section shows in one scroll, so the narrow column left the right
+ * half empty under the two-column rules. Wide screens fill the row the same way: cards two a row, and a
+ * card with no partner takes the whole row. */
+@media (min-width: 75.0625rem) {
+  .sectionNarrow {
+    max-width: none;
+  }
+  .sectionNarrow > .accessStack {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+  }
+  .sectionNarrow > .accessStack > :only-child,
+  .sectionNarrow > .accessStack > :last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}

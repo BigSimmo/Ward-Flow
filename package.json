@@ -73,8 +73,8 @@
     "check:ward-legal-language": "node scripts/ward-flow/check-ward-legal-language.mjs",
     "ward:reference:build": "node scripts/ward-flow/build-reference-registry.mjs && node scripts/ward-flow/build-reference-distances.mjs && node scripts/ward-flow/build-reference-teams.mjs",
     "check:ward-reference": "node scripts/ward-flow/check-ward-reference.mjs",
-    "ward:journey": "node docs/ward-flow/journey/build.mjs",
-    "ward:journey:prove": "node docs/ward-flow/journey/build.mjs --prove",
+    "ward:journey": "node docs/ward-flow/journey/verify.mjs --write",
+    "ward:journey:prove": "node docs/ward-flow/journey/verify.mjs --prove",
     "ward:organise": "node scripts/ward-flow/organisation.mjs --write-report --source working-tree",
     "ward:organise:check": "node scripts/ward-flow/organisation.mjs --check",
     "ward:dev": "node scripts/ward-flow/dev-with-organisation.mjs",
@@ -123,7 +123,8 @@
     "brace-expansion@5": "^5.0.12",
     "fast-uri": "^3.1.7",
     "js-yaml": "^4.3.2",
-    "undici": "^8.12.1"
+    "undici": "^8.12.1",
+    "minimatch@10": "11.0.1"
   },
   "devDependencies": {
     "@axe-core/playwright": "~4.13.0",
