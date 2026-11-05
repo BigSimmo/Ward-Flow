@@ -27,7 +27,7 @@ export function edgeAddress(headers: Headers): string {
 function pruneWrongTries(now: number) {
   for (const [address, entry] of wrongTries) if (now - entry.since > WRONG_TRY_WINDOW_MS) wrongTries.delete(address);
 }
-export function tooManyTries(address: string, now: number): boolean {
+function tooManyTries(address: string, now: number): boolean {
   if (now - allWrongTries.since <= WRONG_TRY_WINDOW_MS && allWrongTries.count >= ALL_WRONG_TRY_LIMIT) return true;
   const entry = wrongTries.get(address);
   if (!entry || now - entry.since > WRONG_TRY_WINDOW_MS) {
@@ -37,7 +37,7 @@ export function tooManyTries(address: string, now: number): boolean {
   }
   return entry.count >= WRONG_TRY_LIMIT;
 }
-export function countWrongTry(address: string, now: number) {
+function countWrongTry(address: string, now: number) {
   if (now - allWrongTries.since > WRONG_TRY_WINDOW_MS) allWrongTries = { count: 1, since: now };
   else allWrongTries.count += 1;
   const entry = wrongTries.get(address);
