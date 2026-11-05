@@ -45,6 +45,8 @@ After `npm run ensure`, verify `/api/local-project-id` before opening the fronte
 
 Changing selectors does not transfer data. Finish or abandon pending work, sign out, stop owned processes, change matching database/auth/browser settings, rebuild public frontend configuration and restart. A previously accepted transaction can still commit. Keep private presets separately. See [Supabase setup](SETUP-SUPABASE.md) and [DATABASE.md](../../docs/ward-flow/DATABASE.md).
 
+Before restoring a database, drain requests and stop every backend and push worker using it. Restart them after the separately authorised restore and runtime-role checks. The store discards its caches when it observes a regressed revision or a replacement update stamp, but a restore can reproduce an identical stamp with different records. Only a restart guarantees that no process retains pre-restore bodies, archive rows or pending save candidates.
+
 ## Another database engine
 
 A new trusted server adapter must preserve `ready()`, `viewer(actorId, { bootstrap, workingAs })`, `read(actorId, view)`, `poll(actorId, knownRevision, view)`, `command(actorId, commandId, expectedRevision, event, { revisionOnly, view })` and `audit(view)`, plus shutdown/startup cleanup through an owned resource's `end()`. The server resolves `view` on every request; retain its membership, role, scope and break glass checks, scoped payloads and access metadata, including rechecking changed access during reads and writes. Keep the existing identity verifier and reducer, and preserve the access, record-view, sign-out and optional push methods used by enabled routes.

@@ -222,6 +222,33 @@ SELECT current_user AS role,
     AND NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.workspace_records', 'TRUNCATE,REFERENCES,TRIGGER')
     AND NOT pg_catalog.has_any_column_privilege(r.oid, 'ward_flow.workspace_records', 'REFERENCES')
   ELSE true END AS records_grants,
+  -- Migration 14: archived records are only added and read, including at column level.
+  CASE WHEN EXISTS (SELECT 1 FROM ward_flow.migrations WHERE version = 14) THEN
+    pg_catalog.has_table_privilege(r.oid, 'ward_flow.archived_records', 'SELECT')
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.archived_records', 'INSERT')
+    AND NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.archived_records', 'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
+    AND NOT pg_catalog.has_any_column_privilege(r.oid, 'ward_flow.archived_records', 'UPDATE,REFERENCES')
+  ELSE true END AS archive_grants,
+  -- Migration 16: snapshots stand once written; a miss reason may be replaced.
+  CASE WHEN EXISTS (SELECT 1 FROM ward_flow.migrations WHERE version = 16) THEN
+    pg_catalog.has_table_privilege(r.oid, 'ward_flow.forecast_snapshots', 'SELECT')
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.forecast_snapshots', 'INSERT')
+    AND NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.forecast_snapshots', 'UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER')
+    AND NOT pg_catalog.has_any_column_privilege(r.oid, 'ward_flow.forecast_snapshots', 'UPDATE,REFERENCES')
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.forecast_miss_reasons', 'SELECT')
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.forecast_miss_reasons', 'INSERT')
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.forecast_miss_reasons', 'UPDATE')
+    AND NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.forecast_miss_reasons', 'DELETE,TRUNCATE,REFERENCES,TRIGGER')
+    AND NOT pg_catalog.has_any_column_privilege(r.oid, 'ward_flow.forecast_miss_reasons', 'REFERENCES')
+  ELSE true END AS forecast_grants,
+  -- Migration 17: account Help preferences may be read, added and updated, never removed.
+  CASE WHEN EXISTS (SELECT 1 FROM ward_flow.migrations WHERE version = 17) THEN
+    pg_catalog.has_table_privilege(r.oid, 'ward_flow.account_preferences', 'SELECT')
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.account_preferences', 'INSERT')
+    AND pg_catalog.has_table_privilege(r.oid, 'ward_flow.account_preferences', 'UPDATE')
+    AND NOT pg_catalog.has_table_privilege(r.oid, 'ward_flow.account_preferences', 'DELETE,TRUNCATE,REFERENCES,TRIGGER')
+    AND NOT pg_catalog.has_any_column_privilege(r.oid, 'ward_flow.account_preferences', 'REFERENCES')
+  ELSE true END AS preferences_grants,
   NOT EXISTS (SELECT 1 FROM browser_roles b WHERE
     pg_catalog.has_schema_privilege(b.oid, 'ward_flow', 'USAGE')
     OR pg_catalog.has_schema_privilege(b.oid, 'ward_flow', 'CREATE')
@@ -312,6 +339,9 @@ export async function verifyRuntimeRole(pool, expectedRole, pushEnabled, unavail
       "push_grants",
       "access_grants",
       "records_grants",
+      "archive_grants",
+      "forecast_grants",
+      "preferences_grants",
       "audit_append_only",
       "browser_denied",
       "guards_valid",

@@ -164,6 +164,9 @@ const roleFields = [
   "rls_valid",
   "access_grants",
   "records_grants",
+  "archive_grants",
+  "forecast_grants",
+  "preferences_grants",
 ];
 function safeSummary() {
   return {

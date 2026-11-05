@@ -110,11 +110,27 @@ Backend settings (Railway dashboard):
   headers and the backend cannot be reached directly. Reverify those conditions before relying on
   per-address sign-in limits; prefer explicit proxy socket addresses, or no forwarded-header trust
   when unverified. This document does not establish the current deployed ingress boundary.
-- Watch paths: `/backend/ward-flow/**`, `/src/components/ward-management/**` and `/src/lib/**`
-  (the engine bundles both, including the synthetic-data guard), `/package.json`,
-  `/package-lock.json` and `/tsconfig.json`. The list lives in
-  [watch-paths.mjs](../backend/ward-flow/watch-paths.mjs), and a backend test fails if the engine
-  is built from a file outside it. Change the Railway setting whenever that list changes.
+- Recorded watch paths: `/backend/ward-flow/**`, `/src/components/ward-management/**` and
+  `/src/lib/**` (the engine bundles both, including the synthetic-data guard), `/package.json`,
+  `/package-lock.json` and `/tsconfig.json`. The maintained source contract in
+  [watch-paths.mjs](../backend/ward-flow/watch-paths.mjs) also includes `/.npmrc`, `/.nvmrc`,
+  `/.node-version` and the root install helpers it depends on. Tests check both the engine inputs
+  and the package lifecycle helper graph against this contract. The additional paths have not
+  been applied to or verified in Railway by the local audit remediation. Copy the complete
+  source contract into the Railway setting under separate deployment authority, then verify it.
+
+The canonical ward forecast-history upgrade needs all older backend writers replaced before
+relying on convergence. Reads can copy the verified view's exact legacy scope into canonical
+history, within the existing 60-snapshot/200-reason windows. These bounded inserts retain the
+original rows and let existing canonical days win. Unseen hashes cannot be reversed or recovered
+by guessing scopes. Cached edits from a noncanonical address return a conflict and need review.
+This source behaviour does not establish a completed hosted upgrade or full historical recovery.
+
+Front-door account verification is bounded per process. Without verified ingress identity, the
+route shares one allowance of 30 checks per minute across callers and allows eight pending checks,
+with an eight-second caller deadline. Raw forwarded headers do not create separate allowances.
+This protects local provider work but is not a distributed per-person limit; verify capacity and
+the ingress contract before a separately authorised rollout.
 
 Both services wait for CI: the owner turned on Railway's **Wait for CI** for `ward-flow-backend`
 and `ward-flow-shared` on 19 October 2026, so a deploy (now a move of `live`) goes ahead only after its GitHub

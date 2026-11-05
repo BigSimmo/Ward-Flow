@@ -100,7 +100,11 @@ jobs:
             [ "$live" = "$sha" ] || { echo "Live changed before release publication" >&2; return 1; }
             if [ "$(printf '%s' "$record" | jq -r '.draft')" = true ]; then
               check_acceptance "$sha"
-              gh api -X PATCH "repos/$REPOSITORY/releases/$id" -F draft=false >/dev/null
+              record="$(gh api -X PATCH "repos/$REPOSITORY/releases/$id" -F draft=false)"
+              [ "$(printf '%s' "$record" | jq -r '.draft')" = false ] || { echo "Release publication was not confirmed" >&2; return 1; }
+              # GitHub retains an existing tag instead of applying target_commitish. Verify the
+              # published tag too, in case another writer created it after the preflight check.
+              validate_release "$record" "$sha"
               echo "Published the retained release record for $sha."
               printf '%s\n' "$record" | jq -r '.body' >> "$GITHUB_STEP_SUMMARY"
             fi

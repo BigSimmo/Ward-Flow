@@ -522,6 +522,20 @@ export function createWorkspaceStore(
   /** The cached state the workspace row names, promoting a committed save; null when none does. */
   function cachedState(revision, updatedAt) {
     const at = updatedAt instanceof Date ? updatedAt.getTime() : Number.NaN;
+    // A restored database is not a delta from the future state this process read. A changed
+    // stamp at the same revision is also a replacement, rather than an ordinary advancing save.
+    // Forget candidates too: a later save can reuse their revision/time after the restoration.
+    if (
+      confirmed &&
+      (Number(revision) < confirmed.revision || (Number(revision) === confirmed.revision && at !== confirmed.updatedAt))
+    ) {
+      confirmed = null;
+      pending = null;
+      scopedReplies.clear();
+      executiveReplies.clear();
+      archivedKnown = null;
+      archiveHeld = null;
+    }
     if (pending && pending.revision === Number(revision) && pending.updatedAt === at) confirmed = pending;
     // A save still committing is newer than this row; any other pending state never committed.
     if (!pending || pending.revision <= Number(revision)) pending = null;
@@ -1227,8 +1241,8 @@ export function createWorkspaceStore(
     const counts = { sent: 0, expired: 0, failed: 0 };
     const failures = {};
     try {
-      const at = clock();
-      const readRed = async () => {
+      const passAt = clock();
+      const readRed = async (at) => {
         const stored = await readWorld(pool, "payload");
         if (!stored || !engine.validWorld(stored.payload)) return null;
         const world = stored.payload;
@@ -1238,7 +1252,7 @@ export function createWorkspaceStore(
       // leases may be retired; an in-flight final attempt still owns its result.
       await pool.query(
         "UPDATE ward_flow.push_deliveries d SET status='failed' FROM ward_flow.push_subscriptions s WHERE d.subscription_id=s.id AND s.workspace_id=$1 AND d.status='pending' AND d.attempts >= $2 AND d.last_attempt_at <= $3",
-        [workspaceId, MAX_DELIVERY_ATTEMPTS, new Date(at.getTime() - retryAfterMs)],
+        [workspaceId, MAX_DELIVERY_ATTEMPTS, new Date(passAt.getTime() - retryAfterMs)],
       );
       const due = "d.status='pending' AND d.attempts < $3 AND (d.last_attempt_at IS NULL OR d.last_attempt_at <= $4)";
       // A bootstrap coordinator's device while it is still named; from 9 also a device held by a
@@ -1252,6 +1266,10 @@ export function createWorkspaceStore(
       const desk = byRole ? ", s.membership_id AS desk_id" : "";
       let after = "0";
       for (;;) {
+        // Earlier pages can outlive a lease. Each new page owns its own current claim time,
+        // which also guards every acknowledgement below. A truly expired in-flight claim is
+        // still recoverable; a lost provider response can therefore still yield a duplicate.
+        const at = clock();
         const { rows } = await pool.query(
           `UPDATE ward_flow.push_deliveries d SET attempts = d.attempts + 1, last_attempt_at = $5 FROM ward_flow.push_subscriptions s WHERE d.subscription_id = s.id AND ${due} AND d.subscription_id IN (SELECT DISTINCT d.subscription_id FROM ward_flow.push_deliveries d JOIN ward_flow.push_subscriptions s ON s.id = d.subscription_id WHERE s.workspace_id=$1 AND s.data_mode='prototype' AND s.revoked_at IS NULL AND ${listener} AND ${due} AND d.subscription_id > $6 ORDER BY d.subscription_id LIMIT $7) RETURNING d.subscription_id AS id, d.item_id, s.endpoint, s.p256dh, s.auth${desk}`,
           [
@@ -1270,7 +1288,7 @@ export function createWorkspaceStore(
         // Read the world after each claim. The claim has seen every commit that queued or cleared
         // its rows, so this read neither misses a new item nor sends one already cleared. A world
         // that cannot be read leaves the claimed rows to come due again for a later delivery.
-        const read = await readRed();
+        const read = await readRed(at);
         if (!read) return;
         const { world, red } = read;
         const devices = new Map();

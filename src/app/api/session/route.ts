@@ -12,6 +12,7 @@ import {
   issuePass,
 } from "@/lib/front-door-pass";
 import { edgeAddress, reserveDemoTry } from "@/lib/demo-code-tries";
+import { checkFrontDoorAccount } from "@/lib/front-door-admission";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -38,37 +39,6 @@ function signInEndsAt(token: string): number | null {
     return times.length ? Math.min(...times) * 1000 + ACCOUNT_PASS_HOURS * 3_600_000 : null;
   } catch {
     return null;
-  }
-}
-
-/** The site's own Supabase project, the one the app signs in with: an https `*.supabase.co` origin. */
-function supabaseOrigin(): string | null {
-  try {
-    const url = new URL(process.env.NEXT_PUBLIC_WARD_SUPABASE_URL ?? "");
-    return url.protocol === "https:" && /^[a-z0-9]+\.supabase\.co$/.test(url.hostname) ? url.origin : null;
-  } catch {
-    return null;
-  }
-}
-
-/** The account a Supabase access token belongs to, checked with Supabase itself. */
-async function checkedAccount(token: string): Promise<{ id: string } | "refused" | "unavailable"> {
-  const publishableKey = process.env.NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY ?? "";
-  const origin = supabaseOrigin();
-  if (!origin || !/^sb_publishable_[A-Za-z0-9_-]+$/.test(publishableKey)) return "unavailable";
-  try {
-    const response = await fetch(`${origin}/auth/v1/user`, {
-      headers: { apikey: publishableKey, authorization: `Bearer ${token}` },
-      cache: "no-store",
-      redirect: "error",
-      signal: AbortSignal.timeout(8_000),
-    });
-    if (response.status === 401 || response.status === 403) return "refused";
-    if (!response.ok) return "unavailable";
-    const user = (await response.json()) as { id?: unknown };
-    return typeof user.id === "string" && user.id ? { id: user.id } : "refused";
-  } catch {
-    return "unavailable";
   }
 }
 
@@ -129,7 +99,13 @@ export async function POST(request: NextRequest) {
   }
 
   if (typeof body.token !== "string" || body.token.length > 8_192) return answer(400, "Sign in again.");
-  const account = await checkedAccount(body.token);
+  const account = await checkFrontDoorAccount(body.token);
+  if (account === "malformed") return answer(400, "Sign in again.");
+  if (account === "rate-limited") {
+    const response = answer(429, "Too many sign-in checks. Wait a minute, then try again.");
+    response.headers.set("Retry-After", "60");
+    return response;
+  }
   if (account === "refused") return answer(401, "Your sign-in was not accepted. Sign in again.");
   if (account === "unavailable") return answer(503, "The sign-in service is busy. Try again in a moment.");
   const endsBy = signInEndsAt(body.token);

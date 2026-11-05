@@ -41,7 +41,7 @@ function post(body: unknown, realIp = "192.0.2.10", forwardedFor?: string): Next
 /** A token shaped like a Supabase access token, with the sign-in time in `amr`. Not signed: Supabase checks it. */
 function token(firstSignInSeconds: number): string {
   const part = (value: object) => Buffer.from(JSON.stringify(value)).toString("base64url");
-  return `${part({ alg: "none" })}.${part({ sub: "synthetic", amr: [{ method: "password", timestamp: firstSignInSeconds }] })}.x`;
+  return `${part({ alg: "HS256", typ: "JWT" })}.${part({ sub: "synthetic", amr: [{ method: "password", timestamp: firstSignInSeconds }] })}.${Buffer.from("synthetic-signature").toString("base64url")}`;
 }
 
 afterEach(() => {
@@ -189,6 +189,41 @@ describe("POST /api/session", () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", "");
     expect((await POST(post({ token: "x" }))).status).toBe(503);
+  });
+
+  it("refuses malformed tokens before contacting the sign-in provider", async () => {
+    vi.stubEnv("WARD_FRONT_DOOR", "required");
+    vi.stubEnv("WARD_PASS_SECRET", SECRET);
+    vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_synthetic");
+    vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_URL", "https://synthetic.supabase.co");
+    const fetcher = vi.fn(async () => new Response(null, { status: 401 }));
+    vi.stubGlobal("fetch", fetcher);
+    for (const malformed of ["garbage", "", "e30.e30.", "e30.W10.c2ln", "a".repeat(8193)]) {
+      const response = await POST(post({ token: malformed }));
+      expect(response.status).toBe(400);
+      expect(response.headers.get("set-cookie")).toBeNull();
+    }
+    expect(fetcher).not.toHaveBeenCalled();
+  });
+
+  it("bounds unverified callers together even when caller-written address headers rotate", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(NOW);
+    vi.stubEnv("WARD_FRONT_DOOR", "required");
+    vi.stubEnv("WARD_PASS_SECRET", SECRET);
+    vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_synthetic");
+    vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_URL", "https://synthetic.supabase.co");
+    const fetcher = vi.fn(async () => new Response(null, { status: 401 }));
+    vi.stubGlobal("fetch", fetcher);
+    const plausible = token(Math.floor(NOW / 1000));
+    for (let attempt = 0; attempt < 30; attempt += 1)
+      expect((await POST(post({ token: plausible }, `192.0.2.${attempt}`, `198.51.100.${attempt}`))).status).toBe(401);
+    const response = await POST(post({ token: plausible }, "203.0.113.1", "203.0.113.2"));
+    expect(response.status).toBe(429);
+    expect(response.headers.get("retry-after")).toBe("60");
+    expect(response.headers.get("cache-control")).toBe("no-store");
+    expect(response.headers.get("set-cookie")).toBeNull();
+    expect(fetcher).toHaveBeenCalledTimes(30);
   });
 
   it("sets the pass after Supabase accepts the sign-in, ending with its 12-hour limit", async () => {
