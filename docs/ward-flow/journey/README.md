@@ -196,4 +196,3 @@ Source digests for Alerts UI were re-reviewed after wording-only edits; event ha
 - Shell footer: **Demo board clock · scenario set on {demo day}**.
 
 These are display-label honesty fixes. They do not change EVENT_ROLE handlers or journey graph edges.
-

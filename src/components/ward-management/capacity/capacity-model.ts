@@ -84,11 +84,7 @@ export function useCapacityModel() {
   const lockedReady = networkRows.reduce((sum, row) => sum + row.lockedReady, 0);
   const pulled = networkRows.reduce((sum, row) => sum + row.pulled, 0);
   // WF-16: hero "Beds freeing today" from the same releasesFreeingToday source as each ward card.
-  const dueOutToday = bedsFreeingTodayTotal(
-    bedReleases,
-    now,
-    new Set(networkRows.map((row) => row.unit.id)),
-  );
+  const dueOutToday = bedsFreeingTodayTotal(bedReleases, now, new Set(networkRows.map((row) => row.unit.id)));
   const oldestCount = networkRows.reduce<NetworkWardRow | undefined>(
     (oldest, row) => (oldest === undefined || row.confirmedAt < oldest.confirmedAt ? row : oldest),
     undefined,

@@ -420,7 +420,11 @@ export function releasesFreeingToday(releases: BedRelease[] | undefined, now: In
   return freeingByUnit;
 }
 /** WF-16 shared source: admissions with expectedDischargeAt today (distinct from beds freeing / forecast). */
-export function dischargesDueToday(unitId: string, admissions: Admission[] | undefined, now: Instant): number | undefined {
+export function dischargesDueToday(
+  unitId: string,
+  admissions: Admission[] | undefined,
+  now: Instant,
+): number | undefined {
   return admissions === undefined
     ? undefined
     : admissions.filter(

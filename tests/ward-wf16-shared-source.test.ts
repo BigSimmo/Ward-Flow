@@ -85,10 +85,7 @@ describe("WF-16 shared figure sources", () => {
     for (const row of gaps) {
       expect(row.gap).toBe(row.bedsThatFit - row.waiting);
     }
-    const readyAll = units.reduce(
-      (sum, unit) => sum + bedStates(unit, admissions, [...bedReleases], []).ready,
-      0,
-    );
+    const readyAll = units.reduce((sum, unit) => sum + bedStates(unit, admissions, [...bedReleases], []).ready, 0);
     const fitTotal = gaps.reduce((sum, row) => sum + row.bedsThatFit, 0);
     // Ready-that-fit is at most all ready; often stricter.
     expect(fitTotal).toBeLessThanOrEqual(readyAll);

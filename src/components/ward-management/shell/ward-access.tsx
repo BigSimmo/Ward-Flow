@@ -14,7 +14,17 @@
  */
 import { useWardAccessEnabled, useWardShellPublic } from "./ward-shell-public-context";
 import { ExecutiveStatisticsUnavailable } from "../statistics/statistics-small-numbers";
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 

@@ -18,10 +18,7 @@ import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { edStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
-import {
-  OCCUPIED_CAPTION,
-  ON_THE_WARD_NOUN,
-} from "@/components/ward-management/ward-occupancy";
+import { OCCUPIED_CAPTION, ON_THE_WARD_NOUN } from "@/components/ward-management/ward-occupancy";
 
 import { StatisticsEdSwarm, type EdSwarmRow } from "./statistics-ed-swarm";
 import { LONG_WAIT_HOURS, edJourneyWaitFigures as edWaitFigures } from "./statistics-ed-waits";

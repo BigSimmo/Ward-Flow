@@ -2,7 +2,6 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 
-
 /**
  * WF-16 printed nouns. "Occupied" / "On the ward" mean a patient is in the bed (leave included).
  * "In use" means Occupied + Pulled — the one occupancy percentage every screen prints.

@@ -49,15 +49,14 @@ describe("WF-16 figure labels", () => {
   });
 });
 
-  it("Capacity hero names locked/open ready as beds (not wards)", () => {
-    const hero = readFileSync("src/components/ward-management/capacity/capacity-hero.tsx", "utf8");
-    expect(hero).toMatch(/label="Locked ready beds"/);
-    expect(hero).toMatch(/label="Open ready beds"/);
-  });
+it("Capacity hero names locked/open ready as beds (not wards)", () => {
+  const hero = readFileSync("src/components/ward-management/capacity/capacity-hero.tsx", "utf8");
+  expect(hero).toMatch(/label="Locked ready beds"/);
+  expect(hero).toMatch(/label="Open ready beds"/);
+});
 
-  it("Statistics map occupancy percent uses the In use noun", () => {
-    const map = readFileSync("src/components/ward-management/statistics/statistics-map-view.tsx", "utf8");
-    expect(map).toMatch(/label: IN_USE_NOUN/);
-    expect(map).not.toMatch(/label: "Occupied"/);
-  });
-
+it("Statistics map occupancy percent uses the In use noun", () => {
+  const map = readFileSync("src/components/ward-management/statistics/statistics-map-view.tsx", "utf8");
+  expect(map).toMatch(/label: IN_USE_NOUN/);
+  expect(map).not.toMatch(/label: "Occupied"/);
+});

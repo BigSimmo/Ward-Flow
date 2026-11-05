@@ -157,13 +157,10 @@ function AlertsWorkspace() {
   usePrintableDisclosures();
   const access = useEffectiveWardAccess();
   const deskRole = access.role === "admin" ? "executive" : access.role;
-  // WF-15: admin borrows executive chrome for gating, but owner/sender labels name Access admin.
-  const deskRoleLabel =
-    access.role === "admin" ? ACCESS_ROLE_LABELS.admin : WARD_FLOW_ROLE_LABELS[deskRole];
+  const deskRoleLabel = access.role === "admin" ? ACCESS_ROLE_LABELS.admin : WARD_FLOW_ROLE_LABELS[deskRole]; // WF-15
   const coordDesk = access.role === "coordinator";
   const actionDisabledReason = coordDesk ? undefined : "Only the coordinator can change alerts.";
-  // Broadcasting is for the coordinator and the site bed manager (`EVENT_ROLE.DISPATCH_BROADCAST_ALERT`).
-  const broadcastDisabledReason =
+  const broadcastDisabledReason = // coordinator or site bed manager (`EVENT_ROLE.DISPATCH_BROADCAST_ALERT`)
     coordDesk || access.role === "bed_manager"
       ? undefined
       : "Only the coordinator or a site bed manager can broadcast.";
@@ -200,7 +197,6 @@ function AlertsWorkspace() {
     broadcastAlerts,
     notices,
   } = state;
-  // Nurse in charge: the ward's own name (title, side panel); undefined on any other desk.
   const wardName = ownWardName(access, units);
   // Events carry the engine clock; what the page shows follows the Live chip, which can pause.
   const clockNow = useWardFlowClock();
@@ -262,7 +258,6 @@ function AlertsWorkspace() {
   const readNotices = feedNotices.filter((notice) => notice.readAt !== undefined);
   // Where this desk is, in words, for the hero eyebrow and the empty state.
   const deskPlace = accessPlaceLabel(access, units);
-  // AL2: the live broadcast sits at the top of Broadcasts; the hero's broadcast line and Today open it.
   function openLiveBroadcast() {
     setTab("broadcasts");
     window.requestAnimationFrame(() =>
@@ -407,8 +402,6 @@ function AlertsWorkspace() {
 
   const activeBroadcast = getActiveBroadcastAlert(broadcastAlerts ?? [], now);
   const deskInScope = useDeskInScope();
-  // Ops-11: acknowledgements count against the wards the directive's target covers, as the banner does.
-  // A bed call is answered by the wards it asked, never ED desks, so it counts replies as the banner does.
   const broadcastBoard =
     activeBroadcast && broadcastKind(activeBroadcast) !== "directive" ? replyBoard(activeBroadcast, units) : undefined;
   const allAcks = !activeBroadcast
@@ -416,7 +409,6 @@ function AlertsWorkspace() {
     : broadcastBoard
       ? { acknowledged: broadcastBoard.answered, of: broadcastBoard.rows.length }
       : directiveAcknowledgements(activeBroadcast, units, deskInScope);
-  // A desk that holds none of the asked desks (a community team, the jobs desk) shows no count, not "0 of 0".
   const broadcastAcks = allAcks && (allAcks.of > 0 || !deskInScope) ? allAcks : undefined;
   const livePullNows = (broadcastAlerts ?? []).filter(
     (alert) => broadcastKind(alert) === "pull_now" && isAlertLive(alert, movements, now),
@@ -989,9 +981,6 @@ function AlertsWorkspace() {
       )}
     </section>
   );
-  // Q184 (Josh, 1 Nov 2026): a desk with nothing late or blocked gets one calm empty state.
-  // WF-15 (nurse): a quiet ward has an empty network queue; ward tasks stay on My ward — do not
-  // claim "Nothing needs you" as if the ward itself is clear.
   const nothingNeedsYou = (
     <div className={styles.nothingEmpty} data-testid="ward-alerts-nothing">
       <StatusGlyph tone="success" size={16} />
@@ -1006,9 +995,7 @@ function AlertsWorkspace() {
     </div>
   );
   const urgencyLabels = ["Act now", "Waiting", "Targets running"] as const;
-  // Safety rule 4: a snoozed act-now alert stays listed in Act now, with its return time.
   const snoozedAct = snoozedEntries.filter((entry) => entry.group === "act");
-  // AL2: under a filter each group keeps only its matching rows, and a group left empty is not drawn.
   const filtered = lens.filter !== "all";
   const actListed = lens.pick([...actEntries, ...snoozedAct]);
   const [waitShown, runningShown, snoozedShown] = [waitEntries, runningEntries, snoozedEntries].map(lens.pick);
@@ -1428,12 +1415,9 @@ function AlertsWorkspace() {
                 <ChecksCard checks={checks} onOpen={() => setPhoneChecks(true)} />
               </>
             ) : (
-              /* Device audit (11 Oct 2026): on an iPad in portrait the Checking strip wraps to three lines,
-                 so it becomes the phone's one-tap card there (shown by CSS in that range only). */
               <ChecksCard checks={checks} className={styles.checkingCardPortrait} onOpen={() => setPhoneChecks(true)} />
             )}
             <PhoneSheet open={phoneChecks} onClose={() => setPhoneChecks(false)} title="Checking" height="tall">
-              {/* The list itself, not the collapsed chip, so one tap reaches it. */}
               <div className={styles.phoneChecks}>{checkingList}</div>
             </PhoneSheet>
           </div>
