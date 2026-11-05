@@ -122,6 +122,28 @@ export function storageFailure(error) {
   );
 }
 
+/**
+ * What a failure said and where it was thrown, for the request log (incident 4 Nov 2026: a 503
+ * logged only `errorName: "Error"`). Only the fixed storage messages above are logged as text,
+ * never a database or payload message, which can quote values. The stack keeps its `at ...`
+ * frames only (function names and file:line), so the message lines are dropped too.
+ */
+export function failureDetail(error) {
+  const message = String(error?.message ?? "");
+  const known = message === "Query read timeout" ? message : message.match(STORAGE_MESSAGES)?.[0];
+  const frames =
+    typeof error?.stack === "string"
+      ? error.stack
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line.startsWith("at "))
+          .slice(0, 6)
+          .map((line) => line.slice(0, 160))
+          .join(" | ")
+      : "";
+  return { ...(known ? { errorMessage: known } : {}), ...(frames ? { errorStack: frames } : {}) };
+}
+
 /** The message of a thrown value, when it has one (H-0294: catch values are unknown). */
 function messageOf(error) {
   return typeof error === "object" && error !== null && "message" in error ? error.message : undefined;
@@ -265,7 +287,7 @@ export function createSharedHandler({
         if (await store.sessionSignedOut(session.sessionId))
           return reply(401, { code: "signed-out", error: "Signed out. Sign in again to carry on." }, "signed_out");
       } catch (error) {
-        note.failure = errorFields(error);
+        note.failure = { ...errorFields(error), ...failureDetail(error) };
         return storageFailure(error)
           ? reply(503, { error: "Database unavailable; try again shortly" }, "storage_unavailable")
           : reply(500, { error: "The server could not complete this request.", requestId }, "server_error");
@@ -280,7 +302,7 @@ export function createSharedHandler({
           signedOut: await store.signOutSession(actorId, session.sessionId, session.startedAt),
         });
       } catch (error) {
-        note.failure = errorFields(error);
+        note.failure = { ...errorFields(error), ...failureDetail(error) };
         return storageFailure(error)
           ? reply(503, { error: "Database unavailable; sign out again shortly" }, "storage_unavailable")
           : reply(500, { error: "The server could not complete this request.", requestId }, "server_error");
@@ -739,7 +761,7 @@ export function createSharedHandler({
           "workspace_full",
         );
       const storage = storageFailure(error);
-      note.failure = errorFields(error);
+      note.failure = { ...errorFields(error), ...failureDetail(error) };
       return storage
         ? reply(
             503,
