@@ -530,6 +530,7 @@ export function reducePlacementEvent(
         blocker: STAGE_TRANSITION_BLOCKERS.accepted,
         pullExpiresAt: undefined,
         allocatedBed: undefined,
+        heldBedNumber: undefined,
         // The admission the pull created was deleted by the shared helper, so the join goes too.
         admissionId: undefined,
         transport: undefined,
@@ -541,7 +542,27 @@ export function reducePlacementEvent(
           { at: event.now, from: movement.stage, to: "accepted_awaiting_bed", by: event.role, reason: event.reason },
         ],
       };
-      const next = replaceMovement(withoutPhantom, movement.id, updatedMovement);
+      const moved = replaceMovement(withoutPhantom, movement.id, updatedMovement);
+      // The numbered referral arm and movement describe the same released commitment.
+      const next =
+        movement.referralId === undefined
+          ? moved
+          : {
+              ...moved,
+              referrals: moved.referrals.map((referral) =>
+                referral.id !== movement.referralId
+                  ? referral
+                  : {
+                      ...referral,
+                      destinations: referral.destinations.map((arm) =>
+                        arm.destination.kind === "psychiatric_ward" &&
+                        (arm.acceptedUnitId ?? arm.destination.unitId) === unit.id
+                          ? { ...arm, heldBedNumber: undefined }
+                          : arm,
+                      ),
+                    },
+              ),
+            };
       // Addendum §1.3: "a referrer not told goes on believing a bed is coming."
       return appendNotices(next, [
         makeNotice(
