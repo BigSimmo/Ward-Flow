@@ -165,7 +165,7 @@ describe("ward capacity draft world and unit identity", () => {
       expect(Number(screen.getByTestId("capacity-world-value").textContent)).toBe(0);
       expect(Number(screen.getByTestId("capacity-world-revision").textContent)).toBe(currentRevision);
 
-      fireEvent.click(screen.getByRole("button", { name: "Start a new capacity observation from the current count" }));
+      fireEvent.click(screen.getByRole("button", { name: "Recount beds now" }));
       expect(input).toHaveValue(0);
       fireEvent.change(input, { target: { value: "1" } });
       await act(async () => {

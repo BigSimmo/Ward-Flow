@@ -360,7 +360,7 @@ export function PatientNowScreen({
   const acceptingUnit = liveMovement?.acceptedUnitId
     ? units.find((u) => u.id === liveMovement.acceptedUnitId)
     : undefined;
-  const acceptingWardName = acceptingUnit?.name ?? "Accepting Inpatient Ward";
+  const acceptingWardName = acceptingUnit?.name ?? "Accepting ward";
 
   const hasArrivalPlan = Boolean(liveMovement?.arrivalDetails);
   const isOverdue = Boolean(
@@ -410,7 +410,7 @@ export function PatientNowScreen({
     const urgencyLabel = urgencyTier ? `Tier ${urgencyTier}` : "urgency not recorded";
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
     // Audit 1 (CS-12, Josh 20 Oct): the synthetic line first in every copy.
-    const text = `${SYNTHETIC_COPY_LINE}\nWard Flow Handover Summary — ${displayName} (${urgencyLabel})\nStatus: ${record.verdict.title}\nSince movement opened: ${waitedStr}\nNext Action: ${record.next[0]?.w ?? "Review"}`;
+    const text = `${SYNTHETIC_COPY_LINE}\nWard Flow handover summary — ${displayName} (${urgencyLabel})\nStatus: ${record.verdict.title}\nSince movement opened: ${waitedStr}\nNext action: ${record.next[0]?.w ?? "Review"}`;
     void copyTextToClipboard(text).then(
       () => {
         setCopied(true);

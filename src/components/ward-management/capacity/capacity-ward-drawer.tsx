@@ -498,7 +498,7 @@ export function CapacityWardFoot({ row, now }: { row: NetworkWardRow; now: Insta
 /** Capacity issue 4: one colour per discharge state, the word always beside it. */
 function stageWords(record: DischargeRecord, now: Instant): string {
   const stage = dischargeRecordStage(record);
-  if (stage === "Discharge blocked") return BED_RELEASE_BLOCKED_LABEL;
+  if (stage === "Discharge held up") return BED_RELEASE_BLOCKED_LABEL;
   if (stage !== "Expected" || record.expectedDischargeAt === null) return stage;
   if (record.expectedDischargeAt < now) return "Date passed";
   const days = dayOf(record.expectedDischargeAt) - dayOf(now);
@@ -558,8 +558,8 @@ function dischargeRecordName(record: DischargeRecord): string {
 }
 
 function dischargeRecordStage(record: DischargeRecord): string {
-  if (record.leftAt !== null) return "Departed";
-  if (record.blockReason !== null) return "Discharge blocked";
+  if (record.leftAt !== null) return "Discharged";
+  if (record.blockReason !== null) return "Discharge held up";
   return record.dischargeConfirmedAt !== null ? "Confirmed" : "Expected";
 }
 

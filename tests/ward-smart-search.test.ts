@@ -68,7 +68,7 @@ describe("searchIntentLabel", () => {
     expect(searchIntentLabel("place", "ward")).toBe("Places");
     expect(searchIntentLabel("form", "4C")).toBe("Forms");
     expect(searchIntentLabel("view", "capacity")).toBe("Views");
-    expect(searchIntentLabel("task", "tasks")).toBe("Tasks");
+    expect(searchIntentLabel("task", "tasks")).toBe("Alerts");
     expect(searchIntentLabel("general", "??")).toBe("All");
   });
 });

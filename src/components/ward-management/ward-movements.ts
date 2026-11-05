@@ -920,7 +920,7 @@ const seededMovements: Movement[] = [
     owner: "ED mental health team",
     referredUnitIds: [],
     declines: [],
-    blocker: "No secure bed available within reach of home",
+    blocker: "No locked bed available within reach of home",
     withdrawnReferrals: [],
     unwinds: [],
     stageChanges: [],

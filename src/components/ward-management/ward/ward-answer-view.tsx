@@ -184,10 +184,10 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   // Nothing pre-selected (Josh, 31 Oct 2026): Accept waits until the ward picks a pull time limit.
   const holdChosenFor = (movementId: string) => holdChoice?.movementId === movementId;
   const holdChoices = [
-    { extended: false, label: `${configuration.pullHoldMinutes} minutes, standard` },
+    { extended: false, label: `${durMinutes(configuration.pullHoldMinutes)} standard` },
     {
       extended: true,
-      label: `${configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES} minutes, extra travel`,
+      label: `${durMinutes(configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES)} extra travel`,
     },
   ];
   const { toastMessage, setToastMessage, triggerToast, toastDeclined } = useAnswerToast();

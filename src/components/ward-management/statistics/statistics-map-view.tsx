@@ -578,7 +578,7 @@ function MapPresentation({
               { value: String(statisticsCountText(network.dueToday)), label: "Due later today" },
               {
                 value: String(statisticsCountText(network.blocked)),
-                label: "Blocked",
+                label: "Held up",
                 tone: (exactStatisticsCount(network.blocked) ?? 0) > 0 ? "warning" : undefined,
               },
             ]
@@ -922,7 +922,11 @@ function BelowMap({
               <ColumnChart columns={columns} gridlines label="Expected discharges across the network, next 7 days" />
             </CardBody>
           </StatCard>
-          <StatCard icon={Lock} title="Discharges held up" aside={`${statisticsCountText(blocked.total)} not departed`}>
+          <StatCard
+            icon={Lock}
+            title="Discharges held up"
+            aside={`${statisticsCountText(blocked.total)} not yet discharged`}
+          >
             <CardBody>
               <BarList
                 label="Discharges held up, by reason"
@@ -963,7 +967,7 @@ function BelowMap({
             <ColumnChart columns={columns} gridlines label="Expected discharges across the network, next 7 days" />
           </CardBody>
         </StatCard>
-        <StatCard icon={Lock} title="Discharges held up" aside={`${blocked.totalCount} not departed`}>
+        <StatCard icon={Lock} title="Discharges held up" aside={`${blocked.totalCount} not yet discharged`}>
           <CardBody>
             <BarList
               label="Discharges held up, by reason"

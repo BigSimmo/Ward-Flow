@@ -1082,7 +1082,7 @@ export const DECLINE_REASON_LABELS: Record<DeclineReason, string> = {
   no_suitable_bed: "No suitable bed",
   age_band_not_provided_here: "Age band not provided here",
   sex_designation_unavailable: "Sex designation unavailable",
-  secure_bed_unavailable: "Secure bed unavailable",
+  secure_bed_unavailable: "Locked bed unavailable",
   belongs_to_another_service: "Belongs to another service",
   referred_elsewhere: "Referred elsewhere",
   // D-78: the ward-only reasons, in the wording the ward screens already used.

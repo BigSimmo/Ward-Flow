@@ -81,7 +81,7 @@ export const RULES: readonly RuleEntry[] = [
     setting: "target-referral_decision",
     label: "Referral decision",
     group: "Deadlines and reply targets",
-    shownOn: "Alerts, Tasks",
+    shownOn: "Alerts",
     display: shortDuration,
   },
   {
@@ -89,7 +89,7 @@ export const RULES: readonly RuleEntry[] = [
     setting: "target-transfer_acceptance",
     label: "Transfer acceptance",
     group: "Deadlines and reply targets",
-    shownOn: "Alerts, Tasks",
+    shownOn: "Alerts",
     display: shortDuration,
   },
   {
@@ -97,7 +97,7 @@ export const RULES: readonly RuleEntry[] = [
     setting: "target-transport_booked",
     label: "Transport booked",
     group: "Deadlines and reply targets",
-    shownOn: "Alerts, Tasks",
+    shownOn: "Alerts",
     display: shortDuration,
   },
   {

@@ -181,7 +181,7 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
   {
     id: "wa-camhs-bed-gridlock",
     name: "Adolescent beds full",
-    title: "Demo: no CAMHS secure beds",
+    title: "Demo: no CAMHS locked beds",
     severity: "critical",
     category: "clinical_stream",
     targetScope: "adolescent",
@@ -200,7 +200,7 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
     targetScopeLabel: "Forensic & High Acuity Units",
     defaultDurationMinutes: 480,
     defaultMessage:
-      "Demo alert. Not a live broadcast. Graylands Frankland Centre secure beds fully committed in this scenario. Custodial transfers need a case conference first.",
+      "Demo alert. Not a live broadcast. Graylands Frankland Centre locked beds fully committed in this scenario. Custodial transfers need a case conference first.",
   },
   {
     id: "wa-transport-transit-delay",

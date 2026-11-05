@@ -514,7 +514,7 @@ function searchTasks(query: string, tasks: readonly InboxItem[]): TaskSearchResu
  */
 export type SearchIntent = "person" | "identifier" | "place" | "form" | "view" | "task" | "general";
 
-export type SearchIntentLabel = "People" | "Movements" | "Places" | "Forms" | "Views" | "Tasks" | "All";
+export type SearchIntentLabel = "People" | "Movements" | "Places" | "Forms" | "Views" | "Alerts" | "All";
 
 const SEARCH_GROUP_ORDER = [
   "people",
@@ -602,7 +602,7 @@ export function searchIntentLabel(intent: SearchIntent, query = ""): SearchInten
     case "view":
       return "Views";
     case "task":
-      return "Tasks";
+      return "Alerts";
     default:
       return "All";
   }
@@ -781,7 +781,7 @@ export function normaliseCommaNameQuery(query: string): string {
 }
 
 /**
- * Words the inbox titles are written in ("Bed pull expired", "Transport awaiting departure", ...).
+ * Words the inbox titles are written in ("Pull expired, bed still pulled", "Transport awaiting departure", ...).
  * A query that is the start of one of them can match a task title, whatever intent it was given:
  * "bed" reads as a name and "transport" as a view, and deriving no tasks for either hid the real
  * action from every search surface (PR #285 review). Names are not caught by this: only a typed

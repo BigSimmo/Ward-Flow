@@ -21,7 +21,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const VIEW_LABELS = { board: "Bed board", journey: "Journey", map: "Map" } as const;
+const VIEW_LABELS = { board: "Bed board", journey: "Movement", map: "Map" } as const;
 
 /** The Summary view switch (one radio group since the 31 Oct 2026 build). */
 const viewSwitch = (view: keyof typeof VIEW_LABELS) =>
@@ -59,7 +59,7 @@ describe("Statistics lazy view loading", () => {
     },
   );
 
-  it("can switch Journey to Map to Bed board while both optional panels are pending", () => {
+  it("can switch Movement to Map to Bed board while both optional panels are pending", () => {
     setForceDynamicLoading(true);
     render(page());
     fireEvent.click(viewSwitch("journey"));

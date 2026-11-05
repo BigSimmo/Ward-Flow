@@ -643,7 +643,7 @@ export function WardTasksDrawer({
     const rows = callRows(contactTargets(item, movement, records?.units), now);
     return (
       <div className={styles.escalationForm} data-ward-task-contacts data-testid={`ward-task-contacts-${item.id}`}>
-        <ul className={styles.callList} aria-label="Who to call, mock numbers">
+        <ul className={styles.callList} aria-label="Who to call, synthetic numbers">
           {rows.map((row) => renderCallRow(row))}
         </ul>
         <div className={styles.escalationFoot}>
@@ -725,7 +725,7 @@ export function WardTasksDrawer({
           ))}
         </div>
         {/* Ops-6: each pick's number. Nothing is recorded until Record escalation is pressed. */}
-        <ul className={styles.callList} aria-label="Escalation contacts, mock numbers">
+        <ul className={styles.callList} aria-label="Escalation contacts, synthetic numbers">
           {callRows(escalationTargets(movement), now).map((row) => renderCallRow(row))}
         </ul>
         {escalationSave.error ? (
@@ -1192,8 +1192,8 @@ export function WardTasksDrawer({
                   : ackFilter === "acknowledged"
                     ? "Nothing acknowledged yet this shift"
                     : ackFilter === "unacknowledged"
-                      ? "Every visible task is acknowledged"
-                      : "Clear the filters to see every task"}
+                      ? "Every visible alert is acknowledged"
+                      : "Clear the filters to see every alert"}
               </p>
               <button
                 type="button"

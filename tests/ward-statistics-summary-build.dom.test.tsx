@@ -100,7 +100,7 @@ describe("the summary view switch", () => {
     summary();
     const bar = screen.getByTestId("ward-statistics-view-bar");
     const radios = within(bar).getAllByRole("radio");
-    expect(radios.map((radio) => radio.textContent)).toEqual(["Bed board", "Journey", "Map"]);
+    expect(radios.map((radio) => radio.textContent)).toEqual(["Bed board", "Movement", "Map"]);
     expect(radios[0]).toHaveAttribute("aria-checked", "true");
   });
 
@@ -109,7 +109,7 @@ describe("the summary view switch", () => {
     expect(screen.getAllByTestId("ward-statistics-view-bar")).toHaveLength(1);
     const cards = screen.getByTestId("ward-statistics-network-cards");
     expect(cards).toContainElement(screen.getByTestId("ward-statistics-view-bar"));
-    fireEvent.click(within(screen.getByTestId("ward-statistics-view-bar")).getByRole("radio", { name: "Journey" }));
+    fireEvent.click(within(screen.getByTestId("ward-statistics-view-bar")).getByRole("radio", { name: "Movement" }));
     const ribbon = screen.getByTestId("ward-statistics-journey-ribbon");
     expect(screen.getAllByTestId("ward-statistics-view-bar")).toHaveLength(1);
     expect(ribbon).toContainElement(screen.getByTestId("ward-statistics-view-bar"));

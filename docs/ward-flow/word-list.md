@@ -2,7 +2,8 @@
 
 **Audience:** anyone writing on-screen text, Help, guides, the demo script or TV copy. **Status:** maintained,
 the single source of truth for Ward Flow's words. **Owner:** Documentation. **Written:** 24 October 2026 from
-`main` plus PR #680, after a wording audit of every screen.
+`main` plus PR #680, after a wording audit of every screen. **Updated:** 5 November 2026 (design audit 2), to
+agree with [DESIGN-SYSTEM §6](../design/DESIGN-SYSTEM.md#6-words).
 
 Use one word for one idea, everywhere. If a word is not here, use plain Australian English and add it here
 when a second screen needs it. Code names (`HOLD_BED`, `ward-bed-hold.ts`, `bed_held`) are not screen text and
@@ -28,20 +29,29 @@ word in the in-app Help glossary is on this list.
 | Closed               | A bed out of service that cannot be given to anyone.                                                         |                                                                                            |
 | **Held up**          | A discharge or move that is delayed. Not a bed state.                                                        |                                                                                            |
 
-## A patient's journey
+## A patient's movement
 
-The stage words, in order: **Referred**, **Review**, **Accepted**, **Pulled**, **Handover ready**, **Moving**,
-**Arrived**.
+The stage words are Home's set, everywhere a stage is named in one word (Josh, 5 November 2026, design audit
+card 6): **Needs a bed**, **Bed agreed**, **Ready to move**, **Moving**. The detailed steps below are only
+sub-labels under those four, in order: **Referred**, **Review**, **Accepted**, **Pulled**, **Handover ready**,
+**Moving**, **Arrived**.
+
+| Stage (Home's set) | Detailed steps under it          |
+| ------------------ | -------------------------------- |
+| **Needs a bed**    | Referred, Review                 |
+| **Bed agreed**     | Accepted, Pulled                 |
+| **Ready to move**  | Handover ready                   |
+| **Moving**         | Moving, then Arrived on the ward |
 
 | Say                | Means                                                                                    | Do not say                    |
 | ------------------ | ---------------------------------------------------------------------------------------- | ----------------------------- |
-| **Movement**       | One patient's journey to a bed, from the request to arrival.                             |                               |
+| **Movement**       | One patient's move to a bed, from the request to arrival.                                | journey                       |
 | **Referred**       | A destination has been asked for, and nothing has answered yet.                          |                               |
 | **Review**         | At least one unit is weighing up whether it can take the patient.                        |                               |
 | **Accepted**       | A unit has agreed in principle, and no bed is pulled yet.                                |                               |
 | **Handover ready** | The bed and paperwork are ready. Only the physical move is left.                         |                               |
 | **Moving**         | The patient has been collected and the move is under way.                                |                               |
-| **Arrived**        | The patient has arrived, and this leg of the journey is complete.                        |                               |
+| **Arrived**        | The patient has arrived, and this leg of the movement is complete.                       |                               |
 | waiting list       | Patients still waiting for a bed: "on the waiting list". "Waitlisted" is fine as a verb. | the waitlist, a waitlist      |
 | Declined           | A ward said no to a referral.                                                            | rejected, refused (for wards) |
 | **Out of area**    | A patient in a bed outside their home health service. No hyphen in headings or labels.   |                               |
@@ -110,11 +120,11 @@ Added 26 October 2026 with the Help glossary, so the two stay in step.
 | Say                      | Means                                                                                                |
 | ------------------------ | ---------------------------------------------------------------------------------------------------- |
 | **Being made ready**     | A released bed still being prepared. It may not be offered as Ready yet.                             |
-| **Confirmed out**        | A discharge the ward has confirmed. Due out is expected but not confirmed.                           |
+| **Confirmed out**        | A discharge the ward has confirmed. An expected discharge is not confirmed yet.                      |
 | **Past date**            | Still on the ward after the expected discharge date.                                                 |
 | **Short**                | More people waiting than beds that fit, for one kind of bed. Spare and Enough are the other two.     |
 | **Cohort**               | The age group a bed is for: Adult, Older adult or Youth.                                             |
-| **Secure bed**           | A locked bed. Describes the ward, not the patient's legal status.                                    |
+| **Locked bed**           | A bed on a locked ward. Describes the ward, not the patient's legal status. Never "secure bed".      |
 | **CLD**                  | Criteria led discharge, with the criteria the treating psychiatrist set.                             |
 | **CLD ready**            | Every criterion for criteria led discharge is met.                                                   |
 | **Fit to travel**        | The ED doctor's recorded medical clearance, needed before transport.                                 |
@@ -131,7 +141,7 @@ Added 26 October 2026 with the Help glossary, so the two stay in step.
 | **Notices**              | A ward's own messages under the bell: buzzes, urgent tasks and notices.                              |
 | **Activity**             | The header drawer of recent changes and notices.                                                     |
 | **Board time**           | The clock every screen works from, in Perth time (AWST).                                             |
-| **Demo**                 | The Demo panel: scenario, clock and reset for the invented data.                                     |
+| **Demo**                 | The Demo panel: scenario, clock and reset for the invented data. The live pill reads "Demo 10:42".   |
 | **Synthetic**            | Invented. Every patient, bed figure and record in Ward Flow is made up.                              |
 
 ## Save problems
@@ -154,8 +164,35 @@ When another desk changed a record first (P058), the message names the record ty
 ## Style
 
 - Australian spelling (colour, centre, organise, cancelled, stabilisation). Do not say US spelling (organize, stabilization, utilization, canceled, behavior, favorite).
-- Sentence case for buttons, labels and headings ("On leave", not "On Leave").
+- Sentence case for buttons, labels and headings ("On leave", not "On Leave"; "Stand down", not "Stand Down").
 - Say what happened, then what to do next. No exclamation marks.
+- Empty lines say "Nobody", not "No one", and end a whole sentence with a full stop ("Nobody waiting in ED.").
+- Short durations ("4h", "1h 30m"), never "240 minutes".
+
+## One word for each thing (design audit 2, 5 November 2026)
+
+This is the DESIGN-SYSTEM §6 table, with the exact phrases `tests/ward-word-list.test.ts` keeps off screen.
+"Releases held up" stays on the Ward page only (Q305). Held is only a patient's own bed kept for leave or
+away; pulled is a bed kept for an incoming patient; held up is a delay.
+
+| Say                            | Do not say                                                            |
+| ------------------------------ | --------------------------------------------------------------------- |
+| Alerts                         | Tasks, for Alerts ("Alerts or Tasks", "Tasks drawer", "called Tasks") |
+| Movement                       | Journey, as a label; journey                                          |
+| Held up                        | blockers; barrier; "With blockers"                                    |
+| held-up discharges             | held-up releases (Releases held up stays on Ward, Q305)               |
+| Discharge due                  | due out ("No discharge due", not "Nobody due out")                    |
+| Bed board                      | Stays and discharges                                                  |
+| New referral                   | Raise a referral                                                      |
+| Add patient                    | New patient; Add a patient                                            |
+| Open or close a bed            | Open, close or hold (hold is for a leave bed)                         |
+| Locked bed                     | secure bed (Secure stays only inside ward names)                      |
+| synthetic numbers              | mock numbers                                                          |
+| on Home                        | on Command                                                            |
+| Pull expired, bed still pulled | bed pull expired                                                      |
+| Stand down                     | Stand Down                                                            |
+| 4h                             | minutes for a long duration ("240 minutes")                           |
+| on the board                   | demo night (the live pill "Demo 10:42" stays, HOW-WE-WORK §6)         |
 
 ## Plain words (wording audit, 26 October 2026)
 
@@ -163,7 +200,7 @@ Held is only for a patient's own leave or away bed (D-85). Held up is for delays
 
 | Say                            | Do not say                              |
 | ------------------------------ | --------------------------------------- |
-| Beds held up by a blocker      | beds held by blockers                   |
+| Beds held up                   | beds held by blockers                   |
 | the pull time limit passed at  | was held until (for a pulled bed)       |
 | Not recorded                   | not held (for a missing number or time) |
 | record                         | dossier                                 |

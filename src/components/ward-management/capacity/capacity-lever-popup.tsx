@@ -151,7 +151,7 @@ function describe(item: HelpItem): string {
     case "clear_held_up":
       return item.uplift > 0
         ? `Clearing these could add up to ${item.uplift} to tomorrow's figure.`
-        : "Held up by the blockers shown. Clearing them widens tomorrow's range only.";
+        : "Held up by the reasons shown. Clearing them widens tomorrow's range only.";
     case "confirm_dates":
       return "Dates recorded on the stay but not yet on the discharge list. Confirming them firms up tomorrow.";
     case "review_overdue":

@@ -205,7 +205,7 @@ async function recordBlockerOnScreen(control: ReturnType<typeof commands>) {
   const occupied = within(everyBed)
     .getAllByRole("button", { name: /^Bed \d{2},/ })
     .filter(
-      (tile) => !/Free|Ready|Closed|Pulled|Held up|Due out|Past date/.test(tile.getAttribute("aria-label") ?? ""),
+      (tile) => !/Free|Ready|Closed|Pulled|Held up|Discharge due|Past date/.test(tile.getAttribute("aria-label") ?? ""),
     );
   expect(occupied.length).toBeGreaterThan(0);
   fireEvent.click(occupied.at(-1)!);

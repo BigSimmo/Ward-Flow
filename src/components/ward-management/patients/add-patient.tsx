@@ -385,7 +385,7 @@ export function AddPatientForm() {
       Boolean(priorSubmissionRef.current?.unconfirmed) ||
       (isDirty &&
         (!isSubmitting || JSON.stringify(formSnapshot()) !== JSON.stringify(priorSubmissionRef.current?.form))),
-    confirmMessage: "You have unsaved changes to this new admission. Are you sure you want to leave?",
+    confirmMessage: "Your new patient is not saved.",
   });
   const restoreSnapshot = (snap: ReturnType<typeof formSnapshot>) => {
     setDraft(snap.draft);

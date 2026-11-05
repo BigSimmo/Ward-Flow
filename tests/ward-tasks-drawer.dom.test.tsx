@@ -313,7 +313,7 @@ describe("task workspace state filters and actions", () => {
     expect(onSelectMovement).toHaveBeenLastCalledWith(item.movementId, "contact");
     fireEvent.click(within(card).getByRole("button", { name: "Escalate" }));
     // Ops-6: each escalation pick is offered, with its number listed below.
-    const escalationList = within(card).getByRole("list", { name: "Escalation contacts, mock numbers" });
+    const escalationList = within(card).getByRole("list", { name: "Escalation contacts, synthetic numbers" });
     for (const pick of ["Duty consultant", "State bed desk", "Executive on call"]) {
       expect(within(card).getByRole("button", { name: pick })).toBeTruthy();
       expect(within(escalationList).getByText(pick)).toBeTruthy();

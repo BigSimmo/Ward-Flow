@@ -68,7 +68,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     actions: [
       "Work down My list first: act now, then referrals to decide. Each row opens the record it is about.",
       "Switch to Everyone waiting for the whole queue. Overdue waits and Tier 1 highlight those rows.",
-      "Open Alerts or Tasks in the header for everything addressed to this desk.",
+      "Open Alerts in the header for everything addressed to this desk.",
     ],
   },
   capacity: {
@@ -113,7 +113,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
   },
   "referral-intake": {
     title: "New referral",
-    purpose: "Raise a referral to one or more wards, an ED or a community team.",
+    purpose: "Send a new referral to one or more wards, an ED or a community team.",
     actions: [
       "Choose the destinations. Several can be sent in one go.",
       "Record the legal status and the tentative diagnosis block, if known.",
@@ -156,7 +156,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     title: "All wards",
     purpose: "Every ward, grouped by health service, each opening its own ward screen.",
     actions: [
-      "Open your ward to see its beds, arrivals and departures.",
+      "Open your ward to see its beds, arrivals and discharges.",
       "While a ward is open, Pin this ward in the menu keeps it under My wards.",
     ],
   },
@@ -171,7 +171,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
   },
   [BED_FINDER_MENU_ID]: {
     title: "Find a bed",
-    purpose: "Lists which wards meet the checks you choose, A to Z by name, before you raise a referral.",
+    purpose: "Lists which wards meet the checks you choose, A to Z by name, before you send a new referral.",
     actions: [
       "Choose the age group, bed type, sex and legal status, then read the wards that meet those checks and their ready beds. Wards are never ranked.",
     ],
@@ -195,7 +195,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     actions: [
       "Open Places, then choose Catchments on the band to find a team.",
       "Open your team to see referrals waiting for an answer.",
-      "Raise a referral from the team page.",
+      "Start a New referral from the team page.",
     ],
   },
   delays: {
@@ -213,7 +213,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
   },
   discharges: {
     title: "Discharges",
-    purpose: "Planned discharges and departures, blocked releases first.",
+    purpose: "Planned discharges, held-up discharges first.",
     actions: [
       "Work through what is blocking each discharge.",
       "Open one to see where the patient is going and the bed release.",
@@ -323,11 +323,11 @@ const PAGE_HELP: readonly PageHelp[] = [
   {
     id: "board",
     path: /^\/ward-flow\/board\/[^/]+$/u,
-    title: "Stays and discharges",
+    title: "Bed board",
     purpose: "Every bed on one ward, who is in it, who is coming in and who is going out today and tomorrow.",
     actions: [
       "Choose a bed to see its patient. Move the date, Record hold-up or Record that they have left.",
-      "Before handover lists beds out of service and people due out.",
+      "Before handover lists beds out of service and people due to be discharged.",
       "Show shift brief opens the ward's sheet for the shift.",
     ],
   },
@@ -346,7 +346,7 @@ const PAGE_HELP: readonly PageHelp[] = [
     id: "patient",
     path: /^\/ward-flow\/(?:people|movements)\/[^/]+$/u,
     title: "Patient",
-    purpose: "One patient's record: where they are now, their journey and the next step.",
+    purpose: "One patient's record: where they are now, their movement and the next step.",
     actions: [
       "Now shows the status card: the bed, fit to travel and transport, each with its next step.",
       "Open Destination to ask wards, pull the bed or make a correction.",
@@ -515,7 +515,7 @@ export type GlossaryTerm = { term: string; meaning: string };
 /** Ward Flow's own words. Codes for sites and services are added below from their one source. */
 const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "Act now", meaning: "Something due now or overdue. Lists that have it keep it in its own Act now group." },
-  { term: "Movement", meaning: "One patient's journey to a bed, from the request to arrival." },
+  { term: "Movement", meaning: "One patient's move to a bed, from the request to arrival." },
   { term: "Referred", meaning: "A destination has been asked for, and nothing has answered yet." },
   { term: "Review", meaning: "At least one unit is weighing up whether it can take the patient." },
   { term: "Accepted", meaning: "A unit has agreed in principle, but no bed has been pulled yet." },
@@ -526,7 +526,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "Pull expired", meaning: "The time limit on a pulled bed has passed. Move or release the bed." },
   { term: "Handover ready", meaning: "The bed and paperwork are ready. Only the physical move is left." },
   { term: "Moving", meaning: "The patient has been collected and the move is under way." },
-  { term: "Arrived", meaning: "The patient has arrived, and this leg of the journey is complete." },
+  { term: "Arrived", meaning: "The patient has arrived, and this leg of the movement is complete." },
   { term: "Held bed", meaning: "A bed kept for a patient on leave or away from the ward, ready for their return." },
   {
     term: "Pull time limit",
@@ -546,7 +546,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "Past date", meaning: "The patient is still on the ward after their expected discharge date." },
   {
     term: "Confirmed out",
-    meaning: "A discharge the ward has confirmed. Due out is one that is expected but not confirmed.",
+    meaning: "A discharge the ward has confirmed. An expected discharge is not confirmed yet.",
   },
   {
     term: "CLD",
@@ -590,8 +590,9 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
       "The age group a bed is for: Adult, Older adult or Youth. Capacity splits adult beds into locked and open.",
   },
   {
-    term: "Secure bed",
-    meaning: "A locked bed. An open bed is unlocked. This describes the ward, not the patient's legal status.",
+    term: "Locked bed",
+    meaning:
+      "A bed on a locked ward. An open bed is on an unlocked ward. This describes the ward, not the patient's legal status.",
   },
 
   {
@@ -729,7 +730,7 @@ export const KEYBOARD_SHORTCUTS: readonly {
     short: "Search, even with shortcuts off (⌘K on a Mac)",
     group: "Find",
   },
-  { keys: "Shift+T", action: "Open Alerts, called Tasks on some desks.", short: "Open Alerts or Tasks", group: "Open" },
+  { keys: "Shift+T", action: "Open Alerts.", short: "Open Alerts", group: "Open" },
   { keys: "Shift+A", action: "Open Activity.", short: "Open Activity", group: "Open" },
   { keys: "Shift+R", action: "Start a new referral.", short: "New referral", group: "Open" },
   {

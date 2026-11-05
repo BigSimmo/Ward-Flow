@@ -776,7 +776,7 @@ export function WardHomeTab({
   if (lapsedHolds.length > 0) {
     actNow.push({
       key: "holds",
-      title: lapsedHolds.length === 1 ? "Bed pull expired" : "Bed pulls expired",
+      title: lapsedHolds.length === 1 ? "Pull expired, bed still pulled" : "Pulls expired, beds still pulled",
       detail: lapsedHolds
         .map(
           (bed) =>

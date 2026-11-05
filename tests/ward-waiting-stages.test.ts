@@ -21,7 +21,7 @@ describe("waitingStages", () => {
     expect(waitingStages([]).map((row) => row.label)).toEqual([
       "Awaiting ward response",
       "Accepted, awaiting bed",
-      "Departure awaiting bed preparation",
+      "Awaiting bed preparation",
       "Awaiting transport",
     ]);
   });
