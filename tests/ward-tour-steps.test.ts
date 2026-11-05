@@ -17,7 +17,7 @@ import { deskActions } from "@/components/ward-management/settings/workstation-d
  */
 
 const ROLES = Object.keys(TOUR_ROLE_LABELS) as TourRole[];
-const DEVICES: readonly TourDevice[] = ["desk", "phone"];
+const DEVICES: readonly TourDevice[] = ["desk", "tablet", "phone"];
 const CHAPTERS = ["Your desk", "Your daily work", "Finding your way", "What you can do"];
 
 const FULL: TourFacts = {
@@ -155,6 +155,56 @@ describe("help and tour audit fixes", () => {
       const ids = tourSteps("admin", device, FULL).map((step) => step.id);
       expect(ids, device).toEqual(expect.arrayContaining(["give-role", "requests"]));
     }
+  });
+});
+
+describe("the tablet tour (746px to 1000px, Help and tour extension, 5 Nov 2026)", () => {
+  it("keeps the desktop's steps but lights the bar's Menu where the desktop lit the side menu", () => {
+    for (const role of ROLES) {
+      const desk = tourSteps(role, "desk", FULL);
+      const tablet = tourSteps(role, "tablet", FULL);
+      expect(
+        tablet.map((step) => step.id),
+        role,
+      ).toEqual(desk.map((step) => step.id));
+      for (const step of tablet) {
+        expect(step.target?.sel ?? "", `${role} ${step.id}`).not.toMatch(/ward-rail|ward-my-wards-pin/);
+      }
+      expect(tablet[0]?.body, role).toContain(`This takes ${tourMinutes(tablet.length, "tablet")}.`);
+    }
+    const coordinator = tourSteps("coordinator", "tablet", FULL);
+    expect(coordinator[0]?.target).toBeUndefined();
+    expect(coordinator.find((step) => step.id === "menu")?.target?.sel).toBe('[data-testid="ward-bar-phone-menu"]');
+    expect(coordinator.find((step) => step.id === "help")?.title).toBe("Help is in the menu");
+    expect(coordinator.find((step) => step.id === "search")?.body).toMatch(/^The magnifier finds/);
+    expect(tourSteps("ward", "tablet", FULL).find((step) => step.id === "you")?.body).toMatch(
+      /^Menu, at the left of the header, opens the side menu/,
+    );
+  });
+});
+
+describe("stronger tours (Help and tour extension, 5 Nov 2026)", () => {
+  it("gives the thinner desks more of their home screen", () => {
+    const ids = (role: TourRole) => tourSteps(role, "desk", FULL).map((step) => step.id);
+    expect(ids("executive")).toEqual(expect.arrayContaining(["menu", "service", "hero", "tabs", "export", "trends"]));
+    expect(ids("admin")).toEqual(expect.arrayContaining(["review", "record-review", "give-role", "requests"]));
+    expect(ids("officer")).toEqual(expect.arrayContaining(["booking", "history", "copy"]));
+    expect(ids("bed_manager")).toContain("planned");
+  });
+
+  it("offers at least one Try it on every desk and device", () => {
+    for (const role of ROLES) {
+      for (const device of DEVICES) {
+        const tries = tourSteps(role, device, FULL).filter((step) => step.tryIt).length;
+        expect(tries, `${role} ${device}`).toBeGreaterThanOrEqual(1);
+      }
+    }
+  });
+
+  it("names only the Governance tabs the access admin sees", () => {
+    const text = JSON.stringify(tourSteps("admin", "desk", FULL));
+    expect(text).toContain("Audit trail");
+    expect(text).not.toMatch(/registers and reports/);
   });
 });
 
