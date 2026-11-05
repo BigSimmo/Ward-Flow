@@ -120,6 +120,11 @@
   cursor: pointer;
 }
 
+/* WF-38: a clear gap between Retry and Sign out. */
+.signOut {
+  margin-inline-start: var(--wf-s-4);
+}
+
 .action:hover {
   border-color: var(--wf-line-3, var(--wf-line));
 }

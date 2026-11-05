@@ -36,6 +36,7 @@ import {
   cx,
   durMinutes,
   phoneRows,
+  requestConfirm,
   tableClasses,
   useIsPhone,
   useIsTabletPortrait,
@@ -522,7 +523,18 @@ export function OfficerScreen() {
       `Patient collected for ${officerPatientName(movement)}. In transit.`,
       "Collection",
     );
-  const runDelivered = (movement: Movement) =>
+  // WF-22 (live test, 4 Nov 2026): arrival cannot be taken back, so it is confirmed first.
+  const runDelivered = async (movement: Movement) => {
+    const confirmed = await requestConfirm({
+      title: "Record arrival at the ward?",
+      message: `Record that ${officerPatientName(movement)} has arrived at the ward. This cannot be undone here.`,
+      confirmLabel: "Record arrival",
+      cancelLabel: "Not yet",
+    });
+    if (!confirmed) return;
+    return recordDelivered(movement);
+  };
+  const recordDelivered = (movement: Movement) =>
     reportOutcome(
       movement.id,
       () => raise("PATIENT_ARRIVED", { movementId: movement.id }),

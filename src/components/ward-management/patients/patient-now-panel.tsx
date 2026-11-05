@@ -142,7 +142,10 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
   // Community clinician (redesign, 31 Oct 2026): the team follows its person on the ward but records
   // none of the ward's changes (leave, gone to ED, discharge date are ward or coordinator only), so the
   // Record a change card of greyed buttons and its "Switch to Ward desk" link are left out for this desk.
-  const ownTeamDesk = useEffectiveWardAccess().role === "community";
+  const effectiveRole = useEffectiveWardAccess().role;
+  const ownTeamDesk = effectiveRole === "community";
+  // WF-21 (live test, 4 Nov 2026): as in `useRoleGate`, only a coordinator's desk can switch desks.
+  const canSwitchDesk = effectiveRole === "coordinator";
   const wardChangeOpen = !ownTeamDesk || gate("RECORD_LEAVE_BED").allowed;
   const whyCard =
     isLiveBedflow && liveMovement ? (
@@ -288,7 +291,8 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
       why={whyMovesLeft ? null : whyCard}
       change={
         <>
-          {isLiveBedflow &&
+          {canSwitchDesk &&
+          isLiveBedflow &&
           liveMovement &&
           (!clearanceGate.allowed || (liveMovement.stage === "pulled" && !gate("HANDOVER_READY").allowed)) ? (
             <div className="lockline" data-testid="ward-patient-role-lockline">
@@ -314,7 +318,7 @@ export function PatientNowPanel(props: PatientNowPanelProps) {
           {whyMovesLeft ? whyCard : null}
           {mode === "ward" && wardChangeOpen ? (
             <>
-              {!gate("RECORD_LEAVE_BED").allowed ? (
+              {canSwitchDesk && !gate("RECORD_LEAVE_BED").allowed ? (
                 <div className="lockline">
                   <button
                     type="button"

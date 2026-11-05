@@ -130,7 +130,7 @@ export function OverrideRegister({ entries, units, now }: OverrideRegisterProps)
                       fontVariantNumeric: "tabular-nums",
                     }}
                   >
-                    NUM Consulted
+                    Nurse unit manager consulted
                   </span>
                 ) : null}
               </div>

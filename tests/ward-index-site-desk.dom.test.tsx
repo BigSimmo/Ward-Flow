@@ -78,7 +78,7 @@ describe("All wards: the site bed manager's desk", () => {
 
     const otherGrid = screen.getByRole("region", { name: "Other sites, bed counts" });
     expect(within(otherGrid).getAllByRole("article")).toHaveLength(OTHER_SITE_CARDS);
-    expect(within(otherGrid).queryByText(/ask NUM/u)).toBeNull();
+    expect(within(otherGrid).queryByText(/ask the nurse unit manager/u)).toBeNull();
 
     const more = screen.getByRole("button", { name: `Show all ${other.length} wards at other sites` });
     expect(more).toHaveAttribute("aria-expanded", "false");

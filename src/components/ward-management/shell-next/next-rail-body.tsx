@@ -379,7 +379,8 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const deskRoleLabel = useDeskRoleLabel(role);
   // Overall review (20 Oct 2026): a desk page opened by its link keeps the person, their menu and
   // their Home, so the card says plainly whose desk is on screen and as whom it is being viewed.
-  const viewing = viewingDeskLine(pathname, personaRole, units, currentPersona.role);
+  // WF-13 (live test, 4 Nov 2026): a page the desk may not open names no place in the rail.
+  const viewing = canOpen(pathname) ? viewingDeskLine(pathname, personaRole, units, currentPersona.role) : null;
   // shell-next: whose figures these are, the bed alert rows for the desk's own place, and pins.
   const countNote = countScopeNote(deskAccess, service);
   const capacityRows = deskCapacityRows(deskAccess, units, admissions ?? [], bedReleases, bedAlerts);
