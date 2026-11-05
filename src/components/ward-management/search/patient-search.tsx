@@ -54,6 +54,7 @@ import {
   type Patient,
 } from "@/components/ward-management/ward-patients";
 import { WARD_ADD_PERSON_HREF } from "@/components/ward-management/ward-nav";
+import { compareFormalNames } from "@/components/ward-management/ward-name-collation";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
@@ -608,7 +609,7 @@ export function PatientSearchPage() {
         if (b.legalDueAt === null) return -1;
         return a.legalDueAt - b.legalDueAt;
       }
-      if (sortBy === "name-asc") return a.name.localeCompare(b.name);
+      if (sortBy === "name-asc") return compareFormalNames(a.name, b.name);
       if (sortBy === "urm-asc") return a.urm.localeCompare(b.urm);
       if (sortBy === "opened-desc") return b.id.localeCompare(a.id);
       return 0;

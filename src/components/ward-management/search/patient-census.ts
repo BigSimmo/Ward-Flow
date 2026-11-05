@@ -37,6 +37,7 @@ import {
 import { acceptedReferralAwaitingMovement, isOpen } from "@/components/ward-management/ward-derivations";
 import type { LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
+import { compareFormalNames } from "@/components/ward-management/ward-name-collation";
 import {
   foldPatientSearchHaystack,
   foldPatientSearchText,
@@ -687,9 +688,11 @@ export function sortCensusRows(rows: readonly CensusRow[], sort: CensusSort, lif
     sort === "tier"
       ? (a: CensusRow, b: CensusRow) => (a.tier ?? 9) - (b.tier ?? 9) || byWait(a, b)
       : sort === "name"
-        ? (a: CensusRow, b: CensusRow) => a.name.localeCompare(b.name)
+        ? (a: CensusRow, b: CensusRow) => compareFormalNames(a.name, b.name)
         : byWait;
-  return [...rows].sort((a, b) => Number(lifted(b)) - Number(lifted(a)) || by(a, b) || a.name.localeCompare(b.name));
+  return [...rows].sort(
+    (a, b) => Number(lifted(b)) - Number(lifted(a)) || by(a, b) || compareFormalNames(a.name, b.name),
+  );
 }
 
 /**

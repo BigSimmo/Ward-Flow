@@ -3,6 +3,7 @@ import { foldPatientSearchHaystack, foldPatientSearchText } from "@/components/w
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { rankByNameStart } from "@/components/ward-management/referrals/referral-patient-rank";
 import { originIsEdOrCrisis } from "@/components/ward-management/community/community-screen-helpers";
+import { compareFormalNames } from "@/components/ward-management/ward-name-collation";
 
 /* Content and locale audit CL-5 and functional F6 (5 Nov 2026). Every name is invented. */
 const finds = (typed: string, name: string) => foldPatientSearchHaystack(name).includes(foldPatientSearchText(typed));
@@ -53,5 +54,18 @@ describe("community ED filter matches ED as a whole word", () => {
     expect(originIsEdOrCrisis("SCGH ED psychiatric liaison")).toBe(true);
     expect(originIsEdOrCrisis("Crisis team")).toBe(true);
     expect(originIsEdOrCrisis("Resus bay", true)).toBe(true);
+  });
+});
+
+describe("people sort by family name, then given name (CL-8)", () => {
+  it("puts Smith before Smith-Jones and reads accents as their letters", () => {
+    const names = ["Smith-Jones, Ava", "Smith, Zoe", "Älvsjö, Tess", "Ostby, Kim", "smith, Amy"];
+    expect([...names].sort(compareFormalNames)).toEqual([
+      "Älvsjö, Tess",
+      "Ostby, Kim",
+      "smith, Amy",
+      "Smith, Zoe",
+      "Smith-Jones, Ava",
+    ]);
   });
 });
