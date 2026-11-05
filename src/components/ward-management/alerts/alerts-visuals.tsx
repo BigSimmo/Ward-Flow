@@ -282,8 +282,8 @@ type PlacedLabel = { x: number; y: number; anchor: "start" | "middle" | "end" };
  */
 export function placeTrackLabels(marks: { x: number; label: string }[], width: number, nowX?: number): PlacedLabel[] {
   const edge = 6;
-  const above = 10;
-  const below = 46;
+  const rows = [10, 46, 62] as const;
+  const gap = 8;
   const nowGap = 6;
   const lastRightByRow = new Map<number, number>();
   return marks.map(({ x, label }) => {
@@ -310,7 +310,9 @@ export function placeTrackLabels(marks: { x: number; label: string }[], width: n
         left = after;
       }
     }
-    const y = left < (lastRightByRow.get(above) ?? -Infinity) + 8 ? below : above;
+    // WF-35: pick the first row with room; a third row keeps three close labels from painting over each other.
+    const y =
+      rows.find((row) => left >= (lastRightByRow.get(row) ?? -Infinity) + gap) ?? rows[rows.length - 1];
     lastRightByRow.set(y, left + w);
     const ax = anchor === "start" ? left : anchor === "end" ? left + w : x;
     return { x: ax, y, anchor };
@@ -320,7 +322,8 @@ export function placeTrackLabels(marks: { x: number; label: string }[], width: n
 /** One line from the first recorded time to now, with what happened on it. */
 export function WaitTrack({ points, now }: { points: TrackPoint[]; now: Instant }) {
   const [frameRef, width] = useFrameWidth(366);
-  const height = 64;
+  // WF-35: room for a third label row (y=62) when two rows are already full.
+  const height = 72;
   const sorted = [...points].sort((a, b) => a.at - b.at);
   const start = sorted[0]?.at ?? now;
   const from = Math.floor((Math.min(start, now) - 10) / 30) * 30;

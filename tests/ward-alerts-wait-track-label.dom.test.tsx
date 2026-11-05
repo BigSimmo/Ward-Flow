@@ -53,4 +53,20 @@ describe("Recorded times track labels", () => {
     expect(placed.anchor).toBe("start");
     expect(placed.x).toBeGreaterThanOrEqual(183 + 6);
   });
+
+  // WF-35 (5 Nov 2026): three close marks used to share one baseline and paint over each other.
+  it("drops a third colliding label onto the lowest row", () => {
+    const [first, second, third] = placeTrackLabels(
+      [
+        { x: 140, label: "Transport booked" },
+        { x: 155, label: "Transport accepted" },
+        { x: 170, label: "Arrived at ward" },
+      ],
+      366,
+    );
+    expect(first.y).toBe(10);
+    expect(second.y).toBe(46);
+    expect(third.y).toBe(62);
+  });
+
 });
