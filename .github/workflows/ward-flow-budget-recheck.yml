@@ -25,6 +25,7 @@ on:
       - "postcss.config.mjs"
       - "script-budget.json"
       - "scripts/check-script-budget.mjs"
+      - "scripts/ward-flow/whats-new-list.mjs"
       - "scripts/install-locked-dependencies.mjs"
       - "scripts/ward-ci-public/**"
       - ".github/workflows/ward-flow.yml"
