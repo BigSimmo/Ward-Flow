@@ -8,7 +8,9 @@ export function safeScreenReturn(raw: string): string | undefined {
   const path = raw.split(/[?#]/)[0].replace(/\/+$/, "");
   if (!/^\/ward-flow(?:\/[a-z0-9-]+)*$/.test(path)) return undefined;
   const address = screenForPath(path);
-  if (!address || address.patientId || address.movementId || address.screen === "patient") return undefined;
+  // A patient address always has screen "patient" (screenForPath), so the screen check covers it
+  // without reading the patient link (D-14).
+  if (!address || address.movementId || address.screen === "patient") return undefined;
   return path;
 }
 

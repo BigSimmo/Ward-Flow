@@ -99,7 +99,7 @@ afterEach(async () => {
     ),
   );
 });
-afterAll(() => rmSync(temporary, { recursive: true, force: true }));
+afterAll(() => rmSync(temporary, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
 
 it("keeps HTTP identity verification and does not use a TLS fixture CA for HTTP", async () => {
   const url = await serve("http");
