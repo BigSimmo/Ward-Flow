@@ -1,5 +1,6 @@
 // @ts-check
 import { createHash } from "node:crypto";
+import { isDeepStrictEqual } from "node:util";
 
 /**
  * How a shared workspace is kept from migration 10: each referral, bed (ward), movement, patient,
@@ -154,9 +155,10 @@ function canonical(value) {
     );
   return value;
 }
-// Engine records are immutable JSON values: a shared body is already equal. Distinct bodies
-// still use canonical JSON equality, including its existing handling of primitive values.
-const same = (a, b) => a === b || JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
+// Engine records are immutable JSON values: shared or deep-equal bodies need no serialisation.
+// Keep canonical JSON equality for the remaining cases, including its primitive semantics.
+const same = (a, b) =>
+  a === b || isDeepStrictEqual(a, b) || JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 
 /** The fields of `core.state` still kept as a whole (not yet as rows). */
 function wholeFields(core) {
