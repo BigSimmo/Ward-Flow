@@ -12,6 +12,14 @@ export const MIDLAND_DECISIONS_KEY = "ward-flow:midland-decisions:v1";
 
 export type MidlandDecision = { id: string; line: string; at: number };
 
+/**
+ * The Accept toast line. Decisions live in this browser only, so the toast says so rather than
+ * a time that would read as a shared save other desks can see.
+ */
+export function midlandSavedLine(movedToAnswered: boolean): string {
+  return movedToAnswered ? "Saved in this browser · moved to Answered" : "Saved in this browser";
+}
+
 const listeners = new Set<() => void>();
 let cache: { raw: string | null; value: Record<string, MidlandDecision> } = { raw: null, value: {} };
 const EMPTY: Record<string, MidlandDecision> = {};

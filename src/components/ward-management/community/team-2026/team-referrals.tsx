@@ -39,7 +39,13 @@ import {
 import home from "@/components/ward-management/ward/ward-home-tab.module.css";
 import { ANSWERED, EXTRA, REFERRALS, SENT, STAFF, type DemoReferral } from "./midland-demo";
 import { Person, Tag, initialsOf } from "./parts";
-import { openReferrals, recordMidlandDecision, undoMidlandDecision, useMidlandDecisions } from "./midland-decisions";
+import {
+  midlandSavedLine,
+  openReferrals,
+  recordMidlandDecision,
+  undoMidlandDecision,
+  useMidlandDecisions,
+} from "./midland-decisions";
 import wt from "@/components/ward-management/ward-table/ward-table.module.css";
 import t from "./team-2026.module.css";
 
@@ -87,11 +93,10 @@ export function useAnswer(name: string, id?: string) {
   const accept = (line: string) => {
     if (id) recordMidlandDecision(id, line);
     else setLocal(line);
-    const at = new Date().toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", hour12: false });
     toast?.push({
       tone: "success",
       title: `Accepted ${name}`,
-      body: id ? `Saved at ${at} · moved to Answered` : `Saved at ${at}`,
+      body: midlandSavedLine(Boolean(id)),
       action: { label: "Undo", onAction: undo },
     });
   };

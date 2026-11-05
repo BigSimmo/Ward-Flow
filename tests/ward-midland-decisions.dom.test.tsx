@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   MIDLAND_DECISIONS_KEY,
+  midlandSavedLine,
   openReferrals,
   recordMidlandDecision,
   undoMidlandDecision,
@@ -21,5 +22,13 @@ describe("WF-05 Accept for Midland records the decision", () => {
     expect(open.every(({ r, index }) => REFERRALS[index] === r)).toBe(true);
     undoMidlandDecision(first.id);
     expect(read()[first.id]).toBeUndefined();
+  });
+});
+
+describe("WF-05 Accept toast is honest about where it saved", () => {
+  it("says the decision is saved in this browser, not a shared save time", () => {
+    expect(midlandSavedLine(true)).toBe("Saved in this browser · moved to Answered");
+    expect(midlandSavedLine(false)).toBe("Saved in this browser");
+    expect(midlandSavedLine(true)).not.toMatch(/\d{2}:\d{2}/);
   });
 });
