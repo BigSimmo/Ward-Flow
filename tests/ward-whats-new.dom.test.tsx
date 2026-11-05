@@ -1,5 +1,4 @@
-import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -88,7 +87,7 @@ describe("what's new note", () => {
 
   it("reads an id stored before entry files against the old list order", () => {
     // A fixed list of the lines from before entry files, sorted as entry files are, so neither a newer
-    // entry file nor the newest-20 cap dropping old lines changes this answer.
+    // entry file nor a late merge changing the list order changes this answer.
     const before: WhatsNewEntry[] = LEGACY_ORDER.toSorted().map((id) => ({ id, date: id.slice(0, 10), line: id }));
     const ids = (seen: string) => unseenWhatsNew(seen, before).map((entry) => entry.id);
     // Under the old order only the referral line came after this id, though it no longer sorts last.
@@ -147,26 +146,22 @@ describe("what's new list", () => {
     }
   });
 
-  it("stays short enough to load with every page", () => {
-    expect(WHATS_NEW.length).toBeLessThanOrEqual(20);
+  it("retains every source note while the corner card stays limited to four", () => {
+    const sourceIds = readdirSync(WHATS_NEW_DIR)
+      .filter((name) => name.endsWith(".json"))
+      .map((name) => name.slice(0, -5))
+      .sort();
+    expect(WHATS_NEW.map((entry) => entry.id)).toEqual(sourceIds);
+    expect(WHATS_NEW_CARD_LIMIT).toBe(4);
+    expect(unseenWhatsNew(null)).toHaveLength(Math.min(4, sourceIds.length));
   });
 
-  it("is the newest 20 entry files, one per change, so parallel pull requests never share lines", () => {
+  it("combines one file per change in filename order without requiring Git metadata", () => {
     expect(WHATS_NEW).toEqual(readWhatsNewEntries());
     expect(() => readFileSync("src/components/ward-management/help/whats-new.json")).toThrow();
     const root = mkdtempSync(path.join(tmpdir(), "whats-new-"));
     const folder = path.join(root, WHATS_NEW_DIR);
     mkdirSync(folder, { recursive: true });
-    const git = (...args: string[]) =>
-      execFileSync(
-        "git",
-        ["-C", root, "-c", "user.name=Synthetic", "-c", "user.email=synthetic@example.invalid", ...args],
-        { encoding: "utf8" },
-      );
-    git("init", "-q", "-b", "main");
-    writeFileSync(path.join(root, "README.md"), "Synthetic fixture.");
-    git("add", "README.md");
-    git("commit", "-qm", "Synthetic base");
     const add = (name: string, body: string) => writeFileSync(path.join(folder, name), body);
     try {
       add("2026-11-04-b.json", '{ "line": "B." }');

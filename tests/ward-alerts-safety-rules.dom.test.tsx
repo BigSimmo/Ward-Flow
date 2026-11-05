@@ -17,18 +17,27 @@ function renderScreen() {
 }
 
 describe("Alerts redesign safety rules", () => {
-  it("never dims an act-now row, whichever highlight is on", () => {
+  it("never dims an act-now row for any reachable condition highlight", () => {
     renderScreen();
-    const summary = screen.getByRole("group", { name: "Alert summary" });
-    expect(document.querySelectorAll('[data-alert-id][data-act="true"]').length).toBeGreaterThan(0);
-    for (const name of [/Waiting/u, /Yours/u]) {
-      const button = within(summary).getByRole("button", { name });
+    for (const expand of screen.queryAllByRole("button", { name: /^Show each/u })) fireEvent.click(expand);
+    fireEvent.click(screen.getByRole("button", { name: /^Checking.*flagged.*clear$/u }));
+    const checks = screen.getByRole("list", { name: "Conditions checked" });
+    const buttons = within(checks).getAllByRole("button");
+    const actCount = document.querySelectorAll('[data-alert-id][data-act="true"]').length;
+    expect(actCount).toBeGreaterThan(0);
+    expect(buttons.length).toBeGreaterThan(1);
+    let dimmedRowsObserved = 0;
+    for (const button of buttons) {
       fireEvent.click(button);
       expect(button).toHaveAttribute("aria-pressed", "true");
+      expect(document.querySelectorAll('[data-alert-id][data-act="true"]')).toHaveLength(actCount);
       expect(document.querySelectorAll('[data-alert-id][data-act="true"][data-dim="true"]')).toHaveLength(0);
+      dimmedRowsObserved += document.querySelectorAll('[data-alert-id][data-dim="true"]').length;
       fireEvent.click(button);
       expect(button).toHaveAttribute("aria-pressed", "false");
+      expect(document.querySelectorAll('[data-alert-id][data-dim="true"]')).toHaveLength(0);
     }
+    expect(dimmedRowsObserved).toBeGreaterThan(0);
   });
 
   it("never dims an act-now row when a condition check is highlighted", () => {
@@ -42,18 +51,34 @@ describe("Alerts redesign safety rules", () => {
     expect(document.querySelectorAll('[data-alert-id][data-act="true"][data-dim="true"]')).toHaveLength(0);
   });
 
-  it("never dims an act-now row when a phone owner highlight is selected", () => {
+  it("never dims an act-now row for any reachable phone owner highlight", () => {
     installMatchMediaStub(true);
     renderScreen();
-    const owner = screen.getByRole("combobox", { name: "Highlight by owner" }) as HTMLSelectElement;
-    const option = within(owner)
-      .getAllByRole("option")
-      .find((item) => (item as HTMLOptionElement).value !== "") as HTMLOptionElement;
-    expect(option).toBeDefined();
-    fireEvent.change(owner, { target: { value: option.value } });
-    expect(owner.value).toBe(option.value);
-    expect(document.querySelectorAll('[data-alert-id][data-act="true"]').length).toBeGreaterThan(0);
-    expect(document.querySelectorAll('[data-alert-id][data-act="true"][data-dim="true"]')).toHaveLength(0);
+    for (const expand of screen.queryAllByRole("button", { name: /^Show each/u })) fireEvent.click(expand);
+    const actCount = document.querySelectorAll('[data-alert-id][data-act="true"]').length;
+    expect(actCount).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("button", { name: "Highlight by owner" }));
+    const ownerCount = screen.getAllByRole("menuitemradio").length - 1;
+    expect(ownerCount).toBeGreaterThan(0);
+    let highlightedRowsObserved = 0;
+    let dimmedRowsObserved = 0;
+    for (let index = 1; index <= ownerCount; index += 1) {
+      if (index > 1) fireEvent.click(screen.getByRole("button", { name: "Highlight by owner" }));
+      fireEvent.click(screen.getAllByRole("menuitemradio")[index]!);
+      const owner = screen.getByRole("button", { name: /^Highlighting /u });
+      highlightedRowsObserved += document.querySelectorAll('[data-alert-id][data-highlighted="true"]').length;
+      expect(document.querySelectorAll('[data-alert-id][data-act="true"]')).toHaveLength(actCount);
+      expect(document.querySelectorAll('[data-alert-id][data-act="true"][data-dim="true"]')).toHaveLength(0);
+      dimmedRowsObserved += document.querySelectorAll('[data-alert-id][data-dim="true"]').length;
+      fireEvent.click(owner);
+      expect(screen.getAllByRole("menuitemradio")[index]).toHaveAttribute("aria-checked", "true");
+      fireEvent.click(screen.getByRole("menuitemradio", { name: "Any owner" }));
+      expect(screen.getByRole("button", { name: "Highlight by owner" })).toBeInTheDocument();
+      expect(document.querySelectorAll('[data-alert-id][data-highlighted="true"]')).toHaveLength(0);
+      expect(document.querySelectorAll('[data-alert-id][data-dim="true"]')).toHaveLength(0);
+    }
+    expect(highlightedRowsObserved).toBeGreaterThan(0);
+    expect(dimmedRowsObserved).toBeGreaterThan(0);
   });
 
   it("lists act now first inside each owner in the Owner view", () => {

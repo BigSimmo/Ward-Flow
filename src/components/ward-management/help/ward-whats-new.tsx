@@ -17,7 +17,7 @@ import styles from "./ward-whats-new.module.css";
  * Each change is its own file in `whats-new/`, so parallel pull requests never edit the same lines
  * (Josh, 4 Nov 2026). A pull request that changes something staff will see adds one file,
  * `whats-new/<YYYY-MM-DD-short-slug>.json`, holding `{ "line": "One plain sentence." }`.
- * `scripts/ward-flow/whats-new-list.mjs` combines the files, newest 20 only, and the build inlines
+ * `scripts/ward-flow/whats-new-list.mjs` combines all valid files in filename order, and the build inlines
  * the result here as `__WARD_WHATS_NEW__`. The live site only moves at the daily release, so the note
  * appears the morning after the merge, and the release workflow copies the new lines into its
  * GitHub release notes. Lines describe merged, visible changes only. The stored value is the list of
@@ -28,7 +28,7 @@ export type WhatsNewEntry = { readonly id: string; readonly date: string; readon
 // Inlined by the build and the tests (`next.config.ts`, `vitest.config.mts`) as a JSON string.
 declare const __WARD_WHATS_NEW__: string | undefined;
 
-/** Oldest first: the newest 20 entry files, by introduction to main and then id. Empty where nothing inlined it. */
+/** Oldest filename date first: every valid entry, so late merges remain available in Help. Empty where nothing inlined it. */
 export const WHATS_NEW: readonly WhatsNewEntry[] =
   typeof __WARD_WHATS_NEW__ === "string" ? (JSON.parse(__WARD_WHATS_NEW__) as WhatsNewEntry[]) : [];
 

@@ -1,16 +1,15 @@
 import { execFileSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 
 import { readWhatsNewEntries, WHATS_NEW_DIR } from "../scripts/ward-flow/whats-new-list.mjs";
 
 const roots: string[] = [];
 afterEach(() => {
   roots.splice(0).forEach((root) => rmSync(root, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 }));
-  vi.restoreAllMocks();
 });
 const git = (root: string, ...args: string[]) =>
   execFileSync(
@@ -36,7 +35,7 @@ function add(root: string, id: string) {
   git(root, "commit", "-qm", "Synthetic note");
 }
 
-describe("What's new introduction order", () => {
+describe("What's new deterministic source feed", () => {
   it("retains an older-dated note when its branch lands after twenty newer-dated notes", () => {
     const root = fixture();
     git(root, "checkout", "-qb", "late-note");
@@ -45,12 +44,12 @@ describe("What's new introduction order", () => {
     for (let index = 0; index < 20; index++) add(root, `2026-11-04-new-${index}`);
     git(root, "merge", "--no-ff", "-qm", "Synthetic late merge", "late-note");
     const selected = readWhatsNewEntries(root);
-    expect(selected).toHaveLength(20);
-    expect(selected.at(-1)?.id).toBe("2026-11-01-late");
-    expect(selected.some((entry) => entry.id === "2026-11-04-new-0")).toBe(false);
+    expect(selected).toHaveLength(21);
+    expect(selected[0]?.id).toBe("2026-11-01-late");
+    expect(selected.some((entry) => entry.id === "2026-11-04-new-0")).toBe(true);
   });
 
-  it("keeps a PR note newest after importing main and agrees with the eventual equal-tree main merge", () => {
+  it("keeps a PR note after importing main and agrees with the eventual equal-tree main merge", () => {
     const root = fixture();
     git(root, "checkout", "-qb", "pr");
     add(root, "2026-11-01-pr-note");
@@ -61,8 +60,8 @@ describe("What's new introduction order", () => {
     git(root, "merge", "--no-ff", "-qm", "Synthetic import main", "main");
     const testedHead = git(root, "rev-parse", "HEAD").trim();
     const testedList = readWhatsNewEntries(root);
-    expect(testedList).toHaveLength(20);
-    expect(testedList.at(-1)?.id).toBe("2026-11-01-pr-note");
+    expect(testedList).toHaveLength(21);
+    expect(testedList[0]?.id).toBe("2026-11-01-pr-note");
     git(root, "checkout", "-q", "main");
     git(root, "merge", "--no-ff", "-qm", "Synthetic land PR", "pr");
     git(root, "update-ref", "refs/remotes/origin/main", "HEAD");
@@ -73,7 +72,7 @@ describe("What's new introduction order", () => {
     expect(readWhatsNewEntries(root)).toEqual(landedList);
   });
 
-  it("does not bump edited old notes and previews a new uncommitted note last", () => {
+  it("does not bump edited old notes and includes a new uncommitted note in filename order", () => {
     const root = fixture();
     add(root, "2026-11-04-first");
     add(root, "2026-11-04-second");
@@ -88,42 +87,42 @@ describe("What's new introduction order", () => {
       JSON.stringify({ line: "Synthetic preview." }),
     );
     expect(readWhatsNewEntries(root).map((entry) => entry.id)).toEqual([
+      "2026-11-01-preview",
       "2026-11-04-first",
       "2026-11-04-second",
-      "2026-11-01-preview",
     ]);
   });
 
-  it("retains all notes when a shallow export cannot prove landing order", () => {
+  it("produces identical embedded definitions with full and shallow Git history", () => {
     const root = fixture();
     for (let index = 0; index < 20; index++) add(root, `2026-11-04-new-${index}`);
     add(root, "2026-11-01-late");
     const shallow = mkdtempSync(path.join(tmpdir(), "ward-news-shallow-"));
     roots.push(shallow);
     git(root, "clone", "-q", "--depth=1", `file://${root}`, shallow);
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     const selected = readWhatsNewEntries(shallow);
     expect(selected).toHaveLength(21);
     expect(selected.some((entry) => entry.id === "2026-11-01-late")).toBe(true);
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining("retaining all notes"));
+    expect(JSON.stringify(selected)).toBe(JSON.stringify(readWhatsNewEntries(root)));
+    expect(readWhatsNewEntries(shallow, 4)).toEqual(readWhatsNewEntries(root, 4));
   });
 
-  it("builds a source export without Git while retaining every note", () => {
-    const root = mkdtempSync(path.join(tmpdir(), "ward-news-export-"));
-    roots.push(root);
-    const folder = path.join(root, WHATS_NEW_DIR);
-    mkdirSync(folder, { recursive: true });
-    for (let index = 0; index < 20; index++)
-      writeFileSync(path.join(folder, `2026-11-04-new-${index}.json`), JSON.stringify({ line: "Synthetic change." }));
-    writeFileSync(path.join(folder, "2026-11-01-late.json"), JSON.stringify({ line: "Synthetic late change." }));
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-    const selected = readWhatsNewEntries(root);
+  it("produces identical embedded definitions in a history-free source export", () => {
+    const root = fixture();
+    for (let index = 0; index < 20; index++) add(root, `2026-11-04-new-${index}`);
+    add(root, "2026-11-01-late");
+    const exported = mkdtempSync(path.join(tmpdir(), "ward-news-export-"));
+    roots.push(exported);
+    cpSync(path.join(root, WHATS_NEW_DIR), path.join(exported, WHATS_NEW_DIR), { recursive: true });
+    const selected = readWhatsNewEntries(exported);
     expect(selected).toHaveLength(21);
     expect(selected[0]?.id).toBe("2026-11-01-late");
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining("Existing bundle budgets still apply"));
+    expect(JSON.stringify(selected)).toBe(JSON.stringify(readWhatsNewEntries(root)));
+    expect(readWhatsNewEntries(exported, 4)).toEqual(readWhatsNewEntries(root, 4));
+    expect(Object.keys(selected[0] ?? {}).sort()).toEqual(["date", "id", "line"]);
   });
 
-  it("release notes describe additions without promising the app's capped list", () => {
+  it("release notes describe additions without relying on build-history selection", () => {
     const workflow = readFileSync(".github/workflows/daily-release.yml", "utf8");
     expect(workflow).toContain("### For staff, added in this release");
     expect(workflow).not.toContain("### For staff, shown in the app");
