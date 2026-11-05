@@ -108,6 +108,14 @@ export function WardPwaRegistration() {
     let noticeId: string | null = null;
     const lifecycle = new AbortController();
 
+    const reloadIfRequested = () => {
+      if (cancelled || !reloadRequested) return;
+      // Consume the request even when unsaved work cancels this navigation. Later controller
+      // events must never replay it.
+      reloadRequested = false;
+      window.location.reload();
+    };
+
     const offer = (registration: ServiceWorkerRegistration, worker: ServiceWorker | null) => {
       // Only an update waits: a first install has no active worker yet and takes over at once.
       const notices = toastRef.current;
@@ -122,20 +130,23 @@ export function WardPwaRegistration() {
         action: {
           label: "Reload",
           onAction: () => {
+            if (cancelled) return;
             reloadRequested = true;
-            worker.postMessage({ type: "SKIP_WAITING" });
+            // Another tab may already have activated this update. Its controllerchange has
+            // happened, so this explicit tap must reload without waiting for another one.
+            if (
+              worker.state === "activated" ||
+              container.controller === worker ||
+              (worker.state === "redundant" && container.controller)
+            )
+              reloadIfRequested();
+            else worker.postMessage({ type: "SKIP_WAITING" });
           },
         },
       });
     };
 
-    const onControllerChange = () => {
-      if (!reloadRequested) return;
-      // Consume the one requested reload before the browser can cancel it for unsaved work.
-      // A later controller event must never replay a cancelled navigation.
-      reloadRequested = false;
-      window.location.reload();
-    };
+    const onControllerChange = reloadIfRequested;
     const onMessage = (event: MessageEvent) => {
       const target = wardPwaOpenTarget(event.data, window.location.origin);
       if (target) routerRef.current.push(target);
