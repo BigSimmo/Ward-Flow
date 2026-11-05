@@ -154,7 +154,8 @@ export function OnCallScreen() {
   // WF-45: transport officers only need transport/retrieval lines (not the full statewide roster).
   // WF-45 follow-up: a site bed manager is scoped to their own site's lines plus statewide, and
   // keeps its own service's service-wide lines (no site: the service's bed coordinator, consultant
-  // and executive on call, the liaison), as the "+ service" heading says (#1470 review).
+  // and executive on call, the liaison), as the "+ service" heading says (#1470 review). Community
+  // teams also carry no site, so the exception is limited to the Hospitals section (#1471 review).
   const scope = useServiceScope();
   const access = useEffectiveWardAccess();
   const siteCode = access.scope.kind === "site" ? access.scope.siteCode : undefined;
@@ -171,7 +172,10 @@ export function OnCallScreen() {
         (entry) =>
           entry.service === "Statewide" ||
           entry.siteCode === siteCode ||
-          (entry.siteCode === undefined && siteService !== undefined && entry.service === siteService),
+          (entry.section === "hospitals" &&
+            entry.siteCode === undefined &&
+            siteService !== undefined &&
+            entry.service === siteService),
       );
     }
     return scoped;
@@ -433,7 +437,10 @@ export function OnCallScreen() {
             : access.role === "officer"
               ? "Transport lines"
               : access.role === "bed_manager" && siteCode
-                ? `${siteCode}${siteService ? ` + ${SERVICE_META[siteService].short}` : ""} + statewide`
+                ? // #1471 review: a saved service other than the site's leaves only statewide lines.
+                  scope && scope !== siteService
+                  ? `${SERVICE_META[scope].short} selected: statewide only`
+                  : `${siteCode}${siteService ? ` + ${SERVICE_META[siteService].short}` : ""} + statewide`
                 : scope
                   ? `${SERVICE_META[scope].short} + statewide`
                   : "All services"
