@@ -71,13 +71,15 @@ export function AddTimeDialog({
       onClose();
       return;
     }
+    const discardOwned = acceptDraft(onClose);
     void requestConfirm({
       title: "Discard the typed time?",
       message: DISCARD_TYPED_TIME,
       confirmLabel: "Discard",
       cancelLabel: "Keep editing",
     }).then((confirmed) => {
-      if (confirmed) onClose();
+      // Only this opening and draft may close on its own discard confirmation.
+      if (confirmed) discardOwned();
     });
   };
 

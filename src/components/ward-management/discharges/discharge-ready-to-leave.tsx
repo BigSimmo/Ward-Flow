@@ -75,6 +75,10 @@ export function ReadyToLeave({
           tone={done === items.length ? "success" : undefined}
         />
       </header>
+      <p>
+        Temporary checklist for this page only. Starting ticks are invented for the demo; changes do not record
+        discharge completion.
+      </p>
       <div className={styles.progress} aria-hidden="true">
         <span
           style={{ width: `${Math.round((done / items.length) * 100)}%` }}

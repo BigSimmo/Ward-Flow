@@ -106,6 +106,10 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
   };
   function save(value: unknown, sectionTitle: string) {
     const submittedRevision = revisions.current.get(sectionTitle);
+    if (careSave.pending) {
+      setLocalError("Still saving the last change. Record this section when it has finished.");
+      return;
+    }
     if (!validCareChange(value) || record.identity.kind !== "linked") {
       setLocalError("Complete the required choices and date before recording.");
       return;
@@ -161,7 +165,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
         }}
       >
         {children}
-        <button className={styles.quietButton} type="submit">
+        <button className={styles.quietButton} type="submit" disabled={careSave.pending}>
           Record {title.toLowerCase()}
         </button>
       </form>
@@ -174,6 +178,7 @@ export function DischargeCareJourney({ record, actor }: { record: DischargeRecor
       <p>
         Chosen workflow facts are attributed to the recording role. Clinical documents remain in the clinical record.
       </p>
+      {careSave.pending && <p role="status">Saving… Other sections can be recorded when this save finishes.</p>}
       {localError && <p role="alert">{localError}</p>}
       {submitted !== null &&
       rejections.length > submitted &&
