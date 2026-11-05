@@ -21,7 +21,7 @@ import {
   type Unit,
 } from "@/components/ward-management/ward-model";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
-import { movementBedReservation } from "./ward-movement-bed-hold";
+import { movementBedReservation, pendingNumberedReservations } from "./ward-movement-bed-hold";
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import type { PlacementEventHelpers, WardFlowState } from "./ward-flow-reducer";
 
@@ -198,7 +198,10 @@ export function reducePlacementEvent(
       const livePulled = state.admissions.filter(
         (admission) => admission.unitId === unit.id && admission.state === "pulled" && admission.movementId !== null,
       ).length;
-      const pullReady = pulledBedAvailability(unit, livePulled).ready;
+      const reservations = pendingNumberedReservations(unit, state, movement.id, movement.referralId);
+      const pullReady = pulledBedAvailability(unit, livePulled).ready - reservations.total;
+      const freeLocked = Math.max(0, lockedBedsFree(unit) - reservations.locked);
+      const freeOpen = Math.max(0, openBedsFree(unit) - reservations.open);
       if (pullReady <= 0) {
         /**
          * Audit A01: a new pull needs the same reservation-aware Ready figure as the ward,
@@ -301,13 +304,13 @@ export function reducePlacementEvent(
       const reservedKind = reservedBed === undefined ? undefined : numberedBedKind(unit, reservedBed);
       if (reservedBed !== undefined && reservedKind === undefined)
         return reject(state, event, "The numbered bed reservation is outside this ward.");
-      if (reservedKind !== undefined && (reservedKind === "locked" ? lockedBedsFree(unit) : openBedsFree(unit)) <= 0)
+      if (reservedKind !== undefined && (reservedKind === "locked" ? freeLocked : freeOpen) <= 0)
         return reject(
           state,
           event,
           `No free ${reservedKind} bed remains for the numbered reservation at ${unit.name}.`,
         );
-      const noLockedBedFree = lockedBedsFree(unit) <= 0;
+      const noLockedBedFree = freeLocked <= 0;
       // A valid reservation keeps its designation when another kind later frees up.
       // Secure requests still need a recorded override to consume a reserved Open bed.
       const bedKindOverrideNeeded =
@@ -321,8 +324,7 @@ export function reducePlacementEvent(
         );
       }
       const bedKindTaken: "locked" | "open" =
-        reservedKind ??
-        (secureBedNeeded ? (noLockedBedFree ? "open" : "locked") : openBedsFree(unit) > 0 ? "open" : "locked");
+        reservedKind ?? (secureBedNeeded ? (noLockedBedFree ? "open" : "locked") : freeOpen > 0 ? "open" : "locked");
 
       /**
        * The eligibility gate goes last, after every existing refusal (Ward Lead ruling): a
@@ -517,7 +519,11 @@ export function reducePlacementEvent(
       // no discharge is recorded. `admissionSequence` is not rewound, so no id is reused. Both
       // halves live in `releasePulledBedAndAdmission`, shared with `WITHDRAW_REFERRAL` and
       // `STOP_TRANSPORT` (WLQ-38).
-      const withoutPhantom = releasePulledBedAndAdmission(state, movement, event.now);
+      const bedReleased = releasePulledBedAndAdmission(state, movement, event.now);
+      if (bedReleased === state)
+        return reject(state, event, `movement ${movement.id}'s pulled bed matches no releasable reservation`);
+      // The numbered referral arm and movement describe the same released commitment.
+      const withoutPhantom = withoutReferralBedHold(bedReleased, movement);
       // Never closes the movement, never clears `legalForm`, never touches `referredUnitIds` —
       // the patient survives and keeps their acceptance; only the pull itself unwinds.
       const updatedMovement: Movement = {
@@ -542,27 +548,7 @@ export function reducePlacementEvent(
           { at: event.now, from: movement.stage, to: "accepted_awaiting_bed", by: event.role, reason: event.reason },
         ],
       };
-      const moved = replaceMovement(withoutPhantom, movement.id, updatedMovement);
-      // The numbered referral arm and movement describe the same released commitment.
-      const next =
-        movement.referralId === undefined
-          ? moved
-          : {
-              ...moved,
-              referrals: moved.referrals.map((referral) =>
-                referral.id !== movement.referralId
-                  ? referral
-                  : {
-                      ...referral,
-                      destinations: referral.destinations.map((arm) =>
-                        arm.destination.kind === "psychiatric_ward" &&
-                        (arm.acceptedUnitId ?? arm.destination.unitId) === unit.id
-                          ? { ...arm, heldBedNumber: undefined }
-                          : arm,
-                      ),
-                    },
-              ),
-            };
+      const next = replaceMovement(withoutPhantom, movement.id, updatedMovement);
       // Addendum §1.3: "a referrer not told goes on believing a bed is coming."
       return appendNotices(next, [
         makeNotice(

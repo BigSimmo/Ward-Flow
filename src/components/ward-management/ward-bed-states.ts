@@ -1,9 +1,12 @@
-import type { WardReferralInboxEntry } from "./referrals/referral-inbox";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { unitCapacity } from "@/components/ward-management/ward-derivations";
 import { pulledBedAvailability } from "@/components/ward-management/ward-ready-beds";
-import type { BedRelease, LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
+import type { BedRelease, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
+import {
+  numberedReservationBeds,
+  type ReservationReferral as BaseReservationReferral,
+} from "@/components/ward-management/ward-movement-bed-hold";
 
 /**
  * The ward's bed states, as ruled (R-B-05, 2026-09-04, "option 2"; R-B-09 "Ready, everywhere";
@@ -38,83 +41,17 @@ export type BedStateCounts = {
   onLeave: number;
 };
 
-export type ReservationReferral = Referral | WardReferralInboxEntry | Movement;
+export type ReservationReferral = BaseReservationReferral | Movement;
 
-/** Named referral holds have not yet reduced the ward's offered observation. Ignore a
- * converted episode and deduplicate physical beds, including admissions already using them. */
+/** Named holds not yet taken up by a stay: the same rule the pull gates use (WF-CAP-001). */
 function namedReservationCount(
   unit: Unit,
   admissions: readonly Admission[],
   referrals: readonly ReservationReferral[],
 ): number {
-  const converted = new Set(
-    admissions
-      .filter(
-        (admission) => admission.unitId === unit.id && ["pulled", "occupied", "departed"].includes(admission.state),
-      )
-      .map((admission) => admission.referralId)
-      .filter(Boolean),
-  );
-  const used = new Set(
-    admissions
-      .filter(
-        (admission) => admission.unitId === unit.id && (admission.state === "pulled" || admission.state === "occupied"),
-      )
-      .map((admission) => admission.bedNumber),
-  );
-  const held = new Set<number>();
-  const episodes = new Set<string>();
-  // A movement's current numbered hold supersedes its referral arm on conversion.
-  const ordered = [...referrals.filter((row) => "stage" in row), ...referrals.filter((row) => !("stage" in row))];
-  for (const referral of ordered) {
-    if ("stage" in referral) {
-      const episode = referral.referralId ?? referral.id;
-      if (episodes.has(episode)) continue;
-      const bed = referral.heldBedNumber;
-      if (
-        referral.closure !== undefined ||
-        referral.stage === "arrived" ||
-        referral.acceptedUnitId !== unit.id ||
-        bed === undefined ||
-        !Number.isInteger(bed) ||
-        bed < 1 ||
-        bed > unit.beds ||
-        used.has(bed) ||
-        admissions.some(
-          (admission) =>
-            admission.unitId === unit.id &&
-            ["pulled", "occupied", "departed"].includes(admission.state) &&
-            (admission.movementId === referral.id ||
-              admission.id === referral.admissionId ||
-              (referral.referralId !== undefined && admission.referralId === referral.referralId)),
-        )
-      )
-        continue;
-      held.add(bed);
-      episodes.add(episode);
-      continue;
-    }
-    if (converted.has(referral.id) || episodes.has(referral.id)) continue;
-    for (const arm of "destinations" in referral ? referral.destinations : [referral]) {
-      const bed = arm.heldBedNumber;
-      if (
-        arm.state !== "accepted" ||
-        arm.withdrawnAt !== undefined ||
-        arm.destination.kind !== "psychiatric_ward" ||
-        (("acceptedUnitId" in arm ? arm.acceptedUnitId : undefined) ?? arm.destination.unitId) !== unit.id ||
-        bed === undefined ||
-        !Number.isInteger(bed) ||
-        bed < 1 ||
-        bed > unit.beds ||
-        used.has(bed)
-      )
-        continue;
-      held.add(bed);
-      episodes.add(referral.id);
-      break;
-    }
-  }
-  return held.size;
+  const movements = referrals.filter((row): row is Movement => "stage" in row);
+  const others = referrals.filter((row): row is BaseReservationReferral => !("stage" in row));
+  return numberedReservationBeds(unit, admissions, movements, others).size;
 }
 
 export function bedStates(
