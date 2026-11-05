@@ -330,9 +330,8 @@ export function RecordFormSheet({
         <div className={styles.recordFoot}>
           <Button
             variant="ghost"
-            disabledReason={saving ? "Saving" : undefined}
             onClick={() => {
-              if (saving) return;
+              // Clear stays usable while a save is pending; submissionVersion keeps the newer draft.
               submissionVersion.current += 1;
               setSaving(false);
               clearDraft();
