@@ -225,13 +225,12 @@ export function formatSheetMoment(
   dayZero: Date,
   options: { includeYearAndZone?: boolean } = {},
 ): string {
-  const date = calendarDateOf(instant, dayZero);
-  const day = date.toLocaleDateString("en-AU", {
+  // No comma after the weekday, the one rule for every written day (Josh, 5 Nov 2026, CL-4).
+  const day = perthDateText(calendarDateOf(instant, dayZero), {
     weekday: "short",
     day: "numeric",
     month: "short",
     ...(options.includeYearAndZone ? { year: "numeric" as const } : {}),
-    timeZone: "Australia/Perth",
   });
   return `${day}, ${formatInstant(instant)}${options.includeYearAndZone ? " AWST" : ""}`;
 }
