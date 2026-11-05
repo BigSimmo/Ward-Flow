@@ -2,7 +2,7 @@
 
 _Updated 2026-10-24 - CI section names every workflow and the two unlisted `ward-ci-public` scripts; Documentation owns._
 
-Curated map of `scripts/` (156 files) and the `package.json` script surface (86 entries),
+Curated map of `scripts/` (157 files) and the `package.json` script surface (86 entries),
 grouped by what each part protects. `package.json` is the command surface; this page says why
 each group exists. `npm run docs:check-inventory` compares the two counts above exactly,
 and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs
@@ -58,7 +58,8 @@ result on main), `changed-checks.mjs` (format, lint and the test-deletion guard 
 `install-chromium.mjs`, `apt-archive-cache.mjs` (the release gate's cached WebKit system packages), and
 `bot-author-policy.mjs` for the bot author workflow, `merge-latest-main.mjs` (merges current main
 before the production build measures the phone script budget) and `budget-recheck.mjs` (run by
-`.github/workflows/ward-flow-budget-recheck.yml` to re-measure armed pull requests when main moves).
+`.github/workflows/ward-flow-budget-recheck.yml` to re-measure armed pull requests when main moves),
+and `main-measured.mjs` (lets the budget gate reuse main's saved measurements instead of building main again).
 The other workflows need no script here: `release-tag.yml` tags each CI-passed main commit
 `release-YYYY-MM-DD-<sha>`, and `backend-uptime.yml` checks the hosted backend's `/healthz` every
 30 minutes and opens an issue for the owner when it stays down. CI also runs

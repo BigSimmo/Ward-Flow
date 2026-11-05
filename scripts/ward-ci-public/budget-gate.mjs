@@ -59,6 +59,17 @@ function measureMain(root, mainSha, outDir) {
   }
 }
 
+/**
+ * Main's own push run already measured this exact commit when main was over budget, so reuse its
+ * saved `script-budget-measured` artifact (main-measured.mjs) instead of a second production build.
+ * Returns the file, or undefined to fall back to building main.
+ */
+function savedMain(root, mainSha, outDir) {
+  const file = join(outDir, "main.json");
+  const status = run(process.execPath, [join(import.meta.dirname, "main-measured.mjs"), mainSha, file], root);
+  return status === 0 && existsSync(file) ? file : undefined;
+}
+
 /** @param {{root?:string,event?:string,outDir?:string}} [options] */
 export function gate({ root = process.cwd(), event = process.env.GITHUB_EVENT_NAME, outDir } = {}) {
   const dir = resolve(outDir ?? join(process.env.RUNNER_TEMP ?? root, "script-budget"));
@@ -85,7 +96,7 @@ export function gate({ root = process.cwd(), event = process.env.GITHUB_EVENT_NA
       cwd: root,
     }).status === 0;
   if (!sameDependencies) console.error("This PR changes dependencies, so main alone cannot be measured fairly here.");
-  const mainFile = sameDependencies ? measureMain(root, mainSha, dir) : undefined;
+  const mainFile = sameDependencies ? (savedMain(root, mainSha, dir) ?? measureMain(root, mainSha, dir)) : undefined;
   const args = [join(root, "scripts/check-script-budget.mjs"), "--judge", merged];
   if (mainFile) args.push(mainFile);
   return run(process.execPath, args, root);
