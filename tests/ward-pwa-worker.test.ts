@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { runInNewContext } from "node:vm";
 
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // The backend's payload builder, loaded by address so the website's type check does not take in the
 // untyped backend module. The tests below run its real output through the worker.
@@ -261,6 +261,9 @@ describe("worker lifecycle", () => {
       runInNewContext(WORKER_SOURCE, {
         URL,
         fetch: fetchResult,
+        AbortController,
+        setTimeout,
+        clearTimeout,
         Response: { error: () => ({ error: true }) },
         caches: { match: async (url: string) => (url === "/ward-flow-offline.html" ? offline : undefined) },
         self: {
@@ -421,4 +424,142 @@ describe("the offline page", () => {
       .replace(/<[^>]+>/g, " ");
     expect(words).not.toMatch(/[—;]/);
   });
+});
+
+/** Execute the shipped navigation handler with controlled network replies and its real timers. */
+function navigationProbe(preloadResponse: Promise<unknown>, signal?: AbortSignal) {
+  let resolveFetch!: (response: unknown) => void;
+  let rejectFetch!: (reason: unknown) => void;
+  const fetchReply = new Promise((resolve, reject) => {
+    resolveFetch = resolve;
+    rejectFetch = reject;
+  });
+  const fetchRequest = vi.fn<(request: unknown, options?: { signal: AbortSignal }) => Promise<unknown>>(
+    () => fetchReply,
+  );
+  const offline = { offline: true };
+  const context: Record<string, unknown> = {
+    URL,
+    AbortController,
+    setTimeout,
+    clearTimeout,
+    Response: { error: () => ({ error: true }) },
+    fetch: fetchRequest,
+    caches: { match: async () => offline },
+    self: { location: { origin: ORIGIN }, addEventListener: () => {} },
+  };
+  runInNewContext(WORKER_SOURCE, context);
+  const navigate = context.fromNetworkFirst as (event: unknown) => Promise<unknown>;
+  const result = navigate({
+    request: { ...request("/ward-flow/capacity", { mode: "navigate" }), signal },
+    preloadResponse,
+  });
+  let settled = false;
+  void result.then(() => (settled = true));
+  return { result, fetchRequest, resolveFetch, rejectFetch, offline, settled: () => settled };
+}
+
+describe("bounded navigation recovery", () => {
+  afterEach(() => vi.useRealTimers());
+
+  it("uses one 15-second header budget even when navigation preload never settles", async () => {
+    vi.useFakeTimers();
+    let resolvePreload!: (response: unknown) => void;
+    const preloaded = new Promise((resolve) => (resolvePreload = resolve));
+    const probe = navigationProbe(preloaded);
+    await vi.advanceTimersByTimeAsync(14_999);
+    expect(probe.settled()).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(1);
+
+    expect(probe.settled()).toBe(true);
+    expect(await probe.result).toBe(probe.offline);
+    expect(probe.fetchRequest).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+    const cancel = vi.fn(async () => undefined);
+    resolvePreload({ body: { cancel } });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(cancel).toHaveBeenCalledTimes(1);
+    expect(probe.fetchRequest).not.toHaveBeenCalled();
+  });
+
+  it("aborts a pending worker fetch at the shared deadline and releases a late body", async () => {
+    vi.useFakeTimers();
+    const probe = navigationProbe(Promise.resolve(undefined));
+    await vi.advanceTimersByTimeAsync(0);
+    expect(probe.fetchRequest).toHaveBeenCalledTimes(1);
+    const signal = probe.fetchRequest.mock.calls[0][1]?.signal;
+    expect(signal?.aborted ?? false).toBe(false);
+    await vi.advanceTimersByTimeAsync(15_000);
+
+    expect(probe.settled()).toBe(true);
+    expect(await probe.result).toBe(probe.offline);
+    expect(signal?.aborted).toBe(true);
+    expect(vi.getTimerCount()).toBe(0);
+    const cancel = vi.fn(async () => undefined);
+    probe.resolveFetch({ body: { cancel } });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(cancel).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([200, 500])("passes through a %s reply before the deadline and clears its timer", async (status) => {
+    vi.useFakeTimers();
+    const probe = navigationProbe(Promise.resolve(undefined));
+    await vi.advanceTimersByTimeAsync(14_999);
+    const response = { status };
+    probe.resolveFetch(response);
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(await probe.result).toBe(response);
+    expect(vi.getTimerCount()).toBe(0);
+    expect(probe.fetchRequest.mock.calls[0][1]?.signal.aborted ?? false).toBe(false);
+  });
+
+  it("uses a successful preload without a duplicate fetch and clears its timer", async () => {
+    vi.useFakeTimers();
+    const response = { status: 200 };
+    const probe = navigationProbe(Promise.resolve(response));
+
+    expect(await probe.result).toBe(response);
+    expect(probe.fetchRequest).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it("opens recovery on a network rejection and clears its timer", async () => {
+    vi.useFakeTimers();
+    const probe = navigationProbe(Promise.resolve(undefined));
+    await vi.advanceTimersByTimeAsync(0);
+    probe.rejectFetch(new TypeError("Failed to fetch"));
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(await probe.result).toBe(probe.offline);
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it.each(["before", "during", "after headers"])(
+    "preserves original navigation cancellation %s fetch",
+    async (when) => {
+      vi.useFakeTimers();
+      const source = new AbortController();
+      if (when === "before") source.abort();
+      const probe = navigationProbe(Promise.resolve(undefined), source.signal);
+      await vi.advanceTimersByTimeAsync(0);
+      const [input, options] = probe.fetchRequest.mock.calls[0];
+      const signal = options?.signal ?? (input as { signal?: AbortSignal }).signal;
+      if (when === "after headers") {
+        probe.resolveFetch({ status: 200 });
+        await probe.result;
+      }
+      if (when !== "before") source.abort();
+
+      expect(signal?.aborted).toBe(true);
+      // This fetch fixture records the signal; release it explicitly instead of pretending it
+      // implements the browser's cancellation machinery.
+      if (when !== "after headers") {
+        probe.rejectFetch(new TypeError("Navigation aborted"));
+        await probe.result;
+      }
+      expect(vi.getTimerCount()).toBe(0);
+    },
+  );
 });

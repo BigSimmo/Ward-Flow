@@ -35,6 +35,19 @@ describe("Playwright production-project isolation", () => {
     expect(source).toMatch(/name: ["']chromium-mockups["'],\s+testMatch: mockupSpecPattern,\s+grep: mockupTag,/m);
   });
 
+  it("collects the real-worker lifecycle lane with an explicit isolated opt-in", () => {
+    const source = readFileSync(resolve(process.cwd(), "playwright.config.ts"), "utf8");
+    const spec = "tests/ui-ward-pwa-lifecycle.spec.ts";
+    expect(configPattern(source, "mockupSpecPattern").test(spec)).toBe(true);
+    expect(configPattern(source, "productionSpecPattern").test(spec)).toBe(false);
+    // Global route-based journeys retain the block. Only this committed real-worker lane opts in.
+    expect(source).toMatch(/serviceWorkers: "block"/u);
+    const lane = readFileSync(resolve(process.cwd(), spec), "utf8");
+    expect(lane).toMatch(/serviceWorkers: "allow"/u);
+    expect(lane).toContain("@mockup");
+    expect(lane).toContain("createWardPwaProxy");
+  });
+
   /**
    * `run-playwright.mjs` owns both servers, and the primary one must stay EMPTY: the workspace
    * spec's empty-caseload assertions (including its wizard count of 0) are observations of a real

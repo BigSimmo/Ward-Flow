@@ -88,6 +88,14 @@ export function segmentBytes(segments) {
   return Buffer.concat(segments.map((segment) => (Buffer.isBuffer(segment) ? segment : segment.bytes())));
 }
 
+/** The uncompressed length without concatenating a fresh whole-body buffer. */
+export function segmentLength(segments) {
+  return segments.reduce(
+    (length, segment) => length + (Buffer.isBuffer(segment) ? segment : segment.bytes()).length,
+    0,
+  );
+}
+
 /**
  * One gzip member for `segments`, reusing each part's compressed blocks. Every segment but the
  * last ends in a sync flush (byte aligned, not final), and each part was compressed on its own,
@@ -130,7 +138,21 @@ export function jsonResponse(body, init) {
   if (!segments) return Response.json(body, init);
   const headers = new Headers(init.headers);
   headers.set("content-type", "application/json");
-  const response = new Response(segmentBytes(segments), { ...init, headers });
+  let index = 0;
+  // A compressed listener can use the registered parts without allocating the whole body.
+  // Other Response consumers receive their own chunks, so reading cannot mutate cached bytes.
+  const bodyStream = new ReadableStream(
+    {
+      pull(controller) {
+        const segment = segments[index++];
+        const bytes = Buffer.isBuffer(segment) ? segment : segment.bytes();
+        controller.enqueue(new Uint8Array(bytes));
+        if (index === segments.length) controller.close();
+      },
+    },
+    { highWaterMark: 0 },
+  );
+  const response = new Response(bodyStream, { ...init, headers });
   Object.defineProperty(response, REPLY_SEGMENTS, { value: segments });
   return response;
 }

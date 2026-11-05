@@ -86,6 +86,10 @@
   gap: var(--wf-s-1);
 }
 
+.presets > button {
+  min-height: var(--wf-h-sm);
+}
+
 .mono {
   font-family: var(--wf-mono);
   font-variant-numeric: tabular-nums;
