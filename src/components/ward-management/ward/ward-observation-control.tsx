@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Button, Segmented } from "@/components/wf";
 import { dayOf, formatInstantWithDay, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
@@ -90,7 +90,10 @@ export function WardObservationControl({
   // Audit 24-3 SV-4: the control stays open with its choices until the level is accepted.
   const recording = useWardFormSave("observation");
 
+  const draftRevision = useRef(0);
+
   function save() {
+    const revision = draftRevision.current;
     // An untouched review box keeps the recorded review time exactly, even one outside today or tomorrow.
     let reviewAt: Instant | null = reviewEdited ? null : observation.reviewAt;
     if (reviewEdited && reviewTime.trim() !== "") {
@@ -106,7 +109,9 @@ export function WardObservationControl({
     if (onSave)
       recording.submit(
         () => onSave(next, openedToken),
-        () => setOpen(false),
+        () => {
+          if (draftRevision.current === revision) setOpen(false);
+        },
       );
   }
 
@@ -150,7 +155,10 @@ export function WardObservationControl({
               label="Observation level"
               items={LEVEL_CHOICES}
               value={level}
-              onChange={setLevel}
+              onChange={(value) => {
+                draftRevision.current += 1;
+                setLevel(value);
+              }}
               testId="ward-observation-level"
             />
           </div>
@@ -161,7 +169,10 @@ export function WardObservationControl({
                 label="Check every"
                 items={INTERVAL_CHOICES}
                 value={String(interval)}
-                onChange={(minutes) => setIntervalMinutes(Number(minutes))}
+                onChange={(minutes) => {
+                  draftRevision.current += 1;
+                  setIntervalMinutes(Number(minutes));
+                }}
               />
             </div>
           ) : null}
@@ -175,6 +186,7 @@ export function WardObservationControl({
                 placeholder="For example 14:30"
                 value={reviewTime}
                 onChange={(event) => {
+                  draftRevision.current += 1;
                   setReviewTime(event.target.value);
                   setReviewEdited(true);
                 }}
@@ -187,6 +199,7 @@ export function WardObservationControl({
                 items={REVIEW_DAYS}
                 value={reviewDay}
                 onChange={(day) => {
+                  draftRevision.current += 1;
                   setReviewDay(day);
                   setReviewEdited(true);
                 }}

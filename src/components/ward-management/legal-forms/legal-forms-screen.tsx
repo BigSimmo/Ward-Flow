@@ -520,8 +520,17 @@ function LegalFormsWorkspace({ initialMovementId, recordOnOpen = false }: Worksp
         const written = { movementId, formCode, writtenAt, ...(region ? { region } : {}), ageBand };
         const completion = raise("RECORD_LEGAL_FORM_WRITTEN", written);
         // The form closes only once the engine has accepted the time.
-        const closeIfAccepted = (outcome: Awaited<typeof completion>) =>
-          outcome?.status === "accepted" && (outcome.isCurrent?.() ?? true) && onAccepted();
+        const closeIfAccepted = (outcome: Awaited<typeof completion>) => {
+          if (outcome?.status === "accepted" && outcome.isCurrent?.() !== false) onAccepted();
+          else if (outcome?.status === "failed" && outcome.confirmation) {
+            void outcome.confirmation.then(
+              (confirmed) => {
+                if (confirmed.commandId === outcome.commandId) closeIfAccepted(confirmed);
+              },
+              () => {},
+            );
+          }
+        };
         if (completion && "then" in completion) void completion.then(closeIfAccepted, () => undefined);
         else closeIfAccepted(completion);
         return completion;

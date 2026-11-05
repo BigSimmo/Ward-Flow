@@ -1,6 +1,7 @@
 "use client";
 
 import { useWardFormSave } from "../use-ward-form-save";
+import { useAlertCommandFeedback, type TrackAlertCommand } from "./use-alert-command-feedback";
 
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
@@ -134,28 +135,15 @@ import {
 } from "@/components/wf";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
-/**
- * **THE ALERTS SCREEN — what is addressed to a role right now, across every movement and referral.**
- *
- * Command queue (Josh, 9 Oct 2026, round 2 option A): one queue arranged by urgency, lanes or
- * owner, the selected alert beside it with a picture of its recorded times, a Today chart and the
- * broadcast desk in a tab. Filters highlight, they never hide.
- *
- * It never says "nothing is wrong", and that is the whole design. Ward Lead ruling, 2026-09-12:
- * an empty alerts screen saying "all clear" is a clinical claim about the entire service, made by
- * a screen that checked a handful of named conditions against one fixture. The hero's Checking
- * line names every condition it looked at, with its count, whether it is zero or not, and names
- * the one it cannot check.
+/** Alerts addressed to the current role. Highlights never hide rows.
+ * Checking names examined conditions and limits; an empty queue must not claim "all clear".
  */
 
 export { extractOverdue } from "./alerts-model";
 
 const COORDINATOR = WARD_FLOW_ROLE_LABELS.coordinator;
 
-/** A request this screen sent, read back from the event log so a refused act never says it happened. */
-type ActionRequest = { type: string; logSequence: number; ok: string; refused: string };
-
-/** The address's query, read on the client only; the server draws the screen without it. */
+type ActionRequest = Parameters<TrackAlertCommand>[0];
 
 export function AlertsScreen() {
   const { worldGeneration } = useWardFlowSelect("worldGeneration");
@@ -319,7 +307,7 @@ function AlertsWorkspace() {
   );
   const { audience: broadcastAudience, setAudience: setBroadcastAudience } = audienceState;
   const [broadcastSuccessNotice, setBroadcastSuccessNotice] = useState<string | null>(null);
-  const [actionRequest, setActionRequest] = useState<ActionRequest | null>(null);
+  const actionFeedback = useAlertCommandFeedback();
   const [broadcastRequest, setBroadcastRequest] = useState<{
     type: "DISPATCH_BROADCAST_ALERT" | "STAND_DOWN_BROADCAST_ALERT";
     title: string;
@@ -333,9 +321,6 @@ function AlertsWorkspace() {
   const broadcastRefused = !!broadcastSave.error;
   const isBroadcastModalOpen =
     broadcastModalOpen && !(broadcastAccepted && broadcastRequest?.type === "DISPATCH_BROADCAST_ALERT");
-  const actionResult = actionRequest
-    ? state.eventLog?.find((entry) => entry.sequence > actionRequest.logSequence && entry.type === actionRequest.type)
-    : undefined;
 
   // ONE draft of the WHOLE broadcast form, cached and restored together, so any edit is protected.
   // A restored draft reopens the composer, because a draft is only cached while it is open.
@@ -405,13 +390,8 @@ function AlertsWorkspace() {
             : broadcastRequest.scope === "all"
               ? `Broadcast Directive "${broadcastRequest.title}" shown in this prototype only; no external notifications are sent. Target: ${broadcastRequest.scopeLabel}.`
               : `Broadcast Directive "${broadcastRequest.title}" shown in this prototype for ${broadcastRequest.scopeLabel} only; no external notifications are sent.`
-          : actionRequest && actionResult
-            ? actionResult.accepted
-              ? actionRequest.ok
-              : actionRequest.refused
-            : broadcastSuccessNotice));
-  const feedbackRefused =
-    broadcastRefused || (actionResult !== undefined && !actionResult.accepted && !broadcastRequest);
+          : (actionFeedback.result?.message ?? broadcastSuccessNotice)));
+  const feedbackRefused = broadcastRefused || (!!actionFeedback.result?.refused && !broadcastRequest);
 
   const activeBroadcast = getActiveBroadcastAlert(broadcastAlerts ?? [], now);
   const deskInScope = useDeskInScope();
@@ -636,19 +616,11 @@ function AlertsWorkspace() {
     const row = document.querySelector<HTMLElement>(`[data-alert-id="${CSS.escape(next.item.id)}"]`);
     row?.scrollIntoView?.({ block: "nearest" });
   };
-  // Notes where the event log stands before each dispatch, so the notice reads the reducer's verdict.
-  const track = useCallback(
-    (request: Omit<ActionRequest, "logSequence">) => {
-      const tail = state.eventLog?.at(-1)?.sequence ?? -1;
-      setBroadcastRequest(null);
-      setBroadcastSuccessNotice(null);
-      setActionRequest((prev) => {
-        const prevPending = prev && !state.eventLog?.some((e) => e.sequence > prev.logSequence && e.type === prev.type);
-        return { ...request, logSequence: prevPending ? Math.max(tail, prev.logSequence + 1) : tail };
-      });
-    },
-    [state.eventLog],
-  );
+  const track: TrackAlertCommand = (request: ActionRequest, record) => {
+    setBroadcastRequest(null);
+    setBroadcastSuccessNotice(null);
+    return actionFeedback.track(request, record);
+  };
   const nameOf = useCallback(
     (item: InboxItem) => allEntries.find((entry) => entry.item.id === item.id)?.subject.displayName ?? "this patient",
     [allEntries],
@@ -660,69 +632,91 @@ function AlertsWorkspace() {
       setChosenId(item.id);
       // The reducer refuses a role re-taking a row it already owns; no notice for a refused act.
       if (currentInboxOwner(inboxOwnership[item.id], item.since)?.by === COORDINATOR) return;
-      track({
-        type: "TAKE_INBOX_ITEM_OWNERSHIP",
-        ok: `You own "${item.title}" for ${nameOf(item)}.`,
-        refused: "Take was not accepted.",
-      });
-      dispatch({ type: "TAKE_INBOX_ITEM_OWNERSHIP", role: "coordinator", now: clockNow, inboxItemId: item.id });
+      track(
+        {
+          type: "TAKE_INBOX_ITEM_OWNERSHIP",
+          ok: `You own "${item.title}" for ${nameOf(item)}.`,
+          refused: "Take was not accepted.",
+        },
+        () => dispatch({ type: "TAKE_INBOX_ITEM_OWNERSHIP", role: "coordinator", now: clockNow, inboxItemId: item.id }),
+      );
     },
     onAcknowledge: (item) => {
       if (actionDisabledReason) return;
       setChosenId(item.id);
-      track({
-        type: "ACKNOWLEDGE_INBOX_ITEM",
-        ok: `"${item.title}" acknowledged and kept on watch.`,
-        refused: "Acknowledge was not accepted.",
-      });
-      dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role: "coordinator", now: clockNow, inboxItemId: item.id });
+      track(
+        {
+          type: "ACKNOWLEDGE_INBOX_ITEM",
+          ok: `"${item.title}" acknowledged and kept on watch.`,
+          refused: "Acknowledge was not accepted.",
+        },
+        () => dispatch({ type: "ACKNOWLEDGE_INBOX_ITEM", role: "coordinator", now: clockNow, inboxItemId: item.id }),
+      );
     },
     onSnooze: (item, until, reason) => {
       if (actionDisabledReason) return;
       // Say "snoozed" only for a snooze the reducer accepts: the same cap it enforces.
       if (!isSnoozeReason(reason) || !snoozeAllowed(until, clockNow, inboxItemIsActNow(item.id))) return;
       setChosenId(item.id);
-      track({
-        type: "SNOOZE_INBOX_ITEM",
-        ok: `"${item.title}" snoozed until ${formatInstantWithDay(until, clockNow)}.`,
-        refused: "Snooze was not accepted.",
-      });
-      dispatch({ type: "SNOOZE_INBOX_ITEM", role: "coordinator", now: clockNow, inboxItemId: item.id, until, reason });
+      track(
+        {
+          type: "SNOOZE_INBOX_ITEM",
+          ok: `"${item.title}" snoozed until ${formatInstantWithDay(until, clockNow)}.`,
+          refused: "Snooze was not accepted.",
+        },
+        () =>
+          dispatch({
+            type: "SNOOZE_INBOX_ITEM",
+            role: "coordinator",
+            now: clockNow,
+            inboxItemId: item.id,
+            until,
+            reason,
+          }),
+      );
     },
     onReturn: (item) => {
       if (actionDisabledReason) return;
-      track({
-        type: "UNSNOOZE_INBOX_ITEM",
-        ok: `"${item.title}" is back on the queue.`,
-        refused: "Return was not accepted.",
-      });
-      dispatch({ type: "UNSNOOZE_INBOX_ITEM", role: "coordinator", now: clockNow, inboxItemId: item.id });
+      track(
+        {
+          type: "UNSNOOZE_INBOX_ITEM",
+          ok: `"${item.title}" is back on the queue.`,
+          refused: "Return was not accepted.",
+        },
+        () => dispatch({ type: "UNSNOOZE_INBOX_ITEM", role: "coordinator", now: clockNow, inboxItemId: item.id }),
+      );
     },
     onRelease: (item, reason: ReleasePullReason) => {
       if (actionDisabledReason) return;
       if (!item.movementId) return;
-      track({
-        type: "RELEASE_PULL",
-        ok: `Bed released for ${nameOf(item)}. The ward has a notice.`,
-        refused: "Release was not accepted. The bed is still pulled.",
-      });
-      dispatch({ type: "RELEASE_PULL", role: "coordinator", now: clockNow, movementId: item.movementId, reason });
+      track(
+        {
+          type: "RELEASE_PULL",
+          ok: `Bed released for ${nameOf(item)}. The ward has a notice.`,
+          refused: "Release was not accepted. The bed is still pulled.",
+        },
+        () =>
+          dispatch({ type: "RELEASE_PULL", role: "coordinator", now: clockNow, movementId: item.movementId, reason }),
+      );
     },
     onEscalate: (item) => {
       if (actionDisabledReason) return;
       setChosenId(item.id);
       const movement = movements.find((candidate: Movement) => candidate.id === item.movementId);
       if (item.movementId && escalationAppliesTo(item, movement, units, now)) {
-        track({
-          type: "RECORD_ESCALATION",
-          ok: `Escalated "${item.title}" for ${nameOf(item)} to ${ESCALATION_CONTACTS[0]}.`,
-          refused: "Escalation was not accepted.",
-        });
-        raise("RECORD_ESCALATION", {
-          movementId: item.movementId,
-          triedUnitIds: movement?.declines.map((decline) => decline.unitId) ?? [],
-          contact: ESCALATION_CONTACTS[0],
-        });
+        track(
+          {
+            type: "RECORD_ESCALATION",
+            ok: `Escalated "${item.title}" for ${nameOf(item)} to ${ESCALATION_CONTACTS[0]}.`,
+            refused: "Escalation was not accepted.",
+          },
+          () =>
+            raise("RECORD_ESCALATION", {
+              movementId: item.movementId,
+              triedUnitIds: movement?.declines.map((decline) => decline.unitId) ?? [],
+              contact: ESCALATION_CONTACTS[0],
+            }),
+        );
       }
       // An alert with no movement, or not about a bed search, has nothing to escalate: the button is disabled, so no notice is made.
     },
@@ -788,7 +782,7 @@ function AlertsWorkspace() {
     const { targetScope, targetScopeLabel } = audienceState.target;
 
     setBroadcastSuccessNotice(null);
-    setActionRequest(null);
+    actionFeedback.clear();
     setBroadcastRequest({
       type: "DISPATCH_BROADCAST_ALERT",
       title: broadcastTitle.trim(),
@@ -813,7 +807,10 @@ function AlertsWorkspace() {
           dispatchedByName: coordDesk ? "State Mental Health Bed Desk Coordinator" : WARD_FLOW_ROLE_LABELS[deskRole],
           kind: broadcastType === "bed_call" ? "bed_call" : "directive",
         }),
-      () => setBroadcastResult({ accepted: true }),
+      () => {
+        setBroadcastResult({ accepted: true });
+        setBroadcastModalOpen(false);
+      },
     );
   };
 
@@ -821,7 +818,7 @@ function AlertsWorkspace() {
     if (broadcastSave.pending) return;
     const alert = broadcastAlerts?.find((entry) => entry.id === alertId);
     setBroadcastSuccessNotice(null);
-    setActionRequest(null);
+    actionFeedback.clear();
     setBroadcastRequest({
       type: "STAND_DOWN_BROADCAST_ALERT",
       title: alert?.title ?? "Directive",
@@ -847,7 +844,7 @@ function AlertsWorkspace() {
     broadcastSave.forget();
     setBroadcastResult(undefined);
     setBroadcastRequest(null);
-    setActionRequest(null);
+    actionFeedback.clear();
     setBroadcastSuccessNotice(null);
     setBroadcastConfirmed(false);
     setBroadcastModalOpen(true);
@@ -855,7 +852,7 @@ function AlertsWorkspace() {
 
   const handleNotify = () => {
     setBroadcastRequest(null);
-    setActionRequest(null);
+    actionFeedback.clear();
     if (notifyOn) {
       setActNowNotificationPreference(false);
       setBroadcastSuccessNotice("Browser notifications off.");
@@ -874,7 +871,7 @@ function AlertsWorkspace() {
 
   const handleCopy = () => {
     setBroadcastRequest(null);
-    setActionRequest(null);
+    actionFeedback.clear();
     const text = handoverText(
       [
         ["Act now", actEntries],
@@ -1320,7 +1317,7 @@ function AlertsWorkspace() {
             onDismiss={() => {
               if (broadcastAccepted) setBroadcastModalOpen(false);
               setBroadcastRequest(null);
-              setActionRequest(null);
+              actionFeedback.clear();
               setBroadcastSuccessNotice(null);
             }}
           />
@@ -1479,12 +1476,15 @@ function AlertsWorkspace() {
             sending={broadcastSave.pending}
             liveBedCall={liveBedCallFor(activeBroadcast, audienceState.recipients, now)}
             onExtendLive={(alertId) => {
-              track({
-                type: "EXTEND_BROADCAST_ALERT",
-                ok: "Live bed call extended.",
-                refused: "Extension was not accepted.",
-              });
-              raise("EXTEND_BROADCAST_ALERT", { alertId });
+              const title = broadcastAlerts?.find((alert) => alert.id === alertId)?.title ?? "Live bed call";
+              track(
+                {
+                  type: "EXTEND_BROADCAST_ALERT",
+                  ok: `Extended "${title}".`,
+                  refused: `Extension of "${title}" was not accepted.`,
+                },
+                () => raise("EXTEND_BROADCAST_ALERT", { alertId }),
+              );
               handleCloseBroadcastModal();
               openLiveBroadcast();
             }}

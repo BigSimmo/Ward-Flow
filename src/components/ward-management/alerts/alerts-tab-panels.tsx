@@ -11,6 +11,7 @@ import { EmptyState, StatusGlyph, TabPanel, cx } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 import type { useWardRaise } from "@/components/ward-management/ward-flow-raise";
+import type { TrackAlertCommand } from "./use-alert-command-feedback";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { withUmrnInPlaceOfMovementIds } from "@/components/ward-management/ward-patient-resolver";
 
@@ -45,7 +46,7 @@ export function AlertsLiveBroadcasts({
   broadcastAcks: { acknowledged: number; of: number } | undefined;
   units: WardFlowState["units"];
   now: Instant;
-  track: (request: { type: string; ok: string; refused: string }) => void;
+  track: TrackAlertCommand;
   raise: ReturnType<typeof useWardRaise>;
   deskRole: string;
   onCopyAnswers: (text: string) => void;
@@ -73,14 +74,14 @@ export function AlertsLiveBroadcasts({
           sentByYou={activeBroadcast.dispatchedByRole === deskRole}
           acknowledgements={broadcastAcks}
           onExtend={() => {
-            // The notice reads the reducer's verdict from the event log, as every
-            // other act on this page does, so a refused extension is not reported.
-            track({
-              type: "EXTEND_BROADCAST_ALERT",
-              ok: `Extended "${activeBroadcast.title}".`,
-              refused: "Extension was not accepted.",
-            });
-            raise("EXTEND_BROADCAST_ALERT", { alertId: activeBroadcast.id });
+            track(
+              {
+                type: "EXTEND_BROADCAST_ALERT",
+                ok: `Extended "${activeBroadcast.title}".`,
+                refused: `Extension of "${activeBroadcast.title}" was not accepted.`,
+              },
+              () => raise("EXTEND_BROADCAST_ALERT", { alertId: activeBroadcast.id }),
+            );
           }}
           onAddUnits={() => setAddingUnits(activeBroadcast.id)}
           addUnitsDisabledReason={
@@ -92,17 +93,19 @@ export function AlertsLiveBroadcasts({
       ) : null}
       {activeBroadcast && addingUnits === activeBroadcast.id ? (
         <AddUnitsDialog
+          key={activeBroadcast.id}
           alert={activeBroadcast}
           units={units}
           onClose={() => setAddingUnits(null)}
           onAdd={(unitIds) => {
-            setAddingUnits(null);
-            track({
-              type: "ADD_BROADCAST_ALERT_UNITS",
-              ok: `Added ${unitIds.length === 1 ? "1 desk" : `${unitIds.length} desks`} to "${activeBroadcast.title}".`,
-              refused: "Adding desks was not accepted.",
-            });
-            raise("ADD_BROADCAST_ALERT_UNITS", { alertId: activeBroadcast.id, unitIds });
+            return track(
+              {
+                type: "ADD_BROADCAST_ALERT_UNITS",
+                ok: `Added ${unitIds.length === 1 ? "1 desk" : `${unitIds.length} desks`} to "${activeBroadcast.title}".`,
+                refused: `Adding desks to "${activeBroadcast.title}" was not accepted.`,
+              },
+              () => raise("ADD_BROADCAST_ALERT_UNITS", { alertId: activeBroadcast.id, unitIds }),
+            );
           }}
         />
       ) : null}

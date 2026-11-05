@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 import { Button, DateField, Dialog, Field, Segmented, TextInput, requestConfirm } from "@/components/wf";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -55,6 +55,13 @@ export function AddTimeDialog({
 }) {
   const legalForm = movement.legalForm;
   const [draft, setDraft] = useState<WrittenDraft>(() => writtenDraftFor(legalForm));
+  const currentDraft = useRef<WrittenDraft | null>(draft);
+  useLayoutEffect(() => {
+    currentDraft.current = draft;
+    return () => {
+      currentDraft.current = null;
+    };
+  }, [draft]);
   const { writtenProblem } = writtenTimeCheck(draft, now, dayZero);
   const typed = draft.date !== "" || draft.time !== "";
   // Leaving the page with a typed time asks first, in the kit's styled confirm.
@@ -71,7 +78,7 @@ export function AddTimeDialog({
       confirmLabel: "Discard",
       cancelLabel: "Keep editing",
     }).then((confirmed) => {
-      if (confirmed) onClose();
+      if (confirmed && currentDraft.current === draft) onClose();
     });
   };
 
@@ -80,7 +87,9 @@ export function AddTimeDialog({
     const written = writtenSaveOf(draft, now, dayZero);
     if (!written) return;
     // Closes only once the engine has accepted the time; a refusal keeps it open with its reason.
-    onSave(written, onClose);
+    onSave(written, () => {
+      if (currentDraft.current === draft) onClose();
+    });
   };
 
   const id = movement.id;
