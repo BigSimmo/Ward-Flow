@@ -50,8 +50,7 @@ function restore(snap: Snap) {
     /* cookie blocked */
   }
   const dark =
-    snap.theme === "dark" ||
-    (snap.theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+    snap.theme === "dark" || (snap.theme === "system" && window.matchMedia("(prefers-color-scheme: dark)").matches);
   const root = document.documentElement;
   if (snap.theme === "system") root.removeAttribute("data-theme");
   else root.setAttribute("data-theme", snap.theme);
