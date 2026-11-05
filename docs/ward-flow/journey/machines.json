@@ -1520,7 +1520,7 @@
     }
   ],
   "review": {
-    "reviewedOn": "2026-11-03",
+    "reviewedOn": "2026-11-05",
     "basis": "Source comparison of eleven machines, route nodes, gates, resources and current gap notes; not runtime or clinical acceptance.",
     "sources": [
       {
@@ -1645,23 +1645,23 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-        "line": 1242,
-        "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+        "line": 1248,
+        "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
       },
       {
         "path": "src/components/ward-management/ward-flow-storage-validation.ts",
         "line": 469,
-        "sha256": "6808a0ac8a98836388fd66286e12ac4f66957ad552aec218f4f931f5c9387660"
+        "sha256": "068cf77a21948ab5323eed99b19305894e6a33677a000000eab6a1f9fddcda00"
       },
       {
         "path": "src/components/ward-management/ward-flow-transport-events.ts",
         "line": 85,
-        "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+        "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
       },
       {
         "path": "src/components/ward-management/ward-flow-undo-events.ts",
-        "line": 269,
-        "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+        "line": 270,
+        "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
       },
       {
         "path": "src/components/ward-management/ward-inbox-reducer.ts",

@@ -105,8 +105,14 @@ async function main() {
   for (const { route, kb, limit } of over) console.log(`::warning::${route} is ${kb} KB against ${limit} KB on main.`);
 
   const body = issueBody({ over, sha: runSha, runUrl });
-  const open = await api(`/issues?state=open&creator=${encodeURIComponent("github-actions[bot]")}&per_page=100`);
-  const existing = open.find((item) => !item.pull_request && item.title === ISSUE_TITLE);
+  let existing;
+  for (let page = 1; !existing; page += 1) {
+    const open = await api(
+      `/issues?state=open&creator=${encodeURIComponent("github-actions[bot]")}&per_page=100&page=${page}`,
+    );
+    existing = open.find((item) => !item.pull_request && item.title === ISSUE_TITLE);
+    if (open.length < 100) break;
+  }
   if (!existing) {
     const issue = await send(`/issues`, { title: ISSUE_TITLE, body, labels: [ISSUE_LABEL] }).catch(() =>
       // The label may not exist yet; an issue without it is still the ask.

@@ -59,11 +59,19 @@ function measureMain(root, mainSha, outDir) {
   }
 }
 
+/** @param {{root?:string,event?:string,outDir?:string}} [options] */
 export function gate({ root = process.cwd(), event = process.env.GITHUB_EVENT_NAME, outDir } = {}) {
   const dir = resolve(outDir ?? join(process.env.RUNNER_TEMP ?? root, "script-budget"));
   mkdirSync(dir, { recursive: true });
   const merged = join(dir, "measured.json");
   const status = measure(root, merged);
+  // Inherited-overage PR warnings may pass the comparative judgement below, but only
+  // a strictly compliant measurement can supply reusable main acceptance evidence.
+  if (status === 0) {
+    const tree = execFileSync("git", ["rev-parse", "HEAD^{tree}"], { cwd: root, encoding: "utf8" }).trim();
+    if (!/^[0-9a-f]{40}$/u.test(tree)) throw new Error("Strict budget measurement has no valid tree identity");
+    console.log(`::notice title=Ward strict budget tree::${tree}`);
+  }
   if (status !== OVER_BUDGET || event !== "pull_request") return status;
   const mainSha = execFileSync("git", ["rev-parse", "refs/remotes/origin/main"], {
     cwd: root,

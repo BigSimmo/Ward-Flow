@@ -28,6 +28,7 @@ import {
 import { type Admission, bedIsOccupied } from "@/components/ward-management/ward-admissions";
 import type { WardFlowEvent } from "@/components/ward-management/ward-flow-events";
 import { sameLinkedPatient } from "./ward-flow-bed-events";
+import { patientHasRetainedUmrnConflict } from "./ward-retained-umrn";
 
 /**
  * UNDO_* events: take back a recent step exactly, using the records kept in `ward-undo.ts`.
@@ -292,6 +293,33 @@ export function reduceUndoEvent(
         (stepChangedSince(state, record) ? "This has changed since, so it cannot be undone" : null);
       if (refusal) return reject(state, event, refusal);
       const undone = applyStepUndo(state, record);
+      // A later leave or absence is a separate record, so the original step's snapshots cannot
+      // detect it. Check the complete inverse before writing any of it: a leave must still name
+      // an occupied stay on its ward, and a stay can have only one active leave.
+      const leaveAdmissions = new Set<string>();
+      for (const leave of undone.leaveBeds) {
+        const stay = findAdmission(undone, leave.admissionId);
+        if (
+          !stay ||
+          stay.state !== "occupied" ||
+          stay.unitId !== leave.unitId ||
+          leaveAdmissions.has(leave.admissionId)
+        )
+          return reject(state, event, "A newer leave or absence conflicts with this step, so it cannot be undone");
+        leaveAdmissions.add(leave.admissionId);
+      }
+      // Archiving frees a record number for a later registration. Restoring the old patient must
+      // recheck its ownership, even though the archived internal id itself is still unused.
+      for (const patient of undone.patients) {
+        const current = state.patients.find((candidate) => candidate.id === patient.id);
+        if (current?.umrn === patient.umrn) continue;
+        if (patientHasRetainedUmrnConflict(patient, undone.patients))
+          return reject(
+            state,
+            event,
+            "This record number now belongs to another patient, so this step cannot be undone",
+          );
+      }
       // Unchanged original rows do not prove that a later, independent stay is absent.
       // Check the restored claims against the current world before committing any part of Undo.
       for (const admission of undone.admissions) {

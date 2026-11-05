@@ -23,8 +23,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
-          "line": 1116,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "line": 1120,
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -334,7 +334,7 @@
         {
           "path": "src/components/ward-management/ward-flow-observation-events.ts",
           "line": 32,
-          "sha256": "b89db758e87f6c00be73e1b44c5fcf56864633c0cae56e7c51fcd83b26be7092"
+          "sha256": "b710d406227a810c4020dadb7ffeb75bb6c7e790d3911dd26895d771de5041b1"
         },
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -344,7 +344,7 @@
         {
           "path": "src/components/ward-management/ward-flow-observation-events.ts",
           "line": 32,
-          "sha256": "b89db758e87f6c00be73e1b44c5fcf56864633c0cae56e7c51fcd83b26be7092"
+          "sha256": "b710d406227a810c4020dadb7ffeb75bb6c7e790d3911dd26895d771de5041b1"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",
@@ -2643,8 +2643,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 97,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "line": 98,
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-flow-reducer.ts",
@@ -2776,8 +2776,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 133,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "line": 134,
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-flow-events.ts",
@@ -2813,7 +2813,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient."
       ],
       "effects": [
         "Applies only saved before/after patches for REFER_TO_UNITS; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -2822,8 +2823,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "line": 261,
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -2864,7 +2865,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient."
       ],
       "effects": [
         "Applies only saved before/after patches for ACCEPT_IN_PRINCIPLE; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -2873,8 +2875,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "line": 261,
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -2915,7 +2917,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_LEGAL_FORM_WRITTEN, RECORD_LEGAL_FORM_CODE, RECORD_LEGAL_FORM_RECEIVED or RECORD_LEGAL_FORM_EXPIRY; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -2924,8 +2927,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "line": 261,
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -2968,7 +2971,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_SUPPORT_NOTIFICATION; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -2977,8 +2981,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "line": 261,
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3019,7 +3023,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_REPATRIATION; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3028,8 +3033,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "line": 261,
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3072,7 +3077,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_HANDOVER_SIGN_OFF; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3081,8 +3087,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "line": 261,
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3123,7 +3129,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_SITE_HANDOVER_SIGN_OFF; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3132,8 +3139,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "line": 261,
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3157,8 +3164,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 282,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "line": 283,
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         }
       ],
       "tests": ["tests/ward-undo-steps.test.ts", "tests/ward-site-handover-sign-off.test.ts"]
@@ -3181,7 +3188,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_ARRIVED_IN_DEPARTMENT, RECORD_EXAMINATION, RECORD_MEDICAL_CLEARANCE, RECORD_TRANSPORT_NEED, RECORD_ED_PRESENTATION or HANDOVER_READY; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3190,8 +3198,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "line": 261,
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3232,7 +3240,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient."
       ],
       "effects": [
         "Applies only saved before/after patches for TRANSPORT_ACCEPTED, TRANSPORT_EN_ROUTE, PATIENT_COLLECTED or PATIENT_ARRIVED; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3241,8 +3250,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "line": 261,
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3283,7 +3292,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_LEAVING or RECORD_PATIENT_DISCHARGE; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3292,8 +3302,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "line": 261,
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3334,7 +3344,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient."
       ],
       "effects": [
         "Applies only saved before/after patches for RECORD_ABSENT_WITHOUT_LEAVE; removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3343,8 +3354,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "line": 261,
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3387,7 +3398,8 @@
         "A matching newest step Undo record exists for this exact subject/action family; a supplied recordSeq must match.",
         "now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).",
         "Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.",
-        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed."
+        "Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.",
+        "Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient."
       ],
       "effects": [
         "Applies only saved before/after patches for COMPLETE_BED_MEETING_ACTION or RECORD_BED_MEETING_ACTION (Chase Undo); removes newly created rows, restores removed/changed rows and removes appended entries.",
@@ -3396,8 +3408,8 @@
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 260,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "line": 261,
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         },
         {
           "path": "src/components/ward-management/ward-undo.ts",
@@ -3542,7 +3554,8 @@
       "guards": [
         "A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.",
         "The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.",
-        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number."
+        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.",
+        "Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient."
       ],
       "effects": [
         "Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.",
@@ -3556,8 +3569,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 265,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "line": 266,
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         }
       ],
       "tests": ["tests/ward-return-early.test.ts"]
@@ -3577,7 +3590,8 @@
       "guards": [
         "A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.",
         "The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.",
-        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number."
+        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.",
+        "Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient."
       ],
       "effects": [
         "Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.",
@@ -3591,8 +3605,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 273,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "line": 274,
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         }
       ],
       "tests": ["tests/ward-tier1-undo.test.ts"]
@@ -3612,7 +3626,8 @@
       "guards": [
         "A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.",
         "The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.",
-        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number."
+        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.",
+        "Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient."
       ],
       "effects": [
         "Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.",
@@ -3626,8 +3641,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 274,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "line": 275,
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         }
       ],
       "tests": ["tests/ward-tier1-undo.test.ts"]
@@ -3647,7 +3662,8 @@
       "guards": [
         "A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.",
         "The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.",
-        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number."
+        "The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.",
+        "Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient."
       ],
       "effects": [
         "Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.",
@@ -3661,8 +3677,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-undo-events.ts",
-          "line": 275,
-          "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+          "line": 276,
+          "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
         }
       ],
       "tests": ["tests/ward-tier1-undo.test.ts"]
