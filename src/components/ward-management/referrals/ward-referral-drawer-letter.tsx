@@ -2,6 +2,7 @@
 
 import { CircleCheck, Copy, FileText, Info, ListChecks, Phone, Printer, Send, Users } from "lucide-react";
 import Link from "next/link";
+import { referralBoardHref } from "../ed/ed-bed-search-step";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { OPERATIONAL_DEFAULT_LABEL } from "@/components/ward-management/ward-operational-defaults";
@@ -133,7 +134,11 @@ export function ReferralConfirmation({ s }: { s: WardReferralDrawerState }) {
                 ))}
               </ul>
               <div className={styles.cardActions}>
-                <Link className={styles.btn} href="/ward-flow/referrals" onClick={onClose}>
+                <Link
+                  className={styles.btn}
+                  href={s.sentReferralId ? referralBoardHref(s.sentReferralId) : "/ward-flow/referrals"}
+                  onClick={onClose}
+                >
                   <Users aria-hidden="true" />
                   View referrals board
                 </Link>

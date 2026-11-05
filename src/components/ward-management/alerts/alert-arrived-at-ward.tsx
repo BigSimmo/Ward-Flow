@@ -1,5 +1,6 @@
 "use client";
 
+import { placeDisplayName } from "@/components/ward-management/ward-place-names";
 import { useEffect, useRef, useState } from "react";
 
 import { Button, useOptionalToast } from "@/components/wf";
@@ -58,7 +59,7 @@ function ArrivedAtWardControl({
   const [asking, setAsking] = useState(false);
   if (!arrivedAtWardOffered(movement)) return null;
   const unitId = movement.acceptedUnitId!;
-  const ward = units.find((unit) => unit.id === unitId)?.name ?? unitId;
+  const ward = placeDisplayName(unitId, units);
 
   function confirm() {
     setAsking(false);

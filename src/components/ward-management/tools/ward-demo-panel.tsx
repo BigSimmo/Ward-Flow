@@ -3,7 +3,7 @@
 import { downloadBlob } from "@/components/ward-management/ward-download";
 
 import { ChevronDown } from "lucide-react";
-import { type ChangeEvent, useId, useRef, useState } from "react";
+import { type ChangeEvent, useId, useLayoutEffect, useRef, useState } from "react";
 
 import { Dialog } from "@/components/wf";
 
@@ -94,13 +94,22 @@ function ExecutiveDemoPanel({ grow = false }: { grow?: boolean }) {
   );
 }
 function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boolean; grow?: boolean }) {
-  const { scenario, saveScenarioFile, loadScenarioFile, savingOnDevice, worldGeneration, shared } = useWardFlowSelect(
+  const {
+    scenario,
+    saveScenarioFile,
+    loadScenarioFile,
+    savingOnDevice,
+    worldGeneration,
+    shared,
+    captureCommandLifetime,
+  } = useWardFlowSelect(
     "scenario",
     "saveScenarioFile",
     "loadScenarioFile",
     "savingOnDevice",
     "worldGeneration",
     "shared",
+    "captureCommandLifetime",
   );
   const now = useWardFlowClock();
   const raise = useWardRaise("demo");
@@ -123,6 +132,17 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
   const resetScenarios: readonly string[] = DEMO_RESET_SCENARIOS;
   const pickable = resetOn ? WARD_SCENARIOS.filter((candidate) => !resetScenarios.includes(candidate)) : WARD_SCENARIOS;
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const importOwner = useRef(0);
+  const importWorld = useRef(worldGeneration);
+  useLayoutEffect(() => {
+    importWorld.current = worldGeneration;
+  }, [worldGeneration]);
+  useLayoutEffect(
+    () => () => {
+      importOwner.current += 1;
+    },
+    [],
+  );
 
   async function saveToFile() {
     if (!saveScenarioFile) return;
@@ -143,6 +163,7 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
    * nothing changed. Each line names who it reached (`demoDataReach`).
    */
   function confirmWorldChange() {
+    importOwner.current += 1;
     const pending = confirming;
     setConfirming(null);
     if (!pending) return;
@@ -185,15 +206,19 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
     const file = input.files?.[0];
     input.value = "";
     if (!file || !loadScenarioFile) return;
-    let text: string;
+    const owner = ++importOwner.current;
+    const startedWorld = worldGeneration;
+    const lifetime = captureCommandLifetime?.();
+    const isCurrent = () =>
+      owner === importOwner.current && startedWorld === importWorld.current && lifetime?.() !== false;
     try {
-      text = await file.text();
+      const result = await loadScenarioFile(file.text(), isCurrent);
+      if (owner === importOwner.current && (result.ok || isCurrent()))
+        setMessage(result.ok ? "Scenario loaded." : result.reason);
     } catch {
-      setMessage("That file could not be read, so nothing was loaded.");
+      if (isCurrent()) setMessage("That file could not be read, so nothing was loaded.");
       return;
     }
-    const result = await loadScenarioFile(text);
-    setMessage(result.ok ? "Scenario loaded." : result.reason);
   }
 
   return (
@@ -215,7 +240,10 @@ function OperationalDemoPanel({ oneList = false, grow = false }: { oneList?: boo
                 aria-current={scenario === candidate ? "true" : undefined}
                 className={demo.choice}
                 {...lock}
-                onClick={() => setConfirming({ kind: "load", scenario: candidate })}
+                onClick={() => {
+                  importOwner.current += 1;
+                  setConfirming({ kind: "load", scenario: candidate });
+                }}
               >
                 <strong>{scenarioLabels[candidate]}</strong>
                 {scenario === candidate ? <em>Current</em> : null}

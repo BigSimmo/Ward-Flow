@@ -114,6 +114,32 @@ describe("a referral decision consumed by a journey", () => {
       expect(after[key]).toEqual(before[key]);
     expectRestorable(after);
   });
+
+  it("permits acceptance Undo once its continuation is safely cancelled and holds no bed", () => {
+    const accepted = acceptedReferral();
+    const started = send(accepted.state, {
+      type: "RAISE_REFERRAL",
+      role: "ward",
+      actingUnitId: UNIT,
+      now: NOW + 1,
+      referralId: accepted.referralId,
+      acceptedUnitId: UNIT,
+      draft,
+    });
+    const movement = started.movements.find((row) => row.referralId === accepted.referralId)!;
+    const cancelled = send(started, {
+      type: "WITHDRAW_REFERRAL",
+      role: "coordinator",
+      now: NOW + 1,
+      movementId: movement.id,
+    });
+    expect(cancelled.movements.find((row) => row.id === movement.id)?.closure?.outcome).toBe("did_not_proceed");
+    expect(cancelled.admissions.some((row) => row.movementId === movement.id && bedIsOccupied(row))).toBe(false);
+    const undone = send(cancelled, undo(accepted.referralId));
+    expect(undone.referrals.find((row) => row.id === accepted.referralId)!.destinations[0].state).toBe("queued");
+    expect(undone.movements).toEqual(cancelled.movements);
+    expectRestorable(undone);
+  });
 });
 
 describe("new bed allocations after capacity reconfirmation", () => {

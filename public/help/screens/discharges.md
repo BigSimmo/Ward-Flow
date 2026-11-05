@@ -8,7 +8,7 @@ Planned discharges and departures, blocked releases first.
 
 1. Discharges today. Held up, confirmed, expected, and discharged in the last day.
 2. Held up first. Discharges with something in the way come first. Open one to see what is blocking it and the bed release.
-3. Held up by barrier. What is holding discharges up, counted by barrier.
+3. Held up by reason. What is holding discharges up, counted by reason.
 4. Print list. A paper copy of the list for the ward or the bed meeting.
 
 ## On a phone

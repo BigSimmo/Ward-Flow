@@ -1,11 +1,12 @@
 import type { BedMeetingAction } from "./bed-meeting/bed-meeting-actions";
 import type { CareJourney } from "./ward-care-journey";
 import {
+  BED_RELEASE_BLOCKERS,
   type BedReleaseBlocker,
   type DischargeDelayClearReason,
   type OverrideReason,
 } from "@/components/ward-management/ward-change-reasons";
-import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
+import { WARD_FLOW_ROLE_LABELS, type WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import type { TentativeDiagnosisBlock } from "@/components/ward-management/ward-diagnosis";
 import {
@@ -683,6 +684,16 @@ export type Admission = {
     readonly reason?: DischargeDelayClearReason;
     readonly blocker: BedReleaseBlocker;
   }>;
+  /**
+   * Live test (5 Nov 2026): every hold-up recorded on this stay, append-only, with its time
+   * and role, so the bed timeline can show who logged what and when. Optional and absent in older
+   * saves, which load as they are (no stored-state version bump).
+   */
+  stayBlockRecords?: ReadonlyArray<{
+    readonly at: Instant;
+    readonly by: WardFlowRole;
+    readonly blocker: BedReleaseBlocker;
+  }>;
   /** Where this person went, once they have gone. `null` until then. */
   leavingDestination: LeavingDestination | null;
   /** When they went. `null` until then. */
@@ -763,12 +774,36 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   dischargeConfirmedBy: true,
   blockReason: true,
   stayBlockClearances: true,
+  stayBlockRecords: true,
   leavingDestination: true,
   leftAt: true,
   followUp: true,
   careJourney: true,
   meetingActions: true,
 };
+
+const STAY_BLOCK_RECORD_KEYS = new Set(["at", "by", "blocker"]);
+
+/**
+ * a stored hold-up log is a list of {finite time, known role, listed blocker} and nothing else:
+ * an unknown role would render as "undefined", and an extra key could carry free text.
+ */
+export function isStayBlockRecords(value: unknown): boolean {
+  return (
+    Array.isArray(value) &&
+    value.every((r) => {
+      if (typeof r !== "object" || r === null || Array.isArray(r)) return false;
+      const record = r as { at?: unknown; by?: unknown; blocker?: unknown };
+      return (
+        Object.keys(record).every((key) => STAY_BLOCK_RECORD_KEYS.has(key)) &&
+        Number.isFinite(record.at) &&
+        typeof record.by === "string" &&
+        Object.hasOwn(WARD_FLOW_ROLE_LABELS, record.by) &&
+        (BED_RELEASE_BLOCKERS as readonly unknown[]).includes(record.blocker)
+      );
+    })
+  );
+}
 
 export const ADMISSION_FIELDS: readonly string[] = Object.keys(ADMISSION_FIELD_PRESENCE);
 

@@ -90,7 +90,7 @@ describe("the account door", () => {
   it("goes straight through for a tab that is still signed in", async () => {
     createWardAuth.mockResolvedValue(adapter({ userId: "synthetic-user" }));
     render(<FrontDoorPage next="/ward-flow/ed" mode="account" tv={false} />);
-    expect(screen.getByText("Checking your sign-in.")).toBeInTheDocument();
+    expect(screen.getByText("Checking your sign-in. This usually takes a few seconds.")).toBeInTheDocument();
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/ward-flow/ed"));
     expect(JSON.parse(String(fetcher.mock.calls[0]?.[1]?.body))).toEqual({ token: "synthetic-token" });
   });
@@ -152,7 +152,9 @@ describe("the account door", () => {
   it("shows the sign-in as unavailable when it is not set up", async () => {
     createWardAuth.mockRejectedValue(new Error("not configured"));
     render(<FrontDoorPage next="/ward-flow" mode="account" tv />);
-    await waitFor(() => expect(screen.queryByText("Checking your sign-in.")).not.toBeInTheDocument());
+    await waitFor(() =>
+      expect(screen.queryByText("Checking your sign-in. This usually takes a few seconds.")).not.toBeInTheDocument(),
+    );
   });
 
   it("closes the sign-in when the page goes away first", async () => {

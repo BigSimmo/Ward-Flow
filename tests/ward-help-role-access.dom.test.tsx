@@ -39,6 +39,8 @@ import { searchHelp } from "@/components/ward-management/help/ward-help-search-i
 import type { WardTourRole } from "@/components/ward-management/help/ward-help-store";
 import { WardHelpSheet } from "@/components/ward-management/help/ward-help-sheet";
 import { tasksForDesk } from "@/components/ward-management/help/ward-help-task-list";
+import { aroundId, SCREEN_TOURS } from "@/components/ward-management/help/ward-help-screen-tours";
+import { showMeSteps } from "@/components/ward-management/help/ward-help-howto";
 import { ROLE_SCREENS, screenForPath } from "@/components/ward-management/ward-role-access";
 
 afterEach(() => {
@@ -141,5 +143,17 @@ describe("keys each login can use", () => {
     };
     expect(found("coordinator").map((result) => result.title)).toContain("Shift+R");
     expect(found("officer").map((result) => result.title)).not.toContain("Shift+R");
+  });
+});
+
+// #1440 GAP 3: the Patients walk round shows Add patient only to a desk that may add one.
+describe("the Patients walk round", () => {
+  it("shows Add patient only to desks that may record ADD_PATIENT", () => {
+    const tour = SCREEN_TOURS.find((howTo) => howTo.id === aroundId("search"));
+    const titles = (role: WardTourRole) => showMeSteps(tour, "desk", role).map((step) => step.title);
+    expect(deskMayAct("bed_manager", ["ADD_PATIENT"])).toBe(false);
+    expect(titles("bed_manager")).not.toContain("Add patient");
+    expect(titles("bed_manager")).toContain("Find a person");
+    expect(titles("coordinator")).toContain("Add patient");
   });
 });

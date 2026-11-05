@@ -111,3 +111,23 @@ export function pickedUpSay(pick: BoardPick, fits: number): string {
 }
 
 export const BOARD_RESTING_SAY = "Choose who needs a bed, then a lit bed. To move someone, open their bed.";
+
+/**
+ * A name as surname and given name. The ward's records give the formal "Surname, Given" form; the
+ * plain "Given Surname" form is read too.
+ */
+export function nameParts(name: string): { last: string; given: string } | null {
+  const comma = name.indexOf(",");
+  if (comma > 0) {
+    const last = name.slice(0, comma).trim();
+    const given =
+      name
+        .slice(comma + 1)
+        .trim()
+        .split(/\s+/)[0] ?? "";
+    return last && given ? { last, given } : null;
+  }
+  const parts = name.trim().split(/\s+/);
+  if (parts.length < 2) return null;
+  return { last: parts[parts.length - 1]!, given: parts[0]! };
+}

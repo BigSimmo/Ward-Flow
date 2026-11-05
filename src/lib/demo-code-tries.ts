@@ -27,7 +27,7 @@ export function edgeAddress(headers: Headers): string {
 function pruneWrongTries(now: number) {
   for (const [address, entry] of wrongTries) if (now - entry.since > WRONG_TRY_WINDOW_MS) wrongTries.delete(address);
 }
-export function tooManyTries(address: string, now: number): boolean {
+function tooManyTries(address: string, now: number): boolean {
   if (now - allWrongTries.since <= WRONG_TRY_WINDOW_MS && allWrongTries.count >= ALL_WRONG_TRY_LIMIT) return true;
   const entry = wrongTries.get(address);
   if (!entry || now - entry.since > WRONG_TRY_WINDOW_MS) {
@@ -37,7 +37,7 @@ export function tooManyTries(address: string, now: number): boolean {
   }
   return entry.count >= WRONG_TRY_LIMIT;
 }
-export function countWrongTry(address: string, now: number) {
+function countWrongTry(address: string, now: number) {
   if (now - allWrongTries.since > WRONG_TRY_WINDOW_MS) allWrongTries = { count: 1, since: now };
   else allWrongTries.count += 1;
   const entry = wrongTries.get(address);
@@ -51,4 +51,26 @@ export function countWrongTry(address: string, now: number) {
 export function resetWrongTriesForTests() {
   wrongTries.clear();
   allWrongTries = { count: 0, since: 0 };
+}
+
+/** Reserve before awaiting verification; only a confirmed correct code releases the slot. */
+export function reserveDemoTry(address: string, now: number): (() => void) | null {
+  if (tooManyTries(address, now)) return null;
+  countWrongTry(address, now);
+  const entry = wrongTries.get(address);
+  const total = allWrongTries;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    // A released slot holds no attempt, so drop an emptied entry and reset an emptied window.
+    if (entry && wrongTries.get(address) === entry) {
+      entry.count = Math.max(0, entry.count - 1);
+      if (entry.count === 0) wrongTries.delete(address);
+    }
+    if (allWrongTries === total) {
+      total.count = Math.max(0, total.count - 1);
+      if (total.count === 0) allWrongTries = { count: 0, since: 0 };
+    }
+  };
 }

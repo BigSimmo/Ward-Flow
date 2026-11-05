@@ -29,7 +29,7 @@ export function useWardFormSave(scope: string) {
     flights: new Map(),
     held: new Map(),
   }));
-  const [error, setError] = useState<{ scope: object; message: string }>();
+  const [error, setError] = useState<{ scope: object; message: string; uncertain: boolean }>();
   useLayoutEffect(() => {
     currentScope.current = scopeToken;
     if (lastLifetime.current !== accessLifetime) {
@@ -47,7 +47,7 @@ export function useWardFormSave(scope: string) {
   // Stable for one scope (it reads only refs, setters and the scope), so a caller's callbacks that
   // depend on this hook are not rebuilt on every render (PR #1326 review).
   const submit = useCallback(
-    (record: () => ReturnType<WardCommandDispatch> | undefined, onAccepted: () => void) => {
+    (record: () => ReturnType<WardCommandDispatch> | undefined, onAccepted: (outcome: WardCommandOutcome) => void) => {
       if (flights.current.has(key) || holding(held.current.get(key))) return;
       const flight: Flight = { key, scope: scopeToken, generation: generation.current };
       flights.current.set(key, flight);
@@ -58,10 +58,11 @@ export function useWardFormSave(scope: string) {
         if (currentScope.current !== flight.scope || generation.current !== flight.generation) return;
         if (outcome?.status === "accepted" && outcome.isCurrent?.() !== false) {
           setError(undefined);
-          onAccepted();
+          onAccepted(outcome);
         } else
           setError({
             scope: flight.scope,
+            uncertain: outcome?.status !== "refused",
             message:
               (outcome?.status === "accepted" ? undefined : wardCommandFailure(outcome || undefined)) ??
               SAVE_NOT_CONFIRMED,
@@ -109,10 +110,11 @@ export function useWardFormSave(scope: string) {
   const awaiting = view.held.get(key);
   const isPending = view.flights.has(key) || holding(awaiting);
   const shownError = error?.scope === scopeToken ? error.message : holding(awaiting) ? SAVE_NOT_CONFIRMED : undefined;
+  const uncertain = holding(awaiting) || (error?.scope === scopeToken && error.uncertain === true);
   // One object per change of what a form shows, not per render (review of PR #1326): callers such
   // as the tasks drawer's escalation guard list this hook's result as a callback dependency.
   return useMemo(
-    () => ({ pending: isPending, error: shownError, clearError, forget, submit }),
-    [isPending, shownError, clearError, forget, submit],
+    () => ({ pending: isPending, uncertain, error: shownError, clearError, forget, submit }),
+    [isPending, uncertain, shownError, clearError, forget, submit],
   );
 }

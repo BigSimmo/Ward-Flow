@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { NextRequest } from "next/server";
 
 import {
@@ -10,7 +11,7 @@ import {
   frontDoorSecret,
   issuePass,
 } from "@/lib/front-door-pass";
-import { countWrongTry, edgeAddress, tooManyTries } from "@/lib/demo-code-tries";
+import { edgeAddress, reserveDemoTry } from "@/lib/demo-code-tries";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -97,11 +98,17 @@ export async function POST(request: NextRequest) {
   if (!frontDoorRequired()) return answer(204);
   const secret = frontDoorSecret();
   if (!secret) return answer(503, "Sign-in is not set up on this server yet. Tell the Ward Flow coordinator.");
-  let body: { token?: unknown; demoCode?: unknown };
+  let body: { token?: string; demoCode?: string };
   try {
     const parsed: unknown = await request.json();
-    if (parsed === null || typeof parsed !== "object" || Array.isArray(parsed)) return answer(400, "Sign in again.");
-    body = parsed as typeof body;
+    const checked = z
+      .union([
+        z.object({ token: z.string().min(1).max(8192) }).strict(),
+        z.object({ demoCode: z.string().min(1).max(256) }).strict(),
+      ])
+      .safeParse(parsed);
+    if (!checked.success) return answer(400, "Sign in again.");
+    body = checked.data;
   } catch {
     return answer(400, "Sign in again.");
   }
@@ -111,11 +118,12 @@ export async function POST(request: NextRequest) {
     // The signed-in site never opens with a demo code: only an account opens it.
     if (process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED === "true") return answer(400, "Sign in with your account.");
     const address = edgeAddress(request.headers);
-    if (tooManyTries(address, now)) return answer(429, "Too many tries. Wait 10 minutes, then try again.");
+    const release = reserveDemoTry(address, now);
+    if (!release) return answer(429, "Too many tries. Wait 10 minutes, then try again.");
     if (!(await demoCodeMatches(body.demoCode))) {
-      countWrongTry(address, now);
       return answer(401, "That demo code is not right. Check it and try again.");
     }
+    release();
     const pass = await issuePass(secret, { kind: "demo", hours: DEMO_PASS_HOURS }, now);
     return withPass(request, pass.value, pass.maxAge);
   }

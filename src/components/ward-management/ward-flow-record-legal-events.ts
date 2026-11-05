@@ -117,7 +117,13 @@ export function reduceRecordedLegalEvent(
         : isExtension
           ? ("extension" as const)
           : ("written_on_form" as const);
-      const historyEntry = { at: event.now, by: event.role, dueAt: event.dueAt, basis };
+      const historyEntry = {
+        at: event.now,
+        by: event.role,
+        dueAt: event.dueAt,
+        basis,
+        formInstance: movement.legalForm.earlierForms?.length ?? 0,
+      };
       const updated: Movement = {
         ...movement,
         legalForm: { ...movement.legalForm, dueAt: event.dueAt },

@@ -56,6 +56,24 @@ export function inEdOver(movement: Movement, now: Instant, minutes: number): boo
   return isOpen(movement) && isWaitingInEd(movement) && Math.max(0, now - movement.openedAt) >= minutes;
 }
 
+/**
+ * WAIT CLOCKS (WF-02, Josh 5 Nov 2026): "waiting" means TIME SINCE REFERRAL, and that is the main
+ * figure everywhere a wait is shown. Time in the department is a separate figure that always
+ * carries the words "in ED". These two are the only clocks a screen reads, so two screens never
+ * print different waits for one person under the same word.
+ *
+ * `minutesSinceReferral` is undefined when no referral time is recorded: it never falls back to
+ * `openedAt` (see `Movement.referredAt`), so a screen shows the in-ED figure, labelled, instead.
+ */
+export function minutesSinceReferral(movement: Pick<Movement, "referredAt">, now: Instant): number | undefined {
+  return movement.referredAt === undefined ? undefined : Math.max(0, now - movement.referredAt);
+}
+
+/** Time in the department, counted up from `openedAt`. Always labelled "in ED" where printed. */
+export function minutesInEd(movement: Pick<Movement, "openedAt">, now: Instant): number {
+  return Math.max(0, now - movement.openedAt);
+}
+
 /** All ED-origin journeys remain open during transport; this is not physical ED occupancy. */
 export function openEdJourneys(
   movements: readonly Movement[],

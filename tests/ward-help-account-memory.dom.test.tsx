@@ -52,7 +52,7 @@ afterEach(() => {
 });
 
 describe("Help remembered by account", () => {
-  it("combines the account and the device at sign-in, and sends only what the account lacks", async () => {
+  it("applies account marks at sign-in without uploading unowned device marks", async () => {
     localStorage.setItem(TOUR_SEEN_STORAGE_KEY, "ward");
     localStorage.setItem(HELP_HINTS_KEY, "ward:ward");
     localStorage.setItem(WHATS_NEW_STORAGE_KEY, JSON.stringify(["2026-11-03-home-flow"]));
@@ -62,7 +62,7 @@ describe("Help remembered by account", () => {
         : account({ tours: ["coordinator"], tips: ["coordinator:capacity"], whatsNew: ["2026-11-04-a"] }),
     );
     mount(call);
-    await waitFor(() => expect(call).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(call).toHaveBeenCalledTimes(1));
     expect(localStorage.getItem(TOUR_SEEN_STORAGE_KEY)?.split(",").sort()).toEqual(["coordinator", "ward"]);
     expect(localStorage.getItem(HELP_HINTS_KEY)?.split(",").sort()).toEqual(["coordinator:capacity", "ward:ward"]);
     expect(JSON.parse(localStorage.getItem(WHATS_NEW_STORAGE_KEY) ?? "[]").sort()).toEqual([
@@ -71,7 +71,7 @@ describe("Help remembered by account", () => {
     ]);
     // The tour was offered on another device, so it is not offered again here.
     expect(localStorage.getItem(AUTO_DONE)).toBe("coordinator");
-    expect(call.mock.calls[1][0]).toEqual({ tours: ["ward"], tips: ["ward:ward"], whatsNew: ["2026-11-03-home-flow"] });
+    expect(call.mock.calls[0][0]).toBeUndefined();
   });
 
   it("sends later marks together, and tips off only when the person changes it", async () => {
@@ -91,6 +91,41 @@ describe("Help remembered by account", () => {
     });
     expect(call).toHaveBeenCalledTimes(2);
     expect(call.mock.calls[1][0]).toEqual({ tours: ["ed"], tips: ["ed:ed-board"], tipsOff: false });
+  });
+
+  it("does not upload the previous account's marks when the signed-in account changes", async () => {
+    const first = vi.fn(async () => account({ tours: ["ward"] }));
+    const second = vi.fn(async (body?: Record<string, unknown>) => account(body));
+    const tree = (actorId: string, preferences: SharedAccessApi["preferences"]) =>
+      createElement(
+        SharedAccessContext.Provider,
+        { value: { api: { preferences } as SharedAccessApi, actorId } },
+        createElement(WardHelpAccountMemory),
+      );
+    const view = render(tree("synthetic-account-a", first));
+    await waitFor(() => expect(localStorage.getItem(TOUR_SEEN_STORAGE_KEY)).toBe("ward"));
+    view.rerender(tree("synthetic-account-b", second));
+    await waitFor(() => expect(second).toHaveBeenCalledTimes(1));
+    vi.useFakeTimers();
+    act(() => markTourSeen("ed"));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(second).toHaveBeenCalledTimes(2);
+    expect(second.mock.calls[1]?.[0]).toEqual({ tours: ["ed"] });
+    expect(first).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not upload a device tips choice made before sign-in", async () => {
+    setHelpTipsOff(true);
+    const call = vi.fn(async () => account());
+    mount(call);
+    await waitFor(() => expect(call).toHaveBeenCalledTimes(1));
+    vi.useFakeTimers();
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(call).toHaveBeenCalledTimes(1);
   });
 
   it("before migration 17, or when the server is unreachable, the device's memory stands", async () => {

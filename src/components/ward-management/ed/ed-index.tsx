@@ -1,5 +1,6 @@
 "use client";
 
+import { minutesInEd, minutesSinceReferral } from "@/components/ward-management/ward-shared-figures";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState, useSyncExternalStore, type ComponentProps } from "react";
@@ -168,7 +169,8 @@ export function EdIndex() {
     return edHomeSummaries(movements, now, accessTarget).map((summary) => {
       const people = summary.open
         .map((movement): EdPerson => {
-          const wait = Math.max(0, now - movement.openedAt);
+          const wait = minutesInEd(movement, now);
+          const sinceReferral = minutesSinceReferral(movement, now);
           const destination = movement.acceptedUnitId
             ? units.find((unit) => unit.id === movement.acceptedUnitId)?.name
             : undefined;
@@ -180,6 +182,7 @@ export function EdIndex() {
             umrn: resolved.umrn,
             href: patientHref(person?.id ?? movement.id),
             wait,
+            sinceReferral,
             clock: wait >= accessTarget ? "past" : wait >= ED_SEVERE_PRESSURE_WAIT_MINUTES ? "severe" : "in",
             stage: STAGE_LABEL[movement.stage],
             destination,

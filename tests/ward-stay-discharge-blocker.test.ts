@@ -104,6 +104,70 @@ describe("a stay-level discharge blocker, recorded before any bed release exists
     expect(history[1]).toEqual({ at: NOW + 5, by: "coordinator", blocker: BED_RELEASE_BLOCKERS[1] });
   });
 
+  it("WF-23: logs every recorded hold-up with its time and role", () => {
+    const state = seedWardFlowState();
+    const person = anOccupantWithNoBlocker(state);
+    const blocked = record(state, person.id, person.unitId, BED_RELEASE_BLOCKERS[0]);
+    const records = find(blocked, person.id).stayBlockRecords ?? [];
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ blocker: BED_RELEASE_BLOCKERS[0] });
+    expect(Number.isFinite(records[0]!.at)).toBe(true);
+    expect(typeof records[0]!.by).toBe("string");
+  });
+
+  it("refuses a non-finite time before appending a hold-up record", () => {
+    const state = seedWardFlowState();
+    const person = anOccupantWithNoBlocker(state);
+    const next = wardFlowReducer(state, {
+      type: "RECORD_STAY_DISCHARGE_BLOCKER",
+      role: "ward",
+      now: Number.NaN,
+      admissionId: person.id,
+      actingUnitId: person.unitId,
+      blocker: BED_RELEASE_BLOCKERS[0],
+    });
+    expect(next.rejections.length).toBe(state.rejections.length + 1);
+    expect(find(next, person.id).blockReason).toBeNull();
+    expect(find(next, person.id).stayBlockRecords ?? []).toHaveLength(0);
+  });
+
+  it("logs a blocker supplied on a bed-release flag, and a recorded repeat of the same hold-up", () => {
+    const state = seedWardFlowState();
+    const person = anOccupantWithNoBlocker(state);
+    const flagged = wardFlowReducer(state, {
+      type: "FLAG_BED_RELEASE",
+      role: "ward",
+      now: NOW,
+      unitId: person.unitId,
+      actingUnitId: person.unitId,
+      admissionId: person.id,
+      waitingOn: "Nothing outstanding",
+      expectedAt: NOW + 60,
+      blocker: BED_RELEASE_BLOCKERS[0],
+    } as Parameters<typeof wardFlowReducer>[1]);
+    expect(flagged.rejections.length).toBe(state.rejections.length);
+    expect(find(flagged, person.id).stayBlockRecords).toEqual([
+      { at: NOW, by: "ward", blocker: BED_RELEASE_BLOCKERS[0] },
+    ]);
+    const release = flagged.bedReleases.find((r) => r.admissionId === person.id && r.state !== "discharged");
+    if (!release) throw new Error("the flag made no release");
+    const again = wardFlowReducer(flagged, {
+      type: "BLOCK_BED_RELEASE",
+      role: "ward",
+      now: NOW + 5,
+      releaseId: release.id,
+      actingUnitId: person.unitId,
+      blocker: BED_RELEASE_BLOCKERS[0],
+    } as Parameters<typeof wardFlowReducer>[1]);
+    expect(again.rejections.length).toBe(state.rejections.length);
+    expect(find(again, person.id).stayBlockRecords).toHaveLength(2);
+    expect(find(again, person.id).stayBlockRecords?.[1]).toEqual({
+      at: NOW + 5,
+      by: "ward",
+      blocker: BED_RELEASE_BLOCKERS[0],
+    });
+  });
+
   it("refuses a reason that is not on the chosen list, so typed text can never be stored", () => {
     const state = seedWardFlowState();
     const person = anOccupantWithNoBlocker(state);

@@ -17,6 +17,7 @@ import {
 } from "./movements-derivations";
 import { Ambulance, ArrowRightLeft, ChartColumn, ChevronRight, ListFilter } from "lucide-react";
 import { PhoneSheet, buttonClass } from "@/components/wf";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { MovementHorizonGantt } from "./movement-horizon-gantt-lazy";
 import type { rankCorridorPairs } from "./movement-corridor-pairs";
 import flow from "./movement-flow.module.css";
@@ -74,6 +75,8 @@ export function MovementsPhoneNav({
   units: Unit[];
   withoutTransport: number;
 }) {
+  // WF-10: only a role that may open the Transport desk is offered the link to it.
+  const canOpenHref = useCanOpenHref();
   return (
     <nav className={flow.phNav} aria-label="Movement panels">
       <button type="button" className={flow.phNavCard} onClick={() => startTransition(() => setPhoneSheet("arrivals"))}>
@@ -213,13 +216,15 @@ export function MovementsPhoneNav({
         ) : (
           <div className={flow.phList}>{transportFeed(() => setPhoneSheet(null))}</div>
         )}
-        <Link
-          href="/ward-flow/transport/officer"
-          className={buttonClass({ variant: "pri", className: flow.phSheetAction })}
-        >
-          <Ambulance size={16} aria-hidden="true" />
-          Open transport dispatch
-        </Link>
+        {canOpenHref("/ward-flow/transport/officer") ? (
+          <Link
+            href="/ward-flow/transport/officer"
+            className={buttonClass({ variant: "pri", className: flow.phSheetAction })}
+          >
+            <Ambulance size={16} aria-hidden="true" />
+            Open transport dispatch
+          </Link>
+        ) : null}
       </PhoneSheet>
     </nav>
   );

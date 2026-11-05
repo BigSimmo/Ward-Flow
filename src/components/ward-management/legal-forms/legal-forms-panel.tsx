@@ -1,6 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useWardFormSave } from "../use-ward-form-save";
+import type { WardCommandDispatch } from "../ward-shared-client";
+import { useWardDraftAcceptance } from "../use-ward-draft-acceptance";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Check, Clock, Copy, ExternalLink, X } from "lucide-react";
 
@@ -92,7 +95,7 @@ export function FocusPanel({
   focusGap: { gap: RecordGap; nonce: number } | null;
   refusal: string | undefined;
   /** Records the written time; `onAccepted` runs only once the engine accepts it. */
-  onSaveWritten: (draft: WrittenSave, onAccepted: () => void) => void;
+  onSaveWritten: (draft: WrittenSave, onAccepted: () => void) => ReturnType<WardCommandDispatch>;
   /** Feature 11: why this route's role may not record a form time, if it may not. */
   recordUnavailable?: string;
   /** Gap list item 1: the time typed from the paper, or undefined to mark it received now. */
@@ -107,7 +110,7 @@ export function FocusPanel({
   extendUnavailable?: string;
   onRecordNext: () => void;
   /** Gap list items 3 to 7: saves the details typed from the paper. */
-  onSaveDetails: (details: LegalFormDetailsSave, onAccepted: () => void) => void;
+  onSaveDetails: (details: LegalFormDetailsSave, onAccepted: () => void) => ReturnType<WardCommandDispatch>;
   /** Why this desk may not record form details, if it may not. */
   detailsUnavailable?: string;
   onRequirements: (code: string) => void;
@@ -120,6 +123,8 @@ export function FocusPanel({
   const recordedDraft = (): WrittenDraft => writtenDraftFor(legalForm);
   const [draft, setDraft] = useState<WrittenDraft>(recordedDraft);
   const [changing, setChanging] = useState(false);
+  const writtenCommand = useWardFormSave(`legal-written:${movement.id}`);
+  const acceptWrittenDraft = useWardDraftAcceptance(JSON.stringify(draft), changing || movement.formedAt === undefined);
   const dateRef = useRef<HTMLInputElement | null>(null);
   const receivedRef = useRef<HTMLButtonElement | null>(null);
   const examRef = useRef<HTMLAnchorElement | null>(null);
@@ -143,9 +148,10 @@ export function FocusPanel({
     event.preventDefault();
     // Region is sent only when chosen. Omitted, a same-form time edit keeps the recorded region.
     const written = writtenSaveOf(draft, now, dayZero);
-    if (recordUnavailable || !written) return;
+    if (recordUnavailable || !written || writtenCommand.pending) return;
     // The Change form closes only on an accepted save; a refusal keeps it open with its reason.
-    onSaveWritten(written, () => setChanging(false));
+    const accepted = acceptWrittenDraft(() => setChanging(false));
+    writtenCommand.submit(() => onSaveWritten(written, accepted), accepted);
   };
 
   const step = nextStep(movement, now);
@@ -256,12 +262,17 @@ export function FocusPanel({
                   size="sm"
                   data-testid={`ward-legal-forms-written-confirm-${movement.id}`}
                   aria-describedby={`ward-legal-forms-clock-preview-${movement.id}`}
-                  disabledReason={recordUnavailable ?? writtenProblem}
+                  disabledReason={writtenCommand.pending ? "Saving" : (recordUnavailable ?? writtenProblem)}
                   reasonDisplay="tooltip"
                 >
                   Save time written
                 </Button>
               </div>
+              {writtenCommand.error ? (
+                <p className={styles.note} role="alert">
+                  {writtenCommand.error}
+                </p>
+              ) : null}
               {refusal ? (
                 <p className={styles.note} data-testid={`ward-legal-forms-written-refusal-${movement.id}`}>
                   Not recorded: {refusal}

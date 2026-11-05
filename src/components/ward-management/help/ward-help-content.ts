@@ -326,7 +326,7 @@ const PAGE_HELP: readonly PageHelp[] = [
     title: "Stays and discharges",
     purpose: "Every bed on one ward, who is in it, who is coming in and who is going out today and tomorrow.",
     actions: [
-      "Choose a bed to see its patient. Move the date, Record a blocker or Record that they have left.",
+      "Choose a bed to see its patient. Move the date, Record hold-up or Record that they have left.",
       "Before handover lists beds out of service and people due out.",
       "Show shift brief opens the ward's sheet for the shift.",
     ],

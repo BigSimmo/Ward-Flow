@@ -30,7 +30,11 @@ import { isConfirmationFresh } from "@/components/ward-management/capacity/capac
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { type DueSoonThresholds, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
-import { isOpen, wardServiceOrder } from "@/components/ward-management/ward-derivations";
+import {
+  isOpen,
+  isStoppedTransportAwaitingRelease,
+  wardServiceOrder,
+} from "@/components/ward-management/ward-derivations";
 import type { BedRelease, HealthService, LeaveBed, Movement, Unit } from "@/components/ward-management/ward-model";
 import {
   edHealthService,
@@ -41,6 +45,7 @@ import {
 import { allEmergencyDepartments, edById, edShortName } from "@/components/ward-management/ward-sites";
 import { waitlistStands } from "@/components/ward-management/ward-waitlist";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
+import { deliveredAwaitingWard, movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
 
 /**
  * THE WARD AND ED TV VIEWS (Josh, 15 Oct 2026): the bed meeting TV, narrowed to one ward or one
@@ -100,6 +105,8 @@ function waitingOnWard(movement: Movement, unitId: string): boolean {
  * as hours in an ambulance. Any other row keeps its stage label.
  */
 function stageText(movement: Movement, label: string, now: Instant): string {
+  if (isStoppedTransportAwaitingRelease(movement)) return "Transport stopped, release pulled bed";
+  if (deliveredAwaitingWard(movement)) return movementStatusLabel(movement);
   const collectedAt = movement.transport?.collectedAt;
   if (collectedAt === undefined || movement.transport?.cancelledAt !== undefined || movement.stage === "arrived")
     return label;
@@ -185,7 +192,11 @@ export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
     .map((movement) => row(movement, ED_STAGE_LABELS[movement.stage]))
     .sort(byWaitThenId);
   const onTheWay = open.filter(
-    (movement) => movement.acceptedUnitId === unit.id && ED_LEAVING_STAGES.includes(movement.stage),
+    (movement) =>
+      movement.acceptedUnitId === unit.id &&
+      ED_LEAVING_STAGES.includes(movement.stage) &&
+      !deliveredAwaitingWard(movement) &&
+      !isStoppedTransportAwaitingRelease(movement),
   ).length;
   const asked = open
     .filter((movement) => waitingOnWard(movement, unit.id))

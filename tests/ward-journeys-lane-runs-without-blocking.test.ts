@@ -29,7 +29,7 @@ describe("the public Ward Flow browser journeys lane", () => {
     // prepared build, static checks and production build (cheap first); only verified main reuse can intentionally skip a selected group.
     const header = browser.slice(0, browser.indexOf("    steps:"));
     expect(header.match(/^ {4}if:.*$/gmu)).toEqual([
-      "    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.verified != 'true' && github.event.pull_request.draft != true && needs.browser-build.result == 'success' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && needs.plan.outputs.build != 'true')) }}",
+      "    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.browser_verified != 'true' && github.event.pull_request.draft != true && needs.browser-build.result == 'success' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true'))) }}",
     ]);
     expect(job("reuse")).toContain("if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}");
     expect(browser).not.toContain("WARD_JOURNEYS_BLOCKING");
@@ -68,9 +68,9 @@ describe("the public Ward Flow browser journeys lane", () => {
     );
     expect(required).toContain("BROWSER_RESULT: ${{ needs.browser.result }}");
     expect(required).toContain("RELEASE_GATE_RESULT: ${{ needs.release-gate.result }}");
-    expect(required).toContain('require_scope "$BROWSER_SCOPE" "$BROWSER_RESULT"');
-    expect(required).toContain('require_scope "$BROWSER_SCOPE" "$BROWSER_BUILD_RESULT"');
-    expect(required).toContain('require_scope "$BROWSER_SCOPE" "$RELEASE_GATE_RESULT"');
+    expect(required).toContain('require_gate "$BROWSER_SCOPE" "$BROWSER_RESULT" "$BROWSER_REUSED"');
+    expect(required).toContain('test "$BROWSER_BUILD_RESULT" = success');
+    expect(required).toContain('require_gate "$BROWSER_SCOPE" "$RELEASE_GATE_RESULT" "$RELEASE_REUSED"');
     expect(required).toContain('if [ "$1" = true ]; then test "$2" = success;');
     expect(required).toContain('elif [ "$1" = false ]; then test "$2" = skipped;');
     // On a verified main reuse the browser groups must be skipped, not failed or cancelled.

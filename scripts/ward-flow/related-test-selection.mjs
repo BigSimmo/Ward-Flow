@@ -1,5 +1,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
+import ts from "typescript";
+import { staticModuleReferences } from "./test-module-dependencies.mjs";
 import { isOfflineUnitTestFile } from "../unit-test-population.mjs";
 
 // These contracts inspect source bytes rather than importing the modules they protect.
@@ -52,10 +54,14 @@ export function selectRelatedTests({ root, changed, cap = 60, includeSourceGuard
     );
   };
   const importers = new Map();
+  let incomplete = false;
   for (const file of files) {
     const source = readFileSync(path.join(root, file), "utf8");
-    for (const match of source.matchAll(/(?:from\s+|import\s*\(\s*|import\s+|require\(\s*)["']([^"']+)["']/gu)) {
-      const target = resolve(file, match[1]);
+    const parsed = staticModuleReferences(ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true));
+    if (parsed.uncertain) incomplete = true;
+    for (const { specifier } of parsed.references) {
+      const target = resolve(file, specifier);
+      if (!target && (specifier.startsWith(".") || specifier.startsWith("@/"))) incomplete = true;
       if (target) {
         if (!importers.has(target)) importers.set(target, new Set());
         importers.get(target).add(file);
@@ -107,11 +113,15 @@ export function selectRelatedTests({ root, changed, cap = 60, includeSourceGuard
     selected,
     sourceGuards,
     deferredSourceGuards: includeSourceGuards ? [] : sourceGuards,
-    partial: partial || (!includeSourceGuards && sourceGuards.length > 0),
+    partial: incomplete || partial || (!includeSourceGuards && sourceGuards.length > 0),
     transitiveCount: transitive.size,
     directCount: direct.size,
-    note: partial
-      ? `fan-out capped: ${transitive.size} related, ${direct.size} direct; running ${selected.length} selected files. The batch gate covers the rest.`
-      : `${selected.length} related test file(s) for ${inputs.length} changed file(s)`,
+    note:
+      (incomplete
+        ? "unresolved module loads: selection is incomplete; the full unit gate must cover the remainder. "
+        : "") +
+      (partial
+        ? `fan-out capped: ${transitive.size} related, ${direct.size} direct; running ${selected.length} selected files. The batch gate covers the rest.`
+        : `${selected.length} related test file(s) for ${inputs.length} changed file(s)`),
   };
 }

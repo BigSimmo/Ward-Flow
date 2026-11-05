@@ -1,3 +1,4 @@
+import type { AuditDecision } from "./ward-audit";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import type { WardFlowState } from "@/components/ward-management/ward-flow-reducer";
@@ -23,7 +24,7 @@ export function observationEditingToken(
 /**
  * A CHANGE OF OBSERVATION LEVEL (fix plan item 10), the only writer of `observation` after intake.
  * Targets the open movement, or the admission once a bed is held; the movement and its live
- * admission change together and append `{ at, from, to }` to `observationChanges`. Refused for an
+ * admission change together and append `{ at, from, to, sequence }` to `observationChanges`. Refused for an
  * invalid level or interval, or no change. Raising an occupied bed's level beyond the ward's staff
  * is not refused here: the capacity refusal stays at `PULL_PATIENT`. Declared here beside its case so
  * `ward-flow-events.ts` stays under its line cap. Part of `WardFlowEvent`.
@@ -59,6 +60,7 @@ export function reduceObservationLevelEvent(
   state: WardFlowState,
   event: ObservationLevelEvent,
   helpers: ObservationLevelHelpers,
+  decision?: AuditDecision,
 ): WardFlowState {
   const { findAdmission, findMovement, reject, replaceAdmission, replaceMovement } = helpers;
   const level = event.observation;
@@ -151,13 +153,32 @@ export function reduceObservationLevelEvent(
   }
   if (current && sameObservation(current, level)) return reject(state, event, "this is the level already recorded");
 
+  // Observation edits are not all audit events. Order them from retained histories rather than
+  // the minute clock or audit counter, across both legacy halves of a journey.
+  let latestSequence = 0;
+  for (const rows of [state.movements, state.admissions]) {
+    for (const row of rows) {
+      for (const change of row.observationChanges ?? [])
+        latestSequence = Math.max(latestSequence, change.sequence ?? 0);
+    }
+  }
+  const sequence = latestSequence + 1;
+  if (!Number.isSafeInteger(sequence))
+    return reject(state, event, "Observation history is full. This change cannot be saved.");
   const changed = <T extends Movement | Admission>(row: T): T => ({
     ...row,
     observation: level,
-    observationChanges: [...(row.observationChanges ?? []), { at: event.now, from: row.observation, to: level }],
+    observationChanges: [
+      ...(row.observationChanges ?? []),
+      { at: event.now, from: row.observation, to: level, sequence },
+    ],
   });
   let next = state;
   if (movement) next = replaceMovement(next, movement.id, changed(movement));
   if (admission) next = replaceAdmission(next, admission.id, changed(admission));
+  if (decision) {
+    decision.outcome = "accepted";
+    decision.reasonCode = "none";
+  }
   return next;
 }

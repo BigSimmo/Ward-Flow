@@ -6,7 +6,7 @@ import {
 } from "../src/components/ward-management/ward-shared-client";
 import type { WardFlowEvent } from "../src/components/ward-management/ward-flow-events";
 import { seedWardFlowStateAt } from "../src/components/ward-management/ward-flow-reducer";
-import { popSheet, pushSheet } from "../src/components/wf/sheet-focus";
+import { holdOpenForm, popSheet, pushSheet } from "../src/components/wf/sheet-focus";
 
 // Audit CS-19: an edit made from a popup is checked against the board the popup opened on, so a
 // change another desk made while the person was looking is reported instead of overwritten.
@@ -68,6 +68,28 @@ function setup(
 }
 
 describe("an edit made from a popup (audit CS-19)", () => {
+  it("keeps an inline save's proof when a newer dialog is opened before the next command", async () => {
+    const record = "0123456789abcdef";
+    let calls = 0;
+    const { client, board, sent, seen } = setup(() =>
+      ++calls === 1 ? { revision: 3, covered: [record] } : { revision: 4 },
+    );
+    await client.refresh();
+    const release = holdOpenForm();
+    try {
+      board.revision = 2;
+      await client.refresh();
+      expect((await client.dispatch(event)).status).toBe("accepted");
+      open("release-pulled-bed");
+      expect((await client.dispatch(event)).status).toBe("accepted");
+      expect(sent).toEqual([1, 1]);
+      expect(seen[1]).toEqual({ [record]: 3 });
+    } finally {
+      release();
+      client.dispose();
+    }
+  });
+
   it("is checked against the board the popup opened on, then works once the person has seen the change", async () => {
     let calls = 0;
     const { client, board, sent, view } = setup(() => (++calls === 1 ? { status: 409, revision: 2 } : { revision: 3 }));

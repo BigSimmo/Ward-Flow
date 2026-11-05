@@ -1,7 +1,8 @@
 "use client";
 
 import type { ReactNode, RefObject } from "react";
-import { Button, cx } from "@/components/wf";
+import { Button, cx, useOptionalToast } from "@/components/wf";
+import { savedAtToast } from "@/components/ward-management/ward-saved-at-toast";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
 import { BED_RELEASE_BLOCKERS, type BedReleaseBlocker } from "@/components/ward-management/ward-change-reasons";
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
@@ -22,12 +23,17 @@ export function useBlockerSave(
   setOpen: (open: boolean) => void,
 ) {
   const save = useWardFormSave(`blocker:${stayKey ?? ""}`);
+  const toast = useOptionalToast();
   const submit =
     onUpdateBlocker && admissionId
       ? (blocker: BedReleaseBlocker | null) =>
           save.submit(
             () => onUpdateBlocker(admissionId, blocker),
-            () => setOpen(false),
+            () => {
+              setOpen(false);
+              // a clear on-screen confirmation with the time of the save.
+              savedAtToast(toast, blocker ? `Hold-up saved: ${blocker}` : "Hold-up cleared");
+            },
           )
       : undefined;
   return {

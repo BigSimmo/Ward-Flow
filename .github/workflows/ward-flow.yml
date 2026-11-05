@@ -7,7 +7,8 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
-  merge_group: null
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch: null
   schedule:
     - cron: 0 18 * * *
@@ -53,11 +54,11 @@ jobs:
       - name: Plan Ward scope
         id: plan
         env:
-          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/ward-ci-public/plan.mjs
       - name: Verify the scope plan against the diff
         env:
-          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
           WARD_PLAN_FULL: ${{ steps.plan.outputs.full }}
           WARD_PLAN_UNIT: ${{ steps.plan.outputs.unit }}
           WARD_PLAN_BROWSER: ${{ steps.plan.outputs.browser }}
@@ -113,6 +114,11 @@ jobs:
     outputs:
       verified: ${{ steps.check.outputs.verified }}
       backend_verified: ${{ steps.check.outputs.backend_verified }}
+      unit_verified: ${{ steps.check.outputs.unit_verified }}
+      coverage_verified: ${{ steps.check.outputs.coverage_verified }}
+      browser_verified: ${{ steps.check.outputs.browser_verified }}
+      release_verified: ${{ steps.check.outputs.release_verified }}
+      build_verified: ${{ steps.check.outputs.build_verified }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -258,7 +264,7 @@ jobs:
   backend:
     name: Ward Flow backend and shared production proof
     needs: [plan, reuse]
-    if: ${{ !cancelled() && needs.plan.outputs.backend == 'true' && needs.reuse.outputs.backend_verified != 'true' }}
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.backend == 'true' && needs.reuse.outputs.backend_verified != 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 35
     services:
@@ -305,23 +311,35 @@ jobs:
         id: shared-version
         if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
         run: echo "version=$(node -p "require('playwright-core/package.json').version")" >> "$GITHUB_OUTPUT" && echo "image=${ImageOS:-unknown}-${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
+      - name: Restore shared-mode Chromium
+        id: shared-cache
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ~/.cache/ms-playwright
+          key: ward-playwright-${{ runner.os }}-${{ steps.shared-version.outputs.version }}
       # Read-only reuse of the release gate's main-saved apt cache, as in the browser journeys.
       - name: Restore release system packages
         if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ~/.cache/ward-release-apt
-          key: ward-release-apt-${{ runner.os }}-${{ steps.shared-version.outputs.version }}-${{ steps.shared-version.outputs.image }}
-          restore-keys: ward-release-apt-${{ runner.os }}-${{ steps.shared-version.outputs.version }}-
+          key: ward-release-apt-${{ runner.os }}-chromium-${{ steps.shared-version.outputs.version }}-${{ steps.shared-version.outputs.image }}
+          restore-keys: |
+            ward-release-apt-${{ runner.os }}-chromium-${{ steps.shared-version.outputs.version }}-
+            ward-release-apt-${{ runner.os }}-${{ steps.shared-version.outputs.version }}-
       - name: Seed release system packages
         if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
         run: node scripts/ward-ci-public/apt-archive-cache.mjs seed "$HOME/.cache/ward-release-apt"
-      - name: Install Chromium for the shared-mode journey
+      - name: Install Chromium and WebKit for the shared-mode journeys
         id: shared-chromium
         timeout-minutes: 10
         if: ${{ !cancelled() && steps.install.outcome == 'success' && steps.backend-install.outcome == 'success' }}
+        env:
+          PLAYWRIGHT_CACHE_HIT: ${{ steps.shared-cache.outputs.cache-hit }}
         run: |
           node scripts/ward-ci-public/install-chromium.mjs
+          node node_modules/playwright/cli.js install --with-deps webkit
       - name: Run the shared-mode browser journey
         timeout-minutes: 20
         if: ${{ !cancelled() && steps.shared-chromium.outcome == 'success' }}
@@ -345,7 +363,7 @@ jobs:
   unit:
     name: Ward Flow unit shard ${{ matrix.shard }}
     needs: [plan, reuse, static, build]
-    if: ${{ !cancelled() && needs.plan.outputs.unit == 'true' && needs.reuse.outputs.verified != 'true' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && needs.plan.outputs.build != 'true')) }}
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.unit == 'true' && needs.reuse.outputs.unit_verified != 'true' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true'))) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
@@ -410,7 +428,6 @@ jobs:
           WARD_COVERAGE_BLOB_DIR: ${{ runner.temp }}/ward-coverage-blobs
           WARD_FULL_GATE_STATE_DIR: ${{ runner.temp }}/ward-unit-state
           WARD_TEST_PROFILE_DIR: ${{ runner.temp }}/ward-profile
-          DEBUG: vitest:coverage
         run: npm run check:ward-expected-reds -- --print-signatures
       # Evidence for the main reuse check: a pull request run that left the sweep out cannot stand
       # in for main, so main runs the shards again.
@@ -448,7 +465,7 @@ jobs:
   browser-build:
     name: Ward Flow prepared browser build
     needs: [plan, reuse]
-    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.verified != 'true' && github.event.pull_request.draft != true }}
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.browser == 'true' && (needs.reuse.outputs.browser_verified != 'true' || needs.reuse.outputs.release_verified != 'true') && github.event.pull_request.draft != true }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
@@ -507,7 +524,7 @@ jobs:
   browser:
     name: Ward Flow browser journeys ${{ matrix.group }}
     needs: [plan, reuse, browser-build, static, build]
-    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.verified != 'true' && github.event.pull_request.draft != true && needs.browser-build.result == 'success' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && needs.plan.outputs.build != 'true')) }}
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.browser_verified != 'true' && github.event.pull_request.draft != true && needs.browser-build.result == 'success' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true'))) }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     strategy:
@@ -560,8 +577,10 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ~/.cache/ward-release-apt
-          key: ward-release-apt-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}-${{ steps.playwright-version.outputs.image }}
-          restore-keys: ward-release-apt-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}-
+          key: ward-release-apt-${{ runner.os }}-chromium-${{ steps.playwright-version.outputs.version }}-${{ steps.playwright-version.outputs.image }}
+          restore-keys: |
+            ward-release-apt-${{ runner.os }}-chromium-${{ steps.playwright-version.outputs.version }}-
+            ward-release-apt-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}-
       - name: Seed release system packages
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node scripts/ward-ci-public/apt-archive-cache.mjs seed "$HOME/.cache/ward-release-apt"
@@ -625,6 +644,7 @@ jobs:
         include:
           - pair: phone journeys, referrals and checks
             project: release-gate-phone
+            browser: webkit
             part: journeys
             second_project: release-gate-phone
             second_part: referrals
@@ -632,6 +652,7 @@ jobs:
             third_part: checks
           - pair: desktop journeys, referrals and checks
             project: release-gate-desktop
+            browser: chromium
             part: journeys
             second_project: release-gate-desktop
             second_part: referrals
@@ -673,7 +694,7 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ~/.cache/ms-playwright
-          key: ward-release-browsers-${{ runner.os }}-chromium-webkit-${{ steps.release-version.outputs.version }}
+          key: ward-release-browsers-${{ runner.os }}-${{ matrix.browser }}-${{ steps.release-version.outputs.version }}
       # WebKit's system packages come from the runner's apt mirror, which has run past the install
       # budget. Cached packages are copied where apt-get looks first; a stale one is just downloaded.
       - name: Restore release system packages
@@ -681,16 +702,18 @@ jobs:
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ~/.cache/ward-release-apt
-          key: ward-release-apt-${{ runner.os }}-${{ steps.release-version.outputs.version }}-${{ steps.release-version.outputs.image }}
-          restore-keys: ward-release-apt-${{ runner.os }}-${{ steps.release-version.outputs.version }}-
+          key: ward-release-apt-${{ runner.os }}-${{ matrix.browser }}-${{ steps.release-version.outputs.version }}-${{ steps.release-version.outputs.image }}
+          restore-keys: |
+            ward-release-apt-${{ runner.os }}-${{ matrix.browser }}-${{ steps.release-version.outputs.version }}-
+            ward-release-apt-${{ runner.os }}-${{ steps.release-version.outputs.version }}-
       - name: Seed release system packages
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node scripts/ward-ci-public/apt-archive-cache.mjs seed "$HOME/.cache/ward-release-apt"
-      - name: Install Chromium and WebKit
+      - name: Install the release device browser
         id: browsers
         timeout-minutes: 10
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
-        run: node scripts/ward-ci-public/install-chromium.mjs chromium webkit
+        run: node scripts/ward-ci-public/install-chromium.mjs ${{ matrix.browser }}
         env:
           PLAYWRIGHT_CACHE_HIT: ${{ steps.release-cache.outputs.cache-hit }}
       - name: Collect release system packages on main
@@ -703,7 +726,7 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ~/.cache/ward-release-apt
-          key: ward-release-apt-${{ runner.os }}-${{ steps.release-version.outputs.version }}-${{ steps.release-version.outputs.image }}
+          key: ward-release-apt-${{ runner.os }}-${{ matrix.browser }}-${{ steps.release-version.outputs.version }}-${{ steps.release-version.outputs.image }}
       - name: Run the release-gate journeys
         id: gate
         if: ${{ !cancelled() && steps.browsers.outcome == 'success' }}
@@ -792,22 +815,26 @@ jobs:
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
         with:
           path: ~/.cache/ms-playwright
-          key: ward-release-browsers-${{ runner.os }}-chromium-webkit-${{ steps.release-version.outputs.version }}
-    needs: [plan, browser-build, static, build]
-    if: ${{ !cancelled() && needs.plan.outputs.browser == 'true' && github.event.pull_request.draft != true && needs.browser-build.result != 'skipped' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && needs.plan.outputs.build != 'true')) }}
+          key: ward-release-browsers-${{ runner.os }}-${{ matrix.browser }}-${{ steps.release-version.outputs.version }}
+    needs: [plan, reuse, browser-build, static, build]
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.browser == 'true' && needs.reuse.outputs.release_verified != 'true' && github.event.pull_request.draft != true && needs.browser-build.result == 'success' && needs.static.result == 'success' && (needs.build.result == 'success' || (needs.build.result == 'skipped' && (needs.plan.outputs.build != 'true' || needs.reuse.outputs.build_verified == 'true'))) }}
   build:
     name: Ward Flow production build
     needs: [plan, reuse]
-    if: ${{ !cancelled() && needs.plan.outputs.build == 'true' && needs.reuse.outputs.verified != 'true' }}
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.build == 'true' && needs.reuse.outputs.build_verified != 'true' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 40
+    # actions: read lets the budget gate reuse main's saved measurements instead of building main twice.
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
           fetch-depth: 0
-      # Main has no merge queue and does not require PRs to be up to date, so measure the budget on
-      # this PR merged with the current main; ward-flow-budget-recheck.yml re-runs this job when main moves.
+      # On pull_request, merge the current main before measuring (strict up-to-date is off; the merge queue
+      # will re-check the grouped head). The PR-only merge step below is skipped on merge_group.
       - name: Merge the latest main before measuring
         if: ${{ github.event_name == 'pull_request' }}
         run: node scripts/ward-ci-public/merge-latest-main.mjs
@@ -815,6 +842,9 @@ jobs:
       - name: Record the built tree
         if: ${{ github.event_name == 'pull_request' }}
         run: echo "::notice title=Ward built tree::$(git rev-parse 'HEAD^{tree}')"
+      - name: Record the measured main
+        if: ${{ github.event_name == 'pull_request' }}
+        run: echo "::notice title=Ward budget main::$(git rev-parse refs/remotes/origin/main)"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version-file: .nvmrc
@@ -856,9 +886,12 @@ jobs:
       # this PR grew, so one over-budget merge to main no longer fails every PR (4 Nov 2026).
       - name: Check the phone script budget
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WARD_BUDGET_MAIN_SHA: ${{ github.event.merge_group.base_sha }}
         run: node scripts/ward-ci-public/budget-gate.mjs
-      # ward-flow-budget-heal.yml reads this when main goes over budget and opens a PR raising it.
-      - name: Keep main's phone script measurements for the budget heal
+      # ward-flow-budget-heal.yml reads this when main goes over budget and opens a trim issue.
+      - name: Keep main's phone script measurements for the budget trim issue
         if: ${{ !cancelled() && github.event_name == 'push' && steps.install.outcome == 'success' }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
@@ -880,7 +913,7 @@ jobs:
     name: Ward Flow coverage
     # Merges only a complete set of passing shards: a failed shard already fails Ward Flow required.
     needs: [plan, reuse, unit]
-    if: ${{ !cancelled() && needs.plan.outputs.unit == 'true' && needs.reuse.outputs.verified != 'true' && needs.unit.result == 'success' }}
+    if: ${{ !cancelled() && needs.plan.result == 'success' && needs.plan.outputs.unit == 'true' && needs.reuse.outputs.coverage_verified != 'true' && needs.unit.result == 'success' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -951,6 +984,11 @@ jobs:
         env:
           REUSE_VERIFIED: ${{ needs.reuse.outputs.verified }}
           BACKEND_REUSED: ${{ needs.reuse.outputs.backend_verified }}
+          UNIT_REUSED: ${{ needs.reuse.outputs.unit_verified }}
+          COVERAGE_REUSED: ${{ needs.reuse.outputs.coverage_verified }}
+          BROWSER_REUSED: ${{ needs.reuse.outputs.browser_verified }}
+          RELEASE_REUSED: ${{ needs.reuse.outputs.release_verified }}
+          BUILD_REUSED: ${{ needs.reuse.outputs.build_verified }}
           STATIC_RESULT: ${{ needs.static.result }}
           UNIT_RESULT: ${{ needs.unit.result }}
           BROWSER_RESULT: ${{ needs.browser.result }}
@@ -974,6 +1012,19 @@ jobs:
             elif [ "$1" = false ]; then test "$2" = skipped;
             else return 1; fi
           }
+          require_gate() {
+            case "$3" in
+              true)
+                test "$GITHUB_EVENT_NAME" = push
+                test "$GITHUB_REF" = refs/heads/main
+                test "$REUSE_RESULT" = success
+                test "$1" = true
+                test "$2" = skipped
+                ;;
+              false|"") require_scope "$1" "$2" ;;
+              *) return 1 ;;
+            esac
+          }
           test "$PLAN_RESULT" = success
           test "$STATIC_RESULT" = success
           test "$SECRET_SCAN_RESULT" = success
@@ -989,25 +1040,15 @@ jobs:
             echo "::error title=Draft fast lane::Quick checks passed. Browser, phone and accessibility checks run when this pull request is marked ready; only that run can pass this check."
             exit 1
           fi
-          if [ "$REUSE_VERIFIED" = true ]; then
-            test "$GITHUB_EVENT_NAME" = push
-            test "$GITHUB_REF" = refs/heads/main
-            test "$REUSE_RESULT" = success
-            test "$UNIT_RESULT" = skipped
-            test "$BROWSER_BUILD_RESULT" = skipped
-            test "$BROWSER_RESULT" = skipped
-            test "$BUILD_RESULT" = skipped
-            test "$COVERAGE_RESULT" = skipped
-            test "$RELEASE_GATE_RESULT" = skipped
-            if [ "$BACKEND_REUSED" = true ]; then test "$BACKEND_RESULT" = skipped;
-            else require_scope "$BACKEND_SCOPE" "$BACKEND_RESULT"; fi
+          test "$UNIT_REUSED" = "$COVERAGE_REUSED"
+          require_gate "$BACKEND_SCOPE" "$BACKEND_RESULT" "$BACKEND_REUSED"
+          require_gate "$UNIT_SCOPE" "$UNIT_RESULT" "$UNIT_REUSED"
+          require_gate "$UNIT_SCOPE" "$COVERAGE_RESULT" "$COVERAGE_REUSED"
+          require_gate "$BROWSER_SCOPE" "$BROWSER_RESULT" "$BROWSER_REUSED"
+          require_gate "$BROWSER_SCOPE" "$RELEASE_GATE_RESULT" "$RELEASE_REUSED"
+          require_gate "$BUILD_SCOPE" "$BUILD_RESULT" "$BUILD_REUSED"
+          if [ "$BROWSER_SCOPE" = true ] && { [ "$BROWSER_REUSED" != true ] || [ "$RELEASE_REUSED" != true ]; }; then
+            test "$BROWSER_BUILD_RESULT" = success
           else
-            test "$BACKEND_REUSED" != true
-            require_scope "$BACKEND_SCOPE" "$BACKEND_RESULT"
-            require_scope "$BROWSER_SCOPE" "$RELEASE_GATE_RESULT"
-            require_scope "$UNIT_SCOPE" "$UNIT_RESULT"
-            require_scope "$UNIT_SCOPE" "$COVERAGE_RESULT"
-            require_scope "$BROWSER_SCOPE" "$BROWSER_BUILD_RESULT"
-            require_scope "$BROWSER_SCOPE" "$BROWSER_RESULT"
-            require_scope "$BUILD_SCOPE" "$BUILD_RESULT"
+            test "$BROWSER_BUILD_RESULT" = skipped
           fi

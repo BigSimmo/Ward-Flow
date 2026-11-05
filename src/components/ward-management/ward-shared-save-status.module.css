@@ -109,7 +109,8 @@
 }
 
 .action {
-  min-height: var(--wf-target, 28px);
+  min-height: var(--ward-tap, 3rem);
+  min-width: var(--ward-tap, 3rem);
   padding: 0 var(--wf-s-2);
   border: 1px solid var(--wf-line-ctl, var(--wf-line));
   border-radius: var(--wf-r-ctl, 0.5rem);
@@ -118,6 +119,11 @@
   font: inherit;
   font-weight: 500;
   cursor: pointer;
+}
+
+/* WF-38: a clear gap between Retry and Sign out. */
+.signOut {
+  margin-inline-start: var(--wf-s-4);
 }
 
 .action:hover {

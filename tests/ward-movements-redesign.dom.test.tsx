@@ -87,15 +87,26 @@ describe("Movements redesign: the coordinator's board", () => {
     const stages = within(pipeline).getAllByRole("button");
     expect(stages.length).toBe(6);
     for (const stage of stages) {
-      expect(stage).toHaveAttribute("aria-pressed", "false");
+      expect(stage).not.toHaveAttribute("aria-pressed");
+      expect(stage).toHaveAttribute("aria-haspopup", "dialog");
+      expect(stage).not.toHaveAttribute("data-highlighted");
       expect(stage.textContent).toMatch(/none waiting|longest /);
     }
     fireEvent.click(stages[0]!);
     const sheet = screen.getByTestId("movement-people-sheet");
-    expect(within(sheet).getAllByRole("listitem").length).toBeGreaterThan(0);
+    const peopleCount = within(sheet).getAllByRole("listitem").length;
+    expect(peopleCount).toBeGreaterThan(0);
+    expect(sheet).toHaveAttribute("role", "dialog");
     fireEvent.click(within(sheet).getByRole("button", { name: "Show in worklist" }));
     expect(screen.queryByTestId("movement-people-sheet")).not.toBeInTheDocument();
-    expect(stages[0]).toHaveAttribute("aria-pressed", "true");
+    expect(stages[0]).toHaveAttribute("data-highlighted", "true");
+    expect(stages[0]).not.toHaveAttribute("aria-pressed");
+    fireEvent.click(stages[0]!);
+    const reopened = screen.getByTestId("movement-people-sheet");
+    expect(reopened).toHaveAttribute("role", "dialog");
+    expect(within(reopened).getAllByRole("listitem")).toHaveLength(peopleCount);
+    expect(stages[0]).toHaveAttribute("data-highlighted", "true");
+    expect(stages[0]).not.toHaveAttribute("aria-pressed");
     expect(screen.queryByRole("group", { name: "Highlight a stage" })).not.toBeInTheDocument();
   });
 

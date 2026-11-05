@@ -183,14 +183,14 @@ describe("RECORD_OBSERVATION_LEVEL is the only way a level changes", () => {
     expect(state.rejections).toEqual([]);
     const after = state.admissions.find((candidate) => candidate.id === admission.id)!;
     expect(after.observation).toEqual(next);
-    expect(after.observationChanges).toEqual([{ at: NOW + 5, from: GENERAL_OBSERVATION, to: next }]);
+    expect(after.observationChanges).toEqual([{ at: NOW + 5, from: GENERAL_OBSERVATION, to: next, sequence: 1 }]);
     const movement = state.movements.find((candidate) => candidate.id === "WF-OBS-0")!;
     expect(movement.observation).toEqual(next);
-    expect(movement.observationChanges).toHaveLength(1);
+    expect(movement.observationChanges).toEqual(after.observationChanges);
     expect(remainingSpeciallingCapacity(unitIn(state), state.admissions)).toBe(0);
   });
 
-  it("is saved only as at, from and to, so a change row cannot carry typed text", () => {
+  it("saves bounded acceptance order with history, and refuses extra typed text", () => {
     const seed = JSON.parse(JSON.stringify(seedWardFlowState())) as WardFlowState;
     const row = { at: NOW, from: GENERAL_OBSERVATION, to: observationAt("within_sight") };
     const withChange = (change: object) => ({
@@ -200,6 +200,11 @@ describe("RECORD_OBSERVATION_LEVEL is the only way a level changes", () => {
       ),
     });
     expect(isValidStoredWardFlowState(withChange(row))).toBe(true);
+    expect(isValidStoredWardFlowState(withChange({ ...row, sequence: 1 }))).toBe(true);
+    for (const sequence of [0, -1, 1.5, Number.MAX_SAFE_INTEGER + 1]) {
+      expect(isValidStoredWardFlowState(withChange({ ...row, sequence }))).toBe(false);
+    }
+    expect(isValidStoredWardFlowState(withChange({ ...row, sequence: 1, note: "x" }))).toBe(false);
     expect(isValidStoredWardFlowState(withChange({ ...row, note: "x" }))).toBe(false);
   });
 

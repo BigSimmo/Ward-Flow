@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
 import { CircleAlert, Clock, ShieldCheck, X } from "lucide-react";
 import {
   ARRIVAL_MODES,
@@ -18,9 +18,13 @@ import {
   OPERATIONAL_DEFAULT_LABEL,
 } from "@/components/ward-management/ward-operational-defaults";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
+import { settledWardCommand } from "../ward-command-completion";
 import type { WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
-import { TimePresets } from "@/components/wf";
+import { requestConfirm, TimePresets } from "@/components/wf";
 import styles from "./arrival-time-modal.module.css";
+import { useDirtyStateGuard } from "../use-dirty-state-guard";
+import { usePatientOf } from "@/components/ward-management/ward-patient-name";
+import { patientIdentityLine } from "@/components/ward-management/ward-patient-resolver";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 
 /**
@@ -75,6 +79,7 @@ export function ArrivalTimeModal(props: ArrivalTimeModalProps) {
 
 function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinator" }: ArrivalTimeModalProps) {
   const { dispatch, configuration } = useWardFlowSelect("dispatch", "configuration");
+  const identity = patientIdentityLine(usePatientOf()(movement));
   const now = useWardFlowClock();
   const baseId = useId();
   // Feature 11: the route's role must be one that may set arrival details (`ward-role-permissions.ts`).
@@ -111,8 +116,25 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
       mounted.current = false;
     };
   }, []);
+  const [initialDraft] = useState(() => JSON.stringify([arrivalMode, trackingNumber, etaText, etaDay]));
+  const draft = JSON.stringify([arrivalMode, trackingNumber, etaText, etaDay]);
+  const currentDraft = useRef(draft);
+  useLayoutEffect(() => {
+    currentDraft.current = draft;
+  }, [draft]);
+  const dirty = draft !== initialDraft;
+  useDirtyStateGuard({ isDirty: dirty || saving, value: draft });
   const dismiss = () => {
-    if (!pending.current) onClose();
+    if (pending.current) return;
+    if (!dirty) return onClose();
+    void requestConfirm({
+      title: "Discard arrival details?",
+      message: "The arrival details have not been recorded. Keep editing to finish them.",
+      confirmLabel: "Discard details",
+      cancelLabel: "Keep editing",
+    }).then((discard) => {
+      if (discard && mounted.current && !pending.current && currentDraft.current === draft) onClose();
+    });
   };
 
   const dialogRef = useRef<HTMLDivElement>(null);
@@ -148,16 +170,18 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
       else setSaveError(outcome?.message ?? SAVE_NOT_CONFIRMED);
     };
     try {
-      const result = dispatch({
-        type: "SET_ARRIVAL_DETAILS",
-        role,
-        now,
-        movementId: movement.id,
-        ...(role === "ward" && movement.acceptedUnitId ? { actingUnitId: movement.acceptedUnitId } : {}),
-        arrivalMode,
-        trackingNumber: trackingNumber.trim() || undefined,
-        estimatedArrivalAt: etaMinutes,
-      });
+      const result = settledWardCommand(
+        dispatch({
+          type: "SET_ARRIVAL_DETAILS",
+          role,
+          now,
+          movementId: movement.id,
+          ...(role === "ward" && movement.acceptedUnitId ? { actingUnitId: movement.acceptedUnitId } : {}),
+          arrivalMode,
+          trackingNumber: trackingNumber.trim() || undefined,
+          estimatedArrivalAt: etaMinutes,
+        }),
+      );
       if (result && "then" in result) void result.then(finish, () => finish());
       else finish(result || undefined);
     } catch {
@@ -188,6 +212,7 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
         role="dialog"
         aria-modal="true"
         aria-labelledby={`${baseId}-arrival-modal-title`}
+        aria-describedby={`${baseId}-arrival-patient`}
         tabIndex={-1}
         className={styles.dialog}
       >
@@ -210,132 +235,144 @@ function ArrivalTimeModalContent({ isOpen, onClose, movement, role = "coordinato
         </div>
 
         <form onSubmit={handleSubmit} className={styles.form}>
-          <div className={styles.note}>
-            <ShieldCheck size={18} className={styles.noteIcon} aria-hidden="true" />
-            <span>
-              Saving clears the {pullHoldLabel} pull clock. Over {LATE_ARRIVAL_GRACE_MINUTES} minutes late (
-              {OPERATIONAL_DEFAULT_LABEL}), a late notice goes to the referrer and accepting ward.
-            </span>
-          </div>
-
-          {late && movement.arrivalDetails ? (
-            <div className={styles.late} role="status" data-testid="arrival-plan-late-state">
-              <CircleAlert size={18} className={styles.lateIcon} aria-hidden="true" />
+          <p id={`${baseId}-arrival-patient`} className={styles.note}>
+            {identity}
+          </p>
+          <fieldset disabled={saving} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+            <legend className="sr-only">Arrival plan</legend>
+            <div className={styles.note}>
+              <ShieldCheck size={18} className={styles.noteIcon} aria-hidden="true" />
               <span>
-                Arrival is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward time (
-                {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST). They have not been marked
-                arrived.
+                Saving keeps the existing {pullHoldLabel} pull time limit. Over {LATE_ARRIVAL_GRACE_MINUTES} minutes
+                late ({OPERATIONAL_DEFAULT_LABEL}), a late notice goes to the referrer and accepting ward.
               </span>
             </div>
-          ) : null}
 
-          <div className={styles.field}>
-            <label htmlFor={`${baseId}-arrival-mode-select`} className={styles.label}>
-              How they are travelling
-            </label>
-            <select
-              id={`${baseId}-arrival-mode-select`}
-              disabled={saving}
-              value={arrivalMode}
-              onChange={(e) => setArrivalMode(e.target.value as ArrivalMode)}
-              aria-describedby={bookedMode && arrivalMode === bookedMode ? `${baseId}-arrival-mode-source` : undefined}
-              className={styles.control}
-            >
-              <option value="" disabled>
-                Choose how they are travelling
-              </option>
-              {ARRIVAL_MODES.map((mode: ArrivalMode) => (
-                <option key={mode} value={mode}>
-                  {ARRIVAL_MODE_LABELS[mode]}
-                </option>
-              ))}
-            </select>
-            {bookedMode && arrivalMode === bookedMode ? (
-              <small id={`${baseId}-arrival-mode-source`}>From the transport booking</small>
+            {late && movement.arrivalDetails ? (
+              <div className={styles.late} role="status" data-testid="arrival-plan-late-state">
+                <CircleAlert size={18} className={styles.lateIcon} aria-hidden="true" />
+                <span>
+                  Arrival is more than {LATE_ARRIVAL_GRACE_MINUTES} minutes past the estimated ward time (
+                  {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST). They have not been
+                  marked arrived.
+                </span>
+              </div>
             ) : null}
-          </div>
 
-          <div className={styles.field}>
-            <label htmlFor={`${baseId}-tracking-number-input`} className={styles.label}>
-              CAD or tracking number
-            </label>
-            <input
-              id={`${baseId}-tracking-number-input`}
-              disabled={saving}
-              type="text"
-              placeholder="e.g. CAD-2026-8912 or SJA-412"
-              aria-describedby={cadFromBooking ? `${baseId}-tracking-number-source` : undefined}
-              value={trackingNumber}
-              onChange={(e) => setTrackingNumber(e.target.value)}
-              className={styles.control}
-            />
-            {cadFromBooking ? <small id={`${baseId}-tracking-number-source`}>From the transport booking</small> : null}
-          </div>
-
-          <div className={styles.etaField}>
-            <div className={styles.label}>
-              Estimated time of arrival (ETA):{" "}
-              <strong>{etaMinutes === undefined ? "Not set" : `${formatInstantWithDay(etaMinutes, now)} AWST`}</strong>
-              {etaFromBooking && !etaText.trim() ? " (from the transport booking)" : null}
+            <div className={styles.field}>
+              <label htmlFor={`${baseId}-arrival-mode-select`} className={styles.label}>
+                How they are travelling
+              </label>
+              <select
+                id={`${baseId}-arrival-mode-select`}
+                disabled={saving}
+                value={arrivalMode}
+                onChange={(e) => setArrivalMode(e.target.value as ArrivalMode)}
+                aria-describedby={
+                  bookedMode && arrivalMode === bookedMode ? `${baseId}-arrival-mode-source` : undefined
+                }
+                className={styles.control}
+              >
+                <option value="" disabled>
+                  Choose how they are travelling
+                </option>
+                {ARRIVAL_MODES.map((mode: ArrivalMode) => (
+                  <option key={mode} value={mode}>
+                    {ARRIVAL_MODE_LABELS[mode]}
+                  </option>
+                ))}
+              </select>
+              {bookedMode && arrivalMode === bookedMode ? (
+                <small id={`${baseId}-arrival-mode-source`}>From the transport booking</small>
+              ) : null}
             </div>
-          </div>
 
-          <div className={styles.field}>
-            <label htmlFor={`${baseId}-eta-time-input`} className={styles.label}>
-              Type the ETA
-            </label>
-            <input
-              id={`${baseId}-eta-time-input`}
-              disabled={saving}
-              type="text"
-              inputMode="numeric"
-              autoComplete="off"
-              placeholder="HH:MM"
-              value={etaText}
-              aria-invalid={etaTypedBadly || undefined}
-              aria-describedby={etaTypedBadly ? `${baseId}-eta-time-problem` : undefined}
-              onChange={(e) => setEtaText(e.target.value)}
-              className={styles.control}
-            />
-            <TimePresets
-              label="Estimated time of arrival"
-              boardMinuteOfDay={minuteOfDay(now)}
-              onPick={pickEta}
-              className={styles.presets}
-            />
-            {etaTypedBadly ? <small id={`${baseId}-eta-time-problem`}>Type the time as 14:40 or 1440.</small> : null}
-            <label htmlFor={`${baseId}-eta-day-select`} className={styles.label}>
-              Day of the typed ETA
-            </label>
-            <select
-              id={`${baseId}-eta-day-select`}
-              disabled={saving}
-              value={etaDay}
-              onChange={(e) => setEtaDay(e.target.value as "today" | "tomorrow")}
-              className={styles.control}
-            >
-              <option value="today">Today</option>
-              <option value="tomorrow">Tomorrow</option>
-            </select>
-          </div>
+            <div className={styles.field}>
+              <label htmlFor={`${baseId}-tracking-number-input`} className={styles.label}>
+                CAD or tracking number
+              </label>
+              <input
+                id={`${baseId}-tracking-number-input`}
+                disabled={saving}
+                type="text"
+                placeholder="e.g. CAD-2026-8912 or SJA-412"
+                aria-describedby={cadFromBooking ? `${baseId}-tracking-number-source` : undefined}
+                value={trackingNumber}
+                onChange={(e) => setTrackingNumber(e.target.value)}
+                className={styles.control}
+              />
+              {cadFromBooking ? (
+                <small id={`${baseId}-tracking-number-source`}>From the transport booking</small>
+              ) : null}
+            </div>
 
-          {saveError ? <p role="alert">{saveError}</p> : null}
-          <div className={styles.actions}>
-            <button type="button" onClick={dismiss} disabled={saving} className={styles.cancelBtn}>
-              Cancel
-            </button>
-            <button
-              type="submit"
-              data-testid="save-arrival-plan-button"
-              className={styles.saveBtn}
-              {...saveGate.buttonProps}
-              disabled={saving || saveGate.buttonProps.disabled}
-              aria-busy={saving || undefined}
-            >
-              {saving ? "Saving…" : "Save arrival plan"}
-            </button>
-            {saveGate.note}
-          </div>
+            <div className={styles.etaField}>
+              <div className={styles.label}>
+                Estimated time of arrival (ETA):{" "}
+                <strong>
+                  {etaMinutes === undefined ? "Not set" : `${formatInstantWithDay(etaMinutes, now)} AWST`}
+                </strong>
+                {etaFromBooking && !etaText.trim() ? " (from the transport booking)" : null}
+              </div>
+            </div>
+
+            <div className={styles.field}>
+              <label htmlFor={`${baseId}-eta-time-input`} className={styles.label}>
+                Type the ETA
+              </label>
+              <input
+                id={`${baseId}-eta-time-input`}
+                disabled={saving}
+                type="text"
+                inputMode="numeric"
+                autoComplete="off"
+                placeholder="HH:MM"
+                value={etaText}
+                aria-invalid={etaTypedBadly || undefined}
+                aria-describedby={etaTypedBadly ? `${baseId}-eta-time-problem` : undefined}
+                onChange={(e) => setEtaText(e.target.value)}
+                className={styles.control}
+              />
+              <TimePresets
+                label="Estimated time of arrival"
+                boardMinuteOfDay={minuteOfDay(now)}
+                onPick={pickEta}
+                className={styles.presets}
+              />
+              {etaTypedBadly ? <small id={`${baseId}-eta-time-problem`}>Type the time as 14:40 or 1440.</small> : null}
+              <label htmlFor={`${baseId}-eta-day-select`} className={styles.label}>
+                Day of the typed ETA
+              </label>
+              <select
+                id={`${baseId}-eta-day-select`}
+                disabled={saving}
+                value={etaDay}
+                onChange={(e) => setEtaDay(e.target.value as "today" | "tomorrow")}
+                className={styles.control}
+              >
+                <option value="today">Today</option>
+                <option value="tomorrow">Tomorrow</option>
+              </select>
+            </div>
+
+            {saveError ? <p role="alert">{saveError}</p> : null}
+            <div className={styles.actions}>
+              <button type="button" onClick={dismiss} disabled={saving} className={styles.cancelBtn}>
+                Cancel
+              </button>
+              <button
+                type="submit"
+                data-testid="save-arrival-plan-button"
+                className={styles.saveBtn}
+                {...saveGate.buttonProps}
+                disabled={saving || saveGate.buttonProps.disabled}
+                aria-busy={saving || undefined}
+              >
+                {saving ? "Saving…" : "Save arrival plan"}
+              </button>
+              {saveGate.note}
+            </div>
+          </fieldset>
         </form>
       </div>
     </div>

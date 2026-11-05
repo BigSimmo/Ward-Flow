@@ -302,6 +302,12 @@ type Entry = {
   body?: ReactNode;
 };
 
+/** WF-29 (live test, 4 Nov 2026): every Tools row carries its own accessible name. */
+function rowName(entry: Entry, end: string): string {
+  const count = entry.count && entry.count.n > 0 ? `, ${entry.count.n} ${entry.count.label}` : "";
+  return `${entry.name}, ${entry.detail}${count}${end}`;
+}
+
 function RowText({ entry, group }: { entry: Entry; group: GroupId }) {
   const Icon = entry.icon;
   return (
@@ -813,7 +819,13 @@ function ToolsSheetView({
   const renderRow = (entry: Entry, group: GroupId) => {
     if (entry.href) {
       return (
-        <Link key={entry.key} href={entry.href} className={styles.row} onClick={onNavigate}>
+        <Link
+          key={entry.key}
+          href={entry.href}
+          className={styles.row}
+          onClick={onNavigate}
+          aria-label={rowName(entry, ", opens its page")}
+        >
           <RowText entry={entry} group={group} />
           <ArrowUpRight className={styles.rowEnd} aria-hidden="true" strokeWidth={1.75} />
           <span className="sr-only">, opens its page</span>
@@ -822,7 +834,13 @@ function ToolsSheetView({
     }
     if (entry.onClick) {
       return (
-        <button key={entry.key} type="button" className={styles.row} onClick={entry.onClick}>
+        <button
+          key={entry.key}
+          type="button"
+          className={styles.row}
+          onClick={entry.onClick}
+          aria-label={rowName(entry, ", opens the form")}
+        >
           <RowText entry={entry} group={group} />
           <ArrowUpRight className={styles.rowEnd} aria-hidden="true" strokeWidth={1.75} />
           <span className="sr-only">, opens the form</span>
@@ -842,6 +860,7 @@ function ToolsSheetView({
           // Only an open tool's panel exists, so a closed row names no panel (axe aria-valid-attr-value).
           aria-controls={isOpen ? `ward-tools-${id}` : undefined}
           data-testid={`ward-tools-toggle-${id}`}
+          aria-label={rowName(entry, "")}
           onClick={() => openTool(id)}
         >
           <RowText entry={entry} group={group} />

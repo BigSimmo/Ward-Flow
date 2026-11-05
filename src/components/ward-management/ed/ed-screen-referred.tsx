@@ -176,7 +176,7 @@ export function EdReferredPanel({ ctx }: { ctx: EdScreenContext }) {
                     <span className={styles.outstandingLabel}>Gender</span>
                     <span data-testid={`ward-ed-gender-${movement.id}`}>{movement.gender ?? "Not yet recorded"}</span>
                   </div>
-                  {movement.transportNeed?.needed === false ? (
+                  {!movement.transport && movement.transportNeed?.needed === false ? (
                     <div className={styles.outstandingItem} data-testid={`ward-ed-outbox-no-transport-${movement.id}`}>
                       No transport needed
                     </div>

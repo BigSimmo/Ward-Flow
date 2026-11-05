@@ -1,5 +1,6 @@
 "use client";
 
+import { placeDisplayName } from "@/components/ward-management/ward-place-names";
 import { useState, type ReactNode } from "react";
 import Link from "next/link";
 import { CalendarClock, ChevronDown, FileText, LayoutList, PhoneCall, Search, Users } from "lucide-react";
@@ -270,7 +271,7 @@ function OperationalCommunityScreen({ teamId }: { teamId: string }) {
       communityMembershipResolution(admissions, candidate, referrals),
     ),
   }));
-  const unitName = (unitId: string) => units.find((unit) => unit.id === unitId)?.name ?? unitId;
+  const unitName = (unitId: string) => placeDisplayName(unitId, units);
   const notArranged = lists.dischargedIntoTheArea.filter((admission) => admission.followUp?.state !== "arranged");
   const dueOut = [...lists.expectedBack].sort(
     (a, b) => (a.expectedDischargeAt ?? Number.POSITIVE_INFINITY) - (b.expectedDischargeAt ?? Number.POSITIVE_INFINITY),

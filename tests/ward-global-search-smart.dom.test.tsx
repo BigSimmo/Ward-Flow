@@ -54,7 +54,7 @@ afterEach(() => installMatchMediaStub(false));
 describe("smart global search", () => {
   it("offers Try asking chips with counts, and a chip asks its question", () => {
     const { input } = renderSearch();
-    const chip = screen.getByRole("button", { name: /^Waiting over 24 hours\s*\d+$/ });
+    const chip = screen.getByRole("button", { name: /^Waiting over 24 hours, \d+$/ });
     fireEvent.click(chip);
     expect(input).toHaveValue("waiting over 24 hours");
     expect(screen.getByTestId("ward-global-search-group-answers")).toBeInTheDocument();

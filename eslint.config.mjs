@@ -359,8 +359,18 @@ const eslintConfig = defineConfig([
     // Archived design artefacts moved out of docs/. The kit's shell browser scripts are copied
     // into the third edition drawings, so editing them to satisfy lint would make the drawings
     // drift. The prototypes are byte-pinned. The kit's .mjs check scripts stay linted.
+    // Drawing HTML is ignored for the same reason as Prettier (manifest-hashed artefacts); do not
+    // broaden this to ** under third-edition-mockups or the kit checkers stop being linted.
     "design/third-edition-mockups/third-edition-kit/shell/*.js",
+    "design/third-edition-mockups/**/*.html",
+    "design/third-edition-mockups/*.html",
     "design/prototypes/**",
+    "design/v7/**/*.html",
+    "design/v7/*.html",
+    "design/v8/**/*.html",
+    "design/v8/*.html",
+    "design/core-pages-review-2026-10/**/*.html",
+    "design/core-pages-review-2026-10/*.html",
     // Recursive `**/` variants cover nested worktrees; the bare globs above already
     // ignore the repo-root dirs, so only the recursive forms are kept here.
     "**/.claude/**",

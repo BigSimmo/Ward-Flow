@@ -1,10 +1,9 @@
-name: Ward Flow budget heal
+name: Ward Flow budget over issue
 
 # When "Ward Flow CI" fails on a push to main and main's own production build measured a route over
-# its phone script budget, this opens one PR raising only those routes (budget-heal.mjs), with its
-# own docs/script-budget-history entry. The PR goes through the normal required checks, which this
-# dispatches on the PR branch because events made with the workflow token start no workflows.
-# Meanwhile open PRs are not blocked: their build fails only routes they grew (budget-gate.mjs).
+# its phone script budget, this opens one issue asking for a trim, or refreshes the open one
+# (budget-heal.mjs). It never raises a budget: a person decides any raise (5 November 2026). Open PRs
+# are not blocked meanwhile: their build fails only routes they grew (budget-gate.mjs, fair blame).
 # It runs main's own scripts only, never pull-request code, and uses free GitHub-hosted runners.
 on:
   workflow_run:
@@ -13,9 +12,10 @@ on:
     branches: [main]
 
 permissions:
-  contents: write
-  pull-requests: write
-  actions: write
+  contents: read
+  issues: write
+  # download-artifact reads main's measurements from the finished CI run.
+  actions: read
 
 concurrency:
   group: ward-flow-budget-heal
@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   heal:
-    name: Ward Flow budget heal
+    name: Ward Flow budget over issue
     if: ${{ github.event.workflow_run.event == 'push' && github.event.workflow_run.conclusion == 'failure' }}
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -42,10 +42,12 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
-      - name: Open or refresh the budget heal PR
+          persist-credentials: false
+      - name: Open or refresh the trim issue
         if: ${{ steps.measured.outcome == 'success' }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
           WARD_MEASURED: ${{ runner.temp }}/script-budget/measured.json
           WARD_RUN_SHA: ${{ github.event.workflow_run.head_sha }}
+          WARD_RUN_URL: ${{ github.event.workflow_run.html_url }}
         run: node scripts/ward-ci-public/budget-heal.mjs

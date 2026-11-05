@@ -35,8 +35,7 @@ import {
   type Referral,
   type ReferralCorrection,
 } from "@/components/ward-management/ward-model";
-import { siteByCode } from "@/components/ward-management/ward-sites";
-import { scenarioEmergencyDepartments } from "@/components/ward-management/ward-scenarios";
+import { scenarioEmergencyDepartments, scenarioSite } from "@/components/ward-management/ward-scenarios";
 import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import type { ReferralSendEventHelpers, WardFlowState } from "./ward-flow-reducer";
 import { isCommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
@@ -269,6 +268,12 @@ export function reduceReferralSendEvent(
       ) {
         return reject(state, event, "RAISE_REFERRAL names a different patient from the one this referral is for");
       }
+      // A draft may outlive an unused patient record, and older referrals may carry a stale link.
+      // Resolve either source now; an absent identity remains a supported unidentified journey.
+      const patientId = event.patientId ?? raisedFrom?.patientId;
+      if (patientId !== undefined && !state.patients.some((patient) => patient.id === patientId)) {
+        return reject(state, event, "RAISE_REFERRAL patientId must name a patient this system already holds");
+      }
       /**
        * WT-04 and WT-30 (walk-through, 26 Oct 2026): a journey started from an ED referral a ward
        * accepted opens when the person was recorded in the department, or else when the referral was
@@ -298,7 +303,7 @@ export function reduceReferralSendEvent(
               ...(raisedFrom!.transportNeeded ? {} : { transportNeed: { needed: false, at: event.now } }),
             }),
         openedAt,
-        patientId: event.patientId ?? raisedFrom?.patientId,
+        patientId,
         // `undefined` when nobody referred this person, a real answer. Never a manufactured id: the
         // guard above refuses anything that does not resolve.
         referralId: raisedFrom?.id ?? event.referralId,
@@ -495,7 +500,7 @@ export function reduceReferralSendEvent(
       );
       const linkedReferral = withoutPulledBed.referrals.find((r) => r.id === movement.referralId);
       const originEd = scenarioEmergencyDepartments(state.scenario).find((d) => d.id === movement.originEdId);
-      const originSite = originEd ? siteByCode(originEd.siteCode) : undefined;
+      const originSite = originEd ? scenarioSite(state.scenario, originEd.siteCode) : undefined;
 
       // Reuse a queued arm to this exact team rather than asking the same team twice. Settled arms
       // are not reused.
@@ -902,8 +907,11 @@ export function reduceReferralSendEvent(
         actingPlaceId?: string;
         actingUnitId?: string;
       };
-      const callerPlaceId =
-        caller.placeId ?? caller.actingPlaceId ?? (caller.role === "ward" ? caller.actingUnitId : undefined);
+      const canonicalPlaceId = caller.actingPlaceId ?? (caller.role === "ward" ? caller.actingUnitId : undefined);
+      if (caller.placeId !== undefined && canonicalPlaceId !== undefined && caller.placeId !== canonicalPlaceId) {
+        return reject(state, event, "Withdrawal place fields disagree. Reopen the record.");
+      }
+      const callerPlaceId = canonicalPlaceId ?? caller.placeId;
       const referral = movement.referralId ? findReferral(state, movement.referralId) : undefined;
       // Verified senders: a transfer from a recorded stay is the sending ward's alone. Otherwise
       // the ED that raised the journey (`originEdId`) owns it, and for a ward-sent referral the

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 
 import { Card, StatusGlyph, durMinutes, useIsPhone, type WfTone } from "@/components/wf";
 import { edOpenSummaries, isDetainedUnderTheAct } from "@/components/ward-management/ed/ed-home-derivations";
@@ -96,9 +97,10 @@ export function HomeEdPressure({ now, movements, selectedEdId, onSelectEd, servi
           const onForms = open.filter(
             (movement) => movement.legalForm !== undefined || isDetainedUnderTheAct(movement.legalStatus),
           ).length;
-          const deadlines = open
-            .filter((movement) => movement.legalForm?.dueAt !== undefined)
-            .map((movement) => clockState(movement.legalForm!.dueAt!, now, thresholds));
+          const deadlines = open.flatMap((movement) => {
+            const dueAt = currentLegalDueAt(movement);
+            return dueAt === undefined ? [] : [clockState(dueAt, now, thresholds)];
+          });
           const critical = deadlines.filter((state) => state === "critical").length;
           const due = deadlines.filter((state) => state === "due").length;
           const forms = (count: number) => `${count} form${count === 1 ? "" : "s"}`;

@@ -2,8 +2,8 @@ import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testi
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
-import { WardRail } from "@/components/ward-management/shell/ward-rail";
+import { NextBarMount as WardBar } from "@/components/ward-management/shell-next/next-bar";
+import { NextRail as WardRail } from "@/components/ward-management/shell-next/next-rail";
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
 import { setServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search";
@@ -79,6 +79,29 @@ describe("Task 3 — Shell wiring, Escape coordination, and Global Search query 
     );
   });
 
+  it("closes the live bar drawer before handling Escape outside it and preserves Service", async () => {
+    setServiceScope("South Metro");
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardLiveRegion />
+        <WardBar />
+      </WardFlowProvider>,
+    );
+    const trigger = screen.getByTestId("ward-bar-activity-trigger");
+    fireEvent.click(trigger);
+    const dialog = await screen.findByRole("dialog", { name: /Activity/u });
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: /Activity/u })).toBeNull());
+    await waitFor(() => expect(trigger).toHaveFocus());
+    expect(screen.getByTestId("ward-bar-service-trigger")).toHaveAccessibleName("Service: South Metro");
+    expect(screen.getByTestId("ward-live-region").textContent).not.toContain("Nothing more to clear");
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.getByTestId("ward-live-region").textContent).toContain(
+      "Nothing more to clear. The service stays South Metro.",
+    );
+    expect(screen.getByTestId("ward-bar-service-trigger")).toHaveAccessibleName("Service: South Metro");
+  });
+
   it("updates shiftCockpit persona and enforces single-overlay mutual exclusion + Escape focus return in WardRail", async () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -94,9 +117,11 @@ describe("Task 3 — Shell wiring, Escape coordination, and Global Search query 
     fireEvent.click(appearanceBtn);
     expect(appearanceBtn).toHaveAttribute("aria-expanded", "true");
 
-    // B6 (Josh, 19 Oct 2026): the person opens Go to a desk, the one switcher, and that closes Appearance.
+    // The live shell's person opens Account; its demo desk action opens the switcher.
     fireEvent.click(personaBtn);
     expect(personaBtn).toHaveAttribute("aria-expanded", "true");
+    const accountMenu = screen.getByRole("menu", { name: "Account" });
+    fireEvent.click(within(accountMenu).getByRole("menuitem", { name: "Try another desk (demo)" }));
     expect(appearanceBtn).toHaveAttribute("aria-expanded", "false");
     const drawer = await screen.findByRole("dialog", { name: "Go to a desk" }, { timeout: 15_000 });
 

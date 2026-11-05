@@ -23,6 +23,8 @@ function harness(children: (state: ReturnType<typeof useWardFlow>) => ReactNode)
   const sent: { type: string; holds: number }[] = [];
   const dispatch = vi.fn((event: WardFlowEvent) => {
     sent.push({ type: event.type, holds: commandSheetHandles().length });
+    // #1435: a dispatch with no outcome is unconfirmed and keeps the form open, so report acceptance.
+    return { commandId: `held-${sent.length}`, status: "accepted" as const };
   });
   function Inner() {
     const state = useWardFlow();

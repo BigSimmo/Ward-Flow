@@ -1,5 +1,6 @@
 "use client";
 
+import { useSyncExternalStore } from "react";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import { formatSheetMoment, type Instant, isClockBreached } from "@/components/ward-management/ward-clock";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -8,10 +9,14 @@ import { observationSummary } from "@/components/ward-management/ward-observatio
 import type { WardScreenBed } from "./ward-screen-derivations";
 import styles from "./ward-bed-list-print.module.css";
 
+const subscribePrintReadiness = () => () => {};
+const clientPrintReady = () => true;
+const serverPrintReady = () => false;
+
 /**
  * THE PRINTED BED LIST (Tier 1 item 9, Josh 4 Nov 2026: "Yes to all recommendations").
  *
- * The downtime fallback for one ward: every bed on one page, with who is in it, its state, the
+ * The downtime fallback for one ward: every bed, with who is in it, its state, the
  * legal status and the form's end time as typed, observations and the expected date out. If the
  * app is down, the last printout keeps the ward running.
  *
@@ -34,12 +39,15 @@ export function WardBedListPrint({
   /** Anchors every time on the sheet to a calendar date: a printout outlives the day it was taken. */
   dayZero: Date;
 }) {
+  // A streamed server table may still be hidden; only its own hydration proves it is printable.
+  const ready = useSyncExternalStore(subscribePrintReadiness, clientPrintReady, serverPrintReady);
   if (beds.length === 0) return null;
   return (
     <section
       className={styles.sheet}
       aria-label={`${unit.name} bed list for printing`}
       data-testid="ward-bed-list-print"
+      data-print-ready={ready ? "" : undefined}
     >
       <div className={styles.head}>
         <h2 className={styles.title}>{unit.name} bed list</h2>
