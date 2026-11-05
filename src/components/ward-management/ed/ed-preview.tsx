@@ -89,7 +89,7 @@ export function EdPreview({
                     {person.destination ? ` · ${person.destination}` : ""}
                   </span>
                 </span>
-                <b className={styles.num}>{splitDuration(person.wait)}</b>
+                <EdWaitFigures person={person} />
               </li>
             ))}
           </ul>
@@ -114,6 +114,15 @@ export function EdLaneFacts({ person }: { person: EdPerson }) {
                 {person.clock !== "in" ? <StatusGlyph tone={CLOCK_TONE[person.clock]} size={9} /> : null}
                 <b className={styles.num}>{splitDuration(person.wait)}</b>
               </span>
+            ),
+          },
+          {
+            id: "referral",
+            label: "Since referral",
+            value: (
+              <b className={styles.num}>
+                {person.sinceReferral === undefined ? "Not recorded" : splitDuration(person.sinceReferral)}
+              </b>
             ),
           },
           { id: "stage", label: "Stage", value: person.stage },
@@ -165,7 +174,7 @@ export function EdLanePicked({ person, row }: { person: EdPerson; row: EdRow }) 
       </span>
       <span className={styles.longest}>
         {person.clock !== "in" ? <StatusGlyph tone={CLOCK_TONE[person.clock]} size={9} /> : null}
-        <b className={styles.num}>{splitDuration(person.wait)}</b>
+        <EdWaitFigures person={person} />
       </span>
       <span className={styles.pickedActions}>
         <Link className={buttonClass({ variant: "sec", size: "sm" })} href={person.href}>
@@ -214,6 +223,22 @@ export function EdPreviewSteps({ onStep }: { onStep: (by: -1 | 1) => void }) {
         onClick={() => onStep(-1)}
       />
       <Button variant="ghost" size="sm" iconOnly icon={ChevronRight} aria-label="Next ED" onClick={() => onStep(1)} />
+    </span>
+  );
+}
+
+/**
+ * WF-02: since referral is the main figure; time in ED sits beside it with its own label, so the
+ * home preview and the Waiting list never print two different waits under one word.
+ */
+function EdWaitFigures({ person }: { person: EdPerson }) {
+  if (person.sinceReferral === undefined) {
+    return <b className={styles.num}>{`${splitDuration(person.wait)} in ED`}</b>;
+  }
+  return (
+    <span>
+      <b className={styles.num}>{`${splitDuration(person.sinceReferral)} since referral`}</b>
+      <span className={styles.meta}>{` · ${splitDuration(person.wait)} in ED`}</span>
     </span>
   );
 }

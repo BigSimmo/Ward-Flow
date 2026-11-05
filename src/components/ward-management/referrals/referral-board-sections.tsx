@@ -61,6 +61,7 @@ import {
   declineReasonWords,
   isOverdue,
   readyUnitCount,
+  staleOnlyUnitCount,
   wardArm,
 } from "./referral-board-parts";
 import styles from "./referrals.module.css";
@@ -226,6 +227,7 @@ export function QueuedSection({
                 const selected = referral.id === selectedId;
                 const priority = getReferralPriority(referral, now);
                 const ready = summary === undefined ? readyUnitCount(referral, units, now) : undefined;
+                const staleOnly = ready === 0 ? staleOnlyUnitCount(referral, units, now) : 0;
                 const ward = wardArm(referral)?.destination;
                 // Redesign (Josh, 30 Oct 2026): short words, not icons alone; "Locked" is the app's word (F-24).
                 const needs = [
@@ -370,6 +372,15 @@ export function QueuedSection({
                         <span className={a.fit}>
                           {/* Redesign (Josh, 30 Oct 2026): the figure counts wards, so it says so. */}
                           <b>{ready}</b> {ready === 1 ? "ward" : "wards"}
+                          {ready === 0 && staleOnly > 0 ? (
+                            <span
+                              className={a.sub}
+                              data-testid={`ward-referral-board-fit-stale-${referral.id}`}
+                              title={`${staleOnly} ${staleOnly === 1 ? "ward fits" : "wards fit"} on every check but their bed count was last confirmed too long ago. Ask the ward to confirm beds.`}
+                            >
+                              {` · ${staleOnly} need bed check`}
+                            </span>
+                          ) : null}
                         </span>
                       )}
                     </td>
