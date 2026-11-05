@@ -84,7 +84,7 @@ describe("ward answer view: recorded facts only (CS-02)", () => {
 
 describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-09)", () => {
   const openDialog = () => {
-    const ready = screen.getAllByRole("button", { name: /^Bed \d\d READY$/ })[0]!;
+    const ready = screen.getAllByRole("button", { name: /^Census square \d+: READY$/ })[0]!;
     fireEvent.click(ready);
     return screen.getByRole("dialog", { name: /accept/i });
   };

@@ -1065,7 +1065,11 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                       ) : (
                                         <>
                                           <strong className={pageStyles.band}>
-                                            {BAND_LABELS[releaseBand(release, now) as ReleaseBand]}
+                                            {/* Review 5 Nov 2026: a completed discharge said "Now" beside
+                                            the time it left. It says "Left" and keeps that time. */}
+                                            {release.state === "discharged"
+                                              ? "Left"
+                                              : BAND_LABELS[releaseBand(release, now) as ReleaseBand]}
                                           </strong>{" "}
                                           <span className={pageStyles.due}>
                                             {/* Josh, 30 Oct: a Later row shows its date alone; its clock time

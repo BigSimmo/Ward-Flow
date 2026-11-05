@@ -1149,7 +1149,7 @@ function WaitingSnapshot({
       )}
       <p className={styles.serviceNote}>
         {by === "ed"
-          ? "Dashed line is the mean per ED. Press an ED to preview who is waiting."
+          ? "Dashed line is the mean of the EDs shown. Press an ED to preview who is waiting."
           : "Dashed line is the mean per service. Press a service to show only its EDs."}
       </p>
       <Legend accessTarget={accessTarget} />
