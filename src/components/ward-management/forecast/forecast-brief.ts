@@ -65,7 +65,7 @@ function bestAction(levers: readonly ForecastLever[]): string {
     case "confirm_dates":
       return `Ask ${top.wards.length} ${top.wards.length === 1 ? "ward" : "wards"} to confirm tomorrow's discharges. ${upTo}`;
     case "clear_held_up":
-      return `Clear held-up releases, starting with ${reasonWord(top.reasons[0]!.reason)}. ${upTo}`;
+      return `Clear held-up discharges, starting with ${reasonWord(top.reasons[0]!.reason)}. ${upTo}`;
     case "review_overdue":
       return `Check ${top.beds} overdue ${top.beds === 1 ? "release" : "releases"} with wards. It widens the range only.`;
   }

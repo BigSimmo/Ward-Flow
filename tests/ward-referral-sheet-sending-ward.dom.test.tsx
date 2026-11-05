@@ -150,7 +150,7 @@ async function walkToWards(umrn = ON_WARD_UMRN, notOnWardReason?: string) {
     timeout: 10_000,
   });
   next("Next, wards");
-  const list = screen.getByRole("list", { name: "Placement Destination Options" });
+  const list = screen.getByRole("list", { name: "Destinations" });
   // A ward never refers to itself, so the sending ward is not offered.
   expect(within(list).queryByRole("checkbox", { name: new RegExp(SENDING) })).toBeNull();
   fireEvent.click(within(list).getAllByRole("checkbox")[0]!);

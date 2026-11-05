@@ -51,7 +51,7 @@ export const CHECKLISTS: readonly Checklist[] = [
         note: "Each row opens the record it is about.",
         go: "home",
       },
-      { text: "Open Alerts or Tasks in the header for everything addressed to this desk.", showMe: "alerts" },
+      { text: "Open Alerts in the header for everything addressed to this desk.", showMe: "alerts" },
       {
         text: "On Capacity, ask for an update when a ward's figure is old.",
         go: "capacity",

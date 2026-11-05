@@ -91,7 +91,7 @@ const CREATE_LINKS: readonly {
   href?: string;
 }[] = [
   { id: "delays", label: "Log a delay", meta: "Choose the patient, then the reason", icon: Clock3 },
-  { id: "wards", label: "Update a bed", meta: "Open, close or hold a bed", icon: BedSingle },
+  { id: "wards", label: "Update a bed", meta: "Open or close a bed", icon: BedSingle },
   {
     id: "add-patient",
     label: "Add patient",

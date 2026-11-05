@@ -42,7 +42,7 @@ describe("patient care journey", () => {
     ]);
   });
 
-  it("moves to Bed found once accepted, and Moving once handover is ready", () => {
+  it("moves to Bed agreed once accepted, and Moving once handover is ready", () => {
     expect(
       patientCareJourney({ mode: "held", movement: movement({ stage: "pulled" }), stayCurrent: false, day })[1],
     ).toMatchObject({

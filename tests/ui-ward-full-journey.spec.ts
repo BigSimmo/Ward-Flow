@@ -273,7 +273,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     // Any ward the slide-out offers this person serves: this step proves the community-sourced
     // entry path reaches the coordinator's board, not which ward answers it.
     await steps.getByRole("button", { name: "Wards", exact: true }).click();
-    await tapChoice(sheet.getByRole("list", { name: "Placement Destination Options" }).getByRole("checkbox").first());
+    await tapChoice(sheet.getByRole("list", { name: "Destinations" }).getByRole("checkbox").first());
     // No transport needed: patient or carer accompanied.
     await sheet.getByLabel("Transport", { exact: true }).selectOption("Family or carer");
 

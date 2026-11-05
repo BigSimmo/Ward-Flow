@@ -26,7 +26,7 @@ export function PatientCareJourneyStrip({
   const current = steps.findIndex((step) => step.state === "now");
   return (
     <div className={styles.wrap} data-testid="ward-patient-care-journey">
-      <ol className={styles.steps} aria-label="Journey">
+      <ol className={styles.steps} aria-label="Movement steps">
         {steps.map((step, index) => (
           <li
             key={step.id}

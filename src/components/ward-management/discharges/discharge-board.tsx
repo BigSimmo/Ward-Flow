@@ -356,7 +356,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
   // Plan item 2i (proposal): the hero's next step, from the same status counts as the chips. Held up
   // first, as the list is ordered; with nothing held up, the confirmed ones are next to see out.
   const noun = (n: number) =>
-    population === "releases" ? (n === 1 ? "release" : "releases") : n === 1 ? "record" : "records";
+    population === "releases" ? (n === 1 ? "discharge" : "discharges") : n === 1 ? "record" : "records";
   const nextKey: "blocked" | "confirmed" | null =
     counts.blocked > 0 ? "blocked" : counts.confirmed > 0 ? "confirmed" : null;
   // Desk and scope (role branches, 31 Oct 2026): the counts are already the desk's own (a ward desk's
@@ -750,7 +750,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                     ? openReleases.length === 0
                       ? "No discharges open."
                       : "No discharges to work now."
-                    : `No ${population === "releases" ? "releases" : "records"} match these filters.`}
+                    : `No ${population === "releases" ? "discharges" : "records"} match these filters.`}
                 </p>
               ) : (
                 <table className={pageStyles.workTable}>

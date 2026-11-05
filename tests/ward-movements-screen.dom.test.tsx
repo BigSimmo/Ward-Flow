@@ -817,7 +817,7 @@ describe("the movement detail drawer", () => {
 
   it("opens from a row and carries the five sections that are built", () => {
     const dialog = openFirstDrawer();
-    for (const section of ["Person", "Journey", "Wards asked", "Escalation", "Transport leg"]) {
+    for (const section of ["Person", "Movement", "Wards asked", "Escalation", "Transport leg"]) {
       expect(within(dialog).getByRole("heading", { name: section })).toBeInTheDocument();
     }
   });

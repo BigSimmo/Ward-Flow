@@ -124,7 +124,7 @@ function MoreFigures({ figures }: { figures: PhoneMoreFigures }) {
       <GroupHead
         title="Discharges held up"
         variant="letter"
-        aside={`${small(blocked.total)} of ${small(blocked.admissions)} not departed`}
+        aside={`${small(blocked.total)} of ${small(blocked.admissions)} not yet discharged`}
       />
       <TallyList label="Discharges held up, by reason" tallies={blocked.tallies} />
       {"statement" in declines ? (

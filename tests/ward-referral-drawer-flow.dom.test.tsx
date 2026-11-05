@@ -144,7 +144,7 @@ describe("approved four-tab referral drawer journey", () => {
       timeout: 10_000,
     });
     next("Next, wards");
-    const locations = screen.getByRole("list", { name: "Placement Destination Options" });
+    const locations = screen.getByRole("list", { name: "Destinations" });
     const first = within(locations).getByRole("checkbox", { name: /Dabakarn/ });
     fireEvent.click(first);
     expect(screen.getByLabelText("Arrival, AWST")).toBeVisible();

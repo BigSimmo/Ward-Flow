@@ -213,7 +213,7 @@ describe("buildActionInbox", () => {
     expect(buildActionInbox(wardMovements, NOW_ANCHOR, allUnits())).toContainEqual(
       expect.objectContaining({
         id: "bed-pull-WF-004",
-        title: "Bed pull expired",
+        title: "Pull expired, bed still pulled",
         movementId: "WF-004",
       }),
     );

@@ -227,8 +227,8 @@ function sinceGroups(changes: ChangesSinceLastLook): SinceGroup[] {
   const groups: SinceGroup[] = [];
   for (const [kind, label] of [
     ["referral", "referral"],
-    ["movement", "journey"],
-    ["release", "bed release"],
+    ["movement", "movement"],
+    ["release", "discharge"],
   ] as const) {
     const count = changes.updates?.filter((update) => update.kind === kind).length ?? 0;
     if (count) groups.push({ key: kind, tone: "info", title: `${plural(count, label, `${label}s`)} updated` });

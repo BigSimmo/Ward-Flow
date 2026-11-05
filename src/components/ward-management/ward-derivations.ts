@@ -651,7 +651,7 @@ export function buildActionInbox(
       kind: INBOX_CATEGORIES.bed_pull_expired.kind,
       tone: "danger",
       icon: CircleAlert,
-      title: "Bed pull expired",
+      title: "Pull expired, bed still pulled",
       detail: `${movement.id} · ${formatRemaining(minutesUntil(pullExpiresAt, now))}`,
       owner: movement.owner,
       movementId: movement.id,

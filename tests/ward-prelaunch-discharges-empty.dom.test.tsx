@@ -42,7 +42,7 @@ describe("Q277: Discharges says plainly when nothing is open", () => {
   it("says No discharges open. when no filter is set", () => {
     renderWith(() => []);
     expect(screen.getAllByText("No discharges open.").length).toBeGreaterThan(0);
-    expect(screen.queryByText("No releases match these filters.")).toBeNull();
+    expect(screen.queryByText("No discharges match these filters.")).toBeNull();
   });
 
   it("says No discharges to work now. when every open discharge is due later and not held up", () => {
@@ -60,6 +60,6 @@ describe("Q277: Discharges says plainly when nothing is open", () => {
     );
     expect(screen.getAllByText("No discharges to work now.").length).toBeGreaterThan(0);
     expect(screen.queryByText("No discharges open.")).toBeNull();
-    expect(screen.queryByText("No releases match these filters.")).toBeNull();
+    expect(screen.queryByText("No discharges match these filters.")).toBeNull();
   });
 });
