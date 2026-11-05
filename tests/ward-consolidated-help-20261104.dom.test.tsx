@@ -16,6 +16,9 @@ vi.mock("next/link", () => ({
 vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({
   useTourFacts: () => ({ facts: {}, home: "/ward-flow", deskHome: "/ward-flow" }),
 }));
+import { HelpFindResults, type HelpFound } from "@/components/ward-management/help/ward-help-find";
+import { setWardAccess, resetWardAccessStoreForTests } from "@/components/ward-management/shell/ward-access-store";
+import type { WardAccessScope } from "@/components/ward-management/ward-role-access";
 import { WardHelpHost } from "@/components/ward-management/help/ward-help-host";
 import { HOW_TOS, showMeSteps } from "@/components/ward-management/help/ward-help-howto";
 import { tasksForDesk } from "@/components/ward-management/help/ward-help-task-list";
@@ -103,5 +106,59 @@ describe("Help request identity and eligibility", () => {
     } finally {
       window.removeEventListener("ward-flow-open-help", heard);
     }
+  });
+});
+
+describe("visible Help BestAnswer eligibility", () => {
+  function answer(id: string, role: "coordinator" | "bed_manager", scope: WardAccessScope) {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", true);
+      setWardAccess({ role, scope });
+    });
+    const task = HOW_TOS.find((item) => item.id === id)!;
+    const found: HelpFound = {
+      kind: "results",
+      closest: false,
+      groups: [],
+      best: { key: `howto:${id}`, group: "Guides", title: task.title, detail: task.answer, howToId: id },
+    };
+    render(
+      <HelpFindResults
+        found={found}
+        query={task.title}
+        role={role}
+        active={0}
+        canShow={() => true}
+        onShowMe={vi.fn()}
+        onChoose={vi.fn()}
+        onUseTyped={vi.fn()}
+      />,
+    );
+    return within(screen.getByRole("region", { name: "Best answer" }));
+  }
+  afterEach(() => {
+    act(() => {
+      setWardFeatureFlagOnDevice("role-access", false);
+      resetWardAccessStoreForTests();
+    });
+  });
+  it.each([false, true])("Rules BestAnswer actions require statewide scope: %s", (statewide) => {
+    const view = answer(
+      "rules",
+      "coordinator",
+      statewide ? { kind: "statewide" } : { kind: "service", service: "North Metro" },
+    );
+    expect(Boolean(view.queryByRole("list", { name: "Steps" }))).toBe(statewide);
+    expect(Boolean(view.queryByRole("button", { name: "Show me on screen" }))).toBe(statewide);
+    expect(Boolean(view.queryByRole("button", { name: "Open in How to" }))).toBe(statewide);
+  });
+  it.each(["bed_manager", "coordinator"] as const)("Capacity BestAnswer steps match %s controls", (role) => {
+    const view = answer(
+      "around-capacity",
+      role,
+      role === "coordinator" ? { kind: "statewide" } : { kind: "site", siteCode: "RPH" },
+    );
+    expect(Boolean(view.queryByText("Planned admissions"))).toBe(role === "coordinator");
+    expect(view.getByText("How full the beds are")).toBeTruthy();
   });
 });

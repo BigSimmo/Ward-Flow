@@ -16,6 +16,8 @@ import {
 import type { ReactNode } from "react";
 
 import { Button, useIsPhone } from "@/components/wf";
+import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { howToFor } from "./ward-help-access";
 
 import { SCREEN_HELP, type GlossaryTerm } from "./ward-help-content";
 import { HOW_TOS, showMeSteps } from "./ward-help-howto";
@@ -168,6 +170,7 @@ function Marked({ text, query }: { text: string; query: string }): ReactNode {
 
 /** The best answer, open: the answer itself, the steps and Show me, or a word's meaning and its look-alikes. */
 function BestAnswer({
+  role,
   result,
   query,
   active,
@@ -175,6 +178,7 @@ function BestAnswer({
   onShowMe,
   onChoose,
 }: {
+  role: WardTourRole;
   result: HelpSearchResult;
   query: string;
   active: boolean;
@@ -186,16 +190,14 @@ function BestAnswer({
   const Icon = ICON[group];
   const howToId = result.key.startsWith("howto:") ? result.key.slice("howto:".length) : undefined;
   const device = useIsPhone() ? "phone" : "desk";
-  const steps = howToId
-    ? showMeSteps(
-        HOW_TOS.find((howTo) => howTo.id === howToId),
-        device,
-      )
-    : [];
+  const access = useEffectiveWardAccess();
+  const task = HOW_TOS.find((howTo) => howTo.id === howToId);
+  const mine = !task || howToFor(task, role, access.scope);
+  const steps = mine ? showMeSteps(task, device, role) : [];
   const showMe = howToId && steps.length && canShow(howToId) ? howToId : undefined;
   const alike = group === "Words" ? relatedTerms(result.title) : [];
   // A guide with nowhere to go is read here; it offers no button that would do nothing.
-  const goes = group === "Shortcuts" || Boolean(howToId) || (group === "Jobs" && Boolean(result.go));
+  const goes = mine && (group === "Shortcuts" || Boolean(howToId) || (group === "Jobs" && Boolean(result.go)));
   return (
     <section
       id="ward-help-found-0"
@@ -273,6 +275,7 @@ export function HelpFindResults({
   canShow: (id: string) => boolean;
   onUseTyped: (words: string) => void;
 }) {
+  const access = useEffectiveWardAccess();
   if (found?.kind === "clinical") {
     return (
       <div className={`${s.card} ${s.clinical}`} role="status">
@@ -307,7 +310,8 @@ export function HelpFindResults({
   const row = (result: HelpSearchResult) => {
     const index = order.get(result) ?? -1;
     const group = groupOf(result);
-    const mine = !result.desks || result.desks.includes(role);
+    const task = HOW_TOS.find((howTo) => howTo.id === result.howToId);
+    const mine = (!result.desks || result.desks.includes(role)) && (!task || howToFor(task, role, access.scope));
     const Icon = result.group === "Settings" ? Settings : ICON[group];
     return (
       <button
@@ -356,6 +360,7 @@ export function HelpFindResults({
       {found.closest ? <p className={s.note}>Nothing matches every word. These are the closest.</p> : null}
       {found.best ? (
         <BestAnswer
+          role={role}
           result={found.best}
           query={marks}
           active={active === 0}

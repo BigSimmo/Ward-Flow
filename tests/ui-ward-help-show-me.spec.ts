@@ -51,7 +51,7 @@ const LIT: Record<"desk" | "phone", Record<string, readonly string[]>> = {
     ward: ["confirm-numbers", "answer-ward-referrals", "bed-board", "new-referral", "sign-off-handover", "tv"],
     ed: ["ed-raise", "new-referral", "find-bed", "search-patient"],
     officer: ["transport-job", "alerts"],
-    bed_manager: ["tv", "sign-off-handover", "statistics", "service-in-view"],
+    bed_manager: ["tv", "statistics", "service-in-view"],
   },
   phone: {
     coordinator: [
@@ -174,3 +174,15 @@ for (const device of ["desk", "phone"] as const) {
     });
   });
 }
+
+test("bed manager cannot launch the coordinator or ward handover sign-off walkthrough @mockup", async ({ page }) => {
+  await signIn(page, DESKS.bed_manager);
+  await expect(async () => {
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent("ward-flow-open-help", { detail: { showMe: "sign-off-handover" } }));
+    });
+    await expect(page.getByTestId("ward-help-sheet")).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 30_000 });
+  await expect(page.getByTestId("ward-show-me-card")).toHaveCount(0);
+  await expect(page).toHaveURL(/\/ward-flow\/capacity(?:\?|$)/u);
+});
