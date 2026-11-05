@@ -53,6 +53,9 @@ export function readReport(body = "") {
   }
 }
 
+/**
+ * @param {{ over: Array<{ route: string, limit: number, kb: number, by: number }>, sha: string, runUrl?: string }} report
+ */
 export function issueBody({ over, sha, runUrl }) {
   return [
     `Main ${sha.slice(0, 7)} measured over its phone first-load script budget (\`script-budget.json\`).`,
