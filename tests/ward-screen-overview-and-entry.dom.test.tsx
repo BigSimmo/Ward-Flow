@@ -308,7 +308,8 @@ describe("the ward overview — 23-ward directory cards and interactive filters"
     // Ward Flow holds no observations. The drawer used to type in the same SpO2, heart rate, blood
     // pressure, pacing mode and transmitter readings for every bed (25 September 2026 audit, A3);
     // no reading appears anywhere in it (the "not recorded" vital signs row was cut, Nov 2026).
-    expect(drawer).not.toHaveTextContent(/SpO2|bpm|mmHg|Transmitter|Telemetry|1:4/i);
+    // "1:4" is the old nursing ratio; word boundaries keep a clock time such as 01:42 from matching.
+    expect(drawer).not.toHaveTextContent(/SpO2|bpm|mmHg|Transmitter|Telemetry|\b1:4\b/i);
 
     // Close the drawer
     const closeBtn = screen.getByRole("button", { name: /Close bed drawer/i });

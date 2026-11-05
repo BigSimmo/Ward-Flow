@@ -89,12 +89,20 @@
 }
 
 .promptBody {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--wf-s-2);
   margin: 0;
-  padding: var(--wf-s-3) var(--wf-s-4);
+  padding: var(--wf-s-4);
   border-top: 1px solid var(--wf-line);
   font-size: var(--wf-fs-13);
   line-height: var(--wf-lh-13);
   color: var(--wf-ink-2);
+}
+.promptIcon {
+  flex: none;
+  color: var(--wf-ink-3);
 }
 /* The next person to place, on the card itself: their name and alert, Open at the right. */
 .nextUp {

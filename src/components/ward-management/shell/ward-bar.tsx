@@ -19,10 +19,7 @@ import {
   subscribeThemePreference,
 } from "@/lib/theme-client";
 import { formatInstant } from "@/components/ward-management/ward-clock";
-import {
-  WARD_HISTORY_TRAVERSAL_CANCELLED,
-  navigateWithDirtyGuard,
-} from "@/components/ward-management/use-dirty-state-guard";
+import { WARD_HISTORY_TRAVERSAL_CANCELLED } from "@/components/ward-management/use-dirty-state-guard";
 import { waitingInEds } from "@/components/ward-management/ward-shared-figures";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { WardGlobalSearch } from "@/components/ward-management/ward-global-search-lazy";
@@ -511,20 +508,10 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
     (id: WardBarPopoverId) => {
       // An ordinary open returns focus to the Tools button; a Board time pill sets its own after this.
       if (id === "tools") toolsReturnFocusRef.current = null;
-      // One Alerts queue: a phone opens the Alerts screen rather than a drawer copy of it, and the
-      // Alerts screen itself moves focus to its own queue. Covers the dock, the menu and search.
-      if (id === "tasks" && oneAlertsQueue && (isPhone || onAlertsScreen)) {
-        if (onAlertsScreen) focusAlertsQueue(tasksActiveCount);
-        else {
-          navigateWithDirtyGuard(() => {
-            // Close the existing sheet only after every unsaved-work guard permits navigation.
-            if (openPanel !== null) {
-              navigationPendingRef.current = true;
-              closePopover(openPanel, false);
-            }
-            router.push(WARD_ALERTS_HREF);
-          });
-        }
+      // One Alerts queue: on the Alerts screen itself the bell moves focus to its own queue. Anywhere
+      // else every size opens the Alerts drawer (Josh, 4 Nov 2026: phones too, not the screen).
+      if (id === "tasks" && oneAlertsQueue && onAlertsScreen) {
+        focusAlertsQueue(tasksActiveCount);
         return;
       }
       // A replacement open must wait for the pending Back; otherwise its popstate would
@@ -563,18 +550,7 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
       // fixed sentences names an announcement for CHOOSING or CLEARING a service, never for opening
       // the selector itself.
     },
-    [
-      closePopover,
-      navigationPendingRef,
-      isPhone,
-      onAlertsScreen,
-      oneAlertsQueue,
-      openPanel,
-      router,
-      scopedNotices.length,
-      setOpenPanel,
-      tasksActiveCount,
-    ],
+    [onAlertsScreen, oneAlertsQueue, openPanel, scopedNotices.length, setOpenPanel, tasksActiveCount],
   );
   useEffect(() => {
     popoverStepsRef.current = { close: closePopover, open: openPopover };

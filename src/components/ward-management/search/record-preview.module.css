@@ -247,6 +247,12 @@
   font-weight: 700;
 }
 
+/* A missing UMRN reads as muted words, not in the mono ID style. */
+.dossierUrmMissing {
+  font-size: var(--t-3);
+  color: var(--muted);
+}
+
 .dossierMetaRow {
   display: flex;
   align-items: center;

@@ -1,6 +1,6 @@
 // One Alerts queue (Josh picked design B and signed it off, 16 Oct 2026, D-61): for the bed
 // coordinator's desk, Tasks and Alerts are one queue. The bar button and the phone dock say Alerts, the desktop drawer is a
-// quick look with a way to the Alerts screen, a phone goes straight to that screen, and on the
+// quick look with a way to the Alerts screen, a phone opens that same drawer, and on the
 // Alerts screen the button does not open a second copy of the list.
 import "@testing-library/jest-dom/vitest";
 import { act, fireEvent, render, screen, within, renderHook } from "@testing-library/react";
@@ -25,6 +25,7 @@ vi.mock("next/navigation", () => ({
 
 import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { NextBarMount } from "@/components/ward-management/shell-next/next-bar";
 import { openWardMenu } from "@/components/ward-management/shell/ward-drawer-bus";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { WardPhoneMenu } from "@/components/ward-management/shell/ward-phone-menu";
@@ -255,10 +256,12 @@ describe("the phone dock with one Alerts queue", () => {
   }
 
   // Q268 (Josh, 2 Nov 2026): the coordinator's dock says Alerts, as the header and Menu do.
-  it("has an Alerts tab that links to the coordinator's queue on the Alerts screen", () => {
+  // Josh, 4 Nov 2026: the phone's Alerts tab opens the same drawer as the desktop bell, not the screen.
+  it("has an Alerts tab that opens the Alerts drawer", () => {
     renderDock();
     const tab = screen.getByTestId("ward-phone-menu-tasks");
-    expect(tab).toHaveAttribute("href", WARD_ALERTS_HREF);
+    expect(tab.tagName).toBe("BUTTON");
+    expect(tab).toHaveAttribute("aria-haspopup", "dialog");
     expect(tab).toHaveAccessibleName("Alerts, 12 outstanding");
     expect(tab).not.toHaveAttribute("aria-current");
     expect(screen.queryByTestId("ward-phone-menu-alerts")).toBeNull();
@@ -291,10 +294,10 @@ describe("the phone dock with one Alerts queue", () => {
 });
 
 describe("the bar's Alerts button", () => {
-  function renderBar() {
+  function renderBar(Bar = WardBar) {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardBar />
+        <Bar />
       </WardFlowProvider>,
     );
     return screen.getByTestId("ward-bar-tasks-trigger");
@@ -319,24 +322,38 @@ describe("the bar's Alerts button", () => {
     expect(mockRouterPush).not.toHaveBeenCalled();
   });
 
-  it("retains unsaved work when the phone Alerts navigation is cancelled", () => {
+  it.each([
+    ["WardBar", WardBar],
+    ["NextBar", NextBarMount],
+  ] as const)("%s keeps unsaved work when leaving through the phone drawer footer is cancelled", async (_, Bar) => {
     installMatchMediaStub(true);
     const confirm = vi.spyOn(window, "confirm").mockReturnValue(false);
     const guard = renderHook(() => useDirtyStateGuard({ isDirty: true, value: "synthetic unfinished form" }));
-    const trigger = renderBar();
-    fireEvent.click(trigger);
-    expect(confirm).toHaveBeenCalledOnce();
-    expect(mockRouterPush).not.toHaveBeenCalled();
-    guard.unmount();
-    confirm.mockRestore();
+    try {
+      fireEvent.click(renderBar(Bar));
+      const dialog = await screen.findByRole("dialog", { name: "Alerts" });
+      expect(confirm).not.toHaveBeenCalled();
+      const footer = within(dialog).getByTestId("ward-tasks-open-alerts");
+      expect(footer).toHaveAttribute("href", WARD_ALERTS_HREF);
+      const click = new MouseEvent("click", { bubbles: true, cancelable: true });
+      fireEvent(footer, click);
+      expect(click.defaultPrevented).toBe(true);
+      expect(confirm).toHaveBeenCalledOnce();
+      expect(mockRouterPush).not.toHaveBeenCalled();
+      expect(dialog).toBeInTheDocument();
+    } finally {
+      guard.unmount();
+      confirm.mockRestore();
+    }
   });
 
-  it("opens the Alerts screen on a phone instead of a drawer", () => {
+  // Josh, 4 Nov 2026: a phone opens the same Alerts drawer as the desktop, with Open Alerts in its foot.
+  it("opens the Alerts drawer on a phone, as on the desktop", async () => {
     installMatchMediaStub(true);
     const trigger = renderBar();
     fireEvent.click(trigger);
-    expect(mockRouterPush).toHaveBeenCalledWith(WARD_ALERTS_HREF);
-    expect(screen.queryByRole("dialog", { name: "Alerts" })).toBeNull();
+    expect(mockRouterPush).not.toHaveBeenCalled();
+    expect(await screen.findByRole("dialog", { name: "Alerts" })).toBeInTheDocument();
   });
 
   // The new frame (Josh, 31 Oct 2026): one name and one icon on every desk, the bell and "Alerts".

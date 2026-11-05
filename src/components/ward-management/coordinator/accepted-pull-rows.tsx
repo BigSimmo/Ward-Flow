@@ -101,6 +101,11 @@ export function AcceptedPullRows({
             line={`${entry.unitName} accepted · ${from}`}
             age={age}
             owner={undefined}
+            action={
+              <Button size="sm" data-placement-action aria-label={shared.openLabel} onClick={() => setPulling(entry)}>
+                Pull bed
+              </Button>
+            }
           />
         ) : (
           <HomeRow

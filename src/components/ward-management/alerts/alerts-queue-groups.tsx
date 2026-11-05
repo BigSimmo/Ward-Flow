@@ -2,11 +2,11 @@
 
 // The Alerts queue's owner menu and same-kind groups (Alerts redesign, approved by Josh 31 Oct 2026).
 // Split from `alerts-screen.tsx` for the line cap.
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, UserRound } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
-import { Select, SrOnly, StatusGlyph, type WfTone } from "@/components/wf";
+import { Button, Menu, SrOnly, StatusGlyph, type WfTone } from "@/components/wf";
 
 import { alertKindOf, minutesText, shownAgeFrom } from "./alerts-model";
 import type { LinkedQueueItem } from "./alert-linked-groups";
@@ -31,20 +31,37 @@ export function OwnerMenu({
   countFor: (owner: string) => number;
 }) {
   if (owners.length === 0) return null;
+  // Alerts overhaul (4 Nov 2026): the kit Menu, not a browser select (Q36), as a chip-sized trigger
+  // that sits at the end of the filter row instead of a full-width line of its own.
   return (
-    <Select
-      aria-label="Highlight by owner"
-      value={value ?? ""}
-      onChange={(event) => onChange(event.target.value === "" ? null : event.target.value)}
-      boxClassName={styles.ownerMenu}
-    >
-      <option value="">Any owner</option>
-      {owners.map((owner) => (
-        <option key={owner} value={owner}>
-          {labelFor(owner)} ({countFor(owner)})
-        </option>
-      ))}
-    </Select>
+    <Menu
+      label="Highlight by owner"
+      align="end"
+      className={styles.ownerMenu}
+      items={[
+        { id: "any", label: "Any owner", checked: value === null, checkable: "radio", onSelect: () => onChange(null) },
+        ...owners.map((owner) => ({
+          id: owner,
+          label: labelFor(owner),
+          meta: String(countFor(owner)),
+          checked: value === owner,
+          checkable: "radio" as const,
+          onSelect: () => onChange(owner),
+        })),
+      ]}
+      trigger={(props) => (
+        <Button
+          {...props}
+          variant={value === null ? "sec" : "tint"}
+          size="sm"
+          icon={UserRound}
+          iconEnd={ChevronDown}
+          aria-label={value === null ? "Highlight by owner" : `Highlighting ${labelFor(value)}`}
+        >
+          {value === null ? "Owner" : labelFor(value)}
+        </Button>
+      )}
+    />
   );
 }
 

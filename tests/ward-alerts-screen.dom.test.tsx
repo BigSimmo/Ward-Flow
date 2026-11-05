@@ -252,13 +252,16 @@ describe("Alerts v10 pass (10 Oct 2026)", () => {
     for (const row of document.querySelectorAll('[data-alert-id][data-act="true"]')) {
       expect(row.getAttribute("data-tone")).not.toBeNull();
     }
-    // The hero's Act now highlight, not the Open view's Act now filter chip (AL2).
-    const hero = screen.getAllByRole("button", { name: /Act now/ });
-    fireEvent.click(hero.find((button) => !button.closest('[data-testid="ward-alerts-filters"]'))!);
+    // A checked condition highlights (4 Nov 2026: the hero no longer repeats the figures, AL2).
+    fireEvent.click(within(checkingList()).getByRole("button", { name: /No eligible bed/u }));
     expect(rows().length).toBe(before);
-    const dimmed = document.querySelectorAll('[data-alert-id][data-dim="true"]').length;
     const lit = document.querySelectorAll('[data-alert-id][data-highlighted="true"]').length;
-    expect(dimmed + lit).toBe(before);
+    expect(lit).toBeGreaterThan(0);
+    // Every other row dims, except an act now row, which never fades (safety rule 4).
+    for (const row of rows()) {
+      if (row.getAttribute("data-highlighted") === "true") continue;
+      expect(row.getAttribute("data-dim") === "true" || row.getAttribute("data-act") === "true").toBe(true);
+    }
     expect(screen.getByText(new RegExp(`^${lit} of \\d+ highlighted, all rows stay$`))).toBeInTheDocument();
   });
 
@@ -285,15 +288,17 @@ describe("Alerts owner menu (remaining-pages audit ops-15, 13 Oct 2026; one menu
       renderScreen();
       const planned = taskItems(seedWardFlowState(), NOW).find((item) => item.plannedAdmission !== undefined);
       expect(planned, "the seed has a planned arrival owned by its booking ward").toBeDefined();
-      const menu = screen.getByRole("combobox", { name: "Highlight by owner" });
-      expect((menu as HTMLSelectElement).value, "nothing chosen at first").toBe("");
-      const labels = within(menu)
-        .getAllByRole("option")
-        .filter((option) => (option as HTMLOptionElement).value !== "")
+      // The kit Menu, not a browser select (Q36, 4 Nov 2026).
+      fireEvent.click(screen.getByRole("button", { name: "Highlight by owner" }));
+      const any = screen.getByRole("menuitemradio", { name: /Any owner/u });
+      expect(any, "nothing chosen at first").toHaveAttribute("aria-checked", "true");
+      const labels = screen
+        .getAllByRole("menuitemradio")
+        .filter((option) => option !== any)
         .map((option) => option.textContent ?? "");
       expect(labels.length).toBeGreaterThan(0);
       expect(labels.some((label) => label.includes(planned!.owner))).toBe(true);
-      for (const label of labels) expect(label.replace(/\(\d+\)/gu, "").trim(), labels.join("|")).not.toBe("Ward");
+      for (const label of labels) expect(label.replace(/\d+/gu, "").trim(), labels.join("|")).not.toBe("Ward");
     } finally {
       vi.unstubAllGlobals();
     }
@@ -403,10 +408,10 @@ describe("Escalate only applies to a bed search that is really exhausted (PR #34
   });
 });
 
-describe("Audit 1 (CS-15): the alert nobody chose says it is first in line", () => {
-  it("labels the first-in-line alert until one is chosen", () => {
+describe("Josh review (4 Nov 2026): the side panel opens on the patient header", () => {
+  it("draws no first-in-line note above the alert, chosen or not", () => {
     renderScreen();
-    expect(screen.getByTestId("ward-alerts-first-in-line")).toHaveTextContent("First in line, not chosen yet");
+    expect(screen.queryByTestId("ward-alerts-first-in-line")).not.toBeInTheDocument();
     fireEvent.click(screen.getAllByTestId("ward-alerts-open").at(-1)!);
     expect(screen.queryByTestId("ward-alerts-first-in-line")).not.toBeInTheDocument();
   });
