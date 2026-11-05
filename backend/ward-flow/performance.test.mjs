@@ -358,6 +358,120 @@ test("a read crossing an incompatible refusal cannot repopulate the repaired sta
   assert.equal((await store.read(actorId, view)).payload, repaired.payload);
 });
 
+test("a late committed read keeps the newer board's cached JSON part", { timeout: 15_000 }, async () => {
+  const world = engine.seedWorld(start);
+  const expectedA = withoutRecordDetail(world);
+  const { db, pool } = memoryDatabase(world);
+  let at = new Date(start);
+  let archiveReached = () => {};
+  let resumeArchive = () => {};
+  const archiveStarted = new Promise((resolve) => {
+    archiveReached = () => resolve(undefined);
+  });
+  const archiveGate = new Promise((resolve) => {
+    resumeArchive = () => resolve(undefined);
+  });
+  /** @template T @param {Promise<T>} promise @returns {Promise<T>} */
+  const bounded = (promise) =>
+    new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(new Error("Synthetic archive barrier timed out")), 5_000);
+      promise.then(
+        (value) => {
+          clearTimeout(timer);
+          resolve(value);
+        },
+        (error) => {
+          clearTimeout(timer);
+          reject(error);
+        },
+      );
+    });
+  const query = pool.query;
+  let holdArchive = true;
+  pool.query = async (sql, params = []) => {
+    const result = await query(sql, params);
+    if (holdArchive && /count\(\*\)::integer AS archived FROM ward_flow\.archived_records/.test(sql)) {
+      holdArchive = false;
+      archiveReached();
+      await archiveGate;
+    }
+    return result;
+  };
+  const store = createWorkspaceStore(pool, {
+    workspaceId,
+    engine,
+    clock: () => new Date(at),
+    log: () => {},
+    alert: () => {},
+    demoEvents: true,
+  });
+  await store.viewer(actorId, {}).catch(() => {});
+  const view = { actorId, membershipId: null, access: engine.STATEWIDE, grants: [] };
+  const pendingA = store.read(actorId, { ...view });
+  const stringify = JSON.stringify;
+  let phase = "outside";
+  let totalSerialisations = 0;
+  let newerSerialisations = 0;
+  let olderSerialisations = 0;
+  try {
+    await bounded(archiveStarted);
+    assert.equal(db.revision, 1);
+    at = new Date(start.getTime() + 1_000);
+    const saved = await store.command(actorId, crypto.randomUUID(), 1, refresh(world.state.units[0].id), {
+      revisionOnly: true,
+    });
+    assert.equal(saved.status, 200);
+    assert.equal(saved.body.outcome, "accepted");
+    assert.equal(saved.body.commandRevision, 2);
+    assert.equal(db.revision, 2);
+    const b1 = await store.read(actorId, { ...view });
+    const expectedB = structuredClone(b1.payload);
+    assert.equal(b1.revision, 2);
+    assert.notDeepEqual(expectedB, expectedA);
+    // The command/size measurement is outside this observation window: only response parts count.
+    JSON.stringify = function (value, ...rest) {
+      if (value && typeof value === "object" && Object.hasOwn(value, "dayZero") && Object.hasOwn(value, "state")) {
+        totalSerialisations++;
+        if (phase === "B1" || phase === "B2") newerSerialisations++;
+        if (phase === "A") olderSerialisations++;
+      }
+      return stringify.call(this, value, ...rest);
+    };
+    phase = "B1";
+    const decodedB1 = await jsonResponse({ snapshot: b1 }, { status: 200, headers: {} }).json();
+    assert.deepEqual(decodedB1.snapshot.payload, expectedB);
+    assert.equal(newerSerialisations, 1);
+    const retainedB = jsonResponse({ snapshot: b1 }, { status: 200, headers: {} });
+    phase = "A";
+    resumeArchive();
+    const a = await bounded(pendingA);
+    assert.equal(a.revision, 1);
+    assert.deepEqual(a.payload, expectedA);
+    const decodedA = await jsonResponse({ snapshot: a }, { status: 200, headers: {} }).json();
+    assert.deepEqual(decodedA.snapshot.payload, expectedA);
+    assert.equal(olderSerialisations, 1);
+    const retainedA = jsonResponse({ snapshot: a }, { status: 200, headers: {} });
+    phase = "B2";
+    const b2 = await store.read(actorId, { ...view });
+    const decodedB2 = await jsonResponse({ snapshot: b2 }, { status: 200, headers: {} }).json();
+    assert.equal(b2.revision, 2);
+    assert.deepEqual(decodedB2.snapshot.payload, expectedB);
+    assert.deepEqual(b1.payload, expectedB);
+    phase = "controls";
+    assert.deepEqual((await retainedB.json()).snapshot, decodedB1.snapshot);
+    assert.deepEqual((await retainedA.json()).snapshot, decodedA.snapshot);
+    assert.equal(totalSerialisations, newerSerialisations + olderSerialisations);
+    assert.equal(olderSerialisations, 1);
+    assert.equal(db.revision, 2);
+    assert.equal(newerSerialisations, 1, "a newer committed board stays serialised once after a late older read");
+    assert.equal(b2.payload, b1.payload, "the newer committed board keeps its cached payload");
+  } finally {
+    JSON.stringify = stringify;
+    resumeArchive();
+    await pendingA.catch(() => {});
+  }
+});
+
 test("a scoped board drops an expired opening when the workspace minute changes", async () => {
   const world = engine.seedWorld(start);
   const view = wardView(world.state.units[0].id);
