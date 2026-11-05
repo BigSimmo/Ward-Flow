@@ -86,17 +86,9 @@ export { clearGlobalSearchRecents } from "./ward-global-search-recents";
 export { permittedSearchResult } from "./ward-global-search-smart";
 
 /**
- * WARD FLOW'S GLOBAL SEARCH — one control, mounted once in the header of every ward route.
- *
- * OWNER RULING: this is the one part of the chrome that does NOT adapt between roles. Same
- * position, same width, same keyboard shortcut everywhere a coordinator, an ED psychiatrist or a
- * ward manager works, so a habit learned in one role works in every other. The only thing that may
- * differ is a small "scope" chip — and that difference belongs to the CALLER, not to this file.
- *
- * ⚠️ THIS COMPONENT CONTAINS NO ROLE LOGIC AT ALL. It takes `scope` as a plain `ReactNode` and
- * renders whatever it is given, unexamined. It does not know what a role is, does not branch on
- * one, and does not read `WardRole` from `ward-derivations.ts`. Whoever wires this into a header
- * decides what the chip says; this file only reserves the slot.
+ * Global search keeps its position, width and keyboard shortcut across desks (owner ruling).
+ * Callers supply the scope chip. Shared catalogue matches use the menu's own-place destination
+ * adaptation followed by the caller's permission checks.
  *
  * PALETTE (Josh, 8 Oct 2026, option B of the global search mockups). The field stays where it is in
  * the header. Focusing it opens a glass palette under the bar, over a soft scrim: kind chips with
