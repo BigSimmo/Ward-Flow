@@ -47,6 +47,7 @@ import { announceToWardShell } from "./shell/ward-live-region";
 import { WardSharedSaveContext, type WardSharedSave } from "./shell/ward-shared-save-context";
 import { WardSharedSaveStatus } from "./ward-shared-save-status";
 import { WardPartialViewProvider } from "./ward-partial-view";
+import { RECOVERY_OUTCOME_WORDS } from "./ward-command-recovery";
 import { isTvPath } from "./bed-meeting/tv-lock-guard";
 import type { SenderReadSource } from "./ward-sender-read-collection";
 
@@ -688,7 +689,7 @@ function WardSharedWorkspaceContent({
           <ul aria-label="Recovered changes">
             {connection.recoveryResults.map((result, index) => (
               <li key={result.commandId}>
-                Change {index + 1}: {result.outcome}.{" "}
+                Change {index + 1}: {RECOVERY_OUTCOME_WORDS[result.outcome]}.{" "}
                 <button
                   type="button"
                   className={styles.dismissRecovery}

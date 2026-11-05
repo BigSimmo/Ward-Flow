@@ -49,6 +49,8 @@ export async function recoverCommandReceipts(host: RecoveryHost) {
   if (entries.length !== read.entries.length) writeCommandRecovery(host.storage, entries);
   if (!entries.length) {
     host.pending(false);
+    // Another desk's entries were dropped: publish the cleared gate now, not at the next poll.
+    if (read.entries.length) host.publish({ boardCurrent: host.view().boardCurrent });
     return;
   }
   const results: RecoveryResult[] = [...(host.view().recoveryResults ?? [])];

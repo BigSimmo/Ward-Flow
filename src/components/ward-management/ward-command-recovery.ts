@@ -6,6 +6,15 @@ export type RecoveryResult = {
   commandId: string;
   outcome: "accepted" | "partly" | "refused" | "unsent" | "unknown" | "expired";
 };
+/** Plain words for staff; the outcome codes stay internal. */
+export const RECOVERY_OUTCOME_WORDS: Record<RecoveryResult["outcome"], string> = {
+  accepted: "saved",
+  partly: "partly saved",
+  refused: "not saved",
+  unsent: "not sent before the reload",
+  unknown: "outcome not known",
+  expired: "outcome not known, the check ran out of time",
+};
 type RecoveryStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_ENTRIES = 256;

@@ -97,6 +97,24 @@ describe("multi-command reload recovery", () => {
       h.client.dispose();
     }
   });
+  it("publishes the cleared gate at once when only another desk's entries were held", async () => {
+    const h = harness([
+      {
+        commandId: "22222222-2222-4222-8222-222222222222",
+        receiptScope: "other-desk",
+        expiresAt: Date.now() + 60_000,
+        phase: "sent",
+      },
+    ]);
+    try {
+      await h.client.refresh();
+      expect(h.requests).toEqual([]);
+      expect(h.view()?.recovering).toBe(false);
+      expect(h.view()?.unconfirmedSave).toBe(false);
+    } finally {
+      h.client.dispose();
+    }
+  });
 });
 
 it("does not send while a durable queued identity cannot be marked sent, then retries once storage recovers", async () => {
