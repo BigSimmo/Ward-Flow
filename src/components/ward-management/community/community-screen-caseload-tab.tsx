@@ -7,6 +7,7 @@
  * "this file" or "this screen" in them still means the community team screen as a whole.
  */
 
+import { Clock } from "lucide-react";
 import { useId } from "react";
 import { NAME_NOT_RECORDED, UMRN_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
 import { legalFormName } from "@/components/ward-management/ward-legal-forms";
@@ -99,10 +100,7 @@ export function CommunityScreenCaseloadTab({ view }: { view: CommunityScreenView
           <div className={styles.cardPanel}>
             <div className={styles.panelHead}>
               <h2 className={styles.panelTitle}>
-                <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <circle cx="8" cy="8" r="6" />
-                  <path d="M8 5v3l2 2" />
-                </svg>
+                <Clock size={16} strokeWidth={1.75} aria-hidden="true" />
                 <span id={`${baseId}-demo-caseloadTitle`}>
                   Community treatment orders (Form 5A) &amp; assertive outreach caseload
                 </span>

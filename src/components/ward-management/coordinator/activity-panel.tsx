@@ -259,7 +259,7 @@ function OpenActivityPanel({
           <PillTabs items={tabs} value={tab} onChange={setTab} label="Activity" idPrefix="home-activity" fill />
         </div>
       }
-      contentClassName={`${styles.glyphScope} ${styles.panelGlyphs}`}
+      contentClassName={styles.glyphScope}
       bodyClassName={styles.panelBody}
       footerClassName={styles.panelFooter}
       footer={showFoot ? <ReviewFoot review={review} now={now} /> : undefined}

@@ -76,7 +76,7 @@ function StatisticsViewLoading({ view }: { view: "journey" | "map" }) {
   const viewSwitch = useViewSwitchAction();
   return (
     <Card id={view} data-testid={`ward-statistics-${view}-loading`}>
-      {viewSwitch ? <CardHead title={view === "journey" ? "Journey" : "Map"} action={viewSwitch} /> : null}
+      {viewSwitch ? <CardHead title={view === "journey" ? "Movement" : "Map"} action={viewSwitch} /> : null}
       <CardBody className={styles.viewLoading}>
         <Spinner />
         <p role="status">Loading {view} view…</p>
@@ -742,7 +742,7 @@ function StatisticsSummaryView({
             <span data-testid="ward-statistics-blocked-discharges-by-reason-admissions">
               {small(blocked.admissionCount)}
             </span>{" "}
-            not departed
+            not yet discharged
           </span>
         )
       }

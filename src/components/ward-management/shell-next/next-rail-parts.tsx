@@ -113,6 +113,16 @@ export function capacityRowsSpoken(rows: readonly CapacityRow[]): string {
 }
 
 /**
+ * WF-44: the closed rail's tile names its place before the percent ("East 74%", "RPH 81%"), so
+ * it never shows a bare "74%". "East Metro" shortens to "East" to fit the tile; "Metro" stays.
+ */
+export function compactPipText(row: Pick<CapacityRow, "name" | "percent"> | undefined): string {
+  if (row?.percent == null) return "—";
+  const place = row.name.replace(/\s+Metro$/u, "").trim() || "Beds";
+  return `${place} ${Math.round(row.percent)}%`;
+}
+
+/**
  * "1 at or over 85% full", "None at or over 85% full": the chip's words, so the alert never rests on colour alone.
  * WF-15 (live test, 5 Nov 2026): "full" says this counts places by bed occupancy, so "None over 85%"
  * no longer reads as a contradiction of the Alerts badge beside it, which counts alerts. "At or over"
@@ -228,18 +238,21 @@ export function PinButton({ id, label, pinned }: { id: string; label: string; pi
 export { RailAccountMenu } from "@/components/ward-management/shell-next/next-account-menu";
 
 /** H2 (Josh, 3 Nov 2026): the bed alerts foot line, Metro as a whole (when the rows above rank
- *  services) and the beds ready now. */
+ *  services) and the beds ready now.
+ * WF-44 (5 Nov 2026): Metro sits on its own line above the ready count, so "Metro 74.6%" never
+ * paints over the East Metro row above it on a tight rail. */
 export function RailReadyLine({ metro, ready }: { metro: number | null; ready: number }) {
   return (
-    <>
+    <span className={parts.readyStack}>
       {metro !== null ? (
-        <>
+        <span className={parts.readyMetro}>
           Metro <b>{formatOccupancyPercent(metro)}</b>
-          <span aria-hidden="true"> · </span>
-        </>
+        </span>
       ) : null}
-      <b>{ready}</b> {ready === 1 ? "bed" : "beds"} ready now
-    </>
+      <span>
+        <b>{ready}</b> {ready === 1 ? "bed" : "beds"} ready now
+      </span>
+    </span>
   );
 }
 

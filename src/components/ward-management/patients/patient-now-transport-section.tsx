@@ -20,6 +20,7 @@ import { CAD_TO_FOLLOW, cadNumberToFollow } from "@/components/ward-management/w
 import { TransportCadToFollow } from "@/components/ward-management/transport/transport-cad-to-follow";
 import { clock } from "./patient-now-records";
 import styles from "./patient-now.module.css";
+import { Ambulance } from "lucide-react";
 import { StatusGlyph } from "@/components/wf";
 import type { Dispatch, SetStateAction } from "react";
 import type { Movement, Rejection, TransportProvider } from "@/components/ward-management/ward-model";
@@ -107,12 +108,7 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
       <div className={styles.transportHeader}>
         <div className={styles.transportTitleCluster}>
           <span className={styles.transportIcon} aria-hidden="true">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <rect x="1" y="3" width="15" height="13" />
-              <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
-              <circle cx="5.5" cy="18.5" r="2.5" />
-              <circle cx="18.5" cy="18.5" r="2.5" />
-            </svg>
+            <Ambulance size={16} strokeWidth={1.75} aria-hidden="true" />
           </span>
           <h3 id="pnTransportHeading" className={`${styles.secH} ${styles.secHFlush}`}>
             {liveMovement ? "Transport dispatch" : "Transport"}
@@ -125,7 +121,13 @@ export function renderTransportSection(ctx: PatientTransportSectionContext) {
               data-booked={isTransportBooked ? "true" : "false"}
               data-testid="ward-patient-transport-badge"
             >
-              {isTransportBooked ? "✓ Transport Booked" : "Awaiting Transport Booking"}
+              {isTransportBooked ? (
+                <>
+                  <StatusGlyph tone="success" /> Transport Booked
+                </>
+              ) : (
+                "Awaiting Transport Booking"
+              )}
             </span>
             {!showTransportForm && !isTransportBooked && (
               <button

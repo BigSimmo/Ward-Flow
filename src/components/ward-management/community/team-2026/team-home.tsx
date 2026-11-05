@@ -10,7 +10,7 @@ import { useState } from "react";
 import { ArrowLeftRight, List, Phone, Users } from "lucide-react";
 import { Button, Card, CardHead, Count, Segmented, SrOnly, StatusGlyph, type WfTone } from "@/components/wf";
 import home from "@/components/ward-management/ward/ward-home-tab.module.css";
-import { DEMO_FIGURES, SENT, shortName } from "./midland-demo";
+import { DEMO_FIGURES, SENT, staffName } from "./midland-demo";
 import { useMidlandDay, useMidlandDemo } from "./use-midland-demo";
 import { perthClockTime } from "@/components/ward-management/ward-clock";
 import { openReferrals, recordMidlandContact, todaysMidlandContacts, useMidlandDecisions } from "./midland-decisions";
@@ -105,12 +105,12 @@ function ListGroup(props: { tone: WfTone; title: string; hint: string; children:
 }
 
 const TODAY_LOG = [
-  ["10:31", "Contact recorded", "Calderbrook, Jonah · clozapine bloods taken · Doyle, M."],
+  ["10:31", "Contact recorded", "Calderbrook, Jonah · clozapine bloods taken · Doyle, Marcus"],
   ["10:05", "Referral received", "Rendlesham, Otto · from Moodjar ward"],
-  ["09:40", "Follow-up booked", "Yarrowdale, Ben · Tue 3 Nov 10:00 · Nair, P."],
+  ["09:40", "Follow-up booked", "Yarrowdale, Ben · Tue 3 Nov 10:00 · Nair, Priya"],
   ["09:12", "Admitted", "Brackwater, Meredith · RGH Adult Secure"],
-  ["08:55", "Referral accepted", "Pembury, Ada · case manager Kuroki, H."],
-  ["08:40", "Depot fridge checked", "Doyle, M."],
+  ["08:55", "Referral accepted", "Pembury, Ada · case manager Kuroki, Hana"],
+  ["08:40", "Depot fridge checked", "Doyle, Marcus"],
 ] as const;
 
 function FlowRow(props: { title: string; detail: string; when: string; tone: WfTone; action: string; go: () => void }) {
@@ -215,7 +215,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
           />
           <Tile
             go={() => go("referrals")}
-            n={f.referrals}
+            n={open.length}
             label="Referrals"
             right={`oldest ${f.oldestReferral}`}
             bar={[
@@ -294,7 +294,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                       }
                       name="Thornbury, Cleo"
                       umrn="UM200288"
-                      detail="left RGH Adult Secure · Byrne, T."
+                      detail="left RGH Adult Secure · Byrne, Tom"
                       when="Day 7"
                       whenSub="of 7"
                       action={cleoContact ? "Open" : "Record contact"}
@@ -324,7 +324,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                       title="Leaving hospital, no follow-up booked"
                       name="Greymantle, Ottoline"
                       umrn="UM100095"
-                      detail="Moodjar · Mallard, J."
+                      detail="Moodjar · Mallard, Jodie"
                       when="Wed 4 Nov"
                       whenSub="in 2 days"
                       action="Book"
@@ -352,7 +352,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                       title="CTO review due"
                       name="Jessop, Rowan"
                       umrn="UM200204"
-                      detail="+2 more · Doyle, M. · ends 9 Nov"
+                      detail="+2 more · Doyle, Marcus · ends 9 Nov"
                       when="Wed 4 Nov"
                       whenSub="in 2 days"
                       action="Open"
@@ -364,7 +364,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                       title="Not seen in 4 weeks"
                       name="Dunmore, Felicity"
                       umrn="UM200140"
-                      detail="+1 more · Mallard, J."
+                      detail="+1 more · Mallard, Jodie"
                       when="31d"
                       whenSub="since seen"
                       action="Open"
@@ -499,7 +499,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                       <FlowRow
                         key={name}
                         title={name}
-                        detail={`${client?.where ?? ""} · ${client?.cm ? shortName(client.cm) : "no case manager"}`}
+                        detail={`${client?.where ?? ""} · ${client?.cm ? staffName(client.cm) : "no case manager"}`}
                         when="6 days ago"
                         tone="neutral"
                         action="Open"
@@ -555,7 +555,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
               <div>
                 <dt>Duty officer</dt>
                 <dd>
-                  Byrne, T. · <span className={t.mono}>ext 4105</span>
+                  Byrne, Tom · <span className={t.mono}>ext 4105</span>
                 </dd>
               </div>
               <div>

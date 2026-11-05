@@ -12,7 +12,7 @@ import { BedSingle, ChevronDown, House, Users } from "lucide-react";
 import { Button, Card, CardHead, Segmented, SrOnly, StatusGlyph } from "@/components/wf";
 import home from "@/components/ward-management/ward/ward-home-tab.module.css";
 import { foldPatientSearchHaystack, foldPatientSearchText } from "@/components/ward-management/ward-patients";
-import { DEMO_FIGURES, STAFF, shortName } from "./midland-demo";
+import { DEMO_FIGURES, STAFF, staffName } from "./midland-demo";
 import { useMidlandDemo } from "./use-midland-demo";
 import { CaseManagerCell, Initials, Person, SeenCell, Tag } from "./parts";
 import wt from "@/components/ward-management/ward-table/ward-table.module.css";
@@ -111,7 +111,7 @@ export function TeamCaseload({
                 <td>
                   <CaseManagerCell client={c} />
                 </td>
-                <td>{shortName(c.dr)}</td>
+                <td>{staffName(c.dr)}</td>
                 <td>
                   {c.legal === "CTO" ? (
                     <>
@@ -285,7 +285,7 @@ export function TeamHospital() {
                   <td>
                     <span className={t.cm}>
                       <Initials id={d.cm} />
-                      {shortName(d.cm)}
+                      {staffName(d.cm)}
                     </span>
                   </td>
                   <td>

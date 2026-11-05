@@ -289,7 +289,9 @@
 .ticks {
   position: relative;
   height: 1em;
-  font-family: var(--wf-mono);
+  /* Axis ticks in Geist with tabular digits (DESIGN-SYSTEM §4 Charts). */
+  font-family: var(--wf-font);
+  font-variant-numeric: tabular-nums;
   font-weight: 500;
   letter-spacing: 0;
 }

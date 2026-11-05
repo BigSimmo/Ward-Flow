@@ -86,4 +86,41 @@ describe("Mobile 16px input floor, 44x44px touch targets, 320px DOB overflow & v
     const rule = /\.required::after\s*\{([^}]*)\}/u.exec(css)?.[1] ?? "";
     expect(rule).toMatch(/content:\s*"\*"\s*\/\s*""/u);
   });
+
+  // WF-41 (5 Nov 2026): at ~610px of card width the ED pressure table clipped inside redesign
+  // halves, and on a short phone the sticky segment and dock left roughly half the viewport.
+  it("WF-41: pressure tables stack and scroll inside their card, and the phone segment unsticks when short", () => {
+    const redesign = readCss("src/components/ward-management/statistics/redesign/statistics-redesign.module.css");
+    expect(redesign).toMatch(
+      /@media\s*\(\s*max-width:\s*80rem\s*\)\s*\{[\s\S]*?\.halves:has\(table\[id="edPressureTable"\]\)[\s\S]*?grid-template-columns:\s*minmax\(0,\s*1fr\)/u,
+    );
+    expect(redesign).toMatch(
+      /@media\s*\(\s*max-width:\s*80rem\s*\)\s*\{[\s\S]*?\.tableWrap:has\(>\s*table\[id="edPressureTable"\]\)[\s\S]*?overflow-x:\s*auto/u,
+    );
+    const phone = readCss("src/components/ward-management/statistics/statistics-phone.module.css");
+    expect(phone).toMatch(
+      /@media\s*\(\s*max-height:\s*44rem\s*\)\s*\{[\s\S]*?\.segPinned\s*\{[\s\S]*?position:\s*static/u,
+    );
+    const v6 = readCss("src/components/ward-management/statistics/statistics-v6.module.css");
+    expect(v6).toMatch(/\.tableWrap\s*\{[\s\S]*?overflow-x:\s*auto/u);
+  });
+
+  // WF-46 (5 Nov 2026): the access admin's Audit trail read as half-drawn, in small text.
+  it("WF-46: the governance event list keeps readable sizes and drops its scroll edge when empty", () => {
+    const css = readCss("src/components/ward-management/governance-third-edition.module.css");
+    expect(css).toMatch(/\.capturedList\[data-empty\]\s*\{[^}]*animation:\s*none/u);
+    expect(css.match(/\n\.eventHeader \{[^}]*\}/u)?.[0] ?? "").toContain("var(--wf-fs-13)");
+    expect(css.match(/\n\.eventRow \{\n  width: 100%;[^}]*\}/u)?.[0] ?? "").toContain("var(--wf-fs-14)");
+  });
+
+  // WF-44 (5 Nov 2026): the live NextRail, not only the unmounted legacy rail, labels its closed
+  // tile and stacks Metro above the ready count with styles that exist.
+  it("WF-44: the live rail stacks Metro and ready beds and labels its closed tile", () => {
+    const css = readCss("src/components/ward-management/shell-next/next-rail.module.css");
+    expect(css).toMatch(/\.readyStack\s*\{[^}]*flex-direction:\s*column/u);
+    expect(css).toMatch(/\.readyMetro\s*\{[^}]*white-space:\s*nowrap/u);
+    expect(css, "no empty rule").not.toMatch(/\{\s*\}/u);
+    const body = readCss("src/components/ward-management/shell-next/next-rail-body.tsx");
+    expect(body).toMatch(/className=\{styles\.compactAlertVal\}>\{compactPipText\(firstRow\)\}/u);
+  });
 });

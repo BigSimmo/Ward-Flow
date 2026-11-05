@@ -53,7 +53,7 @@ const BANNED: readonly Banned[] = [
     instead: "the waiting list",
   },
   // Wording audit, 26 Oct 2026 (D-85 and plain words).
-  { id: "beds held by blockers", pattern: /\bbeds held by blockers?\b/i, instead: "Beds held up by a blocker" },
+  { id: "beds held by blockers", pattern: /\bbeds held by blockers?\b/i, instead: "Beds held up" },
   { id: "was held until", pattern: /\bwas held until\b/i, instead: "the pull time limit passed at" },
   { id: "not held", pattern: /^\s*not held\s*$/i, instead: "Not recorded" },
   { id: "involuntary-capable", pattern: /\binvoluntary-capable\b/i, instead: "Authorised hospital" },
@@ -62,6 +62,28 @@ const BANNED: readonly Banned[] = [
   { id: "active statewide directive", pattern: /\bactive statewide directive\b/i, instead: "Current broadcast" },
   { id: "log in", pattern: /\blog in\b/i, instead: "Sign in" },
   { id: "log out", pattern: /\blog out\b/i, instead: "sign out" },
+  // One word for each thing (DESIGN-SYSTEM §6; design audit 2, 5 Nov 2026). Josh's cards: "Secure
+  // bed" is "Locked bed" everywhere (card 7); the drawer is Alerts on every desk.
+  { id: "Stays and discharges", pattern: /\bStays and discharges\b/i, instead: "Bed board" },
+  { id: "Raise a referral", pattern: /\bRaise a referral\b/i, instead: "New referral" },
+  { id: "New patient", pattern: /\bNew patient\b/, instead: "Add patient" },
+  { id: "mock numbers", pattern: /\bmock numbers?\b/i, instead: "synthetic numbers" },
+  { id: "secure bed", pattern: /\bsecure beds?\b/i, instead: "Locked bed" },
+  { id: "Open, close or hold", pattern: /\bOpen, close or hold\b/i, instead: "Open or close a bed" },
+  { id: "due out", pattern: /\bdue out\b/i, instead: "Discharge due" },
+  { id: "on Command", pattern: /\bon Command\b/, instead: "on Home" },
+  {
+    id: "Tasks, for Alerts",
+    pattern: /\bTasks drawer\b|\bAlerts or Tasks\b|\bTasks and alerts\b|\bcalled Tasks\b|\bAlerts, Tasks\b/i,
+    instead: "Alerts",
+  },
+  { id: "Journey, as a label", pattern: /^\s*Journey\s*$/, instead: "Movement" },
+  { id: "bed pull expired", pattern: /\bbed pulls? expired\b/i, instead: "Pull expired, bed still pulled" },
+  { id: "held-up releases", pattern: /\bheld-up releases?\b/i, instead: "held-up discharges" },
+  { id: "blockers", pattern: /\bblockers\b/i, instead: "Held up" },
+  { id: "Stand Down", pattern: /\bStand Down\b/, instead: "Stand down" },
+  { id: "minutes for a long duration", pattern: /\b\d{3} minutes\b/, instead: "4h" },
+  { id: "demo night", pattern: /\bdemo night\b/i, instead: "on the board" },
   // Australian spelling.
   {
     id: "US spelling",
@@ -70,12 +92,31 @@ const BANNED: readonly Banned[] = [
   },
 ];
 
-/** Exact counts of banned phrases left in files other work owns on 24 Oct 2026. Lower only. */
+/** Exact counts of banned phrases left in files other work owns (24 Oct and 5 Nov 2026). Lower only. */
 const KNOWN_LEFTOVERS: Readonly<Record<string, Readonly<Record<string, number>>>> = {
+  // Mock-up viewer copies (D-91): approved drawings, kept as drawn; never edited or moved from here.
+  "src/app/mockups/ward-flow-redesign/_preview/build-notes.ts": { "Tasks, for Alerts": 1, "demo night": 1 },
+  "src/app/mockups/ward-flow-redesign/_preview/screens.ts": { "Stays and discharges": 1 },
+  "src/components/ward-redesign/pop-alerts/alerts-drawer.tsx": { "mock numbers": 2 },
+  "src/components/ward-redesign/pop-menu/menu-sheets.tsx": { "Open, close or hold": 1 },
+  "src/components/ward-redesign/pop-shortcuts/shortcuts-sheet.tsx": { "Tasks, for Alerts": 1 },
+  "src/components/ward-redesign/pop-tour/tour-steps.ts": { "Raise a referral": 2, "due out": 2 },
+  // "FSH Adult Secure bed 03": Secure inside a ward name, which §6 keeps.
+  "src/components/ward-management/community/community-screen-drawer.tsx": { "secure bed": 1 },
+  // A demo broadcast's own range ("90–120 minutes late"); restating it in hours trips the invented-figure guard.
+  "src/components/ward-management/alerts/ward-broadcast-model.ts": { "minutes for a long duration": 1 },
+  // The On-call footer's synthetic notice, which the design audit's "Do not do" list keeps as it is.
+  "src/components/ward-management/on-call/on-call-screen.tsx": { "mock numbers": 1 },
   // A statistics claim naming the `averageWaitlistWaitMinutes` field, not a patient-facing label.
   "src/components/ward-management/statistics/statistics-claims-other-surfaces.ts": { "the waitlist": 2 },
   // Source evidence quoted word for word from ward-model.ts, not a screen label (H-0847, 27 Oct 2026).
-  "src/components/ward-management/statistics/statistics-claims-shared.ts": { "the waitlist": 1 },
+  "src/components/ward-management/statistics/statistics-claims-shared.ts": {
+    blockers: 1,
+    "secure bed": 2,
+    "the waitlist": 1,
+  },
+  // Source evidence quoted word for word from the record model, not a screen label.
+  "src/components/ward-management/statistics/statistics-claims-statistics-screen.ts": { blockers: 1 },
   // "Waitlist" as a verb in a refusal, which the word list allows; another branch owns the file.
   "src/components/ward-management/ward-flow-referral-answer-events.ts": { "the waitlist": 1 },
   // Help search input data, never shown: "favorite" is a word people type, read as "favourite" (P9).

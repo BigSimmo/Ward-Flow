@@ -32,8 +32,8 @@ for real patient data or clinical deployment.
 The 8 October clean exact-lock baseline passed **916 test files and 10,688 tests**
 (9 files / 146 tests skipped, plus 24 backend mock tests; expanded to 936 files /
 10,881 tests during remediation). These are dated test results. The current source tree has
-**<!-- fact:ward-route-count -->54<!-- /fact --> Ward page routes** and
-**<!-- fact:app-route-count -->58<!-- /fact --> scoped app pages/handlers**, including
+**<!-- fact:ward-route-count -->56<!-- /fact --> Ward page routes** and
+**<!-- fact:app-route-count -->60<!-- /fact --> scoped app pages/handlers**, including
 sign-in and the digest. Counts include redirect files, not distinct interactive screens.
 The separate `/` page redirects to `/ward-flow`; `/ward-flow` renders the Coordinator screen
 directly. Note that
@@ -198,8 +198,8 @@ Historical questions from 24 October 2026, except the source-verified resolution
 
 ## What is built
 
-**Route and screen overview.** The <!-- fact:ward-route-count -->54<!-- /fact --> Ward page routes
-form part of the <!-- fact:app-route-count -->58<!-- /fact --> scoped app pages/handlers including
+**Route and screen overview.** The <!-- fact:ward-route-count -->56<!-- /fact --> Ward page routes
+form part of the <!-- fact:app-route-count -->60<!-- /fact --> scoped app pages/handlers including
 sign-in and digest. The separate root redirect is additional. Engine and components are under
 `src/components/ward-management/` and `src/components/wf/`. Redirect routes are retained
 for old links; their presence does not establish an independent screen:

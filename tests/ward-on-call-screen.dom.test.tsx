@@ -222,7 +222,7 @@ describe("the on-call screen", () => {
     expect(screen.queryByText("Prototype data, invented numbers")).not.toBeInTheDocument();
   });
 
-  it("v10: the title is the hero's one figure, and Downtime card is a dashed Preview", () => {
+  it("v10: the title is the hero's one figure, and Downtime card says it is a preview", () => {
     renderOnCall();
     const hud = screen.getByTestId("ward-on-call-hud-island");
     const title = within(hud).getByRole("heading", { level: 1 }).textContent ?? "";

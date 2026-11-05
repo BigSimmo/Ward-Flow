@@ -3,6 +3,16 @@ import { bedStates } from "@/components/ward-management/ward-bed-states";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 
 /**
+ * WF-16 printed nouns. "Occupied" / "On the ward" mean a patient is in the bed (leave included).
+ * "In use" means Occupied + Pulled — the one occupancy percentage every screen prints.
+ */
+export const OCCUPIED_NOUN = "Occupied";
+export const OCCUPIED_CAPTION = "In a bed, leave included";
+export const IN_USE_NOUN = "In use";
+export const IN_USE_CAPTION = "Occupied or pulled";
+export const ON_THE_WARD_NOUN = "On the ward";
+
+/**
  * **ONE OCCUPANCY FIGURE — device audit, 11 October 2026 (Recommended, top recommendation 1).**
  *
  * Before this, the same "occupancy" label read 79.6% on Home and Capacity, 85.2% on All wards,
@@ -30,6 +40,32 @@ export function wardBedsInUse(
 ): number {
   const states = bedStates(unit, admissions, [...bedReleases], []);
   return states.occupied + states.pulled;
+}
+
+/**
+ * Occupied / On the ward count from the same `bedStates` box every screen reads (WF-16).
+ * Leave is a marker inside Occupied, never a separate bed.
+ */
+export function wardOccupiedBeds(
+  unit: Unit,
+  admissions: readonly Admission[],
+  bedReleases: readonly BedRelease[],
+): number {
+  return bedStates(unit, admissions, [...bedReleases], []).occupied;
+}
+
+/** Occupied, Pulled and In use from one `bedStates` call so the three figures cannot drift (WF-16). */
+export function wardBedUseFigures(
+  unit: Unit,
+  admissions: readonly Admission[],
+  bedReleases: readonly BedRelease[],
+): { occupied: number; pulled: number; inUse: number } {
+  const states = bedStates(unit, admissions, [...bedReleases], []);
+  return {
+    occupied: states.occupied,
+    pulled: states.pulled,
+    inUse: states.occupied + states.pulled,
+  };
 }
 
 export type OccupancyFigure = {

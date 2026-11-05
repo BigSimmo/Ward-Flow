@@ -5,7 +5,7 @@ import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell
 import { setServiceScope, useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronRight, LayoutGrid, List, Lock, Search, SlidersHorizontal } from "lucide-react";
+import { ChevronRight, Circle, LayoutGrid, List, Lock, Search, SlidersHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -829,7 +829,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           <div className={styles.wardsColumn}>
             {placed.length === 0 ? (
               <Card className={cx(styles.emptyCard, styles.wrapText)}>
-                <EmptyState icon={Search} title="No wards recorded" meta="The network has no placed wards." />
+                <EmptyState icon={Circle} title="No wards recorded" meta="The network has no placed wards." />
               </Card>
             ) : isPhone && deskSite ? (
               <>

@@ -455,16 +455,16 @@ export function PatientSearchPage() {
   const people = useMemo(() => {
     if (isChip) {
       const allPeople = findPatients(patients, "", { movements, referrals, units });
-      if (text === "● On this board") {
+      if (text === "On this board") {
         return allPeople.filter((p) => getPatientPresence(p, referrals, movements).key === "live");
       }
-      if (text === "○ Not in Hospital") {
+      if (text === "Not in Hospital") {
         return allPeople.filter((p) => {
           const key = getPatientPresence(p, referrals, movements).key;
           return key === "community" || key === "scheduled";
         });
       }
-      if (text === "◌ Past Patient") {
+      if (text === "Past Patient") {
         return allPeople.filter((p) => getPatientPresence(p, referrals, movements).key === "past");
       }
       if (text === "Form 1A") {

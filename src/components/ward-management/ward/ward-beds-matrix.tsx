@@ -1,5 +1,6 @@
 "use client";
 
+import { Clock, ChevronRight } from "lucide-react";
 import React, { useCallback, useMemo, useState } from "react";
 import styles from "./ward-beds-matrix.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -306,18 +307,7 @@ const WardBedCard = React.memo(function WardBedCard({ bed, isSelected, onSelect 
           </span>
         ) : null}
       </span>
-      <svg
-        className={styles.chev}
-        viewBox="0 0 16 16"
-        width="14"
-        height="14"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.75"
-        aria-hidden="true"
-      >
-        <path d="M6 3.5 10.5 8 6 12.5" />
-      </svg>
+      <ChevronRight className={styles.chev} size={14} strokeWidth={1.75} aria-hidden="true" />
     </button>
   );
 }, areBedCardPropsEqual);
@@ -565,7 +555,7 @@ export function WardBedsMatrix({
         },
         {
           id: "nobody-due",
-          label: "Nobody due out",
+          label: "No discharge due",
           count: nobodyDueOutBeds.length,
           note: "No expected date set",
           tone: null,
@@ -588,18 +578,7 @@ export function WardBedsMatrix({
         <div className={styles.cardHead}>
           <div className={styles.headText}>
             <h2 className={styles.title}>
-              <svg
-                viewBox="0 0 16 16"
-                width="15"
-                height="15"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.75"
-                aria-hidden="true"
-              >
-                <circle cx="8" cy="8" r="6" />
-                <path d="M8 4.5v3.5l2.5 1.5" />
-              </svg>
+              <Clock size={15} strokeWidth={1.75} aria-hidden="true" />
               Before handover
             </h2>
             <span className={styles.subtitle}>

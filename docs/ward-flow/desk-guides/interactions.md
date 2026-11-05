@@ -8,7 +8,7 @@ The keys Ward Flow answers to. Each line is copied from Help in the app, under K
 | --------- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | `/`       | Search, from the box in the header. On Settings it finds a setting.         | `search/search-shortcut.ts`                                                                |
 | `Ctrl+K`  | Search, even with single-key shortcuts off. Cmd+K on a Mac.                 | `search/search-shortcut.ts`                                                                |
-| `Shift+T` | Open Alerts, called Tasks on some desks.                                    | `shell/ward-rail-preferences.ts`                                                           |
+| `Shift+T` | Open Alerts.                                                                | `shell/ward-rail-preferences.ts`                                                           |
 | `Shift+A` | Open Activity.                                                              | `shell/ward-rail-preferences.ts`                                                           |
 | `Shift+R` | Start a new referral.                                                       | `shell/ward-rail-preferences.ts`                                                           |
 | `[`       | Fold the side menu to icons, or open it again.                              | `shell/ward-rail.tsx`                                                                      |

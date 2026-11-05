@@ -1,7 +1,7 @@
 "use client";
 
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
-import { ChevronLeft, ChevronRight, ChevronRight as RowChevron, ShieldCheck, UserRound } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronRight as RowChevron, ShieldCheck, UserRound, Info } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent, type ReactNode } from "react";
 
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -184,10 +184,10 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
   // Nothing pre-selected (Josh, 31 Oct 2026): Accept waits until the ward picks a pull time limit.
   const holdChosenFor = (movementId: string) => holdChoice?.movementId === movementId;
   const holdChoices = [
-    { extended: false, label: `${configuration.pullHoldMinutes} minutes, standard` },
+    { extended: false, label: `${durMinutes(configuration.pullHoldMinutes)} standard` },
     {
       extended: true,
-      label: `${configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES} minutes, extra travel`,
+      label: `${durMinutes(configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES)} extra travel`,
     },
   ];
   const { toastMessage, setToastMessage, triggerToast, toastDeclined } = useAnswerToast();
@@ -862,7 +862,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                       <div className={styles.sbarCard}>
                         {/* Patient Dossier Header */}
                         {isPhone ? (
-                          /* Phone (v10): "This patient" with the person tile; the facts below carry cohort and sex. */
+                          /* Phone (v10): the person's name and UMRN with the person tile; the facts below carry cohort and sex. */
                           <div className={styles.phonePatientHead}>
                             <span className={styles.phonePatientTile} aria-hidden="true">
                               <UserRound strokeWidth={1.75} size={18} aria-hidden="true" />
@@ -1022,34 +1022,9 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                               <li key={gate.gate} data-pass={gate.pass} data-mark={gateMark(gate)}>
                                 <span className={styles.answerGateMark} aria-hidden="true">
                                   {gateMark(gate) === "info" ? (
-                                    "i"
-                                  ) : gate.pass ? (
-                                    <svg
-                                      width="14"
-                                      height="14"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth="2.5"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                    >
-                                      <polyline points="20 6 9 17 4 12" />
-                                    </svg>
+                                    <Info size={12} strokeWidth={1.75} aria-hidden="true" />
                                   ) : (
-                                    <svg
-                                      width="14"
-                                      height="14"
-                                      viewBox="0 0 24 24"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      strokeWidth="2.5"
-                                      strokeLinecap="round"
-                                      strokeLinejoin="round"
-                                    >
-                                      <line x1="12" y1="8" x2="12" y2="12" />
-                                      <line x1="12" y1="16" x2="12.01" y2="16" />
-                                    </svg>
+                                    <StatusGlyph tone={gate.pass ? "success" : "closed"} size={12} />
                                   )}
                                 </span>
                                 <span className={styles.answerGateCopy}>
@@ -1273,7 +1248,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                             open={phoneSheet === "accept" && !blocked}
                             onClose={() => setPhoneSheet(null)}
                             title="Accept in principle"
-                            description={`This patient · ${activeMovement.cohort}, ${activeMovement.security === "Secure" ? "locked" : "open"}`}
+                            description={`${resolvePatientIdentity(activeMovement).formalName} · ${activeMovement.cohort}, ${activeMovement.security === "Secure" ? "locked" : "open"}`}
                             secondary={{ label: "Cancel", onAction: () => setPhoneSheet(null) }}
                             primary={{
                               label: "Accept in principle",
@@ -1289,7 +1264,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                               <dl className={styles.phoneAcceptFacts}>
                                 <div>
                                   <dt>Patient</dt>
-                                  <dd>This patient</dd>
+                                  <dd>{resolvePatientIdentity(activeMovement).formalName}</dd>
                                 </div>
                                 <div>
                                   <dt>Ward</dt>

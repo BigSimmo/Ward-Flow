@@ -507,7 +507,7 @@ export function CoordinatorScreen() {
         },
         now,
       ).map((item) => {
-        if (!item.id.startsWith("bed-pull-") && item.title !== "Bed pull expired") return item;
+        if (!item.id.startsWith("bed-pull-") && item.title !== "Pull expired, bed still pulled") return item;
         return {
           ...item,
           title: "Pull expired, bed still pulled",
@@ -1041,12 +1041,10 @@ export function CoordinatorScreen() {
                     inline
                     value={staleBedCounts + wardsNotReporting}
                     // The chip says how many; opening it says which (it ran off a tablet's edge).
-                    // Amber dot, not the clock: a check is not about time.
+                    // The kit amber dot (at risk).
                     label={
                       <>
-                        {staleBedCounts + wardsNotReporting > 0 ? (
-                          <StatusGlyph tone="warning" size={10} className={activity.dotGlyph} />
-                        ) : null}
+                        {staleBedCounts + wardsNotReporting > 0 ? <StatusGlyph tone="warning" size={10} /> : null}
                         to check{networkWord}
                       </>
                     }

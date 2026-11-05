@@ -25,7 +25,7 @@ import { perthWeekdayTime } from "@/components/ward-management/ward-clock";
 import { foldPatientSearchHaystack, foldPatientSearchText } from "@/components/ward-management/ward-patients";
 import phone from "../community-team-phone.module.css";
 import type { CommunityTeamSection } from "../community-screen-hero";
-import { DEMO_FIGURES, SENT, STAFF as AUTHORED_STAFF, TODAY, shortName } from "./midland-demo";
+import { DEMO_FIGURES, SENT, STAFF as AUTHORED_STAFF, TODAY, staffName } from "./midland-demo";
 import { useMidlandDay, useMidlandDemo } from "./use-midland-demo";
 import { ReferralPage, useAnswer } from "./team-referrals";
 import { openReferrals, useMidlandDecisions } from "./midland-decisions";
@@ -37,19 +37,20 @@ const SHOWN = 8;
 /** HOW-WE-WORK D4: an unconnected control says exactly this. */
 const NOT_WIRED = "Not wired in this prototype.";
 
-const SECTIONS: { id: CommunityTeamSection; label: string; count?: number }[] = [
+/** Audit B2 (5 Nov 2026): every "to answer" figure is the open-referral count, so a decision lowers each one at once. */
+const sectionsFor = (toAnswer: number): { id: CommunityTeamSection; label: string; count?: number }[] => [
   { id: "home", label: "Home" },
   { id: "caseload", label: "Caseload", count: f.caseload },
   { id: "hospital", label: "In hospital", count: f.inHospital },
-  { id: "referrals", label: "Referrals", count: f.referrals },
+  { id: "referrals", label: "Referrals", count: toAnswer },
   { id: "clinicians", label: "Clinicians", count: f.clinicians },
 ];
 
 type Figure = { id: string; value: ReactNode; label: string; tone?: "danger" | "warning" | "info" };
-const FIGURES: Record<CommunityTeamSection, Figure[]> = {
+const figuresFor = (toAnswer: number): Record<CommunityTeamSection, Figure[]> => ({
   home: [
     { id: "act", value: f.actNow, label: "Act now", tone: "danger" },
-    { id: "answer", value: f.referrals, label: "To answer", tone: "warning" },
+    { id: "answer", value: toAnswer, label: "To answer", tone: "warning" },
     { id: "home", value: f.homeIn7Days, label: "Home in 7 days", tone: "info" },
   ],
   caseload: [
@@ -63,7 +64,7 @@ const FIGURES: Record<CommunityTeamSection, Figure[]> = {
     { id: "passed", value: f.datesPassed, label: "Dates passed", tone: "warning" },
   ],
   referrals: [
-    { id: "answer", value: f.referrals, label: "To answer" },
+    { id: "answer", value: toAnswer, label: "To answer" },
     { id: "past", value: f.pastTime, label: "Past its time", tone: "warning" },
     { id: "oldest", value: f.oldestReferral, label: "Oldest" },
   ],
@@ -72,7 +73,7 @@ const FIGURES: Record<CommunityTeamSection, Figure[]> = {
     { id: "field", value: AUTHORED_STAFF.filter((s) => s.today === "field").length, label: "In the field" },
     { id: "away", value: AUTHORED_STAFF.filter((s) => s.today === "leave").length, label: "Away" },
   ],
-};
+});
 
 function Card({ title, aside, children }: { title?: string; aside?: ReactNode; children: ReactNode }) {
   return (
@@ -144,14 +145,15 @@ function HomeSection({
   const duty = STAFF.find((s) => s.today === "duty")!;
   // Same decision state as the Referrals tab (and the tablet home): once answered, it leaves Act now.
   const decisions = useMidlandDecisions();
-  const sallowfieldOpen = openReferrals(REFERRALS, decisions).some(({ r }) => r.id === "r1");
+  const open = openReferrals(REFERRALS, decisions);
+  const sallowfieldOpen = open.some(({ r }) => r.id === "r1");
   const actNow = [
     {
       id: "fu",
       what: "7-day follow-up due today",
       n: "Thornbury, Cleo",
       u: "UM200288",
-      meta: "left RGH Adult Secure · Byrne, T.",
+      meta: "left RGH Adult Secure · Byrne, Tom",
       when: "Day 7",
       action: "Record",
       act: true,
@@ -176,7 +178,7 @@ function HomeSection({
       what: "Leaving hospital, no follow-up booked",
       n: "Greymantle, Ottoline",
       u: "UM100095",
-      meta: "Moodjar · Mallard, J.",
+      meta: "Moodjar · Mallard, Jodie",
       when: day("Wed 4 Nov"),
       action: "Book",
       run: () => note(NOT_WIRED),
@@ -197,7 +199,7 @@ function HomeSection({
       what: "CTO review due",
       n: "Jessop, Rowan",
       u: "UM200204",
-      meta: day("+2 more · Doyle, M. · ends 9 Nov"),
+      meta: day("+2 more · Doyle, Marcus · ends 9 Nov"),
       when: day("Wed 4 Nov"),
       action: "Open",
     },
@@ -206,7 +208,7 @@ function HomeSection({
       what: "Not seen in 4 weeks",
       n: "Dunmore, Felicity",
       u: "UM200140",
-      meta: "+1 more · Mallard, J.",
+      meta: "+1 more · Mallard, Jodie",
       when: "31d",
       action: "Open",
     },
@@ -310,7 +312,7 @@ function HomeSection({
           },
           {
             id: "referrals" as const,
-            value: f.referrals,
+            value: open.length,
             label: "Referrals",
             line: `${f.pastTime} past its time · ${f.dueThisWeek} due this week`,
             bar: [
@@ -436,7 +438,7 @@ function CaseloadSection() {
         <ul className={p.rows}>
           {(all ? rows : rows.slice(0, SHOWN)).map((c) => {
             const warn = (c.flags ?? []).includes("notSeen") || (!c.cm && !c.psychOnly);
-            const who = c.cm ? shortName(c.cm) : c.psychOnly ? "Psychiatrist only" : "No case manager yet";
+            const who = c.cm ? staffName(c.cm) : c.psychOnly ? "Psychiatrist only" : "No case manager yet";
             return (
               <PhoneListRow
                 key={c.u}
@@ -471,7 +473,7 @@ function HospitalSection({ note, onRecord }: { note: (t: string) => void; onReco
                 as="li"
                 leading={<StatusGlyph tone={b.passed || b.none ? "warning" : "neutral"} size={12} />}
                 name={<Name n={c.n} u={c.u} />}
-                meta={`${c.where} · ${c.cm ? shortName(c.cm) : "No case manager"} · ${b.none ? "No team contact" : b.contact}`}
+                meta={`${c.where} · ${c.cm ? staffName(c.cm) : "No case manager"} · ${b.none ? "No team contact" : b.contact}`}
                 value={`${b.bed}d`}
                 time={b.out === "Not set" ? "Out not set" : b.out.startsWith("Passed") ? b.out : `Out ${b.out}`}
               />
@@ -493,7 +495,7 @@ function HospitalSection({ note, onRecord }: { note: (t: string) => void; onReco
                 />
               }
               name={<Name n={d.n} u={d.u} />}
-              meta={`Left ${d.from} ${d.left} · ${shortName(d.cm)} · ${d.label}`}
+              meta={`Left ${d.from} ${d.left} · ${staffName(d.cm)} · ${d.label}`}
               action={
                 d.state === "seen"
                   ? undefined
@@ -615,13 +617,13 @@ function CliniciansSection({ note }: { note: (t: string) => void }) {
           <div>
             <dt>Duty officer</dt>
             <dd>
-              Byrne, T. · <span className={p.mono}>4105</span>
+              Byrne, Tom · <span className={p.mono}>4105</span>
             </dd>
           </div>
           <div>
             <dt>Intake</dt>
             <dd>
-              Vance, K. · <span className={p.mono}>4104</span>
+              Vance, Kara · <span className={p.mono}>4104</span>
             </dd>
           </div>
           <div>
@@ -632,7 +634,7 @@ function CliniciansSection({ note }: { note: (t: string) => void }) {
           </div>
           <div>
             <dt>Leave cover</dt>
-            <dd>Mallard, J. for Walsh, E.</dd>
+            <dd>Mallard, Jodie for Walsh, Ewan</dd>
           </div>
         </dl>
       </Card>
@@ -795,7 +797,9 @@ export function MidlandPhone({
   useRegisterWardBarPlaceSwitch(
     onSwitchTeam ? { label: "East Metro · Adult", actionLabel: "Switch team", onPress: switchTeam } : null,
   );
-  const figures = FIGURES[section];
+  const { REFERRALS } = useMidlandDemo();
+  const toAnswer = openReferrals(REFERRALS, useMidlandDecisions()).length;
+  const figures = figuresFor(toAnswer)[section];
   if (full !== null) {
     return (
       <div className={phone.phone} data-testid="ward-community-phone">
@@ -849,7 +853,7 @@ export function MidlandPhone({
           className={`${phone.segmented} ${p.track}`}
           value={section}
           onChange={open}
-          items={SECTIONS}
+          items={sectionsFor(toAnswer)}
         />
         {section === "home" ? <HomeSection go={open} onRecord={onRecordContact} note={note} /> : null}
         {section === "caseload" ? <CaseloadSection /> : null}

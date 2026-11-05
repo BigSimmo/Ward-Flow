@@ -330,9 +330,9 @@ function lockedReadyText(lockedReady: number): string {
   return lockedReady === 1 ? "1 of the ready beds is locked" : `${lockedReady} of the ready beds are locked`;
 }
 
-/** NA3-02 (Josh, 26 Oct 2026, Part A 15): the bed meeting's held up count is releases, today and tomorrow. */
+/** NA3-02 (Josh, 26 Oct 2026, Part A 15): the bed meeting's held up count is discharges, today and tomorrow. */
 function releasesHeldUpText(heldUp: number): string {
-  return `${heldUp} ${heldUp === 1 ? "release" : "releases"} held up`;
+  return `${heldUp} ${heldUp === 1 ? "discharge" : "discharges"} held up`;
 }
 
 /* --------------------------------------------------------------------------------------------- *
@@ -783,7 +783,7 @@ export function WardTvView({
           )}
         </Panel>
 
-        <Panel title="Held up or past their date" testId="ward-tv-stuck-panel">
+        <Panel title="Held up or overdue" testId="ward-tv-stuck-panel">
           {stuck.length === 0 ? (
             <Empty>Nobody held up or past their date</Empty>
           ) : (
@@ -801,7 +801,7 @@ export function WardTvView({
           )}
         </Panel>
 
-        <Panel title="Off the ward at an ED" testId="ward-tv-away-panel">
+        <Panel title="Away at an ED" testId="ward-tv-away-panel">
           {sheet.away.length === 0 ? (
             <Empty>Everyone is on the ward</Empty>
           ) : (

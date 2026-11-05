@@ -226,7 +226,7 @@ function MidlandGlance({ go }: { go: (section: CommunityTeamSection) => void }) 
       <button type="button" className={v6.glanceItem} onClick={() => go("clinicians")}>
         <Icon icon={Phone} size={14} />
         <span>Duty officer</span>
-        <b>Byrne, T.</b>
+        <b>Byrne, Tom</b>
         <span className={v6.glanceMono}>ext 4105</span>
         <Icon icon={ChevronRight} size={14} />
       </button>

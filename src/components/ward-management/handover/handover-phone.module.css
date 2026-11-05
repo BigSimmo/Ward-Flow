@@ -389,11 +389,10 @@
 }
 
 .prowName {
+  /* Names in full, wrapping, never cut (DS §4 Names). */
   min-width: 0;
   font: 600 var(--wf-fs-14) / 20px var(--wf-font);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 /* F-05 (phone review, Oct 2026): the route and the next step wrap to a second line rather than

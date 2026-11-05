@@ -76,13 +76,13 @@ export function TeamClinicians({ find = "" }: { find?: string }) {
             <div>
               <dt>Duty officer</dt>
               <dd>
-                Byrne, T. · <span className={t.mono}>4105</span>
+                Byrne, Tom · <span className={t.mono}>4105</span>
               </dd>
             </div>
             <div>
               <dt>Intake</dt>
               <dd>
-                Vance, K. · <span className={t.mono}>4104</span>
+                Vance, Kara · <span className={t.mono}>4104</span>
               </dd>
             </div>
             <div>
@@ -93,7 +93,7 @@ export function TeamClinicians({ find = "" }: { find?: string }) {
             </div>
             <div>
               <dt>Leave cover</dt>
-              <dd>Mallard, J. for Walsh, E.</dd>
+              <dd>Mallard, Jodie for Walsh, Ewan</dd>
             </div>
           </dl>
         </Card>
@@ -127,7 +127,7 @@ export function TeamClinicians({ find = "" }: { find?: string }) {
             </div>
             <div>
               <dt>Depot fridge</dt>
-              <dd>Checked 08:40 · Doyle, M.</dd>
+              <dd>Checked 08:40 · Doyle, Marcus</dd>
             </div>
           </dl>
         </Card>

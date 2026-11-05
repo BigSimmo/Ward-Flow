@@ -1,6 +1,6 @@
 "use client";
 
-// "Lists": the department's tabbed lists, Review, Medical Clearance, Expects, Forms and Referred.
+// "Lists": the department's tabbed lists, Review, Medical clearance, Expects, Forms and Referred.
 // Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6, 15 Oct 2026).
 import type { KeyboardEvent } from "react";
 import { formatElapsed, formatInstantWithDay, splitDuration } from "@/components/ward-management/ward-clock";
@@ -40,8 +40,8 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
     answeredAll,
   } = ctx;
   const ALL_DEPARTMENT_TABS: { key: DepartmentTabKey; label: string }[] = [
-    { key: "review", label: "Awaiting Review" },
-    { key: "cleared", label: "Medical Clearance" },
+    { key: "review", label: "Awaiting review" },
+    { key: "cleared", label: "Medical clearance" },
     { key: "expected", label: "Expects" },
     { key: "forms", label: "Forms" },
     { key: "referred", label: "Referred" },
@@ -117,7 +117,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
             type="button"
             role="tab"
             id="ward-ed-cleared-tab"
-            aria-label={`Medical Clearance, ${clearedPatients.length === 0 ? "none" : clearedPatients.length}`}
+            aria-label={`Medical clearance, ${clearedPatients.length === 0 ? "none" : clearedPatients.length}`}
             aria-selected={departmentListTab === "cleared"}
             aria-controls="ward-ed-cleared-panel"
             tabIndex={departmentListTab === "cleared" ? 0 : -1}
@@ -191,7 +191,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
           <EdInboxReferrals ctx={ctx} />
 
           <h2 className={styles.sectionHeading}>
-            Awaiting Review &middot; {awaitingReviewPatients.length} patient
+            Awaiting review &middot; {awaitingReviewPatients.length} patient
             {awaitingReviewPatients.length === 1 ? "" : "s"}
           </h2>
           <p className={styles.unitMeta}>Patients in department without a recorded psychiatric review.</p>
@@ -253,7 +253,7 @@ export function EdListsSection({ ctx }: { ctx: EdScreenContext }) {
           tabIndex={0}
         >
           <h2 className={styles.sectionHeading}>
-            Medical Clearance &middot; {clearedPatients.length} patient
+            Medical clearance &middot; {clearedPatients.length} patient
             {clearedPatients.length === 1 ? "" : "s"}
           </h2>
           <p className={styles.unitMeta}>Patients marked medically cleared for psychiatric assessment.</p>

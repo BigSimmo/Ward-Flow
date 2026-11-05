@@ -2235,7 +2235,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         {isPhone && !phoneCardOpen ? (
           /* Phone (v10): the two views pin under the header as one segmented control, outside the
              ward card so they stay in place while the page scrolls. */
-          <nav className={`${styles.tabBarWrap} ${styles.phoneTabBar}`} aria-label="Ward Operational Tabs">
+          <nav className={`${styles.tabBarWrap} ${styles.phoneTabBar}`} aria-label="Ward tabs">
             <ul
               className={styles.tabList}
               role="tablist"

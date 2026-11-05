@@ -22,13 +22,13 @@ const PROTOTYPE_BADGE = (
 );
 const PHONE_TAIL = (
   <span className={styles.phoneTail}>
-    <span>Invented records ·</span> <span>not for clinical use</span>
+    <span>Demo board clock ·</span> <span>invented records ·</span> <span>not for clinical use</span>
   </span>
 );
 const AUTHORITY_PILL = (
   <span
     className={styles.authorityPill}
-    title={`Ward Flow prototype · demo data as of ${DEMONSTRATION_DAY_LABEL} · synthetic only`}
+    title={`Ward Flow prototype · demo board clock · scenario set on ${DEMONSTRATION_DAY_LABEL} · synthetic only`}
   >
     <svg
       className={styles.authorityIcon}
@@ -51,7 +51,7 @@ const AUTHORITY_PILL = (
 
 export function WardPrototypeFooter({
   testId,
-  note = `Demo data as of ${DEMONSTRATION_DAY_LABEL} · synthetic demonstration figures · Not approved for clinical use`,
+  note = `Demo board clock · scenario set on ${DEMONSTRATION_DAY_LABEL} · synthetic demonstration figures · Not approved for clinical use`,
   extra,
   style,
   className,

@@ -183,7 +183,7 @@ export function StatisticsOverviewScreen() {
               label={`Over ${BED_ALERT_THRESHOLD_PERCENT}%`}
               tone={wardsOverLine > 0 ? "warning" : undefined}
             />
-            <HeroStat value={small(blockedTotal)} label="Blocked" />
+            <HeroStat value={small(blockedTotal)} label="Held up" />
           </>
         ),
       }}

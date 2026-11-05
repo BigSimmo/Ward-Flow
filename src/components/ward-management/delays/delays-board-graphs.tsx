@@ -594,7 +594,7 @@ export function DelaysBoardGraphs(props: Props) {
               onFilters({ cause: null, owner: null });
             }}
           >
-            Blocker
+            Held up by
           </button>
         </div>
       </>

@@ -228,8 +228,8 @@ export function WardTodayTvView({ rows, footer }: { rows: WardClinicalRow[]; foo
     },
     {
       id: "stuck",
-      title: "Held up or past their date",
-      hint: "What is holding the bed",
+      title: "Held up or overdue",
+      hint: "What is holding up the discharge",
       tone: "warning",
       cards: rows.filter((row) => row.plan?.tone && !row.goingToday).map((row) => wardCard(row, row.plan)),
     },
@@ -300,7 +300,7 @@ export function EdBedSearchTvView({
     },
     {
       id: "book",
-      title: "Bed found",
+      title: "Bed agreed",
       hint: "Book transport",
       tone: "warning",
       cards: step("book").map((row) => edCard(row, row.referral)),

@@ -45,9 +45,9 @@ export function ScenarioDialog({
   const result = applyScenario(tomorrow, scenario, units);
   const tightest = [...result.kinds].sort((a, b) => a.after - b.after)[0];
   const options: { key: Toggle; label: string; beds: number }[] = [
-    { key: "clearHeldUp", label: "Held-up releases go ahead", beds: tomorrow.total.heldUp },
+    { key: "clearHeldUp", label: "Held-up discharges go ahead", beds: tomorrow.total.heldUp },
     { key: "confirmDates", label: "Planned dates are confirmed", beds: tomorrow.total.confirmationEligible ?? 0 },
-    { key: "overdueGoAhead", label: "Overdue releases go ahead", beds: tomorrow.total.overdue },
+    { key: "overdueGoAhead", label: "Overdue discharges go ahead", beds: tomorrow.total.overdue },
   ];
   const close = () => {
     setScenario(EMPTY_SCENARIO);

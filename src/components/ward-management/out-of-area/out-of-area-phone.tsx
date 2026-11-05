@@ -58,8 +58,9 @@ export type PhonePerson = {
 
 type PhoneTab = "needs" | "all" | "beds";
 
+// Design audit 4 (B21): no plan yet is a gap (the ring), not declined or closed (the cross).
 const STATUS_TONE: Record<ReturnStatus, WfTone> = {
-  none: "closed",
+  none: "neutral",
   started: "neutral",
   not_agreed: "neutral",
   agreed: "neutral",
@@ -337,7 +338,8 @@ export function OutOfAreaPhone({
             // "No plan" stays on one line; the spoken label names the noun, as the desktop's "No return plan" does.
             label: "No plan",
             actionLabel: `${noPlanCount} with no return plan, highlight them`,
-            tone: "closed",
+            // Design audit 4 (B21): a missing plan is waiting (the ring), not declined or closed (the cross).
+            tone: "neutral",
             onPress: () => onHighlight("noplan"),
             pressed: highlight === "noplan",
           },
@@ -485,7 +487,8 @@ export function OutOfAreaPhone({
             className={styles.phoneBarMain}
             onClick={() => open(nextUp.entry.admission.id)}
           >
-            Plan next return <span className={styles.phoneBarName}>{nextUp.name.split(",")[0]}</span>
+            {/* Names in full (audit B5): the surname alone could match two people. */}
+            Plan next return <span className={styles.phoneBarName}>{nextUp.name}</span>
           </Button>
         ) : (
           <Button

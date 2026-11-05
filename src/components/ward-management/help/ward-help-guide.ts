@@ -142,7 +142,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
       "My ED board is your home: your patients, longest wait first, and where each referral stands. Your menu holds My referrals, New referral and Find a bed.",
     jobs: [
       {
-        job: "Raise a referral",
+        job: "New referral",
         howTo: "ed-raise",
         how: "Use New referral, from the header or on the board. Choose one or more destinations and send it.",
         go: "referral-intake",
@@ -253,7 +253,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
         go: "wards",
       },
       {
-        job: "Discharge blockers",
+        job: "Discharges held up",
         how: "Record or clear what is holding up a discharge, on Discharges.",
         go: "discharges",
       },

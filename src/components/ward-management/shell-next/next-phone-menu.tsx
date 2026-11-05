@@ -647,7 +647,7 @@ export function NextPhoneMenu({
         setOpen(true);
         announceToWardShell("Menu opened.");
       }),
-    [],
+    [setOpen],
   );
 
   // One order for the signed-in person (device audit, 11 Oct 2026), as the desktop rail.

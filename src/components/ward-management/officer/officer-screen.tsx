@@ -11,7 +11,7 @@ import { useOfficerDiversionSave } from "./use-officer-diversion-save";
 import { ReturnEarlyAlerts } from "@/components/ward-management/out-of-area/return-early-alerts";
 import { useTransportCommandFeedback } from "./use-transport-command-feedback";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Clock, Copy, ListChecks, Lock, MapPin, Plus, Search, ShieldCheck, X } from "lucide-react";
+import { Circle, Clock, Copy, ListChecks, Lock, MapPin, Plus, Search, ShieldCheck, X } from "lucide-react";
 
 import {
   Button,
@@ -1319,7 +1319,7 @@ export function OfficerScreen() {
                     </ul>
                   ) : (
                     <div className={styles.filterEmpty}>
-                      <EmptyState icon={Check} title="Nothing delivered yet today." />
+                      <EmptyState icon={Circle} title="Nothing delivered yet today." />
                     </div>
                   )}
                 </TabPanel>
@@ -1344,7 +1344,7 @@ export function OfficerScreen() {
                     </section>
                   ) : (
                     <div className={styles.filterEmpty}>
-                      <EmptyState icon={Check} title="No action has been refused this session." />
+                      <EmptyState icon={Circle} title="No action has been refused this session." />
                     </div>
                   )}
                 </TabPanel>
@@ -1373,7 +1373,7 @@ export function OfficerScreen() {
                     </section>
                   ) : (
                     <div className={styles.filterEmpty}>
-                      <EmptyState icon={Check} title="No transport has been cancelled this session." />
+                      <EmptyState icon={Circle} title="No transport has been cancelled this session." />
                     </div>
                   )}
                 </TabPanel>

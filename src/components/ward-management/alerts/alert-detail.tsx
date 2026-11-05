@@ -165,7 +165,8 @@ export function AlertDetail({
   // Alerts redesign: one plain sentence on the state card, and one on what the Act tab's button does.
   const stateNote =
     kind === "hold"
-      ? `The bed is still held${subject.to ? ` at ${subject.to}` : ""}. Release it or pull again.`
+      ? // "Held" is a ward's own bed kept for leave; an incoming bed is pulled.
+        `The bed is still pulled${subject.to ? ` at ${subject.to}` : ""}. Release it or pull again.`
       : kind === "declines"
         ? `${declineCount} ${declineCount === 1 ? "ward has" : "wards have"} declined. No ward has accepted.`
         : kind === "nobed"

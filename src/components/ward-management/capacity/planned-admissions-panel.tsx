@@ -68,6 +68,7 @@ import { plannedAdmissionAgenda } from "./planned-admissions";
 import {
   applyDraftPatch,
   authorisationReasonNeeded,
+  plannedInitialsRefusal,
   clockInputValue,
   draftTiming,
   plannedDayOffsets,
@@ -222,7 +223,13 @@ export function PlannedAdmissionsPanel({
   // reducer refuses the same people, so this list only spares a coordinator a refusal.
   const getBookablePatients = () => bookablePatientsFor(patients, admissions, movements, plannedFromContext ?? []);
 
-  const displayedRefusal = refusal ?? save.error ?? null;
+  // One message at a time, the newest: a local refusal clears an older save error, and a new save
+  // clears an older refusal, so neither can hide the other (CodeRabbit on PR #1471).
+  const displayedRefusal = save.error ?? refusal ?? null;
+  const refuse = (message: string | null) => {
+    save.clearError();
+    setRefusal(message);
+  };
 
   // A calendar date needs the provider's day zero; a screen given none still labels each day by
   // its distance from today rather than failing to render.
@@ -325,7 +332,7 @@ export function PlannedAdmissionsPanel({
     if (reason === "" || legalStatus === "") return;
     const timing = draftTiming(draft, formOpenedAt);
     if (!timing.ok) {
-      setRefusal(timing.refusal);
+      refuse(timing.refusal);
       return;
     }
     const { expectedArrivalAt, expectedStayDays } = timing;
@@ -349,7 +356,7 @@ export function PlannedAdmissionsPanel({
       if (draft.who === "initials") {
         initials = normalisePlannedAdmissionInitials(draft.initials);
         if (initials === null) {
-          setRefusal("Initials are one to three letters.");
+          refuse(plannedInitialsRefusal(draft.initials));
           return;
         }
       } else {
@@ -367,6 +374,7 @@ export function PlannedAdmissionsPanel({
               : patientCohort(patient.dateOfBirth, arrivalDay);
         }
       }
+      refuse(null);
       save.submit(
         () =>
           dispatch({
@@ -478,13 +486,15 @@ export function PlannedAdmissionsPanel({
     ? undefined
     : form?.mode === "book" && draft.who === "patient" && draft.patientId === ""
       ? "Choose the patient first"
-      : draft.reason === ""
-        ? "Choose a reason first"
-        : draft.unitId === ""
-          ? "Choose a ward first"
-          : draft.legalStatus === ""
-            ? "Choose a legal status first"
-            : undefined;
+      : form?.mode === "book" && draft.who === "initials" && normalisePlannedAdmissionInitials(draft.initials) === null
+        ? (plannedInitialsRefusal(draft.initials) ?? undefined)
+        : draft.reason === ""
+          ? "Choose a reason first"
+          : draft.unitId === ""
+            ? "Choose a ward first"
+            : draft.legalStatus === ""
+              ? "Choose a legal status first"
+              : undefined;
 
   const draftIdentity =
     role !== "executive" && draft?.who === "patient" && draft.patientId !== ""
@@ -492,6 +502,9 @@ export function PlannedAdmissionsPanel({
       : undefined;
   const booked = agenda.length;
   const update = (patch: Partial<Draft>) => {
+    // WF-07: a prior initials refusal must not stick after the draft changes, or it masks a later
+    // server error (displayedRefusal preferred save.error, but Book stayed enabled for bad initials).
+    setRefusal(null);
     setDraft((current) => applyDraftPatch(current, patch));
   };
 
@@ -542,7 +555,11 @@ export function PlannedAdmissionsPanel({
           <Button variant="sec" size="sm" icon={CalendarPlus} onClick={openBook} data-testid="ward-planned-book">
             Book
           </Button>
-        ) : undefined
+        ) : (
+          <span className={styles.none} data-testid="ward-planned-book-role">
+            Your role cannot book.
+          </span>
+        )
       }
     >
       <div className={listSlot ? undefined : styles.body}>
@@ -763,9 +780,7 @@ export function PlannedAdmissionsPanel({
                         value={draft.initials}
                         maxLength={5}
                         autoComplete="off"
-                        onChange={(event) => {
-                          update({ initials: event.target.value });
-                        }}
+                        onChange={(event) => update({ initials: event.target.value })}
                         data-testid="ward-planned-initials"
                       />
                     </Field>

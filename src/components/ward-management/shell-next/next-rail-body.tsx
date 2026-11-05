@@ -77,6 +77,7 @@ import {
   CLOSE_MENUS_EVENT,
   capacityRowsSpoken,
   cardScopeNote,
+  compactPipText,
   overLineLabel,
   RailLiveClock,
   RailReadyLine,
@@ -330,7 +331,14 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const toggleRef = useRef<HTMLButtonElement>(null);
   const moreTriggerRef = useRef<HTMLButtonElement | null>(null);
   const firstMoreLinkRef = useRef<HTMLAnchorElement & HTMLButtonElement>(null);
-  const [moreOpen, setMoreOpen] = useState(false);
+  const [moreOpenPath, setMoreOpenPath] = useState<string | null>(null);
+  const moreOpen = moreOpenPath === pathname;
+  const setMoreOpen = useCallback((o: boolean) => setMoreOpenPath(o ? pathname : null), [pathname]);
+  const [moreEpoch, setMoreEpoch] = useState(pathname);
+  if (moreEpoch !== pathname) {
+    setMoreEpoch(pathname);
+    if (moreOpenPath !== null) setMoreOpenPath(null);
+  }
   // B1: the rail's More shows only the rest; the bar's Menu (tablet portrait, no rail) shows it all.
   const [sheetShowsMain, setSheetShowsMain] = useState(false);
   const [deskModalOpen, setDeskModalOpen] = useState(false);
@@ -425,7 +433,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
     const close = () => setMoreOpen(false);
     window.addEventListener(CLOSE_MENUS_EVENT, close);
     return () => window.removeEventListener(CLOSE_MENUS_EVENT, close);
-  }, []);
+  }, [setMoreOpen]);
 
   // Phone bar (8 Oct 2026): the rail row is hidden under 48rem and the bar's own Menu button opens
   // this same sheet, so the navigation has one home.
@@ -438,7 +446,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
         setSheetShowsMain(true);
         setMoreOpen(true);
       }),
-    [],
+    [setMoreOpen],
   );
 
   useEffect(() => {
@@ -472,7 +480,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
     }
     document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
-  }, [open, setOpen, openOverlay, isTabletLandscape, canRefer]);
+  }, [open, setOpen, setMoreOpen, openOverlay, isTabletLandscape, canRefer]);
 
   useEffect(() => {
     function onPointerDown(event: MouseEvent) {
@@ -902,9 +910,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               }}
             >
               {overLine.over > 0 ? <Dot tone="warning" /> : null}
-              <span className={styles.compactAlertVal}>
-                {firstRow?.percent == null ? "—" : `${Math.round(firstRow.percent)}%`}
-              </span>
+              <span className={styles.compactAlertVal}>{compactPipText(firstRow)}</span>
             </button>
           </Tooltip>
 

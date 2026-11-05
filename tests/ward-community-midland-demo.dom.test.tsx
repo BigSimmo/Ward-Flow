@@ -1,6 +1,11 @@
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { CommunityScreen } from "@/components/ward-management/community/community-screen";
+import {
+  recordMidlandDecision,
+  undoMidlandDecision,
+} from "@/components/ward-management/community/team-2026/midland-decisions";
+import { REFERRALS } from "@/components/ward-management/community/team-2026/midland-demo";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -23,7 +28,7 @@ describe("Midland community team demo (locked design)", () => {
     expect(screen.getByText("9 in hospital · 5 waiting for a case manager")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /CTO reviews due/u })).toHaveTextContent("3");
     expect(screen.getByRole("tab", { name: /^Clinicians/u })).toHaveTextContent("Clinicians12");
-    expect(within(screen.getByTestId("ward-community-glance")).getByText("Byrne, T.")).toBeInTheDocument();
+    expect(within(screen.getByTestId("ward-community-glance")).getByText("Byrne, Tom")).toBeInTheDocument();
   });
 
   it("opens each section from its tab, with the Midland lists", () => {
@@ -65,6 +70,28 @@ describe("Midland community team demo (locked design)", () => {
     renderTeam("albany");
     expect(screen.queryByRole("searchbox", { name: "Find a client or clinician" })).not.toBeInTheDocument();
     expect(screen.queryByText(/waiting for a case manager/u)).not.toBeInTheDocument();
-    expect(screen.queryByText("Byrne, T.")).not.toBeInTheDocument();
+    expect(screen.queryByText("Byrne, Tom")).not.toBeInTheDocument();
+  });
+
+  it("counts referrals to answer from one source in the hero, the tab and the overview tile (audit B2)", () => {
+    window.localStorage.clear();
+    const counts = () => ({
+      hero: screen.getByRole("button", { name: /Referrals to answer/u }).textContent,
+      tab: screen.getByRole("tab", { name: /^Referrals/u }).textContent,
+    });
+    const { unmount } = renderTeam("midland");
+    const before = counts();
+    expect(before.hero).toContain(String(REFERRALS.length));
+    expect(before.tab).toBe(`Referrals${REFERRALS.length}`);
+    unmount();
+    recordMidlandDecision(REFERRALS[0]!.id, "Accepted for Midland", Date.now());
+    try {
+      renderTeam("midland");
+      const after = counts();
+      expect(after.hero).toContain(String(REFERRALS.length - 1));
+      expect(after.tab).toBe(`Referrals${REFERRALS.length - 1}`);
+    } finally {
+      undoMidlandDecision(REFERRALS[0]!.id);
+    }
   });
 });

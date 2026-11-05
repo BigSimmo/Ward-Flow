@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor, configure } from "@testing-library/react";
 import { useRef, type ReactNode } from "react";
+import { renderToString } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   CensusTable,
@@ -152,6 +153,20 @@ describe("census inner scroll owner", () => {
     view.rerender(<Table held={held} identity={identity} />);
     expect(region().scrollTop).toBe(0);
     expect(region().scrollLeft).toBe(0);
+  });
+  // Responsive audit flake (5 Nov 2026): a table scrolled before hydration attaches onScroll was
+  // put back to the top when hydration ran the restore with nothing held.
+  it("keeps a scroll taken before hydration when nothing is held to restore", () => {
+    const held = scrollMemory({ identity: "default", top: 0, left: 0 });
+    const container = document.createElement("div");
+    container.innerHTML = renderToString(<Table held={held} />);
+    document.body.appendChild(container);
+    const served = container.querySelector<HTMLElement>('[aria-label="Patient census rows"]')!;
+    served.scrollTop = 300;
+    render(<Table held={held} />, { container, hydrate: true });
+    expect(region()).toBe(served);
+    expect(region().scrollTop).toBe(300);
+    expect(held.current).toEqual({ identity: "default", top: 300, left: 0 });
   });
   it("keeps position while opening or closing groups under the same query/filter identity", () => {
     const held = scrollMemory({ identity: "default", top: 123, left: 31 });
