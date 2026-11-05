@@ -55,12 +55,22 @@ const save = () => fs.writeFileSync(path, JSON.stringify(state));
 function finish(value) { save(); if (value !== undefined) console.log(typeof value === 'string' ? value : JSON.stringify(value)); }
 function fail(message) { save(); console.error(message); process.exit(1); }
 function inject(key) { if (state[key] > 0) { state[key]--; fail('synthetic ' + key); } }
+// Real gh refuses --slurp with --jq/-q or --template/-t before any request (gh 2.89.0).
+if (args.includes('--slurp') && args.some(value => ['--jq', '-q', '--template', '-t'].includes(value)))
+  fail('the --slurp option is not supported with --jq or --template');
 if (!endpoint.startsWith(root)) fail('Unexpected repository or command');
 const route = endpoint.slice(root.length);
 if (route.startsWith('actions/workflows/')) {
   if (route.includes('head_sha=')) {
     if (!args.includes('--paginate') || !args.includes('--slurp')) fail('Acceptance history must include every page');
-    inject('acceptanceFailures'); finish(state.acceptanceAnswers?.shift() || state.acceptance || 'success');
+    inject('acceptanceFailures');
+    // Answer with slurped run pages so the workflow's real jq query decides the verdict.
+    const answer = state.acceptanceAnswers?.shift() || state.acceptance || 'success';
+    const run = (conclusion, at) => ({ event: 'push', conclusion, updated_at: '2026-11-04T1' + at + ':00:00Z' });
+    const runs = answer === 'missing' ? []
+      : answer === 'ambiguous' ? [run('success', 1), run('failure', 1)]
+      : [run('failure', 0), run(answer, 1)];
+    finish(runs.length ? runs.map(item => ({ workflow_runs: [item] })) : [{ workflow_runs: [] }]);
   } else finish(state.target);
 }
 else if (route === 'git/ref/heads/live') finish(state.current);
@@ -134,6 +144,8 @@ function harness(overrides: Partial<State> = {}) {
   writeFileSync(join(directory, "summary.md"), "");
   const read = (): State => JSON.parse(readFileSync(statePath, "utf8"));
   return {
+    directory,
+    statePath,
     read,
     change(update: Partial<State>) {
       writeFileSync(statePath, JSON.stringify({ ...read(), ...update }));
@@ -158,9 +170,24 @@ function harness(overrides: Partial<State> = {}) {
 }
 
 describe("daily release record and live-ref recovery", () => {
+  it("never pairs --slurp with --jq or --template, which real gh refuses", () => {
+    const h = harness();
+    const fake = spawnSync(
+      join(h.directory, "gh"),
+      ["api", "--paginate", "--slurp", "repos/BigSimmo/Ward-Flow/releases?per_page=100", "--jq", "."],
+      { encoding: "utf8", env: { ...process.env, RELEASE_TEST_STATE: h.statePath } },
+    );
+    expect(fake.status).not.toBe(0);
+    expect(fake.stderr).toContain("--slurp option is not supported");
+    const workflow = readFileSync(".github/workflows/daily-release.yml", "utf8");
+    for (const line of workflow.split("\n").filter((value) => value.includes("--slurp"))) {
+      expect(line).not.toMatch(/\s(--jq|-q|--template|-t)\s/u);
+    }
+  });
+
   it("evaluates the real same-SHA query across paginated attempts and events", () => {
     const workflow = readFileSync(".github/workflows/daily-release.yml", "utf8");
-    const query = /acceptance="\$\([\s\S]*?--jq '([\s\S]*?)'\)"/u.exec(workflow)?.[1];
+    const query = /acceptance="\$\(gh api [\s\S]*?\| jq -r '([\s\S]*?)'\)"/u.exec(workflow)?.[1];
     expect(query).toBeDefined();
     if (!query) throw new Error("Same-SHA acceptance query is missing");
     const green = { event: "push", conclusion: "success", updated_at: "2026-11-04T10:00:00Z" };

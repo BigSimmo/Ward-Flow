@@ -83,7 +83,7 @@ jobs:
             # DP-01: later completed push, scheduled or manual acceptance on this exact SHA
             # supersedes an older green. Cancelled runs are not acceptance. Read every page
             # and order reruns by their latest attempt update; unknown ordering fails closed.
-            acceptance="$(gh api --paginate --slurp "repos/$REPOSITORY/actions/workflows/ward-flow.yml/runs?branch=main&head_sha=$sha&status=completed&per_page=100" --jq '
+            acceptance="$(gh api --paginate --slurp "repos/$REPOSITORY/actions/workflows/ward-flow.yml/runs?branch=main&head_sha=$sha&status=completed&per_page=100" | jq -r '
               [.[].workflow_runs[] | select(.event == "push" or .event == "schedule" or .event == "workflow_dispatch") | select(.conclusion != "cancelled")]
               | if length == 0 then "missing"
                 elif any(.[]; (.updated_at | type) != "string" or (try (.updated_at | fromdateiso8601) catch null) == null) then "ambiguous"
