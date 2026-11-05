@@ -1,4 +1,5 @@
 // @ts-check
+import { membershipPage } from "./membership-page.mjs";
 import { archiveAfterCommit, commandTimer } from "./after-commit.mjs";
 import { createHash, randomUUID } from "node:crypto";
 import {
@@ -2065,8 +2066,10 @@ export function createWorkspaceStore(
     /**
      * Every active or waiting role and cover inside the access admin's own place, with when each
      * was last used, and from 9 the open requests for access there too.
+     * @param {any} view
+     * @param {string | null} [cursor]
      */
-    async listAccess(view) {
+    async listAccess(view, cursor = null) {
       const blocked = accessRefusal(view);
       if (blocked) return blocked;
       const at = clock();
@@ -2080,12 +2083,16 @@ export function createWorkspaceStore(
       const statewide = view.access.scope.kind === "statewide";
       const needsGrant = (row) => statewide && engine.accessNeedsService(row.role, row.scope);
       // The place filter runs here, so read oldest grant first a page at a time until this admin's
-      // own 500 are found: roles elsewhere never crowd them out.
-      const memberships = await pagedMemberships(
-        "workspace_id=$1 AND revoked_at IS NULL AND expires_at > $2",
-        [workspaceId, at],
-        (row) => inside(row) || needsGrant(row),
-      );
+      // own page is found: roles elsewhere never crowd it out. A cursor continues the directory.
+      const page = await membershipPage({
+        query: (sql, values) => pool.query(sql, values),
+        workspaceId,
+        at,
+        cursor,
+        keep: (row) => inside(row) || needsGrant(row),
+      });
+      if (!page) return refused(400, "The roles cursor is invalid. Reload the list.");
+      const memberships = page.memberships;
       const requests =
         view.version >= ACCESS_COVER_MIGRATION
           ? (
@@ -2102,6 +2109,8 @@ export function createWorkspaceStore(
             needsGrant(row) ? { ...presentMembership(row, at), needsGrantAgain: true } : presentMembership(row, at),
           ),
           requests: requests.filter(inside).map((row) => presentRequest(row, at)),
+          complete: page.complete,
+          nextCursor: page.nextCursor,
         },
       };
     },

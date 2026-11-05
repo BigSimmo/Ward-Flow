@@ -581,7 +581,8 @@ export function createSharedHandler({
         return reply(result.status, result.body);
       }
       if (path === "/v1/workspace/access" && request.method === "GET") {
-        const result = await store.listAccess(view);
+        const cursor = new URL(request.url).searchParams.get("cursor");
+        const result = cursor === null ? await store.listAccess(view) : await store.listAccess(view, cursor);
         return reply(result.status, result.body);
       }
       if (path === "/v1/workspace/access/cover" && request.method === "GET" && store.listCovers) {

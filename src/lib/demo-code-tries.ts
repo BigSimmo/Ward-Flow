@@ -52,3 +52,18 @@ export function resetWrongTriesForTests() {
   wrongTries.clear();
   allWrongTries = { count: 0, since: 0 };
 }
+
+/** Reserve before awaiting verification; only a confirmed correct code releases the slot. */
+export function reserveDemoTry(address: string, now: number): (() => void) | null {
+  if (tooManyTries(address, now)) return null;
+  countWrongTry(address, now);
+  const entry = wrongTries.get(address);
+  const total = allWrongTries;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    if (entry && wrongTries.get(address) === entry) entry.count = Math.max(0, entry.count - 1);
+    if (allWrongTries === total) total.count = Math.max(0, total.count - 1);
+  };
+}
