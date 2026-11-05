@@ -109,7 +109,7 @@ export function recordMidlandContact(about: string, at = Date.now()) {
 }
 
 /** Recorded contacts, newest first. */
-export function midlandContacts(all: Record<string, MidlandDecision>): MidlandContact[] {
+function midlandContacts(all: Record<string, MidlandDecision>): MidlandContact[] {
   return Object.values(all)
     .filter((d) => d.id.startsWith(CONTACT_PREFIX))
     .map((d) => ({ about: d.line, at: d.at }))
