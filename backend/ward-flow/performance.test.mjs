@@ -9,7 +9,7 @@ import { gunzipSync } from "node:zlib";
 import * as engine from "./dist/engine.mjs";
 import { LATEST_MIGRATION } from "./migrations.mjs";
 import { createWorkspaceStore, storedAuditChanges } from "./postgres.mjs";
-import { planSave } from "./records.mjs";
+import { jsonCharacterLength, planSave } from "./records.mjs";
 import { withoutRecordDetail } from "./record-detail.mjs";
 import { LruCache, gzipSegments, jsonResponse, registerPart, replySegments, segmentBytes } from "./reply-cache.mjs";
 import { listen, processCacheNotice } from "./server.mjs";
@@ -680,6 +680,260 @@ test("PS-11: the archive count is read once per revision and carried across this
   assert.equal(db.counts, 2);
 });
 
+test("a revision-only save measures its world without serialising a whole-world JSON string", async () => {
+  const world = engine.seedWorld(start);
+  const unit = world.state.units[0];
+  const expected = engine.applyCommand(world, refresh(unit.id), start).world;
+  const expectedLength = JSON.stringify(expected).length;
+  const windows = [];
+  const alerts = [];
+  const watching = {
+    ...engine,
+    archiveClosed: (value, at, afterMinutes) => {
+      windows.push(afterMinutes);
+      return { world: value, archived: [] };
+    },
+  };
+  const { store } = storeFor(world, {
+    engine: watching,
+    alert: (event) => alerts.push(event),
+    sizeLimits: { pressureBytes: expectedLength, pressureAfterMinutes: 7 * 24 * 60, alertEveryMs: 3_600_000 },
+  });
+  await store.viewer(actorId, {}).catch(() => {});
+  const first = await store.read(actorId);
+  let wholeWorldSerialisations = 0;
+  const stringify = JSON.stringify;
+  JSON.stringify = function (value, ...rest) {
+    if (value && typeof value === "object" && "dayZero" in value && "state" in value) wholeWorldSerialisations++;
+    return stringify.call(this, value, ...rest);
+  };
+  let saved;
+  try {
+    saved = await store.command(actorId, crypto.randomUUID(), first.revision, refresh(unit.id), { revisionOnly: true });
+  } finally {
+    JSON.stringify = stringify;
+  }
+  assert.equal(saved.status, 200);
+  assert.equal(saved.body.commandRevision, first.revision + 1);
+  assert.equal(Object.hasOwn(saved.body, "snapshot"), false);
+  const reloaded = await store.read(actorId);
+  assert.equal(reloaded.revision, saved.body.commandRevision);
+  assert.deepEqual(reloaded.payload, withoutRecordDetail(expected));
+  assert.deepEqual(windows, [], "the exact native JSON character length is not above its pressure threshold");
+  assert.equal(alerts.length, 0);
+  assert.equal(wholeWorldSerialisations, 0, "size measurement must not join a whole-world JSON string");
+});
+
+test("JSON character counting matches native UTF-16 lengths with bounded native string pieces", () => {
+  const controls = String.fromCharCode(...Array.from({ length: 32 }, (_, index) => index));
+  const shared = { nested: [1, { text: "é😀" }] };
+  const longKey = "x".repeat(16_383) + "😀" + '\\"\n';
+  const cases = [
+    null,
+    true,
+    false,
+    0,
+    -0,
+    1.25,
+    1e30,
+    NaN,
+    Infinity,
+    -Infinity,
+    "",
+    "é漢字😀",
+    '"\\' + controls + "\u2028\u2029",
+    "\ud800",
+    "\udc00",
+    "x".repeat(16_383) + "😀" + "tail",
+    "\ud800".repeat(16_384) + "x",
+    "\udc00".repeat(16_385),
+    ("\\" + controls).repeat(1000),
+    [],
+    {},
+    Object.assign(Object.create(null), { text: "é😀" }),
+    [null, undefined, "", [], {}, [1, { text: "nested" }]],
+    { omitted: undefined, empty: {}, array: [undefined, null], [longKey]: "é😀" },
+    { first: shared, second: shared },
+  ];
+  const expected = cases.map((value) => JSON.stringify(value).length);
+  const stringify = JSON.stringify;
+  let largestStringPiece = 0;
+  let containerSerialisations = 0;
+  JSON.stringify = function (value, ...rest) {
+    if (typeof value === "string") largestStringPiece = Math.max(largestStringPiece, value.length);
+    if (value && typeof value === "object") containerSerialisations++;
+    return stringify.call(this, value, ...rest);
+  };
+  let actual;
+  try {
+    actual = cases.map((value) => jsonCharacterLength(value));
+  } finally {
+    JSON.stringify = stringify;
+  }
+  assert.deepEqual(actual, expected);
+  assert.equal(containerSerialisations, 0, "ordinary JSON containers must not be joined into native JSON text");
+  assert.equal(largestStringPiece <= 16_384, true, "native escaping receives bounded UTF-16 string pieces");
+  assert.notEqual(
+    jsonCharacterLength("é😀"),
+    Buffer.byteLength(JSON.stringify("é😀")),
+    "legacy size counts UTF-16, not UTF-8",
+  );
+});
+
+test("unsupported JSON shapes retain the native root fallback and callback context", () => {
+  let getterCalls = 0;
+  const getter = {
+    nested: Object.defineProperty({}, "value", {
+      enumerable: true,
+      get() {
+        getterCalls++;
+        return "é😀";
+      },
+    }),
+  };
+  const getterLength = JSON.stringify(getter).length;
+  getterCalls = 0;
+  assert.equal(jsonCharacterLength(getter), getterLength);
+  assert.equal(getterCalls, 1);
+
+  let toJsonCalls = 0;
+  const toJson = {
+    outer: {
+      toJSON(key) {
+        toJsonCalls++;
+        return { key, text: "é😀" };
+      },
+    },
+  };
+  const toJsonLength = JSON.stringify(toJson).length;
+  toJsonCalls = 0;
+  assert.equal(jsonCharacterLength(toJson), toJsonLength);
+  assert.equal(toJsonCalls, 1, "toJSON receives its original nested key exactly once");
+
+  let indexCalls = 0;
+  const indexed = [1, 2];
+  Object.defineProperty(indexed, "1", {
+    enumerable: true,
+    get() {
+      indexCalls++;
+      return "😀";
+    },
+  });
+  const indexLength = JSON.stringify(indexed).length;
+  indexCalls = 0;
+  assert.equal(jsonCharacterLength(indexed), indexLength);
+  assert.equal(indexCalls, 1);
+
+  let proxyGets = 0;
+  const proxy = new Proxy(
+    { value: "é😀" },
+    {
+      get(target, key, receiver) {
+        proxyGets++;
+        return Reflect.get(target, key, receiver);
+      },
+    },
+  );
+  const proxyLength = JSON.stringify(proxy).length;
+  const nativeGets = proxyGets;
+  proxyGets = 0;
+  assert.equal(jsonCharacterLength(proxy), proxyLength);
+  assert.equal(proxyGets, nativeGets, "proxy classification must not trigger extra source reads");
+
+  const sparse = new Array(3);
+  Object.setPrototypeOf(sparse, Object.assign(Object.create(Array.prototype), { 1: "SYNTHETIC" }));
+  let deep = {};
+  for (let level = 0; level < 160; level++) deep = { nested: deep };
+  const fallbackCases = [
+    new Date("2026-11-05T00:00:00Z"),
+    new Number(3),
+    new String("é😀"),
+    new Boolean(false),
+    new Map([["synthetic", 1]]),
+    new Set([1, 2]),
+    sparse,
+    deep,
+    { omitted: undefined, fn: () => {}, symbol: Symbol("synthetic"), list: [undefined, () => {}, Symbol("synthetic")] },
+  ];
+  const rawJson = Object.getOwnPropertyDescriptor(JSON, "rawJSON")?.value;
+  if (typeof rawJson === "function") fallbackCases.push({ value: rawJson("123456") });
+  for (const value of fallbackCases) assert.equal(jsonCharacterLength(value), JSON.stringify(value).length);
+  const cycle = {};
+  cycle.self = cycle;
+  for (const value of [undefined, () => {}, Symbol("synthetic"), 1n, cycle]) {
+    const nativeLength = () => JSON.stringify(value).length;
+    let nativeError;
+    try {
+      nativeLength();
+    } catch (error) {
+      nativeError = error;
+    }
+    assert.ok(nativeError instanceof Error);
+    assert.throws(() => jsonCharacterLength(value), { name: nativeError.name });
+  }
+});
+
+test("command size pressure uses the exact native JSON character boundary", async () => {
+  for (const offset of [-1, 0, 1]) {
+    const seed = engine.seedWorld(start);
+    const world = { ...seed, state: { ...seed.state, syntheticSizeProbe: "é😀\u0000" } };
+    const unit = world.state.units[0];
+    const expected = engine.applyCommand(world, refresh(unit.id), start).world;
+    const oracleLength = JSON.stringify(expected).length;
+    const windows = [];
+    const alerts = [];
+    const { store } = storeFor(world, {
+      engine: {
+        ...engine,
+        archiveClosed: (value, at, afterMinutes) => {
+          windows.push(afterMinutes);
+          return { world: value, archived: [] };
+        },
+      },
+      alert: (event) => alerts.push(event),
+      sizeLimits: { pressureBytes: oracleLength + offset, pressureAfterMinutes: 7 * 24 * 60, alertEveryMs: 3_600_000 },
+    });
+    await store.viewer(actorId, {}).catch(() => {});
+    const first = await store.read(actorId);
+    const saved = await store.command(actorId, crypto.randomUUID(), first.revision, refresh(unit.id), {
+      revisionOnly: true,
+    });
+    assert.equal(saved.status, 200);
+    assert.equal(saved.body.commandRevision, first.revision + 1);
+    assert.deepEqual(windows, offset < 0 ? [7 * 24 * 60] : []);
+    assert.equal(alerts.length, offset < 0 ? 1 : 0);
+  }
+});
+
+test("the existing maximum world character boundary accepts equality and refuses one character more", async () => {
+  const limit = 8_388_608;
+  for (const extra of [0, 1]) {
+    const seed = engine.seedWorld(start);
+    const world = { ...seed, state: { ...seed.state, syntheticSizeProbe: "" } };
+    const unit = world.state.units[0];
+    const base = engine.applyCommand(world, refresh(unit.id), start).world;
+    world.state.syntheticSizeProbe = "x".repeat(limit + extra - JSON.stringify(base).length);
+    const expected = engine.applyCommand(world, refresh(unit.id), start).world;
+    assert.equal(JSON.stringify(expected).length, limit + extra);
+    const { store, db } = storeFor(world, {
+      engine: { ...engine, archiveClosed: (value) => ({ world: value, archived: [] }) },
+    });
+    await store.viewer(actorId, {}).catch(() => {});
+    const first = await store.read(actorId);
+    const save = () =>
+      store.command(actorId, crypto.randomUUID(), first.revision, refresh(unit.id), { revisionOnly: true });
+    if (extra === 0) {
+      const saved = await save();
+      assert.equal(saved.status, 200);
+      assert.equal(saved.body.commandRevision, first.revision + 1);
+      assert.equal((await store.read(actorId)).revision, saved.body.commandRevision);
+    } else {
+      await assert.rejects(save, { name: "WorkspaceTooLargeError" });
+      assert.equal(db.revision, first.revision);
+    }
+  }
+});
+
 test("PS-12 and PS-02: one size measurement per save; past the threshold the short window and a limited alert", async () => {
   const world = engine.seedWorld(start);
   const units = world.state.units.map((unit) => unit.id);
@@ -701,8 +955,11 @@ test("PS-12 and PS-02: one size measurement per save; past the threshold the sho
   let revision = (await store.read(actorId)).revision;
   const stringify = JSON.stringify;
   let measured = 0;
+  // Each ordinary size walk encodes the unique root dayZero key once. Recognising the legacy
+  // whole-world call too preserves this three-measurement control across the implementation change.
   JSON.stringify = function (value, ...rest) {
-    if (value && typeof value === "object" && "dayZero" in value && "state" in value) measured += 1;
+    if (value === "dayZero" || (value && typeof value === "object" && "dayZero" in value && "state" in value))
+      measured += 1;
     return stringify.call(this, value, ...rest);
   };
   try {
