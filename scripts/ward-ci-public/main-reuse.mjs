@@ -77,6 +77,7 @@ export const BACKEND_EVIDENCE = {
 
 /** The notice title the production build uses to record the tree it built (after merging main). */
 export const BUILT_TREE_TITLE = "Ward built tree";
+export const STRICT_BUDGET_TREE_TITLE = "Ward strict budget tree";
 
 /** The unit shard and browser group counts declared by the workflow, so a run with fewer is refused. */
 export function workflowCounts(source) {
@@ -154,6 +155,8 @@ export function decideMainReuse({ repo, sha, before, mainTree, pulls, headTree, 
   const reasons = [];
   for (const run of relevant) {
     if (run.conclusion !== "success") return refuse(`newer completed run ${run.id} concluded ${run.conclusion}`);
+    if (run.strictBudgetTree !== mainTree)
+      return refuse("newest successful run has no strict budget compliance for the main tree");
     const gap =
       runEvidenceGap(run.jobs ?? [], counts) ??
       (upToDate
@@ -276,6 +279,7 @@ async function gatherAndDecide() {
         jobs,
         testedTree: await recordedTreeOf(all, "Ward Flow scope plan", TESTED_TREE_TITLE, api),
         builtTree: await recordedTreeOf(all, "Ward Flow production build", BUILT_TREE_TITLE, api),
+        strictBudgetTree: await recordedTreeOf(jobs, "Ward Flow production build", STRICT_BUDGET_TREE_TITLE, api),
       });
       inspectedGreen++;
     } else runs.push(run);

@@ -75,7 +75,8 @@ describe("a bounded full gate recheck", () => {
       numTotalTests: 2,
       testResults: [{ ...suite(names[0]), assertionResults: [{ status: "pending" }, { status: "skipped" }] }],
     };
-    expect(validateBatchReport(report, [names[0]], root).valid).toBe(true);
+    expect(validateBatchReport(report, [names[0]], root).valid).toBe(false);
+    expect(validateBatchReport(report, [names[0]], root, { approvedSkippedFiles: [names[0]] }).valid).toBe(true);
     expect(validatePolicyReport(report, [names[0]], root).valid).toBe(false);
     report.testResults[0].assertionResults.push({ status: "passed" });
     expect(validatePolicyReport(report, [names[0]], root)).toEqual({ valid: true, failing: [] });

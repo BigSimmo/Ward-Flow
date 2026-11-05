@@ -1,7 +1,8 @@
 #!/usr/bin/env node
+import { isDirectInvocation } from "./run-ward-tests.mjs";
 import { existsSync, mkdirSync, readdirSync } from "node:fs";
 import path from "node:path";
-import { fileURLToPath, pathToFileURL } from "node:url";
+import { fileURLToPath } from "node:url";
 import { childProcessExitCode } from "./child-process-result.mjs";
 import { offlineTestEnvironment } from "./test-environment.mjs";
 import { acquireHeavyRunLock } from "./test-run-lock.mjs";
@@ -116,7 +117,7 @@ export async function runBackendTests({
   return childProcessExitCode(result);
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(path.resolve(process.argv[1])).href) {
+if (isDirectInvocation(process.argv[1], import.meta.url)) {
   let admission;
   try {
     const options = parseBackendTestArguments(process.argv.slice(2));

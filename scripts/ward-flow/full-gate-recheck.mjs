@@ -81,7 +81,12 @@ export function withGateRunResult(report, files, root, runResult) {
   };
 }
 
-export function validateBatchReport(report, expectedFiles, root, { requireProcessEvidence = false } = {}) {
+export function validateBatchReport(
+  report,
+  expectedFiles,
+  root,
+  { requireProcessEvidence = false, approvedSkippedFiles = /** @type {string[]} */ ([]) } = {},
+) {
   if (
     !Array.isArray(report?.testResults) ||
     !Number.isInteger(report.numTotalTests) ||
@@ -100,6 +105,17 @@ export function validateBatchReport(report, expectedFiles, root, { requireProces
     )
   )
     return { valid: false, reason: "batch result has no assertion list" };
+  const notRun = report.testResults.filter(
+    (suite) =>
+      suite.status !== "failed" &&
+      !suite.assertionResults?.some((test) => ["passed", "failed"].includes(test.status)) &&
+      !approvedSkippedFiles.includes(relativeName(root, suite.name)),
+  );
+  if (notRun.length)
+    return {
+      valid: false,
+      reason: `selected files not run: ${notRun.map((suite) => relativeName(root, suite.name)).join(", ")}`,
+    };
   const failing = report.testResults.filter(isFailingSuite).map((suite) => relativeName(root, suite.name));
   if (report.numUnhandledErrors > 0 || report.errors?.length || report.unhandledErrors?.length)
     return { valid: false, reason: "Vitest reported unhandled errors" };

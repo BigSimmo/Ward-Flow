@@ -44,6 +44,22 @@ const STOPS_SAVING = new Set([
 const PLACEHOLDER_ONLY = new Set(["RECORD_REPATRIATION", "RECORD_SUPPORT_NOTIFICATION"]);
 
 describe("device copy of a session holding typed text", () => {
+  it("preserves later non-text changes through a scrubbed save and restore", () => {
+    const fixture = TYPED_TEXT_FIXTURES.find((entry) => entry.type === "RECORD_REPATRIATION")!;
+    const { before, event } = fixture.build(seedWardFlowState());
+    const typed = wardFlowReducer(before, event);
+    const clock = { type: "ADVANCE_CLOCK", role: "demo", now: event.now, minutes: 15 } as const;
+    const changed = wardFlowReducer(typed, clock);
+    expect(changed.clockOffsetMinutes).toBe(typed.clockOffsetMinutes + 15);
+    const copy = deviceCopyFromEvents(changed, [event, clock], worlds);
+    expect(copy).not.toBeNull();
+    const restored = JSON.parse(JSON.stringify(copy));
+    expect(isValidStoredWardFlowState(restored)).toBe(true);
+    expect(restored.clockOffsetMinutes).toBe(changed.clockOffsetMinutes);
+    for (const marker of fixture.markers) expect(JSON.stringify(restored)).not.toContain(marker);
+    expect(JSON.stringify(restored)).toContain(TYPED_TEXT_NOT_KEPT);
+  });
+
   it("has a marker fixture for every typed-text event type, so a new one cannot skip this guard", () => {
     const covered = new Set(TYPED_TEXT_FIXTURES.map((fixture) => fixture.type));
     expect([...WARD_FLOW_TYPED_TEXT_EVENT_TYPES].filter((type) => !covered.has(type))).toEqual([]);

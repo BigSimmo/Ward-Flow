@@ -74,6 +74,7 @@ function evidence(overrides: Record<string, unknown> = {}) {
         event: "pull_request",
         conclusion: "success",
         jobs: greenJobs(),
+        strictBudgetTree: tree,
       },
     ],
     ...overrides,
@@ -110,6 +111,16 @@ describe("main-push reuse decision", () => {
     expect(runEvidenceGap(withoutSweep, counts)).toBe("Ward Flow unit shard 3 did not run its checks (scope-skipped)");
   });
 
+  it("refuses inherited-warning and missing strict budget receipts even for the exact tree", () => {
+    for (const strictBudgetTree of [undefined, null, "e".repeat(40)])
+      expect(decideMainReuse(evidence({ runs: [{ ...evidence().runs[0], strictBudgetTree }] })).verified).toBe(false);
+  });
+
+  it("does not fall back to older strict evidence after a newer warning-only run", () => {
+    const green = { ...evidence().runs[0], updated_at: "2026-11-04T10:00:00Z" };
+    const warning = { ...green, id: 2, strictBudgetTree: null, updated_at: "2026-11-04T11:00:00Z" };
+    expect(decideMainReuse(evidence({ runs: [green, warning] })).verified).toBe(false);
+  });
   it("verifies only an identical, up-to-date tree whose PR run really ran every reusable job", () => {
     expect(decideMainReuse(evidence())).toMatchObject({ verified: true, pr: 75 });
     // The single-job coverage run that preceded the shard merge is equally strong evidence.

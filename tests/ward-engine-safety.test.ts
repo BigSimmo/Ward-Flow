@@ -16,10 +16,16 @@
  * and WARD_ENGINE_FUZZ_FIRST_SEED moves the window of seeds.
  */
 import { describe, expect, it } from "vitest";
+import { deviceCopyFromEvents } from "@/components/ward-management/ward-flow-typed-text-scrub";
 
 import { ADMISSION_STATES } from "@/components/ward-management/ward-admissions";
 import { EVENT_ROLE, type WardFlowEvent } from "@/components/ward-management/ward-flow-events";
-import { seedWardFlowState, wardFlowReducer, type WardFlowState } from "@/components/ward-management/ward-flow-reducer";
+import {
+  seedWardFlowState,
+  seedWardFlowStateAt,
+  wardFlowReducer,
+  type WardFlowState,
+} from "@/components/ward-management/ward-flow-reducer";
 import {
   eventCarriesTypedTextPayload,
   WARD_FLOW_TEXT_SAFE_EVENT_TYPES,
@@ -388,9 +394,7 @@ type StepFailure = Violation & { step: number };
 /**
  * Whether the browser copy is locked after this event, as the provider tracks it
  * (`trackWardFlowTypedTextDispatch`): a dispatch of a typed-text event, or one carrying typed text,
- * stops saving until a reseed moves `worldGeneration`. A locked session is never written, so the
- * storage rule does not apply to it (repatriations and support notifications are refused in a
- * stored copy by design).
+ * requires checking the scrubbed device copy after this and later events. A reseed clears it.
  */
 function typedTextLocked(locked: boolean, event: WardFlowEvent, before: WardFlowState, after: WardFlowState) {
   if (after.worldGeneration !== before.worldGeneration) return false;
@@ -402,6 +406,7 @@ function applyAndCheck(
   event: WardFlowEvent,
   checkStorage: boolean,
   lockedBefore = false,
+  events: readonly WardFlowEvent[] = [event],
 ): Violation | { next: WardFlowState; locked: boolean } {
   deepFreeze(state);
   let next: WardFlowState;
@@ -422,7 +427,16 @@ function applyAndCheck(
   const locked = typedTextLocked(lockedBefore, event, state, next);
   return (
     bedInvariantViolation(next) ??
-    (checkStorage && !locked ? storageViolation(next) : null) ??
+    (checkStorage
+      ? (() => {
+          if (!locked) return storageViolation(next);
+          const copy = deviceCopyFromEvents(next, events, (offset = 0) =>
+            WARD_SCENARIOS.map((scenario) => seedWardFlowStateAt(offset, scenario)),
+          );
+          // A shape that cannot safely hold placeholders deliberately stops persistence.
+          return copy === null ? null : storageViolation(copy);
+        })()
+      : null) ??
     (next.rejections.length === state.rejections.length
       ? (acceptedStepViolation(state, event, next) ?? undoViolation(state, event, next))
       : null) ?? { next, locked }
@@ -460,7 +474,7 @@ function replay(scenario: WardScenario, events: readonly WardFlowEvent[]): StepF
   let state = seedWardFlowState(scenario);
   let locked = false;
   for (const [step, event] of events.entries()) {
-    const result = applyAndCheck(state, event, true, locked);
+    const result = applyAndCheck(state, event, true, locked, events);
     if ("rule" in result) return { ...result, step };
     state = result.next;
     locked = result.locked;
@@ -511,7 +525,7 @@ function runSeed(seed: number, steps = STEPS) {
     recordingRandomRun = true;
     let result: ReturnType<typeof applyAndCheck>;
     try {
-      result = applyAndCheck(state, event, (step + 1) % STORAGE_EVERY === 0 || step === steps - 1, locked);
+      result = applyAndCheck(state, event, (step + 1) % STORAGE_EVERY === 0 || step === steps - 1, locked, events);
     } finally {
       recordingRandomRun = false;
     }

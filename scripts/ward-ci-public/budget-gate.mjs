@@ -64,6 +64,12 @@ export function gate({ root = process.cwd(), event = process.env.GITHUB_EVENT_NA
   mkdirSync(dir, { recursive: true });
   const merged = join(dir, "measured.json");
   const status = measure(root, merged);
+  // Only strict measurement success can supply main acceptance. Inherited PR warnings
+  // deliberately remain successful, but carry no strict-compliance receipt.
+  if (status === 0) {
+    const tree = execFileSync("git", ["rev-parse", "HEAD^{tree}"], { cwd: root, encoding: "utf8" }).trim();
+    console.log(`::notice title=Ward strict budget tree::${tree}`);
+  }
   if (status !== OVER_BUDGET || event !== "pull_request") return status;
   const mainSha = execFileSync("git", ["rev-parse", "refs/remotes/origin/main"], {
     cwd: root,

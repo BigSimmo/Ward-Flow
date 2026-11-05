@@ -78,6 +78,18 @@ jobs:
             case "$draft" in true | false) ;; *) echo "Invalid release record" >&2; return 1 ;; esac
             verify_tag "$tag" "$sha" "$draft"
           }
+          check_acceptance() {
+            local sha="$1" acceptance
+            # DP-01: the whole acceptance workflow is authoritative, including later
+            # scheduled/manual failures on this exact SHA. Cancelled runs are not acceptance.
+            # Include every page and order by the latest attempt update, not original run ID.
+            acceptance="$(gh api --paginate --slurp "repos/$REPOSITORY/actions/workflows/ward-flow.yml/runs?branch=main&head_sha=$sha&status=completed&per_page=100" --jq '
+              [.[].workflow_runs[] | select(.event == "push" or .event == "schedule" or .event == "workflow_dispatch") | select(.conclusion == "success" or .conclusion == "failure" or .conclusion == "timed_out" or .conclusion == "startup_failure")]
+              | sort_by(.updated_at) | if length == 0 then "missing"
+                elif length > 1 and .[-1].updated_at == .[-2].updated_at then "ambiguous"
+                else .[-1].conclusion end')"
+            [ "$acceptance" = success ] || { echo "Latest completed acceptance on $sha is $acceptance; release vetoed." >&2; return 1; }
+          }
           finish_release() {
             local record="$1" sha="$2" id live
             validate_release "$record" "$sha"
@@ -85,6 +97,7 @@ jobs:
             live="$(gh api "repos/$REPOSITORY/git/ref/heads/live" --jq .object.sha)"
             [ "$live" = "$sha" ] || { echo "Live changed before release publication" >&2; return 1; }
             if [ "$(printf '%s' "$record" | jq -r '.draft')" = true ]; then
+              check_acceptance "$sha"
               gh api -X PATCH "repos/$REPOSITORY/releases/$id" -F draft=false >/dev/null
               echo "Published the retained release record for $sha."
               printf '%s\n' "$record" | jq -r '.body' >> "$GITHUB_STEP_SUMMARY"
@@ -105,6 +118,7 @@ jobs:
           fi
           target="$(gh api "repos/$REPOSITORY/actions/workflows/ward-flow.yml/runs?branch=main&event=push&status=success&per_page=1" --jq '.workflow_runs[0].head_sha // ""')"
           [[ "$target" =~ ^[0-9a-f]{40}$ ]] || { echo "No CI-passed main commit found" >&2; exit 1; }
+          check_acceptance "$target"
           if [ "$current" = "$target" ]; then
             echo "Live and its published record are already at $target."
             exit 0

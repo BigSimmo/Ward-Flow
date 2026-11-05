@@ -321,6 +321,9 @@ describe("stored ward flow state fence, equivalence harness", () => {
       const cases = sweep(base, keepFew);
       labels[name] = cases.map((entry) => entry.label);
       recorded[name] = run(base, cases);
+      console.info(
+        `Storage mutations: ${name}; mode=${RECORD ? "recording" : STRIDE === 1 ? "exhaustive" : "sampled"}; population=${cases.length}; executed=${Math.ceil(cases.length / STRIDE)}`,
+      );
       // The sweep must hand every base back unchanged.
       expect(isValidStoredWardFlowState(base)).toBe(true);
     }

@@ -15,9 +15,13 @@ describe("complete release gate and shared-build browser selection", () => {
   it("requires all seven operational journeys on both device projects only for the full preset", () => {
     expect(releaseGateCases(false)).toEqual([]);
     const cases = releaseGateCases(true);
-    expect(cases).toHaveLength(14);
+    expect(cases).toHaveLength(164);
     for (const project of ["release-gate-desktop", "release-gate-phone"]) {
-      expect(cases.filter((entry) => entry.project === project).map((entry) => entry.title.split(":")[0])).toEqual([
+      expect(
+        cases
+          .filter((entry) => entry.project === project && entry.file !== "release-gate-axe-sweep.spec.ts")
+          .map((entry) => entry.title.split(":")[0]),
+      ).toEqual([
         "ED referral to bed offer",
         "Morning bed meeting",
         "Transfer with transport",
@@ -27,7 +31,7 @@ describe("complete release gate and shared-build browser selection", () => {
         "Legal form",
       ]);
     }
-    for (const entry of cases) {
+    for (const entry of cases.filter((entry) => entry.file !== "release-gate-axe-sweep.spec.ts")) {
       const source = readFileSync(`tests/${entry.file}`, "utf8");
       expect(source, entry.title).toContain(JSON.stringify(entry.title));
     }
@@ -41,7 +45,7 @@ describe("complete release gate and shared-build browser selection", () => {
     expect(RELEASE_GATE_PROJECTS).toEqual(["release-gate-desktop", "release-gate-phone"]);
     for (const project of RELEASE_GATE_PROJECTS) {
       const leg = releaseGateCases(true, project);
-      expect(leg).toHaveLength(7);
+      expect(leg).toHaveLength(82);
       expect(new Set(leg.map((entry) => entry.project))).toEqual(new Set([project]));
       expect(leg).toEqual(releaseGateCases(true).filter((entry) => entry.project === project));
     }
@@ -72,8 +76,10 @@ describe("complete release gate and shared-build browser selection", () => {
         "Legal form",
       ]);
       // Together the parts still require all seven journeys on each device, each exactly once.
-      expect([...journeys, ...referrals]).toEqual(releaseGateCases(true, project));
-      expect(releaseGateCases(true, project, "checks")).toEqual([]);
+      expect([...releaseGateCases(true, project, "checks"), ...journeys, ...referrals]).toEqual(
+        releaseGateCases(true, project),
+      );
+      expect(releaseGateCases(true, project, "checks")).toHaveLength(75);
     }
     expect(() => releaseGateCases(true, "release-gate-phone", "smoke")).toThrow(/WARD_RELEASE_GATE_PART/);
   });

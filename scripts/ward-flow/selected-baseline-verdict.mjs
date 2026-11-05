@@ -16,7 +16,10 @@ export function selectedBaselineVerdict({ report, selected, expected, root, runR
       ? path.relative(root, suite.name).replace(/\\/g, "/")
       : suite.name.replace(/\\/g, "/");
     const failed = suite.assertionResults.filter((test) => test.status === "failed");
-    if ((suite.status === "failed" && failed.length === 0) || suite.assertionResults.length === 0)
+    if (
+      (suite.status === "failed" && failed.length === 0) ||
+      !suite.assertionResults.some((test) => ["passed", "failed"].includes(test.status))
+    )
       return { ok: false, reason: `collection incomplete: ${file}` };
     if (failed.length)
       failing.push({

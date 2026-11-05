@@ -23,6 +23,7 @@ type State = {
   listFailures: number;
   compare: string;
   tagLookupFailures: number;
+  acceptance?: string;
 };
 const directories: string[] = [];
 afterEach(() =>
@@ -54,7 +55,7 @@ function fail(message) { save(); console.error(message); process.exit(1); }
 function inject(key) { if (state[key] > 0) { state[key]--; fail('synthetic ' + key); } }
 if (!endpoint.startsWith(root)) fail('Unexpected repository or command');
 const route = endpoint.slice(root.length);
-if (route.startsWith('actions/workflows/')) finish(state.target);
+if (route.startsWith('actions/workflows/')) finish(route.includes('head_sha=') ? (state.acceptance || 'success') : state.target);
 else if (route === 'git/ref/heads/live') finish(state.current);
 else if (route.startsWith('compare/')) finish(args.includes('.status') ? state.compare : 'Merge pull request #42');
 else if (route === 'pulls/42') finish('fix: Synthetic release entry');
@@ -149,6 +150,27 @@ function harness(overrides: Partial<State> = {}) {
 }
 
 describe("daily release record and live-ref recovery", () => {
+  it("evaluates the real same-SHA query across attempts and events", () => {
+    const workflow = readFileSync(".github/workflows/daily-release.yml", "utf8");
+    const query = /acceptance="\$\([\s\S]*?--jq '([\s\S]*?)'\)"/u.exec(workflow)![1];
+    const green = { event: "push", conclusion: "success", updated_at: "2026-11-04T10:00:00Z" };
+    const failed = { event: "schedule", conclusion: "failure", updated_at: "2026-11-04T11:00:00Z" };
+    const judge = (runs: object[]) => {
+      const result = spawnSync("jq", ["-r", query], {
+        input: JSON.stringify([{ workflow_runs: runs }]),
+        encoding: "utf8",
+      });
+      expect(result.status).toBe(0);
+      return result.stdout.trim();
+    };
+    expect(judge([green, failed])).toBe("failure");
+    expect(judge([failed, green, { ...green, event: "workflow_dispatch", updated_at: "2026-11-04T12:00:00Z" }])).toBe(
+      "success",
+    );
+    expect(judge([green, { ...failed, conclusion: "cancelled" }])).toBe("success");
+    expect(judge([failed, { ...green, event: "pull_request", updated_at: "2026-11-04T12:00:00Z" }])).toBe("failure");
+    expect(judge([green, { ...failed, updated_at: green.updated_at }])).toBe("ambiguous");
+  });
   it("does not advance live when preparing its durable record fails", () => {
     const h = harness({ createFailures: 1 });
     expect(h.run().status).not.toBe(0);
@@ -192,7 +214,7 @@ describe("daily release record and live-ref recovery", () => {
     expect(h.run().status).toBe(0);
     const calls = h.read().calls;
     const publication = calls.indexOf("PATCH repos/BigSimmo/Ward-Flow/releases/2");
-    const selection = calls.findIndex((call) => call.includes("actions/workflows/"));
+    const selection = calls.findIndex((call) => call.includes("event=push"));
     expect(publication).toBeGreaterThanOrEqual(0);
     expect(publication).toBeLessThan(selection);
     expect(h.read().records.filter((record) => !record.draft)).toHaveLength(3);
@@ -280,6 +302,19 @@ describe("daily release record and live-ref recovery", () => {
     expect(h.run().status).not.toBe(0);
     expect(h.read().current).toBe(previous);
   });
+
+  it.each(["failure", "timed_out", "missing", "ambiguous"])(
+    "vetoes release after %s acceptance on the same SHA",
+    (acceptance) => {
+      const h = harness({ acceptance });
+      expect(h.run().status).not.toBe(0);
+      expect(h.read().current).toBe(previous);
+      expect(h.read().calls).not.toContain("PATCH repos/BigSimmo/Ward-Flow/git/refs/heads/live");
+      h.change({ acceptance: "success" });
+      expect(h.run().status).toBe(0);
+      expect(h.read().current).toBe(target);
+    },
+  );
 
   it("keeps a completed existing release unchanged and refuses another repository", () => {
     const h = harness({ current: previous, target: previous });

@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { splitPlaywrightArguments } from "./ward-flow/playwright-arguments.mjs";
 import { spawn, spawnSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import {
@@ -140,7 +141,7 @@ if (journeyGroup) {
     );
     process.exit(2);
   }
-  const flags = playwrightArgs.filter((argument) => argument.startsWith("-"));
+  const flags = splitPlaywrightArguments(playwrightArgs).options;
   playwrightArgs.splice(0, playwrightArgs.length, ...flags, ...groups[index - 1].files);
   console.log(
     `Journey group ${index}/${count}: ${Math.round(groups[index - 1].seconds)}s measured, ${groups[index - 1].files.join(", ")}`,
@@ -410,11 +411,7 @@ function stopOwnedProcessTree(child) {
  */
 function balancedShardGroups(args, count) {
   if (args.some((argument) => /^(--grep|-g|--grep-invert|--last-failed|--only-changed)/.test(argument))) return null;
-  const filters = args.filter(
-    (argument, index) =>
-      !argument.startsWith("-") &&
-      !args[index - 1]?.match(/^--(project|workers|reporter|output|shard|timeout|retries|max-failures)$/),
-  );
+  const filters = splitPlaywrightArguments(args).files;
   if (filters.length === 0) return null;
   const specs = readdirSync(path.join(projectRoot, "tests")).filter(
     (name) => /\.spec\.ts$/.test(name) && filters.some((filter) => new RegExp(filter).test(`tests/${name}`)),
@@ -854,7 +851,7 @@ try {
     }
     const shardArgsFor = (index) =>
       shardGroups
-        ? [...reportArgs.filter((argument) => argument.startsWith("-")), ...shardGroups[index].files]
+        ? [...splitPlaywrightArguments(reportArgs).options, ...shardGroups[index].files]
         : [...reportArgs, `--shard=${index + 1}/${shardCount}`];
     const codes = await Promise.all(
       shardUrls.map(
@@ -959,7 +956,7 @@ try {
     }
     if (exitCode !== 0 && rerun.length > 0 && specFailures.length === failedFiles.size) {
       console.log(`Diagnostic rerun of ${rerun.length} failed spec file(s), unsharded: ${rerun.join(", ")}`);
-      const specArgs = playwrightArgs.filter((argument) => argument.startsWith("-"));
+      const specArgs = splitPlaywrightArguments(playwrightArgs).options;
       // Its own output and report directory, so the diagnostic run cannot clear the shards' evidence.
       const diagnosticReport = path.join(absoluteResultsRoot, "diagnostic.json");
       const again = spawnSync(

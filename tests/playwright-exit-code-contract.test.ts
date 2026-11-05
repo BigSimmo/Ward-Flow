@@ -1,3 +1,4 @@
+import { splitPlaywrightArguments } from "../scripts/ward-flow/playwright-arguments.mjs";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { runInNewContext } from "node:vm";
@@ -5,7 +6,7 @@ import { runInNewContext } from "node:vm";
 import { describe, expect, it, vi } from "vitest";
 import { childProcessExitCode } from "../scripts/child-process-result.mjs";
 import { journeyRunVerdict, requestedProjects } from "../scripts/ward-flow/journey-run-verdict.mjs";
-import { releaseGateCases } from "../scripts/ward-flow/browser-run-contract.mjs";
+import { includeGroupCsrf, releaseGateCases } from "../scripts/ward-flow/browser-run-contract.mjs";
 
 /**
  * `scripts/run-playwright.mjs` propagates failure through its exit status.
@@ -71,11 +72,13 @@ async function runPhase({
   codes = [0],
   reports = [executionReport()],
   rerunCode = 0,
+  balanced = false,
 }: {
   args?: string[];
   codes?: number[];
   reports?: (ReturnType<typeof executionReport> | null)[];
   rerunCode?: number;
+  balanced?: boolean;
 } = {}) {
   let exitCode: number | undefined;
   let shardIndex = 0;
@@ -116,11 +119,12 @@ async function runPhase({
       findFreePort: async () => 4201,
       startIsolatedServer: () => ({}),
       waitForServer: async () => {},
-      balancedShardGroups: () => null,
+      balancedShardGroups: () => (balanced ? codes.map((_, i) => ({ files: [`synthetic-${i}.spec.ts`] })) : null),
       spawn: shardChild,
       spawnSync: child,
       childProcessExitCode,
       requestedProjects,
+      splitPlaywrightArguments,
       journeyRunVerdict,
       releaseGateCases,
       requiredReleaseGate: false,
@@ -143,6 +147,38 @@ async function runPhase({
 }
 
 describe("run-playwright post-build verdict", () => {
+  it("preserves spaced values through actual balanced group selection", () => {
+    const args = ["--project", "chromium-mockups", "--workers", "2", "--timeout", "30000", "ward-.*spec.ts"];
+    const grouping = /const journeyGroup = [\s\S]*?\n\}/u.exec(RUNNER)![0];
+    const balancing = RUNNER.slice(RUNNER.indexOf("function balancedShardGroups("), RUNNER.indexOf("\nlet server;"));
+    runInNewContext(`${balancing}\n${grouping}`, {
+      process: { env: { WARD_JOURNEY_GROUP: "2/2" } },
+      playwrightArgs: args,
+      splitPlaywrightArguments,
+      includeGroupCsrf,
+      path,
+      projectRoot: "/synthetic",
+      readdirSync: () => ["ward-a.spec.ts", "ward-b.spec.ts"],
+      readFileSync: () => JSON.stringify({ seconds: {} }),
+      console: { log: () => {} },
+    });
+    expect(args.slice(0, 6)).toEqual(["--project", "chromium-mockups", "--workers", "2", "--timeout", "30000"]);
+    expect(args.slice(6)).toHaveLength(1);
+    expect(args).not.toContain("ward-.*spec.ts");
+  });
+  it("preserves spaced option values on actual balanced shard reconstruction", async () => {
+    const result = await runPhase({
+      args: ["--project", "chromium", "--workers", "2", "--timeout", "30000", "old.spec.ts"],
+      codes: [0, 0],
+      reports: [executionReport(), executionReport()],
+      balanced: true,
+    });
+    expect(result.exitCode).toBe(0);
+    for (const [, args] of result.shardChild.mock.calls) {
+      expect(args).toEqual(expect.arrayContaining(["--project", "chromium", "--workers", "2", "--timeout", "30000"]));
+      expect(args).not.toContain("old.spec.ts");
+    }
+  });
   it.each([0, 1])("retains the original shard failure after a diagnostic rerun exits %s", async (rerunCode) => {
     const result = await runPhase({
       codes: [2, 0],

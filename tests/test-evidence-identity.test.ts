@@ -17,6 +17,8 @@ describe("test outcome input identity", () => {
     for (const name of [
       "WARD_GATE_EXCLUDE_FILES",
       "FAST_CHECK_SEED",
+      "WARD_STORAGE_VERDICTS_FULL",
+      "WARD_STORAGE_VERDICTS_RECORD",
       "NODE_OPTIONS",
       "LANG",
       "LC_ALL",
@@ -93,6 +95,18 @@ describe("test outcome input identity", () => {
     writeFileSync(modules, "invalid dependency tree");
     expect(installedToolchainIdentity(root)).toBeNull();
   });
+  it("distinguishes sampled and exhaustive storage proof and resumes only the same mode", () => {
+    const options = {
+      root: "/unused",
+      dependencyIdentity: "synthetic",
+      population: ["tests/ward-flow-storage-validation-zod.test.ts"],
+      args: ["run"],
+    };
+    const sampled = fullGateInputIdentity({ ...options, env: {} });
+    const exhaustive = fullGateInputIdentity({ ...options, env: { WARD_STORAGE_VERDICTS_FULL: "1" } });
+    expect(exhaustive).not.toBe(sampled);
+    expect(fullGateInputIdentity({ ...options, env: { WARD_STORAGE_VERDICTS_FULL: "1" } })).toBe(exhaustive);
+  });
   it("invalidates full checkpoints when the engine fuzz effort or seed window changes", () => {
     const options = {
       root: "/unused-fixture-root",
@@ -151,6 +165,23 @@ describe("test outcome input identity", () => {
     writeFileSync(path.join(root, "node_modules", ".vite-temp", "config.mjs"), "generated transform");
     expect(() => runFullGateBatches({ ...options, environmentFingerprint: fingerprint() })).not.toThrow();
     expect(executions).toBe(1);
+    const exhaustive = fullGateInputIdentity({
+      root,
+      population,
+      args: ["run"],
+      env: { WARD_STORAGE_VERDICTS_FULL: "1" },
+    });
+    expect(() => runFullGateBatches({ ...options, environmentFingerprint: exhaustive })).toThrow(
+      /different commit, checkout or population/,
+    );
+    const fresh = {
+      ...options,
+      stateDir: path.join(root, "exhaustive-checkpoint"),
+      environmentFingerprint: exhaustive,
+    };
+    runFullGateBatches(fresh);
+    runFullGateBatches(fresh);
+    expect(executions).toBe(2);
   });
   it("ignores generated directories, but hashes a dependency file with a cache-shaped name", () => {
     const root = mkdtempSync(path.join(os.tmpdir(), "ward-volatile-identity-"));

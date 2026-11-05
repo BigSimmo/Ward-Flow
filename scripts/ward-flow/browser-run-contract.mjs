@@ -1,3 +1,4 @@
+import { releaseCheckCases } from "./release-check-obligations.mjs";
 import { requestedProjects } from "./journey-run-verdict.mjs";
 
 // Independent unit controls pin these obligations. The browser specs keep their literal
@@ -52,8 +53,7 @@ export function releaseGateProjectFor(value) {
  * once on each device. `journeys` (the four core bed-flow journeys) and `referrals` (inpatient
  * transfer, community referral and filing a legal form) each require their own named journeys,
  * seven in all, so the
- * required-case check is unchanged; `checks` runs the accessibility and layout-shift sweep, which
- * has no named required cases.
+ * required-case check is unchanged; `checks` runs the accessibility and layout-shift sweep, with explicit case identities and approved phone skips.
  */
 export const RELEASE_GATE_PARTS = Object.freeze({
   journeys: Object.freeze(["release-gate-journeys.spec.ts"]),
@@ -82,7 +82,7 @@ export function releaseGatePartFor(value) {
 /**
  * Why a release-gate part cannot narrow these Playwright arguments, or null when it can. A part
  * replaces the file selection, so any file filter or test-selection option would run less than the
- * whole part (the checks part has no named required cases to catch that).
+ * whole part including the checks sweep.
  * @param {readonly string[]} args
  * @returns {string | null}
  */
@@ -101,6 +101,7 @@ export function releaseGatePartArgsProblem(args) {
  * @param {boolean} required
  * @param {string | null} [only] one device project, or null for both
  * @param {string | null} [part] one release-gate part, or null for the whole gate
+ * @returns {Array<{project:string,file:string,title:string,approvedSkip?:boolean}>}
  */
 export function releaseGateCases(required, only = null, part = null) {
   if (!required) return [];
@@ -108,6 +109,7 @@ export function releaseGateCases(required, only = null, part = null) {
   const files = part === null ? null : RELEASE_GATE_PARTS[releaseGatePartFor(part) ?? ""];
   return projects
     .flatMap((project) => [
+      ...releaseCheckCases(project),
       ...REQUIRED_RELEASE_JOURNEYS.map((title) => ({ project, file: "release-gate-journeys.spec.ts", title })),
       ...REQUIRED_RELEASE_JOURNEY_FILES.map(({ file, title }) => ({ project, file, title })),
     ])

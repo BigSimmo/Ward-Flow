@@ -10,6 +10,8 @@ export const OUTCOME_AFFECTING_ENV_VARS = [
   "CARING_CONTACTS_DATABASE_URL",
   "CARING_CONTACTS_DB_TESTS",
   "FAST_CHECK_SEED",
+  "WARD_STORAGE_VERDICTS_FULL",
+  "WARD_STORAGE_VERDICTS_RECORD",
   "WARD_ENGINE_FUZZ_SEQUENCES",
   "WARD_ENGINE_FUZZ_STEPS",
   "WARD_ENGINE_FUZZ_FIRST_SEED",
@@ -96,6 +98,10 @@ export function fullGateInputIdentity({
   args,
   dependencyIdentity = installedToolchainIdentity(root),
 }) {
+  if (env.WARD_STORAGE_VERDICTS_RECORD === "1")
+    throw new Error(
+      "Fixture recording is not acceptance evidence; run verification without WARD_STORAGE_VERDICTS_RECORD",
+    );
   if (!dependencyIdentity)
     throw new Error("FULL checkpoint dependency byte identity unavailable; cannot resume or issue reusable evidence");
   return createHash("sha256")

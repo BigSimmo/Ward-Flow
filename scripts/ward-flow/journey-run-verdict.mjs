@@ -52,14 +52,15 @@ function countRan(report, executedProjects) {
 /**
  * @param {{ label: string, code: number | null, report: object | null }[]} runs one per shard (or one)
  * @param {string[]} projects the --project names requested
- * @param {{ allowNoTests?: boolean, requiredCases?: {project:string,file:string,title:string}[] }} [options]
+ * @param {{ allowNoTests?: boolean, requiredCases?: {project:string,file:string,title:string,approvedSkip?:boolean}[] }} [options]
  * @returns {{ ok: boolean, ran: number, problems: string[] }}
  */
 export function journeyRunVerdict(runs, projects, { allowNoTests = false, requiredCases = [] } = {}) {
   const problems = [];
   let ran = 0;
   const executedProjects = new Set();
-  const requiredResults = new Map(requiredCases.map((entry) => [JSON.stringify(entry), []]));
+  const caseKey = ({ project, file, title }) => JSON.stringify({ project, file, title });
+  const requiredResults = new Map(requiredCases.map((entry) => [caseKey(entry), []]));
   const relativeFile = (file = "") =>
     file
       .replaceAll("\\", "/")
@@ -101,14 +102,22 @@ export function journeyRunVerdict(runs, projects, { allowNoTests = false, requir
   }
   if (ran === 0 && !allowNoTests) problems.push("no test ran");
   for (const entry of requiredCases) {
-    const found = requiredResults.get(JSON.stringify(entry));
+    const found = requiredResults.get(caseKey(entry));
     const passed =
       found.length === 1 &&
       found[0].status === "expected" &&
       found[0].expectedStatus === "passed" &&
       found[0].results?.length === 1 &&
       found[0].results[0].status === "passed";
-    if (!passed) problems.push(`required journey did not pass: ${entry.project} / ${entry.file} / ${entry.title}`);
+    const approvedSkip =
+      entry.approvedSkip === true &&
+      found.length === 1 &&
+      found[0].status === "skipped" &&
+      found[0].expectedStatus === "skipped" &&
+      found[0].results?.length === 1 &&
+      found[0].results[0].status === "skipped";
+    if (!passed && !approvedSkip)
+      problems.push(`required journey did not pass: ${entry.project} / ${entry.file} / ${entry.title}`);
   }
   return { ok: problems.length === 0, ran, problems };
 }
