@@ -1,5 +1,5 @@
 import { spawnSync } from "node:child_process";
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
@@ -8,12 +8,12 @@ import { removePathSync } from "../scripts/retryable-fs.mjs";
 
 import { judgeAgainstMain, MAIN_TOLERANCE_KB } from "../scripts/check-script-budget.mjs";
 import {
-  AUTO_MERGE_MAX_KB,
-  BRANCH_PREFIX,
-  canAutoMerge,
-  historyEntry,
-  perthDate,
-  planRaise,
+  ISSUE_LABEL,
+  ISSUE_TITLE,
+  issueBody,
+  newlyWorse,
+  overBudget,
+  readReport,
 } from "../scripts/ward-ci-public/budget-heal.mjs";
 import { decideRun } from "../scripts/ward-ci-public/ci-tidy.mjs";
 
@@ -24,20 +24,14 @@ afterEach(() => {
   for (const directory of directories.splice(0)) removePathSync(directory, { recursive: true, force: true });
 });
 
-// The real CLI runs with every Git and HTTP call intercepted before its ESM imports load.
-// Unknown calls throw; this harness cannot contact GitHub or publish a branch.
+// The real CLI runs with every HTTP call intercepted and child processes refused before its ESM
+// imports load. Unknown calls throw; this harness cannot contact GitHub.
 const preload = `
 const fs = require('node:fs');
 const stateFile = process.env.BUDGET_HEAL_TEST_STATE;
 const read = () => JSON.parse(fs.readFileSync(stateFile, 'utf8'));
 const save = state => fs.writeFileSync(stateFile, JSON.stringify(state));
-require('node:child_process').execFileSync = (command, args) => {
-  if (command !== 'git' || !['rev-parse', 'config', 'switch', 'add', 'commit', 'push'].includes(args[0]))
-    throw new Error('Unexpected synthetic command');
-  const state = read();
-  state.calls.push({ method: 'git', endpoint: args[0], args }); save(state);
-  return args[0] === 'rev-parse' ? state.main : '';
-};
+require('node:child_process').execFileSync = () => { throw new Error('Unexpected synthetic command'); };
 require('node:module').syncBuiltinESMExports();
 global.fetch = async (url, init = {}) => {
   const state = read();
@@ -46,44 +40,33 @@ global.fetch = async (url, init = {}) => {
   const body = init.body ? JSON.parse(init.body) : undefined;
   state.calls.push({ method, endpoint, body });
   let result = {};
-  let status = 200;
-  if (method === 'GET' && /^\\/pulls\\?state=open&base=main&per_page=100(?:&page=\\d+)?$/.test(endpoint)) {
-    const page = Number(new URL(endpoint, 'https://synthetic.invalid').searchParams.get('page') || 1);
-    result = state.open.slice((page - 1) * 100, page * 100);
-  }
-  else if (method === 'POST' && endpoint === '/pulls') {
-    state.proposal = { number: 42, node_id: 'synthetic-pr', ...body, labels: [] };
-    result = state.proposal;
-  } else if (method === 'POST' && endpoint === '/issues/42/labels') {
-    if (state.labelFailure) status = 503;
-    else state.proposal.labels = body.labels;
+  const list = endpoint.match(/^\\/issues\\?state=open&creator=github-actions%5Bbot%5D&per_page=100&page=(\\d+)$/);
+  if (method === 'GET' && list) {
+    const page = Number(list[1]);
+    result = state.issues.slice((page - 1) * 100, page * 100);
+  } else if (method === 'POST' && endpoint === '/issues') {
+    state.created = { number: 77, ...body };
+    result = state.created;
+  } else if (method === 'PATCH' && /^\\/issues\\/\\d+$/.test(endpoint)) {
+    const issue = state.issues.find(item => item.number === Number(endpoint.split('/')[2]));
+    if (!issue) throw new Error('Unknown synthetic issue');
+    Object.assign(issue, body);
   } else if (method === 'POST' && /^\\/issues\\/\\d+\\/comments$/.test(endpoint)) {}
-  else if (method === 'PATCH' && /^\\/pulls\\/\\d+$/.test(endpoint)) {
-    const pr = state.open.find(pr => pr.number === Number(endpoint.split('/')[2]));
-    if (!pr) throw new Error('Unknown existing synthetic PR');
-    Object.assign(pr, body);
-  } else if (method === 'POST' && /^\\/actions\\/workflows\\/[^/]+\\/dispatches$/.test(endpoint)) {}
-  else if (method === 'POST' && url === 'https://api.github.com/graphql') {}
   else throw new Error('Unexpected synthetic API request: ' + method + ' ' + endpoint);
   save(state);
-  return { ok: status === 200, status, json: async () => result, text: async () => 'Synthetic label failure' };
+  return { ok: true, status: 200, json: async () => result, text: async () => '' };
 };
 `;
 
-type ExistingPull = { number: number; head: { ref: string }; labels?: { name: string }[]; auto_merge?: object | null };
-function proposal({
-  open = [],
-  labelFailure = false,
-  measured = 572.73,
-}: { open?: ExistingPull[]; labelFailure?: boolean; measured?: number } = {}) {
-  const directory = mkdtempSync(path.join(tmpdir(), "ward-budget-heal-"));
+type SyntheticIssue = { number: number; title: string; body?: string; pull_request?: object };
+function report({ issues = [], measured = 572.73 }: { issues?: SyntheticIssue[]; measured?: number } = {}) {
+  const directory = mkdtempSync(path.join(tmpdir(), "ward-budget-over-"));
   directories.push(directory);
-  mkdirSync(path.join(directory, "docs/script-budget-history"), { recursive: true });
   writeFileSync(path.join(directory, "script-budget.json"), JSON.stringify({ budgets }));
   const measurement = path.join(directory, "measured.json");
   writeFileSync(measurement, JSON.stringify({ measured: { "/a": 490, "/b": measured } }));
   const stateFile = path.join(directory, "state.json");
-  writeFileSync(stateFile, JSON.stringify({ main: mainSha, calls: [], open, labelFailure }));
+  writeFileSync(stateFile, JSON.stringify({ calls: [], issues }));
   const hook = path.join(directory, "preload.cjs");
   writeFileSync(hook, preload);
   const result = spawnSync(
@@ -104,7 +87,8 @@ function proposal({
     },
   );
   const state = JSON.parse(readFileSync(stateFile, "utf8"));
-  return { result, state };
+  const budgetFile = readFileSync(path.join(directory, "script-budget.json"), "utf8");
+  return { result, state, budgetFile };
 }
 
 describe("budget gate: a PR is failed only for growth it caused", () => {
@@ -135,118 +119,86 @@ describe("budget gate: a PR is failed only for growth it caused", () => {
   });
 });
 
-describe("budget heal: what the bot PR raises", () => {
-  it("proposes only over routes, with the owner's 0.2 KB margin rounded up to 0.1 KB", () => {
-    const { budgets: next, raises } = planRaise({ "/a": 480, "/b": 572.73 }, budgets);
-    expect(next).toEqual({ "/a": 500, "/b": 573 });
-    expect(raises).toEqual([{ route: "/b", from: 571.7, to: 573, kb: 572.7 }]);
+describe("budget over issue: the bot asks for a trim and never raises a budget", () => {
+  it("lists only over routes, with the measured size and how far over", () => {
+    expect(overBudget({ "/a": 480, "/b": 572.73 }, budgets)).toEqual([{ route: "/b", limit: 571.7, kb: 572.7, by: 1 }]);
   });
 
-  it("does nothing when main is within budget or a measurement is missing", () => {
-    expect(planRaise({ "/a": 500, "/b": 571.7 }, budgets).raises).toEqual([]);
-    expect(planRaise({}, budgets).raises).toEqual([]);
+  it("reports nothing when main is within budget or a measurement is missing", () => {
+    expect(overBudget({ "/a": 500, "/b": 571.7 }, budgets)).toEqual([]);
+    expect(overBudget({}, budgets)).toEqual([]);
   });
 
-  it(`keeps the ${AUTO_MERGE_MAX_KB} KB size allowance separate from approval to merge`, () => {
-    expect(canAutoMerge([{ route: "/b", from: 571.7, to: 576.7, kb: 575.7 }])).toBe(true);
-    expect(canAutoMerge([{ route: "/b", from: 571.7, to: 576.8, kb: 575.8 }])).toBe(false);
-    expect(canAutoMerge([])).toBe(false);
-    expect(
-      canAutoMerge([
-        { from: 500, to: 501 },
-        { from: 500, to: 506 },
-      ]),
-    ).toBe(false);
+  it("comments again only for a newly over route or growth past the last report", () => {
+    const previous = [{ route: "/b", kb: 572.7 }];
+    expect(newlyWorse([{ route: "/b", limit: 571.7, kb: 574.2, by: 2.5 }], previous)).toEqual([]);
+    expect(newlyWorse([{ route: "/b", limit: 571.7, kb: 574.3, by: 2.6 }], previous)).toHaveLength(1);
+    expect(newlyWorse([{ route: "/a", limit: 500, kb: 501, by: 1 }], previous)).toHaveLength(1);
   });
 
-  it("opens a held proposal before dispatching CI and never asks to arm auto-merge", () => {
-    const { result, state } = proposal();
+  it("asks for a trim, says a person decides any raise, and round-trips its measurements", () => {
+    const over = [{ route: "/b", limit: 571.7, kb: 572.7, by: 1 }];
+    const body = issueBody({ over, sha: "cdbd78ff0000", runUrl: "https://example.invalid/run/1" });
+    expect(body).toMatch(/^Main cdbd78f measured over/);
+    expect(body).toContain("`/b`: 572.7 KB gzipped against 571.7 KB (1 KB over)");
+    expect(body).toContain("This bot never raises");
+    expect(body).not.toMatch(/\n\n\n/);
+    expect(readReport(body)).toEqual([{ route: "/b", kb: 572.7 }]);
+    expect(readReport("no marker")).toEqual([]);
+  });
+
+  it("never writes script-budget.json, a branch or a pull request", () => {
+    const code = readFileSync(new URL("../scripts/ward-ci-public/budget-heal.mjs", import.meta.url), "utf8");
+    expect(code).not.toMatch(/writeFileSync|child_process|\/pulls|\/git\/|dispatches|enablePullRequestAutoMerge/);
+  });
+});
+
+describe("budget over issue: the real script against a synthetic GitHub", () => {
+  type Call = { method: string; endpoint: string };
+
+  it("opens one labelled trim issue and leaves the budget file alone", () => {
+    const { result, state, budgetFile } = report();
     expect(result.status, result.stderr).toBe(0);
-    const label = state.calls.findIndex((call: { endpoint: string }) => call.endpoint === "/issues/42/labels");
-    const dispatch = state.calls.findIndex((call: { endpoint: string }) => call.endpoint.includes("/dispatches"));
-    expect(label).toBeGreaterThanOrEqual(0);
-    expect(label).toBeLessThan(dispatch);
-    expect(state.proposal.labels).toEqual(["hold"]);
-    expect(state.proposal.body).toMatch(/diagnos/i);
-    expect(state.proposal.body).toMatch(/trim/i);
-    expect(state.calls.some((call: { endpoint: string }) => call.endpoint.includes("graphql"))).toBe(false);
-    expect(state.calls.filter((call: { endpoint: string }) => call.endpoint.includes("/dispatches"))).toHaveLength(3);
+    expect(state.created.title).toBe(ISSUE_TITLE);
+    expect(state.created.labels).toEqual([ISSUE_LABEL]);
+    expect(state.created.body).toContain("trim");
+    expect(JSON.parse(budgetFile)).toEqual({ budgets });
+    expect(state.calls.every((call: Call) => call.endpoint.startsWith("/issues"))).toBe(true);
   });
 
-  it("does not request auto-merge even when every proposed raise fits the size allowance", () => {
-    const { result, state } = proposal();
+  it("does nothing when main is within budget", () => {
+    const { result, state } = report({ measured: 571.7 });
     expect(result.status, result.stderr).toBe(0);
-    expect(state.calls.some((call: { endpoint: string }) => call.endpoint.includes("graphql"))).toBe(false);
+    expect(state.calls).toEqual([]);
   });
 
-  it("does not dispatch CI or arm the proposal when applying its hold fails", () => {
-    const { result, state } = proposal({ labelFailure: true });
-    expect(result.status).not.toBe(0);
-    expect(state.calls.some((call: { endpoint: string }) => /dispatches|graphql/.test(call.endpoint))).toBe(false);
-  });
-
-  it.each([
-    { number: 3, head: { ref: `${BRANCH_PREFIX}${mainSha.slice(0, 7)}` }, auto_merge: { enabled: true }, labels: [] },
-    { number: 4, head: { ref: `${BRANCH_PREFIX}older` }, labels: [{ name: "hold" }] },
-    { number: 5, head: { ref: `${BRANCH_PREFIX}older` }, auto_merge: { enabled: true }, labels: [] },
-  ])("leaves existing owned, held or armed PR $number unchanged", (existing) => {
-    const { result, state } = proposal({ open: [existing] });
-    expect(result.status, result.stderr).toBe(0);
-    expect(state.open).toEqual([existing]);
-    expect(state.proposal).toBeUndefined();
-    expect(
-      state.calls.every(
-        (call: { method: string; endpoint: string }) =>
-          call.method === "GET" || (call.method === "git" && call.endpoint === "rev-parse"),
-      ),
-    ).toBe(true);
-  });
-
-  it.each([
-    { number: 3, head: { ref: `${BRANCH_PREFIX}${mainSha.slice(0, 7)}` }, auto_merge: null, labels: [] },
-    { number: 4, head: { ref: `${BRANCH_PREFIX}older` }, labels: [{ name: "hold" }] },
-    { number: 5, head: { ref: `${BRANCH_PREFIX}older` }, auto_merge: { enabled: true }, labels: [] },
-  ])("finds protected or existing proposal $number beyond the first page before mutating anything", (existing) => {
-    const open = [
-      ...Array.from({ length: 100 }, (_, index) => ({ number: 1000 + index, head: { ref: `ordinary-${index}` } })),
-      existing,
+  it("rewrites an open issue found past the first page without a comment when nothing got worse", () => {
+    const body = issueBody({ over: [{ route: "/b", limit: 571.7, kb: 572.7, by: 1 }], sha: mainSha });
+    const issues = [
+      ...Array.from({ length: 100 }, (_, index) => ({ number: 1000 + index, title: `Other ${index}` })),
+      { number: 9, title: ISSUE_TITLE, body },
     ];
-    const { result, state } = proposal({ open });
+    const { result, state } = report({ issues, measured: 573.5 });
     expect(result.status, result.stderr).toBe(0);
-    expect(state.open).toEqual(open);
-    expect(state.proposal).toBeUndefined();
-    expect(
-      state.calls
-        .filter((call: { method: string }) => call.method === "GET")
-        .map((call: { endpoint: string }) => call.endpoint),
-    ).toEqual(["/pulls?state=open&base=main&per_page=100&page=1", "/pulls?state=open&base=main&per_page=100&page=2"]);
-    expect(
-      state.calls.every(
-        (call: { method: string; endpoint: string }) =>
-          call.method === "GET" || (call.method === "git" && call.endpoint === "rev-parse"),
-      ),
-    ).toBe(true);
+    expect(state.created).toBeUndefined();
+    expect(state.calls.filter((call: Call) => call.method === "PATCH").map((call: Call) => call.endpoint)).toEqual([
+      "/issues/9",
+    ]);
+    expect(state.calls.some((call: Call) => call.endpoint.endsWith("/comments"))).toBe(false);
+    expect(readReport(state.issues[100].body)).toEqual([{ route: "/b", kb: 573.5 }]);
   });
 
-  it("keeps an over-allowance proposal held and explicitly leaves the decision to the owner", () => {
-    const { result, state } = proposal({ measured: 580 });
+  it("comments when a route grew past the last report", () => {
+    const body = issueBody({ over: [{ route: "/b", limit: 571.7, kb: 572.7, by: 1 }], sha: mainSha });
+    const { result, state } = report({ issues: [{ number: 9, title: ISSUE_TITLE, body }], measured: 580 });
     expect(result.status, result.stderr).toBe(0);
-    expect(state.proposal.labels).toEqual(["hold"]);
-    expect(state.proposal.body).toMatch(/over 5 KB|above 5 KB/);
-    expect(state.calls.some((call: { endpoint: string }) => call.endpoint.includes("graphql"))).toBe(false);
+    expect(state.calls.filter((call: Call) => call.endpoint === "/issues/9/comments")).toHaveLength(1);
   });
 
-  it("writes a one-paragraph history entry naming the PR and each raise", () => {
-    const text = historyEntry({
-      date: "2026-11-04",
-      pr: 1410,
-      raises: [{ route: "/b", from: 571.7, to: 573.8, kb: 572.7 }],
-      sha: "cdbd78ff0000",
-    });
-    expect(text).toMatch(/^2026-11-04, PR #1410 \(budget heal bot\)\. Main cdbd78f /);
-    expect(text).toContain("`/b` 571.7 to 573.8 KB (main measured 572.7 KB)");
-    expect(text).toMatch(/held.*diagnosis.*trim/i);
-    expect(perthDate(new Date("2026-11-04T17:00:00Z"))).toBe("2026-11-05");
+  it("ignores a pull request that shares the title", () => {
+    const { result, state } = report({ issues: [{ number: 5, title: ISSUE_TITLE, pull_request: {} }] });
+    expect(result.status, result.stderr).toBe(0);
+    expect(state.created.number).toBe(77);
   });
 });
 
@@ -284,4 +236,11 @@ describe("heal and tidy workflows never run pull-request code", () => {
       expect([...code.matchAll(/runs-on: (.+)$/gm)].map((match) => match[1])).toEqual(["ubuntu-24.04"]);
     });
   }
+
+  it("the budget over workflow can write issues only", () => {
+    const yml = readFileSync(new URL("../.github/workflows/ward-flow-budget-heal.yml", import.meta.url), "utf8");
+    const block = yml.match(/^permissions:\n((?:  .+\n)+)/m)?.[1] ?? "";
+    const granted = [...block.matchAll(/^  ([a-z-]+): (\w+)/gm)].map((match) => `${match[1]}: ${match[2]}`);
+    expect(granted).toEqual(["contents: read", "issues: write", "actions: read"]);
+  });
 });
