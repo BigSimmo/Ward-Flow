@@ -42,10 +42,11 @@ import {
   TierTile,
   useIsPhone,
   useIsTabletPortrait,
+  type HeroNextStep,
   type PortraitGroup,
   type WfTone,
 } from "@/components/wf";
-import { type DelayCause, type DelayGroup } from "./delays-derivations";
+import { type DelayCause, type DelayGroup, type DelayOwnerId } from "./delays-derivations";
 import { BandBar, Glyph } from "./delays-board-parts";
 import {
   NO_FILTERS,
@@ -164,7 +165,9 @@ export function DelaysBoard({
   // Role views (nurse in charge, ED clinician): the desk's own words and lenses (`waiting-desk-words.ts`).
   const desk = useWaitingDeskWords(units);
   // Q84 (Josh, 31 Oct 2026): a desk with one place (a site, a ward) names it, not "Statewide".
-  const deskPlace = deskPlaceLabel(useEffectiveWardAccess(), units);
+  const effectiveAccess = useEffectiveWardAccess();
+  const deskPlace = deskPlaceLabel(effectiveAccess, units);
+  const accessRole = effectiveAccess.role;
   const { wardDesk, edDesk } = desk;
   // The shared act-now list, as the Handover sheet reads it, so For handover matches its Act now.
   const {
@@ -942,9 +945,51 @@ export function DelaysBoard({
       label={edDesk ? "Find a person" : "Find a person or ED"}
     />
   );
-  // Round 4 header tiles (`waiting-hero-bar.tsx`): the daily check, the longest wait and who passes 8h next.
-  // Role view (as ED clinician): every person is this ED's, so the longest wait names no ED code.
-  const heroBar = <WaitingHeroBar rows={rows} now={now} check={heroCheck} onOpen={reveal} showOrigin={!edDesk} />;
+  // Round 4 header tiles (`waiting-hero-bar.tsx`): the daily check and who passes 8h next. Plan item
+  // 2i (proposal): the longest wait shows once, as the list's first row, not in the header.
+  const heroBar = <WaitingHeroBar rows={rows} now={now} check={heroCheck} onOpen={reveal} />;
+  // Plan item 2i (proposal): the hero's next step is the desk's own move. A coordinator's is "yours",
+  // an ED desk's is the ED's and a ward desk's is the wards'. The figures are the whose-move tile's
+  // own rows, so the sentence and the tile can never disagree.
+  // A site bed manager reads this list with the coordinator's words, but the coordinator's move is
+  // not theirs: their step is their site's wards (a ward to answer or a bed to be ready).
+  const siteDesk = accessRole === "bed_manager";
+  const ownOwner: DelayOwnerId = edDesk ? "ed" : wardDesk || siteDesk ? "wards" : "yours";
+  const ownTile = tiles.find((tile) => tile.owner === ownOwner);
+  const ownCount = ownTile?.rows.length ?? 0;
+  const ownPressed = filters.owner === ownOwner;
+  const moveWords = siteDesk ? "waiting on your site's wards" : "waiting on your move";
+  // A chosen service is named, so the sentence never reads as the statewide figure.
+  const inService = service === null || wardDesk || edDesk || siteDesk ? "" : ` in ${service}`;
+  const heroNext: HeroNextStep = {
+    answer:
+      ownCount === 0
+        ? `Nobody is ${moveWords}${inService}`
+        : `${ownCount} ${ownCount === 1 ? "person is" : "people are"} ${moveWords}${inService}`,
+    // The tile's own sub fact, said as typed: a form due or past its time, or no suitable bed.
+    owner:
+      ownTile && ownCount > 0 && ownTile.sub.count > 0
+        ? ownOwner === "yours"
+          ? `${ownTile.sub.count} with a form due or past its time`
+          : ownOwner === "wards"
+            ? `${ownTile.sub.count} with no suitable bed`
+            : undefined
+        : undefined,
+    action:
+      ownCount > 0 || ownPressed
+        ? {
+            label: ownPressed ? "Show everyone" : ownCount === 1 ? "Show them" : `Show these ${ownCount}`,
+            pressed: ownPressed,
+            testId: "delays-next-action",
+            onClick: () =>
+              setFilters((current) => ({
+                ...current,
+                owner: current.owner === ownOwner ? null : ownOwner,
+                cause: null,
+              })),
+          }
+        : undefined,
+  };
   const filterRow = (inSheet: boolean) => (
     <div className={`${styles.chead} ${styles.fRow}${inSheet ? ` ${styles.fRowSheet}` : ` ${polish.filterRow}`}`}>
       {/* Design review (22 Oct 2026, Josh approved): in the phone Filter sheet the views sit under
@@ -1018,6 +1063,7 @@ export function DelaysBoard({
         }
         testId="delays-hero"
         className={styles.delaysHero}
+        next={heroNext}
         // C1 (phone simplification, 19 Oct 2026): the card shrinks to this one line as the list scrolls.
         condensed={`${heroTitle} · ${breached} ${formsPast}`}
         stats={

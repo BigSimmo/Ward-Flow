@@ -62,6 +62,7 @@ import {
 } from "./ward-global-search-groups";
 import { SearchOptionBody } from "./ward-global-search-option-body";
 import { WardSearchCommands } from "./ward-global-search-commands";
+import { WardSearchKeyHints } from "./ward-global-search-key-hints";
 import { askWardHelp, looksLikeHelpQuestion } from "./help/ward-help-events";
 import { useWardFeatureFlag } from "./shell/ward-feature-flag-store";
 import { recentsLifetimeNow, rememberRecent, useSessionRecents } from "./ward-global-search-recents";
@@ -280,7 +281,7 @@ const NEEDS_YOU_LIMIT = 3;
 const PHONE_SEARCH_QUERY = WF_PHONE_QUERY;
 
 /** The phone sheet's top: the open field's bottom edge (the bar's top or the status bar, plus the bar). */
-const PHONE_SHEET_TOP = "calc(max(var(--wgs-bar-top, 0px), env(safe-area-inset-top, 0px)) + var(--wgs-bar-h, 3.5rem))";
+const PHONE_SHEET_TOP = "calc(max(var(--wgs-bar-top, 0px), env(safe-area-inset-top, 0px)) + 4.25rem)";
 
 /*
  * Whether the phone sheet is showing, read from the same query as the stylesheet. The phone sheet
@@ -571,6 +572,19 @@ export function WardGlobalSearch({
   /** What someone sees before typing: live work, recent records, common screens and actions. */
   const startGroups = useMemo(() => {
     const g: SearchResultGroup[] = [];
+    // Search redesign (Josh, 4 Nov 2026): the common screens lead, as a row of tiles above the lists.
+    g.push({
+      key: "goto",
+      heading: "Go to",
+      items: startViews.map((view) => ({
+        kind: "view",
+        kindLabel: "View",
+        id: view.key,
+        title: view.title,
+        meta: view.description ?? "",
+        href: view.href,
+      })),
+    });
     const allNeeds = tasks ?? [];
     const needs = allNeeds.slice(0, NEEDS_YOU_LIMIT);
     if (needs.length > 0) {
@@ -597,19 +611,6 @@ export function WardGlobalSearch({
     if (recents.length > 0) {
       g.push({ key: "recent", heading: "Recent", items: [...recents] });
     }
-    const startingViews = startViews;
-    g.push({
-      key: "goto",
-      heading: "Go to",
-      items: startingViews.map((view) => ({
-        kind: "view",
-        kindLabel: "View",
-        id: view.key,
-        title: view.title,
-        meta: view.description ?? "",
-        href: view.href,
-      })),
-    });
     g.push({
       key: "do",
       heading: "Do",
@@ -668,8 +669,10 @@ export function WardGlobalSearch({
   const [autoActive, setAutoActive] = useState(false);
   if (optionsKey !== seenOptionsKey) {
     setSeenOptionsKey(optionsKey);
-    setActiveIndex(groups[0]?.key === "goto" ? 0 : -1);
-    setAutoActive(groups[0]?.key === "goto");
+    // Before typing, Go to leads as tiles but nothing is chosen for the person.
+    const leadsWithMatch = !isStart && groups[0]?.key === "goto";
+    setActiveIndex(leadsWithMatch ? 0 : -1);
+    setAutoActive(leadsWithMatch);
     setHoverIndex(-1);
   }
 
@@ -727,6 +730,11 @@ export function WardGlobalSearch({
           ? Math.max(0, Math.round(window.innerHeight - viewport.height - viewport.offsetTop))
           : 0;
       paletteRef.current?.style.setProperty("--wgs-kb", `${keyboard}px`);
+      // The floating panel centres under the search box, not the window.
+      const field = rootRef.current?.getBoundingClientRect();
+      if (field && field.width > 0) {
+        paletteRef.current?.style.setProperty("--wgs-anchor-x", `${Math.round(field.left + field.width / 2)}px`);
+      }
     };
     const schedule = (event?: Event) => {
       const target = event?.target;
@@ -964,7 +972,7 @@ export function WardGlobalSearch({
       <div
         className={styles.scrim}
         data-above-sheets={aboveSheets || undefined}
-        style={{ top }}
+        style={{ top: isPhone ? 0 : top }} // Phone: the frost covers the whole screen (4 Nov 2026).
         aria-hidden="true"
         data-testid="ward-global-search-scrim"
         onMouseDown={() => close()}
@@ -1314,27 +1322,7 @@ export function WardGlobalSearch({
         ) : null}
 
         <div className={styles.resultsFooter} data-testid="ward-global-search-footer">
-          <div className={styles.footerHints} aria-hidden="true" data-kbd-hint="">
-            <span className={styles.hintItem}>
-              <kbd className={styles.hintKbd}>↑</kbd>
-              <kbd className={styles.hintKbd}>↓</kbd>
-              <span className={styles.hintLabel}>Navigate</span>
-            </span>
-            <span className={styles.hintItem}>
-              <kbd className={styles.hintKbd}>↵</kbd>
-              <span className={styles.hintLabel}>Select</span>
-            </span>
-            {isStart ? null : (
-              <span className={styles.hintItem}>
-                <kbd className={styles.hintKbd}>Tab</kbd>
-                <span className={styles.hintLabel}>Next group</span>
-              </span>
-            )}
-            <span className={styles.hintItem}>
-              <kbd className={styles.hintKbd}>Esc</kbd>
-              <span className={styles.hintLabel}>Dismiss</span>
-            </span>
-          </div>
+          <WardSearchKeyHints isStart={isStart} />
           {canOpenHref(PATIENT_SEARCH_HREF) ? (
             <Link
               href={PATIENT_SEARCH_HREF}
@@ -1466,7 +1454,8 @@ export function WardGlobalSearch({
               }
             }}
           >
-            Cancel
+            <X className={styles.cancelIcon} width={18} height={18} aria-hidden="true" />
+            <span className={styles.cancelText}>Cancel</span>
           </button>
         ) : null}
       </div>

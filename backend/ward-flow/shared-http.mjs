@@ -4,6 +4,7 @@ import { errorFields, parseSubscription } from "./push.mjs";
 import { bootstrapCoordinators } from "./auth.mjs";
 import { jsonResponse } from "./reply-cache.mjs";
 import { forecastHistoryInput, forecastReasonRole } from "./forecast-history.mjs";
+import { accountPreferencesInput } from "./account-preferences.mjs";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 /** Each shared path and the closed route name it is logged under. */
@@ -14,6 +15,7 @@ const ROUTES = new Map([
   ["/v1/workspace/audit", "workspace_audit"],
   ["/v1/workspace/archive", "workspace_archive"],
   ["/v1/workspace/forecast-history", "forecast_history"],
+  ["/v1/workspace/preferences", "account_preferences"],
   ["/v1/workspace/push-key", "push_key"],
   ["/v1/workspace/push-subscribe", "push_subscribe"],
   ["/v1/workspace/push-unsubscribe", "push_unsubscribe"],
@@ -118,6 +120,28 @@ export function storageFailure(error) {
     error?.message === "Query read timeout" ||
     STORAGE_MESSAGES.test(String(error?.message ?? ""))
   );
+}
+
+/**
+ * What a failure said and where it was thrown, for the request log (incident 4 Nov 2026: a 503
+ * logged only `errorName: "Error"`). Only the fixed storage messages above are logged as text,
+ * never a database or payload message, which can quote values. The stack keeps its `at ...`
+ * frames only (function names and file:line), so the message lines are dropped too.
+ */
+export function failureDetail(error) {
+  const message = String(error?.message ?? "");
+  const known = message === "Query read timeout" ? message : message.match(STORAGE_MESSAGES)?.[0];
+  const frames =
+    typeof error?.stack === "string"
+      ? error.stack
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line.startsWith("at "))
+          .slice(0, 6)
+          .map((line) => line.slice(0, 160))
+          .join(" | ")
+      : "";
+  return { ...(known ? { errorMessage: known } : {}), ...(frames ? { errorStack: frames } : {}) };
 }
 
 /** The message of a thrown value, when it has one (H-0294: catch values are unknown). */
@@ -263,7 +287,7 @@ export function createSharedHandler({
         if (await store.sessionSignedOut(session.sessionId))
           return reply(401, { code: "signed-out", error: "Signed out. Sign in again to carry on." }, "signed_out");
       } catch (error) {
-        note.failure = errorFields(error);
+        note.failure = { ...errorFields(error), ...failureDetail(error) };
         return storageFailure(error)
           ? reply(503, { error: "Database unavailable; try again shortly" }, "storage_unavailable")
           : reply(500, { error: "The server could not complete this request.", requestId }, "server_error");
@@ -278,7 +302,7 @@ export function createSharedHandler({
           signedOut: await store.signOutSession(actorId, session.sessionId, session.startedAt),
         });
       } catch (error) {
-        note.failure = errorFields(error);
+        note.failure = { ...errorFields(error), ...failureDetail(error) };
         return storageFailure(error)
           ? reply(503, { error: "Database unavailable; sign out again shortly" }, "storage_unavailable")
           : reply(500, { error: "The server could not complete this request.", requestId }, "server_error");
@@ -493,6 +517,18 @@ export function createSharedHandler({
         }
         const result = await store.recordForecast(view, input);
         return reply(result.status, result.body);
+      }
+      if (path === "/v1/workspace/preferences") {
+        // Migration 17: this account's Help memory (tours done, tips seen, tips off, What's new
+        // read), so a new device does not show them all again. Keyed by the signed-in account, never
+        // by anything the browser names. A store without the table answers `shared: false`.
+        if (!store.accountPreferences || !store.recordAccountPreferences) return reply(200, { shared: false });
+        if (request.method === "GET") return reply(200, await store.accountPreferences({ actorId }));
+        const { body, refusal } = await json();
+        if (refusal) return refusal;
+        const input = accountPreferencesInput(body);
+        if (!input) return reply(400, { error: "Desk, tip or What's new ids, or tips off, are required" });
+        return reply(200, await store.recordAccountPreferences({ actorId }, input));
       }
       if (path === "/v1/workspace/audit" && request.method === "GET") {
         // Change facts name records across the network, so only the statewide coordinator reads
@@ -725,7 +761,7 @@ export function createSharedHandler({
           "workspace_full",
         );
       const storage = storageFailure(error);
-      note.failure = errorFields(error);
+      note.failure = { ...errorFields(error), ...failureDetail(error) };
       return storage
         ? reply(
             503,

@@ -1662,8 +1662,9 @@ export function ShortlistPanel({
               className={`${styles.queueTransitOverdue} ${styles.transitOverdueSpaced}`}
               data-testid="ward-shortlist-transit-overdue"
             >
-              ⚠ Overdue alert: arrival is +{Math.floor((now - movement.arrivalDetails.estimatedArrivalAt) / 60)}h past
-              estimated arrival time.
+              {/* Review 5 Nov 2026: the kit's act-now mark, not a typed warning sign. */}
+              <StatusGlyph tone="danger" size={12} /> Overdue alert: arrival is +
+              {Math.floor((now - movement.arrivalDetails.estimatedArrivalAt) / 60)}h past estimated arrival time.
             </div>
           ) : null}
         </section>

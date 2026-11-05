@@ -213,6 +213,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       readRecordAccess: async () => connected().readRecordAccess(),
       readActivityAudit: async () => connected().readActivityAudit(),
       forecastHistory: async (body) => connected().forecastHistory(body),
+      preferences: async (body) => connected().preferences(body),
     };
   }, [supabase.client, accountBinding]);
   if (!supabaseMode)

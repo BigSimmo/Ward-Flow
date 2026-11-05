@@ -965,7 +965,7 @@ test(
       const { rows: tables } = await owner.query(
         "SELECT relname, relrowsecurity, relforcerowsecurity FROM pg_class WHERE relnamespace='ward_flow'::regnamespace AND relkind='r' ORDER BY relname",
       );
-      assert.equal(tables.length, 16);
+      assert.equal(tables.length, 17);
       assert.ok(tables.every((row) => row.relrowsecurity && !row.relforcerowsecurity));
 
       await runtimeOk(runtime);
@@ -977,6 +977,9 @@ test(
         runtime.query("UPDATE ward_flow.forecast_snapshots SET ready_gap_now=0 WHERE false"),
         /permission denied/,
       );
+      // Migration 17: an account's Help memory is added, read and updated, never deleted.
+      await runtime.query("UPDATE ward_flow.account_preferences SET tips_off=true WHERE false");
+      await assert.rejects(runtime.query("DELETE FROM ward_flow.account_preferences WHERE false"), /permission denied/);
       const store = createWorkspaceStore(runtime, { workspaceId: randomUUID(), engine, demoEvents: true });
       await store.ready();
       await store.read(actor);
@@ -1099,10 +1102,12 @@ test(
       await assert.rejects(rollBack("./infra/rollback-013-referral-record-views.sql"), /not at migration 13/);
       await assert.rejects(rollBack("./infra/rollback-014-archived-records.sql"), /not at migration 14/);
       await assert.rejects(rollBack("./infra/rollback-015-list-and-tv-views.sql"), /not at migration 15/);
-      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 16);
+      await assert.rejects(rollBack("./infra/rollback-016-forecast-history.sql"), /not at migration 16/);
+      assert.equal((await owner.query("SELECT max(version) AS v FROM ward_flow.migrations")).rows[0].v, 17);
       let beforeRecordsRollback;
       let revision = 2;
       for (const [file, version] of [
+        ["./infra/rollback-017-account-preferences.sql", 16],
         ["./infra/rollback-016-forecast-history.sql", 15],
         ["./infra/rollback-015-list-and-tv-views.sql", 14],
         ["./infra/rollback-014-archived-records.sql", 13],
@@ -1610,6 +1615,9 @@ test(
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
+        await client.query(
+          await readFile(new URL("./infra/rollback-017-account-preferences.sql", import.meta.url), "utf8"),
+        );
         await client.query(
           await readFile(new URL("./infra/rollback-016-forecast-history.sql", import.meta.url), "utf8"),
         );

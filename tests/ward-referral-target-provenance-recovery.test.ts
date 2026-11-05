@@ -64,10 +64,11 @@ describe("generated referral intake survives reanchored device recovery", () => 
       wardFlowReducer(advanced, { type: "RESET_SCENARIO", role: "demo", now: NOW_ANCHOR + 60 + 45 + 17 }),
     );
     expect(reset.auditCaptureStartedAt).toBe(NOW_ANCHOR + 77);
-    expect(reset.referrals.filter((referral) => referral.intake)).toHaveLength(31);
+    // 31 -> 36 (3 Nov 2026): the five S6 example referrals carry intakes too.
+    expect(reset.referrals.filter((referral) => referral.intake)).toHaveLength(36);
     const copy = redactTypedTextForDevice(reset, [], worlds);
     expect(copy).not.toBeNull();
-    expect(copy!.referrals.filter((referral) => referral.intake)).toHaveLength(31);
+    expect(copy!.referrals.filter((referral) => referral.intake)).toHaveLength(36);
     expect(copy!.referrals).toEqual(stored(reset.referrals));
     expect(isValidStoredWardFlowState(copy)).toBe(true);
   });

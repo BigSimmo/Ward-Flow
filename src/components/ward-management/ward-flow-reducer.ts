@@ -186,6 +186,8 @@ import { withDemoStageTimes } from "@/components/ward-management/ward-demo-stage
 import { type SupportNotificationRecord } from "@/components/ward-management/ward-support-notifications";
 // Closing the loop, package D (24 Oct 2026).
 import { applyLoopChecksDemoOverlay } from "./ward-loop-checks-demo";
+// S6 example data (3 Nov 2026): no demo list opens empty. A live shared build swaps in a no-op.
+import { applyExampleListsOverlay } from "@/components/ward-management/ward-demo-example-lists";
 import { stepUndoSubjectId, subjectId } from "./ward-flow-subject-id";
 import { nextBedReleaseId, withFreshIds } from "./ward-runtime-ids";
 export { UNLINKED_CARE_REFUSAL } from "./ward-flow-protected-record-events";
@@ -574,7 +576,10 @@ export function seedWardFlowState(scenario: WardScenario = "standard"): WardFlow
     plannedAdmissionSequence: 0,
   };
   // Closing the loop, package D (24 Oct 2026): a few synthetic marks so each record shows in the demo.
-  return network ? seed : applyLoopChecksDemoOverlay(applyRulingsDemoOverlay(seed, NOW_ANCHOR), NOW_ANCHOR);
+  return applyExampleListsOverlay(
+    network ? seed : applyLoopChecksDemoOverlay(applyRulingsDemoOverlay(seed, NOW_ANCHOR), NOW_ANCHOR),
+    NOW_ANCHOR,
+  );
 }
 
 /**

@@ -177,6 +177,17 @@
   white-space: nowrap;
 }
 
+/* Review 5 Nov 2026: at tablet portrait the one-line row names ("Sir Charles Gairdner Hospital
+ * Emergency Department") pushed the last figure column ("24h+", "Longest stay") out of the card.
+ * Up to the 1000px tablet edge the name wraps in full instead, so every figure column shows. */
+@media (max-width: 62.5rem) {
+  .table tbody th,
+  .table tfoot th {
+    min-width: 10rem;
+    white-space: normal;
+  }
+}
+
 .table td {
   max-width: none;
 }

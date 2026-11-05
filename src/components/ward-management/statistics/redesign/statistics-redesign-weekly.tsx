@@ -356,7 +356,7 @@ export function WeeklyBody(props: WeeklyBodyProps) {
             title={`ED waits first passing ${targetText}`}
             now={stillWaiting > 0 ? <Now tone="danger">{stillWaiting} waiting</Now> : null}
             fig={<span data-testid="ward-weekly-ed-count">{edWaits.count}</span>}
-            unit="movements"
+            unit={edWaits.count === 1 ? "movement" : "movements"}
             sub={
               <>
                 Longest <b>{edWaits.longest}</b>

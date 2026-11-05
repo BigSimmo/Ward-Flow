@@ -423,7 +423,8 @@ function ServiceTable({ rows }: { rows: MeetingTvExtras["services"] }) {
           <th scope="col" className={cx(styles.num, styles.headWrap)}>
             Locked ready
           </th>
-          <th scope="col" className={styles.num}>
+          {/* Review 5 Nov 2026: "Discharges due" ran past the panel edge in the 4em column. */}
+          <th scope="col" className={cx(styles.numWide, styles.headWrap)}>
             Discharges due
           </th>
         </tr>

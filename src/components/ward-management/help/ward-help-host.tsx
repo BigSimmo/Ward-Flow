@@ -1,9 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useContext, useEffect, useState } from "react";
 
 import { useWardFeatureFlag } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { SharedAccessContext } from "@/components/ward-management/shell/ward-shared-access-context";
 
 import { helpLinkTask, subscribeWardHelp, type HelpRequest, type HelpView } from "./ward-help-events";
 import { subscribeShortcutsKey } from "./ward-shortcuts-key";
@@ -16,6 +17,7 @@ const WardShowMe = dynamic(() => import("./ward-show-me").then((m) => m.WardShow
 const WardTourAutoStart = dynamic(() => import("./ward-tour-auto-start").then((m) => m.WardTourAutoStart));
 const WardHelpHints = dynamic(() => import("../help-content/ward-help-hints").then((m) => m.WardHelpHints));
 const WardWhatsNew = dynamic(() => import("./ward-whats-new").then((m) => m.WardWhatsNew));
+const WardHelpAccountMemory = dynamic(() => import("./ward-help-account-memory").then((m) => m.WardHelpAccountMemory));
 
 type Open = { view: HelpView; ask?: string; task?: string } | { showMe: string };
 
@@ -56,33 +58,52 @@ export function WardHelpHost() {
   const setView = useCallback((view: HelpView) => setOpen({ view }), []);
   const close = useCallback(() => setOpen(null), []);
   const showMe = useCallback((id: string) => setOpen({ showMe: id }), []);
-  if (open && "showMe" in open) {
-    const id = open.showMe;
-    return askOn ? (
-      <WardShowMe id={id} onClose={close} onBack={() => setOpen({ view: "tasks", task: id })} />
-    ) : (
-      <WardHelpSheet view="tasks" task={id} onView={setView} onClose={close} onTour={startTour} onShowMe={showMe} />
-    );
-  }
-  if (open?.view === "tour") return <WardTour onClose={close} />;
-  if (open)
-    return (
-      <WardHelpSheet
-        view={open.view}
-        task={open.task}
-        ask={open.ask ?? ""}
-        showMeOn={askOn}
-        onView={setView}
-        onClose={close}
-        onTour={startTour}
-        onShowMe={showMe}
-      />
-    );
-  return signedIn ? (
+  // A signed-in account's Help memory (migration 17) stays in step whatever Help shows.
+  const memory = useContext(SharedAccessContext)?.api.preferences ? <WardHelpAccountMemory /> : null;
+  return (
     <>
-      <WardTourAutoStart onStart={startTour} />
-      <WardWhatsNew />
-      <WardHelpHints />
+      {memory}
+      {helpContent()}
     </>
-  ) : null;
+  );
+
+  function helpContent() {
+    if (open && "showMe" in open) {
+      const id = open.showMe;
+      return askOn ? (
+        <WardShowMe id={id} onClose={close} onBack={() => setOpen({ view: "tasks", task: id })} />
+      ) : (
+        <WardHelpSheet
+          view="tasks"
+          task={id}
+          showMeOn={false}
+          onView={setView}
+          onClose={close}
+          onTour={startTour}
+          onShowMe={showMe}
+        />
+      );
+    }
+    if (open?.view === "tour") return <WardTour onClose={close} />;
+    if (open)
+      return (
+        <WardHelpSheet
+          view={open.view}
+          task={open.task}
+          ask={open.ask ?? ""}
+          showMeOn={askOn}
+          onView={setView}
+          onClose={close}
+          onTour={startTour}
+          onShowMe={showMe}
+        />
+      );
+    return signedIn ? (
+      <>
+        <WardTourAutoStart onStart={startTour} />
+        <WardWhatsNew />
+        <WardHelpHints />
+      </>
+    ) : null;
+  }
 }

@@ -23,7 +23,11 @@ import { WardHelpHost } from "@/components/ward-management/help/ward-help-host";
 import { HOW_TOS, showMeSteps } from "@/components/ward-management/help/ward-help-howto";
 import { tasksForDesk } from "@/components/ward-management/help/ward-help-task-list";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
-import { askWardHelp } from "@/components/ward-management/help/ward-help-events";
+import { askWardHelp, showWardHowTo } from "@/components/ward-management/help/ward-help-events";
+import {
+  SharedAccessContext,
+  type SharedAccessApi,
+} from "@/components/ward-management/shell/ward-shared-access-context";
 import {
   headerHelpRows,
   helpPreviewAnswer,
@@ -91,6 +95,36 @@ describe("Help request identity and eligibility", () => {
     const walk = HOW_TOS.find((task) => task.id === "around-capacity")!;
     expect(showMeSteps(walk, "desk", "bed_manager").some((step) => step.title === "Planned admissions")).toBe(false);
     expect(showMeSteps(walk, "desk", "coordinator").some((step) => step.title === "Planned admissions")).toBe(true);
+  });
+  it("keeps account Help memory mounted through flag-off answers and task fallback", async () => {
+    act(() => {
+      setWardFeatureFlagOnDevice("help-ask", false);
+      setWardFeatureFlagOnDevice("role-access", false);
+    });
+    const preferences = vi.fn(async (_body?: unknown) => ({
+      shared: true,
+      tours: [],
+      tips: [],
+      whatsNew: [],
+      tipsOff: null,
+    }));
+    const reads = () => preferences.mock.calls.filter(([body]) => body === undefined).length;
+    render(
+      <SharedAccessContext.Provider value={{ api: { preferences } as SharedAccessApi, actorId: "synthetic-actor" }}>
+        <WardHelpHost />
+      </SharedAccessContext.Provider>,
+    );
+    await waitFor(() => expect(reads()).toBe(1));
+    act(() => askWardHelp("Print the handover sheet"));
+    expect(await screen.findByTestId("ward-help-search")).toHaveValue("Print the handover sheet");
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByTestId("ward-help-search")).toBeNull());
+    act(() => showWardHowTo("print-handover"));
+    const answer = await screen.findByTestId("ward-help-task-answer-print-handover");
+    expect(within(answer).getByRole("button", { expanded: true })).toBeTruthy();
+    fireEvent.keyDown(document, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByTestId("ward-help-task-answer-print-handover")).toBeNull());
+    expect(reads()).toBe(1);
   });
   it("does not play a computer-only task through phone header activation", () => {
     const row = headerHelpRows("Print the handover sheet", "coordinator").items.find(
