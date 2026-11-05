@@ -561,6 +561,15 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
     "/ward-flow/reports/chronology",
     "The PIR patient chronology (D-37). Reached from the Tools sheet's Print and share group (tools/ward-tools-sheet.tsx).",
   ],
+  // WF-42: Activity and Help are shell panels; typed URLs open the panel then replace home.
+  [
+    "/ward-flow/activity",
+    "Not a destination — Activity is a shell panel. activity/page.tsx opens the panel and replaces to /ward-flow so an old or typed URL does not 404.",
+  ],
+  [
+    "/ward-flow/help",
+    "Not a destination — Help is a shell sheet. help/page.tsx opens Help and replaces to /ward-flow so an old or typed URL does not 404.",
+  ],
 ]);
 
 /* ══════════════════════════════════════════════════════════════════════════════════════════════

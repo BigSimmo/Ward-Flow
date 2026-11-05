@@ -56,16 +56,21 @@ export function EventTable({
   empty: ReactNode;
   allowed?: boolean;
 }) {
+  // WF-46 (5 Nov 2026): with no rows the column heads stood over an empty note and the scroll edge
+  // ran half way down it, so the list read as half-drawn. Heads and edge show only with rows.
+  const hasRows = allowed && rows.length > 0;
   return (
-    <div className={cx(thirdEdition.capturedList, local.list)}>
-      <div className={thirdEdition.eventHeader} aria-hidden="true">
-        <span>When</span>
-        <span>What</span>
-        <span>Record</span>
-        <span>By</span>
-        <span>Outcome</span>
-        <span>Review</span>
-      </div>
+    <div className={cx(thirdEdition.capturedList, local.list)} data-empty={hasRows ? undefined : "true"}>
+      {hasRows ? (
+        <div className={thirdEdition.eventHeader} aria-hidden="true">
+          <span>When</span>
+          <span>What</span>
+          <span>Record</span>
+          <span>By</span>
+          <span>Outcome</span>
+          <span>Review</span>
+        </div>
+      ) : null}
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
       <div
         className={cx(thirdEdition.registerBody, local.registerBody)}
