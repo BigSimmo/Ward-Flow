@@ -8,7 +8,7 @@
  * WARD_E2E_DATABASE_URL is an ADMINISTRATOR URL for a throwaway loopback cluster (CI's postgres:16
  * service, or one started by hand). This creates its own database on it, migrates it with the
  * backend's own migration and runtime-role SQL, and drops it at the end. Extra arguments go to
- * `playwright test`; the full gate still requires all four cases exactly once.
+ * `playwright test`; the full gate requires every registered desktop and phone case exactly once.
  *
  * What is real: the browser, `next build` / `next start`, the backend's HTTP handler, workspace store, engine and
  * runtime-role check, its Supabase token verifier (signatures checked against published keys), and
@@ -93,7 +93,7 @@ function freePort() {
 }
 
 /** A port in this checkout's managed range, so `/api/local-project-id` reports a safe local origin. */
-async function freeProjectPort() {
+async function freeProjectPort(excluded = []) {
   const taken = (port) =>
     new Promise((resolve) => {
       const socket = net.createConnection({ host: "127.0.0.1", port });
@@ -101,7 +101,7 @@ async function freeProjectPort() {
       socket.once("error", () => resolve(false));
     });
   for (const port of circularProjectPortRange(stableProjectPort(projectRoot)))
-    if (!isReservedDevPort(port) && !(await taken(port))) return port;
+    if (!excluded.includes(port) && !isReservedDevPort(port) && !(await taken(port))) return port;
   throw new Error("No free port in this checkout's managed range.");
 }
 
@@ -116,7 +116,9 @@ function startFakeAuth() {
   const jwk = { ...publicKey.export({ format: "jwk" }), kid, alg: "ES256", use: "sig" };
   const encode = (value) => Buffer.from(JSON.stringify(value)).toString("base64url");
   const refreshTokens = new Map();
-  const issue = (account) => {
+  // A refresh rotates tokens inside the same sign-in, as Supabase does. Changing its identity
+  // here would falsely turn reload recovery into a different-session privacy refusal.
+  const issue = (account, session = { id: randomUUID(), startedAt: Math.floor(Date.now() / 1000) }) => {
     const now = Math.floor(Date.now() / 1000);
     const head = `${encode({ alg: "ES256", kid, typ: "JWT" })}.${encode({
       iss: `${SUPABASE_ORIGIN}/auth/v1`,
@@ -126,13 +128,13 @@ function startFakeAuth() {
       email: account.email,
       iat: now,
       exp: now + 3600,
-      session_id: randomUUID(),
+      session_id: session.id,
       aal: "aal1",
-      amr: [{ method: "password", timestamp: now }],
+      amr: [{ method: "password", timestamp: session.startedAt }],
     })}`;
     const signature = sign("sha256", Buffer.from(head), { key: privateKey, dsaEncoding: "ieee-p1363" });
     const refresh = randomBytes(24).toString("base64url");
-    refreshTokens.set(refresh, account);
+    refreshTokens.set(refresh, { account, session });
     return {
       access_token: `${head}.${signature.toString("base64url")}`,
       token_type: "bearer",
@@ -175,14 +177,15 @@ function startFakeAuth() {
     if (url.pathname === "/auth/v1/.well-known/jwks.json") return send(200, { keys: [jwk] });
     if (url.pathname === "/auth/v1/token" && request.method === "POST") {
       const grant = url.searchParams.get("grant_type");
+      const held = grant === "refresh_token" ? refreshTokens.get(input.refresh_token) : undefined;
       const account =
         grant === "password"
           ? accounts.find((candidate) => candidate.email === input.email && candidate.password === input.password)
           : grant === "refresh_token"
-            ? refreshTokens.get(input.refresh_token)
+            ? held?.account
             : undefined;
       if (grant === "refresh_token") refreshTokens.delete(input.refresh_token);
-      return account ? send(200, issue(account)) : send(400, { error: "invalid_grant" });
+      return account ? send(200, issue(account, held?.session)) : send(400, { error: "invalid_grant" });
     }
     const account = bearer(request.headers.authorization);
     if (url.pathname === "/auth/v1/user" && request.method === "GET")
@@ -392,7 +395,21 @@ try {
     rmSync(runRoot, { recursive: true, force: true, maxRetries: 3 });
   });
   const nextPort = await freeProjectPort();
-  const appOrigin = `http://localhost:${nextPort}`;
+  // WebKit upgrades HTTP page assets under the unchanged production CSP. Serve the app over
+  // TLS too, on a managed project port, so its scripts/styles and local-origin guard both work.
+  const appTls = await createSharedApiTlsProxy({
+    target: `http://127.0.0.1:${nextPort}`,
+    runRoot,
+    port: await freeProjectPort([nextPort]),
+  });
+  cleanups.push(
+    () =>
+      new Promise((done) => {
+        appTls.server.closeAllConnections();
+        appTls.server.close(() => done(undefined));
+      }),
+  );
+  const appOrigin = appTls.origin;
   const [authOrigin, databaseUrl, engineUrl] = await Promise.all([
     startFakeAuth(),
     createDatabase(),
@@ -411,7 +428,8 @@ try {
   console.log(
     `[shared-mode] production HTTPS API ${apiBaseUrl}, fake auth ${authOrigin}; building and starting Next on ${appOrigin}`,
   );
-  const baseUrl = await startNext({ runId, runRoot, port: nextPort, apiBaseUrl });
+  await startNext({ runId, runRoot, port: nextPort, apiBaseUrl });
+  const baseUrl = appOrigin;
   // Asynchronous on purpose: the fake sign-in service and the backend live in this process, so a
   // synchronous spawn would stop them answering the browser.
   const playwright = spawn(
@@ -420,6 +438,7 @@ try {
       path.join(projectRoot, "node_modules/playwright/cli.js"),
       "test",
       "--project=ward-shared-mode",
+      "--project=ward-shared-phone",
       ...process.argv.slice(2),
       "--reporter=list,json",
       `--output=${resultsRoot}/artifacts`,
@@ -437,6 +456,7 @@ try {
         PLAYWRIGHT_JSON_OUTPUT_FILE: reportFile,
         PLAYWRIGHT_JSON_OUTPUT_DIR: "",
         PLAYWRIGHT_BASE_URL: baseUrl,
+        PLAYWRIGHT_LOCAL_CA_CERT: appTls.certificatePath,
         WARD_E2E_SUPABASE_ORIGIN: SUPABASE_ORIGIN,
         WARD_E2E_AUTH_ORIGIN: authOrigin,
         WARD_E2E_ACCOUNTS: JSON.stringify(accounts.map(({ email, password }) => ({ email, password }))),
@@ -453,9 +473,13 @@ try {
   } catch {
     /* verdict fails closed */
   }
-  const verdict = journeyRunVerdict([{ label: "shared production", code: exitCode, report }], ["ward-shared-mode"], {
-    requiredCases: sharedModeCases(),
-  });
+  const verdict = journeyRunVerdict(
+    [{ label: "shared production", code: exitCode, report }],
+    ["ward-shared-mode", "ward-shared-phone"],
+    {
+      requiredCases: sharedModeCases(),
+    },
+  );
   for (const problem of verdict.problems) console.error(`[shared-mode] ${problem}`);
   if (!verdict.ok) exitCode = exitCode || 1;
 } catch (error) {

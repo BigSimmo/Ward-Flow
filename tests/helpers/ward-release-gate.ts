@@ -38,6 +38,10 @@ export async function expectAccessible(page: Page, testInfo: TestInfo, step: str
   };
   await waitForAccessibleReadiness(page);
   const { results, blocking } = await scan();
+  await testInfo.attach(`screen: ${step}`, {
+    body: await page.screenshot({ fullPage: true, animations: "disabled" }),
+    contentType: "image/png",
+  });
   // For a contrast failure, record what the browser itself reports for each flagged element and its
   // ancestors, so a red run on a slower CI runner can be diagnosed without reproducing it.
   const contrastTargets = blocking

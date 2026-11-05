@@ -75,6 +75,7 @@ export function auditActivity(
       time: formatInstantWithDay(at, now),
       text: refused ? `${action} was refused.` : `${action}.`,
       category: refused ? "other" : (ACTION_CATEGORY[event.action] ?? "other"),
+      ...(event.ownCommandId ? { ownCommandId: event.ownCommandId } : {}),
     };
   });
   return { changes, tones, lastEventAt: rows[0]?.at };

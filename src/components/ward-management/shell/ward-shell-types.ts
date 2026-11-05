@@ -55,6 +55,8 @@ type WardActivityChange = {
   category?: WardActivityCategory;
   /** B3 P170: the record this row is about, opened only when the desk may open it. */
   href?: string;
+  /** Present only when the authenticated actor made this exact shared command. Never a grant. */
+  ownCommandId?: string;
 };
 
 /**

@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { useContext, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import { SharedAccessContext } from "../shell/ward-shared-access-context";
+import { ActivityOwnCommand } from "./activity-own-command";
 
 import { Button, ChipGroup, Drawer, FilterChip, PillTabs, StatusGlyph, TabPanel, useIsPhone } from "@/components/wf";
 import {
@@ -80,6 +82,7 @@ type ActivityPanelProps = {
   testId?: string;
   /** The tab it opens on; by default Changes when any wait for review, otherwise Recent activity. */
   initialTab?: ActivityTab;
+  initialCommandId?: string;
   /** Home's paused clock; elsewhere the live demo clock. */
   now?: Instant;
   /** The page's published figure checks (O-9); none published draws nothing. */
@@ -105,6 +108,7 @@ function OpenActivityPanel({
   id = "home-activity-panel",
   testId = "home-activity-panel",
   initialTab,
+  initialCommandId,
   now: givenNow,
   figureChecks = [],
   returnFocusRef,
@@ -264,7 +268,13 @@ function OpenActivityPanel({
         <ChangesBody review={review} now={now} links={links} />
       </TabPanel>
       <TabPanel idPrefix="home-activity" id="recent" hidden={tab !== "recent"}>
-        <RecentBody events={events} tones={activity.tones} links={links} auditFeed={activity.auditFeed} />
+        <RecentBody
+          events={events}
+          tones={activity.tones}
+          links={links}
+          commandId={initialCommandId}
+          auditFeed={activity.auditFeed}
+        />
       </TabPanel>
       <TabPanel idPrefix="home-activity" id="notices" hidden={tab !== "notices"}>
         <NoticesBody notices={noticeViews} now={now} onMarkRead={markRead} />
@@ -497,13 +507,17 @@ function RecentBody({
   events,
   tones,
   links,
+  commandId,
   auditFeed,
 }: {
   auditFeed?: Activity["auditFeed"];
   events: Activity["content"]["changes"];
   tones: Activity["tones"];
   links: Links;
+  commandId?: string;
 }) {
+  const access = useContext(SharedAccessContext);
+  const scope = `${access?.actorId ?? ""}:${access?.scopeKey ?? ""}`;
   const [filter, setFilter] = useState<ActivityCategoryFilter>("all");
   const personText = usePersonText();
   const counts = useMemo(() => {
@@ -547,6 +561,11 @@ function RecentBody({
         ))}
       </ChipGroup>
       <ol className={styles.plainList} aria-label="Recent activity">
+        {commandId && !rows.some((event) => event.ownCommandId === commandId) ? (
+          <li>
+            <ActivityOwnCommand key={`${scope}:${commandId}`} commandId={commandId} autoReview />
+          </li>
+        ) : null}
         {rows.map((event) => (
           <li key={event.id} className={styles.eventRow}>
             <time className={styles.eventTime}>{event.time}</time>
@@ -563,6 +582,13 @@ function RecentBody({
             ) : (
               <span className={styles.eventText}>{personText(event.text)}</span>
             )}
+            {event.ownCommandId ? (
+              <ActivityOwnCommand
+                key={`${scope}:${event.ownCommandId}`}
+                commandId={event.ownCommandId}
+                autoReview={event.ownCommandId === commandId}
+              />
+            ) : null}
           </li>
         ))}
       </ol>
