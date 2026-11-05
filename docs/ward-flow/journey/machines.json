@@ -1541,12 +1541,12 @@
       {
         "path": "src/components/ward-management/patients/add-patient.tsx",
         "line": 84,
-        "sha256": "0145c077d008426106bc4aa6eeeebbc56cf27d84039c9e42cba372520da87e47"
+        "sha256": "93e5b0e427d0554117f8bbefe76483e3b3b469da33313b2b72e9601d70890e12"
       },
       {
         "path": "src/components/ward-management/patients/patient-now-screen.tsx",
         "line": 1,
-        "sha256": "c06200eaf5901fe508502db34626ff6aa31ff3adf74650aa606aed75d264e3ff"
+        "sha256": "5038887974915b457a6372849d63a7ee77a6fe32169458886b70ef79283c50a6"
       },
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner-body.tsx",
