@@ -363,3 +363,13 @@
 .showMoreItem.showMoreItem {
   border-top: 0;
 }
+
+/* WF-41 (5 Nov 2026): on a short phone the sticky header + pinned segment + dock ate ~half the
+   viewport. Keep the segment in normal flow under 44rem tall so the list keeps most of the screen. */
+@media (max-height: 44rem) {
+  .segPinned {
+    position: static;
+    top: auto;
+    box-shadow: none;
+  }
+}

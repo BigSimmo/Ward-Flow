@@ -10,7 +10,11 @@ import { usePathname } from "next/navigation";
 import { DisabledReason } from "@/components/wf";
 import { wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { useAccessShellRole, useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { dispatchPermission, type WardFlowEventType } from "@/components/ward-management/ward-role-permissions";
+import {
+  dispatchPermission,
+  type WardFlowEventType,
+  withOwnerHint,
+} from "@/components/ward-management/ward-role-permissions";
 import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { useIsBreakGlassRecord } from "@/components/ward-management/shell/ward-access";
 import { SharedSessionContext } from "@/components/ward-management/shell/ward-shared-session-context";
@@ -158,13 +162,15 @@ export function useRoleGate(record?: {
       const permission = dispatchPermission(role, eventType);
       if (permission.allowed) return { allowed: true, buttonProps: {}, note: null };
       const required = requiredRoleForPermission(eventType, permission.reason);
+      // WF-20: a desk that cannot switch is told who owns the step, never only that it is locked.
+      const reason = canSwitchDesk ? permission.reason : withOwnerHint(permission.reason, role, eventType);
       return {
         allowed: false,
-        reason: permission.reason,
+        reason,
         buttonProps: { disabled: true, "aria-describedby": id },
         note: (
           <span className="lockline">
-            <DisabledReason id={id}>{permission.reason}</DisabledReason>
+            <DisabledReason id={id}>{reason}</DisabledReason>
             {canSwitchDesk ? (
               <>
                 {" "}

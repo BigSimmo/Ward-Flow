@@ -987,7 +987,7 @@ function AlertsWorkspace() {
       <strong>{wardName !== undefined ? "Nothing late or blocked in the network queue" : "Nothing needs you"}</strong>
       <span>
         {wardName !== undefined ? (
-          <>No late or blocked network alerts for {deskPlace}. Your ward&apos;s tasks stay on My ward.</>
+          <>No late or blocked network alerts for {deskPlace}. Your ward&apos;s own alerts stay on My ward.</>
         ) : (
           <>Nothing is late or blocked for {deskPlace}. You&apos;ll be told when that changes.</>
         )}
