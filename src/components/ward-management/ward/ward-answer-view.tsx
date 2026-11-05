@@ -187,7 +187,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     { extended: false, label: `${durMinutes(configuration.pullHoldMinutes)} standard` },
     {
       extended: true,
-      label: `${durMinutes(configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES)} extra travel`,
+      label: `${durMinutes(configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES)} with extra travel`,
     },
   ];
   const { toastMessage, setToastMessage, triggerToast, toastDeclined } = useAnswerToast();

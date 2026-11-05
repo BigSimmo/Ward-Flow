@@ -458,7 +458,7 @@ function CaseloadSection() {
             );
           })}
         </ul>
-        {rows.length === 0 ? <p className={p.empty}>No one in this sample matches.</p> : null}
+        {rows.length === 0 ? <p className={p.empty}>Nobody in this sample matches.</p> : null}
         <More shown={SHOWN} total={rows.length} open={all} onToggle={() => setAll(!all)} />
       </Card>
     </>

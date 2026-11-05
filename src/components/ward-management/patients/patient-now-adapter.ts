@@ -80,7 +80,7 @@ function movementVerdict(
       ? { tone: "good", short: "Bed pulled", title: `Bed pulled at ${acceptedUnit.name}.`, gates: [] }
       : {
           tone: "warn",
-          short: "Accepted, Awaiting Bed",
+          short: "Accepted, awaiting bed",
           title: `Acceptance recorded at ${acceptedUnit.name}; no bed pulled.`,
           gates: [],
         };

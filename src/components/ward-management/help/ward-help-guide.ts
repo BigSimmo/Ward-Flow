@@ -292,7 +292,7 @@ export const DESK_GUIDES: Readonly<Record<WardTourRole, DeskGuide>> = {
       },
     ],
     limits: [
-      'Small counts of people read "fewer than 5", so no one can be picked out.',
+      'Small counts of people read "fewer than 5", so nobody can be picked out.',
       "A figure nobody recorded says Not recorded. The app does not guess.",
       "You cannot record, change or approve anything.",
     ],

@@ -193,6 +193,7 @@ away; pulled is a bed kept for an incoming patient; held up is a delay.
 | Stand down                     | Stand Down                                                            |
 | 4h                             | minutes for a long duration ("240 minutes")                           |
 | on the board                   | demo night (the live pill "Demo 10:42" stays, HOW-WE-WORK §6)         |
+| Nobody                         | No one ("Nobody waiting", not "No one waiting")                       |
 
 ## Plain words (wording audit, 26 October 2026)
 

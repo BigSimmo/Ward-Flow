@@ -107,7 +107,7 @@ export function audienceLabel(audience: BroadcastAudience, groups: readonly Audi
     audience.bedNow ? "Wards with a bed now" : "",
     ...groups.filter((group) => audience.groups.includes(group.id)).map((group) => group.label),
   ].filter(Boolean);
-  return names.length > 0 ? names.join(", ") : "No one chosen";
+  return names.length > 0 ? names.join(", ") : "Nobody chosen";
 }
 
 /** The one stored scope a group choice still maps to, for the access check and older readers. */

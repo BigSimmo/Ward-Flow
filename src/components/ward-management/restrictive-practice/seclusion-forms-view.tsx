@@ -319,7 +319,7 @@ export function SeclusionFormsView({ startFor }: { startFor?: string } = {}) {
                     <span className={styles.detail}>
                       {row.recorded
                         ? `Marked by ${row.recorded.by}, ${formatInstantWithDay(row.recorded.at, now)}`
-                        : "No one has marked it yet"}
+                        : "Nobody has marked it yet"}
                     </span>
                   </span>
                   <span className={styles.tag} data-state={row.state}>

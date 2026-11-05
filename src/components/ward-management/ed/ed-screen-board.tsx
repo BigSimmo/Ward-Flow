@@ -185,7 +185,7 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
             return (
               <>
                 {boardMatchCount === 0 ? (
-                  <p className={styles.noPatientMatches}>No one matches. Everyone stays below, dimmed.</p>
+                  <p className={styles.noPatientMatches}>Nobody matches. Everyone stays below, dimmed.</p>
                 ) : null}
                 <TierKey />
                 <table
@@ -223,7 +223,7 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
           return (
             <>
               {boardMatchCount === 0 ? (
-                <p className={styles.noPatientMatches}>No one matches. Everyone stays below, dimmed.</p>
+                <p className={styles.noPatientMatches}>Nobody matches. Everyone stays below, dimmed.</p>
               ) : null}
               <TierKey />
               <ul className={styles.phoneBoardList} aria-label="Emergency department board">

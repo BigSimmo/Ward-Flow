@@ -427,7 +427,7 @@ export function BroadcastComposer({
                   ) : null}
                 </>
               ) : (
-                <span className={css.dim}>No one chosen yet</span>
+                <span className={css.dim}>Nobody chosen yet</span>
               )}
             </div>
             <p className={css.hint}>

@@ -47,7 +47,7 @@ function edRisk(risk: EdAccessRisk, edName: (edId: string) => string): string {
   if (!first || first.atRisk === 0) {
     return risk.alreadyOver > 0
       ? `${risk.alreadyOver} ${risk.alreadyOver === 1 ? "person has" : "people have"} already passed ${target} in ED.`
-      : `No one in ED will pass ${target} in the next day on what is recorded.`;
+      : `Nobody in ED will pass ${target} in the next day on what is recorded.`;
   }
   const people = first.atRisk === 1 ? "1 person" : `${first.atRisk} people`;
   const verb = first.atRisk === 1 ? "passes" : "pass";

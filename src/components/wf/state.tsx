@@ -31,7 +31,7 @@ export type StateLineProps = StateLineBase &
       }
     | {
         kind: Exclude<StateKind, "clear">;
-        /** What is true now: "No one waiting", "Transport did not load". */
+        /** What is true now: "Nobody waiting", "Transport did not load". */
         title: ReactNode;
       }
   );

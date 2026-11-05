@@ -35,7 +35,7 @@ describe("PersonByUmrn", () => {
 
   it("says no one has an unknown UMRN and links to the search with it filled in", () => {
     renderUmrn("UM999999");
-    expect(screen.getByText(/No one with UMRN UM999999\./u)).toBeInTheDocument();
+    expect(screen.getByText(/Nobody with UMRN UM999999\./u)).toBeInTheDocument();
     const link = screen.getByRole("link", { name: "Search patients for UM999999" });
     // The UMRN never goes into the link; it is handed to the search in memory on click.
     expect(link).toHaveAttribute("href", "/ward-flow/search");

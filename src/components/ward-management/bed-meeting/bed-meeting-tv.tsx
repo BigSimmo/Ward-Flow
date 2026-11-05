@@ -531,7 +531,7 @@ function BedMeetingTvView({
           {
             label: "Longest ED wait",
             value: longest ? splitDuration(longest.waitMinutes) : 0,
-            detail: longest ? `At ${edName(longest.department)}` : "No one waiting",
+            detail: longest ? `At ${edName(longest.department)}` : "Nobody waiting",
             tone: longest && longest.waitMinutes >= LONG_WAIT_MINUTES ? "danger" : undefined,
             // Final polish (31 Oct 2026): every tile has its bar. Here, the wait against the long-wait
             // line (full once past it), the same line the tile's Act now uses.
@@ -622,7 +622,7 @@ function BedMeetingTvView({
 
         <Panel title="Longest ED waits" testId="bed-meeting-tv-waits-panel" area="waits">
           {ed.longestWaits.length === 0 ? (
-            <Empty>No one waiting</Empty>
+            <Empty>Nobody waiting</Empty>
           ) : (
             <JourneyList
               rows={ed.longestWaits.slice(0, MEETING_TV_ROWS).map((person) => ({
@@ -878,7 +878,7 @@ function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; sce
           {
             label: "Longest wait",
             value: summary.waiting === 0 ? 0 : splitDuration(summary.longestWaitMinutes),
-            detail: summary.waiting === 0 ? "No one waiting" : "The longest anyone here has waited",
+            detail: summary.waiting === 0 ? "Nobody waiting" : "The longest anyone here has waited",
             tone: summary.longestWaitMinutes >= LONG_WAIT_MINUTES ? "danger" : undefined,
             // Final polish: the wait against the long-wait line (full once past it), as the State TV.
             meter: { value: summary.waiting === 0 ? 0 : summary.longestWaitMinutes, max: LONG_WAIT_MINUTES },
@@ -907,7 +907,7 @@ function EdTvView({ sheet, now, scenario }: { sheet: EdTvSheet; now: number; sce
       <div className={styles.panels}>
         <Panel title="Waiting for a bed" testId="ed-tv-people-panel">
           {sheet.people.length === 0 ? (
-            <Empty>No one waiting for a mental health bed</Empty>
+            <Empty>Nobody waiting for a mental health bed</Empty>
           ) : (
             <JourneyList
               rows={sheet.people.slice(0, ED_TV_PEOPLE_ROWS)}

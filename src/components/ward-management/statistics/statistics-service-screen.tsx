@@ -893,7 +893,7 @@ function ServicePhone({
                   name={entry.name}
                   meta={
                     exactStatisticsCount(entry.figures.onTheList) === 0
-                      ? "No one waiting"
+                      ? "Nobody waiting"
                       : `${small(entry.figures.unplaced)} no ward yet · median ${median === null ? "none" : durMinutes(Math.round(median))}`
                   }
                   value={waitingShown[index]}

@@ -410,7 +410,7 @@ function TeamsIndexView({
             data-testid="ward-statistics-teams-all"
           >
             {listed.length === 0 ? (
-              <p className={redesign.empty}>No one in a bed has a named community team.</p>
+              <p className={redesign.empty}>Nobody in a bed has a named community team.</p>
             ) : (
               <div className={redesign.tableWrap} tabIndex={0} role="region" aria-label="Teams, scrollable">
                 <table className={cx(tableClasses.table, redesign.table)} data-testid="ward-statistics-teams-table">

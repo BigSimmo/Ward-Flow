@@ -78,7 +78,7 @@ describe("broadcast composer", () => {
     fireEvent.click(screen.getByRole("radio", { name: /Tell desks something/ }));
     fireEvent.click(screen.getByRole("button", { name: "Blank" }));
     expect(screen.getByText("Choose who gets it")).toBeInTheDocument();
-    expect(screen.getByText("No one chosen yet")).toBeInTheDocument();
+    expect(screen.getByText("Nobody chosen yet")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /ED desks/ }));
     expect(screen.getByText("Add a title and message")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/^Title$/i), { target: { value: "Synthetic title" } });
