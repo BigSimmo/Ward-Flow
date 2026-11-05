@@ -3,14 +3,9 @@
 import { uploadedFileTypeOf } from "../ward-uploaded-file";
 import type { FollowableChartKind, ReferralChart } from "./referral-submission";
 import styles from "./ward-referral-drawer.module.css";
+import { chartsCountText, documentLabel } from "./referral-document-labels";
 
-export function documentLabel(kind: ReferralChart["kind"]) {
-  return kind === "medication"
-    ? "Medication chart"
-    : kind === "observation"
-      ? "Observation chart"
-      : "Additional document";
-}
+export { chartsCountText, documentLabel };
 
 /**
  * H-0049: a chart is shown by its kind and file type only. Referrals saved before 26 Oct 2026 may
@@ -23,11 +18,6 @@ export function referralChartLabel(chart: ReferralChart) {
 function downloadName(chart: ReferralChart) {
   const extension = chart.mimeType === "application/pdf" ? "pdf" : chart.mimeType === "image/png" ? "png" : "jpg";
   return `${documentLabel(chart.kind)}.${extension}`;
-}
-
-/** "2 attached" or "1 attached, 1 to follow" (A27). */
-export function chartsCountText(attached: number, toFollow: number): string {
-  return toFollow ? `${attached} attached, ${toFollow} to follow` : `${attached} attached`;
 }
 
 export function ReferralDocumentLinks({
