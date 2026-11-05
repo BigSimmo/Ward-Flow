@@ -8,7 +8,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
  * not offered it, and a desk that may open it still is. All data here is synthetic.
  *
  * 1. The New referral slide-out (Shift+R, a link click, arriving on its route) is referral intake.
- * 2. Find a bed's ward rows and Key figures' See all on Statistics link to pages some desks cannot open.
+ * 2. Find a bed's ward rows and Key figures' See all on Statistics link — only desks that may open Statistics.
  * 3. The broadcast banner speaks for the desk's own role, not the coordinator's desk a page implies.
  */
 
@@ -242,17 +242,19 @@ describe("2. Find a bed and Key figures link only to pages the desk may open", (
     return screen.getByTestId("ward-stats-drawer-content");
   }
 
+  it.each([["officer", officer]])(
+    "offers the %s no See all on Statistics link, as it cannot open the statistics hub",
+    (_name, access) => {
+      useDesk(access);
+      const figures = renderFigures();
+      expect(within(figures).queryByRole("link", { name: /See all on Statistics/u })).toBeNull();
+    },
+  );
+
+  // WF-42: bare /statistics opens for ED/ward (redirects to own place), so See all is no longer a dead end.
   it.each([
     ["ED desk", edDesk],
     ["ward desk", { role: "ward", scope: { kind: "ward", unitIds: ["finder-1"] } } as WardAccess],
-    ["officer", officer],
-  ])("offers the %s no See all on Statistics link, as it cannot open the statistics hub", (_name, access) => {
-    useDesk(access);
-    const figures = renderFigures();
-    expect(within(figures).queryByRole("link", { name: /See all on Statistics/u })).toBeNull();
-  });
-
-  it.each([
     ["bed manager", bedManager],
     ["coordinator", coordinator],
   ])("still offers the %s See all on Statistics", (_name, access) => {
