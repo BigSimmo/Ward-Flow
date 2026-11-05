@@ -143,7 +143,7 @@
     "lane": "record",
     "nodes": ["raised", "rkDuplicate", "rkIntakeLost"],
     "roles": ["ed", "community", "ward", "coordinator"],
-    "does": "Registers somebody with no referral, movement or bed record yet — the “searched, nobody came up, so add them” record.",
+    "does": "Registers somebody with no referral, movement or bed record yet \u2014 the \u201csearched, nobody came up, so add them\u201d record.",
     "needs": "A unique nonblank UMRN, given and family names, a real date of birth from 1900 through the applicable Perth day, and valid optional sex, gender, Indigenous-status and source-desk values. Optional preferred name, address, general practitioner, catchment community team and interpreter language are trimmed; blank means not recorded.",
     "changes": "Creates a new patient record, including any optional typed details given.",
     "reasons": ["GENDERS"],
@@ -192,7 +192,7 @@
     "roles": ["ed", "coordinator"],
     "does": "Records the current medical-clearance answer on a referral and synchronises its matching linked movements. Fresh positive clearance resumes a recorded medical-deterioration pause.",
     "needs": "An existing referral, finite recording time and boolean answer. Re-clearance must be later than any unresolved linked deterioration.",
-    "changes": "Replaces the referral answer and the matching movements’ clearance. Positive re-clearance stamps resumedAt and restates their blocker; it does not restore a released bed or booking.",
+    "changes": "Replaces the referral answer and the matching movements\u2019 clearance. Positive re-clearance stamps resumedAt and restates their blocker; it does not restore a released bed or booking.",
     "reasons": [],
     "refuses": [
       {
@@ -317,7 +317,7 @@
       "dNonBinary"
     ],
     "roles": ["ward", "coordinator", "ed", "community"],
-    "does": "A ward, emergency department or community team says yes to the destination addressed to it. The first yes automatically cancels every other destination still waiting — except a community arm, which never competes for the bed.",
+    "does": "A ward, emergency department or community team says yes to the destination addressed to it. The first yes automatically cancels every other destination still waiting \u2014 except a community arm, which never competes for the bed.",
     "needs": "The destination was addressed to the acting desk and has not been withdrawn. Normally it is queued. An explicit reassessment can turn a decline into acceptance; updates on an already accepted arm add history rather than accepting twice. Ward eligibility and bed criteria still apply.",
     "changes": "Marks that destination accepted, cancels the other waiting non-community destinations, notifies the referrer and the receiving ward. No bed is pulled and no movement is created.",
     "reasons": ["GENDER_PLACEMENT_REASONS", "OVERRIDE_REASONS"],
@@ -444,7 +444,7 @@
     "lane": "stall",
     "nodes": ["wardAnswers", "wardDeclined", "cmhtAnswers", "cmhtDeclined", "edAnswers", "edDeclined", "cmhtNothing"],
     "roles": ["ward", "coordinator", "ed", "community"],
-    "does": "Records the destination’s answer. A substantive decline closes that arm; bed-unavailable reasons on a ward arm waitlist it and keep it live. Gender mismatch is not a decline reason.",
+    "does": "Records the destination\u2019s answer. A substantive decline closes that arm; bed-unavailable reasons on a ward arm waitlist it and keep it live. Gender mismatch is not a decline reason.",
     "needs": "A known addressed destination, matching desk kind/place and a valid reason. Re-answering a decided arm requires the documented reassessment path.",
     "changes": "Records a decline or waitlist history entry and the corresponding notices, retaining other arms.",
     "reasons": ["REFERRAL_DECLINE_REASONS", "COMMUNITY_DECLINE_REASONS"],
@@ -531,9 +531,9 @@
     "lane": "stall",
     "nodes": ["wardAnswers", "cmhtWithdrawn", "wardNothing", "cmhtNothing", "wardWithdrawn"],
     "roles": ["coordinator", "community", "ed", "ward"],
-    "does": "The referring party withdraws — either just the community half, leaving the bed request standing, or the whole referral, which also gives back any held bed and cancels any transport.",
+    "does": "The referring party withdraws \u2014 either just the community half, leaving the bed request standing, or the whole referral, which also gives back any held bed and cancels any transport.",
     "needs": "The recorded sender desk/place or coordinator. Whole-referral withdrawal requires waiting non-withdrawn arms and no accepted placement or collected linked journey. The separately scoped community-arm path has its own reason and state checks.",
-    "changes": "Stamps the withdrawal on every still-waiting destination; closes any linked open movement as “did not proceed”.",
+    "changes": "Stamps the withdrawal on every still-waiting destination; closes any linked open movement as \u201cdid not proceed\u201d.",
     "reasons": ["WARD_REQUEST_WITHDRAWAL_REASONS"],
     "refuses": [
       {
@@ -646,7 +646,7 @@
     "refuses": [
       {
         "when": "Guard: note.length === 0",
-        "message": "ADD_REFERRAL_CORRECTION note must say something — a blank is not a correction",
+        "message": "ADD_REFERRAL_CORRECTION note must say something \u2014 a blank is not a correction",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 1181
@@ -654,7 +654,7 @@
       },
       {
         "when": "Guard: note.length > REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS",
-        "message": "ADD_REFERRAL_CORRECTION note is ${note.length} characters and the limit is ${REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS} — it is refused rather than shortened",
+        "message": "ADD_REFERRAL_CORRECTION note is ${note.length} characters and the limit is ${REFERRAL_CORRECTION_NOTE_MAX_CHARACTERS} \u2014 it is refused rather than shortened",
         "source": {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 1189
@@ -676,7 +676,7 @@
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 1147,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/referrals/referral-history-corrections.tsx",
@@ -686,12 +686,12 @@
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 1182,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 1190,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         }
       ]
     }
@@ -703,7 +703,7 @@
     "lane": "record",
     "nodes": ["wardAnswers", "addressed"],
     "roles": ["coordinator"],
-    "does": "Records that somebody looked for a bed nearer the person's home before sending them further. It never gates an acceptance — it exists so the search can be shown to have happened.",
+    "does": "Records that somebody looked for a bed nearer the person's home before sending them further. It never gates an acceptance \u2014 it exists so the search can be shown to have happened.",
     "needs": "The referral is still undecided and no earlier local-bed search is already recorded.",
     "changes": "Stamps the search and who did it.",
     "reasons": [],
@@ -828,7 +828,7 @@
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 94,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward/ward-accepted-referral-placement-form.tsx",
@@ -848,27 +848,27 @@
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 160,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 204,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 216,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 226,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 245,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         }
       ]
     }
@@ -934,7 +934,7 @@
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 681,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/capacity/step-down-board.tsx",
@@ -954,22 +954,22 @@
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 683,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 685,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 705,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 710,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         }
       ]
     }
@@ -1201,7 +1201,7 @@
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 1092,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/coordinator/shortlist-panel.tsx",
@@ -1211,12 +1211,12 @@
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 1105,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 1108,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         }
       ]
     }
@@ -1305,9 +1305,9 @@
     "lane": "end",
     "nodes": ["sAbandoned"],
     "roles": ["ed", "community", "ward", "coordinator"],
-    "does": "Cancels the search outright — either pulling it from every ward still being asked, or, once accepted, revoking the acceptance and giving back any held bed.",
+    "does": "Cancels the search outright \u2014 either pulling it from every ward still being asked, or, once accepted, revoking the acceptance and giving back any held bed.",
     "needs": "An open movement and the recorded sending desk/place or coordinator. After acceptance this path is restricted to the originating ED or coordinator and refuses after collection; other sending desks cannot revoke an accepted movement here.",
-    "changes": "Closes the movement as “did not proceed”, releases any held bed, cancels any live transport.",
+    "changes": "Closes the movement as \u201cdid not proceed\u201d, releases any held bed, cancels any live transport.",
     "reasons": [],
     "refuses": [
       {
@@ -1358,7 +1358,7 @@
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 889,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-raise.ts",
@@ -1378,22 +1378,22 @@
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 895,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 963,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 972,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 1038,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         }
       ]
     }
@@ -1405,7 +1405,7 @@
     "lane": "diversion",
     "nodes": ["edToCommunity", "cmhtFromSearch"],
     "roles": ["ed", "coordinator"],
-    "does": "Instead of admitting, refers the patient straight to a named community team — ends the bed search, creates or reuses a real community referral, and tells everybody involved.",
+    "does": "Instead of admitting, refers the patient straight to a named community team \u2014 ends the bed search, creates or reuses a real community referral, and tells everybody involved.",
     "needs": "The record is open and transport has not collected the patient. If they are on a legal form, a conclusive examination outcome must already be recorded.",
     "changes": "Gives back any held bed, cancels transport, withdraws live ward requests, closes the movement, and raises or reuses the community arm.",
     "reasons": [],
@@ -1458,7 +1458,7 @@
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 459,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ed/ed-screen-row-forms.tsx",
@@ -1468,22 +1468,22 @@
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 463,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 466,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 476,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 489,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         }
       ]
     }
@@ -1495,8 +1495,8 @@
     "lane": "end",
     "nodes": ["edOutcome", "edAnswers"],
     "roles": ["ed", "coordinator"],
-    "does": "Records that the patient no longer needs a psychiatric bed — going home, or to community follow-up — and unwinds everything already in motion.",
-    "needs": "The record is open and transport has not collected the patient. For “for discharge” on a legal form, a conclusive examination outcome must already be recorded.",
+    "does": "Records that the patient no longer needs a psychiatric bed \u2014 going home, or to community follow-up \u2014 and unwinds everything already in motion.",
+    "needs": "The record is open and transport has not collected the patient. For \u201cfor discharge\u201d on a legal form, a conclusive examination outcome must already be recorded.",
     "changes": "Releases a held bed, cancels an uncollected transport job, drops live ward requests, closes the movement, and notifies every ward affected.",
     "reasons": [],
     "refuses": [
@@ -1636,7 +1636,7 @@
     "lane": "record",
     "nodes": ["asked", "rkEscalate"],
     "roles": ["coordinator"],
-    "does": "Records that the search was escalated — which wards were tried, and who was contacted.",
+    "does": "Records that the search was escalated \u2014 which wards were tried, and who was contacted.",
     "needs": "The record is open.",
     "changes": "Stamps the escalation, the wards tried and the contact.",
     "reasons": ["ESCALATION_CONTACTS"],
@@ -1710,7 +1710,7 @@
     "lane": "record",
     "nodes": ["asked", "inPrinciple", "pulled"],
     "roles": ["coordinator"],
-    "does": "Moves the record back to an earlier point. A pure record correction — it deliberately releases no bed and cancels no transport.",
+    "does": "Moves the record back to an earlier point. A pure record correction \u2014 it deliberately releases no bed and cancels no transport.",
     "needs": "An open, unarrived movement, an earlier valid stage and listed correction reason. A stage-only seeded bed hold cannot be stepped back before pulled because that would lose its reservation.",
     "changes": "Moves the stage and logs the correction. Nothing else is touched at all.",
     "reasons": ["STEP_BACK_REASONS"],
@@ -1779,7 +1779,7 @@
     "lane": "expected",
     "nodes": ["pulled", "dRepull", "dForced", "dGenderHard", "dNoLongerSuits"],
     "roles": ["ward", "coordinator"],
-    "does": "The ward claims the bed it accepted, and an admission record is created marked held — not occupied. A patient is not arrived until the ward says they have arrived.",
+    "does": "The ward claims the bed it accepted, and an admission record is created marked held \u2014 not occupied. A patient is not arrived until the ward says they have arrived.",
     "needs": "An open movement at accepted_awaiting_bed and the accepting ward, consistent reservation/identity, current capacity (the Ready figure counts live pulled admissions, and beds still being made ready must not use up all of it), eligibility, bed-kind/gender/legal checks and no conflicting active placement.",
     "changes": "Reserves an allocatable bed, creates or consistently adopts the held admission and starts the configured hold timer. The bed is held rather than occupied.",
     "reasons": ["OVERRIDE_REASONS"],
@@ -1906,9 +1906,9 @@
     "lane": "stall",
     "nodes": ["sPullReleased"],
     "roles": ["coordinator", "ward"],
-    "does": "A ward gives back a bed it was holding before the patient arrived. The admission record is deleted outright — nobody was ever in this bed.",
+    "does": "A ward gives back a bed it was holding before the patient arrived. The admission record is deleted outright \u2014 nobody was ever in this bed.",
     "needs": "An open movement at pulled, a listed release reason, an authorised holding ward/coordinator and no physical collection. Cancel a live booking first. An Undo carrying expectedPull must still name this exact pull.",
-    "changes": "Returns the bed to the ward, deletes the admission, sends the record back to “accepted, awaiting bed”, and tells the department.",
+    "changes": "Returns the bed to the ward, deletes the admission, sends the record back to \u201caccepted, awaiting bed\u201d, and tells the department.",
     "reasons": ["RELEASE_PULL_REASONS"],
     "refuses": [
       {
@@ -2008,7 +2008,7 @@
       },
       {
         "when": "Guard: !heldBedOutstanding",
-        "message": "movement ${movement.id} has no bed pulled — it may already have been released",
+        "message": "movement ${movement.id} has no bed pulled \u2014 it may already have been released",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 583
@@ -2075,7 +2075,7 @@
     "lane": "record",
     "nodes": ["booked", "dNoTransport"],
     "roles": ["ed", "ward", "community", "coordinator"],
-    "does": "Records whether the patient will need help getting to the ward. Answering “no” is what lets them be marked arrived with no journey at all.",
+    "does": "Records whether the patient will need help getting to the ward. Answering \u201cno\u201d is what lets them be marked arrived with no journey at all.",
     "needs": "An open movement. The ward must be the sending ward; a supplied ED place must match the origin. Cancel a live booking before recording that transport is not needed.",
     "changes": "Sets or replaces the answer.",
     "reasons": [],
@@ -2141,7 +2141,7 @@
     "roles": ["ed", "ward", "community", "coordinator"],
     "does": "Logs an already arranged booking: provider, explicit escort and transport-legal-status answers, estimate, and optional typed CAD number. It calls no transport service.",
     "needs": "An open movement at pulled or handover_ready with an accepted destination or admission and no live booking. Desk/place must match sender or coordinator; global medical-clearance/deterioration guards apply. A blank CAD is permitted for later recording.",
-    "changes": "Creates the transport job and records who booked it — which decides who may later cancel it.",
+    "changes": "Creates the transport job and records who booked it \u2014 which decides who may later cancel it.",
     "reasons": ["TRANSPORT_PROVIDERS", "TRANSPORT_LEGAL_STATUSES"],
     "refuses": [
       {
@@ -2208,7 +2208,7 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 645,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/officer/officer-needs-transport.tsx",
@@ -2238,32 +2238,32 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 657,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 663,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 672,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 693,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 698,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 736,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         }
       ]
     }
@@ -2312,7 +2312,7 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 85,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2322,12 +2322,12 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 99,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 109,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         }
       ]
     }
@@ -2376,7 +2376,7 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 128,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
@@ -2391,12 +2391,12 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 132,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 160,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         }
       ]
     }
@@ -2445,7 +2445,7 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 178,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
@@ -2460,12 +2460,12 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 182,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 218,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         }
       ]
     }
@@ -2477,7 +2477,7 @@
     "lane": "expected",
     "nodes": ["collected", "dNoLongerSuits"],
     "roles": ["officer", "coordinator"],
-    "does": "Records that the patient has physically been collected and the journey has begun. After this, cancelling is no longer possible — only stopping.",
+    "does": "Records that the patient has physically been collected and the journey has begun. After this, cancelling is no longer possible \u2014 only stopping.",
     "needs": "An open handover-ready movement with a booked en-route job and current medical, gender and legal checks. A valid supplied exception/identity-check record is retained; collection can restore moving after a stage correction without replacing its original physical time. No restrictive practice may still be recorded as in use for the patient at the sending ward.",
     "changes": "Moves the record to moving and stamps the collection.",
     "reasons": [],
@@ -2492,7 +2492,7 @@
       },
       {
         "when": "Guard: examinationRevokedHoldingBed || awaitingRelease",
-        "message": "cannot collect a patient for movement ${movement.id}: the examination was revoked and this movement still has a bed pulled — a person must release the bed first",
+        "message": "cannot collect a patient for movement ${movement.id}: the examination was revoked and this movement still has a bed pulled \u2014 a person must release the bed first",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 246
@@ -2522,7 +2522,7 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 229,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
@@ -2537,12 +2537,12 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 233,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 248,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         }
       ]
     }
@@ -2599,7 +2599,7 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 315,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
@@ -2624,17 +2624,17 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 354,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 361,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 380,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         }
       ]
     }
@@ -2653,7 +2653,7 @@
     "refuses": [
       {
         "when": "Guard: movement.transport.arrivedAt !== undefined",
-        "message": "cannot cancel transport for movement ${movement.id} — the patient has arrived",
+        "message": "cannot cancel transport for movement ${movement.id} \u2014 the patient has arrived",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 830
@@ -2661,7 +2661,7 @@
       },
       {
         "when": "Guard: movement.transport.collectedAt !== undefined",
-        "message": "cannot cancel transport for movement ${movement.id} — the patient has departed",
+        "message": "cannot cancel transport for movement ${movement.id} \u2014 the patient has departed",
         "source": {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 833
@@ -2707,7 +2707,7 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 825,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
@@ -2722,27 +2722,27 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 838,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 841,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 860,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 884,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 893,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         }
       ]
     }
@@ -2799,7 +2799,7 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 1003,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/movements/movement-workspace-cockpit.tsx",
@@ -2809,17 +2809,17 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 1016,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 1022,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 1041,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         }
       ]
     }
@@ -2959,7 +2959,7 @@
     "lane": "record",
     "nodes": ["occupied", "asked", "rkLegalStatus"],
     "roles": ["coordinator", "ed", "ward", "community"],
-    "does": "Changes the patient's status under the Mental Health Act, recording who changed it and why. It never reacts on its own — even if this makes an already-accepted bed unlawful, that only surfaces for a human to look at.",
+    "does": "Changes the patient's status under the Mental Health Act, recording who changed it and why. It never reacts on its own \u2014 even if this makes an already-accepted bed unlawful, that only surfaces for a human to look at.",
     "needs": "An open movement, sender-kind permission and a listed legal-status-change reason; signed/shared scope further binds the actual sender.",
     "changes": "Sets the status and logs the change.",
     "reasons": ["LEGAL_STATUS_CHANGE_REASONS"],
@@ -2996,7 +2996,7 @@
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 1242,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/movements/sent-journey-changes.tsx",
@@ -3006,12 +3006,12 @@
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 1250,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 1258,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         }
       ]
     }
@@ -3145,7 +3145,7 @@
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 411,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ed/use-ed-record-save.ts",
@@ -3155,12 +3155,12 @@
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 422,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 426,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         }
       ]
     }
@@ -3173,7 +3173,7 @@
     "nodes": ["occupied", "rkForm", "rkExpiryShut"],
     "roles": ["ed", "coordinator", "ward"],
     "does": "Records typed paper expiry or a later extension. An explicit correction may move it earlier only with a reason and matching expected paper facts. No statutory duration is computed.",
-    "needs": "An existing form and finite typed expiry on an open movement, or the admitting ward’s admitted-stay path. An extension is strictly later; a correction must differ and match the current code, written time and previous expiry.",
+    "needs": "An existing form and finite typed expiry on an open movement, or the admitting ward\u2019s admitted-stay path. An extension is strictly later; a correction must differ and match the current code, written time and previous expiry.",
     "changes": "Stores the typed expiry, clears any calculated legacy clock, appends basis/author/time history and, for a correction, its previous facts and reason.",
     "reasons": [],
     "refuses": [
@@ -3319,7 +3319,7 @@
     "nodes": ["personLeaves", "bedReleased", "end0", "end1", "end2", "end3", "end4", "end5", "end6", "end7"],
     "roles": ["ward", "coordinator"],
     "does": "Records physical departure from an occupied stay and retains the departed admission. It is distinct from the protected revision-checked RECORD_PATIENT_DISCHARGE path.",
-    "needs": "The caller names the stay’s ward and a listed destination at a finite time no earlier than arrival. No active transit, restrictive-practice or open return-movement conflict. An involuntary community/against-advice departure needs a recorded permitted paper transition.",
+    "needs": "The caller names the stay\u2019s ward and a listed destination at a finite time no earlier than arrival. No active transit, restrictive-practice or open return-movement conflict. An involuntary community/against-advice departure needs a recorded permitted paper transition.",
     "changes": "Ends the admission and raises the ward's empty and allocatable counts by one (only the timestamps move if this person's release had already been completed), gives back a locked bed, adjusts the sex mix, ends any leave bed, and completes this person's pending bed release.",
     "reasons": [],
     "refuses": [
@@ -3713,7 +3713,7 @@
     "roles": ["ward", "bed_manager", "coordinator"],
     "does": "A ward flags an upcoming discharge for a named occupying admission, saying when and what it is waiting on.",
     "needs": "The ward may only flag a stay on its own ward, with no other live release for that stay.",
-    "changes": "Creates the bed release at “expected”.",
+    "changes": "Creates the bed release at \u201cexpected\u201d.",
     "reasons": ["BED_RELEASE_WAITING_ON", "BED_RELEASE_BLOCKERS"],
     "refuses": [
       {
@@ -3770,9 +3770,9 @@
     "lane": "expected",
     "nodes": ["bedReleased", "ready"],
     "roles": ["ward", "bed_manager", "coordinator"],
-    "does": "Confirms an expected discharge is now decided. It does not free the bed — that is a separate step.",
+    "does": "Confirms an expected discharge is now decided. It does not free the bed \u2014 that is a separate step.",
     "needs": "The release is currently expected.",
-    "changes": "Moves expected to confirmed, clears waitingOn and records the linked admission’s discharge decision. A blocker survives; no bed is freed.",
+    "changes": "Moves expected to confirmed, clears waitingOn and records the linked admission\u2019s discharge decision. A blocker survives; no bed is freed.",
     "reasons": [],
     "refuses": [
       {
@@ -3836,7 +3836,7 @@
     "roles": ["ward", "bed_manager", "coordinator"],
     "does": "Reverses a confirmed discharge decision, restating what it is now waiting on. The only step of the three that goes backwards.",
     "needs": "The release is currently confirmed.",
-    "changes": "Moves confirmed to expected with listed waitingOn and clears the linked admission’s discharge decision. The blocker survives.",
+    "changes": "Moves confirmed to expected with listed waitingOn and clears the linked admission\u2019s discharge decision. The blocker survives.",
     "reasons": ["BED_RELEASE_WAITING_ON"],
     "refuses": [
       {
@@ -3906,7 +3906,7 @@
     "lane": "stall",
     "nodes": ["bedStuck"],
     "roles": ["ward", "bed_manager", "coordinator"],
-    "does": "Flags that a discharge — expected or confirmed — is currently stuck, and says why. Being stuck is a flag, not a stage.",
+    "does": "Flags that a discharge \u2014 expected or confirmed \u2014 is currently stuck, and says why. Being stuck is a flag, not a stage.",
     "needs": "The bed has not already been released.",
     "changes": "Stores the listed blocker and actor/time on the release and linked stay. The release stage remains unchanged.",
     "reasons": ["BED_RELEASE_BLOCKERS"],
@@ -4052,7 +4052,7 @@
     "lane": "record",
     "nodes": ["bedReleased", "rkPrep"],
     "roles": ["ward", "bed_manager", "coordinator"],
-    "does": "Marks a bed as being cleaned or awaiting repair. This is information only — it never stops the bed being counted as available or offered to somebody.",
+    "does": "Marks a bed as being cleaned or awaiting repair. This is information only \u2014 it never stops the bed being counted as available or offered to somebody.",
     "needs": "The ward may only set it on its own release.",
     "changes": "Sets the note. No capacity figure moves.",
     "reasons": ["BED_PREPARATION_NOTES"],
@@ -4185,7 +4185,7 @@
     "lane": "record",
     "nodes": ["asked"],
     "roles": ["ward", "coordinator"],
-    "does": "A ward records the restrictions it is currently operating under — staffing, infection control, a closed bay, and so on.",
+    "does": "A ward records the restrictions it is currently operating under \u2014 staffing, infection control, a closed bay, and so on.",
     "needs": "The ward may only record its own.",
     "changes": "Replaces its constraint list.",
     "reasons": ["WARD_INTAKE_CONSTRAINTS"],
@@ -4342,7 +4342,7 @@
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 1201,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/movements/sent-journey-changes.tsx",
@@ -4352,12 +4352,12 @@
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 1212,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
           "line": 1221,
-          "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+          "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
         }
       ]
     }
@@ -4514,7 +4514,7 @@
     "refuses": [
       {
         "when": "Guard: blocker.length === 0",
-        "message": "RECORD_MOVEMENT_BLOCKER blocker must say something — a blank is not a statement",
+        "message": "RECORD_MOVEMENT_BLOCKER blocker must say something \u2014 a blank is not a statement",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
           "line": 787
@@ -4522,7 +4522,7 @@
       },
       {
         "when": "Guard: nearMiss !== undefined",
-        "message": "\"${blocker}\" differs from \"${nearMiss}\" only in case, and would be stored as an active blocker — use CLEAR_MOVEMENT_BLOCKER to say nothing is holding this up",
+        "message": "\"${blocker}\" differs from \"${nearMiss}\" only in case, and would be stored as an active blocker \u2014 use CLEAR_MOVEMENT_BLOCKER to say nothing is holding this up",
         "source": {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
           "line": 805
@@ -4571,9 +4571,9 @@
     "lane": "record",
     "nodes": ["asked", "pulled", "handover"],
     "roles": ["ed", "community", "ward", "coordinator", "officer"],
-    "does": "Records that nothing is holding the patient up any more — which is a different statement from nobody ever having recorded one.",
+    "does": "Records that nothing is holding the patient up any more \u2014 which is a different statement from nobody ever having recorded one.",
     "needs": "An open movement with an active blocker, and no unresolved revoked-examination or diversion hold. The explicit hold must be resolved through reassessment/release rather than cleared as prose.",
-    "changes": "Writes “None — cleared”.",
+    "changes": "Writes \u201cNone \u2014 cleared\u201d.",
     "reasons": ["BLOCKERS_MEANING_NOTHING_IS_BLOCKING"],
     "refuses": [
       {
@@ -4595,7 +4595,7 @@
     ],
     "screen": {
       "screen": "movements/movement-workspace-cockpit.tsx",
-      "control": "Clear — nothing is holding this up"
+      "control": "Clear \u2014 nothing is holding this up"
     },
     "review": {
       "reviewedOn": "2026-11-03",
@@ -4716,7 +4716,7 @@
     "refuses": [
       {
         "when": "Guard: inboxItemId.length === 0",
-        "message": "ACKNOWLEDGE_INBOX_ITEM inboxItemId must name a row — a blank names nothing",
+        "message": "ACKNOWLEDGE_INBOX_ITEM inboxItemId must name a row \u2014 a blank names nothing",
         "source": {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 315
@@ -4724,7 +4724,7 @@
       },
       {
         "when": "Guard: !inboxCategory || !namesRecord",
-        "message": "ACKNOWLEDGE_INBOX_ITEM inboxItemId ${inboxItemId} does not name a real inbox row — its prefix must be one of INBOX_CATEGORIES and its remainder an existing record for that category",
+        "message": "ACKNOWLEDGE_INBOX_ITEM inboxItemId ${inboxItemId} does not name a real inbox row \u2014 its prefix must be one of INBOX_CATEGORIES and its remainder an existing record for that category",
         "source": {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 336
@@ -4778,14 +4778,14 @@
     "lane": "record",
     "nodes": ["rkInbox"],
     "roles": ["coordinator"],
-    "does": "Records completion of a classified human commitment. The current commitment is the coordinator’s daily check, whose id must name a signed integer day. Live fact rows cannot be ticked away.",
+    "does": "Records completion of a classified human commitment. The current commitment is the coordinator\u2019s daily check, whose id must name a signed integer day. Live fact rows cannot be ticked away.",
     "needs": "A nonblank classified commitment id, a valid daily-check day suffix and no current completion. This is a daily-check record, not proof that any patient/bed action was performed.",
     "changes": "Appends completed role/time history without mutating patient, movement or unit facts.",
     "reasons": [],
     "refuses": [
       {
         "when": "Guard: inboxItemId.length === 0",
-        "message": "COMPLETE_INBOX_ITEM inboxItemId must name a row — a blank names nothing",
+        "message": "COMPLETE_INBOX_ITEM inboxItemId must name a row \u2014 a blank names nothing",
         "source": {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 352
@@ -4867,7 +4867,7 @@
     "refuses": [
       {
         "when": "Guard: inboxItemId.length === 0",
-        "message": "REOPEN_INBOX_ITEM inboxItemId must name a row — a blank names nothing",
+        "message": "REOPEN_INBOX_ITEM inboxItemId must name a row \u2014 a blank names nothing",
         "source": {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
           "line": 387
@@ -4925,7 +4925,7 @@
     "nodes": ["rkClock"],
     "roles": ["demo"],
     "does": "Adds a finite nonnegative simulation offset to the app clock. Ordinary provider time follows wall time, refreshing at minute boundaries while visible and catching up on return; initialNow pins deterministic test/render time.",
-    "needs": "The demo role and finite nonnegative minutes; coordinator is not in this event’s permission list.",
+    "needs": "The demo role and finite nonnegative minutes; coordinator is not in this event\u2019s permission list.",
     "changes": "Increases clockOffsetMinutes; it does not itself create a legal expiry or resolve a timed task.",
     "reasons": [],
     "refuses": [
@@ -5088,7 +5088,7 @@
     "lane": "record",
     "nodes": ["rkSettings"],
     "roles": ["coordinator"],
-    "does": "Saves the tunable settings the rest of the system reads — access-time targets, the parallel referral cap, how long a bed hold lasts.",
+    "does": "Saves the tunable settings the rest of the system reads \u2014 access-time targets, the parallel referral cap, how long a bed hold lasts.",
     "needs": "A validated complete configuration and, when supplied, a valid baseline. Conflicting edits since that baseline refuse; non-conflicting draft fields merge. Signed/shared access also enforces coordinator scope.",
     "changes": "Applies the validated configuration or field merge atomically. It does not silently overwrite a conflicting baseline.",
     "reasons": [],
@@ -5120,7 +5120,7 @@
   },
   {
     "event": "RECORD_PATIENT_DISCHARGE",
-    "name": "Record a patient’s physical departure",
+    "name": "Record a patient\u2019s physical departure",
     "group": "Not wired up here",
     "lane": "record",
     "nodes": ["rkDischarge", "personLeaves"],
@@ -5373,7 +5373,7 @@
       },
       {
         "when": "Guard: movement.closure !== undefined || !movementHoldsBedByStage(movement)",
-        "message": "movement ${movement.id} has no bed pulled — it may already have been released",
+        "message": "movement ${movement.id} has no bed pulled \u2014 it may already have been released",
         "source": {
           "path": "src/components/ward-management/ward-flow-placement-events.ts",
           "line": 640
@@ -5482,7 +5482,7 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 1155,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/referrals/arrival-time-modal.tsx",
@@ -5492,12 +5492,12 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 1157,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 1159,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         }
       ]
     }
@@ -5546,7 +5546,7 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 1240,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/movements/movement-workflow-actions.tsx",
@@ -5556,12 +5556,12 @@
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 1242,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         },
         {
           "path": "src/components/ward-management/ward-flow-transport-events.ts",
           "line": 1243,
-          "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+          "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
         }
       ]
     }
@@ -5574,7 +5574,7 @@
     "nodes": ["rkDischargePlan"],
     "roles": ["ward", "coordinator"],
     "does": "Records that this admission could move to a lower level of care.",
-    "needs": "An existing admission. A ward must name that admission’s ward; coordinator permission is separate.",
+    "needs": "An existing admission. A ward must name that admission\u2019s ward; coordinator permission is separate.",
     "changes": "Sets the flag, and nothing else. No bed figure moves.",
     "reasons": [],
     "refuses": [
@@ -5813,7 +5813,7 @@
     "roles": ["ward", "coordinator", "community"],
     "does": "Records a care journey fact (such as a transfer, transport, clinical plan or document) against an admission on the discharge board.",
     "needs": "Current generation/revision, permitted ward/coordinator/community actor and accessible linked occupied/departed stay. Community writes only its allowed care kinds for its own team; transfer acceptance and cancellation are coordinator-only, and an accepted or handover transfer step needs a linked placement record (a ward referral or agreed repatriation). Change-kind validation and sequence-specific guards apply.",
-    "changes": "Appends or updates the care journey record. Moves no bed figure — except a transfer recorded as arrived, which also ends this admission as transferred, opens a new occupied admission and an arrived movement at the receiving ward, completes any live bed release for the leaver, and moves both wards' bed figures.",
+    "changes": "Appends or updates the care journey record. Moves no bed figure \u2014 except a transfer recorded as arrived, which also ends this admission as transferred, opens a new occupied admission and an arrived movement at the receiving ward, completes any live bed release for the leaver, and moves both wards' bed figures.",
     "reasons": [],
     "refuses": [
       {
@@ -6004,7 +6004,7 @@
     "lane": "record",
     "nodes": ["rkLegalWritten"],
     "roles": ["coordinator", "ed", "ward", "community", "officer"],
-    "does": "Records document type, recognised file type and byte size as attachment metadata. The selected file’s name and bytes are not stored by this event.",
+    "does": "Records document type, recognised file type and byte size as attachment metadata. The selected file\u2019s name and bytes are not stored by this event.",
     "needs": "An existing movement, nonblank document type, recognised file type and positive safe-integer byte size. Legacy filenames are read only to derive their type.",
     "changes": "Appends generated document id, formName, fileType, sizeBytes and role/time metadata; no file body or original filename is retained.",
     "reasons": [],
@@ -6214,7 +6214,7 @@
     "lane": "record",
     "nodes": ["rkLegalWritten"],
     "roles": ["ed", "coordinator"],
-    "does": "For an eligible open country Form1A, forwards the clinician’s typed paper expiry through RECORD_LEGAL_FORM_EXPIRY. It computes no statutory deadline.",
+    "does": "For an eligible open country Form1A, forwards the clinician\u2019s typed paper expiry through RECORD_LEGAL_FORM_EXPIRY. It computes no statutory deadline.",
     "needs": "An existing open movement carrying current Form1A with paper region country, a finite paperExpiresAt and the ordinary expiry extension rules.",
     "changes": "Records the typed expiry and expiry history through the standard expiry handler, clearing any calculated legacy clock.",
     "reasons": [],
@@ -6689,7 +6689,7 @@
     "nodes": ["rkWardDay"],
     "roles": ["ward", "coordinator"],
     "does": "Works out which beds being held while somebody is on leave are worth warning about.",
-    "needs": "Nothing but the clock — it takes no patient and no ward.",
+    "needs": "Nothing but the clock \u2014 it takes no patient and no ward.",
     "changes": "For each leave bed over the open-warning threshold that has not been warned, records openWarningAt and sends a ward notice. It does not release the bed or move capacity.",
     "reasons": [],
     "refuses": [],
@@ -7021,7 +7021,7 @@
     "nodes": ["rkNotice"],
     "roles": ["coordinator", "ward", "ed", "officer", "community", "bed_manager"],
     "does": "Records that one ward or desk has seen a network-wide alert.",
-    "needs": "An active alert and known ward/ED desk not already acknowledged; the special coordinator desk id requires coordinator role. Signed access must match the actor’s actual desk.",
+    "needs": "An active alert and known ward/ED desk not already acknowledged; the special coordinator desk id requires coordinator role. Signed access must match the actor\u2019s actual desk.",
     "changes": "Adds the unit to the alert's acknowledged list.",
     "reasons": [],
     "refuses": [
