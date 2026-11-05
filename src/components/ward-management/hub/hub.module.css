@@ -1272,7 +1272,7 @@
     padding: 3px;
   }
   .hubHero [aria-label="Places views"] > :is(a, button) {
-    min-height: 34px;
+    min-height: 40px;
     padding-block: 0;
   }
 }
