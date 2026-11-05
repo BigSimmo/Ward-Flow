@@ -112,14 +112,37 @@
     "5"
    ]
   },
+  "TRAVEL_MODES": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "Ambulance (St John)",
+    "Mental Health Transport",
+    "Patient transport service",
+    "RFDS",
+    "Police escort",
+    "Ward escort",
+    "Family or carer"
+   ]
+  },
   "ARRIVAL_MODES": {
    "file": "ward-model-vocabulary.ts",
    "members": [
-    "mental_health_transport",
     "ambulance",
-    "police",
+    "mental_health_transport",
     "hospital_transfer",
+    "rfds",
+    "police",
+    "ward_escort",
     "self"
+   ]
+  },
+  "UPLOADED_FILE_TYPES": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "PDF",
+    "JPEG",
+    "PNG",
+    "Other"
    ]
   },
   "SEX_DESIGNATIONS": {
@@ -167,12 +190,44 @@
     "paper_rechecked"
    ]
   },
+  "LEGAL_FORM_MAKER_ROLES": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "medical_practitioner",
+    "amhp",
+    "psychiatrist",
+    "mental_health_practitioner",
+    "person_in_charge"
+   ]
+  },
+  "LEGAL_FORM_COPY_STATES": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "yes",
+    "declined",
+    "not_yet"
+   ]
+  },
+  "LEGAL_FORM_ENDINGS": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "revoked",
+    "form_3e",
+    "replaced",
+    "ended_as_typed"
+   ]
+  },
+  "LEGAL_FORM_CONSENT_STATES": {
+   "file": "ward-model-vocabulary.ts",
+   "members": [
+    "yes",
+    "not_yet"
+   ]
+  },
   "TRANSPORT_PROVIDERS": {
    "file": "ward-model-movement-parts.ts",
    "members": [
-    "Ambulance service",
-    "Patient transport service",
-    "Ward escort"
+    "Ambulance service"
    ]
   },
   "TRANSPORT_LEGAL_STATUSES": {
@@ -360,7 +415,8 @@
    "members": [
     "The examination was revoked",
     "The referral was withdrawn",
-    "The receiving ward can no longer take the patient"
+    "The receiving ward can no longer take the patient",
+    "Absconded in transit, whereabouts unknown"
    ]
   },
   "TRANSPORT_WHEREABOUTS": {
@@ -562,7 +618,7 @@
   "DISCHARGE_ROLE_LABELS": {
    "file": "ward-admissions.ts",
    "members": [
-    "Ward manager"
+    "Nurse in charge"
    ]
   },
   "PLANNED_ADMISSION_REASONS": {
@@ -697,6 +753,7 @@
    "reassessed": "Reassessed",
    "new_information": "New information",
    "correcting_an_error": "Correcting an error",
+   "not_given": "No reason given",
    "recorded_by_treating_team": "Recorded by treating team",
    "patient_no_longer_coming": "No longer coming",
    "bed_needed_for_another_patient": "Bed needed elsewhere",

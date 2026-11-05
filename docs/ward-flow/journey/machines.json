@@ -3,7 +3,7 @@
     {
       "id": "referral",
       "name": "A referral destination",
-      "subject": "One of the (up to three) places a referral was addressed to. Each one carries its own state and answers independently of the others.",
+      "subject": "One addressed destination. A referral can name several distinct wards within the configured recipient cap; answers and reassessments belong to the individual destination.",
       "width": 1064,
       "height": 456,
       "states": [
@@ -34,7 +34,7 @@
           "w": 220,
           "h": 76,
           "label": "Accepted",
-          "sub": "Only a ward acceptance starts anything."
+          "sub": "Records a destination answer. Acceptance creates no movement or admission; a ward answer may also reserve a named bed on the referral."
         },
         {
           "id": "declined",
@@ -44,7 +44,7 @@
           "w": 220,
           "h": 76,
           "label": "Declined",
-          "sub": "Ends this arm only. The others carry on."
+          "sub": "Ends this answer. An explicit clinical reassessment can reconsider a declined destination."
         },
         {
           "id": "cancelled",
@@ -108,12 +108,12 @@
           "label": "stamps every waiting arm"
         }
       ],
-      "note": "The four states are exactly those the code names. A referrer's withdrawal is a stamp on an arm that is still waiting — recorded deliberately as a field, so that a destination which has already answered keeps its answer."
+      "note": "The destination states remain queued, accepted, declined and cancelled. A withdrawal stamps still-queued arms without rewriting their state. A clinical reassessment can update an accepted answer or turn a decline into acceptance; the ordinary first-acceptance cancellation excludes community arms in both directions."
     },
     {
       "id": "movement",
       "name": "A movement",
-      "subject": "The record created when a ward-addressed referral is accepted. This is the one that actually moves — seven stages, and a closure that is not a stage.",
+      "subject": "The separate bed-search record created by RAISE_REFERRAL, or created already arrived by an admitted-ward transfer. Front-door acceptance alone creates no movement. Seven stages plus a separate closure.",
       "width": 3122,
       "height": 600,
       "states": [
@@ -124,7 +124,7 @@
           "y": 250,
           "w": 230,
           "h": 60,
-          "label": "raised in a department"
+          "label": "Movement created"
         },
         {
           "id": "placement_requested",
@@ -164,7 +164,7 @@
           "w": 230,
           "h": 86,
           "label": "Bed pulled",
-          "sub": "A named bed is held, expiring in four hours."
+          "sub": "A bed is pulled and linked to an admission. The hold uses current configuration and any applicable extra-travel extension; expiry flags it for a person rather than releasing it."
         },
         {
           "id": "handover_ready",
@@ -174,7 +174,7 @@
           "w": 230,
           "h": 86,
           "label": "Handover ready",
-          "sub": "Refused unless transport is already booked."
+          "sub": "Requires a booked job or an explicitly recorded no-transport-needed answer, plus current held-bed gender and legal checks."
         },
         {
           "id": "moving",
@@ -194,7 +194,7 @@
           "w": 230,
           "h": 86,
           "label": "Arrived",
-          "sub": "Irreversible. Nothing can step back from here."
+          "sub": "STEP_BACK_STAGE cannot reverse arrival. A separate scoped Undo may reverse the latest unchanged recorded arrival within its window and restored-bed checks."
         },
         {
           "id": "closed",
@@ -259,7 +259,7 @@
           "route": "below",
           "offset": 40,
           "kind": "back",
-          "guard": "this one step only, and only while no bed is held"
+          "guard": "Allowed while awaiting a bed or with a pulled/stepped-back hold. A held bed is released atomically; cancel a live transport job first. Refused at handover-ready/moving."
         },
         {
           "from": "accepted_awaiting_bed",
@@ -286,7 +286,7 @@
           "to": "moving",
           "action": "PATIENT_COLLECTED",
           "route": "straight",
-          "guard": "refused while a revoked examination still holds the bed"
+          "guard": "refused while a revoked examination still holds the bed, or while restrictive practice is still recorded as in use for the patient at the sending ward"
         },
         {
           "from": "moving",
@@ -335,7 +335,7 @@
           "offset": 114,
           "kind": "exit",
           "label": "community order or revoked",
-          "guard": "only before transport is committed — at handover ready or moving it raises a flag instead and the bed stays held"
+          "guard": "A community order before transport commitment closes and refunds. Revocation while a bed is held retains it and flags release; commitment or collection also retains the bed."
         },
         {
           "from": "moving",
@@ -376,12 +376,12 @@
           "guard": "refused once arrived; touches nothing but the stage — no bed given back, no transport cancelled"
         }
       ],
-      "note": "STEP_BACK_STAGE can move the stage to ANY strictly earlier one, with a reason, and is refused once arrived. It is drawn once rather than as twenty-one arrows — it deliberately touches nothing but the stage."
+      "note": "STEP_BACK_STAGE records a strictly earlier stage with a reason, leaving bed and transport intact. It refuses a closure, an arrived stage or a delivered transport leg. WITHDRAW_ACCEPTANCE can release an uncollected hold atomically after cancelling a live job. The separate scoped UNDO_TRANSPORT_STEP route may reverse the latest recorded arrival while its time-window, unchanged-snapshot, actor and restored-bed checks pass."
     },
     {
       "id": "admission",
       "name": "An admission",
-      "subject": "The record of a person in a bed. Created when a bed is pulled — not when they arrive.",
+      "subject": "The held or occupied stay. A new pull creates a held admission; supported direct placement/planned-arrival and ward-transfer paths can create an occupied admission without passing through Held.",
       "width": 1684,
       "height": 426,
       "states": [
@@ -655,13 +655,14 @@
           "to": "enroute",
           "action": "TRANSPORT_EN_ROUTE",
           "route": "straight",
-          "guard": "carries no check on the legal authority — this is where a crew can be sent for somebody who cannot then be collected"
+          "guard": "Requires an open movement at handover-ready, an accepted job and no earlier en-route timestamp. Refused while a revoked/community-order examination retains a bed or awaits release; this handler itself does not rerun held-unit gender/legal checks."
         },
         {
           "from": "enroute",
           "to": "collected",
           "action": "PATIENT_COLLECTED",
-          "route": "straight"
+          "route": "straight",
+          "guard": "refused while restrictive practice is still recorded as in use for the patient at the sending ward"
         },
         {
           "from": "collected",
@@ -692,7 +693,7 @@
           "route": "exit",
           "offset": 0,
           "kind": "exit",
-          "guard": "only whoever booked it, plus the coordinator and the department"
+          "guard": "The booking ward/team must match the supplied acting place; an ED claim is checked against the recorded booking place when both are present. Coordinator access remains subject to the authenticated access boundary."
         },
         {
           "from": "collected",
@@ -769,7 +770,7 @@
           "w": 300,
           "h": 86,
           "label": "Being made ready — a flag",
-          "sub": "Cleaning or repair. Never stops the bed being offered."
+          "sub": "Cleaning or repair is a separate flag. It does not rewrite the ward count, but a new pull refuses when every free bed is still being prepared."
         }
       ],
       "transitions": [
@@ -927,7 +928,7 @@
     {
       "id": "legalstatus",
       "name": "A patient's legal status",
-      "subject": "Four values, on a movement, changeable at any point by one action. Changing it triggers nothing on its own — even when it makes an already-accepted bed unlawful.",
+      "subject": "Four values on an open movement. CHANGE_LEGAL_STATUS records a change and history; it does not itself release a bed or advance the journey. Sending-desk kind and authenticated place scope still apply.",
       "width": 1683,
       "height": 226,
       "states": [
@@ -997,7 +998,7 @@
           "label": "any value to any other"
         }
       ],
-      "note": "Any value can be set to any other — there is no ordering the code enforces, so the arrows show the usual path rather than the only one. Each change records one of two reasons: recorded by the treating team, or correcting an error. If the change makes the accepted ward unlawful, that surfaces as something for a person to look at, never as a block."
+      "note": "Any value can be recorded as another; arrows illustrate examples rather than an enforced legal sequence. The handler requires a listed reason and an open movement. A newly unsuitable accepted ward is surfaced for a person; forward placement/transport steps recheck legal authority, so the change can block later progress."
     },
     {
       "id": "examination",
@@ -1043,7 +1044,7 @@
           "w": 300,
           "h": 90,
           "label": "Community order, or revoked",
-          "sub": "The bed search ends — but what happens to the bed depends on how far the journey got."
+          "sub": "A community order or revocation is recorded. Closure/release depends on the held-bed and transport facts."
         },
         {
           "id": "superseded",
@@ -1090,12 +1091,12 @@
           "guard": "a second examination is refused unless the last one ordered a further one"
         }
       ],
-      "note": "Before a bed is held, a community order or a revocation closes the movement and gives the bed back. Once transport is committed it does not — a flag is raised instead and a person must act. Collecting the patient is then refused while that bed is still held, but sending the crew out is not."
+      "note": "A community order before transport commitment closes the search and releases its hold. Revocation with a held bed retains the bed and admission, keeps the movement open and flags a person to act. At handover-ready, moving or after collection either ending outcome also retains it. Acceptance, en-route and collection refuse an unresolved examination/hold; physical arrival remains recordable."
     },
     {
       "id": "notice",
       "name": "A notice",
-      "subject": "Twenty-three kinds of message, addressed to one role at one place. Written once, never rewritten, never deleted and never expiring.",
+      "subject": "Twenty-four kinds of message, addressed to one role at one place. Written once, never rewritten, never deleted and never expiring.",
       "width": 1442,
       "height": 246,
       "states": [
@@ -1135,7 +1136,7 @@
           "to": "unread",
           "action": "ACCEPT_REFERRAL",
           "route": "straight",
-          "label": "one of twenty-three kinds",
+          "label": "one of twenty-four kinds",
           "guard": "raised as a side-effect of an action, never on its own"
         },
         {
@@ -1146,12 +1147,12 @@
           "guard": "refused if you are not the addressee, and refused a second time"
         }
       ],
-      "note": "Opening the drawer does not mark anything read. There is no delete and no expiry — the list only ever grows. And a referral raised by anyone other than an ED doctor has no addressee this system can resolve, so no notice is raised at all: absent was judged safer than wrong."
+      "note": "Opening the drawer does not mark a notice read. MARK_NOTICE_READ requires the addressed role/place and an unread notice. These are append-only authored messages, separate from derived action-inbox rows and from broadcast alerts. Referral-answer notices resolve the referring ED for ed_medical referrals; other source kinds currently have no safe referrer addressee."
     },
     {
       "id": "inbox",
       "name": "A row in the coordinator's inbox",
-      "subject": "Not stored anywhere. Each row is recomputed from the movements themselves, so it appears when its situation becomes true and leaves when it stops being true.",
+      "subject": "Derived fact rows come from movements, stays, planned bookings and bed-meeting actions. A separate daily nobody-missed check is a commitment with append-only completion history.",
       "width": 1640,
       "height": 416,
       "states": [
@@ -1172,7 +1173,7 @@
           "w": 300,
           "h": 96,
           "label": "Showing",
-          "sub": "One of five situations is true of a movement right now."
+          "sub": "A current fact category is true, or a commitment is due. The current categories live in INBOX_CATEGORIES rather than a fixed five-item list."
         },
         {
           "id": "acknowledged",
@@ -1186,13 +1187,13 @@
         },
         {
           "id": "ticked",
-          "kind": "unreachable",
+          "kind": "normal",
           "x": 1140,
           "y": 230,
           "w": 300,
           "h": 96,
-          "label": "Ticked off",
-          "sub": "Unreachable today. Every one of the five is a live fact, and a fact can never be ticked."
+          "label": "Commitment completed",
+          "sub": "The daily check can be completed and reopened. Live fact categories cannot be ticked away; bed-meeting actions use their dedicated completion event."
         }
       ],
       "transitions": [
@@ -1218,8 +1219,8 @@
           "action": "COMPLETE_INBOX_ITEM",
           "route": "exit",
           "offset": 0,
-          "kind": "exit",
-          "guard": "refused for every category that exists — nobody may silence a live legal breach by ticking a box"
+          "kind": "side",
+          "guard": "Only commitment IDs; daily-check IDs require the day-N shape, and an already-complete history refuses. Facts remain until their underlying situation changes."
         },
         {
           "from": "ticked",
@@ -1230,7 +1231,7 @@
           "kind": "exit"
         }
       ],
-      "note": "The five situations, all of them facts: the accepted ward is no longer lawful for this patient; a legal deadline has passed; a bed hold has run out; every ward asked has declined; and a crew has accepted a job but not set off. A coordinator can say they have seen any of them. None can be ticked off, by owner ruling of 6 September 2026 — ticking would remove the signal while the situation was still true."
+      "note": "Acknowledgement, ownership, snoozing and completion are separate histories. Real fact rows are never completed by COMPLETE_INBOX_ITEM. The daily check uses a day-shaped identifier rather than a movement; bed-meeting actions use COMPLETE_BED_MEETING_ACTION. CANCEL_TRANSPORT appends a returned snooze and a released ownership entry to the job's awaiting-departure and booking-estimate-passed rows. Completion validates category and day syntax, not whether the day is the current day."
     },
     {
       "id": "legalform",
@@ -1256,7 +1257,7 @@
           "w": 260,
           "h": 90,
           "label": "Recorded as received",
-          "sub": "Any of the nine forms with a legal clock, not only 1A. A second receipt is refused."
+          "sub": "Any of the nine forms with a legal clock, not only 1A. A second receipt is refused. A typed received time is kept as typed and cannot be later than now."
         },
         {
           "id": "expiry",
@@ -1266,7 +1267,7 @@
           "w": 300,
           "h": 90,
           "label": "An expiry, typed by a clinician",
-          "sub": "Nothing is computed. An extension must be strictly later than what is there."
+          "sub": "Expiry comes from checked paper facts. An extension must be later; a correction with matching prior form/time/expiry and a listed reason may move it earlier."
         }
       ],
       "transitions": [
@@ -1293,12 +1294,12 @@
           "kind": "side"
         }
       ],
-      "note": "Undoing a receipt does not erase it — the correction is appended, so the record shows that somebody recorded it, then took it back, and why."
+      "note": "Receipt correction appends its reason and clears the receipt without erasing history. Expiry entry need not wait for a receipt: it requires a recorded form. The admitted ward may record a typed expiry on an arrived/closed movement; a checked correction and a later extension are distinct paths."
     }
   ],
   "resources": {
     "title": "A ward's two bed counts",
-    "blurb": "Not a state machine — two numbers, and the complete list of what moves each. Since 26 September the two tracks meet here: a bed release names its patient, and recording that patient leaving is what raises both counts and completes the release, once.",
+    "blurb": "The illustrated routes below show the principal stored-count changes; the current event models also cover planned admissions, direct placement and undo. A normal departure completes the named live release and raises empty/allocatable once. A departure resolving an arrival-capacity conflict clears that conflict instead of inventing another bed. Ready capacity also excludes closed wards and individually closed beds.",
     "counts": [
       {
         "name": "Allocatable",
@@ -1334,7 +1335,7 @@
           {
             "action": "RECORD_EXAMINATION",
             "effect": "+ 1",
-            "note": "via the same release"
+            "note": "Community order before commitment can release a hold; revocation with a held bed retains it for a person to release."
           },
           {
             "action": "RECORD_LEAVING",
@@ -1343,7 +1344,7 @@
           },
           {
             "action": "RECORD_ADMISSION_CARE",
-            "effect": "+ 1 on the ward they leave, \u2212 1 on the ward they arrive at",
+            "effect": "+ 1 on the ward they leave, − 1 on the ward they arrive at",
             "note": "only a transfer recorded as arrived; the source ward's live bed release is completed in the same write"
           },
           {
@@ -1359,16 +1360,16 @@
         "moves": [
           {
             "action": "PATIENT_ARRIVED",
-            "effect": "− 1"
+            "effect": "Usually −1, floored at zero; a pre-counted seeded pull is not decremented twice. Arrival into no empty bed is recorded as a capacity conflict."
           },
           {
             "action": "RECORD_LEAVING",
             "effect": "+ 1",
-            "note": "once, for the leaving; the bed release it completes moves nothing more"
+            "note": "Normally +1, bounded by authored capacity; resolving an arrival conflict or already-counted release does not create an extra free bed."
           },
           {
             "action": "RECORD_ADMISSION_CARE",
-            "effect": "+ 1 on the ward they leave, \u2212 1 on the ward they arrive at",
+            "effect": "+ 1 on the ward they leave, − 1 on the ward they arrive at",
             "note": "only a transfer recorded as arrived"
           }
         ]
@@ -1377,7 +1378,7 @@
   },
   "gates": {
     "title": "Can this ward take this patient?",
-    "blurb": "Thirteen named gates. They are asked on two different occasions — when a ward answers a referral at the front door, and when a movement is sent to wards or a bed is taken — and the two occasions deliberately do not ask the same questions. Eight of the thirteen can be pushed past with a recorded reason. Five cannot.",
+    "blurb": "Thirteen possible eligibility labels across two paths, not thirteen blocking checks at every step. Eight labels belong to the suitability-override list. Acuity and specialling rows are information only; their actual staffing checks occur at placement. Gender designation has no override; Ready-bed and other physical-record checks run separately.",
     "overridable": "Overridable means a coordinator may proceed anyway by choosing one of five recorded reasons: the receiving team has agreed despite the mismatch; clinical urgency outweighs the mismatch; the bed information is known to be out of date; continuity with a previous admission at this unit; closer to the person's home or family.",
     "rows": [
       {
@@ -1424,7 +1425,7 @@
         "movement": true,
         "differs": true,
         "asks": "Is there already an occupant of the same sex, or more than one free bed?",
-        "note": "The front door counts beds that are both allocatable and physically empty; a movement counts allocatable beds alone. The front door is the stricter of the two."
+        "note": "Both current sex-mix paths use Ready availability, with recorded gender and the defined recorded-sex fallback for non-binary or absent gender. Do not repeat the former front-door-versus-movement capacity difference for this row."
       },
       {
         "gate": "Forensic",
@@ -1447,7 +1448,7 @@
         "movement": true,
         "hard": true,
         "asks": "Does the ward's designation suit the gender recorded at referral?",
-        "note": "NOT OVERRIDABLE, AND STRUCTURALLY SO. It is checked before an override reason is even read, and the code will not compile if somebody adds it to the overridable list. If gender is not recorded, a single-gender ward refuses outright and says to record it first. The one way past is for a non-binary patient, and it is not an override — it is a coordinator recording a reason after checking with the ward."
+        "note": "Gender designation is checked before suitability overrides. A binary gender conflicting with the ward cannot be overridden. Non-binary, Different term and unrecorded gender can use an explicit coordinator placement record, subject to the current ward-checked reason requirements."
       },
       {
         "gate": "Acuity",
@@ -1455,8 +1456,8 @@
         "referral": true,
         "movement": true,
         "hard": true,
-        "asks": "Does the ward staff any high-acuity places at all?",
-        "note": "This asks about the ward's authored total, not how many are left. Whether one is actually free is a separate check made when the bed is taken — and that one IS overridable, with the nurse unit manager consulted."
+        "asks": "Information only: what high-acuity staffing is authored for the ward? Current use is checked at placement.",
+        "note": "This eligibility row always passes with info:true. PULL_PATIENT separately checks remaining high-acuity staffing and requires a valid reason plus nurse unit manager consultation for its supported exception."
       },
       {
         "gate": "Specialling",
@@ -1465,8 +1466,8 @@
         "movement": true,
         "hard": true,
         "differs": true,
-        "asks": "Is the ward staffed for one-to-one observation?",
-        "note": "On the front-door path this gate can never fail — a referral has no field for whether specialling is needed, and the gate says so rather than pretending to check."
+        "asks": "Information only: what observation staffing is authored, and what does the recorded level need?",
+        "note": "This row always passes with info:true. A referral does not record observation level. PULL_PATIENT checks actual remaining observation staff; the eligibility row is not itself a hard refusal."
       },
       {
         "gate": "Prior decline",
@@ -1474,7 +1475,7 @@
         "referral": false,
         "movement": true,
         "hard": true,
-        "asks": "Has this ward already declined this patient?"
+        "asks": "Has this ward previously declined this movement? This is historical context; the reducer does not enforce it as a suitability refusal."
       },
       {
         "gate": "A bed to allocate",
@@ -1484,38 +1485,224 @@
         "hard": true,
         "differs": true,
         "asks": "Is there a bed to give?",
-        "note": "ONE NAME, TWO PASS CONDITIONS, ON PURPOSE. A movement passes on the ward's allocatable count alone — deliberately lenient, because accepting in principle is not arriving. The front door passes only when a bed is both allocatable and physically empty. The real floor is at arrival, which refuses when no bed is physically empty."
+        "note": "Movement matching can accept in principle on allocatable capacity; immediate referral matching requires Ready availability. PULL_PATIENT requires a Ready bed. Physical arrival is still recorded at zero empty capacity and creates an arrival-capacity conflict rather than refusing a patient in transit."
       }
     ],
     "outside": {
-      "title": "And seven checks that are not gates at all",
-      "blurb": "These sit outside the thirteen and are evaluated first. A coordinator can be refused by one of these without ever reaching a named gate.",
+      "title": "Placement and held-destination checks outside the label table",
+      "blurb": "These checks answer physical reservations, staffing and record consistency at their actual handlers. They are not all evaluated on every path; an already-held restoration has its own checks and physical arrival has a separate record-first path.",
       "items": [
-        "No bed is physically empty — refused at arrival. This is the real floor under the whole thing.",
-        "Every free bed is still being made ready — refused when a bed is taken.",
-        "No one-to-one place actually left, counted from the beds in use rather than the ward's authored total.",
-        "No high-acuity place actually left — overridable, and uniquely also requires that the nurse unit manager was consulted.",
-        "No locked bed currently free — refused when a bed is taken, which is the check the movement-path security gate knowingly leaves open.",
-        "No coordinator has recorded a ward-checked reason for placing a non-binary patient on this ward.",
-        "The gender was corrected after a ward was already chosen — re-checked at four later points, deliberately not at arrival."
+        "A new pull needs a Ready bed, including closed-ward and closed-bed adjustments and live pulled admissions; when beds are being made ready it needs more Ready beds than pending ones (planned arrivals likewise). An arrival into zero empty capacity is recorded as a capacity conflict.",
+        "Every free bed still being prepared prevents a new pull.",
+        "Current observation staff and high-acuity capacity are checked at placement; supported exceptions need their recorded facts and acuity also needs nurse unit manager consultation.",
+        "A Secure request using an open bed requires the supported recorded reason; naming an unavailable numbered reservation still refuses.",
+        "Coordinator gender-placement records are required for the cases defined by genderReviewNeeded, and a binary designation conflict has no suitability override.",
+        "A restored hold rechecks its matching admission, current staffing, legal authority and gender rather than consuming another bed.",
+        "A no-transport arrival rechecks gender/legal status before arrival; an already-moving patient is recorded without stranding them at the door."
       ]
     }
   },
   "gaps": [
     {
-      "title": "A ward's “held beds” figure is written down and read by nobody",
-      "body": "Every held-bed figure any screen shows is worked out from other numbers. The field meant to hold it is read in exactly zero places across the source, the tests and the scripts. Typing a real held-bed count into it changes no number anywhere — and there is no symptom, because there is no wrong figure, just no figure.",
-      "question": "Should the field be removed, so nobody fills it in believing it does something?"
+      "title": "The stored Unit.held field is not the live operational count",
+      "body": "Operational held/closed/Ready figures are derived. Unit.held remains seed and storage-validation data, so saying it is read in zero places is false. Filling this stored field is not a way to change the live derived figure.",
+      "question": "Would retiring this legacy storage field improve the model? Any removal needs a separately scoped migration and compatibility review."
     },
     {
-      "title": "A whole gender eligibility check is built, tested, and never called",
-      "body": "There is a complete check for whether a ward accepts a patient's gender, written against the person's own recorded gender rather than the gender written on the referral. It has its own result type and its own tests. Nothing anywhere calls it — because neither a referral nor a movement can reliably be resolved back to a patient record yet.",
-      "question": "Is that the check you actually want making this decision? If so, the missing piece is joining a referral to a person, not the check itself."
+      "title": "A patient-shaped placement wrapper remains separate from the live matching path",
+      "body": "genderEligibility is called by validateGenderPlacement, while live referral and movement matching share genderDesignationResult. These are distinct API shapes; the old claim that genderEligibility is never called is false. The wrapper currently has no production caller found in this source scan.",
+      "question": "Should the unused wrapper be retained as a public contract or retired under a separately reviewed API change? Its existence does not mean current matching skips gender."
     },
     {
-      "title": "The coordinator's inbox has a tick that can never be ticked",
-      "body": "Five situations can put a row in the inbox, and every one of them is a live fact — an unlawful destination, a passed legal deadline, an expired bed hold, declined by everyone, a crew that has not set off. Ticking off a row is refused for all five, by design: nobody may silence a live legal breach by ticking a box. So the control exists and always refuses.",
-      "question": "That is a sound rule. The question is whether the tick should be visible at all when nothing it applies to exists — an owner ruling on 6 September said the panel is acknowledge-only."
+      "title": "Inbox completion is for commitments; fact rows need their source condition resolved",
+      "body": "The daily nobody-missed check is a completable commitment, while derived fact rows cannot be ticked away. Bed-meeting actions have a separate completion event. COMPLETE_INBOX_ITEM validates the daily-check identifier shape and appends history; it does not verify that the named day is today.",
+      "question": "Should the daily-check API allow retrospective/future day records? Keep that product decision separate from the rule that live facts cannot be silenced."
     }
-  ]
+  ],
+  "review": {
+    "reviewedOn": "2026-11-03",
+    "basis": "Source comparison of eleven machines, route nodes, gates, resources and current gap notes; not runtime or clinical acceptance.",
+    "sources": [
+      {
+        "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
+        "line": 581,
+        "sha256": "448d7f6e084c37776896bfc2bb9020b1c25cea6b31676a87421b1a8c76280ba4"
+      },
+      {
+        "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
+        "line": 1,
+        "sha256": "6703e1255f7cc2a19c990d10888db8e8e9f0f1c2b77e18eb78d2482c4b3f6b08"
+      },
+      {
+        "path": "src/components/ward-management/legal-forms/legal-forms-sheets.tsx",
+        "line": 325,
+        "sha256": "27df537ac83a872ea00232428181c9a2813084619af38c707c899bcd5e754da2"
+      },
+      {
+        "path": "src/components/ward-management/patients/add-patient.tsx",
+        "line": 84,
+        "sha256": "0145c077d008426106bc4aa6eeeebbc56cf27d84039c9e42cba372520da87e47"
+      },
+      {
+        "path": "src/components/ward-management/patients/patient-now-screen.tsx",
+        "line": 1,
+        "sha256": "c06200eaf5901fe508502db34626ff6aa31ff3adf74650aa606aed75d264e3ff"
+      },
+      {
+        "path": "src/components/ward-management/shell/ward-broadcast-banner-body.tsx",
+        "line": 1,
+        "sha256": "a96ae00d184b52341105eb90f8a0438f5f5561f787c2522f97e0e7ea62e87178"
+      },
+      {
+        "path": "src/components/ward-management/shell/ward-broadcast-banner.tsx",
+        "line": 1,
+        "sha256": "e4a96b5edba8cf8a2bdeb730eb10c2b7d786d472e2acaaa836b5a91e7057f706"
+      },
+      {
+        "path": "src/components/ward-management/shell/ward-facade.ts",
+        "line": 32,
+        "sha256": "1f67e3da9d32ff7085af624d524b3bcefe1c1c7790164963a98d21da4c830d6b"
+      },
+      {
+        "path": "src/components/ward-management/ward-change-reasons.ts",
+        "line": 1,
+        "sha256": "4a1978ca355b120042c222504c62f3aabf83a1d4f463e008bb48ef87149333f9"
+      },
+      {
+        "path": "src/components/ward-management/ward-configuration.ts",
+        "line": 34,
+        "sha256": "3e6cffc45878c910d85d900ae10360c06b6c647bbb4cf749875aaf5bb5640ca8"
+      },
+      {
+        "path": "src/components/ward-management/ward-derivations-transport.ts",
+        "line": 265,
+        "sha256": "ae020d976cbae443b88a3f3620e2c8ea3d058bc837909c3200ff94b65311a2a8"
+      },
+      {
+        "path": "src/components/ward-management/ward-derivations.ts",
+        "line": 1,
+        "sha256": "ead1e4f2bc330d458ccb28355d656d484fa1d547eec4f920f91544215c123e00"
+      },
+      {
+        "path": "src/components/ward-management/ward-duplicate-bed-requests.ts",
+        "line": 1,
+        "sha256": "67efa770558a5972c4fe2fd61af77968df7f155b93f53b3754721df01b3a4bb3"
+      },
+      {
+        "path": "src/components/ward-management/ward-eligibility.ts",
+        "line": 49,
+        "sha256": "4740612e7fae5b516f3500ea56a9417e00953c3fc826bd969d31a626cc104de3"
+      },
+      {
+        "path": "src/components/ward-management/ward-flow-bed-events.ts",
+        "line": 613,
+        "sha256": "be15f220d53a6c3f4304453e9cb29128c063ddd8d13b93e20a317dbc0e527574"
+      },
+      {
+        "path": "src/components/ward-management/ward-flow-event-roles.ts",
+        "line": 1,
+        "sha256": "3eb41a56cb181aefe22ddccbbc6a1c684a25cad9aace23506f1288dcd7a833cc"
+      },
+      {
+        "path": "src/components/ward-management/ward-flow-events.ts",
+        "line": 1,
+        "sha256": "cc194f8c311719c50ea9d0fa4216f884b439ef3f4020bbab7106c278cbffaeff"
+      },
+      {
+        "path": "src/components/ward-management/ward-flow-placement-events.ts",
+        "line": 419,
+        "sha256": "e04c852924390612901e968470813d38246ba88edcea01f73d7be8d7836fd8e5"
+      },
+      {
+        "path": "src/components/ward-management/ward-flow-protected-record-events.ts",
+        "line": 1,
+        "sha256": "1ae21de095af6c797544a45a71fa0bf8513930e9cfd66974fe85e9a9e5aed856"
+      },
+      {
+        "path": "src/components/ward-management/ward-flow-record-events.ts",
+        "line": 630,
+        "sha256": "a29e705c2433c4c003f57fa88308339aeeeee7376952a5c82b7e6723f64856c5"
+      },
+      {
+        "path": "src/components/ward-management/ward-flow-record-legal-events.ts",
+        "line": 51,
+        "sha256": "e821cf3a8a08b764d868debdf6568a5705ea0e4629dd77d851ed0dc81d39f770"
+      },
+      {
+        "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
+        "line": 370,
+        "sha256": "736f149df2bbabc74f2f0a0b4d4182052127d6198be2f83bbc456ea1d91e4403"
+      },
+      {
+        "path": "src/components/ward-management/ward-flow-reducer.ts",
+        "line": 1157,
+        "sha256": "66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2"
+      },
+      {
+        "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
+        "line": 387,
+        "sha256": "2f34104087afc8104b39a7d94dd1b8189981c9bf1dd7c06cffc5db0c34f95ea7"
+      },
+      {
+        "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
+        "line": 1242,
+        "sha256": "bd56fdcccf8e916fd187578a3f75def9fe49524c5466d9bcdf7d390bfd266e11"
+      },
+      {
+        "path": "src/components/ward-management/ward-flow-storage-validation.ts",
+        "line": 469,
+        "sha256": "6808a0ac8a98836388fd66286e12ac4f66957ad552aec218f4f931f5c9387660"
+      },
+      {
+        "path": "src/components/ward-management/ward-flow-transport-events.ts",
+        "line": 85,
+        "sha256": "544ac158864d38cf0aa23f203723562e2883c1d29c402e7b4c23e839a382f1d0"
+      },
+      {
+        "path": "src/components/ward-management/ward-flow-undo-events.ts",
+        "line": 269,
+        "sha256": "032f24fe6dd8dfa7a221a17283038686c8dd11bbef7adedadf47c218f4cb2dd8"
+      },
+      {
+        "path": "src/components/ward-management/ward-inbox-reducer.ts",
+        "line": 58,
+        "sha256": "4a7dde821d15d7032a38cb18333ed34872d78fb28e4be6efb382ad5e9095c81d"
+      },
+      {
+        "path": "src/components/ward-management/ward-model-leave.ts",
+        "line": 1,
+        "sha256": "8fd3116a9d3c3de961b164bfb2b93bb1767a1b40a94bfec68ed8b82e99c56c41"
+      },
+      {
+        "path": "src/components/ward-management/ward-model-notices.ts",
+        "line": 1,
+        "sha256": "876d55af5761125ead1b5c89d8989054852b7568a921072ace1c136ea6be79d4"
+      },
+      {
+        "path": "src/components/ward-management/ward-model-referral-parts.ts",
+        "line": 1,
+        "sha256": "0cc149017178c074e9a389176e03a61c572da70a84822f9e166b3171b6b8c778"
+      },
+      {
+        "path": "src/components/ward-management/ward-model.ts",
+        "line": 1,
+        "sha256": "a3cc74d2e58defab0f62c04ceca9403bf7ac4538b2a25711dd27f460dbf444c1"
+      },
+      {
+        "path": "src/components/ward-management/ward-patient-registration-reducer.ts",
+        "line": 77,
+        "sha256": "36297e83737f7e5f2eb1db69fc4e64deac2be5d4793500b11f838dfc34da2629"
+      },
+      {
+        "path": "src/components/ward-management/ward-ready-beds.ts",
+        "line": 1,
+        "sha256": "489095566f42be24921c7ba289b59a13514c656bf4846cf9cf94fad5a5aeb13c"
+      },
+      {
+        "path": "src/components/ward-management/ward-undo.ts",
+        "line": 1,
+        "sha256": "ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6"
+      }
+    ]
+  }
 }

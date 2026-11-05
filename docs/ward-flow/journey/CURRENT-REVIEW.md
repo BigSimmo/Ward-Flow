@@ -1,3 +1,7 @@
+> **Historical record.** This retained handover predates the current event catalogue repair.
+> Use [the maintained journey guide](README.md) and current source; old gaps and completion claims
+> do not establish present behaviour or commission work.
+
 # Journey Explorer review — 27 September 2026
 
 > **Historical review, 27 September 2026.** Its counts and status describe that build. Regenerate the Explorer with `npm run ward:journey` and see [the journey README](README.md) for current use.
