@@ -91,16 +91,15 @@ export function dispatchPermission(role: WardFlowRole, eventType: WardFlowEventT
   return { allowed: false, reason: rolesOnlyReason(EVENT_ROLE[eventType]) };
 }
 
-/** WF-20: who to ask when a step is locked (text only; nothing is sent). */
+/** WF-20: who to ask when a step is locked (text only). */
 export function roleOwnerHint(role: WardFlowRole, eventType: WardFlowEventType): string | undefined {
-  if (canDispatch(role, eventType)) return undefined;
-  const owners = EVENT_ROLE[eventType].filter((owner) => owner !== "demo" && owner !== role);
-  if (!owners.length) return undefined;
+  if (canDispatch(role, eventType)) return;
+  const owners = EVENT_ROLE[eventType].filter((o) => o !== "demo" && o !== role);
+  if (!owners.length) return;
   const named = owners.includes("coordinator") ? "Bed coordinator" : rolesOnlyReason(owners).slice(0, -5);
   return `Ask the ${named[0].toLowerCase()}${named.slice(1)} to do this.`;
 }
 
-/** Appends roleOwnerHint when someone else owns the step. */
 export function withOwnerHint(reason: string, role: WardFlowRole, eventType: WardFlowEventType): string {
   const hint = roleOwnerHint(role, eventType);
   return hint ? `${reason}. ${hint}` : reason;

@@ -88,27 +88,12 @@ export function WardSharedSaveStatus({
   "use no memo";
   const save = useWardSharedSave();
   const [retrying, setRetrying] = useState(false);
-  // WF-07: sticky reload warning — dismissible, and cleared when Retry runs.
-  const unconfirmedSave = !!save?.unconfirmedSave;
-  const [reloadWarningDismissed, setReloadWarningDismissed] = useState(false);
-  const [sawUnconfirmed, setSawUnconfirmed] = useState(unconfirmedSave);
-  if (unconfirmedSave !== sawUnconfirmed) {
-    setSawUnconfirmed(unconfirmedSave);
-    if (!unconfirmedSave) setReloadWarningDismissed(false);
-  }
-  const reloadWarning = unconfirmedSave && !reloadWarningDismissed && (
+  // WF-07: one warning node reused in both strip layouts (was duplicated JSX).
+  const reloadWarning = save?.unconfirmedSave ? (
     <p className={styles.warning} data-testid="ward-shared-reload-warning">
-      {RELOAD_WARNING}{" "}
-      <button
-        type="button"
-        className={styles.action}
-        onClick={() => setReloadWarningDismissed(true)}
-        data-testid="ward-shared-reload-warning-dismiss"
-      >
-        Dismiss
-      </button>
+      {RELOAD_WARNING}
     </p>
-  );
+  ) : null;
   const stale = useSharedRefreshLate(connection.enabled, 5 * 60_000, false) && connection.receivedAt > 0;
   // Tier 1 item 4 (Josh, 4 Nov 2026): a refresh that is late but not yet failed used to show only on
   // pages with a Live chip. The strip now says when the board last updated, on every screen.
@@ -129,18 +114,13 @@ export function WardSharedSaveStatus({
   const retry = () => {
     (recoveryRef.current ?? barRef.current)?.focus({ preventScroll: true });
     if (retrying) return;
-    setReloadWarningDismissed(true);
     setRetrying(true);
     try {
       void Promise.resolve(connection.retry())
         .catch(() => {})
-        .finally(() => {
-          setRetrying(false);
-          setReloadWarningDismissed(false);
-        });
+        .finally(() => setRetrying(false));
     } catch {
       setRetrying(false);
-      setReloadWarningDismissed(false);
     }
   };
   const waiting = connection.waiting ?? 0;

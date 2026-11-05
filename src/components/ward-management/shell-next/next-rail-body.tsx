@@ -29,7 +29,6 @@ import { useShellPersonaRole } from "@/components/ward-management/settings/perso
 import { useSettingsDeskProfile } from "@/components/ward-management/settings/settings-desk-profile";
 import { currentDeskId } from "@/components/ward-management/settings/workstation-desks";
 import { useNextNavCounts } from "@/components/ward-management/shell-next/next-nav-counts";
-import { usePathTiedOpen } from "@/components/ward-management/shell-next/use-path-tied-open";
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { CHROME_ROLE_LABELS, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
@@ -82,7 +81,6 @@ import {
   RailLiveClock,
   RailReadyLine,
   usePinnedPages,
-  compactOccupancyLabel,
 } from "@/components/ward-management/shell-next/next-rail-parts";
 import railParts from "@/components/ward-management/shell-next/next-rail.module.css";
 import { useAccessNavFilter, useCanOpenHref, useDeskHomeHref } from "@/components/ward-management/shell/ward-access";
@@ -332,8 +330,15 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const toggleRef = useRef<HTMLButtonElement>(null);
   const moreTriggerRef = useRef<HTMLButtonElement | null>(null);
   const firstMoreLinkRef = useRef<HTMLAnchorElement & HTMLButtonElement>(null);
-  // WF-42: More stays tied to the path it opened on.
-  const [moreOpen, setMoreOpen] = usePathTiedOpen(pathname);
+  // WF-42: path-tied More — render adjust clears on route change (no setState-in-effect).
+  const [moreOpenPath, setMoreOpenPath] = useState<string | null>(null);
+  const moreOpen = moreOpenPath === pathname;
+  const setMoreOpen = useCallback((open: boolean) => setMoreOpenPath(open ? pathname : null), [pathname]);
+  const [moreEpoch, setMoreEpoch] = useState(pathname);
+  if (moreEpoch !== pathname) {
+    setMoreEpoch(pathname);
+    if (moreOpenPath !== null) setMoreOpenPath(null);
+  }
   // B1: the rail's More shows only the rest; the bar's Menu (tablet portrait, no rail) shows it all.
   const [sheetShowsMain, setSheetShowsMain] = useState(false);
   const [deskModalOpen, setDeskModalOpen] = useState(false);
@@ -891,7 +896,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
           >
             <button
               type="button"
-              className={`${styles.compactAlertPip} ${railParts.compactPipFit}`}
+              className={styles.compactAlertPip}
               data-alert={overLine.over > 0 ? "true" : undefined}
               data-testid="ward-rail-compact-alert-pip"
               aria-label={capacityCardLabel}
@@ -906,7 +911,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
             >
               {overLine.over > 0 ? <Dot tone="warning" /> : null}
               <span className={styles.compactAlertVal}>
-                {compactOccupancyLabel(firstRow?.name, firstRow?.percent ?? null)}
+                {firstRow?.percent == null ? "—" : `${Math.round(firstRow.percent)}%`}
               </span>
             </button>
           </Tooltip>

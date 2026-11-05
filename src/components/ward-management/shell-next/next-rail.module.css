@@ -260,8 +260,4 @@
 }
 
 /* WF-44 / PR #1471: closed-rail shared rule still forces width 2.75rem; let short place+percent fit. */
-:global(.rail[data-rail="closed"]) .compactPipFit {
-  width: auto;
-  min-width: 2.75rem;
-  max-width: 4.75rem;
-}
+:global(.rail[data-rail="closed"]) 

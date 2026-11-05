@@ -21,7 +21,6 @@ import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile
 import { useFitDockLabels } from "@/components/ward-management/shell/use-fit-dock-labels";
 import { SrOnly } from "@/components/wf";
 import { useNextNavCounts } from "@/components/ward-management/shell-next/next-nav-counts";
-import { usePathTiedOpen } from "@/components/ward-management/shell-next/use-path-tied-open";
 import {
   CHROME_ROLE_LABELS,
   wardTasksAreActionableForRole,
@@ -624,10 +623,23 @@ export function NextPhoneMenu({
   const { counts, shellRole } = useNextNavCounts();
   const deskRoleLabel = useDeskRoleLabel(shellRole);
   const accessAdmin = useEffectiveWardAccess().role === "admin";
-  // WF-42: Menu / Create / switcher stay tied to the path they opened on.
-  const [open, setOpen] = usePathTiedOpen(pathname);
-  const [createOpen, setCreateOpen] = usePathTiedOpen(pathname);
-  const [switcherOpen, setSwitcherOpen] = usePathTiedOpen(pathname);
+  // WF-42: path-tied open — render adjust clears on route change (no setState-in-effect).
+  const [openPath, setOpenPath] = useState<string | null>(null);
+  const [createPath, setCreatePath] = useState<string | null>(null);
+  const [switcherPath, setSwitcherPath] = useState<string | null>(null);
+  const open = openPath === pathname;
+  const createOpen = createPath === pathname;
+  const switcherOpen = switcherPath === pathname;
+  const setOpen = useCallback((next: boolean) => setOpenPath(next ? pathname : null), [pathname]);
+  const setCreateOpen = useCallback((next: boolean) => setCreatePath(next ? pathname : null), [pathname]);
+  const setSwitcherOpen = useCallback((next: boolean) => setSwitcherPath(next ? pathname : null), [pathname]);
+  const [sheetEpoch, setSheetEpoch] = useState(pathname);
+  if (sheetEpoch !== pathname) {
+    setSheetEpoch(pathname);
+    if (openPath !== null) setOpenPath(null);
+    if (createPath !== null) setCreatePath(null);
+    if (switcherPath !== null) setSwitcherPath(null);
+  }
   // The sheets mount on the first open, not on page load: mounting the dynamic component would fetch
   // its chunk straight away instead of when the browser is idle.
   const [sheetsMounted, setSheetsMounted] = useState(false);

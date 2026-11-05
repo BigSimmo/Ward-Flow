@@ -27,23 +27,6 @@ import {
   type ThemePreference,
 } from "./theme";
 
-/** WF-31: statistics routes bump this so theme/glare writers stay in-memory only. */
-let displayPrefScopeDepth = 0;
-
-export function displayPrefScopeActive(): boolean {
-  return displayPrefScopeDepth > 0;
-}
-
-/** Used by display-pref-scope (loaded with the statistics session, not the shared shell). */
-export function adjustDisplayPrefScopeDepth(delta: number): number {
-  displayPrefScopeDepth = Math.max(0, displayPrefScopeDepth + delta);
-  return displayPrefScopeDepth;
-}
-
-export function resetDisplayPrefScopeForTests() {
-  displayPrefScopeDepth = 0;
-}
-
 export const THEME_CHANGE_EVENT = "clinical-kb-theme-change";
 
 const DARK_QUERY = "(prefers-color-scheme: dark)";
@@ -129,24 +112,21 @@ function writeCookie(preference: ThemePreference) {
 
 /** The only writer of the appearance preference. Persists, applies and tells every listener. */
 export function setThemePreference(preference: ThemePreference): ResolvedTheme {
-  // WF-31: statistics routes hold a display-pref scope — apply for this visit only, do not persist.
-  if (displayPrefScopeActive()) inMemoryPreference = preference;
-  else {
-    try {
-      if (preference === "system") window.localStorage.removeItem(THEME_STORAGE_KEY);
-      else window.localStorage.setItem(THEME_STORAGE_KEY, preference);
-      inMemoryPreference = null;
-    } catch {
-      // Storage blocked: keep the choice for this session so it still applies and reads back.
-      inMemoryPreference = preference;
-    }
-    writeCookie(preference);
+  try {
+    if (preference === "system") window.localStorage.removeItem(THEME_STORAGE_KEY);
+    else window.localStorage.setItem(THEME_STORAGE_KEY, preference);
+    inMemoryPreference = null;
+  } catch {
+    // Storage blocked: keep the choice for this session so it still applies and reads back.
+    inMemoryPreference = preference;
   }
+  writeCookie(preference);
   const resolved = applyThemeToDocument(preference);
   window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
   return resolved;
 }
 
+/** Notifies on a choice made in this tab or another, and on an OS change while in "system". */
 export function subscribeThemePreference(onChange: () => void): () => void {
   if (typeof window === "undefined") return () => undefined;
   let media: MediaQueryList | null = null;
@@ -197,29 +177,26 @@ export function applyGlareToDocument(on: boolean) {
 
 /** The only writer of the Glare preference. Persists, applies and tells every listener. */
 export function setGlarePreference(on: boolean) {
-  // WF-31: statistics routes hold a display-pref scope — apply for this visit only, do not persist.
-  if (displayPrefScopeActive()) inMemoryGlare = on;
-  else {
-    try {
-      if (on) window.localStorage.setItem(GLARE_STORAGE_KEY, GLARE_ON_VALUE);
-      else window.localStorage.removeItem(GLARE_STORAGE_KEY);
-      inMemoryGlare = null;
-    } catch {
-      // Storage blocked: keep the choice for this session so it still applies and reads back.
-      inMemoryGlare = on;
-    }
-    try {
-      document.cookie = on
-        ? `${GLARE_COOKIE_NAME}=${GLARE_ON_VALUE}; path=/; max-age=31536000; SameSite=Lax${secureAttribute()}`
-        : `${GLARE_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax${secureAttribute()}`;
-    } catch {
-      // Cookie write blocked: storage or the in-memory fallback still carries the choice.
-    }
+  try {
+    if (on) window.localStorage.setItem(GLARE_STORAGE_KEY, GLARE_ON_VALUE);
+    else window.localStorage.removeItem(GLARE_STORAGE_KEY);
+    inMemoryGlare = null;
+  } catch {
+    // Storage blocked: keep the choice for this session so it still applies and reads back.
+    inMemoryGlare = on;
+  }
+  try {
+    document.cookie = on
+      ? `${GLARE_COOKIE_NAME}=${GLARE_ON_VALUE}; path=/; max-age=31536000; SameSite=Lax${secureAttribute()}`
+      : `${GLARE_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax${secureAttribute()}`;
+  } catch {
+    // Cookie write blocked: storage or the in-memory fallback still carries the choice.
   }
   applyGlareToDocument(on);
   window.dispatchEvent(new Event(GLARE_CHANGE_EVENT));
 }
 
+/** Notifies on a Glare choice made in this tab or another. */
 export function subscribeGlarePreference(onChange: () => void): () => void {
   if (typeof window === "undefined") return () => undefined;
   window.addEventListener("storage", onChange);

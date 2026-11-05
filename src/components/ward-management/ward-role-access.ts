@@ -287,8 +287,7 @@ function homeScreenFor(role: WardAccessRole): WardScreenId {
     case "executive":
       return "statistics";
     case "admin":
-      // WF-46: Access admin lands on Governance (roles and review), not the long Settings form.
-      return "governance";
+      return "governance"; // WF-46
   }
 }
 
@@ -342,8 +341,7 @@ const REDIRECT_TARGETS: Readonly<Record<string, WardScreenId>> = {
   transport: "movements",
   // B4 step 3 (19 Oct 2026): the Delays screen's address since it was renamed Waiting.
   waiting: "delays",
-  // WF-42: Activity and Help are shell panels, not pages; their typed URLs use home access then open the panel.
-  activity: "home",
+  activity: "home", // WF-42 shell panels
   help: "home",
 };
 
@@ -523,7 +521,7 @@ export function screenDecision(
       return { open: false, why: "place" };
   }
   const ownSection = OWN_STATISTICS_SECTION[access.role];
-  // WF-42: bare /statistics has no section; StatisticsOwnRedirect sends the desk to its own place.
+  // WF-42: bare /statistics has no section (own-place redirect).
   if (
     address.screen === "statistics" &&
     ownSection !== undefined &&

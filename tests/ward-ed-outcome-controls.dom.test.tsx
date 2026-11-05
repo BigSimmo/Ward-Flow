@@ -151,12 +151,12 @@ describe("the collected-patient blocked reasons name no internal event", () => {
 
     const outcomeToggle = screen.getByTestId("ward-ed-outcome-toggle-WF-006");
     expect(outcomeToggle).toHaveAttribute("aria-disabled", "true");
-    expect(outcomeToggle.title).toContain("Ask the bed coordinator to stop transport");
+    expect(outcomeToggle.title).toContain("ask the bed coordinator to stop transport");
     expect(outcomeToggle.title).not.toContain("STOP_TRANSPORT");
 
     const cmhtToggle = screen.getByTestId("ed-refer-cmht-WF-006");
     expect(cmhtToggle).toHaveAttribute("aria-disabled", "true");
-    expect(cmhtToggle.title).toContain("Ask the bed coordinator to stop transport");
+    expect(cmhtToggle.title).toContain("ask the bed coordinator to stop transport");
     expect(cmhtToggle.title).not.toContain("STOP_TRANSPORT");
 
     expect(document.body.textContent).not.toContain("STOP_TRANSPORT");

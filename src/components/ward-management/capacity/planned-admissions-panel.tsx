@@ -553,9 +553,8 @@ export function PlannedAdmissionsPanel({
             Book
           </Button>
         ) : (
-          // WF-07 (Josh, 5 Nov 2026): a desk the booking rule refuses is told so, not left guessing.
           <span className={styles.none} data-testid="ward-planned-book-role">
-            Your role cannot book planned admissions.
+            Your role cannot book.
           </span>
         )
       }
@@ -778,14 +777,10 @@ export function PlannedAdmissionsPanel({
                         value={draft.initials}
                         maxLength={5}
                         autoComplete="off"
-                        spellCheck={false}
-                        inputMode="text"
                         aria-invalid={
                           draft.initials.trim() !== "" && normalisePlannedAdmissionInitials(draft.initials) === null
                         }
                         onChange={(event) => {
-                          // Letters, spaces and dots only (normalise strips spaces/dots). Digits and
-                          // other marks never reach the command payload as a silent partial match.
                           const next = event.target.value.replace(/[^A-Za-z.\s]/g, "").slice(0, 5);
                           update({ initials: next });
                         }}

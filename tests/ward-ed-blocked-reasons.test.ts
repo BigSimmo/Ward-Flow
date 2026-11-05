@@ -39,8 +39,7 @@ import {
 import { CANCEL_TRANSPORT_REASONS } from "@/components/ward-management/ward-change-reasons";
 
 const NOW = 10_000;
-const COLLECTED =
-  "The patient has been collected. Ask the bed coordinator to stop transport. The bed stays pulled until it is released.";
+const COLLECTED = "Collected — ask the bed coordinator to stop transport. The bed stays pulled until released.";
 const NOT_UNTIL_EXAMINED = "Not offered until the examination outcome is recorded.";
 
 function movement(overrides: Partial<Movement> = {}): Movement {

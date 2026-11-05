@@ -9,7 +9,6 @@ import {
   applyThemeToDocument,
   readStoredGlarePreference,
   readStoredThemePreference,
-  displayPrefScopeActive,
 } from "@/lib/theme-client";
 import { useAppearanceStore, useGlareStore } from "./ward-bar";
 import { openWardDrawer } from "./ward-drawer-bus";
@@ -62,15 +61,12 @@ function subscribeRailOpen(onChange: () => void) {
 export const useRailOpenStore = createBrowserStore(subscribeRailOpen, getRailOpenSnapshot, true);
 
 export function setRailOpenPreference(open: boolean) {
-  // WF-31: statistics routes hold a display-pref scope — apply for this visit only, do not persist.
-  if (displayPrefScopeActive()) inMemoryFallback = open;
-  else
-    try {
-      window.localStorage.setItem(RAIL_OPEN_STORAGE_KEY, open ? "open" : "closed");
-      inMemoryFallback = null;
-    } catch {
-      inMemoryFallback = open;
-    }
+  try {
+    window.localStorage.setItem(RAIL_OPEN_STORAGE_KEY, open ? "open" : "closed");
+    inMemoryFallback = null;
+  } catch {
+    inMemoryFallback = open;
+  }
   window.dispatchEvent(new Event(railOpenChangeEvent));
 }
 

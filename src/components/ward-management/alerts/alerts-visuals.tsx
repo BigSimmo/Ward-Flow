@@ -310,8 +310,7 @@ export function placeTrackLabels(marks: { x: number; label: string }[], width: n
         left = after;
       }
     }
-    // WF-35: pick the first row with room; a third row keeps three close labels from painting over each other.
-    const y = rows.find((row) => left >= (lastRightByRow.get(row) ?? -Infinity) + gap) ?? rows[rows.length - 1];
+    const y = rows.find((row) => left >= (lastRightByRow.get(row) ?? -Infinity) + gap) ?? rows[2];
     lastRightByRow.set(y, left + w);
     const ax = anchor === "start" ? left : anchor === "end" ? left + w : x;
     return { x: ax, y, anchor };
@@ -321,9 +320,7 @@ export function placeTrackLabels(marks: { x: number; label: string }[], width: n
 /** One line from the first recorded time to now, with what happened on it. */
 export function WaitTrack({ points, now }: { points: TrackPoint[]; now: Instant }) {
   const [frameRef, width] = useFrameWidth(366);
-  // WF-35: room for a third label row (y=62) when two rows are already full.
-  // PR #1471: keep a full 12px line between y=62 labels and the time axis (height - 4).
-  const height = 84;
+  const height = 84; // WF-35 third label row
   const sorted = [...points].sort((a, b) => a.at - b.at);
   const start = sorted[0]?.at ?? now;
   const from = Math.floor((Math.min(start, now) - 10) / 30) * 30;

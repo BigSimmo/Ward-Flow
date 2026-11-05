@@ -54,7 +54,7 @@ export type ReferralDraftAnswers = {
 
 /** WF-20: collected journey — ED/community cannot stop transport; name the owner. */
 const COLLECTED_ASK_COORDINATOR =
-  "The patient has been collected. Ask the bed coordinator to stop transport. The bed stays pulled until it is released.";
+  "Collected — ask the bed coordinator to stop transport. The bed stays pulled until released.";
 
 /**
  * Why the decline confirm is unavailable, or `undefined` once a reason has been chosen. Pure and
