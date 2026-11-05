@@ -406,17 +406,20 @@ export function OnCallScreen() {
         title={
           <>
             <SrOnly>On-call:</SrOnly> {answering.length} {answering.length === 1 ? "line" : "lines"} answering
-            <span className={styles.heroClockZone}>
-              {access.role === "officer"
-                ? " · transport lines"
-                : scope
-                  ? ` · ${SERVICE_META[scope].short} + statewide`
-                  : " · all services"}
-            </span>
           </>
         }
-        // F-08 (phone review, Oct 2026): the phone hero carries the Demo pill and says the numbers are invented.
-        titleMeta={isPhone ? "Prototype data, invented numbers" : undefined}
+        // WF-45: scope sits in the meta so the heading name stays "On-call: N lines answering".
+        titleMeta={
+          access.role === "officer"
+            ? isPhone
+              ? "Transport lines · prototype data"
+              : "Transport lines"
+            : scope
+              ? `${SERVICE_META[scope].short} + statewide`
+              : isPhone
+                ? "All services · prototype data"
+                : "All services"
+        }
         stats={
           isPhone ? (
             // Device audit 11 Oct 2026: the three figures sit on one short line so the number comes sooner.

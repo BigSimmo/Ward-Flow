@@ -570,7 +570,7 @@ export function DelaysBoard({
         <td role="cell" className={styles.cWait}>
           <span className={styles.wcell}>
             <span className={`${styles.wt} ${styles.num}`} data-ward-type-floor="delays-wait">
-              <Glyph tone={waitTone(row.sinceReferral ?? row.waited)} />
+              <Glyph tone={waitTone(row.waited)} />
               {row.sinceReferral !== undefined ? (
                 <>
                   {splitDuration(row.sinceReferral)}
