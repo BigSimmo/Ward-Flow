@@ -136,7 +136,7 @@ describe("BOOK_PLANNED_ADMISSION", () => {
   it("refuses both, neither, bad initials, an unknown patient and a second booking for one patient", () => {
     expect(lastRejection(book(seedWardFlowState(), { patientId: "PT-002" }))).toMatch(/not both/);
     expect(lastRejection(book(seedWardFlowState(), { initials: null }))).toMatch(/not both/);
-    expect(lastRejection(book(seedWardFlowState(), { initials: "Alice" }))).toMatch(/one to three letters/);
+    expect(lastRejection(book(seedWardFlowState(), { initials: "Alice" }))).toMatch(/at most three letters/);
     expect(lastRejection(book(seedWardFlowState(), { initials: null, patientId: "PT-NOPE" }))).toMatch(
       /no patient found/,
     );

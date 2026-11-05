@@ -332,8 +332,8 @@ describe("Governance phone audit fixes (13 Oct 2026)", () => {
       expect(overrides).toHaveAttribute("aria-pressed", "true");
       expect(list.querySelectorAll('[data-dim="true"]').length).toBe(3);
 
-      fireEvent.click(screen.getByRole("radio", { name: /^Reviewed/ }));
-      expect(screen.getByRole("region", { name: "Reviewed this session" })).toHaveTextContent(
+      fireEvent.click(screen.getByRole("radio", { name: /^Audit trail/ }));
+      expect(screen.getByRole("region", { name: "Audit trail this session" })).toHaveTextContent(
         "No event has been reviewed yet.",
       );
 

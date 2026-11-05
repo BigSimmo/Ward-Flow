@@ -102,3 +102,5 @@ export function draftTiming(draft: PlannedAdmissionDraft, now: Instant): DraftTi
     expectedStayDays: stay,
   };
 }
+
+export { plannedInitialsRefusal } from "../ward-admissions";

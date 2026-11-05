@@ -1113,6 +1113,14 @@ export function normalisePlannedAdmissionInitials(value: unknown): string | null
   return PLANNED_ADMISSION_INITIALS_PATTERN.test(compact) ? compact : null;
 }
 
+/** WF-07: name why typed initials are refused (digits, length, empty). */
+export function plannedInitialsRefusal(value: string): string | null {
+  if (normalisePlannedAdmissionInitials(value) !== null) return null;
+  const letters = value.replace(/[\s.]/g, "");
+  if (/\d/.test(letters)) return "Initials are letters only — remove the number.";
+  return letters.length > 3 ? "Initials are at most three letters." : "Initials are one to three letters.";
+}
+
 /**
  * The longest expected stay a booking accepts, in days. A form bound (default), not a clinical or
  * legal limit.

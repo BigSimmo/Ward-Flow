@@ -152,10 +152,14 @@ export function OnCallScreen() {
   // OC2 mock-up (4 Nov 2026): the page follows the header's service, as every other page does. A
   // chosen service shows its own lines plus the statewide ones; Statewide shows everyone.
   // WF-45: transport officers only need transport/retrieval lines (not the full statewide roster).
-  // WF-45 follow-up: a site bed manager is scoped to their own site's lines plus statewide.
+  // WF-45 follow-up: a site bed manager is scoped to their own site's lines plus statewide, and
+  // keeps its own service's service-wide lines (no site: the service's bed coordinator, consultant
+  // and executive on call, the liaison), as the "+ service" heading says (#1470 review). Community
+  // teams also carry no site, so the exception is limited to the Hospitals section (#1471 review).
   const scope = useServiceScope();
   const access = useEffectiveWardAccess();
   const siteCode = access.scope.kind === "site" ? access.scope.siteCode : undefined;
+  const siteService = siteCode ? network.sites.find((site) => site.code === siteCode)?.service : undefined;
   const entries = useMemo(() => {
     const scoped = scope
       ? allEntries.filter((entry) => entry.service === scope || entry.service === "Statewide")
@@ -164,10 +168,18 @@ export function OnCallScreen() {
       return scoped.filter((entry) => entry.group === "Transport and retrieval");
     }
     if (access.role === "bed_manager" && siteCode) {
-      return scoped.filter((entry) => entry.service === "Statewide" || entry.siteCode === siteCode);
+      return scoped.filter(
+        (entry) =>
+          entry.service === "Statewide" ||
+          entry.siteCode === siteCode ||
+          (entry.section === "hospitals" &&
+            entry.siteCode === undefined &&
+            siteService !== undefined &&
+            entry.service === siteService),
+      );
     }
     return scoped;
-  }, [allEntries, scope, access.role, siteCode]);
+  }, [allEntries, scope, access.role, siteCode, siteService]);
   const ids = useMemo(() => new Set(baseEntries.map((entry) => entry.id)), [baseEntries]);
 
   // WF-45: an officer's three transport lines all sit in Statewide, so an officer starts there, not
@@ -425,7 +437,10 @@ export function OnCallScreen() {
             : access.role === "officer"
               ? "Transport lines"
               : access.role === "bed_manager" && siteCode
-                ? `${siteCode}${scope ? ` + ${SERVICE_META[scope].short}` : ""} + statewide`
+                ? // #1471 review: a saved service other than the site's leaves only statewide lines.
+                  scope && scope !== siteService
+                  ? `${SERVICE_META[scope].short} selected: statewide only`
+                  : `${siteCode}${siteService ? ` + ${SERVICE_META[siteService].short}` : ""} + statewide`
                 : scope
                   ? `${SERVICE_META[scope].short} + statewide`
                   : "All services"

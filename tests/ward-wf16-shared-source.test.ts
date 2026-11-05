@@ -3,12 +3,12 @@ import { describe, expect, it } from "vitest";
 import {
   bedKindGaps,
   bedsFreeingTodayTotal,
-  dischargesDueToday,
   networkWardRows,
-  releasesFreeingToday,
 } from "@/components/ward-management/capacity/capacity-derivations";
 import { occupiedBeds } from "@/components/ward-management/statistics/statistics-occupancy";
+import { bedIsOccupied } from "@/components/ward-management/ward-admissions";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
+import { dayOf } from "@/components/ward-management/ward-clock";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import {
   IN_USE_NOUN,
@@ -64,20 +64,31 @@ describe("WF-16 shared figure sources", () => {
     expect(figure.inUse).toBe(manual.inUse);
   });
 
-  it("Beds freeing today totals releasesFreeingToday, distinct from admissions due today", () => {
-    const freeing = bedsFreeingTodayTotal(bedReleases, now);
-    const byUnit = releasesFreeingToday(bedReleases, now);
-    const summed = [...byUnit.values()].reduce((a, b) => a + b, 0);
-    expect(freeing).toBe(summed);
+  it("Beds freeing today counts today's open discharge plans, the same figure as the ward cards", () => {
+    // Worked out here from the records, not through the helper under test.
+    const open = bedReleases.filter(
+      (release) => release.state !== "discharged" && dayOf(release.expectedAt) === dayOf(now),
+    );
+    expect(open.length, "the seed has discharges planned today").toBeGreaterThan(0);
+    expect(bedsFreeingTodayTotal(bedReleases, now)).toBe(open.length);
+    const someUnits = new Set(units.slice(0, 5).map((unit) => unit.id));
+    expect(bedsFreeingTodayTotal(bedReleases, now, someUnits)).toBe(
+      open.filter((release) => someUnits.has(release.unitId)).length,
+    );
+    expect(bedsFreeingTodayTotal(undefined, now)).toBeUndefined();
 
     const rows = networkWardRows(units, now, bedReleases, admissions, leaveBeds);
     const rowFreeing = rows.map((row) => row.freeing).filter((value): value is number => value !== undefined);
-    expect(rowFreeing.reduce((a, b) => a + b, 0)).toBe(summed);
+    expect(rowFreeing.reduce((a, b) => a + b, 0)).toBe(open.length);
 
-    const due = units.reduce((sum, unit) => sum + (dischargesDueToday(unit.id, admissions, now) ?? 0), 0);
-    // Both are real counts; they measure different records and must not be forced equal.
-    expect(typeof due).toBe("number");
-    expect(typeof freeing).toBe("number");
+    // Admissions due today are a different record and are not forced to agree with the plans.
+    const due = admissions.filter(
+      (admission) =>
+        bedIsOccupied(admission) &&
+        admission.expectedDischargeAt !== null &&
+        dayOf(admission.expectedDischargeAt) === dayOf(now),
+    ).length;
+    expect(rows.reduce((sum, row) => sum + (row.dischargesDueToday ?? 0), 0)).toBe(due);
   });
 
   it("spare that fit is bedsThatFit - waiting from bedKindGaps (not all ready beds)", () => {

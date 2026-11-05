@@ -53,7 +53,7 @@ describe("RA-04: the desk switch is offered only where it can work", () => {
     navigation.pathname = "/ward-flow/ed";
     render(<ExaminationButton />);
     expect(screen.getByTestId("record-examination")).toBeDisabled();
-    expect(screen.getByText("ED or coordinator only")).toBeInTheDocument();
+    expect(screen.getByText("ED or coordinator only. Ask the bed coordinator to do this.")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Switch to .* desk/ })).toBeNull();
   });
 

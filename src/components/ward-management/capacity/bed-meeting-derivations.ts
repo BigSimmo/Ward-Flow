@@ -74,6 +74,12 @@ export type BedMeetingDischarges = {
   /** Held up first, then confirmed, then expected — the same order the Discharges board reads. */
   rows: BedMeetingDischargeRow[];
   moreRows: number;
+  /**
+   * The rows due today only, the same day span as `freeingToday` and `heldUpToday`, for the
+   * on-screen sheet whose headline is "Beds freeing today" (#1470 review).
+   */
+  todayRows: BedMeetingDischargeRow[];
+  moreTodayRows: number;
 };
 
 type BedMeetingEdRow = {
@@ -183,26 +189,28 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
   // Discharges — the Discharges board's own grouping.
   const unitName = (unitId: string) => wardLabel(unitId, units.find((unit) => unit.id === unitId)?.name);
   const groups = groupDischarges(scopedReleases, now);
-  const dischargeRows: BedMeetingDischargeRow[] = [
+  const dueToday = (release: BedRelease) => dayOf(release.expectedAt) === dayOf(now);
+  const orderedReleases: { release: BedRelease; row: BedMeetingDischargeRow }[] = [
     ...groups.blocked.map((release) => ({
-      id: release.id,
-      ward: unitName(release.unitId),
-      status: "Held up" as const,
-      note: release.blocker,
+      release,
+      row: { id: release.id, ward: unitName(release.unitId), status: "Held up" as const, note: release.blocker },
     })),
     ...groups.confirmed.map((release) => ({
-      id: release.id,
-      ward: unitName(release.unitId),
-      status: "Confirmed" as const,
-      note: null,
+      release,
+      row: { id: release.id, ward: unitName(release.unitId), status: "Confirmed" as const, note: null },
     })),
     ...groups.expected.map((release) => ({
-      id: release.id,
-      ward: unitName(release.unitId),
-      status: "Expected" as const,
-      note: release.waitingOn ?? null,
+      release,
+      row: {
+        id: release.id,
+        ward: unitName(release.unitId),
+        status: "Expected" as const,
+        note: release.waitingOn ?? null,
+      },
     })),
   ];
+  const dischargeRows = orderedReleases.map(({ row }) => row);
+  const todayDischargeRows = orderedReleases.filter(({ release }) => dueToday(release)).map(({ row }) => row);
   const discharges: BedMeetingDischarges = {
     heldUp: groups.blocked.length,
     confirmed: groups.confirmed.length,
@@ -217,11 +225,12 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
     beyondToday: groups.excludedBeyondToday,
     freeingToday: bedsFreeingTodayTotal(scopedReleases, now, scopedUnitIds) ?? 0,
     heldUpToday: scopedReleases.filter(
-      (release) =>
-        release.state !== "discharged" && release.blocker !== null && dayOf(release.expectedAt) === dayOf(now),
+      (release) => release.state !== "discharged" && release.blocker !== null && dueToday(release),
     ).length,
     rows: dischargeRows.slice(0, BED_MEETING_ROW_LIMIT),
     moreRows: Math.max(0, dischargeRows.length - BED_MEETING_ROW_LIMIT),
+    todayRows: todayDischargeRows.slice(0, BED_MEETING_ROW_LIMIT),
+    moreTodayRows: Math.max(0, todayDischargeRows.length - BED_MEETING_ROW_LIMIT),
   };
 
   // Emergency departments — the ED home's own per-department summaries, narrowed to the service.

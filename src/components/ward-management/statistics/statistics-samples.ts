@@ -2,6 +2,7 @@
 
 import { useSyncExternalStore } from "react";
 
+import { announceToWardShell } from "../shell/ward-live-region";
 import { wardEnvironment, type WardEnvironment } from "../ward-feature-flags";
 
 const STORAGE_KEY = "ward-flow-statistics-samples";
@@ -47,6 +48,12 @@ export function setStatisticsSamples(enabled: boolean) {
     /* In-memory preference works when storage is unavailable. */
   }
   window.dispatchEvent(new Event(CHANGE_EVENT));
+  // WF-42: say what changed — invented charts appear or hide below, which is easy to miss.
+  announceToWardShell(
+    enabled
+      ? "Example history is on, and invented 30-day charts are shown below."
+      : "Example history is off, and the invented charts are hidden.",
+  );
 }
 /**
  * Optional invented history: on by default in the demo, off elsewhere. The viewer's choice is kept on
