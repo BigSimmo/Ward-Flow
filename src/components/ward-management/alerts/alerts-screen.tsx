@@ -1010,7 +1010,7 @@ function AlertsWorkspace() {
   const nothingNow =
     !filtered && actEntries.length + snoozedAct.length + toPull.length + waitEntries.length + dueReminders === 0;
   const urgencyView = quietWard ? (
-    nothingNeedsYou
+    dueReminders === 0 && nothingNeedsYou
   ) : (
     <>
       {nothingNow

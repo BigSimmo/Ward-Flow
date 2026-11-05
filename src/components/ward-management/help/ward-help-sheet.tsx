@@ -468,7 +468,7 @@ function WardHelpSheetView({
           ) : null}
         </p>
       }
-      // A right panel on a computer; on a phone (through 48rem) a near-full bottom sheet whose header
+      // A right panel on a computer; on a phone (through 46.4375rem) a near-full bottom sheet whose header
       // controls stay below the top safe area (Josh, 2 Nov 2026).
       placement="responsive-right"
       mobilePlacement="bottom"

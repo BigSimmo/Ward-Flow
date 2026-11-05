@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, type RefObject } from "react";
+import { useLayoutEffect, useRef, type RefObject } from "react";
 
 /** House rule: no text under 12px, so a label stops shrinking here. */
 const DOCK_LABEL_MIN_PX = 12;
@@ -39,18 +39,55 @@ export function fitDockLabel(label: HTMLElement) {
  * tab instead of breaking mid-word. Labels at today's size already fit and are left alone.
  */
 export function useFitDockLabels(dockRef: RefObject<HTMLElement | null>, selector: string) {
+  const binding = useRef<{ dock: HTMLElement; selector: string; dispose: () => void } | null>(null);
+  // The executive dock can mount after loading or a viewport change. Check the node each commit,
+  // but keep the observers and fitted sizes while the same dock and labels remain mounted.
   useLayoutEffect(() => {
     const dock = dockRef.current;
+    if (binding.current?.dock === dock && binding.current.selector === selector) return;
+    binding.current?.dispose();
+    binding.current = null;
     if (!dock || typeof ResizeObserver === "undefined") return;
+    let active = true;
     const fitAll = () => {
+      if (!active) return;
       for (const label of dock.querySelectorAll<HTMLElement>(selector)) fitDockLabel(label);
+      for (const item of dock.children) observer.observe(item);
     };
-    fitAll();
-    // A width change (rotation) or a text-size change both resize the dock's tabs.
     const observer = new ResizeObserver(fitAll);
     observer.observe(dock);
-    for (const item of dock.children) observer.observe(item);
+    const labelChanged = (node: Node) => {
+      const element = node instanceof Element ? node : node.parentElement;
+      return Boolean(element?.closest(selector) || (node instanceof Element && node.querySelector(selector)));
+    };
+    const mutations = new MutationObserver((records) => {
+      if (
+        records.some(
+          (record) => labelChanged(record.target) || [...record.addedNodes, ...record.removedNodes].some(labelChanged),
+        )
+      )
+        fitAll();
+    });
+    mutations.observe(dock, { childList: true, subtree: true, characterData: true });
+    fitAll();
     void document.fonts?.ready.then(fitAll);
-    return () => observer.disconnect();
+    document.fonts?.addEventListener("loadingdone", fitAll);
+    binding.current = {
+      dock,
+      selector,
+      dispose: () => {
+        active = false;
+        observer.disconnect();
+        mutations.disconnect();
+        document.fonts?.removeEventListener("loadingdone", fitAll);
+      },
+    };
   });
+  useLayoutEffect(
+    () => () => {
+      binding.current?.dispose();
+      binding.current = null;
+    },
+    [],
+  );
 }

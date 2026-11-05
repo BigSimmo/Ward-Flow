@@ -122,6 +122,7 @@ function requireWorkflow(source) {
     ["browser-build", "browser", true],
     ["browser", "browser", true],
     ["build", "build", true],
+    ["budget", "build", true],
     ["coverage", "unit", true],
     ["backend", "backend", false],
     ["release-gate", "browser", false],
@@ -134,6 +135,36 @@ function requireWorkflow(source) {
     exact(job, "Install locked dependencies", "node scripts/install-locked-dependencies.mjs");
     assert.equal(step(job, "Install locked dependencies").fields.get("id"), "install");
   }
+  // Only the aggregate verdict may follow the independently rerunnable budget measurement.
+  assert.match(jobs.get("budget"), /^ {4}needs: \[plan, reuse\]$/mu);
+  for (const [name, body] of jobs) {
+    const needs = /^ {4}needs: ([^\n]+)$/mu.exec(body)?.[1] ?? "";
+    assert.equal(/\bbudget\b/u.test(needs), name === "required", `${name}: isolated budget dependency`);
+  }
+  assert.match(jobs.get("budget"), /^ {4}name: Ward Flow phone script budget$/mu);
+  exact(
+    "budget",
+    "Merge the latest main before measuring",
+    "node scripts/ward-ci-public/merge-latest-main.mjs",
+    expression("github.event_name == 'pull_request'"),
+  );
+  exact(
+    "budget",
+    "Build for production (Railway build command)",
+    "node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack",
+    installed,
+  );
+  exact("budget", "Check the phone script budget", "node scripts/ward-ci-public/budget-gate.mjs", installed);
+  exact(
+    "budget",
+    "Scan the built client bundle for secrets",
+    "npm run check:client-bundle-secrets -- --require-bundle",
+    installed,
+  );
+  assert.ok(
+    jobs.get("budget").indexOf("run: node scripts/ward-ci-public/merge-latest-main.mjs") <
+      jobs.get("budget").indexOf("run: node scripts/ward-ci-public/budget-gate.mjs"),
+  );
   assert.equal(step("static", "Install locked dependencies").fields.get("id"), "install");
   // Installed packages come from a cache saved on main only, straight after an attested install; the
   // installer reuses an exact hit only when its own post-install stamp still matches (see
@@ -609,7 +640,7 @@ function requireWorkflow(source) {
   assert.match(jobs.get("required"), /^ {4}if: always\(\)$/mu);
   assert.match(
     jobs.get("required"),
-    /^ {4}needs: \[plan, reuse, static, backend, unit, browser-build, browser, release-gate, build, coverage\]$/mu,
+    /^ {4}needs: \[plan, reuse, static, backend, unit, browser-build, browser, release-gate, build, budget, coverage\]$/mu,
   );
   assert.match(
     step("static", "Check doc facts and retired terms").text,
@@ -678,6 +709,7 @@ function requireWorkflow(source) {
     BROWSER_BUILD_RESULT: "needs.browser-build.result",
     SECRET_SCAN_RESULT: "needs.plan.outputs.secret_scan",
     BUILD_RESULT: "needs.build.result",
+    BUDGET_RESULT: "needs.budget.result",
     COVERAGE_RESULT: "needs.coverage.result",
     RELEASE_GATE_RESULT: "needs.release-gate.result",
     BACKEND_SCOPE: "needs.plan.outputs.backend",
@@ -708,6 +740,7 @@ function requireWorkflow(source) {
             require_scope "$UNIT_SCOPE" "$UNIT_RESULT"
             require_scope "$UNIT_SCOPE" "$COVERAGE_RESULT"
             require_scope "$BUILD_SCOPE" "$BUILD_RESULT"
+            require_scope "$BUILD_SCOPE" "$BUDGET_RESULT"
             test "$BROWSER_BUILD_RESULT" = skipped
             test "$BROWSER_RESULT" = skipped
             test "$RELEASE_GATE_RESULT" = skipped
@@ -722,6 +755,7 @@ function requireWorkflow(source) {
             test "$BROWSER_BUILD_RESULT" = skipped
             test "$BROWSER_RESULT" = skipped
             test "$BUILD_RESULT" = skipped
+            test "$BUDGET_RESULT" = skipped
             test "$COVERAGE_RESULT" = skipped
             test "$RELEASE_GATE_RESULT" = skipped
             if [ "$BACKEND_REUSED" = true ]; then test "$BACKEND_RESULT" = skipped;
@@ -735,6 +769,7 @@ function requireWorkflow(source) {
             require_scope "$BROWSER_SCOPE" "$BROWSER_BUILD_RESULT"
             require_scope "$BROWSER_SCOPE" "$BROWSER_RESULT"
             require_scope "$BUILD_SCOPE" "$BUILD_RESULT"
+            require_scope "$BUILD_SCOPE" "$BUDGET_RESULT"
           fi`,
   );
 }
@@ -804,6 +839,7 @@ for (let bits = 0; bits < 16; bits++)
       BROWSER_RESULT: !reuse && enabled(2) ? "success" : "skipped",
       BROWSER_BUILD_RESULT: !reuse && enabled(2) ? "success" : "skipped",
       BUILD_RESULT: !reuse && enabled(3) ? "success" : "skipped",
+      BUDGET_RESULT: !reuse && enabled(3) ? "success" : "skipped",
       RELEASE_GATE_RESULT: !reuse && enabled(2) ? "success" : "skipped",
     };
     assert.equal(runVerdict(values), 0);
@@ -818,6 +854,7 @@ for (let bits = 0; bits < 16; bits++)
       "BROWSER_RESULT",
       "BROWSER_BUILD_RESULT",
       "BUILD_RESULT",
+      "BUDGET_RESULT",
       "RELEASE_GATE_RESULT",
       ...(reuse ? ["REUSE_RESULT"] : []),
     ])

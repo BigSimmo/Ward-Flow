@@ -807,7 +807,7 @@ jobs:
           persist-credentials: false
           fetch-depth: 0
       # Main has no merge queue and does not require PRs to be up to date, so measure the budget on
-      # this PR merged with the current main; ward-flow-budget-recheck.yml re-runs this job when main moves.
+      # this PR merged with the current main; the independent budget job is re-run when main moves.
       - name: Merge the latest main before measuring
         if: ${{ github.event_name == 'pull_request' }}
         run: node scripts/ward-ci-public/merge-latest-main.mjs
@@ -876,6 +876,57 @@ jobs:
         with:
           path: .next/cache
           key: ${{ steps.production-cache.outputs.cache-primary-key }}
+  # Recheck only this independent measurement and required when main moves. The production
+  # build still gates the expensive test lanes; none of them depends on budget.
+  budget:
+    name: Ward Flow phone script budget
+    needs: [plan, reuse]
+    if: ${{ !cancelled() && needs.plan.outputs.build == 'true' && needs.reuse.outputs.verified != 'true' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - name: Merge the latest main before measuring
+        if: ${{ github.event_name == 'pull_request' }}
+        run: node scripts/ward-ci-public/merge-latest-main.mjs
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install and record the pinned npm toolchain
+        run: npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require('./package.json').packageManager")" && node --version && npm --version
+      - name: Restore installed packages
+        id: node-modules
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}
+      - name: Install locked dependencies
+        id: install
+        env:
+          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
+        run: node scripts/install-locked-dependencies.mjs
+      - name: Restore Next build cache
+        id: production-cache
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: .next/cache
+          key: ward-production-next-${{ runner.os }}-${{ hashFiles('package-lock.json', 'next.config.ts') }}-${{ github.sha }}
+          restore-keys: ward-production-next-${{ runner.os }}-${{ hashFiles('package-lock.json', 'next.config.ts') }}-
+      - name: Build for production (Railway build command)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack
+      - name: Check the phone script budget
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node scripts/ward-ci-public/budget-gate.mjs
+      - name: Scan the built client bundle for secrets
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm run check:client-bundle-secrets -- --require-bundle
+
   coverage:
     name: Ward Flow coverage
     # Merges only a complete set of passing shards: a failed shard already fails Ward Flow required.
@@ -943,7 +994,7 @@ jobs:
   required:
     name: Ward Flow required
     if: always()
-    needs: [plan, reuse, static, backend, unit, browser-build, browser, release-gate, build, coverage]
+    needs: [plan, reuse, static, backend, unit, browser-build, browser, release-gate, build, budget, coverage]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -956,6 +1007,7 @@ jobs:
           BROWSER_RESULT: ${{ needs.browser.result }}
           SECRET_SCAN_RESULT: ${{ needs.plan.outputs.secret_scan }}
           BUILD_RESULT: ${{ needs.build.result }}
+          BUDGET_RESULT: ${{ needs.budget.result }}
           COVERAGE_RESULT: ${{ needs.coverage.result }}
           RELEASE_GATE_RESULT: ${{ needs.release-gate.result }}
           PLAN_RESULT: ${{ needs.plan.result }}
@@ -983,6 +1035,7 @@ jobs:
             require_scope "$UNIT_SCOPE" "$UNIT_RESULT"
             require_scope "$UNIT_SCOPE" "$COVERAGE_RESULT"
             require_scope "$BUILD_SCOPE" "$BUILD_RESULT"
+            require_scope "$BUILD_SCOPE" "$BUDGET_RESULT"
             test "$BROWSER_BUILD_RESULT" = skipped
             test "$BROWSER_RESULT" = skipped
             test "$RELEASE_GATE_RESULT" = skipped
@@ -997,6 +1050,7 @@ jobs:
             test "$BROWSER_BUILD_RESULT" = skipped
             test "$BROWSER_RESULT" = skipped
             test "$BUILD_RESULT" = skipped
+            test "$BUDGET_RESULT" = skipped
             test "$COVERAGE_RESULT" = skipped
             test "$RELEASE_GATE_RESULT" = skipped
             if [ "$BACKEND_REUSED" = true ]; then test "$BACKEND_RESULT" = skipped;
@@ -1010,4 +1064,5 @@ jobs:
             require_scope "$BROWSER_SCOPE" "$BROWSER_BUILD_RESULT"
             require_scope "$BROWSER_SCOPE" "$BROWSER_RESULT"
             require_scope "$BUILD_SCOPE" "$BUILD_RESULT"
+            require_scope "$BUILD_SCOPE" "$BUDGET_RESULT"
           fi

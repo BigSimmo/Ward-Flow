@@ -10,7 +10,7 @@ import { mergeLatestMain } from "../scripts/ward-ci-public/merge-latest-main.mjs
 
 const since = Date.parse("2026-10-21T06:00:00Z");
 const armed = { draft: false, auto_merge: { merge_method: "merge" } };
-const build = (fields: Record<string, unknown>) => ({ id: 7, name: "Ward Flow production build", ...fields });
+const build = (fields: Record<string, unknown>) => ({ id: 7, name: "Ward Flow phone script budget", ...fields });
 const done = { status: "completed" };
 
 describe("budget recheck: which pull requests re-measure when main moves", () => {
@@ -39,6 +39,28 @@ describe("budget recheck: which pull requests re-measure when main moves", () =>
         since,
       ),
     ).toEqual({ action: "rerun", jobId: 7 });
+  });
+
+  it("keeps budget enforcement for older workflows until their independent job exists", () => {
+    const legacy = {
+      id: 9,
+      name: "Ward Flow production build",
+      status: "completed",
+      conclusion: "success",
+      started_at: "2026-10-21T05:00:00Z",
+    };
+    expect(decide(armed, done, [legacy], since)).toEqual({ action: "rerun", jobId: 9 });
+    const budget = build({ status: "completed", conclusion: "success", started_at: "2026-10-21T05:00:00Z" });
+    expect(decide(armed, done, [legacy, budget], since)).toEqual({ action: "rerun", jobId: 7 });
+    expect(decide(armed, done, [{ ...legacy, started_at: "2026-10-21T06:01:00Z" }], since).action).toBe("skip");
+    expect(decide(armed, done, [legacy, { ...budget, conclusion: "failure" }], since)).toEqual({
+      action: "rerun",
+      jobId: 7,
+    });
+    expect(decide(armed, done, [legacy, { ...budget, conclusion: "skipped", started_at: null }], since)).toEqual({
+      action: "skip",
+      reason: "build out of scope for this PR",
+    });
   });
 
   it("never re-runs a run for an older head, which would cancel the current head's run", () => {
@@ -130,6 +152,7 @@ describe("budget recheck workflow", () => {
       "next.config.ts",
       "script-budget.json",
       "scripts/check-script-budget.mjs",
+      "scripts/ward-flow/whats-new-list.mjs",
       "scripts/ward-ci-public/**",
       ".github/workflows/ward-flow.yml",
     ])
@@ -213,7 +236,7 @@ describe("conflicts fail in the scope plan job", () => {
     // Every other job needs the plan (directly or through it), so a conflict stops them all, and
     // Ward Flow required fails because the plan did not succeed.
     expect(job("required")).toContain('test "$PLAN_RESULT" = success');
-    for (const name of ["static", "backend", "unit", "browser-build", "release-gate", "build", "coverage"])
+    for (const name of ["static", "backend", "unit", "browser-build", "release-gate", "build", "budget", "coverage"])
       expect(job(name)).toMatch(/^ {4}needs: (?:plan|\[plan\b[^\n]*\])$/mu);
   });
 
@@ -223,5 +246,48 @@ describe("conflicts fail in the scope plan job", () => {
     expect(merge).toBeGreaterThan(0);
     // The budget step is budget-gate.mjs (it runs check-script-budget.mjs on the merged build).
     expect(merge).toBeLessThan(build.indexOf("run: node scripts/ward-ci-public/budget-gate.mjs"));
+  });
+});
+
+describe("budget rechecks preserve the completed test lanes", () => {
+  const workflow = readFileSync(new URL("../.github/workflows/ward-flow.yml", import.meta.url), "utf8");
+  const jobs = new Map(
+    [...workflow.matchAll(/^ {2}([a-z][a-z0-9_-]*):\n([\s\S]*?)(?=^ {2}[a-z][a-z0-9_-]*:\n|(?![\s\S]))/gmu)].map(
+      (match) => [match[1], match[2]] as const,
+    ),
+  );
+  const needs = (body: string) =>
+    (/^ {4}needs: ([^\n]+)$/mu.exec(body)?.[1] ?? "").replace(/[\[\]]/gu, "").split(/,\s*/u);
+
+  it("re-running the budget job reaches only the required check, never a test matrix", () => {
+    const reached = new Set(["budget"]);
+    let count;
+    do {
+      count = reached.size;
+      for (const [name, body] of jobs) if (needs(body).some((dependency) => reached.has(dependency))) reached.add(name);
+    } while (count !== reached.size);
+    expect([...reached].sort()).toEqual(["budget", "required"]);
+    const budget = jobs.get("budget") ?? "";
+    expect(budget).toContain("name: Ward Flow phone script budget");
+    expect(needs(budget)).toEqual(["plan", "reuse"]);
+    expect(budget).toContain("fetch-depth: 0");
+    const merge = budget.indexOf("run: node scripts/ward-ci-public/merge-latest-main.mjs");
+    const build = budget.indexOf("run: node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack");
+    const measure = budget.indexOf("run: node scripts/ward-ci-public/budget-gate.mjs");
+    expect(merge).toBeGreaterThan(0);
+    expect(build).toBeGreaterThan(merge);
+    expect(measure).toBeGreaterThan(build);
+    expect(budget).toContain("npm run check:client-bundle-secrets -- --require-bundle");
+  });
+
+  it("preserves cheap-first production gates, main budget-heal artifacts and original tree attestation", () => {
+    for (const name of ["unit", "browser", "release-gate"]) expect(needs(jobs.get(name) ?? "")).toContain("build");
+    const build = jobs.get("build") ?? "";
+    expect(build).toContain("name: Keep main's phone script measurements for the budget heal");
+    expect(build).toContain("name: script-budget-measured");
+    expect(build).toContain("::notice title=Ward built tree::");
+    expect(build).toContain("run: node scripts/ward-ci-public/budget-gate.mjs");
+    expect(jobs.get("budget")).not.toContain("::notice title=Ward built tree::");
+    expect(jobs.get("required")).toContain("BUDGET_RESULT: ${{ needs.budget.result }}");
   });
 });

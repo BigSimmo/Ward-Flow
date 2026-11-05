@@ -2,12 +2,13 @@
  * Runs from `.github/workflows/ward-flow-budget-recheck.yml` on every push to main.
  *
  * Main has no merge queue and its ruleset does not require branches to be up to date, so a pull
- * request's last "Ward Flow production build" may have measured the phone script budget against an
+ * request's last "Ward Flow phone script budget" may have measured the phone script budget against an
  * older main. For each open, non-draft pull request into main with auto-merge armed, this re-runs
- * that job on the PR's latest Ward Flow CI run. The build merges the current main before measuring
- * (`merge-latest-main.mjs`), and GitHub re-runs the jobs that depend on it, so the required
+ * that independent job on the PR's latest Ward Flow CI run. It builds the current-main merge before measuring
+ * (`merge-latest-main.mjs`). Only the required job depends on it, so the required
  * "Ward Flow required" check goes back to pending and the PR cannot merge until the budget holds
- * against the main it would land on.
+ * against the main it would land on. Runs created before the independent job existed fall back
+ * to their production build, preserving budget enforcement until their workflow is refreshed.
  *
  * With WARD_PR_NUMBER set (auto-merge was just armed on that PR), it checks only that PR, against
  * the time main last moved, so a PR armed after a push that skipped it is still re-measured.
@@ -16,7 +17,8 @@
  */
 import { pathToFileURL } from "node:url";
 
-const BUILD_JOB = "Ward Flow production build";
+const BUILD_JOB = "Ward Flow phone script budget";
+const LEGACY_BUILD_JOB = "Ward Flow production build";
 const WORKFLOW = "ward-flow.yml";
 
 /**
@@ -31,14 +33,14 @@ export function decide(pr, run, jobs, since) {
   // A push during the wait moves the head: re-running the old head's run cancels the new one.
   if (run.head_sha && pr.head?.sha && run.head_sha !== pr.head.sha)
     return { action: "skip", reason: "run is for an older head" };
-  const build = jobs.find((job) => job.name === BUILD_JOB);
+  const build = jobs.find((job) => job.name === BUILD_JOB) ?? jobs.find((job) => job.name === LEGACY_BUILD_JOB);
   const started = build?.started_at ? Date.parse(build.started_at) : NaN;
   if (build && started > since) return { action: "skip", reason: "build started after main moved" };
   if (run.status !== "completed") {
     if (!build || !build.started_at) return { action: "skip", reason: "build not started; it will fetch the new main" };
     return { action: "wait" };
   }
-  if (!build) return { action: "skip", reason: "no production build job in the run" };
+  if (!build) return { action: "skip", reason: "no phone script budget job in the run" };
   if (build.conclusion === "skipped") return { action: "skip", reason: "build out of scope for this PR" };
   return { action: "rerun", jobId: build.id };
 }
@@ -105,7 +107,8 @@ async function main() {
         else if (verdict.action === "skip") console.log(`#${pr.number}: skipped (${verdict.reason})`);
         else {
           await api(`/actions/jobs/${verdict.jobId}/rerun`, { method: "POST" });
-          console.log(`#${pr.number}: re-running "${BUILD_JOB}" on run ${run.id} against the new main`);
+          const name = jobs.find((job) => job.id === verdict.jobId)?.name ?? BUILD_JOB;
+          console.log(`#${pr.number}: re-running "${name}" on run ${run.id} against the new main`);
         }
       } catch (error) {
         failures++;

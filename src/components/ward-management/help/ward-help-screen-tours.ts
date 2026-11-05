@@ -229,8 +229,8 @@ const AROUND: readonly Around[] = [
       {
         device: "desk",
         target: id("ward-discharge-barrier-bars"),
-        title: "Held up by barrier",
-        body: "What is holding discharges up, counted by barrier.",
+        title: "Held up by reason",
+        body: "What is holding discharges up, counted by reason.",
       },
       {
         device: "desk",

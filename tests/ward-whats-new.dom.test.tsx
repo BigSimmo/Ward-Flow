@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
@@ -133,13 +134,12 @@ describe("what's new note", () => {
 });
 
 describe("what's new list", () => {
-  it("has unique ids, real dates in order and short plain lines", () => {
+  it("has unique ids, real dates and short plain lines", () => {
     const ids = WHATS_NEW.map((entry) => entry.id);
     expect(new Set(ids).size).toBe(ids.length);
-    for (const [index, entry] of WHATS_NEW.entries()) {
+    for (const entry of WHATS_NEW) {
       expect(entry.date, entry.id).toMatch(/^\d{4}-\d{2}-\d{2}$/);
       expect(Number.isNaN(Date.parse(entry.date)), entry.id).toBe(false);
-      if (index > 0) expect(entry.date >= (WHATS_NEW[index - 1] as WhatsNewEntry).date, entry.id).toBe(true);
       expect(entry.line.length, entry.id).toBeLessThanOrEqual(120);
       expect(entry.line, entry.id).toMatch(/^[A-Z].*\.$/);
       // Staff words only: no pull request numbers, file names or code.
@@ -157,6 +157,16 @@ describe("what's new list", () => {
     const root = mkdtempSync(path.join(tmpdir(), "whats-new-"));
     const folder = path.join(root, WHATS_NEW_DIR);
     mkdirSync(folder, { recursive: true });
+    const git = (...args: string[]) =>
+      execFileSync(
+        "git",
+        ["-C", root, "-c", "user.name=Synthetic", "-c", "user.email=synthetic@example.invalid", ...args],
+        { encoding: "utf8" },
+      );
+    git("init", "-q", "-b", "main");
+    writeFileSync(path.join(root, "README.md"), "Synthetic fixture.");
+    git("add", "README.md");
+    git("commit", "-qm", "Synthetic base");
     const add = (name: string, body: string) => writeFileSync(path.join(folder, name), body);
     try {
       add("2026-11-04-b.json", '{ "line": "B." }');

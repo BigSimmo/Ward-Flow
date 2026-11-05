@@ -1,5 +1,7 @@
+import "@testing-library/jest-dom/vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { installMatchMediaStub } from "./setup/jsdom.setup";
 
 import { AlertsScreen } from "@/components/ward-management/alerts/alerts-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
@@ -17,11 +19,41 @@ function renderScreen() {
 describe("Alerts redesign safety rules", () => {
   it("never dims an act-now row, whichever highlight is on", () => {
     renderScreen();
+    const summary = screen.getByRole("group", { name: "Alert summary" });
+    expect(document.querySelectorAll('[data-alert-id][data-act="true"]').length).toBeGreaterThan(0);
     for (const name of [/Waiting/u, /Yours/u]) {
-      fireEvent.click(screen.getAllByRole("button", { name })[0]!);
+      const button = within(summary).getByRole("button", { name });
+      fireEvent.click(button);
+      expect(button).toHaveAttribute("aria-pressed", "true");
       expect(document.querySelectorAll('[data-alert-id][data-act="true"][data-dim="true"]')).toHaveLength(0);
-      fireEvent.click(screen.getAllByRole("button", { name })[0]!);
+      fireEvent.click(button);
+      expect(button).toHaveAttribute("aria-pressed", "false");
     }
+  });
+
+  it("never dims an act-now row when a condition check is highlighted", () => {
+    renderScreen();
+    fireEvent.click(screen.getByRole("button", { name: /^Checking.*flagged.*clear$/u }));
+    const checks = screen.getByRole("list", { name: "Conditions checked" });
+    const check = within(checks).getByRole("button", { name: /Legal due time passed/u });
+    fireEvent.click(check);
+    expect(check).toHaveAttribute("aria-pressed", "true");
+    expect(document.querySelectorAll('[data-alert-id][data-act="true"]').length).toBeGreaterThan(0);
+    expect(document.querySelectorAll('[data-alert-id][data-act="true"][data-dim="true"]')).toHaveLength(0);
+  });
+
+  it("never dims an act-now row when a phone owner highlight is selected", () => {
+    installMatchMediaStub(true);
+    renderScreen();
+    const owner = screen.getByRole("combobox", { name: "Highlight by owner" }) as HTMLSelectElement;
+    const option = within(owner)
+      .getAllByRole("option")
+      .find((item) => (item as HTMLOptionElement).value !== "") as HTMLOptionElement;
+    expect(option).toBeDefined();
+    fireEvent.change(owner, { target: { value: option.value } });
+    expect(owner.value).toBe(option.value);
+    expect(document.querySelectorAll('[data-alert-id][data-act="true"]').length).toBeGreaterThan(0);
+    expect(document.querySelectorAll('[data-alert-id][data-act="true"][data-dim="true"]')).toHaveLength(0);
   });
 
   it("lists act now first inside each owner in the Owner view", () => {

@@ -274,6 +274,7 @@ export function dischargeChoiceBlockedReason(movement: Movement): string | undef
  * mirrors rather than the next time somebody reads it.
  */
 export function handoverBlockedReason(movement: Movement, who?: string): string | undefined {
+  if (movement.stage === "moving") return `${who ?? "This patient"} is already on the way.`;
   // Mirrors the reducer's `noTransportNeeded` exception (`HANDOVER_READY`): a movement with no
   // transport job may still be marked handover-ready when a "no transport needed" answer is
   // recorded (`transportNeed.needed === false`, or a job whose own `needed` is false), so it must
@@ -308,11 +309,12 @@ export function handoverBlockedReason(movement: Movement, who?: string): string 
  * would tell somebody a patient cannot be transported when in truth they have not finished asking.
  */
 export function bookTransportBlockedReason(movement: Movement, who?: string): string | undefined {
+  if (movement.stage === "moving") return `${who ?? "This patient"} is already on the way.`;
   // Owner answer 30 (2026-09-17), build plan item 30: cancelling a booked transport no longer
   // leaves a replacement job standing while a bed is held, so a person must be able to book again
   // from `handover_ready` as well as `pulled` — before this ruling nobody needed to, because a job
-  // was always already there. The message still says "no bed pulled yet" when it fires, which stays
-  // true: every stage this guard now refuses genuinely is earlier than `pulled`.
+  // was always already there. Moving patients have their own reason above; earlier stages still
+  // need a bed pulled first.
   if (movement.stage !== "pulled" && movement.stage !== "handover_ready") {
     // Owner, 26 Sept 2026: the patient's name, not the WF journey number.
     return `${who ?? "This patient"} has no bed pulled yet — transport can only be booked once a bed is pulled, or after handover is marked ready.`;

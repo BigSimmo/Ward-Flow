@@ -129,7 +129,9 @@ jobs:
               *) echo "$line" >> new.txt ;;
             esac
           done < prs.txt
-          # The plain lines staff see in the app's "What's new" note: the entry files this release
+          # Staff-facing notes added by this release. The app keeps a shorter history-based list,
+          # so this release section does not promise every added note is currently shown.
+          # The entry files this release
           # adds, one file per change in the app's folder. Read as data through the API, never run.
           # A folder missing at either end counts as empty. Ids in the older one-file list at the
           # base count as already shipped, so moving to one file per entry repeats no line.
@@ -153,7 +155,7 @@ jobs:
           done
           {
             echo "What changed on the live site since the last release."
-            if [ -s staff.txt ]; then printf '\n### For staff, shown in the app\n\n'; cat staff.txt; fi
+            if [ -s staff.txt ]; then printf '\n### For staff, added in this release\n\n'; cat staff.txt; fi
             for section in "New:new.txt" "Fixed:fixed.txt" "Behind the scenes:other.txt"; do
               file="${section#*:}"
               if [ -s "$file" ]; then printf '\n### %s\n\n' "${section%%:*}"; cat "$file"; fi

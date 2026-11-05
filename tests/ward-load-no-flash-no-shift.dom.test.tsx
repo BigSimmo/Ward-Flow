@@ -19,7 +19,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-import { WardRail } from "@/components/ward-management/shell/ward-rail";
+import { NextRail as WardRail } from "@/components/ward-management/shell-next/next-rail";
 import { RAIL_OPEN_STORAGE_KEY, WARD_RAIL_EARLY_SCRIPT } from "@/components/ward-management/shell/ward-rail-early";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";

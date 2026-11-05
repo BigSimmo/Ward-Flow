@@ -28,7 +28,7 @@ export type WhatsNewEntry = { readonly id: string; readonly date: string; readon
 // Inlined by the build and the tests (`next.config.ts`, `vitest.config.mts`) as a JSON string.
 declare const __WARD_WHATS_NEW__: string | undefined;
 
-/** Oldest first: the newest 20 entry files, by date and then id. Empty where nothing inlined it. */
+/** Oldest first: the newest 20 entry files, by introduction to main and then id. Empty where nothing inlined it. */
 export const WHATS_NEW: readonly WhatsNewEntry[] =
   typeof __WARD_WHATS_NEW__ === "string" ? (JSON.parse(__WARD_WHATS_NEW__) as WhatsNewEntry[]) : [];
 

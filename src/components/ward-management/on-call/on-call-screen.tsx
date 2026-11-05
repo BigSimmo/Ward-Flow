@@ -595,9 +595,12 @@ export function OnCallScreen() {
   ));
 
   // OC2 mock-up: one service index in the toolbar replaces the jump pills repeated on every service row.
-  const indexServices = [...new Set(tabRows.map((entry) => entry.service))].filter(
-    (service): service is Exclude<DirectoryService, "Statewide"> => service !== "Statewide",
-  );
+  const shownRows = showTest ? tabRows.filter((entry) => showTest(entry, minute)) : tabRows;
+  const indexServices = groupRows(entries, shownRows, tab, tab === "hospitals" ? groupBy : "place")
+    .map((block) => block.service)
+    .filter(
+      (service): service is Exclude<DirectoryService, "Statewide"> => service !== null && service !== "Statewide",
+    );
   const serviceIndex =
     tab !== "mine" && indexServices.length > 1 ? (
       <span className={styles.jump} role="group" aria-label="Jump to service">
@@ -764,7 +767,7 @@ export function OnCallScreen() {
             </div>
             <DirectoryTable
               entries={entries}
-              rows={showTest ? tabRows.filter((entry) => showTest(entry, minute)) : tabRows}
+              rows={shownRows}
               tab={tab}
               groupBy={tab === "hospitals" ? groupBy : "place"}
               actions={actions}
