@@ -6,7 +6,7 @@ import { GraduationCap, PlayCircle } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 
-import { Button, useIsPhone } from "@/components/wf";
+import { Button, StatusGlyph, useIsPhone } from "@/components/wf";
 
 import { setPracticeSession, usePracticeSession } from "@/components/ward-management/demo-reset/ward-practice-session";
 import { PRACTICE_STEPS, practiceProgress } from "@/components/ward-management/demo-reset/ward-practice-steps";
@@ -159,7 +159,7 @@ export function WardHelpPracticeCard({
                   aria-current={isNext ? "step" : undefined}
                 >
                   <span className={s.mark} aria-hidden="true">
-                    {done ? "✓" : ""}
+                    {done ? <StatusGlyph tone="success" /> : null}
                   </span>
                   <span>
                     <strong>{step.title}</strong>

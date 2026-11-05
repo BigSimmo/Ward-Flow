@@ -25,14 +25,14 @@ import { useWardFormSave } from "../use-ward-form-save";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import {
   ArrowLeft,
-  AlertTriangle,
-  CheckCircle2,
+  TriangleAlert,
+  CircleCheck,
   CircleAlert,
   FileCheck2,
   Info,
   Hospital,
   ShieldCheck,
-  Truck,
+  Ambulance,
   Activity,
   ArrowRight,
 } from "lucide-react";
@@ -478,7 +478,7 @@ export function MovementWorkspaceCockpit({
                       {gateMark(gate) === "info" ? (
                         <Info size={15} aria-hidden="true" />
                       ) : gate.pass ? (
-                        <CheckCircle2 className={styles.gatePass} size={15} aria-hidden="true" />
+                        <CircleCheck className={styles.gatePass} size={15} aria-hidden="true" />
                       ) : (
                         <CircleAlert className={styles.gateFail} size={15} aria-hidden="true" />
                       )}
@@ -655,7 +655,7 @@ export function MovementWorkspaceCockpit({
                   <div className={styles.stepIndicatorRow}>
                     <span className={styles.stepNumber}>{idx + 1}</span>
                     {state === "done" ? (
-                      <CheckCircle2 className={styles.stepIcon} aria-hidden="true" />
+                      <CircleCheck className={styles.stepIcon} aria-hidden="true" />
                     ) : state === "current" ? (
                       <Activity className={styles.stepIcon} aria-hidden="true" />
                     ) : (
@@ -755,7 +755,7 @@ export function MovementWorkspaceCockpit({
             <div className={styles.panelCard}>
               <div className={styles.panelCardHeader}>
                 <div className={styles.panelTitleGroup}>
-                  <AlertTriangle className={styles.readinessCardIcon} size={18} aria-hidden="true" />
+                  <TriangleAlert className={styles.readinessCardIcon} size={18} aria-hidden="true" />
                   <h2 className={styles.panelCardTitle}>{open ? "Needs attention" : "Why this stopped"}</h2>
                 </div>
                 {open ? <span className={styles.panelCountBadge}>{attention.length}</span> : null}
@@ -838,7 +838,7 @@ export function MovementWorkspaceCockpit({
 
                   <li className={styles.readinessCard}>
                     <div className={styles.readinessCardHeader}>
-                      <Truck size={16} className={styles.readinessCardIcon} aria-hidden="true" />
+                      <Ambulance size={16} className={styles.readinessCardIcon} aria-hidden="true" />
                       <strong>Transport</strong>
                     </div>
                     <span className={styles.readinessCardBody}>{transportReadinessState(patient, open)}</span>
@@ -914,7 +914,7 @@ export function MovementWorkspaceCockpit({
             <div data-testid="ward-console-transport-panel" className={styles.panelCard}>
               <div className={styles.panelCardHeader}>
                 <div className={styles.panelTitleGroup}>
-                  <Truck className={styles.readinessCardIcon} size={18} aria-hidden="true" />
+                  <Ambulance className={styles.readinessCardIcon} size={18} aria-hidden="true" />
                   <h2 className={styles.panelCardTitle}>Transport</h2>
                 </div>
               </div>

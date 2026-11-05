@@ -3,9 +3,9 @@
 import {
   AlarmClock,
   ArrowUpRight,
-  BedDouble,
+  BedSingle,
   Bell,
-  CheckCircle2,
+  CircleCheck,
   ChevronDown,
   Clock,
   FileText,
@@ -194,7 +194,7 @@ const ROLE_LABELS: Partial<Record<WardFlowRole, string>> = {
 function rowIcon(item: InboxItem) {
   if (/transport/i.test(item.title)) return item.icon;
   if (/legal/i.test(item.title)) return FileText;
-  if (/bed pull|pulls? expired/i.test(item.title)) return BedDouble;
+  if (/bed pull|pulls? expired/i.test(item.title)) return BedSingle;
   if (/destination/i.test(item.title)) return TriangleAlert;
   return item.icon;
 }
@@ -979,7 +979,7 @@ export function WardTasksDrawer({
                   complete(item.id);
                 }}
               >
-                <CheckCircle2 aria-hidden="true" />
+                <CircleCheck aria-hidden="true" />
                 Mark done
               </button>
             )}

@@ -6,7 +6,7 @@ import { howToFor } from "./ward-help-access";
 
 import {
   ArrowRight,
-  BedDouble,
+  BedSingle,
   Check,
   ChevronDown,
   ChevronRight,
@@ -22,7 +22,7 @@ import {
   SlidersHorizontal,
   ThumbsDown,
   ThumbsUp,
-  Truck,
+  Ambulance,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -53,8 +53,8 @@ type Topic = (typeof HOW_TO_TOPICS)[number];
 
 /** Each topic's icon and short chip name. */
 const TOPIC_LOOK: Readonly<Record<Topic, { icon: LucideIcon; chip: string }>> = {
-  "Beds and referrals": { icon: BedDouble, chip: "Beds" },
-  Transport: { icon: Truck, chip: "Transport" },
+  "Beds and referrals": { icon: BedSingle, chip: "Beds" },
+  Transport: { icon: Ambulance, chip: "Transport" },
   "Handover and reports": { icon: ClipboardList, chip: "Handover" },
   "Finding your way": { icon: Compass, chip: "Finding your way" },
   "Settings and display": { icon: SlidersHorizontal, chip: "Settings" },

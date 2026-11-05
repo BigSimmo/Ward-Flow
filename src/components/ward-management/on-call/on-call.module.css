@@ -669,9 +669,7 @@
   color: var(--wf-dim);
 }
 
-.previewButton {
-  border-style: dashed;
-}
+/* Design audit 4 (B14): no dashed edge on the working Downtime card button (dashed means disabled). */
 
 .starCell {
   padding-right: 0;

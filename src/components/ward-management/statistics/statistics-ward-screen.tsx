@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
-  BedDouble,
+  BedSingle,
   CalendarClock,
   Clock,
   Download,
@@ -344,7 +344,7 @@ function OperationalWardScreen({
         paused={live.paused}
         onTogglePause={live.togglePause}
       >
-        <StatCard icon={BedDouble} title="No such ward">
+        <StatCard icon={BedSingle} title="No such ward">
           <CardBody className={styles.bodyStack}>
             <p data-testid="ward-statistics-ward-unresolved">
               No ward has the id <code className={ward.unresolvedId}>{unitId}</code>.

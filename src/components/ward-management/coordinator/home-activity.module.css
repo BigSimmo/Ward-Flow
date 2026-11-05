@@ -554,46 +554,11 @@ a.eventText:hover {
   font-weight: inherit;
 }
 /*
- * Status glyphs on this page (Josh, 30 Oct 2026): one refined set in place of the kit's basic
- * triangle, bar and dot. Act now is a rounded warning triangle with an exclamation mark, to decide
- * a rounded square with a question mark, overdue or watch a filled clock. Each is a mask filled with
- * the glyph's own colour (the danger, info and warning tokens, or the hero's), so light, dark and
- * forced colours still follow the kit. Home's screen and its Activity panel carry `.glyphScope`; the kit is unchanged.
+ * Status glyphs on this page: the kit StatusGlyph, one shape per tone (Josh, 5 Nov 2026, card 10,
+ * after the 3 Nov icon rule). Home's own refined set (the "?" square and the clock, 30 Oct) is gone.
+ * Glyphs sit centred on the text line.
  */
-.glyphScope svg:is([data-wf-glyph="danger"], [data-wf-glyph="info"], [data-wf-glyph="warning"]) {
-  width: 12px;
-  height: 12px;
-  background-color: currentColor;
-  -webkit-mask: var(--wf-glyph) center / contain no-repeat;
-  mask: var(--wf-glyph) center / contain no-repeat;
-}
-.glyphScope svg:is([data-wf-glyph="danger"], [data-wf-glyph="info"], [data-wf-glyph="warning"]) > * {
-  visibility: hidden;
-}
-.glyphScope svg[data-wf-glyph="danger"] {
-  --wf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cdefs%3E%3Cmask id='m'%3E%3Crect width='16' height='16' fill='white'/%3E%3Cpath d='M8 5.4v3.6' stroke='black' stroke-width='1.9' stroke-linecap='round'/%3E%3Ccircle cx='8' cy='11.8' r='1.1' fill='black'/%3E%3C/mask%3E%3C/defs%3E%3Cpath d='M6.6 2.3a1.6 1.6 0 0 1 2.8 0l5.5 9.6a1.6 1.6 0 0 1-1.4 2.4H2.5a1.6 1.6 0 0 1-1.4-2.4z' mask='url%28%23m%29'/%3E%3C/svg%3E");
-}
-.glyphScope svg[data-wf-glyph="info"] {
-  --wf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cdefs%3E%3Cmask id='m'%3E%3Crect width='16' height='16' fill='white'/%3E%3Cpath d='M6.1 6.2a1.95 1.95 0 1 1 2.7 1.8c-.5.2-.8.6-.8 1.1v.3' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='8' cy='11.7' r='1.05' fill='black'/%3E%3C/mask%3E%3C/defs%3E%3Cpath d='M4.5 1.5h7a3 3 0 0 1 3 3v7a3 3 0 0 1-3 3h-7a3 3 0 0 1-3-3v-7a3 3 0 0 1 3-3z' mask='url%28%23m%29'/%3E%3C/svg%3E");
-}
-.glyphScope svg[data-wf-glyph="warning"] {
-  --wf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cdefs%3E%3Cmask id='m'%3E%3Crect width='16' height='16' fill='white'/%3E%3Cpath d='M8 4.6v3.7l2.3 1.5' fill='none' stroke='black' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/mask%3E%3C/defs%3E%3Ccircle cx='8' cy='8' r='6.6' mask='url%28%23m%29'/%3E%3C/svg%3E");
-}
-@media (forced-colors: active) {
-  .glyphScope svg[data-wf-glyph] {
-    forced-color-adjust: none;
-    background-color: CanvasText;
-  }
-}
-
-/* In Activity an amber event is "worth a look", not overdue, so it is a filled dot rather than the
-   overdue clock. */
-.panelGlyphs svg[data-wf-glyph="warning"] {
-  --wf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='4.6'/%3E%3C/svg%3E");
-}
-
-/* Glyphs: 12px everywhere, 14px in the hero; a 6px gap to the text; centred on the text line. */
-.glyphScope svg:is([data-wf-glyph="danger"], [data-wf-glyph="info"], [data-wf-glyph="warning"]) {
+.glyphScope svg[data-wf-glyph] {
   flex: none;
   vertical-align: middle;
 }
@@ -610,11 +575,12 @@ a.eventText:hover {
 .glyphScope svg.tierGlyph > * {
   visibility: hidden;
 }
-/* Amber that is not about time (the hero's checks, Beds that fit's shortfalls) is the plain dot. */
-.glyphScope svg[data-wf-glyph="warning"].dotGlyph {
-  --wf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='4.6'/%3E%3C/svg%3E");
+@media (forced-colors: active) {
+  .glyphScope svg.tierGlyph {
+    forced-color-adjust: none;
+    background-color: CanvasText;
+  }
 }
-
 /* "Also in Alerts" sits on its own line under the change, aligned with its text. */
 .alertTag {
   display: table;
@@ -674,16 +640,9 @@ a.eventText:hover {
   }
 }
 
-/* 14px glyphs in the hero; the tier mark takes the hero's quiet ink there. */
-.glyphScope [data-wf-hero] svg:is([data-wf-glyph="danger"], [data-wf-glyph="info"], [data-wf-glyph="warning"]),
+/* The tier mark is 14px in the hero, in the hero's quiet ink. */
 .glyphScope [data-wf-hero] svg.tierGlyph {
   width: 14px;
   height: 14px;
-}
-.glyphScope [data-wf-hero] svg.tierGlyph {
   color: var(--wf-hero-ink-2);
-}
-.glyphScope [data-wf-hero-lead] svg[data-wf-glyph="warning"],
-.glyphScope [data-testid="home-beds-fit"] svg[data-wf-glyph="warning"] {
-  --wf-glyph: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='4.6'/%3E%3C/svg%3E");
 }
