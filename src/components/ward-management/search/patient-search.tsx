@@ -48,6 +48,7 @@ import {
 } from "@/components/ward-management/ward-flow-provider";
 import {
   findPatients,
+  foldPatientSearchHaystack,
   foldPatientSearchText,
   patientAgeYears,
   type Patient,
@@ -370,11 +371,11 @@ export function PatientSearchPage() {
     const context = { patients, referrals, movements };
     for (const movement of movements) {
       const info = resolveSubjectPatient(movement, context);
-      words.set(movement.id, foldPatientSearchText(`${info.displayName} ${info.formalName} ${info.umrn}`));
+      words.set(movement.id, foldPatientSearchHaystack(`${info.displayName} ${info.formalName} ${info.umrn}`));
     }
     for (const referral of referrals) {
       const info = resolveSubjectPatient(referral, context);
-      words.set(referral.id, foldPatientSearchText(`${info.displayName} ${info.formalName} ${info.umrn}`));
+      words.set(referral.id, foldPatientSearchHaystack(`${info.displayName} ${info.formalName} ${info.umrn}`));
     }
     return words;
   }, [patients, referrals, movements]);

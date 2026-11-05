@@ -11,6 +11,7 @@ import { useMemo, useState } from "react";
 import { BedSingle, ChevronDown, House, Users } from "lucide-react";
 import { Button, Card, CardHead, Segmented, SrOnly, StatusGlyph } from "@/components/wf";
 import home from "@/components/ward-management/ward/ward-home-tab.module.css";
+import { foldPatientSearchHaystack, foldPatientSearchText } from "@/components/ward-management/ward-patients";
 import { CLIENTS, DEMO_FIGURES, DISCHARGED, INPATIENTS, IN_BED, STAFF, shortName } from "./midland-demo";
 import { CaseManagerCell, Initials, Person, SeenCell, Tag } from "./parts";
 import wt from "@/components/ward-management/ward-table/ward-table.module.css";
@@ -29,12 +30,12 @@ export function TeamCaseload({
 }) {
   const [filter, setFilter] = useState<CaseFilter>("all");
   const f = DEMO_FIGURES;
-  const needle = find.trim().toLowerCase();
+  const needle = foldPatientSearchText(find);
   const rows = useMemo(
     () =>
       CLIENTS.filter((c) => {
         if (filter !== "all" && !(c.flags ?? []).includes(filter)) return false;
-        if (needle && !`${c.n} ${c.u}`.toLowerCase().includes(needle)) return false;
+        if (needle && !foldPatientSearchHaystack(`${c.n} ${c.u}`).includes(needle)) return false;
         if (caseManager === "psych") return Boolean(c.psychOnly);
         if (caseManager) return c.cm === caseManager;
         return true;

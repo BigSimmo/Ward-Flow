@@ -37,7 +37,12 @@ import {
 import { acceptedReferralAwaitingMovement, isOpen } from "@/components/ward-management/ward-derivations";
 import type { LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
-import { foldPatientSearchText, patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
+import {
+  foldPatientSearchHaystack,
+  foldPatientSearchText,
+  patientAgeYears,
+  type Patient,
+} from "@/components/ward-management/ward-patients";
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
@@ -253,7 +258,7 @@ export function buildCensus(state: {
       patientRecordId: patient?.id ?? null,
       communityTeam: patient?.catchmentCommunityTeam ?? null,
       confidential: Boolean((patient as { confidential?: boolean } | undefined)?.confidential),
-      searchText: foldPatientSearchText(`${info.displayName} ${info.formalName} ${info.umrn}`),
+      searchText: foldPatientSearchHaystack(`${info.displayName} ${info.formalName} ${info.umrn}`),
     };
   };
   const legalOnRecord = (subject: Admission) => resolve(subject).patient?.legalStatus;
@@ -615,7 +620,7 @@ export function buildCensus(state: {
       reservedTimePassed: false,
       acceptedUnitName: null,
       timeline: [],
-      searchText: foldPatientSearchText(`${name} ${patient.umrn}`),
+      searchText: foldPatientSearchHaystack(`${name} ${patient.umrn}`),
       placeText: foldPatientSearchText(patient.catchmentCommunityTeam ?? ""),
     });
   }

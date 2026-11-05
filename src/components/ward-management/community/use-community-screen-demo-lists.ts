@@ -14,6 +14,7 @@ import {
   DEMO_COMMUNITY_EGRESS,
   DEMO_COMMUNITY_CASELOAD,
 } from "./community-demo-cohort";
+import { originIsEdOrCrisis } from "./community-screen-helpers";
 import type { CaseloadFilter, TriageFilter, InpatientFilter, EgressFilter } from "./community-screen-helpers";
 
 export function useCommunityScreenDemoLists({
@@ -42,11 +43,7 @@ export function useCommunityScreenDemoLists({
       if (triageFilter === "p2") return r.urgency === 2;
       if (triageFilter === "p3") return r.urgency === 3;
       if (triageFilter === "ed") {
-        return (
-          r.origin.toLowerCase().includes("ed") ||
-          r.origin.toLowerCase().includes("crisis") ||
-          r.origin.toLowerCase().includes("resus")
-        );
+        return originIsEdOrCrisis(r.origin, true);
       }
       return true;
     });

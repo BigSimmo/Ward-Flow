@@ -22,6 +22,7 @@ import {
   registerWfBandHero,
 } from "@/components/wf";
 import { perthWeekdayTime } from "@/components/ward-management/ward-clock";
+import { foldPatientSearchHaystack, foldPatientSearchText } from "@/components/ward-management/ward-patients";
 import phone from "../community-team-phone.module.css";
 import type { CommunityTeamSection } from "../community-screen-hero";
 import {
@@ -389,7 +390,7 @@ function CaseloadSection() {
     if (filter !== "all" && !(c.flags ?? []).includes(filter)) return false;
     if (cm === "psych" && !c.psychOnly) return false;
     if (cm && cm !== "psych" && c.cm !== cm) return false;
-    return !find || c.n.toLowerCase().includes(find.trim().toLowerCase());
+    return !find.trim() || foldPatientSearchHaystack(c.n).includes(foldPatientSearchText(find));
   });
   const chips: { id: CaseFilter; label: string; n: number }[] = [
     { id: "all", label: "All", n: f.caseload },
