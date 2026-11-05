@@ -209,7 +209,7 @@ export function communityReferralBlockedReason(movement: Movement): string | und
     // P2-5 (Ward Lead audit, 2026-09-17): no internal event name in user-facing text. The stop
     // control itself waits on an owner question (see the build plan), so this names who to
     // contact rather than a control this screen does not offer.
-    return `The patient has been collected. Ask the coordinator to stop the journey, using the "Stop transport" control on the console; the bed stays pulled until it is released.`;
+    return `The patient has been collected. Only the bed coordinator can stop the journey now, so ask them to stop transport. The bed stays pulled until it is released.`;
   }
   const isOnForm = !!movement.legalForm || (movement.legalStatus !== undefined && movement.legalStatus !== "Voluntary");
   if (isOnForm) {
@@ -236,7 +236,7 @@ export function edOutcomeBlockedReason(movement: Movement): string | undefined {
   if (movement.transport?.collectedAt !== undefined) {
     // P2-5 (Ward Lead audit, 2026-09-17): no internal event name in user-facing text — see
     // `communityReferralBlockedReason`'s own identical fix immediately above.
-    return `The patient has been collected. Ask the coordinator to stop the journey, using the "Stop transport" control on the console; the bed stays pulled until it is released.`;
+    return `The patient has been collected. Only the bed coordinator can stop the journey now, so ask them to stop transport. The bed stays pulled until it is released.`;
   }
   return undefined;
 }
@@ -380,7 +380,7 @@ export function withdrawReferralBlockedReason(movement: Movement, who?: string):
   // P2-5 (Ward Lead audit, 2026-09-17): no internal event name — see
   // `communityReferralBlockedReason`'s identical fix above.
   if (movement.transport?.collectedAt !== undefined) {
-    return `The patient has been collected. Ask the coordinator to stop the journey, using the "Stop transport" control on the console; the bed stays pulled until it is released.`;
+    return `The patient has been collected. Only the bed coordinator can stop the journey now, so ask them to stop transport. The bed stays pulled until it is released.`;
   }
   if (!movement.acceptedUnitId && movement.referredUnitIds.length === 0) {
     return `${who ?? "This patient"} holds no live referral to withdraw.`;
