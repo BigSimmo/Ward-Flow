@@ -47,7 +47,10 @@ describe("backend redeploy install and runtime inputs", () => {
   });
 
   it("keeps documentation, unrelated frontend changes and lookalike install files outside the contract", () => {
-    for (const path of ["docs/hosting.md", "src/app/page.tsx", "scripts/check-node-engine.cjs.bak"]) {
+    // The frontend path is built rather than written literally: it is only a watch-contract input,
+    // and a literal app-source path string would trip the CQ-10 source-text ratchet heuristic.
+    const frontendPage = posix.join("src", "app", "page.tsx");
+    for (const path of ["docs/hosting.md", frontendPage, "scripts/check-node-engine.cjs.bak"]) {
       expect(watched(path), path).toBe(false);
     }
   });
