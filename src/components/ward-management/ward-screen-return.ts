@@ -19,18 +19,19 @@ export function authorisedScreenReturn(raw: string, access: WardAccess, places: 
 
 /** Call after session cleanup. The next account must still pass its own access check. */
 export function rememberScreenReturn(raw: string): void {
-  memory = safeScreenReturn(raw) ?? "/ward-flow";
+  memory = undefined;
+  const path = safeScreenReturn(raw) ?? "/ward-flow";
   try {
-    sessionStorage.setItem(KEY, memory);
+    sessionStorage.setItem(KEY, path);
   } catch {
-    /* A memory-only screen is safe too. */
+    memory = path; // A memory-only screen is safe too, used only when storage could not hold it.
   }
 }
 
 export function takeScreenReturn(): string | undefined {
   let path = memory;
   try {
-    path = sessionStorage.getItem(KEY) ?? path;
+    path = sessionStorage.getItem(KEY) ?? memory;
     sessionStorage.removeItem(KEY);
   } catch {
     /* Memory fallback. */
