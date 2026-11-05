@@ -36,6 +36,7 @@ import {
   StatusGlyph,
   useOptionalToast,
 } from "@/components/wf";
+import { perthWeekdayTime } from "@/components/ward-management/ward-clock";
 import home from "@/components/ward-management/ward/ward-home-tab.module.css";
 import { ANSWERED, EXTRA, REFERRALS, SENT, STAFF, type DemoReferral } from "./midland-demo";
 import { Person, Tag, initialsOf } from "./parts";
@@ -820,15 +821,7 @@ export function TeamReferrals() {
                         <Tag tone="success">Accepted</Tag>
                       </td>
                       <td>{decisions[r.id]!.line}</td>
-                      <td>
-                        You ·{" "}
-                        {new Date(decisions[r.id]!.at).toLocaleString("en-AU", {
-                          weekday: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: false,
-                        })}
-                      </td>
+                      <td>You · {perthWeekdayTime(new Date(decisions[r.id]!.at))}</td>
                     </tr>
                   ))}
                   {ANSWERED.map((s) => (

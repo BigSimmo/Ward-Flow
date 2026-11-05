@@ -7,6 +7,7 @@
  */
 
 import { useSyncExternalStore } from "react";
+import { perthIsoDay } from "@/components/ward-management/ward-clock";
 
 export const MIDLAND_DECISIONS_KEY = "ward-flow:midland-decisions:v1";
 
@@ -116,11 +117,15 @@ function midlandContacts(all: Record<string, MidlandDecision>): MidlandContact[]
     .sort((a, b) => b.at - a.at);
 }
 
-/** Contacts recorded on `today`'s local day, newest first: Today's log and the Act-now row are today's only. */
+/**
+ * Contacts recorded on `today`'s Perth day, newest first: Today's log and the Act-now row are today's
+ * only. The Perth calendar, not the browser's (CL-3, 5 Nov 2026), so a Sydney or New York browser
+ * does not keep yesterday evening's Perth contact as today's.
+ */
 export function todaysMidlandContacts(
   all: Record<string, MidlandDecision>,
   today: Date = new Date(),
 ): MidlandContact[] {
-  const day = today.toDateString();
-  return midlandContacts(all).filter((c) => new Date(c.at).toDateString() === day);
+  const day = perthIsoDay(today);
+  return midlandContacts(all).filter((c) => perthIsoDay(new Date(c.at)) === day);
 }

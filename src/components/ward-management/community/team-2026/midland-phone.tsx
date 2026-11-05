@@ -21,6 +21,7 @@ import {
   buttonClass,
   registerWfBandHero,
 } from "@/components/wf";
+import { perthWeekdayTime } from "@/components/ward-management/ward-clock";
 import phone from "../community-team-phone.module.css";
 import type { CommunityTeamSection } from "../community-screen-hero";
 import {
@@ -588,12 +589,7 @@ function ReferralsSection({ open }: { open: (index: number) => void }) {
                     u: r.u,
                     meta: `${r.ask} · You`,
                     value: decisions[r.id]!.line,
-                    time: new Date(decisions[r.id]!.at).toLocaleString("en-AU", {
-                      weekday: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: false,
-                    }),
+                    time: perthWeekdayTime(new Date(decisions[r.id]!.at)),
                   })),
                   ...ANSWERED.map((a) => ({ n: a.n, u: a.u, meta: `${a.ask} · ${a.by}`, value: a.ans, time: a.when })),
                 ]

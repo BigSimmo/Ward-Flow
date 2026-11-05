@@ -11,7 +11,7 @@ import { ArrowLeftRight, List, Phone, Users } from "lucide-react";
 import { Button, Card, CardHead, Count, Segmented, SrOnly, StatusGlyph, type WfTone } from "@/components/wf";
 import home from "@/components/ward-management/ward/ward-home-tab.module.css";
 import { CLIENTS, DEMO_FIGURES, REFERRALS, SENT, STAFF, shortName } from "./midland-demo";
-import { clockTime } from "@/components/ward-management/ward-saved-at-toast";
+import { perthClockTime } from "@/components/ward-management/ward-clock";
 import { openReferrals, recordMidlandContact, todaysMidlandContacts, useMidlandDecisions } from "./midland-decisions";
 import { Initials } from "./parts";
 import t from "./team-2026.module.css";
@@ -163,7 +163,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
     ...contacts.map(
       (c) =>
         [
-          clockTime(new Date(c.at)),
+          perthClockTime(new Date(c.at)),
           "Contact recorded",
           `${c.about === "a" ? "Thornbury, Cleo" : "Team contact"} · by Community`,
         ] as const,
@@ -284,7 +284,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                       tone={cleoContact ? "success" : "danger"}
                       title={
                         cleoContact
-                          ? `Contact recorded at ${clockTime(new Date(cleoContact.at))}`
+                          ? `Contact recorded at ${perthClockTime(new Date(cleoContact.at))}`
                           : "7-day follow-up due today"
                       }
                       name="Thornbury, Cleo"
