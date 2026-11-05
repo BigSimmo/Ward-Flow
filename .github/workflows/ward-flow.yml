@@ -7,7 +7,8 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main]
-  merge_group: null
+  merge_group:
+    types: [checks_requested]
   workflow_dispatch: null
   schedule:
     - cron: 0 18 * * *
@@ -886,6 +887,7 @@ jobs:
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
+          WARD_BUDGET_MAIN_SHA: ${{ github.event.merge_group.base_sha }}
         run: node scripts/ward-ci-public/budget-gate.mjs
       # ward-flow-budget-heal.yml reads this when main goes over budget and opens a trim issue.
       - name: Keep main's phone script measurements for the budget trim issue
