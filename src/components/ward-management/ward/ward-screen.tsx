@@ -83,6 +83,7 @@ import { unitHealthService } from "@/components/ward-management/ward-service-sco
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import { plural } from "@/components/ward-management/ward-plural";
 import { CheckingFoot, durMinutes, Menu, useIsPhone, useOptionalToast } from "@/components/wf";
+import { clockTime, savedAtToast } from "@/components/ward-management/ward-saved-at-toast";
 import { useActionToast } from "@/components/ward-management/use-action-toast";
 import { useWardUnitQueues } from "./use-ward-unit-queues";
 import styles from "./ward.module.css";
@@ -1557,7 +1558,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
     // stops *this* caller misusing the event — it is what stops any other call site writing to a
     // unit it did not claim to be acting as, and what puts that claim on the event where the
     // reducer can compare it.
-    raise("CONFIRM_CAPACITY", {
+    return raise("CONFIRM_CAPACITY", {
       unitId: wardUnitId,
       actingUnitId: unitId,
       value: Math.floor(parsed),
@@ -1574,7 +1575,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       warnToast(`Enter a whole number from 0 to ${unit.beds} beds.`);
       return;
     }
-    submitCapacity();
+    // WF-47: say on screen that the beds were saved, and when.
+    completeCommand(
+      "capacity-rollup",
+      () => submitCapacity(),
+      (outcome) => {
+        const failure = wardCommandFailure(outcome);
+        if (failure) warnToast(failure);
+        else savedAtToast(toast, `Beds confirmed: ${parsed} of ${unit.beds}`);
+      },
+    );
   }
 
   function handleConfirmBedsAndMorningRollup() {
@@ -1605,7 +1615,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         }
         const confirmed = () =>
           setToastMessage(
-            `Capacity and morning bed numbers confirmed (due ${morningRollupTimeLabel}): ${plural(releasesCountedToday.length, "discharge", "discharges")} planned today.`,
+            `Capacity and morning bed numbers confirmed at ${clockTime()} (due ${morningRollupTimeLabel}): ${plural(releasesCountedToday.length, "discharge", "discharges")} planned today.`,
           );
         if (isRollupConfirmedToday) {
           confirmed();

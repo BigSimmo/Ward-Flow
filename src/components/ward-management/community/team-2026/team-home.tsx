@@ -11,6 +11,7 @@ import { ArrowLeftRight, List, Phone, Users } from "lucide-react";
 import { Button, Card, CardHead, Count, Segmented, SrOnly, StatusGlyph, type WfTone } from "@/components/wf";
 import home from "@/components/ward-management/ward/ward-home-tab.module.css";
 import { CLIENTS, DEMO_FIGURES, REFERRALS, SENT, STAFF, shortName } from "./midland-demo";
+import { openReferrals, useMidlandDecisions } from "./midland-decisions";
 import { Initials } from "./parts";
 import t from "./team-2026.module.css";
 
@@ -149,6 +150,7 @@ const ADMITTED_THIS_WEEK = [
 ];
 
 export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
+  const decisions = useMidlandDecisions();
   const [list, setList] = useState<"todo" | "log">("todo");
   const [flow, setFlow] = useState<"ref" | "adm" | "dis">("ref");
   const f = DEMO_FIGURES;
@@ -420,7 +422,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                 value={flow}
                 onChange={setFlow}
                 items={[
-                  { id: "ref", label: "Referrals", count: REFERRALS.length },
+                  { id: "ref", label: "Referrals", count: openReferrals(REFERRALS, decisions).length },
                   { id: "adm", label: "Admitted", count: ADMITTED_THIS_WEEK.length },
                   { id: "dis", label: "Leaving", count: 4 },
                 ]}
@@ -430,7 +432,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
               {flow === "ref" ? (
                 <>
                   <FlowGroup title="Awaiting your answer">
-                    {REFERRALS.map((r) => (
+                    {openReferrals(REFERRALS, decisions).map(({ r }) => (
                       <FlowRow
                         key={r.id}
                         title={r.n}

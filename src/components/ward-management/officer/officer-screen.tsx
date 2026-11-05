@@ -45,7 +45,7 @@ import {
 import { transportLeg } from "@/components/ward-management/ward-derivations";
 import { movementUmrn, resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { formatDateOfBirth } from "@/components/ward-management/ward-patients";
-import { dayOf, formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -75,6 +75,8 @@ import { SYNTHETIC_COPY_LINE } from "@/components/ward-management/referrals/refe
 import {
   type HighlightPill,
   type HistoryTab,
+  arrivedSinceStartOfDay,
+  arrivalsAxis,
   type JobsTab,
   LEG_TONE,
   OFFICER_ACTION_REJECTION_LABELS,
@@ -423,7 +425,8 @@ export function OfficerScreen() {
   // Delivered today: closed jobs leave the live list and land here, newest first.
   const deliveredToday = movements
     .filter(
-      (movement) => movement.transport?.arrivedAt !== undefined && dayOf(movement.transport.arrivedAt) === dayOf(now),
+      (movement) =>
+        movement.transport?.arrivedAt !== undefined && arrivedSinceStartOfDay(movement.transport.arrivedAt, now),
     )
     .sort((a, b) => b.transport!.arrivedAt! - a.transport!.arrivedAt!);
 
@@ -645,12 +648,12 @@ export function OfficerScreen() {
     })
     .filter((item): item is { movement: Movement; eta: Instant; booked: boolean } => item !== undefined)
     .sort((a, b) => a.eta - b.eta);
-  const arrivalsStart = Math.min(now, ...arrivals.map((item) => item.eta));
-  const arrivalsEnd = Math.max(now, ...arrivals.map((item) => item.eta));
-  const arrivalsSpan = Math.max(arrivalsEnd - arrivalsStart, 1);
-  const arrivalsLeft = (at: Instant) => `${((at - arrivalsStart) / arrivalsSpan) * 100}%`;
-  const hourTicks: Instant[] = [];
-  for (let tick = Math.ceil(arrivalsStart / 60) * 60; tick <= arrivalsEnd; tick += 60) hourTicks.push(tick);
+  // WF-09: the axis is clamped to now +/-48h with at most a dozen labels; a job eight days late
+  // used to draw ~200 hourly labels and was the suspected cause of the tab crash.
+  const { left: arrivalsLeft, ticks: hourTicks } = arrivalsAxis(
+    now,
+    arrivals.map((item) => item.eta),
+  );
   const upcoming = arrivals.filter((item) => item.eta >= now).length;
   const firstUpcoming = arrivals.findIndex((item) => item.eta >= now);
 
