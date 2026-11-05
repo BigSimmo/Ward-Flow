@@ -544,7 +544,12 @@ export function PlannedAdmissionsPanel({
           <Button variant="sec" size="sm" icon={CalendarPlus} onClick={openBook} data-testid="ward-planned-book">
             Book
           </Button>
-        ) : undefined
+        ) : (
+          // WF-07 (Josh, 5 Nov 2026): a desk the booking rule refuses is told so, not left guessing.
+          <span className={styles.none} data-testid="ward-planned-book-role">
+            Your role cannot book planned admissions.
+          </span>
+        )
       }
     >
       <div className={listSlot ? undefined : styles.body}>
