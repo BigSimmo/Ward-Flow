@@ -96,6 +96,8 @@ describe("Governance as the access admin", () => {
       expect(screen.queryByRole("button", { name: /Reports/ })).not.toBeInTheDocument();
       expect(screen.queryByRole("button", { name: /Review next/ })).not.toBeInTheDocument();
       expect(screen.getByRole("link", { name: "Open the Access log" })).toBeInTheDocument();
+      // WF-46: phone Audit trail tab matches the desktop label (was "Reviewed").
+      expect(screen.getByRole("radio", { name: /^Audit trail/ })).toBeInTheDocument();
     });
   });
 });

@@ -80,7 +80,9 @@ describe("own-place Statistics for ward, ED and team desks (D-80)", () => {
     expect(opens(edDesk, `${BASE}/statistics/ed/${otherEd!.id}`)).toBe(false);
     expect(opens(teamDesk, `${BASE}/statistics/community/${otherTeam!.id}`)).toBe(false);
     for (const desk of [wardDesk, edDesk, teamDesk]) {
-      for (const section of ["", "/overview", "/compare", "/weekly", "/wards", "/eds", "/teams", "/services"]) {
+      // WF-42: bare /statistics opens so the page can redirect to the desk's own place.
+      expect(opens(desk, `${BASE}/statistics`), `${desk.role} hub`).toBe(true);
+      for (const section of ["/overview", "/compare", "/weekly", "/wards", "/eds", "/teams", "/services"]) {
         expect(opens(desk, `${BASE}/statistics${section}`), `${desk.role} ${section}`).toBe(false);
       }
       // A desk never opens another kind of place's page either.

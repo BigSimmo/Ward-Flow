@@ -623,9 +623,16 @@ export function NextPhoneMenu({
   const { counts, shellRole } = useNextNavCounts();
   const deskRoleLabel = useDeskRoleLabel(shellRole);
   const accessAdmin = useEffectiveWardAccess().role === "admin";
-  const [open, setOpen] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [switcherOpen, setSwitcherOpen] = useState(false);
+  // WF-42: Menu / Create / switcher stay tied to the path they opened on, so a route change closes them.
+  const [openPath, setOpenPath] = useState<string | null>(null);
+  const [createPath, setCreatePath] = useState<string | null>(null);
+  const [switcherPath, setSwitcherPath] = useState<string | null>(null);
+  const open = openPath === pathname;
+  const createOpen = createPath === pathname;
+  const switcherOpen = switcherPath === pathname;
+  const setOpen = (next: boolean) => setOpenPath(next ? pathname : null);
+  const setCreateOpen = (next: boolean) => setCreatePath(next ? pathname : null);
+  const setSwitcherOpen = (next: boolean) => setSwitcherPath(next ? pathname : null);
   // The sheets mount on the first open, not on page load: mounting the dynamic component would fetch
   // its chunk straight away instead of when the browser is idle.
   const [sheetsMounted, setSheetsMounted] = useState(false);
