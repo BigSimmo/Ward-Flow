@@ -455,6 +455,14 @@ function WardHelpSheetView({
   const searching = query.trim().length > 0;
   const suggesting = !searching && focused;
   const inView = view === "desk" || view === "keys" || (view === "checklist" && Boolean(checklist));
+  // A checklist opens as a view inside Help, from the job list or a search with no answer; the
+  // search words are cleared so the checklist, not the results, shows.
+  const openChecklist = (id: string) => {
+    setQuery("");
+    setFocused(false);
+    setChecklist(id);
+    onView("checklist");
+  };
 
   return (
     <Sheet
@@ -626,6 +634,7 @@ function WardHelpSheetView({
               setLiteral(true);
               typed(words);
             }}
+            onOpenChecklist={openChecklist}
           />
         </div>
       ) : suggesting ? (
@@ -680,10 +689,7 @@ function WardHelpSheetView({
               openTask={task}
               screenName={screenName}
               showMeOn={showMeOn}
-              onOpenChecklist={(id) => {
-                setChecklist(id);
-                onView("checklist");
-              }}
+              onOpenChecklist={openChecklist}
             />
           ) : null}
           {tab === "questions" ? <HelpQuestions screen={screen} /> : null}
