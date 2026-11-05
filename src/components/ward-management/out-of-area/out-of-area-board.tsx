@@ -751,20 +751,22 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   }
 
   /* ---- desktop ---- */
-  const pill = (key: HighlightKey, label: string, tone?: WfTone) => (
-    <button
-      key={key}
-      type="button"
-      className={styles.pill}
-      aria-pressed={highlight === key}
-      data-testid={`ward-out-of-area-highlight-${key}`}
-      onClick={() => toggleHighlight(key)}
-    >
-      <span className={styles.pillCount}>{countOf(key)}</span>
-      {tone ? <StatusGlyph tone={tone} size={9} /> : null}
-      {label}
-    </button>
-  );
+  // A highlight with nobody in it is hidden (design audit B19), unless it is the one switched on.
+  const pill = (key: HighlightKey, label: string, tone?: WfTone) =>
+    countOf(key) === 0 && highlight !== key ? null : (
+      <button
+        key={key}
+        type="button"
+        className={styles.pill}
+        aria-pressed={highlight === key}
+        data-testid={`ward-out-of-area-highlight-${key}`}
+        onClick={() => toggleHighlight(key)}
+      >
+        <span className={styles.pillCount}>{countOf(key)}</span>
+        {tone ? <StatusGlyph tone={tone} size={9} /> : null}
+        {label}
+      </button>
+    );
 
   const planCard = selected ? (
     <Card
