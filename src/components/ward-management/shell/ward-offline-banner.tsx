@@ -104,6 +104,7 @@ function ExecutiveOfflineNotice() {
       className={styles.banner}
       role="status"
       data-testid="ward-offline-banner"
+      data-wf-offline-note=""
       style={fullscreenElement ? FULLSCREEN_PLACEMENT : undefined}
     >
       {"You're offline. This report is not updating."}
@@ -124,6 +125,7 @@ function WardOfflineNotice() {
       className={styles.banner}
       role="status"
       data-testid="ward-offline-banner"
+      data-wf-offline-note=""
       style={fullscreenElement ? FULLSCREEN_PLACEMENT : undefined}
     >
       {"You're offline. This screen keeps working, but nothing is updating. "}

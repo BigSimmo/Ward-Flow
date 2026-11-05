@@ -429,6 +429,13 @@
   display: none !important;
 }
 
+/* The offline note itself is drawn into the body (ST8), outside the holder, so the rule above only
+   reaches its hidden marker. While a higher note sits before that marker, hide the drawn note too,
+   so one note still shows at a time. */
+:global(body):has(.bannerHolder > * + [data-wf-offline-slot]) > :global([data-wf-offline-note]) {
+  display: none !important;
+}
+
 /* Over a hero band (header at rest in ink) the notes sit on the band's top colour, so header, notes
    and hero read as one surface and the page keeps its band (wf/band.ts, Josh 27 Oct 2026). Once the
    page scrolls the header turns light and the holder goes back to the page ground. */
