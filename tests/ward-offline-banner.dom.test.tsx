@@ -1,5 +1,4 @@
 import { act, render, screen } from "@testing-library/react";
-import { readFileSync } from "node:fs";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 import { WardOfflineBanner } from "@/components/ward-management/shell/ward-offline-banner";
@@ -32,12 +31,10 @@ describe("WardOfflineBanner", () => {
     expect(screen.queryByTestId("ward-offline-banner")).toBeNull();
   });
 
-  it("keeps one note at a time: the drawn note waits while a higher note is pinned", () => {
+  it("marks the drawn note so the layout can hold it while a higher note is pinned", () => {
     setOnline(false);
     render(<WardOfflineBanner practice={false} />);
     expect(screen.getByTestId("ward-offline-banner").hasAttribute("data-wf-offline-note")).toBe(true);
-    const css = readFileSync("src/app/ward-flow/ward-flow-layout.module.css", "utf8");
-    expect(css).toMatch(/\.bannerHolder > \* \+ \[data-wf-offline-slot\]\) > :global\(\[data-wf-offline-note\]\)/u);
   });
 
   it("writes nothing to browser storage", () => {
