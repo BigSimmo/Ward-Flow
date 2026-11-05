@@ -89,9 +89,14 @@ describe("scenario import ownership", () => {
     mount();
     let first!: ReturnType<NonNullable<typeof current.loadScenarioFile>>;
     let second!: ReturnType<NonNullable<typeof current.loadScenarioFile>>;
-    act(() => {
+    // The file text is awaited before the read starts, so let the older read begin before the newer import.
+    await act(async () => {
       first = current.loadScenarioFile!("first");
+      await vi.waitFor(() => expect(reads.has("first")).toBe(true));
+    });
+    await act(async () => {
       second = current.loadScenarioFile!("second");
+      await vi.waitFor(() => expect(reads.has("second")).toBe(true));
     });
     await act(async () => {
       reads.get("second")!(imported(15));
@@ -108,10 +113,11 @@ describe("scenario import ownership", () => {
   it("refuses a pending import after the local day is reset", async () => {
     mount();
     let pending!: ReturnType<NonNullable<typeof current.loadScenarioFile>>;
-    act(() => {
+    await act(async () => {
       pending = current.loadScenarioFile!("first");
-      current.resetDemoState();
+      await vi.waitFor(() => expect(reads.has("first")).toBe(true));
     });
+    act(() => current.resetDemoState());
     const generation = current.worldGeneration;
     await act(async () => {
       reads.get("first")!(imported(30));
