@@ -19,7 +19,7 @@ const FIXED_HOMES: Partial<Record<TourRole, string>> = {
   officer: "/ward-flow/transport/officer",
   bed_manager: "/ward-flow/capacity",
   executive: "/ward-flow/statistics",
-  // Access admin lands on Settings; the tour itself walks Governance.
+  // WF-46: Access admin lands on Governance (roles and review), not the long Settings form.
   admin: "/ward-flow/governance",
 };
 

@@ -103,13 +103,15 @@ export const PAIRS = [
 export const SUPERSEDED = ["patient-search-console.html", "patient-search-working.html"];
 
 /**
- * Complete 56-route roster mapping every commissioned Ward Flow route (54 under
+ * Complete 58-route roster mapping every commissioned Ward Flow route (56 under
  * `/ward-flow/**` plus `/ward-flow-sign-in` and `/mockups/ward-flow-digest`)
  * to its screen folder and current React component file relative to
  * `src/components/ward-management/` (`null` for server redirect stubs and the HTML digest route handler).
  */
 export const ROUTE_COMPONENTS = [
   { route: "/", folder: "coordinator", react: "coordinator/coordinator-screen.tsx" },
+  // WF-42: typed URL opens the Activity panel then settles on home.
+  { route: "/activity", folder: "coordinator", react: null },
   { route: "/alerts", folder: "alerts", react: "alerts/alerts-screen.tsx" },
   { route: "/bed-meeting", folder: "bed-meeting", react: "bed-meeting/bed-meeting-tv.tsx" },
   { route: "/bed-meeting/agenda", folder: "bed-meeting", react: "bed-meeting/bed-meeting-agenda-screen.tsx" },
@@ -127,6 +129,8 @@ export const ROUTE_COMPONENTS = [
   { route: "/exceptions", folder: "delays", react: null },
   { route: "/governance", folder: "governance", react: "ward-management-modes.tsx" },
   { route: "/handover", folder: "handover", react: "handover/handover-page.tsx" },
+  // WF-42: typed URL opens Help then settles on home.
+  { route: "/help", folder: "coordinator", react: null },
   { route: "/hub", folder: "hub", react: "hub/hub-screen.tsx" },
   { route: "/hub/catchments", folder: "community", react: "community/community-index.tsx" },
   { route: "/legal-forms", folder: "legal-forms", react: "legal-forms/legal-forms-screen.tsx" },

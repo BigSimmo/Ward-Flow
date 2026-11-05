@@ -52,6 +52,10 @@ export type ReferralDraftAnswers = {
   legalFormDueAtTime: string;
 };
 
+/** WF-20: collected journey — ED/community cannot stop transport; name the owner. */
+const COLLECTED_ASK_COORDINATOR =
+  "Collected — ask the bed coordinator to stop transport. The bed stays pulled until released.";
+
 /**
  * Why the decline confirm is unavailable, or `undefined` once a reason has been chosen. Pure and
  * module-level so the wording lives in one place rather than being spelled twice inside JSX.
@@ -209,7 +213,7 @@ export function communityReferralBlockedReason(movement: Movement): string | und
     // P2-5 (Ward Lead audit, 2026-09-17): no internal event name in user-facing text. The stop
     // control itself waits on an owner question (see the build plan), so this names who to
     // contact rather than a control this screen does not offer.
-    return `The patient has been collected. Ask the coordinator to stop the journey, using the "Stop transport" control on the console; the bed stays pulled until it is released.`;
+    return COLLECTED_ASK_COORDINATOR;
   }
   const isOnForm = !!movement.legalForm || (movement.legalStatus !== undefined && movement.legalStatus !== "Voluntary");
   if (isOnForm) {
@@ -236,7 +240,7 @@ export function edOutcomeBlockedReason(movement: Movement): string | undefined {
   if (movement.transport?.collectedAt !== undefined) {
     // P2-5 (Ward Lead audit, 2026-09-17): no internal event name in user-facing text — see
     // `communityReferralBlockedReason`'s own identical fix immediately above.
-    return `The patient has been collected. Ask the coordinator to stop the journey, using the "Stop transport" control on the console; the bed stays pulled until it is released.`;
+    return COLLECTED_ASK_COORDINATOR;
   }
   return undefined;
 }
@@ -380,7 +384,7 @@ export function withdrawReferralBlockedReason(movement: Movement, who?: string):
   // P2-5 (Ward Lead audit, 2026-09-17): no internal event name — see
   // `communityReferralBlockedReason`'s identical fix above.
   if (movement.transport?.collectedAt !== undefined) {
-    return `The patient has been collected. Ask the coordinator to stop the journey, using the "Stop transport" control on the console; the bed stays pulled until it is released.`;
+    return COLLECTED_ASK_COORDINATOR;
   }
   if (!movement.acceptedUnitId && movement.referredUnitIds.length === 0) {
     return `${who ?? "This patient"} holds no live referral to withdraw.`;

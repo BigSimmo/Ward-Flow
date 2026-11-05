@@ -737,6 +737,23 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* WF-41 (5 Nov 2026): live review saw the ED pressure table clip at ~610px of card width while
+   halves still ran two-up. Stack any half-grid that holds a pressure table through desktop widths
+   so Awaiting / 8h+ stay in view; keep overflow inside the wrap. */
+@media (max-width: 80rem) {
+  .halves:has(table[id="edPressureTable"]),
+  .halves:has(table[id="wardPressureTable"]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tableWrap:has(> table[id="edPressureTable"]),
+  .tableWrap:has(> table[id="wardPressureTable"]) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 @media (max-width: 560px) {
   .body {
     gap: 10px;

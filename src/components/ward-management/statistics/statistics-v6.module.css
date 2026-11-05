@@ -914,6 +914,26 @@
   flex: 1 1 auto;
 }
 
+/* WF-41 (5 Nov 2026): at tablet widths the ED pressure table sat in a half column and clipped the
+   8h+ cells. Stack earlier, keep horizontal scroll inside the card, and never let the table widen
+   the page. */
+@media (max-width: 64rem) {
+  .grid2:has(table[id="wardPressureTable"]),
+  .grid2:has(table[id="edPressureTable"]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tableWrap > table[id="edPressureTable"],
+  .tableWrap > table[id="wardPressureTable"] {
+    min-width: 0;
+  }
+
+  .tableWrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 /* Layout sweep STATS-03: up to 1600px the ward and ED pressure tables take a full row each, so the
    Awaiting and 24h+ columns stay in view instead of scrolling out of a half column. */
 @media (max-width: 100rem) {

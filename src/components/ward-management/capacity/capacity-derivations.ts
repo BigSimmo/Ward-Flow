@@ -405,7 +405,7 @@ type NetworkWardInputs = {
   freeingByUnit: Map<string, number>;
 };
 /** WF-16 shared source: release plans due today (not the forecast next-24h discharge count). */
-export function releasesFreeingToday(releases: BedRelease[] | undefined, now: Instant): Map<string, number> {
+function releasesFreeingToday(releases: BedRelease[] | undefined, now: Instant): Map<string, number> {
   const freeingByUnit = new Map<string, number>();
   for (const release of releases ?? []) {
     // ⚠️ "discharged", NOT "released". The third bed state was RENAMED on 2026-08-30 because
@@ -420,11 +420,7 @@ export function releasesFreeingToday(releases: BedRelease[] | undefined, now: In
   return freeingByUnit;
 }
 /** WF-16 shared source: admissions with expectedDischargeAt today (distinct from beds freeing / forecast). */
-export function dischargesDueToday(
-  unitId: string,
-  admissions: Admission[] | undefined,
-  now: Instant,
-): number | undefined {
+function dischargesDueToday(unitId: string, admissions: Admission[] | undefined, now: Instant): number | undefined {
   return admissions === undefined
     ? undefined
     : admissions.filter(
@@ -512,6 +508,24 @@ function networkWardRow(unit: Unit, inputs: NetworkWardInputs): NetworkWardRow {
   };
 }
 
+/** Sum of `releasesFreeingToday` for the given units (or every unit with a count) — Capacity hero "Beds freeing today" (WF-16). */
+export function bedsFreeingTodayTotal(
+  releases: BedRelease[] | undefined,
+  now: Instant,
+  unitIds?: ReadonlySet<string>,
+): number | undefined {
+  if (releases === undefined) return undefined;
+  const byUnit = releasesFreeingToday(releases, now);
+  if (unitIds === undefined) {
+    let total = 0;
+    for (const count of byUnit.values()) total += count;
+    return total;
+  }
+  let total = 0;
+  for (const unitId of unitIds) total += byUnit.get(unitId) ?? 0;
+  return total;
+}
+
 /**
  * What a ward's "freeing today" cell prints — the one place that decides it.
  *
@@ -534,24 +548,6 @@ function networkWardRow(unit: Unit, inputs: NetworkWardInputs): NetworkWardRow {
  * must survive any rewording is the PROPERTY, which is what the tests assert: the absence reads as
  * a sentence and never as a figure.
  */
-/** Sum of `releasesFreeingToday` for the given units (or every unit with a count) — Capacity hero "Beds freeing today" (WF-16). */
-export function bedsFreeingTodayTotal(
-  releases: BedRelease[] | undefined,
-  now: Instant,
-  unitIds?: ReadonlySet<string>,
-): number | undefined {
-  if (releases === undefined) return undefined;
-  const byUnit = releasesFreeingToday(releases, now);
-  if (unitIds === undefined) {
-    let total = 0;
-    for (const count of byUnit.values()) total += count;
-    return total;
-  }
-  let total = 0;
-  for (const unitId of unitIds) total += byUnit.get(unitId) ?? 0;
-  return total;
-}
-
 export function freeingCellText(freeing: number | undefined): string {
   /*
    * A known zero reads as the digit 0, like every other count on Capacity (Capacity issue 5, Josh,
