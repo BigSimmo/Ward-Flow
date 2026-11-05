@@ -1,6 +1,6 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X, ChevronRight } from "lucide-react";
 import { HOME_REGION_NOT_RECORDED, ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { useEffect, useMemo, useState } from "react";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
@@ -638,9 +638,7 @@ export function RecordPreview({
                 {linkedMovement ? (
                   <Link href={movementHref(linkedMovement.id)} className={styles.btnPrimary}>
                     <span>View movement</span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
+                    <ChevronRight size={12} strokeWidth={1.75} aria-hidden="true" />
                   </Link>
                 ) : (
                   <Link
@@ -870,9 +868,7 @@ export function RecordPreview({
           <div className={styles.dossierActionBar}>
             <Link href="/ward-flow/referrals" className={styles.btnPrimary}>
               <span>Intake board</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
+              <ChevronRight size={12} strokeWidth={1.75} aria-hidden="true" />
             </Link>
             {/* Contact Referrer and Cancel Referral are hidden until they work: they only ever said
                 "Not wired in this prototype." (overall review, 20 Oct 2026). */}
@@ -1099,9 +1095,7 @@ export function RecordPreview({
         <div className={styles.dossierActionBar}>
           <Link href={movementHref(movement.id)} className={styles.btnPrimary}>
             <span>View movement</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
+            <ChevronRight size={12} strokeWidth={1.75} aria-hidden="true" />
           </Link>
           <button
             type="button"

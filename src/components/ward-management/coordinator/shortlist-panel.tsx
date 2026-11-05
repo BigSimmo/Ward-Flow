@@ -4,7 +4,7 @@ import { securityWord } from "@/components/ward-management/ward-model-vocabulary
 import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { currentLegalDueAt, formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
 
-import { Check, CheckCircle2, CircleAlert, ChevronDown, ChevronUp, Info } from "lucide-react";
+import { Check, CircleCheck, CircleAlert, ChevronDown, ChevronUp, Info } from "lucide-react";
 import Link from "next/link";
 import { createPortal, flushSync } from "react-dom";
 import { movementHref, patientHref, unitHref } from "@/components/ward-management/shell/ward-facade";
@@ -2218,7 +2218,7 @@ export function ShortlistPanel({
                       {gateMark(gate) === "info" ? (
                         <Info aria-hidden="true" />
                       ) : gate.pass ? (
-                        <CheckCircle2 aria-hidden="true" className={styles.shortlistGateIconOk} />
+                        <CircleCheck aria-hidden="true" className={styles.shortlistGateIconOk} />
                       ) : (
                         <CircleAlert aria-hidden="true" className={styles.shortlistGateIconBad} />
                       )}

@@ -1188,7 +1188,7 @@ describe("Third Edition dropdown filters and yield strip", () => {
 
   it("yields matching live caseload when clicking quick query chips", () => {
     renderSearch();
-    const liveChip = screen.getByRole("button", { name: "● On this board" });
+    const liveChip = screen.getByRole("button", { name: "On this board" });
     fireEvent.click(liveChip);
 
     const yieldTotal = Number(screen.getByTestId("ward-patient-search-yield-total").textContent);

@@ -2,6 +2,7 @@
 // Copied from src/components/ward-management/referrals/referral-match-not-a-bed.tsx (Referrals redesign).
 // Final round (31 Oct 2026): reason and recipient choices use the kit Select, same options, nothing pre-chosen (D-71).
 
+import { Check } from "lucide-react";
 import { type Dispatch, type ReactNode } from "react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { RadioGroup } from "@/components/wf";
@@ -343,19 +344,7 @@ export function renderNotABedPanel({
                 data-placement-action
                 onClick={() => setEdAcceptConfirmOpen(true)}
               >
-                <svg
-                  viewBox="0 0 24 24"
-                  width="15"
-                  height="15"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden="true"
-                >
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
+                <Check size={15} strokeWidth={1.75} aria-hidden="true" />
                 <span>Accept presentation</span>
               </button>
             ) : (
@@ -454,19 +443,7 @@ export function renderNotABedPanel({
               data-placement-action
               onClick={handleCommunityAccept}
             >
-              <svg
-                viewBox="0 0 24 24"
-                width="15"
-                height="15"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
+              <Check size={15} strokeWidth={1.75} aria-hidden="true" />
               <span>Accept referral</span>
             </button>
           </div>

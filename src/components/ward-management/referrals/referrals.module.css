@@ -1073,13 +1073,11 @@
 
 .matchRowAccepts {
   border-color: var(--success-border);
-  border-left: 0.25rem solid var(--ward-success);
   background: var(--ward-success-soft);
   box-shadow: var(--lift-sm);
 }
 
 .matchRowDeclines {
-  border-left: 0.25rem solid var(--ward-border-strong);
   background: var(--surface-raised);
 }
 
@@ -1261,7 +1259,6 @@
   padding: var(--ward-space-4) var(--ward-space-8);
   border-radius: var(--radius-sm);
   background: var(--surface-subtle);
-  border-left: 0.1875rem solid var(--ward-warning);
   color: var(--ink);
   font-size: var(--t-0);
   font-weight: 600;
@@ -3374,7 +3371,6 @@
   border-radius: var(--r2, 6px);
   background: var(--surface);
   border: 1px solid var(--line);
-  border-left: 4px solid var(--line-strong);
   padding: 12px 14px;
   display: flex;
   flex-direction: column;
@@ -3393,17 +3389,14 @@
 }
 
 .unitCardReady {
-  border-left-color: var(--good);
   background: var(--surface);
 }
 
 .unitCardTurnaround {
-  border-left-color: var(--warn);
   background: var(--surface);
 }
 
 .unitCardIneligible {
-  border-left-color: var(--danger);
   background: var(--surface-2);
 }
 
@@ -4484,8 +4477,7 @@
 
 .screen[data-ward-design="v6"] .matchReasonText {
   padding: var(--wf-s-1) var(--wf-s-2);
-  border-left: 2px solid var(--wf-warning);
-  border-radius: 0 var(--wf-r-sm) var(--wf-r-sm) 0;
+  border-radius: var(--wf-r-sm);
   background: var(--wf-surface-2);
   color: var(--wf-ink-1);
   font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
