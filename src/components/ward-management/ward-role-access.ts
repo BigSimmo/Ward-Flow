@@ -523,15 +523,14 @@ export function screenDecision(
       return { open: false, why: "place" };
   }
   const ownSection = OWN_STATISTICS_SECTION[access.role];
-  if (address.screen === "statistics" && ownSection !== undefined) {
-    // WF-42: bare /statistics has no section. Let the page redirect to the desk's own place
-    // instead of showing "Not part of your role" while the scoped link still works.
-    if (address.statisticsSection === undefined) {
-      /* open — StatisticsOwnRedirect replaces to ownStatisticsHrefFor */
-    } else if (address.statisticsSection !== ownSection) {
-      return { open: false, why: "place" };
-    }
-  }
+  // WF-42: bare /statistics has no section; StatisticsOwnRedirect sends the desk to its own place.
+  if (
+    address.screen === "statistics" &&
+    ownSection !== undefined &&
+    address.statisticsSection !== undefined &&
+    address.statisticsSection !== ownSection
+  )
+    return { open: false, why: "place" };
   // A desk held to one ED or one team never opens the index of every ED or team (review on PR #330).
   if (address.screen === "ed" && address.edId === undefined && scope.kind === "ed")
     return { open: false, why: "place" };

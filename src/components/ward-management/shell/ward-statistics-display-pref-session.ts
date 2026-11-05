@@ -20,7 +20,7 @@ function readRailOpen(): boolean {
   }
 }
 
-export function snapshotDisplayPrefs(): DisplayPrefBaseline {
+function snapshotDisplayPrefs(): DisplayPrefBaseline {
   return {
     theme: readStoredThemePreference(),
     glare: readStoredGlarePreference(),
@@ -28,7 +28,7 @@ export function snapshotDisplayPrefs(): DisplayPrefBaseline {
   };
 }
 
-export function restoreDisplayPrefs(snap: DisplayPrefBaseline) {
+function restoreDisplayPrefs(snap: DisplayPrefBaseline) {
   setThemePreference(snap.theme);
   setGlarePreference(snap.glare);
   setRailOpenPreference(snap.railOpen);

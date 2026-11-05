@@ -97,12 +97,10 @@ export function dispatchPermission(role: WardFlowRole, eventType: WardFlowEventT
  * named whenever they may take the step; otherwise the owning roles are. Undefined when allowed.
  */
 export function roleOwnerHint(role: WardFlowRole, eventType: WardFlowEventType): string | undefined {
-  if (canDispatch(role, eventType)) return undefined;
   const owners = EVENT_ROLE[eventType].filter((owner) => owner !== "demo" && owner !== role);
-  if (owners.length === 0) return undefined;
-  if (owners.includes("coordinator")) return "Ask the bed coordinator to do this.";
-  const named = rolesOnlyReason(owners).replace(/ only$/, "");
-  return `Ask the ${named.charAt(0).toLowerCase()}${named.slice(1)} to do this.`;
+  if (canDispatch(role, eventType) || !owners.length) return undefined;
+  const named = owners.includes("coordinator") ? "Bed coordinator" : rolesOnlyReason(owners).slice(0, -5);
+  return `Ask the ${named[0].toLowerCase()}${named.slice(1)} to do this.`;
 }
 
 /** "Ward or coordinator only. Ask the bed coordinator to do this." The reason alone when nobody else owns it. */

@@ -352,7 +352,7 @@ export function PlannedAdmissionsPanel({
       if (draft.who === "initials") {
         initials = normalisePlannedAdmissionInitials(draft.initials);
         if (initials === null) {
-          setRefusal(plannedInitialsRefusal(draft.initials) ?? "Initials are one to three letters.");
+          setRefusal(plannedInitialsRefusal(draft.initials));
           return;
         }
       } else {
@@ -484,7 +484,7 @@ export function PlannedAdmissionsPanel({
     : form?.mode === "book" && draft.who === "patient" && draft.patientId === ""
       ? "Choose the patient first"
       : form?.mode === "book" && draft.who === "initials" && normalisePlannedAdmissionInitials(draft.initials) === null
-        ? (plannedInitialsRefusal(draft.initials) ?? "Enter one to three letters for the initials.")
+        ? (plannedInitialsRefusal(draft.initials) ?? undefined)
         : draft.reason === ""
           ? "Choose a reason first"
           : draft.unitId === ""

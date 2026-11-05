@@ -1119,13 +1119,12 @@ export function normalisePlannedAdmissionInitials(value: unknown): string | null
  */
 export function plannedInitialsRefusal(value: string): string | null {
   if (normalisePlannedAdmissionInitials(value) !== null) return null;
-  const trimmed = value.trim();
-  if (trimmed === "") return "Enter one to three letters for the initials.";
-  if (/\d/.test(trimmed)) return "Initials are letters only — remove the number.";
-  const letters = trimmed.replace(/[\s.]/g, "");
-  if (letters.length > 3) return "Initials are at most three letters.";
-  if (letters.length === 0) return "Initials are one to three letters.";
-  return "Initials are one to three letters — use A–Z only.";
+  const letters = value.replace(/[\s.]/g, "");
+  return /\d/.test(letters)
+    ? "Initials are letters only — remove the number."
+    : letters.length > 3
+      ? "Initials are at most three letters."
+      : "Initials are one to three letters.";
 }
 
 /**

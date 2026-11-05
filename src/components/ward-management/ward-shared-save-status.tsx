@@ -96,7 +96,19 @@ export function WardSharedSaveStatus({
     setSawUnconfirmed(unconfirmedSave);
     if (!unconfirmedSave) setReloadWarningDismissed(false);
   }
-  const showReloadWarning = unconfirmedSave && !reloadWarningDismissed;
+  const reloadWarning = unconfirmedSave && !reloadWarningDismissed && (
+    <p className={styles.warning} data-testid="ward-shared-reload-warning">
+      {RELOAD_WARNING}{" "}
+      <button
+        type="button"
+        className={styles.action}
+        onClick={() => setReloadWarningDismissed(true)}
+        data-testid="ward-shared-reload-warning-dismiss"
+      >
+        Dismiss
+      </button>
+    </p>
+  );
   const stale = useSharedRefreshLate(connection.enabled, 5 * 60_000, false) && connection.receivedAt > 0;
   // Tier 1 item 4 (Josh, 4 Nov 2026): a refresh that is late but not yet failed used to show only on
   // pages with a Live chip. The strip now says when the board last updated, on every screen.
@@ -157,19 +169,7 @@ export function WardSharedSaveStatus({
     <>
       {freshness && <span> {freshness}</span>}
       {connection.error && <span> {connection.error}</span>}
-      {showReloadWarning && (
-        <p className={styles.warning} data-testid="ward-shared-reload-warning">
-          {RELOAD_WARNING}{" "}
-          <button
-            type="button"
-            className={styles.action}
-            onClick={() => setReloadWarningDismissed(true)}
-            data-testid="ward-shared-reload-warning-dismiss"
-          >
-            Dismiss
-          </button>
-        </p>
-      )}
+      {reloadWarning}
     </>
   );
   return (
@@ -190,19 +190,7 @@ export function WardSharedSaveStatus({
           {freshness && <span> {freshness}</span>}
           {connection.error && <span> {connection.error}</span>}
         </span>
-        {showReloadWarning && (
-          <p className={styles.warning} data-testid="ward-shared-reload-warning">
-            {RELOAD_WARNING}{" "}
-            <button
-              type="button"
-              className={styles.action}
-              onClick={() => setReloadWarningDismissed(true)}
-              data-testid="ward-shared-reload-warning-dismiss"
-            >
-              Dismiss
-            </button>
-          </p>
-        )}
+        {reloadWarning}
         {problem && (
           <span className={styles.end}>
             {!retrying && (connection.status === "unavailable" || late || stale) && (

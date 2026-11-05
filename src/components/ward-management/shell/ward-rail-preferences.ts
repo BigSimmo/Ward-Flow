@@ -63,17 +63,14 @@ export const useRailOpenStore = createBrowserStore(subscribeRailOpen, getRailOpe
 
 export function setRailOpenPreference(open: boolean) {
   // WF-31: statistics routes hold a display-pref scope — apply for this visit only, do not persist.
-  if (displayPrefScopeActive()) {
-    inMemoryFallback = open;
-    window.dispatchEvent(new Event(railOpenChangeEvent));
-    return;
-  }
-  try {
-    window.localStorage.setItem(RAIL_OPEN_STORAGE_KEY, open ? "open" : "closed");
-    inMemoryFallback = null;
-  } catch {
-    inMemoryFallback = open;
-  }
+  if (displayPrefScopeActive()) inMemoryFallback = open;
+  else
+    try {
+      window.localStorage.setItem(RAIL_OPEN_STORAGE_KEY, open ? "open" : "closed");
+      inMemoryFallback = null;
+    } catch {
+      inMemoryFallback = open;
+    }
   window.dispatchEvent(new Event(railOpenChangeEvent));
 }
 
