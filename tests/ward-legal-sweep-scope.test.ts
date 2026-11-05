@@ -1,4 +1,5 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { removePathSync } from "../scripts/retryable-fs.mjs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
@@ -10,7 +11,7 @@ const inputs = legalSweepInputs(".");
 const changed = (...files: string[]) => files.map((file) => ({ status: "M", file }));
 const fixtures: string[] = [];
 afterEach(() => {
-  for (const root of fixtures.splice(0)) rmSync(root, { recursive: true, force: true });
+  for (const root of fixtures.splice(0)) removePathSync(root, { recursive: true });
 });
 
 function fixture(overrides: Record<string, string | null> = {}) {
