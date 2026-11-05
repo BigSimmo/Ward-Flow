@@ -17,8 +17,9 @@ const RADIUS = 5;
 const SPACING = RADIUS * 2 + 3;
 const LANE = RADIUS * 2 + 2;
 const MIN_ROW = 44;
-/** A row never grows past seven lanes: a crowded row packs its lanes closer instead. */
-const MAX_LANES = 7;
+/** A row never grows past eleven lanes: a crowded row packs its lanes closer instead. Review 5 Nov
+ *  2026: at seven, Armadale's 23 waits near 0h shrank to 2px dots and read as one smear. */
+const MAX_LANES = 11;
 const ROW_PAD = 10;
 const AXIS_H = 24;
 const MIN_WIDTH = 280;

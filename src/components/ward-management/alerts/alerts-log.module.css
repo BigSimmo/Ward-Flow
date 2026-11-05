@@ -1,7 +1,20 @@
 /* AL2 (Josh, 3 Nov 2026): the Open view's filter chips and their empty line. */
 .filterRow {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
   padding: var(--wf-s-2) var(--wf-s-4);
   border-bottom: 1px solid var(--wf-line);
+}
+
+.filterRow > .filterChips {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.filterEnd {
+  display: flex;
+  flex: none;
 }
 
 .filterChips {
@@ -41,7 +54,12 @@
 /* Phone: one line of chips that scrolls inside its row, never the page. */
 @media (max-width: 46.4375rem) {
   .filterRow {
+    gap: 0;
     padding: var(--wf-s-2) 0;
+  }
+
+  .filterEnd {
+    padding: 0 var(--wf-s-3) 0 var(--wf-s-1);
   }
 
   .filterChips {

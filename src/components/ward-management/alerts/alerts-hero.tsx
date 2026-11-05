@@ -8,7 +8,6 @@ import { Bell, BellRing, ChevronRight, Copy, Ellipsis, Pause, Play, Radio } from
 import {
   Button,
   Hero,
-  HeroStat,
   LiveChip,
   Menu,
   PhoneHero,
@@ -27,7 +26,6 @@ import type { QueueEntry } from "./alerts-queue";
 import styles from "./alerts.module.css";
 
 export type AlertsTab = "now" | "earlier";
-export type HeroPill = "act" | "wait" | "mine";
 
 // Alerts redesign (Q112, Josh 1 Nov 2026): the title is the Act now and Waiting figures, Home's
 // count included. "New to you" is gone: nothing on the page explained it.
@@ -46,8 +44,6 @@ export function AlertsHero({
   live,
   actCount,
   waitEntries,
-  pill,
-  togglePill,
   yoursCount,
   handleNext,
   broadcastTriggerRef,
@@ -79,8 +75,6 @@ export function AlertsHero({
   /** Act now: the act-now alerts plus accepted referrals with no bed pulled (Q111). */
   actCount: number;
   waitEntries: QueueEntry[];
-  pill: HeroPill | null;
-  togglePill: (next: HeroPill) => void;
   yoursCount: number;
   handleNext: () => void;
   broadcastTriggerRef: RefObject<HTMLButtonElement | null>;
@@ -126,6 +120,7 @@ export function AlertsHero({
               oldestRaised !== undefined || activeBroadcast
                 ? [
                     oldestRaised !== undefined ? `oldest ${minutesText(Math.max(0, now - oldestRaised))}` : "",
+                    officerDesk || yoursCount === 0 ? "" : `${yoursCount} yours`,
                     activeBroadcast ? "broadcast live" : "",
                   ]
                     .filter(Boolean)
@@ -137,36 +132,8 @@ export function AlertsHero({
             eyebrow="Alerts"
             // F-08: the standard Demo pill, as on every phone hero; Pause below holds the list.
             chip={<LiveChip state={live.paused ? "paused" : "live"} onHero />}
-            figures={[
-              {
-                id: "act",
-                value: actCount,
-                label: "Act now",
-                tone: "danger",
-                pressed: pill === "act",
-                onPress: () => togglePill("act"),
-              },
-              {
-                id: "wait",
-                value: waitEntries.length,
-                label: "Waiting",
-                tone: "warning",
-                pressed: pill === "wait",
-                onPress: () => togglePill("wait"),
-              },
-              ...(officerDesk
-                ? []
-                : [
-                    {
-                      id: "mine",
-                      value: yoursCount,
-                      // P018 (Josh, 27 Oct 2026): "Yours" on every screen, as the desktop hero says.
-                      label: "Yours",
-                      pressed: pill === "mine",
-                      onPress: () => togglePill("mine"),
-                    },
-                  ]),
-            ]}
+            // Alerts overhaul (4 Nov 2026): the title already counts act now and waiting, and the
+            // filter chips below filter by them, so the hero draws no figures of its own.
             actions={
               <div className={phoneRows.heroPills}>
                 {/* Phone (Josh, Q153, 1 Nov 2026): one hero action, the rest under "…". Working the
@@ -287,79 +254,27 @@ export function AlertsHero({
               </span>
             ) : undefined
           }
+          // Alerts overhaul (4 Nov 2026): one line of tools. The counts live once, on the filter chips
+          // under the band, so the band no longer repeats them. Next alert is the one filled action;
+          // Broadcast stays in view for a coordinator, and the rarer tools sit under "…".
           aside={
-            // Nurse in charge: with no alert in turn, Next of 0 and an empty handover copy are left out.
-            wardDesk && nextQueue.length === 0 ? undefined : (
-              <div className={styles.heroTools}>
-                <PageLiveChip paused={live.paused} onTogglePause={live.togglePause} />
-                <Button
-                  variant="onHero"
-                  size="sm"
-                  icon={notifyOn ? BellRing : Bell}
-                  aria-pressed={notifyOn}
-                  title="Act-now alerts notify in this open tab. No patient detail is shown."
-                  onClick={handleNotify}
-                >
-                  Notify me
-                </Button>
-              </div>
-            )
-          }
-          bar={
-            <div className={styles.heroBar}>
-              <div className={styles.heroStats} role="group" aria-label="Alert summary">
-                <HeroStat
-                  inline
-                  value={actCount}
-                  label="Act now"
-                  tone="danger"
-                  pressed={pill === "act"}
-                  onToggle={() => togglePill("act")}
-                />
-                <HeroStat
-                  inline
-                  value={waitEntries.length}
-                  label="Waiting"
-                  pressed={pill === "wait"}
-                  onToggle={() => togglePill("wait")}
-                />
-                {officerDesk ? null : (
-                  <HeroStat
-                    inline
-                    value={yoursCount}
-                    label="Yours"
-                    pressed={pill === "mine"}
-                    onToggle={() => togglePill("mine")}
-                  />
-                )}
-              </div>
-            </div>
-          }
-          barAside={
             <div className={styles.heroTools}>
-              {/* Transport officer: the handover copy is on My jobs (Copy handover). */}
-              {officerDesk ? null : (
-                <Button variant="onHero" size="sm" icon={Copy} className={styles.deskOnly} onClick={handleCopy}>
-                  Copy for handover
-                </Button>
-              )}
-              {/* A quiet ward desk has nothing next, so no Next alert, as on the phone. */}
+              <PageLiveChip paused={live.paused} onTogglePause={live.togglePause} />
               {showNext ? (
                 <Button
-                  variant="onHero"
+                  variant="light"
                   size="sm"
                   icon={ChevronRight}
                   disabled={nextQueue.length === 0}
                   onClick={handleNext}
                 >
-                  {/* Next steps through the actionable queue only; running targets are listed, not counted. */}
                   Next alert
                 </Button>
               ) : null}
               {canBroadcast ? (
                 <Button
                   ref={broadcastTriggerRef}
-                  variant="light"
+                  variant="onHero"
                   size="sm"
                   icon={Radio}
                   disabledReason={broadcastDisabledReason}
@@ -368,6 +283,33 @@ export function AlertsHero({
                   Broadcast alert
                 </Button>
               ) : null}
+              <Menu
+                label="More alert tools"
+                align="end"
+                items={[
+                  ...(officerDesk
+                    ? []
+                    : [{ id: "copy", label: "Copy for handover", icon: Copy, onSelect: handleCopy }]),
+                  {
+                    id: "notify",
+                    label: "Notify me in this tab",
+                    icon: notifyOn ? BellRing : Bell,
+                    checked: notifyOn,
+                    meta: "No patient detail",
+                    onSelect: handleNotify,
+                  },
+                ]}
+                trigger={(props) => (
+                  <Button
+                    {...props}
+                    variant="onHero"
+                    size="sm"
+                    iconOnly
+                    icon={Ellipsis}
+                    aria-label="More alert tools"
+                  />
+                )}
+              />
             </div>
           }
           // A quiet ward's checks sit in the side panel instead, so the screen may pass no foot.

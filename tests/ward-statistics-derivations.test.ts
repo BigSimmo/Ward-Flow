@@ -295,7 +295,7 @@ describe("pullToArrival", () => {
     expect(result.averageMinutes).toBe(120);
   });
 
-  it("reads the seeded world, where every measured gap is the same 5 hours the fixture writes", () => {
+  it("reads the seeded world, where each measured gap is its own invented 2h to 8h", () => {
     const seeded = seedWardFlowState();
     const result = pullToArrival(seeded.admissions);
 
@@ -304,14 +304,14 @@ describe("pullToArrival", () => {
     expect(seeded.admissions.length).toBeGreaterThan(0);
     expect(result.measuredCount).toBeGreaterThan(0);
 
-    // 300 is read straight out of `ward-admissions-seed.ts` — `PULL_TO_ARRIVAL_MINUTES = 5 * 60`,
-    // applied to every seeded arrival — not observed from this function's own output. That the
-    // range collapses onto the average is the fixture telling the truth about itself: these are
-    // authored instants with no spread, which is exactly why the screen renders the range beside
-    // the average rather than the average alone.
-    expect(result.averageMinutes).toBe(300);
-    expect(result.shortestMinutes).toBe(300);
-    expect(result.longestMinutes).toBe(300);
+    // Review 5 Nov 2026: the seed gives each arrived record its own gap (`seededPullToArrivalMinutes`,
+    // 120 to 480 minutes in 15 minute steps), so the range is a real spread around the average and
+    // no longer collapses onto one fixed 5 hours.
+    expect(result.shortestMinutes).toBeGreaterThanOrEqual(120);
+    expect(result.longestMinutes).toBeLessThanOrEqual(480);
+    expect(result.shortestMinutes!).toBeLessThan(result.longestMinutes!);
+    expect(result.averageMinutes!).toBeGreaterThan(result.shortestMinutes!);
+    expect(result.averageMinutes!).toBeLessThan(result.longestMinutes!);
 
     // No seeded record is chronologically impossible, so the guard removes nothing from the figure
     // above. Pinned so that a seed which later DID carry one could not shrink the average without

@@ -10,7 +10,8 @@ import { bedMeetingTvHref } from "@/components/ward-management/ward-nav";
 import Link from "next/link";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
-import { buttonClass, Hero, LiveChip, PhoneSheet, Sheet, TextInput } from "@/components/wf";
+import { buttonClass, Hero, LiveChip, PhoneSheet, Sheet, TextInput, useIsTabletPortrait } from "@/components/wf";
+import { WardPhoneFind } from "./ward-phone-find";
 import styles from "./ward.module.css";
 import noticesSheet from "./ward-notices-sheet.module.css";
 import { SinceLastLookPill } from "../since-last-look-pill";
@@ -145,6 +146,11 @@ export function WardScreenTopBar({
   // heading for screen readers.
   const position = `${plural(states.ready, "bed", "beds")} ready, ${states.occupied} occupied`;
   const service = unitHealthService(unit);
+  const tabletFind = useIsTabletPortrait();
+  const findBed = (next: string) => {
+    setBedQuery(next);
+    if (activeTab !== "attn" && activeTab !== "board") selectActiveTab("attn");
+  };
   const closePhoneNotices = () => {
     setNotificationCenterOpen(false);
   };
@@ -299,22 +305,25 @@ export function WardScreenTopBar({
           </ul>
           {isPhone ? null : (
             <div className={styles.tabTools} role="toolbar" aria-label="Ward actions">
-              <TextInput
-                type="search"
-                icon={Search}
-                boxClassName={styles.findBox}
-                aria-label="Find a bed or person on this ward"
-                placeholder="Find bed or person"
-                value={bedQuery}
-                onChange={(event) => {
-                  setBedQuery(event.target.value);
-                  if (activeTab !== "attn" && activeTab !== "board") selectActiveTab("attn");
-                }}
-                onClear={() => {
-                  setBedQuery("");
-                }}
-                data-testid="ward-find-input"
-              />
+              {/* Josh, 4 Nov 2026: on a tablet the find box is the same search icon as the phone's,
+                  opening in place, so the tab row keeps its room. */}
+              {tabletFind ? (
+                <WardPhoneFind value={bedQuery} onChange={findBed} />
+              ) : (
+                <TextInput
+                  type="search"
+                  icon={Search}
+                  boxClassName={styles.findBox}
+                  aria-label="Find a bed or person on this ward"
+                  placeholder="Find bed or person"
+                  value={bedQuery}
+                  onChange={(event) => findBed(event.target.value)}
+                  onClear={() => {
+                    setBedQuery("");
+                  }}
+                  data-testid="ward-find-input"
+                />
+              )}
               {/* Approved 31 Oct 2026: Notices, Shift brief and Handover sit in the More menu at every
                   desktop width, leaving three actions and More. The Notices drawer stays here; the More
                   menu's Notices item opens it. */}

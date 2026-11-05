@@ -208,6 +208,38 @@
   scrollbar-width: thin;
 }
 
+/* Review 5 Nov 2026: below 1280px the strip scrolls, and at tablet width the cut card gave no sign
+   there was more. The shared row fade (choice.module.css `wfRowFade`): full at the start, none once
+   scrolled to the end, and a strip that fits never fades. */
+@property --wf-row-fade {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes keysFade {
+  from {
+    --wf-row-fade: 32px;
+  }
+  to {
+    --wf-row-fade: 0px;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .keys {
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
+    mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
+    /* Longhands: the CSS build folds `animation` and `animation-timeline` into one shorthand that
+       Chrome rejects, which dropped the fade. Without a full set of longhands it cannot fold them. */
+    animation-name: keysFade;
+    animation-duration: 1ms;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: scroll(self inline);
+  }
+}
+
 .keyGroup {
   display: flex;
   flex: 1 0 auto;
@@ -1930,6 +1962,19 @@
   white-space: normal;
 }
 
+/* Review 5 Nov 2026: a place too long to sit beside the time ("Executive office") wrapped word by
+   word in a narrow column there. It now takes the next line whole. Its leading "· " (0.5em) hangs
+   left of the row, so it shows beside the time and is clipped when the place starts its own line. */
+.phoneRowMeta:has(> .phoneRowSubWrap) {
+  flex-wrap: wrap;
+  column-gap: calc(4px + 0.5em);
+  overflow-x: clip;
+}
+
+.phoneRowMeta > .phoneRowSubWrap {
+  margin-left: -0.5em;
+}
+
 .phoneRowEnd {
   display: flex;
   flex-direction: column;
@@ -2168,5 +2213,64 @@
   .sibling b {
     white-space: normal;
     text-overflow: clip;
+  }
+}
+
+/* Josh review (4 Nov 2026): a calmer phone On-call. The Cover at track is one 40px row with no
+ * caps label (the track names itself), and the focal card puts the number and its Copy and
+ * Details on one line, so the first directory line sits higher. */
+@media (max-width: 46.4375rem) {
+  [data-testid="ward-on-call-hud-island"] .heroLabel {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .coverTrack > * {
+    min-height: 34px;
+  }
+  .focalSeg button {
+    height: 40px;
+  }
+  .focal {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: var(--wf-s-2);
+    row-gap: 4px;
+  }
+  .focal > .focalSeg {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  .focal > .focalLabel {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .focal > .focalUntil {
+    grid-column: 1 / -1;
+    grid-row: 4;
+  }
+  .focal > .focalNumber {
+    grid-column: 1;
+    grid-row: 3;
+    font-size: 24px;
+    line-height: 30px;
+  }
+  .focal > .focalActions {
+    grid-column: 2;
+    grid-row: 3;
+    margin-top: 0;
+  }
+  .focalActions > * {
+    min-height: 40px;
+  }
+  .focalMini {
+    min-height: 44px;
+  }
+  .phoneChips {
+    flex-wrap: wrap;
   }
 }

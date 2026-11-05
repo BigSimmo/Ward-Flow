@@ -213,8 +213,9 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
       ? "Add patient"
       : /^\/ward-flow\/people\/[^/]+\/?$/u.test(pathname)
         ? "Patient"
-        : /^\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname)
-          ? "Movement"
+        : // Review 5 Nov 2026: "Patient" here too, as on tablet and desktop; the page is the patient's.
+          /^\/ward-flow\/movements\/[^/]+\/?$/u.test(pathname)
+          ? "Patient"
           : // The statistics tab's own word, so the lean bar never mixes "Statistics compare" with "EDs".
             /^\/ward-flow\/statistics\/(services|wards|eds|teams|overview|compare)\/?$/u.test(pathname)
             ? (
