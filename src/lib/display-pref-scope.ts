@@ -15,7 +15,7 @@ export type DisplayPrefBaseline = {
 let baseline: DisplayPrefBaseline | null = null;
 let depth = 0;
 
-export { displayPrefScopeActive, resetDisplayPrefScopeForTests };
+export { displayPrefScopeActive };
 
 export function enterDisplayPrefScope(snap: DisplayPrefBaseline): () => DisplayPrefBaseline | null {
   if (depth === 0) baseline = snap;
