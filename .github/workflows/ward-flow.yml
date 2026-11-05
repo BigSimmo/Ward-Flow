@@ -54,11 +54,11 @@ jobs:
       - name: Plan Ward scope
         id: plan
         env:
-          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/ward-ci-public/plan.mjs
       - name: Verify the scope plan against the diff
         env:
-          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
           WARD_PLAN_FULL: ${{ steps.plan.outputs.full }}
           WARD_PLAN_UNIT: ${{ steps.plan.outputs.unit }}
           WARD_PLAN_BROWSER: ${{ steps.plan.outputs.browser }}
@@ -832,8 +832,8 @@ jobs:
         with:
           persist-credentials: false
           fetch-depth: 0
-      # Main has no merge queue and does not require PRs to be up to date, so measure the budget on
-      # this PR merged with the current main; ward-flow-budget-recheck.yml re-runs this job when main moves.
+      # On pull_request, merge the current main before measuring (strict up-to-date is off; the merge queue
+      # will re-check the grouped head). The PR-only merge step below is skipped on merge_group.
       - name: Merge the latest main before measuring
         if: ${{ github.event_name == 'pull_request' }}
         run: node scripts/ward-ci-public/merge-latest-main.mjs
