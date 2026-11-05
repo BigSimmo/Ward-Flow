@@ -89,6 +89,14 @@ describe("WF-42 bare /statistics stays closed and the closed screen redirects", 
     expect(screen.queryByText("Compare")).toBeNull();
     expect(nav.replace).not.toHaveBeenCalled();
   });
+
+  it("sends a ward desk signing in on a saved bare /statistics to its own Statistics, not home (#1471 review)", () => {
+    renderGated("/ward-flow/statistics", wardDesk, <p>Statistics hub</p>, true);
+    expect(screen.getByText("Opening your statistics")).toBeInTheDocument();
+    expect(screen.queryByText("Opening your home")).toBeNull();
+    expect(nav.replace).toHaveBeenCalledWith(`/ward-flow/statistics/ward/${WARD_UNIT}`);
+    expect(nav.replace).not.toHaveBeenCalledWith(`/ward-flow/ward/${WARD_UNIT}`);
+  });
 });
 
 describe("#1470 review: the role notice is only for a refused deep link", () => {
@@ -144,6 +152,21 @@ describe("WF-42 /activity and /help open their panel on each desk's own home", (
     });
     expect(open).toHaveBeenCalledTimes(1);
   });
+
+  it("still opens the panel when the route change unmounts the address page first (#1471 review)", () => {
+    vi.useFakeTimers();
+    const open = vi.fn();
+    const view = renderGated("/ward-flow/activity", wardDesk, <WardPanelAddress label="Activity" open={open} />);
+    expect(nav.replace).toHaveBeenCalledWith(`/ward-flow/ward/${WARD_UNIT}`);
+    // router.replace(home) commits: the address page unmounts before its zero-delay timer runs.
+    nav.pathname = `/ward-flow/ward/${WARD_UNIT}`;
+    view.unmount();
+    expect(open).not.toHaveBeenCalled();
+    act(() => {
+      vi.runOnlyPendingTimers();
+    });
+    expect(open).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("WF-42 example history announcement", () => {
@@ -153,12 +176,12 @@ describe("WF-42 example history announcement", () => {
     act(() => {
       setStatisticsSamples(true);
     });
-    expect(live).toHaveTextContent(/Example history on/i);
+    expect(live).toHaveTextContent(/Example history is on, and invented 30-day charts are shown below\./i);
     expect(live).toHaveTextContent(/Invented/i);
     act(() => {
       setStatisticsSamples(false);
     });
-    expect(live).toHaveTextContent(/Example history off/i);
+    expect(live).toHaveTextContent(/Example history is off, and the invented charts are hidden\./i);
   });
 });
 

@@ -863,6 +863,15 @@ function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: s
   const pathname = usePathname() ?? "";
   const address = screenForPath(pathname);
   const atWardFlowHome = address?.screen === "home";
+  // WF-42 (Josh, 5 Nov 2026): bare /statistics stays closed to a ward, ED or team desk (D-80), and
+  // its closed screen sends that desk on to its own place's Statistics instead. This runs before the
+  // sign-in landing below, so a saved bare /statistics opens the desk's statistics, not its home.
+  const ownStatistics =
+    address?.screen === "statistics" && address.statisticsSection === undefined
+      ? ownStatisticsHrefFor(access, communityTeamSlug)
+      : undefined;
+  if (!opening && patientId === undefined && ownStatistics !== undefined)
+    return <OwnHomeRedirect href={ownStatistics} refused={false} status="Opening your statistics" />;
   // #804, #797: so does a page a sign-in landed on, often left open by the account before.
   const toOwnHome =
     !opening &&
@@ -870,14 +879,6 @@ function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: s
     (atWardFlowHome || (signInLanding !== undefined && samePath(signInLanding, pathname))) &&
     !samePath(home, pathname);
   if (toOwnHome) return <OwnHomeRedirect href={home} refused={!atWardFlowHome} status="Opening your home" />;
-  // WF-42 (Josh, 5 Nov 2026): bare /statistics stays closed to a ward, ED or team desk (D-80), and
-  // its closed screen sends that desk on to its own place's Statistics instead.
-  const ownStatistics =
-    address?.screen === "statistics" && address.statisticsSection === undefined
-      ? ownStatisticsHrefFor(access, communityTeamSlug)
-      : undefined;
-  if (!opening && patientId === undefined && ownStatistics !== undefined)
-    return <OwnHomeRedirect href={ownStatistics} refused={false} status="Opening your statistics" />;
   if (opening)
     return (
       <WardGround>

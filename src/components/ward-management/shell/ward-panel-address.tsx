@@ -10,6 +10,31 @@ import { useRouter } from "next/navigation";
 
 import { useDeskHomeHref } from "@/components/ward-management/shell/ward-access";
 
+/**
+ * The panel request waits here, at module level, not in the page's effect: `router.replace(home)`
+ * unmounts this page, and an effect cleanup would cancel a timer it owned before the request ran
+ * (CodeRabbit on PR #1471). The shell's bar and Help host live in the layout, so they are still
+ * subscribed when it runs on the desk's home.
+ */
+let pendingOpen: (() => void) | null = null;
+let pendingTimer: number | undefined;
+
+function openPendingPanel() {
+  pendingTimer = undefined;
+  const open = pendingOpen;
+  pendingOpen = null;
+  open?.();
+}
+
+function requestPanelAfterRoute(open: () => void) {
+  pendingOpen = open;
+  // A macrotask later every chrome on the page has subscribed, including one that wraps this
+  // page (the executive chrome's effects run after its children's).
+  // A later request (the desk's home settling) replaces the earlier one, so the panel opens once.
+  if (pendingTimer !== undefined) window.clearTimeout(pendingTimer);
+  pendingTimer = window.setTimeout(openPendingPanel, 0);
+}
+
 export function WardPanelAddress({ label, open }: { label: string; open: () => void }) {
   const router = useRouter();
   const home = useDeskHomeHref();
@@ -18,10 +43,7 @@ export function WardPanelAddress({ label, open }: { label: string; open: () => v
     // panel does not go Back onto this address and open it again (CodeRabbit on PR #1471).
     window.history.replaceState(window.history.state, "", home);
     router.replace(home);
-    // A macrotask later every chrome on the page has subscribed, including one that wraps this
-    // page (the executive chrome's effects run after its children's).
-    const timer = window.setTimeout(open, 0);
-    return () => window.clearTimeout(timer);
+    requestPanelAfterRoute(open);
   }, [home, open, router]);
   return (
     <main>
