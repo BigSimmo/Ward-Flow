@@ -7,8 +7,10 @@ What is addressed to this desk right now, across every movement and referral.
 ## What is on the screen
 
 1. Addressed to your desk. Alerts for this desk right now, act now first.
-2. Open an alert. Each alert opens the record it is about.
-3. Forecast. Forecast lines set in Settings: beds likely to be short tomorrow, the ED access target and a worse forecast.
+2. Show open alerts. Act now, Waiting, Forecast, Reminders, Notices, Snoozed or Yours. All shows every one again.
+3. Open an alert. Each alert opens the record it is about.
+4. The order. How the list is ordered: act now first, then waiting, oldest first in each.
+5. Forecast. Forecast lines set in Settings: beds likely to be short tomorrow, the ED access target and a worse forecast.
 
 ## Jobs done here
 
