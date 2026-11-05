@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterAll, afterEach, beforeAll, expect, it, vi } from "vitest";
 import { getPlaywrightBaseUrl } from "../scripts/playwright-base-url";
-import { appName, localProjectId } from "../src/lib/local-server-utils.mjs";
+import { appName, localProjectId } from "@/lib/local-server-utils.mjs";
 
 const projectRoot = process.cwd();
 const temporary = mkdtempSync(path.join(tmpdir(), "ward-playwright-identity-"));

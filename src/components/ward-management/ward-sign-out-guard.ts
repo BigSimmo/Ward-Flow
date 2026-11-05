@@ -1,4 +1,4 @@
-import { requestConfirm } from "@/components/wf/confirm-dialog";
+import { requestConfirm } from "@/components/wf";
 
 /** Forced expiry never waits for an answer; a failed prompt keeps a voluntary session open. */
 export async function allowWardSignOut(
