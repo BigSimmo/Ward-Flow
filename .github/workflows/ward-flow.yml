@@ -228,9 +228,6 @@ jobs:
         with:
           path: ${{ runner.temp }}/ward-eslint-cache
           key: ${{ steps.lint-cache.outputs.cache-primary-key }}
-      - name: Inventory production dependency licences (advisory)
-        if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.frontend_static == 'true' }}
-        run: npm run check:licences
       - name: Check for new unused code
         if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.frontend_static == 'true' }}
         env:

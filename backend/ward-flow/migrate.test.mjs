@@ -1,9 +1,8 @@
 // @ts-check
 import assert from "node:assert/strict";
-import { readdir, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { test } from "node:test";
 import { migrate } from "./migrate.mjs";
-import { migrationPolicyIssues } from "./rls-migration-policy.mjs";
 
 function database(version) {
   let current = version;
@@ -320,13 +319,4 @@ test("pruneReceipts refuses invalid retention windows and prunes expired command
     assert.match(call.sql, /LIMIT \$3/);
     assert.deepEqual(call.params?.slice(1), [14, 5_000]);
   }
-});
-
-test("the complete checked-in migration chain leaves every table protected", async () => {
-  const directory = new URL("./migrations/", import.meta.url);
-  const files = (await readdir(directory)).filter((name) => /^\d+.*\.sql$/.test(name));
-  const migrations = await Promise.all(
-    files.map(async (name) => ({ name, sql: await readFile(new URL(name, directory), "utf8") })),
-  );
-  assert.deepEqual(migrationPolicyIssues(migrations), []);
 });

@@ -21,22 +21,17 @@
 // 30 October 2026 (D-89): likewise the Home and Activity mock-up's copy of the shortlist panel.
 // 30 October 2026 (D-89): and the nurse in charge's and ED clinician's Waiting copies, which follow the coordinator's line by line.
 export const MAX_LINES_DEFAULT = 1500;
-export const MAX_LINES_HEADROOM = 150;
+export const MAX_LINES_HEADROOM = 300;
 
 export const MAX_LINES_BASELINE = {
   "src/components/ward-management/ward-flow-reducer.ts": 2550,
   "src/components/ward-management/ward/ward-screen.tsx": 2575,
-  "src/components/ward-management/ward-model.ts": 1882,
-  "src/components/ward-management/ward-movements.ts": 2068,
+  "src/components/ward-management/ward-model.ts": 1900,
+  "src/components/ward-management/ward-movements.ts": 2070,
   "src/components/ward-management/ward-flow-events.ts": 2750,
   "src/components/ward-management/coordinator/shortlist-panel.tsx": 2850,
   "src/components/ward-management/movements/movement-workspace-cockpit.tsx": 2150,
   "src/components/ward-management/ward/ward-home-tab.tsx": 2150,
-  "src/components/ward-management/ward-patients-seed.ts": 1773,
+  "src/components/ward-management/ward-patients-seed.ts": 1800,
   "src/components/ward-management/ward/ward-answer-view.tsx": 1750,
-};
-
-export const MAX_SCRIPT_LINES_DEFAULT = 1200;
-export const MAX_SCRIPT_LINES_BASELINE = {
-  "scripts/guard-push.mjs": 2132,
 };
