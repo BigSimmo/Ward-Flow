@@ -2,7 +2,8 @@
 
 import { useEffect, useLayoutEffect, useState, type RefObject } from "react";
 
-import type { TourDevice, TourTarget } from "./ward-tour-steps";
+import type { WardTourDevice } from "./ward-tour-device";
+import type { TourTarget } from "./ward-tour-steps";
 
 /**
  * THE SPOTLIGHT, shared by the desk tour (`ward-tour.tsx`) and Show me (`ward-show-me.tsx`): find a
@@ -38,7 +39,7 @@ function tall(rect: DOMRect): boolean {
  * Brings the control into view: centred, or a tall one to just under the header. On a phone every
  * control goes to just under the header, so the card has room to dock underneath it.
  */
-function bringIntoView(element: HTMLElement, device: TourDevice): void {
+function bringIntoView(element: HTMLElement, device: WardTourDevice): void {
   const behavior: ScrollBehavior = "instant";
   if (device !== "phone" && !tall(element.getBoundingClientRect())) {
     element.scrollIntoView({ block: "center", inline: "nearest", behavior });
@@ -120,7 +121,7 @@ function markReady(card: HTMLElement): void {
  * by transform only, so settling from the middle to beside its control, or a phone card changing
  * height at the foot, never counts as a layout shift.
  */
-function placeCard(card: HTMLElement, box: SpotBox | null, device: TourDevice): void {
+function placeCard(card: HTMLElement, box: SpotBox | null, device: WardTourDevice): void {
   const style = card.style;
   style.maxHeight = "";
   const vw = window.innerWidth;
@@ -194,7 +195,7 @@ function placeCard(card: HTMLElement, box: SpotBox | null, device: TourDevice): 
 export function useSpotlight(
   targets: readonly TourTarget[] | undefined,
   key: string,
-  device: TourDevice = "desk",
+  device: WardTourDevice = "desk",
 ): { box: SpotBox | null; missing: boolean; held: boolean; element: HTMLElement | null } {
   const [spot, setSpot] = useState<{
     key: string;
@@ -275,7 +276,7 @@ export function usePlacedCard(
   cardRef: RefObject<HTMLElement | null>,
   spotRef: RefObject<HTMLElement | null>,
   box: SpotBox | null,
-  device: TourDevice,
+  device: WardTourDevice,
   step: unknown,
   // The "not on this screen" line makes the card taller, so it is placed again when that appears.
   missing = false,

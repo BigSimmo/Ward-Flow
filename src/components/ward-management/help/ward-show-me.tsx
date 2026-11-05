@@ -7,7 +7,7 @@ import { Info, X } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from "react";
 
-import { OverlayPortal, useIsPhone, useModalFocus } from "@/components/wf";
+import { OverlayPortal, useModalFocus } from "@/components/wf";
 import { hasOpenSheet, subscribeToSheetStack, topSheetRoot } from "@/components/wf/sheet-focus";
 import { PHONE_QUICK_SETTINGS } from "@/components/ward-management/settings/settings-screen-model";
 import { navigateWithDirtyGuard } from "@/components/ward-management/use-dirty-state-guard";
@@ -19,7 +19,8 @@ import { HOW_TOS, showMeSteps } from "./ward-help-howto";
 import { useTourRole } from "./ward-help-store";
 import { SPOT_NOT_HERE, usePlacedCard, useSpotlight } from "./ward-spotlight";
 import { useTourFacts } from "./ward-tour-facts";
-import type { TourDevice, TourTarget } from "./ward-tour-steps";
+import type { TourTarget } from "./ward-tour-steps";
+import { useSwipe, useTourDevice, walkDevice } from "./ward-tour-device";
 import styles from "./ward-tour.module.css";
 
 /**
@@ -31,7 +32,10 @@ import styles from "./ward-tour.module.css";
 export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () => void; onBack: () => void }) {
   const role = useTourRole();
   const access = useEffectiveWardAccess();
-  const device: TourDevice = useIsPhone() ? "phone" : "desk";
+  // Phone, tablet (the rail across the top) or desk: where the card sits. On a tablet the walk's
+  // steps are the computer's (`walkDevice`), laid out across the top.
+  const device = useTourDevice();
+  const stepsFor = walkDevice(device);
   const { home, deskHome } = useTourFacts(role);
   const howTo = HOW_TOS.find((candidate) => candidate.id === id);
   const capabilityAllowed = Boolean(howTo && howToFor(howTo, role, access));
@@ -43,11 +47,14 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
   const permitted = Boolean(
     howTo &&
     capabilityAllowed &&
-    showMeAvailable(howTo, role, deskHome ?? home, device === "phone", access) &&
+    showMeAvailable(howTo, role, deskHome ?? home, stepsFor === "phone", access) &&
     walkPlaysHere(howTo, pathname),
   );
   // Keep the desk's own steps and skip unsupported devices before a walk can navigate.
-  const steps = useMemo(() => (permitted ? showMeSteps(howTo, device, role) : []), [howTo, device, role, permitted]);
+  const steps = useMemo(
+    () => (permitted ? showMeSteps(howTo, stepsFor, role) : []),
+    [howTo, stepsFor, role, permitted],
+  );
   const restricted = Boolean(howTo && !capabilityAllowed);
   const router = useRouter();
   // A computer and a phone walk different steps, so a window narrowed mid-walk (or a tablet
@@ -130,6 +137,12 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
     if (ownsFocus && document.activeElement === document.body) nextRef.current?.focus();
   }, [index, ownsFocus]);
 
+  // A swipe across the card on a touch screen: left is Next, right is Back.
+  const swipe = useSwipe(
+    last ? undefined : () => setIndex(index + 1),
+    index > 0 ? () => setIndex(index - 1) : undefined,
+  );
+
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (event.key === "ArrowRight" && !last) {
       event.preventDefault();
@@ -191,7 +204,7 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
         ) : (
           <div key="dim" className={styles.dim} aria-hidden="true" />
         )}
-        {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches the arrow keys bubbling up from the focused button inside */}
+        {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches the arrow keys bubbling up from the focused button inside, and a swipe across the card */}
         <div
           ref={cardRef}
           className={styles.card}
@@ -200,6 +213,7 @@ export function WardShowMe({ id, onClose, onBack }: { id: string; onClose: () =>
           aria-labelledby="ward-show-me-title"
           aria-describedby="ward-show-me-body"
           onKeyDown={onKeyDown}
+          {...swipe}
           id="ward-show-me-card"
           data-testid="ward-show-me-card"
           data-step={index}
