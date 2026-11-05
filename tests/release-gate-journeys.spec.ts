@@ -301,6 +301,12 @@ test("Transfer with transport: the ED books transport, the officer delivers, and
     await expect(button).not.toHaveAttribute("aria-disabled", "true");
     await clearToasts(page);
     await button.click();
+    // WF-22: arrival cannot be undone, so the officer confirms it first.
+    if (stage === "arrive")
+      await page
+        .getByRole("dialog", { name: "Record arrival at the ward?" })
+        .getByRole("button", { name: "Record arrival", exact: true })
+        .click();
     // Collected warns and asks for a recorded reason when Form 4A or fit to travel is missing.
     if (stage === "collect") {
       const check = page.getByTestId("ward-officer-collect-check");
