@@ -116,6 +116,7 @@ function Submit({
         type="submit"
         variant="pri"
         size="sm"
+        loading={pending}
         className={styles.submit}
         // Saving stays focusable and explained like a blocked save; the submit handler ignores repeats.
         aria-disabled={pending || blocked ? true : undefined}
