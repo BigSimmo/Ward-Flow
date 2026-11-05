@@ -114,8 +114,8 @@ function ActivityOwnCommandBody({ commandId, autoReview = false }: { commandId: 
                   ? "This change was partly recorded. Check the current board."
                   : "Your change was recorded."}
           </p>
-          {receipt && receipt.outcome !== "refused" ? (
-            offer.event && !message.startsWith("Undone.") ? (
+          {receipt && receipt.outcome !== "refused" && !message.startsWith("Undone.") ? (
+            offer.event ? (
               <Button size="sm" variant="ghost" disabled={sending} onClick={() => void undo()}>
                 Undo this change
               </Button>

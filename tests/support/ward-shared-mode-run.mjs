@@ -93,7 +93,7 @@ function freePort() {
 }
 
 /** A port in this checkout's managed range, so `/api/local-project-id` reports a safe local origin. */
-async function freeProjectPort() {
+async function freeProjectPort(excluded = []) {
   const taken = (port) =>
     new Promise((resolve) => {
       const socket = net.createConnection({ host: "127.0.0.1", port });
@@ -101,7 +101,7 @@ async function freeProjectPort() {
       socket.once("error", () => resolve(false));
     });
   for (const port of circularProjectPortRange(stableProjectPort(projectRoot)))
-    if (!isReservedDevPort(port) && !(await taken(port))) return port;
+    if (!excluded.includes(port) && !isReservedDevPort(port) && !(await taken(port))) return port;
   throw new Error("No free port in this checkout's managed range.");
 }
 
@@ -395,7 +395,21 @@ try {
     rmSync(runRoot, { recursive: true, force: true, maxRetries: 3 });
   });
   const nextPort = await freeProjectPort();
-  const appOrigin = `http://localhost:${nextPort}`;
+  // WebKit upgrades HTTP page assets under the unchanged production CSP. Serve the app over
+  // TLS too, on a managed project port, so its scripts/styles and local-origin guard both work.
+  const appTls = await createSharedApiTlsProxy({
+    target: `http://127.0.0.1:${nextPort}`,
+    runRoot,
+    port: await freeProjectPort([nextPort]),
+  });
+  cleanups.push(
+    () =>
+      new Promise((done) => {
+        appTls.server.closeAllConnections();
+        appTls.server.close(() => done(undefined));
+      }),
+  );
+  const appOrigin = appTls.origin;
   const [authOrigin, databaseUrl, engineUrl] = await Promise.all([
     startFakeAuth(),
     createDatabase(),
@@ -414,7 +428,8 @@ try {
   console.log(
     `[shared-mode] production HTTPS API ${apiBaseUrl}, fake auth ${authOrigin}; building and starting Next on ${appOrigin}`,
   );
-  const baseUrl = await startNext({ runId, runRoot, port: nextPort, apiBaseUrl });
+  await startNext({ runId, runRoot, port: nextPort, apiBaseUrl });
+  const baseUrl = appOrigin;
   // Asynchronous on purpose: the fake sign-in service and the backend live in this process, so a
   // synchronous spawn would stop them answering the browser.
   const playwright = spawn(
@@ -441,6 +456,7 @@ try {
         PLAYWRIGHT_JSON_OUTPUT_FILE: reportFile,
         PLAYWRIGHT_JSON_OUTPUT_DIR: "",
         PLAYWRIGHT_BASE_URL: baseUrl,
+        PLAYWRIGHT_LOCAL_CA_CERT: appTls.certificatePath,
         WARD_E2E_SUPABASE_ORIGIN: SUPABASE_ORIGIN,
         WARD_E2E_AUTH_ORIGIN: authOrigin,
         WARD_E2E_ACCOUNTS: JSON.stringify(accounts.map(({ email, password }) => ({ email, password }))),

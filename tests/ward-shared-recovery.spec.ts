@@ -1,5 +1,5 @@
 import { expect, test, type BrowserContextOptions, type Page, type TestInfo } from "playwright/test";
-import { expectAccessible } from "./helpers/ward-release-gate";
+import { expectAccessible, isPhoneLayout } from "./helpers/ward-release-gate";
 import {
   accounts,
   openDesk,
@@ -24,6 +24,12 @@ function deviceOptions(info: TestInfo): BrowserContextOptions {
 
 async function ready(page: Page) {
   await expect(sharedStatus(page)).toHaveText(new RegExp(`^${READY}`, "u"), { timeout: 30_000 });
+}
+
+async function showPhoneBeds(page: Page) {
+  const more = page.getByRole("button", { name: /^Show \d+ more beds?$/u });
+  if (await more.count()) await more.click();
+  return page.getByTestId("ward-phone-round-list");
 }
 
 test.beforeEach(async ({ browser }, info) => {
@@ -147,20 +153,34 @@ test("Activity Undo: a desk reviews its own bed closure and waits for the server
   const { page } = desk;
   await page.goto("/ward-flow/ward/rph-adult-secure", { waitUntil: "domcontentloaded" });
   await ready(page);
-  await page.getByRole("button", { name: "Full bed list", exact: true }).click();
-  const readyBed = page.locator('[data-testid^="ward-bed-card-"][data-state="ready"]');
-  // The fixture has ready beds; pick an actual empty bed rather than assuming a bed number.
-  const bed = readyBed.first();
-  await expect(bed).toBeVisible();
-  const bedId = await bed.getAttribute("data-testid");
-  await bed.click();
+  const phone = isPhoneLayout(page);
+  let bedId: string | null = null;
+  let phoneReadyName: RegExp | undefined;
+  // Follow each device's real bed controls, choosing an actual empty bed in the fixture.
+  if (phone) {
+    const rows = await showPhoneBeds(page);
+    const bed = rows.getByRole("button", { name: /^Bed \d+, Ready,/u }).first();
+    await expect(bed).toBeVisible();
+    const number = /^Bed (\d+),/u.exec((await bed.getAttribute("aria-label")) ?? "")?.[1];
+    expect(number).toBeDefined();
+    phoneReadyName = new RegExp(`^Bed ${number}, Ready,`, "u");
+    await bed.click();
+    await page.getByRole("button", { name: "Update this bed", exact: true }).click();
+  } else {
+    await page.getByRole("button", { name: "Full bed list", exact: true }).click();
+    const bed = page.locator('[data-testid^="ward-bed-card-"][data-state="ready"]').first();
+    await expect(bed).toBeVisible();
+    bedId = await bed.getAttribute("data-testid");
+    await bed.click();
+  }
   const request = nextCommand(page);
   await page.getByTestId("ward-drawer-close-bed").click();
   const command = await request;
   expect((await command.response())?.status()).toBe(200);
   const commandId = command.postDataJSON().commandId as string;
   await ready(page);
-  await expect(page.getByTestId(bedId!)).toHaveAttribute("data-state", "closed");
+  if (phone) await expect(page.getByTestId("ward-drawer-reopen-bed")).toBeVisible();
+  else await expect(page.getByTestId(bedId!)).toHaveAttribute("data-state", "closed");
   await page.getByRole("button", { name: "Close bed drawer", exact: true }).click();
   await page
     .getByRole("button", { name: /^Activity(?:\b|$)/u })
@@ -178,10 +198,14 @@ test("Activity Undo: a desk reviews its own bed closure and waits for the server
   await own.getByRole("button", { name: "Undo this change", exact: true }).click();
   expect((await (await inverse).response())?.status()).toBe(200);
   await expect(own).toContainText("Undone. The shared board confirmed the change.");
+  await expect(own).not.toContainText("A later change replaced this one");
   await expectAccessible(page, info, "Activity reports the confirmed inverse");
   await page.reload({ waitUntil: "domcontentloaded" });
   await ready(page);
-  await expect(page.getByTestId(bedId!)).toHaveAttribute("data-state", "ready");
+  if (phone) {
+    const rows = await showPhoneBeds(page);
+    await expect(rows.getByRole("button", { name: phoneReadyName! })).toBeVisible();
+  } else await expect(page.getByTestId(bedId!)).toHaveAttribute("data-state", "ready");
 });
 
 test("sign-out return: cancelling preserves a waiting change and confirmed sign-out returns only to the authorised screen", async ({}, info) => {

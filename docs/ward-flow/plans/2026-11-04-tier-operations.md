@@ -57,15 +57,19 @@ Keep existing provider names; no rename or settings change is commissioned here.
 | Browser exception, when opted in    | Josh / email through Sentry rules                   | Inspect class and safe built-asset coordinates           | Both reporting switches, rate limit and synthetic delivery   |
 | Release-gate or flaky test failure  | Josh / repository checks                            | Reproduce on the same head and fix or record the blocker | Passing applicable gate; no retries or quarantine to hide it |
 
-Josh configures the uptime token through the approved secret interface; never paste it into chat,
-documents or logs. Confirm the exact Ward Flow backend and account first. A configured token is
-not proof that a database check or an email works. Test alerts, provider reads and workflow runs
-require applicable authority and any spending admission. No Slack or email delivery is activated
-by this document.
+Josh configures the same `WARD_FLOW_UPTIME_TOKEN` in the Ward Flow backend environment and
+the `BigSimmo/Ward-Flow` repository's Actions secret through their approved secret interfaces;
+never paste its value into chat, documents or logs. Confirm the exact backend and account first.
+The monitor sends it as `x-ward-flow-uptime-token` to `/healthz`. Acceptance requires an observed
+`database: ok` answer. A missing database answer means the token is absent or mismatched: the
+workflow reports an unknown result and can finish green without checking the database.
+Record the authenticated database answer and separate observed test-email receipt. A configured
+token or green run alone proves neither. Test alerts, provider reads and workflow runs require
+applicable authority and any spending admission. No delivery is activated by this document.
 
 ## Licence review — P2
 
-The pinned lockfile inventory flags16 production/optional package entries for owner review:
+The pinned lockfile inventory flags 16 production/optional package entries for owner review:
 Sharp/libvips platform binaries include LGPL expressions, `caniuse-lite` declares CC-BY-4.0,
 and backend `web-push` declares MPL-2.0. Platform variants are separate lock entries.
 `npm run check:licences` is advisory in CI; `--enforce` refuses these entries. No exception has
@@ -90,5 +94,5 @@ questions and constraints, not a new notes schema or handover feature.
 - [ ] Review actual licence exceptions before enabling enforcement.
 - [ ] Confirm contacts, reporting configuration and synthetic alert delivery through authorised tools.
 - [ ] Complete NVDA, VoiceOver and physical-device acceptance.
-- [ ] Supply the unnamed Tier 4 checklist descriptions before assessing those references.
+- Deferred by the owner on 5 November 2026: unnamed Tier 4 items 19–23 and 25 need descriptions before assessment.
 - [ ] Authorise publication/release separately when the local candidate is ready.

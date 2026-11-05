@@ -39,8 +39,8 @@ An implementation, passing local checks, owner acceptance, hosted CI and release
 ## Explicit exclusions and missing information
 
 I1 handover implementation, item 91 monthly exports and item 97 integrations remain held.
-The PDF refers to Tier 4 items 19–23 and 25 without descriptions: these are unassessed,
-not completed. NVDA, VoiceOver, physical devices, telemetry activation, uptime-token setup,
+The PDF refers to Tier 4 items 19–23 and 25 without descriptions: the owner deferred them on
+5 November 2026. They remain unassessed, not completed. NVDA, VoiceOver, physical devices, telemetry activation, uptime-token setup,
 alert delivery, hosted PostgreSQL and release need their own observed acceptance.
 
 ## Historical context

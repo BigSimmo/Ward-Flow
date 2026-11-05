@@ -41,12 +41,12 @@ export function waitForChild(child, description) {
     );
   });
 }
-export async function createSharedApiTlsProxy({ target, runRoot }) {
+export async function createSharedApiTlsProxy({ target, runRoot, port = 0 }) {
   const backend = new URL(target);
   if (backend.protocol !== "http:" || backend.hostname !== "127.0.0.1")
     throw new Error("Shared TLS proxy must target the local synthetic backend");
-  const key = path.join(runRoot, "loopback-key.pem");
-  const cert = path.join(runRoot, "loopback-cert.pem");
+  const key = path.join(runRoot, `loopback-${port}-key.pem`);
+  const cert = path.join(runRoot, `loopback-${port}-cert.pem`);
   const certificate = spawn(
     "openssl",
     [
@@ -76,7 +76,7 @@ export async function createSharedApiTlsProxy({ target, runRoot }) {
         port: backend.port,
         path: request.url,
         method: request.method,
-        headers: request.headers,
+        headers: { ...request.headers, "x-forwarded-proto": "https" },
       },
       (incoming) => {
         response.writeHead(incoming.statusCode ?? 502, incoming.headers);
@@ -92,7 +92,7 @@ export async function createSharedApiTlsProxy({ target, runRoot }) {
   });
   await new Promise((resolve, reject) => {
     server.once("error", reject);
-    server.listen(0, "127.0.0.1", () => resolve(undefined));
+    server.listen(port, "127.0.0.1", () => resolve(undefined));
   });
-  return { server, origin: `https://127.0.0.1:${server.address().port}` };
+  return { server, origin: `https://127.0.0.1:${server.address().port}`, certificatePath: cert };
 }

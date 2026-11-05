@@ -61,6 +61,7 @@ describe("reviewing an own Activity command", () => {
     testState.now = 21;
     testState.workingRole = "ward";
     testState.undoRecords[0]!.role = "ward";
+    testState.undoRecords[0]!.seq = 7;
     testState.dispatch.mockReset();
   });
   it("reads only on Review, then says Undone only after this inverse is accepted", async () => {
@@ -80,9 +81,13 @@ describe("reviewing an own Activity command", () => {
     expect(screen.queryByText("Undone. The shared board confirmed the change.")).toBeNull();
     expect(screen.getByRole("button", { name: "Undo this change" })).toBeDisabled();
     await act(async () => {
+      // The confirmed inverse consumes the original record before its reply reaches the UI.
+      testState.undoRecords[0]!.seq = 8;
       settle({ commandId: "inverse", status: "accepted" });
     });
     expect(screen.getByText("Undone. The shared board confirmed the change.")).toBeInTheDocument();
+    expect(screen.queryByText(/A later change replaced this one/)).toBeNull();
+    expect(screen.queryByRole("button", { name: "Undo this change" })).toBeNull();
   });
   it("uses the current working role when the coordinator reviews a change from a ward page", async () => {
     testState.workingRole = "coordinator";
