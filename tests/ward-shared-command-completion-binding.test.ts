@@ -97,7 +97,7 @@ describe("authenticated successful command completion evidence", () => {
       expect(h.view().unconfirmedSave).toBe(true);
       expect(h.view().snapshot?.revision).toBe(1);
       const receipt = h.receipts.get(WARD_COMMAND_RECOVERY_KEY);
-      expect(JSON.parse(receipt!).commandId).toBe(answer.commandId);
+      expect(JSON.parse(receipt!).entries[0].commandId).toBe(answer.commandId);
       let confirmed = false;
       void answer.confirmation!.then(() => {
         confirmed = true;

@@ -47,6 +47,7 @@ import { announceToWardShell } from "./shell/ward-live-region";
 import { WardSharedSaveContext, type WardSharedSave } from "./shell/ward-shared-save-context";
 import { WardSharedSaveStatus } from "./ward-shared-save-status";
 import { WardPartialViewProvider } from "./ward-partial-view";
+import { RECOVERY_OUTCOME_WORDS } from "./ward-command-recovery";
 import { isTvPath } from "./bed-meeting/tv-lock-guard";
 import type { SenderReadSource } from "./ward-sender-read-collection";
 
@@ -107,7 +108,7 @@ export type WardSharedConnection = SharedView & {
   sessionEndsAt?: number | null;
   /** What the sign-in screen says after a deliberate sign-out, such as the shared computer reminder. */
   farewell?: string | null;
-  retry: () => void;
+  retry: () => void | Promise<void>;
   /** P172: clears the outcome of an uncertain save once read. Not offered while the receipt is being checked. */
   dismissRecovery?: (shown?: string) => void;
   dispatch: WardCommandDispatch;
@@ -174,6 +175,8 @@ export function selectWardAuthProvider(): string {
 }
 
 export function useWardShared(enabled: boolean): WardSharedConnection {
+  // The API bindings below already use explicit memoisation. Compiler wrapper caches add phone download weight.
+  "use no memo";
   const supabaseMode = selectWardAuthProvider() === "supabase";
   const supabase = useWardSupabaseShared(enabled && supabaseMode);
   // An account without a role still needs its own access-request API. Include the account in
@@ -212,6 +215,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       breakGlass: async (patientId, reason) => connected().breakGlass(patientId, reason),
       readRecordAccess: async () => connected().readRecordAccess(),
       readActivityAudit: async () => connected().readActivityAudit(),
+      readOwnCommand: async (commandId) => connected().readOwnCommand(commandId),
       forecastHistory: async (body) => connected().forecastHistory(body),
       preferences: async (body) => connected().preferences(body),
     };
@@ -274,6 +278,8 @@ function useDisplaySessionLifetime(until: number | null | undefined): boolean {
 }
 
 export function WardSharedAccess({ connection, children }: { connection: WardSharedConnection; children: ReactNode }) {
+  // Keep the explicit context memoisation; automatic JSX caches inflate every route's initial script.
+  "use no memo";
   const hasSnapshot = !!(connection.snapshot || connection.executiveSnapshot);
   const [showLiveInfo, setShowLiveInfo] = useState(false);
   const [slot, setSlot] = useState<DataModeSlot | null>(null);
@@ -352,6 +358,7 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
         ? {
             api: connected && !connection.recovering && accessApi ? accessApi : unavailableAccessApi,
             actorId,
+            scopeKey: connection.snapshot?.accessContext,
             workspaceId: connection.workspaceId
               ? JSON.stringify([
                   process.env.NEXT_PUBLIC_WARD_API_BASE_URL?.replace(/\/$/u, "") ?? "",
@@ -360,7 +367,15 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
               : undefined,
           }
         : null,
-    [connection.enabled, connection.recovering, connection.workspaceId, connected, accessApi, actorId],
+    [
+      connection.enabled,
+      connection.recovering,
+      connection.workspaceId,
+      connected,
+      accessApi,
+      actorId,
+      connection.snapshot?.accessContext,
+    ],
   );
   // The header holds the Prototype pill, so the only strip above the app is the account strip
   // (`WardSharedSaveStatus`), which publishes its own height as --wf-data-bar-height.
@@ -679,6 +694,32 @@ function WardSharedWorkspaceContent({
       {/* Always mounted, so focus has somewhere to land when Dismiss removes the outcome it sat beside. */}
       <div ref={recoveryOutcomeRef} tabIndex={-1} data-testid="ward-shared-recovery-outcome">
         {connection.recovery && <span role="alert"> {connection.recovery}</span>}
+        {connection.recoveryStorageUnavailable && connection.unconfirmedSave && (
+          <p role="alert">
+            Reload recovery is unavailable on this browser. Keep this page open until your changes are confirmed.
+          </p>
+        )}
+        {!!connection.recoveryResults?.length && (
+          <ul aria-label="Recovered changes">
+            {connection.recoveryResults.map((result, index) => (
+              <li key={result.commandId}>
+                Change {index + 1}: {RECOVERY_OUTCOME_WORDS[result.outcome]}.{" "}
+                <button
+                  type="button"
+                  className={styles.dismissRecovery}
+                  onClick={(event) => {
+                    const opener = event.currentTarget;
+                    void import("./shell/ward-activity-panel-store").then(({ openActivityPanel }) =>
+                      openActivityPanel({ tab: "recent", commandId: result.commandId, opener }),
+                    );
+                  }}
+                >
+                  Review change {index + 1}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         {connection.recovery && !connection.recovering && connection.dismissRecovery && (
           <button
             type="button"

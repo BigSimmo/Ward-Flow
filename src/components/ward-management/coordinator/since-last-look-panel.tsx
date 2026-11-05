@@ -139,9 +139,13 @@ export function useSinceLastLook(
   const account = useContext(SharedAccessContext);
   const userId = account?.actorId ?? "local-demo";
   noteWardSessionAccount(account);
-  const storageKey = scopeKey
+  const baseStorageKey = scopeKey
     ? `${LAST_LOOK_STORAGE_KEY}:${scopeKey}:${encodeURIComponent(userId)}:${encodeURIComponent(world.scenario)}:${generation}`
     : LAST_LOOK_STORAGE_KEY;
+  const storageKey = account?.scopeKey
+    ? `${baseStorageKey}:desk:${account.scopeKey}:${encodeURIComponent(userId)}:${encodeURIComponent(world.scenario)}:${generation}`
+    : baseStorageKey;
+
   const current = useMemo(
     () => takeLastLookSnapshot({ ...scoped, worldGeneration: generation, userId }, now, thresholds, scopeKey),
     [scoped, now, thresholds, generation, userId, scopeKey],

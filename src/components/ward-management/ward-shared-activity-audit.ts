@@ -1,6 +1,12 @@
 import type { SharedAsk } from "./ward-shared-push-api";
 
-export type SharedActivityAuditEvent = { sequence: string; action: string; outcome: string; committed_at: string };
+export type SharedActivityAuditEvent = {
+  sequence: string;
+  action: string;
+  outcome: string;
+  committed_at: string;
+  ownCommandId?: string;
+};
 export type SharedActivityAuditPage = {
   events: SharedActivityAuditEvent[];
   complete: boolean;

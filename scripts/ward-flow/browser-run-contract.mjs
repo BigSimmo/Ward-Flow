@@ -229,12 +229,24 @@ export const REQUIRED_SHARED_JOURNEYS = Object.freeze([
   "different records at once: two desks change different records from the same revision, and both saves land on both desks",
   "a desk that loses its network says it is not connected, then catches up without a reload when it returns",
 ]);
+/** Recovery/session journeys need the shared backend on both desktop and phone. */
+export const REQUIRED_SHARED_RECOVERY_JOURNEYS = Object.freeze([
+  "offline recovery: a save accepted before reload is checked by receipt and is never replayed",
+  "stale board: five minutes without a successful refresh shows its time and one keyboard retry",
+  "Activity Undo: a desk reviews its own bed closure and waits for the server to confirm the inverse",
+  "sign-out return: cancelling preserves a waiting change and confirmed sign-out returns only to the authorised screen",
+]);
 export function sharedModeCases() {
-  return REQUIRED_SHARED_JOURNEYS.map((title) => ({
-    project: "ward-shared-mode",
-    file: "ward-shared-mode.spec.ts",
-    title,
-  }));
+  return [
+    ...REQUIRED_SHARED_JOURNEYS.map((title) => ({
+      project: "ward-shared-mode",
+      file: "ward-shared-mode.spec.ts",
+      title,
+    })),
+    ...["ward-shared-mode", "ward-shared-phone"].flatMap((project) =>
+      REQUIRED_SHARED_RECOVERY_JOURNEYS.map((title) => ({ project, file: "ward-shared-recovery.spec.ts", title })),
+    ),
+  ];
 }
 
 /** Preserve option/value pairs while replacing only positional spec filters. */

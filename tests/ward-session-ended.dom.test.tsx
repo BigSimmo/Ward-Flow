@@ -45,15 +45,15 @@ it("ends the session when this tab's stored sign-in is cleared, instead of still
         : Response.json({ access_token: "access", refresh_token: "refresh", expires_in: 3600, user }),
   );
   vi.stubGlobal("fetch", fetcher);
-  const realSetInterval = globalThis.setInterval;
+  const realSetTimeout = globalThis.setTimeout;
   let pollTick: (() => void) | undefined;
-  vi.spyOn(globalThis, "setInterval").mockImplementation(((fn: TimerHandler, ms?: number) => {
+  vi.spyOn(globalThis, "setTimeout").mockImplementation(((fn: TimerHandler, ms?: number) => {
     if (ms === 3000 && typeof fn === "function") {
       pollTick = fn as () => void;
-      return 0 as unknown as ReturnType<typeof setInterval>;
+      return 0 as unknown as ReturnType<typeof setTimeout>;
     }
-    return realSetInterval(fn, ms);
-  }) as typeof setInterval);
+    return realSetTimeout(fn, ms);
+  }) as typeof setTimeout);
   const { result, unmount } = renderHook(() => useWardShared(true));
   await waitFor(() => expect(result.current.status).toBe("ready"));
   await act(async () => {
@@ -143,15 +143,15 @@ it("drops the in-memory sign-in too, so a token refresh still on its way cannot 
     return Response.json(session);
   });
   vi.stubGlobal("fetch", fetcher);
-  const realSetInterval = globalThis.setInterval;
+  const realSetTimeout = globalThis.setTimeout;
   let pollTick: (() => void) | undefined;
-  vi.spyOn(globalThis, "setInterval").mockImplementation(((fn: TimerHandler, ms?: number) => {
+  vi.spyOn(globalThis, "setTimeout").mockImplementation(((fn: TimerHandler, ms?: number) => {
     if (ms === 3000 && typeof fn === "function") {
       pollTick = fn as () => void;
-      return 0 as unknown as ReturnType<typeof setInterval>;
+      return 0 as unknown as ReturnType<typeof setTimeout>;
     }
-    return realSetInterval(fn, ms);
-  }) as typeof setInterval);
+    return realSetTimeout(fn, ms);
+  }) as typeof setTimeout);
   const { result, unmount } = renderHook(() => useWardShared(true));
   await waitFor(() => expect(result.current.status).toBe("ready"));
   await act(async () => {
