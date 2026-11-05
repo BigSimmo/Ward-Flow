@@ -131,7 +131,8 @@ older worker can still apply its unfenced delivery result during a mixed-version
 Front-door account verification is bounded per process. Without verified ingress identity, the
 route shares one allowance of 30 checks per minute across callers and allows eight pending checks,
 with an eight-second caller deadline. Raw forwarded headers do not create separate allowances.
-The route's JSON reader also limits consumption to 16 KiB, five seconds and eight pending reads.
+The route's JSON reader accepts bodies up to 16 KiB, rejects oversized input, and allows five
+seconds and eight pending reads. A delivered stream chunk can itself exceed the accepted size.
 These are separate per-process budgets. Installed Next middleware finalises its cloned body before
 calling the route, so these route limits do not establish an upstream HTTP-body timeout or
 connection limit. Its 1 MiB proxy clone limit truncates buffering rather than rejecting an upload.
