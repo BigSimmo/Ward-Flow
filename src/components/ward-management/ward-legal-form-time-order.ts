@@ -7,7 +7,7 @@ import type { Instant } from "./ward-clock";
  * the time it was written or started.
  */
 export const WRITTEN_LATER_THAN_NOW = "The time written cannot be later than now";
-export const EXPIRY_NOT_AFTER_WRITTEN = "The expiry must be later than the time written";
+const EXPIRY_NOT_AFTER_WRITTEN = "The expiry must be later than the time written";
 
 /** What is wrong with the typed order, or undefined when it is fine. Missing values are not checked here. */
 export function legalFormTimeOrderProblem(
