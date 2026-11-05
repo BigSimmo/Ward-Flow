@@ -6,7 +6,7 @@
 // the ward's recording controls. Split out of ward-board.tsx to keep that file under the line cap;
 // WardBoard still owns every value and passes it in.
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
-import { Button, Field, Select, TextInput, buttonClass, cx } from "@/components/wf";
+import { Button, Field, Select, StatusGlyph, TextInput, buttonClass, cx } from "@/components/wf";
 import { X } from "lucide-react";
 import {
   LEAVING_DESTINATIONS,
@@ -416,7 +416,13 @@ export function WardBoardDetailPanel({
                           );
                         }}
                       >
-                        {selectedOccupant.stepDownCandidate ? "✓ Marked for step-down" : "Mark for step-down"}
+                        {selectedOccupant.stepDownCandidate ? (
+                          <>
+                            <StatusGlyph tone="success" /> Marked for step-down
+                          </>
+                        ) : (
+                          "Mark for step-down"
+                        )}
                       </button>
                     </div>
                     {selectedOccupant.days !== null &&

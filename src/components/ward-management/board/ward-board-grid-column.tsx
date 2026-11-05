@@ -6,6 +6,7 @@
 // The bed board's middle column: the bed grid with its filter, order and legend, and the people
 // count beneath it. Split out of ward-board.tsx to keep that file under the line cap; WardBoard
 // still owns every value and passes it in.
+import { ArrowDownUp } from "lucide-react";
 import { STAY_BANDS } from "@/components/ward-management/ward-admissions";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -139,19 +140,7 @@ export function WardBoardGridColumn({
           </Select>
           <span className={styles.phoneSort}>
             {orderSelect}
-            <svg
-              viewBox="0 0 24 24"
-              width="20"
-              height="20"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.75"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3" />
-            </svg>
+            <ArrowDownUp size={20} strokeWidth={1.75} aria-hidden="true" />
           </span>
         </div>
       ) : (
@@ -183,9 +172,7 @@ export function WardBoardGridColumn({
       <ul className={styles.legend} data-testid="ward-board-legend">
         {STAY_BANDS.map((band) => (
           <li key={band.id} className={styles.legendItem}>
-            <span className={`${styles.legendSwatch} ${BAND_CLASS[band.id]}`} aria-hidden="true">
-              <span className={styles.legendGlyph}>●</span>
-            </span>
+            <span className={`${styles.legendSwatch} ${BAND_CLASS[band.id]}`} aria-hidden="true" />
             <span className="sr-only">Stay length: </span>
             {band.label}
           </li>

@@ -2,7 +2,7 @@
 
 import { Fragment, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { BedDouble, Check, ChevronRight, Download, ListFilter, Minus, Plus, X } from "lucide-react";
+import { BedSingle, Check, ChevronRight, Download, ListFilter, Minus, Plus, X } from "lucide-react";
 
 import {
   Button,
@@ -368,7 +368,7 @@ function CapacityChartView({
           closeDetails();
         }
       }}
-      icon={BedDouble}
+      icon={BedSingle}
       title={title}
       action={
         <span className={styles.headControls}>
@@ -435,10 +435,10 @@ function CapacityChartView({
         <span role="group" aria-label="Bed status legend" className={styles.legendSlot}>
           <Legend
             items={[
-              { id: "ready", label: BED_STATE_LABELS.ready, fill: "data-1" },
+              { id: "occupied", label: BED_STATE_LABELS.occupied, fill: "data-3" },
               { id: "pulled", label: BED_STATE_LABELS.pulled, hatch: true },
               { id: "closed", label: BED_STATE_LABELS.closed, fill: "data-2" },
-              { id: "occupied", label: BED_STATE_LABELS.occupied, fill: "data-3" },
+              { id: "ready", label: BED_STATE_LABELS.ready, fill: "data-1" },
             ]}
           />
         </span>
@@ -546,8 +546,13 @@ function CapacityChartView({
                       ))}
                       {scale === "share" ? <i className={styles.alertMark} style={{ left: `${alertLine}%` }} /> : null}
                       <span className={styles.bar} style={{ width: `${(row.beds / denominator) * 100}%` }}>
-                        {row.ready > 0 && (
-                          <span className={styles.ready} style={{ width: `${(row.ready / (row.beds || 1)) * 100}%` }} />
+                        {/* C3 mock-up (5 Nov 2026): in use first from the left (occupied, then pulled), so the 85% alert
+                            line marks where in-use beds cross it; closed and ready sit at the right end. */}
+                        {row.occupied > 0 && (
+                          <span
+                            className={styles.occupied}
+                            style={{ width: `${(row.occupied / (row.beds || 1)) * 100}%` }}
+                          />
                         )}
                         {row.pulled > 0 && (
                           <span
@@ -559,11 +564,8 @@ function CapacityChartView({
                         {row.closed > 0 && (
                           <span className={styles.held} style={{ width: `${(row.closed / (row.beds || 1)) * 100}%` }} />
                         )}
-                        {row.occupied > 0 && (
-                          <span
-                            className={styles.occupied}
-                            style={{ width: `${(row.occupied / (row.beds || 1)) * 100}%` }}
-                          />
+                        {row.ready > 0 && (
+                          <span className={styles.ready} style={{ width: `${(row.ready / (row.beds || 1)) * 100}%` }} />
                         )}
                       </span>
                     </span>

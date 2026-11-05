@@ -32,7 +32,7 @@ import { demographicLabel } from "./referral-board-model";
 import { ReferralWorkedOn } from "./referral-worked-on-note";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import { referralPresentation } from "@/components/ward-management/ward-partial-view-presenters";
-import { Button, Icon, Menu, buttonClass, cx, durMinutes } from "@/components/wf";
+import { Button, Icon, Menu, StatusGlyph, buttonClass, cx, durMinutes } from "@/components/wf";
 import { BED_MEETING_REFERRALS_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 
@@ -98,7 +98,7 @@ export function LiveDecisionClock({ referral, now }: { referral: Referral; now: 
             "Clock stopped at triage"
           ) : overdue ? (
             <>
-              <TriangleAlert size={13} aria-hidden="true" />
+              <StatusGlyph tone="danger" size={12} />
               <b className={s.mono}>{durMinutes(now - dueAt)}</b> overdue
             </>
           ) : (

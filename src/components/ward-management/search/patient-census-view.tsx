@@ -270,13 +270,20 @@ export function CensusTable(props: CensusTableProps) {
     const element = scrollRef.current;
     let held = readScrollPosition?.();
     if (!held || !recordScrollPosition) return;
-    if (held.identity !== props.scrollIdentity) {
+    const retired = held.identity !== props.scrollIdentity;
+    if (retired) {
       held = { identity: props.scrollIdentity ?? "", top: 0, left: 0 };
       recordScrollPosition(held);
     }
     if (!element) return;
-    element.scrollTop = held.top;
-    element.scrollLeft = held.left;
+    if (!retired && held.top === 0 && held.left === 0) {
+      // Nothing to restore. The table can already be scrolled before hydration attaches onScroll;
+      // keep that newer position rather than jumping back to the top (responsive audit flake).
+      recordScrollPosition({ identity: held.identity, top: element.scrollTop, left: element.scrollLeft });
+    } else {
+      element.scrollTop = held.top;
+      element.scrollLeft = held.left;
+    }
     return () => {
       // Capture synchronously before responsive unmount, even if its final scroll event is queued.
       if (readScrollPosition?.().identity === (props.scrollIdentity ?? ""))

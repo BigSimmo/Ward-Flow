@@ -29,23 +29,8 @@
   outline-offset: 2px;
 }
 
-/* Under 1600px a tool shows its icon only; its name stays for a screen reader and as the tooltip. */
-@media (max-width: 100rem) {
-  .toolLabel {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-
-  .tool:has(.toolLabel) {
-    position: relative;
-    width: var(--wf-h-sm);
-    padding: 0;
-  }
-}
+/* Design audit 4 (C12): a tool keeps its name beside its icon at every desktop width (only the rail
+ * and dock are icon-first). */
 
 .stepper {
   display: inline-flex;

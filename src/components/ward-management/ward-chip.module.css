@@ -52,18 +52,7 @@
   letter-spacing: 0;
   font-weight: 400;
 }
-.kindChip[data-kind="ward"] {
-  border-left: 3px solid var(--ward-blue-border);
-}
-.kindChip[data-kind="community"] {
-  border-left: 3px solid var(--ward-border-strong);
-}
-.kindChip[data-kind="ed"] {
-  border-left: 3px solid var(--ward-blue);
-}
-.kindChip[data-kind="transport"] {
-  border-left: 3px solid var(--ward-divider);
-}
+/* No coloured side edge per kind (Josh, 31 Oct 2026): the visible word says what the record is. */
 
 /*
  * A colour declared directly on an element cannot be overridden by any ancestor rule at any

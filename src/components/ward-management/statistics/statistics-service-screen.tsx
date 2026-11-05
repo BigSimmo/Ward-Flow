@@ -2,7 +2,7 @@
 
 import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { BedDouble, ChevronDown, Clock, LayoutList, MapPin, Network, Plane } from "lucide-react";
+import { BedSingle, ChevronDown, Clock, LayoutList, MapPin, Network, Plane } from "lucide-react";
 
 import {
   BarList,
@@ -971,7 +971,7 @@ function ReadyBeds({
   return (
     <StatCard
       id="ready-beds"
-      icon={BedDouble}
+      icon={BedSingle}
       title="Ready beds by ward"
       aside={`${readyRows.length} ${readyRows.length === 1 ? "ward" : "wards"}`}
       data-testid="ward-statistics-service-ready-beds"
