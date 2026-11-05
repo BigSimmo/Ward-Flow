@@ -236,20 +236,47 @@ export function unclosedMarkers(text) {
     .map(({ number }) => number);
 }
 
-/** Rewrite every fact marker to the current value. Unknown names are returned, never guessed. */
+/** Live facts cannot rewrite frozen history or a verification tied to a Git revision. */
 export function applyMarkers(text, factsByName) {
   const unknown = [];
   const stale = [];
-  const updated = text.replace(MARKER, (whole, name, current) => {
-    if (!factsByName.has(name)) {
-      unknown.push(name);
-      return whole;
-    }
-    const value = factsByName.get(name);
-    if (current !== value) stale.push({ name, current, value });
-    return `<!-- fact:${name} -->${value}<!-- /fact -->`;
-  });
-  return { updated, unknown, stale };
+  const frozen = [];
+  const fencePattern = /<!-- (docs-script-refs:historical|docs-facts:frozen)-(start|end) -->/gu;
+  const stack = [];
+  const malformed = [];
+  for (const match of text.matchAll(fencePattern)) {
+    if (match[2] === "start") stack.push(match[1]);
+    else if (stack.at(-1) === match[1]) stack.pop();
+    else malformed.push(`Unmatched or crossed ${match[1]} end fence.`);
+  }
+  if (stack.length) malformed.push(`Unclosed evidence fence: ${stack.join(", ")}.`);
+  if (malformed.length) return { updated: text, unknown, stale, frozen, malformed };
+  const active = [];
+  const updated = text
+    .split("\n")
+    .map((line, index) => {
+      for (const match of line.matchAll(fencePattern)) if (match[2] === "start") active.push(match[1]);
+      // A commit SHA has at least one a-f letter, so an all-digit token such as `2026110` is not one.
+      const fixedRevision =
+        /(?:^|[\s_*])(?:checked|verified|observed|tested)\b.*`(?=[0-9]*[a-f])[a-f0-9]{7,40}`/iu.test(line);
+      const result = line.replace(MARKER, (whole, name, current) => {
+        if (active.length || fixedRevision) {
+          frozen.push({ line: index + 1, name });
+          return whole;
+        }
+        if (!factsByName.has(name)) {
+          unknown.push(name);
+          return whole;
+        }
+        const value = factsByName.get(name);
+        if (current !== value) stale.push({ name, current, value });
+        return `<!-- fact:${name} -->${value}<!-- /fact -->`;
+      });
+      for (const match of line.matchAll(fencePattern)) if (match[2] === "end") active.pop();
+      return result;
+    })
+    .join("\n");
+  return { updated, unknown, stale, frozen, malformed };
 }
 
 export function loadRetiredConfig(root = ROOT) {
@@ -399,9 +426,20 @@ export function run({ root = ROOT, write = false, base = null } = {}) {
         errors.push(
           `${file}:${line}: fact marker is not a complete <!-- fact:name -->value<!-- /fact --> pair on one line.`,
         );
-      const { updated, unknown, stale } = applyMarkers(text, factsByName);
+      const { updated, unknown, stale, frozen, malformed } = applyMarkers(text, factsByName);
+      for (const problem of malformed) errors.push(`${file}: ${problem}`);
+      for (const item of frozen)
+        errors.push(
+          `${file}:${item.line}: live fact "${item.name}" is inside frozen or fixed-revision evidence; replace the marker with the value verified at that revision.`,
+        );
       for (const name of unknown) errors.push(`${file}: unknown fact "${name}" (see ${FACTS_DOC}).`);
-      if (stale.length > 0) {
+      if (
+        stale.length > 0 &&
+        frozen.length === 0 &&
+        malformed.length === 0 &&
+        unknown.length === 0 &&
+        unclosedMarkers(text).length === 0
+      ) {
         if (write) {
           writeFileSync(path.join(root, file), updated);
           written.push(file);

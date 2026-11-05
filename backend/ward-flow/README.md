@@ -1,6 +1,6 @@
 # Ward Flow backend
 
-_Updated 2026-10-24 - local-mode saving brought into line with D-72; Documentation owns._
+_Updated 2026-11-03 - distinguish liveness, protected monitoring and signed readiness against source at `a6d8a0fd`; no hosted acceptance; Documentation owns._
 
 > [!IMPORTANT]
 > Synthetic data only. The current database and sign-in provider, and how to change it, are
@@ -8,13 +8,39 @@ _Updated 2026-10-24 - local-mode saving brought into line with D-72; Documentati
 > must never connect to PsychSift's Supabase or Railway resources.
 
 This package is the optional shared synthetic workspace. It is a plain Node HTTP server
-(`server.mjs`) that serves `/healthz`, `/readyz` and `/v1/workspace*`. `/healthz` needs no sign-in,
-always answers 200 while the server runs, and reports `database` as `ok` or `unavailable` (never the
-reason) from a check it repeats at most every 30 seconds; the uptime workflow alerts on either. The provider is chosen by
+(`server.mjs`) that serves `/healthz`, `/readyz` and `/v1/workspace*`. Anonymous
+`GET /healthz` returns HTTP 200 with `{service:"ward-flow-backend",status:"ok"}` while the process
+runs; it does not check or report database readiness. With the matching monitor token it instead
+reports `database` as `ok` or `unavailable` (never the reason), cached for at most 30 seconds.
+See [Health and monitor configuration](#health-and-monitor-configuration) for the separate contracts.
+The provider is chosen by
 `WARD_DATABASE_PROVIDER` and `WARD_AUTH_PROVIDER` (see DATABASE.md). Runtime never migrates the
 database and never substitutes an administrator login. Shared readiness requires migrations `001`
 to `005` and accepts later versions through <!-- fact:latest-migration -->017-account-preferences<!-- /fact -->.
 These source files do not establish a current hosted connection or deployment.
+
+## Health and monitor configuration
+
+_Source checked 3 November 2026 at `a6d8a0fd`; no hosted configuration or notification delivery checked._
+
+- **Process liveness:** anonymous `GET /healthz` returns HTTP 200 without a `database` field.
+  Railway can use this for startup liveness. A database outage must not restart a healthy process.
+- **Protected monitor:** configure `WARD_FLOW_UPTIME_TOKEN` privately on the Ward Flow backend
+  and the same value as the Ward Flow repository's Actions secret `WARD_FLOW_UPTIME_TOKEN`.
+  The monitor sends it in `x-ward-flow-uptime-token`. Provisioning or rotation is an authorised
+  settings change; never paste its value into commands, tickets, logs, documentation or chat.
+  An absent/mismatched token gets the ordinary liveness response, not a database answer.
+  `backend-uptime.yml` then warns **Database not checked**; a green run with that warning is not
+  database monitoring acceptance. Check the executed step and intended notification delivery
+  separately. `database: unavailable` is an outage diagnostic even though HTTP status remains 200.
+- **Signed readiness:** `GET /readyz` requires a valid authorised sign-in bearer token. In shared
+  mode HTTP 200 with `database: ready` confirms the store's readiness check; storage failure is
+  HTTP 503. HTTP 401 means sign-in was denied, HTTP 429 is verifier rate limiting, and a verifier
+  outage is HTTP 503. A non-shared server can return HTTP 200 with an empty object: that is not
+  shared-database acceptance. Readiness still does not prove a user's save/reload/conflict journey.
+
+Use only authorised private tooling to send credentials. Synthetic local endpoint tests establish
+these source contracts; they do not establish the deployed token, database or alert configuration.
 
 ## How the UI connects
 

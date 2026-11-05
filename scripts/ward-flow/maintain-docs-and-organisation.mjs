@@ -355,6 +355,8 @@ function runNodeCommand(root, label, args) {
 }
 
 export const WRITE_GENERATOR_STEPS = [
+  { label: "journey", args: ["docs/ward-flow/journey/verify.mjs", "--write"] },
+  { label: "printable-help", args: ["scripts/build-help-cheat-sheets.mjs", "--output", "public/help"] },
   { label: "owner-rulings-index", args: ["scripts/ward-flow/owner-rulings-index.mjs"] },
   { label: "screen-map", args: ["scripts/ward-flow/screen-map.mjs", "--write"] },
   { label: "mockup-manifest", args: ["scripts/ward-flow/mockup-manifest.mjs", "--write"] },
@@ -370,6 +372,11 @@ export const WRITE_GENERATOR_STEPS = [
 ];
 
 export const CHECK_INDEX_STEPS = [
+  { label: "journey --check", args: ["docs/ward-flow/journey/verify.mjs", "--check"] },
+  {
+    label: "printable-help --check",
+    args: ["scripts/build-help-cheat-sheets.mjs", "--output", "public/help", "--check"],
+  },
   { label: "owner-rulings-index --check", args: ["scripts/ward-flow/owner-rulings-index.mjs", "--check"] },
   { label: "screen-map --check", args: ["scripts/ward-flow/screen-map.mjs", "--check"] },
   { label: "mockup-manifest --check", args: ["scripts/ward-flow/mockup-manifest.mjs", "--check"] },
