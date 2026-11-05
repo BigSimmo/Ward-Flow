@@ -144,7 +144,12 @@ export function CapacityHero({
               onPress={() => onHighlight("open")}
             />
             <HeroChip value={model.pulled} label="Beds pulled" tone={model.pulled > 0 ? "warning" : undefined} />
-            <HeroChip value={model.dueOutToday ?? "Not tracked"} label="Discharges due today" />
+            <HeroChip
+              value={model.dueOutToday ?? "Not tracked"}
+              // WF-16: same source as each ward card's "freeing today" (release plans due today).
+              // The Bed forecast's discharge counts are the next 24h windows — a different figure.
+              label="Beds freeing today"
+            />
             {oldestCount ? (
               <HeroChip
                 value={durMinutes(Math.max(0, now - oldestCount.confirmedAt))}

@@ -152,8 +152,10 @@ export function OnCallScreen() {
   // OC2 mock-up (4 Nov 2026): the page follows the header's service, as every other page does. A
   // chosen service shows its own lines plus the statewide ones; Statewide shows everyone.
   // WF-45: transport officers only need transport/retrieval lines (not the full statewide roster).
+  // WF-45 follow-up: a site bed manager is scoped to their own site's lines plus statewide.
   const scope = useServiceScope();
   const access = useEffectiveWardAccess();
+  const siteCode = access.scope.kind === "site" ? access.scope.siteCode : undefined;
   const entries = useMemo(() => {
     const scoped = scope
       ? allEntries.filter((entry) => entry.service === scope || entry.service === "Statewide")
@@ -161,8 +163,11 @@ export function OnCallScreen() {
     if (access.role === "officer") {
       return scoped.filter((entry) => entry.group === "Transport and retrieval");
     }
+    if (access.role === "bed_manager" && siteCode) {
+      return scoped.filter((entry) => entry.service === "Statewide" || entry.siteCode === siteCode);
+    }
     return scoped;
-  }, [allEntries, scope, access.role]);
+  }, [allEntries, scope, access.role, siteCode]);
   const ids = useMemo(() => new Set(baseEntries.map((entry) => entry.id)), [baseEntries]);
 
   // WF-45: an officer's three transport lines all sit in Statewide, so an officer starts there, not
@@ -419,9 +424,11 @@ export function OnCallScreen() {
             ? "Prototype data, invented numbers"
             : access.role === "officer"
               ? "Transport lines"
-              : scope
-                ? `${SERVICE_META[scope].short} + statewide`
-                : "All services"
+              : access.role === "bed_manager" && siteCode
+                ? `${siteCode} + statewide`
+                : scope
+                  ? `${SERVICE_META[scope].short} + statewide`
+                  : "All services"
         }
         stats={
           isPhone ? (

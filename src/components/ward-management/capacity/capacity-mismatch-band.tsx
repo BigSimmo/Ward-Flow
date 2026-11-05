@@ -144,12 +144,13 @@ function MismatchTile({
           <span className={styles.mmHeroWord}>exactly enough</span>
         ) : (
           <>
-            <b>{Math.abs(row.gap)}</b> <span className={styles.mmHeroWord}>{short ? "short" : "spare"}</span>
+            <b>{Math.abs(row.gap)}</b> <span className={styles.mmHeroWord}>{short ? "short" : "spare that fit"}</span>
           </>
         )}
       </p>
       <p className={styles.mmSub}>
         {row.waiting} waiting · {row.bedsThatFit} ready that fit
+        {/* WF-16: "spare" below is ready-that-fit minus waiting, not the network's all-ready count. */}
       </p>
       <div className={styles.mmScale}>
         <span className={styles.mmTileLabel}>Now</span>
@@ -167,7 +168,7 @@ function MismatchTile({
         <span className={styles.mmAxis} aria-hidden="true">
           <span>Short</span>
           <span>0</span>
-          <span>Spare</span>
+          <span>Spare that fit</span>
         </span>
       </div>
       {tomorrow ? (

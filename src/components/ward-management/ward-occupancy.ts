@@ -2,6 +2,17 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 
+
+/**
+ * WF-16 printed nouns. "Occupied" / "On the ward" mean a patient is in the bed (leave included).
+ * "In use" means Occupied + Pulled — the one occupancy percentage every screen prints.
+ */
+export const OCCUPIED_NOUN = "Occupied";
+export const OCCUPIED_CAPTION = "In a bed, leave included";
+export const IN_USE_NOUN = "In use";
+export const IN_USE_CAPTION = "Occupied or pulled";
+export const ON_THE_WARD_NOUN = "On the ward";
+
 /**
  * **ONE OCCUPANCY FIGURE — device audit, 11 October 2026 (Recommended, top recommendation 1).**
  *

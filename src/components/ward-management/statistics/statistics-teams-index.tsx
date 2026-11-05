@@ -243,7 +243,7 @@ function TeamsIndexView({
         stats: (
           <>
             <HeroStat value={shown(withDateTotal)} label="With a date" />
-            <HeroStat value={activeCount} label="Teams with a patient in a bed" />
+            <HeroStat value={activeCount} label="Teams that have someone in a bed" />
             <HeroStat value={shown(dueOutWeekTotal)} label="Discharges due within 7 days" />
           </>
         ),
@@ -252,7 +252,7 @@ function TeamsIndexView({
         <>
           <HeroStat value={shown(inBedTotal)} label="Team patients in a bed" />
           <HeroStat value={shown(withDateTotal)} label="With a discharge date" />
-          <HeroStat value={activeCount} label="Teams with a patient in" />
+          <HeroStat value={activeCount} label="Teams that have someone in a bed" />
           <HeroStat value={shown(noTeamInBed)} label="In a bed, no team named" />
         </>
       }
@@ -350,7 +350,7 @@ function TeamsIndexView({
                     unit="in a bed"
                     sub={
                       nobody
-                        ? "Nobody in a bed"
+                        ? "No team patients in a bed here"
                         : [`${shown(withDate)} with a discharge date`, busy.map((entry) => entry.team.name).join(", ")]
                             .filter(Boolean)
                             .join(" · ")
@@ -368,8 +368,8 @@ function TeamsIndexView({
           <StatCard
             id="all-teams"
             className={index.anchorTarget}
-            title="Teams with someone in a bed"
-            meta={`${active.length} of ${teams.length} teams`}
+            title="Teams that have someone in a bed"
+            meta={`${active.length} of ${teams.length} teams have someone in a bed`}
             action={
               <Segmented<"bed" | "all">
                 label="Teams shown"
