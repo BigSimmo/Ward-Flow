@@ -233,15 +233,16 @@ export { RailAccountMenu } from "@/components/ward-management/shell-next/next-ac
  * paints over the East Metro row above it on a tight rail. */
 export function RailReadyLine({ metro, ready }: { metro: number | null; ready: number }) {
   return (
-    <>
+    <span className={parts.readyStack}>
       {metro !== null ? (
-        <>
+        <span className={parts.readyMetro}>
           Metro <b>{formatOccupancyPercent(metro)}</b>
-          <span aria-hidden="true"> · </span>
-        </>
+        </span>
       ) : null}
-      <b>{ready}</b> {ready === 1 ? "bed" : "beds"} ready now
-    </>
+      <span>
+        <b>{ready}</b> {ready === 1 ? "bed" : "beds"} ready now
+      </span>
+    </span>
   );
 }
 

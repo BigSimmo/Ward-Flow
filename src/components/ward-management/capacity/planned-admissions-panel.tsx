@@ -328,6 +328,7 @@ export function PlannedAdmissionsPanel({
     if (reason === "" || legalStatus === "") return;
     const timing = draftTiming(draft, formOpenedAt);
     if (!timing.ok) {
+      save.clearError();
       setRefusal(timing.refusal);
       return;
     }
