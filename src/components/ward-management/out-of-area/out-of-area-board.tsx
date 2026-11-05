@@ -233,7 +233,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const statusOf = (entry: OutOfAreaEntry) =>
     returnStatus(recordOf(entry.admission.id), drafts[entry.admission.id], now);
   const offsetOf = (entry: OutOfAreaEntry) => dischargeOffsetDays(entry, now);
-  const returnMovementOf = (id: string) => movements.findLast((movement) => movement.sourceAdmissionId === id)?.id;
+  const returnMovementOf = (id: string) => movements.find((movement) => movement.sourceAdmissionId === id)?.id;
 
   // Device audit 11 Oct 2026: a Return column where every row reads the same says nothing the
   // Checking line has not; it shows only when the plan state differs between people.
