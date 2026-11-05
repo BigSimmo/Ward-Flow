@@ -345,6 +345,11 @@ export function useWardSupabaseShared(
       const sessionEnded = () => {
         if (!storedAtConnect || storedSignIn() !== false) return false;
         disconnect();
+        // Drop the in-memory sign-in as well, so a token refresh already on its way cannot store
+        // it again, and clear this tab's Ward Flow data as a sign-out here would. This tab only:
+        // the stored key went from this tab, so no server sign-out reaches another tab.
+        void instance.signOut(true).catch(() => {});
+        endWardFlowTabSession();
         setForm((old) => ({ ...old, message: SESSION_ENDED_MESSAGE, messageKind: "info" }));
         setView({ ...emptyView, status: "ready", error: SESSION_ENDED_MESSAGE });
         return true;

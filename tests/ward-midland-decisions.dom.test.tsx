@@ -66,3 +66,20 @@ describe("the phone Answered list", () => {
     undoMidlandDecision(first.id);
   });
 });
+
+describe("the phone home Act now list", () => {
+  beforeEach(() => window.localStorage.clear());
+  it("drops the overdue Sallowfield referral once it is answered", async () => {
+    const { render, screen, cleanup } = await import("@testing-library/react");
+    const { MidlandPhone } = await import("@/components/ward-management/community/team-2026/midland-phone");
+    const props = { section: "home", open: vi.fn(), onRecordContact: vi.fn(), onReferFromTeam: vi.fn() } as const;
+    render(<MidlandPhone {...props} />);
+    expect(screen.queryByText("Referral past its answer time")).toBeTruthy();
+    cleanup();
+    recordMidlandDecision("r1", "Accepted for Midland", Date.now());
+    render(<MidlandPhone {...props} />);
+    expect(screen.queryByText("Referral past its answer time")).toBeNull();
+    cleanup();
+    undoMidlandDecision("r1");
+  });
+});

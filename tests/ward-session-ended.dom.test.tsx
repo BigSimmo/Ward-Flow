@@ -112,3 +112,65 @@ it("ends the session when the stored sign-in is cleared while the first workspac
   expect(result.current.signedIn).toBe(false);
   unmount();
 });
+
+it("drops the in-memory sign-in too, so a token refresh still on its way cannot store it again", async () => {
+  const snapshot = {
+    dataMode: "prototype",
+    revision: 1,
+    now: 642,
+    payload: {
+      version: 1,
+      state: seedWardFlowStateAt(0),
+      dayZero: "2026-10-07T00:00:00Z",
+      startedAt: "2026-10-07T10:00:00Z",
+    },
+  };
+  // A short-lived token, so every token read refreshes. The second refresh is held open.
+  const session = { access_token: "access", refresh_token: "refresh", expires_in: 30, user };
+  let refreshes = 0;
+  let releaseRefresh: (() => void) | undefined;
+  const fetcher = vi.fn(async (url: string | URL | Request) => {
+    const path = String(url);
+    if (path.includes("/v1/workspace"))
+      return Response.json({
+        snapshot,
+        actorId: user.id,
+        access: { role: "coordinator", scope: { kind: "statewide" } },
+      });
+    if (path.endsWith("/user")) return Response.json(user);
+    if (path.includes("grant_type=refresh_token") && ++refreshes === 2)
+      await new Promise<void>((resolve) => (releaseRefresh = resolve));
+    return Response.json(session);
+  });
+  vi.stubGlobal("fetch", fetcher);
+  const realSetInterval = globalThis.setInterval;
+  let pollTick: (() => void) | undefined;
+  vi.spyOn(globalThis, "setInterval").mockImplementation(((fn: TimerHandler, ms?: number) => {
+    if (ms === 3000 && typeof fn === "function") {
+      pollTick = fn as () => void;
+      return 0 as unknown as ReturnType<typeof setInterval>;
+    }
+    return realSetInterval(fn, ms);
+  }) as typeof setInterval);
+  const { result, unmount } = renderHook(() => useWardShared(true));
+  await waitFor(() => expect(result.current.status).toBe("ready"));
+  await act(async () => {
+    await result.current.credentials!.signIn("synthetic@example.invalid", "private-password");
+  });
+  await waitFor(() => expect(releaseRefresh).toBeDefined());
+  sessionStorage.setItem("ward-synthetic-tab-note", "x");
+
+  sessionStorage.removeItem(WARD_AUTH_STORAGE_KEY);
+  await act(async () => {
+    pollTick!();
+  });
+  expect(result.current.signedIn).toBe(false);
+  // This tab's Ward Flow data goes with the session, as a sign-out here would clear it.
+  expect(sessionStorage.getItem("ward-synthetic-tab-note")).toBeNull();
+  await act(async () => {
+    releaseRefresh!();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  });
+  expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
+  unmount();
+});

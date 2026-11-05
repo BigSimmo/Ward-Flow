@@ -149,6 +149,9 @@ function HomeSection({
   const [allCms, setAllCms] = useState(false);
   const cms = STAFF.filter((s) => s.load);
   const duty = STAFF.find((s) => s.today === "duty")!;
+  // Same decision state as the Referrals tab (and the tablet home): once answered, it leaves Act now.
+  const decisions = useMidlandDecisions();
+  const sallowfieldOpen = openReferrals(REFERRALS, decisions).some(({ r }) => r.id === "r1");
   const actNow = [
     {
       id: "fu",
@@ -161,16 +164,20 @@ function HomeSection({
       act: true,
       run: onRecord,
     },
-    {
-      id: "ref",
-      what: "Referral past its answer time",
-      n: "Sallowfield, June",
-      u: "UM200322",
-      meta: "from GP · psychiatrist review",
-      when: "3d 1h",
-      action: "Answer",
-      run: () => go("referrals"),
-    },
+    ...(sallowfieldOpen
+      ? [
+          {
+            id: "ref",
+            what: "Referral past its answer time",
+            n: "Sallowfield, June",
+            u: "UM200322",
+            meta: "from GP · psychiatrist review",
+            when: "3d 1h",
+            action: "Answer",
+            run: () => go("referrals"),
+          },
+        ]
+      : []),
     {
       id: "book",
       what: "Leaving hospital, no follow-up booked",
