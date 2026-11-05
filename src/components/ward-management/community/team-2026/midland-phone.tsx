@@ -37,6 +37,7 @@ import {
   shortName,
 } from "./midland-demo";
 import { ReferralPage, useAnswer } from "./team-referrals";
+import { openReferrals, useMidlandDecisions } from "./midland-decisions";
 import { useRegisterWardBarPlaceSwitch } from "@/components/ward-management/shell/ward-bar-place-switch";
 import p from "./midland-phone.module.css";
 
@@ -508,6 +509,7 @@ function HospitalSection({ note, onRecord }: { note: (t: string) => void; onReco
 }
 
 function ReferralsSection({ open }: { open: (index: number) => void }) {
+  const decisions = useMidlandDecisions();
   const [pane, setPane] = useState<"q" | "s" | "h">("q");
   return (
     <>
@@ -518,16 +520,16 @@ function ReferralsSection({ open }: { open: (index: number) => void }) {
         value={pane}
         onChange={setPane}
         items={[
-          { id: "q", label: "To answer", count: REFERRALS.length },
+          { id: "q", label: "To answer", count: openReferrals(REFERRALS, decisions).length },
           { id: "s", label: "Sent", count: SENT.length },
-          { id: "h", label: "Answered", count: f.answeredThisMonth },
+          { id: "h", label: "Answered", count: f.answeredThisMonth + REFERRALS.filter((r) => decisions[r.id]).length },
         ]}
       />
       {pane === "q" ? (
         <Card>
           <GroupHead title="Oldest first" hint="answer within 3 days" />
           <ul className={p.rows}>
-            {REFERRALS.map((r, index) => (
+            {openReferrals(REFERRALS, decisions).map(({ r, index }) => (
               <li key={r.id} className={p.ref}>
                 <div className={p.refHead}>
                   <span>
@@ -651,7 +653,7 @@ function ReferralSheet({
   openFull: () => void;
 }) {
   const r = index === null ? null : REFERRALS[index]!;
-  const { accept, say: note } = useAnswer(r?.n ?? "");
+  const { accept, say: note } = useAnswer(r?.n ?? "", r?.id);
   return (
     <PhoneSheet
       open={r !== null}

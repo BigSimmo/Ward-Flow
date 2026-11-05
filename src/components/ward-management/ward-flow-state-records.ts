@@ -94,10 +94,18 @@ export function withStayBlocker(
   state: WardFlowState,
   admissionId: string,
   blocker: BedReleaseBlocker | null,
+  recorded?: { at: Instant; by: WardFlowRole },
 ): WardFlowState {
   const stay = findAdmission(state, admissionId);
   if (!stay || stay.blockReason === blocker) return state;
-  return replaceAdmission(state, stay.id, { ...stay, blockReason: blocker });
+  return replaceAdmission(state, stay.id, {
+    ...stay,
+    blockReason: blocker,
+    // the hold-up joins the stay's own log with its time and role.
+    ...(recorded && blocker !== null
+      ? { stayBlockRecords: [...(stay.stayBlockRecords ?? []), { ...recorded, blocker }] }
+      : {}),
+  });
 }
 
 export function findLeaveBed(state: WardFlowState, leaveBedId: string): LeaveBed | undefined {

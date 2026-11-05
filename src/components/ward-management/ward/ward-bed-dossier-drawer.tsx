@@ -73,6 +73,9 @@ import {
 import { PhoneBedSheet } from "./ward-bed-dossier-phone";
 import { WardDrawerDischargeDate } from "./ward-drawer-discharge-date";
 import { observationEditingToken } from "@/components/ward-management/ward-flow-observation-events";
+import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
+
+const roleLabel = (role: keyof typeof WARD_FLOW_ROLE_LABELS) => WARD_FLOW_ROLE_LABELS[role];
 
 interface WardBedDossierDrawerProps {
   selectedBed: number;
@@ -483,6 +486,19 @@ export function WardBedDossierDrawer({
       if (metTimes.every((at): at is number => at !== null))
         timeline.push({ at: Math.max(...metTimes), tone: "success", label: "All discharge criteria met" });
     }
+    // every hold-up recorded and cleared, with who and when.
+    for (const record of admission.stayBlockRecords ?? [])
+      timeline.push({
+        at: record.at,
+        tone: "warning",
+        label: `Hold-up: ${record.blocker}, by ${roleLabel(record.by)}`,
+      });
+    for (const cleared of admission.stayBlockClearances ?? [])
+      timeline.push({
+        at: cleared.at,
+        tone: "success",
+        label: `Hold-up cleared: ${cleared.blocker}, by ${roleLabel(cleared.by)}`,
+      });
     timeline.sort((left, right) => right.at - left.at);
   }
 

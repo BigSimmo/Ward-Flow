@@ -53,7 +53,6 @@ import {
   expectedArrival,
   formRequiredLabel,
   officerLeg,
-  pastWardEta,
   transportLegalStatusLabel,
 } from "./officer-screen-helpers";
 import type { Dispatch, SetStateAction } from "react";
@@ -342,7 +341,11 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
           })()
         : null}
 
-      {pastWardEta(movement, now) && movement.arrivalDetails ? (
+      {/* the alert follows whichever ETA the job shows (ward ETA, else the booked ETA). */}
+      {eta !== undefined &&
+      transport.arrivedAt === undefined &&
+      !movement.closure &&
+      now > eta + LATE_ARRIVAL_GRACE_MINUTES ? (
         <div
           className={styles.overdue}
           role="alert"
@@ -351,8 +354,8 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
         >
           <StatusGlyph tone="warning" size={9} />
           <span>
-            <strong>Arrival overdue.</strong> More than {LATE_ARRIVAL_GRACE_MINUTES}m past the ward ETA (
-            {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST).
+            <strong>Arrival overdue.</strong> More than {LATE_ARRIVAL_GRACE_MINUTES}m past the{" "}
+            {arrival?.booked ? "booked" : "ward"} ETA ({formatInstantWithDay(eta, now)} AWST).
           </span>
         </div>
       ) : null}
@@ -468,7 +471,7 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
                 <b>
                   {packOpen} {packOpen === 1 ? "form" : "forms"} to upload
                 </b>{" "}
-                before collection
+                {transport.collectedAt === undefined ? "before collection" : "still outstanding"}
               </span>
               <span className={styles.formsLineGo}>View</span>
             </button>

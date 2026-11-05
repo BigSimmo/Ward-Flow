@@ -37,6 +37,8 @@ import {
 import { formTitleForCode } from "@/lib/form-register";
 import { ABSENCE_STEP_LABELS, type LeaveBed, type Movement } from "../ward-model";
 import { LEAVING_DESTINATIONS, type Admission } from "../ward-admissions";
+import type { Patient } from "../ward-patients";
+import type { PatientRegistrationScope } from "../ward-patient-registration";
 import { calendarDateOf, perthDateLabel, perthDayLabel } from "../ward-clock";
 import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import { originName } from "@/components/ward-management/ward-movement-origin";
@@ -299,6 +301,26 @@ function stayTime(stay: Admission): number {
   return stay.arrivedAt ?? stay.pulledAt ?? stay.leftAt ?? 0;
 }
 
+const SCOPE_DESK: Record<PatientRegistrationScope["kind"], string> = {
+  ed: "ED",
+  ward: "ward",
+  team: "community team",
+  site: "site bed desk",
+  service: "service desk",
+};
+
+/** "Record created by <desk>" at the time it was added; undefined when that was not recorded. */
+export function createdEvent(
+  patient: Pick<Patient, "addedAt" | "registrationScope"> | undefined,
+  unitName: (id: string) => string | undefined,
+): LogEvent | undefined {
+  if (!patient || typeof patient.addedAt !== "number") return undefined;
+  const scope = patient.registrationScope;
+  const place = scope ? unitName(scope.placeId) : undefined;
+  const by = scope ? (place ? `${place} (${SCOPE_DESK[scope.kind]})` : `the ${SCOPE_DESK[scope.kind]}`) : undefined;
+  return { at: patient.addedAt, tone: "neutral", text: by ? `Record created by ${by}` : "Record created" };
+}
+
 // ── Tab ───────────────────────────────────────────────────────────────────────────────────────
 
 export function PatientHistoryTab({
@@ -334,6 +356,7 @@ export function PatientHistoryTab({
   onBackToNow: () => void;
 }) {
   const leaveBeds = useOptionalWardFlowSelect("leaveBeds")?.leaveBeds ?? [];
+  const patients = useOptionalWardFlowSelect("patients")?.patients ?? [];
   const extras = recordExtrasFor(patientId ?? record.id);
   const current = record.presentations.find((p) => p.current);
   const rows: EpisodeRow[] = [
@@ -376,6 +399,12 @@ export function PatientHistoryTab({
     events.push({ at: absence.since, tone: "danger", text: `${absenceWord}, recorded` });
     for (const done of absence.steps) events.push({ at: done.at, tone: "info", text: ABSENCE_STEP_LABELS[done.step] });
   }
+  // who created this record and when, from the registration itself.
+  const created = createdEvent(
+    patients.find((p) => p.id === (patientId ?? record.id)),
+    unitName,
+  );
+  if (created) events.push(created);
   events.sort((a, b) => b.at - a.at);
 
   const chronology = chronologyHref ? (

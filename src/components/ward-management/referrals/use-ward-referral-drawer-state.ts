@@ -17,6 +17,7 @@ import { calendarDateOf, formatInstantWithDay, type Instant } from "@/components
 import { referralAgeBand } from "./referral-age-band";
 import { cleanReferralContact, cleanReferralFields, cleanReferralText } from "./referral-text-clean";
 import { referralDraftKeptOnScreen } from "./referral-draft-kept-check";
+import { noticeDraftKept } from "./referral-draft-saved-notice";
 import {
   URGENCY_LEVELS,
   HEALTH_SERVICES,
@@ -71,7 +72,7 @@ import { drawerFootStatus } from "./referral-drawer-foot-status";
 import { focusFirstInvalidField, referralInboxSummary } from "./referral-drawer-helpers";
 import * as fromRecord from "./referral-record-prefill";
 import { type ReferralTextInput } from "./referral-letter";
-import { useIsPhone, useModalFocus, type WfTone } from "@/components/wf";
+import { useIsPhone, useModalFocus, useOptionalToast, type WfTone } from "@/components/wf";
 import { usePathname } from "next/navigation";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { profileForChromeRole } from "@/components/ward-management/settings/settings-profile";
@@ -124,7 +125,6 @@ import {
 } from "./ward-referral-drawer-model";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { NO_SENDING_WARD, useReferralUrlPrefill, useSheetSender } from "./use-referral-sheet-sender";
-
 export { NO_SENDING_WARD };
 
 /**
@@ -183,7 +183,7 @@ export function useWardReferralDrawerState({
   const { scenario, worldGeneration } = useWardFlowSelect("scenario", "worldGeneration");
   const now = useWardFlowClock();
   const { sendGate, sendingWard, senderMissing } = useSheetSender(gate, units, pathname, searchId);
-
+  const toast = useOptionalToast();
   const urlPrefill = useReferralUrlPrefill({
     initialOriginSiteCode,
     initialPatientId,
@@ -544,7 +544,7 @@ export function useWardReferralDrawerState({
     setGuardOpen(false);
     approveNextHistoryNavigation();
     onClose();
-    announceToWardShell(kept ? "Synthetic referral draft kept for this session." : "Draft not kept: signed in again.");
+    noticeDraftKept(toast, kept);
   }
 
   function handleDrawerClose() {

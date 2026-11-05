@@ -7,7 +7,7 @@ import {
   stageCopy,
   transportLeg,
 } from "@/components/ward-management/ward-derivations";
-import { type Instant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { type Instant, dayOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { CAD_TO_FOLLOW, cadNumberToFollow } from "@/components/ward-management/ward-cad-number";
 import { LATE_ARRIVAL_GRACE_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import type { Movement, TransportJob, Unit } from "@/components/ward-management/ward-model";
@@ -243,6 +243,31 @@ export type HighlightPill = "requested" | "accepted" | "en_route" | "collected" 
 export type SortKey = "next" | "wait" | "eta";
 
 export type JobsTab = "jobs" | "history";
+
+/**
+ * an arrival counts in History from the moment it is written. A write stamped on a later
+ * day than the screen's clock (a clock that has not caught up, or a stored world behind real time)
+ * used to drop out of both Jobs and History; anything from the start of today onward now counts.
+ */
+export function arrivedSinceStartOfDay(arrivedAt: Instant, now: Instant): boolean {
+  return dayOf(arrivedAt) >= dayOf(now);
+}
+
+/** the Arrivals card's time axis, clamped to now +/-48h, with a bounded number of hour ticks. */
+export function arrivalsAxis(now: Instant, etas: readonly Instant[], reachHours = 48, maxTicks = 12) {
+  const reach = reachHours * 60;
+  const lo = now - reach;
+  const hi = now + reach;
+  const clamp = (at: Instant) => Math.min(hi, Math.max(lo, at));
+  const start = Math.min(now, ...etas.map(clamp));
+  const end = Math.max(now, ...etas.map(clamp));
+  const span = Math.max(end - start, 1);
+  const step = Math.max(1, Math.ceil(span / 60 / maxTicks)) * 60;
+  const ticks: Instant[] = [];
+  for (let tick = Math.ceil(start / step) * step; tick <= end; tick += step) ticks.push(tick);
+  const left = (at: Instant) => `${((clamp(at) - start) / span) * 100}%`;
+  return { start, end, span, ticks, left };
+}
 
 export type HistoryTab = "delivered" | "refused" | "cancelled";
 

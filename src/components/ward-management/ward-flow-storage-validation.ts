@@ -18,6 +18,7 @@ import {
   isPlannedAdmissionStayDays,
   PLANNED_ADMISSION_INITIALS_PATTERN,
   PLANNED_ADMISSION_STATES,
+  isStayBlockRecords,
 } from "./ward-admissions";
 import { referralIntakeError, type ReferralIntakeDetails } from "./referrals/referral-submission";
 import { REFERRAL_INFORMATION_NEED_IDS } from "./referrals/referral-information-needs";
@@ -601,6 +602,7 @@ const admission = z.looseObject({
   dischargeDateSetBy: nullableText,
   dischargeConfirmedBy: nullableText,
   blockReason: z.nullable(z.enum(BED_RELEASE_BLOCKERS)),
+  stayBlockRecords: z.optional(z.custom(isStayBlockRecords)), // absent in older saves.
   leavingDestination: z.nullable(z.custom(isLeavingDestination)),
   // A stored barrier is a list value or absent; free text here would be typed text restored from
   // storage (review finding A2-2).

@@ -5,7 +5,8 @@
  * referral-page-light.png, referral-page-dark.png and referral-document-viewer.png): the queue with
  * To answer, Sent by team and Answered; the side panel for the chosen referral; and the full
  * referral page, modelled on the ward Answer page. Midland demo data, ported from the mock-up
- * (Q126, Q132). The team accepts as itself (Q125). Demo answers stay on this page and are not saved.
+ * (Q126, Q132). The team accepts as itself (Q125). Answers are recorded in this browser
+ * (midland-decisions.ts) so the counts and lists stay changed after a reload.
  */
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -38,6 +39,7 @@ import {
 import home from "@/components/ward-management/ward/ward-home-tab.module.css";
 import { ANSWERED, EXTRA, REFERRALS, SENT, STAFF, type DemoReferral } from "./midland-demo";
 import { Person, Tag, initialsOf } from "./parts";
+import { openReferrals, recordMidlandDecision, undoMidlandDecision, useMidlandDecisions } from "./midland-decisions";
 import wt from "@/components/ward-management/ward-table/ward-table.module.css";
 import t from "./team-2026.module.css";
 
@@ -75,21 +77,26 @@ function TimeCard({ r }: { r: DemoReferral }) {
   );
 }
 
-/** Accept turns the actions into one success line with Undo (the mock-up's behaviour). */
-export function useAnswer(name: string) {
+/** Accept records the answer and turns the actions into one success line with Undo. */
+export function useAnswer(name: string, id?: string) {
   const toast = useOptionalToast();
-  const [accepted, setAccepted] = useState<string | null>(null);
+  const decisions = useMidlandDecisions();
+  const [local, setLocal] = useState<string | null>(null);
+  const accepted = id ? (decisions[id]?.line ?? null) : local;
+  const undo = () => (id ? undoMidlandDecision(id) : setLocal(null));
   const accept = (line: string) => {
-    setAccepted(line);
+    if (id) recordMidlandDecision(id, line);
+    else setLocal(line);
+    const at = new Date().toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", hour12: false });
     toast?.push({
       tone: "success",
       title: `Accepted ${name}`,
-      body: "Demo data · not saved",
-      action: { label: "Undo", onAction: () => setAccepted(null) },
+      body: id ? `Saved at ${at} · moved to Answered` : `Saved at ${at}`,
+      action: { label: "Undo", onAction: undo },
     });
   };
   const say = (title: string) => toast?.push({ tone: "info", title });
-  return { accepted, accept, undo: () => setAccepted(null), say };
+  return { accepted, accept, undo, say };
 }
 
 function Done({ line, undo }: { line: string; undo: () => void }) {
@@ -108,7 +115,7 @@ const ROOM = STAFF.filter((s) => s.load && s.today !== "leave");
 
 function SidePanel({ r, openPage }: { r: DemoReferral; openPage: () => void }) {
   const [cm, setCm] = useState("");
-  const { accepted, accept, undo, say } = useAnswer(r.n);
+  const { accepted, accept, undo, say } = useAnswer(r.n, r.id);
   return (
     <div className={t.detail}>
       <div className={t.dHead}>
@@ -257,7 +264,7 @@ export function ReferralPage({ index, go, back }: { index: number; go: (index: n
   );
   const [first, setFirst] = useState(r.firstContact);
   const [doc, setDoc] = useState<{ name: string; meta: string; who: string } | null>(null);
-  const { accepted, accept, undo, say } = useAnswer(r.n);
+  const { accepted, accept, undo, say } = useAnswer(r.n, r.id);
   const passN = r.checks.filter((c) => c[0] === "pass").length;
   const firstName = r.n.split(", ")[1] ?? r.n;
   const referrer = (r.contacts[0]?.[1] ?? "").replace(/^(\w+), (Dr )?(\w+)$/, "$2$3 $1");
@@ -637,6 +644,7 @@ export function ReferralPage({ index, go, back }: { index: number; go: (index: n
 export function TeamReferrals() {
   const [pane, setPane] = useState<"q" | "s" | "h">("q");
   const [selected, setSelected] = useState(0);
+  const decisions = useMidlandDecisions();
   const [page, setPage] = useState<number | null>(null);
   const backRef = useRef<HTMLDivElement>(null);
   if (page !== null) {
@@ -654,6 +662,8 @@ export function TeamReferrals() {
     );
   }
   const chosen = REFERRALS[selected]!;
+  const open = openReferrals(REFERRALS, decisions);
+  const decidedRows = REFERRALS.filter((r) => decisions[r.id]);
   return (
     <div className={t.refGrid} ref={backRef}>
       <Card className={home.v6Card}>
@@ -667,9 +677,9 @@ export function TeamReferrals() {
               value={pane}
               onChange={setPane}
               items={[
-                { id: "q", label: "To answer", count: REFERRALS.length },
+                { id: "q", label: "To answer", count: open.length },
                 { id: "s", label: "Sent by team", count: SENT.length },
-                { id: "h", label: "Answered", count: 14 },
+                { id: "h", label: "Answered", count: 14 + decidedRows.length },
               ]}
             />
           }
@@ -690,7 +700,7 @@ export function TeamReferrals() {
                   </tr>
                 </thead>
                 <tbody>
-                  {REFERRALS.map((r, index) => (
+                  {open.map(({ r, index }) => (
                     <tr
                       key={r.id}
                       className={`${t.refRow}${index === selected ? ` ${t.sel}` : ""}`}
@@ -794,6 +804,27 @@ export function TeamReferrals() {
                   </tr>
                 </thead>
                 <tbody>
+                  {decidedRows.map((r) => (
+                    <tr key={r.id}>
+                      <td>
+                        <Person name={r.n} umrn={r.u} />
+                      </td>
+                      <td>{r.ask}</td>
+                      <td>
+                        <Tag tone="success">Accepted</Tag>
+                      </td>
+                      <td>{decisions[r.id]!.line}</td>
+                      <td>
+                        You ·{" "}
+                        {new Date(decisions[r.id]!.at).toLocaleString("en-AU", {
+                          weekday: "short",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: false,
+                        })}
+                      </td>
+                    </tr>
+                  ))}
                   {ANSWERED.map((s) => (
                     <tr key={s.u}>
                       <td>
@@ -813,7 +844,9 @@ export function TeamReferrals() {
               </table>
             </div>
             <div className={t.tableFoot}>
-              <span className={t.shown}>Showing {ANSWERED.length} of 14 this month</span>
+              <span className={t.shown}>
+                Showing {ANSWERED.length + decidedRows.length} of {14 + decidedRows.length} this month
+              </span>
             </div>
           </>
         )}

@@ -12,6 +12,16 @@ import { CLINICAL_VALUES } from "./ward-clinical-values";
 
 /** Every Ward Flow tab in this browser hears a deliberate sign-out (Audit 5 PS-08, Audit 4 A4-06). */
 const SESSION_CHANNEL = "ward-flow-session";
+const SESSION_ENDED_MESSAGE = "Your session ended. Sign in again to carry on.";
+
+/** Whether this tab still stores a sign-in; `null` when the browser blocks storage. */
+function storedSignIn(): boolean | null {
+  try {
+    return window.sessionStorage.getItem(WARD_AUTH_STORAGE_KEY) !== null;
+  } catch {
+    return null;
+  }
+}
 const IDLE_ACTIVITY = ["pointerdown", "keydown", "wheel", "touchstart"] as const;
 
 /**
@@ -345,8 +355,20 @@ export function useWardSupabaseShared(
         pushSubscribe: (subscription) => client.pushSubscribe(subscription),
         pushUnsubscribe: (endpoint) => client.pushUnsubscribe(endpoint),
       });
+      // A sign-in cleared from this tab's storage (another tool, or the browser) ends the session
+      // here too, instead of the page still looking signed in until a reload. Only a sign-in that
+      // was stored when connecting counts, so a browser that blocks storage keeps its in-memory one.
+      const storedAtConnect = storedSignIn() === true;
+      const sessionEnded = () => {
+        if (!storedAtConnect || storedSignIn() !== false) return false;
+        disconnect();
+        setForm((old) => ({ ...old, message: SESSION_ENDED_MESSAGE, messageKind: "info" }));
+        setView({ ...emptyView, status: "ready", error: SESSION_ENDED_MESSAGE });
+        return true;
+      };
       onVisibilityChange = () => {
         if (!closed && connection.current === client && document.visibilityState === "visible") {
+          if (sessionEnded()) return;
           void client.refresh();
         }
       };
@@ -355,6 +377,7 @@ export function useWardSupabaseShared(
       }
       timer = setInterval(() => {
         if (typeof document !== "undefined" && document.visibilityState === "hidden") return;
+        if (sessionEnded()) return;
         void client.refresh();
       }, SHARED_REFRESH_MS);
     };

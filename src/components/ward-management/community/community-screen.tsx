@@ -94,6 +94,7 @@ import { CommunityScreenInBedTab } from "./community-screen-in-bed-tab";
 import { CommunityScreenBackTab } from "./community-screen-back-tab";
 import { CommunityScreenCaseloadTab } from "./community-screen-caseload-tab";
 import { MIDLAND_DEMO_TEAM } from "./team-2026/midland-demo";
+import { recordMidlandContact } from "./team-2026/midland-decisions";
 import { MidlandTeamSections } from "./team-2026/midland-sections";
 import {
   CommunityScreenTransportBookDialog,
@@ -428,6 +429,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
     generation: worldGeneration,
     shared,
     onAccepted: (source) => {
+      if (MIDLAND_DEMO_TEAM.test(teamId)) recordMidlandContact("team");
       if (source === "modal") setActiveModalType((current) => (current === "contact" ? null : current));
       else setToastMessage("Team contact logged. This does not record patient or referral contact.");
     },

@@ -1,6 +1,7 @@
 import type { BedMeetingAction } from "./bed-meeting/bed-meeting-actions";
 import type { CareJourney } from "./ward-care-journey";
 import {
+  BED_RELEASE_BLOCKERS,
   type BedReleaseBlocker,
   type DischargeDelayClearReason,
   type OverrideReason,
@@ -683,6 +684,16 @@ export type Admission = {
     readonly reason?: DischargeDelayClearReason;
     readonly blocker: BedReleaseBlocker;
   }>;
+  /**
+   * Live test (5 Nov 2026): every hold-up recorded on this stay, append-only, with its time
+   * and role, so the bed timeline can show who logged what and when. Optional and absent in older
+   * saves, which load as they are (no stored-state version bump).
+   */
+  stayBlockRecords?: ReadonlyArray<{
+    readonly at: Instant;
+    readonly by: WardFlowRole;
+    readonly blocker: BedReleaseBlocker;
+  }>;
   /** Where this person went, once they have gone. `null` until then. */
   leavingDestination: LeavingDestination | null;
   /** When they went. `null` until then. */
@@ -763,12 +774,28 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   dischargeConfirmedBy: true,
   blockReason: true,
   stayBlockClearances: true,
+  stayBlockRecords: true,
   leavingDestination: true,
   leftAt: true,
   followUp: true,
   careJourney: true,
   meetingActions: true,
 };
+
+/** a stored hold-up log is a list of {finite time, known role, listed blocker}. */
+export function isStayBlockRecords(value: unknown): boolean {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (r) =>
+        typeof r === "object" &&
+        r !== null &&
+        Number.isFinite((r as { at?: unknown }).at) &&
+        typeof (r as { by?: unknown }).by === "string" &&
+        (BED_RELEASE_BLOCKERS as readonly unknown[]).includes((r as { blocker?: unknown }).blocker),
+    )
+  );
+}
 
 export const ADMISSION_FIELDS: readonly string[] = Object.keys(ADMISSION_FIELD_PRESENCE);
 

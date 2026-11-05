@@ -494,7 +494,18 @@ export function AddPatientForm() {
             // P143 (Josh, 8:57 PM): refer path only; in-app move, as a reload drops a demo-mode record.
             ...(prior.intent === "refer"
               ? { nextStep: { label: "Open patient", onNextStep: () => router.push(patientHref(added.id)) } }
-              : {}),
+              : {
+                  // a new record is on no board until something brings them in; say so and
+                  // offer the next step there and then.
+                  body: "Not on a board yet. Start a referral to add this presentation.",
+                  nextStep: {
+                    label: "Start referral",
+                    onNextStep: () =>
+                      router.push(
+                        `${WARD_REFERRAL_INTAKE_HREF}?${new URLSearchParams({ new: "1", patientId: encodeRecordAddress(added.id) }).toString()}`,
+                      ),
+                  },
+                }),
           },
     );
     if (prior.intent === "refer") {
