@@ -530,13 +530,13 @@ function WardsIndexView({
             <div className={redesign.tableWrap} tabIndex={0} role="region" aria-label="Every ward, scrollable">
               <table className={cx(tableClasses.table, redesign.table)} data-testid="ward-statistics-wards-table">
                 <caption className={styles.srOnly}>
-                  Every inpatient ward: occupancy, occupied of beds, ready, being made ready, pulled, closed, blocked
-                  discharges and the longest current stay
+                  Every inpatient ward: beds in use (occupied and pulled), occupied of beds, ready, being made ready,
+                  pulled, closed, blocked discharges and the longest current stay
                 </caption>
                 <thead>
                   <tr>
                     <th scope="col">Ward</th>
-                    <th scope="col">Occupancy</th>
+                    <th scope="col">In use</th>
                     {[
                       "Occupied",
                       BED_STATE_LABELS.ready,
@@ -587,7 +587,7 @@ function WardsIndexView({
                               <Occ
                                 pct={row.rate}
                                 threshold={BED_ALERT_THRESHOLD_PERCENT}
-                                label={`${row.name} occupancy`}
+                                label={`${row.name} beds in use`}
                               />
                             </td>
                             <td className={num(false)}>{`${row.occupied} of ${row.beds}`}</td>
