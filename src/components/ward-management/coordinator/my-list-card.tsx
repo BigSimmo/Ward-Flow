@@ -405,15 +405,17 @@ export function MyListCard({
       <div className={styles.needsFoot}>
         <StatusGlyph tone="neutral" size={9} />
         <span>Oldest first within each group. Snoozed items return by themselves.</span>
-        <button
-          type="button"
-          className={styles.footLink}
+        {/* Design audit A26 (5 Nov 2026): the kit small button, so it keeps the 40px phone size. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className={styles.footAction}
           aria-haspopup="dialog"
           onClick={() => setCallSheetOpen(true)}
           data-testid="home-call-sheet-open"
         >
           Call sheet
-        </button>
+        </Button>
       </div>
       {callSheetOpen ? (
         <Sheet
