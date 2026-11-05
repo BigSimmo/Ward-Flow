@@ -106,6 +106,6 @@ describe("forecastByKind", () => {
   });
 
   it("words a range end the way the mismatch table does", () => {
-    expect([kindRangeWord(-4), kindRangeWord(0), kindRangeWord(3)]).toEqual(["4 short", "even", "3 spare"]);
+    expect([kindRangeWord(-4), kindRangeWord(0), kindRangeWord(3)]).toEqual(["4 short", "even", "3 spare that fit"]);
   });
 });
