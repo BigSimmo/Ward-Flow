@@ -36,7 +36,6 @@
 .note {
   margin: 0;
   padding: var(--wf-s-2) var(--wf-s-3);
-  border-left: 3px solid var(--wf-warning);
   border-radius: var(--wf-r-tag);
   background: var(--wf-hold-tint);
   font-size: var(--wf-fs-13);
@@ -45,7 +44,6 @@
 }
 
 .noteCalm {
-  border-left-color: var(--wf-success);
   background: var(--wf-surface-2);
 }
 
@@ -309,11 +307,6 @@
 
 .bedChange input {
   width: 64px;
-}
-
-/* ED access risk. */
-.riskCard {
-  box-shadow: inset 4px 0 0 var(--wf-warning);
 }
 
 .riskTable {
