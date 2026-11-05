@@ -233,6 +233,7 @@
     /* Longhands: the CSS build folds `animation` and `animation-timeline` into one shorthand that
        Chrome rejects, which dropped the fade. Without a full set of longhands it cannot fold them. */
     animation-name: keysFade;
+    animation-duration: 1ms;
     animation-timing-function: linear;
     animation-fill-mode: both;
     animation-timeline: scroll(self inline);

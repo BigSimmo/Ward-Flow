@@ -120,7 +120,7 @@ export function AlertsHero({
               oldestRaised !== undefined || activeBroadcast
                 ? [
                     oldestRaised !== undefined ? `oldest ${minutesText(Math.max(0, now - oldestRaised))}` : "",
-                    officerDesk ? "" : `${yoursCount} yours`,
+                    officerDesk || yoursCount === 0 ? "" : `${yoursCount} yours`,
                     activeBroadcast ? "broadcast live" : "",
                   ]
                     .filter(Boolean)
@@ -300,7 +300,14 @@ export function AlertsHero({
                   },
                 ]}
                 trigger={(props) => (
-                  <Button {...props} variant="onHero" size="sm" icon={Ellipsis} aria-label="More alert tools" />
+                  <Button
+                    {...props}
+                    variant="onHero"
+                    size="sm"
+                    iconOnly
+                    icon={Ellipsis}
+                    aria-label="More alert tools"
+                  />
                 )}
               />
             </div>

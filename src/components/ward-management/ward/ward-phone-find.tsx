@@ -15,11 +15,19 @@ export function WardPhoneFind({ value, onChange }: { value: string; onChange: (n
   const [opened, setOpened] = useState(false);
   const open = opened || value !== "";
   const inputRef = useRef<HTMLInputElement>(null);
+  const rowRef = useRef<HTMLDivElement>(null);
+  const refocusOpener = useRef(false);
+  // Clear folds the field away, so focus moves to the search icon that replaces it.
+  useEffect(() => {
+    if (!refocusOpener.current || open) return;
+    refocusOpener.current = false;
+    rowRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+  }, [open]);
   useEffect(() => {
     if (opened) inputRef.current?.focus();
   }, [opened]);
   return (
-    <div className={styles.row} data-open={open ? "true" : undefined}>
+    <div ref={rowRef} className={styles.row} data-open={open ? "true" : undefined}>
       {open ? (
         <TextInput
           ref={inputRef}
@@ -33,6 +41,7 @@ export function WardPhoneFind({ value, onChange }: { value: string; onChange: (n
           onClear={() => {
             onChange("");
             setOpened(false);
+            refocusOpener.current = true;
           }}
           onBlur={() => {
             if (value === "") setOpened(false);
