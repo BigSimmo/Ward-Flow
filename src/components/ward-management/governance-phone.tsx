@@ -274,7 +274,7 @@ export function GovernancePhone({
         items={[
           { id: "review", label: "Review", count: toReview.length },
           ...(adminDesk ? [] : [{ id: "gaps" as const, label: "Form gaps", count: totalGaps }]),
-          { id: "audit", label: "Reviewed", count: reviewedCount },
+          { id: "audit", label: "Audit trail", count: reviewedCount },
         ]}
       />
       {phoneTab === "review" ? (
@@ -396,12 +396,12 @@ export function GovernancePhone({
       {/* Audit settings-6: Review already lists what waits, so the phone's third view lists only
           what has been reviewed, newest first. The full captured trail is on a tablet or computer. */}
       {phoneTab === "audit" ? (
-        <Card aria-label="Reviewed this session">
+        <Card aria-label="Audit trail this session">
           {allowed && phoneReviewed.length > 0 ? (
             <ul className={thirdEdition.phoneList}>{phoneReviewed.map(phoneEventRow)}</ul>
           ) : (
             <p className={thirdEdition.emptyCell}>
-              {allowed ? "No event has been reviewed yet." : "Record access unavailable"}
+              {allowed ? "No event has been reviewed yet." : "Audit is read by coordinators."}
             </p>
           )}
         </Card>

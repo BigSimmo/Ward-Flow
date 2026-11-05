@@ -489,6 +489,12 @@
     animation: govMoreRight linear both;
     animation-timeline: scroll(self inline);
   }
+
+  /* WF-46: an empty list has nothing off to the right, so it draws no edge. */
+  .capturedList[data-empty] {
+    border-right-color: transparent;
+    animation: none;
+  }
 }
 
 .eventHeader,
@@ -508,7 +514,8 @@
   min-height: 36px;
   border-bottom: 1px solid var(--wf-line);
   color: var(--wf-ink-3);
-  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  /* WF-46: column heads at 13px and rows at 14px, readable at desk distance. */
+  font: 600 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
@@ -528,9 +535,14 @@
   border-bottom: 1px solid var(--wf-line);
   background: none;
   color: var(--wf-ink-1);
-  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  font: 400 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
   text-align: left;
   cursor: pointer;
+}
+
+.eventRow .quietText {
+  font-size: var(--wf-fs-13);
+  line-height: var(--wf-lh-13);
 }
 
 .eventRow:hover {
@@ -544,7 +556,7 @@
 
 .eventTime {
   color: var(--wf-ink-2);
-  font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  font: 500 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-mono);
   white-space: nowrap;
 }
 

@@ -110,7 +110,7 @@ describe("Delays escalation follows the existing desk permission", () => {
     if (role === "coordinator") expect(button).not.toBeDisabled();
     else {
       expect(button).toBeDisabled();
-      expect(button).toHaveAccessibleDescription("Coordinator only");
+      expect(button).toHaveAccessibleDescription("Coordinator only. Ask the bed coordinator to do this.");
     }
     fireEvent.click(button);
     const escalations = sent.filter((event) => event.type === "RECORD_ESCALATION");
