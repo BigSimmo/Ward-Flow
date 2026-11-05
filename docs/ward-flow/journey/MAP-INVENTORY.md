@@ -212,7 +212,7 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: Reject blank or placeholder CAD values; ward’s actingUnitId must identify the sending ward
   effects: Updates only movement.transport.cadNumber and cadAdded; does not dispatch, accept or advance the job
   tests: tests/ward-transport-cad-to-follow.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-transport-events.ts:1116; SHA256 e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928
+  Reviewed source: src/components/ward-management/ward-flow-transport-events.ts:1120; SHA256 e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928
   Reviewed source: src/components/ward-management/ward-flow-event-roles.ts:186; SHA256 3eb41a56cb181aefe22ddccbbc6a1c684a25cad9aace23506f1288dcd7a833cc
   Reviewed source: src/components/ward-management/ward-transport-collection-events.ts:30; SHA256 1ebf665a65645eb14f53647d07db90bef0a947b2a7e298f2b6f203b7c78d3496
   Reviewed source: src/components/ward-management/ward-access-state.ts:652; SHA256 57c3e6555702e92d7e985f8943cb335859fda46abb757b898812c99dc184eb9d
@@ -1727,7 +1727,7 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   effects: Does not remove the audit evidence of the decision or Undo; a later reassessment can make this Undo inapplicable.
   tests: tests/ward-undo-and-bed-board.test.ts
   tests: tests/ward-undo-toast-record-seq.dom.test.tsx
-  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:97; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
+  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:98; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1453; SHA256 66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2
   Reviewed source: src/components/ward-management/ward-undo.ts:482; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-access-state.ts:652; SHA256 57c3e6555702e92d7e985f8943cb335859fda46abb757b898812c99dc184eb9d
@@ -1790,7 +1790,7 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   effects: Consumes bed-placement Undo; same-kind moves do not overwrite or block on unrelated later capacity changes.
   tests: tests/ward-undo-and-bed-board.test.ts
   tests: tests/ward-release-pull-undo-guard.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:133; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
+  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:134; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
   Reviewed source: src/components/ward-management/ward-flow-events.ts:2577; SHA256 cc194f8c311719c50ea9d0fa4216f884b439ef3f4020bbab7106c278cbffaeff
   Reviewed source: src/components/ward-management/ward-undo.ts:482; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-access-state.ts:652; SHA256 57c3e6555702e92d7e985f8943cb335859fda46abb757b898812c99dc184eb9d
@@ -1808,10 +1808,11 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient.
   effects: Applies only saved before/after patches for REFER_TO_UNITS; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-undo-steps.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:260; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
+  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:261; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
   Reviewed source: src/components/ward-management/ward-undo.ts:74; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:136; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:384; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
@@ -1830,10 +1831,11 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient.
   effects: Applies only saved before/after patches for ACCEPT_IN_PRINCIPLE; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-undo-steps.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:260; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
+  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:261; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
   Reviewed source: src/components/ward-management/ward-undo.ts:74; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:136; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:384; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
@@ -1852,11 +1854,12 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient.
   effects: Applies only saved before/after patches for RECORD_LEGAL_FORM_WRITTEN, RECORD_LEGAL_FORM_CODE, RECORD_LEGAL_FORM_RECEIVED or RECORD_LEGAL_FORM_EXPIRY; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-audit-legal-group.test.ts
   tests: tests/ward-ed-handover-events.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:260; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
+  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:261; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
   Reviewed source: src/components/ward-management/ward-undo.ts:74; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:136; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:384; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
@@ -1875,11 +1878,12 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient.
   effects: Applies only saved before/after patches for RECORD_SUPPORT_NOTIFICATION; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-undo-steps.test.ts
   tests: tests/ward-support-notifications.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:260; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
+  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:261; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
   Reviewed source: src/components/ward-management/ward-undo.ts:74; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:136; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:384; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
@@ -1898,10 +1902,11 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient.
   effects: Applies only saved before/after patches for RECORD_REPATRIATION; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-out-of-area-repatriation.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:260; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
+  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:261; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
   Reviewed source: src/components/ward-management/ward-undo.ts:74; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:136; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:384; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
@@ -1919,11 +1924,12 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.
   guards: The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.
   guards: The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.
+  guards: Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient.
   effects: Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.
   effects: The audit evidence of the step and of the Undo stays.
   tests: tests/ward-return-early.test.ts
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1496; SHA256 66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2
-  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:265; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
+  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:266; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
 - UNDO_HANDOVER_SIGN_OFF — modelled; event roles: coordinator, ward
   Reviewed command model: Latest sign-off for that ward or network removed.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:623
@@ -1938,10 +1944,11 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient.
   effects: Applies only saved before/after patches for RECORD_HANDOVER_SIGN_OFF; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-undo-steps.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:260; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
+  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:261; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
   Reviewed source: src/components/ward-management/ward-undo.ts:74; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:136; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:384; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
@@ -1960,16 +1967,17 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient.
   effects: Applies only saved before/after patches for RECORD_SITE_HANDOVER_SIGN_OFF; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-undo-steps.test.ts
   tests: tests/ward-site-handover-sign-off.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:260; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
+  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:261; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
   Reviewed source: src/components/ward-management/ward-undo.ts:74; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:136; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:384; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-access-state.ts:652; SHA256 57c3e6555702e92d7e985f8943cb335859fda46abb757b898812c99dc184eb9d
-  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:282; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
+  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:283; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
 - UNDO_ED_STEP — modelled; event roles: ed, ward, community, coordinator
   Reviewed command model: Newest ED board step and all records it changed restored.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:627
@@ -1984,11 +1992,12 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient.
   effects: Applies only saved before/after patches for RECORD_ARRIVED_IN_DEPARTMENT, RECORD_EXAMINATION, RECORD_MEDICAL_CLEARANCE, RECORD_TRANSPORT_NEED, RECORD_ED_PRESENTATION or HANDOVER_READY; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-ed-examination-save.dom.test.tsx
   tests: tests/ward-ed-handover-events.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:260; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
+  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:261; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
   Reviewed source: src/components/ward-management/ward-undo.ts:74; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:136; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:384; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
@@ -2007,10 +2016,11 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient.
   effects: Applies only saved before/after patches for TRANSPORT_ACCEPTED, TRANSPORT_EN_ROUTE, PATIENT_COLLECTED or PATIENT_ARRIVED; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-undo-steps.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:260; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
+  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:261; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
   Reviewed source: src/components/ward-management/ward-undo.ts:74; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:136; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:384; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
@@ -2029,10 +2039,11 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient.
   effects: Applies only saved before/after patches for RECORD_LEAVING or RECORD_PATIENT_DISCHARGE; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-departure-undo-integrity.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:260; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
+  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:261; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
   Reviewed source: src/components/ward-management/ward-undo.ts:74; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:136; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:384; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
@@ -2051,10 +2062,11 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient.
   effects: Applies only saved before/after patches for RECORD_ABSENT_WITHOUT_LEAVE; removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-engine-safety.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:260; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
+  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:261; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
   Reviewed source: src/components/ward-management/ward-undo.ts:74; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:136; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:384; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
@@ -2073,10 +2085,11 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: now is at/after the step and within UNDO_WINDOW_MINUTES (currently five).
   guards: Every affected row/whole-list patch still matches saved after values (a created notice may have been read); changed records refuse rather than overwrite newer work.
   guards: Any restored occupied/pulled bed is rechecked against current linked-patient, bed-number and hold conflicts; a sending-occupied/receiving-pulled transfer hold is allowed.
+  guards: Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient.
   effects: Applies only saved before/after patches for COMPLETE_BED_MEETING_ACTION or RECORD_BED_MEETING_ACTION (Chase Undo); removes newly created rows, restores removed/changed rows and removes appended entries.
   effects: Consumes that step Undo record; a removed stay loses its bed-placement Undo. Audit history remains; a unit allocatable revision advances instead of being rolled back.
   tests: tests/ward-bed-meeting-undo.test.ts
-  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:260; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
+  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:261; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
   Reviewed source: src/components/ward-management/ward-undo.ts:74; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:136; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
   Reviewed source: src/components/ward-management/ward-undo.ts:384; SHA256 ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6
@@ -2095,11 +2108,12 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.
   guards: The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.
   guards: The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.
+  guards: Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient.
   effects: Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.
   effects: The audit evidence of the step and of the Undo stays.
   tests: tests/ward-tier1-undo.test.ts
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1504; SHA256 66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2
-  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:273; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
+  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:274; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
 - UNDO_RELEASE_STEP — modelled; event roles: coordinator, ward, ed, community, bed_manager
   Reviewed command model: takes back a released bed, cancelled transport, withdrawn ward request or cancelled planned admission.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:635
@@ -2113,11 +2127,12 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.
   guards: The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.
   guards: The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.
+  guards: Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient.
   effects: Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.
   effects: The audit evidence of the step and of the Undo stays.
   tests: tests/ward-tier1-undo.test.ts
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1505; SHA256 66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2
-  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:274; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
+  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:275; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
 - UNDO_PATIENT_RECORD — modelled; event roles: community, coordinator
   Reviewed command model: takes back a community treatment order recorded or ended, or a record archived in error.
   Permission source: src/components/ward-management/ward-flow-event-roles.ts:636
@@ -2131,11 +2146,12 @@ Source-contract SHA256: f2c336b9c6dc9858dd01c8ee8f74b4759a9398e9c650e6df5d396949
   guards: A matching Undo record exists for this kind of step on this subject; a supplied recordSeq must match the newest record.
   guards: The undoing role is the role (and ward) that acted, or a coordinator; now is within UNDO_WINDOW_MINUTES.
   guards: The subject has not changed since the step, and restoring it would not put the patient in a second bed or clash with an occupied bed number.
+  guards: Before writing, every restored leave must still name an occupied stay on its ward with no second active leave, and a restored patient's record number must not now belong to another patient.
   effects: Restores the saved snapshot of the step, removes notices that step raised and consumes the Undo record.
   effects: The audit evidence of the step and of the Undo stays.
   tests: tests/ward-tier1-undo.test.ts
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:1506; SHA256 66fc4c279a531df1015e97a752670e8b36295eab0f71c95e73dc248cb57314e2
-  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:275; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
+  Reviewed source: src/components/ward-management/ward-flow-undo-events.ts:276; SHA256 55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339
 
 ## 111 BOXES ON THE ROUTE MAP  (lane = how it is coloured)
 - [expected] A community team

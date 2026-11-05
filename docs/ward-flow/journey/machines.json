@@ -1520,7 +1520,7 @@
     }
   ],
   "review": {
-    "reviewedOn": "2026-11-03",
+    "reviewedOn": "2026-11-05",
     "basis": "Source comparison of eleven machines, route nodes, gates, resources and current gap notes; not runtime or clinical acceptance.",
     "sources": [
       {
@@ -1645,7 +1645,7 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-        "line": 1242,
+        "line": 1248,
         "sha256": "e75e8d9adc0b767319b2238a24cda5fc4bded7969b19c94d9d5404ee2057d95c"
       },
       {
@@ -1660,7 +1660,7 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-undo-events.ts",
-        "line": 269,
+        "line": 270,
         "sha256": "55fd71565d81c185e6f1cc155035d7cb9447dbf7451ad7e2b35a06e288890339"
       },
       {
