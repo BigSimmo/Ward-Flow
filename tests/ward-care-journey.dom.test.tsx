@@ -168,7 +168,7 @@ describe("D-30 transfer acceptance controls", () => {
 });
 
 describe("coding review handoff download (H-0356)", () => {
-  function CodedWorkspace() {
+  function CodedWorkspace({ leftAt = NOW_ANCHOR }: { leftAt?: number }) {
     const { admissions, openDischargeRecord, readDischargeRecord } = useWardFlow();
     const [handle, setHandle] = useState<ReturnType<typeof openDischargeRecord> | null>(null);
     const admission = admissions.find((a) => a.state === "occupied" && a.patientId)!;
@@ -191,7 +191,7 @@ describe("coding review handoff download (H-0356)", () => {
             record={{
               ...read.value,
               admissionState: "departed",
-              leftAt: NOW_ANCHOR,
+              leftAt,
               leavingDestination: "left-against-advice",
               careJourney: { ...emptyCareJourney(), coding },
             }}
@@ -201,6 +201,30 @@ describe("coding review handoff download (H-0356)", () => {
       </>
     );
   }
+
+  it.each([
+    [0, "2026-11-03T16:00:00.000Z"],
+    [1440, "2026-11-04T16:00:00.000Z"],
+    [-1, "2026-11-03T15:59:00.000Z"],
+  ])("downloads a standalone calendar basis for departure minute %s", async (leftAt, departureAt) => {
+    download.blob.mockReset();
+    const dayZero = new Date("2026-11-03T16:00:00.000Z");
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR} initialDayZero={dayZero.getTime()}>
+        <CodedWorkspace leftAt={leftAt} />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Open care record" }));
+    fireEvent.click(screen.getByRole("button", { name: "Download coding review handoff" }));
+    expect(download.blob).toHaveBeenCalledTimes(1);
+    const [blob] = download.blob.mock.calls[0]!;
+    expect(JSON.parse(await blob.text())).toMatchObject({
+      schemaVersion: 2,
+      leftAt,
+      timeBasis: { unit: "minutes", origin: dayZero.toISOString(), timeZone: "Australia/Perth" },
+      departureAt,
+    });
+  });
 
   it("names the file synthetic and marks the file itself synthetic", async () => {
     download.blob.mockReset();

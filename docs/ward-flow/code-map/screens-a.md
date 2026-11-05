@@ -13,6 +13,11 @@ collapse only mirrored linked changes one for one, and preserve separate attempt
 The domain audit records the writer's explicit verdict; the session log retains the nested target.
 A denied audit row and its session entry count once. Authoritative database auditing is unchanged.
 
+DI-7 caller completion (5 November 2026): the separation-review download passes the provider's
+calendar anchor to `separationHandoff`. Its version 2 payload retains the minute offset and includes
+the origin, Perth timezone and absolute departure timestamp, so the file can be understood later.
+Mounted download checks cover midnight, the next midnight and the preceding minute.
+
 _Updated 2026-10-23 — ED examination save confirmation and recovery; Documentation owns._
 
 ## Current-tree check — 24 October 2026
