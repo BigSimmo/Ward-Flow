@@ -238,6 +238,8 @@ export type CensusTableProps = {
   notice?: ReactNode;
 };
 
+const countPeople = (rows: readonly CensusRow[]) => new Set(rows.map((row) => row.patientRecordId ?? row.key)).size;
+
 const WARD_CAP = 40;
 /** Waiting, Bed found and Moving fold after this many rows on the desktop table, like phone. */
 const GROUP_CAP = 10;
@@ -301,7 +303,7 @@ export function CensusTable(props: CensusTableProps) {
             Today chip, and comes back here. */}
         {tab === "now" ? (
           <p className={styles.registerCount}>
-            <b>{rows.length}</b> {rows.length === 1 ? "person" : "people"}
+            <b>{countPeople(rows)}</b> {countPeople(rows) === 1 ? "person" : "people"}
           </p>
         ) : (
           <Button variant="ghost" size="sm" icon={ChevronLeft} onClick={() => props.onTab("now")}>
@@ -482,7 +484,7 @@ export function CensusTable(props: CensusTableProps) {
       <div className={styles.foot}>
         <span>
           {searching
-            ? `${rows.length} found across ${groupsFound} ${groupsFound === 1 ? "group" : "groups"}`
+            ? `${countPeople(rows)} found across ${groupsFound} ${groupsFound === 1 ? "group" : "groups"}`
             : `${props.totalPeople} people. Every person the app holds, by where they are now`}
         </span>
         <span className={styles.spacer} />
@@ -1160,7 +1162,7 @@ export function PhoneCensus(props: PhoneCensusProps) {
                 <h2 className={styles.phoneGroupHead}>
                   <CensusGlyphMark glyph={group.glyph} size={8} />
                   <span>{group.label}</span>
-                  {searching ? <span className={styles.phoneGroupCount}>{group.rows.length}</span> : null}
+                  {searching ? <span className={styles.phoneGroupCount}>{countPeople(group.rows)}</span> : null}
                 </h2>
                 <ul className={styles.phoneRows}>
                   {shown.map((row) => {

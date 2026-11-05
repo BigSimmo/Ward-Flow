@@ -22,6 +22,7 @@ import { demoDayZero, dueSoonThresholdsOf } from "@/components/ward-management/w
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
+import { isOpen } from "@/components/ward-management/ward-derivations";
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
 import { NOW_ANCHOR, wardSites } from "@/components/ward-management/ward-sites";
 
@@ -311,5 +312,32 @@ describe("screens and places", () => {
     const siteWord = entry.site.split(/\s+/)[0]!.toLowerCase();
     const found = searchHub(entries, `${siteWord} ${firstWord}`, "all");
     expect(found.map((candidate) => candidate.id)).toContain(entry.id);
+  });
+});
+
+// Ported from #1440 (consolidated search continuity): two open requests for one person are one
+// person in a question answer; the census keeps both requests.
+describe("question answers count people, not requests", () => {
+  it("counts one person while retaining both legitimate request links in the census", () => {
+    const world = seedWardFlowState();
+    const movement = world.movements.find(isOpen)!;
+    world.movements = [
+      { ...movement, openedAt: 0 },
+      { ...movement, id: "WF-SECOND", openedAt: 1 },
+    ];
+    const person = resolveSubjectPatient(movement, world).patient!;
+    expect(person).toBeDefined();
+    const result = buildCensus({
+      ...world,
+      now: 10000,
+      thresholds: dueSoonThresholdsOf(world.configuration),
+      dayZero: new Date("2026-10-01T00:00:00Z"),
+    });
+    expect(result.rows.filter((row) => row.patientRecordId === person.id).map((row) => row.key)).toEqual([
+      movement.id,
+      "WF-SECOND",
+    ]);
+    const answer = answerQuestion("over 24 hours", result)!;
+    expect(answer.rows.filter((row) => row.patientRecordId === person.id)).toHaveLength(1);
   });
 });

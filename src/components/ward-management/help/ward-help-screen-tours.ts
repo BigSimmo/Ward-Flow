@@ -472,6 +472,7 @@ const AROUND: readonly Around[] = [
       {
         target: id("ward-patient-search-add"),
         title: "Add patient",
+        acts: ["ADD_PATIENT"],
         body: "Register a new synthetic person when they are not found.",
       },
     ],
