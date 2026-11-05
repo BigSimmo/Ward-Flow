@@ -1434,6 +1434,12 @@
     line-clamp: 2;
     white-space: normal;
   }
+
+  /* Visual review (5 Nov 2026): a wrapped owner breaks into two even lines, never one word left
+     alone ("State bed coordination / desk"). */
+  .row .nextOwner {
+    text-wrap: balance;
+  }
 }
 
 /* An act-now row (a legal authority passed or approaching) carries the act tint and a status glyph

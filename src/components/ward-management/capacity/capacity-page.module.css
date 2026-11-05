@@ -1086,9 +1086,13 @@
   }
 }
 
-/* The oldest-count jump sits at the right end of the hero's figures. */
-.heroJump {
-  margin-inline-start: auto;
+/* The oldest-count jump sits at the right end of the hero's figures on desktop, where the chips
+   share one line. Below that the chips wrap, and a wrapped jump starts its line at the left like
+   the rest rather than sitting alone at the right (visual review, 5 Nov 2026). */
+@media (min-width: 75.0625rem) {
+  .heroJump {
+    margin-inline-start: auto;
+  }
 }
 
 /* Planned admissions, reused unchanged: Book keeps its icon beside the word in the narrow column,

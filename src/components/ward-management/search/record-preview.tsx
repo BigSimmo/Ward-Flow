@@ -936,7 +936,7 @@ export function RecordPreview({
         <div className={styles.dossierHeader}>
           <div className={styles.dossierTitleRow}>
             <h3 className={styles.dossierName}>{subjectName}</h3>
-            <span className={styles.dossierUrm}>{subjectUrm}</span>
+            <span className={linkedPatient ? styles.dossierUrm : styles.dossierUrmMissing}>{subjectUrm}</span>
           </div>
           <div className={styles.dossierMetaRow}>
             <span className={styles.metaDemographics}>

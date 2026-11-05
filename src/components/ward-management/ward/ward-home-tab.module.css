@@ -1949,7 +1949,7 @@ label.todoMain:has(.todoTick:focus-visible) {
 
 .todayPill[data-tone="danger"] {
   background: color-mix(in srgb, var(--wf-danger) 12%, transparent);
-  color: var(--wf-danger);
+  color: var(--wf-danger-ink);
 }
 
 .todayLine {

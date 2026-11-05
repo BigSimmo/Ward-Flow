@@ -169,17 +169,7 @@ function OpenButton({ entry, handlers }: { entry: QueueEntry; handlers: QueueHan
 }
 
 function Who({ entry }: { entry: QueueEntry }) {
-  return (
-    <span className={styles.who}>
-      <strong className={styles.name}>{entry.subject.displayName}</strong>{" "}
-      {/* Alerts redesign: a missing UMRN reads as plain words, not in bold mono as if it were a number. */}
-      {entry.subject.umrn === UMRN_NOT_RECORDED ? (
-        <span className={parts.umrnMissing}>{entry.subject.umrn}</span>
-      ) : (
-        <strong className={styles.umrn}>{entry.subject.umrn}</strong>
-      )}
-    </span>
-  );
+  return <AlertWho name={entry.subject.displayName} umrn={entry.subject.umrn} />;
 }
 
 /** "10m overdue" under "10m" says the time twice; the note keeps only what it adds. */
@@ -342,39 +332,83 @@ export function GroupHead({
 }
 
 /**
- * Phone row (v10): a list row in one inset card. Glyph, the alert, the patient, the route and its one
- * action (Q180), with how long and the owner on the right. The title opens the alert's sheet.
+ * Phone row layout (v10): a list row in one inset card. Glyph, the opener, the patient, the route and
+ * its one action (Q180), with how long and the owner on the right. Every act-now row on Alerts uses
+ * it, the accepted-to-pull rows too, so the list reads as one.
  */
+export function AlertPhoneRowLayout({
+  data,
+  glyph,
+  open,
+  who,
+  line,
+  action,
+  age,
+  owner,
+}: {
+  data: Record<string, string | undefined>;
+  glyph: ReactNode;
+  /** The row's one Open button, its hit area stretched over the row (.rowOpen::after). */
+  open: ReactNode;
+  who: ReactNode;
+  line: ReactNode;
+  action: ReactNode;
+  age: ReactNode;
+  owner?: ReactNode;
+}) {
+  return (
+    <li className={styles.phoneRow} {...data}>
+      <span className={styles.phoneRowGlyph}>{glyph}</span>
+      <span className={styles.phoneRowText}>
+        {open}
+        <span className={styles.phoneRowLine}>{who}</span>
+        <span className={styles.phoneRowLine}>{line}</span>
+        {/* Q180 (Josh, 1 Nov 2026): one action on every row, on a phone too. */}
+        <span className={styles.phoneRowAct}>{action}</span>
+      </span>
+      <span className={styles.phoneRowEnd}>
+        <span className={styles.phoneRowAge}>{age}</span>
+        {owner !== undefined ? <span className={styles.phoneRowOwner}>{owner}</span> : null}
+      </span>
+    </li>
+  );
+}
+
+/** A patient with their UMRN; a missing UMRN reads as plain words, not in bold mono as if it were a number. */
+export function AlertWho({ name, umrn }: { name: string; umrn: string | undefined }) {
+  return (
+    <span className={styles.who}>
+      <strong className={styles.name}>{name}</strong>{" "}
+      {!umrn || umrn === UMRN_NOT_RECORDED ? (
+        <span className={parts.umrnMissing}>{UMRN_NOT_RECORDED}</span>
+      ) : (
+        <strong className={styles.umrn}>{umrn}</strong>
+      )}
+    </span>
+  );
+}
+
+/** Phone row (v10) for one alert: the title opens the alert's sheet. */
 export function AlertPhoneRow({ entry, now, handlers }: { entry: QueueEntry; now: Instant; handlers: QueueHandlers }) {
   const route = entry.subject.to ? `${entry.subject.from} to ${entry.subject.to}` : entry.subject.from;
   const ageFrom = shownAgeFrom(entry.item, entry.raised);
   const ended = legalTypedEnd(entry.item);
   return (
-    <li className={styles.phoneRow} {...rowData(entry, handlers)}>
-      <span className={styles.phoneRowGlyph}>
-        {entry.snooze ? <AlarmClock size={14} aria-hidden="true" /> : <StatusGlyph tone={glyphTone(entry)} />}
-      </span>
-      <span className={styles.phoneRowText}>
-        <OpenButton entry={entry} handlers={handlers} />
-        <span className={styles.phoneRowLine}>
-          <Who entry={entry} />
-        </span>
-        <span className={styles.phoneRowLine}>{route}</span>
-        {/* Q180 (Josh, 1 Nov 2026): one action on every row, on a phone too. */}
-        <span className={styles.phoneRowAct}>
-          <RowAction entry={entry} handlers={handlers} />
-        </span>
-      </span>
-      <span className={styles.phoneRowEnd}>
-        <span className={styles.phoneRowAge}>
-          {ageFrom !== undefined
-            ? minutesText(Math.max(0, now - ageFrom))
-            : ended !== undefined
-              ? typedTimeLine(ended, now)
-              : ""}
-        </span>
-        <span className={styles.phoneRowOwner}>{entry.mine ? "You" : ownerShort(entry.owner, false)}</span>
-      </span>
-    </li>
+    <AlertPhoneRowLayout
+      data={rowData(entry, handlers)}
+      glyph={entry.snooze ? <AlarmClock size={14} aria-hidden="true" /> : <StatusGlyph tone={glyphTone(entry)} />}
+      open={<OpenButton entry={entry} handlers={handlers} />}
+      who={<Who entry={entry} />}
+      line={route}
+      action={<RowAction entry={entry} handlers={handlers} />}
+      age={
+        ageFrom !== undefined
+          ? minutesText(Math.max(0, now - ageFrom))
+          : ended !== undefined
+            ? typedTimeLine(ended, now)
+            : ""
+      }
+      owner={entry.mine ? "You" : ownerShort(entry.owner, false)}
+    />
   );
 }

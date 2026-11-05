@@ -146,7 +146,11 @@
 @supports (animation-timeline: scroll()) {
   .tableWrap {
     border-right: 2px solid transparent;
-    animation: statsMoreRight linear both;
+    /* Longhands: the CSS build folds the shorthand plus timeline into one
+       declaration that Chrome rejects (5 Nov 2026). */
+    animation-name: statsMoreRight;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: scroll(self inline);
   }
 }

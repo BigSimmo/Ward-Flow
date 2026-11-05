@@ -208,6 +208,37 @@
   scrollbar-width: thin;
 }
 
+/* Review 5 Nov 2026: below 1280px the strip scrolls, and at tablet width the cut card gave no sign
+   there was more. The shared row fade (choice.module.css `wfRowFade`): full at the start, none once
+   scrolled to the end, and a strip that fits never fades. */
+@property --wf-row-fade {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes keysFade {
+  from {
+    --wf-row-fade: 32px;
+  }
+  to {
+    --wf-row-fade: 0px;
+  }
+}
+
+@supports (animation-timeline: scroll()) {
+  .keys {
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
+    mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
+    /* Longhands: the CSS build folds `animation` and `animation-timeline` into one shorthand that
+       Chrome rejects, which dropped the fade. Without a full set of longhands it cannot fold them. */
+    animation-name: keysFade;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: scroll(self inline);
+  }
+}
+
 .keyGroup {
   display: flex;
   flex: 1 0 auto;
@@ -1928,6 +1959,19 @@
 .phoneRowSubWrap {
   overflow: visible;
   white-space: normal;
+}
+
+/* Review 5 Nov 2026: a place too long to sit beside the time ("Executive office") wrapped word by
+   word in a narrow column there. It now takes the next line whole. Its leading "· " (0.5em) hangs
+   left of the row, so it shows beside the time and is clipped when the place starts its own line. */
+.phoneRowMeta:has(> .phoneRowSubWrap) {
+  flex-wrap: wrap;
+  column-gap: calc(4px + 0.5em);
+  overflow-x: clip;
+}
+
+.phoneRowMeta > .phoneRowSubWrap {
+  margin-left: -0.5em;
 }
 
 .phoneRowEnd {

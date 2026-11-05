@@ -302,9 +302,10 @@
 
 .hrow {
   display: grid;
-  /* Layout sweep SHELL-15 (25 Oct 2026): the action track keeps one width (the widest button,
-   * "Chase transport", is about 7.2rem), so the time column lines up from row to row. */
-  grid-template-columns: 1rem minmax(0, 1fr) 6.5rem minmax(7.5rem, max-content);
+  /* Layout sweep SHELL-15 (25 Oct 2026): the action track keeps one width so the time column lines
+   * up from row to row. Visual review (5 Nov 2026): the widest button, "Record notifications", is
+   * about 9.3rem, so the track is 9.5rem; max-content only lets a longer one push its own row. */
+  grid-template-columns: 1rem minmax(0, 1fr) 6.5rem minmax(9.5rem, max-content);
   align-items: center;
   gap: var(--wf-s-3);
   min-height: 56px;
@@ -375,10 +376,14 @@
   font-weight: 500;
 }
 
+/* The time is a right-aligned column with tabular figures, so "45m" and "10m overdue" end together. */
 .hrowAge {
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
   gap: 2px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
   color: var(--wf-ink-3);
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }

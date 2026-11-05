@@ -90,6 +90,7 @@ import { alertChecks } from "./alerts-checks";
 import { useAlertsHistory } from "./alerts-history";
 import { AlertsHero } from "./alerts-hero";
 import { AcceptedPullRows, useAcceptedPull } from "@/components/ward-management/coordinator/accepted-pull-rows";
+import { AlertPullPhoneRows } from "./alerts-pull-phone-rows";
 import { acceptedReferralsAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { groupSameKind, KindGroup } from "./alerts-queue-groups";
 import { PhoneOwnerMenu } from "./alerts-phone-owner";
@@ -542,16 +543,25 @@ function AlertsWorkspace() {
   const { actNow: actCount, outstanding } = alertsNowFigures(inbox, toPull.length); // Q260: as the bell and Menu
   const pull = useAcceptedPull();
   const pullRows =
-    toPull.length > 0 ? (
-      <AcceptedPullRows
+    toPull.length === 0 ? null : isPhone ? (
+      // Visual review: on a phone these rows take the act-now alert row's layout and its action.
+      <AlertPullPhoneRows
         toPull={toPull}
         now={now}
-        phone={isPhone}
         testId="ward-alerts-accepted-to-pull"
         pulling={pull.pulling}
         setPulling={pull.setPulling}
       />
-    ) : null;
+    ) : (
+      <AcceptedPullRows
+        toPull={toPull}
+        now={now}
+        phone={false}
+        testId="ward-alerts-accepted-to-pull"
+        pulling={pull.pulling}
+        setPulling={pull.setPulling}
+      />
+    );
   const highlightedCount = allEntries.filter((entry) => entry.highlighted).length;
   const anyHighlight = highlightOn;
   const maxAge = Math.max(
