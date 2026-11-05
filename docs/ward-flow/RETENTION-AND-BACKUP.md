@@ -313,8 +313,9 @@ Do these in the Ward Flow project only, after checking the project name and ID m
    Before migration 11 the backend can work, but opening a record is not logged and a sign-out
    takes effect only when its token expires. Later capabilities depend on their own migrations. For separately authorised undo, use the canonical
    [setup and rollback procedure](../../backend/ward-flow/SETUP-SUPABASE.md); do not start at an
-   older version than the actual schema. At schema 16 the sequence starts 16 → 15 → 14, one matching
-   script per stop-on-error transaction. Rollback 16 drops shared forecast history; rollback 15
+   older version than the actual schema. At schema 17 the sequence starts 17 → 16 → 15 → 14, one matching
+   script per stop-on-error transaction. Rollback 17 drops Help remembered by account; rollback 16
+   drops shared forecast history; rollback 15
    refuses once list or TV access history exists. Rollback 14 restores archived records to the live
    board, which may then exceed its save limit. Each script checks its exact starting version.
    Preserve required history and recovery evidence before any undo; never delete history to bypass
