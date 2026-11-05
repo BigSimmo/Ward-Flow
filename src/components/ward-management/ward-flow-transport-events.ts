@@ -29,7 +29,7 @@ import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { transportExceptionRecord } from "@/components/ward-management/ward-transport-checks";
 import { movementBedReservation } from "./ward-movement-bed-hold";
 import { openRestrictivePracticeRefusal } from "./restrictive-practice/ward-restrictive-practice";
-import { sameObservation } from "./ward-observation";
+import { sameObservation, journeyObservationWins } from "./ward-observation";
 import type { TransportEventHelpers, WardFlowState } from "./ward-flow-reducer";
 
 /**
@@ -575,18 +575,12 @@ export function reduceTransportEvent(
         const { bedNumber: _previousNumber, ...withoutBedNumber } = pulledAdmission;
         void _previousNumber;
         // Audit S-2: the journey and the held bed record one observation level. If they still
-        // differ here (a record from before the two were joined), the later recorded change wins and
-        // the stay keeps the change in its history, so neither level is dropped silently.
-        const journeyChange = movement.observationChanges?.at(-1);
-        const wardChange = pulledAdmission.observationChanges?.at(-1);
-        // Accepted edits carry the reducer's actual command order, including within one minute.
-        // Older saves have no sequence: retain the existing timestamp fallback for legacy ties.
-        const journeyIsLater =
-          journeyChange?.sequence !== undefined || wardChange?.sequence !== undefined
-            ? (journeyChange?.sequence ?? Number.NEGATIVE_INFINITY) >=
-              (wardChange?.sequence ?? Number.NEGATIVE_INFINITY)
-            : (journeyChange?.at ?? Number.NEGATIVE_INFINITY) >= (wardChange?.at ?? Number.NEGATIVE_INFINITY);
-        const journeyLevelWins = !sameObservation(movement.observation, pulledAdmission.observation) && journeyIsLater;
+        // differ here (a record from before the two were joined), acceptance sequence wins before
+        // the legacy timestamp fallback. The stay keeps reconciliation in its history.
+        const journeySequence = movement.observationChanges?.at(-1)?.sequence;
+        const journeyLevelWins =
+          !sameObservation(movement.observation, pulledAdmission.observation) &&
+          journeyObservationWins(movement.observationChanges, pulledAdmission.observationChanges);
         withPerson = replaceAdmission(withUnit, pulledAdmission.id, {
           ...withoutBedNumber,
           ...(journeyLevelWins
@@ -594,7 +588,12 @@ export function reduceTransportEvent(
                 observation: movement.observation,
                 observationChanges: [
                   ...(pulledAdmission.observationChanges ?? []),
-                  { at: event.now, from: pulledAdmission.observation, to: movement.observation },
+                  {
+                    at: event.now,
+                    from: pulledAdmission.observation,
+                    to: movement.observation,
+                    ...(journeySequence === undefined ? {} : { sequence: journeySequence }),
+                  },
                 ],
               }
             : {}),

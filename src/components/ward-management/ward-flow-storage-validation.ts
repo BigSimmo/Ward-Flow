@@ -1,4 +1,5 @@
 import { validDischargeRequestNamespace } from "./ward-discharge-records";
+import { hasDuplicateRetainedUmrns } from "./ward-retained-umrn";
 import {
   RESTRICTIVE_PRACTICE_IDS,
   SECLUSION_ROOM_STATUS_IDS,
@@ -237,7 +238,6 @@ function nested(value: unknown, depth = 0): boolean {
   }
   return true;
 }
-
 // Pass 2: row shapes.
 
 // D-38: a community treatment order is the one non-text patient field: Form 5A, a finite recorded
@@ -488,9 +488,8 @@ const observationChangeRule = z.strictObject({
   at: finite,
   from: observationRule,
   to: observationRule,
-  sequence: z.optional(counter),
+  sequence: z.optional(counter.check(z.gte(1))),
 });
-
 const movement = z
   .looseObject({
     id,
@@ -1025,16 +1024,7 @@ const storedState = z.looseObject({
   leaveBeds: z.array(leaveBed).check(z.refine(distinctIds)),
   refreshRequests: z.array(refreshRequest).check(z.refine(distinctRefreshRequestIds)),
   referrals: z.array(referral).check(z.refine(distinctIds)),
-  patients: z.array(patient).check(
-    z.refine(distinctIds),
-    z.refine((rows) => {
-      // Redacted device placeholders do not identify a person; retained UMRNs do.
-      const retained = rows
-        .map((row) => row.umrn.trim().toLowerCase())
-        .filter((umrn) => umrn !== "" && umrn !== TYPED_TEXT_NOT_KEPT.toLowerCase());
-      return new Set(retained).size === retained.length;
-    }),
-  ),
+  patients: z.array(patient).check(z.refine(distinctIds)),
   admissions: z.array(admission).check(z.refine(distinctIds)),
   notices: z.array(notice).check(z.refine(distinctIds)),
   // One record per admission, as the reducer keeps it.
@@ -1143,9 +1133,10 @@ function identitiesMatchScenario(state: StoredState): boolean {
     })
   );
 }
-
 // Pass 3: links between rows. Ids are already unique within each collection.
 function consistent(state: StoredState, value: RecordValue): boolean {
+  // Whole-world adoption obeys registration's retained-number ownership rule, preserving privacy placeholders.
+  if (hasDuplicateRetainedUmrns(state.patients)) return false;
   if (!identitiesMatchScenario(state)) return false;
   if (validateConfiguration(value.configuration) === null) return false;
   const submissionIds = state.referrals.flatMap((referral) =>

@@ -1521,7 +1521,7 @@
   ],
   "review": {
     "reviewedOn": "2026-11-05",
-    "basis": "Source comparison of eleven machines, route nodes, gates, resources and current gap notes; not runtime or clinical acceptance. 5 November follow-up: explicit handler, payload, authority and caller review reconciled the consolidated audit repairs. Accepted observation sequence and legacy-tie fallback, current place/Undo provenance, safe world reset/import identity, return retry, meeting occurrence metadata and UI draft/completion ownership qualify existing transitions; they add no clinical decision or new physical transport stage. See CURRENT-REVIEW.md for the source-by-source review scope and reused versus fresh evidence.",
+    "basis": "Source comparison of eleven machines, route nodes, gates, resources and current gap notes; not runtime or clinical acceptance. 5 November follow-up: explicit handler, payload, authority and caller review reconciled the consolidated audit repairs. Accepted observation sequence and legacy-tie fallback, current place/Undo provenance, safe world reset/import identity, return retry, meeting occurrence metadata and UI draft/completion ownership qualify existing transitions; they add no clinical decision or new physical transport stage. See CURRENT-REVIEW.md for the source-by-source review scope and reused versus fresh evidence. Main29f61/domain1430 reconciliation: accepted observation order is max(retained history,0)+1 with positive-safe restore metadata and sequence preserved through arrival; legacy ties retain compatibility fallback. Import and archive Undo share normalized retained identity, excluding explicit missing/privacy sentinels. Complete inverses preserve occupied-stay/leave consistency. No transition geometry or clinical rule changed; see CURRENT-REVIEW.md.",
     "sources": [
       {
         "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
@@ -1645,23 +1645,23 @@
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
-        "line": 1244,
-        "sha256": "9d5fbe9ac47f88aa0bfa4e94aebd3a5332a1513be0a0c3540d8be4ccec716eb1"
+        "line": 1250,
+        "sha256": "303cd38cbcd3d1f3e3de3d24f56f3e8e608b90fc44f736f86ccc06be032d949d"
       },
       {
         "path": "src/components/ward-management/ward-flow-storage-validation.ts",
         "line": 453,
-        "sha256": "a1895a85269e896b14cd6448ad0e219463b3618e15f453974f7aeee403fac5f6"
+        "sha256": "67d4c326f9f77149ea6a96d37ea653da7dfcdddb27983bcd32d0e6c6c2671f32"
       },
       {
         "path": "src/components/ward-management/ward-flow-transport-events.ts",
         "line": 85,
-        "sha256": "82810a5f3db4a31b81fa2b4c0fb213f8a534762d85d0441720059c789aeb30ae"
+        "sha256": "e39eb7a1938c796e6d6bf98fd6fc594d719bffeddba39b8be5f5ed686fac0928"
       },
       {
         "path": "src/components/ward-management/ward-flow-undo-events.ts",
-        "line": 269,
-        "sha256": "ae7e816d7f32135ddbd2912d14de027a99e0e7bf24051c0c405400a91f7048f0"
+        "line": 270,
+        "sha256": "7344423b59a813fb2f73d630be0d158154dd5c64d718ec797aebe6de4c140b5e"
       },
       {
         "path": "src/components/ward-management/ward-inbox-reducer.ts",
@@ -1702,6 +1702,16 @@
         "path": "src/components/ward-management/ward-undo.ts",
         "line": 1,
         "sha256": "ad52fafbe54392dfa96cbe79dac75a1496c6aa044743b57360383d0fcd19c3f6"
+      },
+      {
+        "path": "src/components/ward-management/ward-observation.ts",
+        "line": 48,
+        "sha256": "b714525f0d4c6d18d050f9a3600f38c8de4e9a013595a77844c5c492fbdc2e3c"
+      },
+      {
+        "path": "src/components/ward-management/ward-retained-umrn.ts",
+        "line": 13,
+        "sha256": "7968243f077b9d5c9a6fe6a56385f48ff6a97aa39cfdeec8fe97f05919693d80"
       }
     ]
   }

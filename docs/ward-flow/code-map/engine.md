@@ -2,6 +2,41 @@
 
 _Updated 2026-10-27 - event count, state version and the list of event modules checked against source at `3532c376`; Documentation owns._
 
+## Domain repair correction — 4 November 2026
+
+These changes build on main `559f22589` (which includes PR #1398). Earlier census
+counts below are unchanged.
+
+- Observation changes now carry an optional positive safe-integer `sequence`, ordered
+  across retained movement and admission histories. Arrival uses acceptance order before
+  minute timestamps. Older histories without a sequence keep timestamp ordering; an old
+  exact tie still favours the journey because its actual order cannot be recovered.
+  No staffing level is automatically preferred. See `ward-flow-observation-events.ts`,
+  `ward-observation.ts` and `tests/ward-audit-s2-observation-join.test.ts` (WF-DOM-001).
+- Generic Undo checks the complete proposed leave/stay links and one-leave-per-stay
+  cardinality before committing, including arrival and leave-return inverses. It also
+  rechecks restored patient record-number ownership (WF-DOM-004, WF-DOM-PR01).
+  See `ward-flow-undo-events.ts` and `tests/ward-undo-dependent-records.test.ts`.
+- Scenario import and device restore reject duplicate retained UMRNs using the same
+  trim/case equivalence as registration. Deliberate device privacy placeholders and
+  missing numbers remain compatible. The real import parser is covered in
+  `tests/ward-retained-umrn.test.ts` (WF-DOM-003).
+  `backend/ward-flow/domain-undo-ordering.test.mjs` also exercises observation ordering
+  and both Undo boundaries through authenticated local HTTP, PostgreSQL transactions,
+  independent-store reloads and replayed refusal receipts.
+- Referral raising resolves any supplied or inherited patient ID against current
+  records, including drafts retained after archive. Unidentified journeys remain
+  supported (`tests/ward-referral-patient-identity.test.ts`, WF-DOM-H01).
+
+Acceptance Undo's existing downstream dependency guard remains in place (WF-DOM-002).
+PULL and planned admission already check Ready capacity (WF-DOM-D01). Protected
+care-transfer acceptance does not reserve a destination bed: its arrival event consumes
+capacity and departs the source, as pinned by `ward-journey-transfer-arrival-model.test.ts`.
+Josh confirmed on 4 November 2026 that this repair should retain the current arrival
+model (WF-DOM-D01). He also confirmed retaining the existing request-then-withdraw
+recovery for agreed repatriation, rather than adding a dedicated cancellation action
+(WF-DOM-D02); `ward-return-withdraw-recovery.test.ts` covers that route.
+
 ## Current-tree check — 27 October 2026
 
 Checked against `main` at `3532c376`. `EVENT_ROLE` lives in `ward-flow-event-roles.ts`
