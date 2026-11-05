@@ -99,11 +99,11 @@ export function ShiftChecks({
           </div>
         ) : null}
       </section>
-      <section className={styles.shiftSection} aria-label="Held-up releases">
+      <section className={styles.shiftSection} aria-label="Held-up discharges">
         <div className={styles.shiftTop}>
           <span className={styles.shiftFigure}>
             {heldUp.total}
-            <span className={styles.shiftNoun}>held-up {heldUp.total === 1 ? "release" : "releases"}</span>
+            <span className={styles.shiftNoun}>held-up {heldUp.total === 1 ? "discharge" : "discharges"}</span>
           </span>
           {canOpen(HELD_UP_HREF) ? (
             <Link

@@ -503,7 +503,7 @@ function JourneyPresentation({
   }
 
   return (
-    <section id="journey" aria-label="Journey" data-testid="ward-statistics-journey-view" className={styles.view}>
+    <section id="journey" aria-label="Movement" data-testid="ward-statistics-journey-view" className={styles.view}>
       <StatCard
         id="journey-ribbon"
         icon={Route}

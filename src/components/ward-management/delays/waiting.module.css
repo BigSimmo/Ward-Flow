@@ -168,15 +168,6 @@
     white-space: normal;
     overflow-wrap: break-word;
   }
-
-  /* Q285: the kit's one-line FormalName reads as plain wrapping text here. */
-  .phWrapLine [data-formal-name],
-  .phWrapLine [data-formal-name] > span {
-    display: inline;
-    max-width: none;
-    overflow: visible;
-    white-space: inherit;
-  }
 }
 
 /* D-91: the one page search field (parts/search-field.tsx) in the table head, wide enough for its

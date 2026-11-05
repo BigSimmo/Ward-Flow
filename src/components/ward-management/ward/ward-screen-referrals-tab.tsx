@@ -72,11 +72,7 @@ export function WardScreenReferralsTab({
               </span>
             </div>
             {entries.length === 0 ? (
-              <EmptyState
-                icon={Inbox}
-                title="0 referrals waiting"
-                meta="A community team, another ward or the bed coordinator sends one here. It shows as soon as it is sent."
-              />
+              <EmptyState icon={Inbox} title="No referrals yet." meta="Referrals sent to this ward show here." />
             ) : (
               <WardReferralInbox unitId={unit.id} embedded />
             )}

@@ -258,7 +258,7 @@ function deskMore(role: TourRole): MoreStep[] {
           "discharges",
           RAIL_MORE,
           "Discharges",
-          "Discharges, under More, lists your site's planned discharges and departures, blocked releases first.",
+          "Discharges, under More, lists your site's planned discharges, held-up discharges first.",
         ),
         learnStep(role, "desk", false),
       ];

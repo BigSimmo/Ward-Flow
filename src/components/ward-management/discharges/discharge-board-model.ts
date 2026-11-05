@@ -65,16 +65,16 @@ export function releaseTimingWords(release: BedRelease, now: Instant): string {
 }
 
 export const EMPTY_REASON: Record<GroupKey, string> = {
-  blocked: "release is currently blocked",
-  confirmed: "release is confirmed, unreleased and not blocked",
-  expected: "release is expected and not blocked",
-  "discharged-today": "the person has been discharged today",
+  blocked: "Nobody held up.",
+  confirmed: "No confirmed discharges.",
+  expected: "No expected discharges.",
+  "discharged-today": "Nobody discharged today.",
 };
 
 export const GROUP_DESCRIPTIONS: Record<GroupKey, string> = {
   blocked: "These need someone to act on them now.",
-  confirmed: "Waiting only on the clock, not blocked.",
-  expected: "Not yet confirmed by the ward, and not blocked.",
+  confirmed: "Waiting only on the clock, not held up.",
+  expected: "Not yet confirmed by the ward, and not held up.",
   "discharged-today": "The bed is already free.",
 };
 

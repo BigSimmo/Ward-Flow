@@ -373,9 +373,9 @@ export function WeeklyBody(props: WeeklyBodyProps) {
           />
           {delayed.unknown ? (
             <Tile title="Delayed discharge">
-              {/* with no expected date held for the week, a sentence instead of two "Not known" figures. */}
+              {/* with no expected date set for the week, a sentence instead of two "Not known" figures. */}
               <p className={s.outside} data-testid="ward-weekly-delayed-days">
-                Not enough history: no expected date held for this week.
+                Not enough history: no expected date set for this week.
               </p>
             </Tile>
           ) : (

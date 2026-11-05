@@ -206,7 +206,7 @@ describe("Ward Flow Advanced Clinical Features DOM Suite", () => {
       const stepDownToggle = screen.getByTestId("ward-board-stepdown-toggle");
       expect(stepDownToggle).toBeDefined();
       fireEvent.click(stepDownToggle);
-      expect(screen.getByTestId("ward-board-stepdown-toggle").textContent).toContain("Marked as Step-Down");
+      expect(screen.getByTestId("ward-board-stepdown-toggle").textContent).toContain("Marked for step-down");
     });
 
     it("does not render discharge barrier dropdown for short-stay occupants (< 7 days)", () => {

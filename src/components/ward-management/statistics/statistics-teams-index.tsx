@@ -415,7 +415,8 @@ function TeamsIndexView({
               <div className={redesign.tableWrap} tabIndex={0} role="region" aria-label="Teams, scrollable">
                 <table className={cx(tableClasses.table, redesign.table)} data-testid="ward-statistics-teams-table">
                   <caption className={styles.srOnly}>
-                    Community teams: people in a bed, those with a discharge date and those due out within 7 days
+                    Community teams: people in a bed, those with a discharge date and those due for discharge within 7
+                    days
                   </caption>
                   <thead>
                     <tr>

@@ -606,5 +606,5 @@ export function isPinned(row: BoardRow, thresholds: DueSoonThresholds): boolean 
  * form times, and sorts each group by wait. Neither order ranks anybody clinically.
  */
 export function waitingOrderLine(flat: boolean): string {
-  return flat ? "Longest wait first" : "Form times first, then other blockers. Longest wait first in each.";
+  return flat ? "Longest wait first" : "Form times first, then every other reason. Longest wait first in each.";
 }

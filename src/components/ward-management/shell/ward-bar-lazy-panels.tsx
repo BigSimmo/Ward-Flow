@@ -34,7 +34,7 @@ export const WardReferralDrawer = dynamic(
   withLoadRetry(() => loadReferralDrawer().then((m) => m.WardReferralDrawer), "Referrals did not load"),
 );
 export const WardTasksDrawer = dynamic(
-  withLoadRetry(() => loadTasksDrawer().then((m) => m.WardTasksDrawer), "Tasks and alerts did not load"),
+  withLoadRetry(() => loadTasksDrawer().then((m) => m.WardTasksDrawer), "Alerts did not load"),
 );
 
 export const ActivityPanel = dynamic(() =>

@@ -226,7 +226,7 @@ const AROUND: readonly Around[] = [
       {
         target: id("ward-discharge-group-blocked"),
         title: "Held up first",
-        body: "Discharges with something in the way come first. Open one to see what is blocking it and the bed release.",
+        body: "Discharges with something in the way come first. Open one to see what is holding it up and the bed.",
       },
       {
         device: "desk",
@@ -579,7 +579,7 @@ const AROUND: readonly Around[] = [
       },
       {
         target: [id("ward-ed-add-patient"), id("ward-phone-create")],
-        title: "Add a patient",
+        title: "Add patient",
         body: "Add patient registers a new synthetic person. On a phone it is under the plus button.",
       },
     ],
@@ -703,7 +703,7 @@ export const MORE_JOBS: readonly HowTo[] = [
     title: "Clear a held-up discharge",
     keywords: "discharge held up blocked barrier blocker release delay",
     answer:
-      "Open Discharges, where held-up discharges come first. Open one to see what is blocking it and the bed release, and update the barrier once it is sorted.",
+      "Open Discharges, where held-up discharges come first. Open one to see what is holding it up and the bed, and update the hold-up once it is sorted.",
     desks: ["ward", "coordinator"],
     acts: ["CLEAR_STAY_DISCHARGE_BLOCKER", "SET_DISCHARGE_BARRIER"],
     go: "discharges",
@@ -720,7 +720,7 @@ export const MORE_JOBS: readonly HowTo[] = [
       {
         target: { sel: '[data-testid="ward-discharge-group-blocked"]' },
         title: "Open one",
-        body: "Held up comes first. Open a discharge to see its barrier and the bed release.",
+        body: "Held up comes first. Open a discharge to see what is holding it up and the bed.",
       },
     ],
   },

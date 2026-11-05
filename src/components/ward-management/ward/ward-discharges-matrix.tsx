@@ -9,7 +9,7 @@ import { handoverScopeValue } from "@/components/ward-management/handover/handov
 import {
   formatInstant,
   formatInstantWithDay,
-  formatRemaining,
+  splitDuration,
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import { SuburbTeamPanel } from "./suburb-team-panel";
@@ -180,7 +180,7 @@ export function WardDischargesMatrix({
                 </div>
                 <div>
                   <span>
-                    Open for: <strong>{formatRemaining(now - leaveBed.confirmedAt)}</strong>
+                    Open <strong>{splitDuration(Math.max(now - leaveBed.confirmedAt, 0))}</strong>
                   </span>
                 </div>
                 <div>

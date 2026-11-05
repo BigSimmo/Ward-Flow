@@ -11,7 +11,7 @@ import { createBackend } from "./providers.mjs";
 import { createSharedHandler } from "./shared-http.mjs";
 import { errorFields } from "./push.mjs";
 import { logFailure, startErrorReporting } from "./error-report.mjs";
-import { REPLY_SEGMENTS, gzipSegments } from "./reply-cache.mjs";
+import { REPLY_SEGMENTS, gzipSegments, segmentLength } from "./reply-cache.mjs";
 
 const gzipAsync = promisify(gzip);
 
@@ -303,17 +303,27 @@ export function listen(handler, config, { deadlineMs = HANDLER_DEADLINE_MS } = {
         ]);
         clearTimeout(timer);
         const headers = Object.fromEntries(response.headers);
-        let body = Buffer.from(await response.arrayBuffer());
-        // Audit F-04: a full workspace read is tens of kilobytes of JSON; gzip cuts it to a few.
-        if (
-          body.length >= GZIP_MIN_BYTES &&
+        const segments = /** @type {any} */ (response)[REPLY_SEGMENTS];
+        const mayCompress =
           acceptsGzip(incoming.headers["accept-encoding"]) &&
-          String(headers["content-type"] ?? "").startsWith("application/json")
-        ) {
-          // Audit PS-05: compressed off the main thread, and a scoped board the store already holds
-          // keeps its compressed form, so only the small per-request fields are compressed here.
-          const segments = /** @type {any} */ (response)[REPLY_SEGMENTS];
-          body = segments ? await gzipSegments(segments) : await gzipAsync(body);
+          String(headers["content-type"] ?? "").startsWith("application/json");
+        /** @type {Buffer} */
+        let body;
+        let compressed = false;
+        if (mayCompress && segments && segmentLength(segments) >= GZIP_MIN_BYTES) {
+          // Use the cached parts directly; consuming the full body first duplicates the board
+          // for every reconnecting desk even though those uncompressed copies are never sent.
+          await response.body?.cancel();
+          body = await gzipSegments(segments);
+          compressed = true;
+        } else {
+          body = Buffer.from(await response.arrayBuffer());
+          if (mayCompress && body.length >= GZIP_MIN_BYTES) {
+            body = await gzipAsync(body);
+            compressed = true;
+          }
+        }
+        if (compressed) {
           headers["content-encoding"] = "gzip";
           headers.vary = headers.vary ? `${headers.vary}, Accept-Encoding` : "Accept-Encoding";
         }

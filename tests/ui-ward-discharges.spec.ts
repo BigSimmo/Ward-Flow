@@ -174,7 +174,7 @@ async function goBackToWard(page: Page) {
  * <N> ready"), and the card opens the ward's panel, whose Discharges view holds each discharge
  * record with its status. So Ready is read off the card, and "the release reached the coordinator
  * as confirmed" is read off this release's own record in that panel: Expected, then Confirmed once
- * the ward confirms it, then Departed (no longer confirmed) once the person leaves. That is the same
+ * the ward confirms it, then Left ward (no longer confirmed) once the person leaves. That is the same
  * proof the Confirmed count gave, made on the one record this journey moves rather than on a total.
  */
 
@@ -302,7 +302,7 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     // Ready rises by exactly one, and the completed release no longer counts as confirmed: the bed is
     // free and already counted in Ready, so counting it twice would inflate the board.
     await expect.poll(() => boardReady(page)).toBe(readyBefore + 1);
-    await expect.poll(() => boardReleaseStatus(page, release.admissionId)).toBe("Departed");
+    await expect.poll(() => boardReleaseStatus(page, release.admissionId)).toBe("Left ward");
   });
 
   /**

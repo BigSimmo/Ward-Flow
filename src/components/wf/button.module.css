@@ -65,6 +65,7 @@
 .sm {
   height: var(--wf-h-sm);
   height: calc-size(auto, max(size, var(--wf-h-sm)));
+  min-height: var(--wf-h-sm);
   padding: 0 10px;
   border-radius: var(--wf-r-ctl);
   font-size: var(--wf-fs-12);
