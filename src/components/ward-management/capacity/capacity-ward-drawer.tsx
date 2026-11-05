@@ -515,7 +515,7 @@ function toneOfWords(words: string): string {
   // Q8 (Josh, 4 Nov 2026): a passed date is amber, as everywhere else. Red means act now only.
   if (words === "Date passed") return local.wdTagWarn ?? "";
   if (words === "Due today" || words === "Due tomorrow") return local.wdTagInfo ?? "";
-  if (words === "Confirmed" || words === "Departed" || words === "Discharged") return local.wdTagGood ?? "";
+  if (words === "Confirmed" || words === "Left ward" || words === "Discharged") return local.wdTagGood ?? "";
   return "";
 }
 
@@ -558,7 +558,8 @@ function dischargeRecordName(record: DischargeRecord): string {
 }
 
 function dischargeRecordStage(record: DischargeRecord): string {
-  if (record.leftAt !== null) return "Discharged";
+  // Left ward, not Discharged: a record that has left also covers a death or a transfer.
+  if (record.leftAt !== null) return "Left ward";
   if (record.blockReason !== null) return "Discharge held up";
   return record.dischargeConfirmedAt !== null ? "Confirmed" : "Expected";
 }

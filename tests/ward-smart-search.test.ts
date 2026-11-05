@@ -51,6 +51,8 @@ describe("detectSearchIntent", () => {
     ["governance", "view"],
     ["task", "task"],
     ["tasks", "task"],
+    ["alert", "task"],
+    ["alerts", "task"],
     ["zzq-9", "general"],
     ["", "general"],
   ] as const)("%s → %s", (query, intent) => {

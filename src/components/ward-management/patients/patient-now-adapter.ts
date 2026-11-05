@@ -44,7 +44,7 @@ function movementVerdict(
   acceptedUnit?: Unit,
   departed = false,
   admissions: readonly Admission[] = [],
-  departureLabel = "Discharge",
+  departureLabel = "Departure",
 ): PatientNowRecord["verdict"] {
   // A departed stay is named by its recorded destination: a transfer or a death is not a discharge.
   if (departed)
@@ -88,11 +88,21 @@ function movementVerdict(
   return { tone: "warn", short: "Needs a bed", title: "Placement request active across network wards.", gates: [] };
 }
 
+/** Who the patient is collected from, by where the movement started. */
+function collectionPoint(originKind: MovementOriginKind | undefined): string {
+  if (originKind === "admission") return "the sending ward";
+  if (originKind === "community") return "the referring community team";
+  return "the ED";
+}
+
+type MovementOriginKind = ReturnType<typeof presentationOrigin>["kind"];
+
 function movementNextSteps(
   movement: Movement,
   acceptedUnit?: Unit,
   departed = false,
-  departureLabel = "Discharge",
+  departureLabel = "Departure",
+  originKind?: MovementOriginKind,
 ): PatientNowRecord["next"] {
   if (departed)
     return [
@@ -136,13 +146,23 @@ function movementNextSteps(
     return [
       {
         w: "Send the patient",
-        d: "Transport is booked or not needed. Coordinate collection from the ED.",
+        d: `Transport is booked or not needed. Coordinate collection from ${collectionPoint(originKind)}.`,
         tone: "good" as const,
       },
     ];
   }
 
-  if (movement.stage === "pulled" || acceptedUnit) {
+  if (movement.stage === "pulled") {
+    return [
+      {
+        w: "Book transport",
+        d: `Bed pulled at ${acceptedUnit?.name ?? "allocated unit"}. Book transport or record that none is needed.`,
+        tone: "good" as const,
+      },
+    ];
+  }
+
+  if (acceptedUnit) {
     return [
       {
         w: "Pull the bed",
@@ -365,7 +385,7 @@ export function resolvePatientNowRecord(
           : []),
       ],
       ladder: "Review the current movement for escalation and next actions",
-      next: movementNextSteps(movement, acceptedUnit, departed, departureLabel),
+      next: movementNextSteps(movement, acceptedUnit, departed, departureLabel, origin.kind),
       transport: movement.transport
         ? [
             ["Status", transportLeg(movement.transport) ?? "Booked"],
@@ -583,7 +603,7 @@ export function resolvePatientNowRecord(
             : []),
         ],
         ladder: "Review the current movement for escalation and next actions",
-        next: movementNextSteps(activeMovement, acceptedUnit, latestDeparture, departureLabel),
+        next: movementNextSteps(activeMovement, acceptedUnit, latestDeparture, departureLabel, origin.kind),
         transport: activeMovement.transport
           ? [
               ["Status", transportLeg(activeMovement.transport) ?? "Booked"],

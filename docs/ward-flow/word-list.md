@@ -124,7 +124,7 @@ Added 26 October 2026 with the Help glossary, so the two stay in step.
 | **Past date**            | Still on the ward after the expected discharge date.                                                 |
 | **Short**                | More people waiting than beds that fit, for one kind of bed. Spare and Enough are the other two.     |
 | **Cohort**               | The age group a bed is for: Adult, Older adult or Youth.                                             |
-| **Locked bed**           | A bed on a locked ward. Describes the ward, not the patient's legal status. Never "secure bed".      |
+| **Locked bed**           | A bed designated locked. Describes the bed, not the patient's legal status. Never "secure bed".      |
 | **CLD**                  | Criteria led discharge, with the criteria the treating psychiatrist set.                             |
 | **CLD ready**            | Every criterion for criteria led discharge is met.                                                   |
 | **Fit to travel**        | The ED doctor's recorded medical clearance, needed before transport.                                 |

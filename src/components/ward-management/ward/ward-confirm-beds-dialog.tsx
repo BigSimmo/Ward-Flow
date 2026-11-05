@@ -183,7 +183,7 @@ export function WardConfirmBedsDialog({
           </p>
           {staleRevision ? (
             <button type="button" className={styles.linkish} onClick={onStartFromCurrent}>
-              Recount beds now
+              Use current count
             </button>
           ) : null}
         </div>

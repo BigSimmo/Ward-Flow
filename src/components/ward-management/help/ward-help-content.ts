@@ -592,7 +592,7 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   {
     term: "Locked bed",
     meaning:
-      "A bed on a locked ward. An open bed is on an unlocked ward. This describes the ward, not the patient's legal status.",
+      "A bed the ward designates locked. Each ward splits its beds into locked and open. This describes the bed, not the patient's legal status.",
   },
 
   {
