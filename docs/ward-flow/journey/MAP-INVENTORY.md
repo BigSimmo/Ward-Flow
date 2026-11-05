@@ -1548,7 +1548,7 @@ Source-contract SHA256: 0feda23d2e7de9fa3ee4f7d35bbf3f45b2d75ac98e4e84a9161c6b45
   guards: Ward caller must name its actingUnitId and all affected wards must be that unit.
   guards: Admission authorisation gate needs a listed override reason when applicable; other placement gates are rechecked on conversion.
   guards: Ward must be open to new admissions. Sex and ageBand are listed.
-  guards: Linked patient exists, has no occupied/pulled bed or existing booked planned admission; recorded birth date matches cohort on arrival date. Initials-only requires 1–3 letters; a refusal names the real cause (digits, length, empty) rather than only a generic line.
+  guards: Linked patient exists, has no occupied/pulled bed or existing booked planned admission; recorded birth date matches cohort on arrival date. Initials-only requires 1–3 letters; the panel names digits and more than three letters separately, while blank initials get the generic "Initials are one to three letters." line; a direct event with neither patient nor initials is rejected by the patient-or-initials guard.
   effects: Appends a booked plan and increments plannedAdmissionSequence; linked gender comes from patient record, never event.
   effects: Stores a required same-ward authorisation override. No bed count or admission changes until conversion; initials invoke the typed-text persistence boundary.
   tests: tests/ward-planned-admissions.test.ts
