@@ -200,6 +200,8 @@ export function PlannedAdmissionsPanel({
   const patientOf = usePatientOf();
   const [form, setForm] = useState<FormState>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
+  // Day choices belong to the calendar on which this form opened, even across midnight.
+  const [formOpenedAt, setFormOpenedAt] = useState(now);
   // Audit 1 (WP-12, Josh 20 Oct): no reason is chosen for the coordinator; one must be picked.
   const [cancelReason, setCancelReason] = useState<PlannedAdmissionCancelReason | "">("");
   const [refusal, setRefusal] = useState<string | null>(null);
@@ -224,16 +226,18 @@ export function PlannedAdmissionsPanel({
   // A calendar date needs the provider's day zero; a screen given none still labels each day by
   // its distance from today rather than failing to render.
   function calendarDay(dayOffset: number, options: Intl.DateTimeFormatOptions): string {
-    if (!(dayZero instanceof Date)) return dayOffset < 0 ? `${-dayOffset}d ago` : `+${dayOffset}d`;
-    return calendarDateOf((dayOf(now) + dayOffset) * MINUTES_PER_DAY, dayZero).toLocaleDateString("en-AU", {
+    const fromToday = dayOf(formOpenedAt) + dayOffset - dayOf(now);
+    if (!(dayZero instanceof Date)) return fromToday < 0 ? `${-fromToday}d ago` : `+${fromToday}d`;
+    return calendarDateOf((dayOf(formOpenedAt) + dayOffset) * MINUTES_PER_DAY, dayZero).toLocaleDateString("en-AU", {
       ...options,
       timeZone: "Australia/Perth",
     });
   }
 
   function dayLabel(dayOffset: number): string {
-    if (dayOffset === 0) return "Today";
-    if (dayOffset === 1) return "Tomorrow";
+    const fromToday = dayOf(formOpenedAt) + dayOffset - dayOf(now);
+    if (fromToday === 0) return "Today";
+    if (fromToday === 1) return "Tomorrow";
     return calendarDay(dayOffset, { weekday: "short", day: "numeric", month: "short" });
   }
 
@@ -254,6 +258,7 @@ export function PlannedAdmissionsPanel({
   const changing = form?.mode === "change" ? plannedAdmissions.find((planned) => planned.id === form.id) : undefined;
 
   function openBook() {
+    setFormOpenedAt(now);
     const bookablePatients = getBookablePatients();
     setRefusal(null);
     save.forget();
@@ -278,6 +283,7 @@ export function PlannedAdmissionsPanel({
   }
 
   function openChange(planned: PlannedAdmission) {
+    setFormOpenedAt(now);
     setRefusal(null);
     save.forget();
     setDraft({
@@ -319,7 +325,7 @@ export function PlannedAdmissionsPanel({
     if (draftMissing || overrideReasonMissing) return;
     const { reason, legalStatus } = draft;
     if (reason === "" || legalStatus === "") return;
-    const timing = draftTiming(draft, now);
+    const timing = draftTiming(draft, formOpenedAt);
     if (!timing.ok) {
       setRefusal(timing.refusal);
       return;
