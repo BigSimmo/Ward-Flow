@@ -20,7 +20,7 @@ const chromiumExecutablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 // `tests/playwright-project-isolation.test.ts` asserts every spec on disk is matched.
 const productionSpecPattern = /.*api-csrf-proxy\.spec\.ts/;
 const mockupSpecPattern =
-  /.*ui-(ward-native-history-print|ward-management|ward-chrome-header|ward-coordinator|ward-roles|ward-discharges|ward-capacity-morning-moved|ward-referrals|ward-forced-colors|ward-full-journey|ward-search|ward-statistics-compare|ward-statistics-journey|ward-table-thresholds|ward-responsive-audit|ward-tour-targets|ward-help-show-me|ward-design-sweep)\.spec\.ts/;
+  /.*ui-(ward-native-history-print|ward-management|ward-chrome-header|ward-coordinator|ward-roles|ward-discharges|ward-capacity-morning-moved|ward-referrals|ward-forced-colors|ward-full-journey|ward-search|ward-statistics-compare|ward-statistics-journey|ward-table-thresholds|ward-responsive-audit|ward-tour-targets|ward-help-show-me|ward-design-sweep|ward-pwa-lifecycle)\.spec\.ts/;
 // A bounded Ward-only cross-browser proof; keep prototype cases separate from the inherited
 // production projects. The spec checks responsive geometry and keyboard access to local scrollers.
 const wardResponsiveSpecPattern = /.*ui-ward-responsive-audit\.spec\.ts/;
@@ -45,7 +45,7 @@ const knownFailurePattern = knownFailurePatternFromEnvironment();
 export default defineConfig({
   testDir: "./tests",
   testMatch:
-    /.*(?:release-gate-journeys|release-gate-axe-sweep|ward-shared-(?:mode|recovery|performance)|api-csrf-proxy|ui-ward-(?:native-history-print|management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds|responsive-audit|tour-targets|help-show-me|design-sweep))\.spec\.ts/,
+    /.*(?:release-gate-journeys|release-gate-axe-sweep|ward-shared-(?:mode|recovery|performance)|api-csrf-proxy|ui-ward-(?:native-history-print|management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds|responsive-audit|tour-targets|help-show-me|design-sweep|pwa-lifecycle))\.spec\.ts/,
   timeout: 60_000,
   retries: 0,
   // Fail the run if a stray `test.only` is committed: otherwise it silently
@@ -100,13 +100,9 @@ export default defineConfig({
     // Validates the phone PWA bounded scroll shell (globals.css:3755-3793) by
     // allowing phone scroll journeys to emulate `display-mode: standalone` either
     // through Chromium CDP session or the forceCompiledStandalonePhoneCss fixture.
-    // In production builds the PWA worker (public/sw.js) registers in every test,
-    // claims the page, and serves every subsequent navigation — bypassing route
-    // interception for navigations outright, and wedging Playwright-Firefox's
-    // reload path under an active route (the two ui-smoke reload hangs in matrix
-    // run 4012). Page routes also cannot intercept requests made by a controlling
-    // service worker. Only ui-pwa.spec.ts is meant to exercise the worker; it opts
-    // back in with test.use({ serviceWorkers: "allow" }).
+    // Keep routing-based journeys isolated from production workers. The real-worker lifecycle
+    // lane (ui-ward-pwa-lifecycle.spec.ts) alone opts in through test.use({ serviceWorkers: "allow" });
+    // it controls faults at a loopback HTTP proxy, since page routes cannot intercept worker traffic.
     serviceWorkers: "block",
   },
   projects: [
