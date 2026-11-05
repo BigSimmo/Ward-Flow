@@ -26,6 +26,7 @@ import {
   type ResolvedTheme,
   type ThemePreference,
 } from "./theme";
+import { displayPrefScopeActive } from "./display-pref-scope";
 
 export const THEME_CHANGE_EVENT = "clinical-kb-theme-change";
 
@@ -112,6 +113,13 @@ function writeCookie(preference: ThemePreference) {
 
 /** The only writer of the appearance preference. Persists, applies and tells every listener. */
 export function setThemePreference(preference: ThemePreference): ResolvedTheme {
+  // WF-31: statistics routes hold a display-pref scope — apply for this visit only, do not persist.
+  if (displayPrefScopeActive()) {
+    inMemoryPreference = preference;
+    const resolved = applyThemeToDocument(preference);
+    window.dispatchEvent(new Event(THEME_CHANGE_EVENT));
+    return resolved;
+  }
   try {
     if (preference === "system") window.localStorage.removeItem(THEME_STORAGE_KEY);
     else window.localStorage.setItem(THEME_STORAGE_KEY, preference);
@@ -126,7 +134,6 @@ export function setThemePreference(preference: ThemePreference): ResolvedTheme {
   return resolved;
 }
 
-/** Notifies on a choice made in this tab or another, and on an OS change while in "system". */
 export function subscribeThemePreference(onChange: () => void): () => void {
   if (typeof window === "undefined") return () => undefined;
   let media: MediaQueryList | null = null;
@@ -177,6 +184,13 @@ export function applyGlareToDocument(on: boolean) {
 
 /** The only writer of the Glare preference. Persists, applies and tells every listener. */
 export function setGlarePreference(on: boolean) {
+  // WF-31: statistics routes hold a display-pref scope — apply for this visit only, do not persist.
+  if (displayPrefScopeActive()) {
+    inMemoryGlare = on;
+    applyGlareToDocument(on);
+    window.dispatchEvent(new Event(GLARE_CHANGE_EVENT));
+    return;
+  }
   try {
     if (on) window.localStorage.setItem(GLARE_STORAGE_KEY, GLARE_ON_VALUE);
     else window.localStorage.removeItem(GLARE_STORAGE_KEY);
@@ -196,7 +210,6 @@ export function setGlarePreference(on: boolean) {
   window.dispatchEvent(new Event(GLARE_CHANGE_EVENT));
 }
 
-/** Notifies on a Glare choice made in this tab or another. */
 export function subscribeGlarePreference(onChange: () => void): () => void {
   if (typeof window === "undefined") return () => undefined;
   window.addEventListener("storage", onChange);

@@ -1114,6 +1114,21 @@ export function normalisePlannedAdmissionInitials(value: unknown): string | null
 }
 
 /**
+ * WF-07: why typed initials are refused, naming the real cause (digits, length, empty) so a 422
+ * is not a generic "one to three letters" when the value clearly has extras.
+ */
+export function plannedInitialsRefusal(value: string): string | null {
+  if (normalisePlannedAdmissionInitials(value) !== null) return null;
+  const trimmed = value.trim();
+  if (trimmed === "") return "Enter one to three letters for the initials.";
+  if (/\d/.test(trimmed)) return "Initials are letters only — remove the number.";
+  const letters = trimmed.replace(/[\s.]/g, "");
+  if (letters.length > 3) return "Initials are at most three letters.";
+  if (letters.length === 0) return "Initials are one to three letters.";
+  return "Initials are one to three letters — use A–Z only.";
+}
+
+/**
  * The longest expected stay a booking accepts, in days. A form bound (default), not a clinical or
  * legal limit.
  */
