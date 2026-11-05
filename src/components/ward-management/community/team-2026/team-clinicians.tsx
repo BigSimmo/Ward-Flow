@@ -11,7 +11,8 @@ import { CalendarDays, MapPin, Phone, Stethoscope } from "lucide-react";
 import { Button, Card, CardHead, Segmented, SrOnly } from "@/components/wf";
 import home from "@/components/ward-management/ward/ward-home-tab.module.css";
 import { foldPatientSearchHaystack, foldPatientSearchText } from "@/components/ward-management/ward-patients";
-import { STAFF, TODAY, type DemoStaff } from "./midland-demo";
+import { TODAY, type DemoStaff } from "./midland-demo";
+import { useMidlandDay, useMidlandDemo } from "./use-midland-demo";
 import { Tag } from "./parts";
 import wt from "@/components/ward-management/ward-table/ward-table.module.css";
 import t from "./team-2026.module.css";
@@ -57,6 +58,8 @@ function LoadCell({ s }: { s: DemoStaff }) {
 }
 
 export function TeamClinicians({ find = "" }: { find?: string }) {
+  const { STAFF } = useMidlandDemo();
+  const day = useMidlandDay();
   const [filter, setFilter] = useState<StaffFilter>("all");
   const needle = foldPatientSearchText(find);
   const count = (key: StaffFilter) => STAFF.filter((s) => shows(key, s.today)).length;
@@ -64,7 +67,11 @@ export function TeamClinicians({ find = "" }: { find?: string }) {
     <>
       <div className={t.three}>
         <Card className={home.v6Card}>
-          <CardHead icon={CalendarDays} title="Today's cover" aside={<span className={t.meta}>Mon 2 Nov</span>} />
+          <CardHead
+            icon={CalendarDays}
+            title="Today's cover"
+            aside={<span className={t.meta}>{day("Mon 2 Nov")}</span>}
+          />
           <dl className={t.dl}>
             <div>
               <dt>Duty officer</dt>
