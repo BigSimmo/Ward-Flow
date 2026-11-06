@@ -296,4 +296,6 @@ it("says a scope with no beds is empty, with no Clear filters when no filter is 
   render(<StatisticsCapacityChart units={[]} bedReleases={[]} />);
   expect(screen.getByText("No inpatient beds here.")).toBeInTheDocument();
   expect(screen.queryByRole("button", { name: "Clear filters" })).toBeNull();
+  // The axis is not drawn over an empty chart: `hidden` alone loses to the module's display: grid.
+  expect(screen.queryByText("Ready", { selector: "span" })).toBeNull();
 });

@@ -82,7 +82,7 @@ const AROUND: readonly Around[] = [
         device: "desk",
         target: id("capacity-bed-meeting"),
         title: "Bed meeting and TV",
-        body: "Bed meeting prints the sheet and opens the agenda. Its Open on TV puts it on the meeting room screen, read only.",
+        body: "Bed meeting opens a menu: Print the meeting sheet and Open the meeting agenda. Open on TV shows only when a TV is available, and puts the meeting on the room screen, read only.",
       },
     ],
   },

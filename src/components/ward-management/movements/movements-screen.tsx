@@ -101,6 +101,8 @@ type MovementsPlace = {
   sideView: "transport" | "shape";
   /** Null until the reader opens or closes a group: then the first group with people is open (Q227). */
   phoneOpenGroups: ReadonlySet<string> | null;
+  /** Phone groups opened past their first rows with "Show N more". */
+  phoneFullGroups: ReadonlySet<string>;
   showAll: boolean;
   highlight: string | null;
 };
@@ -214,7 +216,9 @@ export function MovementsScreen() {
     () => returned?.phoneOpenGroups ?? null,
   );
   // Design audit A12 (5 Nov 2026): an open phone group shows about eight rows, then "Show N more".
-  const [phoneFullGroups, setPhoneFullGroups] = useState<ReadonlySet<string>>(() => new Set());
+  const [phoneFullGroups, setPhoneFullGroups] = useState<ReadonlySet<string>>(
+    () => returned?.phoneFullGroups ?? new Set(),
+  );
   // v6 worklist: a search over name, UMRN or ED, and a short list per group until Show all.
   const [search, setSearch] = useState("");
   const [showAll, setShowAll] = useState(returned?.showAll ?? false);
@@ -222,7 +226,7 @@ export function MovementsScreen() {
   const [highlight, setHighlight] = useState<string | null>(returned?.highlight ?? null);
   // M1 to M4 (Josh, 3 Nov 2026): a figure opens the patients behind it in a pop-up list.
   const [peopleList, setPeopleList] = useState<MovementPeopleList | null>(null);
-  const place: MovementsPlace = { order, shapeTab, sideView, phoneOpenGroups, showAll, highlight };
+  const place: MovementsPlace = { order, shapeTab, sideView, phoneOpenGroups, phoneFullGroups, showAll, highlight };
   useReturnToPlace(MOVEMENTS_ROUTE, place, worklistRow);
   // "Show in worklist" from the list pop-up marks those rows, as the figures used to.
   function showHighlight(key: string) {
@@ -1327,7 +1331,11 @@ export function MovementsScreen() {
                     className={buttonClass({ variant: "ghost", size: "sm" })}
                     aria-expanded={showAll}
                     aria-controls={boardTab === "every" ? "movements-pane-every" : "movements-pane-resolved"}
-                    onClick={() => setShowAll((value) => !value)}
+                    onClick={() => {
+                      // Show fewer folds every list back, phone groups opened with "Show N more" too.
+                      if (showAll) setPhoneFullGroups(new Set());
+                      setShowAll(!showAll);
+                    }}
                   >
                     {showAll ? "Show fewer" : `Show all ${worklistListTotal}`}
                   </button>
