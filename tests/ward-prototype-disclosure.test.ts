@@ -158,8 +158,8 @@ const DISCLOSURE = /prototypeBadge/u;
 
 function sharedShellDiscloses(): boolean {
   const layout = stripComments(readFileSync(`${ROUTES_DIR}/layout.tsx`, "utf8"));
-  const bar = stripComments(readFileSync(`${COMPONENTS_DIR}/shell/ward-bar.tsx`, "utf8"));
-  if (!layout.includes("<WardBarMount />") || !/<WardBar \{\.\.\.props\}/u.test(bar)) return false;
+  const bar = stripComments(readFileSync(`${COMPONENTS_DIR}/shell-next/next-bar.tsx`, "utf8"));
+  if (!layout.includes("<WardBarMount />") || !/<NextBar \{\.\.\.props\}/u.test(bar)) return false;
   let found = false;
   const visit = (node: ts.Node) => {
     if (ts.isJsxElement(node) && node.openingElement.tagName.getText() === "span") {
@@ -181,7 +181,7 @@ function sharedShellDiscloses(): boolean {
     }
     ts.forEachChild(node, visit);
   };
-  visit(ts.createSourceFile("ward-bar.tsx", bar, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX));
+  visit(ts.createSourceFile("next-bar.tsx", bar, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX));
   return found;
 }
 
