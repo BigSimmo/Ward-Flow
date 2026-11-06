@@ -222,7 +222,7 @@ export function PhoneBedSheet({
                   value={bedItem?.preparing ? BED_STATE_LABELS.beingMadeReady : "Ready"}
                   tone={bedItem?.preparing ? "neutral" : "success"}
                 />
-                <FactTile label="Pulled for" value={bedItem?.heldFor ?? "No one"} />
+                <FactTile label="Pulled for" value={bedItem?.heldFor ?? "Nobody"} />
               </div>
               <h3 className={styles.phoneSec}>Placement</h3>
               <dl className={styles.phoneKv}>

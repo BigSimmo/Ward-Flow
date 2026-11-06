@@ -217,7 +217,7 @@ describe("the Alerts drawer redesign (pop-alerts, approved 31 Oct 2026)", () => 
   });
 
   it("says a bed pull is past its pull limit, not overdue", () => {
-    const pull = items.find((item) => /bed pull/iu.test(item.title));
+    const pull = items.find((item) => /pulls? expired/iu.test(item.title));
     if (!pull) throw new Error("fixture drifted: the seeded inbox has no bed pull alert");
     const drawer = renderDrawer([pull]);
     expect(drawer).toHaveTextContent("Past pull limit");

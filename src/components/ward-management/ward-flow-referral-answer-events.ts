@@ -510,7 +510,8 @@ export function reduceReferralAnswerEvent(
       }
       // `homeRegion` is a region from a fixed list, never an address or free text; see
       // `HOME_REGIONS`.
-      if (!HOME_REGIONS.includes(event.homeRegion)) {
+      // FORM-REF (Josh, 5 Nov 2026): a region not recorded is absent and warns on the form.
+      if (event.homeRegion !== undefined && !HOME_REGIONS.includes(event.homeRegion)) {
         return reject(state, event, `RECEIVE_REFERRAL homeRegion must be chosen from HOME_REGIONS`);
       }
       // The suburb is resolved against the real catchment table, never merely checked for
@@ -528,8 +529,14 @@ export function reduceReferralAnswerEvent(
       }
       // A synthetic site code, never an address — resolved against the real network rather than
       // merely checked for non-emptiness, so "12 Wellington St, Perth" cannot pass as a code.
-      const originSite = scenarioSite(state.scenario, event.originSiteCode);
-      if (!originSite) {
+      // FORM-REF (Josh, 5 Nov 2026): the location of referral warns, never blocks, so it may be
+      // absent. A ward always sends from its own site; a code that is given must still be real.
+      if (event.originSiteCode === undefined && event.source === "psychiatric_ward") {
+        return reject(state, event, `RECEIVE_REFERRAL from a ward must carry the ward's site`);
+      }
+      const originSite =
+        event.originSiteCode === undefined ? undefined : scenarioSite(state.scenario, event.originSiteCode);
+      if (event.originSiteCode !== undefined && !originSite) {
         return reject(state, event, `RECEIVE_REFERRAL originSiteCode must resolve to a real site`);
       }
       /**
@@ -538,7 +545,7 @@ export function reduceReferralAnswerEvent(
        * site's own record in `wardSites`, never a hand-written list of codes
        * (`docs/ward-flow-changeable-data-rule.md`).
        */
-      if (event.source === "ed_medical" && !originSite.emergencyDepartment) {
+      if (event.source === "ed_medical" && originSite && !originSite.emergencyDepartment) {
         return reject(
           state,
           event,

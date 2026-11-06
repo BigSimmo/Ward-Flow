@@ -20,7 +20,7 @@ const GROUP_TERMS: readonly (readonly string[])[] = [
     "Ready",
     "Confirmed beds",
     "Cohort",
-    "Secure bed",
+    "Locked bed",
     "Short",
   ],
   [

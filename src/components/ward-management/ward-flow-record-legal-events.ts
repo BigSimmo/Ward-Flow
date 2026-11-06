@@ -19,6 +19,7 @@ import {
   PAPER_EXPIRY_CORRECTION_REASONS,
 } from "./ward-model-vocabulary";
 import { ED_PRESENTATION_CHOICES, isEdPresentation } from "./ed/ed-presentation";
+import { legalFormTimeOrderProblem } from "./ward-legal-form-time-order";
 
 type RecordedLegalEvent = Extract<
   RecordedFactEvent,
@@ -305,6 +306,9 @@ export function reduceRecordedLegalEvent(
       ) {
         return reject(state, event, "Enter the time and expiry written on the form.");
       }
+      // F2: a written time later than now, or a typed expiry not after it, is refused (MHA 2014 fields).
+      const writtenOrderProblem = legalFormTimeOrderProblem(writtenAt, paperExpiresAt, event.now);
+      if (writtenOrderProblem) return reject(state, event, `${writtenOrderProblem}.`);
       if (!isLegalClockFormCode(event.formCode)) {
         return reject(state, event, "That form is not a recognised legal form in this prototype");
       }
@@ -419,6 +423,9 @@ export function reduceRecordedLegalEvent(
       ) {
         return reject(state, event, "Enter the time and expiry written on the form.");
       }
+      // F2: the same order check as a written form, on the continuation's start time.
+      const continuationOrderProblem = legalFormTimeOrderProblem(event.startedAt, event.paperExpiresAt, event.now);
+      if (continuationOrderProblem) return reject(state, event, `${continuationOrderProblem}.`);
       if (!isLegalClockFormCode(event.formCode)) {
         return reject(state, event, "That form is not a recognised legal form in this prototype");
       }

@@ -257,11 +257,10 @@ export const NO_DIAGNOSIS_VALUE = "none";
  */
 
 /** One spelling, used by the control, its title and its screen-reader note. */
-export const LEGAL_STATUS_UNCHOSEN =
-  "Choose the new legal status before recording the change. None is chosen for you: a status nobody picked would be filed as the patient's legal status.";
+export const LEGAL_STATUS_UNCHOSEN = "Choose the new legal status before recording the change. None is chosen for you.";
 
 export const LEGAL_STATUS_REASON_UNCHOSEN =
-  "Choose where this entry came from before recording the change. None is chosen for you: a reason nobody picked would be filed as the treating team's own report.";
+  "Choose where this entry came from before recording the change. None is chosen for you.";
 
 /**
  * The local form's own draft shape, distinct from `ReferralDraft` (`ward-flow-events.ts`) — the

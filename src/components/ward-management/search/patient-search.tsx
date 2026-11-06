@@ -29,7 +29,7 @@ import {
   useMediaQuery,
 } from "@/components/wf";
 
-import { MOVEMENT_STAGES } from "@/components/ward-management/ward-model";
+import { MOVEMENT_STAGES, ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import type { Movement, MovementStage } from "@/components/ward-management/ward-model";
 import {
   isOpen,
@@ -48,11 +48,13 @@ import {
 } from "@/components/ward-management/ward-flow-provider";
 import {
   findPatients,
+  foldPatientSearchHaystack,
   foldPatientSearchText,
   patientAgeYears,
   type Patient,
 } from "@/components/ward-management/ward-patients";
 import { WARD_ADD_PERSON_HREF } from "@/components/ward-management/ward-nav";
+import { compareFormalNames } from "@/components/ward-management/ward-name-collation";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
@@ -370,11 +372,11 @@ export function PatientSearchPage() {
     const context = { patients, referrals, movements };
     for (const movement of movements) {
       const info = resolveSubjectPatient(movement, context);
-      words.set(movement.id, foldPatientSearchText(`${info.displayName} ${info.formalName} ${info.umrn}`));
+      words.set(movement.id, foldPatientSearchHaystack(`${info.displayName} ${info.formalName} ${info.umrn}`));
     }
     for (const referral of referrals) {
       const info = resolveSubjectPatient(referral, context);
-      words.set(referral.id, foldPatientSearchText(`${info.displayName} ${info.formalName} ${info.umrn}`));
+      words.set(referral.id, foldPatientSearchHaystack(`${info.displayName} ${info.formalName} ${info.umrn}`));
     }
     return words;
   }, [patients, referrals, movements]);
@@ -453,16 +455,16 @@ export function PatientSearchPage() {
   const people = useMemo(() => {
     if (isChip) {
       const allPeople = findPatients(patients, "", { movements, referrals, units });
-      if (text === "● On this board") {
+      if (text === "On this board") {
         return allPeople.filter((p) => getPatientPresence(p, referrals, movements).key === "live");
       }
-      if (text === "○ Not in Hospital") {
+      if (text === "Not in Hospital") {
         return allPeople.filter((p) => {
           const key = getPatientPresence(p, referrals, movements).key;
           return key === "community" || key === "scheduled";
         });
       }
-      if (text === "◌ Past Patient") {
+      if (text === "Past Patient") {
         return allPeople.filter((p) => getPatientPresence(p, referrals, movements).key === "past");
       }
       if (text === "Form 1A") {
@@ -564,7 +566,10 @@ export function PatientSearchPage() {
           communityTeam: info.patient?.catchmentCommunityTeam ?? null,
           indigenous: Boolean(info.patient?.aboriginalOrTorresStraitIslanderStatus),
           confidential: Boolean((info.patient as { confidential?: boolean } | undefined)?.confidential),
-          origin: isComm ? `${ref.originSiteCode} Community` : `${ref.originSiteCode} ED`,
+          origin:
+            ref.originSiteCode === undefined
+              ? ORIGIN_NOT_RECORDED
+              : `${ref.originSiteCode} ${isComm ? "Community" : "ED"}`,
           setting: isComm ? "community" : "ed",
           service: svc,
           legalStatus: refLegal,
@@ -582,8 +587,8 @@ export function PatientSearchPage() {
           presence: isComm ? "community" : "live",
           presenceLabel: isComm ? "Not in Hospital" : "On this board",
           presenceDetail: isComm
-            ? `Active Community Referral · ${ref.originSiteCode}`
-            : `Queued Referral · ${ref.originSiteCode} ED`,
+            ? `Active Community Referral · ${ref.originSiteCode ?? ORIGIN_NOT_RECORDED}`
+            : `Queued Referral · ${ref.originSiteCode === undefined ? ORIGIN_NOT_RECORDED : `${ref.originSiteCode} ED`}`,
           clinicalNote: NO_CLINICAL_NOTE,
           personRecordId: info.patient?.id ?? null,
           openedAtInstant: ref.raisedAt,
@@ -607,7 +612,7 @@ export function PatientSearchPage() {
         if (b.legalDueAt === null) return -1;
         return a.legalDueAt - b.legalDueAt;
       }
-      if (sortBy === "name-asc") return a.name.localeCompare(b.name);
+      if (sortBy === "name-asc") return compareFormalNames(a.name, b.name);
       if (sortBy === "urm-asc") return a.urm.localeCompare(b.urm);
       if (sortBy === "opened-desc") return b.id.localeCompare(a.id);
       return 0;

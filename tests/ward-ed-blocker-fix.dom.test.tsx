@@ -238,11 +238,10 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
     );
     const dialog = screen.getByTestId("ward-ed-book-transport-WF-011");
     const left = within(dialog).getByTestId("ward-ed-book-transport-left-WF-011");
-    // Josh, 31 Oct 2026: the form starts with nothing chosen, so the day and the legal status are
-    // among the answers left. CAD to follow (Josh, 27 Oct 2026): the CAD number is not.
-    expect(left.textContent).toContain(
-      "5 answers left: provider, estimated time, today or tomorrow, escort answer, legal status",
-    );
+    // Josh, 31 Oct 2026: the form starts with nothing chosen, so the legal status is among the
+    // answers left. CAD to follow (Josh, 27 Oct 2026): the CAD number is not. Form rule (W32, 5 Nov
+    // 2026): a blank estimated time warns, so neither it nor its day is asked until a time is typed.
+    expect(left.textContent).toContain("3 answers left: provider, escort answer, legal status");
     expect(left.getAttribute("role")).toBe("status");
     // The confirm keeps its full sentence for screen readers.
     const confirm = within(dialog).getByTestId("ward-ed-book-transport-confirm-WF-011");
@@ -264,7 +263,7 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
 
     // With every answer given, the top line says so.
     expect(within(dialog).getByTestId("ward-ed-book-transport-left-WF-011").textContent).toBe(
-      "Every answer given. Check them, then save.",
+      "Every required answer given. Check them, then save.",
     );
     const cad = within(dialog).getByTestId("ward-ed-transport-cad-number-WF-011") as HTMLInputElement;
     expect(cad.value).toBe("");

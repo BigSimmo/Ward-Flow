@@ -456,10 +456,13 @@ export type RepatriationRecord = {
   agreedAt?: Instant;
   agreedBy?: WardFlowRole;
   mode: RepatriationMode;
-  provider: TransportProvider;
+  /** Absent when not recorded (form rule, Josh's card 3, 5 Nov 2026). */
+  provider?: TransportProvider;
+  /** Blank is "CAD to follow" (card 3). */
   cadNumber: string;
   transportLegalStatus: TransportLegalStatus;
-  estimatedAt: Instant;
+  /** Absent when the depart time is not recorded (card 3). */
+  estimatedAt?: Instant;
   /** #177 (Josh, 27 Oct 2026): an involuntary return's Form 4C and escort answers. Absent when blank. */
   form4CReceived?: boolean;
   escortRequired?: boolean;

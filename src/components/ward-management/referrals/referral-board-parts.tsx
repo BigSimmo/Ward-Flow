@@ -1,13 +1,14 @@
 "use client";
 
 import { wardAddressing } from "@/components/ward-management/ward-eligibility";
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { FileText, TriangleAlert } from "lucide-react";
+import { FileText } from "lucide-react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Referral, Unit } from "@/components/ward-management/ward-model";
@@ -275,7 +276,7 @@ export function WaitRunway({
       <div className={styles.bandHead}>
         <span className={styles.bandEyebrow}>Waiting</span>
         <span className={styles.bandKey}>
-          <TriangleAlert size={12} aria-hidden="true" />
+          <StatusGlyph tone="danger" size={12} />
           overdue
         </span>
       </div>
@@ -309,7 +310,7 @@ export function WaitRunway({
               onClick={() => onSelect(referral.id)}
             >
               {/* Audit 11 Oct 2026: "T2", as the tier chip reads, so a mark is not read as a count. */}
-              {overdue ? <TriangleAlert size={12} aria-hidden="true" /> : `T${referral.urgency}`}
+              {overdue ? <StatusGlyph tone="danger" size={12} /> : `T${referral.urgency}`}
             </button>
           );
         })}
@@ -456,7 +457,7 @@ export function WaitCell({ referral, now }: { referral: Referral; now: Instant }
     <span className={cx(styles.wait, overdue && styles.waitOver)}>
       <b>{waited}</b>
       <span>
-        {overdue ? <TriangleAlert size={12} aria-hidden="true" /> : null}
+        {overdue ? <StatusGlyph tone="danger" size={12} /> : null}
         {due}
       </span>
     </span>
@@ -490,7 +491,7 @@ export function DecisionClock({ referral, now }: { referral: Referral; now: Inst
             "Clock stopped at triage"
           ) : overdue ? (
             <>
-              <TriangleAlert size={12} aria-hidden="true" />
+              <StatusGlyph tone="danger" size={12} />
               <b className={styles.mono}>{durMinutes(now - dueAt)}</b> overdue
             </>
           ) : (
@@ -543,7 +544,7 @@ export function referralTimeline(
     {
       at: referral.raisedAt,
       tone: "success",
-      text: `Raised by ${REFERRAL_SOURCE_WORDS[referral.source]}, ${siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode}`,
+      text: `Raised by ${REFERRAL_SOURCE_WORDS[referral.source]}, ${siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode ?? ORIGIN_NOT_RECORDED}`,
     },
   ];
   if (referral.triagedAt !== undefined) entries.push({ at: referral.triagedAt, tone: "info", text: "Triaged" });
@@ -646,7 +647,7 @@ export function ReferralTimeline({
     <>
       <li className={cx(styles.timelineDue, overdue && styles.timelineLate)}>
         <span className={styles.timelineAt}>{formatInstantWithDay(dueAt, now)}</span>
-        {overdue ? <TriangleAlert size={12} aria-hidden="true" /> : <StatusGlyph tone="neutral" size={9} />}
+        {overdue ? <StatusGlyph tone="danger" size={12} /> : <StatusGlyph tone="neutral" size={9} />}
         <span>
           {overdue ? "Decision was due" : "Decision due"} (tier {referral.urgency})
         </span>

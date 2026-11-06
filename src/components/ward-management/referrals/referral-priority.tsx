@@ -5,6 +5,7 @@ import {
   OVERDUE_AFTER_MINUTES_BY_TIER,
 } from "@/components/ward-management/ward-operational-defaults";
 import { referralClocks } from "@/components/ward-management/ward-referrals";
+import { StatusGlyph, type WfTone } from "@/components/wf";
 import styles from "./referrals.module.css";
 
 /*
@@ -39,49 +40,9 @@ export function referralPriorityLabel(priority: ReferralPriority): string {
   }
 }
 
+/** Design audit 4 (5 Nov 2026): the kit StatusGlyph, one shape per tone, not hand-drawn marks. */
+const PRIORITY_TONE: Record<ReferralPriority, WfTone> = { overdue: "danger", urgent: "warning", routine: "neutral" };
+
 export function PriorityGlyph({ priority }: { priority: ReferralPriority }) {
-  switch (priority) {
-    case "overdue":
-      return (
-        <svg
-          className={styles.priorityIcon}
-          viewBox="0 0 16 16"
-          width="12"
-          height="12"
-          aria-hidden="true"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <circle cx="8" cy="8" r="6" />
-          <polyline points="8 4 8 8 11 9.5" />
-        </svg>
-      );
-    case "urgent":
-      return (
-        <svg
-          className={styles.priorityIcon}
-          viewBox="0 0 16 16"
-          width="12"
-          height="12"
-          aria-hidden="true"
-          fill="currentColor"
-        >
-          <path d="M8 1.5 1 14h14L8 1.5ZM8 5a.9.9 0 0 1 .9.9v3.4a.9.9 0 0 1-1.8 0V5.9A.9.9 0 0 1 8 5Zm0 6.8a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z" />
-        </svg>
-      );
-    case "routine":
-      return (
-        <svg
-          className={styles.priorityIcon}
-          viewBox="0 0 16 16"
-          width="12"
-          height="12"
-          aria-hidden="true"
-          fill="currentColor"
-        >
-          <circle cx="8" cy="8" r="4.5" />
-        </svg>
-      );
-  }
+  return <StatusGlyph tone={PRIORITY_TONE[priority]} size={12} className={styles.priorityIcon} />;
 }

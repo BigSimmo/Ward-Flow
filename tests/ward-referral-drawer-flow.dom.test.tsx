@@ -72,13 +72,15 @@ function answer(label: string, answer: string) {
 }
 
 describe("approved four-tab referral drawer journey", () => {
-  it("requires catchment confirmation and places the story in Referral, documents in Documentation", () => {
+  it("warns on an unconfirmed catchment and places the story in Referral, documents in Documentation", () => {
     setup();
     // v6 (ReferralDrawer.webp): the footer always offers "Next, referral"; it checks the patient step when pressed.
     expect(screen.getByRole("button", { name: "Next, referral" })).toBeInTheDocument();
     tab("Wards");
     fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
-    expect(screen.getByRole("alert")).toHaveTextContent("Confirm the patient's catchment");
+    // FORM-REF (Josh, 5 Nov 2026): the catchment warns in Before you send and never stops Send.
+    expect(screen.getByRole("alert")).not.toHaveTextContent("catchment");
+    expect(screen.getByTestId("ward-referral-send-warnings")).toHaveTextContent("Not recorded: catchment");
     tab("Patient");
     confirmCatchment();
     next("Next, referral");
@@ -142,7 +144,7 @@ describe("approved four-tab referral drawer journey", () => {
       timeout: 10_000,
     });
     next("Next, wards");
-    const locations = screen.getByRole("list", { name: "Placement Destination Options" });
+    const locations = screen.getByRole("list", { name: "Destinations" });
     const first = within(locations).getByRole("checkbox", { name: /Dabakarn/ });
     fireEvent.click(first);
     expect(screen.getByLabelText("Arrival, AWST")).toBeVisible();
@@ -181,45 +183,93 @@ describe("approved four-tab referral drawer journey", () => {
 });
 
 describe("errors mark and move to the field at fault (DA-12)", () => {
-  const origin = () => screen.getByLabelText(/Referring (emergency department|service location)/);
+  // FORM-REF (Josh, 5 Nov 2026): these cases use the legal status, which blocks (LEGAL-REF). PT-005 is a registered person with no legal status here.
+  const legal = () => screen.getByLabelText("Legal status");
+  const legalError = 'Choose the legal status, or "Not yet recorded"';
+  function setupUnanswered() {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardReferralDrawer onClose={vi.fn()} initialPatientId="PT-005" />
+        <Probe />
+      </WardFlowProvider>,
+    );
+    fireEvent.change(screen.getByLabelText("Age band"), { target: { value: "Adult" } });
+    // Gender (WS-01) and urgency block too; answer them so the legal status is the one thing left.
+    fireEvent.change(screen.getByTestId("ward-referral-gender"), { target: { value: "not_recorded" } });
+    fireEvent.click(document.querySelector<HTMLInputElement>('input[type="radio"][name$="-urgency"][value="2"]')!);
+  }
 
   it("marks a missing field, names its error and moves focus to it", async () => {
-    setup();
-    confirmCatchment();
+    setupUnanswered();
     next("Next, referral");
-    // The sample person's record fills the location; clear it to leave the step unanswered.
-    fireEvent.change(origin(), { target: { value: "" } });
-    expect(origin()).not.toHaveAttribute("aria-invalid");
+    expect(legal()).not.toHaveAttribute("aria-invalid");
+    // The location and referring service block too when no desk fills them, and are listed in the
+    // summary; give them so the legal status is the one thing to fix.
+    fireEvent.change(screen.getByLabelText(/Referring (emergency department|service location)/), {
+      target: { value: "RPH" },
+    });
+    const team = screen.queryByLabelText(/Referring community service/);
+    if (team) fireEvent.change(team, { target: { value: "Synthetic referring service" } });
     next("Next, clearance");
 
-    expect(origin()).toHaveAttribute("aria-invalid", "true");
-    expect(origin()).toHaveAccessibleDescription("Choose the location of referral");
+    expect(legal()).toHaveAttribute("aria-invalid", "true");
+    expect(legal()).toHaveAccessibleDescription(legalError);
     // Error summary (Josh approved 24 Oct 2026): focus lands on the step's summary; its link reaches the field.
     await waitFor(() =>
       expect(screen.getByRole("heading", { name: "1 thing to fix before the next step" })).toHaveFocus(),
     );
-    fireEvent.click(screen.getByRole("link", { name: "Choose the location of referral" }));
-    expect(origin()).toHaveFocus();
+    fireEvent.click(screen.getByRole("link", { name: legalError }));
+    expect(legal()).toHaveFocus();
 
-    fireEvent.change(origin(), { target: { value: "RPH" } });
-    expect(origin()).not.toHaveAttribute("aria-invalid");
+    fireEvent.change(legal(), { target: { value: "Voluntary" } });
+    expect(legal()).not.toHaveAttribute("aria-invalid");
   });
 
   it("opens the step at fault when Send finds a problem on an earlier step", async () => {
-    setup();
-    confirmCatchment();
+    setupUnanswered();
+    // Josh, 5 Nov 2026 (finding 2): the location and service block when no desk fills them; give them.
     tab("Referral");
-    fireEvent.change(origin(), { target: { value: "" } });
+    fireEvent.change(screen.getByLabelText(/Referring (emergency department|service location)/), {
+      target: { value: "RPH" },
+    });
+    const team = screen.queryByLabelText("Referring community service");
+    if (team) fireEvent.change(team, { target: { value: "Synthetic referring service" } });
     tab("Wards");
-    expect(origin()).not.toBeVisible();
+    expect(legal()).not.toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
 
-    expect(screen.getByRole("alert")).toHaveTextContent("Choose the location of referral");
-    expect(origin()).toBeVisible();
+    expect(screen.getByRole("alert")).toHaveTextContent(legalError);
+    expect(legal()).toBeVisible();
     await waitFor(() =>
       expect(screen.getByRole("heading", { name: "1 thing to fix before the next step" })).toHaveFocus(),
     );
-    fireEvent.click(screen.getByRole("link", { name: "Choose the location of referral" }));
-    expect(origin()).toHaveFocus();
+    fireEvent.click(screen.getByRole("link", { name: legalError }));
+    expect(legal()).toHaveFocus();
+  });
+});
+
+describe("an ED referral's expected arrival time (PR #1474 review)", () => {
+  const arrival = () => screen.getByLabelText("Expected arrival, AWST");
+  const nextFromReferral = () => fireEvent.click(screen.getAllByRole("button", { name: /^Next, /u }).at(-1)!);
+
+  it("holds the referral while a typed arrival is not a real 24-hour time, and lets an empty one through", () => {
+    setup();
+    fireEvent.click(within(screen.getByRole("group", { name: "Refer to" })).getByRole("button", { name: "ED" }));
+    confirmCatchment();
+    tab("Referral");
+    fireEvent.change(arrival(), { target: { value: "11:45pm" } });
+    nextFromReferral();
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Type a 24-hour time, HH:MM, for the expected arrival, or clear it.",
+    );
+    expect(arrival()).toBeVisible();
+    expect(arrival()).toHaveAttribute("aria-invalid", "true");
+    expect(arrival()).toHaveAccessibleDescription(/Type a 24-hour time, HH:MM/u);
+
+    // Cleared, the time is optional again and the step moves on.
+    fireEvent.change(arrival(), { target: { value: "" } });
+    nextFromReferral();
+    expect(arrival()).not.toBeVisible();
+    expect(screen.queryByText(/for the expected arrival, or clear it/u)).not.toBeInTheDocument();
   });
 });

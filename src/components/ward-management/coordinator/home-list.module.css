@@ -130,6 +130,10 @@
   text-decoration: underline;
 }
 
+.footAction {
+  margin-inline-start: auto;
+}
+
 /* ---------- Beds that fit ---------- */
 
 .gapCard {
@@ -570,12 +574,14 @@
     border-radius: var(--wf-r-track);
     box-shadow: none;
   }
-  .viewSwitch.viewSwitch > * {
+  /* K3 (design audit, 5 Nov 2026): a 32px floor rather than a fixed height. Tripled so it outranks
+     the kit's phone segmented floor (40px), which a fixed height no longer overrides. */
+  .viewSwitch.viewSwitch.viewSwitch > * {
     position: relative;
     flex: 1 1 auto;
     justify-content: center;
-    height: 32px;
-    min-height: 0;
+    min-height: 32px;
+    height: auto;
     padding-inline: 8px;
     border-radius: var(--wf-r-seg-item);
     font-size: var(--wf-fs-13);

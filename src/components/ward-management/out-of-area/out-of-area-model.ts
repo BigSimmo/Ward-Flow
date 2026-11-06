@@ -1,5 +1,5 @@
 import { bedIsOccupied, daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
-import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
+import { CAD_TO_FOLLOW, cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import {
   dayOf,
   formatInstantWithDay,
@@ -20,7 +20,10 @@ import { BED_MEETING_MINUTES, SHIFT_PATTERN } from "@/components/ward-management
 import { outOfAreaLedger, type OutOfAreaEntry } from "@/components/ward-management/ward-referrals";
 import { siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 import { boundedBedAvailability } from "@/components/ward-management/ward-ready-beds";
-import { instantFromEstimatedTimeInputs } from "@/components/ward-management/ward-transport-checks";
+import {
+  instantFromEstimatedTimeInputs,
+  minutesFromTimeInput,
+} from "@/components/ward-management/ward-transport-checks";
 
 /**
  * Out of area option A (9 Oct 2026): the small, pure reads the page shows beside the ledger.
@@ -134,21 +137,64 @@ export const PLAN_STEPS = [
   { n: 2, title: "Transport", answers: ["road or flight", "provider", "legal status"] },
   { n: 3, title: "Dispatch", answers: ["CAD number", "depart time"] },
 ] as const;
-const PLAN_ANSWER_COUNT = 7;
+/** The answers that block (`missingAnswers`), all missing on a blank plan. */
+const PLAN_ANSWER_COUNT = 4;
 
-/** The answers still needed, in plan order. None is filled in for the coordinator. */
-export function missingAnswers(draft: RepatDraft, now: Instant): string[] {
+/**
+ * The answers still needed, in plan order. None is filled in for the coordinator.
+ *
+ * Form rule (design audit W13, Josh's card 3, 5 Nov 2026): the provider and depart time warn
+ * (`planWarnings`) and a blank CAD is "CAD to follow". A typed CAD the rule refuses is a wrong answer
+ * and still blocks. So does a typed depart time that cannot be read: recording it would drop the
+ * time the person gave. A blank depart time only warns.
+ */
+export function missingAnswers(draft: RepatDraft): string[] {
   const missing: string[] = [];
   if (!siteDirectory.some((site) => site.code === draft.homeHospital)) missing.push("receiving hospital");
   if (draft.receivingWardAgreed === undefined) missing.push("ward agreement");
   if (draft.mode !== "road" && draft.mode !== "flight") missing.push("road or flight");
-  if (draft.provider === undefined) missing.push("provider");
   if (draft.transportLegalStatus === undefined) missing.push("legal status");
-  if (cadNumberProblem(draft.cadNumber) !== undefined) missing.push("CAD number");
-  if (instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now) === undefined) {
-    missing.push("depart time");
-  }
+  if (draft.cadNumber.trim() && cadNumberProblem(draft.cadNumber) !== undefined) missing.push("CAD number");
+  if (departTimeUnreadable(draft)) missing.push("depart time");
   return missing;
+}
+
+/** A depart time was typed but cannot be read as a clock time. Blank is not unreadable. */
+export function departTimeUnreadable(draft: RepatDraft): boolean {
+  return draft.estimatedTime.trim() !== "" && minutesFromTimeInput(draft.estimatedTime) === undefined;
+}
+
+/** W13: the words for a return recorded with no depart time or no provider. */
+export const DEPART_TIME_NOT_RECORDED = "Depart time not recorded";
+export const PROVIDER_NOT_RECORDED = "Provider not recorded";
+
+/** W13: what the plan sends without, as warnings. Recording still goes ahead. */
+function planWarnings(draft: RepatDraft, now: Instant): string[] {
+  return [
+    draft.provider === undefined ? "provider" : "",
+    // An unreadable typed time blocks in `missingAnswers` instead, so only a blank one warns here.
+    !departTimeUnreadable(draft) &&
+    instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now) === undefined
+      ? "depart time"
+      : "",
+  ].filter(Boolean);
+}
+
+/**
+ * W13: the plan's warning line, with "CAD to follow" for a blank CAD. Empty when nothing warns.
+ * "You can still record." is said only when nothing blocks "Record sent to ward" (every blocking
+ * answer but the ward agreement, which that record does not need); otherwise the omissions are
+ * listed without the promise.
+ */
+export function planWarningsLine(draft: RepatDraft, now: Instant): string {
+  const missing = planWarnings(draft, now);
+  const parts = [
+    missing.length ? `Not recorded: ${missing.join(", ")}.` : "",
+    draft.cadNumber.trim() ? "" : `${CAD_TO_FOLLOW}.`,
+  ].filter(Boolean);
+  if (!parts.length) return "";
+  const blocked = missingAnswers(draft).some((answer) => answer !== "ward agreement");
+  return blocked ? parts.join(" ") : `${parts.join(" ")} You can still record.`;
 }
 
 /**
@@ -175,7 +221,13 @@ export function returnStatus(
   now: Instant,
 ): ReturnStatus {
   if (record) return record.receivingWardAgreed ? "agreed" : "not_agreed";
-  if (draft && missingAnswers(draft, now).length < PLAN_ANSWER_COUNT) return "started";
+  if (
+    draft &&
+    (missingAnswers(draft).length < PLAN_ANSWER_COUNT ||
+      planWarnings(draft, now).length < 2 ||
+      draft.cadNumber.trim() !== "")
+  )
+    return "started";
   return "none";
 }
 
@@ -313,11 +365,12 @@ export function shiftLabel(now: Instant): string {
 
 /** Whether a recorded return departs on today's calendar day. */
 export function leavesToday(record: RepatriationRecord, now: Instant): boolean {
-  return dayOf(record.estimatedAt) === dayOf(now);
+  return record.estimatedAt !== undefined && dayOf(record.estimatedAt) === dayOf(now);
 }
 
 /** A night shift runs past midnight, so a departure can fall yesterday as well as today or tomorrow. */
 export function departureDayLabel(record: RepatriationRecord, now: Instant): string {
+  if (record.estimatedAt === undefined) return DEPART_TIME_NOT_RECORDED;
   const offset = dayOf(record.estimatedAt) - dayOf(now);
   if (offset === 0) return "Today";
   if (offset === 1) return "Tomorrow";

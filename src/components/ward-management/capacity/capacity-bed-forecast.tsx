@@ -216,15 +216,16 @@ export function BedForecast({
           {siteName ? <p>Estimate for the wards at {siteName}.</p> : null}
           <p>
             From {plural(sourceSummary.discharges, "recorded discharge", "recorded discharges")} on{" "}
-            {plural(sourceSummary.wards, "ward", "wards")} and planned admissions.{" "}
-            {plural(sourceSummary.overdueNotHeldUp, "release is", "releases are")} overdue and not held up;{" "}
-            {plural(weekOut, "bed is", "beds are")} due out in the next {bars.length} days. Not yet counted:{" "}
+            {plural(sourceSummary.wards, "ward", "wards")} and planned admissions (not the same figure as &quot;Beds
+            freeing today&quot; on the hero, which counts only today&apos;s discharge plans).{" "}
+            {plural(sourceSummary.overdueNotHeldUp, "discharge is", "discharges are")} overdue and not held up;{" "}
+            {plural(weekOut, "discharge is", "discharges are")} due in the next {bars.length} days. Not yet counted:{" "}
             {plural(forecastModel.notCounted.leaveBeds, "bed", "beds")} held for people on leave,{" "}
             {plural(forecastModel.notCounted.repatriations, "repatriation", "repatriations")} booked.
           </p>
           <p>
             Tomorrow&apos;s figure takes the ready beds that fit, adds the discharges recorded for today and tomorrow,
-            and subtracts the people already waiting and the admissions already booked. Held-up and overdue releases
+            and subtracts the people already waiting and the admissions already booked. Held-up and overdue discharges
             only widen the range.
           </p>
           <p>
@@ -324,7 +325,7 @@ function helpItems(levers: readonly ForecastLever[], rows: readonly NetworkWardR
     lever.kind === "clear_held_up"
       ? {
           kind: lever.kind,
-          title: `Chase ${plural(lever.beds, "held-up release", "held-up releases")}`,
+          title: `Chase ${plural(lever.beds, "held-up discharge", "held-up discharges")}`,
           uplift: lever.likelyUplift,
           detail: tallyBarriers(lever.reasons)
             .map((entry) => `${entry.label} ${entry.count}`)
@@ -339,7 +340,7 @@ function helpItems(levers: readonly ForecastLever[], rows: readonly NetworkWardR
           }
         : {
             kind: lever.kind,
-            title: `Review ${plural(lever.beds, "overdue release", "overdue releases")}`,
+            title: `Review ${plural(lever.beds, "overdue discharge", "overdue discharges")}`,
             uplift: 0,
             detail: "Dates passed: they widen the range only",
           },

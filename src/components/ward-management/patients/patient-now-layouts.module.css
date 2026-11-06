@@ -31,11 +31,17 @@
   }
 }
 
+/* Side-by-side cards sit flush and level (design audit A16, 5 Nov 2026): both columns stretch to the
+   taller one, and the left column's cards share its height, so Legal now ends level with Who to call. */
 .twoUp {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--wf-s-3);
-  align-items: start;
+  align-items: stretch;
+}
+
+.twoUp > .col {
+  align-content: stretch;
 }
 
 @media (max-width: 760px) {

@@ -55,6 +55,34 @@ describe("a save does not wait behind a poll (#817)", () => {
   });
 });
 
+// SD-04 (audit, 5 Nov 2026): a poll that lands while a save is out says it was skipped, so the
+// poller does not count it as a failed read and back off.
+describe("a poll during a save", () => {
+  it("reports itself as skipped, not as a read", async () => {
+    let answer: (() => void) | undefined;
+    const client = new SharedWorkspaceClient({
+      baseUrl: "https://example.test",
+      token: async () => "test",
+      changed: () => {},
+      fetch: async (url) => {
+        if (String(url).endsWith("/commands"))
+          return new Promise<Response>((done) => {
+            answer = () => done(Response.json({ snapshot: snapshot(2) }));
+          });
+        return Response.json({ snapshot: snapshot(1) });
+      },
+    });
+    await client.refresh();
+    const saving = client.dispatch(event);
+    await vi.waitFor(() => expect(answer).toBeDefined());
+    await expect(client.refresh()).resolves.toBe("skipped");
+    answer!();
+    await saving;
+    await expect(client.refresh()).resolves.toBeUndefined();
+    client.dispose();
+  });
+});
+
 describe("a save does not wait behind a poll's token refresh (#817)", () => {
   it("stops a poll still waiting for its token and sends the save", async () => {
     let tokens = 0;

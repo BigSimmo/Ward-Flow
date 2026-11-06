@@ -790,3 +790,17 @@ it("warns ten minutes before the session limit, and not before (A4-05)", () => {
   rerender(<WardSessionEndingNotice endsAt={Date.now() + 9 * 60_000} />);
   expect(screen.getByRole("alert")).toHaveTextContent(/You will be signed out at .*12-hour sign-in limit/);
 });
+
+it("gives the sign-out time on the 24-hour clock, never am or pm (design audit W3, 5 Nov 2026)", () => {
+  // 20:00 Perth (UTC+8) on a fixed synthetic day, five minutes away.
+  const endsAt = Date.parse("2026-11-05T12:00:00Z");
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(endsAt - 5 * 60_000);
+  try {
+    render(<WardSessionEndingNotice endsAt={endsAt} />);
+    expect(screen.getByRole("alert")).toHaveTextContent(/signed out at 20:00,/);
+    expect(screen.getByRole("alert")).not.toHaveTextContent(/\b(am|pm)\b/);
+  } finally {
+    vi.useRealTimers();
+  }
+});

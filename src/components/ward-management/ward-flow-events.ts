@@ -1017,7 +1017,8 @@ export type WardFlowEvent =
        */
       cadNumber: string;
       transportLegalStatus: TransportLegalStatus;
-      estimatedAt: Instant;
+      /** Absent when no estimated time was given (form rule W32, Josh's card 3, 5 Nov 2026); it warns. */
+      estimatedAt?: Instant;
       /** Audit fix (13 Oct 2026): booked with a check open (status differs from Legal now), and why. */
       exception?: TransportExceptionInput;
     }
@@ -1440,8 +1441,8 @@ export type WardFlowEvent =
        */
       destinations: ReferralDestination[];
       /** The broad area this person is from — one of `HOME_REGIONS`, never an address. See
-       *  `Referral.homeRegion`'s own doc comment. */
-      homeRegion: HomeRegion;
+       *  `Referral.homeRegion`'s own doc comment. Absent when not recorded (FORM-REF). */
+      homeRegion?: HomeRegion;
       /** The suburb, resolved against the catchment table by the reducer — never free text, and
        *  never an address. ⚠️ A UNION, not a string, so **"not known" is an answer rather than a
        *  failure to answer**: a patient of no fixed abode must be referable, and for the hour this
@@ -1490,8 +1491,12 @@ export type WardFlowEvent =
       sendingTeamName?: string;
       urgency: 1 | 2 | 3;
       atsCategory?: AtsCategory;
-      /** A synthetic site code (see `wardSites`), never an address. */
-      originSiteCode: string;
+      /**
+       * A synthetic site code (see `wardSites`), never an address. Form rule (design audit FORM-REF,
+       * Josh, 5 Nov 2026): absent when the referrer sent without recording the location of referral.
+       * A ward's own referral always carries its site.
+       */
+      originSiteCode?: string;
       transportNeeded: boolean;
       /**
        * ⚠️ THE WRITTEN HISTORY. The only free text this event carries, and the only part of a
@@ -2279,11 +2284,16 @@ export type WardFlowEvent =
       homeHospital: string;
       receivingWardAgreed: boolean;
       mode: RepatriationMode;
-      provider: TransportProvider;
-      /** CAD or tracking number from the phone call, same field as `BOOK_TRANSPORT.cadNumber`. */
+      /** Form rule (design audit W13, Josh's card 3, 5 Nov 2026): absent when not recorded; it warns. */
+      provider?: TransportProvider;
+      /**
+       * CAD or tracking number from the phone call, same field as `BOOK_TRANSPORT.cadNumber`. Blank
+       * is "CAD to follow" (Josh's card 3, 5 Nov 2026); a typed placeholder is still refused.
+       */
       cadNumber: string;
       transportLegalStatus: TransportLegalStatus;
-      estimatedAt: Instant;
+      /** Absent when the depart time is not recorded; it warns (card 3). */
+      estimatedAt?: Instant;
       /**
        * #177 (Josh, 27 Oct 2026): for an involuntary return, whether Form 4C is in hand and whether
        * an escort is needed for the journey. Both optional and never a gate: absent when the

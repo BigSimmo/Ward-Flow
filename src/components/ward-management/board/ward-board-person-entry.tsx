@@ -26,7 +26,7 @@ function blockerInBarrierTag(occupant: Occupant): boolean {
 
 /** The long-stay tag. A recorded blocker answers it, so it never says "unrecorded" beside one (UX audit, 21 Oct 2026). */
 function barrierText(occupant: Occupant): string {
-  if (occupant.dischargeBarrier) return `Discharge barrier: ${occupant.dischargeBarrier}`;
+  if (occupant.dischargeBarrier) return `Held up by: ${occupant.dischargeBarrier}`;
   if (occupant.blockReason !== null) return `Held up: ${occupant.blockReason}`;
   return "Hold-up not recorded (stay ≥ 7d)";
 }
@@ -169,7 +169,8 @@ export function PersonEntry({
 
         <div className={styles.detailChips}>
           {age !== null && <span className={`${styles.detailChip} ${redesign.chip}`}>{age} yrs</span>}
-          <span className={`${styles.detailChip} ${redesign.chip}`}>{occupant.sex}</span>
+          {/* B11 (Josh, 5 Nov 2026): named, so it reads apart from the Gender chip beside it. */}
+          <span className={`${styles.detailChip} ${redesign.chip}`}>Sex: {occupant.sex}</span>
           <span className={`${styles.detailChip} ${redesign.chip}`}>Gender: {occupant.gender ?? "Not recorded"}</span>
           <span className={`${styles.detailChip} ${redesign.chip}`}>{occupant.homeRegion ?? "Region unrecorded"}</span>
           {resolvedPatient?.umrn && (

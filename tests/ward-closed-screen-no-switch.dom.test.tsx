@@ -1,11 +1,12 @@
 // P160 (Josh, 27 Oct 2026): the "Not part of your role" page offers Go to your home only. Switch
 // desk is not shown there. Who may change desk, and where, is unchanged.
+// WF-42: bare /statistics sends a ward desk on to its own Statistics, so this closed case uses Governance.
 import "@testing-library/jest-dom/vitest";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-const nav = vi.hoisted(() => ({ pathname: "/ward-flow/statistics" }));
+const nav = vi.hoisted(() => ({ pathname: "/ward-flow/governance" }));
 
 vi.mock("next/navigation", () => ({
   usePathname: () => nav.pathname,
@@ -47,14 +48,14 @@ describe("the closed screen", () => {
         <WardAccessScope>
           <ToastProvider>
             <WardAccessGate>
-              <p>Statistics</p>
+              <p>Governance</p>
             </WardAccessGate>
           </ToastProvider>
         </WardAccessScope>
       </WardFlowProvider>,
     );
     expect(screen.getByText("Not part of your role")).toBeInTheDocument();
-    expect(screen.queryByText("Statistics")).toBeNull();
+    expect(screen.queryByText("Governance")).toBeNull();
     expect(screen.getByTestId("ward-access-home")).toHaveTextContent("Go to your home");
     expect(screen.queryByTestId("ward-access-switch")).toBeNull();
     expect(screen.queryByRole("button", { name: "Switch desk" })).toBeNull();

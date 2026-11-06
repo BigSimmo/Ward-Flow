@@ -404,6 +404,7 @@ type NetworkWardInputs = {
   leave?: LeaveBed[];
   freeingByUnit: Map<string, number>;
 };
+/** WF-16 shared source: release plans due today (not the forecast next-24h discharge count). */
 function releasesFreeingToday(releases: BedRelease[] | undefined, now: Instant): Map<string, number> {
   const freeingByUnit = new Map<string, number>();
   for (const release of releases ?? []) {
@@ -418,6 +419,7 @@ function releasesFreeingToday(releases: BedRelease[] | undefined, now: Instant):
   }
   return freeingByUnit;
 }
+/** WF-16 shared source: admissions with expectedDischargeAt today (distinct from beds freeing / forecast). */
 function dischargesDueToday(unitId: string, admissions: Admission[] | undefined, now: Instant): number | undefined {
   return admissions === undefined
     ? undefined
@@ -504,6 +506,24 @@ function networkWardRow(unit: Unit, inputs: NetworkWardInputs): NetworkWardRow {
     speciallingFree: admissions === undefined ? undefined : remainingSpeciallingCapacity(unit, admissions),
     speciallingStaffable: staffableSpecialling(unit),
   };
+}
+
+/** Sum of `releasesFreeingToday` for the given units (or every unit with a count) — Capacity hero "Beds freeing today" (WF-16). */
+export function bedsFreeingTodayTotal(
+  releases: BedRelease[] | undefined,
+  now: Instant,
+  unitIds?: ReadonlySet<string>,
+): number | undefined {
+  if (releases === undefined) return undefined;
+  const byUnit = releasesFreeingToday(releases, now);
+  if (unitIds === undefined) {
+    let total = 0;
+    for (const count of byUnit.values()) total += count;
+    return total;
+  }
+  let total = 0;
+  for (const unitId of unitIds) total += byUnit.get(unitId) ?? 0;
+  return total;
 }
 
 /**

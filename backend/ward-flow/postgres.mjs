@@ -19,6 +19,7 @@ import {
   conflictingCollection,
   conflictRecordType,
   coveredRecords,
+  jsonCharacterLength,
   staleReason,
   markerKind,
   planSave,
@@ -153,8 +154,8 @@ function canonical(value) {
   return value;
 }
 
-/** The serialised size of a world, measured once per save (audit PS-12). */
-const worldBytes = (world) => JSON.stringify(world).length;
+/** The legacy JSON character count of a world, measured once per save (audit PS-12). */
+const worldBytes = jsonCharacterLength;
 
 /**
  * The audit row's `changes` as stored. A reset or new scenario replaces the whole board, so the
@@ -265,6 +266,12 @@ export function createWorkspaceStore(
    * @type {LruCache<{ payload: any, partial: any }>}
    */
   const scopedReplies = new LruCache(SCOPED_REPLY_CACHE_ENTRIES);
+  /** The committed row whose scoped boards this cache currently holds. @type {string | null} */
+  let scopedReplyStamp = null;
+  // A read crossing an incompatible-row refusal must not repopulate this cache.
+  let scopedReplyEpoch = 0;
+  // Only a read entering this generation may replace it with a different committed row.
+  let scopedReplyTicket = {};
   /** Full public reports only, from committed locked reads; never a candidate save. */
   const executiveReplies = new LruCache(SCOPED_REPLY_CACHE_ENTRIES);
   async function executiveSnapshot(connection, row, at, view, stamp) {
@@ -363,7 +370,7 @@ export function createWorkspaceStore(
       demoControls: false,
     };
   }
-  function scopedParts(row, at, view, senderView, stamp) {
+  function scopedParts(row, at, view, senderView, stamp, entryTicket) {
     const reviewable = reviewIdsFor(row, row.payload, view, at);
     const build = () => ({
       partial: senderView ? engine.partialViewForWorld(row.payload, view.access, at, view.grants) : undefined,
@@ -373,23 +380,39 @@ export function createWorkspaceStore(
       ),
     });
     if (typeof stamp !== "string") return build();
+    // A different committed row replaces old boards; in-flight replies keep their own immutable parts.
+    if (stamp !== scopedReplyStamp) {
+      if (entryTicket !== scopedReplyTicket) {
+        // A late read keeps its own reply parts without evicting a different current board.
+        const parts = build();
+        registerPart(parts.payload);
+        if (parts.partial) registerPart(parts.partial);
+        return parts;
+      }
+      scopedReplies.clear();
+      scopedReplyStamp = stamp;
+      scopedReplyTicket = {};
+    }
+    const wholeNetwork = !view || engine.wholeNetwork(view.access);
     const now = engine.worldNow(row.payload, at);
     const key = createHash("sha256")
       .update(
         JSON.stringify(
           canonical({
             stamp,
-            now,
+            // Statewide projection returns the world unchanged; only its reply clock moves.
+            now: wholeNetwork ? null : now,
             senderView,
             reviewable,
             access: view ? view.access : null,
             // As the engine turns them into workspace minutes (engine.ts `worldGrants`).
-            grants: view
-              ? (view.grants ?? []).map((grant) => [
-                  grant.patientId,
-                  now + Math.max(0, Math.ceil((new Date(grant.until).getTime() - at.getTime()) / 60_000)),
-                ])
-              : null,
+            grants:
+              view && !wholeNetwork
+                ? (view.grants ?? []).map((grant) => [
+                    grant.patientId,
+                    now + Math.max(0, Math.ceil((new Date(grant.until).getTime() - at.getTime()) / 60_000)),
+                  ])
+                : null,
           }),
         ),
       )
@@ -408,14 +431,21 @@ export function createWorkspaceStore(
    * only a read path passes it, so a board built inside a save that might still roll back is
    * never kept for other requests. The payload may then be shared: no caller may change it.
    */
-  const snapshot = async (row, at, view, stamp, connection = null) => {
+  const snapshot = async (
+    row,
+    at,
+    view,
+    stamp,
+    connection = null,
+    replyTicket = /** @type {object | undefined} */ (undefined),
+  ) => {
     if (view?.access?.role === "executive") return executiveSnapshot(connection, row, at, view, stamp);
     const context = accessContext(at, view);
     const revision = Number(row.revision);
     const senderView =
       typeof context.accessContext === "string" &&
       (view?.access?.role === "ward" || view?.access?.role === "bed_manager");
-    const parts = scopedParts(row, at, view, senderView, stamp);
+    const parts = scopedParts(row, at, view, senderView, stamp, replyTicket);
     return {
       dataMode: row.data_mode,
       // Whether the demonstration controls work here for this desk, so the screens can say when they
@@ -1119,6 +1149,9 @@ export function createWorkspaceStore(
       // serve them until a restart. Forget them, so the next request reads every row again.
       confirmed = null;
       pending = null;
+      scopedReplies.clear();
+      scopedReplyStamp = null;
+      scopedReplyEpoch += 1;
       throw new Error(refusal);
     }
     // A selected ward desk can include several cover memberships. Resolve all of them again
@@ -1458,6 +1491,8 @@ export function createWorkspaceStore(
     }
   }
   async function read(actorId, view) {
+    const replyEpoch = scopedReplyEpoch;
+    const replyTicket = scopedReplyTicket;
     if (view?.access?.role === "executive" && !view.membershipId) throw new Error("role-ended");
     if (view?.membershipId) return scopedRead(actorId, view);
     const at = clock();
@@ -1466,7 +1501,7 @@ export function createWorkspaceStore(
     if (stored && engine.validWorld(stored.payload)) {
       stored.archived = await archivedCount(pool, stored.payload, stored.revision);
       await prepareReviewAuthority(pool, stored, view);
-      return snapshot(stored, at, view, stored.stamp);
+      return snapshot(stored, at, view, replyEpoch === scopedReplyEpoch ? stored.stamp : undefined, null, replyTicket);
     }
     return transaction(async (client, now) => {
       const row = await lock(client, actorId, now, view);
@@ -1482,6 +1517,8 @@ export function createWorkspaceStore(
    * one another. An uninitialised or incompatible workspace falls back to the locked write path.
    */
   async function scopedRead(actorId, view) {
+    const replyEpoch = scopedReplyEpoch;
+    const replyTicket = scopedReplyTicket;
     const version = await schemaVersion();
     const ready = await transaction(async (client, at) => {
       const row = await lockedWorld(client, "SHARE", true, { copy: false });
@@ -1493,7 +1530,7 @@ export function createWorkspaceStore(
       Object.assign(view, current);
       row.archived = await archivedCount(client, row.payload, row.revision);
       await prepareReviewAuthority(client, row, current);
-      return snapshot(row, at, current, row.stamp, client);
+      return snapshot(row, at, current, replyEpoch === scopedReplyEpoch ? row.stamp : undefined, client, replyTicket);
     });
     if (ready) return ready;
     const current = await viewer(actorId, { workingAs: view.membershipId });

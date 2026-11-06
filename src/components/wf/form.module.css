@@ -51,9 +51,9 @@
   display: flex;
   align-items: center;
   gap: var(--wf-s-2);
-  height: var(--wf-h-md);
-  /* Touch tablets: the 44px touch size (`--wf-tablet-tap`, 0 elsewhere). */
-  min-height: var(--wf-tablet-tap, 0px);
+  /* K3 (design audit, 5 Nov 2026): a floor, not a fixed height, so large text grows the box. Touch
+     tablets: the 44px touch size (`--wf-tablet-tap`, 0 elsewhere). */
+  min-height: max(var(--wf-h-md), var(--wf-tablet-tap, 0px));
   min-width: 0;
   padding: 0 var(--wf-s-3);
   box-sizing: border-box;
@@ -84,10 +84,18 @@
   border-style: dashed;
 }
 
+/* A refused select takes no taps (iOS Safari opens its picker even when the press is cancelled). It
+   keeps its tab stop, and its reason is plain text beside it, so nothing here needs a press. */
+.refusedSelect {
+  pointer-events: none;
+}
+
 .control {
   flex: 1 1 auto;
+  /* Fills the box's height (it has a floor, not a fixed height, so a percentage would not resolve). */
+  align-self: stretch;
   min-width: 0;
-  height: 100%;
+  height: auto;
   padding: 0;
   margin: 0;
   border: 0;
@@ -398,7 +406,7 @@
 .stp {
   display: inline-flex;
   align-items: stretch;
-  height: var(--wf-h-md);
+  min-height: var(--wf-h-md);
   box-sizing: border-box;
   border: 1px solid var(--wf-line-ctl);
   border-radius: var(--wf-r-md);
@@ -487,11 +495,10 @@
   /* Not a textarea box: it grows with its rows and counter (a fixed 44px pushed the counter onto
      the border, 25 Oct 2026). */
   .in:not(.area) {
-    height: 2.75rem;
+    min-height: 2.75rem;
   }
 
   .in:not(.area) > .control {
-    height: calc(100% + 2px);
     margin-block: -1px;
   }
 }

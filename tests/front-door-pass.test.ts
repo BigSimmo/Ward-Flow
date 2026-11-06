@@ -423,14 +423,19 @@ describe("POST /api/session", () => {
     expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.50", "198.51.100.99"))).status).toBe(429);
   });
 
-  it("pauses every address once wrong tries across all addresses reach the cap", async () => {
+  it("refuses wrong codes once tries across all addresses reach the cap, but still opens with the right code", async () => {
     vi.stubEnv("WARD_FRONT_DOOR", "required");
     vi.stubEnv("WARD_PASS_SECRET", SECRET);
     vi.stubEnv("WARD_DEMO_CODE", "WARD-7Q4K");
     vi.stubEnv("NEXT_PUBLIC_WARD_SHARED_ENABLED", "false");
     for (let attempt = 0; attempt < 200; attempt += 1)
       expect((await POST(post({ demoCode: "WRONG" }, `10.0.${attempt >> 8}.${attempt & 255}`))).status).toBe(401);
-    expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.60"))).status).toBe(429);
+    expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.61"))).status).toBe(429);
+    expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.60"))).status).toBe(204);
+    // The per-address limit still applies at the cap.
+    for (let attempt = 0; attempt < 9; attempt += 1)
+      expect((await POST(post({ demoCode: "WRONG" }, "192.0.2.61"))).status).toBe(429);
+    expect((await POST(post({ demoCode: "ward 7q4k" }, "192.0.2.61"))).status).toBe(429);
   });
 
   it("never opens the signed-in site with a demo code", async () => {

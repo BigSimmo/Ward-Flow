@@ -116,9 +116,10 @@ describe("referral slide-out, option B", () => {
       .map((match) => Number(match[1]))
       .reduce((sum, n) => sum + n, 0);
     expect(stepNeeds).toBeGreaterThan(0);
-    // A2-9 (audit 13 Oct 2026): the contact details asked at Send are counted too, on their own row.
-    const contactNeeds = Number(/(\d+) to fill at Send/u.exec(rail.textContent ?? "")?.[1] ?? 0);
-    expect(Number(left)).toBe(stepNeeds + contactNeeds);
+    // Form rule (design audit FORM-REF, 5 Nov 2026, replacing A2-9): the contact details warn and are
+    // not counted, so the steps' needs are the whole count.
+    expect(rail).not.toHaveTextContent("to fill at Send");
+    expect(Number(left)).toBe(stepNeeds);
   });
 
   it("closes straight away when nothing was entered", () => {
@@ -232,8 +233,8 @@ describe("referral slide-out, option B", () => {
     renderDrawer();
     fireEvent.click(screen.getByRole("button", { name: "Add patient" }));
     const form = screen.getByTestId("ward-referral-new-patient");
-    // RF3 (3 Nov 2026): the card becomes New patient, the search hides, and the form has its own close.
-    expect(screen.getByRole("heading", { name: "New patient" })).toBeInTheDocument();
+    // RF3 (3 Nov 2026): the card becomes Add patient (one word, design audit 2), the search hides, and the form has its own close.
+    expect(screen.getByRole("heading", { name: "Add patient" })).toBeInTheDocument();
     expect(screen.queryByLabelText("Find a patient")).not.toBeInTheDocument();
     expect(within(form).getByRole("button", { name: "Close new patient" })).toBeInTheDocument();
     expect(within(form).getByRole("button", { name: "Back to search" })).toBeInTheDocument();
@@ -462,7 +463,7 @@ describe("owner pins carried over from the retired full-page form", () => {
   it("lists every ward in a fixed order and says in words why one will refuse (Audit 1, CS-06)", () => {
     renderDrawer();
     fireEvent.click(steps().getByRole("button", { name: "Wards" }));
-    const rows = within(screen.getByRole("list", { name: "Placement Destination Options" })).getAllByRole("listitem");
+    const rows = within(screen.getByRole("list", { name: "Destinations" })).getAllByRole("listitem");
     const text = rows.map((row) => row.textContent ?? "");
     // WF-009's person needs an involuntary bed; SJGS is not set up for one, so it is not "Bed ready".
     // Walk-through WT-27: rows show the ward name and site code, never the internal ward id.
@@ -481,7 +482,7 @@ describe("owner pins carried over from the retired full-page form", () => {
   it("caps the wards chosen and says choose up to the cap", () => {
     renderDrawer();
     fireEvent.click(steps().getByRole("button", { name: "Wards" }));
-    const list = screen.getByRole("list", { name: "Placement Destination Options" });
+    const list = screen.getByRole("list", { name: "Destinations" });
     const boxes = within(list).getAllByRole("checkbox");
     const cap = Number(/\d+/.exec(screen.getByText(/^Up to \d+$/).textContent ?? "")![0]);
     boxes.slice(0, cap + 1).forEach((box) => fireEvent.click(box));

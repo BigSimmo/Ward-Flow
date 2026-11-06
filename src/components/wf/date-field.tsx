@@ -103,14 +103,98 @@ export function DateField({
   );
 }
 
-/** "14:30" (or 1430, 14.30, 9:05) as "14:30"; null when not a real 24-hour time. */
+/**
+ * "14:30" (or 1430, 14.30, 9:05) as "14:30"; null when not a real 24-hour time. With no separator it
+ * takes exactly four digits, so "143" is never read as 01:43 (design audit, PR #1474 review).
+ */
 export function parseTypedTime(text: string): string | null {
-  const match = /^(\d{1,2})[:.\s]?(\d{2})$/u.exec(text.trim());
+  const trimmed = text.trim();
+  const match = /^(\d{1,2})[:.\s](\d{2})$/u.exec(trimmed) ?? /^(\d{2})(\d{2})$/u.exec(trimmed);
   if (!match) return null;
   const hours = Number(match[1]);
   const minutes = Number(match[2]);
   if (hours > 23 || minutes > 59) return null;
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+/**
+ * Typed time text that cannot become a 24-hour time: four or more digits that do not parse (25:00),
+ * or any letter or other character ("2:30 pm"). An am/pm time is marked wrong, never converted, and
+ * there is no length cap, so a pasted "11:45pm" is never cut short to a different time.
+ */
+function timeTextWrong(text: string): boolean {
+  if (/[^\d:.\s]/u.test(text)) return true;
+  return (text.match(/\d/gu)?.length ?? 0) >= 4 && parseTypedTime(text) === null;
+}
+
+/** The Field error a caller shows when its submit finds a TimeField unfinished or not a real time. */
+export const TIME_FIELD_ERROR = "Type a 24-hour time, HH:MM";
+
+export type TimeFieldProps = Omit<TextInputProps, "value" | "defaultValue" | "onChange" | "type"> & {
+  /** "HH:MM" (24-hour), or "" for none. */
+  value: string;
+  /** Called with "HH:MM" when the typed text is a real 24-hour time, otherwise with "". */
+  onValueChange: (time: string) => void;
+  /** Called with the text as typed, so a caller can tell an empty box from an unfinished or wrong one. */
+  onTextChange?: (text: string) => void;
+};
+
+/**
+ * THE KIT'S TYPED TIME BOX (W14, design audit 5 Nov 2026): one HH:MM (24-hour) text box in place of
+ * the browser's `<input type="time">`, whose picker showed am/pm in en-AU Chrome. The person types
+ * "14:30", "1430", "14.30" or "9:05"; the caller's value stays "HH:MM" (or "" while unfinished or not
+ * a real time), the shape `type="time"` gave, so reducers and checks are unchanged. Nothing is filled
+ * in for the person (D5, D-70). A finished entry that is not a real time (25:00), or any letters (an
+ * am/pm time), is marked invalid; on leaving the box it shows the stored HH:MM. A caller whose submit
+ * finds the value "" shows `TIME_FIELD_ERROR` through its Field and does not save.
+ *
+ *     <Field label="Arrival time" hint="HH:MM">
+ *       <TimeField value={time} onValueChange={setTime} />
+ *     </Field>
+ */
+export function TimeField({
+  value,
+  onValueChange,
+  invalid,
+  placeholder = "HH:MM",
+  onBlur,
+  onTextChange,
+  ...inputProps
+}: TimeFieldProps) {
+  const [typed, setTyped] = useState(value);
+  // A new value from the caller (a reset, or a record loaded) replaces the typed text; the person's
+  // own unfinished typing (value "") is left alone.
+  const [lastValue, setLastValue] = useState(value);
+  if (value !== lastValue) {
+    setLastValue(value);
+    if (value !== (parseTypedTime(typed) ?? "")) setTyped(value);
+  }
+  const wrong = timeTextWrong(typed);
+  return (
+    <TextInput
+      {...inputProps}
+      type="text"
+      inputMode="numeric"
+      autoComplete="off"
+      placeholder={placeholder}
+      value={typed}
+      invalid={invalid || wrong}
+      onBlur={(event) => {
+        // Show the time that will be saved ("1430" and "9:05" read back as 14:30 and 09:05).
+        const stored = parseTypedTime(typed);
+        if (stored !== null && stored !== typed) setTyped(stored);
+        onBlur?.(event);
+      }}
+      onChange={(event) => {
+        const text = event.target.value;
+        setTyped(text);
+        onTextChange?.(text);
+        const next = parseTypedTime(text) ?? "";
+        setLastValue(next);
+        onValueChange(next);
+      }}
+    />
+  );
 }
 
 /** "2026-10-31T14:30" split into its date and time parts; "" parts when it is not one. */
@@ -182,7 +266,7 @@ export function DateTimeField({
     if (value === undefined) setOwn(joined);
     onValueChange?.(joined);
   };
-  const timeWrong = timeText.trim().length >= 4 && parseTypedTime(timeText) === null;
+  const timeWrong = timeTextWrong(timeText);
   return (
     <div className={styles.dateTime} data-wf-date-time="" data-testid={testId}>
       <DateField
@@ -201,7 +285,6 @@ export function DateTimeField({
         type="text"
         inputMode="numeric"
         autoComplete="off"
-        maxLength={5}
         placeholder="HH:MM"
         value={timeText}
         required={required}

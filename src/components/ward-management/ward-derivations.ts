@@ -651,7 +651,7 @@ export function buildActionInbox(
       kind: INBOX_CATEGORIES.bed_pull_expired.kind,
       tone: "danger",
       icon: CircleAlert,
-      title: "Bed pull expired",
+      title: "Pull expired, bed still pulled",
       detail: `${movement.id} · ${formatRemaining(minutesUntil(pullExpiresAt, now))}`,
       owner: movement.owner,
       movementId: movement.id,
@@ -1161,7 +1161,8 @@ function referralMatches(referral: Referral, needle: string): boolean {
     referral.source,
     referral.urgency,
   ];
-  return haystack.some((value) => String(value).toLowerCase().includes(needle));
+  // FORM-REF: an absent region or location is not the word "undefined" to search.
+  return haystack.some((value) => value !== undefined && String(value).toLowerCase().includes(needle));
 }
 
 /**

@@ -50,7 +50,7 @@ it("capacity CSV retains the held snapshot time across the new year and preserve
   vi.spyOn(Date, "now").mockReturnValue(Date.UTC(2027, 0, 2));
   const csv = await captureCsv(() => fireEvent.click(screen.getByRole("button", { name: "Chart CSV" })));
   const lines = csv.split("\r\n");
-  expect(lines[1]).toBe(`"As at","Thu, 31 Dec 2026, 23:59 AWST"`);
+  expect(lines[1]).toBe(`"As at","Thu 31 Dec 2026, 23:59 AWST"`);
   expect(lines[2]).toContain('"Scope","Capacity across the network');
   expect(lines[5]).toBe(
     '"Synthetic current-state data","Scope","Total beds","Ready","Pulled","Closed","Occupied","On leave"',
@@ -74,21 +74,21 @@ it("directory CSV explicitly stamps a Perth generation time and distinguishes re
 it("quotes metadata through the same formula-safe CSV path as the untouched data schema", async () => {
   const csv = await captureCsv(() =>
     downloadCsv("synthetic.csv", [["Value"], ["=unsafe"]], {
-      asAt: "Fri, 1 Jan 2027, 00:05 AWST",
+      asAt: "Fri 1 Jan 2027, 00:05 AWST",
       scope: '=HYPERLINK("x")',
     }),
   );
   expect(csv).toContain('"Scope","\'=HYPERLINK(""x"")"');
   const lines = csv.split("\r\n");
   expect(lines[0]).toBe('"Data","Synthetic, not clinical records"');
-  expect(lines[1]).toBe('"As at","Fri, 1 Jan 2027, 00:05 AWST"');
+  expect(lines[1]).toBe('"As at","Fri 1 Jan 2027, 00:05 AWST"');
   expect(lines[3]).toBe('"Period","Recorded state as at snapshot"');
   expect(lines.slice(5)).toEqual(['"Value"', '"\'=unsafe"']);
 });
 
 it("capacity export names all matching rows when one service is only highlighted", async () => {
   const units = [allUnits().find((u) => u.siteCode === "RPH")!, allUnits().find((u) => u.siteCode === "FSH")!];
-  render(<StatisticsCapacityChart units={units} bedReleases={[]} asAt="Fri, 1 Jan 2027, 00:05 AWST" />);
+  render(<StatisticsCapacityChart units={units} bedReleases={[]} asAt="Fri 1 Jan 2027, 00:05 AWST" />);
   fireEvent.click(
     within(screen.getByRole("radiogroup", { name: "Health service filter" })).getByRole("radio", { name: "South" }),
   );
@@ -121,9 +121,7 @@ it("searched roster export names matching rows without repeating the typed searc
 });
 
 it("capacity export names the alert-line highlight while still exporting every matching row", async () => {
-  render(
-    <StatisticsCapacityChart units={allUnits().slice(0, 2)} bedReleases={[]} asAt="Fri, 1 Jan 2027, 00:05 AWST" />,
-  );
+  render(<StatisticsCapacityChart units={allUnits().slice(0, 2)} bedReleases={[]} asAt="Fri 1 Jan 2027, 00:05 AWST" />);
   fireEvent.click(screen.getByRole("button", { name: /at or over the alert line/iu }));
   const csv = await captureCsv(() => fireEvent.click(screen.getByRole("button", { name: "Chart CSV" })));
   expect(csv).toMatch(/all matching rows; all services highlighted, only rows at or above the \d+% alert line;/u);

@@ -9,9 +9,9 @@ import {
 
 describe("shared Perth calendar origin", () => {
   it.each([
-    ["2026-10-20T15:59:00Z", "2026-10-19T16:00:00.000Z", "2026-10-20T10:42", "Tue, 20 Oct, 10:42"],
-    ["2026-10-20T16:00:00Z", "2026-10-20T16:00:00.000Z", "2026-10-21T10:42", "Wed, 21 Oct, 10:42"],
-    ["2026-10-20T18:00:00Z", "2026-10-20T16:00:00.000Z", "2026-10-21T10:42", "Wed, 21 Oct, 10:42"],
+    ["2026-10-20T15:59:00Z", "2026-10-19T16:00:00.000Z", "2026-10-20T10:42", "Tue 20 Oct, 10:42"],
+    ["2026-10-20T16:00:00Z", "2026-10-20T16:00:00.000Z", "2026-10-21T10:42", "Wed 21 Oct, 10:42"],
+    ["2026-10-20T18:00:00Z", "2026-10-20T16:00:00.000Z", "2026-10-21T10:42", "Wed 21 Oct, 10:42"],
   ])("agrees with the local calendar for a session opened at %s", (openedAt, origin, typed, label) => {
     const at = new Date(openedAt);
     const world = seedWorld(at);

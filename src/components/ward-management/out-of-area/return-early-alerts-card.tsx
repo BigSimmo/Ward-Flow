@@ -33,7 +33,7 @@ export function ReturnEarlyAlerts({ desk, now }: { desk: ReturnEarlyDesk; now: I
         id={headingId}
         icon={Flag}
         iconPlain
-        title="Out of area returns flagged early"
+        title="Returns flagged early"
         meta={`${alerts.length} ${alerts.length === 1 ? "alert" : "alerts"}`}
       />
       <CardBody>

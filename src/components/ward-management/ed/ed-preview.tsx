@@ -62,7 +62,7 @@ export function EdPreview({
         </h3>
         {row.people.length === 0 ? (
           <p className={styles.previewEmpty}>
-            <StatusGlyph tone="success" size={9} /> No one waiting at {row.short}
+            <StatusGlyph tone="success" size={9} /> Nobody waiting at {row.short}
           </p>
         ) : (
           <ul className={styles.previewList} data-phone={isPhone ? "true" : undefined}>

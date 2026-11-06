@@ -12,7 +12,8 @@ import {
   WARD_FLOW_DEMO_STORAGE_KEY,
   WARD_FLOW_STORED_STATE_VERSION,
 } from "./ward-flow-demo-storage-constants";
-import { markDemoSaveCurrent } from "./ward-flow-demo-save-marker";
+import { DEMO_SAVE_CURRENT_KEY, markDemoSaveCurrent } from "./ward-flow-demo-save-marker";
+import { clearMidlandDecisions } from "./community/team-2026/midland-decisions";
 
 export { RESTORED_NOTICE_PREFIX, STORAGE_UNAVAILABLE, WARD_FLOW_DEMO_STORAGE_KEY };
 
@@ -245,8 +246,27 @@ export function tryWriteDemoState(
   }
 }
 
+/**
+ * SD-01 and SD-07 (Josh, 5 Nov 2026): no safe copy can be written now (it cannot be made without
+ * typed text, or its code has not loaded). The last save stays: it was written from a safe copy, so it
+ * holds no typed text (D-18). It is only marked as not the latest, so a restore says later changes may
+ * not have been saved. Deleting it lost the earlier, safe work on the next reload. False when even
+ * that mark could not be made, which the provider treats as unavailable storage.
+ */
+export function keepLastSafeDemoSave(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    window.sessionStorage.removeItem(DEMO_SAVE_CURRENT_KEY);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Reset demo: the saved day and the Midland team's decisions, which are part of the same demo day (SD-06). */
 export function clearWardFlowDemoState(): boolean {
   if (typeof window === "undefined") return false;
+  clearMidlandDecisions();
   try {
     window.sessionStorage.removeItem(WARD_FLOW_DEMO_STORAGE_KEY);
     markDemoSaveCurrent(false);

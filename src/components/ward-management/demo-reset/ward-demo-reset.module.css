@@ -85,3 +85,9 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+.feedback {
+  margin: 0 var(--wf-s-3) var(--wf-s-3);
+  color: var(--wf-ink-1);
+  font-size: var(--wf-fs-14);
+}

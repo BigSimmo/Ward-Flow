@@ -39,9 +39,9 @@ export function BedMeetingSheetDialog({
       sub: `${ed.overLongWait} waiting over 24 hours · ${ed.detained} detained`,
     },
     {
-      label: "Discharges due today",
-      value: discharges.confirmed + discharges.expected + discharges.heldUp,
-      sub: `${discharges.heldUp} held up`,
+      label: "Beds freeing today",
+      value: discharges.freeingToday,
+      sub: `${discharges.heldUpToday} held up`,
     },
     { label: "Pulled", value: capacity.pulled, sub: `${capacity.closed} closed` },
   ];
@@ -90,7 +90,7 @@ export function BedMeetingSheetDialog({
             <Kicker>Discharges today</Kicker>
           </h3>
           <ul className={styles.sheetList}>
-            {discharges.rows.map((row) => (
+            {discharges.todayRows.map((row) => (
               <li key={row.id}>
                 <span className={styles.strong}>
                   <SpelledCodes text={row.ward} />
@@ -101,7 +101,9 @@ export function BedMeetingSheetDialog({
                 </span>
               </li>
             ))}
-            {discharges.moreRows > 0 ? <li className={styles.mutedXs}>And {discharges.moreRows} more</li> : null}
+            {discharges.moreTodayRows > 0 ? (
+              <li className={styles.mutedXs}>And {discharges.moreTodayRows} more</li>
+            ) : null}
           </ul>
           <h3 className={styles.sheetHead}>
             <Kicker>Top delays</Kicker>

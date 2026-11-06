@@ -33,7 +33,7 @@ const beds: WalkRoundBed[] = [
     number: "01",
     name: "Mia K.",
     note: "Expected out today",
-    stateWord: "Due out",
+    stateWord: "Discharge due",
     changeKey: "occupied|due",
     glyph: "info",
     days: "12d",

@@ -876,7 +876,10 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
             >
               {overLine.over > 0 ? <Dot tone="warning" /> : null}
               <span className={styles.compactAlertVal}>
-                {firstRow?.percent == null ? "—" : `${Math.round(firstRow.percent)}%`}
+                {/* WF-44: short place + percent so a closed rail never shows a bare "74%". */}
+                {firstRow?.percent == null
+                  ? "—"
+                  : `${(firstRow.name ?? "").replace(/\s+Metro$/u, "").trim() || firstRow.name || "Beds"} ${Math.round(firstRow.percent)}%`}
               </span>
             </button>
           </Tooltip>

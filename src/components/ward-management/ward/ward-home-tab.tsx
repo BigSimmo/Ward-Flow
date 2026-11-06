@@ -776,7 +776,7 @@ export function WardHomeTab({
   if (lapsedHolds.length > 0) {
     actNow.push({
       key: "holds",
-      title: lapsedHolds.length === 1 ? "Bed pull expired" : "Bed pulls expired",
+      title: lapsedHolds.length === 1 ? "Pull expired, bed still pulled" : "Pulls expired, beds still pulled",
       detail: lapsedHolds
         .map(
           (bed) =>
@@ -2054,10 +2054,10 @@ export function WardHomeTab({
             now={now}
             extended={acceptExtended}
             holdChoices={[
-              { extended: false, label: `${configuration.pullHoldMinutes} minutes, standard` },
+              { extended: false, label: `${durMinutes(configuration.pullHoldMinutes)} standard` },
               {
                 extended: true,
-                label: `${configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES} minutes, extra travel`,
+                label: `${durMinutes(configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES)} with extra travel`,
               },
             ]}
             dialogRef={acceptDialogRef}

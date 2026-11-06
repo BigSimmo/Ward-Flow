@@ -2,7 +2,17 @@
 
 import Link from "next/link";
 import { createContext, useContext, useMemo, type MouseEvent } from "react";
-import { BedSingle, Building2, ClipboardList, FileText, Hospital, LayoutDashboard, Plus, Users } from "lucide-react";
+import {
+  BedSingle,
+  Building2,
+  ClipboardList,
+  FileText,
+  Hospital,
+  LayoutDashboard,
+  Plus,
+  Users,
+  Check,
+} from "lucide-react";
 
 import { StatusGlyph, TierTile, durMinutes, type WfTone } from "@/components/wf";
 import { calendarDateOf, demoDayZero } from "@/components/ward-management/ward-clock";
@@ -164,13 +174,7 @@ function Journey({ stage }: { stage: MovementStage }) {
             aria-current={state === "current" ? "step" : undefined}
           >
             <span className={styles.node} aria-hidden="true">
-              {state === "done" ? (
-                <svg viewBox="0 0 10 10" width="10" height="10">
-                  <path d="M1.5 5.2 3.8 7.5 8.5 2.5" fill="none" stroke="currentColor" strokeWidth="1.8" />
-                </svg>
-              ) : (
-                index + 1
-              )}
+              {state === "done" ? <Check size={10} strokeWidth={1.75} aria-hidden="true" /> : index + 1}
             </span>
             <span className={styles.stepLabel} title={stageCopy[step].shortLabel}>
               {stageCopy[step].shortLabel}

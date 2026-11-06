@@ -111,6 +111,11 @@
   text-underline-offset: 2px;
 }
 
+/* The separator and the UMRN wrap as one (design audit B18). */
+.umrnPair {
+  white-space: nowrap;
+}
+
 .umrnLink:hover {
   color: var(--wf-accent-ink);
   text-decoration-color: currentColor;
@@ -1556,6 +1561,7 @@ fieldset.formRow {
 
 .phoneBarName {
   font-weight: 400;
+  overflow-wrap: anywhere;
 }
 
 .phoneToast {

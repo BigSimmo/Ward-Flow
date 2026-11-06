@@ -4,6 +4,8 @@
  * read and show a time a person typed. Nothing here computes a legal limit (rule D5).
  */
 
+import { perthDateText } from "@/components/ward-management/ward-clock";
+
 const perthDateTime = new Intl.DateTimeFormat("en-GB", {
   timeZone: "Australia/Perth",
   year: "numeric",
@@ -19,16 +21,10 @@ function perthParts(date: Date): Record<string, string> {
   return Object.fromEntries(perthDateTime.formatToParts(date).map(({ type, value }) => [type, value]));
 }
 
-/** Formats a Date as en-AU date and time in AWST: "Fri, 25 Sep 2026, 17:00". */
+/** Formats a Date as en-AU date and time in AWST: "Fri 25 Sep 2026, 17:00" (no comma after the weekday). */
 export function formatStatutoryDateTime(d: Date): string {
   if (Number.isNaN(d.getTime())) return "Not recorded";
-  const dayStr = d.toLocaleDateString("en-AU", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "Australia/Perth",
-  });
+  const dayStr = perthDateText(d, { weekday: "short", day: "numeric", month: "short", year: "numeric" });
   const timeStr = d.toLocaleTimeString("en-AU", {
     hour: "2-digit",
     minute: "2-digit",

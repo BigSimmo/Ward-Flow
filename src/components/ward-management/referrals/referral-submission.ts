@@ -126,8 +126,12 @@ export type ReferralIntakeDetails = {
    * Finding 40 (Josh, 27 Oct 2026): `notKnown` records "Catchment not known" for a ward or ED
    * referral, with the team left blank. The letter says so. A community team referral still needs
    * the team (`RECEIVE_REFERRAL` refuses it).
+   *
+   * Form rule (design audit FORM-REF, Josh, 5 Nov 2026): the catchment warns, never blocks. A
+   * referral sent before anyone confirmed it carries `confirmed: false`, with the suggested team
+   * (or none), and every letter says it is not confirmed.
    */
-  catchment: { teamName: string; service?: HealthService; confirmed: true; notKnown?: true };
+  catchment: { teamName: string; service?: HealthService; confirmed: boolean; notKnown?: true };
   reasonForReferral: string;
   legalStatus: string;
   riskFlags: (typeof REFERRAL_RISK_FLAGS)[number][];
@@ -216,6 +220,23 @@ export function referralContactError(contact: ReferralContact): string | null {
   if (!text(contact.role).trim()) missing.push("role");
   if (!text(contact.location).trim()) missing.push("location or service");
   if (missing.length) return `${CONTACT_MISSING_PREFIX}${joinAnd(missing)}.`;
+  return referralContactLimitError(contact);
+}
+
+/**
+ * Form rule (design audit FORM-REF, Josh, 5 Nov 2026): the referrer's contact details warn, never
+ * block, so a referral sends with any of them blank. `referralContactError` above names what is
+ * still missing for the warning. Only the shape and the length limits refuse a send, here and at the
+ * engine boundary.
+ */
+export function referralContactLimitError(contact: ReferralContact): string | null {
+  if (
+    !onlyFields(contact, ["name", "email", "phone", "role", "location"]) ||
+    [contact.name, contact.email, contact.phone, contact.role, contact.location].some(
+      (value) => typeof value !== "string",
+    )
+  )
+    return "Check your contact details.";
   if ([contact.name, contact.role, contact.location].some((v) => v.length > 200))
     return "Shorten your name, role or location to 200 characters.";
   if (contact.email.length > 254) return "Shorten your email to 254 characters.";
@@ -226,6 +247,9 @@ export function referralContactError(contact: ReferralContact): string | null {
 /** Finding 40: the words a letter shows for the catchment, flagging "Catchment not known". */
 export function referralCatchmentWords(catchment: ReferralIntakeDetails["catchment"]): string {
   if (catchment.notKnown) return "Catchment not known";
+  // FORM-REF: sent before anyone confirmed it, so the letter says so rather than "confirmed".
+  if (!catchment.confirmed)
+    return catchment.teamName.trim() ? `${catchment.teamName} · not confirmed` : "Catchment not confirmed";
   return `${catchment.teamName} · confirmed${catchment.service ? ` · ${catchment.service}` : ""}`;
 }
 
@@ -256,10 +280,14 @@ export function referralIntakeError(intake: ReferralIntakeDetails): string | nul
       "needs",
     ]) ||
     !onlyFields(intake.catchment, ["teamName", "service", "confirmed", "notKnown"]) ||
-    intake.catchment.confirmed !== true ||
-    (intake.catchment.notKnown !== undefined && intake.catchment.notKnown !== true) ||
+    typeof intake.catchment.confirmed !== "boolean" ||
+    (intake.catchment.notKnown !== undefined &&
+      (intake.catchment.notKnown !== true || intake.catchment.confirmed !== true)) ||
     typeof intake.catchment.teamName !== "string" ||
-    (intake.catchment.notKnown ? intake.catchment.teamName !== "" : !intake.catchment.teamName.trim()) ||
+    // FORM-REF: an unconfirmed catchment may carry the suggested team or none; a confirmed one names it.
+    (intake.catchment.notKnown
+      ? intake.catchment.teamName !== ""
+      : intake.catchment.confirmed && !intake.catchment.teamName.trim()) ||
     intake.catchment.teamName.length > 200
   )
     return "Confirm the patient's catchment.";
@@ -282,18 +310,18 @@ export function referralIntakeError(intake: ReferralIntakeDetails): string | nul
     return "Answer medical clearance.";
   if (medical.syntheticTimelineBase !== undefined && !isSyntheticReferralTimelineBase(medical.syntheticTimelineBase))
     return "Check the synthetic medical review timeline.";
+  // FORM-REF (Josh, 5 Nov 2026): whether clearance is complete is still asked, but the expected time
+  // and the clarification contact warn, never block. Each one given must still be readable.
   if (
     !medical.cleared &&
-    (typeof medical.expectedAt !== "string" ||
-      !Number.isFinite(Date.parse(medical.expectedAt)) ||
-      typeof medical.contactName !== "string" ||
-      !medical.contactName.trim() ||
-      medical.contactName.length > 200 ||
-      typeof medical.contactPhone !== "string" ||
-      !medical.contactPhone.trim() ||
-      medical.contactPhone.length > 40)
+    ((medical.expectedAt !== undefined &&
+      (typeof medical.expectedAt !== "string" || !Number.isFinite(Date.parse(medical.expectedAt)))) ||
+      (medical.contactName !== undefined &&
+        (typeof medical.contactName !== "string" || medical.contactName.length > 200)) ||
+      (medical.contactPhone !== undefined &&
+        (typeof medical.contactPhone !== "string" || medical.contactPhone.length > 40)))
   )
-    return "Record expected medical clearance, a clarification contact and their phone number.";
+    return "Check the expected medical clearance time and the clarification contact.";
   if (typeof intake.triageAndRampCompleted !== "boolean" || typeof intake.additionalDocuments !== "boolean")
     return "Answer the documentation questions.";
   if (!Array.isArray(intake.charts) || intake.charts.length > 3) return "Attach up to three charts / documents.";
@@ -362,5 +390,5 @@ export function referralIntakeError(intake: ReferralIntakeDetails): string | nul
       typeof intake.needs === "object" && intake.needs !== null ? needsError(intake.needs) : "Check the needs.";
     if (error) return error;
   }
-  return referralContactError(intake.referrer);
+  return referralContactLimitError(intake.referrer);
 }

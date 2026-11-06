@@ -215,7 +215,7 @@ describe("the Delays board's filters never leave a stale one pressed", () => {
     renderBoard(<ClearUrgentFlagProbe movementId="WF-018" />);
 
     fireEvent.click(screen.getByRole("tab", { name: "Where and whose move" }));
-    fireEvent.click(screen.getByRole("button", { name: "Blocker" }));
+    fireEvent.click(screen.getByRole("button", { name: "Held up by" }));
     const cell = screen.getByRole("button", {
       name: new RegExp(`^${catchmentName(origin!)}, Family: 1 waiting`, "u"),
     });

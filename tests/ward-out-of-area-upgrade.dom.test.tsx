@@ -386,6 +386,13 @@ describe("Out of area v10 pass", () => {
     expect(screen.getByText(/highlighted, all rows/)).toBeInTheDocument();
   });
 
+  it("hides a highlight chip with nobody in it (design audit B19)", () => {
+    renderBoard();
+    const chips = within(screen.getByRole("group", { name: "Highlight people" })).getAllByRole("button");
+    expect(chips.length).toBeGreaterThan(0);
+    for (const chip of chips) expect(chip.textContent).not.toMatch(/^0\D/);
+  });
+
   // Redesign (Josh, 31 Oct 2026): the Checking line keeps the two figures about this list. "Other
   // records without home area or travel time" left it because it counted records that are not on
   // this list; the screen-reader counts line still states that figure once.

@@ -90,7 +90,7 @@ export function ToolLeaveDue({ onNavigate }: { onNavigate: () => void }) {
   void onNavigate;
   const wards = useLeaveDue();
   const now = useWardFlowClock();
-  if (wards.length === 0) return <EmptyState title="No one due back today." />;
+  if (wards.length === 0) return <EmptyState title="Nobody due back today." />;
   return (
     <div className={styles.tool}>
       {wards.map((ward) => (

@@ -260,7 +260,7 @@ describe("JourneyStrip", () => {
   it("sizes each stage by its real duration and names the path", () => {
     render(
       <JourneyStrip
-        label="Journey since ED arrival"
+        label="Movement since ED arrival"
         formatDuration={(m) => `${Math.floor(m / 60)}h ${m % 60}m`}
         stages={[
           { id: "t", label: "ED triage", minutes: 20 },
@@ -269,7 +269,7 @@ describe("JourneyStrip", () => {
         ]}
       />,
     );
-    const bar = screen.getByRole("img", { name: /Journey since ED arrival: ED triage 0h 20m/ });
+    const bar = screen.getByRole("img", { name: /Movement since ED arrival: ED triage 0h 20m/ });
     expect(bar.getAttribute("aria-label")).toContain("Now on ward.");
     const segs = Array.from(bar.children) as HTMLElement[];
     expect(segs.map((seg) => seg.style.flexGrow)).toEqual(["20", "600", "300"]);

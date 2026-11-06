@@ -4,7 +4,7 @@ import Link from "next/link";
 import { GraduationCap } from "lucide-react";
 import { useId, useMemo } from "react";
 
-import { Button } from "@/components/wf";
+import { Button, StatusGlyph } from "@/components/wf";
 
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -87,7 +87,7 @@ export function WardPracticeMode({ className, headingClassName }: { className?: 
                   aria-current={current ? "step" : undefined}
                 >
                   <span className={styles.mark} aria-hidden="true">
-                    {done ? "✓" : ""}
+                    {done ? <StatusGlyph tone="success" /> : null}
                   </span>
                   <span>
                     <strong>{step.title}</strong>

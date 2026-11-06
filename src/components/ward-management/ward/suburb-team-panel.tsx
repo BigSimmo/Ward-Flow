@@ -1,5 +1,6 @@
 "use client";
 
+import { Check, Search, MapPinned } from "lucide-react";
 import { useId, useState } from "react";
 
 import { catchmentLookupsFor } from "@/components/ward-management/tools/ward-catchment-query";
@@ -192,10 +193,7 @@ export function SuburbTeamPanel() {
       <div className={styles.suburbLookupHead}>
         <div className={styles.suburbHeaderLeft}>
           <div className={styles.suburbHeaderIcon}>
-            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M8 1a5 5 0 00-5 5c0 3.5 5 9 5 9s5-5.5 5-9a5 5 0 00-5-5z" />
-              <circle cx="8" cy="6" r="2" />
-            </svg>
+            <MapPinned size={16} strokeWidth={1.75} aria-hidden="true" />
           </div>
           <div className={styles.suburbHeaderTitles}>
             <h2 id={headingId} className={styles.suburbHeaderMainTitle}>
@@ -223,18 +221,7 @@ export function SuburbTeamPanel() {
         </label>
         <div className={styles.suburbSearchRow}>
           <div className={styles.suburbInputWrapper}>
-            <svg
-              className={styles.suburbInputIcon}
-              viewBox="0 0 16 16"
-              width="15"
-              height="15"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-            >
-              <circle cx="7" cy="7" r="4.5" />
-              <path d="M10.5 10.5L14 14" />
-            </svg>
+            <Search className={styles.suburbInputIcon} size={15} strokeWidth={1.75} aria-hidden="true" />
             <input
               id={`${baseId}-ward-suburb-team-input`}
               className={styles.suburbSearchInput}
@@ -245,9 +232,7 @@ export function SuburbTeamPanel() {
             />
           </div>
           <button type="submit" className={styles.btnLookupAction}>
-            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 8l3 3 7-7" />
-            </svg>
+            <Check size={14} strokeWidth={1.75} aria-hidden="true" />
             <span>Look up the team</span>
           </button>
         </div>

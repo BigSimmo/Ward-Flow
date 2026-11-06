@@ -23,12 +23,18 @@ describe("WardOfflineBanner", () => {
       setOnline(false);
       window.dispatchEvent(new Event("offline"));
     });
-    expect(screen.getByRole("status").textContent).toMatch(/^Offline\./);
+    expect(screen.getByRole("status").textContent).toMatch(/^You're offline\./u);
     act(() => {
       setOnline(true);
       window.dispatchEvent(new Event("online"));
     });
     expect(screen.queryByTestId("ward-offline-banner")).toBeNull();
+  });
+
+  it("marks the drawn note so the layout can hold it while a higher note is pinned", () => {
+    setOnline(false);
+    render(<WardOfflineBanner practice={false} />);
+    expect(screen.getByTestId("ward-offline-banner").hasAttribute("data-wf-offline-note")).toBe(true);
   });
 
   it("writes nothing to browser storage", () => {

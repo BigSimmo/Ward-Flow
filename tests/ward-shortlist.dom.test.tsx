@@ -106,9 +106,7 @@ describe("ShortlistPanel escalation contact", () => {
     renderShortlist();
     fireEvent.click(screen.getByTestId("ward-shortlist-escalation-toggle"));
 
-    const select = screen.getByLabelText(
-      "Role or service being contacted next — a role or service only, never a person's name (synthetic data only)",
-    );
+    const select = screen.getByLabelText("Role or service being contacted next");
     expect(select).toHaveAttribute("id", "ward-shortlist-escalation-contact");
     expect(select.getAttribute("data-testid")).toBe("ward-shortlist-escalation-contact");
   });

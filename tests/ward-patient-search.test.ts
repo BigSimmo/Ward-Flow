@@ -6,6 +6,8 @@ import { isOpen, searchMovements, searchPatients } from "../src/components/ward-
 import { seedWardFlowState } from "../src/components/ward-management/ward-flow-reducer";
 import { findPatients } from "../src/components/ward-management/ward-patients";
 import type { Movement } from "../src/components/ward-management/ward-model";
+import { getPatientPresence } from "../src/components/ward-management/search/patient-search-model";
+import { isCommunityReferral } from "../src/components/ward-management/search/community-referral";
 
 const { movements, units, referrals, patients } = seedWardFlowState();
 const openIds = movements
@@ -339,5 +341,22 @@ describe("findPatients — FIX 2, a partial record number must find its person",
     // asserts the property (case-insensitive substring match), not a single accidental id.
     expect(found.length).toBeGreaterThan(1);
     expect(found.map((patient) => patient.id)).toContain("PT-001");
+  });
+});
+
+describe("getPatientPresence — a community referral without its location", () => {
+  it("calls a queued community-source referral with no origin site 'Community / Home', as the rows do", () => {
+    const queued = referrals.find(
+      (referral) => referralState(referral) === "queued" && typeof Reflect.get(referral, "patientId") === "string",
+    );
+    expect(queued).toBeDefined();
+    if (!queued) return;
+    const patientId = Reflect.get(queued, "patientId") as string;
+    const patient = patients.find((p) => p.id === patientId);
+    expect(patient).toBeDefined();
+    if (!patient) return;
+    const community = { ...queued, originSiteCode: undefined, source: "community" as const };
+    expect(isCommunityReferral(community)).toBe(true);
+    expect(getPatientPresence(patient, [community], [])).toEqual({ key: "community", label: "Community / Home" });
   });
 });

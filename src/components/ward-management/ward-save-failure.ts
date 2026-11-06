@@ -27,7 +27,7 @@ export const SAVE_PROBLEMS = {
   connectionLost: [NOT_CONFIRMED, RETRY],
   /** Offline: a save queued behind the lost one waits on this page and goes when the connection returns. */
   heldOffline: [
-    "Offline, so this change is waiting on this page.",
+    "You're offline. This change is waiting on this page.",
     "It sends by itself when you are back online. Keep this page open.",
   ],
   /** The status bar's line for the same lost connection. */

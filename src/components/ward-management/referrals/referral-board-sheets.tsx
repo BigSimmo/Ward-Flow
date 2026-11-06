@@ -5,6 +5,7 @@
  * open only from a button or a key, so the board loads them after first render.
  */
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { ClipboardCopy } from "lucide-react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -37,7 +38,7 @@ function meetingText(rows: MeetingRow[], now: Instant): string {
       return [
         `${index + 1}. T${row.referral.urgency} ${row.name}`,
         `waiting ${waited}, ${due}`,
-        `from ${row.referral.originSiteCode}`,
+        `from ${row.referral.originSiteCode ?? ORIGIN_NOT_RECORDED}`,
         `asking for ${askingForShort(row.referral)}`,
         needWords(row.referral).join(", ") || "no bed needs recorded",
       ].join(" | ");
@@ -166,7 +167,7 @@ export function BedMeetingSheet({
                     <span className={styles.mono}>{row.umrn}</span>
                     <span className={styles.phoneOnly}>
                       {" "}
-                      · {row.referral.originSiteCode} to {askingForShort(row.referral)}
+                      · {row.referral.originSiteCode ?? ORIGIN_NOT_RECORDED} to {askingForShort(row.referral)}
                     </span>
                   </span>
                 </span>
@@ -175,7 +176,7 @@ export function BedMeetingSheet({
                 <WaitCell referral={row.referral} now={now} />
               </td>
               <td className={cx(styles.mono, styles.deskOnly)} title={siteByCode(row.referral.originSiteCode)?.name}>
-                {row.referral.originSiteCode}
+                {row.referral.originSiteCode ?? ORIGIN_NOT_RECORDED}
               </td>
               <td className={styles.deskOnly}>{askingForShort(row.referral)}</td>
               <td className={styles.deskOnly}>{needWords(row.referral).join(", ") || "None recorded"}</td>
@@ -220,7 +221,7 @@ function isbarSections(
 ): { heading: string; paragraphs: string[] }[] {
   const intake = referral.intake;
   const { waited, due } = waitWords(referral, now);
-  const site = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode;
+  const site = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode ?? ORIGIN_NOT_RECORDED;
   const reason = intake?.reasonForReferral?.replace(/\s+/g, " ").trim();
   const story = patientStory(referral);
   const letterLegal = intake?.legalStatus?.trim();
@@ -299,7 +300,7 @@ export function IsbarSheet({
       open={open}
       onClose={onClose}
       title="Referral summary"
-      description="ISBAR, from what the referral records. Nothing here is inferred."
+      description="ISBAR, from the referral record."
       footer={
         <div className={styles.sheetFoot}>
           <Button variant="ghost" size="sm" onClick={onClose}>

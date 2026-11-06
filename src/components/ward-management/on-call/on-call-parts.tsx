@@ -132,7 +132,7 @@ export function UntilCell({
         <span className={styles.untilSub}>
           {alternative
             ? `Now: ${alternative.kind === "nurseInCharge" ? "nurse in charge" : lower(alternative.name)}`
-            : "No one covers now"}
+            : "Nobody covers now"}
         </span>
       )}
     </span>
@@ -262,7 +262,7 @@ function StatusBlock({ entry, actions }: { entry: DirectoryEntry; actions: Conta
             <span className={styles.mono}>{numberAt(alternative, actions.minute) ?? ""}</span>
           </>
         ) : (
-          "No one covers now"
+          "Nobody covers now"
         )}
       </span>
     </div>

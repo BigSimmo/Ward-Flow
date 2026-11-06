@@ -374,7 +374,7 @@ describe("the zero-case sentence states D-a's definition, and D-c's narrowed abs
 
     // D-c: "Nobody is waiting..." — narrowed, so it names the service.
     expect(screen.getByTestId("ward-delays-nobody-waiting")).toHaveTextContent(
-      `Nobody is waiting in any emergency department in ${SERVICE}, counted over every open movement.`,
+      `Nobody is waiting in ED in ${SERVICE}, counted over every open movement.`,
     );
 
     // D-b: the escalations register is whole-network and unaffected by narrowing — its own absence

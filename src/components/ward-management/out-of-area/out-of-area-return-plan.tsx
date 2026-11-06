@@ -35,7 +35,11 @@ import {
   TRAVEL_SHORT,
   confirmedAgeText,
   dischargeShort,
+  departTimeUnreadable,
   missingAnswers,
+  DEPART_TIME_NOT_RECORDED,
+  planWarningsLine,
+  PROVIDER_NOT_RECORDED,
   shortSiteName,
   type BedOption,
   type RepatDraft,
@@ -43,22 +47,22 @@ import {
 import { ReturnTracker, returnStepsDone } from "./out-of-area-return-tracker";
 import styles from "./out-of-area-board.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
-import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
+import { CAD_TO_FOLLOW, cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { HomeServiceReturnPanel } from "./home-service-return-panel-lazy";
 import type { ReturnEarlyFlagRecord } from "./return-early";
 import { UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-undo";
 import { OfficerBookingContacts } from "@/components/ward-management/officer/officer-booking-contacts";
 
-export function returnPlanMissingToSend(draft: RepatDraft, now: Instant = 0): string[] {
-  return missingAnswers(draft, now).filter((answer) => answer !== "ward agreement");
+export function returnPlanMissingToSend(draft: RepatDraft): string[] {
+  return missingAnswers(draft).filter((answer) => answer !== "ward agreement");
 }
 
-export function canSendReturnPlan(draft: RepatDraft, now: Instant = 0): boolean {
-  return returnPlanMissingToSend(draft, now).length === 0;
+export function canSendReturnPlan(draft: RepatDraft): boolean {
+  return returnPlanMissingToSend(draft).length === 0;
 }
 
-export function returnPlanBlockReason(draft: RepatDraft, now: Instant = 0): string | undefined {
-  const missing = returnPlanMissingToSend(draft, now);
+export function returnPlanBlockReason(draft: RepatDraft): string | undefined {
+  const missing = returnPlanMissingToSend(draft);
   return missing.length ? `Answer the ${missing.length} left first.` : undefined;
 }
 
@@ -243,10 +247,12 @@ export function ReturnPlan({
     <FlagEarly flag={earlyFlag} hospital={hospital} now={now} onFlag={onFlagEarly} onUndo={onUndoFlagEarly} />
   );
   const site = siteByCode(entry.unit.siteCode);
-  const missing = missingAnswers(draft, now);
+  const missing = missingAnswers(draft);
   // A typed CAD number the rule refuses is named beside the field; blank stays a plain "missing".
   const cadProblem = draft.cadNumber.trim() ? cadNumberProblem(draft.cadNumber) : undefined;
   const cadError = cadProblem ? `${cadProblem.charAt(0).toUpperCase()}${cadProblem.slice(1)}.` : undefined;
+  // A typed depart time that cannot be read blocks and is named beside the field; blank only warns.
+  const departError = departTimeUnreadable(draft) ? "Enter the depart time as HH:MM, or leave it blank." : undefined;
   const move = whoseMove(draft, record);
   const returnMovement = useOptionalWardFlowSelect("movements")?.movements.find(
     (movement) => movement.id === returnMovementId,
@@ -395,7 +401,7 @@ export function ReturnPlan({
                 </fieldset>
               ) : (
                 <p className={styles.planHint}>
-                  <StatusGlyph tone="closed" size={9} />
+                  <StatusGlyph tone="neutral" size={9} />
                   {entry.band === "air_transport_only"
                     ? "Air only placement, travel times are not compared"
                     : `No shorter travel recorded for ${entry.admission.homeRegion}`}
@@ -546,7 +552,7 @@ export function ReturnPlan({
                   onChange={(event) => onDraft({ cadNumber: event.target.value })}
                 />
               </Field>
-              <Field label="Depart" className={styles.formRow}>
+              <Field label="Depart" className={styles.formRow} error={departError}>
                 <TextInput
                   icon={Clock}
                   inputMode="numeric"
@@ -570,6 +576,14 @@ export function ReturnPlan({
               />
             </section>
           </div>
+          {/* W13 (Josh's card 3, 5 Nov 2026): the provider and depart time warn, and a blank CAD is
+              "CAD to follow". The plan still records. */}
+          {planWarningsLine(draft, now) ? (
+            <p className={cx(styles.planHint, styles.inkWarning)} data-testid="ward-out-of-area-repat-warnings">
+              <StatusGlyph tone="warning" size={9} />
+              {planWarningsLine(draft, now)}
+            </p>
+          ) : null}
           <div className={styles.planFoot}>
             <span className={styles.need} title={missing.length ? `Still needed: ${missing.join(", ")}` : undefined}>
               {missing.length ? (
@@ -587,8 +601,8 @@ export function ReturnPlan({
               variant="sec"
               size="sm"
               data-testid="ward-out-of-area-repat-send"
-              disabledReason={pending ? "Saving" : returnPlanBlockReason(draft, now)}
-              title={returnPlanBlockReason(draft, now)}
+              disabledReason={pending ? "Saving" : returnPlanBlockReason(draft)}
+              title={returnPlanBlockReason(draft)}
               reasonDisplay="tooltip"
               onClick={onSendToWard}
             >
@@ -692,7 +706,7 @@ function RecordedReturn({
         <dd>{record.receivingWardAgreed ? "Agreed" : "Not yet agreed"}</dd>
         <dt>Transport</dt>
         <dd>
-          {record.mode === "road" ? "Road" : "Flight"} · {record.provider}
+          {record.mode === "road" ? "Road" : "Flight"} · {record.provider ?? PROVIDER_NOT_RECORDED}
         </dd>
         <dt>Legal status</dt>
         <dd>{LEGAL_LABELS[record.transportLegalStatus]}</dd>
@@ -717,9 +731,11 @@ function RecordedReturn({
           </>
         ) : null}
         <dt>CAD</dt>
-        <dd className={styles.mono}>{record.cadNumber}</dd>
+        <dd className={record.cadNumber ? styles.mono : undefined}>{record.cadNumber || CAD_TO_FOLLOW}</dd>
         <dt>Depart</dt>
-        <dd className={styles.mono}>{formatInstantWithDay(record.estimatedAt, now)}</dd>
+        <dd className={record.estimatedAt === undefined ? undefined : styles.mono}>
+          {record.estimatedAt === undefined ? DEPART_TIME_NOT_RECORDED : formatInstantWithDay(record.estimatedAt, now)}
+        </dd>
       </dl>
       <div className={styles.planFoot}>
         {flagEarly}

@@ -46,10 +46,12 @@ import {
   LiveChip,
   PhoneFilterFold,
   RadioGroup,
+  ShowMoreRow,
   StatusGlyph,
   TextInput,
   buttonClass,
   cx,
+  foldLimit,
   phoneRows,
   useIsPhone,
 } from "@/components/wf";
@@ -89,6 +91,8 @@ import {
 export { causeOf, inServiceSuffix } from "./movements-screen-helpers";
 
 const MOVEMENT_BOARD_TABS = ["every", "resolved"] as const;
+/** Rows an open phone group shows before its "Show N more" row (the about-eight list rule). */
+const PHONE_GROUP_CAP = 8;
 const MOVEMENTS_ROUTE = "/ward-flow/movements";
 /** What Back brings back (`use-return-to-place.ts`). The tab lives in the address, and the search is typed text, so neither is kept here. */
 type MovementsPlace = {
@@ -97,6 +101,8 @@ type MovementsPlace = {
   sideView: "transport" | "shape";
   /** Null until the reader opens or closes a group: then the first group with people is open (Q227). */
   phoneOpenGroups: ReadonlySet<string> | null;
+  /** Phone groups opened past their first rows with "Show N more". */
+  phoneFullGroups: ReadonlySet<string>;
   showAll: boolean;
   highlight: string | null;
 };
@@ -209,6 +215,10 @@ export function MovementsScreen() {
   const [phoneOpenGroups, setPhoneOpenGroups] = useState<ReadonlySet<string> | null>(
     () => returned?.phoneOpenGroups ?? null,
   );
+  // Design audit A12 (5 Nov 2026): an open phone group shows about eight rows, then "Show N more".
+  const [phoneFullGroups, setPhoneFullGroups] = useState<ReadonlySet<string>>(
+    () => returned?.phoneFullGroups ?? new Set(),
+  );
   // v6 worklist: a search over name, UMRN or ED, and a short list per group until Show all.
   const [search, setSearch] = useState("");
   const [showAll, setShowAll] = useState(returned?.showAll ?? false);
@@ -216,7 +226,7 @@ export function MovementsScreen() {
   const [highlight, setHighlight] = useState<string | null>(returned?.highlight ?? null);
   // M1 to M4 (Josh, 3 Nov 2026): a figure opens the patients behind it in a pop-up list.
   const [peopleList, setPeopleList] = useState<MovementPeopleList | null>(null);
-  const place: MovementsPlace = { order, shapeTab, sideView, phoneOpenGroups, showAll, highlight };
+  const place: MovementsPlace = { order, shapeTab, sideView, phoneOpenGroups, phoneFullGroups, showAll, highlight };
   useReturnToPlace(MOVEMENTS_ROUTE, place, worklistRow);
   // "Show in worklist" from the list pop-up marks those rows, as the figures used to.
   function showHighlight(key: string) {
@@ -582,9 +592,18 @@ export function MovementsScreen() {
   const groupRows = (id: string, rows: Movement[]) =>
     isPhone
       ? openPhoneGroups.has(id)
-        ? rows
+        ? phoneFullGroups.has(id)
+          ? rows
+          : capRows(rows, foldLimit(rows.length, PHONE_GROUP_CAP))
         : rows.filter((movement) => pinnedRowIds.has(movement.id) || isMarked(movement))
       : capRows(rows, GROUP_CAP);
+  // The phone group's own foot row: shown only while it is open and folding hides rows.
+  const phoneMoreRow = (id: string, total: number, shown: number) =>
+    isPhone && openPhoneGroups.has(id) && total > shown ? (
+      <ShowMoreRow onClick={() => setPhoneFullGroups((full) => new Set(full).add(id))} expanded={false}>
+        {`Show ${total - shown} more`}
+      </ShowMoreRow>
+    ) : null;
   const togglePhoneGroup = (id: string) =>
     setPhoneOpenGroups((open) => {
       const next = new Set(open ?? openPhoneGroups);
@@ -1219,6 +1238,7 @@ export function MovementsScreen() {
                                 />
                               )}
                               {rows.length > 0 ? <WardRecordList>{rows.map(renderRow)}</WardRecordList> : null}
+                              {phoneMoreRow(stage.id, stage.movements.length, rows.length)}
                             </div>
                           );
                         })
@@ -1258,6 +1278,7 @@ export function MovementsScreen() {
                                 />
                               )}
                               {rows.length > 0 ? <WardRecordList>{rows.map(renderRow)}</WardRecordList> : null}
+                              {phoneMoreRow(group.id, group.rows.length, rows.length)}
                             </div>
                           );
                         })
@@ -1310,7 +1331,11 @@ export function MovementsScreen() {
                     className={buttonClass({ variant: "ghost", size: "sm" })}
                     aria-expanded={showAll}
                     aria-controls={boardTab === "every" ? "movements-pane-every" : "movements-pane-resolved"}
-                    onClick={() => setShowAll((value) => !value)}
+                    onClick={() => {
+                      // Show fewer folds every list back, phone groups opened with "Show N more" too.
+                      if (showAll) setPhoneFullGroups(new Set());
+                      setShowAll(!showAll);
+                    }}
                   >
                     {showAll ? "Show fewer" : `Show all ${worklistListTotal}`}
                   </button>

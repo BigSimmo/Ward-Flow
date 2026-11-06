@@ -309,10 +309,10 @@ export function smartSearchGroups(
   if (smartResults.tasks.length > 0) {
     g.push({
       key: "tasks",
-      heading: "Tasks",
+      heading: "Alerts",
       items: smartResults.tasks.map((t) => ({
         kind: "task",
-        kindLabel: "Task",
+        kindLabel: "Alert",
         id: t.task.id,
         title: t.task.title,
         meta: withUmrnInPlaceOfMovementIds(t.task.detail, lookup),

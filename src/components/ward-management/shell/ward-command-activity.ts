@@ -1,4 +1,5 @@
 import { placeDisplayName } from "@/components/ward-management/ward-place-names";
+import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import { DECLINE_REASON_NOT_SHARED } from "@/components/ward-management/ward-model";
 import {
@@ -174,7 +175,7 @@ export function deriveCommandActivity(input: CommandActivityInput): CommandActiv
     events.push({
       at: referral.raisedAt,
       id: `referral-raised:${referral.id}`,
-      text: `${umrn} referral raised. ${referral.ageBand}, ${referral.homeRegion}.`,
+      text: `${umrn} referral raised. ${referral.ageBand}, ${referral.homeRegion ?? HOME_REGION_NOT_RECORDED}.`,
       tone: "info",
       category: "referral",
     });

@@ -5,7 +5,7 @@ import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell
 import { setServiceScope, useServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronRight, LayoutGrid, List, Lock, Search, SlidersHorizontal } from "lucide-react";
+import { ChevronRight, Circle, LayoutGrid, List, Lock, Search, SlidersHorizontal } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -526,12 +526,13 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           title={
             <>
               <SrOnly>{"All wards, "}</SrOnly>
-              {`${readyNow} ${readyNow === 1 ? "bed" : "beds"} ready${isPhone ? "" : " now"}`}
+              {/* One title at every width (design audit B28, 5 Nov 2026): the phone's shorter answer. */}
+              {`${readyNow} ${readyNow === 1 ? "bed" : "beds"} ready`}
             </>
           }
           titleMeta={
             isPhone
-              ? `${heroUnits.length} wards · ${statewidePercent === null ? "share in use not recorded" : `${statewidePercent.toFixed(1)}% in use`} · ${pulled} pulled`
+              ? `${heroUnits.length} wards · ${statewidePercent === null ? "share in use not recorded" : `${Math.round(statewidePercent)}% in use`} · ${pulled} pulled`
               : deskSite
                 ? // A site desk: figures that filter nothing read as one quiet line, not as look-alike chips.
                   `${readyNow + freeingByShiftEnd} ready by ${formatInstantWithDay(shiftEnd, now)} · ${pulled} pulled`
@@ -829,7 +830,7 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
           <div className={styles.wardsColumn}>
             {placed.length === 0 ? (
               <Card className={cx(styles.emptyCard, styles.wrapText)}>
-                <EmptyState icon={Search} title="No wards recorded" meta="The network has no placed wards." />
+                <EmptyState icon={Circle} title="No wards recorded" meta="The network has no placed wards." />
               </Card>
             ) : isPhone && deskSite ? (
               <>
@@ -1225,7 +1226,7 @@ function WardPhoneList({
                 <span className={styles.phoneGroupDot} data-service={group.key} aria-hidden="true" />
                 <span>{group.label}</span>
                 <span className={styles.phoneGroupShare}>
-                  {beds > 0 ? `${((occupied / beds) * 100).toFixed(1)}%` : ""}
+                  {beds > 0 ? `${Math.round((occupied / beds) * 100)}%` : ""}
                 </span>
               </h2>
             ) : null}

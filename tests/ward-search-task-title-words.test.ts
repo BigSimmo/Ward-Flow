@@ -36,6 +36,15 @@ describe("search keeps the inbox for words the task titles are written in", () =
     expect(searchTasks("transport").map((result) => result.task.title)).toEqual(["Transport awaiting departure"]);
   });
 
+  // The inbox is named Alerts on screen, so its name finds it as the older word "task" does.
+  it.each(["alert", "alerts", "task", "tasks"])("lists every inbox row for %s", (query) => {
+    expect(shouldDeriveSearchTasks(query)).toBe(true);
+    expect(searchTasks(query).map((result) => result.task.title)).toEqual([
+      "Bed pull expired",
+      "Transport awaiting departure",
+    ]);
+  });
+
   it("still skips the inbox for an ordinary name, which is what the gate is for", () => {
     expect(shouldDeriveSearchTasks("Smith")).toBe(false);
     expect(shouldDeriveSearchTasks("Bedford")).toBe(false);

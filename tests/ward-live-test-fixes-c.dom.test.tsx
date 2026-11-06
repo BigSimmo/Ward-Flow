@@ -77,7 +77,8 @@ describe("WF-18 draft saved points to the Drafts list", () => {
   it("offers View drafts on the saved toast", async () => {
     const { noticeDraftKept } = await import("@/components/ward-management/referrals/referral-draft-saved-notice");
     const push = vi.fn(() => "t");
-    noticeDraftKept({ push }, true, new Date(2026, 10, 5, 9, 7));
+    // 09:07 on the Perth clock (CL-2): the time reads in Perth whatever the device zone.
+    noticeDraftKept({ push }, true, new Date("2026-11-05T01:07:00Z"));
     expect(push).toHaveBeenCalledWith(
       expect.objectContaining({
         title: "Draft saved at 09:07",

@@ -275,7 +275,9 @@ describe("referral command completion across shared snapshots", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Synthetic refusal");
     expect(screen.getByLabelText("Given name")).toHaveValue("Synthetic");
   });
-  it("focuses the first invalid contact field when confirmation is refused", async () => {
+  // Form rule (design audit FORM-REF, Josh's card 2, 5 Nov 2026): the referrer's own contact warns
+  // and never blocks, so a blank name says so beside the field and Confirm still sends.
+  it("sends with a blank contact name, warning beside the field instead of refusing", async () => {
     setup(<Probe panels footer />);
     ready();
     act(() => {
@@ -283,12 +285,10 @@ describe("referral command completion across shared snapshots", () => {
       state.handleDispatch();
     });
     await waitFor(() => expect(screen.getByRole("heading", { name: "Confirm and send" })).toHaveFocus());
-    const confirm = screen.getByRole("button", { name: "Confirm and send" });
-    confirm.focus();
-    fireEvent.click(confirm);
-    await waitFor(() => expect(screen.getByLabelText("Your name")).toHaveFocus());
-    expect(screen.getByLabelText("Your name")).toHaveAttribute("aria-invalid", "true");
-    expect(dispatch).not.toHaveBeenCalled();
+    expect(screen.getByText("Name not recorded. You can still send.")).toBeVisible();
+    expect(screen.getByLabelText("Your name")).not.toHaveAttribute("aria-invalid");
+    fireEvent.click(screen.getByRole("button", { name: "Confirm and send" }));
+    await waitFor(() => expect(dispatch).toHaveBeenCalledTimes(1));
     expect(state.contact.phone).toBe("0412345678");
   });
   it.each([

@@ -633,11 +633,6 @@ export function OperatorSwitcherModal({ isOpen, onClose, onSelectRole }: Operato
                 }
               >
                 <Icon icon={ChevronDown} size={14} className={styles.chev} />
-                <span
-                  className={styles.svcDot}
-                  data-service={SERVICE_SWATCH[service] ?? "statewide"}
-                  aria-hidden="true"
-                />
                 <b className={fold.serviceName}>{service}</b>
                 <span className={fold.serviceMeta}>
                   {group.length} {group.length === 1 ? "hospital" : "hospitals"}
@@ -812,13 +807,10 @@ function targetLabel(minutes: number): string {
   return minutes % 60 === 0 ? `${minutes / 60}h` : durMinutes(minutes);
 }
 
-function DeskGroup({ label, service, children }: { label: string; service: string; children: ReactNode }) {
+function DeskGroup({ label, children }: { label: string; service: string; children: ReactNode }) {
   return (
     <section className={styles.group} aria-label={label}>
-      <p className={styles.groupHead}>
-        <span className={styles.svcDot} data-service={service} aria-hidden="true" />
-        {label}
-      </p>
+      <p className={styles.groupHead}>{label}</p>
       {children}
     </section>
   );

@@ -130,7 +130,7 @@ export function DischargeGroupSection({
       >
         {releases.length === 0 ? (
           <p className={styles.emptyNote} data-testid={`ward-discharge-group-${groupKey}-empty`}>
-            None. No {EMPTY_REASON[groupKey]}.
+            {EMPTY_REASON[groupKey]}
           </p>
         ) : (
           <>

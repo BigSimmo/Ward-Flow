@@ -1,5 +1,5 @@
 import { RELEASE_BANDS, releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
-import { calendarDateOf, dayOf, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, formatSheetMoment, perthDateLabel, type Instant } from "@/components/ward-management/ward-clock";
 import type { DischargeRecord } from "@/components/ward-management/ward-discharge-records";
 import { BED_RELEASES_HELD_UP_ANY_DATE_LABEL } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
@@ -28,7 +28,8 @@ export const PHONE_GROUP_TONES: Record<GroupKey, WfTone> = {
   blocked: "warning",
   confirmed: "success",
   expected: "neutral",
-  "discharged-today": "closed",
+  // Design audit 4 (A18): a completed discharge is done (the tick), not declined or closed (the cross).
+  "discharged-today": "success",
 };
 
 /**
@@ -65,16 +66,16 @@ export function releaseTimingWords(release: BedRelease, now: Instant): string {
 }
 
 export const EMPTY_REASON: Record<GroupKey, string> = {
-  blocked: "release is currently blocked",
-  confirmed: "release is confirmed, unreleased and not blocked",
-  expected: "release is expected and not blocked",
-  "discharged-today": "the person has been discharged today",
+  blocked: "Nobody held up.",
+  confirmed: "No confirmed discharges.",
+  expected: "No expected discharges.",
+  "discharged-today": "Nobody discharged today.",
 };
 
 export const GROUP_DESCRIPTIONS: Record<GroupKey, string> = {
   blocked: "These need someone to act on them now.",
-  confirmed: "Waiting only on the clock, not blocked.",
-  expected: "Not yet confirmed by the ward, and not blocked.",
+  confirmed: "Waiting only on the clock, not held up.",
+  expected: "Not yet confirmed by the ward, and not held up.",
   "discharged-today": "The bed is already free.",
 };
 
@@ -285,14 +286,9 @@ export function recordedMoment(value: Instant | null, dayZero: Date): string {
   return value !== null && Number.isFinite(value) ? formatSheetMoment(value, dayZero) : "Not recorded";
 }
 
-/** The calendar day alone ("Fri, 9 Oct"), for a release already past its date. */
+/** The calendar day alone ("Fri 9 Oct"), for a release already past its date. */
 export function recordedDate(value: Instant, dayZero: Date): string {
-  return calendarDateOf(value, dayZero).toLocaleDateString("en-AU", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    timeZone: "Australia/Perth",
-  });
+  return perthDateLabel(value, dayZero, { weekday: "short", day: "numeric", month: "short" });
 }
 
 export const BLOCKER_CATEGORIES = [
@@ -340,7 +336,7 @@ export function matchesHighlight(
 }
 
 export function perthDay(instant: Instant, dayZero: Date, options: Intl.DateTimeFormatOptions): string {
-  return calendarDateOf(instant, dayZero).toLocaleDateString("en-AU", { ...options, timeZone: "Australia/Perth" });
+  return perthDateLabel(instant, dayZero, options);
 }
 
 export const stageTone = (stage: WorkStatus): WfTone =>

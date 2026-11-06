@@ -939,6 +939,8 @@ describe("every route answers to the table", () => {
   it("sends each desk home to its own place", () => {
     expect(homeHrefFor(wardDesk, (name) => name)).toBe(`${BASE}/ward/${unitId}`);
     expect(homeHrefFor({ role: "officer", scope: { kind: "jobs" } }, (name) => name)).toBe(`${BASE}/transport/officer`);
+    // WF-46: Access admin home is Governance, not the long Settings form.
+    expect(homeHrefFor({ role: "admin", scope: { kind: "statewide" } }, (name) => name)).toBe(`${BASE}/governance`);
   });
 });
 

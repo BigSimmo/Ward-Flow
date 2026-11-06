@@ -6,7 +6,7 @@
 // the ward's recording controls. Split out of ward-board.tsx to keep that file under the line cap;
 // WardBoard still owns every value and passes it in.
 import type { WardCommandDispatch } from "@/components/ward-management/ward-shared-client";
-import { Button, Field, Select, TextInput, buttonClass, cx } from "@/components/wf";
+import { Button, Field, Select, StatusGlyph, TIME_FIELD_ERROR, TimeField, buttonClass, cx } from "@/components/wf";
 import { X } from "lucide-react";
 import {
   LEAVING_DESTINATIONS,
@@ -25,14 +25,15 @@ import styles from "./board.module.css";
 import redesign from "./ward-board-panels.module.css";
 import { departureTimeInputValue, type Occupant, type ShiftTileItem, type Tile } from "./ward-board-model";
 
-import type { Dispatch, RefObject, SetStateAction } from "react";
+import { useState, type Dispatch, type RefObject, type SetStateAction } from "react";
 import type { WardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Patient } from "@/components/ward-management/ward-patients";
 import { PersonEntry } from "./ward-board-person-entry";
 import { WardDiagnosisControl } from "./ward-board-ward-diagnosis";
+import { plural } from "@/components/ward-management/ward-plural";
 
 /** Redesign: the record's buttons are the kit's, so the panel matches the rest of the page. */
-// Long labels ("Record that they have gone to an emergency department") wrap inside the panel
+// Long labels ("Gone to an ED" and others) wrap inside the panel
 // instead of running past its edge (QA 31 Oct 2026).
 const SEC_BUTTON = cx(buttonClass({ variant: "sec" }), redesign.detailButtonWrap);
 const PRI_BUTTON = cx(buttonClass({ variant: "pri" }), redesign.detailButtonWide, redesign.detailButtonWrap);
@@ -108,6 +109,7 @@ export function WardBoardDetailPanel({
   setSelectedBlocker: Dispatch<SetStateAction<BedReleaseBlocker>>;
   unit: Unit;
 }) {
+  const [dateTimeWrong, setDateTimeWrong] = useState(false);
   return (
     <aside
       className={cx(styles.detail, redesign.detail)}
@@ -264,7 +266,12 @@ export function WardBoardDetailPanel({
                             dateEdit.day === "tomorrow" ? "tomorrow" : "today",
                             dateEdit.time,
                           );
-                          if (!admission || today === undefined) return;
+                          if (!admission) return;
+                          // An unfinished or not-real time stops the save with words (PR #1474 review).
+                          if (today === undefined) {
+                            setDateTimeWrong(true);
+                            return;
+                          }
                           const expectedDischargeAt =
                             dateEdit.day === "recorded" && admission.expectedDischargeAt !== null
                               ? today +
@@ -300,13 +307,19 @@ export function WardBoardDetailPanel({
                             <option value="tomorrow">Tomorrow</option>
                           </Select>
                         </Field>
-                        <Field label="Expected discharge time">
-                          <TextInput
+                        <Field
+                          label="Expected discharge time"
+                          hint="HH:MM"
+                          error={dateTimeWrong ? TIME_FIELD_ERROR : undefined}
+                        >
+                          <TimeField
                             aria-label="Expected discharge time"
-                            type="time"
                             required
                             value={dateEdit.time}
-                            onChange={(event) => setDateEdit({ ...dateEdit, time: event.target.value })}
+                            onValueChange={(time) => {
+                              setDateTimeWrong(false);
+                              setDateEdit({ ...dateEdit, time });
+                            }}
                           />
                         </Field>
                         <button type="submit" className={SEC_BUTTON}>
@@ -322,6 +335,7 @@ export function WardBoardDetailPanel({
                         className={SEC_BUTTON}
                         onClick={() => {
                           const admission = admissions.find((row) => row.id === selectedTile.key);
+                          setDateTimeWrong(false);
                           if (admission)
                             setDateEdit({
                               admissionId: admission.id,
@@ -364,7 +378,7 @@ export function WardBoardDetailPanel({
                             });
                           }}
                         >
-                          Record that they have gone to an emergency department
+                          Gone to an ED
                         </button>
                       ) : (
                         <button
@@ -416,9 +430,13 @@ export function WardBoardDetailPanel({
                           );
                         }}
                       >
-                        {selectedOccupant.stepDownCandidate
-                          ? "✓ Marked as Step-Down Candidate (Subacute Transfer)"
-                          : "Mark as Step-Down Candidate (Subacute Transfer)"}
+                        {selectedOccupant.stepDownCandidate ? (
+                          <>
+                            <StatusGlyph tone="success" /> Marked for step-down
+                          </>
+                        ) : (
+                          "Mark for step-down"
+                        )}
                       </button>
                     </div>
                     {selectedOccupant.days !== null &&
@@ -431,7 +449,7 @@ export function WardBoardDetailPanel({
                             htmlFor="ward-board-barrier-select"
                             className={cx(styles.leavingLabel, redesign.fieldLabel)}
                           >
-                            Main discharge hold-up (stay: {selectedOccupant.days} days)
+                            Main discharge hold-up (stay: {plural(selectedOccupant.days, "day", "days")})
                           </label>
                           <Select
                             id="ward-board-barrier-select"

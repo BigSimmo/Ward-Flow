@@ -1408,8 +1408,11 @@ export type Referral = {
    * The broad area this person is from — see `HOME_REGIONS`'s own doc comment. A region, never
    * an address; membership-checked, never free text. Carries no distance, travel-time band or
    * ordering by proximity — that is Phase 8's work, deliberately not built here.
+   *
+   * Form rule (design audit FORM-REF, Josh, 5 Nov 2026): absent when the referrer sent without
+   * choosing one. It warns in Before you send and never blocks.
    */
-  homeRegion: HomeRegion;
+  homeRegion?: HomeRegion;
   /**
    * The suburb this person is from — **`CM-4`: the suburb is the RECORDED fact.** It is the coarsest
    * fact the owner's catchment documents are keyed on and the finest one that is stable, so it
@@ -1494,8 +1497,12 @@ export type Referral = {
   urgency: UrgencyLevel;
   /** Absent means ATS not recorded; independent of the three operational urgency tiers. */
   atsCategory?: AtsCategory;
-  /** A synthetic site code (see `wardSites`), never an address. */
-  originSiteCode: string;
+  /**
+   * A synthetic site code (see `wardSites`), never an address. Form rule (design audit FORM-REF,
+   * Josh, 5 Nov 2026): absent when the referrer sent without recording the location of referral.
+   * A ward's own referral always carries its site.
+   */
+  originSiteCode?: string;
   transportNeeded: boolean;
   /**
    * ⚠️ THE WRITTEN HISTORY — THE ONLY FREE TEXT ON A REFERRAL, AND THE ONLY FIELD HERE THAT

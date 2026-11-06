@@ -335,10 +335,27 @@ export function Sheet({
       openFocusRef.current?.cancel();
       openFocusRef.current = null;
       popSheet(sheetId);
-      const resolveConnectedRestoreTarget = () =>
-        [resolveReturnFocusTarget?.() ?? null, resolveReturnFocusRefTarget(), previousActiveElement].find(
+      // D3 (design audit, 5 Nov 2026; Q299): the opener, then the caller's target, then what had
+      // focus before. A connected target can still refuse focus (a bar button hidden on a phone, an
+      // item in a menu that has closed), so each is tried in turn, and when none takes it focus goes
+      // to the shell's own fallback (the phone Menu button), as Tools already did, never the body.
+      const restoreCandidates = () =>
+        [resolveReturnFocusTarget?.() ?? null, resolveReturnFocusRefTarget(), previousActiveElement].filter(
           (target): target is HTMLElement => Boolean(target?.isConnected),
-        ) ?? null;
+        );
+      const resolveConnectedRestoreTarget = () => restoreCandidates()[0] ?? null;
+      const restoreFocus = () => {
+        const active = document.activeElement;
+        const lost = active == null || active === document.body || !active.isConnected;
+        // The shell's fallback only ever picks up focus that has fallen to the page.
+        const fallbacks = lost ? Array.from(document.querySelectorAll<HTMLElement>("[data-wf-focus-fallback]")) : [];
+        for (const target of [...restoreCandidates(), ...fallbacks]) {
+          if (!canRestoreFocusTo(target)) continue;
+          target.focus({ preventScroll: true });
+          if (document.activeElement === target) return true;
+        }
+        return false;
+      };
       if (restoreTimers.frame != null) {
         window.cancelAnimationFrame(restoreTimers.frame);
         restoreTimers.frame = null;
@@ -351,14 +368,11 @@ export function Sheet({
         // Removed while open (a drawer that renders only while it has a record): restore focus
         // now rather than through timers, which must not outlive the component. The panel is
         // already gone here, so focus has fallen to the body unless something else took it.
-        const restoreTarget = resolveConnectedRestoreTarget();
         if (
           typeof document !== "undefined" &&
-          restoreTarget &&
-          canRestoreFocusTo(restoreTarget) &&
           (document.activeElement === document.body || document.activeElement == null)
         ) {
-          restoreTarget.focus({ preventScroll: true });
+          restoreFocus();
         }
         return;
       }
@@ -368,31 +382,23 @@ export function Sheet({
       // the whole suite even when every test assertion passed.
       restoreTimers.frame = window.requestAnimationFrame(() => {
         restoreTimers.frame = null;
+        if (typeof document === "undefined") return;
         const restoreTarget = resolveConnectedRestoreTarget();
-        if (typeof document === "undefined" || !restoreTarget?.isConnected) return;
         // A sheet opened while this one was closing (switching between two
         // sheets in one tick) now owns focus. Instances cannot cancel each
         // other's timers, so the stack is the only place this is knowable —
         // without it the new sheet has to fight the restore back. Handing
         // focus back down to a sheet this one was stacked on still restores.
-        if (!canRestoreFocusTo(restoreTarget)) return;
-        restoreTarget.focus({ preventScroll: true });
+        if (restoreTarget && !canRestoreFocusTo(restoreTarget)) return;
+        restoreFocus();
         restoreTimers.timeout = window.setTimeout(() => {
           restoreTimers.timeout = null;
           if (typeof document === "undefined") return;
-          const retryTarget = resolveConnectedRestoreTarget();
           // Only retry when focus fell through to the document body. If another
           // surface (e.g. a Guide dialog opened from a phone menu sheet) already
           // took focus, do not steal it back.
-          if (
-            !retryTarget ||
-            !canRestoreFocusTo(retryTarget) ||
-            document.activeElement === retryTarget ||
-            (document.activeElement !== document.body && document.activeElement != null)
-          ) {
-            return;
-          }
-          retryTarget.focus({ preventScroll: true });
+          if (document.activeElement !== document.body && document.activeElement != null) return;
+          restoreFocus();
         }, 50);
       });
     };
@@ -426,7 +432,7 @@ export function Sheet({
       className={cn(
         // The modal rung is kept on the backdrop itself so the non-portal
         // branch still stacks above sibling chrome.
-        "pointer-events-auto fixed inset-0 z-[var(--z-modal)] flex motion-reduce:animate-none motion-reduce:transition-none",
+        "pointer-events-auto fixed inset-0 z-[var(--wf-z-modal)] flex motion-reduce:animate-none motion-reduce:transition-none",
         styles.backdrop,
         desktopBackdropClassName,
         !sideSheet && !responsiveSideSheet && "motion-safe:animate-overlay-in",

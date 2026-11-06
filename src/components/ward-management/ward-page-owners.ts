@@ -18,7 +18,7 @@ export const PAGE_OWNERS = {
   waiting: { route: "/ward-flow/waiting", name: "Waiting", job: "Who in ED has waited longest and why" },
   movements: { route: "/ward-flow/movements", name: "Movements", job: "Get each accepted patient to arrival" },
   referrals: { route: "/ward-flow/referrals", name: "Referrals", job: "Decide each referral" },
-  discharges: { route: "/ward-flow/discharges", name: "Discharges", job: "Clear held-up releases" },
+  discharges: { route: "/ward-flow/discharges", name: "Discharges", job: "Clear held-up discharges" },
   // `/ward-flow/transport` only redirects here (shell-19), so the owner is the officer's page itself.
   transport: { route: "/ward-flow/transport/officer", name: "Transport", job: "Get a booking for every pulled bed" },
 } as const satisfies Record<string, PageOwner>;

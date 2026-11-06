@@ -256,14 +256,22 @@ export function transportCadToFollow(draft: Pick<TransportBookingAnswers, "provi
 export function transportAnswersMissing(draft: TransportBookingAnswers, now: Instant): TransportAnswer[] {
   const missing: TransportAnswer[] = [];
   if (draft.provider === undefined) missing.push("provider");
-  // The time and the day are separate answers (Josh, 31 Oct 2026): a readable time with no day yet
-  // is missing only the day.
-  if (instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay ?? "today", now) === undefined)
-    missing.push("time");
-  if (draft.estimatedDay === undefined) missing.push("day");
+  // Form rule (design audit W32, Josh's card 3, 5 Nov 2026): a blank estimated time warns
+  // (`transportAnswerWarnings`). A typed time must still be readable and have its day (Josh, 31 Oct
+  // 2026), so a half-given time is a wrong answer and still blocks.
+  if (draft.estimatedTime.trim()) {
+    if (instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay ?? "today", now) === undefined)
+      missing.push("time");
+    if (draft.estimatedDay === undefined) missing.push("day");
+  }
   if (draft.escortRequired === undefined) missing.push("escort");
   if (draft.transportLegalStatus === undefined) missing.push("legalStatus");
   return missing;
+}
+
+/** W32: what a booking is logged without, as warnings. Booking still goes ahead. */
+export function transportAnswerWarnings(draft: TransportBookingAnswers): string[] {
+  return draft.estimatedTime.trim() ? [] : ["estimated time"];
 }
 
 /**

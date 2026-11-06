@@ -259,7 +259,7 @@ describe("48-Hour Bed Movement Horizon (Gantt Chart)", () => {
     );
     expect(within(drawer).getByRole("heading", { name: `${wf014.formalName} — what is recorded` })).toBeInTheDocument();
     expect(within(drawer).getByRole("heading", { name: "Person" })).toBeInTheDocument();
-    expect(within(drawer).getByRole("heading", { name: "Journey" })).toBeInTheDocument();
+    expect(within(drawer).getByRole("heading", { name: "Movement" })).toBeInTheDocument();
     expect(within(drawer).getByRole("heading", { name: "Transport leg" })).toBeInTheDocument();
   });
 

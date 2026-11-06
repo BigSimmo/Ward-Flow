@@ -3,7 +3,7 @@
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { useMemo, useState, type CSSProperties } from "react";
 import Link from "next/link";
-import { BedDouble, Clock, Columns3, Route } from "lucide-react";
+import { BedSingle, Clock, Columns3, Route } from "lucide-react";
 
 import { Button, CardBody, Legend, SrOnly, StatusGlyph, cx, type WfTone } from "@/components/wf";
 import type { Admission } from "@/components/ward-management/ward-admissions";
@@ -18,6 +18,7 @@ import { stageCopy } from "@/components/ward-management/ward-stage-copy";
 import { edStatisticsHref } from "@/components/ward-management/shell/ward-facade";
 import { BED_ALERT_THRESHOLD_PERCENT } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
+import { OCCUPIED_CAPTION, ON_THE_WARD_NOUN } from "@/components/ward-management/ward-occupancy";
 
 import { StatisticsEdSwarm, type EdSwarmRow } from "./statistics-ed-swarm";
 import { LONG_WAIT_HOURS, edJourneyWaitFigures as edWaitFigures } from "./statistics-ed-waits";
@@ -185,8 +186,8 @@ export function journeyStages({
     },
     {
       id: "ward",
-      label: "On the ward",
-      caption: "In a bed, leave included",
+      label: ON_THE_WARD_NOUN,
+      caption: OCCUPIED_CAPTION,
       tone: "success",
       count: beds.occupied,
       breakdown: [
@@ -502,7 +503,7 @@ function JourneyPresentation({
   }
 
   return (
-    <section id="journey" aria-label="Journey" data-testid="ward-statistics-journey-view" className={styles.view}>
+    <section id="journey" aria-label="Movement" data-testid="ward-statistics-journey-view" className={styles.view}>
       <StatCard
         id="journey-ribbon"
         icon={Route}
@@ -563,7 +564,7 @@ function JourneyPresentation({
       <FlushRow layout="halves" className={styles.bedsRow}>
         <StatCard
           id="journey-beds"
-          icon={BedDouble}
+          icon={BedSingle}
           title="Where is a bed"
           meta={totalPreparing > 0 ? `${totalReady} ready, ${totalPreparing} being made ready` : `${totalReady} ready`}
           action={

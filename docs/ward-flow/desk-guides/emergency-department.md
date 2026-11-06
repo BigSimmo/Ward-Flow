@@ -14,7 +14,7 @@ holds **New referral**.
 
 ## Jobs you do most
 
-1. **Raise a referral.** Use **New referral**, or **Raise referral** on the board. Fill in the
+1. **New referral.** Use **New referral**, from the header or on the board. Fill in the
    form and send it.
 2. **Record ED steps.** On a patient, use **Record examination**, **Record medically cleared** and
    **Mark handover ready**.

@@ -36,8 +36,10 @@ import {
   StatusGlyph,
   useOptionalToast,
 } from "@/components/wf";
+import { perthWeekdayTime } from "@/components/ward-management/ward-clock";
 import home from "@/components/ward-management/ward/ward-home-tab.module.css";
-import { ANSWERED, EXTRA, REFERRALS, SENT, STAFF, type DemoReferral } from "./midland-demo";
+import { SENT, STAFF, type DemoReferral } from "./midland-demo";
+import { useMidlandDemo } from "./use-midland-demo";
 import { Person, Tag, initialsOf } from "./parts";
 import {
   midlandSavedLine,
@@ -258,6 +260,7 @@ function Section({
 }
 
 export function ReferralPage({ index, go, back }: { index: number; go: (index: number) => void; back: () => void }) {
+  const { REFERRALS, EXTRA } = useMidlandDemo();
   const r = REFERRALS[index]!;
   const x = EXTRA[r.id]!;
   const n = REFERRALS.length;
@@ -648,6 +651,7 @@ export function ReferralPage({ index, go, back }: { index: number; go: (index: n
 }
 
 export function TeamReferrals() {
+  const { REFERRALS, ANSWERED } = useMidlandDemo();
   const [pane, setPane] = useState<"q" | "s" | "h">("q");
   const [selected, setSelected] = useState(0);
   const decisions = useMidlandDecisions();
@@ -820,15 +824,7 @@ export function TeamReferrals() {
                         <Tag tone="success">Accepted</Tag>
                       </td>
                       <td>{decisions[r.id]!.line}</td>
-                      <td>
-                        You ·{" "}
-                        {new Date(decisions[r.id]!.at).toLocaleString("en-AU", {
-                          weekday: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                          hour12: false,
-                        })}
-                      </td>
+                      <td>You · {perthWeekdayTime(new Date(decisions[r.id]!.at))}</td>
                     </tr>
                   ))}
                   {ANSWERED.map((s) => (

@@ -76,6 +76,7 @@ import {
   type RepatDraft,
   type ReturnStatus,
   currentReturnMovement,
+  DEPART_TIME_NOT_RECORDED,
 } from "./out-of-area-model";
 import { OutOfAreaPhone, type PhonePerson } from "./out-of-area-phone";
 import { returnEarlyFlagOf } from "./return-early";
@@ -88,6 +89,7 @@ import { instantFromEstimatedTimeInputs } from "@/components/ward-management/war
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import { plural } from "@/components/ward-management/ward-plural";
+import { compareFormalNames } from "@/components/ward-management/ward-name-collation";
 
 /**
  * Phase 8, Task 5 (spec D8-3): the out-of-area ledger — how many people are currently in a bed a
@@ -127,8 +129,9 @@ function getPatientProfileHref(info: ResolvedPatientInfo): string | null {
 type SortOrder = "ledger" | "days" | "patient";
 type HighlightKey = "due" | "air" | "road" | "noplan" | "notagreed" | "bed" | `age:${DaysAwayGroupId}`;
 
+// Design audit 4 (B21): no plan yet is a gap (the ring), not declined or closed (the cross).
 const STATUS_TONE: Record<ReturnStatus, WfTone> = {
-  none: "closed",
+  none: "neutral",
   started: "neutral",
   not_agreed: "neutral",
   agreed: "neutral",
@@ -243,7 +246,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   if (sortOrder === "days") sorted.sort((a, b) => daysAway(b, now) - daysAway(a, now));
   if (sortOrder === "patient") {
     // D-83: the Name order sorts by surname, so it reads the record's formal (surname-first) name.
-    sorted.sort((a, b) => patientOf(a).formalName.localeCompare(patientOf(b).formalName, "en-AU"));
+    sorted.sort((a, b) => compareFormalNames(patientOf(a).formalName, patientOf(b).formalName));
   }
 
   const selected = selectedId ? entries.find((entry) => entry.admission.id === selectedId) : undefined;
@@ -385,13 +388,12 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   function recordReturn(entry: OutOfAreaEntry) {
     const admissionId = entry.admission.id;
     const draft = draftFor(admissionId);
-    if (missingAnswers(draft, now).length > 0) return;
+    if (missingAnswers(draft).length > 0) return;
+    // W13 (Josh's card 3, 5 Nov 2026): the provider and depart time may be absent; they warn.
     const estimatedAt = instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now);
     if (
-      estimatedAt === undefined ||
       draft.receivingWardAgreed === undefined ||
       (draft.mode !== "road" && draft.mode !== "flight") ||
-      draft.provider === undefined ||
       draft.transportLegalStatus === undefined
     ) {
       return;
@@ -410,10 +412,10 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         homeHospital: draft.homeHospital,
         receivingWardAgreed: draft.receivingWardAgreed,
         mode: draft.mode,
-        provider: draft.provider,
+        ...(draft.provider === undefined ? {} : { provider: draft.provider }),
         cadNumber: draft.cadNumber.trim(),
         transportLegalStatus: draft.transportLegalStatus,
-        estimatedAt,
+        ...(estimatedAt === undefined ? {} : { estimatedAt }),
         ...involuntaryReturnAnswers(draft),
       },
       {
@@ -427,14 +429,9 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   function sendPlanToWard(entry: OutOfAreaEntry) {
     const admissionId = entry.admission.id;
     const draft = draftFor(admissionId);
-    if (!canSendReturnPlan(draft, now)) return;
+    if (!canSendReturnPlan(draft)) return;
     const estimatedAt = instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now);
-    if (
-      estimatedAt === undefined ||
-      (draft.mode !== "road" && draft.mode !== "flight") ||
-      draft.provider === undefined ||
-      draft.transportLegalStatus === undefined
-    ) {
+    if ((draft.mode !== "road" && draft.mode !== "flight") || draft.transportLegalStatus === undefined) {
       return;
     }
     const targetHospitalName = siteByCode(draft.homeHospital)?.name ?? draft.homeHospital;
@@ -454,10 +451,10 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         homeHospital: draft.homeHospital,
         receivingWardAgreed: wardAgreed,
         mode: draft.mode,
-        provider: draft.provider,
+        ...(draft.provider === undefined ? {} : { provider: draft.provider }),
         cadNumber: draft.cadNumber.trim(),
         transportLegalStatus: draft.transportLegalStatus,
-        estimatedAt,
+        ...(estimatedAt === undefined ? {} : { estimatedAt }),
         ...involuntaryReturnAnswers(draft),
       },
       {
@@ -483,11 +480,11 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         homeHospital: existing.homeHospital,
         receivingWardAgreed: true,
         mode: existing.mode,
-        provider: existing.provider,
+        ...(existing.provider === undefined ? {} : { provider: existing.provider }),
         cadNumber: existing.cadNumber,
         transportLegalStatus: existing.transportLegalStatus,
         // The recorded departure estimate stands; agreeing the return never moves it.
-        estimatedAt: existing.estimatedAt,
+        ...(existing.estimatedAt === undefined ? {} : { estimatedAt: existing.estimatedAt }),
         // #177: the plan's Form 4C and escort answers stand too.
         ...(existing.form4CReceived === undefined ? {} : { form4CReceived: existing.form4CReceived }),
         ...(existing.escortRequired === undefined ? {} : { escortRequired: existing.escortRequired }),
@@ -629,16 +626,18 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       return { record, entry };
     })
     .filter((row): row is { record: RepatriationRecord; entry: OutOfAreaEntry } => row.entry !== undefined)
-    .sort((a, b) => a.record.estimatedAt - b.record.estimatedAt)
+    .sort((a, b) => (a.record.estimatedAt ?? Infinity) - (b.record.estimatedAt ?? Infinity))
     .map(({ record, entry }) => ({
       id: entry.admission.id,
       name: patientOf(entry).formalName,
       to: shortSiteName(record.homeHospital),
       mode: record.mode === "road" ? "Road" : "Flight",
-      time: formatInstant(record.estimatedAt),
+      time: record.estimatedAt === undefined ? DEPART_TIME_NOT_RECORDED : formatInstant(record.estimatedAt),
       day: departureDayLabel(record, now),
     }));
-  const leavingToday = repatriations.filter((record) => leavesToday(record, now) && record.estimatedAt >= now);
+  const leavingToday = repatriations.filter(
+    (record) => leavesToday(record, now) && record.estimatedAt !== undefined && record.estimatedAt >= now,
+  );
   const dueSoon = entries.filter((entry) => {
     const offset = offsetOf(entry);
     return offset === 0 || offset === 1;
@@ -657,7 +656,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     .map((entry) => ({
       id: entry.admission.id,
       name: patientOf(entry).formalName,
-      left: missingAnswers(draftFor(entry.admission.id), now).length,
+      left: missingAnswers(draftFor(entry.admission.id)).length,
     }));
 
   const counts = (
@@ -751,20 +750,22 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   }
 
   /* ---- desktop ---- */
-  const pill = (key: HighlightKey, label: string, tone?: WfTone) => (
-    <button
-      key={key}
-      type="button"
-      className={styles.pill}
-      aria-pressed={highlight === key}
-      data-testid={`ward-out-of-area-highlight-${key}`}
-      onClick={() => toggleHighlight(key)}
-    >
-      <span className={styles.pillCount}>{countOf(key)}</span>
-      {tone ? <StatusGlyph tone={tone} size={9} /> : null}
-      {label}
-    </button>
-  );
+  // A highlight with nobody in it is hidden (design audit B19), unless it is the one switched on.
+  const pill = (key: HighlightKey, label: string, tone?: WfTone) =>
+    countOf(key) === 0 && highlight !== key ? null : (
+      <button
+        key={key}
+        type="button"
+        className={styles.pill}
+        aria-pressed={highlight === key}
+        data-testid={`ward-out-of-area-highlight-${key}`}
+        onClick={() => toggleHighlight(key)}
+      >
+        <span className={styles.pillCount}>{countOf(key)}</span>
+        {tone ? <StatusGlyph tone={tone} size={9} /> : null}
+        {label}
+      </button>
+    );
 
   const planCard = selected ? (
     <Card
@@ -885,7 +886,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             <CheckingFoot
               items={[
                 { id: "due", label: "Discharge date passed", value: countOf("due"), tone: "warning" },
-                { id: "noplan", label: "No return plan", value: countOf("noplan"), tone: "closed" },
+                { id: "noplan", label: "No return plan", value: countOf("noplan"), tone: "neutral" },
               ]}
             />
           }
@@ -952,7 +953,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                   {pill("due", "Date passed", "warning")}
                   {pill("air", "Air only")}
                   {pill("road", TRAVEL_SHORT.three_hours_or_more)}
-                  {pill("noplan", "No plan", "closed")}
+                  {pill("noplan", "No plan", "neutral")}
                   {pill("notagreed", "Not agreed", "neutral")}
                   {pill("bed", "Awaiting home bed", "neutral")}
                 </div>
@@ -1043,24 +1044,25 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                 <b title={info.formalName}>{info.formalName}</b>
                                 <span className={styles.legalUmrn}>
                                   {/* UX audit (21 Oct 2026): a stay with none recorded says so in the table,
-                                      so the gap shows before a return trip is planned. The no-break space
-                                      keeps the dot with the legal text when the line wraps. */}
-                                  <span>
-                                    {legalOf(entry) ?? "Legal not recorded"}
-                                    {" ·"}{" "}
+                                      so the gap shows before a return trip is planned. Design audit B18
+                                      (5 Nov 2026): the dot travels with the UMRN, so a wrapped line never
+                                      ends in a dangling dot. */}
+                                  <span>{legalOf(entry) ?? "Legal not recorded"}</span>{" "}
+                                  <span className={styles.umrnPair}>
+                                    {"· "}
+                                    {href ? (
+                                      <Link
+                                        href={href}
+                                        className={styles.umrnLink}
+                                        onClick={(event) => event.stopPropagation()}
+                                        title={`Open profile for ${info.formalName} (${info.umrn})`}
+                                      >
+                                        {info.umrn}
+                                      </Link>
+                                    ) : (
+                                      <span className={styles.mono}>{info.umrn}</span>
+                                    )}
                                   </span>
-                                  {href ? (
-                                    <Link
-                                      href={href}
-                                      className={styles.umrnLink}
-                                      onClick={(event) => event.stopPropagation()}
-                                      title={`Open profile for ${info.formalName} (${info.umrn})`}
-                                    >
-                                      {info.umrn}
-                                    </Link>
-                                  ) : (
-                                    <span className={styles.mono}>{info.umrn}</span>
-                                  )}
                                 </span>
                               </span>
                             </td>
@@ -1086,7 +1088,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                               <span className={styles.two}>
                                 <span className={cx(styles.status, offset !== null && offset < 0 && styles.inkWarning)}>
                                   {offset === null ? (
-                                    <StatusGlyph tone="closed" size={9} />
+                                    <StatusGlyph tone="neutral" size={9} />
                                   ) : offset < 0 ? (
                                     <StatusGlyph tone="warning" size={9} />
                                   ) : null}
@@ -1105,7 +1107,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                 <ReturnCell
                                   status={status}
                                   record={record}
-                                  left={missingAnswers(draftFor(entry.admission.id), now).length}
+                                  left={missingAnswers(draftFor(entry.admission.id)).length}
                                 />
                               </td>
                             ) : null}
@@ -1119,7 +1121,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                 <CardFoot
                   meta={
                     <span className={styles.footNote}>
-                      <StatusGlyph tone="closed" size={9} />
+                      <StatusGlyph tone="neutral" size={9} />
                       <span>
                         <b>{bedDays}</b> {bedDays === 1 ? "bed day" : "bed days"} across {entries.length}{" "}
                         {entries.length === 1 ? "person" : "people"}

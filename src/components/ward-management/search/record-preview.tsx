@@ -1,6 +1,7 @@
 "use client";
 
-import { X } from "lucide-react";
+import { X, ChevronRight } from "lucide-react";
+import { HOME_REGION_NOT_RECORDED, ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { useEffect, useMemo, useState } from "react";
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { formTitleForCode } from "@/lib/form-register";
@@ -44,7 +45,7 @@ function settingLabel(setting: string): string {
       ? "Emergency department"
       : setting === "inpatient"
         ? "Inpatient ward"
-        : "Location not recorded";
+        : ORIGIN_NOT_RECORDED;
 }
 
 export type PreviewSelection =
@@ -115,7 +116,7 @@ export function buildReferralSummary(referral: Referral): ReferralSummary {
   return {
     id: referral.id,
     originLine: withSendingTeam(
-      `Referral from ${referral.originSiteCode} · ${referral.ageBand} · ${referral.homeRegion}`,
+      `Referral from ${referral.originSiteCode ?? ORIGIN_NOT_RECORDED} · ${referral.ageBand} · ${referral.homeRegion ?? HOME_REGION_NOT_RECORDED}`,
       referral,
     ),
     declineNote,
@@ -362,7 +363,7 @@ export function RecordPreview({
       disposition = withdrawn ? "Withdrawn" : declined ? "Declined" : NOT_RECORDED;
       targetWard = "Not admitted";
       currentStage = withdrawn ? "Withdrawn" : declined ? "Declined" : "No open movement";
-      originSite = referral.originSiteCode;
+      originSite = referral.originSiteCode ?? ORIGIN_NOT_RECORDED;
       urgency = `Tier ${referral.urgency}`;
     } else if (referral) {
       const isComm = isCommunityReferral(referral);
@@ -373,7 +374,7 @@ export function RecordPreview({
         disposition = "Community management";
         targetWard = "Not admitted";
         currentStage = "Outpatient";
-        originSite = referral.originSiteCode;
+        originSite = referral.originSiteCode ?? ORIGIN_NOT_RECORDED;
         urgency = `Tier ${referral.urgency}`;
       } else {
         presenceStatus = "live";
@@ -383,7 +384,7 @@ export function RecordPreview({
         disposition = "Unplaced";
         targetWard = "Pending allocation";
         currentStage = "Referred";
-        originSite = `${referral.originSiteCode} ED`;
+        originSite = referral.originSiteCode === undefined ? ORIGIN_NOT_RECORDED : `${referral.originSiteCode} ED`;
         urgency = `Tier ${referral.urgency}`;
       }
     }
@@ -637,9 +638,7 @@ export function RecordPreview({
                 {linkedMovement ? (
                   <Link href={movementHref(linkedMovement.id)} className={styles.btnPrimary}>
                     <span>View movement</span>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
+                    <ChevronRight size={12} strokeWidth={1.75} aria-hidden="true" />
                   </Link>
                 ) : (
                   <Link
@@ -764,11 +763,11 @@ export function RecordPreview({
           <div className={styles.quickMetricsStrip}>
             <div className={styles.quickMetricCard}>
               <span className={styles.metricLabel}>Origin site</span>
-              <span className={styles.metricVal}>{referral.originSiteCode}</span>
+              <span className={styles.metricVal}>{referral.originSiteCode ?? ORIGIN_NOT_RECORDED}</span>
             </div>
             <div className={styles.quickMetricCard}>
               <span className={styles.metricLabel}>Home region</span>
-              <span className={styles.metricVal}>{referral.homeRegion}</span>
+              <span className={styles.metricVal}>{referral.homeRegion ?? HOME_REGION_NOT_RECORDED}</span>
             </div>
             <div className={styles.quickMetricCard}>
               <span className={styles.metricLabel}>Age cohort</span>
@@ -859,7 +858,7 @@ export function RecordPreview({
                   <span className={styles.timelineMonoTime}>{formatInstantWithDay(referral.raisedAt, now)} AWST</span>
                 </div>
                 <span className={styles.timelineEventText}>
-                  Record active from origin site ({referral.originSiteCode})
+                  Record active from origin site ({referral.originSiteCode ?? ORIGIN_NOT_RECORDED})
                 </span>
               </div>
             </div>
@@ -869,9 +868,7 @@ export function RecordPreview({
           <div className={styles.dossierActionBar}>
             <Link href="/ward-flow/referrals" className={styles.btnPrimary}>
               <span>Intake board</span>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                <polyline points="9 18 15 12 9 6" />
-              </svg>
+              <ChevronRight size={12} strokeWidth={1.75} aria-hidden="true" />
             </Link>
             {/* Contact Referrer and Cancel Referral are hidden until they work: they only ever said
                 "Not wired in this prototype." (overall review, 20 Oct 2026). */}
@@ -1098,9 +1095,7 @@ export function RecordPreview({
         <div className={styles.dossierActionBar}>
           <Link href={movementHref(movement.id)} className={styles.btnPrimary}>
             <span>View movement</span>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
+            <ChevronRight size={12} strokeWidth={1.75} aria-hidden="true" />
           </Link>
           <button
             type="button"

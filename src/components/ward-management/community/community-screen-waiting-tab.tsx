@@ -8,6 +8,7 @@
  */
 
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
+import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { referralWaitLine } from "@/components/ward-management/referrals/referral-wait";
 import { communityDeclineBlockedReason } from "@/components/ward-management/community/community-blocked-reasons";
 import { COMMUNITY_DECLINE_REASONS, type CommunityDeclineReason } from "@/components/ward-management/ward-model";
@@ -16,7 +17,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { DisabledReason } from "@/components/wf";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import styles from "./community.module.css";
-import { referralOriginLabel } from "./community-screen-helpers";
+import { originIsEdOrCrisis, referralOriginLabel } from "./community-screen-helpers";
 import { communityAttentionItems } from "./community-screen-panels";
 import type { CommunityScreenView } from "./community-screen";
 
@@ -141,14 +142,7 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                   >
                     <span>ED Liaison &amp; Crisis</span>
                     <span className={styles.badgePill} id="chipEdBadge">
-                      {
-                        demoTeamReferrals.filter(
-                          (r) =>
-                            r.origin.toLowerCase().includes("ed") ||
-                            r.origin.toLowerCase().includes("crisis") ||
-                            r.origin.toLowerCase().includes("resus"),
-                        ).length
-                      }
+                      {demoTeamReferrals.filter((r) => originIsEdOrCrisis(r.origin, true)).length}
                     </span>
                   </button>
                 </div>
@@ -370,14 +364,15 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                         <div className={styles.refClinicalSummary}>
                           Origin: {referralOriginLabel(referral)}.{" "}
                           {referral.history ||
-                            `${referral.ageBand} · ${referral.homeRegion}. ${referral.transportNeeded ? "Transport needed." : "No transport recorded."}`}
+                            `${referral.ageBand} · ${referral.homeRegion ?? HOME_REGION_NOT_RECORDED}. ${referral.transportNeeded ? "Transport needed." : "No transport recorded."}`}
                         </div>
                         <ReferralIntakeSummary intake={referral.intake} />
                         <p className={`${styles.cardDetail} ${styles.displayNone}`}>
                           {referralWaitLine(referral, now)}
                         </p>
                         <p className={`${styles.cardDetail} ${styles.displayNone}`}>
-                          {referral.ageBand} · {referral.homeRegion} · {referralOriginLabel(referral)}
+                          {referral.ageBand} · {referral.homeRegion ?? HOME_REGION_NOT_RECORDED} ·{" "}
+                          {referralOriginLabel(referral)}
                         </p>
                         <p className={`${styles.cardDetail} ${styles.displayNone}`}>
                           {referral.transportNeeded ? "Transport needed" : "No transport recorded"}

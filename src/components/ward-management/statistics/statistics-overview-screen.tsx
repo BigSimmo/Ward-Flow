@@ -183,14 +183,14 @@ export function StatisticsOverviewScreen() {
               label={`Over ${BED_ALERT_THRESHOLD_PERCENT}%`}
               tone={wardsOverLine > 0 ? "warning" : undefined}
             />
-            <HeroStat value={small(blockedTotal)} label="Blocked" />
+            <HeroStat value={small(blockedTotal)} label="Held up" />
           </>
         ),
       }}
       stats={
         <>
           <HeroStat value={totalBeds} label="Inpatient beds" />
-          <HeroStat value={occupancy.inUse} label={`${occupiedShare.toFixed(1)}% in use`} />
+          <HeroStat value={occupancy.inUse} label={`${Math.round(occupiedShare)}% in use`} />
           <HeroStat value={capacity.ready} label="Ready now" />
           <HeroStat value={preparingCount} label="Being made ready" />
           <HeroStat

@@ -154,7 +154,7 @@ export function WardHomeTodayStrip({
         </p>
         <p className={styles.todayLine}>
           {arrivals === 0
-            ? "No one booked in"
+            ? "Nobody booked in"
             : nextEta === undefined
               ? "Arrival time not recorded"
               : `Next due ${formatInstantWithDay(nextEta, now)}`}
@@ -243,7 +243,20 @@ function WardHomeTomorrowCard({
 /**
  * WH5 (3 Nov 2026): a bed tile's words, as the bed board draws a bed. Surname, then the given name on
  * its own line, then one short state line ("210d", "On leave · 12d"). `name` is null for a free bed.
+ * Audit B16 (5 Nov 2026): the formal name reads in full, with its comma ("Ferrowmoor," then
+ * "Gareth"), as the phone round list and the board show it; every given name is kept.
  */
+/** "Surname, Given Names" as its two parts, every given name kept; a plain "Given Surname" is read too. */
+function formalParts(name: string): { last: string; given: string } | null {
+  const comma = name.indexOf(",");
+  if (comma > 0) {
+    const last = name.slice(0, comma).trim();
+    const given = name.slice(comma + 1).trim();
+    return last && given ? { last, given } : null;
+  }
+  return nameParts(name);
+}
+
 export function WardHomeTileText({
   name,
   label,
@@ -255,16 +268,16 @@ export function WardHomeTileText({
   note: string;
   days: string;
 }) {
-  const parts = name === null ? null : nameParts(name);
+  const parts = name === null ? null : formalParts(name);
   const stateLine = [note === BED_STATE_LABELS.occupied ? "" : note, days].filter(Boolean).join(" · ");
   return (
     <>
       <span className={styles.bedTileName} data-wrap={parts ? undefined : "true"} aria-hidden="true">
-        {parts ? parts.last : label}
+        {parts ? `${parts.last},` : label}
       </span>
       {parts ? (
         <span className={styles.bedTileGiven} aria-hidden="true">
-          {parts.given}
+          {` ${parts.given}`}
         </span>
       ) : null}
       <span className={styles.bedTileState} aria-hidden="true">

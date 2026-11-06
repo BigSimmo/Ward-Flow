@@ -101,7 +101,7 @@ export function deskCapacityRows(
     : [ownRow];
 }
 
-/** Read aloud as the rows show: "Metro 85.9% full, over 85%. East Metro 86.7% full, over 85%". */
+/** Read aloud as the rows show: "Metro 86% full, over 85%. East Metro 87% full, over 85%". */
 export function capacityRowsSpoken(rows: readonly CapacityRow[]): string {
   return rows
     .map((row) => {
@@ -110,6 +110,16 @@ export function capacityRowsSpoken(rows: readonly CapacityRow[]): string {
       return `${row.name} ${formatOccupancyPercent(row.percent)} full${over}`;
     })
     .join(". ");
+}
+
+/**
+ * WF-44: the closed rail's tile names its place before the percent ("East 74%", "RPH 81%"), so
+ * it never shows a bare "74%". "East Metro" shortens to "East" to fit the tile; "Metro" stays.
+ */
+export function compactPipText(row: Pick<CapacityRow, "name" | "percent"> | undefined): string {
+  if (row?.percent == null) return "—";
+  const place = row.name.replace(/\s+Metro$/u, "").trim() || "Beds";
+  return `${place} ${Math.round(row.percent)}%`;
 }
 
 /**
@@ -228,18 +238,21 @@ export function PinButton({ id, label, pinned }: { id: string; label: string; pi
 export { RailAccountMenu } from "@/components/ward-management/shell-next/next-account-menu";
 
 /** H2 (Josh, 3 Nov 2026): the bed alerts foot line, Metro as a whole (when the rows above rank
- *  services) and the beds ready now. */
+ *  services) and the beds ready now.
+ * WF-44 (5 Nov 2026): Metro sits on its own line above the ready count, so "Metro 74.6%" never
+ * paints over the East Metro row above it on a tight rail. */
 export function RailReadyLine({ metro, ready }: { metro: number | null; ready: number }) {
   return (
-    <>
+    <span className={parts.readyStack}>
       {metro !== null ? (
-        <>
+        <span className={parts.readyMetro}>
           Metro <b>{formatOccupancyPercent(metro)}</b>
-          <span aria-hidden="true"> · </span>
-        </>
+        </span>
       ) : null}
-      <b>{ready}</b> {ready === 1 ? "bed" : "beds"} ready now
-    </>
+      <span>
+        <b>{ready}</b> {ready === 1 ? "bed" : "beds"} ready now
+      </span>
+    </span>
   );
 }
 
