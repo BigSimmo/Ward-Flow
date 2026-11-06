@@ -961,7 +961,7 @@ function ToolsSheetView({
             return (
               <span
                 className={styles.rowIcon}
-                data-group={pageEntry.key === "demo" ? "look" : groupOf(pageEntry.key)}
+                data-group={pageEntry.key === "demo" ? "share" : groupOf(pageEntry.key)}
                 aria-hidden="true"
               >
                 <Icon aria-hidden="true" strokeWidth={1.75} />
@@ -1099,7 +1099,7 @@ function ToolsSheetView({
                 <WardRoleSwitcher withWords />
               </div>
               {/* The executive desktop keeps its own scenario controls, so the demo row shows there on phone only. */}
-              {isPhone || !executive ? renderRow(demoEntry, "look") : null}
+              {isPhone || !executive ? renderRow(demoEntry, "share") : null}
             </div>
           </section>
         ) : null}

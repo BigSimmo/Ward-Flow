@@ -551,3 +551,102 @@
   gap: var(--wf-s-3);
   min-width: 0;
 }
+
+/* Polish (Josh, 6 Nov 2026: "improve the design and style and colour"). Phone and tablet only, where
+   tools open as pages. One hue in three steps tells the groups apart: Do now is solid action blue,
+   Look up its tint, Print and share neutral. Rows sit taller with larger tiles, and the dividers start
+   after the icon, as in iOS Settings. */
+.sheet:not([data-two-pane]) .rowIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--wf-r-sm);
+}
+
+.sheet:not([data-two-pane]) .rowIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.sheet:not([data-two-pane]) .rowIcon[data-group="do"] {
+  background: var(--wf-accent);
+  color: var(--wf-surface);
+}
+
+.sheet:not([data-two-pane]) .rowIcon[data-group="look"] {
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.sheet:not([data-two-pane]) .row {
+  min-height: 56px;
+  padding-block: 8px;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--wf-m-fast, 120ms) var(--wf-ease, ease);
+}
+
+.sheet:not([data-two-pane]) .row:active {
+  background: var(--wf-selected);
+}
+
+.sheet:not([data-two-pane]) .rowText {
+  gap: 2px;
+}
+
+.sheet:not([data-two-pane]) .rowText strong {
+  font-size: var(--wf-fs-15);
+  line-height: 1.25;
+}
+
+.sheet:not([data-two-pane]) .rowText em {
+  font-size: var(--wf-fs-13);
+}
+
+.sheet:not([data-two-pane]) .card.card > * + * {
+  position: relative;
+  border-top: 0;
+}
+
+.sheet:not([data-two-pane]) .card.card > * + *::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: calc(var(--wf-s-3) * 2 + 32px);
+  height: 1px;
+  background: var(--wf-line);
+  pointer-events: none;
+}
+
+.sheet:not([data-two-pane]) .groupHeading {
+  padding-inline: var(--wf-s-3);
+}
+
+.sheet:not([data-two-pane]) .list {
+  gap: var(--wf-s-4);
+}
+
+/* The tool page's title: a large tile and a 20px name, so the page reads as its own place. */
+.sheet .pageTitle .rowIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--wf-r-md);
+}
+
+.sheet .pageTitle .rowIcon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.sheet .pageTitle .rowText strong {
+  font-size: var(--wf-fs-20);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.sheet .pageTitle .rowText em {
+  font-size: var(--wf-fs-13);
+}
+
+.back {
+  font-size: var(--wf-fs-15);
+}
