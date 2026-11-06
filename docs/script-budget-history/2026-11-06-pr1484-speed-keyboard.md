@@ -1,4 +1,4 @@
-# 6 Nov 2026, front-end audit fix PR 2 (speed and keyboard access)
+# 6 Nov 2026, #1484 front-end audit fix PR 2 (speed and keyboard access)
 
 Measured locally on this branch and on `main` at `60eff461`, both built with `WARD_GATE_BUILD=1 npm run build` and measured with the same phone user agent (`scripts/check-script-budget.mjs`). Main alone in brackets.
 
