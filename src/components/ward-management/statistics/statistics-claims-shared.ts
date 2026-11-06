@@ -209,8 +209,8 @@ export const BED_RELEASE_BODY =
 export const SITE_BY_CODE_LOOKUP =
   "/** Returns `undefined` for an unknown code. Never falls back to a different site. The site's " +
   "* identity only: its wards differ by scenario, so read them through the network. */ export " +
-  "function siteByCode(code: string): SiteIdentity | undefined { return siteDirectory.find((site) => " +
-  "site.code === code); }";
+  "function siteByCode(code: string | undefined): SiteIdentity | undefined { if (code === undefined) " +
+  "return undefined; return siteDirectory.find((site) => site.code === code); }";
 
 /** Shared by the two screens that make the site-lookup claim, so both go red together. */
 export const SITE_BY_CODE_GAINS_A_FALLBACK: FalsifyingEdit = {

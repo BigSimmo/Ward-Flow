@@ -5,6 +5,7 @@
 // the Alerts redesign (Q111, Josh 1 Nov 2026), on Alerts too, so the two pages agree.
 
 import { useState } from "react";
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import dynamic from "next/dynamic";
 
 import { minutesText } from "@/components/ward-management/alerts/alerts-model";
@@ -93,7 +94,7 @@ export function AcceptedPullRows({
           name,
           umrn: who.umrn,
         };
-        const from = withSendingTeam(`from ${referral.originSiteCode}`, referral);
+        const from = withSendingTeam(`from ${referral.originSiteCode ?? ORIGIN_NOT_RECORDED}`, referral);
         return phone ? (
           <PhoneRow
             key={referral.id}

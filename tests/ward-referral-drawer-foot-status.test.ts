@@ -21,9 +21,9 @@ function status(flowError: string | null, contactNeeded: number) {
     flowError,
     confirmationOpen: true,
     contactNeeded,
-    contactAttempted: true,
-    itemsLeft: contactNeeded,
+    itemsLeft: 0,
     itemsTotal: 9,
+    warningCount: contactNeeded,
   });
 }
 
@@ -34,8 +34,12 @@ describe("referral drawer footer after a refused Send (#823)", () => {
     expect(refusal).toMatch(/^Enter your name/);
   });
 
-  it("reads the live contact count while contact details are still missing", () => {
-    expect(status(refusal, 2)).toMatchObject({ tone: "danger", first: "2 contact details needed" });
+  // FORM-REF (Josh, 5 Nov 2026): missing contact details warn and Send still goes ahead.
+  it("reads the live contact count as a warning while contact details are still missing", () => {
+    expect(status(refusal, 2)).toMatchObject({
+      tone: "warning",
+      first: "Ready to send · 2 contact details not recorded",
+    });
   });
 
   it("clears the 'Enter your name…' warning as soon as the contact fields are valid", () => {
@@ -60,7 +64,7 @@ describe("referral drawer footer after a refused Send (#823)", () => {
 });
 
 describe("referral drawer footer once every step is done (P155)", () => {
-  function foot(itemsLeft: number, contactNeeded: number) {
+  function foot(itemsLeft: number, warningCount: number) {
     return drawerFootStatus({
       view: "new",
       inboxWard: undefined,
@@ -72,16 +76,17 @@ describe("referral drawer footer once every step is done (P155)", () => {
       submissionAwaitingRecord: false,
       flowError: null,
       confirmationOpen: false,
-      contactNeeded,
-      contactAttempted: false,
+      contactNeeded: 0,
       itemsLeft,
       itemsTotal: 19,
+      warningCount,
     }).first;
   }
 
-  it("says only contact details remain, and that they are asked at Send", () => {
-    expect(foot(5, 5)).toBe("5 contact details needed at Send");
-    expect(foot(1, 1)).toBe("1 contact detail needed at Send");
+  // FORM-REF: what warns is named once every blocking item is in; it never counts as still needed.
+  it("says every required item is in and how many warn", () => {
+    expect(foot(0, 5)).toBe("All required items in · 5 not recorded");
+    expect(foot(0, 1)).toBe("All required items in · 1 not recorded");
   });
 
   it("keeps the overall count while step items also remain", () => {

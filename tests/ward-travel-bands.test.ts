@@ -49,7 +49,9 @@ const REGIONS_WITH_NO_BANDS: HomeRegion[] = HOME_REGIONS.filter(
 );
 
 /** Home regions a seeded referral actually uses, so the gap wording renders in the seeded data. */
-const SEEDED_HOME_REGIONS: HomeRegion[] = [...new Set(referrals.map((referral) => referral.homeRegion))];
+const SEEDED_HOME_REGIONS: HomeRegion[] = [
+  ...new Set(referrals.flatMap((referral) => (referral.homeRegion ? [referral.homeRegion] : []))),
+];
 
 /** Every (region, site) pair the fixture records, flattened. */
 const RECORDED_PAIRS: { region: HomeRegion; siteCode: string; band: TravelBand }[] = HOME_REGIONS.flatMap((region) =>

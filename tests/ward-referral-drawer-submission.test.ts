@@ -204,11 +204,21 @@ describe("confirmed drawer submissions use the shared referral engine", () => {
   });
   it("validates documentation and contact fields at the engine boundary", () => {
     expect(referralIntakeError(intake)).toBeNull();
-    for (const invalid of [
-      // Finding 44 (Josh, 27 Oct 2026): the email no longer blocks; the phone still does.
+    // Form rule (design audit FORM-REF, Josh's card 2, 5 Nov 2026): the referrer's contact, an
+    // unconfirmed catchment and a clearance still to come with no time or contact warn in the drawer,
+    // so the engine accepts them. Each must still have the right shape.
+    for (const warned of [
       { ...intake, referrer: { ...intake.referrer, phone: "bad" } },
       { ...intake, catchment: { ...intake.catchment, confirmed: false } },
       { ...intake, medicalClearance: { cleared: false } },
+    ]) {
+      expect(referralIntakeError(warned as ReferralIntakeDetails)).toBeNull();
+      const state = wardFlowReducer(seedWardFlowState(), { ...event(), intake: warned as ReferralIntakeDetails });
+      expect(state.rejections).toEqual([]);
+    }
+    for (const invalid of [
+      { ...intake, referrer: { ...intake.referrer, phone: "1".repeat(41) } },
+      { ...intake, medicalClearance: { cleared: false, expectedAt: "not a time" } },
       { ...intake, charts: [intake.charts[0]] },
       { ...intake, charts: [{ ...intake.charts[0], base64: "truncated" }, intake.charts[1]] },
     ]) {

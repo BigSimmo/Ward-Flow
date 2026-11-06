@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import Link from "next/link";
 import { Check, Plus } from "lucide-react";
 
@@ -573,7 +574,8 @@ function BedMeetingAgenda() {
                           {overdue ? <span className={styles.urgency}>Overdue</span> : null}
                         </span>
                         <span className={styles.detail}>
-                          {waited} · {due} · {referral.originSiteCode} · {askingForShort(referral)}
+                          {waited} · {due} · {referral.originSiteCode ?? ORIGIN_NOT_RECORDED} ·{" "}
+                          {askingForShort(referral)}
                         </span>
                       </div>
                       <Link

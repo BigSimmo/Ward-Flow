@@ -29,7 +29,7 @@ import {
   useMediaQuery,
 } from "@/components/wf";
 
-import { MOVEMENT_STAGES } from "@/components/ward-management/ward-model";
+import { MOVEMENT_STAGES, ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import type { Movement, MovementStage } from "@/components/ward-management/ward-model";
 import {
   isOpen,
@@ -564,7 +564,10 @@ export function PatientSearchPage() {
           communityTeam: info.patient?.catchmentCommunityTeam ?? null,
           indigenous: Boolean(info.patient?.aboriginalOrTorresStraitIslanderStatus),
           confidential: Boolean((info.patient as { confidential?: boolean } | undefined)?.confidential),
-          origin: isComm ? `${ref.originSiteCode} Community` : `${ref.originSiteCode} ED`,
+          origin:
+            ref.originSiteCode === undefined
+              ? ORIGIN_NOT_RECORDED
+              : `${ref.originSiteCode} ${isComm ? "Community" : "ED"}`,
           setting: isComm ? "community" : "ed",
           service: svc,
           legalStatus: refLegal,
@@ -582,8 +585,8 @@ export function PatientSearchPage() {
           presence: isComm ? "community" : "live",
           presenceLabel: isComm ? "Not in Hospital" : "On this board",
           presenceDetail: isComm
-            ? `Active Community Referral · ${ref.originSiteCode}`
-            : `Queued Referral · ${ref.originSiteCode} ED`,
+            ? `Active Community Referral · ${ref.originSiteCode ?? ORIGIN_NOT_RECORDED}`
+            : `Queued Referral · ${ref.originSiteCode === undefined ? ORIGIN_NOT_RECORDED : `${ref.originSiteCode} ED`}`,
           clinicalNote: NO_CLINICAL_NOTE,
           personRecordId: info.patient?.id ?? null,
           openedAtInstant: ref.raisedAt,

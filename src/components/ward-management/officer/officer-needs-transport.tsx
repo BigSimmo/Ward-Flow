@@ -274,7 +274,9 @@ export function returnPlanBooking(record: RepatriationRecord | undefined, now: I
     cadNumber: record.cadNumber,
     transportLegalStatus: record.transportLegalStatus,
     escortRequired: record.escortRequired,
-    ...(record.estimatedAt >= now ? etaPresetAnswers(now, record.estimatedAt - now) : {}),
+    ...(record.estimatedAt !== undefined && record.estimatedAt >= now
+      ? etaPresetAnswers(now, record.estimatedAt - now)
+      : {}),
   };
 }
 

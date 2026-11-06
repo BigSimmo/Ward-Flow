@@ -15,6 +15,7 @@
  * page's own cause ranking (`delayGroups` and `ownerOf`), so the two pages never disagree about why
  * somebody is waiting. Nothing here ranks people by need; the sort is wait, tier or name only.
  */
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import {
   delayGroups,
   ownerOf,
@@ -392,7 +393,11 @@ export function buildCensus(state: {
     const away = occupied?.awayAtEmergencyDepartmentSince != null;
     const absent = leave?.absentWithoutLeave !== undefined;
     const onLeave = leave !== undefined && !absent;
-    const referralOrigin = community ? `${referral.originSiteCode} Community` : `${referral.originSiteCode} ED`;
+    // FORM-REF: a referral may be sent without its location; say so rather than print "undefined".
+    const referralOrigin =
+      referral.originSiteCode === undefined
+        ? ORIGIN_NOT_RECORDED
+        : `${referral.originSiteCode} ${community ? "Community" : "ED"}`;
     const where = away
       ? "At ED"
       : absent

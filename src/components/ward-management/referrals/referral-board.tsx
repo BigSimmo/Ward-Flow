@@ -1,6 +1,7 @@
 "use client";
 
 import { useLocationSearch } from "@/components/ward-management/ward-url-state";
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
@@ -693,7 +694,7 @@ export function ReferralBoard({
       <dl className={cx(a.strip, panel.facts)}>
         <div>
           <dt>From</dt>
-          <dd>{siteByCode(r.originSiteCode)?.name ?? r.originSiteCode}</dd>
+          <dd>{siteByCode(r.originSiteCode)?.name ?? r.originSiteCode ?? ORIGIN_NOT_RECORDED}</dd>
           <dd className={a.stripSub}>{REFERRAL_SOURCE_WORDS[r.source]}</dd>
         </div>
         {/* U3: once every request is answered there is nothing being asked for, so the cell goes. */}

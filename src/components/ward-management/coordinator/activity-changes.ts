@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useMemo, useState } from "react";
+import { HOME_REGION_NOT_RECORDED, ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 
 import type { WfTone } from "@/components/wf";
 import {
@@ -128,7 +129,7 @@ function changeLines(changes: ChangesSinceLastLook, context: LineContext): Chang
       group: "referrals",
       tone: "info",
       ...person(nameOf(referral)),
-      text: `new referral from ${referral.originSiteCode} · ${referral.ageBand}, ${referral.homeRegion}`,
+      text: `new referral from ${referral.originSiteCode ?? ORIGIN_NOT_RECORDED} · ${referral.ageBand}, ${referral.homeRegion ?? HOME_REGION_NOT_RECORDED}`,
       at: referral.raisedAt,
     });
   }

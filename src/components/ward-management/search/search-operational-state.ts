@@ -54,6 +54,6 @@ export function movementOriginService(movement: Movement): string {
   return (ed ? siteByCode(ed.siteCode)?.service : undefined) ?? "Service not recorded";
 }
 
-export function referralOriginService(originSiteCode: string): string {
+export function referralOriginService(originSiteCode: string | undefined): string {
   return siteByCode(originSiteCode)?.service ?? "Service not recorded";
 }
