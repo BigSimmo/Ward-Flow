@@ -12,8 +12,8 @@ import styles from "./ward-flow-error-panel.module.css";
  * THE RECOVERY PANEL EVERY WARD FLOW `error.tsx` RENDERS, WRITTEN ONCE.
  *
  * ⚠️ **WHY THIS IS NOT `@/components/route-error-boundary`.** The repository has a shared boundary
- * panel and twenty `error.tsx` files delegate to it, so importing it here was the obvious move and
- * it is the wrong one: `tests/ward-flow-seam.test.ts` holds Ward Flow's outward dependencies at a
+ * panel (`src/app/error.tsx` delegates to it), so importing it here was the obvious move and it is
+ * the wrong one: `tests/ward-flow-seam.test.ts` holds Ward Flow's outward dependencies at a
  * ceiling of SEVEN approved shared modules, with a canary asserting that list is exactly seven
  * long. That ceiling is the bill for ever extracting this prototype from its host, and its own
  * header says an eighth entry is a decision to be argued rather than a number to be re-baselined.
@@ -28,13 +28,15 @@ import styles from "./ward-flow-error-panel.module.css";
  *
  * ⚠️ **IT MUST NOT SWALLOW THE ERROR.** A boundary that renders "something went wrong" and logs
  * nothing turns a loud failure into a silent one, which is worse than the blanked page it replaces
- * — and it looks like a fix. Three things therefore always happen: the error object goes to
- * `console.error` (so the stack is in the browser console in every environment), the message is
- * rendered on screen, and the stack is put behind a disclosure in development.
+ * — and it looks like a fix. Three things therefore always happen: a console line names the
+ * failure, the message (or, in production, a fixed sentence) is rendered on screen, and the stack
+ * is put behind a disclosure in development.
  *
- * ⚠️ **THE MESSAGE IS SHOWN ONLY OUTSIDE PRODUCTION.** Audit 5 PS-05: a guard can quote part of
- * the failing record in its message, and the signed-in shared site is a production build, so there
- * the panel shows a fixed sentence and the digest instead. The full error is still in the console.
+ * ⚠️ **THE MESSAGE IS SHOWN AND LOGGED ONLY OUTSIDE PRODUCTION.** Audit 5 PS-05: a guard can quote
+ * part of the failing record in its message, and the signed-in shared site is a production build,
+ * so there the panel shows a fixed sentence and the digest instead. Front-end audit TE-12 (5 Nov
+ * 2026): the production console line carries the error type and digest only, like `PanelBoundary`;
+ * development still logs the whole error object with its stack.
  *
  * ⚠️ **"TRY AGAIN" IS HONEST BUT LIMITED, AND THE COPY SAYS SO.** `retry()` re-renders this
  * segment; it does not re-create `WardFlowProvider`, which lives in the layout ABOVE every boundary
@@ -53,9 +55,9 @@ export function WardFlowErrorPanel({
   /** The error thrown below this boundary, forwarded by Next. */
   error: Error & { digest?: string };
   /**
-   * Next 16's `retry` — NOT the older `reset`. Same reading as
-   * `src/app/caring-contacts/error.tsx`: `retry()` re-fetches and re-renders, `reset()` only clears
-   * the error state, and a button reading "Try again" should do the former.
+   * Next 16's `retry` — NOT the older `reset`. Same reading as `src/app/error.tsx`: `retry()`
+   * re-fetches and re-renders, `reset()` only clears the error state, and a button reading
+   * "Try again" should do the former.
    */
   retry: () => void;
   title: string;
@@ -77,9 +79,9 @@ export function WardFlowErrorPanel({
       : "The connection dropped. This page will reload by itself when the connection returns, unless a save or unfinished work still needs attention. Check recent saves before repeating an action.";
 
   useEffect(() => {
-    // The whole error object, not `error.message`: the console entry is where the stack is
-    // reachable in production as well as development.
-    console.error(logLabel, error);
+    // TE-12: production logs the type and digest only, never the message, which can carry record
+    // content. Development logs the whole object, so the stack is reachable there.
+    console.error(logLabel, process.env.NODE_ENV === "production" ? { name: error.name, digest: error.digest } : error);
     headingRef.current?.focus({ preventScroll: true });
   }, [error, logLabel]);
 

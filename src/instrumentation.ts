@@ -16,8 +16,8 @@ export async function register() {
 
   // Playwright validates a real production build, but its runner must remain a
   // provider-free demo. Permit that otherwise-invalid combination only for the
-  // runner's isolated output and inert loopback environment. A partial or
-  // externally-addressed configuration still fails closed below.
+  // runner's isolated output and a demo with no Ward Flow provider settings. A
+  // partial or externally-addressed configuration still fails closed below.
   //
   // src/proxy.ts `shouldBlockProductionMockups` relies on this refusal: it only
   // lets mockups through when PLAYWRIGHT_OFFLINE_MODE and NEXT_PUBLIC_MOCKUPS_ENABLED
@@ -25,12 +25,17 @@ export async function register() {
   // process where that combination doesn't also mean the isolated test profile.
   if (process.env.PLAYWRIGHT_OFFLINE_MODE === "true") {
     const isolatedOutput = /^\.next-playwright\/[a-z0-9-]+\/dist$/i.test(process.env.NEXT_DIST_DIR ?? "");
+    // CB-6 (front-end audit, 5 Nov 2026): Ward Flow's own provider settings. The PsychSift names
+    // this used to check (RAG_PROVIDER_MODE, OPENAI_API_KEY, NEXT_PUBLIC_SUPABASE_URL) are never
+    // read by Ward Flow, so they proved nothing about it.
     const providerFree =
       process.env.NEXT_PUBLIC_DEMO_MODE === "true" &&
-      process.env.RAG_PROVIDER_MODE === "offline" &&
-      process.env.NEXT_PUBLIC_SUPABASE_URL === "http://127.0.0.1:1" &&
-      !process.env.SUPABASE_SERVICE_ROLE_KEY &&
-      !process.env.OPENAI_API_KEY;
+      process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED !== "true" &&
+      !process.env.NEXT_PUBLIC_WARD_API_BASE_URL &&
+      !process.env.NEXT_PUBLIC_WARD_SUPABASE_URL &&
+      !process.env.NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY &&
+      !process.env.WARD_SUPABASE_DATABASE_URL &&
+      !process.env.SUPABASE_SERVICE_ROLE_KEY;
     if (isolatedOutput && providerFree) return;
     throw new Error("Refusing to start: invalid isolated Playwright offline environment.");
   }

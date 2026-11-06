@@ -55,7 +55,7 @@ import {
   saveTourStep,
 } from "@/components/ward-management/help/ward-help-store";
 import { fullTourSteps } from "@/components/ward-management/help/ward-tour-more-steps";
-import { WardWhatsNew } from "@/components/ward-management/help/ward-whats-new";
+import { TOUR_AUTO_STARTED_EVENT, WardWhatsNew } from "@/components/ward-management/help/ward-whats-new";
 
 const STEPS = fullTourSteps("coordinator", "desk", tourFacts.facts);
 
@@ -262,8 +262,14 @@ describe("tour auto-start", () => {
     expect(onStart).toHaveBeenCalledTimes(1);
     unmount();
     // A reload: the desk's tour is still unseen, but this desk already had it on this device.
-    render(<WardTourAutoStart onStart={onStart} />);
-    await new Promise((resolve) => setTimeout(resolve, 700));
+    // TE-08: fake time carries the 500 ms settle timer past its end, so a late start cannot slip by.
+    vi.useFakeTimers();
+    try {
+      render(<WardTourAutoStart onStart={onStart} />);
+      act(() => vi.advanceTimersByTime(2000));
+    } finally {
+      vi.useRealTimers();
+    }
     expect(onStart).toHaveBeenCalledTimes(1);
     expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe("coordinator");
     // A first visit gets the tour, so the what's new note is marked read too.
@@ -275,12 +281,18 @@ describe("tour auto-start", () => {
     const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("QuotaExceededError");
     });
+    const offered = vi.fn();
+    window.addEventListener(TOUR_AUTO_STARTED_EVENT, offered);
+    vi.useFakeTimers();
     try {
       render(<WardTourAutoStart onStart={onStart} />);
-      await new Promise((resolve) => setTimeout(resolve, 700));
+      act(() => vi.advanceTimersByTime(2000));
+      expect(offered).not.toHaveBeenCalled();
       expect(onStart).not.toHaveBeenCalled();
     } finally {
+      vi.useRealTimers();
       setItem.mockRestore();
+      window.removeEventListener(TOUR_AUTO_STARTED_EVENT, offered);
     }
   });
 
@@ -332,8 +344,18 @@ describe("tour auto-start", () => {
     unmount();
     route.pathname = "/ward-flow";
     act(() => markTourSeen("coordinator"));
-    render(<WardTourAutoStart onStart={onStart} />);
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // TE-08: the old 50 ms wait ended before the 500 ms settle timer, so it proved nothing.
+    const offered = vi.fn();
+    window.addEventListener(TOUR_AUTO_STARTED_EVENT, offered);
+    vi.useFakeTimers();
+    try {
+      render(<WardTourAutoStart onStart={onStart} />);
+      act(() => vi.advanceTimersByTime(2000));
+    } finally {
+      vi.useRealTimers();
+      window.removeEventListener(TOUR_AUTO_STARTED_EVENT, offered);
+    }
+    expect(offered).not.toHaveBeenCalled();
     expect(onStart).not.toHaveBeenCalled();
   });
 

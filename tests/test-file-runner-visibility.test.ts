@@ -224,6 +224,21 @@ describe("no file under tests/ is invisible to every runner", () => {
         expect(project.pattern.test("tests/ward-shared-mode.spec.ts"), project.name).toBe(false);
         expect(project.pattern.test(otherWardSpec), project.name).toBe(false);
         expect(project.pattern.test("tests/api-csrf-proxy.spec.ts"), project.name).toBe(false);
+      } else if (["visual-desktop", "visual-phone"].includes(project.name)) {
+        // Nightly image baselines (TE-01): their own spec and nothing else.
+        expect(project.patternName, project.name).toBe("visualSpecPattern");
+        expect(project.pattern.test("tests/ward-visual-baselines.spec.ts"), project.name).toBe(true);
+        expect(project.pattern.test(otherWardSpec), project.name).toBe(false);
+        expect(project.pattern.test("tests/release-gate-journeys.spec.ts"), project.name).toBe(false);
+        expect(project.pattern.test("tests/api-csrf-proxy.spec.ts"), project.name).toBe(false);
+      } else if (project.name === "tablet-webkit") {
+        // Nightly 834px tablet (TE-02): the axe sweep and the responsive audit only.
+        expect(project.patternName, project.name).toBe("tabletSpecPattern");
+        expect(project.pattern.test("tests/release-gate-axe-sweep.spec.ts"), project.name).toBe(true);
+        expect(project.pattern.test(responsiveSpec), project.name).toBe(true);
+        expect(project.pattern.test("tests/release-gate-journeys.spec.ts"), project.name).toBe(false);
+        expect(project.pattern.test(otherWardSpec), project.name).toBe(false);
+        expect(project.pattern.test("tests/api-csrf-proxy.spec.ts"), project.name).toBe(false);
       } else if (["chromium-mockups", "chromium-mockups-known"].includes(project.name)) {
         expect(project.pattern.test(responsiveSpec), project.name).toBe(true);
         expect(project.pattern.test(otherWardSpec), project.name).toBe(true);
