@@ -874,8 +874,7 @@ function ToolsSheetView({
   const quickTitle = recentIds.length > 0 ? "Recent" : "Suggested";
 
   // Q311: two panes always show a tool, never an empty pane; the first quick pick opens with the sheet.
-  // The demo controls are setup, not a tool to work in, so they open in place under their row
-  // and the pane keeps showing a tool.
+  // The demo controls open like any tool: in the pane here, as their own page below two panes.
   const shown: ToolsSheetToolId | null = twoPane ? (open ?? quickIds[0] ?? null) : open;
   // A search with no match empties the pane too, so an old tool never sits beside "No tool matches".
 
