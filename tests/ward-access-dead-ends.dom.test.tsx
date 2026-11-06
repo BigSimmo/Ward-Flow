@@ -28,7 +28,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { discardReferralDraft } from "@/components/ward-management/referrals/referral-draft-store";
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
 import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-broadcast-banner";
 import { openWardDrawer } from "@/components/ward-management/shell/ward-drawer-bus";
 import { openDrawerForShortcut } from "@/components/ward-management/shell/ward-rail-preferences";

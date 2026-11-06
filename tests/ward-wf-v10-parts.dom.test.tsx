@@ -32,7 +32,7 @@ import {
   WardCapacityRow,
   registerWfBandHero,
 } from "@/components/wf";
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { installMatchMediaStub } from "./setup/jsdom.setup";

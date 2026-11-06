@@ -255,7 +255,7 @@ type WardBarProps = {
   onServiceChange?: (service: HealthService | null) => void;
 };
 
-function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarProps) {
+export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarProps) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
   // A1-17: the shared phone query, so the server's phone guess draws the phone bar first.

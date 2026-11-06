@@ -18,7 +18,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { WardLiveRegion, resetWardLiveRegionForTests } from "@/components/ward-management/shell/ward-live-region";
-import { WardRail } from "@/components/ward-management/shell/ward-rail";
+import { NextRailBody as WardRail } from "@/components/ward-management/shell-next/next-rail-body";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 

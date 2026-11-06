@@ -29,7 +29,10 @@ vi.mock("@/components/ward-management/ward-flow-provider", async (importOriginal
   };
 });
 
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
+// CB-1 (Josh, 6 Nov 2026): the live bar's Activity trigger reads "Activity" alone, with no
+// "synthetic activity" words, so that one case stays on the retired bar until Josh decides.
+import { WardBar as RetiredWardBar } from "@/components/ward-management/shell/ward-bar";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { activeWardNetwork, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -65,7 +68,7 @@ describe("the Activity panel is consistently wired across all screens", () => {
 
   it("labels the trigger as synthetic activity without a clock or a tone", () => {
     currentPathname = "/ward-flow/movements";
-    render(<WardBar />);
+    render(<RetiredWardBar />);
     const trigger = screen.getByTestId("ward-bar-activity-trigger");
     expect(trigger.querySelector('[data-tone][aria-hidden="true"]')).toBeNull();
     expect(trigger.textContent).toContain("synthetic activity");

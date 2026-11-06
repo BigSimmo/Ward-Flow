@@ -9,7 +9,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
 import {
   LAST_LOOK_STORAGE_KEY,
   parseLastLookSnapshot,

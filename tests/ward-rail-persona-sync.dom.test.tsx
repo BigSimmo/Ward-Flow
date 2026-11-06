@@ -3,7 +3,11 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
-import { WardRail } from "@/components/ward-management/shell/ward-rail";
+import { NextRailBody as WardRail } from "@/components/ward-management/shell-next/next-rail-body";
+// CB-1 (Josh, 6 Nov 2026): three cases stay on the retired rail until Josh decides, because the live
+// rail has no equivalent. Its person opens the account menu, not "Go to a desk" (DK1, 3 Nov 2026),
+// and its menu follows the desk's access role, not the persona-sync event.
+import { WardRail as RetiredWardRail } from "@/components/ward-management/shell/ward-rail";
 import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/persona-sync";
 import { popSheet, pushSheet } from "@/components/wf/sheet-focus";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -56,7 +60,7 @@ describe("rail menu follows the chosen desk (Q201)", () => {
   it("links My ward to the ward chosen in Go to a desk, not the all-wards index", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardRail />
+        <RetiredWardRail />
       </WardFlowProvider>,
     );
     act(() => dispatchPersonaSyncForRole("ward", "test-ward", "/ward-flow/ward/test-ward"));
@@ -99,7 +103,7 @@ describe("one switcher from the rail (B6) and no persona listbox (DA-05 pattern)
     const user = userEvent.setup();
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardRail />
+        <RetiredWardRail />
       </WardFlowProvider>,
     );
     expect(trigger()).toHaveAttribute("aria-haspopup", "dialog");
@@ -135,7 +139,7 @@ describe("one switcher from the rail (B6) and no persona listbox (DA-05 pattern)
   it("opens the switcher on a press even when the press does not focus the button (Safari, macOS Firefox)", async () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardRail />
+        <RetiredWardRail />
       </WardFlowProvider>,
     );
     // WebKit does not focus a pressed <button>; the click alone must open the drawer.

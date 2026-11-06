@@ -49,7 +49,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { WARD_ADMISSIONS_ANCHOR } from "@/components/ward-management/ward-admissions-seed";
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
 import { WardGround } from "@/components/ward-management/ward-shell";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 

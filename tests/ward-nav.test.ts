@@ -48,7 +48,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-import { WardRail } from "@/components/ward-management/shell/ward-rail";
+import { NextRailBody as WardRail } from "@/components/ward-management/shell-next/next-rail-body";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { WardModeWorkspace } from "@/components/ward-management/ward-management-modes";
