@@ -19,7 +19,6 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { bedFits, whyBedDoesNotFit, type BoardPick } from "@/components/ward-management/ward/ward-bed-board-logic";
-import { fitSurname } from "@/components/ward-management/ward/ward-bed-board";
 import { layoutBedNumbers } from "@/components/ward-management/ward/ward-bed-layout";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 
@@ -191,13 +190,38 @@ describe("Bed board layout and fit rules", () => {
       stayAdmissionId: kind === "o" ? `a${index + 1}` : undefined,
     }));
 
-  it("cuts a long surname so its box ends at the ellipsis, leaving no gap before the initial", () => {
-    // One unit per letter, ellipsis included: room 6 fits five letters and the ellipsis.
-    const measure = (text: string) => text.length;
-    expect(fitSurname("Ferrowmoor", 6, measure)).toBe("Ferro…");
-    expect(fitSurname("Ferrowmoor", 10, measure)).toBe("Ferrowmoor");
-    expect(fitSurname("Ferrowmoor", 1, measure)).toBe("F…");
-    expect(fitSurname("Van Dyke", 5, measure)).toBe("Van…");
+  it("shows every surname and given name in full, never cut with an ellipsis (Josh, 6 Nov 2026)", () => {
+    // A narrow cell and a working text measure: the old fit cut any surname here to "F…".
+    const getContext = vi
+      .spyOn(HTMLCanvasElement.prototype, "getContext")
+      .mockReturnValue({ font: "", measureText: (text: string) => ({ width: text.length * 8 }) } as never);
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        disconnect() {}
+        unobserve() {}
+      },
+    );
+    try {
+      renderBoard();
+      const named = Array.from(document.querySelectorAll<HTMLElement>("[data-testid^='ward-board-bed-']")).filter(
+        (cell) => !/ready|closed|pulled/i.test(cell.getAttribute("aria-label") ?? ""),
+      );
+      expect(named.length).toBeGreaterThan(0);
+      for (const cell of named) {
+        const label = cell.getAttribute("aria-label") ?? "";
+        expect(cell.textContent).not.toContain("…");
+        // axe 4.14: the visible surname and given name sit, whole and in order, in the accessible name.
+        const shown = cell.querySelector("[class*='cellWord']")?.textContent ?? "";
+        const given = (cell.querySelector("[class*='cellInitial']")?.textContent ?? "").replace(/^, /, "");
+        expect(shown.length).toBeGreaterThan(1);
+        expect(label).toContain(`, ${shown}, ${given}, `);
+      }
+    } finally {
+      getContext.mockRestore();
+      vi.unstubAllGlobals();
+    }
   });
 
   it("keeps every tile in its baseline bed when nothing is numbered", () => {
