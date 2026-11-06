@@ -447,7 +447,7 @@ describe("PKCE password recovery (SEC-2)", () => {
   it("finishes a failed account check before a password change and never spends the code again", async () => {
     const tab = storage();
     let userUp = false;
-    const fetcher = vi.fn(async (endpoint: RequestInfo | URL, _init?: RequestInit) => {
+    const fetcher = vi.fn<(endpoint: RequestInfo | URL, init?: RequestInit) => Promise<Response>>(async (endpoint) => {
       if (String(endpoint).includes("grant_type=pkce")) return Response.json(session("recovery-access"));
       return userUp ? Response.json(user) : Response.json({}, { status: 503 });
     });
