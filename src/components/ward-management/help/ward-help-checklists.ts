@@ -65,6 +65,7 @@ const PRACTISE: ChecklistStep = {
 };
 const MAKE_IT_YOURS: ChecklistStep = {
   text: "In Settings, Display, choose your theme.",
+  note: "On a phone, Theme is under On this phone in Settings.",
   go: "settings#display",
   showMe: "theme",
 };
