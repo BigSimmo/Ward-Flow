@@ -146,9 +146,34 @@ export function calendarDateOf(instant: Instant, dayZero: Date): Date {
   return new Date(dayZero.getTime() + instant * 60_000);
 }
 
+/**
+ * A real moment's Perth calendar day as text, with no comma after the weekday: "Wed 4 Nov", not the
+ * "Wed, 4 Nov" that `en-AU` gives for a short weekday (phone audit, 1 Nov 2026; CL-4, 5 Nov 2026).
+ * Any comma later in the text, such as the one before a time, is kept.
+ */
+export function perthDateText(moment: Date, options: Intl.DateTimeFormatOptions): string {
+  const parts = new Intl.DateTimeFormat("en-AU", { ...options, timeZone: "Australia/Perth" }).formatToParts(moment);
+  return parts
+    .map((part, index) => (part.type === "literal" && parts[index - 1]?.type === "weekday" ? " " : part.value))
+    .join("");
+}
+
 /** An instant's Perth calendar day as text, e.g. `{ weekday: "short", day: "numeric", month: "short" }`. */
 export function perthDateLabel(instant: Instant, dayZero: Date, options: Intl.DateTimeFormatOptions): string {
-  return calendarDateOf(instant, dayZero).toLocaleDateString("en-AU", { ...options, timeZone: "Australia/Perth" });
+  return perthDateText(calendarDateOf(instant, dayZero), options);
+}
+
+/**
+ * A real moment's clock face ("HH:MM") on the Perth (AWST) clock, whatever the device's zone. For a
+ * time something was recorded at, so it reads on the same clock as the board (CL-2, 5 Nov 2026).
+ */
+export function perthClockTime(moment: Date): string {
+  return formatInstant(Math.floor((moment.getTime() + PERTH_UTC_OFFSET_MS) / 60_000));
+}
+
+/** "Thu 10:42": a recorded moment's Perth weekday and clock face, for a list of recent answers. */
+export function perthWeekdayTime(moment: Date): string {
+  return `${perthDateText(moment, { weekday: "short" })} ${perthClockTime(moment)}`;
 }
 
 // Reuse fixed formats without making routes that only import clock arithmetic pay for Intl setup.
@@ -200,13 +225,12 @@ export function formatSheetMoment(
   dayZero: Date,
   options: { includeYearAndZone?: boolean } = {},
 ): string {
-  const date = calendarDateOf(instant, dayZero);
-  const day = date.toLocaleDateString("en-AU", {
+  // No comma after the weekday, the one rule for every written day (Josh, 5 Nov 2026, CL-4).
+  const day = perthDateText(calendarDateOf(instant, dayZero), {
     weekday: "short",
     day: "numeric",
     month: "short",
     ...(options.includeYearAndZone ? { year: "numeric" as const } : {}),
-    timeZone: "Australia/Perth",
   });
   return `${day}, ${formatInstant(instant)}${options.includeYearAndZone ? " AWST" : ""}`;
 }

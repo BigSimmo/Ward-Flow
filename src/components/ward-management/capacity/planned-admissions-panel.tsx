@@ -32,6 +32,7 @@ import {
   formatRemaining,
   minutesUntil,
   perthCalendarDay,
+  perthDateLabel,
   type Instant,
 } from "@/components/ward-management/ward-clock";
 import { OVERRIDE_REASONS, type OverrideReason } from "@/components/ward-management/ward-change-reasons";
@@ -235,10 +236,7 @@ export function PlannedAdmissionsPanel({
   function calendarDay(dayOffset: number, options: Intl.DateTimeFormatOptions): string {
     const fromToday = dayOf(formOpenedAt) + dayOffset - dayOf(now);
     if (!(dayZero instanceof Date)) return fromToday < 0 ? `${-fromToday}d ago` : `+${fromToday}d`;
-    return calendarDateOf((dayOf(formOpenedAt) + dayOffset) * MINUTES_PER_DAY, dayZero).toLocaleDateString("en-AU", {
-      ...options,
-      timeZone: "Australia/Perth",
-    });
+    return perthDateLabel((dayOf(formOpenedAt) + dayOffset) * MINUTES_PER_DAY, dayZero, options);
   }
 
   function dayLabel(dayOffset: number): string {

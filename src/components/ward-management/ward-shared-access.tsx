@@ -709,8 +709,11 @@ function WardSharedWorkspaceContent({
                   className={styles.dismissRecovery}
                   onClick={(event) => {
                     const opener = event.currentTarget;
-                    void import("./shell/ward-activity-panel-store").then(({ openActivityPanel }) =>
-                      openActivityPanel({ tab: "recent", commandId: result.commandId, opener }),
+                    // TE-05: offline the panel's code may not load; say so rather than doing nothing.
+                    void import("./shell/ward-activity-panel-store").then(
+                      ({ openActivityPanel }) =>
+                        openActivityPanel({ tab: "recent", commandId: result.commandId, opener }),
+                      () => announceToWardShell("The change could not open. Check the connection, then try again."),
                     );
                   }}
                 >

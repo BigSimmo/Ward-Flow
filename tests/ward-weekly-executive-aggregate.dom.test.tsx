@@ -174,7 +174,7 @@ describe("Weekly executive aggregate adoption", () => {
     expect(screen.getByText(/Weekly report · synthetic demo data · North Metro/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Paused, pause demo updates/ }));
     expect(togglePause).toHaveBeenCalledOnce();
-    expect(screen.getByTestId("ward-weekly-range")).toHaveTextContent("Wed, 23 Sept 2026, 10:42 AWST");
+    expect(screen.getByTestId("ward-weekly-range")).toHaveTextContent("Wed 23 Sept 2026, 10:42 AWST");
     expect(guard.operational).not.toHaveBeenCalled();
   });
 

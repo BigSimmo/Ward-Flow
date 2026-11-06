@@ -12,7 +12,7 @@ export function WardDemoSavingNote({ saving }: { saving: boolean }) {
     );
   return (
     <p className={styles.quiet} role="status" data-testid="ward-demo-not-saved">
-      Demonstration state is not saved on this device. A reload starts it again.
+      Demonstration state is not saved on this device. A reload loses changes since the last save.
     </p>
   );
 }

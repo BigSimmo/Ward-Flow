@@ -23,7 +23,7 @@ describe("WF-44 live rail occupancy labels", () => {
     const { container } = render(<RailReadyLine metro={74.6} ready={3} />);
     const stack = container.firstElementChild!;
     expect(stack.children).toHaveLength(2);
-    expect(stack.children[0]).toHaveTextContent(/^Metro 74\.6%$/u);
+    expect(stack.children[0]).toHaveTextContent(/^Metro 75%$/u);
     expect(stack.children[1]).toHaveTextContent("3 beds ready now");
     expect(stack.className).not.toBe("");
     expect(stack.children[0]!.className).not.toBe("");

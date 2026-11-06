@@ -206,9 +206,9 @@ describe("rail bed alerts (live figures)", () => {
     expect(trigger.textContent).not.toContain("96.4%");
     expect(expected.metroOccupancyPercent).not.toBeNull();
     // The new sidebar's capacity card (Josh, 30 Oct 2026): one row per place, its name, meter and
-    // occupancy, read aloud as "Metro 85.9% full".
-    expect(trigger).toHaveTextContent(`Metro${expected.metroOccupancyPercent}%`);
-    expect(trigger.getAttribute("aria-label")).toContain(`Metro ${expected.metroOccupancyPercent}% full`);
+    // occupancy as a whole percent (CL-9), read aloud as "Metro 86% full".
+    expect(trigger).toHaveTextContent(`Metro${Math.round(expected.metroOccupancyPercent!)}%`);
+    expect(trigger.getAttribute("aria-label")).toContain(`Metro ${Math.round(expected.metroOccupancyPercent!)}% full`);
   });
 });
 

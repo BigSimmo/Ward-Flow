@@ -28,7 +28,7 @@ import {
 } from "@/components/ward-management/referrals/arrival-time-modal";
 import type { EdNeedsItem } from "./ed-needs-you";
 import { resolveSubjectPatient, UMRN_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
-import { foldPatientSearchText } from "@/components/ward-management/ward-patients";
+import { foldPatientSearchHaystack, foldPatientSearchText } from "@/components/ward-management/ward-patients";
 import { activeTaskItems, inboxItemsForRole } from "@/components/ward-management/ward-act-now-items";
 import {
   ANSWERED_VISIBLE_CAP,
@@ -340,7 +340,7 @@ export function deriveEdScreen({
   const matchesPatientQuery = (movement: Movement) => {
     if (!foldedQuery) return true;
     const person = resolveSubjectPatient(movement, resolveState);
-    return foldPatientSearchText(`${person.displayName} ${person.umrn}`).includes(foldedQuery);
+    return foldPatientSearchHaystack(`${person.displayName} ${person.umrn}`).includes(foldedQuery);
   };
   const heroHighlightMatch: Record<string, (m: Movement) => boolean> = {
     past: (m) => isWaitingInEd(m) && now - m.openedAt >= accessTarget,

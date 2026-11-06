@@ -128,7 +128,7 @@ it("keeps the prepared copy's full calendar date across midnight", () => {
   const dayZero = perthMidnight(2026, 9, 24);
   renderSheet(NOW_ANCHOR - 24 * 60, dayZero);
   for (const page of screen.getAllByRole("article")) {
-    expect(page).toHaveTextContent("Prepared Fri, 23 Oct 2026, 10:42 AWST");
+    expect(page).toHaveTextContent("Prepared Fri 23 Oct 2026, 10:42 AWST");
   }
 });
 

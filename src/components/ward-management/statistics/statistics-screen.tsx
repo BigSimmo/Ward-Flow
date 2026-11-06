@@ -235,7 +235,7 @@ function ExecutiveStatisticsScreen() {
         totalBeds: beds.total,
         occupiedCount: beds.occupied,
         inUseCount: beds.inUse,
-        occupiedPct: beds.total ? Math.round((beds.inUse / beds.total) * 1000) / 10 : 0,
+        occupiedPct: beds.total ? Math.round((beds.inUse / beds.total) * 100) : 0,
         availableNow: beds.ready,
         pendingPreparation: data.capacity.pendingPreparation,
         waitingCount: people.waitingInEd,
@@ -325,7 +325,8 @@ function OperationalStatisticsScreen({
   // L1: the percentage and the count beside it are the one occupancy figure, Occupied + Pulled.
   const inUseCount = occupancy.inUse;
   // One decimal place, the precision Home, Overview and Wards print (audit stats-20: 85.2%, not 85%).
-  const occupiedPct = occupancy.beds > 0 ? Math.round((occupancy.inUse / occupancy.beds) * 1000) / 10 : 0;
+  // Whole percent, the one rule for every percentage (Josh, 5 Nov 2026, CL-9).
+  const occupiedPct = occupancy.beds > 0 ? Math.round((occupancy.inUse / occupancy.beds) * 100) : 0;
   // Audit 6 (Josh, 20 Oct 2026): the one ready figure, leaving out beds pulled for an incoming patient.
   const availableNow = totalReadyBedsNow(siteUnits, sourceAdmissions, sourceBedReleases);
   // Ready beds still being cleaned count as ready (the owner's ruling); the label says how many.
@@ -980,7 +981,7 @@ function StatisticsSummaryView({
             <HeroChips label="Network at a glance">
               <HeroChip value={totalBeds} label="Beds" />
               {/* The count names its noun first, its share after. */}
-              <HeroChip value={inUseCount} label={`In use · ${occupiedPct.toFixed(1)}%`} />
+              <HeroChip value={inUseCount} label={`In use · ${occupiedPct}%`} />
               <HeroChip value={pendingPreparation} label="Being made ready" />
               {notShown(dischargesCount) ? null : (
                 <HeroChip

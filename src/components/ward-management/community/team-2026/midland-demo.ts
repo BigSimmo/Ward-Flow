@@ -693,7 +693,10 @@ export const REFERRALS = [
         "Admitted 3 weeks ago with a relapse of schizophrenia after stopping medication. Expected home Thu 5 Nov.",
       ],
       ["Background", "Known to this team 2015–2023, closed when well. Lives with his brother in Swan View."],
-      ["Assessment", "Settled on paliperidone depot, next due Thu 19 Nov. Insight improving. Voluntary since Fri."],
+      [
+        "Assessment",
+        "Settled on paliperidone depot, next due Thu 19 Nov. Insight improving. Voluntary since Fri 30 Oct.",
+      ],
       ["Recommendation", "Case manager to meet him before discharge, 7-day follow-up, and a depot clinic booking."],
     ],
     docs: [

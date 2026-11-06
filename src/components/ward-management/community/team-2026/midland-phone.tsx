@@ -21,21 +21,12 @@ import {
   buttonClass,
   registerWfBandHero,
 } from "@/components/wf";
+import { perthWeekdayTime } from "@/components/ward-management/ward-clock";
+import { foldPatientSearchHaystack, foldPatientSearchText } from "@/components/ward-management/ward-patients";
 import phone from "../community-team-phone.module.css";
 import type { CommunityTeamSection } from "../community-screen-hero";
-import {
-  CLIENTS,
-  DEMO_FIGURES,
-  DISCHARGED,
-  INPATIENTS,
-  IN_BED,
-  REFERRALS,
-  SENT,
-  ANSWERED,
-  STAFF,
-  TODAY,
-  staffName,
-} from "./midland-demo";
+import { DEMO_FIGURES, SENT, STAFF as AUTHORED_STAFF, TODAY, staffName } from "./midland-demo";
+import { useMidlandDay, useMidlandDemo } from "./use-midland-demo";
 import { ReferralPage, useAnswer } from "./team-referrals";
 import { openReferrals, useMidlandDecisions } from "./midland-decisions";
 import { useRegisterWardBarPlaceSwitch } from "@/components/ward-management/shell/ward-bar-place-switch";
@@ -79,8 +70,8 @@ const figuresFor = (toAnswer: number): Record<CommunityTeamSection, Figure[]> =>
   ],
   clinicians: [
     { id: "working", value: f.working, label: "Working today" },
-    { id: "field", value: STAFF.filter((s) => s.today === "field").length, label: "In the field" },
-    { id: "away", value: STAFF.filter((s) => s.today === "leave").length, label: "Away" },
+    { id: "field", value: AUTHORED_STAFF.filter((s) => s.today === "field").length, label: "In the field" },
+    { id: "away", value: AUTHORED_STAFF.filter((s) => s.today === "leave").length, label: "Away" },
   ],
 });
 
@@ -148,6 +139,8 @@ function HomeSection({
 }) {
   const [week, setWeek] = useState(false);
   const [allCms, setAllCms] = useState(false);
+  const { STAFF, REFERRALS } = useMidlandDemo();
+  const day = useMidlandDay();
   const cms = STAFF.filter((s) => s.load);
   const duty = STAFF.find((s) => s.today === "duty")!;
   // Same decision state as the Referrals tab (and the tablet home): once answered, it leaves Act now.
@@ -186,7 +179,7 @@ function HomeSection({
       n: "Greymantle, Ottoline",
       u: "UM100095",
       meta: "Moodjar · Mallard, Jodie",
-      when: "Wed 4 Nov",
+      when: day("Wed 4 Nov"),
       action: "Book",
       run: () => note(NOT_WIRED),
     },
@@ -197,7 +190,7 @@ function HomeSection({
       what: "Waiting for a case manager",
       n: "Elmsworth, Kai",
       u: "UM200152",
-      meta: "+4 more · accepted Thu 29 Oct",
+      meta: day("+4 more · accepted Thu 29 Oct"),
       when: "4d",
       action: "Allocate",
     },
@@ -206,8 +199,8 @@ function HomeSection({
       what: "CTO review due",
       n: "Jessop, Rowan",
       u: "UM200204",
-      meta: "+2 more · Doyle, Marcus · ends 9 Nov",
-      when: "Wed 4 Nov",
+      meta: day("+2 more · Doyle, Marcus · ends 9 Nov"),
+      when: day("Wed 4 Nov"),
       action: "Open",
     },
     {
@@ -382,6 +375,7 @@ function HomeSection({
 type CaseFilter = "all" | "hosp" | "cto" | "ctoDue" | "notSeen" | "unalloc";
 
 function CaseloadSection() {
+  const { CLIENTS, STAFF } = useMidlandDemo();
   const [filter, setFilter] = useState<CaseFilter>("all");
   const [find, setFind] = useState("");
   const [cm, setCm] = useState("");
@@ -390,7 +384,7 @@ function CaseloadSection() {
     if (filter !== "all" && !(c.flags ?? []).includes(filter)) return false;
     if (cm === "psych" && !c.psychOnly) return false;
     if (cm && cm !== "psych" && c.cm !== cm) return false;
-    return !find || c.n.toLowerCase().includes(find.trim().toLowerCase());
+    return !find.trim() || foldPatientSearchHaystack(c.n).includes(foldPatientSearchText(find));
   });
   const chips: { id: CaseFilter; label: string; n: number }[] = [
     { id: "all", label: "All", n: f.caseload },
@@ -466,6 +460,7 @@ function CaseloadSection() {
 }
 
 function HospitalSection({ note, onRecord }: { note: (t: string) => void; onRecord: () => void }) {
+  const { INPATIENTS, IN_BED, DISCHARGED } = useMidlandDemo();
   return (
     <>
       <Card title="In hospital now" aside={<span className={p.small}>{f.datesPassed} dates passed</span>}>
@@ -518,6 +513,7 @@ function HospitalSection({ note, onRecord }: { note: (t: string) => void; onReco
 }
 
 function ReferralsSection({ open }: { open: (index: number) => void }) {
+  const { REFERRALS, ANSWERED } = useMidlandDemo();
   const decisions = useMidlandDecisions();
   const [pane, setPane] = useState<"q" | "s" | "h">("q");
   return (
@@ -590,12 +586,7 @@ function ReferralsSection({ open }: { open: (index: number) => void }) {
                     u: r.u,
                     meta: `${r.ask} · You`,
                     value: decisions[r.id]!.line,
-                    time: new Date(decisions[r.id]!.at).toLocaleString("en-AU", {
-                      weekday: "short",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: false,
-                    }),
+                    time: perthWeekdayTime(new Date(decisions[r.id]!.at)),
                   })),
                   ...ANSWERED.map((a) => ({ n: a.n, u: a.u, meta: `${a.ask} · ${a.by}`, value: a.ans, time: a.when })),
                 ]
@@ -617,9 +608,11 @@ function ReferralsSection({ open }: { open: (index: number) => void }) {
 }
 
 function CliniciansSection({ note }: { note: (t: string) => void }) {
+  const { STAFF } = useMidlandDemo();
+  const day = useMidlandDay();
   return (
     <>
-      <Card title="Today's cover" aside={<span className={p.small}>Mon 2 Nov</span>}>
+      <Card title="Today's cover" aside={<span className={p.small}>{day("Mon 2 Nov")}</span>}>
         <dl className={p.dl}>
           <div>
             <dt>Duty officer</dt>
@@ -676,6 +669,7 @@ function ReferralSheet({
   onClose: () => void;
   openFull: () => void;
 }) {
+  const { REFERRALS, STAFF } = useMidlandDemo();
   const r = index === null ? null : REFERRALS[index]!;
   const { accept, say: note } = useAnswer(r?.n ?? "", r?.id);
   return (
@@ -803,6 +797,7 @@ export function MidlandPhone({
   useRegisterWardBarPlaceSwitch(
     onSwitchTeam ? { label: "East Metro · Adult", actionLabel: "Switch team", onPress: switchTeam } : null,
   );
+  const { REFERRALS } = useMidlandDemo();
   const toAnswer = openReferrals(REFERRALS, useMidlandDecisions()).length;
   const figures = figuresFor(toAnswer)[section];
   if (full !== null) {

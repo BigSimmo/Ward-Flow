@@ -1,7 +1,7 @@
 import { act, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { WardDemoNotSavedNote } from "@/components/ward-management/shell/ward-demo-saving";
+import { WardDemoNotSavedNote, WardDemoTypedTextNote } from "@/components/ward-management/shell/ward-demo-saving";
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 
 /*
@@ -32,6 +32,7 @@ describe("Not saved on this device note (S-1)", () => {
       <WardFlowProvider>
         <Capture />
         <WardDemoNotSavedNote />
+        <WardDemoTypedTextNote />
       </WardFlowProvider>,
     );
     expect(screen.queryByTestId("ward-demo-not-saved")).toBeNull();
@@ -62,6 +63,7 @@ describe("Not saved on this device note (S-1)", () => {
       <WardFlowProvider>
         <Capture />
         <WardDemoNotSavedNote />
+        <WardDemoTypedTextNote />
       </WardFlowProvider>,
     );
     const movement = current!.movements.find((candidate) => !candidate.closure)!;
