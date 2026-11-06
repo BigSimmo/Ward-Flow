@@ -68,7 +68,7 @@ import { drawerFootStatus } from "./referral-drawer-foot-status";
 import { focusFirstInvalidField, referralInboxSummary } from "./referral-drawer-helpers";
 import * as fromRecord from "./referral-record-prefill";
 import { type ReferralTextInput } from "./referral-letter";
-import { TIME_FIELD_ERROR, useIsPhone, useModalFocus, useOptionalToast, type WfTone } from "@/components/wf";
+import { TIME_FIELD_ERROR, useIsPhone, useModalFocus, useOptionalToast } from "@/components/wf";
 import { usePathname } from "next/navigation";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { profileForChromeRole } from "@/components/ward-management/settings/settings-profile";
@@ -117,6 +117,7 @@ import {
   recordedSexAndGender,
   type ReferralGenderAnswer,
   isOwnLeaveGuardAnchor,
+  isListedOrigin,
   type WardReferralDrawerContentProps,
 } from "./ward-referral-drawer-model";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
@@ -790,16 +791,9 @@ export function useWardReferralDrawerState({
   }
   // WS-01: a ward referral answers gender before Send ("Not yet recorded" counts as an answer).
   const genderUnanswered = destType === "ward" && referralGender === "";
-  const originValid =
-    !!sendingWard ||
-    (!senderMissing &&
-      !!originSiteCode &&
-      siteDirectory.some(
-        (site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment),
-      ));
-  // FORM-REF: the reason warns (`sendWarnings`); these block. Josh, 5 Nov 2026 (finding 2): the location
-  // and referring service come from the sending desk (ED: its site; community: its service) and block
-  // only when nothing could fill them, because an accepted referral cannot be moved without them.
+  const originValid = !!sendingWard || (!senderMissing && isListedOrigin(originSiteCode, sourceKind));
+  // FORM-REF: the reason warns (`sendWarnings`); these block. Josh, 5 Nov 2026 (finding 2): the location and referring
+  // service come from the sending desk and block only when nothing fills them: an accepted referral needs both to move.
   function referralError() {
     if (senderMissing) return NO_SENDING_WARD;
     if (!originValid)

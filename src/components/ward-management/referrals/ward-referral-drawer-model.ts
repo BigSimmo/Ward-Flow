@@ -24,7 +24,7 @@ import {
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
-import { edById, siteByCode } from "@/components/ward-management/ward-sites";
+import { edById, siteByCode, siteDirectory } from "@/components/ward-management/ward-sites";
 import { type NotOnSendingWardReason } from "@/components/ward-management/ward-change-reasons";
 import { type CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import { communityReferralPurposeLabel } from "@/components/ward-management/ward-referrals";
@@ -601,3 +601,11 @@ export type WardReferralDrawerContentProps = WardReferralDrawerProps & {
   onViewChange: (view: DrawerView) => void;
   onRestart: () => void;
 };
+
+/** The location of referral is a listed site, and an emergency department when the referral comes from one. */
+export function isListedOrigin(originSiteCode: string, sourceKind: "community" | "ed"): boolean {
+  return (
+    !!originSiteCode &&
+    siteDirectory.some((site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment))
+  );
+}
