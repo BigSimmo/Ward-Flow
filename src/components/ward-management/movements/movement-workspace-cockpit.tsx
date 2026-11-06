@@ -1040,7 +1040,7 @@ export function MovementWorkspaceCockpit({
                     </div>
                   </dl>
                 ) : (
-                  <p className={styles.actionSay}>Not escalated.</p>
+                  <p className={styles.actionSay}>No escalation recorded.</p>
                 )}
               </div>
             </div>
