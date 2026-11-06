@@ -3,7 +3,6 @@ import { headers } from "next/headers";
 
 import {
   OverlayScope,
-  PanelBoundary,
   ToastProvider,
   WfServerPhoneProvider,
   guessPhoneFromRequest,
@@ -224,13 +223,8 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
               <WardSkipToActNow />
               {/* P073: "Skip to main content" moves focus into the page's main. */}
               <WardMainFocusTarget />
-              {/* TE-06 (front-end audit, 5 Nov 2026): the route `error.tsx` cannot wrap this layout, so the
-              rail, the top bar and each note have their own boundary. One broken part shows a short
-              error line and the rest of the ward keeps working. */}
               <div className={styles.shellRow}>
-                <PanelBoundary label="The sidebar">
-                  <WardRail />
-                </PanelBoundary>
+                <WardRail />
                 {/* Gives the rail its stored or tablet shape before the first paint (ward-rail-early.ts),
               so the sidebar does not fold and slide the page once the app loads. */}
                 <WardFirstDocumentOnly>
@@ -241,9 +235,7 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                   />
                 </WardFirstDocumentOnly>
                 <div className={styles.shellContent} data-wf-scroller="">
-                  <PanelBoundary label="The top bar">
-                    <WardBarMount />
-                  </PanelBoundary>
+                  <WardBarMount />
                   {/* A1-17: until the page's code is running, taps do nothing; say so rather than look
                 ready. Hidden once the header is ready (`data-wf-bar-ready`, ward-early-tap.ts). */}
                   <p className={styles.loadingNote} role="status" data-testid="ward-loading-note" data-print-hide>
@@ -267,34 +259,16 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                 comes first, so a recovery note waiting to be closed never hides it. Keep this order. */}
                   <div className={styles.bannerHolder} data-wf-bar-notes="">
                     {/* SD-02 (Josh, 5 Nov 2026): lost device saving outranks every other note. */}
-                    <PanelBoundary label="This note">
-                      <WardDemoNotSavedNote />
-                    </PanelBoundary>
-                    <PanelBoundary label="This note">
-                      <WardBroadcastBanner />
-                    </PanelBoundary>
-                    <PanelBoundary label="This note">
-                      <WardRecoveryNotice />
-                    </PanelBoundary>
-                    <PanelBoundary label="This note">
-                      <WardOtherTabDayNote />
-                    </PanelBoundary>
-                    <PanelBoundary label="This note">
-                      <WardOfflineBanner practice={false} />
-                    </PanelBoundary>
+                    <WardDemoNotSavedNote />
+                    <WardBroadcastBanner />
+                    <WardRecoveryNotice />
+                    <WardOtherTabDayNote />
+                    <WardOfflineBanner practice={false} />
                     {/* Fix plan item 9: retakes the downtime pack hourly and at shift change, and offers it to print or save. */}
-                    <PanelBoundary label="This note">
-                      <WardDowntimePackLine />
-                    </PanelBoundary>
-                    <PanelBoundary label="This note">
-                      <WardAccessBanner />
-                    </PanelBoundary>
-                    <PanelBoundary label="This note">
-                      <WardPracticeLine />
-                    </PanelBoundary>
-                    <PanelBoundary label="This note">
-                      <WardDemoTypedTextNote />
-                    </PanelBoundary>
+                    <WardDowntimePackLine />
+                    <WardAccessBanner />
+                    <WardPracticeLine />
+                    <WardDemoTypedTextNote />
                   </div>
                   <WardPhoneDesktopOnly />
                   {/* A closed screen replaces the whole ground, which it draws itself (shell/ward-access.tsx).
