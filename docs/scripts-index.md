@@ -63,7 +63,9 @@ and `main-measured.mjs` (lets the budget gate reuse main's saved measurements in
 The other workflows need no script here: `release-tag.yml` tags each CI-passed main commit
 `release-YYYY-MM-DD-<sha>`, and `backend-uptime.yml` checks the hosted backend's `/healthz` every
 10 minutes, signs in as the synthetic monitor account to load `/v1/workspace`, and opens an issue
-for the owner when either stays down. CI also runs
+for the owner when either stays down. `ward-flow-nightly-browsers.yml` runs the nightly image
+baselines and the 834px tablet checks through `run-playwright.mjs` (front-end audit TE-01, TE-02),
+and a manual run with "update baselines" writes new baselines to commit. CI also runs
 `check-script-budget.mjs` (phone first-load script budgets in `script-budget.json`),
 `check-knip-baseline.mjs` (`npm run check:knip`), `ward-flow/related-tests.mjs`,
 `ward-flow/gate-tsc.mjs` and `ward-flow/selected-baseline-verdict.mjs`. Beside the knip ratchet,

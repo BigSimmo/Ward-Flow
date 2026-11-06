@@ -27,12 +27,19 @@ export const playwrightProjectNames = Object.freeze({
   // The release gate (tests/release-gate-journeys.spec.ts): desktop Chrome and phone WebKit.
   releaseGateDesktop: "release-gate-desktop",
   releaseGatePhone: "release-gate-phone",
+  // Nightly only (front-end audit TE-01, TE-02): image baselines and the 834px tablet.
+  visualDesktop: "visual-desktop",
+  visualPhone: "visual-phone",
+  tabletWebkit: "tablet-webkit",
 });
 
 const DEFAULT_CONFIG_PROJECTS = Object.freeze({
   "playwright.config.ts": [
     playwrightProjectNames.releaseGateDesktop,
     playwrightProjectNames.releaseGatePhone,
+    playwrightProjectNames.visualDesktop,
+    playwrightProjectNames.visualPhone,
+    playwrightProjectNames.tabletWebkit,
     playwrightProjectNames.firefoxWardResponsive,
     playwrightProjectNames.webkitWardResponsive,
     playwrightProjectNames.chromium,
@@ -58,6 +65,9 @@ const PROJECT_BROWSER_FAMILIES = Object.freeze({
   [playwrightProjectNames.mobilePwaStandalone]: "webkit",
   [playwrightProjectNames.releaseGateDesktop]: "chromium",
   [playwrightProjectNames.releaseGatePhone]: "webkit",
+  [playwrightProjectNames.visualDesktop]: "chromium",
+  [playwrightProjectNames.visualPhone]: "webkit",
+  [playwrightProjectNames.tabletWebkit]: "webkit",
 });
 
 // Mirrors Playwright's chromium-headless-shell executable table for the

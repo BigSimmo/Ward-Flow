@@ -1,0 +1,106 @@
+name: Ward Flow nightly browsers
+
+# Front-end audit, 5 Nov 2026. Two browser checks that run nightly and never on a pull request, so
+# they add no PR cost and never block a merge:
+# - TE-01: image baselines for ten key screens, desktop Chromium 1440 and phone WebKit 390
+#   (tests/ward-visual-baselines.spec.ts, baselines in tests/visual-baselines/).
+# - TE-02: the 834px tablet layout on iPad WebKit, through the axe sweep and the responsive audit.
+# Baselines must be made on this same hosted Linux runner: fonts and anti-aliasing differ between
+# machines. A manual run with "update_baselines" ticked writes fresh baselines and uploads them as
+# the ward-visual-baselines artifact; a person downloads it and commits tests/visual-baselines/ in a
+# pull request. It compares nothing and pushes nothing. Synthetic data only, local production
+# server, no provider calls.
+on:
+  # 19:30 UTC is 3:30 am in Perth, after the main CI nightly (18:00 UTC) and before the 6 am release.
+  schedule:
+    - cron: "30 19 * * *"
+  workflow_dispatch:
+    inputs:
+      update_baselines:
+        description: "Write new image baselines and upload them as an artifact to commit. Runs no comparison."
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ward-flow-nightly-browsers
+  cancel-in-progress: false
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  nightly:
+    name: Ward Flow nightly browsers
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - name: Install and record the pinned npm toolchain
+        run: npm install --global --ignore-scripts --no-audit --no-fund "$(node -p "require('./package.json').packageManager")" && node --version && npm --version
+      - name: Restore installed packages
+        id: node-modules
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: node_modules
+          key: ward-node-modules-${{ runner.os }}-${{ hashFiles('.nvmrc', 'package.json', 'package-lock.json') }}
+      - name: Install locked dependencies
+        id: install
+        env:
+          WARD_INSTALL_RESTORED: ${{ steps.node-modules.outputs.cache-hit }}
+        run: node scripts/install-locked-dependencies.mjs
+      - name: Resolve the Playwright version
+        id: playwright-version
+        run: echo "version=$(node -p "require('playwright-core/package.json').version")" >> "$GITHUB_OUTPUT" && echo "image=${ImageOS:-unknown}-${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
+      # Read-only reuse of the release gate's main-saved WebKit system packages; a stale or missing
+      # cache only means apt downloads them.
+      - name: Restore release system packages
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ~/.cache/ward-release-apt
+          key: ward-release-apt-${{ runner.os }}-webkit-${{ steps.playwright-version.outputs.version }}-${{ steps.playwright-version.outputs.image }}
+          restore-keys: |
+            ward-release-apt-${{ runner.os }}-webkit-${{ steps.playwright-version.outputs.version }}-
+            ward-release-apt-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}-
+      - name: Seed release system packages
+        run: node scripts/ward-ci-public/apt-archive-cache.mjs seed "$HOME/.cache/ward-release-apt"
+      - name: Install Chromium and WebKit
+        id: browsers
+        timeout-minutes: 10
+        run: node scripts/ward-ci-public/install-chromium.mjs chromium webkit
+      - name: Compare image baselines and run the tablet checks
+        id: nightly
+        if: ${{ inputs.update_baselines != true }}
+        env:
+          WARD_GATE_BUILD: "1"
+        run: npm run test:e2e -- --project=visual-desktop --project=visual-phone --project=tablet-webkit
+      - name: Write new image baselines
+        id: update
+        if: ${{ inputs.update_baselines == true }}
+        env:
+          WARD_GATE_BUILD: "1"
+        run: npm run test:e2e -- --project=visual-desktop --project=visual-phone --update-snapshots=all ward-visual-baselines.spec.ts
+      - name: Upload the new image baselines to commit
+        if: ${{ !cancelled() && steps.update.outcome == 'success' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: ward-visual-baselines
+          path: tests/visual-baselines/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload failed nightly evidence and picture diffs
+        if: ${{ !cancelled() && (steps.nightly.outcome == 'failure' || steps.update.outcome == 'failure') }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: ward-nightly-browser-failures-${{ github.run_id }}
+          path: test-results/
+          if-no-files-found: warn
+          retention-days: 7

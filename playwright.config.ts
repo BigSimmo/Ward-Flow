@@ -20,7 +20,7 @@ const chromiumExecutablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 // `tests/playwright-project-isolation.test.ts` asserts every spec on disk is matched.
 const productionSpecPattern = /.*api-csrf-proxy\.spec\.ts/;
 const mockupSpecPattern =
-  /.*ui-(ward-native-history-print|ward-management|ward-chrome-header|ward-coordinator|ward-roles|ward-discharges|ward-capacity-morning-moved|ward-referrals|ward-forced-colors|ward-full-journey|ward-search|ward-statistics-compare|ward-statistics-journey|ward-table-thresholds|ward-responsive-audit|ward-tour-targets|ward-help-show-me|ward-design-sweep|ward-pwa-lifecycle)\.spec\.ts/;
+  /.*ui-(ward-native-history-print|ward-management|ward-chrome-header|ward-coordinator|ward-roles|ward-discharges|ward-capacity-morning-moved|ward-referrals|ward-forced-colors|ward-full-journey|ward-search|ward-statistics-compare|ward-statistics-journey|ward-table-thresholds|ward-responsive-audit|ward-tour-targets|ward-help-show-me|ward-design-sweep|ward-pwa-lifecycle|ward-seclusion)\.spec\.ts/;
 // A bounded Ward-only cross-browser proof; keep prototype cases separate from the inherited
 // production projects. The spec checks responsive geometry and keyboard access to local scrollers.
 const wardResponsiveSpecPattern = /.*ui-ward-responsive-audit\.spec\.ts/;
@@ -32,6 +32,13 @@ const releaseGateSpecPattern =
 // Shared mode (audit F-16): two signed-in desks against a real local backend and PostgreSQL. It needs
 // the stack `tests/support/ward-shared-mode-run.mjs` starts (shared-mode production `next start`, the backend, a
 // fake sign-in service), so the project exists only inside that runner, never in the offline gates.
+// Nightly only (.github/workflows/ward-flow-nightly-browsers.yml), never on a pull request. TE-01: image
+// baselines for ten key screens, made and compared on the same hosted Linux runner. TE-02: the 834px
+// tablet layout, which has its own server path (guessTabletFromRequest), runs the axe sweep and the
+// responsive audit on iPad WebKit. Front-end audit, 5 Nov 2026.
+const visualSpecPattern = /.*ward-visual-baselines\.spec\.ts/;
+const tabletSpecPattern = /.*(?:release-gate-axe-sweep|ui-ward-responsive-audit)\.spec\.ts/;
+const visualBaselinePath = "{testDir}/visual-baselines/{projectName}/{arg}{ext}";
 const sharedModeSpecPattern = /.*ward-shared-(?:mode|recovery|performance)\.spec\.ts/;
 const sharedPhoneSpecPattern = /.*ward-shared-recovery\.spec\.ts/;
 const sharedModeRunner = Boolean(process.env.WARD_E2E_ACCOUNTS);
@@ -45,7 +52,7 @@ const knownFailurePattern = knownFailurePatternFromEnvironment();
 export default defineConfig({
   testDir: "./tests",
   testMatch:
-    /.*(?:release-gate-journeys|release-gate-axe-sweep|ward-shared-(?:mode|recovery|performance)|api-csrf-proxy|ui-ward-(?:native-history-print|management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds|responsive-audit|tour-targets|help-show-me|design-sweep|pwa-lifecycle))\.spec\.ts/,
+    /.*(?:release-gate-journeys|release-gate-axe-sweep|ward-visual-baselines|ward-shared-(?:mode|recovery|performance)|api-csrf-proxy|ui-ward-(?:native-history-print|management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds|responsive-audit|tour-targets|help-show-me|design-sweep|pwa-lifecycle|seclusion))\.spec\.ts/,
   timeout: 60_000,
   retries: 0,
   // Fail the run if a stray `test.only` is committed: otherwise it silently
@@ -109,6 +116,28 @@ export default defineConfig({
       name: "release-gate-phone",
       testMatch: releaseGateSpecPattern,
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
+    },
+    {
+      name: "visual-desktop",
+      testMatch: visualSpecPattern,
+      snapshotPathTemplate: visualBaselinePath,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1440, height: 1024 },
+        ...(chromiumExecutablePath ? { launchOptions: { executablePath: chromiumExecutablePath } } : {}),
+      },
+    },
+    {
+      name: "visual-phone",
+      testMatch: visualSpecPattern,
+      snapshotPathTemplate: visualBaselinePath,
+      use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
+    },
+    {
+      // The responsive audit's own cases are tagged @mockup; the axe sweep's are not, so no grep here.
+      name: "tablet-webkit",
+      testMatch: tabletSpecPattern,
+      use: { ...devices["iPad Pro 11"], viewport: { width: 834, height: 1112 } },
     },
     {
       name: "firefox-ward-responsive",
