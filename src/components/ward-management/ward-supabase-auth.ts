@@ -466,8 +466,13 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
   async updatePassword(password: string) {
     if (!this.isRecovery || !this.session) throw new WardAuthError("session", "Open a password recovery link first.");
     await this.refreshIfNeeded();
+    if (!this.session) throw new WardAuthError("session", "Your session has expired. Sign in again.");
+    // A recovery session saved before its account check finished (the check failed or the page
+    // closed) names no account yet. Finish that check first, so no password changes on an account
+    // this browser has not confirmed. The recovery code is spent, so it is never exchanged again.
+    if (!this.session.user?.id) await this.verify(this.session);
     const session = this.session;
-    if (!session) throw new WardAuthError("session", "Your session has expired. Sign in again.");
+    if (!session?.user?.id) throw new WardAuthError("session", "Your session has expired. Sign in again.");
     const generation = this.generation;
     const user = (await this.request(
       "/user",

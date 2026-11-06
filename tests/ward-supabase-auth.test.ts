@@ -444,6 +444,30 @@ describe("PKCE password recovery (SEC-2)", () => {
     expect(auth.isRecovery).toBe(true);
     auth.dispose();
   });
+  it("finishes a failed account check before a password change and never spends the code again", async () => {
+    const tab = storage();
+    let userUp = false;
+    const fetcher = vi.fn(async (endpoint: RequestInfo | URL, _init?: RequestInit) => {
+      if (String(endpoint).includes("grant_type=pkce")) return Response.json(session("recovery-access"));
+      return userUp ? Response.json(user) : Response.json({}, { status: 503 });
+    });
+    const auth = new SupabaseWardAuth({ url, publishableKey: "sb_publishable_test", storage: tab, fetch: fetcher });
+    await expect(auth.restore({ code: "synthetic-code", verifier })).rejects.toMatchObject({ kind: "unavailable" });
+    expect(auth.isRecovery).toBe(true);
+    expect(auth.userId).toBeNull();
+    // Still unchecked: no password is sent.
+    await expect(auth.updatePassword("new-private-password")).rejects.toMatchObject({ kind: "unavailable" });
+    expect(fetcher.mock.calls.some(([, init]) => (init as RequestInit | undefined)?.method === "PUT")).toBe(false);
+    userUp = true;
+    await auth.updatePassword("new-private-password");
+    const calls = fetcher.mock.calls.map(
+      ([endpoint, init]) =>
+        `${(init as RequestInit | undefined)?.method ?? "GET"} ${String(endpoint).replace(url, "")}`,
+    );
+    expect(calls.filter((call) => call.includes("grant_type=pkce"))).toHaveLength(1);
+    expect(calls.slice(-2)).toEqual(["GET /auth/v1/user", "PUT /auth/v1/user"]);
+    auth.dispose();
+  });
   it.each([400, 403, 404, 422])("reports a refused code (%i) as an invalid link", async (status) => {
     const tab = storage();
     const auth = new SupabaseWardAuth({
