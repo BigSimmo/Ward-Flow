@@ -24,7 +24,8 @@ const SCROLL_TOP_RULES = ["target-size"];
 const BLOCKING_IMPACTS = new Set(["serious", "critical"]);
 
 /**
- * Runs axe on the page as it stands and fails on any serious or critical WCAG 2.1 AA violation.
+ * Runs axe on the page as it stands and fails on any serious or critical WCAG 2.2 AA violation
+ * (the tags in `AXE_TAGS` include 2.0, 2.1 and 2.2 A and AA).
  * Moderate and minor findings are attached to the report but never fail the gate. The full result
  * is attached per step, so a red run says which rule failed on which element at which step.
  */

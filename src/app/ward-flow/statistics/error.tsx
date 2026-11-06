@@ -5,10 +5,11 @@ import { WardFlowErrorPanel } from "../ward-flow-error-panel";
 /**
  * THE STATISTICS BOUNDARY — nearer than `ward-flow/error.tsx`, because this is where the guards are.
  *
- * ⚠️ **EXACTLY WHAT THIS COVERS — read from the route tree.** There is no `statistics/layout.tsx`,
- * so this boundary wraps the five statistics page renders and nothing else: `statistics`,
- * `statistics/compare`, `statistics/overview`, `statistics/ed/[edId]` and
- * `statistics/ward/[unitId]`. Every other ward route goes to the parent boundary one level up.
+ * ⚠️ **EXACTLY WHAT THIS COVERS — read from the route tree.** An `error.tsx` does not wrap the
+ * `layout.tsx` beside it, so `statistics/layout.tsx` (the Samples figures) sits outside this
+ * boundary and inside the parent one. This boundary wraps every statistics page render below it
+ * (twelve `page.tsx` files today: list `src/app/ward-flow/statistics` rather than trusting this
+ * count). Every other ward route goes to the parent boundary one level up.
  *
  * ⚠️ **WHY IT EXISTS WHEN THE PARENT WOULD ALSO HAVE CAUGHT THESE.** Six of the prototype's render
  * guards are here — five "the section is no longer defined" checks across four screens, plus
@@ -16,10 +17,9 @@ import { WardFlowErrorPanel } from "../ward-flow-error-panel";
  * A nearer boundary buys two real things and one thing it is tempting to claim and should not be:
  *   - `retry()` re-renders only the statistics segment rather than the whole ward subtree; and
  *   - the copy can name what failed, which "something went wrong" never can.
- *   - It does NOT keep more of the screen alive than the parent would. Both boundaries render
- *     inside `ward-flow/layout.tsx`, so both preserve `WardFlowProvider` and both replace the
- *     entire page, rail included. Anyone reasoning that a nearer boundary "fails smaller" on
- *     screen is reasoning about a layout this route tree does not have.
+ *   - It keeps only a little more of the screen alive than the parent would. Both boundaries
+ *     render inside `ward-flow/layout.tsx`, so both keep `WardFlowProvider`, the rail and the top
+ *     bar, and both replace the page area. This one also keeps the statistics layout's own parts.
  */
 export default function WardFlowStatisticsErrorBoundary({
   error,

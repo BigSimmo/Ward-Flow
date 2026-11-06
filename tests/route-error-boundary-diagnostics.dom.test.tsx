@@ -67,4 +67,19 @@ describe("RouteErrorBoundary Copy Diagnostics privacy", () => {
     expect(payload.message).toBeUndefined();
     expect(payload.digest).toBe("DIGEST-123");
   });
+
+  it("TE-12: logs only the error type and digest in production, never the message", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      const error = Object.assign(new Error("Synthetic Person Example has no bed"), { digest: "digest-1" });
+      render(<RouteErrorBoundary error={error} retry={() => undefined} logLabel="Shared label:" />);
+      const ours = consoleError.mock.calls.filter((call) => call[0] === "Shared label:");
+      expect(ours).toHaveLength(1);
+      expect(ours[0][1]).toEqual({ name: "Error", digest: "digest-1" });
+      expect(JSON.stringify(consoleError.mock.calls)).not.toContain("Synthetic Person Example");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
 });

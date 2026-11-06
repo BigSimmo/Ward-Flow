@@ -127,7 +127,9 @@ with the private operations receipt, without copying credentials or record conte
 
 ## Application rollback
 
-Railway's inspected history lists these prior builds as rollback-capable candidates:
+The rollback route moves `live` back to an earlier `live-*` release after pausing the daily
+release ([runbook](OPERATIONS-RUNBOOK.md#rolling-back-the-app)). Railway's inspected history lists
+these prior builds, kept here as a record of what it could still serve:
 
 | Service        | Prior deployment                       | Source                                     |
 | -------------- | -------------------------------------- | ------------------------------------------ |

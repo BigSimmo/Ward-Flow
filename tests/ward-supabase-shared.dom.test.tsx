@@ -743,11 +743,18 @@ describe("sign-out across tabs and the session limit (Audit 5 PS-08, Audit 4 A4-
 
   it("an idle sign-out with a reason stays in this tab", async () => {
     const { result } = await signedIn();
-    await act(async () => {
-      result.current.signOut("Signed out after 15 minutes without use. Sign in again to carry on.");
-      // No other tab answers its question within the wait (audit 24-3 SM-1).
-      await new Promise((resolve) => setTimeout(resolve, 300));
-    });
+    // TE-08: fake time runs the 250 ms wait for another tab's answer to its end, then lets the
+    // sign-out that follows finish, instead of hoping a 300 ms real sleep is long enough.
+    vi.useFakeTimers();
+    try {
+      await act(async () => {
+        result.current.signOut("Signed out after 15 minutes without use. Sign in again to carry on.");
+        // No other tab answers its question within the wait (audit 24-3 SM-1).
+        await vi.advanceTimersByTimeAsync(300);
+      });
+    } finally {
+      vi.useRealTimers();
+    }
     expect(channels[0].posted).not.toContain("signed-out");
     expect(result.current.error).toBe("Signed out after 15 minutes without use. Sign in again to carry on.");
     expect(vi.mocked(fetch).mock.calls.some(([url]) => String(url).includes("/logout"))).toBe(true);

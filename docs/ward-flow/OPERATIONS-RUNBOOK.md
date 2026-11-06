@@ -4,7 +4,7 @@
 
 Written 24 October 2026 from repository docs and config; not tested against the live services.
 
-_Updated 2026-11-05 — health diagnostics and release identities reconciled against source; Documentation owns. No live service check was performed._
+_Updated 2026-11-06 — one rollback route with a release pause switch (front-end audit CB-2); 2026-11-05 — health diagnostics and release identities reconciled against source; Documentation owns. No live service check was performed._
 
 **Who this is for:** whoever looks after the hosted synthetic prototype. **Status:** current
 guidance, pulled together from the dated records linked below. Those records hold the detail and
@@ -145,15 +145,38 @@ browser on the hosted site.**
 
 ### Rolling back the app
 
-1. Get Josh's yes. Name the service and the exact earlier deployment.
-2. Check that deployment still works with the current database schema and settings. Pair the
-   site and backend versions. An older build may lack a later fix.
-3. In Railway, redeploy that earlier deployment. Leave the database alone.
-4. Fix the source with a reviewed revert or fix pull request. Never reset shared history.
+There is one route (front-end audit CB-2, Josh's card 4, 5 November 2026). Railway deploys the
+site from `live`, so a rollback moves `live` back to an earlier release. It does not redeploy an old
+Railway deployment, and it never touches the database.
 
-Rollback candidates are listed in
-[operations-readiness.md](operations-readiness.md#application-rollback). **No live rollback has
-been run or proven.**
+1. Get Josh's yes. Write down the current `live` commit, the earlier `live-*` release to go back
+   to, and each service's current deployment.
+2. **Pause the daily release first.** In the repository's Actions variables, set
+   `WARD_RELEASE_PAUSED` to `true` (a repository setting, so Josh's yes). While it is set, the 6 am
+   run does nothing and a "release now" run fails, so neither can ship the bad commit again
+   (`.github/workflows/daily-release.yml`, tested in `tests/ward-daily-release-retry.test.ts`).
+   A run reads the switch once, when it starts, so a run already going when it is set can still
+   move `live`. Before step 4, open the "Ward Flow daily release" runs list and cancel any queued or
+   running release, or wait for it to finish. A cancel can take a minute, so carry on only when every
+   such run shows as finished, then read `live` again and note where it is.
+3. Check that the earlier release still works with the current database schema and settings. Pair
+   the site and backend versions. An older build may lack a later fix.
+4. Move `live` back to the commit of that `live-*` release. This is the only time `live` is moved
+   by hand, and only with Josh's yes:
+   `gh api -X PATCH repos/BigSimmo/Ward-Flow/git/refs/heads/live -f sha=<that commit> -F force=true`.
+   Railway then deploys it. **Not yet tried:** whether branch protection on `live` allows this.
+5. Confirm Railway has deployed it: each service's newest deployment has succeeded and its source
+   commit is the one `live` now points at. Moving `live` is not a rollback until this is true. Then
+   check the health URL and the affected page, then the shared-mode checks above.
+6. Fix the source on `main` with a reviewed revert or fix pull request. Never reset shared history.
+   Once that fix has passed CI on `main`, clear `WARD_RELEASE_PAUSED` (delete it or set `false`)
+   with Josh's yes, then wait for 6 am or run "release now". The release starts from the earlier
+   release's record, so no special input is needed.
+
+Earlier Railway deployments are listed in
+[operations-readiness.md](operations-readiness.md#application-rollback) as a record only. **No live
+rollback has been run or proven.** The rehearsal below touches live, so it needs Josh's yes on the
+day.
 
 ### During a pilot
 
