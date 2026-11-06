@@ -50,7 +50,7 @@
   box-shadow: var(--wf-e1);
 }
 
-.card > * + * {
+.card.card > * + * {
   border-top: 1px solid var(--wf-line);
 }
 
@@ -239,7 +239,7 @@
 }
 
 .paneHead strong {
-  font-size: var(--wf-fs-15, 15px);
+  font-size: var(--wf-fs-16);
 }
 
 .paneBody {
@@ -462,4 +462,92 @@
   .showMore {
     min-height: 44px;
   }
+}
+
+/* Phone and tablet (Josh, 6 Nov 2026): the open tool is its own page with Back, like iOS Settings. */
+.page {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  outline: none;
+  animation: wf-tools-page-in var(--wf-m-base, 200ms) var(--wf-ease, ease);
+}
+
+@keyframes wf-tools-page-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page {
+    animation: none;
+  }
+}
+
+.pageHead {
+  display: grid;
+  gap: var(--wf-s-2);
+  padding-bottom: var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  justify-self: start;
+  min-height: 40px;
+  margin-left: calc(var(--wf-s-2) * -1);
+  padding: 0 var(--wf-s-2) 0 4px;
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: transparent;
+  color: var(--wf-accent-ink);
+  font: inherit;
+  font-size: var(--wf-fs-16);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.back svg {
+  width: 20px;
+  height: 20px;
+}
+
+.back:hover {
+  background: var(--wf-hover);
+}
+
+.back:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+}
+
+.pageTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.pageTitle .rowIcon {
+  width: 32px;
+  height: 32px;
+}
+
+.pageTitle .rowIcon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.pageTitle .rowText strong {
+  font-size: var(--wf-fs-16);
+}
+
+.pageBody {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
 }
