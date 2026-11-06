@@ -954,7 +954,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
         contentClassName={bar.drawerSheet}
         bodyClassName={bar.drawerBody}
       >
-        <p>This is the bed coordinator&apos;s list. Individual alerts are unavailable for this desk.</p>
+        <p>Individual alerts are unavailable for this desk.</p>
       </Sheet>
       <Sheet
         id="ward-bar-tools-drawer"
