@@ -23,7 +23,7 @@ import {
   elapsedOpenMinutes,
   type EdSummary,
 } from "@/components/ward-management/ed/ed-home-derivations";
-import { groupDischarges } from "@/components/ward-management/discharges/discharge-board";
+import { groupDischarges } from "@/components/ward-management/discharges/discharge-board-model";
 import { edHasNoBedYet } from "@/components/ward-management/ed/ed-no-bed";
 import { isEdInitiatedWithdrawal } from "@/components/ward-management/ed/ed-screen-model";
 import { isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
