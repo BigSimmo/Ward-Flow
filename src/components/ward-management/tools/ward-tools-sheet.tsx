@@ -985,6 +985,7 @@ function ToolsSheetView({
       {toolPage}
       <div className={styles.list} hidden={Boolean(toolPage)}>
         <SearchField
+          className={styles.search}
           label="Search tools"
           placeholder="Search tools"
           value={query}
