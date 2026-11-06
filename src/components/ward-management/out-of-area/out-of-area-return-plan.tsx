@@ -35,6 +35,7 @@ import {
   TRAVEL_SHORT,
   confirmedAgeText,
   dischargeShort,
+  departTimeUnreadable,
   missingAnswers,
   DEPART_TIME_NOT_RECORDED,
   planWarningsLine,
@@ -250,6 +251,8 @@ export function ReturnPlan({
   // A typed CAD number the rule refuses is named beside the field; blank stays a plain "missing".
   const cadProblem = draft.cadNumber.trim() ? cadNumberProblem(draft.cadNumber) : undefined;
   const cadError = cadProblem ? `${cadProblem.charAt(0).toUpperCase()}${cadProblem.slice(1)}.` : undefined;
+  // A typed depart time that cannot be read blocks and is named beside the field; blank only warns.
+  const departError = departTimeUnreadable(draft) ? "Enter the depart time as HH:MM, or leave it blank." : undefined;
   const move = whoseMove(draft, record);
   const returnMovement = useOptionalWardFlowSelect("movements")?.movements.find(
     (movement) => movement.id === returnMovementId,
@@ -549,7 +552,7 @@ export function ReturnPlan({
                   onChange={(event) => onDraft({ cadNumber: event.target.value })}
                 />
               </Field>
-              <Field label="Depart" className={styles.formRow}>
+              <Field label="Depart" className={styles.formRow} error={departError}>
                 <TextInput
                   icon={Clock}
                   inputMode="numeric"

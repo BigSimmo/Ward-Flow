@@ -571,6 +571,11 @@ export function reduceRecordedStayEvent(
         typeof event.form4CReceived === "boolean" ? event.form4CReceived : existingRecord?.form4CReceived;
       const escortRequired =
         typeof event.escortRequired === "boolean" ? event.escortRequired : existingRecord?.escortRequired;
+      // W13: an agreement that does not repeat the plan's provider or depart time keeps the plan's
+      // own. The plan form is closed once recorded, so the only event that meets a record is the
+      // receiving ward's agreement, and no one can clear these on purpose through it.
+      const provider = event.provider ?? existingRecord?.provider;
+      const estimatedAt = event.estimatedAt ?? existingRecord?.estimatedAt;
       let earlier = existingRecord?.earlier;
       if (retainedRecord && !existingRecord) {
         const { earlier: previous, ...priorPlan } = retainedRecord;
@@ -585,10 +590,10 @@ export function reduceRecordedStayEvent(
         receivingWardAgreed: event.receivingWardAgreed,
         ...(event.receivingWardAgreed && existingRecord ? { agreedAt: event.now, agreedBy: event.role } : {}),
         mode: event.mode,
-        ...(event.provider === undefined ? {} : { provider: event.provider }),
+        ...(provider === undefined ? {} : { provider }),
         cadNumber: event.cadNumber.trim(),
         transportLegalStatus: event.transportLegalStatus,
-        ...(event.estimatedAt === undefined ? {} : { estimatedAt: event.estimatedAt }),
+        ...(estimatedAt === undefined ? {} : { estimatedAt }),
         ...(form4CReceived === undefined ? {} : { form4CReceived }),
         ...(escortRequired === undefined ? {} : { escortRequired }),
       };

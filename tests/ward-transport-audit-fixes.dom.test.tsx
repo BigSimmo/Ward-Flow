@@ -88,7 +88,9 @@ describe("Log booking (A4-7, A4-6, A4-2, A4-5)", () => {
     // W32 (Josh's card 3, 5 Nov 2026, replacing A4-6): with no ETA every answer is in and the blank
     // time warns instead of blocking Save.
     fireEvent.change(within(form).getByTestId("ward-patient-input-cad"), { target: { value: "CAD-SYN-7" } });
-    expect(within(form).getByTestId("ward-patient-book-transport-left")).toHaveTextContent("Every answer given");
+    expect(within(form).getByTestId("ward-patient-book-transport-left")).toHaveTextContent(
+      "Every required answer given",
+    );
     expect(within(form).getByTestId("ward-patient-book-transport-left-warnings")).toHaveTextContent(
       "Not recorded: estimated time. You can still save.",
     );

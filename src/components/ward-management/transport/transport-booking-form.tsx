@@ -331,7 +331,7 @@ export function TransportBookingForm({
       ) : (
         <p className={styles.allAnswered} data-testid={tid("left")} role="status">
           <StatusGlyph tone="success" size={9} />
-          Every answer given. Check them, then save.
+          Every required answer given. Check them, then save.
         </p>
       )}
       {/* W32 (Josh's card 3, 5 Nov 2026): the estimated time warns, never blocks. */}

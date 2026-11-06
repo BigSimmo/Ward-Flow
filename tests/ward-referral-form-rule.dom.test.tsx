@@ -107,6 +107,29 @@ describe("New referral form rule (FORM-REF)", () => {
   }, 60_000);
 });
 
+describe("New referral catchment after another patient-step error", () => {
+  it("marks only the missing age band, never the warning-only catchment or home region", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardReferralDrawer onClose={vi.fn()} />
+        <Probe />
+      </WardFlowProvider>,
+    );
+    chooseSampleReferralPerson("UM100005");
+    fireEvent.change(screen.getByLabelText("Age band"), { target: { value: "" } });
+    next("Next, referral");
+    // The age band blocks and is marked.
+    expect(screen.getByLabelText("Age band")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByRole("link", { name: "Choose the age band" })).toBeInTheDocument();
+    // The catchment and home region only warn: nothing in the card says it is required or invalid.
+    expect(screen.queryByText("Confirm the catchment before continuing")).toBeNull();
+    expect(screen.queryByText("Use the suggested catchment or change it before continuing")).toBeNull();
+    const card = screen.getByRole("heading", { name: "Catchment" }).closest("section")!;
+    expect(card.querySelector("[data-referral-invalid]")).toBeNull();
+    expect(card.querySelector('[aria-invalid="true"]')).toBeNull();
+  });
+});
+
 describe("New referral legal status (LEGAL-REF)", () => {
   it('blocks until the legal status is answered, with "Not yet recorded" counted as an answer', () => {
     render(
@@ -167,8 +190,42 @@ describe("New referral location from the sending desk", () => {
     fireEvent.change(screen.getByLabelText("Legal status"), { target: { value: "Not yet recorded" } });
     next("Next, clearance");
     expect(screen.getByRole("alert")).toHaveTextContent("Choose the referring emergency department.");
+    // The blocking field is named in the step's error summary and marked beside the field.
+    expect(screen.getByRole("link", { name: "Choose the referring emergency department" })).toHaveAttribute(
+      "href",
+      `#${origin.id}`,
+    );
+    expect(origin).toHaveAttribute("aria-invalid", "true");
     fireEvent.change(origin, { target: { value: "SCGH" } });
     next("Next, clearance");
     expect(screen.queryByText("Choose the referring emergency department.")).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Choose the referring emergency department" })).toBeNull();
+    expect(origin).not.toHaveAttribute("aria-invalid", "true");
+  });
+
+  it("names and marks a blank referring community service when no desk can fill it", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardReferralDrawer onClose={vi.fn()} initialPatientId="PT-005" initialCategory="ed" />
+        <Probe />
+      </WardFlowProvider>,
+    );
+    fireEvent.change(screen.getByLabelText("Age band"), { target: { value: "Adult" } });
+    tab("Referral");
+    fireEvent.click(within(screen.getByRole("group", { name: "Source" })).getByRole("button", { name: "Community" }));
+    const origin = screen.getByLabelText(/Referring service location/) as HTMLSelectElement;
+    fireEvent.change(origin, { target: { value: origin.options[1]!.value } });
+    fireEvent.change(screen.getByLabelText("Legal status"), { target: { value: "Not yet recorded" } });
+    next("Next, clearance");
+    const team = screen.getByLabelText(/Referring community service/);
+    expect(screen.getByRole("link", { name: "Record the referring community service" })).toHaveAttribute(
+      "href",
+      `#${team.id}`,
+    );
+    expect(team).toHaveAttribute("aria-invalid", "true");
+    expect(origin).not.toHaveAttribute("aria-invalid", "true");
+    fireEvent.change(team, { target: { value: "Synthetic referring service" } });
+    expect(screen.queryByRole("link", { name: "Record the referring community service" })).toBeNull();
+    expect(team).not.toHaveAttribute("aria-invalid", "true");
   });
 });

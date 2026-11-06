@@ -43,7 +43,6 @@ export function ReferralCatchmentCard({ s, addressLine }: { s: WardReferralDrawe
     homeRegion,
     setHomeRegion,
     setFlowError,
-    patientShowErrors,
     suburbKnown,
   } = s;
   const suggestion = catchmentTeam && !catchmentEditing ? catchmentForSuburb(catchmentSuburb, catchmentTeam) : null;
@@ -120,7 +119,6 @@ export function ReferralCatchmentCard({ s, addressLine }: { s: WardReferralDrawe
                   className={cx(styles.btn, styles.btnTint)}
                   id={`${sectionId}-use-catchment`}
                   data-testid="ward-referral-use-catchment"
-                  data-referral-invalid={patientShowErrors ? "" : undefined}
                   onClick={useSuggestion}
                 >
                   <CircleCheck aria-hidden="true" />
@@ -195,7 +193,6 @@ export function ReferralCatchmentCard({ s, addressLine }: { s: WardReferralDrawe
                     id={`${sectionId}-region`}
                     className={styles.fieldSelect}
                     value={homeRegion}
-                    aria-invalid={patientShowErrors && !homeRegion ? true : undefined}
                     onChange={(e) => {
                       setHomeRegion(e.target.value as HomeRegion);
                       // The region is its own answer; a team already confirmed stays so,
@@ -265,15 +262,7 @@ export function ReferralCatchmentCard({ s, addressLine }: { s: WardReferralDrawe
                       id={`${sectionId}-confirm-catchment`}
                       className={`${styles.btn} ${styles.btnTint}`}
                       aria-disabled={!catchmentTeam.trim() || !homeRegion ? "true" : undefined}
-                      // A button cannot carry aria-invalid; this marks it as the step's fault for the focus move.
-                      data-referral-invalid={patientShowErrors && catchmentTeam.trim() && homeRegion ? "" : undefined}
-                      aria-describedby={
-                        !catchmentTeam.trim() || !homeRegion
-                          ? `${sectionId}-catchment-why`
-                          : patientShowErrors
-                            ? `${sectionId}-catchment-error`
-                            : undefined
-                      }
+                      aria-describedby={!catchmentTeam.trim() || !homeRegion ? `${sectionId}-catchment-why` : undefined}
                       onClick={() => {
                         if (!catchmentTeam.trim() || !homeRegion) return;
                         setCatchmentConfirmed(true);
@@ -295,14 +284,8 @@ export function ReferralCatchmentCard({ s, addressLine }: { s: WardReferralDrawe
             </div>
           </>
         ) : null}
-        {patientShowErrors && !catchmentConfirmed && !catchmentNotKnown ? (
-          <p className={styles.fieldError} id={`${sectionId}-catchment-error`}>
-            <StatusGlyph tone="danger" size={9} />
-            {offering
-              ? "Use the suggested catchment or change it before continuing"
-              : "Confirm the catchment before continuing"}
-          </p>
-        ) : null}
+        {/* FORM-REF (Josh, 5 Nov 2026): the catchment and home region warn in Before you send and
+            never block, so another step error marks nothing here invalid. */}
       </div>
     </section>
   );

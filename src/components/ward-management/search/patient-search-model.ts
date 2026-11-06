@@ -7,6 +7,7 @@ import { type Patient } from "@/components/ward-management/ward-patients";
 import { LONG_WAIT_MINUTES, WAIT_FILTER_SHORT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { referralState } from "@/components/ward-management/ward-referrals";
 import { CENSUS_HIGHLIGHTS, type CensusGroup, type CensusHighlight, type CensusRow } from "./patient-census";
+import { isCommunityReferral } from "./community-referral";
 
 /** The wait bands, in hours, from Josh's named defaults (D-22, D-24): under 6, 6 to 24, over 24. */
 export const SHORT_WAIT_HOURS = WAIT_FILTER_SHORT_MINUTES / 60;
@@ -117,7 +118,9 @@ export function getPatientPresence(
   if (movement) return { key: "live", label: "On this board" };
   const referral = referrals.find((r) => matchesPatient(r, patient.id) && referralState(r) === "queued");
   if (referral) {
-    if ((referral.originSiteCode ?? "").includes("CMHT") || (referral.originSiteCode ?? "").includes("Clinic")) {
+    // The same community test the rows use, so a community referral sent without its location is
+    // still "Community / Home" here (source "community"), not "On this board".
+    if (isCommunityReferral(referral)) {
       return { key: "community", label: "Community / Home" };
     }
     return { key: "live", label: "On this board" };

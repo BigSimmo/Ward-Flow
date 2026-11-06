@@ -203,6 +203,13 @@ describe("errors mark and move to the field at fault (DA-12)", () => {
     setupUnanswered();
     next("Next, referral");
     expect(legal()).not.toHaveAttribute("aria-invalid");
+    // The location and referring service block too when no desk fills them, and are listed in the
+    // summary; give them so the legal status is the one thing to fix.
+    fireEvent.change(screen.getByLabelText(/Referring (emergency department|service location)/), {
+      target: { value: "RPH" },
+    });
+    const team = screen.queryByLabelText(/Referring community service/);
+    if (team) fireEvent.change(team, { target: { value: "Synthetic referring service" } });
     next("Next, clearance");
 
     expect(legal()).toHaveAttribute("aria-invalid", "true");

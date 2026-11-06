@@ -263,7 +263,7 @@ describe("the blocker opens in place when the greyed action is tapped", () => {
 
     // With every answer given, the top line says so.
     expect(within(dialog).getByTestId("ward-ed-book-transport-left-WF-011").textContent).toBe(
-      "Every answer given. Check them, then save.",
+      "Every required answer given. Check them, then save.",
     );
     const cad = within(dialog).getByTestId("ward-ed-transport-cad-number-WF-011") as HTMLInputElement;
     expect(cad.value).toBe("");

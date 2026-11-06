@@ -108,7 +108,7 @@ describe("the one transport booking form", () => {
     fireEvent.click(screen.getByTestId(id("escort", "no")));
     fireEvent.click(screen.getByTestId(id("legal", "involuntary")));
     expect(screen.getByTestId(id("time"))).toHaveValue("");
-    expect(screen.getByTestId(id("left"))).toHaveTextContent("Every answer given. Check them, then save.");
+    expect(screen.getByTestId(id("left"))).toHaveTextContent("Every required answer given. Check them, then save.");
     expect(screen.getByTestId(`${id("left")}-warnings`)).toHaveTextContent("Not recorded: estimated time.");
     fireEvent.click(screen.getByTestId(id("confirm")));
     expect(onSubmit).toHaveBeenCalledTimes(1);
@@ -256,7 +256,7 @@ describe("the one transport booking form", () => {
     fireEvent.change(screen.getByTestId(id("time")), { target: { value: "11:15" } });
     fireEvent.click(screen.getByTestId(id("day", "today")));
     fireEvent.click(screen.getByTestId(id("legal", "involuntary")));
-    expect(screen.getByTestId(id("left"))).toHaveTextContent("Every answer given. Check them, then save.");
+    expect(screen.getByTestId(id("left"))).toHaveTextContent("Every required answer given. Check them, then save.");
     fireEvent.click(screen.getByTestId(id("confirm")));
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ provider: "Ward escort", cadNumber: "" }));
   });
@@ -272,7 +272,7 @@ describe("the one transport booking form", () => {
     fireEvent.click(screen.getByTestId(id("legal", "involuntary")));
     expect(screen.getByTestId(id("cad"))).toHaveValue("");
     expect(screen.getByTestId(id("cad-to-follow"))).toHaveTextContent("CAD to follow");
-    expect(screen.getByTestId(id("left"))).toHaveTextContent("Every answer given. Check them, then save.");
+    expect(screen.getByTestId(id("left"))).toHaveTextContent("Every required answer given. Check them, then save.");
     fireEvent.click(screen.getByTestId(id("confirm")));
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ provider: "Ambulance (St John)", cadNumber: "" }));
   });

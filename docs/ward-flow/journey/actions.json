@@ -3376,7 +3376,7 @@
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 122,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         },
         {
           "path": "src/components/ward-management/ward-flow-provider.tsx",
@@ -3406,17 +3406,17 @@
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 134,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 140,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 148,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         }
       ]
     }
@@ -3465,7 +3465,7 @@
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 208,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen-overlays.tsx",
@@ -3490,12 +3490,12 @@
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 229,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 238,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         }
       ]
     }
@@ -3544,7 +3544,7 @@
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 244,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen-overlays.tsx",
@@ -3569,12 +3569,12 @@
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 246,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 257,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         }
       ]
     }
@@ -3623,7 +3623,7 @@
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 317,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         },
         {
           "path": "src/components/ward-management/patients/patient-now-screen.tsx",
@@ -3633,12 +3633,12 @@
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 324,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 336,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         }
       ]
     }
@@ -6746,9 +6746,9 @@
     "lane": "record",
     "nodes": ["dRepat"],
     "roles": ["coordinator"],
-    "does": "Logs a repatriation already arranged off the system: the home hospital, whether its ward agreed, road or flight, and voluntary or involuntary, with the provider, the CAD or tracking number and an estimated time when known (W13, 5 Nov 2026: each left out warns, and a blank CAD is CAD to follow). It books nothing.",
+    "does": "Logs a repatriation already arranged off the system: the home hospital, whether its ward agreed, road or flight, and voluntary or involuntary, with the provider, the CAD or tracking number and an estimated time when known (W13, 5 Nov 2026: each left out warns, and a blank CAD is CAD to follow; a typed depart time the form cannot read blocks the plan form rather than recording without it). It books nothing.",
     "needs": "A non-departed admission with valid home hospital, mode and legal status. A provider, if given, must be listed; a typed CAD must pass the CAD rule; an estimate, if given, must be finite. An unanswered prior plan may later be agreed once; an agreed plan cannot be agreed again while its return remains open; after a did_not_proceed closure a distinct new attempt may be agreed. An involuntary stay cannot be logged as a voluntary return. Any still-open return for the source stay refuses another plan. A retained agreed plan may start a distinct new attempt only after its linked return closed did_not_proceed; this retry qualification does not allow duplicate live returns or duplicate agreement of an active plan.",
-    "changes": "Creates or updates the telephone plan. Each distinct plan’s first agreement creates an open placement_requested return movement linked to the source stay; it does not itself book transport or transfer the patient. A retry preserves its prior closed journey and a flat earlier plan snapshot while replacing the single current plan for that stay. Agreed return origin site/ED lookup follows the saved scenario network. Local restore validates flat prior records and retains typed CAD values only as the redaction placeholder.",
+    "changes": "Creates or updates the telephone plan. Each distinct plan’s first agreement creates an open placement_requested return movement linked to the source stay; it does not itself book transport or transfer the patient. A retry preserves its prior closed journey and a flat earlier plan snapshot while replacing the single current plan for that stay. Agreed return origin site/ED lookup follows the saved scenario network. Local restore validates flat prior records and retains typed CAD values only as the redaction placeholder. An agreement that does not repeat the plan's provider or estimated time keeps the plan's own; a value it gives wins.",
     "reasons": ["TRANSPORT_PROVIDERS", "TRANSPORT_LEGAL_STATUSES"],
     "refuses": [
       {
@@ -6815,7 +6815,7 @@
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 478,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         },
         {
           "path": "src/components/ward-management/out-of-area/out-of-area-board.tsx",
@@ -6825,32 +6825,32 @@
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 481,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 506,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 509,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 512,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 515,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 518,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         }
       ]
     }
@@ -6899,7 +6899,7 @@
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 457,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         },
         {
           "path": "src/components/ward-management/handover/handover-scope-rules.ts",
@@ -6909,12 +6909,12 @@
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 462,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
           "line": 465,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         }
       ]
     }
@@ -6954,8 +6954,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 654,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "line": 659,
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         },
         {
           "path": "src/components/ward-management/community/use-community-contact-save.ts",
@@ -6964,8 +6964,8 @@
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
-          "line": 658,
-          "sha256": "c7423c68723cd982148f01f4186908f31538fa02e53f2524a79d246e6540fbed"
+          "line": 663,
+          "sha256": "76f41e705f685062ecbfc8024544a4d50b5097cc1f9f68d9ad34976cbf9e4621"
         }
       ]
     }

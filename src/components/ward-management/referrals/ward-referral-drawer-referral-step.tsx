@@ -153,6 +153,7 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
     edNeeds,
     setEdNeeds,
     toggleRisk,
+    originValid,
     sendingWard,
     senderMissing,
     reasonRoom,
@@ -165,6 +166,13 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
     storyError,
   } = s;
   const community = destType === "community";
+  // The location and referring service block only when the sending desk could not fill them
+  // (`referralError`), so they are asked, marked and named here only then.
+  const fromAsked = !sendingWard && !senderMissing;
+  const originError =
+    sourceKind === "ed" ? "Choose the referring emergency department" : "Choose the location of referral";
+  const originMissing = fromAsked && !originValid;
+  const sendingTeamMissing = fromAsked && sourceKind === "community" && !sendingTeam.trim();
   const genderUnanswered = destType === "ward" && referralGender === "";
   // The step's faults in the order the step shows them, for the error summary.
   const problems: ErrorSummaryItem[] = attempted.referral
@@ -175,8 +183,10 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
         ...(community && !communityNeeds.firstContact
           ? [{ id: `${sectionId}-first-contact`, text: "Choose when the team should first make contact" }]
           : []),
-        // FORM-REF (Josh, 5 Nov 2026): the location, referring service and reason warn in Before you
-        // send, so only what blocks is listed here.
+        // FORM-REF (Josh, 5 Nov 2026): the reason warns in Before you send, so only what blocks is
+        // listed here. The location and referring service block when the sending desk cannot fill them.
+        ...(originMissing ? [{ id: `${sectionId}-origin`, text: originError }] : []),
+        ...(sendingTeamMissing ? [{ id: `${sectionId}-sending`, text: "Record the referring community service" }] : []),
         ...(legalStatus === ""
           ? [{ id: `${sectionId}-refLegalSelect`, text: LEGAL_STATUS_UNANSWERED.replace(/\.$/u, "") }]
           : []),
@@ -250,6 +260,8 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
               <Field
                 label={sourceKind === "ed" ? "Referring emergency department" : "Referring service location"}
                 htmlFor={`${sectionId}-origin`}
+                required
+                error={attempted.referral && originMissing ? originError : null}
               >
                 <SelectBox>
                   <select
@@ -270,7 +282,13 @@ export function ReferralDetailsStep({ s }: { s: WardReferralDrawerState }) {
                 </SelectBox>
               </Field>
               {sourceKind === "community" && (
-                <Field label="Referring community service" htmlFor={`${sectionId}-sending`} wide>
+                <Field
+                  label="Referring community service"
+                  htmlFor={`${sectionId}-sending`}
+                  required
+                  wide
+                  error={attempted.referral && sendingTeamMissing ? "Record the referring community service" : null}
+                >
                   <input
                     id={`${sectionId}-sending`}
                     className={styles.fieldInput}
