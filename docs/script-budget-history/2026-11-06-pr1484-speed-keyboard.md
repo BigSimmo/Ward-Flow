@@ -20,3 +20,5 @@ New budgets (PERF-02), at the measured size plus 0.3 KB:
 - Statistics `/ward-flow/statistics`: 607.5 KB (605.5). Budget 607.8.
 
 Capacity fell 42.5 KB and Bed meeting TV 61.1 KB because both now import `groupDischarges` from the discharge board model instead of the discharge board UI (PERF-03). Not yet measured on hosted CI.
+
+After main (#1482, Help and tour) merged in at `8847fc14`, hosted CI measured Capacity at 656.8 KB against the new 656.4 budget. The 0.7 KB came in with #1482's shared Help code, which every route carries; this PR's own Capacity change is unchanged. Budget 656.4 raised to 657.1, the measured size plus 0.3 KB, the same rule as the other new budgets. Every other screen was within budget on that run.
