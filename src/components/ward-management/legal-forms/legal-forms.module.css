@@ -1477,12 +1477,14 @@ button.taskLabel[aria-pressed="true"] {
 }
 
 /* Phone compact switch (Josh, 12 Oct 2026): the views take the shared phone track (`--wf-phone-*`);
- * each option's hit area reaches the 48px floor, so the face drops its own 44px floor. The switch
- * pins under the phone header through the shared `pinnedSwitch` (ward-pinned-switch.module.css). */
+ * each option's hit area reaches the 48px floor, so the face drops its own 44px floor to the kit's
+ * 40px face (Q295). Not 0: this rule ties the kit's `.seg .segItem` and, when this sheet loads after
+ * the kit's, a 0 here squashed the options to their text (PR #1480 design sweep). The switch pins
+ * under the phone header through the shared `pinnedSwitch` (ward-pinned-switch.module.css). */
 @media (max-width: 46.4375rem) {
   .phoneViews button,
   .phoneViews [role="radio"] {
-    min-height: 0;
+    min-height: var(--wf-phone-seg-item-h, 40px);
   }
 }
 
