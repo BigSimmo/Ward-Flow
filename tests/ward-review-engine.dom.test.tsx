@@ -132,7 +132,7 @@ describe("review caller regressions", () => {
     renderWard();
     fireEvent.click(screen.getByTestId("ward-open-bed-board"));
     const occupied = [...document.querySelectorAll<HTMLElement>("[data-testid^='ward-board-bed-']")].find(
-      (item) => !/ready|closed|pulled/.test(item.getAttribute("aria-label") ?? ""),
+      (item) => !/ready|closed|pulled/i.test(item.getAttribute("aria-label") ?? ""),
     );
     expect(occupied).toBeDefined();
     fireEvent.click(occupied!);
@@ -152,7 +152,7 @@ describe("review caller regressions", () => {
     const chip = chips.at(-1)!;
     fireEvent.click(chip);
     const free = [...document.querySelectorAll<HTMLElement>("[data-testid^='ward-board-bed-']")].find((item) =>
-      /, ready, fits$/.test(item.getAttribute("aria-label") ?? ""),
+      /, Ready, [^,]+, fits$/.test(item.getAttribute("aria-label") ?? ""),
     );
     expect(free).toBeDefined();
     fireEvent.click(free!);

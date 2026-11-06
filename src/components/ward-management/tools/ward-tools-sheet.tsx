@@ -315,10 +315,11 @@ function RowText({ entry, group }: { entry: Entry; group: GroupId }) {
       <span className={styles.rowIcon} data-group={group} aria-hidden="true">
         <Icon aria-hidden="true" strokeWidth={1.75} />
       </span>
+      {/* axe 4.14 joins a row's visible words with no gap, so a space keeps "Find a bed" and its detail
+          two words; the row and its text are flex and grid, where a space takes no room. */}
       <span className={styles.rowText}>
-        <strong>{entry.name}</strong>
-        <em>{entry.detail}</em>
-      </span>
+        <strong>{entry.name}</strong> <em>{entry.detail}</em>
+      </span>{" "}
       {entry.count && entry.count.n > 0 ? (
         <Count
           n={entry.count.n}

@@ -36,7 +36,8 @@ function renderRows(rows: PhoneRoundRow[]) {
 describe("ward phone round list, ready bed", () => {
   it("draws Ready once for a ready bed", () => {
     const list = renderRows([row("07", {})]);
-    const bed = list.getByRole("button", { name: "Bed 07" });
+    // axe 4.14: the row is named by the words it shows, in order (no aria-label).
+    const bed = list.getByRole("button", { name: "Bed 07 Ready" });
     expect(bed.textContent?.match(/Ready/g)).toHaveLength(1);
     // The ready mark stays, beside the name.
     expect(bed.querySelector('[data-wf-glyph="success"]')).not.toBeNull();
@@ -54,7 +55,7 @@ describe("ward phone round list, ready bed", () => {
         glyph: null,
       }),
     ]);
-    const text = list.getByRole("button", { name: "Bed 03" }).textContent ?? "";
+    const text = list.getByRole("button", { name: "Bed 03 Testperson, Alex Occupied 95d stay" }).textContent ?? "";
     expect(text).toContain("Occupied");
     expect(text).toContain("95d");
   });

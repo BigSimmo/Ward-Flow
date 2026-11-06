@@ -173,7 +173,7 @@ describe("Menu: Act now, the desk's own pages, then More pages", () => {
 
     const more = screen.getByTestId("ward-phone-menu-more-pages");
     expect(more).toHaveAttribute("aria-expanded", "false");
-    expect(more).toHaveTextContent(/More pages\d+ pages? in \d+ groups?/u);
+    expect(more).toHaveTextContent(/More pages \d+ pages? in \d+ groups?/u);
     const folded = document.getElementById(more.getAttribute("aria-controls")!)!;
     expect(folded).not.toBeVisible();
     expect(folded.querySelectorAll("a[href]").length).toBeGreaterThan(0);

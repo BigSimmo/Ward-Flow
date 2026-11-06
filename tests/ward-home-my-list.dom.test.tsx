@@ -28,8 +28,10 @@ describe("Home My List referral rows (D-92, Josh 31 Oct 2026)", () => {
     expect(open).toHaveAttribute("aria-current", "true");
     // CB-3: the row's name is "Open referral for <name>: <visible title>".
     const name = open!.getAttribute("aria-label")!.replace(/^Open referral for (.+?): .*$/u, "$1");
-    const panelDecide = await screen.findAllByRole("link", { name: `Decide referral for ${name}` });
-    // One Decide in the row, one in the side panel the row opened.
-    expect(panelDecide.length).toBeGreaterThanOrEqual(2);
+    // One Decide in the row, one in the side panel the row opened (named by its own words, axe 4.14).
+    expect(screen.getAllByRole("link", { name: `Decide referral for ${name}` }).length).toBeGreaterThanOrEqual(1);
+    expect(
+      (await screen.findAllByRole("link", { name: `Decide on this referral for ${name}` })).length,
+    ).toBeGreaterThanOrEqual(1);
   });
 });

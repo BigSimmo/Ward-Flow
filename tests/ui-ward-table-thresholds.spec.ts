@@ -605,7 +605,18 @@ test.describe("@mockup the ward type floor is met where it is painted, not where
         [...document.querySelectorAll("[data-ward-type-floor]")].map((element) => ({
           name: element.getAttribute("data-ward-type-floor") ?? "",
           px: Number.parseFloat(getComputedStyle(element).fontSize),
-          tableStep: getComputedStyle(element).getPropertyValue("--t-1").trim(),
+          // The token is declared in rem (BA-5), so its string reads "0.8125rem"; a probe that sets
+          // font-size from it reports the step in px at this root, which is what the floor rules on.
+          tableStep: (() => {
+            // An undeclared token would make the probe inherit, so an empty token never passes.
+            if (!getComputedStyle(element).getPropertyValue("--t-1").trim()) return "(not declared)";
+            const probe = document.createElement("span");
+            probe.style.fontSize = "var(--t-1)";
+            element.append(probe);
+            const px = getComputedStyle(probe).fontSize;
+            probe.remove();
+            return px;
+          })(),
         })),
       );
 

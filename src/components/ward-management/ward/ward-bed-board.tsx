@@ -201,7 +201,7 @@ function CellName({ surname, given }: { surname: string; given: string }) {
     <span ref={nameRef} className={styles.cellName}>
       <span ref={wordRef} className={styles.cellWord}>
         {shown}
-      </span>
+      </span>{" "}
       <span ref={initialRef} className={styles.cellInitial}>
         <span className={styles.srComma}>, </span>
         {given}
@@ -241,25 +241,31 @@ function cellLabel(
   bed: BedItem,
   fits: boolean,
   nameFor: (name: string, umrn: string | undefined | null) => string,
+  shownSub: string,
+  collidingPairs?: ReadonlySet<string>,
 ): string {
-  // A2-20: the accessible name follows Discreet names, as the visible cell does. Codex on #551: it uses the
-  // cell's Ready and Pulled words too, so a pulled bed is never announced as free.
+  // A2-20: the accessible name follows Discreet names. Codex on #551: it uses the cell's Ready and
+  // Pulled words too, so a pulled bed is never announced as free.
+  // axe 4.14 (label-content-name-mismatch): the name holds the cell's visible words in the order
+  // shown (number, short tag, name or state word, then the quiet line or the fit reason), and the
+  // spoken extras (the full criteria led phrase, "fits") come after them.
   const alias = bed.patientAlias === undefined ? undefined : nameFor(bed.patientAlias, bed.umrn);
-  const state =
-    bed.status === "ready"
-      ? bed.heldFor
-        ? `pulled for ${bed.heldFor}`
-        : bed.preparing
-          ? "being made ready"
-          : "ready"
-      : bed.status === "closed"
-        ? "closed"
-        : bed.status === "incoming"
-          ? `pulled${alias ? `, ${alias}` : ""}`
-          : `${alias ?? "occupant not recorded"}${bed.status === "leave" ? ", on leave" : ""}`;
+  const occupant =
+    bed.status === "ready" || bed.status === "closed" || bed.status === "incoming"
+      ? null
+      : occupantParts(alias, bed.umrn, collidingPairs);
+  const word =
+    bed.status === "ready" || bed.status === "closed" || bed.status === "incoming"
+      ? cellWord(bed)
+      : occupant
+        ? `${occupant.surname}, ${occupant.given}`
+        : alias
+          ? surname(alias)
+          : "occupant not recorded";
+  const chip = bed.criteriaLedChip;
   // D-64: the cell shows the short criteria led discharge tag, and the full phrase is spoken and in the tooltip.
-  const criteria = bed.criteriaLedChip ? `, ${bed.criteriaLedChip.phrase}` : "";
-  return `Bed ${bedNumberLabel(bed.bedNumber)}, ${state}${criteria}${fits ? ", fits" : ""}`;
+  const extras = [chip?.phrase, fits ? "fits" : undefined].filter(Boolean);
+  return `Bed ${bedNumberLabel(bed.bedNumber)}${chip ? `, ${chip.short}` : ""}, ${word}, ${shownSub}${extras.length ? `, ${extras.join(", ")}` : ""}`;
 }
 
 function matchesQuery(bed: BedItem, query: string): boolean {
@@ -532,7 +538,8 @@ export function WardBedBoard({
                   const source = picked?.kind === "stay" && picked.fromBed === Number(bed.bedNumber);
                   const glyph = bedGlyphTone(bed);
                   const dim = picked ? !fits && !source : !matchesQuery(bed, query);
-                  const label = cellLabel(bed, fits, nameFor);
+                  const shownSub = fits && picked ? fitReason(bed, picked, isMixed) : cellSub(bed);
+                  const label = cellLabel(bed, fits, nameFor, shownSub, collidingPairs);
                   const chosen = confirming !== null && Number(confirming.bedNumber) === Number(bed.bedNumber);
                   return (
                     <button
@@ -572,26 +579,21 @@ export function WardBedBoard({
                           : undefined
                       }
                     >
+                      {/* axe 4.14 joins visible words with no gap; these spaces take no room in the flex cell. */}
                       <span className={styles.cellTop}>
-                        <span className={styles.cellNo}>{bedNumberLabel(bed.bedNumber)}</span>
+                        <span className={styles.cellNo}>{bedNumberLabel(bed.bedNumber)}</span>{" "}
                         {bed.criteriaLedChip ? (
                           <CriteriaLedTag chip={bed.criteriaLedChip} short />
                         ) : glyph ? (
                           <StatusGlyph tone={glyph} size={10} />
                         ) : null}
-                      </span>
+                      </span>{" "}
                       <span className={styles.cellState}>
                         <CellWord bed={bed} collidingPairs={collidingPairs} />
+                      </span>{" "}
+                      <span className={fits && picked ? styles.cellReason : styles.cellSub} aria-hidden="true">
+                        {shownSub}
                       </span>
-                      {fits && picked ? (
-                        <span className={styles.cellReason} aria-hidden="true">
-                          {fitReason(bed, picked, isMixed)}
-                        </span>
-                      ) : (
-                        <span className={styles.cellSub} aria-hidden="true">
-                          {cellSub(bed)}
-                        </span>
-                      )}
                     </button>
                   );
                 })}

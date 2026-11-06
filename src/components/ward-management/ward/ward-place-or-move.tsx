@@ -36,12 +36,13 @@ export function WardPlaceOrMove({
     <button
       type="button"
       className={buttonClass({ variant: waiting > 0 ? "tint" : "ghost", size: "sm" })}
-      aria-label={waiting > 0 ? `Place or move beds, ${waiting} waiting to be placed` : "Place or move beds"}
+      // axe 4.14: the name starts with the words and count the button shows ("Place or move 2").
+      aria-label={waiting > 0 ? `Place or move, ${waiting} waiting to be placed in a bed` : "Place or move beds"}
       data-testid="ward-open-bed-board"
       onClick={onOpen}
     >
       <Hand strokeWidth={1.75} size={14} aria-hidden="true" />
-      Place or move
+      Place or move{" "}
       {waiting > 0 ? (
         <span className={styles.placeCount} aria-hidden="true">
           {waiting}

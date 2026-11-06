@@ -285,7 +285,7 @@ export function ReferralPlacementPanel({
     <Link
       href={referralBoardHref(referral.id)}
       className={buttonClass({ variant: "pri", className: drawer.wide })}
-      aria-label={`Decide referral for ${patientLabel}`}
+      aria-label={`Decide on this referral for ${patientLabel}`}
       data-testid="ward-referral-placement-decide"
     >
       Decide on this referral

@@ -52,7 +52,7 @@ describe("Command referral placement panel names the patient", () => {
     live.patientId = undefined;
     try {
       const label = openReferral("RF-001");
-      expect(label).toBe("Decide referral for Not recorded");
+      expect(label).toBe("Decide on this referral for Not recorded");
       expect(label).not.toMatch(/PT-|Name not recorded/);
     } finally {
       live.patientId = saved;
