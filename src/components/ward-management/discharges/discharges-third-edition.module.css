@@ -996,6 +996,11 @@
   min-width: 0;
 }
 
+/* In the drawer the "Going to" field sits between the facts and Milestones; give it room. */
+.detailDrawerBody .departDest {
+  margin-block: var(--wf-s-2) var(--wf-s-3);
+}
+
 /* Follow-up and care-journey sections inside the dossier tab. */
 .drawerSection {
   display: flex;
