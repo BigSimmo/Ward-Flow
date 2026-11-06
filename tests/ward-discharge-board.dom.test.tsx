@@ -492,9 +492,8 @@ describe("DischargeBoard", () => {
 
   it("gives every release a freshness stamp in its selected detail", () => {
     renderBoard();
-    // Selection changes detail contents; keep the named regions while walking every row.
+    // Each row opens the detail drawer (drawer review, 6 Nov 2026); it is read afresh per row.
     const table = releaseWorklist();
-    const details = screen.getByRole("region", { name: "Selected discharge details" });
 
     let inspected = 0;
     for (const key of RELEASE_GROUP_KEYS) {
@@ -502,7 +501,7 @@ describe("DischargeBoard", () => {
       expect(rows.length, `${key} has no release row, so its detail freshness was not exercised`).toBeGreaterThan(0);
       for (const row of rows) {
         fireEvent.click(rowOpener(row));
-        expect(details).toBeInTheDocument();
+        const details = screen.getByTestId("ward-discharge-detail");
         expect(within(details).getByText(/^Confirmed \d{2}:\d{2} ·/)).toBeInTheDocument();
         inspected += 1;
       }

@@ -251,6 +251,8 @@ function DischargeProbe() {
       >
         Open own discharge
       </button>
+      {/* Drawer review (6 Nov 2026): the detail's tabs are the kit drawer's, so the probe picks the tab. */}
+      <button onClick={() => s.setDrawerTab("dossier")}>Show the record tab</button>
       <output data-testid="opened-record">{s.activeRecord?.admissionId ?? "none"}</output>
       {s.activeRecord ? <DischargeRecordDetail key={s.activeRecord.id} s={s} activeRecord={s.activeRecord} /> : null}
     </>
@@ -341,7 +343,7 @@ describe("role restrictions and record actors", () => {
       .mockReturnValue({ commandId: "retry", status: "accepted" });
     renderCommand(<DischargeProbe />, dispatch);
     await act(async () => fireEvent.click(screen.getByRole("button", { name: "Open own discharge" })));
-    fireEvent.click(screen.getByRole("tab", { name: "Record" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show the record tab" }));
     fireEvent.click(screen.getByTestId("ward-discharge-update-date-btn"));
     const input = screen.getByTestId("ward-discharge-new-time-input");
     fireEvent.change(input, { target: { value: "23:15" } });
