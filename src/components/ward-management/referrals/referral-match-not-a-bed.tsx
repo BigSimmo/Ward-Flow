@@ -85,8 +85,7 @@ export function renderNotABedPhoneReview({
         <span className={styles.v10AskWhat}>Psychiatric review, not answered by a bed</span>
         <p className="sr-only">
           {patientInfo ? formatUmrn(patientInfo.umrn) : "This referral"} was sent to{" "}
-          {referralDestinationLabels(referral).join(", ").toLowerCase()} — none of which is answered by matching a bed.
-          There is no bed shortlist for this referral.
+          {referralDestinationLabels(referral).join(", ").toLowerCase()}. There is no bed shortlist.
         </p>
       </div>
       {gpSourceNotice}
@@ -265,8 +264,7 @@ export function renderNotABedPanel({
         </span>
         <p className="sr-only">
           {patientInfo ? formatUmrn(patientInfo.umrn) : "This referral"} was sent to{" "}
-          {referralDestinationLabels(referral).join(", ").toLowerCase()} — none of which is answered by matching a bed.
-          There is no bed shortlist for this referral.
+          {referralDestinationLabels(referral).join(", ").toLowerCase()}. There is no bed shortlist.
         </p>
       </div>
       {gpSourceNotice}

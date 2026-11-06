@@ -56,7 +56,7 @@ describe("ward answer: the Bed request panel and the census reason follow whethe
     const unit = unitById(WARD_ID)!;
     expect(screen.queryByTestId(/^ward-incoming-/)).not.toBeInTheDocument();
     const line = screen.getByTestId("ward-answer-all-answered");
-    expect(line).toHaveTextContent("Requests land here as they are sent.");
+    expect(line).toHaveTextContent("No requests waiting.");
     expect(screen.queryByRole("heading", { name: "Bed request" })).not.toBeInTheDocument();
 
     const reason = document.getElementById(`ward-answer-bed-reason-${WARD_ID}`)!;

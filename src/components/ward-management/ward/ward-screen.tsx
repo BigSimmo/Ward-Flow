@@ -944,7 +944,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             testId="ward-unit-unresolved"
             list={{ href: "/ward-flow/wards", label: "All wards" }}
           >
-            No ward matches this link. It never falls back to a different ward.
+            No ward matches this link.
           </WardNotFoundBody>
         </main>
       </div>
@@ -2160,7 +2160,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const wardLead =
     service !== null && unitHealthService(unit) !== undefined ? (
       <p className={styles.placeholder} data-testid="ward-unit-service-sentence">
-        {`This ward is one unit in ${unitHealthService(unit)}, so its own figures below do not change with the service.`}
+        {`Part of ${unitHealthService(unit)}. Not filtered by service.`}
       </p>
     ) : null;
 

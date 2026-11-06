@@ -258,7 +258,7 @@ describe("Coordinator & ED Transit Clocks and Telemetry", () => {
       expect(card).toBeInTheDocument();
       const overdueAlert = screen.getByTestId("ward-shortlist-transit-overdue");
       expect(overdueAlert).toBeInTheDocument();
-      expect(overdueAlert).toHaveTextContent(/Overdue alert/i);
+      expect(overdueAlert).toHaveTextContent(/Arrival overdue/i);
       expect(screen.getByTestId("ward-shortlist-transit-countdown")).toHaveTextContent("Overdue (+2h)");
     });
 

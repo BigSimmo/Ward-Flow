@@ -1242,7 +1242,6 @@ export function DelaysBoard({
                   <PhoneFilterFold
                     count={filterCount}
                     title="Filter the list"
-                    description="Filters narrow the list. The list says how many they hide."
                     className={styles.phoneFold}
                     data-testid="delays-filter-fold"
                   >
@@ -1412,7 +1411,6 @@ export function DelaysBoard({
                 open={phoneSheet === "spread"}
                 onClose={() => setPhoneSheet(null)}
                 title="Wait spread and the hours ahead"
-                description="Dots and columns follow the same filters as the list"
                 height="tall"
               >
                 <DelaysBoardGraphs

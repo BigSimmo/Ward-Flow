@@ -356,9 +356,7 @@ describe("finding 1 — a closed movement must not render as live and actionable
 
     const summary = screen.getByTestId("ward-console-eligibility-summary");
     // And the caveat is now unavoidable: it is the first thing inside the block that was revealed.
-    expect(
-      within(summary).getByText(/This is a calculation against the wards as they are right now/i),
-    ).toBeInTheDocument();
+    expect(within(summary).getByText(/Calculated against the wards right now/i)).toBeInTheDocument();
     expect(within(summary).getByText(/not a record of what was true when this movement closed/i)).toBeInTheDocument();
   });
 
@@ -472,7 +470,7 @@ describe("finding 3 — a statutory deadline must carry its day and its breach s
     // Readiness states the verdict and points at the panel above. It must not carry a second copy
     // of the clock face — that is the duplication the ruling names.
     const readiness = screen.getByTestId("ward-console-readiness");
-    expect(within(readiness).getByText("Recorded, and its deadline is still ahead.")).toBeInTheDocument();
+    expect(within(readiness).getByText("Recorded. Deadline ahead.")).toBeInTheDocument();
     expect(within(readiness).queryByText(/15:42/)).toBeNull();
 
     // Advance `now` by 350 minutes: the deadline (NOW_ANCHOR + 300) is now 50 minutes in the past.
@@ -483,9 +481,7 @@ describe("finding 3 — a statutory deadline must carry its day and its breach s
     expect(within(legalPanel).queryByText(/overdue/i)).toBeNull();
     // And the breach reaches the reader who is scanning rather than reading: the attention rail
     // carries the typed time, and Readiness says the deadline has passed and where to read it.
-    expect(
-      within(readiness).getByText("Recorded, and its deadline has passed. Needs attention shows the time as typed."),
-    ).toBeInTheDocument();
+    expect(within(readiness).getByText("Recorded. Deadline passed.")).toBeInTheDocument();
     const rail = screen.getByTestId("ward-console-attention");
     expect(within(rail).getByText(/ended 15:42 as typed/)).toBeInTheDocument();
     expect(within(rail).queryByText(/50m overdue/)).toBeNull();
@@ -607,7 +603,7 @@ describe("D3 — the audit timeline must not promise ten kinds of event and deli
     // inventing an instant, so it is named underneath instead.
     renderWorkspace("WF-004");
     const untimed = screen.getByTestId("ward-console-untimed");
-    expect(within(untimed).getByText(/reached step 4 of 7/)).toBeInTheDocument();
+    expect(within(untimed).getByText(/Reached step 4 of 7/)).toBeInTheDocument();
     // v10 pass 3 (10 Oct 2026): the acceptance now has a synthetic seed time (`withDemoStageTimes`),
     // so it moves from the untimed list to a dated timeline row rather than vanishing.
     expect(within(untimed).queryByText(/BTY Adult Secure accepted this patient/)).toBeNull();
@@ -627,9 +623,7 @@ describe("D4, D5, D6 — a closed movement must not contradict itself", () => {
     expect(screen.queryByText(/nothing can be holding it up/i)).toBeNull();
     const readiness = screen.getByTestId("ward-console-readiness");
     expect(within(readiness).queryByText("Patient declined transfer")).toBeNull();
-    expect(
-      within(readiness).getByText(/A note was recorded before this movement closed\. Nothing is holding it up now/),
-    ).toBeInTheDocument();
+    expect(within(readiness).getByText(/A note was recorded before closure/)).toBeInTheDocument();
     // The note itself survives, once, where it can be read beside the controls that change it.
     const blockerPanel = screen.getByTestId("ward-patient-blocker");
     expect(within(blockerPanel).getByText("Patient declined transfer")).toBeInTheDocument();
@@ -654,14 +648,16 @@ describe("D4, D5, D6 — a closed movement must not contradict itself", () => {
     // else" sat DIRECTLY ABOVE "it is not in the queue at all". Adjacent, and contradictory.
     renderWorkspace("WF-008");
     const flagPanel = screen.getByTestId("ward-patient-urgent-flag");
-    expect(within(flagPanel).queryByText(/like everybody else/)).toBeNull();
-    expect(within(flagPanel).getByText(/it is not in the queue at all/)).toBeInTheDocument();
+    expect(within(flagPanel).queryByText(/Ordered by urgency tier and wait/)).toBeNull();
+    expect(within(flagPanel).getByText(/Closed, so not in the queue/)).toBeInTheDocument();
     // One sentence, not two to reconcile.
     expect(flagPanel.querySelectorAll("p")).toHaveLength(1);
 
     cleanup();
     renderWorkspace("WF-001");
-    expect(within(screen.getByTestId("ward-patient-urgent-flag")).getByText(/like everybody else/)).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId("ward-patient-urgent-flag")).getByText(/Ordered by urgency tier and wait/),
+    ).toBeInTheDocument();
   });
 });
 
@@ -709,7 +705,7 @@ describe("the judgement — one fact, one home", () => {
     renderWorkspace("WF-004");
     const page = screen.getByTestId("ward-patient-workspace").textContent ?? "";
     expect(occurrences(page, "nobody has recorded whether one is needed")).toBe(0);
-    expect(occurrences(page, "Nobody has recorded an answer either way")).toBe(1);
+    expect(occurrences(page, "Not recorded either way")).toBe(1);
     const transport = screen.getByTestId("ward-console-transport-panel");
     expect(within(transport).getByText("No job has been raised.")).toBeInTheDocument();
   });

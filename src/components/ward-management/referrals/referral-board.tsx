@@ -1429,11 +1429,7 @@ export function ReferralBoard({
                       icon={ClipboardList}
                       title={
                         // ROLE BRANCH (ward): an empty queue says where the ward's answer is recorded.
-                        wardEmpty
-                          ? "Accept and Decline open here"
-                          : readOnly
-                            ? "Select a queued referral to review its facts."
-                            : "Select a queued referral to review its facts and record a decision."
+                        wardEmpty ? "Accept and Decline open here" : "Select a queued referral."
                       }
                       meta={wardEmpty ? undefined : `${queued.length} awaiting decision · ${decidedTotal} decided`}
                     />
@@ -1455,7 +1451,7 @@ export function ReferralBoard({
             open
             onClose={() => setPulling(undefined)}
             title="Pull the bed"
-            description="Anything already recorded is filled in. Check the details, then pull the bed."
+            description="Check the details, then pull the bed."
             testId="ward-referral-pull-sheet"
           >
             <PullAcceptedReferral item={pulling} onDone={() => setPulling(undefined)} />
