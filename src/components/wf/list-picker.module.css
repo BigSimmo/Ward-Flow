@@ -40,7 +40,7 @@
   position: absolute;
   top: calc(100% + 6px);
   left: 0;
-  z-index: var(--z-popover, 95);
+  z-index: var(--wf-z-popover);
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-1);

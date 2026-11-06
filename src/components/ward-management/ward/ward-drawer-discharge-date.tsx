@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Button, Stepper } from "@/components/wf";
+import { Button, Stepper, TimeField } from "@/components/wf";
 import { dayOf, formatInstantWithDay, type Instant } from "../ward-clock";
 import { clockInputValue } from "../capacity/planned-admissions-draft";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
@@ -116,7 +116,7 @@ export function WardDrawerDischargeDate({
       </div>
       <label>
         Expected discharge time
-        <input disabled={save.pending} type="time" value={time} onChange={(event) => setTime(event.target.value)} />
+        <TimeField disabled={save.pending} value={time} onValueChange={setTime} />
       </label>
       <p className={styles.hint} aria-live="polite">
         {parsed === undefined

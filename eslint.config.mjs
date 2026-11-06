@@ -57,8 +57,11 @@ const eslintConfig = defineConfig([
   {
     files: ["**/*.{jsx,tsx}"],
     rules: {
-      // The kit's typed date boxes render a real <input> first, so a wrapping <label> labels it.
-      "jsx-a11y/label-has-associated-control": ["error", { controlComponents: ["DateField", "DateTimeField"] }],
+      // The kit's typed date and time boxes render a real <input> first, so a wrapping <label> labels it.
+      "jsx-a11y/label-has-associated-control": [
+        "error",
+        { controlComponents: ["DateField", "DateTimeField", "TimeField"] },
+      ],
     },
   },
   // The rest of the jsx-a11y recommended set. `aria-role` ignores components because `role` is also

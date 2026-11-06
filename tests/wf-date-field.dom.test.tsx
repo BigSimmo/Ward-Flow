@@ -119,6 +119,9 @@ describe("kit typed date and time (DD/MM/YYYY plus HH:MM)", () => {
     expect(parseTypedTime("14:30")).toBe("14:30");
     expect(parseTypedTime("9:05")).toBe("09:05");
     expect(parseTypedTime("1430")).toBe("14:30");
+    // PR #1474 review: with no separator it takes exactly four digits, never "143" as 01:43.
+    expect(parseTypedTime("143")).toBeNull();
+    expect(parseTypedTime("2:30 pm")).toBeNull();
     expect(parseTypedTime("24:00")).toBeNull();
     expect(parseTypedTime("12:60")).toBeNull();
     expect(parseTypedTime("2pm")).toBeNull();

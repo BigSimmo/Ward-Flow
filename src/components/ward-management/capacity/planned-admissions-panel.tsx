@@ -9,7 +9,7 @@ import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
 import { CalendarPlus, Ellipsis } from "lucide-react";
 
 import { useUndoableStep } from "../use-undoable-step";
-import { Button, buttonClass, Field, Menu, Select, Sheet, StatusGlyph, TextInput } from "@/components/wf";
+import { Button, buttonClass, Field, Menu, Select, Sheet, StatusGlyph, TextInput, TimeField } from "@/components/wf";
 import {
   PLANNED_ADMISSION_CANCEL_REASONS,
   PLANNED_ADMISSION_CANCEL_REASON_LABELS,
@@ -898,12 +898,11 @@ export function PlannedAdmissionsPanel({
                   ))}
                 </Select>
               </Field>
-              <Field label="Arrival time">
-                <TextInput
-                  type="time"
+              <Field label="Arrival time" hint="HH:MM">
+                <TimeField
                   value={draft.time}
-                  onChange={(event) => {
-                    update({ time: event.target.value });
+                  onValueChange={(time) => {
+                    update({ time });
                   }}
                   data-testid="ward-planned-time"
                 />

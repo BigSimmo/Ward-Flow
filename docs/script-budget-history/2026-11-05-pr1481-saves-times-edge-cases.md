@@ -9,3 +9,7 @@ Raised `/ward-flow` 557.8 to 558.6 KB, `/ward-flow/referrals` 551.8 to 552.5 KB 
 ## Hosted measure after the main merge (6 Nov 2026, 00:05Z)
 
 CI run 42132907062, merged with main 07d6dfb2: Referrals 552.6 KB (main alone 552.1 KB), so its budget 552.5 is raised to 553.1. RPH ward measured 588.3 KB (main alone 587.7 KB), so its budget is lowered from 591.3 to 588.8. Home 558.5, ED 512.9 and Movement 583.1 KB are under their budgets.
+
+## Carried over #1474 (6 Nov 2026)
+
+Merging main after #1474 took the higher budget for each screen, which is `main`'s value on every screen: Home 559.1, Referrals 553.4, ED 516.1, RPH ward 590.6 and Movement 585.0 KB. No budget is above what either side had. Not re-measured after the merge.

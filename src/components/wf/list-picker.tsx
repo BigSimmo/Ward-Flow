@@ -33,6 +33,7 @@ import {
   type ReactNode,
 } from "react";
 
+import { DisabledReason } from "./button";
 import { cx } from "./cx";
 import { Icon } from "./icon";
 import { useOutsidePress, usePanelFit } from "./menu";
@@ -56,6 +57,12 @@ export type ListPickerProps = {
   /** Marks the field required (`aria-required`) and leaves out the Clear row. */
   required?: boolean;
   disabled?: boolean;
+  /**
+   * Why the choice cannot be changed now (K11, design audit 5 Nov 2026; DESIGN-SYSTEM §4 Actions):
+   * the field button is `aria-disabled` and keeps its tab stop, it does not open, and the reason
+   * shows as text under the field, linked by `aria-describedby`.
+   */
+  disabledReason?: string;
   /** The field button's id. Generated when omitted. */
   id?: string;
   /** Name of the hidden input that carries the value in a form. */
@@ -116,6 +123,7 @@ export function ListPicker({
   placeholder = "Choose",
   required = false,
   disabled = false,
+  disabledReason,
   id: idProp,
   name,
   testId,
@@ -125,6 +133,8 @@ export function ListPicker({
   const id = idProp ?? `wf-list-picker-${generated.replace(/:/gu, "")}`;
   const labelId = `${id}-label`;
   const listId = `${id}-list`;
+  const reasonId = `${id}-reason`;
+  const off = disabled || Boolean(disabledReason);
   const isPhone = useIsPhone();
 
   const [open, setOpen] = useState(false);
@@ -172,14 +182,14 @@ export function ListPicker({
 
   const openList = useCallback(
     (seed = "") => {
-      if (disabled) return;
+      if (off) return;
       const chosenAt = chosen ? sectionsOf(options).flatMap((section) => section.rows) : [];
       const at = chosenAt.find((row) => row.option.value === chosen?.value)?.index ?? 0;
       setQuery(seed);
       setActive(seed ? 0 : at);
       setOpen(true);
     },
-    [chosen, disabled, options],
+    [chosen, off, options],
   );
 
   useOutsidePress(open && !isPhone, anchorRef, closeFromOutside);
@@ -358,7 +368,7 @@ export function ListPicker({
           {label}
         </span>
       </div>
-      <div className={cx(formStyles.in, invalid && formStyles.invalid, disabled && styles.disabled)}>
+      <div className={cx(formStyles.in, invalid && formStyles.invalid, off && styles.disabled)}>
         <button
           ref={buttonRef}
           id={id}
@@ -370,7 +380,7 @@ export function ListPicker({
           aria-controls={open ? listId : undefined}
           aria-required={required || undefined}
           aria-activedescendant={!isPhone && !searchable ? activeId : undefined}
-          disabled={disabled}
+          {...(disabledReason ? { "aria-disabled": true, "aria-describedby": reasonId } : { disabled })}
           aria-invalid={invalid || undefined}
           data-testid={testId}
           className={cx(formStyles.control, formStyles.select, styles.trigger, !chosen && styles.placeholder)}
@@ -381,6 +391,7 @@ export function ListPicker({
         </button>
         <Icon icon={ChevronDown} size={16} className={formStyles.selectCaret} />
       </div>
+      {disabledReason ? <DisabledReason id={reasonId}>{disabledReason}</DisabledReason> : null}
       {name ? <input type="hidden" name={name} value={value ?? ""} /> : null}
       {open && !isPhone ? (
         <div ref={panelRef} className={cx(overlayStyles.glass, styles.panel)}>

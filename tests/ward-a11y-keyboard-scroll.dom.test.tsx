@@ -80,7 +80,8 @@ describe("Phase 6: Accessibility & Ergonomics Polish", () => {
     expect(dateBox.id).not.toBe("");
     const dateLabel = Array.from(document.querySelectorAll("label")).find((label) => label.htmlFor === dateBox.id);
     expect(dateLabel).toHaveTextContent("Date on form");
-    expect(screen.getByLabelText("Time on form")).toHaveAttribute("type", "time");
+    // W14 (design audit, 5 Nov 2026): the kit typed HH:MM box, not the browser time picker.
+    expect(screen.getByLabelText("Time on form")).toHaveAttribute("type", "text");
     // The result shows only a typed time (rule D5), so type one before reading it back.
     fireEvent.change(screen.getByLabelText("Time on form"), { target: { value: "09:15" } });
     expect(screen.getByTestId("ward-form-times-result")).toHaveTextContent(/^Form 3A/u);
