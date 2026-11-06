@@ -505,7 +505,6 @@ function ToolsSheetView({
     return () => window.removeEventListener("keydown", onKey, true);
   }, [pageOpen]);
 
-
   useEffect(() => {
     if (!openRequest) return;
     queueMicrotask(() => {
