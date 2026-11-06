@@ -116,7 +116,6 @@ export function DischargeRecordDetail({
     setShowUpdateDate,
     newTimeDraft,
     setNewTimeDraft,
-    isPhone,
     drawerTab,
     setDrawerTab,
     selectedUnit,
@@ -641,7 +640,9 @@ export function DischargeReleaseDetail({
           ]}
         />
         {detailRelease.preparing ? (
-          <p className={pageStyles.note}>Preparation recorded: {detailRelease.preparationNote ?? "Reason not recorded"}.</p>
+          <p className={pageStyles.note}>
+            Preparation recorded: {detailRelease.preparationNote ?? "Reason not recorded"}.
+          </p>
         ) : null}
         <ReadyToLeave
           onCto={releaseOnCto}

@@ -3,7 +3,18 @@
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
-import { ChevronDown, ChevronRight, Copy, FileText, Filter, OctagonAlert, Printer, TrendingUp, Truck, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  FileText,
+  Filter,
+  OctagonAlert,
+  Printer,
+  TrendingUp,
+  Truck,
+  X,
+} from "lucide-react";
 import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import { dayOf, formatSheetMoment } from "@/components/ward-management/ward-clock";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
@@ -628,18 +639,18 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       </tr>
                     </thead>
                   ) : (
-                  <thead>
-                    <tr>
-                      <th scope="col">{ownWard ? "Patient" : "Patient / ward"}</th>
-                      <th scope="col">{population === "releases" ? "Timing" : "Expected / departed"}</th>
-                      <th scope="col">Stage / blocker</th>
-                      {population === "releases" ? (
-                        <th scope="col" className={releaseList.actionHead}>
-                          <span className="sr-only">Next</span>
-                        </th>
-                      ) : null}
-                    </tr>
-                  </thead>
+                    <thead>
+                      <tr>
+                        <th scope="col">{ownWard ? "Patient" : "Patient / ward"}</th>
+                        <th scope="col">{population === "releases" ? "Timing" : "Expected / departed"}</th>
+                        <th scope="col">Stage / blocker</th>
+                        {population === "releases" ? (
+                          <th scope="col" className={releaseList.actionHead}>
+                            <span className="sr-only">Next</span>
+                          </th>
+                        ) : null}
+                      </tr>
+                    </thead>
                   )}
                   {population === "records" ? (
                     <tbody>
@@ -823,7 +834,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                         {linked?.identity.kind === "linked" ? (
                                           <span className={pageStyles.mono}>{linked.identity.patient.umrn}</span>
                                         ) : null}
-                                        <span>{ownWard ? healthServiceLabel(unit) : unitLabel(unit, release.unitId)}</span>
+                                        <span>
+                                          {ownWard ? healthServiceLabel(unit) : unitLabel(unit, release.unitId)}
+                                        </span>
                                       </span>
                                     </td>
                                     <td className={`${pageStyles.colOut} ${pageStyles.timingCell}`}>
@@ -853,7 +866,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                             size={9}
                                           />
                                         )}
-                                        {release.state === "discharged" ? "Discharged" : WORK_STATUS_LABELS[release.state]}
+                                        {release.state === "discharged"
+                                          ? "Discharged"
+                                          : WORK_STATUS_LABELS[release.state]}
                                       </span>
                                     </td>
                                     <td className={pageStyles.colBlocker}>
@@ -861,7 +876,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                         <span className={pageStyles.blockerCell}>
                                           <span className={pageStyles.blockerTag}>
                                             <StatusGlyph tone="danger" size={9} />
-                                            {release.blocker.replace(/^Awaiting (\w)/, (_, first: string) => first.toUpperCase())}
+                                            {release.blocker.replace(/^Awaiting (\w)/, (_, first: string) =>
+                                              first.toUpperCase(),
+                                            )}
                                           </span>
                                           {release.waitingOn ? (
                                             <span className={pageStyles.personMeta}>
@@ -877,80 +894,88 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                                   </>
                                 )}
                                 {isPhone ? (
-                                <>
-                                <td data-label={ownWard ? "Patient" : "Patient / ward"}>
-                                  <button
-                                    type="button"
-                                    className={pageStyles.recordButton}
-                                    aria-pressed={releaseId === release.id}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      openReleaseOn(release.id, e.currentTarget, "milestones");
-                                    }}
-                                  >
-                                    {/* Redesign: the person first, then the ward and service. */}
-                                    {linked ? recordName(linked) : "Name not recorded"}
-                                  </button>
-                                  {ownWard ? null : (
-                                    <span className={pageStyles.secondary}>{placeLine(unit, release.unitId)}</span>
-                                  )}
-                                </td>
-                                <td data-label="Timing" className={`${pageStyles.timingCell} ${releaseList.timing}`}>
-                                  {/* Device audit, 11 Oct 2026: a release past its date says how far
+                                  <>
+                                    <td data-label={ownWard ? "Patient" : "Patient / ward"}>
+                                      <button
+                                        type="button"
+                                        className={pageStyles.recordButton}
+                                        aria-pressed={releaseId === release.id}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          openReleaseOn(release.id, e.currentTarget, "milestones");
+                                        }}
+                                      >
+                                        {/* Redesign: the person first, then the ward and service. */}
+                                        {linked ? recordName(linked) : "Name not recorded"}
+                                      </button>
+                                      {ownWard ? null : (
+                                        <span className={pageStyles.secondary}>{placeLine(unit, release.unitId)}</span>
+                                      )}
+                                    </td>
+                                    <td
+                                      data-label="Timing"
+                                      className={`${pageStyles.timingCell} ${releaseList.timing}`}
+                                    >
+                                      {/* Device audit, 11 Oct 2026: a release past its date says how far
                                       past, with the date alone; "Now" and the clock time read as
                                       due this minute on rows one to four days late. */}
-                                  {overdue ? (
-                                    <>
-                                      <strong className={pageStyles.band}>
-                                        <StatusGlyph tone="danger" size={9} />
-                                        {pastWords(now - release.expectedAt)}
-                                      </strong>{" "}
-                                      <span className={pageStyles.due}>
-                                        {recordedDate(release.expectedAt, dayZero)}
-                                      </span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <strong className={pageStyles.band}>
-                                        {BAND_LABELS[releaseBand(release, now) as ReleaseBand]}
-                                      </strong>{" "}
-                                      <span className={pageStyles.due}>
-                                        {/* Josh, 30 Oct: a Later row shows its date alone; its clock time
+                                      {overdue ? (
+                                        <>
+                                          <strong className={pageStyles.band}>
+                                            <StatusGlyph tone="danger" size={9} />
+                                            {pastWords(now - release.expectedAt)}
+                                          </strong>{" "}
+                                          <span className={pageStyles.due}>
+                                            {recordedDate(release.expectedAt, dayZero)}
+                                          </span>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <strong className={pageStyles.band}>
+                                            {BAND_LABELS[releaseBand(release, now) as ReleaseBand]}
+                                          </strong>{" "}
+                                          <span className={pageStyles.due}>
+                                            {/* Josh, 30 Oct: a Later row shows its date alone; its clock time
                                             only mirrored the board clock. */}
-                                        {release.state !== "discharged" && releaseBand(release, now) === "beyond-today"
-                                          ? recordedDate(release.expectedAt, dayZero)
-                                          : recordedMoment(
-                                              release.state === "discharged" ? release.confirmedAt : release.expectedAt,
-                                              dayZero,
-                                            )}
-                                      </span>
-                                    </>
-                                  )}
-                                </td>
-                                <td data-label="Stage / blocker">
-                                  <div className={pageStyles.stageCluster}>
-                                    {/* A stuck release keeps its own stage word, so a blocked confirmation
+                                            {release.state !== "discharged" &&
+                                            releaseBand(release, now) === "beyond-today"
+                                              ? recordedDate(release.expectedAt, dayZero)
+                                              : recordedMoment(
+                                                  release.state === "discharged"
+                                                    ? release.confirmedAt
+                                                    : release.expectedAt,
+                                                  dayZero,
+                                                )}
+                                          </span>
+                                        </>
+                                      )}
+                                    </td>
+                                    <td data-label="Stage / blocker">
+                                      <div className={pageStyles.stageCluster}>
+                                        {/* A stuck release keeps its own stage word, so a blocked confirmation
                                         still reads apart from a blocked prediction, but never with the
                                         green tick beside its blocker (UX audit, 21 Oct 2026). */}
-                                    {release.state !== "discharged" && release.blocker !== null ? (
-                                      <span className={pageStyles.badge} data-status="blocked">
-                                        <StatusGlyph tone="danger" size={9} />
-                                        <span className="sr-only">Held up: </span>
-                                        <span>{WORK_STATUS_LABELS[release.state]}</span>
-                                      </span>
-                                    ) : (
-                                      badge(release.state === "discharged" ? "departed" : release.state)
-                                    )}
-                                    {release.blocker && <span className={pageStyles.blocker}>{release.blocker}</span>}
-                                    {release.waitingOn && (
-                                      <span className={pageStyles.secondary}>
-                                        <Truck size={12} className={pageStyles.inlineIcon} aria-hidden="true" />{" "}
-                                        {release.waitingOn}
-                                      </span>
-                                    )}
-                                  </div>
-                                </td>
-                                </>
+                                        {release.state !== "discharged" && release.blocker !== null ? (
+                                          <span className={pageStyles.badge} data-status="blocked">
+                                            <StatusGlyph tone="danger" size={9} />
+                                            <span className="sr-only">Held up: </span>
+                                            <span>{WORK_STATUS_LABELS[release.state]}</span>
+                                          </span>
+                                        ) : (
+                                          badge(release.state === "discharged" ? "departed" : release.state)
+                                        )}
+                                        {release.blocker && (
+                                          <span className={pageStyles.blocker}>{release.blocker}</span>
+                                        )}
+                                        {release.waitingOn && (
+                                          <span className={pageStyles.secondary}>
+                                            <Truck size={12} className={pageStyles.inlineIcon} aria-hidden="true" />{" "}
+                                            {release.waitingOn}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </td>
+                                  </>
                                 ) : null}
                                 <td className={releaseList.actionCell}>
                                   {release.state === "discharged" ? null : (
@@ -1174,7 +1199,11 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                       variant="pri"
                       className={pageStyles.footPri}
                       onClick={(e) =>
-                        openReleaseOn(detailRelease.id, e.currentTarget, releaseActionPart(detailRelease, canChangeDate))
+                        openReleaseOn(
+                          detailRelease.id,
+                          e.currentTarget,
+                          releaseActionPart(detailRelease, canChangeDate),
+                        )
                       }
                     >
                       {releaseActionLabel(detailRelease, canChangeDate)}

@@ -13,12 +13,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import {
-  calendarDateOf,
-  formatInstant,
-  MINUTES_PER_DAY,
-  type Instant,
-} from "@/components/ward-management/ward-clock";
+import { calendarDateOf, formatInstant, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { holidaysListedFor, WA_PUBLIC_HOLIDAYS_LAST_YEAR } from "@/components/ward-management/wa-public-holidays";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
 import { Badge, Button, Card, IconTile } from "@/components/wf";
@@ -184,7 +179,11 @@ export function DischargeWeekendPrep({
         {groups.map((group) => {
           const OwnerIcon = OWNER_ICONS[group.closure.owner];
           return (
-            <section key={group.closure.owner} className={styles.service} aria-label={closureFact(group.closure, dayZero)}>
+            <section
+              key={group.closure.owner}
+              className={styles.service}
+              aria-label={closureFact(group.closure, dayZero)}
+            >
               <header className={styles.serviceHead}>
                 <span className={styles.serviceIcon} aria-hidden="true">
                   <OwnerIcon size={16} aria-hidden="true" />
