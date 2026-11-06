@@ -2,11 +2,11 @@
 
 // Redesign (approved 31 Oct 2026): the record's cards and chips on the kit's radii.
 
-// PersonEntry: one person's discharge plan, shared by the bed board's slide-out and its printed
+// PersonEntry: one person's discharge plan, shared by the bed board's record drawer and its printed
 // sheet. Split out of ward-board.tsx to keep that file under the line cap.
 import { StatusGlyph } from "@/components/wf";
 import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
-import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
+import type { ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
 import { calendarDateOf } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -133,48 +133,25 @@ export function PersonEntry({
     );
   }
 
-  // Detail panel view (idPrefix === "ward-board-selected-person")
+  // Detail panel view (idPrefix === "ward-board-selected-person"). Drawer review (6 Nov 2026): the
+  // drawer's head already names the person, carries the UMRN and the stay, and shows a passed date
+  // as its status pill, so none of those repeat here. The record reads as flat hairline sections,
+  // not cards inside the drawer's card.
   const patient = resolvedPatient?.patient;
   const age = patient
     ? patientAgeYears(patient, displayDate ?? (clock ? calendarDateOf(clock.now, clock.dayZero) : new Date()))
     : null;
-  const displayName = resolvedPatient?.formalName || resolveSubjectPatient({ id: occupant.key }, {}).formalName;
 
   return (
     <>
-      {/* 1. Identity & Stay Card */}
-      <div className={`${styles.detailIdCard} ${redesign.idCard}`}>
-        <div className={styles.detailStayRow}>
-          <p className={`${styles.personStay} ${styles.flushMargin}`}>
-            {occupant.days === null ? (
-              <span className={styles.personNoStay}>No stay yet — not arrived</span>
-            ) : (
-              <>
-                <span className={styles.personDays} data-testid={`${idPrefix}-${occupant.key}-days`}>
-                  {occupant.days} day{occupant.days === 1 ? "" : "s"}
-                </span>
-                <span className={styles.daysUnit}>here</span>
-                {occupant.bandLabel !== null && <span className={styles.personBand}>{occupant.bandLabel}</span>}
-              </>
-            )}
-            {occupant.pastDate && (
-              <span className={styles.pastMark}>
-                <StatusGlyph tone="warning" size={10} className={styles.statusGlyph} /> <span>Past date</span>
-              </span>
-            )}
-          </p>
-        </div>
-
-        <div className={styles.detailName}>{displayName}</div>
-
+      <div className={redesign.recordFacts}>
         <div className={styles.detailChips}>
           {age !== null && <span className={`${styles.detailChip} ${redesign.chip}`}>{age} yrs</span>}
           {/* B11 (Josh, 5 Nov 2026): named, so it reads apart from the Gender chip beside it. */}
           <span className={`${styles.detailChip} ${redesign.chip}`}>Sex: {occupant.sex}</span>
           <span className={`${styles.detailChip} ${redesign.chip}`}>Gender: {occupant.gender ?? "Not recorded"}</span>
-          <span className={`${styles.detailChip} ${redesign.chip}`}>{occupant.homeRegion ?? "Region unrecorded"}</span>
-          {resolvedPatient?.umrn && (
-            <span className={`${styles.detailChip} ${redesign.chip}`}>UMRN {resolvedPatient.umrn}</span>
+          {occupant.bandLabel !== null && (
+            <span className={`${styles.detailChip} ${redesign.chip}`}>{occupant.bandLabel}</span>
           )}
         </div>
 
@@ -199,12 +176,38 @@ export function PersonEntry({
         )}
       </div>
 
-      {/* 2. Catchment & Demographic Card */}
-      <div className={`${styles.detailSectionCard} ${redesign.sectionCard}`}>
-        <div className={styles.detailSectionHeading}>Catchment & Team</div>
+      <section className={redesign.recordSection}>
+        <h3 className={redesign.recordHeading}>What is happening today</h3>
+        <p className={styles.personExpected}>{expectedPhrase(occupant.expectedDays)}</p>
+        {occupant.expectedDays !== null && (
+          <p className={styles.personLine}>
+            {occupant.dischargeDateSetBy !== null ? `Date set by ${occupant.dischargeDateSetBy}` : "Date set"}
+            {/* A moved date is said once, by the line below, not twice. */}
+            {occupant.dischargeDateMoves > 0 ? "" : `, and ${movesPhrase(occupant.dischargeDateMoves)}`}.{" "}
+            {occupant.confirmed
+              ? occupant.dischargeConfirmedBy !== null
+                ? `Confirmed by ${occupant.dischargeConfirmedBy}.`
+                : "Confirmed."
+              : "Not confirmed."}
+          </p>
+        )}
+        {occupant.dischargeDateMoves > 0 && (
+          // A plain line, not a tinted banner (D-94).
+          <p className={styles.personLine}>
+            This discharge date has moved {occupant.dischargeDateMoves}{" "}
+            {occupant.dischargeDateMoves === 1 ? "time" : "times"}.
+          </p>
+        )}
+        {occupant.blockReason !== null && !blockerInBarrierTag(occupant) && (
+          <p className={styles.personBlocker}>Held up by: {occupant.blockReason}.</p>
+        )}
+      </section>
+
+      <section className={redesign.recordSection}>
+        <h3 className={redesign.recordHeading}>Catchment and team</h3>
         <div className={styles.catchmentGrid}>
           <div className={styles.catchmentItem}>
-            <span className={styles.catchmentLabel}>Home Region</span>
+            <span className={styles.catchmentLabel}>Home region</span>
             <span className={styles.catchmentValue}>{occupant.homeRegion ?? "Not recorded"}</span>
           </div>
           <div className={styles.catchmentItem}>
@@ -212,19 +215,18 @@ export function PersonEntry({
             <span className={styles.catchmentValue}>{patient?.suburb ?? "Not recorded"}</span>
           </div>
           <div className={styles.catchmentItem}>
-            <span className={styles.catchmentLabel}>Community Team</span>
+            <span className={styles.catchmentLabel}>Community team</span>
             <span className={styles.catchmentValue}>{patient?.catchmentCommunityTeam ?? "Not recorded"}</span>
           </div>
           <div className={styles.catchmentItem}>
-            <span className={styles.catchmentLabel}>Legal Status</span>
+            <span className={styles.catchmentLabel}>Legal status</span>
             <span className={styles.catchmentValue}>{patient?.legalStatus ?? "Not recorded"}</span>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* 3. Clinical & Transport Card */}
-      <div className={`${styles.detailSectionCard} ${redesign.sectionCard}`}>
-        <div className={styles.detailSectionHeading}>Clinical & Transport</div>
+      <section className={redesign.recordSection}>
+        <h3 className={redesign.recordHeading}>Clinical</h3>
         {occupant.awayAtEdHours !== null && (
           <p className={styles.personAway} data-testid="ward-board-person-away">
             {occupant.awayAtEdHours === 0
@@ -242,34 +244,7 @@ export function PersonEntry({
             {`Ward's tentative diagnosis: ${occupant.wardDiagnosis.phrase}, recorded by ${occupant.wardDiagnosis.recordedBy} at ${occupant.wardDiagnosis.recordedAt}. The one above is kept.`}
           </p>
         )}
-      </div>
-
-      {/* 4. What is Happening Today / Leaving Plan Card */}
-      <div className={`${styles.detailSectionCard} ${redesign.sectionCard}`}>
-        <div className={styles.detailSectionHeading}>What is happening today</div>
-        <p className={styles.personExpected}>{expectedPhrase(occupant.expectedDays)}</p>
-        {occupant.expectedDays !== null && (
-          <p className={styles.personLine}>
-            {occupant.dischargeDateSetBy !== null ? `Date set by ${occupant.dischargeDateSetBy}` : "Date set"}
-            {/* A moved date is said once, by the flag below, not twice. */}
-            {occupant.dischargeDateMoves > 0 ? "" : `, and ${movesPhrase(occupant.dischargeDateMoves)}`}.{" "}
-            {occupant.confirmed
-              ? occupant.dischargeConfirmedBy !== null
-                ? `Confirmed by ${occupant.dischargeConfirmedBy}.`
-                : "Confirmed."
-              : "Not confirmed."}
-          </p>
-        )}
-        {occupant.dischargeDateMoves > 0 && (
-          <div className={styles.dateMovedAlert}>
-            This discharge date has moved {occupant.dischargeDateMoves}{" "}
-            {occupant.dischargeDateMoves === 1 ? "time" : "times"}.
-          </div>
-        )}
-        {occupant.blockReason !== null && !blockerInBarrierTag(occupant) && (
-          <p className={styles.personBlocker}>Held up by: {occupant.blockReason}.</p>
-        )}
-      </div>
+      </section>
     </>
   );
 }

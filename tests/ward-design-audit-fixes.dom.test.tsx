@@ -88,7 +88,8 @@ describe("departure confirmation (DA-08)", () => {
     }
     expect(away, "the seed must offer an ED transfer on this ward").not.toBeNull();
     fireEvent.click(away!);
-    const dialog = screen.getByRole("dialog");
+    // Drawer review (6 Nov 2026): the confirmation stacks over the bed record's kit drawer.
+    const dialog = screen.getByRole("dialog", { name: "Confirm emergency department transfer" });
     expect(within(dialog).getByText(/has gone to an emergency/u)).toBeInTheDocument();
     expect(within(dialog).getByTestId("ward-board-confirm-identity").textContent).toMatch(/^Check: .+ · .+/u);
   });

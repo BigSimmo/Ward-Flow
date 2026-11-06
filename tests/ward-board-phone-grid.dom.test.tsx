@@ -65,37 +65,43 @@ describe("phone bed grid", () => {
     expect(after).toBeLessThan(before);
   });
 
-  it("opens the bed's record in a sheet and closes it again", () => {
+  it("opens the bed's record in the kit drawer (a sheet from the foot) and closes it again", () => {
     stubPhone(true);
     renderBoard();
     const tile = within(screen.getByTestId("ward-board-beds")).getAllByRole("button")[0]!;
     fireEvent.click(tile);
-    const sheet = screen.getByTestId("ward-board-detail-sheet");
-    expect(within(sheet).getByTestId("ward-board-detail")).toBeInTheDocument();
-    // The sheet is titled with the card's own line, here the surname and initial.
-    const title = tile.querySelector('[data-testid$="-name"]')?.textContent ?? "";
-    expect(title).not.toBe("");
-    expect(within(sheet).getAllByRole("heading", { level: 2 })[0]).toHaveTextContent(title);
+    // Drawer review (6 Nov 2026): one kit drawer at every width; on a phone it rises from the foot.
+    const sheet = screen.getByTestId("ward-board-detail");
+    expect(sheet).toHaveAttribute("role", "dialog");
+    // Titled with the person, never "Who is in this bed". The card's own line is the surname and
+    // initial; the drawer names the person in full, so it starts with the card's surname.
+    const cardLine = tile.querySelector('[data-testid$="-name"]')?.textContent ?? "";
+    expect(cardLine).not.toBe("");
+    const heading = within(sheet).getAllByRole("heading", { level: 2 })[0]!;
+    expect(heading).not.toHaveTextContent("Who is in this bed");
+    expect(heading.textContent ?? "").not.toBe("");
     fireEvent.click(within(sheet).getByRole("button", { name: "Close bed record" }));
-    expect(screen.queryByTestId("ward-board-detail-sheet")).toBeNull();
+    expect(screen.queryByTestId("ward-board-detail")).toBeNull();
   });
 
-  it("opens a person's bed tall and an empty bed's two lines at their own height (WARD-16)", () => {
+  it("opens each bed's record in the drawer and closes it again (WARD-16)", () => {
     stubPhone(true);
     renderBoard();
     // Redesign (Josh, 30 Oct 2026): a phone opens on the first 8 beds; Show more draws the rest.
     expect(within(screen.getByTestId("ward-board-beds")).getAllByRole("button")).toHaveLength(8);
     fireEvent.click(screen.getByRole("button", { name: /^Show \d+ more beds?$/u }));
-    const heights = new Set<string | null>();
+    // Drawer review (6 Nov 2026): the kit drawer sizes itself to its content on a phone, so the
+    // old tall/content heights are gone; every bed still opens and closes.
+    const kinds = new Set<string | null>();
     for (const tile of within(screen.getByTestId("ward-board-beds")).getAllByRole("button")) {
       fireEvent.click(tile);
-      const sheet = screen.getByTestId("ward-board-detail-sheet");
-      const named = tile.querySelector('[data-testid$="-name"]') !== null;
-      if (named) expect(sheet).toHaveAttribute("data-height", "tall");
-      heights.add(sheet.getAttribute("data-height"));
+      const sheet = screen.getByTestId("ward-board-detail");
+      kinds.add(sheet.querySelector("[data-detail-kind]")?.getAttribute("data-detail-kind") ?? null);
       fireEvent.click(within(sheet).getByRole("button", { name: "Close bed record" }));
+      expect(screen.queryByTestId("ward-board-detail")).toBeNull();
     }
-    expect(heights).toEqual(new Set(["tall", "content"]));
+    expect(kinds.has("occupied")).toBe(true);
+    expect(kinds.size).toBeGreaterThan(1);
   });
 
   it("leaves the sheet open when Escape only dismisses a select inside it", () => {
@@ -106,20 +112,20 @@ describe("phone bed grid", () => {
     const select = tiles.reduce<HTMLSelectElement | null>((found, tile) => {
       if (found !== null) return found;
       fireEvent.click(tile);
-      return screen.queryByTestId("ward-board-detail-sheet")?.querySelector("select") ?? null;
+      return screen.queryByTestId("ward-board-detail")?.querySelector("select") ?? null;
     }, null);
     if (select === null) throw new Error("no bed record with a select");
     fireEvent.keyDown(select, { key: "Escape" });
-    expect(screen.getByTestId("ward-board-detail-sheet")).toBeInTheDocument();
+    expect(screen.getByTestId("ward-board-detail")).toBeInTheDocument();
     fireEvent.keyDown(screen.getByRole("button", { name: "Close bed record" }), { key: "Escape" });
-    expect(screen.queryByTestId("ward-board-detail-sheet")).toBeNull();
+    expect(screen.queryByTestId("ward-board-detail")).toBeNull();
   });
 
-  it("keeps the side panel beside the grid on a larger screen", () => {
+  it("opens no record by itself on a larger screen, where the beds take the full width", () => {
     stubPhone(false);
     renderBoard();
-    expect(screen.getByTestId("ward-board-detail")).toBeInTheDocument();
-    expect(screen.queryByTestId("ward-board-detail-sheet")).toBeNull();
+    // Drawer review (6 Nov 2026): no side column; the record opens in the kit drawer when chosen.
+    expect(screen.queryByTestId("ward-board-detail")).toBeNull();
     const figures = screen.getByTestId("ward-board-triage");
     const beds = screen.getByTestId("ward-board-beds");
     expect(figures.compareDocumentPosition(beds) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();

@@ -91,13 +91,17 @@ describe("ward board page", () => {
     const tile = container.querySelector<HTMLElement>('[data-bed-kind="occupied"]');
     expect(tile).not.toBeNull();
     const tileButton = within(tile!).getByRole("button");
-    // The record already opens on the first bed that needs a look (redesign point 16), so press only a closed tile.
-    if (tileButton.getAttribute("aria-pressed") !== "true") fireEvent.click(tileButton);
-    expect(screen.getByTestId("ward-board-detail")).toHaveAttribute("data-detail-kind", "occupied");
+    // Drawer review (6 Nov 2026): nothing opens by itself; the record is the kit drawer, and the
+    // kind of bed it describes sits on its body. Closing it removes the drawer.
+    fireEvent.click(tileButton);
+    expect(screen.getByTestId("ward-board-detail").querySelector("[data-detail-kind]")).toHaveAttribute(
+      "data-detail-kind",
+      "occupied",
+    );
     const ready = boardFilter("Ready");
     ready.focus();
     fireEvent.click(ready);
-    expect(screen.getByTestId("ward-board-detail")).toHaveAttribute("data-detail-kind", "none");
+    expect(screen.queryByTestId("ward-board-detail")).toBeNull();
     expect(tile).not.toBeVisible();
     expect(container.querySelectorAll("[data-bed-kind]")).toHaveLength(unitFor(UNIT_ID).beds);
     expect(ready).toHaveFocus();

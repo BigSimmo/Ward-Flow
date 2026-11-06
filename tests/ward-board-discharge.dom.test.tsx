@@ -213,7 +213,8 @@ describe("recording a departure from the ward board", () => {
 
     // Left open, the panel would describe a bed this ward no longer fills.
     expect(screen.queryByTestId("ward-board-record-leaving")).toBeNull();
-    expect(screen.getByTestId("ward-board-select-hint")).toBeTruthy();
+    // Drawer review (6 Nov 2026): the record is the kit drawer, so it is gone, not emptied.
+    expect(screen.queryByTestId("ward-board-detail")).toBeNull();
   });
 
   it("records the destination the ward chose, not the default", () => {

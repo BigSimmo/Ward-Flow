@@ -5,7 +5,7 @@ import { useUndoableStep } from "@/components/ward-management/use-undoable-step"
 import type { WardCommandDispatch, WardCommandOutcome } from "@/components/ward-management/ward-shared-client";
 import { WardNotFoundBody } from "@/components/ward-management/shell/ward-not-found";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
-import { PhoneSheet, useIsPhone, useModalFocus } from "@/components/wf";
+import { useIsPhone, useModalFocus } from "@/components/wf";
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react";
 
 import {
@@ -235,8 +235,6 @@ export function WardBoard({
    * person, and so nothing in this component ever has an ordinal to print.
    */
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
-  const [autoPicked, setAutoPicked] = useState(false);
-  const [autoPickedKey, setAutoPickedKey] = useState<string | null>(null);
   const isPhone = useIsPhone();
   const [dateEdit, setDateEdit] = useState<{
     admissionId: string;
@@ -598,22 +596,9 @@ export function WardBoard({
     }
   };
 
-  // Redesign (point 16): the record column opens on the first bed that needs a look rather than
-  // sitting empty. Once only, so closing it is respected; never on a phone, where it is a sheet.
-  if (!autoPicked && !isPhone && selectedKey === null) {
-    const firstLook = tiles.find((tile) => tileMatchesFilter(tile, "look"));
-    setAutoPicked(true);
-    if (firstLook) {
-      setSelectedKey(firstLook.key);
-      setAutoPickedKey(firstLook.key);
-    }
-  }
-  // The first render reads the server's phone guess, so a phone that guessed desktop can pick a bed
-  // here. Once the browser says phone, an untouched pick is put back, so no sheet opens unasked.
-  if (isPhone && autoPickedKey !== null) {
-    setAutoPickedKey(null);
-    if (selectedKey === autoPickedKey) setSelectedKey(null);
-  }
+  // Drawer review (6 Nov 2026): the record opens in the kit drawer only when a bed is chosen. A
+  // drawer opened by itself would cover the board on arrival, so the old auto-pick (redesign point
+  // 16) went with the record column.
 
   let lookCount = 0;
   let readyCount = 0;
@@ -1037,23 +1022,11 @@ export function WardBoard({
     />
   );
 
-  /** The phone sheet's title: the card's own line, or what kind of bed it is. */
-  const phoneSheetTitle =
-    selectedTile === null
-      ? ""
-      : (cardNameByKey.get(selectedTile.key) ??
-        (selectedTile.kind === "empty"
-          ? "An empty bed"
-          : selectedTile.kind === "closed"
-            ? "A closed bed"
-            : selectedTile.kind === "occupied" || selectedTile.kind === "waiting"
-              ? "Who is in this bed"
-              : "A bed out of service"));
-
   const detailPanel = (
     <WardBoardDetailPanel
       admissions={admissions}
       blockedTileCount={blockedTileCount}
+      cardName={selectedTile ? cardNameByKey.get(selectedTile.key) : undefined}
       closeDetail={closeDetail}
       closedTileCount={closedTileCount}
       constraint={constraint}
@@ -1193,10 +1166,7 @@ export function WardBoard({
          * without the overlay a phone sheet would impose.
          */}
         {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
-        <div
-          className={`${styles.zones}${selectedTile !== null ? ` ${styles.zonesOpen}` : ""} ${panels.zones}`}
-          onKeyDown={onZoneKeyDown}
-        >
+        <div className={`${styles.zones} ${panels.zones}`} onKeyDown={onZoneKeyDown}>
           <WardBoardFlowColumn
             flowTab={flowTab}
             incoming={incoming}
@@ -1213,41 +1183,13 @@ export function WardBoard({
           {!isPhone && gridColumn}
 
           {/*
-           * THE SLIDE-OUT. Present only while something is selected, so it costs no width otherwise,
-           * and it takes its own grid track rather than covering the beds it describes — a reader who
-           * has just chosen a tile wants to compare it with the others, and a panel over the grid
-           * would make them close it to do that.
-           *
-           * NOT modal and NOT a focus trap: Tab leaves it into the rest of the page, Escape closes it
-           * from anywhere in the zones, and focus returns to the exact tile that opened it. The tile's
-           * own `aria-pressed` is what says which one is open.
+           * THE BED'S RECORD: drawer review, 6 Nov 2026 (Josh: a right drawer for every detail
+           * panel; the lists take the full width, with one page scroll). It opens in the kit
+           * PanelDrawer at every width, a sheet from the foot on a phone, so the grid no longer
+           * gives up a column to it. The drawer owns focus, Escape and the return of focus; the
+           * zones' Escape handler skips events from it because it is portalled out of the zones.
            */}
-          {/*
-           * A PERMANENT COLUMN, not a slide-out — owner, 2026-08-30: make the side panels more
-           * like the home page's.
-           *
-           * The home page keeps its right region always present and, with nothing chosen, says so:
-           * "Select a movement from the priority queue to see its explainable shortlist." That is
-           * the pattern this now follows. A panel that appears only on click has two costs: the
-           * grid reflows under the reader's hands at the moment they click, and until they click
-           * there is nothing telling them the beds are clickable at all.
-           */}
-          {isPhone ? (
-            // Change 10 (D-77): on a phone the bed's record opens in a sheet over the grid.
-            <PhoneSheet
-              open={selectedTile !== null}
-              onClose={closeDetail}
-              title={phoneSheetTitle}
-              closeLabel="Close bed record"
-              // WARD-16: an empty, closed or pulled bed has two lines, so its sheet fits them.
-              height={selectedOccupant ? "tall" : "content"}
-              data-testid="ward-board-detail-sheet"
-            >
-              <div className={styles.detailSheetBody}>{detailPanel}</div>
-            </PhoneSheet>
-          ) : (
-            detailPanel
-          )}
+          {detailPanel}
           <WardBoardWorkBand
             blockerCloseBtnRef={blockerCloseBtnRef}
             blockerDialogItem={blockerDialogItem}

@@ -152,7 +152,7 @@ export function BedActions({
   actions: BedAction[];
   mainId: BedAction["id"] | null;
   phone?: boolean;
-  /** WH1: drawn on the drawer's dark footer band, the filled step full width above the others. */
+  /** WH1: in the drawer's foot band, the filled step full width above the others (light kit foot, 6 Nov 2026). */
   band?: boolean;
 }) {
   const router = useOptionalRouter();
@@ -161,7 +161,7 @@ export function BedActions({
   const second = rest.find((action) => !action.href);
   const more = rest.filter((action) => action !== second);
   const size = band ? "md" : "lg";
-  const plain = band ? "onHero" : "sec";
+  const plain = "sec";
   const draw = (action: BedAction, variant: "pri" | "sec" | "onHero", className?: string) =>
     action.href ? (
       <Link

@@ -113,7 +113,9 @@ describe("WardBoard Patient Safety Confirmations", () => {
     fireEvent.click(awayBtn);
 
     // Modal dialog must appear for ED transfer confirmation
-    const dialog = screen.getByRole("dialog");
+    // Drawer review (6 Nov 2026): the confirmation stacks over the bed record's kit drawer, so it is
+    // found by its name among the two dialogs.
+    const dialog = screen.getByRole("dialog", { name: "Confirm emergency department transfer" });
     expect(dialog).toBeInTheDocument();
     expect(screen.getByText("Confirm emergency department transfer")).toBeInTheDocument();
 
@@ -122,8 +124,8 @@ describe("WardBoard Patient Safety Confirmations", () => {
     expect(proceedBtn).toHaveTextContent("Record ED transfer");
     fireEvent.click(proceedBtn);
 
-    // Dialog closes and toast reports ED transfer
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    // The confirmation closes (the bed's record stays open under it) and a toast reports the transfer.
+    expect(screen.queryByRole("dialog", { name: "Confirm emergency department transfer" })).not.toBeInTheDocument();
     const toast = await screen.findByTestId("ward-board-toast");
     expect(toast).toHaveTextContent(/away at an emergency department/i);
   });

@@ -78,7 +78,8 @@ describe("the bed board says what the reducer actually did", () => {
     for (const tile of tiles) {
       fireEvent.click(within(tile).getByRole("button"));
       const detail = screen.getByTestId("ward-board-detail");
-      expect(detail).toHaveAttribute("data-detail-kind", "occupied");
+      // Drawer review (6 Nov 2026): the kind sits on the kit drawer's body.
+      expect(detail.querySelector("[data-detail-kind]")).toHaveAttribute("data-detail-kind", "occupied");
       expect(detail).not.toHaveTextContent("Name not recorded");
     }
   });
