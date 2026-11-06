@@ -9,3 +9,5 @@ Diagnosis: the growth is the kit `Menu` that MU1 adds to the Referrals hero, so 
 The RPH ward and Movement screens are over their budgets on main alone (587.7 and 583.8 KB), which is not this PR's growth. The budget trim issue tracks that.
 
 Carried over #1474: merging main after #1474 took the higher budget for each screen. Home `/ward-flow` is 559.1 (main's #1474 value), Referrals stays 556.5 (this PR), and the RPH ward (590.6) and Movement (585.0) screens take main's #1474 values. No budget is above what either side had.
+
+Re-measured after #1474: CI run 42139161537 measured this PR merged with main a702f96e at 557.8 KB on Referrals (main alone 553.5 KB, main's budget 553.4). The growth is the same kit `Menu` (4.3 KB over main alone). Budget 556.5 raised to 558.2, which is 4.8 KB over main's budget and inside the 5 KB per screen allowance.
