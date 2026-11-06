@@ -145,6 +145,12 @@ export const BUILD_NOTES: Readonly<Record<string, readonly string[]>> = {
   waiting: [
     "**Built into the app (31 October):** this is the real Waiting page (round 8, approved by Josh on 31 October), with the nurse in charge's and ED clinician's views as role branches in the same screen. It stays here only as the backdrop for the Loading (Waiting) pop-up.",
   ],
+  "triage-risk": [
+    "**New mock-up (6 November), not built into the app:** one entry for the mental health triage (SMHMR900) and the risk assessment and management plan (SMHMR905), ported from the approved single-file Option D onto the kit, for Josh's review. Synthetic patient (Harlow, Jesse), referral and last triage only.",
+    "**Works here:** the banner's Alerts, Patient profile and Referral open the tabbed slide-out; the section index (step chips on a phone) ticks each section and Go to next needed jumps; Mental state One box and By domain convert both ways, with Show phrases, Look for, whole-word and negation-aware matching and contradiction swaps; urgency A to G is the clinician's choice with a hint only; past risk carries forward from the last RAMP with Undo and a Rest of history answer; the three family violence questions are word for word; the Summary builds the document as you go.",
+    "**Mock only:** Sign and send, Save draft, Awaiting information, documents and Open full profile say 'Not wired in this prototype.' Nothing is saved; the prototype's session draft and saved preferences are left out, so no typed text reaches browser storage. Now fills the board time.",
+    "**Left out:** the prototype's own Desktop view and theme switches (the viewer has both) and its pinned patient bar on scroll (the kit Hero's condensed line does this on a phone).",
+  ],
   "new-referral": [
     "**Built from a copy of today's referral slide-out**, in the same panel and steps, so finding a patient, the four steps, the Before you send list, Save draft and the ask-before-closing guard all work as now.",
     '**New:** the Catchment card says what is known in one line, then the four fields, then one row with Catchment not known and Confirm catchment. Today it says "not known" three ways before the first field. The suggested team box shows only once a team has been found.',

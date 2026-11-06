@@ -53,6 +53,13 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "legal-forms", label: "Legal forms", group: "Reference", appPath: "/ward-flow/legal-forms" },
   { slug: "patient", label: "Patient record", group: "Places and records", appPath: "/ward-flow/people/196zcp24w5t0" },
   { slug: "add-patient", label: "Add patient", group: "Places and records", appPath: "/ward-flow/people/new" },
+  // 6 Nov 2026: a new mock-up of a combined triage and risk assessment, for Josh's review (not built).
+  {
+    slug: "triage-risk",
+    label: "Triage and risk",
+    group: "Places and records",
+    appPath: "/ward-flow/people/196zcp24w5t0/triage",
+  },
   // Q218 (Josh, 2 Nov 2026): the pages with no approved redesign are drawn from main in the newest
   // shell, so the master design no longer shows their older (BL86) content.
   { slug: "eds", label: "All EDs", group: "Coordinator", appPath: "/ward-flow/ed" },
