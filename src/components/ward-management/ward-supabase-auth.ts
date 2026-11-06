@@ -17,11 +17,11 @@ const base64url = (bytes: Uint8Array) =>
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/, "");
-/** SEC-2: a PKCE code verifier (RFC 7636 section 4.1): 48 random bytes, 64 base64url characters. */
+/** SEC-2: a PKCE code verifier (RFC 7636): 48 random bytes, 64 base64url characters. */
 export function createPkceVerifier(): string {
   return base64url(crypto.getRandomValues(new Uint8Array(48)));
 }
-/** The S256 code challenge for a verifier (RFC 7636 section 4.2). */
+/** The SHA-256 PKCE code challenge for a verifier (RFC 7636). */
 export async function pkceChallenge(verifier: string): Promise<string> {
   return base64url(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier))));
 }

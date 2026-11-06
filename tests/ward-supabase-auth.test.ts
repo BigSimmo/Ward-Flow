@@ -240,12 +240,12 @@ describe("PKCE password recovery (SEC-2)", () => {
     expect(first).toMatch(/^[A-Za-z0-9_-]{64}$/);
     expect(createPkceVerifier()).not.toBe(first);
   });
-  it("derives the RFC 7636 appendix B S256 challenge", async () => {
+  it("derives the RFC 7636 worked example SHA-256 challenge", async () => {
     expect(await pkceChallenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")).toBe(
       "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
     );
   });
-  it("sends the S256 challenge with the recover request and keeps the verifier in this browser", async () => {
+  it("sends the SHA-256 challenge with the recover request and keeps the verifier in this browser", async () => {
     const link = storage();
     const fetcher = vi.fn(async () => Response.json({}));
     const auth = new SupabaseWardAuth({
