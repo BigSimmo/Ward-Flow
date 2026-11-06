@@ -13,3 +13,5 @@ Carried over #1474: merging main after #1474 took the higher budget for each scr
 Re-measured after #1474: CI run 42139161537 measured this PR merged with main a702f96e at 557.8 KB on Referrals (main alone 553.5 KB, main's budget 553.4). The growth is the same kit `Menu` (4.3 KB over main alone). Budget 556.5 raised to 558.2, which is 4.8 KB over main's budget and inside the 5 KB per screen allowance.
 
 Carried over #1481: merging main after #1481 took the higher budget for each screen. Home `/ward-flow` is 561.0 (main's #1481 value), Referrals stays 558.2 (this PR), and the RPH ward (591.5) and Movement (587.0) screens take main's #1481 values. No budget is above what either side had.
+
+Re-measured after #1481: CI run 42147053523 measured Referrals at 558.9 KB merged with main ef67b806 (main alone 555.0 KB, main's budget 554.8). Same kit `Menu` growth, 3.9 KB over main alone. Budget 558.2 raised to 559.4, which is 4.6 KB over main's budget and inside the 5 KB per screen allowance.
