@@ -20,13 +20,16 @@ import {
   Avatar,
   Button,
   DateField,
+  DrawerFootRow,
   FactGrid,
   FilterChip,
   Icon,
+  PanelDrawer,
   PhoneSheet,
   Segmented,
   ShowMoreRow,
   StatusGlyph,
+  StatusPill,
   Timeline,
   buttonClass,
   tableClasses,
@@ -796,59 +799,90 @@ function writeCensusMarker(key: string, value: string | null): void {
   }
 }
 
-/** The selected person. Every fact is the record's own; a missing one says so. */
-export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }: CensusDetailProps) {
+/** Puts focus back on the Ward bed link when the reader returns from that bed. */
+function useCensusBedLinkReturn(rowKey: string) {
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (readCensusMarker("wardflow:census-bed-opener") !== row.key) return;
+    if (readCensusMarker("wardflow:census-bed-opener") !== rowKey) return;
     const link = Array.from(document.querySelectorAll<HTMLElement>("[data-census-bed-link]")).find(
-      (element) => element.dataset.censusBedLink === row.key,
+      (element) => element.dataset.censusBedLink === rowKey,
     );
     if (link) {
       link.focus({ preventScroll: true });
       writeCensusMarker("wardflow:census-bed-opener", null);
     }
-  }, [row.key]);
-  const quiet = row.group === "off";
-  const facts: [string, string, string][] =
-    row.kind === "admission" && row.group === "ward"
+  }, [rowKey]);
+}
+
+function censusFacts(row: CensusRow): [string, string, string][] {
+  return row.kind === "admission" && row.group === "ward"
+    ? [
+        ["Ward", row.where, row.whereSub],
+        [
+          "Expected discharge",
+          row.to,
+          row.next.startsWith("Waiting on") ? row.next : row.pastExpected ? "Date has passed" : "",
+        ],
+        ["Legal", row.legal, "As recorded"],
+        ["Community team", row.communityTeam ?? "Not recorded", ""],
+      ]
+    : row.kind === "person"
       ? [
-          ["Ward", row.where, row.whereSub],
-          [
-            "Expected discharge",
-            row.to,
-            row.next.startsWith("Waiting on") ? row.next : row.pastExpected ? "Date has passed" : "",
-          ],
-          ["Legal", row.legal, "As recorded"],
+          ["Date of birth", dobText(row.dob), row.age === null ? "Age not recorded" : `${row.age}y`],
           ["Community team", row.communityTeam ?? "Not recorded", ""],
+          ["Legal", row.legal, "As recorded"],
+          ["Open records", "None", ""],
         ]
-      : row.kind === "person"
-        ? [
-            ["Date of birth", dobText(row.dob), row.age === null ? "Age not recorded" : `${row.age}y`],
-            ["Community team", row.communityTeam ?? "Not recorded", ""],
-            ["Legal", row.legal, "As recorded"],
-            ["Open records", "None", ""],
-          ]
-        : [
-            ["Where now", row.where, row.whereSub],
-            ["Heading to", row.to, row.toSub],
-            ["Legal", row.legal, row.legalSub],
-            row.kind === "movement"
-              ? ["Transport", row.transport ?? "Not recorded", row.escort ? "Nurse escort" : ""]
-              : ["Community team", row.communityTeam ?? "Not recorded", ""],
-          ];
-  const record =
-    row.kind === "movement" ? (
-      <Link className={buttonClass({ size: "sm" })} href={movementHref(row.key)}>
+      : [
+          ["Where now", row.where, row.whereSub],
+          ["Heading to", row.to, row.toSub],
+          ["Legal", row.legal, row.legalSub],
+          row.kind === "movement"
+            ? ["Transport", row.transport ?? "Not recorded", row.escort ? "Nurse escort" : ""]
+            : ["Community team", row.communityTeam ?? "Not recorded", ""],
+        ];
+}
+
+function hasCensusRecordLink(row: CensusRow): boolean {
+  return (
+    row.kind === "movement" ||
+    row.kind === "referral" ||
+    (row.kind === "admission" && Boolean(row.unitId) && row.bedNumber !== undefined) ||
+    row.group === "off"
+  );
+}
+
+/** The row's own record: its movement, referral, ward bed, or a new referral for a quiet record. */
+function CensusRecordLink({
+  row,
+  onNavigate,
+  variant,
+  size,
+}: {
+  row: CensusRow;
+  onNavigate?: () => void;
+  variant?: "pri" | "sec";
+  size?: "sm";
+}) {
+  const className = buttonClass({ variant, size });
+  if (row.kind === "movement") {
+    return (
+      <Link className={className} href={movementHref(row.key)}>
         Movement
       </Link>
-    ) : row.kind === "referral" ? (
-      <Link className={buttonClass({ size: "sm" })} href={referralBoardHref(row.key)}>
+    );
+  }
+  if (row.kind === "referral") {
+    return (
+      <Link className={className} href={referralBoardHref(row.key)}>
         Referral
       </Link>
-    ) : row.kind === "admission" && row.unitId && row.bedNumber !== undefined ? (
+    );
+  }
+  if (row.kind === "admission" && row.unitId && row.bedNumber !== undefined) {
+    return (
       <Link
-        className={buttonClass({ size: "sm" })}
+        className={className}
         data-census-bed-link={row.key}
         href={`/ward-flow/ward/${encodeURIComponent(row.unitId)}?bed=${row.bedNumber}`}
         onClick={() => {
@@ -860,33 +894,24 @@ export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }
       >
         Ward bed
       </Link>
-    ) : quiet ? (
-      <Link className={buttonClass({ size: "sm" })} href="/ward-flow/referrals/new">
+    );
+  }
+  if (row.group === "off") {
+    return (
+      <Link className={className} href="/ward-flow/referrals/new">
         New referral
       </Link>
-    ) : null;
+    );
+  }
+  return null;
+}
+
+/** What happens next, the facts and the latest entries: shared by the card and the drawer. */
+function CensusDetailFacts({ row, now, neutral = false }: { row: CensusRow; now: Instant; neutral?: boolean }) {
+  const quiet = row.group === "off";
   return (
-    <div className={styles.detail}>
-      <div className={styles.detailHead}>
-        <Avatar
-          name={row.name}
-          initials={initials(row.name)}
-          size="lg"
-          decorative
-          className={cx(quiet && styles.avatarQuiet)}
-        />
-        <div className={styles.two}>
-          <h2 className={styles.detailName}>{row.name}</h2>
-          <span>
-            <span className={styles.mono}>{row.umrn}</span> · {ageSex(row)}
-          </span>
-        </div>
-        {row.tier !== null ? <TierPill tier={row.tier} /> : null}
-        {onClose ? (
-          <Button variant="ghost" size="sm" icon={X} iconOnly aria-label="Back to this shift" onClick={onClose} />
-        ) : null}
-      </div>
-      <div className={cx(styles.statusCard, quiet && styles.statusQuiet)}>
+    <>
+      <div className={cx(neutral ? styles.drawerStatus : styles.statusCard, !neutral && quiet && styles.statusQuiet)}>
         <span className={styles.statusLine}>
           <CensusGlyphMark glyph={row.glyph} />
           {row.next}
@@ -905,7 +930,7 @@ export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }
         </span>
       </div>
       <dl className={styles.facts}>
-        {facts.map(([term, value, sub]) => (
+        {censusFacts(row).map(([term, value, sub]) => (
           <div key={term}>
             <dt>{term}</dt>
             <dd>{value}</dd>
@@ -928,6 +953,36 @@ export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }
           />
         </div>
       ) : null}
+    </>
+  );
+}
+
+/** The selected person. Every fact is the record's own; a missing one says so. */
+export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }: CensusDetailProps) {
+  useCensusBedLinkReturn(row.key);
+  const quiet = row.group === "off";
+  return (
+    <div className={styles.detail}>
+      <div className={styles.detailHead}>
+        <Avatar
+          name={row.name}
+          initials={initials(row.name)}
+          size="lg"
+          decorative
+          className={cx(quiet && styles.avatarQuiet)}
+        />
+        <div className={styles.two}>
+          <h2 className={styles.detailName}>{row.name}</h2>
+          <span>
+            <span className={styles.mono}>{row.umrn}</span> · {ageSex(row)}
+          </span>
+        </div>
+        {row.tier !== null ? <TierPill tier={row.tier} /> : null}
+        {onClose ? (
+          <Button variant="ghost" size="sm" icon={X} iconOnly aria-label="Back to this shift" onClick={onClose} />
+        ) : null}
+      </div>
+      <CensusDetailFacts row={row} now={now} />
       <div className={styles.actions}>
         <Button
           variant="ghost"
@@ -944,7 +999,7 @@ export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }
           </span>
         ) : null}
         <span className={styles.spacer} />
-        {record}
+        <CensusRecordLink row={row} onNavigate={onNavigate} size="sm" />
         {row.patientRecordId ? (
           <Link className={buttonClass({ variant: "pri", size: "sm" })} href={patientHref(row.patientRecordId)}>
             Open patient
@@ -953,6 +1008,95 @@ export function CensusDetail({ row, now, onClose, onNavigate, onCopy, copyNote }
       </div>
     </div>
   );
+}
+
+export type CensusDetailDrawerProps = {
+  row: CensusRow | null;
+  open: boolean;
+  now: Instant;
+  onClose: () => void;
+  onNavigate: () => void;
+  onCopy: (row: CensusRow) => void;
+  copyNote: string | null;
+  testId?: string;
+};
+
+/**
+ * Drawer review (6 Nov 2026): the chosen person opens in the kit right drawer at every width above
+ * the phone, so the census keeps the page's one scroll and its full width. One quiet subtitle (UMRN,
+ * age and sex, tier), the group as the tag, one scroll body, and a light foot with one filled action.
+ */
+export function CensusDetailDrawer({
+  row,
+  open,
+  now,
+  onClose,
+  onNavigate,
+  onCopy,
+  copyNote,
+  testId,
+}: CensusDetailDrawerProps) {
+  if (row === null) return null;
+  const group = CENSUS_GROUPS.find((entry) => entry.id === row.group);
+  // One filled action: Open patient when there is a person record, otherwise the row's own record.
+  const recordLeads = !row.patientRecordId;
+  return (
+    <PanelDrawer
+      open={open}
+      onClose={onClose}
+      title={row.name}
+      subtitle={
+        <span className={styles.drawerSubtitle}>
+          <span className={styles.mono}>{row.umrn}</span>
+          <span aria-hidden="true">·</span>
+          <span>{ageSex(row)}</span>
+          {row.tier !== null ? (
+            <>
+              <span aria-hidden="true">·</span>
+              <span>Tier {row.tier}</span>
+            </>
+          ) : null}
+        </span>
+      }
+      tag={
+        group ? (
+          <StatusPill tone={group.glyph === "off" ? "neutral" : TONE[group.glyph]}>{group.short}</StatusPill>
+        ) : null
+      }
+      closeLabel="Close patient details"
+      testId={testId}
+      bodyClassName={styles.drawerBody}
+      foot={
+        <>
+          {copyNote ? (
+            <span className={styles.copyNote} role="status" aria-live="polite">
+              {copyNote}
+            </span>
+          ) : null}
+          {row.patientRecordId ? (
+            <Link className={buttonClass({ variant: "pri" })} href={patientHref(row.patientRecordId)}>
+              Open patient
+            </Link>
+          ) : null}
+          <DrawerFootRow className={styles.drawerTools}>
+            {hasCensusRecordLink(row) ? (
+              <CensusRecordLink row={row} onNavigate={onNavigate} variant={recordLeads ? "pri" : "sec"} />
+            ) : null}
+            <Button variant="sec" icon={Copy} onClick={() => onCopy(row)}>
+              Copy summary
+            </Button>
+          </DrawerFootRow>
+        </>
+      }
+    >
+      <CensusDrawerBody row={row} now={now} />
+    </PanelDrawer>
+  );
+}
+
+function CensusDrawerBody({ row, now }: { row: CensusRow; now: Instant }) {
+  useCensusBedLinkReturn(row.key);
+  return <CensusDetailFacts row={row} now={now} neutral />;
 }
 
 /* ───────────────────────── history ───────────────────────── */

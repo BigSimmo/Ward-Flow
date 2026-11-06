@@ -2362,51 +2362,6 @@
   flex: none;
 }
 
-/* The record in the phone and tablet drawer: the same sections as the side card, on one surface. */
-.v6DetailsSheet {
-  overflow: hidden;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-lg);
-  background: var(--wf-surface);
-}
-
-/* Phone drawer: same foot action wrap as the side preview card. */
-.v6DetailsSheet > :last-child,
-.v6DetailsSheet > :last-child > div {
-  flex-wrap: wrap;
-}
-
-/* The kit's action group is flex: 0 0 auto, so the wrap above never took effect and Open patient ran
-   past the card on a 320px phone. Here the group may shrink, and wraps from the right. */
-.v6DetailsSheet > :last-child > div:last-child {
-  flex: 1 1 auto;
-  min-width: 0;
-  justify-content: flex-end;
-}
-
-.v6DetailsDrawerClose {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: var(--ward-tap, 3rem);
-  min-height: var(--ward-tap, 3rem);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  background: transparent;
-  color: var(--wf-ink-2);
-  cursor: pointer;
-}
-
-.v6DetailsDrawerClose:hover {
-  background: var(--wf-hover);
-  color: var(--wf-ink-1);
-}
-
-.v6DetailsDrawerClose:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-}
-
 .v6Row {
   display: grid;
   grid-template-columns: 2.5rem minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.25fr) minmax(0, 0.7fr);

@@ -15,8 +15,6 @@ import {
 import { UserPlus } from "lucide-react";
 
 import {
-  Card,
-  Drawer,
   Hero,
   HeroTrack,
   Icon,
@@ -96,7 +94,7 @@ import {
   type CensusSort,
 } from "./patient-census";
 import {
-  CensusDetail,
+  CensusDetailDrawer,
   CensusEmpty,
   CensusHistory,
   CensusTable,
@@ -105,7 +103,6 @@ import {
   PhoneCensus,
   DobField,
   DobToggle,
-  ShiftSummary,
 } from "./patient-census-view";
 
 import styles from "./search.module.css";
@@ -119,7 +116,6 @@ import {
   getPatientPresence,
   highlightTest,
   matchesTier,
-  previewCardHidden,
   resultId,
   waitedHours,
 } from "./patient-search-model";
@@ -247,13 +243,11 @@ export function PatientSearchPage() {
   const [requestedSelectedId, setSelectedId] = useState<string | null>(null);
   const [copyNote, setCopyNote] = useState<string | null>(null);
   const [accessRecord, setAccessRecord] = useState<AccessEntry[]>([]);
-  // Below the two column layout the record card would sit under every row, so a tap opens it in a
-  // drawer instead, and focus goes back to the row on close.
+  // Drawer review (6 Nov 2026): a chosen row opens in the kit right drawer at every width above the
+  // phone, and the kit Sheet hands focus back to the row on close.
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const detailsTriggerRef = useRef<HTMLElement | null>(null);
   const [dobOn, setDobOn] = useState(false);
   const [dob, setDob] = useState("");
-  const [soleDismissedFor, setSoleDismissedFor] = useState<string | null>(null);
   const [highlight, setHighlight] = useState<CensusHighlight | null>(returned?.highlight ?? null);
   const [censusSort, setCensusSort] = useState<CensusSort>(returned?.censusSort ?? "wait");
   const [tab, setTab] = useState<"now" | "history">(returned?.tab ?? "now");
@@ -270,7 +264,6 @@ export function PatientSearchPage() {
     },
   );
   const [showAllWard, setShowAllWard] = useState(returned?.showAllWard ?? false);
-  const [flashKey, setFlashKey] = useState<string | null>(null);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   // Identity remains in this mounted component only; return memory holds numeric offsets.
   const censusScrollIdentity = JSON.stringify([
@@ -810,13 +803,10 @@ export function PatientSearchPage() {
     CENSUS_HIGHLIGHTS.map((chip) => [chip.id, countedRows.filter(chip.test).length]),
   ) as Record<CensusHighlight, number>;
 
-  // A search that finds exactly one person opens them; otherwise the panel shows this shift until a
-  // row is chosen.
-  // Closing that detail keeps it closed until the search itself changes.
-  const searchKey = `${needle}|${dobIso ?? ""}`;
+  // A search that finds exactly one person marks that row; the drawer opens only when a row is chosen.
   const selectedCensus =
     visibleRows.find((row) => row.key === requestedSelectedId) ??
-    (searching && visibleRows.length === 1 && soleDismissedFor !== searchKey ? visibleRows[0]! : null);
+    (searching && visibleRows.length === 1 ? visibleRows[0]! : null);
   const selectedId = selectedCensus?.key ?? null;
   const selectedRow = unifiedCaseload.find((row) => row.id === selectedId) ?? null;
   // The drawer belongs to the row that opened it. If that row leaves the results the drawer closes,
@@ -825,19 +815,6 @@ export function PatientSearchPage() {
   const drawerOpen = detailsOpen && requestedSelectedId !== null && selectedId === requestedSelectedId;
   if (detailsOpen && !drawerOpen) setDetailsOpen(false);
 
-  // If the page widens into two columns while the drawer is open (a tablet turned to landscape, a
-  // wider window), the side card now shows the same record, so the drawer closes. The phone layout
-  // unmounts the card, so the observer re-attaches to the new card when that layout changes.
-  useEffect(() => {
-    if (!drawerOpen || typeof ResizeObserver === "undefined") return;
-    const card = document.querySelector<HTMLElement>("[data-preview-card]");
-    if (card === null) return;
-    const observer = new ResizeObserver(() => {
-      if (!previewCardHidden()) setDetailsOpen(false);
-    });
-    observer.observe(card);
-    return () => observer.disconnect();
-  }, [drawerOpen, isPhone]);
   const preview: PreviewSelection | null =
     selectedRow === null
       ? requestedPreview?.kind === "person"
@@ -856,14 +833,12 @@ export function PatientSearchPage() {
           : selectedRow.originalSubject
         : selectedRow.originalSubject;
 
-  const selectRow = (row: CensusRow, trigger?: HTMLElement) => {
+  const selectRow = (row: CensusRow) => {
     rememberReturnRow(PATIENTS_ROUTE, row.key);
     setSelectedId(row.key);
     setExpandedKey((current) => (current === row.key ? null : row.key));
-    if (trigger && !isPhone && previewCardHidden()) {
-      detailsTriggerRef.current = trigger;
-      setDetailsOpen(true);
-    }
+    // The phone opens its own sheet from the expanded row; every wider page uses the drawer.
+    if (!isPhone) setDetailsOpen(true);
     const movement = row.kind === "movement" ? movements.find((m) => m.id === row.key) : undefined;
     const referral = row.kind === "referral" ? referrals.find((r) => r.id === row.key) : undefined;
     const person = row.patientRecordId ? patients.find((p) => p.id === row.patientRecordId) : undefined;
@@ -876,20 +851,6 @@ export function PatientSearchPage() {
             ? { kind: "person", patient: person }
             : null,
     );
-  };
-
-  const jumpToRow = (row: CensusRow) => {
-    setTab("now");
-    setOpenGroups((current) => ({ ...current, [row.group]: true }));
-    if (row.group === "ward") setShowAllWard(true);
-    selectRow(row);
-    setFlashKey(row.key);
-    window.setTimeout(() => {
-      document
-        .querySelector(`[data-id="${CSS.escape(row.key)}"]`)
-        ?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() });
-    }, 30);
-    window.setTimeout(() => setFlashKey(null), 1800);
   };
 
   const jumpToGroup = (group: CensusGroup) => {
@@ -1023,38 +984,6 @@ export function PatientSearchPage() {
       {refusal.sentence}
     </p>
   ) : null;
-  const detailOrSummary = (closeable: boolean) =>
-    selectedCensus ? (
-      <CensusDetail
-        row={selectedCensus}
-        now={now}
-        onNavigate={closeable ? undefined : () => setDetailsOpen(false)}
-        onClose={
-          closeable
-            ? () => {
-                setSelectedId(null);
-                setSoleDismissedFor(searchKey);
-              }
-            : undefined
-        }
-        onCopy={copyRow}
-        copyNote={copyNote}
-      />
-    ) : (
-      <ShiftSummary
-        rows={census.rows}
-        closedToday={census.closedToday}
-        now={now}
-        highlight={highlight}
-        highlightCounts={highlightCounts}
-        onSelect={jumpToRow}
-        onHighlight={(chip) => {
-          setTab("now");
-          setHighlight((current) => (current === chip ? null : chip));
-        }}
-        onHistory={() => setTab("history")}
-      />
-    );
 
   return (
     <div
@@ -1400,7 +1329,7 @@ export function PatientSearchPage() {
               showAllWard={showAllWard}
               onShowAllWard={() => setShowAllWard(true)}
               selectedKey={selectedId}
-              flashKey={flashKey}
+              flashKey={null}
               onSelect={selectRow}
               tab={tab}
               onTab={setTab}
@@ -1408,38 +1337,23 @@ export function PatientSearchPage() {
               historyCount={historyCount}
               history={history}
               onCopyList={copyList}
-              copyNote={selectedCensus ? null : copyNote}
+              copyNote={drawerOpen ? null : copyNote}
               empty={refusal ? null : empty}
               notice={refusalNotice}
             />
-            <Card
-              className={cs.side}
-              role="region"
-              aria-labelledby="ward-patient-search-side-title"
-              data-preview-card
-              data-wf-rail="1201"
-            >
-              <span id="ward-patient-search-side-title" className="sr-only">
-                Patient details
-              </span>
-              {detailOrSummary(true)}
-            </Card>
           </div>
         )}
 
-        <Drawer
+        <CensusDetailDrawer
+          row={selectedCensus}
           open={drawerOpen}
-          onClose={() => {
-            setDetailsOpen(false);
-          }}
-          title="Patient details"
-          closeLabel="Close patient details"
-          closeButtonClassName={styles.v6DetailsDrawerClose}
-          returnFocusRef={detailsTriggerRef}
+          now={now}
+          onClose={() => setDetailsOpen(false)}
+          onNavigate={() => setDetailsOpen(false)}
+          onCopy={copyRow}
+          copyNote={copyNote}
           testId="ward-patient-search-details"
-        >
-          <div className={styles.v6DetailsSheet}>{detailOrSummary(false)}</div>
-        </Drawer>
+        />
 
         <WardPrototypeFooter
           testId="ward-patient-search-governance"

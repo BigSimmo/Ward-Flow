@@ -249,16 +249,9 @@
 
 /* ───── layout ───── */
 
+/* Drawer review (6 Nov 2026): the census takes the full width. A chosen person opens in the kit
+   right drawer at every width above the phone, so there is no side card or sticky rail. */
 .layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--wf-s-3);
-  align-items: start;
-  min-width: 0;
-}
-
-.side {
-  display: none;
   min-width: 0;
 }
 
@@ -272,30 +265,6 @@
   .stateTrack {
     flex: 1 1 100%;
     margin-left: 0;
-  }
-}
-
-/* Layout sweep SHELL-03 (25 Oct 2026): beside a 300px side panel, a page under 68rem left the table
- * (720px at least) too narrow, so it scrolled sideways and hid the Time column at 1024 and 1280.
- * Under 68rem the panel stays hidden, as on narrower screens, so choosing a row opens the details
- * drawer (previewCardHidden) rather than updating a card far below the table. */
-@container patient-search (min-width: 68rem) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr) 300px;
-  }
-
-  .side {
-    display: block;
-    position: sticky;
-    top: var(--wf-s-3);
-    padding: 0;
-    overflow: hidden;
-  }
-}
-
-@container patient-search (min-width: 80rem) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr) 340px;
   }
 }
 
@@ -370,13 +339,12 @@
 }
 
 .scroll {
-  /* Both axes share this bounded owner so the sticky headings follow row scrolling. */
-  max-block-size: 65dvh;
-  overflow: auto;
+  /* Drawer review (6 Nov 2026): no height cap, so the rows scroll with the page (one scroll). Only
+     a table wider than the page scrolls sideways here. */
+  overflow-x: auto;
 }
 
-/* Device sweep (24 Oct 2026): at 1024 px the census sits beside the "This shift" panel and scrolls
-   sideways with Time out of sight. The right edge is drawn while there is more to the right, the
+/* Device sweep (24 Oct 2026): on a narrow page the census scrolls sideways with Time out of sight. The right edge is drawn while there is more to the right, the
    same scroll-driven edge as the shared ward table: a border, never a fade, and nothing on a
    table that fits. */
 @keyframes censusMoreRight {
@@ -397,7 +365,8 @@
   }
 }
 
-/* Cells, borders and padding come from the shared wf table; this adds the fixed layout and sticky head. */
+/* Cells, borders and padding come from the shared wf table; this adds the fixed layout. The head no
+   longer sticks: the rows scroll with the page, and a sideways scroll box cannot pin it there. */
 table.censusTable {
   min-width: 720px;
   border-collapse: separate;
@@ -429,9 +398,6 @@ table.censusTable {
 }
 
 .censusTable thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
   background: var(--wf-surface);
   font: 600 var(--wf-fs-12) / 16px var(--wf-font);
   letter-spacing: 0.05em;
@@ -932,6 +898,47 @@ tr:has(+ .moreRow) > td {
   border-top: 1px solid var(--wf-line);
 }
 
+/* ───── the person drawer (kit PanelDrawer) ───── */
+
+.drawerSubtitle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 6px;
+  min-width: 0;
+  white-space: normal;
+}
+
+.drawerBody {
+  gap: var(--wf-s-4);
+  padding: var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+}
+
+/* What happens next: a plain block on the drawer surface, no tinted banner (D-94). */
+.drawerStatus {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-bottom: var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.drawerStatus .statusSub {
+  white-space: normal;
+}
+
+/* Values wrap in full in the drawer rather than ending in "…". */
+.drawerBody .facts dd {
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/* The secondary buttons share the row equally, at one height. */
+.drawerTools > * {
+  flex: 1 1 0;
+}
+
 /* ───── phone (its own design, 390 by 844) ───── */
 
 .heroPhone {
@@ -1135,7 +1142,6 @@ tr:has(+ .moreRow) > td {
 }
 
 @media print {
-  .side,
   .chipBar,
   .toolbar button {
     display: none !important;

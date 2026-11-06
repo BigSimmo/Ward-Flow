@@ -62,8 +62,11 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
     expect(screen.queryByRole("button", { name: "Highlight by owner" })).not.toBeInTheDocument();
   });
 
-  it("opens the most urgent alert in the side panel and moves with Next alert", () => {
+  it("opens the most urgent alert in the drawer and moves with Next alert", () => {
     renderScreen();
+    // Drawer review (6 Nov 2026): nothing opens by itself; Next alert opens the most urgent first.
+    expect(screen.queryByRole("complementary", { name: "Selected alert" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Next alert/ }));
     const firstName = within(selectedPanel()).getByRole("heading", { level: 2 }).textContent;
     expect(firstName).toBeTruthy();
     expect(within(selectedPanel()).getByText(/UM\d{6}/)).toBeInTheDocument();
@@ -81,6 +84,8 @@ describe("Alerts — Command queue (9 October 2026, round 2 option A)", () => {
 
   it("acknowledges the selected alert from the panel", () => {
     renderScreen();
+    // Drawer review (6 Nov 2026): the alert opens in the kit drawer once a row is chosen.
+    fireEvent.click(screen.getAllByTestId("ward-alerts-open")[0]!);
     const panel = selectedPanel();
     fireEvent.click(within(panel).getByRole("button", { name: /^Acknowledge / }));
     expect(within(panel).getByRole("button", { name: /^Seen: / })).toHaveTextContent("Seen");

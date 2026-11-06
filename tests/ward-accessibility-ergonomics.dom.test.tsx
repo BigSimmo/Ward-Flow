@@ -135,7 +135,7 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
       expect(firstCard).toHaveAttribute("aria-selected", "true");
       expect(secondCard).toHaveAttribute("aria-selected", "false");
       expect(screen.getByTestId("ward-patient-search-preview")).toBeInTheDocument();
-      expect(screen.getByRole("region", { name: "Patient details" })).toHaveTextContent(
+      expect(screen.getByTestId("ward-patient-search-details")).toHaveTextContent(
         firstCard.querySelector("b")?.textContent ?? "",
       );
     });

@@ -19,23 +19,10 @@ import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 // The Patients census search is the kit's one page search field (D-91, Patients redesign).
 const SEARCH_LABEL = "Find a person by name, UMRN or place";
 
-// jsdom applies no CSS module rules, so the side card's visibility (the stylesheet's call at 56rem
-// of page width) is set inline. The ResizeObserver stand-in notifies only observers of the card that
-// is mounted now, and matchMedia stands in for the phone layout (below 40rem).
-const observed = new Map<() => void, Element>();
+// Drawer review (6 Nov 2026): the side card and its sticky rail are gone, so a chosen row opens the
+// kit right drawer at every width above the phone. matchMedia stands in for the phone layout.
 let phone = false;
 const phoneListeners = new Set<() => void>();
-
-function setCardHidden(hidden: boolean) {
-  document.querySelector<HTMLElement>("[data-preview-card]")!.style.display = hidden ? "none" : "";
-}
-
-function resizeCard() {
-  const card = document.querySelector("[data-preview-card]");
-  act(() => {
-    for (const [notify, element] of observed) if (element === card) notify();
-  });
-}
 
 function setPhone(next: boolean) {
   phone = next;
@@ -43,22 +30,8 @@ function setPhone(next: boolean) {
 }
 
 beforeEach(() => {
-  observed.clear();
   phone = false;
   phoneListeners.clear();
-  vi.stubGlobal(
-    "ResizeObserver",
-    class {
-      constructor(private readonly callback: () => void) {}
-      observe(element: Element) {
-        observed.set(this.callback, element);
-      }
-      unobserve() {}
-      disconnect() {
-        observed.delete(this.callback);
-      }
-    },
-  );
   vi.stubGlobal("matchMedia", (query: string) => ({
     media: query,
     get matches() {
@@ -79,38 +52,33 @@ function openRecordInDrawer() {
       <PatientSearchPage />
     </WardFlowProvider>,
   );
-  setCardHidden(true);
   fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "WF-318" } });
   fireEvent.click(screen.getByTestId("ward-patient-search-case-WF-318"));
 }
 
-describe("Patient search record drawer when the page widens", () => {
-  it("closes once the side card shows the record, so it is not shown twice", () => {
+describe("Patient search record drawer", () => {
+  it("opens the chosen record in the kit drawer, with no side card beside the census", () => {
     openRecordInDrawer();
-    expect(screen.getByTestId("ward-patient-search-details")).toBeInTheDocument();
+    const drawer = screen.getByTestId("ward-patient-search-details");
+    expect(drawer).toHaveAttribute("role", "dialog");
+    expect(drawer).toHaveTextContent("Bed pulled");
+    expect(document.querySelector("[data-preview-card]")).toBeNull();
+    expect(screen.queryByRole("region", { name: "Patient details" })).not.toBeInTheDocument();
+  });
 
-    setCardHidden(false);
-    resizeCard();
-
+  it("closes from its Close button and leaves the row chosen", () => {
+    openRecordInDrawer();
+    fireEvent.click(screen.getByRole("button", { name: "Close patient details" }));
     expect(screen.queryByTestId("ward-patient-search-details")).not.toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Patient details" })).toHaveTextContent("Bed pulled");
+    expect(screen.getByTestId("ward-patient-search-case-WF-318")).toHaveAttribute("aria-selected", "true");
   });
 
-  it("stays open while the page is still one column", () => {
-    openRecordInDrawer();
-    resizeCard();
-    expect(screen.getByTestId("ward-patient-search-details")).toBeInTheDocument();
-  });
-
-  it("still closes after the page passes through the phone layout and widens again", () => {
+  it("stays open while the page passes through the phone layout and widens again", () => {
     openRecordInDrawer();
     setPhone(true);
     expect(screen.getByTestId("ward-patient-search-details")).toBeInTheDocument();
 
     setPhone(false);
-    setCardHidden(false);
-    resizeCard();
-
-    expect(screen.queryByTestId("ward-patient-search-details")).not.toBeInTheDocument();
+    expect(screen.getByTestId("ward-patient-search-details")).toBeInTheDocument();
   });
 });
