@@ -407,6 +407,7 @@ export function PhoneListRow({
   const content = (
     <>
       {present(leading) ? <span className={styles.rowLeading}>{leading}</span> : null}
+      {present(leading) ? " " : null}
       <span className={styles.rowText}>
         <span className={styles.rowName}>{name}</span>
         {present(meta) ? (
