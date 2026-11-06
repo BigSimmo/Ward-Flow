@@ -39,9 +39,16 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-import { applyAppearance, WardBar } from "@/components/ward-management/shell/ward-bar";
+import { applyAppearance } from "@/components/ward-management/shell/ward-bar";
+import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
 import { WardLiveRegion, resetWardLiveRegionForTests } from "@/components/ward-management/shell/ward-live-region";
-import { computeShiftProgress, WardRail } from "@/components/ward-management/shell/ward-rail";
+import { computeShiftProgress } from "@/components/ward-management/shell-next/next-rail-body";
+import { NextRailBody as WardRail } from "@/components/ward-management/shell-next/next-rail-body";
+// CB-1 (Josh, 6 Nov 2026): two cases stay on the retired shell until Josh decides, because the live
+// shell has no equivalent. Its Activity trigger reads "Activity" alone, with no "synthetic activity"
+// words, and its Settings is an account-menu item (DK1, 3 Nov 2026), not a link in the rail.
+import { WardBar as RetiredWardBar } from "@/components/ward-management/shell/ward-bar";
+import { WardRail as RetiredWardRail } from "@/components/ward-management/shell/ward-rail";
 import { resetWardChecksForTests, useWardChecksPublisher } from "@/components/ward-management/shell/ward-checks";
 import type { WardReconciliationCheck } from "@/components/ward-management/shell/ward-shell-types";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
@@ -87,13 +94,17 @@ function ChecksPublisher({ checks }: { checks: readonly WardReconciliationCheck[
   return null;
 }
 
-function renderShell(checks: WardReconciliationCheck[] = OK_CHECKS) {
+function renderShell(
+  checks: WardReconciliationCheck[] = OK_CHECKS,
+  Rail: () => ReactNode = WardRail,
+  Bar: typeof WardBar = WardBar,
+) {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <WardLiveRegion />
       <ChecksPublisher checks={checks} />
-      <WardRail />
-      <WardBar />
+      <Rail />
+      <Bar />
     </WardFlowProvider>,
   );
 }
@@ -646,19 +657,19 @@ describe("round-2 review, Important 2 — the closed rail strip's sighted-user p
 // a reconciliation verdict. Real published checks remain available in a compact disclosure, while
 // silence and an explicitly empty publication both make no agreement claim here; the rail retains
 // their distinct fixed sentences.
-function renderBarOnly(checks?: WardReconciliationCheck[]) {
+function renderBarOnly(checks?: WardReconciliationCheck[], Bar: typeof WardBar = WardBar) {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <WardLiveRegion />
       {checks === undefined ? null : <ChecksPublisher checks={checks} />}
-      <WardBar />
+      <Bar />
     </WardFlowProvider>,
   );
 }
 
 describe("Activity distinguishes demo provenance from published figure checks", () => {
   it("labels Command activity as synthetic demo state without claiming reconciliation", () => {
-    renderBarOnly();
+    renderBarOnly(undefined, RetiredWardBar);
     const trigger = screen.getByTestId("ward-bar-activity-trigger");
     expect(trigger.textContent ?? "").toContain("synthetic activity");
     expect(trigger).not.toHaveTextContent(/\d{1,2}:\d{2}/u);
@@ -777,7 +788,7 @@ describe("assertion 5 — demonstration controls reachable from Tools", () => {
   });
 
   it("reaches Appearance and Settings from the rail's role controls", async () => {
-    renderShell();
+    renderShell(OK_CHECKS, RetiredWardRail, RetiredWardBar);
 
     const appearance = screen.getByRole("group", { name: "Appearance" });
     expect(within(appearance).getByRole("button", { name: "Dark" })).toBeInTheDocument();

@@ -13,10 +13,18 @@ vi.mock("next/link", () => ({
   ),
 }));
 
+// The live rail (`shell-next/next-rail-body.tsx`) reads the router for its account menu, which jsdom
+// has no App Router for, so it is mocked as the sibling shell-next suites mock it.
+vi.mock("next/navigation", () => ({
+  usePathname: () => "/ward-flow",
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 import { CommunityIndex } from "@/components/ward-management/community/community-index";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { WardRail } from "@/components/ward-management/shell/ward-rail";
+import { NextRailBody as WardRail } from "@/components/ward-management/shell-next/next-rail-body";
 import { railEntries, roleMenu } from "@/components/ward-management/shell/ward-rail-entries";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -86,9 +94,10 @@ const railHrefs: string[] = (() => {
   const { container, getByTestId } = renderInProvider(<WardRail />);
   // B1 (Josh, 19 Oct 2026): the rail shows the desk's own short menu and keeps every other page,
   // Community among them, one tap away under More. That sheet portals to the body, so it is opened
-  // and its links are collected with the rail's own.
+  // and its links are collected with the rail's own. Found by its test id: the live rail's sheet
+  // element id is `preview-rail-more-pages`, the retired rail's was `ward-rail-more-pages`.
   fireEvent.click(getByTestId("ward-rail-more"));
-  const sheet = document.getElementById("ward-rail-more-pages");
+  const sheet = document.querySelector('[data-testid="ward-rail-more-pages"]');
   return [...container.querySelectorAll("a[href]"), ...(sheet?.querySelectorAll("a[href]") ?? [])].map(
     (anchor) => anchor.getAttribute("href") ?? "",
   );

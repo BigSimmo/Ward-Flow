@@ -151,7 +151,7 @@ const CLOSED_RAIL_CARD_MEDIA_QUERY = "(min-width: 1001px)";
  * shows the same short menu). Above 1200px the stored open or closed preference applies as before;
  * at 1000px and below the tablet portrait and phone shapes take over.
  */
-const TABLET_LANDSCAPE_RAIL_QUERY = "(min-width: 1001px) and (max-width: 1200px)";
+export const TABLET_LANDSCAPE_RAIL_QUERY = "(min-width: 1001px) and (max-width: 1200px)";
 
 // Visual abbreviations for the tablet row. Full registry names and live counts remain on the
 // accessible link and its hover card; these never define destinations.

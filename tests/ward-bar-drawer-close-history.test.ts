@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { drawerCloseHistoryStep, isPendingNavigation } from "@/components/ward-management/shell/ward-bar";
+import { drawerCloseHistoryStep, isPendingNavigation } from "@/components/ward-management/shell/ward-bar-model";
 
 // 26 September 2026: three journeys (full-journey:126, roles:1030, and the same shape by hand)
 // showed that closing the Tools drawer while a slow page was still loading sent the person back to

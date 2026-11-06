@@ -11,7 +11,7 @@ vi.mock("next/link", () => ({
 }));
 
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
-import { setRailOpenPreference } from "@/components/ward-management/shell/ward-rail";
+import { setRailOpenPreference } from "@/components/ward-management/shell/ward-rail-preferences";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { ToastProvider } from "@/components/wf";
 

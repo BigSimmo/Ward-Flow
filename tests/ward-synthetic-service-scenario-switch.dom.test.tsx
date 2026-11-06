@@ -5,7 +5,7 @@ import { StatisticsServiceScreen } from "@/components/ward-management/statistics
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { activateScenarioNetwork, scenarioWardNetwork } from "@/components/ward-management/ward-scenarios";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
 
 vi.mock("next/link", () => ({
   default: ({ href, children }: { href: string; children: ReactNode }) => <a href={href}>{children}</a>,

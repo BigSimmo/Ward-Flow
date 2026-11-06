@@ -40,7 +40,7 @@ vi.mock("@/components/ward-management/shell/ward-command-activity", async (impor
   };
 });
 
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
 import type { WardActivityContent } from "@/components/ward-management/shell/ward-shell-types";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { activeWardNetwork, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
