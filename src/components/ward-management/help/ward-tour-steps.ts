@@ -25,7 +25,7 @@ export type TourRole = WardChromeRole | "admin";
  */
 export type TourDevice = "desk" | "tablet" | "phone";
 /** "Go further" holds the optional steps offered after the first-run tour (`goFurtherSteps`). */
-export type TourChapter = "Your desk" | "Your daily work" | "Finding your way" | "What you can do" | "Go further";
+type TourChapter = "Your desk" | "Your daily work" | "Finding your way" | "What you can do" | "Go further";
 
 /** The first element matching `sel` that is shown, holds `text` when given, then `up` parents up. */
 export type TourTarget = { readonly sel: string; readonly text?: string; readonly up?: number };
