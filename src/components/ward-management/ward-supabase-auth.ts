@@ -2,13 +2,29 @@
 const WARD_SUPABASE_ORIGIN = "https://zakzoemeedfepxcstsou.supabase.co";
 import {
   WARD_AUTH_STORAGE_KEY,
+  WARD_RECOVERY_LINK_INVALID,
+  WARD_RECOVERY_VERIFIER_KEY,
   WardAuthError,
-  consumeRecoveryFragment,
+  consumeRecoveryLink,
   type WardAuthSession,
   type WardAuthUser,
+  type WardRecoveryLink,
 } from "./ward-auth-link";
 
-export { WARD_AUTH_STORAGE_KEY, WardAuthError, consumeRecoveryFragment };
+export { WARD_AUTH_STORAGE_KEY, WardAuthError, consumeRecoveryLink };
+const base64url = (bytes: Uint8Array) =>
+  btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+/** SEC-2: a PKCE code verifier (RFC 7636): 48 random bytes, 64 base64url characters. */
+export function createPkceVerifier(): string {
+  return base64url(crypto.getRandomValues(new Uint8Array(48)));
+}
+/** The SHA-256 PKCE code challenge for a verifier (RFC 7636). */
+export async function pkceChallenge(verifier: string): Promise<string> {
+  return base64url(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier))));
+}
 type User = WardAuthUser;
 type Session = WardAuthSession;
 type StoragePort = Pick<Storage, "getItem" | "setItem" | "removeItem">;
@@ -49,7 +65,7 @@ export type WardBrowserAuthAdapter = {
   /** True while this tab's sign-in is held in memory only because the browser refused to store it. */
   readonly storageLost?: boolean;
   reauthenticate(password: string): Promise<void>;
-  restore(recovery?: ReturnType<typeof consumeRecoveryFragment>): Promise<void>;
+  restore(recovery?: WardRecoveryLink | null): Promise<void>;
   signUp(email: string, password: string, redirectTo?: string): Promise<void>;
   signIn(email: string, password: string): Promise<void>;
   token(options?: { refresh?: boolean }): Promise<string>;
@@ -75,6 +91,11 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
       url: string;
       publishableKey: string;
       storage?: StoragePort;
+      /**
+       * SEC-2: this browser's local storage, which keeps a recovery request's PKCE verifier until
+       * its emailed link comes back (in a new tab). Without it a recovery link cannot be asked for.
+       */
+      linkStorage?: Pick<Storage, "getItem" | "setItem" | "removeItem">;
       fetch?: typeof fetch;
       timeoutMs?: number;
       coordinatorEmail?: string;
@@ -186,7 +207,10 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
       });
       this.assert(generation);
       if (!response.ok) {
-        const rejected = [400, 401, 403, 422].includes(response.status);
+        // SEC-2: an unknown or spent recovery code is a 404 from the PKCE exchange, not an outage.
+        const rejected =
+          [400, 401, 403, 422].includes(response.status) ||
+          (response.status === 404 && path.includes("grant_type=pkce"));
         if (
           (token && [401, 403].includes(response.status)) ||
           // A reload always refreshes now (H-0044), so any refused refresh token ends the session.
@@ -270,12 +294,37 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
     );
     await this.verify({ ...this.readSession(value, false), user: { id } }, generation);
   }
-  async restore(recovery: Session | null = null) {
+  async restore(recovery: WardRecoveryLink | null = null) {
     if (recovery) {
       this.invalidate();
       this.clear();
-      this.save(recovery);
-      await this.verify(recovery);
+      const generation = this.generation;
+      // SEC-2: the code counts only with the verifier this browser kept when it asked for the link.
+      let value: unknown;
+      try {
+        value = await this.request(
+          "/token?grant_type=pkce",
+          {
+            method: "POST",
+            body: JSON.stringify({ auth_code: recovery.code, code_verifier: recovery.verifier }),
+          },
+          undefined,
+          generation,
+        );
+      } catch (error) {
+        if (error instanceof WardAuthError && error.kind === "credentials")
+          throw new WardAuthError("session", WARD_RECOVERY_LINK_INVALID);
+        throw error;
+      }
+      const session = this.readSession(value, true);
+      // The code is spent now, so a retry must not ask for it again: the reply names its account.
+      const named = (value as { user?: { id?: unknown; email?: unknown } } | null)?.user;
+      if (typeof named?.id === "string" && typeof named.email === "string" && named.email)
+        this.adopt(session, named as User, generation);
+      else {
+        this.save(session);
+        await this.verify(session, generation);
+      }
       return;
     }
     let saved: string | null | undefined;
@@ -376,16 +425,54 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
     const redirect = new URL(redirectTo);
     if (redirect.pathname !== "/ward-flow" || redirect.search || redirect.hash)
       throw new WardAuthError("unavailable", "Invalid recovery destination.");
-    await this.request("/recover?redirect_to=" + encodeURIComponent(redirect.toString()), {
-      method: "POST",
-      body: JSON.stringify({ email }),
-    });
+    // SEC-2 (Josh, 6 Nov 2026): a PKCE recovery. The link Supabase emails carries a code that only
+    // works with this verifier, kept in this browser alone, so the link signs in nowhere else.
+    const storage = this.options.linkStorage;
+    // Offline, no email can go, so ask for nothing and keep the last link working.
+    if (typeof navigator !== "undefined" && navigator.onLine === false)
+      throw new WardAuthError("unavailable", "Sign-in service is unavailable. Try again.");
+    const verifier = createPkceVerifier();
+    const challenge = await pkceChallenge(verifier);
+    let previous: string | null = null;
+    try {
+      if (!storage) throw new Error();
+      previous = storage.getItem(WARD_RECOVERY_VERIFIER_KEY);
+      storage.setItem(WARD_RECOVERY_VERIFIER_KEY, JSON.stringify({ verifier, createdAt: Date.now() }));
+    } catch {
+      throw new WardAuthError(
+        "unavailable",
+        "This browser could not keep the recovery request. Allow this site to store data, then try again.",
+      );
+    }
+    try {
+      await this.request("/recover?redirect_to=" + encodeURIComponent(redirect.toString()), {
+        method: "POST",
+        body: JSON.stringify({ email, code_challenge: challenge, code_challenge_method: "s256" }),
+      });
+    } catch (error) {
+      // A refused request sent no email, so the earlier link's verifier comes back. Any other
+      // failure may still have sent the email, so the new verifier stays until it lapses.
+      if (error instanceof WardAuthError && error.kind === "credentials") {
+        try {
+          if (previous === null) storage.removeItem(WARD_RECOVERY_VERIFIER_KEY);
+          else storage.setItem(WARD_RECOVERY_VERIFIER_KEY, previous);
+        } catch {
+          // Storage went away mid-request; the earlier link then needs a new request.
+        }
+      }
+      throw error;
+    }
   }
   async updatePassword(password: string) {
     if (!this.isRecovery || !this.session) throw new WardAuthError("session", "Open a password recovery link first.");
     await this.refreshIfNeeded();
+    if (!this.session) throw new WardAuthError("session", "Your session has expired. Sign in again.");
+    // A recovery session saved before its account check finished (the check failed or the page
+    // closed) names no account yet. Finish that check first, so no password changes on an account
+    // this browser has not confirmed. The recovery code is spent, so it is never exchanged again.
+    if (!this.session.user?.id) await this.verify(this.session);
     const session = this.session;
-    if (!session) throw new WardAuthError("session", "Your session has expired. Sign in again.");
+    if (!session?.user?.id) throw new WardAuthError("session", "Your session has expired. Sign in again.");
     const generation = this.generation;
     const user = (await this.request(
       "/user",

@@ -213,8 +213,21 @@ export async function frontDoorVerdict(
   const url = request.nextUrl.clone();
   url.pathname = FRONT_DOOR_SIGN_IN_PATH;
   url.search = "";
-  if (pathname === "/ward-flow" || pathname.startsWith("/ward-flow/"))
-    url.searchParams.set("next", safeNextPath(pathname + search));
+  if (pathname === "/ward-flow" || pathname.startsWith("/ward-flow/")) {
+    // SEC-2: a recovery link returns to /ward-flow with its code in the query. The sign-in page
+    // takes it from its own address, so it rides there and never inside `next`.
+    let rest = search;
+    const target = new URLSearchParams(search);
+    const link = ["code", "error", "error_code", "error_description"].filter((key) => target.has(key));
+    if (pathname === "/ward-flow" && link.length) {
+      for (const key of link) {
+        url.searchParams.set(key, target.get(key)!);
+        target.delete(key);
+      }
+      rest = target.toString() ? "?" + target.toString() : "";
+    }
+    url.searchParams.set("next", safeNextPath(pathname + rest));
+  }
   return NextResponse.redirect(url, 307);
 }
 

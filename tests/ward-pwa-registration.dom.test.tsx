@@ -7,12 +7,8 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push }) }));
 import { SettingsInstallHint } from "@/components/ward-management/settings/settings-install-hint";
 import { PHONE_PUSH_SCOPE, PHONE_PUSH_WORKER_URL } from "@/components/ward-management/shell/ward-phone-push";
 import { listenForInstallPrompt } from "@/components/ward-management/shell/ward-pwa-install";
-import {
-  LEGACY_PWA_SCOPES,
-  PHONE_ALERTS_MOVED_NOTICE,
-  WardPwaRegistration,
-  wardPwaOpenTarget,
-} from "@/components/ward-management/shell/ward-pwa-registration";
+import { WardPwaRegistration, wardPwaOpenTarget } from "@/components/ward-management/shell/ward-pwa-registration";
+import { LEGACY_PWA_SCOPES, PHONE_ALERTS_MOVED_NOTICE } from "@/components/ward-management/shell/ward-pwa-update";
 import { ToastProvider } from "@/components/wf";
 
 /** PWA plan items 5, 6 and 11 and F-11 (Oct 2026): one worker registration, the update notice, install. */

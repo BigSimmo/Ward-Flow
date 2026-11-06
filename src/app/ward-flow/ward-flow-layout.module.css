@@ -518,3 +518,55 @@
     display: none;
   }
 }
+
+/*
+ * TE-06 (Josh, 6 Nov 2026): the line a broken sidebar or top bar shows in its place
+ * (shell-next/next-shell-boundary.tsx). Styled by attribute, not a class, so the class map this
+ * stylesheet ships to the browser does not grow. In the row it stands where the rail was; in the
+ * content column it takes the bar's line.
+ */
+.shellRow [data-wf-shell-error] {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  max-inline-size: 100%;
+  padding: var(--wf-s-3);
+  border-block-end: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-1);
+  font: 0.875rem / 1.4 var(--wf-font);
+}
+
+.shellRow > [data-wf-shell-error] {
+  flex-direction: column;
+  align-items: flex-start;
+  inline-size: 12rem;
+  border-block-end: 0;
+  border-inline-end: 1px solid var(--wf-line);
+}
+
+/* At 1000px and under the rail is never drawn beside the page (the bar's Menu holds the
+   navigation), so its line would only squeeze the page. */
+@media (max-width: 1000px) {
+  .shellRow > [data-wf-shell-error] {
+    display: none;
+  }
+}
+
+.shellRow [data-wf-shell-error] button {
+  min-block-size: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-ctl);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: 600 0.875rem / 1.2 var(--wf-font);
+  cursor: pointer;
+}
+
+.shellRow [data-wf-shell-error] button:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
