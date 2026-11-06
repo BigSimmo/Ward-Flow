@@ -14,6 +14,9 @@ on:
     - cron: 0 18 * * *
 permissions:
   contents: read
+# CB-15 (front-end audit, 5 Nov 2026): no Next.js build telemetry from CI.
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
 # Each PR and main have one queue. A newer push to a PR cancels that PR's older run, even mid-run,
 # because a superseded head's result is never used and it held the PR's new run behind it while
 # filling the 40 shared job slots (Josh, 4 Nov 08:20Z). Main runs always finish, and a newer main
@@ -239,6 +242,11 @@ jobs:
         env:
           KNIP_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: npm run check:knip
+      # CB-13 (front-end audit, 5 Nov 2026): app files that only tests reach, such as the retired
+      # shell. Advisory: it prints the list and never fails.
+      - name: Report app files only tests use (advisory)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' && needs.plan.outputs.frontend_static == 'true' }}
+        run: npm run check:knip:production
       - name: Check maintained policy contracts
         if: ${{ !cancelled() && needs.plan.outputs.policy == 'true' && steps.install.outcome == 'success' }}
         run: node scripts/ward-ci-public/check-policy-contracts.mjs
