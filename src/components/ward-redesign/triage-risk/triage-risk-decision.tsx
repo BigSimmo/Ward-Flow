@@ -7,9 +7,10 @@
  */
 import { Info } from "lucide-react";
 
-import { Icon, Segmented, SrOnly, StatusGlyph, TextInput } from "@/components/wf";
+import { ChipGroup, FilterChip, Icon, Segmented, SrOnly, StatusGlyph, TextInput } from "@/components/wf";
+import { phoneRows } from "@/components/wf/phone-rows";
 
-import { ACTIONS, AHD, LEGAL, OUTCOMES, REFERRER_URGENCY, TIERS, type Tier } from "./triage-risk-data";
+import { ACTIONS, AHD, LEGAL, OUTCOMES, REFERRER_URGENCY, TIERS, WHO_TOLD, type Tier } from "./triage-risk-data";
 import { Choice, MultiChips, Reveal, Row, type FormApi } from "./triage-risk-parts";
 import { acuteFlagNames, hasLegalForm } from "./triage-risk-state";
 import styles from "./triage-risk-redesign.module.css";
@@ -27,16 +28,28 @@ export function UrgencyHint({ children }: { children: string }) {
 }
 
 export function DecisionBody({ form }: { form: FormApi }) {
-  const { state, set, setText } = form;
+  const { state, set, setText, update } = form;
   const acute = acuteFlagNames(state);
-  const toggleAction = (value: string) => set("actions", toggleIn(state.actions, value));
+  const toggleAction = (value: string) =>
+    update((s) => {
+      const actions = toggleIn(s.actions, value);
+      // Telling someone replaces "None needed".
+      const told = WHO_TOLD.some(([action]) => action === value) && actions.includes(value);
+      return { ...s, actions, urgNone: told ? false : s.urgNone };
+    });
+  const toggleNoneNeeded = () =>
+    update((s) => ({
+      ...s,
+      urgNone: !s.urgNone,
+      actions: s.urgNone ? s.actions : s.actions.filter((a) => !WHO_TOLD.some(([action]) => action === a)),
+    }));
   return (
     <div className={styles.rows}>
       <Row label="Urgency" hint={`Referrer asked ${REFERRER_URGENCY}`} top>
         <Segmented
           size="md"
           label="Urgency"
-          className={styles.tiers}
+          className={`${styles.tiers} ${styles.choice}`}
           items={TIERS.map(([tier, short, long]) => ({
             id: tier,
             label: (
@@ -62,16 +75,32 @@ export function DecisionBody({ form }: { form: FormApi }) {
               <span>
                 <b>Immediate response.</b> If anyone is in danger now, call 000 or police. Record who you told:
               </span>
-              <MultiChips
-                label="Who was told"
-                options={[
-                  ["Police notified", "Police"],
-                  ["Ambulance notified", "Ambulance"],
-                  ["Senior consulted", "Senior"],
-                ]}
-                values={state.actions}
-                onToggle={toggleAction}
-              />
+              <span id="triage-urg-who" className={styles.contents}>
+                <ChipGroup label="Who was told" className={phoneRows.chipRow}>
+                  {WHO_TOLD.map(([value, label]) => (
+                    <FilterChip
+                      key={value}
+                      className={phoneRows.chip}
+                      pressed={state.actions.includes(value)}
+                      onPressedChange={() => toggleAction(value)}
+                    >
+                      {label}
+                    </FilterChip>
+                  ))}
+                  <FilterChip className={phoneRows.chip} pressed={state.urgNone} onPressedChange={toggleNoneNeeded}>
+                    None needed
+                  </FilterChip>
+                </ChipGroup>
+              </span>
+              {state.urgNone ? (
+                <TextInput
+                  id="triage-urg-none-why"
+                  aria-label="Why no one needed to be told"
+                  placeholder="Why no one needed to be told"
+                  value={state.text.urgNoneWhy}
+                  onChange={(event) => setText("urgNoneWhy", event.target.value)}
+                />
+              ) : null}
             </div>
           </div>
         </Reveal>
@@ -123,12 +152,7 @@ export function DecisionBody({ form }: { form: FormApi }) {
         </Reveal>
       ) : null}
       <Row label="Mental Health Act">
-        <Choice
-          label="Mental Health Act"
-          options={LEGAL.map(([value, label]) => [value, label] as const)}
-          value={state.legal}
-          onChange={(v) => set("legal", v)}
-        />
+        <Choice label="Mental Health Act" options={LEGAL} value={state.legal} onChange={(v) => set("legal", v)} />
       </Row>
       {hasLegalForm(state) ? (
         <Reveal>

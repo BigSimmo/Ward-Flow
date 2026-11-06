@@ -4,18 +4,34 @@
  * Triage and risk mock-up: 5 Risk and FDV, and 6 Formulation and plan (SMHMR905).
  *
  * - Past risk is kept apart from current risk. Past flags can be carried forward from the last
- *   RAMP (with Undo), then checked; current risk is assessed today and never carried forward.
- * - An unmarked factor is never a silent No: each list ends with an explicit "Rest of …" answer.
- * - The family and domestic violence questions are word for word, asked alone, with a trained
- *   interpreter and never a relative.
+ *   RAMP (with Undo), then each is confirmed today; Rest of history is never carried. Current risk
+ *   is assessed today and never carried forward.
+ * - Tap marks sets what a tap records: Present, Not present or Not known.
+ * - An unmarked factor is never a silent No: each list ends with an explicit "Rest of …" answer,
+ *   which names what it covers. A factor the mental state or the FDV screen contradicts is not
+ *   covered; it is listed as a conflict to check.
+ * - The family and domestic violence questions are word for word, asked alone, with an accredited
+ *   interpreter and never a family member or friend.
  * - There is no low, medium or high rating; the formulation and plan carry the judgement.
  *
  * Synthetic data only.
  */
-import { Info } from "lucide-react";
-import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { Check, Info } from "lucide-react";
+import { useRef, type KeyboardEvent, type ReactNode } from "react";
 
-import { AppliedFilter, Badge, Button, ChipGroup, FilterChip, Icon, Kbd, Textarea, TextInput } from "@/components/wf";
+import {
+  AppliedFilter,
+  Badge,
+  Button,
+  ChipGroup,
+  FilterChip,
+  Icon,
+  Kbd,
+  Segmented,
+  StatusGlyph,
+  Textarea,
+  TextInput,
+} from "@/components/wf";
 import { phoneRows } from "@/components/wf/phone-rows";
 
 import {
@@ -46,35 +62,77 @@ import {
   type FormApi,
 } from "./triage-risk-parts";
 import { useHeadedBox } from "./triage-risk-review";
-import { fdvOutcome, sinceLastText, type TriageState } from "./triage-risk-state";
+import {
+  fdvOutcome,
+  restConfirmed,
+  restSets,
+  sinceLastText,
+  type FactorMark,
+  type TriageState,
+} from "./triage-risk-state";
 import { boxLine, hasPhrase, wordCount } from "./triage-risk-text";
 import styles from "./triage-risk-redesign.module.css";
 
 const toggleIn = (list: readonly string[], value: string) =>
   list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
 
-/** A flag press: not marked, then present, then not known, then not marked again. */
-function cycleFactor(state: TriageState, key: string): TriageState {
+const MARKS: { id: FactorMark; label: string }[] = [
+  { id: "y", label: "Present" },
+  { id: "n", label: "Not present" },
+  { id: "u", label: "Not known" },
+];
+
+/** A flag press records the Tap marks choice; pressing a flag already so marked clears it. */
+function tapFactor(state: TriageState, key: string, mark: FactorMark): TriageState {
   const f = { ...state.f };
-  const mark = f[key];
-  if (!mark) f[key] = "y";
-  else if (mark === "y") f[key] = "u";
-  else delete f[key];
+  if (f[key] === mark) delete f[key];
+  else f[key] = mark;
   return { ...state, f };
 }
 
-/** One flag: its name, and "12 Oct" when carried or "not known" when marked so. */
-export function FactorChip({ form, flag, name }: { form: FormApi; flag: string; name: string }) {
-  const mark = form.state.f[flag];
-  const sub = mark === "u" ? "not known" : mark === "y" && form.state.fromLast.includes(flag) ? "12 Oct" : "";
+/** "Tap marks: Present / Not present / Not known", above each set of flags. One is always chosen. */
+export function MarkBar({ form }: { form: FormApi }) {
   return (
-    <span title={FLAG_INFO[flag]} className={styles.flagWrap}>
+    <div className={styles.markBar}>
+      <span className={styles.miniLabel} aria-hidden="true">
+        Tap marks
+      </span>
+      <Segmented
+        size="md"
+        label="Tap marks"
+        className={styles.choice}
+        items={MARKS}
+        value={form.tapMark}
+        onChange={form.setTapMark}
+      />
+    </div>
+  );
+}
+
+/** One flag, named as its factor: a tick when present, and how it was recorded underneath. */
+export function FactorChip({ form, flag }: { form: FormApi; flag: string }) {
+  const { state } = form;
+  const mark = state.f[flag];
+  const carried = mark === "y" && state.fromLast.includes(flag);
+  const sub =
+    mark === "u"
+      ? "not known"
+      : mark === "n"
+        ? "not present"
+        : carried
+          ? state.confirmed.includes(flag)
+            ? "confirmed today"
+            : "carried 12 Oct"
+          : "";
+  return (
+    <span title={FLAG_INFO[flag]} className={styles.flagWrap} data-factor={flag}>
       <FilterChip
-        className={`${phoneRows.chip} ${mark === "u" ? styles.unknownChip : ""}`}
+        className={`${phoneRows.chip} ${styles.flagChip} ${mark === "u" ? styles.unknownChip : ""} ${mark === "n" ? styles.notPresentChip : ""}`}
         pressed={mark === "y"}
-        onPressedChange={() => form.update((s) => cycleFactor(s, flag))}
+        onPressedChange={() => form.update((s) => tapFactor(s, flag, form.tapMark))}
       >
-        {name}
+        {mark === "y" ? <Icon icon={Check} size={14} className={styles.tick} /> : null}
+        {FACTOR_NAME[flag]}
         {sub ? <span className={styles.chipSub}> {sub}</span> : null}
       </FilterChip>
     </span>
@@ -88,8 +146,8 @@ function FlagGroups({ form, groups, label }: { form: FormApi; groups: readonly F
         <div key={group} className={styles.flagGroup}>
           <span className={styles.flagGroupLabel}>{group}</span>
           <ChipGroup label={`${label}: ${group}`} className={phoneRows.chipRow}>
-            {flags.map(([flag, name]) => (
-              <FactorChip key={flag} form={form} flag={flag} name={name} />
+            {flags.map((flag) => (
+              <FactorChip key={flag} form={form} flag={flag} />
             ))}
           </ChipGroup>
         </div>
@@ -108,11 +166,72 @@ function SubHead({ tag, note, kind, action }: { tag: string; note: string; kind:
   );
 }
 
+/**
+ * What a "Rest of …" answer covers, by name. With Not present, factors the mental state or FDV
+ * screen contradicts are left out and listed to check; current risk also asks for a confirmation.
+ */
+function Covers({ form, kind }: { form: FormApi; kind: "now" | "bg" }) {
+  const { state } = form;
+  const value = kind === "now" ? state.rest : state.restPast;
+  if (!value) return null;
+  const sets = restSets(state, kind);
+  const notPresent = value === "np";
+  const list = notPresent ? sets.covered : sets.all;
+  const word = notPresent ? "not present" : kind === "now" ? "not assessed" : "not known";
+  const confirm = () => {
+    const keys = restSets(state, "now").covered.map((f) => f.key);
+    form.set("restCov", keys);
+    form.say(`Rest of current risk confirmed for ${keys.length} factors.`);
+  };
+  return (
+    <div className={styles.covers} data-refocus={`covers-${kind}`}>
+      <span>
+        <b>Covers {list.length}</b> unmarked {kind === "now" ? "current" : "history"} factors as {word}:{" "}
+        {list.map((f) => f.name).join(", ") || "none"}.
+      </span>
+      {notPresent && sets.conflicts.length ? (
+        <span className={styles.conflicts}>
+          <StatusGlyph tone="warning" size={8} />
+          <span>Not covered, check first:</span>
+          {sets.conflicts.map(({ factor, why }) => (
+            <span key={factor.key} className={styles.conflict}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  form.jump("risk", { selector: `[data-factor="${factor.key}"] button`, factor: factor.key })
+                }
+              >
+                {factor.name}
+              </Button>
+              <span className={styles.quiet}>({why.join("; ")})</span>
+            </span>
+          ))}
+        </span>
+      ) : null}
+      {notPresent && kind === "now" ? (
+        restConfirmed(state) ? (
+          <span className={styles.inlineMark}>
+            <StatusGlyph tone="success" size={10} />
+            Confirmed
+          </span>
+        ) : (
+          <Button size="sm" id="triage-rest-ok" className={phoneRows.chip} onClick={confirm}>
+            Confirm none of these are present
+          </Button>
+        )
+      ) : null}
+    </div>
+  );
+}
+
 function FdvBlock({ form }: { form: FormApi }) {
   const { state, set, update } = form;
   const outcome = fdvOutcome(state);
   const anyYes = ["q1", "q2", "q3"].some((q) => state.fdv[q] === "y");
   const questions = FDV_QUESTIONS.filter(([id]) => id !== "q4" || anyYes);
+  const notAlone = state.fdvAlone === "no";
+  const notPrivate = (state.how === "phone" || state.others.length > 0) && !state.fdvNot && !notAlone;
   const answer = (id: string, value: string | null) =>
     update((s) => {
       const fdv = { ...s.fdv };
@@ -130,6 +249,14 @@ function FdvBlock({ form }: { form: FormApi }) {
     const rows = event.currentTarget.parentElement?.querySelectorAll<HTMLElement>("[data-fdv-question]");
     rows?.[index + 1]?.focus();
   };
+  const followUp = (label: string, options: readonly (readonly [string, string])[]) => (
+    <MultiChips
+      label={label}
+      options={options}
+      values={state.actions}
+      onToggle={(v) => set("actions", toggleIn(state.actions, v))}
+    />
+  );
   return (
     <>
       <div className={styles.subHead}>
@@ -137,10 +264,45 @@ function FdvBlock({ form }: { form: FormApi }) {
         <span className={styles.pushEnd}>{outcome ? `Outcome: ${outcome}` : "Outcome follows the answers"}</span>
       </div>
       <Hint>
-        Ask alone, word for word. Trained interpreter, never a relative. <Kbd>Y</Kbd> and <Kbd>N</Kbd> keys answer the
-        focused question.
+        Ask alone, word for word. If an interpreter is needed, use an accredited interpreter, never a family member or
+        friend.
+        {/* The kit hides key caps on a phone, so the key line is left out there. */}
+        {form.isPhone ? null : (
+          <>
+            {" "}
+            <Kbd>Y</Kbd> and <Kbd>N</Kbd> keys answer the focused question.
+          </>
+        )}
       </Hint>
-      {state.fdvNot ? null : (
+      <Row label="Asked alone" hint="Answer before the questions">
+        <Choice
+          id="triage-fdv-alone"
+          label="Asked alone"
+          options={[
+            ["yes", "Yes"],
+            ["no", "No, could not ask alone"],
+          ]}
+          value={state.fdvAlone}
+          onChange={(v) => set("fdvAlone", v === "yes" || v === "no" ? v : null)}
+        />
+      </Row>
+      {notPrivate ? (
+        <div className={styles.nudge} data-testid="triage-fdv-private">
+          <span className={styles.grow}>
+            {state.how === "phone"
+              ? "Reviewed by phone. If you cannot be sure they are alone and can speak freely, choose No and use Could not ask."
+              : "Others were present at the review. Ask only once they are alone; otherwise use Could not ask."}
+          </span>
+        </div>
+      ) : null}
+      {notAlone && !state.fdvNot ? (
+        <div className={styles.nudge}>
+          <span className={styles.grow}>
+            Not alone: do not ask the questions now. Tap Could not ask and choose why.
+          </span>
+        </div>
+      ) : null}
+      {state.fdvNot || notAlone ? null : (
         <div className={styles.questions}>
           {questions.map(([id, text], index) => (
             // A focusable row so Y and N can answer it, as the prototype does (aria-keyshortcuts says so).
@@ -180,7 +342,7 @@ function FdvBlock({ form }: { form: FormApi }) {
         >
           Could not ask
         </FilterChip>
-        {state.fdvNot || anyYes ? null : (
+        {state.fdvNot || anyYes || notAlone ? null : (
           <FilterChip className={phoneRows.chip} pressed={state.fdvSus} onPressedChange={(on) => set("fdvSus", on)}>
             Suspected, not disclosed
           </FilterChip>
@@ -188,29 +350,38 @@ function FdvBlock({ form }: { form: FormApi }) {
       </ChipGroup>
       {state.fdvNot ? (
         <Reveal>
-          <MultiChips
-            label="Why not asked"
-            options={FDV_NOT_ASKED}
-            values={state.fdvReason ? [state.fdvReason] : []}
-            onToggle={(v) => set("fdvReason", state.fdvReason === v ? null : v)}
-          />
+          <span id="triage-fdv-reason" className={styles.contents}>
+            <MultiChips
+              label="Why not asked"
+              options={FDV_NOT_ASKED}
+              values={state.fdvReason ? [state.fdvReason] : []}
+              onToggle={(v) => set("fdvReason", state.fdvReason === v ? null : v)}
+            />
+          </span>
         </Reveal>
       ) : null}
-      {outcome === "Disclosed" || outcome === "Suspected, not disclosed" ? (
+      {outcome === "Disclosed" ? (
         <Reveal>
           <span className={styles.revealText}>
             Positive screen: complete the FDV951, offer social work or an FDV service. With reasonable belief of
             significant harm, consent to refer is preferred but not required.
           </span>
-          <MultiChips
-            label="FDV actions"
-            options={[
-              ["FDV951 started", "FDV951 started"],
-              ["Social work referral", "Social work"],
-            ]}
-            values={state.actions}
-            onToggle={(v) => set("actions", toggleIn(state.actions, v))}
-          />
+          {followUp("FDV actions", [
+            ["FDV951 started", "FDV951 started"],
+            ["Social work referral", "Social work"],
+          ])}
+        </Reveal>
+      ) : null}
+      {outcome === "Suspected, not disclosed" ? (
+        <Reveal>
+          <span className={styles.revealText} data-testid="triage-fdv-suspected">
+            Suspected, not disclosed: note what raised your concern in the assessment. Do not press for disclosure. Ask
+            again when they are alone and it is safe, and discuss with social work or a senior.
+          </span>
+          {followUp("FDV follow-up", [
+            ["Social work referral", "Social work"],
+            ["Senior consulted", "Senior"],
+          ])}
         </Reveal>
       ) : null}
     </>
@@ -221,6 +392,7 @@ export function RiskBody({ form, onAllFactors }: { form: FormApi; onAllFactors: 
   const { state, set, update, say } = form;
   const explain = useDisclosure(false);
   const carried = state.fromLast.length > 0;
+  const carriedPresent = state.fromLast.filter((k) => state.f[k] === "y");
   const since = sinceLastText(state);
   const fromMse = MSE_TO_RISK.filter(([domain, phrase, flag]) => {
     const has =
@@ -228,7 +400,7 @@ export function RiskBody({ form, onAllFactors }: { form: FormApi; onAllFactors: 
         ? hasPhrase(boxLine(state.text.mseBox, domain), phrase, domain)
         : Boolean(state.mse[domain]?.chips.includes(phrase));
     return has && state.f[flag] !== "y";
-  });
+  }).filter(([, , flag], index, all) => all.findIndex(([, , other]) => other === flag) === index);
   const carryForward = () => {
     update((s) => {
       const f = { ...s.f };
@@ -239,22 +411,21 @@ export function RiskBody({ form, onAllFactors }: { form: FormApi; onAllFactors: 
           fromLast.push(key);
         }
       }
-      const restFromLast = !s.restPast;
-      return { ...s, f, fromLast, restPast: s.restPast ?? "np", restFromLast };
+      // Flags only: Rest of history is always answered today.
+      return { ...s, f, fromLast, confirmed: [] };
     });
-    say("History carried from 12 Oct. Check each one.");
+    say("Flags carried from 12 Oct. Confirm each today, and answer Rest of history.");
   };
   const undoCarry = () =>
     update((s) => {
       const f = { ...s.f };
       for (const key of s.fromLast) delete f[key];
-      return { ...s, f, fromLast: [], restPast: s.restFromLast ? null : s.restPast, restFromLast: false };
+      return { ...s, f, fromLast: [], confirmed: [] };
     });
-  const [kind, setKind] = useState<"now" | "bg">("now");
   const addOther = () => {
     const text = state.text.otherRisk.trim();
     if (!text) return say("Describe the risk first.");
-    update((s) => ({ ...s, xr: [...s.xr, { t: text, k: kind }], text: { ...s.text, otherRisk: "" } }));
+    update((s) => ({ ...s, xr: [...s.xr, { t: text, k: s.xrKind }], text: { ...s.text, otherRisk: "" } }));
   };
   return (
     <>
@@ -285,9 +456,9 @@ export function RiskBody({ form, onAllFactors }: { form: FormApi; onAllFactors: 
             <div key={title}>
               <h3 className={styles.guideHead}>{title}</h3>
               {groups.flatMap(([, flags]) =>
-                flags.map(([flag, name]) => (
+                flags.map((flag) => (
                   <p key={flag} className={styles.flagInfo}>
-                    <b>{name}</b>
+                    <b>{FACTOR_NAME[flag]}</b>
                     <span>{FLAG_INFO[flag]}</span>
                   </p>
                 )),
@@ -298,10 +469,28 @@ export function RiskBody({ form, onAllFactors }: { form: FormApi; onAllFactors: 
       ) : null}
       {carried ? (
         <div className={styles.carried}>
-          <span>History carried from 12 Oct. Check each one with the person and record; tap a flag to change it.</span>
+          <span className={styles.grow}>
+            Carried from 12 Oct. Check each with the person, then mark it confirmed today. Tap a flag to change it.
+          </span>
           <Button variant="ghost" size="sm" onClick={undoCarry}>
             Undo
           </Button>
+          {carriedPresent.length ? (
+            <div className={styles.confirmList} id="triage-carried" data-refocus="carried">
+              {carriedPresent.map((key) => (
+                <ChipGroup key={key} label={FACTOR_NAME[key]} className={styles.confirmItem}>
+                  <span>{FACTOR_NAME[key]}</span>
+                  <FilterChip
+                    className={phoneRows.chip}
+                    pressed={state.confirmed.includes(key)}
+                    onPressedChange={() => set("confirmed", toggleIn(state.confirmed, key))}
+                  >
+                    Confirmed today
+                  </FilterChip>
+                </ChipGroup>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : (
         <div className={styles.carry}>
@@ -314,22 +503,26 @@ export function RiskBody({ form, onAllFactors }: { form: FormApi; onAllFactors: 
           </Button>
         </div>
       )}
+      <MarkBar form={form} />
       <FlagGroups form={form} groups={FLAGS_PAST} label="Past risk" />
       <div className={styles.restRow}>
         <span className={styles.grow}>
           <b>Rest of history</b> · anything not marked above
         </span>
         <Choice
+          id="triage-rest-past"
           label="Rest of history"
           options={[
             ["np", "Not present"],
             ["nk", "Not known"],
           ]}
           value={state.restPast}
-          onChange={(v) => update((s) => ({ ...s, restPast: v, restFromLast: false }))}
+          onChange={(v) => set("restPast", v)}
         />
       </div>
+      <Covers form={form} kind="bg" />
       <SubHead tag="Current risk" kind="now" note="Assess today. Never carried forward" />
+      <MarkBar form={form} />
       <FlagGroups form={form} groups={FLAGS_NOW} label="Current risk" />
       {state.f["other.now.parent"] === "y" ? (
         <div className={styles.nudge}>
@@ -350,23 +543,25 @@ export function RiskBody({ form, onAllFactors }: { form: FormApi; onAllFactors: 
       ) : null}
       <div className={styles.restRow}>
         <span className={styles.grow}>
-          <b>Rest of current risk</b> · tap a flag twice for not known ·{" "}
+          <b>Rest of current risk</b> · anything not marked ·{" "}
           <Button variant="ghost" size="sm" onClick={onAllFactors} aria-haspopup="dialog">
             See all RAMP factors
           </Button>
         </span>
         <Choice
+          id="triage-rest-now"
           label="Rest of current risk"
           options={[
             ["np", "Not present"],
             ["na", "Not assessed"],
           ]}
           value={state.rest}
-          onChange={(v) => set("rest", v)}
+          onChange={(v) => update((s) => ({ ...s, rest: v, restCov: null }))}
         />
       </div>
+      <Covers form={form} kind="now" />
       {fromMse.length ? (
-        <div className={styles.suggest}>
+        <div className={styles.suggest} data-refocus="risk-suggest">
           <span>Suggested from mental state</span>
           {fromMse.map(([, , flag]) => (
             <Button
@@ -384,7 +579,7 @@ export function RiskBody({ form, onAllFactors }: { form: FormApi; onAllFactors: 
       <Row label="Other risk" hint="Anything not listed, past or current" htmlFor="triage-other-risk" top>
         <div className={styles.stack}>
           {state.xr.length ? (
-            <div className={styles.inline}>
+            <div className={styles.inline} data-refocus="other-risk">
               {state.xr.map((risk, index) => (
                 <AppliedFilter
                   key={`${risk.t}-${index}`}
@@ -409,14 +604,17 @@ export function RiskBody({ form, onAllFactors }: { form: FormApi; onAllFactors: 
                 addOther();
               }}
             />
-            <Choice
+            {/* Always one chosen: a second press keeps it (it is how the risk is filed, not an answer). */}
+            <Segmented
+              size="md"
               label="Past or current"
-              options={[
-                ["now", "Current"],
-                ["bg", "Past"],
+              className={styles.choice}
+              items={[
+                { id: "now", label: "Current" },
+                { id: "bg", label: "Past" },
               ]}
-              value={kind}
-              onChange={(v) => setKind(v === "bg" ? "bg" : "now")}
+              value={state.xrKind}
+              onChange={(v) => set("xrKind", v)}
             />
             <Button size="sm" className={phoneRows.chip} onClick={addOther}>
               Add
@@ -445,6 +643,7 @@ export function PlanBody({ form }: { form: FormApi }) {
       />
       <Textarea
         ref={planRef}
+        id="triage-rp"
         aria-label="Risk formulation and safety plan"
         rows={autoRows(state.text.rp, 7)}
         placeholder="Who is at risk, of what, how soon, what keeps them safe, and the plan. Short lines are fine."
@@ -460,6 +659,7 @@ export function PlanBody({ form }: { form: FormApi }) {
       <div className={styles.rows}>
         <Row label="Risk may change quickly">
           <Choice
+            id="triage-changeable"
             label="Risk may change quickly"
             options={[
               ["yes", "Yes"],
@@ -471,6 +671,7 @@ export function PlanBody({ form }: { form: FormApi }) {
         </Row>
         <Row label="Factors add uncertainty">
           <Choice
+            id="triage-uncertain"
             label="Factors add uncertainty"
             options={[
               ["yes", "Yes"],
@@ -486,23 +687,21 @@ export function PlanBody({ form }: { form: FormApi }) {
             <UrgencyHint>{`Urgency ${state.urgency}: consider a risk review within 24 hours. You choose.`}</UrgencyHint>
           ) : null}
         </Row>
-        <Row label="Copy and collateral" hint="Who you spoke to or used" top>
-          <div className={styles.stack}>
-            <span className={styles.miniLabel}>Copy to</span>
-            <MultiChips
-              label="Plan copy to"
-              options={COPY_TO}
-              values={state.copyGiven}
-              onToggle={(v) => set("copyGiven", toggleIn(state.copyGiven, v))}
-            />
-            <span className={styles.miniLabel}>Collateral</span>
-            <MultiChips
-              label="Collateral and sources"
-              options={SOURCES}
-              values={state.sources}
-              onToggle={(v) => set("sources", toggleIn(state.sources, v))}
-            />
-          </div>
+        <Row label="Plan copy to" labelId="triage-l-copy">
+          <MultiChips
+            label="Plan copy to"
+            options={COPY_TO}
+            values={state.copyGiven}
+            onToggle={(v) => set("copyGiven", toggleIn(state.copyGiven, v))}
+          />
+        </Row>
+        <Row label="Collateral" hint="Who you spoke to or used" labelId="triage-l-coll" top>
+          <MultiChips
+            label="Collateral"
+            options={SOURCES}
+            values={state.sources}
+            onToggle={(v) => set("sources", toggleIn(state.sources, v))}
+          />
         </Row>
       </div>
     </>

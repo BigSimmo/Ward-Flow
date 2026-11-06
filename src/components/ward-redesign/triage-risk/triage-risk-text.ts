@@ -6,7 +6,8 @@
  *   be true with another (`MSE_VS`) replaces it. "Not assessed" replaces the line; any phrase
  *   replaces "Not assessed". Matching is whole word, so "Oriented" never matches "Disoriented".
  * - Free-text boxes: headings ("Why now:"), the dot shortcuts (.all, .form, .plan) and the parse
- *   the summary reads.
+ *   the summary reads. Only known headings count, in any case; any other "Word:" stays as text.
+ * - Reviewed time: DD/MM/YYYY HH:MM, a real date, never in the future.
  */
 import { GUIDES, MSE, MSE_VS, type GuideGroup } from "./triage-risk-data";
 
@@ -76,7 +77,9 @@ function dropPhrase(line: string, phrase: string): string {
 }
 
 const DOMAIN_LABELS = MSE.map((d) => d.label);
-const isDomainLine = (line: string) => DOMAIN_LABELS.some((label) => line.startsWith(`${label}:`));
+/** A line that starts with a domain's label, in any case (as `boxLine` reads it). */
+const isDomainLine = (line: string) =>
+  DOMAIN_LABELS.some((label) => line.toLowerCase().startsWith(`${label.toLowerCase()}:`));
 
 /** Adds or removes a tapped phrase on its domain's line. `replaced` names what a clash removed. */
 export function toggleBoxPhrase(box: string, domain: string, phrase: string): { box: string; replaced: string[] } {
@@ -88,7 +91,9 @@ export function toggleBoxPhrase(box: string, domain: string, phrase: string): { 
     lines.push(`${label}: ${phrase}`);
     const known = lines.filter(isDomainLine);
     const other = lines.filter((line) => line.trim() && !isDomainLine(line));
-    known.sort((a, b) => DOMAIN_LABELS.indexOf(a.split(":")[0]) - DOMAIN_LABELS.indexOf(b.split(":")[0]));
+    const order = (line: string) =>
+      DOMAIN_LABELS.findIndex((label) => line.toLowerCase().startsWith(`${label.toLowerCase()}:`));
+    known.sort((a, b) => order(a) - order(b));
     return { box: [...known, ...other].join("\n"), replaced: [] };
   }
   let current = match[2].trim();
@@ -119,7 +124,12 @@ export function toggleDomainChip(chips: readonly string[], domain: string, phras
 
 export type DomainEntry = { chips: string[]; detail: string };
 
-/** One box to By domain: each line's known phrases become chips, the rest stays as detail. */
+/**
+ * One box to By domain. Each domain's line is read again from scratch, so a line deleted from the
+ * box clears that domain. A known phrase anywhere in the line becomes a chip when it stands as its
+ * own item (at the start, or after a comma, full stop or semicolon), including one added after free
+ * text; the rest stays as detail. Chips keep the order they had in the line.
+ */
 export function boxToDomains(box: string): Record<string, DomainEntry> {
   const out: Record<string, DomainEntry> = {};
   for (const domain of MSE) {
@@ -129,24 +139,23 @@ export function boxToDomains(box: string): Record<string, DomainEntry> {
       out[domain.id] = { chips: [NA], detail: line.replace(/^not assessed\.?\s*/i, "") };
       continue;
     }
-    // Leading phrases become chips; from the first part that is not a phrase, the rest of the line
-    // stays as typed, punctuation and all.
+    // Longest first, so "No suicidal thoughts" is taken whole before "Suicidal thoughts" is tried,
+    // and a phrase with a comma in it ("Denies, appears distracted") is read whole.
+    const found = domain.phrases
+      .filter((phrase) => hasPhrase(line, phrase, domain.id))
+      .sort((a, b) => b.length - a.length);
     const chips: string[] = [];
     let rest = line;
-    // Longest first, so "No suicidal thoughts" wins over "Suicidal thoughts", and a phrase with a
-    // comma in it ("Denies, appears distracted") is read whole.
-    const byLength = [...domain.phrases].sort((a, b) => b.length - a.length);
-    for (;;) {
-      const lower = rest.toLowerCase();
-      const known = byLength.find((p) => {
-        const after = lower.slice(p.length);
-        return lower.startsWith(p.toLowerCase()) && (after === "" || /^\s*[,.;]/.test(after));
-      });
-      if (!known) break;
-      if (!chips.includes(known)) chips.push(known);
-      rest = rest.slice(known.length).replace(/^\s*[,.;]\s*/, "");
+    for (const phrase of found) {
+      const next = dropPhrase(rest, phrase);
+      if (next === rest) continue;
+      chips.push(phrase);
+      rest = next;
     }
-    out[domain.id] = { chips, detail: rest.trim() };
+    const at = (phrase: string) => line.search(phraseRe(phrase));
+    chips.sort((a, b) => at(a) - at(b));
+    rest = rest.replace(/^[\s,.;]+|[\s,;]+$/g, "");
+    out[domain.id] = { chips, detail: rest.charAt(0).toUpperCase() + rest.slice(1) };
   }
   return out;
 }
@@ -170,22 +179,41 @@ export function domainsToBox(domains: Readonly<Record<string, DomainEntry>>, pre
   return [...lines, ...other].join("\n");
 }
 
-/** "Heading: text" lines; a line with no heading joins the one above. */
+export const guideHeadings = (groups: readonly GuideGroup[]) => groups.flatMap(([, items]) => items.map(([h]) => h));
+
+let knownHeadings: readonly string[] | null = null;
+/** The headings the summary reads: the guides', "Mental state" and the eight domains. Longest first. */
+function headingsKnown(): readonly string[] {
+  knownHeadings ??= [
+    ...new Set([...guideHeadings(GUIDES.note), ...guideHeadings(GUIDES.rp), "Mental state", ...DOMAIN_LABELS]),
+  ].sort((a, b) => b.length - a.length);
+  return knownHeadings;
+}
+
+/**
+ * "Heading: text" lines, for known headings only and in any case ("why now:" is Why now). A short
+ * note in brackets after the heading stays with it ("History (12 Oct, check):"). Any other line,
+ * "Mother: said he has not slept" included, joins the one above. Headings with nothing after them
+ * are left out.
+ */
 export function parseHeadedText(text: string): [string, string][] {
+  const known = headingsKnown();
+  const re = new RegExp(`^(${known.map(escapeRegExp).join("|")})(\\s*\\([^)]{0,60}\\))?\\s*:\\s*(.*)$`, "i");
   const out: [string, string][] = [];
   for (const raw of text.split(/\n/)) {
     const line = raw.trim();
     if (!line) continue;
-    const match = line.match(/^([A-Z][A-Za-z ,'()0-9-]{1,40}):\s*(.*)$/);
+    const match = line.match(re);
     if (match) {
-      if (match[2].trim()) out.push([match[1], match[2]]);
-    } else if (out.length) out[out.length - 1][1] += ` ${line}`;
-    else out.push(["", line]);
+      const heading = known.find((h) => h.toLowerCase() === match[1].toLowerCase()) ?? match[1];
+      out.push([heading + (match[2] ?? ""), match[3]]);
+    } else if (out.length) {
+      const last = out[out.length - 1];
+      last[1] += last[1] ? ` ${line}` : line;
+    } else out.push(["", line]);
   }
-  return out;
+  return out.filter(([, body]) => body.trim());
 }
-
-export const guideHeadings = (groups: readonly GuideGroup[]) => groups.flatMap(([, items]) => items.map(([h]) => h));
 
 export function headingFilled(text: string, heading: string): boolean {
   const match = text.match(new RegExp(`^${escapeRegExp(heading)}:(.*)$`, "mi"));
@@ -254,4 +282,30 @@ export function expandShortcut(
     caret: nextCaret,
     message: missing.length ? `${missing.length} headings added.` : "Those headings are already in.",
   };
+}
+
+export type ReviewTimeCheck = { ok: boolean; message: string; future: boolean };
+
+/**
+ * The reviewed time: DD/MM/YYYY HH:MM, a date and time that exist, and not in the future (a minute's
+ * grace). `message` is the plain words to show; empty when there is nothing typed yet.
+ */
+export function checkReviewTime(value: string, now: number): ReviewTimeCheck {
+  const text = value.trim();
+  if (!text) return { ok: false, message: "", future: false };
+  const match = text.match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/);
+  if (!match) return { ok: false, message: "Use DD/MM/YYYY HH:MM, for example 06/11/2026 09:42.", future: false };
+  const [day, month, year, hour, minute] = match.slice(1).map(Number);
+  const date = new Date(year, month - 1, day, hour, minute);
+  if (hour > 23 || minute > 59 || date.getDate() !== day || date.getMonth() !== month - 1)
+    return { ok: false, message: "That date or time does not exist. Use DD/MM/YYYY HH:MM.", future: false };
+  if (date.getTime() > now + 60_000)
+    return { ok: false, message: "That time is in the future. Enter when you reviewed.", future: true };
+  return { ok: true, message: "", future: false };
+}
+
+/** Now, as a reviewed time: DD/MM/YYYY HH:MM. */
+export function reviewTimeStamp(date: Date): string {
+  const two = (n: number) => String(n).padStart(2, "0");
+  return `${two(date.getDate())}/${two(date.getMonth() + 1)}/${date.getFullYear()} ${two(date.getHours())}:${two(date.getMinutes())}`;
 }

@@ -12,7 +12,7 @@
  * Synthetic data only.
  */
 import { Copy } from "lucide-react";
-import { useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import {
   Badge,
@@ -32,29 +32,18 @@ import {
   AREA_NAME,
   AREAS,
   CONTACTS,
-  FORMULATION_HEADINGS,
-  HOW,
+  FACTOR_NAME,
   HOW_TO,
-  LEGAL,
+  LAST_TRIAGE,
   PATIENT,
   PSOLIS_FIELD_MAP,
   REFERRER_URGENCY,
-  REVIEW,
-  TIER_LONG,
   type SectionId,
 } from "./triage-risk-data";
 import { Choice, type FormApi } from "./triage-risk-parts";
-import { FactorChip } from "./triage-risk-risk";
-import {
-  allFactors,
-  areaShortName,
-  fdvOutcome,
-  hasLegalForm,
-  mseLines,
-  sinceLastText,
-  type Requirement,
-} from "./triage-risk-state";
-import { parseHeadedText } from "./triage-risk-text";
+import { FactorChip, MarkBar } from "./triage-risk-risk";
+import { allFactors, type Requirement, type Target } from "./triage-risk-state";
+import { summaryModel, summaryText, type DocBlock, type DocValue } from "./triage-risk-summary";
 import styles from "./triage-risk-redesign.module.css";
 
 const SUMMARY_TABS = [
@@ -65,10 +54,8 @@ const SUMMARY_TABS = [
   { id: "profile", label: "Profile" },
 ];
 
-const HOW_NAME: Readonly<Record<string, string>> = Object.fromEntries(HOW);
-const LEGAL_SHORT: Readonly<Record<string, string>> = Object.fromEntries(LEGAL.map(([v, , short]) => [v, short]));
-const REVIEW_NAME: Readonly<Record<string, string>> = Object.fromEntries(REVIEW);
-const SITUATION = ["Why now", "Request", "Views"];
+/** Where a summary or "Before you sign" item goes: its section, and the field when there is one. */
+export type Jump = (section: SectionId, target?: Target) => void;
 
 /**
  * Copies through the Ward Flow copy helper (synthetic first line, no UMRN or birth date) and says
@@ -98,6 +85,36 @@ function Missing({ children }: { children: ReactNode }) {
   return <span className={styles.missing}>{children}</span>;
 }
 
+/** A value's runs of text, with the quiet ones muted. */
+function Value({ value }: { value: DocValue }) {
+  return (
+    <>
+      {value.map((bit, index) =>
+        typeof bit === "string" ? bit : <Missing key={`${index}-${bit.quiet}`}>{bit.quiet}</Missing>,
+      )}
+    </>
+  );
+}
+
+function Block({ block }: { block: DocBlock }) {
+  if (block.kind === "facts")
+    return <Facts rows={block.rows.map(([label, value]) => [label, <Value key={label} value={value} />] as const)} />;
+  if (block.kind === "missing") return <p className={styles.missing}>{block.text}</p>;
+  if (block.kind === "tags")
+    return (
+      <ul className={styles.docTags} aria-label={block.label}>
+        {block.items.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+    );
+  return (
+    <p className={styles.docNote}>
+      <Value value={block.value} />
+    </p>
+  );
+}
+
 function DocSection({
   letter,
   title,
@@ -125,46 +142,17 @@ function DocSection({
   );
 }
 
-/** The document the form builds as it is filled in. */
-function SummaryDocument({ form, jump }: { form: FormApi; jump: (section: SectionId) => void }) {
+/** The document the form builds as it is filled in. Copy writes the same model as plain text. */
+function SummaryDocument({ form, jump }: { form: FormApi; jump: Jump }) {
   const { state, say } = form;
-  const ref = useRef<HTMLElement>(null);
   const [full, setFull] = useState(false);
-  const notes = parseHeadedText(state.text.note);
-  const plan = parseHeadedText(state.text.rp);
-  const situation = notes.filter(([h]) => SITUATION.includes(h));
-  const background = notes.filter(([h]) => !SITUATION.includes(h));
-  const formulation = plan.filter(([h]) => (FORMULATION_HEADINGS as readonly string[]).includes(h));
-  const safety = plan.filter(([h]) => !(FORMULATION_HEADINGS as readonly string[]).includes(h));
-  const mental = mseLines(state);
-  const factors = allFactors(state);
-  const present = factors.filter((f) => f.mark === "y");
-  const unknown = factors.filter((f) => f.mark === "u");
-  const pastPresent = present.filter((f) => f.kind === "bg");
-  const nowPresent = present.filter((f) => f.kind === "now");
-  const byArea = new Map<string, string[]>();
-  for (const f of nowPresent) byArea.set(f.area, [...(byArea.get(f.area) ?? []), f.name]);
-  const restNow = factors.filter((f) => f.kind === "now" && !f.mark).length;
-  const restBg = factors.filter((f) => f.kind === "bg" && !f.mark).length;
-  const since = sinceLastText(state);
-  const fdv = fdvOutcome(state);
-  const actions = [...state.actions, ...(state.copyGiven.length ? [`Plan copy to ${state.copyGiven.join(", ")}`] : [])];
-  const otherNow = state.xr.filter((x) => x.k !== "bg").map((x) => x.t);
-  const otherPast = state.xr.filter((x) => x.k === "bg").map((x) => x.t);
-  const pairs = (list: readonly [string, string][]) => <Facts rows={list.map(([h, t]) => [h || "Note", t] as const)} />;
-
-  const copy = () => {
-    const doc = ref.current?.cloneNode(true) as HTMLElement | undefined;
-    if (!doc) return;
-    doc.querySelectorAll("button, [data-no-copy]").forEach((node) => node.remove());
-    const text = (doc.innerText || doc.textContent || "").replace(/\n{3,}/g, "\n\n").trim();
-    copyText(text, "Summary copied.", "Copy not allowed here. Select the summary text instead.", say);
-  };
+  const model = summaryModel(state);
+  const copy = () =>
+    copyText(summaryText(model), "Summary copied.", "Copy not allowed here. Select the summary text instead.", say);
 
   return (
     <>
       <article
-        ref={ref}
         className={styles.doc}
         data-capped={full ? undefined : ""}
         aria-labelledby="triage-doc-title"
@@ -172,119 +160,28 @@ function SummaryDocument({ form, jump }: { form: FormApi; jump: (section: Sectio
       >
         <div className={styles.docTop}>
           <div className={styles.grow}>
-            <div className={styles.quiet}>Mental health triage and risk · synthetic</div>
+            <div className={styles.quiet}>{model.kicker}</div>
             <div className={styles.docTitle} id="triage-doc-title">
-              {PATIENT.name} {/* The UMRN stays on screen and is left out of a copy (ward-clipboard.ts). */}
-              <span className={styles.mono} data-no-copy="">
+              {model.name} {/* The UMRN stays on screen and is left out of a copy (ward-clipboard.ts). */}
+              <span className={styles.mono}>
                 {PATIENT.umrn} · {PATIENT.meta.split(" · ")[1]}
               </span>
             </div>
-            <div className={styles.quiet}>
-              {state.text.revTime ? `${state.text.revTime} · ` : ""}
-              {state.how ? HOW_NAME[state.how] : "how not set"}
-              {state.where ? ` · ${state.where}` : ""} · {PATIENT.author} · referral from Synthetic ED
-            </div>
+            <div className={styles.quiet}>{model.meta}</div>
           </div>
-          <Button variant="ghost" size="sm" icon={Copy} onClick={copy}>
+          <Button variant="ghost" size="sm" icon={Copy} onClick={copy} data-testid="triage-copy-summary">
             Copy
           </Button>
         </div>
-        <Facts
-          rows={[
-            ["Urgency", state.urgency ? `${state.urgency} · ${TIER_LONG[state.urgency]}` : <Missing>–</Missing>],
-            ["Outcome", state.outcome ?? <Missing>–</Missing>],
-            [
-              "Legal",
-              state.legal ? (
-                `${LEGAL_SHORT[state.legal]}${hasLegalForm(state) && state.text.legalForm.trim() ? ` · ${state.text.legalForm.trim()} (as typed)` : ""}`
-              ) : (
-                <Missing>–</Missing>
-              ),
-            ],
-            ["Review risk", state.review ? REVIEW_NAME[state.review] : <Missing>–</Missing>],
-          ]}
-        />
-        <DocSection letter="S" title="Situation" onEdit={() => jump("note")}>
-          {situation.length ? pairs(situation) : <p className={styles.missing}>Reason not written yet.</p>}
-          {state.problems.length ? <p className={styles.docNote}>Problems: {state.problems.join(", ")}.</p> : null}
-        </DocSection>
-        <DocSection letter="B" title="Background" onEdit={() => jump("note")}>
-          {background.length ? pairs(background) : <p className={styles.missing}>Not written yet.</p>}
-        </DocSection>
-        <DocSection letter="A" title="Assessment" onEdit={() => jump("mse")}>
-          {mental.length ? pairs(mental) : <p className={styles.missing}>Mental state not written yet.</p>}
-          {formulation.length ? pairs(formulation) : null}
-          <Facts
-            rows={[
-              ["Current risk", nowPresent.length ? `${nowPresent.length} present` : "None flagged"],
-              ...[...byArea.entries()].map(([area, names]) => [areaShortName(area), names.join(", ")] as const),
-              ...(otherNow.length ? [["Other current", otherNow.join(", ")] as const] : []),
-              ...(otherPast.length ? [["Other past", otherPast.join(", ")] as const] : []),
-              [
-                "Past risk",
-                pastPresent.length ? (
-                  <>
-                    {pastPresent.map((f) => f.name).join(", ")}
-                    {state.fromLast.length ? <Missing> (from 12 Oct RAMP, checked)</Missing> : null}
-                  </>
-                ) : state.restPast ? (
-                  "None recorded"
-                ) : (
-                  <Missing>Not answered</Missing>
-                ),
-              ],
-            ]}
-          />
-          {since ? <p className={styles.docNote}>{since}</p> : null}
-          <p className={styles.docNote}>
-            {unknown.length ? `Not known: ${unknown.map((f) => f.name.toLowerCase()).join(", ")}. ` : ""}
-            Other current factors ({restNow}):{" "}
-            {state.rest === "np" ? "not present" : state.rest === "na" ? "not assessed" : "not answered"}. Other history
-            ({restBg}):{" "}
-            {state.restPast === "np" ? "not present" : state.restPast === "nk" ? "not known" : "not answered"}. FDV
-            screen: {(fdv ?? "not done").toLowerCase()}.{state.changeable === "yes" ? " Risk may change quickly." : ""}
-            {state.uncertain === "yes" ? " Some factors add uncertainty." : ""}
-          </p>
-        </DocSection>
-        <DocSection letter="R" title="Plan" onEdit={() => jump("plan")}>
-          {safety.length ? pairs(safety) : <p className={styles.missing}>Safety plan not written yet.</p>}
-          {actions.length ? (
-            <ul className={styles.docTags} aria-label="Actions">
-              {actions.map((action) => (
-                <li key={action}>{action}</li>
-              ))}
-            </ul>
-          ) : null}
-          {state.text.consultWho.trim() ? (
-            <p className={styles.docNote}>Consulted: {state.text.consultWho.trim()}</p>
-          ) : null}
-          {state.urgency && state.urgency !== REFERRER_URGENCY && state.text.urgReason.trim() ? (
-            <p className={styles.docNote}>
-              Referrer urgency {REFERRER_URGENCY}, changed to {state.urgency}: {state.text.urgReason.trim()}
-            </p>
-          ) : null}
-          {state.actions.includes("Bed request") ? (
-            <p className={styles.docNote}>
-              Medical clearance:{" "}
-              {{ yes: "cleared", pending: "pending", na: "not needed" }[state.medical ?? ""] ?? "not recorded"}.
-            </p>
-          ) : null}
-          {state.ahd && state.ahd !== "none" ? (
-            <p className={styles.docNote}>
-              {state.ahd === "ahd"
-                ? `Advance health directive${state.ahdCopy === "onfile" ? " on the record" : state.ahdCopy === "toget" ? ", copy to be provided" : ""}: follow any relevant decision.`
-                : state.ahd === "guard"
-                  ? "Guardian in place."
-                  : "Directive or guardian not asked."}
-            </p>
-          ) : null}
-        </DocSection>
-        <p className={styles.docFoot}>
-          Prints as SMHMR900 and SMHMR905
-          {state.sources.length ? ` · Collateral: ${state.sources.join(", ")}` : ""}
-          {state.episode ? ` · ${state.episode} episode` : ""}
-          {hasLegalForm(state) ? " · Legal form as typed. Not legally checked." : ""}
-        </p>
+        <Facts rows={model.keys.map(([label, value]) => [label, <Value key={label} value={value} />] as const)} />
+        {model.parts.map((part) => (
+          <DocSection key={part.letter} letter={part.letter} title={part.title} onEdit={() => jump(part.edit)}>
+            {part.blocks.map((block, index) => (
+              <Block key={`${part.letter}-${index}`} block={block} />
+            ))}
+          </DocSection>
+        ))}
+        <p className={styles.docFoot}>{model.foot.join(" · ")}</p>
       </article>
       <Button
         variant="ghost"
@@ -299,7 +196,7 @@ function SummaryDocument({ form, jump }: { form: FormApi; jump: (section: Sectio
   );
 }
 
-function BeforeYouSign({ reqs, jump }: { reqs: readonly Requirement[]; jump: (section: SectionId) => void }) {
+function BeforeYouSign({ reqs, jump }: { reqs: readonly Requirement[]; jump: Jump }) {
   const needed = reqs.filter((r) => r.blocks && !r.ok);
   const toCheck = reqs.filter((r) => !r.blocks && !r.ok);
   const counts = [needed.length ? `${needed.length} needed` : "", toCheck.length ? `${toCheck.length} to check` : ""]
@@ -314,8 +211,13 @@ function BeforeYouSign({ reqs, jump }: { reqs: readonly Requirement[]; jump: (se
       </div>
       {needed.length || toCheck.length ? (
         <ChipGroup label="Go to what is left">
-          {[...needed, ...toCheck].map((r) => (
-            <Button key={r.label} size="sm" className={phoneRows.chip} onClick={() => jump(r.section)}>
+          {[...needed, ...toCheck].map((r, index) => (
+            <Button
+              key={`${index}-${r.label}`}
+              size="sm"
+              className={phoneRows.chip}
+              onClick={() => jump(r.section, r.target)}
+            >
               <span className={styles.inlineMark}>
                 <StatusGlyph tone={r.blocks ? "neutral" : "warning"} size={8} />
                 {r.label}
@@ -351,7 +253,7 @@ export function SummaryDrawer({
   onTab: (tab: string) => void;
   onClose: () => void;
   reqs: readonly Requirement[];
-  jump: (section: SectionId) => void;
+  jump: Jump;
   signButton: ReactNode;
 }) {
   const left = reqs.filter((r) => r.blocks && !r.ok).length;
@@ -414,7 +316,7 @@ export function SummaryDrawer({
                   "Reason",
                   "Five days of rising agitation after a missed depot. Threatening staff in ED. Mother worried at home.",
                 ],
-                ["Legal", "CTO, Form 5A (as typed). Not legally checked."],
+                ["Legal", `${PATIENT.legal}, Form 5A (as typed). Not legally checked.`],
                 ["Medically", "Bloods pending; obs stable"],
                 ["Now at", "Synthetic ED · bay 7, security nearby"],
                 [
@@ -439,10 +341,7 @@ export function SummaryDrawer({
               rows={[
                 ["Urgency", "D within 48 hours"],
                 ["Outcome", "Community follow-up; depot restarted"],
-                [
-                  "Flags then",
-                  "Previous violence (history) · Weapons history · Absconding history · Significant alcohol or drug use",
-                ],
+                ["Flags then", LAST_TRIAGE.pastFlags.map((k) => FACTOR_NAME[k]).join(" · ")],
                 [
                   "Formulation",
                   "Risk to others rises with relapse and stopping treatment; settles on depot with family support.",
@@ -524,7 +423,7 @@ export function SummaryDrawer({
             <Facts
               rows={[
                 ["Community team", "Active · Synthetic East CMHT since 2019"],
-                ["Legal", "CTO, Form 5A (as typed). Not legally checked."],
+                ["Legal", `${PATIENT.legal}, Form 5A (as typed). Not legally checked.`],
                 ["Directive", "None recorded"],
                 ["Nominated person", "None recorded"],
                 ["Last contact", "30 Oct · depot clinic, missed"],
@@ -652,7 +551,7 @@ export function AllFactorsDrawer({ form, open, onClose }: { form: FormApi; open:
               ["na", "Not assessed"],
             ]}
             value={form.state.rest}
-            onChange={(v) => form.set("rest", v)}
+            onChange={(v) => form.update((s) => ({ ...s, rest: v, restCov: null }))}
           />
           <DrawerFootRow>
             <Button variant="pri" onClick={onClose}>
@@ -663,6 +562,7 @@ export function AllFactorsDrawer({ form, open, onClose }: { form: FormApi; open:
       }
     >
       <div className={styles.pane}>
+        <MarkBar form={form} />
         {AREAS.map((area) => {
           const count = factors.filter((f) => f.area === area.id && f.mark === "y").length;
           return (
@@ -675,8 +575,8 @@ export function AllFactorsDrawer({ form, open, onClose }: { form: FormApi; open:
                 <div key={kind} className={styles.stack}>
                   <span className={styles.miniLabel}>{kind === "bg" ? "Background" : "Now"}</span>
                   <ChipGroup label={`${area.name}: ${kind === "bg" ? "background" : "now"}`}>
-                    {area[kind].map(([id, name]) => (
-                      <FactorChip key={id} form={form} flag={`${area.id}.${kind}.${id}`} name={name} />
+                    {area[kind].map(([id]) => (
+                      <FactorChip key={id} form={form} flag={`${area.id}.${kind}.${id}`} />
                     ))}
                   </ChipGroup>
                 </div>

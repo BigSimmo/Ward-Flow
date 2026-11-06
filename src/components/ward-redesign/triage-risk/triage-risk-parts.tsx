@@ -22,7 +22,7 @@ import {
 import { phoneRows } from "@/components/wf/phone-rows";
 
 import type { GuideGroup, SectionId } from "./triage-risk-data";
-import type { SectionStatus, TextKey, TriageState } from "./triage-risk-state";
+import type { FactorMark, SectionStatus, Target, TextKey, TriageState } from "./triage-risk-state";
 import { headingFilled, guideHeadings } from "./triage-risk-text";
 import styles from "./triage-risk-redesign.module.css";
 
@@ -36,6 +36,13 @@ export type FormApi = {
   say: (message: string) => void;
   isPhone: boolean;
   openSummary: (tab?: string) => void;
+  /** The time now, refreshed each minute: a reviewed time may not pass it. */
+  now: number;
+  /** Closes any slide-out and goes to a section, or to the field a target names. */
+  jump: (section: SectionId, target?: Target) => void;
+  /** What a tap on a risk flag records (Tap marks). A way of entering, not an answer. */
+  tapMark: FactorMark;
+  setTapMark: (mark: FactorMark) => void;
 };
 
 type Option = readonly [value: string, label: string] | string;
@@ -80,27 +87,39 @@ export function Row({
   );
 }
 
-/** One of a few, nothing chosen until pressed; pressing the chosen one clears it. */
+/**
+ * One of a few, nothing chosen until pressed; pressing the chosen one clears it. `id` names a
+ * wrapper (no box of its own) so "Go to" can land on the group.
+ */
 export function Choice({
   label,
   options,
   value,
   onChange,
+  id,
 }: {
   label: string;
   options: readonly Option[];
   value: string | null;
   onChange: (value: string | null) => void;
+  id?: string;
 }) {
-  return (
+  const group = (
     <Segmented
       size="md"
       label={label}
       className={styles.choice}
       items={options.map((option) => ({ id: optionValue(option), label: optionLabel(option) }))}
       value={value ?? ""}
-      onChange={(id) => onChange(id === value ? null : id)}
+      onChange={(next) => onChange(next === value ? null : next)}
     />
+  );
+  return id ? (
+    <span id={id} className={styles.contents}>
+      {group}
+    </span>
+  ) : (
+    group
   );
 }
 
@@ -132,13 +151,12 @@ export function MultiChips({
   );
 }
 
-/** The tick or ring and its words for a section: Done, n to check, or n needed. */
+/** The tick or ring and its words for a section: Done, n to check, n needed (Mental state: n of 8). */
 export function StatusMark({ status, withText = true }: { status: SectionStatus; withText?: boolean }) {
-  const text = status.needed ? `${status.needed} needed` : status.toCheck ? `${status.toCheck} to check` : "Done";
   return (
     <span className={styles.status}>
       <StatusGlyph tone={status.done ? "success" : "neutral"} size={10} />
-      {withText ? <span>{text}</span> : <SrOnly>{text}</SrOnly>}
+      {withText ? <span>{status.text}</span> : <SrOnly>, {status.text}</SrOnly>}
     </span>
   );
 }

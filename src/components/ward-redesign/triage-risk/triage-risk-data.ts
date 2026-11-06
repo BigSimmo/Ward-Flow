@@ -174,70 +174,35 @@ export const AREAS: readonly RiskArea[] = [
   },
 ];
 
-export type FlagGroup = readonly [group: string, flags: readonly Factor[]];
+/** A group of flags on the form, by key; each flag's name is its factor name (one name per factor). */
+export type FlagGroup = readonly [group: string, flags: readonly string[]];
 
 /** The past-risk flags shown on the form (keys are `area.bg.factor`). */
 export const FLAGS_PAST: readonly FlagGroup[] = [
-  [
-    "Suicide",
-    [
-      ["suicide.bg.att", "Previous attempts"],
-      ["suicide.bg.sh", "Previous self-harm"],
-    ],
-  ],
-  [
-    "Violence",
-    [
-      ["violence.bg.prev", "Previous violence"],
-      ["violence.bg.weap", "Previous use of weapons"],
-      ["violence.bg.for", "Forensic history"],
-    ],
-  ],
-  [
-    "Other",
-    [
-      ["other.bg.abs", "Absconding"],
-      ["general.bg.aod", "Significant alcohol or drug use"],
-      ["other.bg.vic", "Victim of violence or abuse"],
-      ["other.bg.nonad", "Non-adherence"],
-    ],
-  ],
+  ["Suicide", ["suicide.bg.att", "suicide.bg.sh"]],
+  ["Violence", ["violence.bg.prev", "violence.bg.weap", "violence.bg.for"]],
+  ["Other", ["other.bg.abs", "general.bg.aod", "other.bg.vic", "other.bg.nonad"]],
 ];
 
 /** The current-risk flags shown on the form (keys are `area.now.factor`). Never carried forward. */
 export const FLAGS_NOW: readonly FlagGroup[] = [
-  [
-    "Suicide",
-    [
-      ["suicide.now.idea", "Suicidal ideas"],
-      ["suicide.now.plan", "Plan or intent"],
-      ["suicide.now.means", "Access to means"],
-      ["suicide.now.hope", "Hopelessness"],
-      ["suicide.now.shnow", "Recent self-harm"],
-    ],
-  ],
+  ["Suicide", ["suicide.now.idea", "suicide.now.plan", "suicide.now.means", "suicide.now.hope", "suicide.now.shnow"]],
   [
     "Violence",
-    [
-      ["violence.now.cur", "Recent violence"],
-      ["violence.now.intent", "Intent to harm others"],
-      ["violence.now.cmd", "Command hallucinations"],
-      ["violence.now.vmeans", "Access to weapons"],
-      ["violence.now.para", "Paranoid ideas about others"],
-    ],
+    ["violence.now.cur", "violence.now.intent", "violence.now.cmd", "violence.now.vmeans", "violence.now.para"],
   ],
   [
     "Other",
     [
-      ["general.now.intox", "Intoxicated or withdrawing"],
-      ["general.now.agit", "Distress or agitation"],
-      ["other.now.leave", "Wants to leave"],
-      ["other.now.parent", "Children or dependants"],
-      ["other.now.nonadn", "Not taking treatment"],
-      ["other.now.self", "Self-neglect"],
-      ["other.now.sexex", "Vulnerable to exploitation"],
-      ["other.now.recdis", "Recent discharge"],
-      ["other.now.sexsafe", "Sexual safety concern"],
+      "general.now.intox",
+      "general.now.agit",
+      "other.now.leave",
+      "other.now.parent",
+      "other.now.nonadn",
+      "other.now.self",
+      "other.now.sexex",
+      "other.now.recdis",
+      "other.now.sexsafe",
     ],
   ],
 ];
@@ -544,6 +509,95 @@ export const MSE_TO_RISK: readonly (readonly [domain: string, phrase: string, fl
   ["app", "Agitated", "general.now.agit"],
 ];
 
+/**
+ * Mental state phrases that contradict a current factor being covered by "Not present": a factor
+ * with any of these in the mental state is listed as a conflict to check, never silently covered.
+ */
+export const MSE_SIGNALS: readonly (readonly [
+  flag: string,
+  signs: readonly (readonly [domain: string, phrase: string])[],
+])[] = [
+  [
+    "other.now.delu",
+    [
+      ["tc", "Persecutory delusions"],
+      ["tc", "Grandiose delusions"],
+      ["tc", "Ideas of reference"],
+      ["tc", "Passivity phenomena"],
+    ],
+  ],
+  ["violence.now.para", [["tc", "Persecutory delusions"]]],
+  ["suicide.now.idea", [["tc", "Suicidal thoughts"]]],
+  [
+    "suicide.now.plan",
+    [
+      ["tc", "Suicidal plan"],
+      ["tc", "Suicidal intent"],
+    ],
+  ],
+  [
+    "suicide.now.hope",
+    [
+      ["tc", "Hopelessness"],
+      ["mood", "Hopeless"],
+    ],
+  ],
+  ["violence.now.intent", [["tc", "Thoughts of harming others"]]],
+  ["violence.now.cmd", [["perc", "Command hallucinations"]]],
+  ["general.now.intox", [["app", "Intoxicated"]]],
+  [
+    "general.now.agit",
+    [
+      ["app", "Agitated"],
+      ["app", "Restless"],
+    ],
+  ],
+  [
+    "violence.now.ang",
+    [
+      ["mood", "Angry"],
+      ["app", "Hostile"],
+    ],
+  ],
+  [
+    "general.now.imp",
+    [
+      ["app", "Disinhibited"],
+      ["ins", "Impulsive"],
+    ],
+  ],
+  [
+    "other.now.judg",
+    [
+      ["ins", "Judgement impaired"],
+      ["ins", "Impulsive"],
+      ["ins", "Lacks capacity for this decision"],
+    ],
+  ],
+  [
+    "general.now.dis",
+    [
+      ["cog", "Disoriented"],
+      ["tf", "Disorganised"],
+    ],
+  ],
+  ["other.now.nonadn", [["ins", "Declines treatment"]]],
+  ["other.now.self", [["app", "Poor hygiene"]]],
+];
+
+/** A flag marked present while the mental state says the opposite: a "Check" before signing. */
+export const MSE_NEGATIVES: readonly (readonly [domain: string, phrase: string, flag: string])[] = [
+  ["tc", "No suicidal thoughts", "suicide.now.idea"],
+  ["tc", "No suicidal thoughts", "suicide.now.plan"],
+  ["tc", "No thoughts of harming others", "violence.now.intent"],
+  ["perc", "No perceptual disturbance", "violence.now.cmd"],
+  ["tc", "No delusions elicited", "other.now.delu"],
+  ["tc", "No delusions elicited", "violence.now.para"],
+];
+
+/** Factors a disclosed or suspected family violence screen contradicts as "Not present". */
+export const FDV_FACTORS = ["other.now.fdvn", "other.bg.fdvh"] as const;
+
 /** A current flag (or area prefix) that suggests a problem chip. */
 export const RISK_TO_PROBLEM: readonly (readonly [prefix: string, problem: string])[] = [
   ["suicide.now", "Self-harm"],
@@ -590,6 +644,13 @@ export type Tier = (typeof TIERS)[number][0];
 export const TIER_LONG = Object.fromEntries(TIERS.map(([tier, , long]) => [tier, long])) as Record<Tier, string>;
 export const TIER_SHORT = Object.fromEntries(TIERS.map(([tier, short]) => [tier, short])) as Record<Tier, string>;
 
+/** Who was told, for urgency A: one of these, or None needed with a reason. */
+export const WHO_TOLD = [
+  ["Police notified", "Police"],
+  ["Ambulance notified", "Ambulance"],
+  ["Senior consulted", "Senior"],
+] as const;
+
 export const ACTIONS = [
   ["Intake meeting", "Intake meeting"],
   ["Bed request", "Bed request"],
@@ -602,13 +663,14 @@ export const ACTIONS = [
   ["GP letter", "GP letter"],
 ] as const;
 
+/** Legal status in full words, as typed from the record; nothing is computed or checked. */
 export const LEGAL = [
-  ["vol", "Voluntary", "Vol"],
-  ["ref", "Referred (Form 1A)", "1A"],
-  ["det", "Detained", "Det"],
-  ["cto", "CTO", "CTO"],
-  ["ito", "Inpatient order", "ITO"],
-  ["nyr", "Not yet recorded", "NYR"],
+  ["vol", "Voluntary"],
+  ["ref", "Referred (Form 1A)"],
+  ["det", "Detained"],
+  ["cto", "Community treatment order"],
+  ["ito", "Inpatient treatment order"],
+  ["nyr", "Not yet recorded"],
 ] as const;
 /** Legal statuses with a form, whose form and date are kept only as typed. */
 export const LEGAL_WITH_FORM: readonly string[] = ["ref", "det", "cto", "ito"];
@@ -650,7 +712,7 @@ export const AMHW = [
 ] as const;
 export const INTERPRETER = [
   ["no", "Not needed"],
-  ["used", "Used"],
+  ["acc", "Accredited interpreter"],
   ["na", "Needed, not available"],
 ] as const;
 export const OUTCOMES = ["Accepted", "Referred on", "Advice only", "No further action"] as const;
@@ -671,7 +733,7 @@ export const LAST_TRIAGE = {
   label: "Last RAMP · 12 Oct · Synthetic CMHT",
   pastFlags: ["violence.bg.prev", "violence.bg.weap", "other.bg.abs", "general.bg.aod"],
   pastSummary:
-    "Previous violence · Previous use of weapons · Absconding · Significant alcohol or drug use. Rest of history: not present.",
+    "Previous violence · Previous use of weapons · Absconding · Significant alcohol or drug use. Carries these flags only; you answer Rest of history today.",
   /** Current flags seen then, only to say what is new today. Never carried forward. */
   nowFlags: ["general.now.agit"],
   history: "History (12 Oct, Synthetic CMHT, check): Lives with mother; no dependants. No current charges.",
@@ -685,6 +747,7 @@ export const PATIENT = {
   dob: "14/03/1992",
   nowAt: "Synthetic ED · bay 7",
   team: "Active",
+  legal: "Community treatment order",
   legalTag: "Form 5A, as typed · Not legally checked.",
   alert: "Violence to staff, Mar 2025",
   alertCount: 3,
@@ -741,7 +804,7 @@ export const HOW_TO = [
   ],
   [
     "Risk and FDV",
-    "Past risk: carry forward the last RAMP, check it, and answer Rest of history. Current risk: assess today, tap what is present, answer Rest of current risk. Then ask the three family violence questions alone, word for word.",
+    "Tap marks sets what a tap records: Present, Not present or Not known. Past risk: carry forward the last RAMP, confirm each flag today, and answer Rest of history yourself. Current risk: assess today, mark what is present, answer Rest of current risk and confirm what it covers. Then record whether you asked alone and ask the three family violence questions word for word.",
   ],
   [
     "Formulation and plan",

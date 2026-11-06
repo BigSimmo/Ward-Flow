@@ -31,7 +31,11 @@ function replacedWords(replaced: readonly string[], phrase: string) {
   return `Replaced ${replaced.join(", ").toLowerCase()} with ${phrase.toLowerCase()}`;
 }
 
-/** Switches layout, carrying the text across so nothing is lost. */
+/**
+ * Switches layout, carrying the text across so nothing is lost. Each switch reads the other layout
+ * afresh: a line deleted from the box clears that domain, and a domain emptied of chips and detail
+ * leaves no line behind.
+ */
 function switchMseMode(state: TriageState, mode: "box" | "dom"): TriageState {
   if (mode === state.mseMode) return state;
   if (mode === "dom") return { ...state, mseMode: "dom", mse: boxToDomains(state.text.mseBox) };
@@ -106,6 +110,7 @@ export function MentalStateBody({ form }: { form: FormApi }) {
         <Segmented
           size="md"
           label="Mental state layout"
+          className={styles.choice}
           items={[
             { id: "box", label: "One box" },
             { id: "dom", label: "By domain" },
@@ -129,6 +134,7 @@ export function MentalStateBody({ form }: { form: FormApi }) {
       {box ? (
         <>
           <Textarea
+            id="triage-mse-box"
             aria-label="Mental state"
             rows={autoRows(state.text.mseBox, 5)}
             placeholder="Type, or use Show phrases to tap them in. One line per domain, for example: Speech: pressured, hard to interrupt"
@@ -138,7 +144,7 @@ export function MentalStateBody({ form }: { form: FormApi }) {
           <div className={styles.boxFoot}>
             <span>Show phrases to tap them in under each domain. Tap again to remove.</span>
             <span className={styles.mono} data-testid="triage-mse-count">
-              {mseAnsweredCount(state)} of {MSE.length} domains
+              {mseAnsweredCount(state)} of {MSE.length} domains answered or marked Not assessed
             </span>
           </div>
           {phrasesOpen ? (
@@ -207,6 +213,7 @@ export function MentalStateBody({ form }: { form: FormApi }) {
                     ))}
                   </ChipGroup>
                   <TextInput
+                    id={`triage-mx-${domain.id}`}
                     aria-label={`${domain.label} detail`}
                     placeholder={domain.detailHint}
                     value={entry?.detail ?? ""}

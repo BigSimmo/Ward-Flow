@@ -11,7 +11,7 @@
  * only; nothing typed goes to browser storage (HOW-WE-WORK §6).
  */
 import { BellRing, BookUser, CircleHelp, FileText, Inbox } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import {
   Button,
@@ -26,6 +26,7 @@ import {
 } from "@/components/wf";
 import { announce } from "@/components/wf/live-announcer";
 import { phoneRows } from "@/components/wf/phone-rows";
+import { useMinuteNow } from "@/components/wf/use-minute-now";
 
 import { DecisionBody } from "./triage-risk-decision";
 import { LEGAL, PATIENT, REVIEW, SECTIONS, TIER_SHORT, type SectionId } from "./triage-risk-data";
@@ -40,11 +41,13 @@ import {
   exampleTriage,
   requirements,
   sectionStatus,
+  type FactorMark,
+  type Target,
   type TriageState,
 } from "./triage-risk-state";
 import styles from "./triage-risk-redesign.module.css";
 
-const LEGAL_SHORT: Readonly<Record<string, string>> = Object.fromEntries(LEGAL.map(([v, , short]) => [v, short]));
+const LEGAL_NAME: Readonly<Record<string, string>> = Object.fromEntries(LEGAL);
 const REVIEW_SHORT: Readonly<Record<string, string>> = Object.fromEntries(
   REVIEW.map(([v, label]) => [v, label.replace("At ", "")]),
 );
@@ -62,6 +65,9 @@ type Sheet = "sum" | "how" | "all" | null;
 const reducedMotion = () =>
   typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
+const shown = (el: Element | null): el is HTMLElement =>
+  el instanceof HTMLElement && el.isConnected && el.getClientRects().length > 0;
+
 /** Scrolls a section into view and puts focus on its first field. */
 function goToSection(section: SectionId) {
   const card = document.getElementById(`triage-${section}`);
@@ -75,6 +81,82 @@ function goToSection(section: SectionId) {
   }, 350);
 }
 
+/**
+ * Goes to the exact field a target names. A factor that is not on the form opens All RAMP factors
+ * and lands on its chip there. With no target, or none shown, it goes to the section.
+ */
+function goToTarget(section: SectionId, target: Target | undefined, openAllFactors: () => void) {
+  const card = document.getElementById(`triage-${section}`);
+  const field = target ? (card ?? document).querySelector(target.selector) : null;
+  if (shown(field)) {
+    field.scrollIntoView({ behavior: reducedMotion() ? "auto" : "smooth", block: "center" });
+    window.setTimeout(() => field.focus({ preventScroll: true }), 350);
+    return;
+  }
+  if (target?.factor) {
+    openAllFactors();
+    // After the drawer has opened and put focus on its Close button.
+    window.setTimeout(() => {
+      const chip = document.querySelector(`[data-testid="triage-factors-sheet"] ${target.selector}`);
+      if (!shown(chip)) return;
+      chip.scrollIntoView({ block: "center" });
+      chip.focus({ preventScroll: true });
+    }, 300);
+    return;
+  }
+  goToSection(section);
+}
+
+type FocusMemory = { el: HTMLElement; box: string | null; index: number; label: string; section: string | null };
+
+/**
+ * Keeps focus when a list redraws: when the focused control goes (an Other risk removed, a
+ * suggestion taken), focus moves to the control now in its place in the same list, else to its
+ * section heading, never to the top of the page.
+ */
+function useFocusKeeper(state: TriageState) {
+  const last = useRef<FocusMemory | null>(null);
+  useEffect(() => {
+    const onFocusIn = (event: FocusEvent) => {
+      const el = event.target;
+      if (!(el instanceof HTMLElement)) return;
+      const box = el.closest<HTMLElement>("[data-refocus]");
+      last.current = {
+        el,
+        box: box?.dataset.refocus ?? null,
+        index: box ? [...box.querySelectorAll("button")].indexOf(el as HTMLButtonElement) : -1,
+        label: el.textContent ?? "",
+        section: el.closest<HTMLElement>("[data-section]")?.dataset.section ?? null,
+      };
+    };
+    document.addEventListener("focusin", onFocusIn);
+    return () => document.removeEventListener("focusin", onFocusIn);
+  }, []);
+  useLayoutEffect(() => {
+    const memory = last.current;
+    if (!memory || shown(memory.el)) return;
+    const active = document.activeElement;
+    if (active && active !== document.body && active !== memory.el) return;
+    let next: HTMLElement | null = null;
+    if (memory.box) {
+      const box = document.querySelector(`[data-refocus="${memory.box}"]`);
+      const buttons = box ? [...box.querySelectorAll<HTMLButtonElement>("button")].filter(shown) : [];
+      next =
+        (memory.label ? buttons.find((b) => b.textContent === memory.label) : undefined) ??
+        buttons[Math.min(Math.max(memory.index, 0), buttons.length - 1)] ??
+        null;
+    }
+    if (!next && memory.section) {
+      const heading = document.getElementById(`triage-h-${memory.section}`);
+      if (heading) {
+        heading.tabIndex = -1;
+        next = heading;
+      }
+    }
+    next?.focus({ preventScroll: true });
+  }, [state]);
+}
+
 export function TriageRiskRedesign() {
   const isPhone = useIsPhone();
   const toast = useOptionalToast();
@@ -84,6 +166,10 @@ export function TriageRiskRedesign() {
   const [sheet, setSheet] = useState<Sheet>(null);
   const [tab, setTab] = useState("sum");
   const [active, setActive] = useState<SectionId>("rev");
+  const [tapMark, setTapMark] = useState<FactorMark>("y");
+  const now = useMinuteNow();
+  const navLock = useRef(0);
+  useFocusKeeper(state);
 
   const say = useCallback(
     (message: string) => {
@@ -96,6 +182,11 @@ export function TriageRiskRedesign() {
     setTab(next);
     setSheet("sum");
   }, []);
+  const jump = useCallback((section: SectionId, target?: Target) => {
+    setSheet(null);
+    if (section === "rev") setEditingReview(true);
+    window.setTimeout(() => goToTarget(section, target, () => setSheet("all")), 0);
+  }, []);
   const form: FormApi = useMemo(
     () => ({
       state,
@@ -105,31 +196,30 @@ export function TriageRiskRedesign() {
       say,
       isPhone,
       openSummary,
+      now,
+      jump,
+      tapMark,
+      setTapMark,
     }),
-    [state, say, isPhone, openSummary],
+    [state, say, isPhone, openSummary, now, jump, tapMark],
   );
 
-  const reqs = useMemo(() => requirements(state), [state]);
+  const reqs = useMemo(() => requirements(state, now), [state, now]);
   const needed = reqs.filter((r) => r.blocks && !r.ok);
   const left = needed.length;
   const blocking = reqs.filter((r) => r.blocks).length;
   const percent = Math.round((100 * (blocking - left)) / blocking);
-  const status = Object.fromEntries(SECTIONS.map((s) => [s.id, sectionStatus(reqs, s.id)])) as Record<
+  const status = Object.fromEntries(SECTIONS.map((s) => [s.id, sectionStatus(reqs, s.id, state)])) as Record<
     SectionId,
     ReturnType<typeof sectionStatus>
   >;
   const sectionsDone = SECTIONS.filter((s) => status[s.id].done).length;
   const flagCount = allFactors(state).filter((f) => f.mark === "y").length;
 
-  const jump = useCallback((section: SectionId) => {
-    setSheet(null);
-    if (section === "rev") setEditingReview(true);
-    window.setTimeout(() => goToSection(section), 0);
-  }, []);
   const nextNeeded = () => {
     const first = needed[0];
     if (!first) return say("Everything needed is in.");
-    jump(first.section);
+    jump(first.section, first.target);
   };
 
   // The index marks the section in view.
@@ -137,6 +227,8 @@ export function TriageRiskRedesign() {
     if (typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver(
       (entries) => {
+        // A click in the index has just set the section; scrolling there must not override it.
+        if (Date.now() < navLock.current) return;
         for (const entry of entries) {
           const id = (entry.target as HTMLElement).dataset.section as SectionId | undefined;
           if (entry.isIntersecting && id) setActive(id);
@@ -230,6 +322,8 @@ export function TriageRiskRedesign() {
           aria-current={active === s.id ? "location" : undefined}
           onClick={(event) => {
             event.preventDefault();
+            navLock.current = Date.now() + 1200;
+            setActive(s.id);
             jump(s.id);
           }}
         >
@@ -267,7 +361,7 @@ export function TriageRiskRedesign() {
                   label="Urgency"
                   value={state.urgency ? `${state.urgency} ${TIER_SHORT[state.urgency]}` : "–"}
                 />
-                <HeroStat label="Legal" value={state.legal ? LEGAL_SHORT[state.legal] : "–"} />
+                <HeroStat label="Legal" value={state.legal ? LEGAL_NAME[state.legal] : "–"} />
                 <HeroStat label="Risk flags" value={flagCount} />
                 <HeroStat label="Review" value={state.review ? REVIEW_SHORT[state.review] : "–"} />
               </>
@@ -293,15 +387,12 @@ export function TriageRiskRedesign() {
                   </>
                 )}
               </p>
-              <HeroChips label="Legal and alerts" className={styles.bannerTags}>
-                <HeroChip value="CTO" label={PATIENT.legalTag} />
+              {/* Alert first, then allergies, legal status in full words (as typed), then the rest. */}
+              <HeroChips label="Alerts, allergies and legal" className={styles.bannerTags}>
                 <HeroChip value="Alert" tone="warning" label={PATIENT.alert} />
-                {isPhone ? null : (
-                  <>
-                    <HeroChip value="+2" label="more alerts" onPress={() => openSummary("alerts")} />
-                    <HeroChip value="2" label="Allergies" />
-                  </>
-                )}
+                <HeroChip value="Allergies" label="2" />
+                <HeroChip value={PATIENT.legal} label={PATIENT.legalTag} />
+                <HeroChip value="+2" label="more alerts" onPress={() => openSummary("alerts")} />
               </HeroChips>
             </div>
           }
@@ -312,7 +403,10 @@ export function TriageRiskRedesign() {
                 "Alerts",
                 BellRing,
                 () => openSummary("alerts"),
-                <span className={styles.heroCount}>{PATIENT.alertCount}</span>,
+                <>
+                  {" "}
+                  <span className={styles.heroCount}>{PATIENT.alertCount}</span>
+                </>,
               )}
               {bannerLink("Patient profile", "Profile", BookUser, () => openSummary("profile"))}
               {isPhone ? null : bannerLink("Referral", "Referral", Inbox, () => openSummary("ref"))}

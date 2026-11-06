@@ -1,13 +1,10 @@
 "use client";
 
 /** Triage and risk mock-up: 1 Review details and 2 Assessment (SMHMR900). Synthetic data only. */
-import { useRef, type ChangeEvent, type RefObject } from "react";
+import { useRef, useState, type ChangeEvent, type RefObject } from "react";
 
 import { Button, ChipGroup, FilterChip, Kbd, StatusGlyph, Textarea, TextInput } from "@/components/wf";
 import { phoneRows } from "@/components/wf/phone-rows";
-import { timePresetClockText } from "@/components/wf/time-presets";
-import { useWardFlowClock } from "@/components/ward-management/ward-flow-provider";
-import { minuteOfDay } from "@/components/ward-management/ward-clock";
 
 import {
   AMHW,
@@ -24,7 +21,7 @@ import {
 } from "./triage-risk-data";
 import { autoRows, Choice, GuideBox, MultiChips, Reveal, Row, type FormApi } from "./triage-risk-parts";
 import type { TextKey, TriageState } from "./triage-risk-state";
-import { addHeading, expandShortcut, wordCount } from "./triage-risk-text";
+import { addHeading, checkReviewTime, expandShortcut, reviewTimeStamp, wordCount } from "./triage-risk-text";
 import styles from "./triage-risk-redesign.module.css";
 
 const toggleIn = (list: readonly string[], value: string) =>
@@ -59,9 +56,9 @@ export function useHeadedBox(
   return { onChange, onHeading };
 }
 
-function reviewDone(state: TriageState) {
+function reviewDone(state: TriageState, now: number) {
   return Boolean(
-    state.text.revTime.trim().length >= 5 &&
+    checkReviewTime(state.text.revTime, now).ok &&
     state.how &&
     state.where &&
     state.present &&
@@ -82,9 +79,13 @@ export function ReviewBody({
   onEditing: (editing: boolean) => void;
 }) {
   const { state, set, setText } = form;
-  const now = useWardFlowClock(0);
-  const done = reviewDone(state);
-  const folded = done && !editing;
+  const [timeFocused, setTimeFocused] = useState(false);
+  const done = reviewDone(state, form.now);
+  // Never folds away under the caret: the fields stay open while the time is being typed.
+  const folded = done && !editing && !timeFocused;
+  const time = checkReviewTime(state.text.revTime, form.now);
+  // A wrong time shows once the field is left or the time is complete; a future time at once.
+  const showError = Boolean(time.message) && (time.future || !timeFocused || state.text.revTime.trim().length >= 16);
   return (
     <>
       <div className={styles.oneLine}>
@@ -136,20 +137,30 @@ export function ReviewBody({
             <TextInput
               id="triage-rev-time"
               className={styles.mono}
-              boxClassName={styles.shortInput}
-              placeholder="DD/MM HH:MM"
-              inputMode="numeric"
+              boxClassName={styles.timeInput}
+              placeholder="DD/MM/YYYY HH:MM"
+              autoComplete="off"
+              invalid={showError}
+              aria-describedby={showError ? "triage-rev-error" : undefined}
               value={state.text.revTime}
               onChange={(event) => setText("revTime", event.target.value)}
+              onFocus={() => setTimeFocused(true)}
+              onBlur={() => setTimeFocused(false)}
             />
             <Button
               size="sm"
               className={phoneRows.chip}
-              onClick={() => setText("revTime", `06/11 ${timePresetClockText(minuteOfDay(now))}`)}
+              onClick={() => setText("revTime", reviewTimeStamp(new Date()))}
             >
               Now
             </Button>
           </div>
+          {showError ? (
+            <p className={styles.fieldError} id="triage-rev-error">
+              <StatusGlyph tone="warning" size={8} />
+              <span>{time.message}</span>
+            </p>
+          ) : null}
         </Row>
         <Row label="How">
           <Choice label="How" options={HOW} value={state.how} onChange={(v) => set("how", v)} />
@@ -160,6 +171,7 @@ export function ReviewBody({
         <Row label="Person present">
           <div className={styles.inline}>
             <Choice
+              id="triage-present"
               label="Person present"
               options={[
                 ["yes", "Yes"],
@@ -197,7 +209,7 @@ export function ReviewBody({
             </Row>
           </Reveal>
         ) : null}
-        <Row label="Interpreter">
+        <Row label="Interpreter" hint="Never a family member or friend">
           <Choice label="Interpreter" options={INTERPRETER} value={state.interp} onChange={(v) => set("interp", v)} />
         </Row>
         <Row label="Notes source">
@@ -269,7 +281,7 @@ export function AssessmentBody({ form }: { form: FormApi }) {
             onToggle={(v) => set("problems", toggleIn(state.problems, v))}
           />
           {suggested.length ? (
-            <div className={styles.suggest}>
+            <div className={styles.suggest} data-refocus="problem-suggest">
               <span>Suggested from risk flags</span>
               {suggested.map((problem) => (
                 <Button
