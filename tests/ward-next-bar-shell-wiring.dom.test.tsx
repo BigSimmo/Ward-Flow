@@ -149,6 +149,8 @@ describe("2. the master design's bar opens the referral slide-out only for a des
     renderBar();
     act(() => openWardDrawer("referral"));
     expect(await screen.findByTestId("ward-bar-referral-sheet")).toBeInTheDocument();
+    // BA-12 (front-end audit, 5 Nov 2026): the sheet is named for its heading, not "Referrals".
+    expect(screen.getByRole("dialog", { name: "New referral" })).toBeInTheDocument();
   });
 
   it("still opens it in place from a referral link for an ED desk", async () => {

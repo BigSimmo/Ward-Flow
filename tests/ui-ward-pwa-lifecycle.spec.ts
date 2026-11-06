@@ -201,7 +201,7 @@ test.describe("real-worker recovery and update ownership @mockup", () => {
       .getByRole("group", { name: "Referral sections" })
       .getByRole("button", { name: "Referral", exact: true })
       .click();
-    const restored = second.getByRole("dialog", { name: "Referrals", exact: true }).locator("#refDocInput");
+    const restored = second.getByRole("dialog", { name: "New referral", exact: true }).locator("#refDocInput");
     await expect(restored).toBeVisible();
     expect(
       await restored.evaluate((element) => (element as HTMLInputElement).value === "PWA draft recovery fixture"),

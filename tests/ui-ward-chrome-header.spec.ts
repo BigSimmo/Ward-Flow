@@ -882,7 +882,7 @@ test("@mockup compact Referrals opens from Tools and retains a draft across sect
   const toolsBox = await tools.boundingBox();
   expect(toolsBox?.height).toBeGreaterThanOrEqual(566);
   await tools.getByRole("button", { name: /New referral/u }).click();
-  const referral = page.getByRole("dialog", { name: "Referrals", exact: true });
+  const referral = page.getByRole("dialog", { name: "New referral", exact: true });
   await expect(page.getByRole("dialog")).toHaveCount(1);
   const sections = referral.getByRole("group", { name: "Referral sections" });
   // v10 phone (11 Oct 2026): each step opens as a sheet over the step list; closing it returns to
