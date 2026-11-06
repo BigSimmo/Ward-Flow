@@ -13,3 +13,12 @@ CI run 42132907062, merged with main 07d6dfb2: Referrals 552.6 KB (main alone 55
 ## Carried over #1474 (6 Nov 2026)
 
 Merging main after #1474 took the higher budget for each screen, which is `main`'s value on every screen: Home 559.1, Referrals 553.4, ED 516.1, RPH ward 590.6 and Movement 585.0 KB. No budget is above what either side had. Not re-measured after the merge.
+
+Re-measured after #1474: CI run 42139889514 measured this PR merged with main a702f96e. Main alone in brackets.
+
+- Home `/ward-flow`: 560.5 KB (558.7). Budget 559.1 raised to 561.0.
+- Referrals `/ward-flow/referrals`: 554.4 KB (553.5). Budget 553.4 raised to 554.8.
+- RPH ward `/ward-flow/ward/rph-adult-secure`: 591.1 KB (590.5). Budget 590.6 raised to 591.5.
+- Movement `/ward-flow/movements/WF-001`: 586.6 KB (585.4). Budget 585.0 raised to 587.0.
+
+This PR's own growth is 0.6 to 1.8 KB per screen, from the same save and time edge-case guards as before. Each new budget is under 2 KB above main's and inside the 5 KB per screen allowance.
