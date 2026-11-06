@@ -11,38 +11,202 @@
  * other, so a phone is never walked to a part only a computer draws. Words describe what the screen
  * shows; nothing here ranks, suggests or places, or works out a legal time.
  */
-import type { WardScreenId } from "@/components/ward-management/ward-role-access";
+import type { HowTo } from "./ward-help-howto";
+import { type Around, HERO, id, MORE_PAGES, named, starts } from "./ward-help-screen-tours-pages";
 
-import type { HowTo, ShowMeStep } from "./ward-help-howto";
-import type { TourTarget } from "./ward-tour-steps";
-
-const id = (testId: string): TourTarget => ({ sel: `[data-testid="${testId}"]` });
-const starts = (testId: string): TourTarget => ({ sel: `[data-testid^="${testId}"]` });
-
-/** The screen's hero card, as the desk tour finds it. */
-const HERO: TourTarget = { sel: "#main-content section[aria-labelledby]" };
 const PHONE_FIGURES = starts("wf-phone-hero-figure-");
 
-type Around = {
-  /** The rail entry id, which is also the screen's help id (`SCREEN_HELP`). */
-  readonly screen: string;
-  /** The screen's name as Help's "On this screen" card shows it. */
-  readonly name: string;
-  readonly keywords?: string;
-  /**
-   * A page the rail does not list (one ward, one ED board), matched by its address in Help. Its walk
-   * round plays on the page already open, so it names no `go`, and its purpose is said here for the
-   * printed guide.
-   */
-  readonly page?: {
-    readonly purpose: string;
-    /** The page's own address; its walk round is offered only there. */
-    readonly path: RegExp;
-    /** The screen a desk must open to see the page, so another desk is never offered it. */
-    readonly needs: WardScreenId;
-  };
-  readonly steps: readonly ShowMeStep[];
-};
+/**
+ * Walk-rounds for the rail screens that had none (5 Nov 2026): Home, All wards, Places, New
+ * referral and Transport. Each step names a part the screen draws before anyone chooses a record.
+ */
+const MORE_SCREENS: readonly Around[] = [
+  {
+    screen: "command",
+    name: "Home",
+    keywords: "home my list coordinator start queue",
+    steps: [
+      {
+        target: id("ward-home-occupancy-link"),
+        title: "How full the network is",
+        body: "The share of network beds in use, with At risk once it passes the line. Open it for Capacity.",
+      },
+      {
+        target: id("ward-home-ed-pressure"),
+        title: "Every ED at a glance",
+        body: "One tile per emergency department, with how many are waiting and the longest wait. Choose a tile to narrow the list to that ED, and again to clear it.",
+      },
+      {
+        target: { sel: '#main-content [role="radiogroup"][aria-label="Home list"]' },
+        title: "Needs you and Flow",
+        body: "Needs you is what needs a person. Flow lists every open movement, and its tabs narrow it by stage.",
+      },
+      {
+        target: id("home-my-list"),
+        title: "Needs you",
+        body: "Act now first, then referrals to decide and what you are waiting on others for. Each row opens the record it is about.",
+      },
+      {
+        device: "desk",
+        target: id("home-beds-fit"),
+        title: "Beds that fit",
+        body: "For each bed type, beds against the people waiting, now and tomorrow. Short means more people than beds. Counts only.",
+      },
+      {
+        device: "desk",
+        target: id("home-placement-prompt"),
+        title: "Placement",
+        body: "Choose someone from the list and their placement checks open here. A person always chooses the bed.",
+      },
+    ],
+  },
+  {
+    screen: "wards",
+    name: "All wards",
+    keywords: "ward list every ward occupancy beds ready stale",
+    steps: [
+      {
+        target: [id("wf-occupancy-ring"), HERO],
+        title: "Beds ready now",
+        body: "Ready beds across the wards you can see, and the share in use. The counts beside it narrow the list, such as Stale counts.",
+      },
+      {
+        target: named("Ward filters", "section"),
+        title: "Find a ward",
+        body: "Search by ward, hospital or service. Filters holds status, age group and order.",
+      },
+      {
+        target: [starts("ward-index-link-"), named("Wards", "section")],
+        title: "Open a ward",
+        body: "Each ward with its beds. Open one for its beds, arrivals and discharges.",
+      },
+      {
+        device: "desk",
+        target: { sel: 'aside[aria-label="Statewide by service"]' },
+        title: "By service",
+        body: "Occupancy for each health service, and the wards whose bed count needs a check.",
+      },
+    ],
+  },
+  {
+    screen: "hub",
+    name: "Places",
+    keywords: "places hub network wards eds teams pin catchments",
+    steps: [
+      {
+        target: HERO,
+        title: "What needs a check",
+        body: "The band names the wards whose bed count is old, with the ward to ask first.",
+      },
+      {
+        target: { sel: 'nav[aria-label="Places views"]' },
+        title: "Places and Catchments",
+        body: "Catchments finds which community team covers a suburb.",
+      },
+      {
+        target: named("Search wards, EDs and community teams", "input"),
+        title: "Search places",
+        body: "Type a ward, hospital, ED, team or service. Show narrows the list to wards, EDs or teams.",
+      },
+      {
+        target: { sel: "#hub-results" },
+        title: "The network",
+        body: "Every place, grouped by service. Choose one to see who is heading or waiting there, then refer or open it.",
+      },
+      {
+        device: "desk",
+        target: { sel: 'aside[aria-label="At a glance"]' },
+        title: "At a glance",
+        body: "Wards that need a bed check, wards by service, and the places you pinned or opened lately.",
+      },
+    ],
+  },
+  {
+    screen: "referral-intake",
+    name: "New referral",
+    keywords: "new referral form send refer intake raise",
+    steps: [
+      {
+        target: starts("ward-referral-refer-to-"),
+        title: "Refer to",
+        body: "A ward, a community team or an ED. The steps below change to suit.",
+      },
+      {
+        device: "desk",
+        target: [id("ward-referral-new-patient-toggle"), id("ward-referral-no-patient")],
+        title: "The patient",
+        body: "Find the patient, or choose Add patient for someone new. Not yet identified covers a person whose name is not known.",
+      },
+      {
+        device: "desk",
+        target: [
+          id("ward-referral-use-catchment"),
+          id("ward-referral-catchment-not-known"),
+          id("ward-referral-suburb-note"),
+        ],
+        title: "Catchment",
+        body: "Worked out from the suburb on the record. Use this catchment to accept it, or choose another.",
+      },
+      {
+        device: "desk",
+        target: id("ward-referral-summary-rail"),
+        title: "Before you send",
+        body: "What is still needed, step by step. Send stays locked until it is all in.",
+      },
+      {
+        device: "desk",
+        target: id("ward-referral-save-draft"),
+        title: "Save draft",
+        body: "Keeps the referral in this tab until it reloads, so you can come back to it.",
+      },
+      {
+        device: "phone",
+        target: id("ward-referral-phone-hero"),
+        title: "The referral so far",
+        body: "Where the referral is going. It reads Fill in and send until it has gone.",
+      },
+      {
+        device: "phone",
+        target: id("ward-referral-phone-continue"),
+        title: "Continue",
+        body: "Takes you to the next step still needed. It sends once every step is in.",
+      },
+    ],
+  },
+  {
+    screen: "officer",
+    name: "Transport",
+    keywords: "transport officer jobs run sheet collect arrive booking",
+    steps: [
+      {
+        target: HERO,
+        title: "Jobs open",
+        body: "How many transport jobs are open. The figures highlight jobs, such as those that need transport.",
+      },
+      {
+        acts: ["RECORD_TRANSPORT_CAD"],
+        target: id("ward-officer-hero-log-booking"),
+        title: "Log booking",
+        body: "Records a booking already made by phone, with the CAD number and the quoted ETA.",
+      },
+      {
+        target: id("ward-officer-need"),
+        title: "Needs transport",
+        body: "Beds pulled with no transport logged yet. Log booking on a row once it is booked.",
+      },
+      {
+        target: [id("ward-officer-joblist"), named("Jobs", "section")],
+        title: "Jobs",
+        body: "Late jobs first, then forms to upload, then furthest along. History holds the jobs closed today.",
+      },
+      {
+        target: [starts("ward-officer-next-"), named("Next action", "section")],
+        title: "The next step",
+        body: "Each job's button is its next stage, such as En route or Arrived at ward. It is recorded with the time.",
+      },
+    ],
+  },
+];
 
 const AROUND: readonly Around[] = [
   {
@@ -258,6 +422,11 @@ const AROUND: readonly Around[] = [
         body: "Ward Flow does not work out legal periods. The times are copied from the paper form and are not legally checked.",
       },
       {
+        target: { sel: '#main-content [role="radiogroup"][aria-label="View"]' },
+        title: "On a form, Checklist and History",
+        body: "On a form lists everyone with a form now. Checklist shows what each form still needs. History holds closed moves.",
+      },
+      {
         target: id("ward-legal-forms-groups"),
         title: "Choose a patient",
         body: "Grouped by the typed expiry, earliest typed time first. Choose a patient to see their form.",
@@ -448,9 +617,21 @@ const AROUND: readonly Around[] = [
       },
       {
         device: "desk",
+        target: starts("ed-index-preview-"),
+        title: "Preview who is waiting",
+        body: "Choose an ED's card to preview who is waiting there without leaving the list.",
+      },
+      {
+        device: "desk",
         target: starts("ed-index-link-"),
         title: "Enter an ED",
         body: "Enter opens that ED's board and each patient's next step.",
+      },
+      {
+        device: "phone",
+        target: starts("ed-index-phone-row-"),
+        title: "Open an ED",
+        body: "Each row is one ED, with how many are waiting. Open it for that ED's board.",
       },
     ],
   },
@@ -463,6 +644,11 @@ const AROUND: readonly Around[] = [
         target: id("ward-patient-typeahead-input"),
         title: "Find a person",
         body: "Search by name, record number or place.",
+      },
+      {
+        target: { sel: '[role="radiogroup"][aria-label="Where people are now"]' },
+        title: "Where people are now",
+        body: "Everyone, In ED, In placement, Inpatient, Community or Not active.",
       },
       {
         target: id("ward-patient-search-results-console"),
@@ -488,9 +674,20 @@ const AROUND: readonly Around[] = [
         body: "Alerts for this desk right now, act now first.",
       },
       {
+        target: id("ward-alerts-filters"),
+        title: "Show open alerts",
+        body: "Act now, Waiting, Forecast, Reminders, Notices, Snoozed or Yours. All shows every one again.",
+      },
+      {
         target: id("ward-alerts-open"),
         title: "Open an alert",
         body: "Each alert opens the record it is about.",
+      },
+      {
+        device: "desk",
+        target: id("ward-alerts-order-note"),
+        title: "The order",
+        body: "How the list is ordered: act now first, then waiting, oldest first in each.",
       },
       {
         target: id("ward-alerts-forecast"),
@@ -584,6 +781,8 @@ const AROUND: readonly Around[] = [
       },
     ],
   },
+  ...MORE_SCREENS,
+  ...MORE_PAGES,
 ];
 
 /**

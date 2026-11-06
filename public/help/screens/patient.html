@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Patient record screen — Ward Flow</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 14mm;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font:
+          11pt/1.35 Arial,
+          sans-serif;
+        color: CanvasText;
+        background: Canvas;
+      }
+      main {
+        max-width: 182mm;
+        margin: auto;
+      }
+      h1 {
+        font-size: 21pt;
+        margin: 0 0 3mm;
+      }
+      h2 {
+        font-size: 12pt;
+        margin: 5mm 0 2mm;
+      }
+      header {
+        border-bottom: 1pt solid;
+        padding-bottom: 3mm;
+      }
+      header p,
+      footer p {
+        margin: 0;
+      }
+      li {
+        margin-bottom: 2.5mm;
+      }
+      ul,
+      ol {
+        padding-left: 5mm;
+        margin: 0;
+      }
+      section,
+      li {
+        break-inside: avoid;
+      }
+      footer {
+        border-top: 0.5pt solid;
+        margin-top: 5mm;
+        padding-top: 3mm;
+        font-size: 10pt;
+      }
+      .draft {
+        font-size: 10pt;
+      }
+      @media screen {
+        body {
+          padding: 5mm;
+        }
+        .draft {
+          padding: 2mm 0;
+        }
+      }
+      @media print {
+        .draft {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Patient record</h1>
+        <p>Ward Flow · One patient's record: where they are now, their movement and the next step.</p>
+      </header>
+      <p class="draft">Print on A4 at 100%. Use your browser’s Print command.</p>
+      <section>
+        <h2>What is on the screen</h2>
+        <ol>
+          <li>At a glance. Legal status, observation level, risk and alerts, as recorded.</li>
+          <li>Where they are up to. Each step from the ED to the community, with the current one marked.</li>
+          <li>The status card. The bed, fit to travel and transport, each with who does it and its next step.</li>
+          <li>Destination. Open Destination to ask wards, pull the bed or make a correction.</li>
+          <li>The record. Now, History, Details and Documents. History lists each change as it was saved.</li>
+        </ol>
+      </section>
+      <footer>
+        <p>In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.</p>
+        <p>Prototype on synthetic data. Not for real patients.</p>
+      </footer>
+    </main>
+  </body>
+</html>

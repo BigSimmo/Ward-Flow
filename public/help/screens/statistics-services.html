@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Health services screen — Ward Flow</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 14mm;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font:
+          11pt/1.35 Arial,
+          sans-serif;
+        color: CanvasText;
+        background: Canvas;
+      }
+      main {
+        max-width: 182mm;
+        margin: auto;
+      }
+      h1 {
+        font-size: 21pt;
+        margin: 0 0 3mm;
+      }
+      h2 {
+        font-size: 12pt;
+        margin: 5mm 0 2mm;
+      }
+      header {
+        border-bottom: 1pt solid;
+        padding-bottom: 3mm;
+      }
+      header p,
+      footer p {
+        margin: 0;
+      }
+      li {
+        margin-bottom: 2.5mm;
+      }
+      ul,
+      ol {
+        padding-left: 5mm;
+        margin: 0;
+      }
+      section,
+      li {
+        break-inside: avoid;
+      }
+      footer {
+        border-top: 0.5pt solid;
+        margin-top: 5mm;
+        padding-top: 3mm;
+        font-size: 10pt;
+      }
+      .draft {
+        font-size: 10pt;
+      }
+      @media screen {
+        body {
+          padding: 5mm;
+        }
+        .draft {
+          padding: 2mm 0;
+        }
+      }
+      @media print {
+        .draft {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Health services</h1>
+        <p>Ward Flow · Each health service's beds, where referrals were accepted and its open ED movements.</p>
+      </header>
+      <p class="draft">Print on A4 at 100%. Use your browser’s Print command.</p>
+      <section>
+        <h2>What is on the screen</h2>
+        <ol>
+          <li>Statistics views. Network, Compare, Services, Wards, EDs, Teams and Weekly.</li>
+          <li>Each service. Beds in use, pulled, closed and ready. Open a service for its own figures.</li>
+          <li>Where referrals were accepted. Every referral on record, counted by the service that accepted it.</li>
+          <li>Open ED movements. People still in an ED or in transit, counted by service.</li>
+        </ol>
+      </section>
+      <section>
+        <h2>On a phone</h2>
+        <ul>
+          <li>
+            Each service. Beds in use, wards at the at-risk line and open ED movements. Open a service for its own
+            figures.
+          </li>
+          <li>Where referrals were accepted. Every referral on record, counted by the service that accepted it.</li>
+        </ul>
+      </section>
+      <footer>
+        <p>In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.</p>
+        <p>Prototype on synthetic data. Not for real patients.</p>
+      </footer>
+    </main>
+  </body>
+</html>

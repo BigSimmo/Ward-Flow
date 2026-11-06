@@ -14,6 +14,10 @@ Recorded decisions to review, gaps by site and the audit trail for this session.
 
 - Waiting for review. Newest first. Choose an event, then Record review.
 
+## Jobs done here
+
+- Look through the audit trail. Open Governance. Review lists events waiting for review, newest first: overrides, refused or stale actions and record access. Audit trail lists what has been reviewed.
+
 In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
 
 _Prototype on synthetic data. Not for real patients._

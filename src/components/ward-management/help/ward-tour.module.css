@@ -104,8 +104,16 @@
   scroll-margin-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* The chapter menu is a short stop: on a phone the card may grow over the lit control while it is
+   open (placeCard otherwise caps it to the room beside the control), so every chapter shows. */
+.layer[data-device="phone"] .card[data-menu] {
+  max-height: 72vh !important;
+}
+
+/* On a phone the ask list stays short, so See common tasks and Go further show without scrolling the card. */
 .layer[data-device="phone"] .canDo {
   grid-template-columns: minmax(0, 1fr);
+  max-height: min(15rem, 30vh);
 }
 
 .layer[data-device="phone"] .card[data-place="centre"] {
@@ -128,13 +136,139 @@
   font-weight: 500;
 }
 
-.chapter {
-  margin: 0;
-  color: var(--wf-accent);
+/* The chapter you are in, as a button that opens the chapter menu, with where you are in it. */
+.chapterRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.chapterButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  min-width: 0;
+  min-height: 28px;
+  margin-left: -0.375rem;
+  padding: 0 0.375rem;
+  border: 0;
+  border-radius: var(--wf-r-ctl, 8px);
+  background: transparent;
+  color: var(--wf-accent-ink, var(--wf-accent));
+  font: inherit;
   font-size: var(--wf-fs-12);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  cursor: pointer;
+}
+
+/* Hover only where there is a pointer that hovers, so a tapped button is not left lit on a phone. */
+@media (hover: hover) {
+  .chapterButton:hover,
+  .chapterItem:hover {
+    background: var(--wf-hover);
+  }
+}
+
+.chapterButton svg {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  transition: transform var(--wf-t-micro, 120ms) var(--wf-ease-out);
+}
+
+.chapterButton[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.chapterStep {
+  flex: none;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The chapter menu: every chapter, its size, a tick on those already walked. */
+.chapters {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0.25rem;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  list-style: none;
+}
+
+.chapterItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 40px;
+  padding: 0 0.625rem 0 0.375rem;
+  border: 0;
+  border-radius: var(--wf-r-sm, 6px);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  text-align: left;
+  cursor: pointer;
+}
+
+.chapterItem[aria-current] {
+  background: var(--wf-accent-tint);
+  font-weight: 600;
+}
+
+.chapterMark {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  color: var(--wf-success-ink, var(--wf-accent));
+}
+
+.chapterMark svg {
+  width: 14px;
+  height: 14px;
+}
+
+.chapterName {
+  flex: 1;
+  min-width: 0;
+}
+
+.chapterCount {
+  flex: none;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The end of the first-run tour: the optional extra steps, offered beside Done, never started. */
+.further {
+  /* A row of its own above Replay, Back and Done in the pinned foot. */
+  flex: 1 0 100%;
+  min-height: 40px;
+  padding: 0 0.875rem;
+  border: 1px solid var(--wf-line-ctl);
+  border-radius: var(--wf-r-ctl, 8px);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink, var(--wf-accent));
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.further:hover {
+  background: var(--wf-hover);
 }
 
 .title {
@@ -429,14 +563,16 @@
    invisible cover above and below keeps the 48px tap area. The text link keeps its own row. */
 .layer[data-device="phone"] .primary,
 .layer[data-device="phone"] .secondary,
-.layer[data-device="phone"] .skip {
+.layer[data-device="phone"] .skip,
+.layer[data-device="phone"] .further {
   position: relative;
   min-height: 40px;
 }
 
 .layer[data-device="phone"] .primary::after,
 .layer[data-device="phone"] .secondary::after,
-.layer[data-device="phone"] .skip::after {
+.layer[data-device="phone"] .skip::after,
+.layer[data-device="phone"] .further::after {
   position: absolute;
   inset: -4px 0;
   content: "";
@@ -444,6 +580,17 @@
 
 .layer[data-device="phone"] .tasksLink {
   min-height: var(--spacing-tap, 3rem);
+}
+
+/* The chapter button keeps its small face on a touch screen, with a taller invisible tap area. */
+.layer:not([data-device="desk"]) .chapterButton {
+  position: relative;
+}
+
+.layer:not([data-device="desk"]) .chapterButton::after {
+  position: absolute;
+  inset: -10px 0;
+  content: "";
 }
 
 /* Round 2 (Josh, 30 Oct): the same 32px close on a phone, with a larger invisible touch area. */
@@ -460,6 +607,9 @@
 .primary:focus-visible,
 .secondary:focus-visible,
 .skip:focus-visible,
+.further:focus-visible,
+.chapterButton:focus-visible,
+.chapterItem:focus-visible,
 .close:focus-visible,
 .tasksLink:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
@@ -479,6 +629,10 @@
   .spot::before {
     animation-duration: 120ms;
     animation-timing-function: linear;
+  }
+
+  .chapterButton svg {
+    transition: none;
   }
 }
 

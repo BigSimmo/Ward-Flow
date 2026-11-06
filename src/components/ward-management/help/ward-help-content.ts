@@ -61,14 +61,49 @@ const CATCHMENT_QUESTION: HelpQuestion = {
     "Open Places and choose Catchments on the band. Type the suburb or postcode in the lookup. It names the team that covers it.",
 };
 
+/** Statistics' small-count rule, said wherever figures about people show. */
+const FEWER_THAN_FIVE: HelpQuestion = {
+  question: 'Why does a figure say "fewer than 5"?',
+  answer: 'Small counts of people read "fewer than 5", so no one can be picked out.',
+};
+
+/** Where every statistics figure comes from. */
+const FIGURES_FROM: HelpQuestion = {
+  question: "Where do these figures come from?",
+  answer:
+    "They are worked out from the synthetic records in this demo. A figure nobody recorded says Not recorded, and each figure's note says what it counts and what it leaves out.",
+};
+
 export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
   command: {
     title: "Home",
     purpose: "What needs the coordinator now, across every ward, ED and movement.",
     actions: [
-      "Work down My list first: act now, then referrals to decide. Each row opens the record it is about.",
-      "Switch to Everyone waiting for the whole queue. Overdue waits and Tier 1 highlight those rows.",
+      "Work down Needs you first: act now, then referrals to decide. Each row opens the record it is about.",
+      "Switch to Flow for every open movement. Its tabs narrow it to Needs a bed, Bed agreed, Ready to move or Moving.",
       "Open Alerts in the header for everything addressed to this desk.",
+    ],
+    phoneActions: [
+      "Work down Needs you first: act now, then referrals to decide. Tap a row to open the record it is about.",
+      "Switch to Flow for every open movement, or Later today for the rest of the shift.",
+      "Alerts sits in the dock at the foot of the screen.",
+    ],
+    questions: [
+      {
+        question: "How do I place a patient from Home?",
+        answer:
+          "Choose the patient, alert or referral in the list and Placement opens with the checks for a bed. Nothing is chosen for you. Offer a bed once the checks you need are met.",
+      },
+      {
+        question: "How do I see one ED's patients?",
+        answer:
+          "Choose that ED's tile under ED pressure. The list narrows to that ED. Choose the tile again to see every ED.",
+      },
+      {
+        question: "What is Later today?",
+        answer:
+          "The rest of the shift, from times the records already hold, against your default targets, such as people likely to pass the ED access target.",
+      },
     ],
   },
   capacity: {
@@ -79,7 +114,19 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       "Open a ward to see its beds and who is coming in.",
       "Use the service selector in the header to look at one health service.",
     ],
-    questions: [TV_QUESTION],
+    questions: [
+      TV_QUESTION,
+      {
+        question: "What does Short mean on Mismatch?",
+        answer:
+          "More people waiting than beds that fit, for that kind of bed. Spare means more beds than people, and Enough means they match.",
+      },
+      {
+        question: "Does Nearest ready beds choose a ward for me?",
+        answer:
+          "No. It lists ready beds by road distance from the place you choose. Distance only, not suitability, and a person always chooses the bed.",
+      },
+    ],
   },
   movements: {
     title: "Movements",
@@ -88,6 +135,18 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       "Open a movement to see its bed, transport and legal form in one place.",
       "Move it on a stage once that step is done, such as pulling a bed or booking transport.",
       "Rows marked Act now are due now or overdue.",
+    ],
+    questions: [
+      {
+        question: "Where is the timeline?",
+        answer:
+          "On a computer, turn on Show timeline above the list. It shows what is coming up for each receiving ward and stays as you left it on this device.",
+      },
+      {
+        question: "How do I pull a bed?",
+        answer:
+          "Once a ward accepts, the Bed box shows Pull the bed. Choose it and pick the bed. The bed is kept for the patient until the pull time limit.",
+      },
     ],
   },
   referrals: {
@@ -108,6 +167,16 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
         question: "How do I ask more wards?",
         answer:
           "Open the referral and choose Ask more wards, then tick the wards. They are listed A to Z and never ranked, and only a ward that fits can be ticked. The card shows how many are waiting out of the network's limit, and a ward that declines frees its place.",
+      },
+      {
+        question: "How do I chase a ward that has not answered?",
+        answer:
+          "Under Offered to wards, each referral waiting on a ward has Chase. It shows who was asked and how long they have had it.",
+      },
+      {
+        question: "Why is a referral marked overdue?",
+        answer:
+          "It has waited past its decision target. The targets are operational defaults set in Settings, not legal limits.",
       },
     ],
   },
@@ -150,6 +219,10 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
         answer:
           "Read Act now first, then what is due before the next handover. Work through Before you sign, then choose Sign off. Use More to print the sheet or present it at the meeting.",
       },
+      {
+        question: "What are ward promises?",
+        answer: "Times a ward said it would ring back. Chase the overdue ones first, and hand over any still open.",
+      },
     ],
   },
   wards: {
@@ -157,7 +230,19 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     purpose: "Every ward, grouped by health service, each opening its own ward screen.",
     actions: [
       "Open your ward to see its beds, arrivals and discharges.",
+      "Search by ward, hospital or service. Filters holds status, age group and order.",
       "While a ward is open, Pin this ward in the menu keeps it under My wards.",
+    ],
+    questions: [
+      {
+        question: "What does Stale counts mean?",
+        answer:
+          "Wards whose bed figures have not been confirmed lately. Choose Stale counts to highlight them, then ask the ward to confirm.",
+      },
+      {
+        question: "How do I read a ward's bed strip?",
+        answer: "One cell a bed. On a computer, the key above the list says what each cell shows.",
+      },
     ],
   },
   ed: {
@@ -168,6 +253,17 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       "Use Past target to find EDs with someone past the access target.",
       "Open an ED to see its board and each patient's next step.",
     ],
+    questions: [
+      {
+        question: "Is Past target a legal deadline?",
+        answer:
+          "No. The access target is an ED performance target set in Settings, counted from when the patient's wait began.",
+      },
+      {
+        question: "How do I see who is waiting without leaving the list?",
+        answer: "On a computer, choose an ED's card to preview who is waiting there. Enter opens its full board.",
+      },
+    ],
   },
   [BED_FINDER_MENU_ID]: {
     title: "Find a bed",
@@ -175,19 +271,58 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     actions: [
       "Choose the age group, bed type, sex and legal status, then read the wards that meet those checks and their ready beds. Wards are never ranked.",
     ],
+    questions: [
+      {
+        question: "Does Find a bed choose the ward?",
+        answer:
+          "No. It lists the wards that meet the checks you chose, A to Z by name. A person always chooses where to refer.",
+      },
+    ],
   },
   officer: {
     title: "Transport",
     purpose: "The transport officer's jobs: who is moving, where and when.",
     actions: [
       "Open a job to see the pickup, the destination and the booking.",
-      "Record when the patient is collected.",
+      "Each job's button is its next stage, such as En route, Collected or Arrived at ward.",
+      "Log booking records a booking already made by phone, with its CAD number.",
+    ],
+    phoneActions: [
+      "Next action at the top is the job to do now. Tap a job for the pickup, destination and booking.",
+      "Each job's button is its next stage, such as En route, Collected or Arrived at ward.",
+      "Log booking records a booking already made by phone, with its CAD number.",
+    ],
+    questions: [
+      {
+        question: "What order are the jobs in?",
+        answer: "Late jobs first, then forms to upload, then furthest along.",
+      },
+      {
+        question: "Why can't I book transport?",
+        answer:
+          "Log booking stays greyed until a ward has accepted the patient, and the reason shows beside it. Book by phone first: logging it needs the CAD number from the call, the quoted ETA, the provider, the legal status and whether an escort is needed.",
+      },
     ],
   },
   alerts: {
     title: "Alerts",
     purpose: "What is addressed to this desk right now, across every movement and referral.",
-    actions: ["Act on the top alert first.", "Each alert opens the record it is about."],
+    actions: [
+      "Act on the top alert first.",
+      "Each alert opens the record it is about.",
+      "Use the chips to show one kind, such as Act now, Forecast or Yours.",
+    ],
+    questions: [
+      {
+        question: "What order are alerts in?",
+        answer: "Act now first, then waiting. Oldest first in each.",
+      },
+      {
+        question: "Where do forecast alerts come from?",
+        answer:
+          "From the forecast lines set in Settings: beds likely to be short tomorrow, the ED access target and a forecast that got worse.",
+      },
+    ],
   },
   community: {
     title: "Community",
@@ -197,6 +332,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       "Open your team to see referrals waiting for an answer.",
       "Start a New referral from the team page.",
     ],
+    questions: [CATCHMENT_QUESTION],
   },
   delays: {
     title: "Waiting",
@@ -205,11 +341,32 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       "Use the saved views: Due soon or on you, Form due and For handover.",
       "Open a row to deal with what is holding it up.",
     ],
+    questions: [
+      {
+        question: "Who is the wait on?",
+        answer:
+          "Each wait is split by who can move it on next: you, the ED, the wards, transport or someone else. Choose one to narrow the list.",
+      },
+      {
+        question: "Does the order mean one patient matters more?",
+        answer: "No. The list is longest wait first. Flags highlight a row but never move it.",
+      },
+    ],
   },
   statistics: {
     title: "Statistics",
     purpose: "Counts and waits for the network, a service or a ward, worked out from the records.",
-    actions: ["Read each figure's note for what it counts and what it leaves out."],
+    actions: [
+      "Read each figure's note for what it counts and what it leaves out.",
+      "Choose a view on the band: Network, Compare, Services, Wards, EDs, Teams or Weekly.",
+      "On a computer, Export downloads the figures at the top of the page as a spreadsheet file.",
+    ],
+    phoneActions: [
+      "Read each figure's note for what it counts and what it leaves out.",
+      "Choose a view on the band: Network, Compare, Services, Wards, EDs, Teams or Weekly.",
+      "More figures holds discharges held up, declines by reason and the rest.",
+    ],
+    questions: [FIGURES_FROM, FEWER_THAN_FIVE],
   },
   discharges: {
     title: "Discharges",
@@ -217,6 +374,19 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
     actions: [
       "Work through what is blocking each discharge.",
       "Open one to see where the patient is going and the bed release.",
+      "On a computer, Print list makes a paper copy for the ward or the bed meeting.",
+    ],
+    questions: [
+      {
+        question: "What is the difference between confirmed and expected?",
+        answer:
+          "A confirmed discharge is one the ward has confirmed. An expected discharge has a date but is not confirmed yet.",
+      },
+      {
+        question: "How do I clear a hold-up?",
+        answer:
+          "Open the discharge to see what is holding it up and the bed, then update the hold-up once it is sorted. The ward and the coordinator can record it.",
+      },
     ],
   },
   search: {
@@ -226,6 +396,17 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       "Use the switch on the band: Everyone, In ED, In placement, Inpatient, Community or Not active.",
       "Search by record number, place, stage or owner.",
       "To see who closed today, choose Today on the band. On a phone, use Closed today at the foot of the list.",
+    ],
+    questions: [
+      {
+        question: "Why can't I find a patient?",
+        answer:
+          "Each desk sees only the patients its role covers. Check the switch is on Everyone, then try the record number. If they are new, use Add patient.",
+      },
+      {
+        question: "Is what I type kept?",
+        answer: "No. The words you search are never stored, put in an address or logged.",
+      },
     ],
   },
   hub: {
@@ -237,7 +418,14 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       "Choose a place to see who is heading or waiting there, then refer or open it. Pin the places you use most.",
       "Choose Catchments on the band to find which community team covers a suburb.",
     ],
-    questions: [CATCHMENT_QUESTION],
+    questions: [
+      CATCHMENT_QUESTION,
+      {
+        question: "Why does a ward need a bed check?",
+        answer:
+          "Its bed count has not been confirmed lately, so the figure may be out of date. Ask the ward to confirm its numbers.",
+      },
+    ],
   },
   "legal-forms": {
     title: "Legal forms",
@@ -246,6 +434,18 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       "Times are as typed from the paper form. Ward Flow does not work out legal periods, and the times are not legally checked.",
       "Switch between On a form, Checklist and History. Each row names its next step. Choose a patient to see their form.",
       "Use Record next form when a new form is written. Record and tell lists who to let know.",
+    ],
+    questions: [
+      {
+        question: "Does Ward Flow work out when a form expires?",
+        answer:
+          "No. A person types the time from the paper form, and Ward Flow keeps it as typed. It is never legally checked.",
+      },
+      {
+        question: "How do I record a new form?",
+        answer:
+          "Choose the patient, then Record next form. Type the time from the paper form and record it. Record and tell lists who to let know.",
+      },
     ],
   },
   governance: {
@@ -256,6 +456,17 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       "Gaps by site lists missing requirements for each site.",
       "Audit trail lists what this session captured. Registers and Reports hold previews.",
     ],
+    questions: [
+      {
+        question: "Why can't I record a review?",
+        answer: "Only the bed coordinator records a review. Other desks that open Governance can read the events.",
+      },
+      {
+        question: "What goes to review?",
+        answer:
+          "Recorded decisions such as overrides and refusals. Each one waits under Review until someone records a review.",
+      },
+    ],
   },
   seclusion: {
     title: "Seclusion",
@@ -264,6 +475,16 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       "Choose the ward, then Mark available or Mark out of service for its seclusion room.",
       "Record start when one begins and Record end when it finishes. Times are as typed, and nothing works out a legal limit.",
       "Use Record incident for an incident on the ward.",
+    ],
+    questions: [
+      {
+        question: "Does Ward Flow tell me when seclusion must end?",
+        answer: "No. Times are as typed, and nothing works out a legal limit.",
+      },
+      {
+        question: "Where do finished episodes go?",
+        answer: "Once Record end is pressed, the episode leaves In use now. Finished episodes are kept in Governance.",
+      },
     ],
   },
   "out-of-area": {
@@ -274,6 +495,16 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       "Fill in the plan, then Record sent to ward or Record return.",
       "Copy the bed meeting summary or export the list from the header.",
     ],
+    questions: [
+      {
+        question: "What counts as out of area?",
+        answer: "A patient in a bed outside their home health service.",
+      },
+      {
+        question: "Who records a return plan?",
+        answer: "The bed coordinator. Other desks can read the plan and the days away.",
+      },
+    ],
   },
   "on-call": {
     title: "On-call",
@@ -282,6 +513,21 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       "Search by role, hospital, ward, team or number.",
       "Pick a service in the header, or use Show, to narrow the list.",
       "Star a line to keep it under Mine and at the top of the page.",
+    ],
+    questions: [
+      {
+        question: "Who do I call if no one answers?",
+        answer: "Open the line. Its If no answer list names who to try next.",
+      },
+      {
+        question: "How do I see who is on call later?",
+        answer: "Use Cover at and choose the time. The lines show who answers then.",
+      },
+      {
+        question: "Are these numbers real?",
+        answer:
+          "No. Every number is synthetic. Each list says when someone last checked it, and Mark checked now records a fresh check.",
+      },
     ],
   },
 };
@@ -305,7 +551,18 @@ const PAGE_HELP: readonly PageHelp[] = [
       "Choose Accept in principle, or Decline with a reason.",
       "Use Previous and Next when more than one request is waiting.",
     ],
-    questions: [WHY_NO_ANSWER],
+    questions: [
+      WHY_NO_ANSWER,
+      {
+        question: "Do the gates decide for me?",
+        answer:
+          "No. Each gate reads Pass or Does not pass to inform your answer. The ward decides, and a decline needs a reason.",
+      },
+      {
+        question: "Can a ward see where else a patient was referred?",
+        answer: "You never see which other wards the patient was referred to.",
+      },
+    ],
   },
   {
     id: "ward",
@@ -318,7 +575,15 @@ const PAGE_HELP: readonly PageHelp[] = [
       "Bed board places patients in beds. Decisions holds what is due this shift.",
       "Confirm numbers when the bed figures change. Notices, Shift brief and Handover are in the toolbar.",
     ],
-    questions: [WHY_NO_ANSWER, TV_QUESTION],
+    questions: [
+      WHY_NO_ANSWER,
+      TV_QUESTION,
+      {
+        question: "How often should I confirm numbers?",
+        answer:
+          "After any bed change, and by the morning bed numbers time set in Settings. Confirm numbers tells the network your count is current.",
+      },
+    ],
   },
   {
     id: "board",
@@ -327,8 +592,19 @@ const PAGE_HELP: readonly PageHelp[] = [
     purpose: "Every bed on one ward, who is in it, who is coming in and who is going out today and tomorrow.",
     actions: [
       "Choose a bed to see its patient. Move the date, Record hold-up or Record that they have left.",
-      "Before handover lists beds out of service and people due to be discharged.",
+      "Before handover lists what needs you before the next handover, such as a discharge still here.",
       "Show shift brief opens the ward's sheet for the shift.",
+    ],
+    questions: [
+      {
+        question: "How do I record that a patient has left?",
+        answer:
+          "Choose their bed, choose where they are going, then Record that they have left. A trip to an ED is Gone to an ED instead, which keeps the bed.",
+      },
+      {
+        question: "What does Past date mean on a bed?",
+        answer: "The patient is still on the ward after their expected discharge date.",
+      },
     ],
   },
   {
@@ -340,6 +616,17 @@ const PAGE_HELP: readonly PageHelp[] = [
       "Fill in family name, given name, date of birth and UMRN. Everything else is optional.",
       "Read the Duplicate check first, so one person does not get two records.",
       "Choose Add patient to open the new record, or Add and start referral to go straight to a referral.",
+    ],
+    questions: [
+      {
+        question: "Why is Add patient greyed out?",
+        answer: "It waits on the four core details: family name, given name, date of birth and UMRN.",
+      },
+      {
+        question: "What does the duplicate check look at?",
+        answer:
+          "Every patient record, as you type a UMRN or a name of four letters or more. Open the existing record instead if it is the same person.",
+      },
     ],
   },
   {
@@ -386,7 +673,14 @@ const PAGE_HELP: readonly PageHelp[] = [
       "Each row's button is its next step, such as Record exam, Refer to a ward or Handover ready. A referral waiting in the inbox has Ask for a bed.",
       "New referral starts a new one. Tap a figure in the header to highlight those patients.",
     ],
-    questions: [TV_QUESTION],
+    questions: [
+      TV_QUESTION,
+      {
+        question: "Does Ward Flow work out when a form expires?",
+        answer:
+          "No. A person types the time from the paper form, and Ward Flow keeps it as typed. It is never legally checked.",
+      },
+    ],
   },
   {
     id: "catchments",
@@ -398,7 +692,14 @@ const PAGE_HELP: readonly PageHelp[] = [
       "Use the A to Z to open a team's own page with its referrals.",
       "Read alike sets team names that look similar side by side. Choose Places on the band to go back.",
     ],
-    questions: [CATCHMENT_QUESTION],
+    questions: [
+      CATCHMENT_QUESTION,
+      {
+        question: "Why do some teams read alike?",
+        answer:
+          "Some team names are written more than one way. Read alike sets them side by side so you open the right one.",
+      },
+    ],
   },
   {
     id: "community-team",
@@ -411,6 +712,16 @@ const PAGE_HELP: readonly PageHelp[] = [
       "In a bed, Expected back and Caseload and CTOs follow the team's patients.",
       "New referral in the header starts a referral. How to reach this team stays beside every list.",
     ],
+    questions: [
+      {
+        question: "How do I open another team?",
+        answer: "Choose Switch team at the top of the page, or find the team on Places, Catchments.",
+      },
+      {
+        question: "Are the team's phone and address real?",
+        answer: "No. They are invented for the demo, as is every patient on the page.",
+      },
+    ],
   },
   {
     id: "settings",
@@ -419,8 +730,23 @@ const PAGE_HELP: readonly PageHelp[] = [
     purpose: "The network's rules and this device's own choices, in tabs.",
     actions: [
       "Change a rule under Rules, then Save. Rule changes wait for Save.",
-      "Display holds the theme, Single-key shortcuts and Replay the tour.",
+      "Display holds the theme, row density and Single-key shortcuts. They save at once on this device.",
       "Press / to find a setting.",
+    ],
+    phoneActions: [
+      "Change a rule under Rules, then Save. Rule changes wait for Save.",
+      "On this phone holds the theme and row density. They save at once.",
+      "Use Find a setting at the top, or open an area under All settings.",
+    ],
+    questions: [
+      {
+        question: "Why can't I change the rules?",
+        answer: "Only the bed coordinator for the whole network changes the rules, and every save is recorded.",
+      },
+      {
+        question: "Where is the tour?",
+        answer: "Help holds the tour, the keyboard shortcuts and Show me. Open Help to replay the tour.",
+      },
     ],
   },
   {
@@ -433,6 +759,17 @@ const PAGE_HELP: readonly PageHelp[] = [
       "The coordinator takes a New snapshot. The pack does not update by itself.",
       "Print or save PDF to keep a paper copy.",
     ],
+    questions: [
+      {
+        question: "Why can't I take a new snapshot?",
+        answer: "Only the bed coordinator takes a new snapshot. Every desk sees when the last one was taken.",
+      },
+      {
+        question: "What if Ward Flow is down?",
+        answer:
+          "Tell the bed coordinator on shift. They decide when everyone switches to paper and pass the problem to the Ward Flow team.",
+      },
+    ],
   },
   {
     id: "bed-meeting-agenda",
@@ -441,9 +778,148 @@ const PAGE_HELP: readonly PageHelp[] = [
     purpose: "The bed meeting's agenda, built from fixed rules, and the actions agreed at earlier meetings.",
     actions: [
       "Work through each section: longest ED waits, pulled beds, stranded stays and out of area.",
-      "Add action against a person, with an owner and a due time, then Record action.",
-      "Mark an earlier action Done once it is.",
+      "Use Action against a person, with an owner and a due time, then Record action.",
+      "Use Mark done on an earlier action once it is.",
     ],
+    questions: [
+      {
+        question: "Who decides what is on the agenda?",
+        answer:
+          "Fixed rules build it from the records, such as the longest ED waits and pulled beds with least time left. Nobody is ranked.",
+      },
+      {
+        question: "Why can't I add an action?",
+        answer: "Only the bed coordinator, who chairs the meeting, records an action. Other desks read the agenda.",
+      },
+    ],
+  },
+  {
+    id: "chronology",
+    path: /^\/ward-flow\/reports\/chronology$/u,
+    title: "Patient chronology",
+    purpose: "One patient's events in time order, for a post-incident review, ready to print or download.",
+    actions: [
+      "Find a patient by name or UMRN, or choose one from Patients on the board.",
+      "Narrow the events by source: Records, Audit or Session.",
+      "Print, or Download CSV for a spreadsheet copy.",
+    ],
+    phoneActions: [
+      "Find a patient by name or UMRN, or choose one from Patients on the board.",
+      "Tap an event for its detail. Filters narrows the events by source.",
+      "Print sits under Filters on a phone.",
+    ],
+    questions: [
+      {
+        question: "What does a chronology hold?",
+        answer:
+          "Referrals, movements and admissions as saved, the coordinator's audit trail where your desk may see it, and this browser session's log. Times are as recorded or typed. Nothing is calculated.",
+      },
+      {
+        question: "Is this a clinical record?",
+        answer: "No. It is built from synthetic demo data, for practising a post-incident review.",
+      },
+    ],
+  },
+  {
+    id: "statistics-compare",
+    path: /^\/ward-flow\/statistics\/compare$/u,
+    title: "Compare",
+    purpose: "Every ward and every ED side by side, as a chart or a table, with up to three wards pinned.",
+    actions: [
+      "Choose what to compare, such as Occupancy or Stay, and switch between Chart and Data.",
+      "CSV downloads the figures you are looking at.",
+      "Pin up to three wards to set them beside the network.",
+    ],
+    questions: [FIGURES_FROM, FEWER_THAN_FIVE],
+  },
+  {
+    id: "statistics-services",
+    path: /^\/ward-flow\/statistics\/services$/u,
+    title: "Health services",
+    purpose: "Each health service's beds, where referrals were accepted and its open ED movements.",
+    actions: [
+      "Open a service for its own figures.",
+      "Compare opens the ward and ED comparisons.",
+      "Read each figure's note for what it counts and what it leaves out.",
+    ],
+    questions: [FIGURES_FROM, FEWER_THAN_FIVE],
+  },
+  {
+    id: "statistics-wards",
+    path: /^\/ward-flow\/statistics\/wards$/u,
+    title: "All wards",
+    purpose: "Every ward's beds in use, stay so far and discharges held up.",
+    actions: [
+      "Group the table by service, or show one list.",
+      "Open a ward for its own figures, or Compare wards to set them side by side.",
+      "Read each figure's note for what it counts and what it leaves out.",
+    ],
+    questions: [
+      FIGURES_FROM,
+      {
+        question: "What does in use mean?",
+        answer: "Beds occupied or pulled, as a share of the ward's beds.",
+      },
+    ],
+  },
+  {
+    id: "statistics-eds",
+    path: /^\/ward-flow\/statistics\/eds$/u,
+    title: "All emergency departments",
+    purpose: "Every emergency department's open movements and how long each has been open.",
+    actions: [
+      "Read the chart: one dot per open movement, by hours since it opened.",
+      "Sort the table by any column, or open an ED for its own figures.",
+      "Compare EDs sets them side by side.",
+    ],
+    questions: [
+      FIGURES_FROM,
+      {
+        question: "Does an open movement mean the patient is still in the ED?",
+        answer: "Not always. Open ED movements include people in transit, and the note under the chart says how many.",
+      },
+    ],
+  },
+  {
+    id: "statistics-teams",
+    path: /^\/ward-flow\/statistics\/teams$/u,
+    title: "Community teams",
+    purpose: "Each community team's patients in a bed, and those with a discharge date.",
+    actions: [
+      "Read Teams by service for each service's team patients in a bed.",
+      "The table lists only teams with someone in a bed. Show all lists every team.",
+      "Open a team for its own figures.",
+    ],
+    questions: [FIGURES_FROM, FEWER_THAN_FIVE],
+  },
+  {
+    id: "statistics-weekly",
+    path: /^\/ward-flow\/statistics\/weekly$/u,
+    title: "Weekly operations",
+    purpose: "One week's operations: the pilot measures, where the time goes and the pressure that week.",
+    actions: [
+      "Choose the week: this week so far, the last full week or one of the seven before it.",
+      "Read the pilot measures first, then where the time goes.",
+      "Print makes a paper copy of the week.",
+    ],
+    questions: [
+      FIGURES_FROM,
+      {
+        question: "Why does a measure show a dash?",
+        answer: "Nothing finished that week to measure, so there is no typical time to show.",
+      },
+    ],
+  },
+  {
+    id: "statistics-place",
+    path: /^\/ward-flow\/statistics\/(?:service|ward|ed|community)\/[^/]+$/u,
+    title: "Statistics",
+    purpose: "The figures for one health service, ward, ED or community team, worked out from the records.",
+    actions: [
+      "Read each figure's note for what it counts and what it leaves out.",
+      "A ward, ED or team desk sees its own figures only, as counts.",
+    ],
+    questions: [FIGURES_FROM, FEWER_THAN_FIVE],
   },
 ];
 
@@ -653,6 +1129,106 @@ const WARD_FLOW_TERMS: readonly GlossaryTerm[] = [
   { term: "KPI", meaning: "Key performance indicator, such as the national seven-day follow-up measure." },
   { term: "MHERL", meaning: "Mental Health Emergency Response Line, the WA crisis phone line." },
   { term: "PIR", meaning: "Post-incident review. The PIR chronology lists one patient's events in time order." },
+
+  // Chronology (5 Nov 2026): the words on the patient chronology and its sources.
+  {
+    term: "Chronology",
+    meaning: "One patient's events in time order, built from the records for a post-incident review.",
+  },
+  {
+    term: "Audit trail",
+    meaning: "Coordinator changes and overrides, with their reasons. Only some desks see it.",
+  },
+  { term: "Session log", meaning: "What this browser session recorded, for this session only." },
+  { term: "CSV", meaning: "A plain spreadsheet file. Download CSV saves the figures or events you are looking at." },
+
+  // Statistics (5 Nov 2026): the words the figures and their notes use.
+  { term: "In use", meaning: "Beds occupied or pulled, as a share of a ward's beds." },
+  {
+    term: "Occupancy",
+    meaning: "The share of beds in use. At risk shows once it passes the line set for the screen.",
+  },
+  {
+    term: "Typical",
+    meaning: "The middle value, the median: half took less time and half took more.",
+  },
+  {
+    term: "Slowest 1 in 10",
+    meaning: "The time the slowest tenth took longer than. It shows how long the long waits run.",
+  },
+  {
+    term: "Stay so far",
+    meaning: "How long people in a bed now have been there. It is not a finished length of stay.",
+  },
+  {
+    term: "Open ED movement",
+    meaning: "A movement that started at an ED and has not closed. It includes people in transit.",
+  },
+  {
+    term: "Fewer than 5",
+    meaning: "Shown in place of a small count of people, so no one can be picked out.",
+  },
+  { term: "Not recorded", meaning: "Nobody recorded this figure. Ward Flow does not guess it." },
+  {
+    term: "Pilot measures",
+    meaning: "The weekly report's own measures, such as referral to arrival and bed figures on time.",
+  },
+
+  // Other screens (5 Nov 2026).
+  {
+    term: "Stranded",
+    meaning:
+      "A prompt, not a judgement: someone in a bed a long time with no expected discharge date, or waiting on something outside the ward.",
+  },
+  {
+    term: "Step-down",
+    meaning: "A patient the ward has marked as a candidate for subacute care. A person marks it.",
+  },
+  {
+    term: "Stale count",
+    meaning: "A ward's bed figures not confirmed lately, so they may be out of date. Ask the ward to confirm.",
+  },
+  {
+    term: "Mismatch",
+    meaning: "People waiting against beds that fit, for each kind of bed, on Capacity.",
+  },
+  {
+    term: "Downtime pack",
+    meaning: "A printable copy of the last snapshot, for when the system is down. It does not update by itself.",
+  },
+  {
+    term: "Snapshot",
+    meaning: "A copy of the figures at one time. Only the bed coordinator takes a new one.",
+  },
+  {
+    term: "Read alike",
+    meaning: "Community team names that look similar, set side by side so you open the right one.",
+  },
+  {
+    term: "Caseload",
+    meaning: "The people a community team is looking after.",
+  },
+  {
+    term: "Ward promise",
+    meaning: "A time a ward said it would ring back. Handover lists the ones to chase.",
+  },
+  {
+    term: "Accept in principle",
+    meaning: "A ward agrees it can take the patient. A bed is pulled as a separate step.",
+  },
+  {
+    term: "Gate",
+    meaning: "One of a ward's own checks for a patient, marked Pass or Does not pass. It informs the answer.",
+  },
+  {
+    term: "Bed meeting",
+    meaning: "The regular meeting on beds. Its agenda is built from fixed rules and its actions have an owner.",
+  },
+  { term: "Surge", meaning: "A Settings choice that tightens some rules at once for a busy period." },
+  {
+    term: "Cover",
+    meaning: "One ward or one ED handed to another desk for a time. It lasts for a set time and ends by itself.",
+  },
 ];
 
 /**

@@ -157,6 +157,11 @@ async function stepsLit(page: Page, id: string, total: number): Promise<readonly
   }
   await page.keyboard.press("Escape");
   await expect(card).toBeHidden();
+  // The New referral walk (5 Nov 2026) plays over the referral form, which stays open once the walk
+  // closes, as it would for anyone. Close it so the next walk starts on a clear screen.
+  const sheet = page.locator('[role="dialog"][aria-modal="true"]');
+  for (let tries = 0; tries < 3 && (await sheet.count()) > 0; tries += 1) await page.keyboard.press("Escape");
+  await expect(sheet).toHaveCount(0);
   return dark;
 }
 
