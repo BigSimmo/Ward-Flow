@@ -178,6 +178,10 @@ Every person, ward and figure named anywhere in it is invented.
 
 </details>
 
+## Label review — 6 Nov 2026 (`fix/pr2-speed-keyboard`)
+
+Source digests for `ward-screen.tsx`, `officer-screen.tsx`, `discharge-board.tsx` and `out-of-area-board.tsx` were re-reviewed after accessible-name and spacing edits only (axe 4.14 label content, front-end fix PR 2). Event dispatches, roles and the cited lines are unchanged; the `CLEAR_BED_RELEASE_BLOCK` citation in `discharge-board.tsx` moved from line 1411 to 1408.
+
 ## Follow-up honesty — 5 Nov 2026 (`fix/wf-followup`)
 
 Source digests for Alerts UI were re-reviewed after wording-only edits; event handlers and roles are unchanged.
