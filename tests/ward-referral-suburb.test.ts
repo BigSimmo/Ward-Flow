@@ -164,9 +164,9 @@ describe("a referral records its suburb", () => {
     // an accepted cost with its reason, because the alternative is a silent invention and because
     // the day a suburb-to-region source exists this test is where the change starts.
     const referrals = seedWardFlowState().referrals;
-    expect(referrals.every((referral) => referral.homeRegion.length > 0)).toBe(true);
+    expect(referrals.every((referral) => (referral.homeRegion ?? "").length > 0)).toBe(true);
     expect(
-      referrals.some((referral) => referral.suburb.kind === "named" && referral.homeRegion.length > 0),
+      referrals.some((referral) => referral.suburb.kind === "named" && (referral.homeRegion ?? "").length > 0),
       "both facts are stored side by side, deliberately and not by oversight",
     ).toBe(true);
   });

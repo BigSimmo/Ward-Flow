@@ -22,8 +22,9 @@ import { edById, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
  * Option B (Josh, 13 Oct 2026): ED, community team and Home all open the one referral slide-out,
  * prefilled from where it starts. When the entry point names a person, the record answers what it
  * can: the cohort, the catchment the suburb names (counted as confirmed, Change reopens it) and the
- * referring site. The seed records no home region on a movement, so that is the one question step 1
- * still asks; answering it completes step 1 without asking for the catchment again.
+ * referring site. The seed records no home region on a movement. Form rule (design audit FORM-REF,
+ * 5 Nov 2026): the home region now warns in "Before you send" instead of blocking, so step 1 is
+ * complete from the record alone; answering the region clears the warning.
  */
 afterEach(() => {
   cleanup();
@@ -56,7 +57,7 @@ function stepState(name: string) {
 }
 
 describe("the referral slide-out opened from an entry point", () => {
-  it("asks only the home region in step 1, then completes it, with the person as a summary with Change", () => {
+  it("completes step 1 from the record, warns on the home region, with the person as a summary with Change", () => {
     const { patientId, siteCode } = answeredPerson();
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -69,10 +70,12 @@ describe("the referral slide-out opened from an entry point", () => {
         />
       </WardFlowProvider>,
     );
-    expect(stepState("Patient")).toBe("false");
+    expect(stepState("Patient")).toBe("true");
     expect(screen.getAllByText(/Catchment confirmed/u).length).toBeGreaterThan(0);
+    expect(screen.getByTestId("ward-referral-send-warnings")).toHaveTextContent("home region");
     fireEvent.change(screen.getByLabelText("Home region"), { target: { value: "Perth Metropolitan" } });
     expect(stepState("Patient")).toBe("true");
+    expect(screen.queryByTestId("ward-referral-send-warnings")).not.toBeInTheDocument();
     expect(screen.getAllByText(/Catchment confirmed/u).length).toBeGreaterThan(0);
     // The summary, not the search: the entry point already named the person.
     expect(screen.queryByRole("combobox", { name: "Find a patient" })).not.toBeInTheDocument();

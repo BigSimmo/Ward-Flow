@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import {
-  clearanceItems,
   clearanceNeeded,
   communityReferralError,
   communityTeamsMatching,
@@ -26,14 +25,10 @@ describe("community short form", () => {
     );
     expect(communityReferralError("follow_up", { ...EMPTY_DOCUMENTATION, medical: "yes" })).toBeNull();
     const pending = { ...EMPTY_DOCUMENTATION, medical: "no" as const };
-    expect(communityReferralError("assess_for_admission", pending)).toBe(
-      "Add expected medical clearance, a clarification contact and phone number.",
-    );
-    expect([clearanceNeeded(EMPTY_DOCUMENTATION), clearanceItems(EMPTY_DOCUMENTATION)]).toEqual([1, 1]);
-    expect([clearanceNeeded(pending), clearanceItems(pending)]).toEqual([3, 4]);
-    expect(clearanceNeeded({ ...pending, expectedAt: "2026-10-23T12:00", contactName: "A", contactPhone: "1" })).toBe(
-      0,
-    );
+    // FORM-REF (Josh, 5 Nov 2026): the expected time and clarification contact warn, never block.
+    expect(communityReferralError("assess_for_admission", pending)).toBeNull();
+    expect(clearanceNeeded(EMPTY_DOCUMENTATION)).toBe(1);
+    expect(clearanceNeeded(pending)).toBe(0);
   });
 
   it("finds teams by name or by a suburb they follow up", () => {

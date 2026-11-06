@@ -999,7 +999,8 @@ export function edById(id: string | undefined): EmergencyDepartment | undefined 
 
 /** Returns `undefined` for an unknown code. Never falls back to a different site. The site's
  * identity only: its wards differ by scenario, so read them through the network. */
-export function siteByCode(code: string): SiteIdentity | undefined {
+export function siteByCode(code: string | undefined): SiteIdentity | undefined {
+  if (code === undefined) return undefined;
   return siteDirectory.find((site) => site.code === code);
 }
 

@@ -51,7 +51,7 @@ describe("consolidated census contracts", () => {
     const row = census(state).rows.find((r) => r.key === template.id)!;
     expect(row.where).toBe(state.units.find((u) => u.id === state.admissions[0]!.unitId)!.name);
     expect(row.timeline[0]?.text).toBe(
-      `Referral raised at ${template.originSiteCode} ${template.source === "community" || /CMHT|Clinic/.test(template.originSiteCode) ? "Community" : "ED"}`,
+      `Referral raised at ${template.originSiteCode} ${template.source === "community" || /CMHT|Clinic/.test(template.originSiteCode ?? "") ? "Community" : "ED"}`,
     );
   });
   it("shows a source stay's ED absence on a pending return movement", () => {

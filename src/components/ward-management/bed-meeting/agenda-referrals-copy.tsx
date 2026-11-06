@@ -1,6 +1,7 @@
 "use client";
 
 import { ClipboardCopy } from "lucide-react";
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { useState } from "react";
 
 import { Button } from "@/components/wf";
@@ -25,7 +26,7 @@ export function agendaReferralsText(
       return [
         `${index + 1}. T${referral.urgency} ${nameOf(referral)}`,
         `waiting ${waited}, ${due}`,
-        `from ${referral.originSiteCode}`,
+        `from ${referral.originSiteCode ?? ORIGIN_NOT_RECORDED}`,
         `asking for ${askingForShort(referral)}`,
         needWords(referral).join(", ") || "no bed needs recorded",
       ].join(" | ");
