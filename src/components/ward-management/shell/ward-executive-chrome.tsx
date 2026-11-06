@@ -726,9 +726,8 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                 title={`Board time ${clock} AWST${online ? "" : ". Offline"}`}
               >
                 <span className={bar.demoClockDot} data-offline={online ? undefined : "true"} aria-hidden="true" />
-                <span className={bar.demoClockLabel}>Board time</span>
-                <span className={bar.demoClockTime}>{clock}</span>
-                <span className={bar.demoClockTz}>AWST</span>
+                <span className={bar.demoClockLabel}>Board time</span>{" "}
+                <span className={bar.demoClockTime}>{clock}</span> <span className={bar.demoClockTz}>AWST</span>
               </WardDemoClockPopover>
               {/* The shell's synthetic-data marker for screen readers (visually hidden, so no pill shows). */}
               <span
