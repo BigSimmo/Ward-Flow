@@ -137,9 +137,10 @@ export function WardTourWelcome({
           {card.body}
         </p>
       </div>
-      {/* Heard on each move, in place of reading the whole card again. */}
+      {/* Heard on each move, in place of reading the whole card again. The dots carry the total, so
+          the live text says only which card this is, as the tour's own title does. */}
       <p className="sr-only" aria-live="polite" aria-atomic="true" data-testid="ward-tour-welcome-live">
-        {from ? `Card ${at + 1} of ${cards.length}. ${card.title}` : ""}
+        {from ? `Card ${at + 1}. ${card.title}` : ""}
       </p>
       <div className={styles.dots}>
         {cards.map((each, index) => (

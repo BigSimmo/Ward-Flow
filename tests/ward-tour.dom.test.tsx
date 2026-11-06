@@ -375,7 +375,7 @@ describe("welcome cards before the first-run tour", () => {
     expect(dialog.textContent).toMatch(/synthetic/u);
     expect(dialog.textContent).toMatch(/no real patients/u);
     // The move is said once, for a screen reader.
-    expect(screen.getByTestId("ward-tour-welcome-live").textContent).toBe("Card 2 of 3. A prototype with made-up data");
+    expect(screen.getByTestId("ward-tour-welcome-live").textContent).toBe("Card 2. A prototype with made-up data");
 
     fireEvent.keyDown(dialog, { key: "ArrowRight" });
     expect(dialog.dataset.card).toBe("help");
