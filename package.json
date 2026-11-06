@@ -112,7 +112,7 @@
     "zod": "^4.6.7"
   },
   "overrides": {
-    "axe-core": "~4.13.0",
+    "axe-core": "~4.14.0",
     "postcss": "^8.5.26",
     "esbuild": "0.28.2",
     "sharp": "0.35.5",
@@ -127,7 +127,7 @@
     "minimatch@10": "11.0.1"
   },
   "devDependencies": {
-    "@axe-core/playwright": "~4.13.0",
+    "@axe-core/playwright": "~4.14.0",
     "@babel/parser": "^8.0.7",
     "@next/bundle-analyzer": "^16.4.0",
     "@next/env": "16.4.2",
