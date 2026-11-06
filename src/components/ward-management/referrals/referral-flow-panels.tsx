@@ -61,12 +61,13 @@ export const EMPTY_DOCUMENTATION: DocumentationDraft = {
   charts: [],
 };
 
-/** The clearance answers alone, which the community short form asks on its Referral step (D-77). */
+/**
+ * The clearance answer alone, which the community short form asks on its Referral step (D-77).
+ * FORM-REF (Josh, 5 Nov 2026): whether clearance is complete blocks. The expected time and the
+ * clarification contact warn in Before you send (`referral-send-warnings.ts`).
+ */
 export function clearanceError(draft: DocumentationDraft): string | null {
-  if (!draft.medical) return "Answer whether medical clearance is complete.";
-  if (draft.medical === "no" && (!draft.expectedAt || !draft.contactName.trim() || !draft.contactPhone.trim()))
-    return "Add expected medical clearance, a clarification contact and phone number.";
-  return null;
+  return draft.medical ? null : "Answer whether medical clearance is complete.";
 }
 
 /**
@@ -83,11 +84,7 @@ export function documentationProblems(
     if (when) problems.push({ id: `${idBase}-${id}`, text });
   };
   add(!draft.medical, "medical", "Answer whether the patient has been medically cleared");
-  if (draft.medical === "no") {
-    add(!draft.expectedAt, "expected", "Enter the expected clearance time");
-    add(!draft.contactName.trim(), "contact", "Enter a contact name");
-    add(!draft.contactPhone.trim(), "phone", "Enter a contact phone number");
-  }
+  // FORM-REF: the expected time and clarification contact warn, so they are not problems here.
   if (clearanceOnly) return problems;
   // Triage and RAMP and "anything else" never block: left unanswered, each is sent as No. The two
   // charts never block either: one not attached is sent as to follow (finding 42).
@@ -373,9 +370,7 @@ export function DocumentationPanel({
               <div className={styles.fieldGrid} data-layout="three">
                 <div className={styles.formField}>
                   <div className={styles.fieldLabelRow}>
-                    <label htmlFor={`${id}-expected`} className={styles.required}>
-                      Expected clearance
-                    </label>
+                    <label htmlFor={`${id}-expected`}>Expected clearance</label>
                   </div>
                   <DateTimeField
                     id={`${id}-expected`}
@@ -386,9 +381,7 @@ export function DocumentationPanel({
                 </div>
                 <div className={styles.formField}>
                   <div className={styles.fieldLabelRow}>
-                    <label htmlFor={`${id}-contact`} className={styles.required}>
-                      Contact name
-                    </label>
+                    <label htmlFor={`${id}-contact`}>Contact name</label>
                   </div>
                   <input
                     id={`${id}-contact`}
@@ -401,9 +394,7 @@ export function DocumentationPanel({
                 </div>
                 <div className={styles.formField}>
                   <div className={styles.fieldLabelRow}>
-                    <label htmlFor={`${id}-phone`} className={styles.required}>
-                      Contact phone
-                    </label>
+                    <label htmlFor={`${id}-phone`}>Contact phone</label>
                   </div>
                   <input
                     id={`${id}-phone`}
@@ -537,7 +528,7 @@ export function ContactFields({
   contact: ReferralContact;
   /** Takes an updater, so a field typed before the last one re-rendered is not overwritten. */
   onChange: Dispatch<SetStateAction<ReferralContact>>;
-  /** Shown under each field after a failed send. `referralContactError` stays the gate. */
+  /** FORM-REF: each blank field's warning. None of them stops Send (`referralContactLimitError`). */
   errors?: Partial<Record<keyof ReferralContact, string>>;
 }) {
   const id = useId();
@@ -546,16 +537,10 @@ export function ContactFields({
       {CONTACT_FIELDS.map(([key, label, type, placeholder]) => {
         const error = errors[key];
         return (
-          <div
-            className={`${styles.formField} ${key === "location" ? styles.fieldWide : ""}`}
-            key={key}
-            data-invalid={error ? true : undefined}
-          >
+          <div className={`${styles.formField} ${key === "location" ? styles.fieldWide : ""}`} key={key}>
             <div className={styles.fieldLabelRow}>
-              {/* Finding 44 (Josh, 27 Oct 2026): the email is asked but never blocks a send. */}
-              <label htmlFor={`${id}-${key}`} className={key === "email" ? undefined : styles.required}>
-                {label}
-              </label>
+              {/* Finding 44 and FORM-REF (Josh, 27 Oct and 5 Nov 2026): no contact field blocks a send. */}
+              <label htmlFor={`${id}-${key}`}>{label}</label>
             </div>
             <input
               id={`${id}-${key}`}
@@ -563,9 +548,7 @@ export function ContactFields({
               type={type}
               autoComplete={CONTACT_AUTOCOMPLETE[key]}
               enterKeyHint="next"
-              required={key !== "email"}
               placeholder={placeholder}
-              aria-invalid={error ? true : undefined}
               aria-describedby={error ? `${id}-${key}-error` : undefined}
               maxLength={key === "email" ? 254 : key === "phone" ? 40 : 200}
               value={contact[key]}
@@ -575,8 +558,8 @@ export function ContactFields({
               }}
             />
             {error ? (
-              <p className={styles.fieldError} id={`${id}-${key}-error`}>
-                <StatusGlyph tone="danger" size={9} />
+              <p className={styles.fieldWarning} id={`${id}-${key}-error`}>
+                <StatusGlyph tone="warning" size={9} />
                 {error}
               </p>
             ) : null}

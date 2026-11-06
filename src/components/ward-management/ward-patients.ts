@@ -407,7 +407,7 @@ export function findPatients(patients: readonly Patient[], query: string, _conte
       fold(patient.umrn).replace(/ /g, "").includes(umrnNeedle) ||
       fold(patient.givenName).startsWith(needle) ||
       fold(patient.familyName).startsWith(needle) ||
-      fold(patientDisplayName(patient)).includes(needle)
+      foldPatientSearchHaystack(patientDisplayName(patient)).includes(needle)
     ) {
       return true;
     }
@@ -657,10 +657,37 @@ export function sameRecordNumber(left: string, right: string): boolean {
   return left.trim().toLowerCase() === right.trim().toLowerCase();
 }
 
+// Letters NFD does not split into a base letter and a mark (CL-5, 5 Nov 2026): "ostergaard" finds
+// Østergaard and "lukasz" finds Łukasz.
+const UNSPLIT_LETTERS: Readonly<Record<string, string>> = { ø: "o", ł: "l", đ: "d", æ: "ae", œ: "oe", ß: "ss" };
+
+function foldWith(value: string, joiner: string): string {
+  // Audit 24-7 (CT-23): runs of spaces count as one, so a doubled space still matches.
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[øłđæœß]/g, (letter) => UNSPLIT_LETTERS[letter] ?? letter)
+    .replace(/['’-]/g, joiner)
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 /** Fold text the way `findPatients` does before comparing needles and haystacks. */
 export function foldPatientSearchText(value: string): string {
-  // Audit 24-7 (CT-23): runs of spaces count as one, so a doubled space still matches.
-  return value.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/['’-]/g, "").replace(/\s+/g, " ").trim();
+  return foldWith(value, "");
+}
+
+/**
+ * A name or record folded as a haystack to search: the folded text, then again with each apostrophe
+ * or hyphen read as a space when that differs, so "obrien" and "o brien" both find O'Brien and
+ * "smith jones" finds Smith-Jones (CL-5, 5 Nov 2026). Fold the typed needle with
+ * `foldPatientSearchText`; equality checks keep using that one form.
+ */
+export function foldPatientSearchHaystack(value: string): string {
+  const joined = foldWith(value, "");
+  const spaced = foldWith(value, " ");
+  return joined === spaced ? joined : `${joined} ${spaced}`;
 }
 
 /**

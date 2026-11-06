@@ -1229,7 +1229,7 @@ function DowntimeCard({
       footer={
         <div className={styles.downtimeFoot}>
           {notice}
-          <span className={styles.cellSub}>Synthetic records and synthetic numbers.</span>
+          <span className={styles.cellSub}>Synthetic records and numbers.</span>
           <Button variant="pri" size="sm" icon={Copy} onClick={() => onCopy(text, "Downtime card copied")}>
             Copy as text
           </Button>

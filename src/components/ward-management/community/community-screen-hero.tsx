@@ -19,6 +19,7 @@ import ward from "@/components/ward-management/ward/ward.module.css";
 import { contactForTeam } from "@/components/ward-management/community/community-team-contact-mapping";
 import { communityRosterCounts } from "./community-screen-panels";
 import { DEMO_FIGURES } from "./team-2026/midland-demo";
+import { useMidlandDay } from "./team-2026/use-midland-demo";
 import type { ActiveTabType } from "./community-screen-helpers";
 import styles from "./community.module.css";
 import v6 from "./community-team-v6.module.css";
@@ -219,6 +220,7 @@ const MIDLAND_EYEBROW = "Midland · Community mental health · East Metro · Adu
 
 /** Midland's at-a-glance strip, as the locked mock-up states it (demo data). */
 function MidlandGlance({ go }: { go: (section: CommunityTeamSection) => void }) {
+  const day = useMidlandDay();
   return (
     <div className={v6.glance} data-testid="ward-community-glance">
       <button type="button" className={v6.glanceItem} onClick={() => go("clinicians")}>
@@ -239,7 +241,7 @@ function MidlandGlance({ go }: { go: (section: CommunityTeamSection) => void }) 
       <button type="button" className={v6.glanceItem} onClick={() => go("hospital")}>
         <Icon icon={House} size={14} />
         <span>Next home</span>
-        <b className={v6.glanceMono}>Wed 4 Nov</b>
+        <b className={v6.glanceMono}>{day("Wed 4 Nov")}</b>
         <b>Greymantle, Ottoline</b>
         <span>Moodjar</span>
         <Icon icon={ChevronRight} size={14} />
@@ -338,7 +340,7 @@ export function CommunityScreenTabRow({
             { id: "counts", label: "Catchment counts", onSelect: () => setActiveModalType("handover") },
             { id: "reach", label: "How to reach the team", onSelect: () => openTeamSection("home") },
             { id: "activity", label: "Activity sample", onSelect: () => setActiveDrawer("activityDrawer") },
-            { id: "tasks", label: "Tasks sample", onSelect: () => setActiveDrawer("tasksDrawer") },
+            { id: "tasks", label: "Alerts sample", onSelect: () => setActiveDrawer("tasksDrawer") },
             { id: "tools", label: "Tools sample", onSelect: () => setActiveDrawer("toolsDrawer") },
           ]}
           trigger={(props) => (

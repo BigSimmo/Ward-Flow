@@ -170,7 +170,7 @@ export function OccupancyRing({ percent, alertAt, scope, status, className }: Oc
   const point = (r: number) => [74 + r * Math.cos(theta), 76 - r * Math.sin(theta)].map((n) => n.toFixed(1));
   const [ax, ay] = point(54);
   const [bx, by] = point(74);
-  const figure = known ? `${value.toFixed(1)}%` : "Not recorded";
+  const figure = known ? `${Math.round(value)}%` : "Not recorded";
   return (
     <div
       className={cx(styles.ring, className)}
@@ -194,7 +194,7 @@ export function OccupancyRing({ percent, alertAt, scope, status, className }: Oc
       <b className={styles.ringFigure} aria-hidden="true">
         {known ? (
           <>
-            {value.toFixed(1)}
+            {Math.round(value)}
             <span className={styles.ringUnit}>%</span>
           </>
         ) : (
@@ -268,7 +268,7 @@ export function WardCapacityRow({
       >
         <StackBar segments={segments} label="Beds" thin />
       </span>
-      <span className={styles.capPct}>{known ? `${percent.toFixed(1)}%` : "Not recorded"}</span>
+      <span className={styles.capPct}>{known ? `${Math.round(percent)}%` : "Not recorded"}</span>
       <span className={styles.capGlyph}>{glyph ? <StatusGlyph tone={glyph} /> : null}</span>
     </>
   );

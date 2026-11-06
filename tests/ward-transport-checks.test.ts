@@ -14,6 +14,7 @@ import {
   transportExceptionRecord,
   transportAnswersBlockedReason,
   transportAnswersMissing,
+  transportAnswerWarnings,
   transportCadToFollow,
   transportExceptionText,
   transportStatusClashes,
@@ -246,20 +247,24 @@ describe("transport booking answers still missing", () => {
     estimatedDay: "today",
   } as const;
 
+  // W32 (Josh's card 3, 5 Nov 2026): a blank estimated time warns, so neither it nor the CAD number
+  // is an answer still missing.
   it("lists every unanswered question in the popup's order, and the CAD number is not one of them", () => {
-    expect(transportAnswersMissing(blank, NOW_ANCHOR)).toEqual(["provider", "time", "escort", "legalStatus"]);
+    expect(transportAnswersMissing(blank, NOW_ANCHOR)).toEqual(["provider", "escort", "legalStatus"]);
     expect(transportAnswersBlockedReason(blank, NOW_ANCHOR)).toBe(
-      "Before booking, choose who is collecting the patient, enter the estimated time, answer the escort question, state whether the transport is voluntary or involuntary.",
+      "Before booking, choose who is collecting the patient, answer the escort question, state whether the transport is voluntary or involuntary.",
     );
+    expect(transportAnswerWarnings(blank)).toEqual(["estimated time"]);
+    expect(transportAnswerWarnings({ ...blank, estimatedTime: "13:30" })).toEqual([]);
   });
 
   // Josh, 31 Oct 2026 (yes): the form starts with neither Today nor Tomorrow, so the day is its own
-  // missing answer, between the time and the escort question.
+  // missing answer once a time is typed. W32: with no time at all, neither is asked.
   it("asks for the day when neither Today nor Tomorrow is chosen", () => {
     const noDay = { ...blank, estimatedDay: undefined };
-    expect(transportAnswersMissing(noDay, NOW_ANCHOR)).toEqual(["provider", "time", "day", "escort", "legalStatus"]);
-    expect(transportAnswersBlockedReason(noDay, NOW_ANCHOR)).toBe(
-      "Before booking, choose who is collecting the patient, enter the estimated time, choose today or tomorrow, answer the escort question, state whether the transport is voluntary or involuntary.",
+    expect(transportAnswersMissing(noDay, NOW_ANCHOR)).toEqual(["provider", "escort", "legalStatus"]);
+    expect(transportAnswersBlockedReason({ ...noDay, estimatedTime: "13:30" }, NOW_ANCHOR)).toBe(
+      "Before booking, choose who is collecting the patient, choose today or tomorrow, answer the escort question, state whether the transport is voluntary or involuntary.",
     );
     expect(transportAnswersMissing({ ...noDay, estimatedTime: "13:30" }, NOW_ANCHOR)).toEqual([
       "provider",

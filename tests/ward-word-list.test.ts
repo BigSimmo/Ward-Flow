@@ -27,7 +27,8 @@ import { siteDirectory } from "@/components/ward-management/ward-sites";
  * suite.
  */
 
-type Banned = { id: string; pattern: RegExp; instead: string };
+/** `skip`: files a rule does not read, such as the approved mock-up copies kept as drawn (D-91). */
+type Banned = { id: string; pattern: RegExp; instead: string; skip?: RegExp };
 
 /** Each id must appear in the "Do not say" column of docs/ward-flow/word-list.md. */
 const BANNED: readonly Banned[] = [
@@ -53,7 +54,7 @@ const BANNED: readonly Banned[] = [
     instead: "the waiting list",
   },
   // Wording audit, 26 Oct 2026 (D-85 and plain words).
-  { id: "beds held by blockers", pattern: /\bbeds held by blockers?\b/i, instead: "Beds held up" },
+  { id: "beds held by blockers", pattern: /\bbeds held by blockers?\b/i, instead: "Discharges held up" },
   { id: "was held until", pattern: /\bwas held until\b/i, instead: "the pull time limit passed at" },
   { id: "not held", pattern: /^\s*not held\s*$/i, instead: "Not recorded" },
   { id: "involuntary-capable", pattern: /\binvoluntary-capable\b/i, instead: "Authorised hospital" },
@@ -84,6 +85,9 @@ const BANNED: readonly Banned[] = [
   { id: "Stand Down", pattern: /\bStand Down\b/, instead: "Stand down" },
   { id: "minutes for a long duration", pattern: /\b\d{3} minutes\b/, instead: "4h" },
   { id: "demo night", pattern: /\bdemo night\b/i, instead: "on the board" },
+  // #1476 review (5 Nov 2026): the §6 "Nobody, not No one" rule, now kept by this test.
+  // The ED board mock-up copies under ward-redesign/ stay as drawn (D-91), so this rule skips them.
+  { id: "No one", pattern: /\bNo one\b/, instead: "Nobody", skip: /^src\/components\/ward-redesign\// },
   // Australian spelling.
   {
     id: "US spelling",
@@ -175,6 +179,7 @@ function bannedCounts(): Map<string, Map<string, number>> {
       const words = text.replace(/\s+/g, " ");
       for (const { banned, counter } of BANNED_COUNTERS) {
         // `match` with a global pattern resets `lastIndex` itself, so reusing one is safe.
+        if (banned.skip?.test(file)) continue;
         const hits = words.match(counter)?.length ?? 0;
         if (hits === 0) continue;
         const perFile = found.get(file) ?? new Map<string, number>();

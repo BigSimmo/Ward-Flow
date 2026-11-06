@@ -58,6 +58,7 @@ import { CommunityAboutThisData, CommunityWorthAttention, type CommunityPhoneLis
 import v6 from "./community-team-v6.module.css";
 import { DEMO_COMMUNITY_CASELOAD, DEMO_COMMUNITY_UMRNS, resolveCommunityTeamConfig } from "./community-demo-cohort";
 import {
+  originIsEdOrCrisis,
   referralOriginLabel,
   caseloadStatutoryFormCode,
   caseloadRowsForTeam,
@@ -775,23 +776,14 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   const p2ReferralsCount = waitingReferrals.filter((r) => r.urgency === 2).length;
   const p3ReferralsCount = waitingReferrals.filter((r) => r.urgency === 3).length;
   const edReferralsCount = waitingReferrals.filter(
-    (r) =>
-      r.source === "ed_medical" ||
-      r.source === "crisis_service" ||
-      referralOriginLabel(r).toLowerCase().includes("ed") ||
-      referralOriginLabel(r).toLowerCase().includes("crisis"),
+    (r) => r.source === "ed_medical" || r.source === "crisis_service" || originIsEdOrCrisis(referralOriginLabel(r)),
   ).length;
   const visibleWaitingReferrals = waitingReferrals.filter((r) => {
     if (triageFilter === "p1") return r.urgency === 1;
     if (triageFilter === "p2") return r.urgency === 2;
     if (triageFilter === "p3") return r.urgency === 3;
     if (triageFilter === "ed") {
-      return (
-        r.source === "ed_medical" ||
-        r.source === "crisis_service" ||
-        referralOriginLabel(r).toLowerCase().includes("ed") ||
-        referralOriginLabel(r).toLowerCase().includes("crisis")
-      );
+      return r.source === "ed_medical" || r.source === "crisis_service" || originIsEdOrCrisis(referralOriginLabel(r));
     }
     return true;
   });

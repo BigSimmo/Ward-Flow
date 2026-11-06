@@ -50,8 +50,9 @@ export function typedTimeToInstant(time: string, dayOffset: number, now: Instant
 
 /**
  * The ward's changes to a stay, from the Patient page: start leave with a typed return time, record
- * them gone to ED, or set the expected discharge date. Every time here is one a person typed, and it
- * must be later than now. Absence without leave stays on the status card.
+ * them gone to ED, or set the expected discharge date. Every time here is one a person typed. A leave
+ * return time must be later than now; a discharge time that has passed warns and still saves.
+ * Absence without leave stays on the status card.
  */
 export function PatientWardChangeCard({
   now,
@@ -129,6 +130,9 @@ export function PatientWardChangeCard({
     : undefined;
   const parsed = preset ? typedTimeToInstant(preset.time, preset.day, now) : typedTimeToInstant(time, day, now);
   const future = parsed !== undefined && parsed > now;
+  // Form rule (design audit, Josh's card 3, 5 Nov 2026), as on the bed drawer: a discharge time
+  // that has passed warns and still saves as typed. A leave return time stays future-only.
+  const canSave = parsed !== undefined && (future || form === "discharge");
   const leaveLimit = roleLimit("RECORD_LEAVE_BED");
   const edLimit = roleLimit("RECORD_AWAY_AT_EMERGENCY_DEPARTMENT");
   const dischargeLimit = roleLimit("UPDATE_EXPECTED_DISCHARGE");
@@ -205,7 +209,7 @@ export function PatientWardChangeCard({
       aria-label={form === "leave" ? "Start leave" : "Set discharge date"}
       onSubmit={(event) => {
         event.preventDefault();
-        if (pending || !future || parsed === undefined) return;
+        if (pending || !canSave || parsed === undefined) return;
         if (form === "leave") onRecordLeave(parsed, kind, leaveLegal?.onOrder ? authorised : undefined);
         else onSaveDischarge(parsed);
       }}
@@ -335,12 +339,14 @@ export function PatientWardChangeCard({
               ? "Type the time"
               : future
                 ? formatInstantWithDay(parsed, now)
-                : "That time has already passed"}
+                : form === "discharge"
+                  ? `${formatInstantWithDay(parsed, now)}. That time has passed. It saves as typed.`
+                  : "That time has already passed"}
           </p>
         </>
       )}
       {isPhone ? null : (
-        <Button className={styles.tap} type="submit" size="sm" variant="pri" disabled={pending || !future}>
+        <Button className={styles.tap} type="submit" size="sm" variant="pri" disabled={pending || !canSave}>
           {form === "leave" ? "Record leave" : "Save date"}
         </Button>
       )}
@@ -394,7 +400,7 @@ export function PatientWardChangeCard({
                 type="submit"
                 form={`${baseId}-pn-ward-change-form`}
                 variant="pri"
-                disabled={pending || !future}
+                disabled={pending || !canSave}
               >
                 {form === "leave" ? "Record leave" : "Save date"}
               </Button>

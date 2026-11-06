@@ -597,7 +597,7 @@ function WardsIndexView({
                               <Occ
                                 pct={row.rate}
                                 threshold={BED_ALERT_THRESHOLD_PERCENT}
-                                label={`${row.name} occupancy`}
+                                label={`${row.name} beds in use`}
                               />
                             </td>
                             <td className={num(false)}>{`${row.occupied} of ${row.beds}`}</td>

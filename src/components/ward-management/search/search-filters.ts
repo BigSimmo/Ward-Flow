@@ -80,7 +80,7 @@ export function matchesService(result: PatientSearchResult, service: string): bo
   }
 
   if (result.kind === "referral") {
-    const originService = siteByCode.get(result.referral.originSiteCode)?.service;
+    const originService = siteByCode.get(result.referral.originSiteCode ?? "")?.service;
     const destMatches = result.referral.destinations.some((d: ReferralAddressing) => {
       if (d.destination.kind === "psychiatric_ward" && d.acceptedUnitId) {
         return siteByUnitId.get(d.acceptedUnitId)?.service === service;
@@ -122,7 +122,7 @@ export function matchesSetting(
       // Other referring channels do not establish a patient's physical location.
       return (
         result.referral.source === "ed_medical" &&
-        Boolean(siteByCode.get(result.referral.originSiteCode)?.emergencyDepartment)
+        Boolean(siteByCode.get(result.referral.originSiteCode ?? "")?.emergencyDepartment)
       );
     }
     if (setting === "community") {
@@ -144,8 +144,8 @@ export function matchesPresence(result: PatientSearchResult, presence: string): 
     if (result.kind === "referral") {
       return (
         result.referral.source !== "community" &&
-        !result.referral.originSiteCode.includes("CMHT") &&
-        !result.referral.originSiteCode.includes("Clinic")
+        !(result.referral.originSiteCode ?? "").includes("CMHT") &&
+        !(result.referral.originSiteCode ?? "").includes("Clinic")
       );
     }
     return false;

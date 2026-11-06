@@ -57,24 +57,26 @@ export function isValidSharedWardFlowState(value: unknown): value is WardFlowSta
     if (!row || typeof row !== "object" || Object.getPrototypeOf(row) !== Object.prototype) return false;
     // #177 (Josh, 27 Oct 2026): an involuntary return may also carry its Form 4C and escort answers.
     const answers = (["form4CReceived", "escortRequired"] as const).filter((key) => Object.hasOwn(row, key));
+    // W13 (Josh's card 3, 5 Nov 2026): a plan may be recorded with no provider or depart time.
+    const optional = (["provider", "estimatedAt"] as const).filter((key) => Object.hasOwn(row, key)).length;
     if (
       answers.some((key) => typeof row[key] !== "boolean") ||
       // A plan agreed after it was first logged also carries `agreedAt` and `agreedBy`.
       Object.keys(row).length !==
-        (Object.hasOwn(row, "agreedAt") ? 12 : 10) + answers.length + Number(Object.hasOwn(row, "earlier")) ||
+        (Object.hasOwn(row, "agreedAt") ? 10 : 8) + optional + answers.length + Number(Object.hasOwn(row, "earlier")) ||
       (Object.hasOwn(row, "agreedAt") &&
         (!Number.isFinite(row.agreedAt) || !Object.hasOwn(WARD_FLOW_ROLE_LABELS, row.agreedBy as string))) ||
       typeof row.admissionId !== "string" ||
       !admissionIds.has(row.admissionId) ||
       !Number.isFinite(row.at) ||
-      !Number.isFinite(row.estimatedAt) ||
+      (row.estimatedAt !== undefined && !Number.isFinite(row.estimatedAt)) ||
       !Object.hasOwn(WARD_FLOW_ROLE_LABELS, row.by) ||
       typeof row.homeHospital !== "string" ||
       typeof row.cadNumber !== "string" ||
       row.cadNumber.length > 200 ||
       typeof row.receivingWardAgreed !== "boolean" ||
       !REPATRIATION_MODES.includes(row.mode) ||
-      !TRANSPORT_PROVIDERS.includes(row.provider) ||
+      (row.provider !== undefined && !TRANSPORT_PROVIDERS.includes(row.provider)) ||
       !TRANSPORT_LEGAL_STATUSES.includes(row.transportLegalStatus)
     )
       return false;

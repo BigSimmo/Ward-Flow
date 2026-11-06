@@ -85,7 +85,7 @@ describe("OccupancyRing", () => {
   it("says at risk at or over the alert line, with the figure to one decimal", () => {
     render(<OccupancyRing percent={90.34} alertAt={90} scope="Statewide" />);
     const ring = screen.getByTestId("wf-occupancy-ring");
-    expect(ring).toHaveAccessibleName("Statewide 90.3% of beds occupied. Alert line 90%. At risk, over 90%.");
+    expect(ring).toHaveAccessibleName("Statewide 90% of beds occupied. Alert line 90%. At risk, over 90%.");
   });
 
   it("says Not recorded rather than drawing a value it does not hold", () => {
@@ -118,7 +118,7 @@ describe("WardCapacityRow, GroupHead and SinceYouLooked", () => {
     expect(row).toHaveAttribute("data-dim", "true");
     // A dimmed row drops the fit tint (pass 4), so only the matching places stand out.
     expect(row).not.toHaveAttribute("data-fit");
-    expect(row).toHaveTextContent("90.0%");
+    expect(row).toHaveTextContent("90%");
     fireEvent.click(row);
     expect(onSelect).toHaveBeenCalledTimes(1);
   });

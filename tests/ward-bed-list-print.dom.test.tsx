@@ -49,8 +49,8 @@ describe("printed bed list", () => {
     expect(first.getByText("Held up, Awaiting accommodation")).toBeInTheDocument();
     expect(first.getByText("Form 6A Involuntary inpatient")).toBeInTheDocument();
     // Dated, never "tomorrow": the sheet outlives the day it was printed (review: Codex).
-    expect(first.getByText(/^Ends Mon, 2 Nov, 12:42 as typed$/u)).toBeInTheDocument();
-    expect(screen.getByText(/^As at Mon, 2 Nov 2026, \d{2}:\d{2} AWST\./u)).toBeInTheDocument();
+    expect(first.getByText(/^Ends Mon 2 Nov, 12:42 as typed$/u)).toBeInTheDocument();
+    expect(screen.getByText(/^As at Mon 2 Nov 2026, \d{2}:\d{2} AWST\./u)).toBeInTheDocument();
     expect(first.getByText("General, hourly")).toBeInTheDocument();
   });
 
@@ -129,7 +129,7 @@ describe("printed bed list audit boundaries", () => {
       />,
     );
     expect(screen.getByTestId("ward-bed-list-print-5")).toHaveTextContent(
-      expectedDischargeAt === 0 ? "Mon, 2 Nov, 00:00" : "Tue, 3 Nov, 00:00",
+      expectedDischargeAt === 0 ? "Mon 2 Nov, 00:00" : "Tue 3 Nov, 00:00",
     );
   });
 

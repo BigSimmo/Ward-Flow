@@ -756,6 +756,13 @@ button.stat:hover .statV {
   font-size: var(--wf-fs-12);
 }
 
+/* Design audit A11 (5 Nov 2026): the rule above also reached the name's own spans (the kit
+   FormalName), so phone names read grey and small, like a disabled row. The name keeps its ink. */
+.whoBtn b span {
+  color: inherit;
+  font-size: inherit;
+}
+
 .wcell {
   display: flex;
   align-items: center;

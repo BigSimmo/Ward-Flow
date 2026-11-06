@@ -170,9 +170,12 @@ describe("documentationProblems", () => {
     expect(
       documentationProblems({ ...EMPTY_DOCUMENTATION, medical: "yes", toFollow: ["medication", "observation"] }, "d"),
     ).toEqual([]);
-    expect(
-      documentationProblems({ ...EMPTY_DOCUMENTATION, medical: "no" }, "d", true).map((problem) => problem.text),
-    ).toEqual(["Enter the expected clearance time", "Enter a contact name", "Enter a contact phone number"]);
+    // Form rule (design audit FORM-REF, 5 Nov 2026): clearance still to come with no expected time or
+    // clarification contact warns in "Before you send" and is no longer a problem to fix.
+    expect(documentationProblems({ ...EMPTY_DOCUMENTATION, medical: "no" }, "d", true)).toEqual([]);
+    expect(documentationProblems(EMPTY_DOCUMENTATION, "d", true).map((problem) => problem.text)).toEqual([
+      "Answer whether the patient has been medically cleared",
+    ]);
   });
 });
 

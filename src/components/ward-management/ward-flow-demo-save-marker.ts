@@ -5,7 +5,7 @@
  * not have been saved" only when it is missing, so an ordinary reload no longer warns of a loss that
  * did not happen. A save from before this marker existed reads as not current: the cautious side.
  */
-const DEMO_SAVE_CURRENT_KEY = "ward-flow:demo-save-current";
+export const DEMO_SAVE_CURRENT_KEY = "ward-flow:demo-save-current";
 
 export function markDemoSaveCurrent(current: boolean) {
   try {

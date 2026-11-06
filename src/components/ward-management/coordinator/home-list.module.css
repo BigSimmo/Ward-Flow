@@ -130,6 +130,10 @@
   text-decoration: underline;
 }
 
+.footAction {
+  margin-inline-start: auto;
+}
+
 /* ---------- Beds that fit ---------- */
 
 .gapCard {

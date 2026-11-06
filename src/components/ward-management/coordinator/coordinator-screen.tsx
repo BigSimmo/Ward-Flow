@@ -729,7 +729,7 @@ export function CoordinatorScreen() {
         {" · "}
         <Link href="/ward-flow/capacity" className={styles.heroOccupancyLink} data-testid="ward-home-occupancy-link">
           {statewideOccupancy >= BED_ALERT_THRESHOLD_PERCENT ? "At risk " : ""}
-          {statewideOccupancy.toFixed(1)}%{statewideOccupancy >= BED_ALERT_THRESHOLD_PERCENT ? "" : " beds in use"}
+          {Math.round(statewideOccupancy)}%{statewideOccupancy >= BED_ALERT_THRESHOLD_PERCENT ? "" : " beds in use"}
         </Link>
       </>
     );

@@ -161,8 +161,8 @@ describe("Statistics phone polish (batch 4)", () => {
   it("prints the network figure to one decimal place on the hub (stats-20)", () => {
     asPhone();
     renderInProvider(<StatisticsScreen />);
-    // Phone review F-26: the figure's label names it ("Beds in use, 85.2%").
-    expect(screen.getByText(/^Beds in use, \d+\.\d%$/u)).toBeInTheDocument();
+    // Phone review F-26: the figure's label names it ("Beds in use, 85%").
+    expect(screen.getByText(/^Beds in use, \d+%$/u)).toBeInTheDocument();
   });
 
   it("writes a nought as 0, never none, on the Services phone list (stats-21)", () => {

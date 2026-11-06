@@ -58,12 +58,12 @@ describe("fixture sanity", () => {
 });
 
 describe("the ward page states how the chosen service relates to it (item 44, task F3)", () => {
-  it("with the unit's own service chosen, states the exact §3 sentence", () => {
+  it("with the unit's own service chosen, states the short service sentence", () => {
     setServiceScope(OWN_SERVICE);
     renderWard(UNIT.id);
 
     expect(screen.getByTestId("ward-unit-service-sentence")).toHaveTextContent(
-      `This ward is one unit in ${OWN_SERVICE}, so its own figures below do not change with the service.`,
+      `Part of ${OWN_SERVICE}. Not filtered by service.`,
     );
   });
 
@@ -72,7 +72,7 @@ describe("the ward page states how the chosen service relates to it (item 44, ta
     renderWard(UNIT.id);
 
     expect(screen.getByTestId("ward-unit-service-sentence")).toHaveTextContent(
-      `This ward is one unit in ${OWN_SERVICE}, so its own figures below do not change with the service.`,
+      `Part of ${OWN_SERVICE}. Not filtered by service.`,
     );
   });
 

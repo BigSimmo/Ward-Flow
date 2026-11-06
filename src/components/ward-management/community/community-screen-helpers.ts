@@ -7,6 +7,7 @@
  */
 
 import { placeDisplayName } from "@/components/ward-management/ward-place-names";
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import type { SinceItem } from "@/components/wf";
 import {
   isAwaitingTeamAnswer,
@@ -272,10 +273,23 @@ const REFERRAL_SOURCE_LABELS: Record<CommunityScopedReferral["source"], string> 
  * `siteDirectory` already owns. An unresolvable site code renders as the code itself rather than a
  * blank or a guess, the same discipline `unitName` holds a few functions above.
  */
+/**
+ * Whether an origin label names an emergency department or crisis service, for the "ED Liaison &
+ * Crisis" filter. "ED" is a whole word: the letters inside "King Edward" or "Medical" are not an ED.
+ * `alsoResus` keeps the demo lists' "resus" match.
+ */
+export function originIsEdOrCrisis(label: string, alsoResus = false): boolean {
+  const text = label.toLowerCase();
+  if (text.split(/[^\p{L}\p{N}]+/u).includes("ed")) return true;
+  return text.includes("crisis") || (alsoResus && text.includes("resus"));
+}
+
 export function referralOriginLabel(referral: CommunityScopedReferral): string {
   const channel = REFERRAL_SOURCE_LABELS[referral.source] ?? referral.source;
   const site = siteByCode(referral.originSiteCode);
-  const origin = site ? `${channel} · ${site.name}` : `${channel} · site ${referral.originSiteCode}`;
+  const origin = site
+    ? `${channel} · ${site.name}`
+    : `${channel} · ${referral.originSiteCode ? `site ${referral.originSiteCode}` : ORIGIN_NOT_RECORDED}`;
   // The sending team, where the record names one. Appended through the shared helper rather than
   // formatted here: this is one of three places origin is rendered, and a wording decision made
   // three times becomes three claims about one fact the day somebody sharpens one of them.

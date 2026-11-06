@@ -1,6 +1,7 @@
 "use client";
 
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
+import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { currentLegalDueAt, formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
 
 import { Check, CircleCheck, CircleAlert, ChevronDown, ChevronUp, Info } from "lucide-react";
@@ -112,6 +113,7 @@ import { FIT_LABEL, fitGroups, type FitKind } from "./home-fit";
 import { NextWardAfterRefusal } from "./next-ward-after-refusal";
 import { PreMatchCleaningNote } from "./prematch-cleaning-note";
 import { TIER_TARGETS_NOTE, queueWaitThresholds } from "./priority-queue";
+import { plural } from "@/components/ward-management/ward-plural";
 import {
   capacityLine,
   Fact,
@@ -306,7 +308,7 @@ export function ReferralPlacementPanel({
         <dl className={drawer.grid}>
           <Fact label="Ward asked" value={referralAsked(referral, units)} />
           <Fact label="Referred from" value={referralFrom(referral)} />
-          <Fact label="Profile" value={`${referral.ageBand} · ${referral.homeRegion}`} />
+          <Fact label="Profile" value={`${referral.ageBand} · ${referral.homeRegion ?? HOME_REGION_NOT_RECORDED}`} />
           {/* Owner ruling, 2026-09-02: a coordinator may see a referred patient's suburb, a service
               area and never an address (PD-3), in the wording every reader uses. Never a filter (Q-2). */}
           <Fact label="Suburb" value={referralSuburbLabel(referral.suburb)} testId="ward-referral-placement-suburb" />
@@ -625,9 +627,7 @@ export function ShortlistPanel({
   }
 
   if (!movement) {
-    return (
-      <p className={styles.placeholder}>Select a movement from the priority queue to see its explainable shortlist.</p>
-    );
+    return <p className={styles.placeholder}>Select a movement from the priority queue.</p>;
   }
 
   // TypeScript's narrowing of `movement` above does not reach into the `handleRefer` /
@@ -1656,8 +1656,8 @@ export function ShortlistPanel({
               data-testid="ward-shortlist-transit-overdue"
             >
               {/* Review 5 Nov 2026: the kit's act-now mark, not a typed warning sign. */}
-              <StatusGlyph tone="danger" size={12} /> Overdue alert: arrival is +
-              {Math.floor((now - movement.arrivalDetails.estimatedArrivalAt) / 60)}h past estimated arrival time.
+              <StatusGlyph tone="danger" size={12} /> Arrival overdue by{" "}
+              {Math.floor((now - movement.arrivalDetails.estimatedArrivalAt) / 60)}h.
             </div>
           ) : null}
         </section>
@@ -1677,7 +1677,7 @@ export function ShortlistPanel({
               <div className={shortlistStyles.candidateHeading}>
                 <h4 className={styles.shortlistSectionHeading}>Candidates</h4>
                 <span className={`${shortlistStyles.candidateState} ${shortlistStyles.tabularNum}`}>
-                  {shortlist.length} wards
+                  {plural(shortlist.length, "ward", "wards")}
                 </span>
               </div>
               <span className={shortlistStyles.toggleChevron}>
@@ -1686,9 +1686,7 @@ export function ShortlistPanel({
             </button>
             <div id="ward-shortlist-candidates-content" style={candidatesOpen ? undefined : { display: "none" }}>
               {offerable.length === 0 && groups["no-bed"].length === 0 ? (
-                <p className={styles.placeholder}>
-                  No eligible destination. No ward can take this person, with or without a recorded reason.
-                </p>
+                <p className={styles.placeholder}>No eligible destination.</p>
               ) : null}
               {/* The wards that fit lead: a bed ready, then fits with no bed now (never selectable: the
               engine refuses a ward with no bed). */}
@@ -2201,7 +2199,7 @@ export function ShortlistPanel({
             ) : null}
             {sortedGates.length === 0 ? (
               <p id="ward-shortlist-gate-list" className={styles.placeholder}>
-                Select a candidate unit to see its eligibility checks.
+                Select a candidate unit.
               </p>
             ) : (
               <>
@@ -2757,8 +2755,7 @@ export function ShortlistPanel({
               {!movement.escalation ? (
                 <p className={styles.shortlistSectionNote}>
                   {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
-                  No eligible destination is currently available for {patientWho}. Record what was tried and who is
-                  being contacted next.
+                  No eligible destination is currently available for {patientWho}.
                 </p>
               ) : null}
               <button
@@ -2774,8 +2771,7 @@ export function ShortlistPanel({
               {escalationOpen ? (
                 <form className={styles.shortlistOverrideForm} onSubmit={submitEscalation}>
                   <label className={styles.shortlistOverrideLabel} htmlFor="ward-shortlist-escalation-contact">
-                    Role or service being contacted next — a role or service only, never a person&apos;s name (synthetic
-                    data only)
+                    Role or service being contacted next
                   </label>
                   <select
                     id="ward-shortlist-escalation-contact"
@@ -2819,7 +2815,7 @@ export function ShortlistPanel({
 
       <details className={`${styles.shortlistScoreDetails} ${shortlistStyles.scoreDetails} source-print`}>
         <summary className={`${styles.shortlistScoreSummary} ${shortlistStyles.tabularNum}`}>Why this wait</summary>
-        <p className={styles.shortlistScoreNote}>The factors below explain a wait; they do not order the queue.</p>
+        <p className={styles.shortlistScoreNote}>These do not order the queue.</p>
         {factors.length === 0 ? (
           <p className={styles.placeholder}>No contributing factors currently.</p>
         ) : (

@@ -295,10 +295,17 @@ describe("BOOK_TRANSPORT", () => {
       expect(state.rejections[0]!.reason).toContain("transportLegalStatus");
     });
 
-    it("refuses a missing estimatedAt", () => {
+    // W32 (Josh's card 3, 5 Nov 2026): a booking with no estimated time warns in the form and saves.
+    it("books with no estimatedAt, and refuses one that is not a real time", () => {
+      const { movementId } = heldBedMovement();
       const state = book({ estimatedAt: undefined });
-      expect(state.rejections.length).toBe(1);
-      expect(state.rejections[0]!.reason).toContain("estimatedAt");
+      expect(state.rejections).toEqual([]);
+      expect(state.movements.find((candidate) => candidate.id === movementId)!.transport).not.toHaveProperty(
+        "estimatedAt",
+      );
+      const refused = book({ estimatedAt: Number.NaN });
+      expect(refused.rejections.length).toBe(1);
+      expect(refused.rejections[0]!.reason).toContain("estimatedAt");
     });
 
     it("accepts and stores all three when answered", () => {

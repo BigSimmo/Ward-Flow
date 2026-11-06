@@ -6,6 +6,13 @@ export type FrontDoorNotice = { tone: DoorBannerTone; icon: DoorBannerIcon; titl
 export const SIGNED_OUT_NOTICE = "You have signed out. On a shared computer, close the browser too.";
 
 /**
+ * TE-03 (audit, 5 Nov 2026): Sign out with unconfirmed changes asks first, but when that question's
+ * code cannot load (offline) the sign-out still goes ahead, and the front door says what was cleared.
+ */
+export const SIGNED_OUT_UNCONFIRMED_NOTICE =
+  "You have signed out. Changes not yet confirmed on this page were cleared, and a change already sent may still have been saved. Check the board after you sign in. On a shared computer, close the browser too.";
+
+/**
  * Why the sign-in screen is showing, as one banner: the reason the app gave when it signed this
  * tab out (an idle sign-out, another tab, the sign-in limit, a refused sign-in). The first sentence
  * is the banner's title and the rest its body, so the app's own words reach the screen unchanged.

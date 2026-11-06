@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ToastProvider } from "@/components/wf";
 import { WardTasksDrawer } from "@/components/ward-management/ward-tasks-drawer";
+import { AcknowledgeVisibleButton } from "@/components/ward-management/tasks-acknowledge-visible";
 import { buildActionInbox, isOpen } from "@/components/ward-management/ward-derivations";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { UNDO_TOAST_MS } from "@/components/ward-management/ward-operational-defaults";
@@ -106,5 +107,22 @@ describe("Tasks drawer: Acknowledge visible asks first and offers Undo (P017)", 
     expect(screen.queryByRole("button", { name: /^Acknowledge visible/ })).toBeNull();
     act(() => vi.advanceTimersByTime(UNDO_TOAST_MS + 1000));
     expect(acks(dispatch)).toHaveLength(n);
+  });
+});
+
+describe("Acknowledge visible says one alert in the singular (CL-7, 5 Nov 2026)", () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => vi.useRealTimers());
+
+  it("asks 'Acknowledge 1 alert?' and confirms '1 alert acknowledged.'", () => {
+    render(
+      <ToastProvider>
+        <AcknowledgeVisibleButton ids={["synthetic-alert-1"]} onAcknowledge={vi.fn()} classes={{}} />
+      </ToastProvider>,
+    );
+    fireEvent.click(screen.getByRole("button", { name: /^Acknowledge visible/ }));
+    const dialog = screen.getByRole("dialog", { name: "Acknowledge 1 alert?" });
+    fireEvent.click(within(dialog).getByRole("button", { name: "Acknowledge 1" }));
+    expect(screen.getByText("1 alert acknowledged.")).toBeTruthy();
   });
 });

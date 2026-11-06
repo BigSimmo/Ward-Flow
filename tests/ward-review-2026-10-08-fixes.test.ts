@@ -388,8 +388,9 @@ describe("A2-1: a scenario holding a drawer referral can be saved and loaded", (
       ...stored,
       referrals: stored.referrals.map((r, i, all) =>
         i === all.length - 1
-          ? // Finding 44: the email no longer blocks, so a phone with no digits is the malformed field.
-            { ...r, intake: { ...r.intake!, referrer: { ...r.intake!.referrer, phone: "bad" } } }
+          ? // Form rule (FORM-REF, 5 Nov 2026): the referrer's contact warns and is no longer pattern
+            // checked, so a risk flag from outside the fixed list is the malformed field.
+            { ...r, intake: { ...r.intake!, riskFlags: ["not-a-recorded-flag"] } }
           : r,
       ),
     };

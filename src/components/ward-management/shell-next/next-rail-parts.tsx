@@ -101,7 +101,7 @@ export function deskCapacityRows(
     : [ownRow];
 }
 
-/** Read aloud as the rows show: "Metro 85.9% full, over 85%. East Metro 86.7% full, over 85%". */
+/** Read aloud as the rows show: "Metro 86% full, over 85%. East Metro 87% full, over 85%". */
 export function capacityRowsSpoken(rows: readonly CapacityRow[]): string {
   return rows
     .map((row) => {

@@ -74,6 +74,8 @@ describe("Movement so far", () => {
       Date.parse(node.getAttribute("datetime") ?? ""),
     );
     expect([...times].sort((a, b) => b - a)).toEqual(times);
+    // CL-6 (5 Nov 2026): the machine-readable time is the real moment, not minutes read as 1970 milliseconds.
+    for (const time of times) expect(new Date(time).getUTCFullYear()).toBeGreaterThan(2000);
     expect(screen.getByRole("button", { name: "Full history" })).toBeInTheDocument();
     // The near-empty duration bar is gone.
     expect(screen.queryByText("Journey since this movement opened")).toBeNull();

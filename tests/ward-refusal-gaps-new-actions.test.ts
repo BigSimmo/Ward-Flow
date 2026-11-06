@@ -78,11 +78,13 @@ describe("RECORD_REPATRIATION refuses a log with any answer missing or off its l
       { provider: TRANSPORT_PROVIDERS[1] },
       "RECORD_REPATRIATION provider must be chosen from TRANSPORT_PROVIDERS",
     ],
+    // W13 (Josh's card 3, 5 Nov 2026): a blank CAD number is "CAD to follow" and records, so only a
+    // CAD that is not text at all is refused here.
     [
-      "a CAD number that is only whitespace",
+      "a CAD number that is not text",
+      { cadNumber: 42 },
       { cadNumber: "   " },
-      { cadNumber: "CAD-1" },
-      "RECORD_REPATRIATION cadNumber must be answered, and it has no default",
+      "RECORD_REPATRIATION cadNumber must be typed text or left blank",
     ],
     [
       "a CAD number that is a placeholder",
@@ -102,11 +104,12 @@ describe("RECORD_REPATRIATION refuses a log with any answer missing or off its l
       { transportLegalStatus: "involuntary" },
       "RECORD_REPATRIATION transportLegalStatus must be chosen from TRANSPORT_LEGAL_STATUSES",
     ],
+    // W13: the depart time warns when left out, but a time that is given must be a real one.
     [
       "an estimated time that is not a number",
+      { estimatedAt: Number.NaN },
       { estimatedAt: undefined },
-      { estimatedAt: NOW + 30 },
-      "RECORD_REPATRIATION estimatedAt must be answered, and it has no default",
+      "RECORD_REPATRIATION estimatedAt must be a real time when it is given",
     ],
   ];
 

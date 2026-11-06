@@ -11,6 +11,7 @@ import { CONTINUATION_LEGAL_FORMS, countryExtensionEligible } from "../ward-lega
 import { RELEASE_PULL_REASONS, changeReasonLabels, type ReleasePullReason } from "../ward-change-reasons";
 import { isArrivalLate, isLegalClockFormCode, leaveBedNeedsOpenWarning } from "../ward-legal-clock";
 import { perthDateTimeLocal } from "../ward-clock";
+import { legalFormTimeOrderProblem } from "../ward-legal-form-time-order";
 import { resolveSubjectPatient } from "../ward-patient-resolver";
 import styles from "./movement-workspace-cockpit.module.css";
 
@@ -309,6 +310,12 @@ export function MovementWorkflowActions({ movement }: { movement: Movement }) {
                 : () => {
                     if (!Number.isFinite(started) || (expiry && !Number.isFinite(due))) {
                       setLocalError("Enter the date and time written on the form.");
+                      return;
+                    }
+                    // F2: the same order check as the Forms page and the engine (MHA 2014 fields block).
+                    const orderProblem = legalFormTimeOrderProblem(started, expiry ? due : undefined, now);
+                    if (orderProblem) {
+                      setLocalError(`${orderProblem}.`);
                       return;
                     }
                     before();

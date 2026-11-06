@@ -134,7 +134,7 @@ describe("Due back (Q326)", () => {
 
   it("says so when no one is due back", () => {
     withFlow(<WithLeave make={() => []} />);
-    expect(screen.getByText("No one due back today.")).toBeTruthy();
+    expect(screen.getByText("Nobody due back today.")).toBeTruthy();
     expect(screen.queryAllByRole("region")).toHaveLength(0);
   });
 });

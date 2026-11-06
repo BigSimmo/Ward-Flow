@@ -187,7 +187,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
     { extended: false, label: `${durMinutes(configuration.pullHoldMinutes)} standard` },
     {
       extended: true,
-      label: `${durMinutes(configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES)} extra travel`,
+      label: `${durMinutes(configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES)} with extra travel`,
     },
   ];
   const { toastMessage, setToastMessage, triggerToast, toastDeclined } = useAnswerToast();
@@ -311,7 +311,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
             testId="ward-unit-unresolved"
             list={{ href: "/ward-flow/wards", label: "All wards" }}
           >
-            No ward matches this link. It never falls back to a different ward.
+            No ward matches this link.
           </WardNotFoundBody>
         </main>
       </div>
@@ -777,7 +777,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
               <div className={styles.allAnswered} data-testid="ward-answer-all-answered">
                 <p className={styles.allAnsweredLine}>
                   <StatusGlyph tone="success" size={10} />
-                  <span>Requests land here as they are sent.</span>
+                  <span>No requests waiting.</span>
                 </p>
                 {declineLeftNote ? <p role="status">{declineLeftNote}</p> : null}
               </div>
@@ -969,7 +969,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                           </div>
                           <div>
                             <dt>From</dt>
-                            <dd>Emergency department. Origin department is not disclosed in this ward view.</dd>
+                            <dd>Emergency department (not named)</dd>
                           </div>
                           <div>
                             <dt>Referred</dt>
@@ -1481,7 +1481,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                         {pendingPreparation} of the {states.ready} ready {states.ready === 1 ? "bed" : "beds"} at{" "}
                         {unit.name} {pendingPreparation === 1 ? "is" : "are"} still being made ready.
                       </strong>{" "}
-                      It is not offered until someone opens the bed and taps Ready.
+                      Not offered until marked Ready.
                     </p>
                   ) : null}
                   <form className={styles.capacityForm} onSubmit={submitCapacity} data-testid="ward-capacity-form">
@@ -1638,7 +1638,7 @@ export function WardAnswerView({ unitId, initialMovementId }: WardAnswerViewProp
                 </div>
                 <div className={styles.historyPanelBody}>
                   {recentAnswers.length === 0 ? (
-                    <p>No accepted or declined answers are recorded for {unit.name}.</p>
+                    <p>No answers yet.</p>
                   ) : (
                     <ul className={styles.historyList} data-testid="ward-answer-history">
                       {recentAnswers.map((answer) => (

@@ -6,6 +6,7 @@ import { useId, useRef, useState, useSyncExternalStore } from "react";
 import { Dialog, SrOnly, useOptionalToast } from "@/components/wf";
 import { UNDO_TOAST_MS } from "./ward-operational-defaults";
 import { useOptionalWardFlowSelect } from "./ward-flow-provider";
+import { plural } from "./ward-plural";
 
 // Rows confirmed but still inside their Undo window. Held outside the component so closing and
 // reopening the drawer inside the window keeps them pending (Josh, 27 Oct 2026, 10:41 PM AWST).
@@ -71,7 +72,7 @@ export function AcknowledgeVisibleButton({
     publishHeld();
     toast.push({
       tone: "success",
-      title: `${batch.ids.length} alerts acknowledged.`,
+      title: `${plural(batch.ids.length, "alert", "alerts")} acknowledged.`,
       undo: {
         durationMs: UNDO_TOAST_MS,
         onUndo: () => release(batchId),
@@ -107,7 +108,7 @@ export function AcknowledgeVisibleButton({
       <Dialog
         open={asking !== null}
         onClose={() => setAsking(null)}
-        title={`Acknowledge ${count} alerts?`}
+        title={`Acknowledge ${plural(count, "alert", "alerts")}?`}
         description="Includes alerts below the screen. Act now alerts are excluded, as are those still in their Undo window. This does not resolve the underlying condition."
         size="sm"
         returnFocusRef={triggerRef}

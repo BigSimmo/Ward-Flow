@@ -1,5 +1,5 @@
 import { RELEASE_BANDS, releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
-import { calendarDateOf, dayOf, formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
+import { dayOf, formatSheetMoment, perthDateLabel, type Instant } from "@/components/ward-management/ward-clock";
 import type { DischargeRecord } from "@/components/ward-management/ward-discharge-records";
 import { BED_RELEASES_HELD_UP_ANY_DATE_LABEL } from "@/components/ward-management/ward-derivations";
 import type { BedRelease, Unit } from "@/components/ward-management/ward-model";
@@ -286,14 +286,9 @@ export function recordedMoment(value: Instant | null, dayZero: Date): string {
   return value !== null && Number.isFinite(value) ? formatSheetMoment(value, dayZero) : "Not recorded";
 }
 
-/** The calendar day alone ("Fri, 9 Oct"), for a release already past its date. */
+/** The calendar day alone ("Fri 9 Oct"), for a release already past its date. */
 export function recordedDate(value: Instant, dayZero: Date): string {
-  return calendarDateOf(value, dayZero).toLocaleDateString("en-AU", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    timeZone: "Australia/Perth",
-  });
+  return perthDateLabel(value, dayZero, { weekday: "short", day: "numeric", month: "short" });
 }
 
 export const BLOCKER_CATEGORIES = [
@@ -341,7 +336,7 @@ export function matchesHighlight(
 }
 
 export function perthDay(instant: Instant, dayZero: Date, options: Intl.DateTimeFormatOptions): string {
-  return calendarDateOf(instant, dayZero).toLocaleDateString("en-AU", { ...options, timeZone: "Australia/Perth" });
+  return perthDateLabel(instant, dayZero, options);
 }
 
 export const stageTone = (stage: WorkStatus): WfTone =>

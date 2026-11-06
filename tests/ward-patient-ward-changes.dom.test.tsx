@@ -82,6 +82,17 @@ describe("ward changes from the Patient page", () => {
     expect(screen.getByTestId("probe-leave")).toHaveTextContent("none");
   });
 
+  it("saves a discharge time that has passed, with a warning, while leave stays future-only", () => {
+    renderPatient();
+    fireEvent.click(within(changeCard()).getByRole("button", { name: "Discharge date" }));
+    fireEvent.change(within(changeCard()).getByLabelText("Expected discharge time"), { target: { value: "00:05" } });
+    expect(within(changeCard()).getByText(/That time has passed\. It saves as typed\./)).toBeVisible();
+    const save = within(changeCard()).getByRole("button", { name: "Save date" });
+    expect(save).toBeEnabled();
+    fireEvent.click(save);
+    expect(screen.getByTestId("probe-discharge")).toHaveTextContent(String(startOfToday + 5));
+  });
+
   it("records them gone to ED with the bed kept, then back on the ward", () => {
     const root = renderPatient();
     fireEvent.click(within(changeCard()).getByRole("button", { name: "Gone to ED" }));

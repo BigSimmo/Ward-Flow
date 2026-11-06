@@ -321,7 +321,7 @@ function ComparePresentation({
     asAt,
   } = model;
   const isPhone = useIsPhone();
-  const readyPct = totalBeds > 0 ? ((readyBeds / totalBeds) * 100).toFixed(1) : "0.0";
+  const readyPct = totalBeds > 0 ? Math.round((readyBeds / totalBeds) * 100) : 0;
 
   const section = statisticsSectionById("compare");
   if (!section) throw new Error("statistics-sections.ts no longer defines the 'compare' section");

@@ -15,6 +15,7 @@
  * - An alert with no journey (a booking, H10) shows its facts, with its own action pinned.
  */
 import { BedSingle, ChevronRight, FileText, Inbox } from "lucide-react";
+import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import Link from "next/link";
 import { useId, useState } from "react";
 
@@ -97,7 +98,7 @@ export function HomePlacementDrawer({
     : entry
       ? entry.subject.from
       : referral
-        ? `${referral.ageBand} · ${referral.homeRegion}`
+        ? `${referral.ageBand} · ${referral.homeRegion ?? HOME_REGION_NOT_RECORDED}`
         : undefined;
   const tier = movement?.urgency ?? referral?.urgency;
   const recordHref =

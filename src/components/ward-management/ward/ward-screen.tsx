@@ -944,7 +944,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             testId="ward-unit-unresolved"
             list={{ href: "/ward-flow/wards", label: "All wards" }}
           >
-            No ward matches this link. It never falls back to a different ward.
+            No ward matches this link.
           </WardNotFoundBody>
         </main>
       </div>
@@ -2160,7 +2160,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const wardLead =
     service !== null && unitHealthService(unit) !== undefined ? (
       <p className={styles.placeholder} data-testid="ward-unit-service-sentence">
-        {`This ward is one unit in ${unitHealthService(unit)}, so its own figures below do not change with the service.`}
+        {`Part of ${unitHealthService(unit)}. Not filtered by service.`}
       </p>
     ) : null;
 
@@ -2520,10 +2520,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             now={now}
             extended={cockpitHold?.movementId === cockpitAcceptMovement.id && cockpitHold.extended}
             holdChoices={[
-              { extended: false, label: `${configuration.pullHoldMinutes} minutes, standard` },
+              { extended: false, label: `${durMinutes(configuration.pullHoldMinutes)} standard` },
               {
                 extended: true,
-                label: `${configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES} minutes, extra travel`,
+                label: `${durMinutes(configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES)} with extra travel`,
               },
             ]}
             dialogRef={cockpitAcceptRef}

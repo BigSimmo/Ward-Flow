@@ -79,7 +79,7 @@ async function hydrateAcrossMidnight() {
   mount = document.createElement("div");
   mount.innerHTML = renderToString(tree);
   document.body.appendChild(mount);
-  expect(mount.textContent).toContain("Thu, 15 Oct");
+  expect(mount.textContent).toContain("Thu 15 Oct");
   const caption = mount.querySelector('[data-testid="calendar-caption"]');
   const draft = mount.querySelector("input");
   if (!draft) throw new Error("Expected the local draft input in the server markup");
@@ -99,7 +99,7 @@ describe("provider calendar origin across server/client midnight", () => {
     expect(mount!.querySelector('[data-testid="calendar-caption"]')).toBe(caption);
     expect(screen.getByRole("textbox", { name: "Local draft" })).toBe(draft);
     expect(draft.value).toBe("unsubmitted");
-    expect(screen.getByTestId("calendar-caption")).toHaveTextContent("Fri, 16 Oct");
+    expect(screen.getByTestId("calendar-caption")).toHaveTextContent("Fri 16 Oct");
     expect(screen.getByTestId("calendar-origin")).toHaveTextContent("2026-10-15T16:00:00.000Z");
   });
 
