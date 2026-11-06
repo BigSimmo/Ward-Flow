@@ -1,4 +1,4 @@
-import { groupDischarges } from "@/components/ward-management/discharges/discharge-board";
+import { groupDischarges } from "@/components/ward-management/discharges/discharge-board-model";
 import { delayGroups, type DelayCause } from "@/components/ward-management/delays/delays-derivations";
 import { edOpenSummaries, elapsedOpenMinutes } from "@/components/ward-management/ed/ed-home-derivations";
 import type { Admission } from "@/components/ward-management/ward-admissions";

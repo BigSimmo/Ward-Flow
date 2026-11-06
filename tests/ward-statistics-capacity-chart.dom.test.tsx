@@ -32,7 +32,8 @@ describe("current-capacity explorer", () => {
   it("aggregates hospitals, exposes ward-level evidence, and clears a selected bar", () => {
     chart();
     const bar = screen.getByRole("button", {
-      name: /Royal Perth Hospital: 4 ready, 0 pulled, 2 closed, 14 occupied of 20 beds/,
+      // CB-3: the row's visible context line sits between the name and the breakdown.
+      name: /^Royal Perth Hospital: .+, 4 ready, 0 pulled, 2 closed, 14 occupied of 20 beds/,
     });
     fireEvent.click(bar);
     const details = within(screen.getByTestId("capacity-details"));
@@ -48,7 +49,7 @@ describe("current-capacity explorer", () => {
     const pulled = { id: "AD-PULLED-1", unitId: "Alpha", state: "pulled", movementId: null } as unknown as Admission;
     render(<StatisticsCapacityChart units={units} bedReleases={[]} admissions={[pulled]} />);
     const bar = screen.getByRole("button", {
-      name: /Royal Perth Hospital: 4 ready, 1 pulled, 2 closed, 13 occupied of 20 beds/,
+      name: /Royal Perth Hospital: .+, 4 ready, 1 pulled, 2 closed, 13 occupied of 20 beds/,
     });
     fireEvent.click(bar);
     const details = within(screen.getByTestId("capacity-details"));
@@ -63,21 +64,24 @@ describe("current-capacity explorer", () => {
 
   it("highlights a service and dims the rest by colour, never hiding a row (v10)", () => {
     chart();
-    fireEvent.click(screen.getByRole("button", { name: /Royal Perth Hospital: 4 ready/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Royal Perth Hospital: .+, 4 ready/ }));
     // v6: the service filter is a segmented control ("South" for South Metro), and the summary
     // reads "ready of N beds" with the foot saying how many rows are shown.
     fireEvent.click(
       within(screen.getByRole("radiogroup", { name: "Health service filter" })).getByRole("radio", { name: "South" }),
     );
     // The other service's row stays, dimmed by colour; the summary counts the highlighted rows.
-    expect(screen.getByRole("button", { name: /Royal Perth Hospital: 4 ready/ })).toHaveAttribute("data-dim", "true");
+    expect(screen.getByRole("button", { name: /Royal Perth Hospital: .+, 4 ready/ })).toHaveAttribute(
+      "data-dim",
+      "true",
+    );
     expect(screen.queryByTestId("capacity-details")).not.toBeInTheDocument();
     expect(screen.getByText(/ready of 5 (synthetic )?beds/)).toBeInTheDocument();
     expect(screen.getByTestId("ward-statistics-capacity-showing")).toHaveTextContent(
       "1 of 2 hospitals highlighted, all rows stay",
     );
     const fiona = screen.getByRole("button", {
-      name: /Fiona Stanley Hospital: 0 ready, 0 pulled, 0 closed, 5 occupied/,
+      name: /Fiona Stanley Hospital: .+, 0 ready, 0 pulled, 0 closed, 5 occupied/,
     });
     expect(fiona).not.toHaveAttribute("data-dim");
   });
@@ -87,9 +91,9 @@ describe("current-capacity explorer", () => {
     fireEvent.click(screen.getByRole("radio", { name: "Wards" }));
     expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Beta: 1 ready, 0 pulled, 1 closed, 8 occupied of 10 beds/ }),
+      screen.getByRole("button", { name: /Beta: .+, 1 ready, 0 pulled, 1 closed, 8 occupied of 10 beds/ }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: /Alpha: 3 ready/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Alpha: .+, 3 ready/ })).toBeInTheDocument();
     expect(screen.getByTestId("ward-statistics-capacity-showing")).toHaveTextContent("Showing 3 of 3 wards");
   });
 
@@ -110,7 +114,7 @@ describe("current-capacity explorer", () => {
     // v6 opens on the percentage scale; switch to beds first to see the shared denominator.
     fireEvent.click(screen.getByRole("radio", { name: "Beds" }));
     const smallBar = screen
-      .getByRole("button", { name: /Fiona Stanley Hospital: 0 ready/ })
+      .getByRole("button", { name: /Fiona Stanley Hospital: .+, 0 ready/ })
       .querySelector('[style*="width"]');
     expect(smallBar).toHaveStyle({ width: "25%" });
     fireEvent.click(screen.getByRole("radio", { name: "%" }));
@@ -121,8 +125,11 @@ describe("current-capacity explorer", () => {
     // The chip highlights that row and dims the rest; every row stays.
     fireEvent.click(overChip);
     expect(overChip).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("button", { name: /Fiona Stanley Hospital: 0 ready/ })).not.toHaveAttribute("data-dim");
-    expect(screen.getByRole("button", { name: /Royal Perth Hospital: 4 ready/ })).toHaveAttribute("data-dim", "true");
+    expect(screen.getByRole("button", { name: /Fiona Stanley Hospital: .+, 0 ready/ })).not.toHaveAttribute("data-dim");
+    expect(screen.getByRole("button", { name: /Royal Perth Hospital: .+, 4 ready/ })).toHaveAttribute(
+      "data-dim",
+      "true",
+    );
   });
 
   it("can aggregate hospitals from a service ward view and reset to that view", () => {
@@ -135,9 +142,9 @@ describe("current-capacity explorer", () => {
       />,
     );
     expect(screen.queryByRole("button", { name: "Reset view" })).toBeNull();
-    expect(screen.getByRole("button", { name: /Alpha: 3 ready/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Alpha: .+, 3 ready/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("radio", { name: "Hospitals" }));
-    expect(screen.getByRole("button", { name: /Royal Perth Hospital: 4 ready/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Royal Perth Hospital: .+, 4 ready/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Reset view" }));
     expect(screen.getByRole("radio", { name: "Wards" })).toHaveAttribute("aria-checked", "true");
     expect(screen.getByText(/ready of 20 (synthetic )?beds/)).toBeInTheDocument();
@@ -148,8 +155,8 @@ describe("current-capacity explorer", () => {
 
   it("moves keyboard focus between capacity rows and returns it when details close", () => {
     chart();
-    const perth = screen.getByRole("button", { name: /Royal Perth Hospital: 4 ready/ });
-    const fiona = screen.getByRole("button", { name: /Fiona Stanley Hospital: 0 ready/ });
+    const perth = screen.getByRole("button", { name: /Royal Perth Hospital: .+, 4 ready/ });
+    const fiona = screen.getByRole("button", { name: /Fiona Stanley Hospital: .+, 0 ready/ });
     perth.focus();
     fireEvent.keyDown(perth, { key: "ArrowDown" });
     expect(fiona).toHaveFocus();
@@ -167,7 +174,7 @@ describe("current-capacity explorer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Reset view" }));
     // v6: every view control returns to its default, which is now the percentage scale.
     expect(screen.getByRole("radio", { name: "%" })).toHaveAttribute("aria-checked", "true");
-    expect(screen.getByRole("button", { name: /Royal Perth Hospital: 4 ready/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Royal Perth Hospital: .+, 4 ready/ })).toBeInTheDocument();
   });
 });
 

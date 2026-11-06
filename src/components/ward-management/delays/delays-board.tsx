@@ -746,16 +746,17 @@ export function DelaysBoard({
               type="button"
               className={styles.gin}
               aria-expanded={open}
-              aria-label={`${band.title}, ${list.length} ${list.length === 1 ? "person" : "people"}${includes ? `, ${includes}` : ", all in an ED"}, ${open ? band.note : "folded"}`}
+              // CB-3 (axe 4.14 label-content-name-mismatch): the band's visible words first, in order,
+              // then how many people that is and whether all are in an ED.
+              aria-label={`${band.title}, ${list.length}${includes && !isPhone ? `, ${includes}` : ""}, ${open ? (isPhone && includes) || band.note : "folded"}. ${list.length} ${list.length === 1 ? "person" : "people"}${includes ? "" : ", all in an ED"}`}
               onClick={() => setBandOpen((current) => ({ ...current, [band.id]: !open }))}
               data-testid={`delays-band-${band.id}`}
             >
               <ChevronDown size={14} aria-hidden="true" className={open ? undefined : styles.folded} />
               <Glyph tone={band.tone} />
-              <span className={styles.gTitle}>{band.title}</span>
-              <span className={styles.k}>{list.length}</span>
+              <span className={styles.gTitle}>{band.title}</span> <span className={styles.k}>{list.length}</span>{" "}
               {includes && !isPhone ? <span className={styles.mut}>{includes}</span> : null}
-              <span className={styles.sp} />
+              <span className={styles.sp} />{" "}
               <span className={styles.mut}>{open ? (isPhone && includes) || band.note : "folded"}</span>
             </button>
           </td>

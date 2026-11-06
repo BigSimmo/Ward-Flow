@@ -103,7 +103,12 @@ export function AcceptedPullRows({
             age={age}
             owner={undefined}
             action={
-              <Button size="sm" data-placement-action aria-label={shared.openLabel} onClick={() => setPulling(entry)}>
+              <Button
+                size="sm"
+                data-placement-action
+                aria-label={`Pull bed for ${name} at ${entry.unitName}`}
+                onClick={() => setPulling(entry)}
+              >
                 Pull bed
               </Button>
             }

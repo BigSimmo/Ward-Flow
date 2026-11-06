@@ -535,13 +535,13 @@ function CapacityChartView({
                     className={styles.row}
                     data-dim={highlighting && !isLit(row) ? "true" : undefined}
                     aria-pressed={selected?.id === row.id}
-                    aria-label={`${row.name}: ${row.ready} ready, ${row.pulled} pulled, ${row.closed} closed, ${row.occupied} occupied of ${row.beds} beds. Show details.`}
+                    // CB-3: the row's visible words in order, then the breakdown (axe label-content-name-mismatch).
+                    aria-label={`${row.name}: ${sub}, ${row.ready} ready, ${row.pulled} pulled, ${row.closed} closed, ${row.occupied} occupied of ${row.beds} beds. Show details.`}
                     onClick={() => setSelectedId(selected?.id === row.id ? null : row.id)}
                   >
                     <span className={styles.rowName}>
-                      <strong>{row.name}</strong>
-                      <small>{sub}</small>
-                    </span>
+                      <strong>{row.name}</strong> <small>{sub}</small>
+                    </span>{" "}
                     <span className={styles.barArea} aria-hidden="true">
                       {ticks.map((tick) => (
                         <i className={styles.guide} key={tick} style={{ left: `${(tick / maximum) * 100}%` }} />
@@ -570,7 +570,7 @@ function CapacityChartView({
                           <span className={styles.ready} style={{ width: `${(row.ready / (row.beds || 1)) * 100}%` }} />
                         )}
                       </span>
-                    </span>
+                    </span>{" "}
                     <span className={styles.readyCount} data-empty={row.ready === 0}>
                       {over ? <StatusGlyph tone="warning" size={9} /> : null}
                       {row.ready}

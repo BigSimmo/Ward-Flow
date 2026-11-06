@@ -44,4 +44,28 @@ describe("Skip to main content moves focus to the page's main (P073)", () => {
     expect(screen.getByRole("main")).toHaveAttribute("tabindex", "0");
     expect(screen.getByRole("main")).toHaveFocus();
   });
+
+  // BA-4 (front-end audit, 5 Nov 2026): on the bed meeting TV at desktop a hidden phone-only card
+  // also carries id="main-content" ahead of the route, so the skip link focused nothing.
+  it("skips a hidden #main-content and focuses the main that is shown", () => {
+    render(
+      <>
+        <WardMainFocusTarget />
+        <a href="#main-content">Skip to main content</a>
+        <main id="main-content" data-testid="hidden-card" />
+        <main id="main-content" data-testid="route-main">
+          <h1>Bed meeting</h1>
+        </main>
+      </>,
+    );
+    const hidden = screen.getByTestId("hidden-card");
+    const route = screen.getByTestId("route-main");
+    Object.defineProperty(hidden, "checkVisibility", { configurable: true, value: () => false });
+    Object.defineProperty(route, "checkVisibility", { configurable: true, value: () => true });
+    const notPrevented = fireEvent.click(screen.getByRole("link", { name: "Skip to main content" }));
+    expect(route).toHaveFocus();
+    expect(route).toHaveAttribute("tabindex", "-1");
+    expect(hidden).not.toHaveAttribute("tabindex");
+    expect(notPrevented).toBe(false);
+  });
 });

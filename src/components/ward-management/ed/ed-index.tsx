@@ -708,7 +708,10 @@ function PeoplePips({ row, highlight }: { row: EdRow; highlight: Highlight | nul
           <StatusGlyph tone={CLOCK_TONE[person.clock]} size={8} />
         </span>
       ))}
-      {row.people.length > PIPS_SHOWN ? <span className={styles.more}>+{row.people.length - PIPS_SHOWN}</span> : null}
+      {/* CB-3: drawn from the attribute, so a row's visible words stay the ones its name says. */}
+      {row.people.length > PIPS_SHOWN ? (
+        <span className={styles.more} data-more={`+${row.people.length - PIPS_SHOWN}`} />
+      ) : null}
     </div>
   );
 }
@@ -1201,15 +1204,22 @@ function PhoneEdList({
             item.summary.waiting > 0 ? (
               <span className={styles.longest}>
                 {clock !== "in" ? <StatusGlyph tone={CLOCK_TONE[clock]} size={9} /> : null}
+                <span className="sr-only">Longest wait </span>
                 {splitDuration(item.summary.longestWaitMinutes)}
               </span>
             ) : (
               "Clear"
             )
           }
-          time={item.summary.waiting > 0 ? `${item.summary.waiting} waiting` : undefined}
+          // CB-3: no aria-label, so the row is named by the words it shows (a row cut by the screen's
+          // edge still matches its name), with what a tap does for a screen reader.
+          time={
+            <>
+              {item.summary.waiting > 0 ? `${item.summary.waiting} waiting` : null}
+              <span className="sr-only">. Opens a preview.</span>
+            </>
+          }
           onSelect={() => onPreview(item.summary.ed.id)}
-          aria-label={`${item.short}, ${item.summary.waiting > 0 ? `${item.summary.waiting} waiting, longest ${splitDuration(item.summary.longestWaitMinutes)}` : "clear"}. Opens a preview.`}
           data-testid={`ed-index-phone-row-${item.summary.ed.id}`}
         />
       </div>

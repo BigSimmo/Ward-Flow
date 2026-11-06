@@ -39,6 +39,12 @@ export function countIn(counts: NavCountMap, id: string): WardNavCount | undefin
   return counts[id as keyof NavCountMap];
 }
 
+/** The chip's words, for a row name that must hold them (axe 4.14); over 99 the exact count follows. */
+export function chipText(value: number | undefined): string {
+  if (!value) return "0";
+  return value > 99 ? `99+ (${value})` : String(value);
+}
+
 export function CountChip({ value, className }: { value: number | undefined; className: string }) {
   if (!value) return null;
   return (

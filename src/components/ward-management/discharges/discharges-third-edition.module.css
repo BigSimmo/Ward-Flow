@@ -18,6 +18,9 @@
   flex-direction: column;
   gap: var(--wf-s-3);
   min-width: 0;
+  /* BA-11 (front-end audit, 5 Nov 2026): rows stop at about 1,920px, so on a 2560 screen a name and
+     its figures are not far apart. No effect below that width. */
+  max-inline-size: 120rem;
   padding: var(--wf-s-4);
   box-sizing: border-box;
 }

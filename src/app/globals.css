@@ -907,6 +907,13 @@ html {
   scroll-padding-top: calc(4rem + env(safe-area-inset-top));
 }
 
+/* The 12px text floor holds whatever the root size (compact density or a smaller browser text
+   size), and the token still grows with a larger one. The token file keeps 0.75rem for Figma sync;
+   html:root outranks its :root rule whatever the load order. */
+html:root {
+  --wf-fs-12: max(12px, 0.75rem);
+}
+
 /*
  * Interface density scales the rem baseline so every rem-based size shifts
  * together. "Comfortable" is the browser default (16px) and sets no attribute,
@@ -916,11 +923,11 @@ html {
  * form controls so iOS never zooms.
  */
 html[data-density="compact"] {
-  font-size: 15px;
+  font-size: 93.75%; /* 15px at the 16px default, relative so BA-5's rem type follows the browser */
 }
 
 html[data-density="spacious"] {
-  font-size: 17px;
+  font-size: 106.25%; /* 17px at the 16px default */
 }
 
 body {

@@ -1346,6 +1346,11 @@
   outline-offset: 2px;
 }
 
+/* The account menu's initials come from data-initials (CB-3), so the name check skips them. */
+.userAvatar[data-initials]::before {
+  content: attr(data-initials);
+}
+
 .userAvatar {
   display: grid;
   place-items: center;
@@ -2261,6 +2266,12 @@
   .railToggle::before,
   .capacityPulseStrip {
     border: 1px solid CanvasText;
+  }
+
+  /* BA-9 (front-end audit, 5 Nov 2026): focus was only a thicker border here, so it gets a ring. */
+  .railToggle:focus-visible::before {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
   }
 
   .moreTrigger,

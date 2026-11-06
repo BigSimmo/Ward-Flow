@@ -82,15 +82,17 @@ export function renderArrivalsCard(ctx: OfficerArrivalsContext) {
                     <button
                       type="button"
                       className={styles.arrivalWho}
-                      aria-label={`Open the job for ${officerPatientName(movement)}`}
+                      // axe 4.14: the name says the action, then the row's visible words in order.
+                      aria-label={`Open the job: ${formatInstantWithDay(eta, now)}, ${destinationLabelFor(movement)}, ${officerPatientName(movement)} · ${umrnFor(movement)}, ${isLate ? "Late" : booked ? "Est." : "Ward ETA"}`}
                       onClick={() => openJob(movement.id)}
                     >
-                      <b className={styles.arrivalTime}>{formatInstantWithDay(eta, now)}</b>
+                      {/* Spaces keep the words apart for axe; the row is a flex column, where they take no room. */}
+                      <b className={styles.arrivalTime}>{formatInstantWithDay(eta, now)}</b>{" "}
                       <StatusGlyph tone={isLate ? "warning" : booked ? "neutral" : "info"} size={9} />
-                      <strong>{destinationLabelFor(movement)}</strong>
+                      <strong>{destinationLabelFor(movement)}</strong>{" "}
                       <span>
                         {officerPatientName(movement)} · {umrnFor(movement)}
-                      </span>
+                      </span>{" "}
                       <span className={cx(styles.arrivalKind, isLate && styles.warnText)}>
                         {isLate ? "Late" : booked ? "Est." : "Ward ETA"}
                       </span>

@@ -102,9 +102,9 @@ describe("weekend and holiday preparation", () => {
     // Desk: one pill per closed service, in a fixed order; each pill's name carries when it closes and reopens.
     const pills = within(screen.getByRole("list", { name: "Closed services" })).getAllByRole("button");
     expect(pills.map((pill) => pill.getAttribute("aria-label"))).toEqual([
-      "Pharmacy closes Sat 24 Oct 12:00, reopens Mon 26 Oct 08:30 (Weekend). 1 waiting",
-      "Patient transport closes Sat 24 Oct 14:00, reopens Mon 26 Oct 07:00 (Weekend). 3 waiting",
-      "Community mental health team closes Fri 23 Oct 17:00, reopens Mon 26 Oct 08:30 (Weekend). 1 waiting",
+      "Pharmacy, 1 waiting. Pharmacy closes Sat 24 Oct 12:00, reopens Mon 26 Oct 08:30 (Weekend).",
+      "Patient transport, 3 waiting. Patient transport closes Sat 24 Oct 14:00, reopens Mon 26 Oct 07:00 (Weekend).",
+      "Community mental health team, 1 waiting. Community mental health team closes Fri 23 Oct 17:00, reopens Mon 26 Oct 08:30 (Weekend).",
     ]);
     fireEvent.click(screen.getByTestId("ward-discharge-weekend-patient_transport"));
     const transport = screen.getByRole("dialog", { name: "Patient transport, 3 waiting" });

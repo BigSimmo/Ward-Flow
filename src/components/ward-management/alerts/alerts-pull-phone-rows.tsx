@@ -65,7 +65,7 @@ export function AlertPullPhoneRows({
                 type="button"
                 className={styles.rowOpen}
                 aria-current={pulling?.referral.id === referral.id ? "true" : undefined}
-                aria-label={openLabel}
+                aria-label={`${openLabel}: Accepted, bed not pulled`}
                 onClick={() => setPulling(entry)}
               >
                 <span className={styles.rowOpenText}>Accepted, bed not pulled</span>
@@ -78,7 +78,7 @@ export function AlertPullPhoneRows({
                 size="sm"
                 className={styles.btn}
                 data-placement-action
-                aria-label={openLabel}
+                aria-label={`Pull bed for ${name} at ${entry.unitName}`}
                 onClick={() => setPulling(entry)}
               >
                 Pull bed

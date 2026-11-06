@@ -226,8 +226,9 @@ export function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimm
       name={name}
       meta={
         <>
-          <span className={styles.phoneMetaLine}>{formTitle(legalForm.code)}</span>
+          <span className={styles.phoneMetaLine}>{formTitle(legalForm.code)}</span>{" "}
           <span className={styles.phoneMetaLine}>{where}</span>
+          {step.action === "none" ? null : " "}
           {step.action === "none" ? null : (
             <span className={cx(styles.phoneMetaLine, styles.phoneStep)}>
               {step.action === "next-form" ? step.title : STEP_LABEL[step.action]}
@@ -240,19 +241,24 @@ export function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimm
         hasDue ? (
           <span className={styles.leftLine}>
             <StatusGlyph tone={STANDING_TONE[standing]} size={9} />
-            {typedClock(dueAt!, now)}
+            {typedClock(dueAt!, now)}{" "}
             <span className={styles.phoneTimeWord}>{standing === "passed" ? "ended, as typed" : "as typed"}</span>
           </span>
         ) : (
           <span className={styles.leftLine}>
-            {durText(now - movement.openedAt)}
-            <span className={styles.phoneTimeWord}>in ED</span>
+            {durText(now - movement.openedAt)} <span className={styles.phoneTimeWord}>in ED</span>
           </span>
         )
       }
       // The colour's words sit under the typed time ("within 1h"), never colour alone.
-      time={typed.word}
-      aria-label={`${name}, ${umrn}, ${legalFormName(legalForm)}, ${legalDeadlineText(movement, now)}${standingSuffix(typed)}`}
+      // CB-3: no aria-label, so the row is named by the words it shows in order (a row cut by the
+      // screen's edge still matches its name), then the record number and full form for a screen reader.
+      time={
+        <>
+          {typed.word}
+          <span className="sr-only">{`. ${umrn}, ${legalFormName(legalForm)}, ${legalDeadlineText(movement, now)}${standingSuffix(typed)}`}</span>
+        </>
+      }
       onSelect={() => onSelect(movement)}
     />
   );

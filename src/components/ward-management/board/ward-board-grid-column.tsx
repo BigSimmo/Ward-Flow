@@ -302,35 +302,8 @@ export function WardBoardGridColumn({
                       <span />
                     </span>
                     <span className={styles.bedNote}>{tile.bandLabel}</span>
-                    {/* The band in words, for the screen reader only: the visible number already
-                            states it.
-
-                            🔴 **THE ORIGINAL SENTENCE HERE SAID PRINTING BOTH "WOULD CROWD OUT THE NUMBER
-                            THIS WHOLE TILE EXISTS TO SHOW". MEASURED IN A BROWSER, THAT IS FALSE.**
-                            Revealing the band on every occupied tile: **zero horizontal overflow, and
-                            the number's width unchanged to the pixel** (38→38, 19→19).
-                            ⚠️ **Both fit.** The tile is not crowded and never was.
-
-                            ✅ **THE REAL COST IS VERTICAL, AND IT IS WHY THE LABEL STAYS `sr-only`:** every
-                            occupied tile grows **88px → 117px**, one to 138px, all seventeen — about a
-                            third taller, and the grid a third longer. **On a phone that is a materially
-                            longer scroll through the beds, and that is the cost we declined.**
-
-                            ⚠️ **THE MEASUREMENT, carried with the conclusion so nobody re-runs it:**
-                            Chromium, **375px viewport**, 17 occupied tiles, tile **109×88px**, three
-                            columns of 109px. 🔴 **Note 109 and not 80: `minmax(5rem, 1fr)` under
-                            `auto-fill` makes 5rem a FLOOR, not the width** — two earlier versions of this
-                            comment named 390px and then 80px, and both were wrong.
-
-                            ⚠️ **DESKTOP IS UNMEASURED.** This is a phone cost only; at a wider viewport the
-                            same label might cost nothing anybody notices. **Nobody has the desktop
-                            answer, and a viewport-conditional label is deliberately NOT explored — a
-                            breakpoint-conditional difference is invisible to every gate here.**
-
-                            🔴 **The reason the label stays in that channel at all is an ASYMMETRY OF NEED,
-                            untouched by any of the above: a sighted reader sees the number and derives
-                            the band; a screen-reader user cannot scan a grid of numbers to form one.** */}
-                    <span className="sr-only">{tile.bandLabel}</span>
+                    {/* BA-13 (front-end audit, 5 Nov 2026): the band label above is now visible on every
+                            occupied tile, so its screen-reader-only copy (read the band twice) is gone. */}
                     {tile.pastDate && (
                       <span className={styles.pastMark} data-testid={`ward-board-bed-${index + 1}-past`}>
                         <StatusGlyph tone="warning" size={10} className={styles.statusGlyph} /> <span>Past date</span>

@@ -111,11 +111,15 @@ export function formatColour([r, g, b, a]) {
   return `rgba(${r}, ${g}, ${b}, ${a})`;
 }
 
+// BA-5 (5 Nov 2026): type and line-height tokens are rem (1rem = 16px), so Figma still sees pixels.
 const toPx = (value) => {
   if (typeof value === "number") return Number.isFinite(value) ? value : null;
-  const m = typeof value === "string" && value.trim().match(/^(-?[\d.]+)px$/);
-  return m && Number.isFinite(+m[1]) ? +m[1] : null;
+  const m = typeof value === "string" && value.trim().match(/^(-?[\d.]+)(px|rem)$/);
+  return m && Number.isFinite(+m[1]) ? +m[1] * (m[2] === "rem" ? 16 : 1) : null;
 };
+
+/** A Figma pixel size written in the unit the CSS already uses for that token. */
+const sizeIn = (px, current) => (/rem$/.test(current.trim()) ? `${+(px / 16).toFixed(5)}rem` : `${px}px`);
 
 const record = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
 
@@ -242,7 +246,7 @@ export function applyTokens(css, incoming) {
       skipped.push(`${c.name} (Day): Figma has different Day and Night values but the CSS holds one for both`);
       continue;
     }
-    for (const t of targets) edits.push({ ...t, value });
+    for (const t of targets) edits.push({ ...t, value: c.group === "Size" ? sizeIn(toPx(c.to), t.value) : value });
   }
   let out = css;
   for (const e of edits.sort((a, b) => b.valueStart - a.valueStart)) {

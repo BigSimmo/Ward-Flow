@@ -232,11 +232,12 @@ export function DischargeWeekendPrep({
                           type="button"
                           {...props}
                           className={styles.pill}
-                          aria-label={`${closureFact(group.closure, dayZero)}. ${group.rows.length} waiting`}
+                          // CB-3: the visible service and count lead the name (axe label-content-name-mismatch).
+                          aria-label={`${service}, ${group.rows.length} waiting. ${closureFact(group.closure, dayZero)}.`}
                           data-testid={`ward-discharge-weekend-${group.closure.owner}`}
                         >
                           <OwnerIcon size={14} strokeWidth={1.75} aria-hidden="true" className={styles.pillIcon} />
-                          <span className={styles.pillName}>{service}</span>
+                          <span className={styles.pillName}>{service}</span>{" "}
                           <span className={styles.pillCount}>{group.rows.length}</span>
                           <ChevronDown size={14} strokeWidth={1.75} aria-hidden="true" className={styles.pillChevron} />
                         </button>

@@ -47,13 +47,19 @@ test("Legal form: a Form 1A gets its time written and is marked received, the re
   await dismissTip(page);
   await expectAccessible(page, testInfo, "Forms page");
 
-  // Any Form 1A in the seed with no time written and no expiry typed. Its row's label leads with the
-  // person's name, then (on the phone) their UMRN.
-  const rowLabel = /^([^,]+, [^,]+), (?:UM\d+, )?Form 1A \(.*No deadline recorded/u;
+  // Any Form 1A in the seed with no time written and no expiry typed. Its row's name leads with the
+  // person's name (on the phone after the form code it shows, then their UMRN further on). The phone
+  // row takes its name from its content (no aria-label), so the name is read from the accessibility
+  // tree, and on the phone the person's name from the row's own name line.
+  const rowLabel = /^(?:1A )?([^,]+, [^,]+), (?:UM\d+, )?Form 1A \(.*No deadline recorded/u;
   const row = page.getByRole("button", { name: rowLabel }).first();
   await expect(row).toBeVisible();
-  const name = rowLabel.exec((await row.getAttribute("aria-label")) ?? "")?.[1] ?? "";
+  const spoken = /^- button "(.*)"/mu.exec(await row.ariaSnapshot())?.[1] ?? "";
+  const nameLine = row.locator('[class*="rowName"]');
+  const name =
+    (await nameLine.count()) > 0 ? (await nameLine.first().innerText()).trim() : (rowLabel.exec(spoken)?.[1] ?? "");
   expect(name, "the row's label leads with the person's name").not.toBe("");
+  expect(spoken.replace(/^1A /u, "").startsWith(name), "the row's name leads with the person's name").toBe(true);
   await dismissTip(page);
   await row.click();
 

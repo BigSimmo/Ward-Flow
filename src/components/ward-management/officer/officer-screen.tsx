@@ -915,10 +915,10 @@ export function OfficerScreen() {
                       onClick={() => setProviderHighlight((prev) => (prev === provider ? null : provider))}
                       title={isSelected ? "Stop highlighting this provider" : `Highlight ${provider} jobs`}
                       aria-pressed={isSelected}
-                      // Redesign: the job count on screen; how many are moving is in the spoken label.
-                      aria-label={`${provider}, ${jobCount}, ${moving} moving`}
+                      // Redesign: job count on screen, moving in the spoken label (CB-3: shown words lead).
+                      aria-label={`${provider.replace(/ service$/, "")} ${jobCount}, ${provider}, ${moving} moving`}
                     >
-                      <span className={styles.fleetName}>{provider.replace(/ service$/, "")}</span>
+                      <span className={styles.fleetName}>{provider.replace(/ service$/, "")}</span>{" "}
                       <span className={styles.fleetCounts}>{jobCount}</span>
                     </button>
                   );

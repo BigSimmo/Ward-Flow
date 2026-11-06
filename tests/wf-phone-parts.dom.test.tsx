@@ -313,7 +313,7 @@ describe("PhoneHero", () => {
     const figures = within(hero).getAllByRole("listitem");
     expect(PHONE_HERO_FIGURE_LIMIT).toBe(3);
     expect(figures).toHaveLength(3);
-    expect(figures.map((figure) => figure.textContent)).toEqual(["2Act now", "7Waiting", "0Free beds"]);
+    expect(figures.map((figure) => figure.textContent)).toEqual(["2 Act now", "7 Waiting", "0 Free beds"]);
     expect(hero).not.toHaveTextContent("Moving");
 
     // Actions sit below the figures.

@@ -40,7 +40,7 @@ describe("Discharges charts under the table (direction A)", () => {
     const bars = within(dayChart()).getAllByRole("button");
     // DC5 (Josh, 3 Nov 2026): the column of dates already passed reads "Overdue".
     expect(bars[0]).toHaveTextContent("Overdue");
-    expect(bars[0]).toHaveAccessibleName(/^Overdue, expected date already passed: \d+ due/u);
+    expect(bars[0]).toHaveAccessibleName(/^Overdue: \d+ due, expected date already passed, /u);
     expect(within(dayChart()).queryByText("Passed")).not.toBeInTheDocument();
     // The furthest day with anyone due is two or more days ahead, so the list's groups leave its
     // not-held-up releases out until the day is chosen.

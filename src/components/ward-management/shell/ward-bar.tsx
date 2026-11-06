@@ -1106,9 +1106,8 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
           aria-label={`Board time ${liveClockFace} AWST${online ? "" : ". Offline"}`}
         >
           <span className={styles.demoClockDot} data-offline={online ? undefined : "true"} aria-hidden="true" />
-          <span className={styles.demoClockLabel}>Board time</span>
-          <span className={styles.demoClockTime}>{liveClockFace}</span>
-          <span className={styles.demoClockTz}>AWST</span>
+          <span className={styles.demoClockLabel}>Board time</span>{" "}
+          <span className={styles.demoClockTime}>{liveClockFace}</span> <span className={styles.demoClockTz}>AWST</span>
         </WardDemoClockPopover>
 
         {/* The shell's synthetic-data marker for screen readers (visually hidden, so no pill shows). */}

@@ -449,6 +449,9 @@ button.runwayCardRow:focus-visible {
   [data-referral-layout="queue-panel"] .layout.layout.layout.layout {
     grid-template-columns: minmax(0, 1fr) clamp(23rem, 34%, 28rem);
     gap: var(--wf-s-3);
+    /* BA-11 (front-end audit, 5 Nov 2026): the queue and panel stop at about 1,920px, so on a 2560
+       screen the Patient and "Since referral" columns are not 1,400px apart. */
+    max-inline-size: 120rem;
   }
 }
 

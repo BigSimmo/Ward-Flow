@@ -45,7 +45,15 @@ import { announceToWardShell } from "./ward-live-region";
 import { isActiveRailEntry, isRoleMenuAction, type RailEntry, type RoleMenuAction } from "./ward-rail-entries";
 import { requestToolsTool } from "../tools/ward-tools-open";
 import { usePhoneCreateOptions, type PhoneCreateId } from "./ward-phone-create-options";
-import { Chevron, CountChip, countIn, MenuSearching, type PageRowRender, Section } from "./ward-phone-menu-parts";
+import {
+  Chevron,
+  chipText,
+  CountChip,
+  countIn,
+  MenuSearching,
+  type PageRowRender,
+  Section,
+} from "./ward-phone-menu-parts";
 import { WardMyWards } from "./ward-my-wards";
 import { PhoneMenuTop } from "./ward-phone-menu-top";
 import { useWardHelpRow } from "@/components/ward-management/help/ward-help-link";
@@ -107,7 +115,8 @@ function NeedRowLink({ row, onGo, onTasks }: { row: NeedRow; onGo: () => void; o
   const common = {
     className: row.actNow ? `${styles.row} ${actNowStyles.actNow}` : styles.row,
     "data-act-marker": row.actNow || undefined,
-    "aria-label": `${row.label}, ${row.count} ${row.meta}`,
+    // axe 4.14: the name keeps the row's visible order (label, its words, then the count chip).
+    "aria-label": `${row.label}, ${row.meta}: ${chipText(row.count)}`,
     "data-testid": "ward-phone-menu-need",
   };
   return (
@@ -129,10 +138,10 @@ function RowBody({ icon: Icon, label, meta }: { icon: typeof Plus; label: string
   return (
     <>
       <Icon aria-hidden="true" className={styles.rowIcon} strokeWidth={1.75} />
+      {/* axe 4.14 joins visible words with no gap; these spaces take no room in the flex and grid row. */}
       <span className={styles.rowText}>
-        <span className={styles.rowLabel}>{label}</span>
-        {meta ? <span className={styles.rowMeta}>{meta}</span> : null}
-      </span>
+        <span className={styles.rowLabel}>{label}</span> {meta ? <span className={styles.rowMeta}>{meta}</span> : null}
+      </span>{" "}
     </>
   );
 }
@@ -159,6 +168,9 @@ function PageRow({
         <span>{count.noun}</span>
       </>
     ) : undefined;
+  // axe 4.14: a row that shows its count's words reads them in the order shown, then the chip.
+  const name =
+    meta && count ? `${entry.label}, ${count.noun}: ${chipText(count.value)}` : wardNavCountLabel(entry.label, count);
   const face = (
     <>
       <RowBody icon={entry.icon} label={entry.label} meta={meta} />
@@ -173,7 +185,7 @@ function PageRow({
         <button
           type="button"
           className={styles.row}
-          aria-label={wardNavCountLabel(entry.label, count)}
+          aria-label={name}
           data-testid="ward-phone-new-referral"
           onClick={onNewReferral}
         >
@@ -189,7 +201,7 @@ function PageRow({
         prefetch={true}
         className={styles.row}
         aria-current={isActiveRailEntry(pathname, entry) ? "page" : undefined}
-        aria-label={wardNavCountLabel(entry.label, count)}
+        aria-label={name}
         data-testid="ward-rail-link"
         onClick={() => onGo(entry)}
       >

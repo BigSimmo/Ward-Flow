@@ -404,6 +404,21 @@
   white-space: nowrap;
 }
 
+/* PERF-08 (6 Nov 2026): a desktop browser at phone width gets this desktop row until React swaps in
+ * the phone rows. Below the phone line the row stacks (time beside the title, action underneath),
+ * so that first paint stays readable rather than one letter per line. */
+@media (max-width: 46.4375rem) {
+  .hrow {
+    grid-template-columns: 1rem minmax(0, 1fr) auto;
+  }
+
+  .hrowAction {
+    grid-column: 2 / -1;
+    justify-content: flex-start;
+    white-space: normal;
+  }
+}
+
 /* Placement and Referral placement sit in a narrower column on this Home, so their facts wrap
    rather than lose their ends ("Adult · Perth Metr…"). Scoped here; the shared panel is unchanged. */
 .rightCol dl dd,

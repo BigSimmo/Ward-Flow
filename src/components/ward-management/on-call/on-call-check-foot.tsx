@@ -30,7 +30,7 @@ function MarkChecked({ entry, role }: { entry: DirectoryEntry; role: WardFlowRol
       <Button
         size="sm"
         variant="sec"
-        aria-label={`Mark ${entry.name} as checked now`}
+        aria-label={`Mark checked now: ${entry.name}`}
         data-testid="ward-on-call-mark-checked"
         disabledReason={save.pending ? "Saving" : undefined}
         onClick={() => {

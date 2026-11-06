@@ -141,8 +141,9 @@ test.describe("real-worker recovery and update ownership @mockup", () => {
       waitUntil: "domcontentloaded",
     });
     await ready(second);
+    // BA-12 (this PR): the sheet is named for its heading, New referral, as the restore check below reads it.
     const referral = second.getByRole("dialog", {
-      name: "Referrals",
+      name: "New referral",
       exact: true,
     });
     await referral
@@ -201,7 +202,7 @@ test.describe("real-worker recovery and update ownership @mockup", () => {
       .getByRole("group", { name: "Referral sections" })
       .getByRole("button", { name: "Referral", exact: true })
       .click();
-    const restored = second.getByRole("dialog", { name: "Referrals", exact: true }).locator("#refDocInput");
+    const restored = second.getByRole("dialog", { name: "New referral", exact: true }).locator("#refDocInput");
     await expect(restored).toBeVisible();
     expect(
       await restored.evaluate((element) => (element as HTMLInputElement).value === "PWA draft recovery fixture"),

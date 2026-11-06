@@ -59,11 +59,15 @@ describe("Handover title count (NA2-01)", () => {
   // Audit 24-4 decision 5 (Josh): Act now counts people, Alerts counts alerts. Both are named.
   it("names the people and the alerts on the Act now count", () => {
     renderAt();
-    // 1 Nov 2026 redesign: the count's spoken name is "Act now (n people, m alerts)"; its face shows n.
-    const pill = within(screen.getByTestId("ward-handover-kpi-strip")).getByRole("button", { name: /^Act now \(/ });
-    const match = /^Act now \((\d+) (?:person|people), (\d+) alerts?\)$/.exec(pill.getAttribute("aria-label") ?? "");
+    // 1 Nov 2026 redesign: the count's spoken name is "n Act now (n people, m alerts)"; its face shows n.
+    // CB-3 (axe 4.14): the name starts with the face's own "n Act now".
+    const pill = within(screen.getByTestId("ward-handover-kpi-strip")).getByRole("button", { name: /^\d+ Act now \(/ });
+    const match = /^(\d+) Act now \((\d+) (?:person|people), (\d+) alerts?\)$/.exec(
+      pill.getAttribute("aria-label") ?? "",
+    );
     expect(match, pill.getAttribute("aria-label") ?? "").not.toBeNull();
-    const [, people, alerts] = match!.map(Number);
+    const [, face, people, alerts] = match!.map(Number);
+    expect(face).toBe(people);
     const count = Number(/^\d+/.exec((pill.textContent ?? "").trim())?.[0]);
     expect(people).toBe(count);
     expect(people).toBeGreaterThan(0);

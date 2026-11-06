@@ -534,7 +534,8 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
       } else if (id === "tools") {
         announceToWardShell("Tools opened. Quick actions, look ups, print and share, and demo controls are here.");
       } else if (id === "referral") {
-        announceToWardShell("Referral drawer opened. Statewide psychiatric bed placement engine.");
+        // BA-12 (front-end audit, 5 Nov 2026): the sheet's own name, with no engine jargon.
+        announceToWardShell("New referral opened.");
       }
       // No opening announcement for the Service selector — the standard's §7.4 list of the shell's
       // fixed sentences names an announcement for CHOOSING or CLEARING a service, never for opening
@@ -636,7 +637,7 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
       setReferralRequest((current) => ({ ...request, id: current.id + 1 }));
       referralReturnFocusRef.current = null;
       setOpenPanel("referral");
-      announceToWardShell("Referral drawer opened. Statewide psychiatric bed placement engine.");
+      announceToWardShell("New referral opened.");
     });
     return () => {
       window.cancelAnimationFrame(frame);
@@ -1091,9 +1092,8 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
           aria-label={`Board time ${liveClockFace} AWST${online ? "" : ". Offline"}`}
         >
           <span className={styles.demoClockDot} data-offline={online ? undefined : "true"} aria-hidden="true" />
-          <span className={styles.demoClockLabel}>Board time</span>
-          <span className={styles.demoClockTime}>{liveClockFace}</span>
-          <span className={styles.demoClockTz}>AWST</span>
+          <span className={styles.demoClockLabel}>Board time</span>{" "}
+          <span className={styles.demoClockTime}>{liveClockFace}</span> <span className={styles.demoClockTz}>AWST</span>
         </WardDemoClockPopover>
 
         {/* The shell's synthetic-data marker for screen readers (visually hidden, so no pill shows). */}
@@ -1294,7 +1294,7 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
         id="ward-bar-referral-drawer"
         open={openPanel === "referral"}
         onClose={() => (referralCloseRef.current ? referralCloseRef.current() : closeReferral())}
-        ariaLabel="Referrals"
+        ariaLabel="New referral"
         headerHidden
         placement="right"
         testId="ward-bar-referral-sheet"

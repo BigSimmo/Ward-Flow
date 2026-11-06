@@ -324,7 +324,7 @@ export function OutOfAreaPhone({
             label: "Home today",
             tone: "success",
             onPress: () => setTab("needs"),
-            actionLabel: `${leaving.length} going home today, show My list`,
+            actionLabel: `${leaving.length} Home today, going home today, show My list`,
           },
           {
             id: "date-passed",
@@ -339,7 +339,7 @@ export function OutOfAreaPhone({
             value: noPlanCount,
             // "No plan" stays on one line; the spoken label names the noun, as the desktop's "No return plan" does.
             label: "No plan",
-            actionLabel: `${noPlanCount} with no return plan, highlight them`,
+            actionLabel: `${noPlanCount} No plan, with no return plan, highlight them`,
             // Design audit 4 (B21): a missing plan is waiting (the ring), not declined or closed (the cross).
             tone: "neutral",
             onPress: () => onHighlight("noplan"),

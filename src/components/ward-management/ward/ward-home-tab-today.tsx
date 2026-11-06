@@ -257,6 +257,11 @@ function formalParts(name: string): { last: string; given: string } | null {
   return nameParts(name);
 }
 
+/** The tile's state line as drawn ("Held up · 210d"); an occupied bed's plain state is left out. */
+export function tileStateLine(note: string, days: string): string {
+  return [note === BED_STATE_LABELS.occupied ? "" : note, days].filter(Boolean).join(" · ");
+}
+
 export function WardHomeTileText({
   name,
   label,
@@ -269,17 +274,17 @@ export function WardHomeTileText({
   days: string;
 }) {
   const parts = name === null ? null : formalParts(name);
-  const stateLine = [note === BED_STATE_LABELS.occupied ? "" : note, days].filter(Boolean).join(" · ");
+  const stateLine = tileStateLine(note, days);
   return (
     <>
       <span className={styles.bedTileName} data-wrap={parts ? undefined : "true"} aria-hidden="true">
         {parts ? `${parts.last},` : label}
-      </span>
+      </span>{" "}
       {parts ? (
         <span className={styles.bedTileGiven} aria-hidden="true">
           {` ${parts.given}`}
         </span>
-      ) : null}
+      ) : null}{" "}
       <span className={styles.bedTileState} aria-hidden="true">
         <span className={styles.bedTileNote}>{stateLine}</span>
       </span>

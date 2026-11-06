@@ -75,6 +75,7 @@ import {
   countTitle,
   deskCapacityRows,
   CLOSE_MENUS_EVENT,
+  capacityRowsOver,
   capacityRowsSpoken,
   cardScopeNote,
   compactPipText,
@@ -415,8 +416,10 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const metroSpoken =
     metroShown || bedAlerts.metroOccupancyPercent === null
       ? ""
-      : ` Metro ${formatOccupancyPercent(bedAlerts.metroOccupancyPercent)} full.`;
-  const capacityCardLabel = `Bed alerts: ${overLine.label}. ${capacityRowsLabel}.${metroSpoken} ${readyBeds} ${readyBeds === 1 ? "bed" : "beds"} ready now, ${cardScopeNote(capacityRows, deskAccess, service)}.`;
+      : `, Metro ${formatOccupancyPercent(bedAlerts.metroOccupancyPercent)}`;
+  // CB-3 (axe 4.14 label-content-name-mismatch): the name reads the card's visible words in order
+  // first ("East Metro 87%, North Metro 86%, ..."), then which places are over the line.
+  const capacityCardLabel = `Bed alerts: ${overLine.label}. ${capacityRowsLabel}${metroSpoken}, ${readyBeds} ${readyBeds === 1 ? "bed" : "beds"} ready now, ${cardScopeNote(capacityRows, deskAccess, service)}.${capacityRowsOver(capacityRows)}`;
   const handoverText = shiftProgress.handoverDue ? null : durMinutes(shiftProgress.remainingMinutes);
 
   const setOpen = useCallback((next: boolean) => {
@@ -553,7 +556,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   const handoverCountdown = (
     <>
       <ClipboardList aria-hidden="true" className={styles.shiftClockIcon} strokeWidth={1.75} />
-      <span className={styles.shiftTimerLabel}>Handover</span>
+      <span className={styles.shiftTimerLabel}>Handover</span>{" "}
       <span className={styles.shiftTimeBadge}>
         {handoverText === null ? (
           "due now"
@@ -670,13 +673,15 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 </span>
               ) : null}
             </span>
+            {/* CB-3: a space between the flex items (not drawn), so the visible words stay apart for
+                axe's label-in-name check ("Capacity 26", not "Capacity26"). */}{" "}
             {count ? (
               <span className={styles.tag} data-tone={count.urgent ? "warning" : undefined}>
                 {count.urgent ? <Dot tone="warning" className={styles.tagDot} /> : null}
                 {count.value}
               </span>
             ) : null}
-          </span>
+          </span>{" "}
           {count ? <small className={styles.railState}>{count.noun}</small> : null}
         </span>
         {options.sheet ? <ChevronRight aria-hidden="true" className={styles.sheetChevron} /> : null}
@@ -773,8 +778,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
             <span className={styles.brandEmblem} aria-hidden="true">
               <WardFlowMark className={styles.emblemGlyph} />
             </span>
-            <span className={styles.brandTitle}>Ward Flow</span>
-            <span className={styles.brandStateText}>WA</span>
+            <span className={styles.brandTitle}>Ward Flow</span> <span className={styles.brandStateText}>WA</span>
           </Link>
         )}
         <button
@@ -933,7 +937,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
             }}
           >
             <span className={railParts.capacityHead} aria-hidden="true">
-              <span className={styles.alertsEyebrow}>Bed alerts</span>
+              <span className={styles.alertsEyebrow}>Bed alerts</span>{" "}
               <span className={styles.alertsChip} data-alert={overLine.over > 0 ? "true" : undefined}>
                 {overLine.over > 0 ? <Dot tone="warning" /> : null}
                 {overLine.label}
@@ -941,19 +945,19 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
               <span className={styles.capacityChevron} data-open={alertsOpen ? "true" : undefined}>
                 <ChevronDown aria-hidden="true" strokeWidth={1.75} />
               </span>
-            </span>
+            </span>{" "}
             <span className={railParts.capacityRows} aria-hidden="true">
               {capacityRows.map((row) => (
                 <span key={row.key} className={styles.alertRow} title={`${row.counts}, beds in use`}>
-                  <span className={styles.alertRowName}>{row.name}</span>
-                  {row.percent === null ? <span className={styles.meter} /> : <BedAlertMeter percent={row.percent} />}
+                  <span className={styles.alertRowName}>{row.name}</span>{" "}
+                  {row.percent === null ? <span className={styles.meter} /> : <BedAlertMeter percent={row.percent} />}{" "}
                   <span className={styles.alertRowPercent}>
                     {row.percent !== null && isBedAlert(row.percent) ? <Dot tone="warning" /> : null}
                     {row.percent === null ? "—" : formatOccupancyPercent(row.percent)}
-                  </span>
+                  </span>{" "}
                 </span>
               ))}
-            </span>
+            </span>{" "}
             <span className={railParts.capacityReady} aria-hidden="true">
               {readyLine}
             </span>

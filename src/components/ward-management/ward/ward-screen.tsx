@@ -2105,14 +2105,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         aria-selected={activeTab === "return"}
         tabIndex={activeTab === "return" ? 0 : -1}
         aria-controls="tab-return"
-        aria-label={`Decisions (Ward record), ${decisionsDueLabel}`}
+        aria-label={`Decisions (Ward record), ${decisionsDue > 0 ? (isPhone ? decisionsDue : `${decisionsDue} Due`) : "Done"}, ${decisionsDueLabel}`}
         onClick={() => {
           selectActiveTab("return");
         }}
       >
         <span className={styles.tabLabel} data-label="Decisions">
           Decisions
-        </span>
+        </span>{" "}
         <span className={styles.tabBadge} id="badgeReturn" title={decisionsDueLabel} aria-hidden="true">
           {decisionsDue > 0 ? (isPhone ? decisionsDue : `${decisionsDue} Due`) : "Done"}
         </span>
@@ -2147,7 +2147,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       >
         <span className={styles.tabLabel} data-label="Referrals">
           Referrals
-        </span>
+        </span>{" "}
         <span className={styles.tabBadge} title={referralsLabel} aria-hidden="true">
           {referralsWaiting}
         </span>
