@@ -139,7 +139,7 @@ export function ReferralSummarySheet({
         onClose();
       }}
       title="Referral"
-      description="From what the referral records. Nothing here is inferred."
+      description="From the referral record."
       headerBottom={
         <div className={t.tabsBar}>
           <Tabs label="Referral sections" idPrefix={TAB_PREFIX} value={tab} onChange={setChosen} items={tabItems} />

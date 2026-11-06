@@ -591,7 +591,7 @@ export function PatientTransitOperations({
           {remaining !== undefined && (
             <p className={styles.hold} role="status">
               {remaining <= 0
-                ? "Pull time limit passed. The bed stays pulled until a person releases it or sets a new limit."
+                ? "Pull time limit passed. Release the bed or set a new limit."
                 : `Bed pulled · ${dur(remaining)} remaining · Pull time limit ${clock(movement.pullExpiresAt!)}`}
             </p>
           )}
@@ -887,10 +887,7 @@ export function PatientTransitOperations({
             {MOVEMENT_STAGES.indexOf(movement.stage) > 0 && (
               <details>
                 <summary>Step back with recorded reason</summary>
-                <p className={styles.deckHint}>
-                  Corrects the stage record. Pulled beds and transport bookings remain until explicitly released or
-                  cancelled.
-                </p>
+                <p className={styles.deckHint}>Corrects the stage record only. Pulled beds and bookings stay.</p>
                 <label>
                   Earlier movement stage
                   <select value={backTo} onChange={(e) => setBackTo(e.target.value as MovementStage)}>
@@ -1008,7 +1005,6 @@ export function PatientTransitOperations({
         <div>
           <span className={styles.eyebrow}>PATIENT NOW / BEDFLOW</span>
           <h2 id={`${baseId}-transit-title`}>Transit operations</h2>
-          <p>Coordinate the next step with the patient’s clinical context in view.</p>
         </div>
       </header>
       {/* Audit 24-1 (B-05): the sheet that hosts this deck covers the page header on a phone, so the
@@ -1022,11 +1018,7 @@ export function PatientTransitOperations({
         {errors.length > 0 ? (
           <p role="alert">{errors.map((e) => e.reason).join(" · ")}</p>
         ) : latestAudit ? (
-          <p>
-            {latestAudit.outcome === "accepted"
-              ? "Recorded in the shared patient movement."
-              : "Review the action outcome in the audit record."}
-          </p>
+          <p>{latestAudit.outcome === "accepted" ? "Recorded." : "Check the audit record."}</p>
         ) : null}
       </div>
       {showMetrics ? (

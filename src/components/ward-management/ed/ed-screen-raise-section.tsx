@@ -360,7 +360,7 @@ function EdRaiseIntoMovementForm({ ctx }: { ctx: EdScreenContext }) {
           {draft.legalFormCode !== null ? (
             <fieldset className={styles.declineFieldset}>
               <legend className={styles.declineLegend}>Expiry written on the form (optional)</legend>
-              <p className={styles.cardMeta}>Leave blank if the form has no expiry or you do not have it yet.</p>
+              <p className={styles.cardMeta}>Leave blank if none.</p>
               <label className={fieldClass("legalFormDueAtDate", styles.referralField)}>
                 Date
                 <DateField

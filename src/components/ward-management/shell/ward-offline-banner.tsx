@@ -128,7 +128,7 @@ function WardOfflineNotice() {
       data-wf-offline-note=""
       style={fullscreenElement ? FULLSCREEN_PLACEMENT : undefined}
     >
-      {"You're offline. This screen keeps working, but nothing is updating. "}
+      {"You're offline. Nothing is updating until the connection returns. "}
       <span className={styles.bannerPack}>
         {lastPackAt === null
           ? "If it stops, use the latest printed or saved downtime pack."

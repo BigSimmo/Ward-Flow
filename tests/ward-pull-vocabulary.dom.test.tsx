@@ -176,10 +176,9 @@ describe("the ward screen says pull, never hold, about an incoming patient", () 
    * folding *pulled* into *on the way*. A pulled bed and a patient en route are not the same thing on
    * this screen, and the bed note six hundred lines above says so in as many words.
    *
-   * ⚠️ **But the drawing had the better second half and the app had none:** *"Absence here means none,
-   * not that none was asked for."* That is this project's absence discipline written into an empty
-   * state — the difference between *nobody is coming* and *we never asked*. The heading came from the
-   * drawing; this sentence keeps the app's three states and carries the drawing's discipline.
+   * Josh, 1 Nov 2026 (Q106): the second half, "Absence here means none, not that none was asked
+   * for.", is cut. The empty state now reads "Nobody accepted, pulled or en route to <ward>." and
+   * keeps the app's three states.
    *
    * 🔴 **NO BRANCH. The previous version of this case branched on whether the placeholder rendered at
    * all, and the arm asserting the heading was DEAD** — `bty-youth` has no open movement accepted to
@@ -198,7 +197,7 @@ describe("the ward screen says pull, never hold, about an incoming patient", () 
    * is the only movement contending for it (measured against the fixture directly), so the arrival is
    * not blocked by the floor guard.
    */
-  it("keeps all three states in the empty text, and says absence means none rather than unasked", () => {
+  it("keeps all three states in the empty text", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <ArrivalDriverHarness movementId="WF-021" unitId="bty-youth" />
@@ -208,15 +207,12 @@ describe("the ward screen says pull, never hold, about an incoming patient", () 
     // Owner ruled: once the rulings-demo seed overlay is applied, this placeholder renders twice on
     // the "Coming in" section — leave the duplicate rather than tightening the screen to render it
     // once. Check every match rather than assuming exactly one.
-    const placeholders = screen.getAllByText(/No patient is currently accepted, pulled or en route/);
+    const placeholders = screen.getAllByText(/Nobody accepted, pulled or en route/);
     expect(placeholders.length).toBeGreaterThan(0);
     for (const placeholder of placeholders) {
       const text = placeholder.textContent ?? "";
       expect(text, "the empty state no longer distinguishes accepted from pulled from en route").toContain(
         "accepted, pulled or en route",
-      );
-      expect(text, "the empty state lost the absence discipline the drawing supplied").toContain(
-        "Absence here means none, not that none was asked for",
       );
       expect(text).not.toMatch(/held/i);
     }

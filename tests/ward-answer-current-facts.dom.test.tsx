@@ -165,9 +165,7 @@ describe("Ward answer current facts", () => {
 
     const card = screen.getByTestId(`ward-incoming-${COADDRESSED.id}`);
     const shown = card.textContent ?? "";
-    expect(
-      within(card).getByText("Emergency department. Origin department is not disclosed in this ward view."),
-    ).toBeInTheDocument();
+    expect(within(card).getByText("Emergency department (not named)")).toBeInTheDocument();
 
     for (const other of allUnits()) {
       if (other.id === COADDRESSED_UNIT.id) continue;
@@ -270,7 +268,7 @@ describe("Ward answer current facts", () => {
 
     // Empty state (redesign approved by Josh, 31 Oct 2026): the hero already says "Nothing to
     // answer", so the Bed request panel is one quiet line, not a card head with a coloured badge.
-    expect(screen.getByTestId("ward-answer-all-answered")).toHaveTextContent("Requests land here as they are sent.");
+    expect(screen.getByTestId("ward-answer-all-answered")).toHaveTextContent("No requests waiting.");
     expect(screen.queryByText("none waiting")).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "Bed request" })).not.toBeInTheDocument();
     expect(screen.queryByText("Emergency department origin")).not.toBeInTheDocument();

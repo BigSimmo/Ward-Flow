@@ -223,10 +223,7 @@ export function WardArrivalsCorridor({
       </div>
 
       {accepted.length === 0 ? (
-        <p className={styles.placeholder}>
-          No patient is currently accepted, pulled or en route to {unit.name}. Absence here means none, not that none
-          was asked for.
-        </p>
+        <p className={styles.placeholder}>Nobody accepted, pulled or en route to {unit.name}.</p>
       ) : (
         <div className={styles.inboundStream}>
           {accepted.map((movement) => {
@@ -555,8 +552,7 @@ export function WardArrivalsCorridor({
 
                   {canCancel ? (
                     <p className={styles.cancelNote} data-testid="ward-cancel-transport-unavailable">
-                      This ward cannot cancel a transport it did not book. Ask the sending emergency department, or the
-                      bed coordinator.
+                      Only the sending emergency department or the bed coordinator can cancel this transport.
                     </p>
                   ) : null}
                 </div>
@@ -605,11 +601,6 @@ export function WardArrivalsCorridor({
         </section>
       ) : null}
 
-      {/* Explains the ruled four bed boxes (`ward-bed-states.ts`), Closed by contrast with the PULL */}
-      <div className={styles.explanationNote}>
-        <strong>Note:</strong> Ready, pulled, closed and occupied total {unit.beds}. Closed means empty but not offered;
-        it is separate from a bed pulled for a patient, which is allocated and waiting for them to arrive.
-      </div>
       <Dialog
         open={releaseHeldMovement !== undefined}
         onClose={() => setReleaseHeldId(null)}
