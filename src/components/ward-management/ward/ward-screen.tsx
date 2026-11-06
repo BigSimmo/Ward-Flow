@@ -2105,14 +2105,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         aria-selected={activeTab === "return"}
         tabIndex={activeTab === "return" ? 0 : -1}
         aria-controls="tab-return"
-        aria-label={`Decisions (Ward record), ${decisionsDueLabel}`}
+        aria-label={`Decisions (Ward record), ${decisionsDue > 0 ? (isPhone ? decisionsDue : `${decisionsDue} Due`) : "Done"}, ${decisionsDueLabel}`}
         onClick={() => {
           selectActiveTab("return");
         }}
       >
         <span className={styles.tabLabel} data-label="Decisions">
           Decisions
-        </span>
+        </span>{" "}
         <span className={styles.tabBadge} id="badgeReturn" title={decisionsDueLabel} aria-hidden="true">
           {decisionsDue > 0 ? (isPhone ? decisionsDue : `${decisionsDue} Due`) : "Done"}
         </span>
@@ -2147,7 +2147,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       >
         <span className={styles.tabLabel} data-label="Referrals">
           Referrals
-        </span>
+        </span>{" "}
         <span className={styles.tabBadge} title={referralsLabel} aria-hidden="true">
           {referralsWaiting}
         </span>
@@ -2173,8 +2173,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       data-ward-rebuilt-screen="ward"
     >
       <main id="main-content" className={styles.main}>
-        {/* BA-14 (front-end audit, 5 Nov 2026): the screen-reader-only Ward heading names the ward. */}
-        <h1 className={styles.screenName}>{presentation === "answer" ? "Ward answer" : unit.name}</h1>
+        <h1 className={styles.screenName}>{presentation === "answer" ? "Ward answer" : "Ward"}</h1>
         {/* Tier 1 item 9: the one-page bed list, on paper only. */}
         {presentation === "answer" ? null : (
           <WardBedListPrint unit={unit} beds={bedsList} now={now} dayZero={dayZero} />
