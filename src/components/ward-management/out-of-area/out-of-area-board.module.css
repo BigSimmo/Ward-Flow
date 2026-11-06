@@ -1900,10 +1900,12 @@ fieldset.formRow {
 /* Phone compact switch (Josh, 12 Oct 2026): Needs you, Everyone and Beds take the shared phone track
  * (`--wf-phone-*`), whose 48px box carries a transparent band round the 34px track. The pinned
  * switch paints that band in the canvas and sits flush under the bar; the collar runs to the sides
- * and below only, so it never covers the bar. Phone only. */
+ * and below only, so it never covers the bar. Phone only. The options keep the kit's 40px face
+ * (Q295), not 0: this rule ties the kit's `.seg .segItem`, and when this sheet loaded after the
+ * kit's a 0 squashed the options to their text (same fix as Governance and Legal forms, #1480). */
 @media (max-width: 46.4375rem) {
   .phoneTabs [role="radio"] {
-    min-height: 0;
+    min-height: var(--wf-phone-seg-item-h, 40px);
   }
 
   .phoneTabs {
