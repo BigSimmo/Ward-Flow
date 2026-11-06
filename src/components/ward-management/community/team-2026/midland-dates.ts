@@ -16,7 +16,7 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sept", 
 const WEEKDAY = "(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun)";
 // "Wed 4 Nov" or "4 Nov", as the mock-up writes them; a time after the date is left as it is.
 const WRITTEN_DATE = new RegExp(
-  `\\b(${WEEKDAY} )?([1-9]|[12]\\d|3[01]) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept?|Oct|Nov|Dec)\\b`,
+  String.raw`\b(${WEEKDAY} )?([1-9]|[12]\d|3[01]) (Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sept?|Oct|Nov|Dec)\b`,
   "g",
 );
 
