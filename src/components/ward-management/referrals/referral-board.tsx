@@ -104,6 +104,7 @@ import { edSingleColumn, useEdDeskReferrals } from "./referral-ed-desk";
 import { EdNextOverdue, ReferralEdRaisedSection } from "./referral-ed-raised-section";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { focusIsLost, rememberOpener, returnFocusToOpener, useIsPhone, type FocusOpener } from "@/components/wf";
+import { focusAfterDecision, focusQueueFallback, nextQueuedId } from "./referral-focus-fallback";
 import mph from "./referral-match-phone.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
@@ -382,7 +383,8 @@ export function ReferralBoard({
     const opener = triggerRef.current;
     if (returnFocusToOpener(opener)) return;
     window.requestAnimationFrame(() => {
-      if (focusIsLost(detailRef.current)) returnFocusToOpener(opener);
+      // BA-3: a detail the page opened by itself has no opener, so the queue takes focus instead.
+      if (focusIsLost(detailRef.current) && !returnFocusToOpener(opener)) focusQueueFallback();
     });
   }, []);
   const clearHighlights = useCallback(() => {
@@ -505,6 +507,13 @@ export function ReferralBoard({
     setSelectedReferralId(referral.id);
     setDecidedHereId(referral.id);
     watchDecision(referral.id, `${title} · ${nameOf(referral)}`, completion);
+    // BA-1: the pressed Accept or Decline is gone, so focus moves to the next referral or the outcome.
+    focusAfterDecision(
+      nextQueuedId(
+        queued.map((queuedReferral) => queuedReferral.id),
+        referral.id,
+      ),
+    );
   };
 
   function selectAt(step: 1 | -1) {
