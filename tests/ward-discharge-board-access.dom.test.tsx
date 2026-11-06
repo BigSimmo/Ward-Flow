@@ -77,7 +77,8 @@ function renderBoard() {
     </WardFlowProvider>,
   );
 }
-function expectDeniedDetail(name: string, detail = screen.getByRole("region", { name: "Selected discharge details" })) {
+// Drawer review (6 Nov 2026): the detail opens in the kit drawer, so it exists only while a row is open.
+function expectDeniedDetail(name: string, detail = screen.getByTestId("ward-discharge-detail")) {
   expect(detail).toHaveTextContent("This record could not be opened. Select it again to retry.");
   expect(within(detail).queryByRole("heading", { name })).not.toBeInTheDocument();
   expect(within(detail).queryByTestId("ward-discharge-update-date-btn")).not.toBeInTheDocument();
@@ -97,37 +98,28 @@ describe("DischargeBoard guarded detail access", () => {
   it("shows a retryable failure when allocating an open receipt throws", () => {
     access.mode = "allocation-failed";
     renderBoard();
-    // Selection and closing replace contents, not these named regions or the detail shell.
     const worklist = screen.getByRole("region", { name: "Discharge worklist" });
-    const detail = screen.getByRole("region", { name: "Selected discharge details" });
-    const detailShell = detail.parentElement!;
     const name = openFirstRecord(worklist);
-    expect(detail).toBeInTheDocument();
+    const detail = screen.getByTestId("ward-discharge-detail");
     expectDeniedDetail(name, detail);
-    expect(within(detailShell).getByRole("button", { name: "Close" })).toBeInTheDocument();
-    fireEvent.keyDown(window, { key: "Escape" });
-    expect(within(detailShell).queryByRole("button", { name: "Close" })).not.toBeInTheDocument();
-    expect(detail).toBeInTheDocument();
-    expect(detail).toHaveTextContent("Select a record to view dates, hold-ups and ward follow-up.");
+    // Closing removes the drawer; the worklist region stays.
+    fireEvent.click(within(detail).getByRole("button", { name: "Close" }));
+    expect(screen.queryByTestId("ward-discharge-detail")).toBeNull();
     access.mode = "normal";
     expect(worklist).toBeInTheDocument();
     fireEvent.click(within(worklist).getByRole("button", { name }));
-    expect(detail).toBeInTheDocument();
-    expect(within(detail).getByRole("heading", { name })).toBeInTheDocument();
+    expect(within(screen.getByTestId("ward-discharge-detail")).getByRole("heading", { name })).toBeInTheDocument();
   });
 
   it("removes opened details when a scenario reset invalidates the receipt", () => {
     renderBoard();
     const name = openFirstRecord();
-    const detail = screen.getByRole("region", { name: "Selected discharge details" });
+    const detail = screen.getByTestId("ward-discharge-detail");
     expect(within(detail).getByRole("heading", { name })).toBeInTheDocument();
     expect(within(detail).getByText(/UMRN/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Reset scenario" }));
-    // World-generation changes remount the workspace and clear selection altogether.
-    const cleared = screen.getByRole("region", { name: "Selected discharge details" });
-    expect(cleared).toHaveTextContent("Select a record to view dates, hold-ups and ward follow-up.");
-    expect(within(cleared).queryByRole("heading", { name })).not.toBeInTheDocument();
-    expect(within(cleared).queryByTestId("ward-discharge-update-date-btn")).not.toBeInTheDocument();
-    expect(within(cleared).queryByText(/UMRN/)).not.toBeInTheDocument();
+    // World-generation changes remount the workspace and clear selection, so the drawer closes.
+    expect(screen.queryByTestId("ward-discharge-detail")).toBeNull();
+    expect(screen.queryByTestId("ward-discharge-update-date-btn")).not.toBeInTheDocument();
   });
 });

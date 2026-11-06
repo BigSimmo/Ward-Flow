@@ -161,11 +161,12 @@ describe("Discharges charts under the table (direction A)", () => {
     expect(options.slice(1).every((option) => option.getAttribute("aria-checked") === "false")).toBe(true);
   });
 
-  it("keeps the table full width until a row is opened", () => {
+  it("keeps the table full width and opens a row in the drawer", () => {
+    // Drawer review (6 Nov 2026): no side column opens beside the list; the row opens the kit drawer.
     renderBoard();
-    const workspace = screen.getByRole("region", { name: "Discharge worklist" }).closest("[data-detail-open]");
-    expect(workspace).toBeNull();
+    expect(screen.queryByTestId("ward-discharge-detail")).toBeNull();
     fireEvent.click(within(worklistRows()[0]!).getAllByRole("button")[0]!);
-    expect(screen.getByRole("region", { name: "Discharge worklist" }).closest("[data-detail-open]")).not.toBeNull();
+    expect(screen.getByRole("region", { name: "Discharge worklist" }).closest("[data-detail-open]")).toBeNull();
+    expect(screen.getByTestId("ward-discharge-detail")).toHaveAttribute("role", "dialog");
   });
 });

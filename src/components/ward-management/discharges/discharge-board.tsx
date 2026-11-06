@@ -13,7 +13,6 @@ import {
   Printer,
   TrendingUp,
   Ambulance,
-  X,
 } from "lucide-react";
 import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import { dayOf, formatSheetMoment } from "@/components/ward-management/ward-clock";
@@ -26,8 +25,11 @@ import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-pro
 import {
   Button,
   Card,
+  DrawerFootRow,
+  Field,
   Hero,
   LiveChip,
+  PanelDrawer,
   PhoneSheet,
   Select,
   ShowMoreRow,
@@ -76,7 +78,13 @@ import {
   stageTone,
 } from "./discharge-board-model";
 import { DischargePopulationSwitch, DischargeFilterCard } from "./discharge-board-filters";
-import { DischargeRecordDetail, DischargeReleaseDetail, DischargeRestingDetail } from "./discharge-detail-panes";
+import {
+  DischargeRecordDetail,
+  DischargeReleaseDetail,
+  dischargeDrawerTabs,
+  recordDrawerHead,
+  releaseDrawerHead,
+} from "./discharge-detail-panes";
 import { useDischargeDeskView } from "./discharge-desk-view";
 import { useDischargeWorkspaceState } from "./use-discharge-workspace-state";
 // Closing-the-loop package B (24 Oct 2026): the weekend and holiday list. Since the redesign (approved
@@ -201,7 +209,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     identity,
     selected,
     releaseId,
-    openError,
     isPhone,
     phoneChart,
     setPhoneChart,
@@ -214,7 +221,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     highlight,
     setHighlight,
     copyNote,
-    detailRef,
     listRef,
     setDeparture,
     offerDeparture,
@@ -239,6 +245,8 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
     total,
     closeDrawer,
     openRecord,
+    drawerTab,
+    setDrawerTab,
     filtersActive,
     openCount,
     openScopedRecords,
@@ -397,6 +405,147 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             },
           },
   };
+
+  /* ---- detail drawer (drawer review, 6 Nov 2026) ---- */
+  const drawerHead = activeRecord
+    ? recordDrawerHead(s, activeRecord)
+    : detailRelease
+      ? releaseDrawerHead(s, detailRelease)
+      : null;
+  // The phone shows the release's panes together (no tabs); a record keeps its tabs at every width.
+  const drawerTabs = drawerHead && (activeRecord || !isPhone) ? dischargeDrawerTabs(drawerHead.hasBlocker) : undefined;
+  // "Going to" sits in the body, beside the facts, so the foot keeps one primary and one secondary.
+  const departureField =
+    canRecordDeparture && detailRelease ? (
+      <Field label="Going to" className={pageStyles.departDest}>
+        <Select
+          aria-label="Where are they going?"
+          data-testid="ward-discharge-departure-destination"
+          value={departureDestination}
+          onChange={(event) =>
+            setDeparture({
+              releaseId: detailRelease.id,
+              destination: event.target.value as LeavingDestination,
+            })
+          }
+        >
+          {LEAVING_DESTINATIONS.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </Select>
+      </Field>
+    ) : null;
+  const recordDeparture = (variant: "pri" | "sec") =>
+    canRecordDeparture && detailRelease ? (
+      <Button
+        variant={variant}
+        className={variant === "pri" ? pageStyles.drawerPrimary : undefined}
+        data-testid="ward-discharge-record-departure"
+        onClick={() => {
+          const who = linkedReleaseRecord ? recordName(linkedReleaseRecord) : "The person";
+          const admissionId = detailRelease.admissionId;
+          const completion = recordWardDeparture(
+            admissionId,
+            detailRelease.unitId,
+            departureDestination,
+            s.releaseActor.role === "coordinator" ? "coordinator" : "ward",
+          );
+          // The completion carries this command's accepted Undo record, including shared saves.
+          offerDeparture(
+            {
+              success: `Recorded: ${who} has left the ward.`,
+              undo: (at) => ({
+                type: "UNDO_DEPARTURE",
+                role: s.releaseActor.role,
+                now: at,
+                admissionId,
+                ...(s.releaseActor.role === "ward" ? { actingUnitId: s.releaseActor.actingUnitId } : {}),
+              }),
+              undone: `Undone. ${who} is back in their bed.`,
+            },
+            { completion },
+          );
+        }}
+      >
+        Record discharge
+      </Button>
+    ) : null;
+  // The next step: Clear hold-up on a phone, Record discharge once confirmed, otherwise the row's own
+  // action (Chase opens Held up, Confirm date the date control).
+  const releaseAction =
+    detailRelease && detailRelease.state !== "discharged" && !canRecordDeparture
+      ? releaseActionLabel(detailRelease, canChangeDate)
+      : null;
+  const drawerPrimary =
+    phoneClearBlocker && detailRelease ? (
+      <Button
+        variant="pri"
+        className={pageStyles.drawerPrimary}
+        data-testid="ward-discharge-clear-blocker"
+        onClick={() =>
+          dispatch({
+            type: "CLEAR_BED_RELEASE_BLOCK",
+            role: s.releaseActor.role,
+            now,
+            releaseId: detailRelease.id,
+            actingUnitId: detailRelease.unitId,
+          })
+        }
+      >
+        Clear hold-up
+      </Button>
+    ) : canRecordDeparture ? (
+      recordDeparture("pri")
+    ) : detailRelease && releaseAction && releaseAction !== "Open" ? (
+      <Button
+        variant="pri"
+        className={pageStyles.drawerPrimary}
+        onClick={(e) =>
+          openReleaseOn(detailRelease.id, e.currentTarget, releaseActionPart(detailRelease, canChangeDate))
+        }
+      >
+        {releaseAction}
+      </Button>
+    ) : null;
+  const openWard = selectedUnitId ? (
+    <Link href={`/ward-flow/ward/${selectedUnitId}`} className={buttonClass({ variant: "sec" })}>
+      Open ward
+    </Link>
+  ) : null;
+  const recordLink =
+    detailRelease && linkedReleaseRecord ? (
+      <Button
+        variant="sec"
+        icon={FileText}
+        onClick={(e) => {
+          s.setPopulation("records");
+          openRecord(linkedReleaseRecord, e.currentTarget);
+        }}
+      >
+        Discharge record
+      </Button>
+    ) : null;
+  // Phone (drawer review): one primary and one secondary. A wider screen keeps the record link too.
+  const drawerSecondary = isPhone ? (
+    phoneClearBlocker && canRecordDeparture ? (
+      recordDeparture("sec")
+    ) : (
+      openWard
+    )
+  ) : (
+    <>
+      {recordLink}
+      {openWard}
+    </>
+  );
+  const drawerFoot = selectedUnitId ? (
+    <>
+      {drawerPrimary}
+      <DrawerFootRow className={pageStyles.drawerFootRow}>{drawerSecondary}</DrawerFootRow>
+    </>
+  ) : undefined;
 
   return (
     <div className={`${styles.screen} ${pageStyles.screen}`} data-testid="ward-discharge-board" data-ward-design="v6">
@@ -676,7 +825,6 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
         ) : null}
         <div
           className={`${pageStyles.workspace} ${releaseList.workspace}`}
-          data-detail-open={Boolean(selected || releaseId) || undefined}
           data-recorded={population === "records" || undefined}
         >
           <Card className={`${pageStyles.register} ${releaseList.list}`} aria-labelledby="discharge-register-heading">
@@ -1206,7 +1354,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
           {/* Redesign (Josh, 30 Oct): the one barrier panel, and under it the day chart, beside the list on a
               wide screen, so "Choose a day" sits beside the rows it highlights. On a tablet both keep their
               place under the list. The Barriers view is gone. */}
-          {guarded.status === "allowed" && !isPhone && nowView && !(selected || releaseId) ? (
+          {guarded.status === "allowed" && !isPhone && nowView ? (
             <div className={releaseList.barrierSide}>
               <DischargeBarrierBars
                 barriers={barrierCounts}
@@ -1224,203 +1372,43 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
               />
             </div>
           ) : null}
-          {Boolean(selected || releaseId) && (
-            <div
-              className={pageStyles.scrim}
-              onClick={closeDrawer}
-              aria-hidden="true"
-              data-sheet-scrim=""
-              data-testid="ward-discharge-scrim"
-            />
-          )}
-          <div className={pageStyles.rightRail}>
-            {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
-            <aside
-              ref={detailRef}
-              className={`${pageStyles.detail}${selected || releaseId ? ` ${pageStyles.open}` : ""}`}
-              tabIndex={-1}
-              aria-labelledby="discharge-detail-heading"
-              onKeyDown={(event) => {
-                if (event.key === "Escape") {
-                  event.preventDefault();
-                  closeDrawer();
-                  return;
-                }
-                if (event.key === "Tab") {
-                  if (typeof window !== "undefined" && window.matchMedia("(min-width: 46.5rem)").matches) {
-                    return;
-                  }
-                  const focusable = Array.from(
-                    detailRef.current?.querySelectorAll<HTMLElement>(
-                      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-                    ) ?? [],
-                  ).filter((el) => !el.hasAttribute("disabled"));
-                  if (focusable.length === 0) return;
-                  const first = focusable[0];
-                  const last = focusable[focusable.length - 1];
-                  if (!first || !last) return;
-                  if (event.shiftKey && document.activeElement === first) {
-                    last.focus();
-                    event.preventDefault();
-                  } else if (!event.shiftKey && document.activeElement === last) {
-                    first.focus();
-                    event.preventDefault();
-                  }
-                }
-              }}
-            >
-              <header className={pageStyles.detailHeader}>
-                <h2
-                  id="discharge-detail-heading"
-                  className={activeRecord || detailRelease ? pageStyles.localTitle : pageStyles.detailTitle}
-                >
-                  {activeRecord || detailRelease ? "Selected discharge" : "Record detail"}
-                </h2>
-                {(selected || releaseId) && (
-                  <Button
-                    iconOnly
-                    icon={X}
-                    variant="ghost"
-                    size="sm"
-                    aria-label="Close"
-                    className={pageStyles.closeBtn}
-                    onClick={closeDrawer}
-                  />
-                )}
-              </header>
-              <div className={pageStyles.detailBody} role="region" aria-label="Selected discharge details" tabIndex={0}>
-                {activeRecord ? (
-                  <DischargeRecordDetail key={activeRecord.id} s={s} activeRecord={activeRecord} />
-                ) : detailRelease ? (
-                  <DischargeReleaseDetail
-                    key={`${detailRelease.id}:${openOn?.n ?? 0}`}
-                    s={s}
-                    detailRelease={detailRelease}
-                    openOn={openOn?.releaseId === detailRelease.id ? openOn.part : null}
-                  />
-                ) : selected || openError ? (
-                  <p className={pageStyles.emptyState}>This record could not be opened. Select it again to retry.</p>
-                ) : (
-                  <DischargeRestingDetail s={s} />
-                )}
-              </div>
-              {selectedUnitId && (
-                <footer className={pageStyles.detailFooter}>
-                  {canRecordDeparture ? (
-                    <label className={pageStyles.departDest}>
-                      <span>Going to</span>
-                      <Select
-                        aria-label="Where are they going?"
-                        data-testid="ward-discharge-departure-destination"
-                        value={departureDestination}
-                        onChange={(event) =>
-                          setDeparture({
-                            releaseId: detailRelease?.id ?? null,
-                            destination: event.target.value as LeavingDestination,
-                          })
-                        }
-                      >
-                        {LEAVING_DESTINATIONS.map((option) => (
-                          <option key={option.id} value={option.id}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </Select>
-                    </label>
-                  ) : null}
-                  {!isPhone && detailRelease && linkedReleaseRecord ? (
-                    <Button
-                      size="sm"
-                      variant="sec"
-                      icon={FileText}
-                      onClick={(e) => {
-                        s.setPopulation("records");
-                        openRecord(linkedReleaseRecord, e.currentTarget);
-                      }}
-                    >
-                      Discharge record
-                    </Button>
-                  ) : null}
-                  <Link
-                    href={`/ward-flow/ward/${selectedUnitId}`}
-                    className={buttonClass({ size: "sm", variant: "sec" })}
-                  >
-                    Open ward
-                  </Link>
-                  {!isPhone && !canRecordDeparture && detailRelease && detailRelease.state !== "discharged" ? (
-                    <Button
-                      size="sm"
-                      variant="pri"
-                      className={pageStyles.footPri}
-                      onClick={(e) =>
-                        openReleaseOn(
-                          detailRelease.id,
-                          e.currentTarget,
-                          releaseActionPart(detailRelease, canChangeDate),
-                        )
-                      }
-                    >
-                      {releaseActionLabel(detailRelease, canChangeDate)}
-                    </Button>
-                  ) : null}
-                  {canRecordDeparture && detailRelease ? (
-                    <Button
-                      variant={phoneClearBlocker ? "sec" : "pri"}
-                      size="sm"
-                      className={phoneClearBlocker ? undefined : pageStyles.departPri}
-                      data-testid="ward-discharge-record-departure"
-                      onClick={() => {
-                        const who = linkedReleaseRecord ? recordName(linkedReleaseRecord) : "The person";
-                        const admissionId = detailRelease.admissionId;
-                        const completion = recordWardDeparture(
-                          admissionId,
-                          detailRelease.unitId,
-                          departureDestination,
-                          s.releaseActor.role === "coordinator" ? "coordinator" : "ward",
-                        );
-                        // The completion carries this command's accepted Undo record, including shared saves.
-                        offerDeparture(
-                          {
-                            success: `Recorded: ${who} has left the ward.`,
-                            undo: (at) => ({
-                              type: "UNDO_DEPARTURE",
-                              role: s.releaseActor.role,
-                              now: at,
-                              admissionId,
-                              ...(s.releaseActor.role === "ward" ? { actingUnitId: s.releaseActor.actingUnitId } : {}),
-                            }),
-                            undone: `Undone. ${who} is back in their bed.`,
-                          },
-                          { completion },
-                        );
-                      }}
-                    >
-                      Record discharge
-                    </Button>
-                  ) : null}
-                  {phoneClearBlocker && detailRelease ? (
-                    <Button
-                      variant="pri"
-                      className={pageStyles.phFootPri}
-                      data-testid="ward-discharge-clear-blocker"
-                      onClick={() =>
-                        dispatch({
-                          type: "CLEAR_BED_RELEASE_BLOCK",
-                          role: s.releaseActor.role,
-                          now,
-                          releaseId: detailRelease.id,
-                          actingUnitId: detailRelease.unitId,
-                        })
-                      }
-                    >
-                      Clear hold-up
-                    </Button>
-                  ) : null}
-                </footer>
-              )}
-            </aside>
-          </div>
         </div>
+        {/* Drawer review (6 Nov 2026): the chosen discharge opens in the kit drawer at every width, as
+            Home, Capacity and Transport do. The list keeps the page's one scroll and its full width;
+            the drawer's body is the only scroll inside it. */}
+        {selected || releaseId ? (
+          <PanelDrawer
+            open
+            onClose={closeDrawer}
+            title={drawerHead?.title ?? "Selected discharge"}
+            titleId="discharge-detail-heading"
+            subtitle={drawerHead?.subtitle}
+            tag={drawerHead?.tag}
+            tabs={drawerTabs}
+            tab={drawerTab}
+            onTabChange={setDrawerTab}
+            tabsLabel="Discharge inspection sections"
+            bodyLabel="Selected discharge details"
+            testId="ward-discharge-detail"
+            className={pageStyles.detailDrawer}
+            bodyClassName={pageStyles.detailDrawerBody}
+            foot={drawerFoot}
+          >
+            {activeRecord ? (
+              <DischargeRecordDetail key={activeRecord.id} s={s} activeRecord={activeRecord} />
+            ) : detailRelease ? (
+              <DischargeReleaseDetail
+                key={`${detailRelease.id}:${openOn?.n ?? 0}`}
+                s={s}
+                detailRelease={detailRelease}
+                openOn={openOn?.releaseId === detailRelease.id ? openOn.part : null}
+                departure={departureField}
+              />
+            ) : (
+              <p className={pageStyles.emptyState}>This record could not be opened. Select it again to retry.</p>
+            )}
+          </PanelDrawer>
+        ) : null}
         {guarded.status === "allowed" && !isPhone && nowView ? (
           /* Tablet: the day chart and the barrier panel under the list. A wide screen has both beside the
              list instead, so CSS hides this pair there (one barrier panel on screen at any width). */
