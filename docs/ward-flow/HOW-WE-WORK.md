@@ -123,7 +123,9 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   newest CI-passed `main` commit and writes a GitHub Release (`live-YYYY-MM-DD-HHMM`) with a short
   "what changed" note; the coordinator posts its New and Fixed lines in project chat. "Release now"
   for an urgent fix means a manual run of that workflow after Josh says so. Never push to `live` by
-  hand; rolling back to an earlier `live-*` tag needs Josh's yes.
+  hand; rolling back to an earlier `live-*` tag needs Josh's yes, and starts by pausing the daily
+  release with the `WARD_RELEASE_PAUSED` repository variable
+  ([runbook](OPERATIONS-RUNBOOK.md#rolling-back-the-app)).
 - **One claim board across machines: GitHub.** Claude threads and Codex work on different
   machines, so the open PRs and branches are the shared claim board (Q374). Comments on the pinned
   issue "Who is editing what" are no longer needed.

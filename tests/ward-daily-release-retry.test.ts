@@ -426,4 +426,30 @@ describe("daily release record and live-ref recovery", () => {
     expect(h.run("BigSimmo/Other").status).not.toBe(0);
     expect(h.read().calls).toEqual([]);
   });
+
+  // CB-2 (front-end audit, 5 Nov 2026): after a rollback live sits behind main, and main still holds
+  // the bad commit. While WARD_RELEASE_PAUSED is set, no run may move live forward again.
+  it("holds a rolled-back live while releases are paused, on the schedule and by hand", () => {
+    const h = harness({ current: previous, target });
+    const scheduled = h.run("BigSimmo/Ward-Flow", { RELEASE_PAUSED: "true", EVENT_NAME: "schedule" });
+    expect(scheduled.status).toBe(0);
+    expect(scheduled.stdout).toContain("Releases are paused");
+    expect(h.read().calls).toEqual([]);
+    expect(h.read().current).toBe(previous);
+
+    const byHand = h.run("BigSimmo/Ward-Flow", { RELEASE_PAUSED: "yes", EVENT_NAME: "workflow_dispatch" });
+    expect(byHand.status).not.toBe(0);
+    expect(byHand.stderr).toContain("Releases are paused");
+    expect(h.read().calls).toEqual([]);
+    expect(h.read().current).toBe(previous);
+  });
+
+  it("releases as usual once the pause is cleared", () => {
+    const h = harness({ current: previous, target });
+    expect(h.run("BigSimmo/Ward-Flow", { RELEASE_PAUSED: "false", EVENT_NAME: "schedule" }).status).toBe(0);
+    expect(h.read().current).toBe(target);
+    const h2 = harness({ current: previous, target });
+    expect(h2.run("BigSimmo/Ward-Flow", { RELEASE_PAUSED: "", EVENT_NAME: "schedule" }).status).toBe(0);
+    expect(h2.read().current).toBe(target);
+  });
 });
