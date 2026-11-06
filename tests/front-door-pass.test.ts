@@ -158,6 +158,23 @@ describe("proxy front door", () => {
     expect(to.searchParams.get("next")).toBe("/ward-flow/bed-meeting?tv=1");
   });
 
+  it("carries a recovery link's code onto the sign-in address, never inside next (SEC-2)", async () => {
+    const answer = await frontDoorVerdict(page("/ward-flow?code=synthetic-code&view=beds"), ON);
+    const to = new URL(answer!.headers.get("location")!);
+    expect(to.pathname).toBe("/sign-in");
+    expect(to.searchParams.get("code")).toBe("synthetic-code");
+    expect(to.searchParams.get("next")).toBe("/ward-flow?view=beds");
+    const failed = await frontDoorVerdict(page("/ward-flow?error=access_denied&error_code=otp_expired"), ON);
+    const back = new URL(failed!.headers.get("location")!);
+    expect(back.searchParams.get("error_code")).toBe("otp_expired");
+    expect(back.searchParams.get("next")).toBe("/ward-flow");
+    // Only the recovery destination itself carries a link; a deeper page keeps its address whole.
+    const deeper = await frontDoorVerdict(page("/ward-flow/capacity?code=synthetic"), ON);
+    const kept = new URL(deeper!.headers.get("location")!);
+    expect(kept.searchParams.get("code")).toBeNull();
+    expect(kept.searchParams.get("next")).toBe("/ward-flow/capacity?code=synthetic");
+  });
+
   it("answers an API call without a pass with 401, not a redirect", async () => {
     const answer = await frontDoorVerdict(page("/api/workspace"), ON);
     expect(answer?.status).toBe(401);

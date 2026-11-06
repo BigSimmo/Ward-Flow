@@ -17,6 +17,7 @@ vi.mock("../src/components/ward-management/shell/ward-phone-push", async (origin
 });
 import { CLINICAL_VALUES } from "../src/components/ward-management/ward-clinical-values";
 import { WARD_AUTH_STORAGE_KEY } from "../src/components/ward-management/ward-supabase-auth";
+import { WARD_RECOVERY_VERIFIER_KEY } from "../src/components/ward-management/ward-auth-link";
 const user = { id: "12345678-1234-1234-1234-123456789abc" };
 
 function mutableAuth() {
@@ -61,6 +62,7 @@ beforeEach(() => {
   vi.stubEnv("NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test");
   vi.stubEnv("NEXT_PUBLIC_WARD_API_BASE_URL", "https://api.example.test");
   sessionStorage.clear();
+  localStorage.removeItem(WARD_RECOVERY_VERIFIER_KEY);
   window.history.replaceState({}, "", "/ward-flow");
 });
 /** A stand-in for the app badge API, removed again by the caller. */
@@ -75,6 +77,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   sessionStorage.clear();
+  localStorage.removeItem(WARD_RECOVERY_VERIFIER_KEY);
 });
 describe("Supabase shared sign-in", () => {
   it.each(["operational", "executive"] as const)(
@@ -337,14 +340,47 @@ describe("Supabase shared sign-in", () => {
     expect(get).not.toHaveBeenCalled();
     expect(screen.queryByText("Workspace contents")).toBeNull();
   });
-  it("erases recovery URL and cannot enter workspace before password update", async () => {
+  it("refuses the old implicit recovery fragment without signing in (SEC-2)", async () => {
     window.history.replaceState(
       {},
       "",
       "/ward-flow#type=recovery&access_token=access&refresh_token=refresh&expires_in=3600",
     );
+    const fetcher = vi.fn(async () => Response.json({}, { status: 503 }));
+    vi.stubGlobal("fetch", fetcher);
+    render(<Probe />);
+    expect(await screen.findByText(/recovery link is invalid or expired/i)).toBeInTheDocument();
+    expect(window.location.hash).toBe("");
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Set a new password" })).toBeNull();
+    expect(await screen.findByLabelText("Email")).toBeInTheDocument();
+  });
+  it("does not sign in with a recovery code opened on another device or browser (SEC-2)", async () => {
+    window.history.replaceState({}, "", "/ward-flow?code=synthetic-code");
+    const fetcher = vi.fn(async () => Response.json({}, { status: 503 }));
+    vi.stubGlobal("fetch", fetcher);
+    render(<Probe />);
+    expect(
+      await screen.findByText(
+        "Open this link on the device and browser where you asked for it, or ask for a new link here.",
+      ),
+    ).toBeInTheDocument();
+    expect(window.location.search).toBe("");
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(sessionStorage.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
+    expect(screen.queryByRole("heading", { name: "Set a new password" })).toBeNull();
+    // The sign-in screen can still ask for a new link here.
+    expect(await screen.findByRole("button", { name: "Forgot password?" })).toBeInTheDocument();
+  });
+  it("exchanges a PKCE recovery code, erases it and cannot enter workspace before password update", async () => {
+    // SEC-2: the browser that asked for the link holds the verifier.
+    const verifier = "s".repeat(64);
+    localStorage.setItem(WARD_RECOVERY_VERIFIER_KEY, JSON.stringify({ verifier, createdAt: Date.now() }));
+    window.history.replaceState({}, "", "/ward-flow?code=synthetic-code");
     let complete!: (response: Response) => void;
     const calls: string[] = [];
+    let exchange: unknown;
     vi.stubGlobal(
       "fetch",
       vi.fn(async (url, init) => {
@@ -353,13 +389,19 @@ describe("Supabase shared sign-in", () => {
           return new Promise<Response>((r) => {
             complete = r;
           });
+        if (String(url).includes("grant_type=pkce")) {
+          exchange = JSON.parse(String(init?.body));
+          return Response.json({ access_token: "access", refresh_token: "refresh", expires_in: 3600 });
+        }
         if (String(url).endsWith("/user")) return Response.json({ ...user, email: "coordinator@example.test" });
         return Response.json({}, { status: 503 });
       }),
     );
     render(<Probe />);
     await screen.findByRole("heading", { name: "Set a new password" });
-    expect(window.location.hash).toBe("");
+    expect(window.location.search).toBe("");
+    expect(exchange).toEqual({ auth_code: "synthetic-code", code_verifier: verifier });
+    expect(localStorage.getItem(WARD_RECOVERY_VERIFIER_KEY)).toBeNull();
     // Fresh audit X-1: the recovery screen names the account the link signs in to.
     expect(screen.getByTestId("ward-recovery-account")).toHaveTextContent(
       "This link is for coordinator@example.test. If that is not your account, choose Cancel.",
