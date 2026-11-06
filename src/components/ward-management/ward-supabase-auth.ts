@@ -95,7 +95,7 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
        * SEC-2: this browser's local storage, which keeps a recovery request's PKCE verifier until
        * its emailed link comes back (in a new tab). Without it a recovery link cannot be asked for.
        */
-      linkStorage?: Pick<Storage, "setItem" | "removeItem">;
+      linkStorage?: Pick<Storage, "getItem" | "setItem" | "removeItem">;
       fetch?: typeof fetch;
       timeoutMs?: number;
       coordinatorEmail?: string;
@@ -428,10 +428,15 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
     // SEC-2 (Josh, 6 Nov 2026): a PKCE recovery. The link Supabase emails carries a code that only
     // works with this verifier, kept in this browser alone, so the link signs in nowhere else.
     const storage = this.options.linkStorage;
+    // Offline, no email can go, so ask for nothing and keep the last link working.
+    if (typeof navigator !== "undefined" && navigator.onLine === false)
+      throw new WardAuthError("unavailable", "Sign-in service is unavailable. Try again.");
     const verifier = createPkceVerifier();
     const challenge = await pkceChallenge(verifier);
+    let previous: string | null = null;
     try {
       if (!storage) throw new Error();
+      previous = storage.getItem(WARD_RECOVERY_VERIFIER_KEY);
       storage.setItem(WARD_RECOVERY_VERIFIER_KEY, JSON.stringify({ verifier, createdAt: Date.now() }));
     } catch {
       throw new WardAuthError(
@@ -439,11 +444,24 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
         "This browser could not keep the recovery request. Allow this site to store data, then try again.",
       );
     }
-    // A failed request may still have sent the email, so the verifier stays until it lapses.
-    await this.request("/recover?redirect_to=" + encodeURIComponent(redirect.toString()), {
-      method: "POST",
-      body: JSON.stringify({ email, code_challenge: challenge, code_challenge_method: "s256" }),
-    });
+    try {
+      await this.request("/recover?redirect_to=" + encodeURIComponent(redirect.toString()), {
+        method: "POST",
+        body: JSON.stringify({ email, code_challenge: challenge, code_challenge_method: "s256" }),
+      });
+    } catch (error) {
+      // A refused request sent no email, so the earlier link's verifier comes back. Any other
+      // failure may still have sent the email, so the new verifier stays until it lapses.
+      if (error instanceof WardAuthError && error.kind === "credentials") {
+        try {
+          if (previous === null) storage.removeItem(WARD_RECOVERY_VERIFIER_KEY);
+          else storage.setItem(WARD_RECOVERY_VERIFIER_KEY, previous);
+        } catch {
+          // Storage went away mid-request; the earlier link then needs a new request.
+        }
+      }
+      throw error;
+    }
   }
   async updatePassword(password: string) {
     if (!this.isRecovery || !this.session) throw new WardAuthError("session", "Open a password recovery link first.");

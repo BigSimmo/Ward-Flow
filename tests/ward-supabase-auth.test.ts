@@ -272,6 +272,40 @@ describe("PKCE password recovery (SEC-2)", () => {
     expect(String(init.body)).not.toContain(kept.verifier);
     auth.dispose();
   });
+  it("keeps the earlier link's verifier when a resend is refused or the browser is offline", async () => {
+    const link = storage();
+    let reply = () => Response.json({});
+    const fetcher = vi.fn(async () => reply());
+    const auth = new SupabaseWardAuth({
+      url,
+      publishableKey: "sb_publishable_test",
+      linkStorage: link,
+      fetch: fetcher,
+    });
+    await auth.recover("synthetic@example.invalid", "https://ward.example.test/ward-flow");
+    const first = link.getItem(WARD_RECOVERY_VERIFIER_KEY);
+    reply = () => Response.json({}, { status: 422 });
+    await expect(
+      auth.recover("synthetic@example.invalid", "https://ward.example.test/ward-flow"),
+    ).rejects.toMatchObject({ kind: "credentials" });
+    expect(link.getItem(WARD_RECOVERY_VERIFIER_KEY)).toBe(first);
+    vi.stubGlobal("navigator", { onLine: false });
+    await expect(
+      auth.recover("synthetic@example.invalid", "https://ward.example.test/ward-flow"),
+    ).rejects.toMatchObject({ kind: "unavailable" });
+    expect(link.getItem(WARD_RECOVERY_VERIFIER_KEY)).toBe(first);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    vi.unstubAllGlobals();
+    // A timeout may still have sent the email, so its new verifier stays.
+    reply = () => {
+      throw new TypeError("network");
+    };
+    await expect(
+      auth.recover("synthetic@example.invalid", "https://ward.example.test/ward-flow"),
+    ).rejects.toMatchObject({ kind: "unavailable" });
+    expect(link.getItem(WARD_RECOVERY_VERIFIER_KEY)).not.toBe(first);
+    auth.dispose();
+  });
   it("asks for no link when this browser cannot keep the verifier", async () => {
     const fetcher = vi.fn(async () => Response.json({}));
     const auth = new SupabaseWardAuth({ url, publishableKey: "sb_publishable_test", fetch: fetcher });
@@ -281,6 +315,7 @@ describe("PKCE password recovery (SEC-2)", () => {
       kind: "unavailable",
     });
     const blocked = {
+      getItem: () => null,
       setItem: () => {
         throw new DOMException("blocked", "SecurityError");
       },
