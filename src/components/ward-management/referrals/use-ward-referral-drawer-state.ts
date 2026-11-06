@@ -68,7 +68,7 @@ import { drawerFootStatus } from "./referral-drawer-foot-status";
 import { focusFirstInvalidField, referralInboxSummary } from "./referral-drawer-helpers";
 import * as fromRecord from "./referral-record-prefill";
 import { type ReferralTextInput } from "./referral-letter";
-import { useIsPhone, useModalFocus, useOptionalToast } from "@/components/wf";
+import { TIME_FIELD_ERROR, useIsPhone, useModalFocus, useOptionalToast, type WfTone } from "@/components/wf";
 import { usePathname } from "next/navigation";
 import { wardChromeRole } from "@/components/ward-management/ward-chrome-role";
 import { profileForChromeRole } from "@/components/ward-management/settings/settings-profile";
@@ -374,6 +374,7 @@ export function useWardReferralDrawerState({
   const shownUrgency = community ? communityUrgency(communityNeeds.firstContact) : urgency;
   const sectionIds = sectionIdsFor(destType);
   const [edNeeds, setEdNeeds] = useState<EdNeeds>(kept?.edNeeds ?? {});
+  const [edArrivalWrong, setEdArrivalWrong] = useState(false);
   const draftNow: KeptDraft & { needsChartReattachment: boolean } = {
     submissionId: recoveryId,
     needsChartReattachment: draftNeedsChartReattachment(kept, documentation.charts),
@@ -789,6 +790,13 @@ export function useWardReferralDrawerState({
   }
   // WS-01: a ward referral answers gender before Send ("Not yet recorded" counts as an answer).
   const genderUnanswered = destType === "ward" && referralGender === "";
+  const originValid =
+    !!sendingWard ||
+    (!senderMissing &&
+      !!originSiteCode &&
+      siteDirectory.some(
+        (site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment),
+      ));
   // FORM-REF: the reason warns (`sendWarnings`); these block. Josh, 5 Nov 2026 (finding 2): the location
   // and referring service come from the sending desk (ED: its site; community: its service) and block
   // only when nothing could fill them, because an accepted referral cannot be moved without them.
@@ -805,15 +813,10 @@ export function useWardReferralDrawerState({
     if (shortForm) return shortForm;
     if (cleanReferralText(doctorNote).length > reasonRoom)
       return `Shorten the reason for referral to ${reasonRoom} characters or fewer.`;
+    // PR #1474 review: an ED arrival time typed but not a real 24-hour time is fixed or cleared first.
+    if (destType === "ed" && edArrivalWrong) return `${TIME_FIELD_ERROR}, for the expected arrival, or clear it.`;
     return null;
   }
-  const originValid =
-    !!sendingWard ||
-    (!senderMissing &&
-      !!originSiteCode &&
-      siteDirectory.some(
-        (site) => site.code === originSiteCode && (sourceKind !== "ed" || !!site.emergencyDepartment),
-      ));
   const needsSendingTeam = !sendingWard && !senderMissing && sourceKind === "community";
   const sendingTeamMissing = needsSendingTeam && !sendingTeam.trim();
   const needed: Record<DrawerSection, number> = {
@@ -831,6 +834,7 @@ export function useWardReferralDrawerState({
         community && !communityPurpose,
         doctorNote.length > reasonRoom,
         genderUnanswered,
+        destType === "ed" && edArrivalWrong,
       ].filter(Boolean).length + (community ? clearanceNeeded(documentation) : 0),
     documentation: community ? 0 : documentationNeeded(documentation),
     placement: (community ? selectedRecipient : selectedDestinations.length) ? 0 : 1,
@@ -1407,6 +1411,8 @@ export function useWardReferralDrawerState({
     setCommunityNeeds,
     edNeeds,
     setEdNeeds,
+    edArrivalWrong,
+    setEdArrivalWrong,
     draftNow,
     draftRestored: draftRestored && kept !== null,
     draftSessionSaved,

@@ -17,7 +17,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 26px;
+  /* K3 (design audit, 5 Nov 2026): a floor, so large text grows the tag instead of cutting it. */
+  min-height: 26px;
   padding: 0 10px;
   border-radius: var(--wf-r-sm);
   border: 1px solid var(--wf-line);

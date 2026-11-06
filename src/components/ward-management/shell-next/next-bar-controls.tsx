@@ -139,6 +139,8 @@ export function NextPhoneMenuEntry({
       <button
         type="button"
         ref={menuRef}
+        // D3 (design audit, 5 Nov 2026): where a closed pop-up hands focus when its opener has gone.
+        data-wf-focus-fallback=""
         className={styles.phoneOnly}
         aria-label="Menu"
         aria-haspopup="dialog"
