@@ -115,3 +115,130 @@ test(
     }
   },
 );
+
+test(
+  "real PostgreSQL: valid restored revisions replace warm bodies before reads and unrelated saves",
+  { skip: !url },
+  async (t) => {
+    const engine = await import("./dist/engine.mjs");
+    const pool = new Pool({ connectionString: url, max: 4 });
+    try {
+      await migrate(pool);
+      for (const sameRevision of [false, true])
+        for (const commandFirst of [false, true]) {
+          await t.test(
+            `${sameRevision ? "replacement stamp" : "older revision"}, ${commandFirst ? "locked save first" : "unlocked read first"}`,
+            async () => {
+              const workspaceId = randomUUID(),
+                actor = randomUUID();
+              let at = new Date("2026-11-05T02:00:00Z");
+              const options = { workspaceId, engine, clock: () => at };
+              const warm = createWorkspaceStore(pool, options);
+              const first = await warm.read(actor);
+              const older = (
+                await pool.query("SELECT revision, payload, updated_at FROM ward_flow.workspaces WHERE id=$1", [
+                  workspaceId,
+                ])
+              ).rows[0];
+              const records = (
+                await pool.query(
+                  "SELECT collection, record_id, kind, ordinal, revision, body FROM ward_flow.workspace_records WHERE workspace_id=$1",
+                  [workspaceId],
+                )
+              ).rows;
+              const units = first.payload.state.units.map((unit) => unit.id);
+              const refresh = (unitId) => ({ type: "REQUEST_CAPACITY_REFRESH", role: "coordinator", unitId });
+              at = new Date(at.getTime() + 60_000);
+              const admission = first.payload.state.admissions[0];
+              assert.equal(
+                (
+                  await warm.command(actor, randomUUID(), first.revision, {
+                    type: "SET_STEP_DOWN_CANDIDATE",
+                    role: "coordinator",
+                    admissionId: admission.id,
+                    stepDownCandidate: !admission.stepDownCandidate,
+                  })
+                ).status,
+                200,
+              );
+              // Also hold a future archive/count for this same generation, then restore it away.
+              const closed = first.payload.state.movements.find((movement) => movement.closure);
+              const archivedBody = { ...closed, id: `${closed.id}-cache-restore` };
+              await pool.query(
+                "INSERT INTO ward_flow.archived_records(workspace_id,world_generation,collection,record_id,closed_at,archived_revision,body) VALUES($1,$2,'movements',$3,0,3,$4)",
+                [workspaceId, first.payload.state.worldGeneration, archivedBody.id, archivedBody],
+              );
+              await pool.query("UPDATE ward_flow.workspaces SET revision=3,updated_at=$2 WHERE id=$1", [
+                workspaceId,
+                at,
+              ]);
+              assert.notDeepEqual(
+                (await warm.read(actor)).payload,
+                first.payload,
+                "warm a different, valid future body",
+              );
+              const view = await warm.viewer(actor, { bootstrap: true });
+              assert.equal((await warm.read(actor)).archived, 1);
+              assert.equal((await warm.archive(view)).archived, 1);
+              const restoredRevision = sameRevision ? 3 : Number(older.revision);
+              const restoredStamp = sameRevision ? new Date(at.getTime() + 1) : older.updated_at;
+              const client = await pool.connect();
+              try {
+                await client.query("BEGIN");
+                await client.query("SELECT id FROM ward_flow.workspaces WHERE id=$1 FOR UPDATE", [workspaceId]);
+                await client.query("UPDATE ward_flow.workspaces SET revision=$2,payload=$3,updated_at=$4 WHERE id=$1", [
+                  workspaceId,
+                  restoredRevision,
+                  older.payload,
+                  restoredStamp,
+                ]);
+                await client.query("DELETE FROM ward_flow.archived_records WHERE workspace_id=$1", [workspaceId]);
+                await client.query("DELETE FROM ward_flow.workspace_records WHERE workspace_id=$1", [workspaceId]);
+                for (const record of records)
+                  await client.query(
+                    "INSERT INTO ward_flow.workspace_records(workspace_id,collection,record_id,kind,ordinal,revision,body) VALUES($1,$2,$3,$4,$5,$6,$7)",
+                    [
+                      workspaceId,
+                      record.collection,
+                      record.record_id,
+                      record.kind,
+                      record.ordinal,
+                      record.revision,
+                      record.body,
+                    ],
+                  );
+                await client.query("COMMIT");
+              } catch (error) {
+                await client.query("ROLLBACK");
+                throw error;
+              } finally {
+                client.release();
+              }
+              const truth = () => createWorkspaceStore(pool, options).read(actor);
+              if (!commandFirst)
+                assert.deepEqual(
+                  (await warm.read(actor)).payload,
+                  (await truth()).payload,
+                  "restored body is authoritative",
+                );
+              // The save touches a different record, so a retained future body would contaminate its world.
+              assert.equal((await warm.command(actor, randomUUID(), restoredRevision, refresh(units[1]))).status, 200);
+              const actual = await warm.read(actor);
+              assert.deepEqual(actual.payload, (await truth()).payload);
+              const expected = engine.applyCommand(first.payload, refresh(units[1]), at).world;
+              assert.deepEqual(
+                actual.payload.state.admissions,
+                first.payload.state.admissions,
+                "unrelated save preserves restored bodies",
+              );
+              assert.deepEqual(actual.payload.state.refreshRequests, expected.state.refreshRequests);
+              assert.equal(actual.archived, 0, "the count must not survive restoration");
+              assert.equal((await warm.archive(view)).archived, 0, "held archive rows must not survive restoration");
+            },
+          );
+        }
+    } finally {
+      await pool.end();
+    }
+  },
+);

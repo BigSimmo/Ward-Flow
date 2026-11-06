@@ -87,6 +87,12 @@ these source contracts; they do not establish the deployed token, database or al
 - Phone alerts: before 9 they stay with the bootstrap statewide coordinators. From 9 each device
   records the membership that turned it on, and alerts reach bed managers, nurses in charge, ED
   clinicians, transport officers and community teams for their own place, cover included.
+  For a given device endpoint, each accepted registration advances its timestamp, including repeats
+  in the same millisecond. Cleanup and delivery results apply only to that registration's captured item
+  claims. Re-enabling alerts therefore cannot be undone by an older send's result. Results are
+  recorded in a short transaction after sending, with workspace, subscription and delivery locks
+  taken in that order; no provider call holds those locks. An expired claim or uncertain provider
+  outcome can still lead to a repeated send.
 
 ## Files
 

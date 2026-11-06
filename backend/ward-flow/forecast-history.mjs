@@ -109,9 +109,30 @@ export function forecastHistoryInput(body) {
  * @param {{ access: { role: string, scope: unknown }, actorId?: string }} view
  */
 export function forecastScopeKey(view) {
+  const scope = /** @type {{ kind?: string, unitIds?: string[] } | null} */ (view.access.scope);
+  // Ward IDs are a set: reciprocal cover must address the same desk. Other scopes already have
+  // a fixed shape from parseAccess(), and retain their existing persisted identity.
+  return legacyForecastScopeKey({
+    access: {
+      role: view.access.role,
+      scope: scope?.kind === "ward" ? { kind: "ward", unitIds: [...(scope.unitIds ?? [])].sort() } : scope,
+    },
+  });
+}
+
+/** The exact pre-canonical address, derived only from the current verified server view. */
+function legacyForecastScopeKey(view) {
   return createHash("sha256")
     .update(JSON.stringify([view.access.role, view.access.scope ?? null]))
     .digest("hex");
+}
+
+/**
+ * Only the old address derivable from this verified view may be reconciled. Old hashes carry no
+ * reversible scope metadata, so other historical ward permutations cannot be guessed.
+ */
+function forecastScopeKeys(view) {
+  return [...new Set([forecastScopeKey(view), legacyForecastScopeKey(view)])];
 }
 
 /**
@@ -132,8 +153,25 @@ export function forecastHistoryStore({ pool, workspaceId, schemaVersion, worldGe
       throw error;
     });
 
+  async function reconcileKnownHistory(view, generation) {
+    const [canonical, legacy] = forecastScopeKeys(view);
+    if (!legacy) return;
+    // Compatibility GETs may insert these bounded copies. The original rows stay intact; an
+    // existing canonical day wins every conflict. INSERT-only snapshots need no new grants.
+    await query(
+      `INSERT INTO ward_flow.forecast_snapshots(workspace_id, world_generation, scope_key, demo_day, taken_at, ready_gap_now, tomorrow_low, tomorrow_likely, tomorrow_high, created_at) SELECT workspace_id, world_generation, $3, demo_day, taken_at, ready_gap_now, tomorrow_low, tomorrow_likely, tomorrow_high, created_at FROM ward_flow.forecast_snapshots WHERE workspace_id=$1 AND data_mode='prototype' AND world_generation=$2 AND scope_key=$4 ORDER BY demo_day DESC LIMIT ${FORECAST_SNAPSHOT_LIMIT} ON CONFLICT DO NOTHING`,
+      [workspaceId, generation, canonical, legacy],
+    );
+    await query(
+      `INSERT INTO ward_flow.forecast_miss_reasons(workspace_id, world_generation, scope_key, demo_day, reason, chosen_by, chosen_at, actor_id, updated_at) SELECT workspace_id, world_generation, $3, demo_day, reason, chosen_by, chosen_at, actor_id, updated_at FROM ward_flow.forecast_miss_reasons WHERE workspace_id=$1 AND data_mode='prototype' AND world_generation=$2 AND scope_key=$4 ORDER BY demo_day DESC LIMIT ${FORECAST_REASON_LIMIT} ON CONFLICT DO NOTHING`,
+      [workspaceId, generation, canonical, legacy],
+    );
+  }
+
   async function history(view, generation) {
+    await reconcileKnownHistory(view, generation);
     const scopeKey = forecastScopeKey(view);
+    const wardScope = /** @type {{ kind?: string } | null} */ (view.access.scope)?.kind === "ward";
     const [snapshots, reasons] = await Promise.all([
       query(
         `SELECT demo_day, taken_at, ready_gap_now, tomorrow_low, tomorrow_likely, tomorrow_high FROM ward_flow.forecast_snapshots WHERE workspace_id=$1 AND data_mode='prototype' AND world_generation=$2 AND scope_key=$3 ORDER BY demo_day DESC LIMIT ${FORECAST_SNAPSHOT_LIMIT}`,
@@ -159,7 +197,9 @@ export function forecastHistoryStore({ pool, workspaceId, schemaVersion, worldGe
         reason: row.reason,
         by: row.chosen_by,
         at: row.chosen_at,
-        version: row.version,
+        // Every equivalent ward view receives the same canonical-bound CAS token. Other desks
+        // retain their existing UTC timestamp tokens. Neither form grants scope authority.
+        version: wardScope ? `${scopeKey}:${row.version}` : row.version,
       })),
     };
   }
@@ -189,6 +229,7 @@ export function forecastHistoryStore({ pool, workspaceId, schemaVersion, worldGe
           body: { code: "world-changed", error: "The demonstration was reset. Read the board again." },
         };
       const scopeKey = forecastScopeKey(view);
+      await reconcileKnownHistory(view, generation);
       const { snapshot, reason } = input;
       if (snapshot)
         await query(
@@ -206,6 +247,9 @@ export function forecastHistoryStore({ pool, workspaceId, schemaVersion, worldGe
           ],
         );
       if (reason) {
+        const expectedVersion = input.expectedVersion ?? null;
+        const addressed = typeof expectedVersion === "string" ? /^([a-f0-9]{64}):(.+)$/.exec(expectedVersion) : null;
+        const sourceVersion = addressed?.[2] ?? expectedVersion;
         const values = [
           workspaceId,
           generation,
@@ -218,15 +262,19 @@ export function forecastHistoryStore({ pool, workspaceId, schemaVersion, worldGe
         ];
         const changed =
           // No basis (none read, or an older browser): a first reason only, never an overwrite.
-          (input.expectedVersion ?? null) === null
+          expectedVersion === null
             ? await query(
                 `INSERT INTO ward_flow.forecast_miss_reasons(workspace_id, world_generation, scope_key, demo_day, reason, chosen_by, chosen_at, actor_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT DO NOTHING RETURNING ${FORECAST_REASON_VERSION_SQL} AS version`,
                 values,
               )
-            : await query(
-                `UPDATE ward_flow.forecast_miss_reasons SET reason=$5, chosen_by=$6, chosen_at=$7, actor_id=$8, updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond') WHERE workspace_id=$1 AND data_mode='prototype' AND world_generation=$2 AND scope_key=$3 AND demo_day=$4 AND ${FORECAST_REASON_VERSION_SQL}=$9 RETURNING ${FORECAST_REASON_VERSION_SQL} AS version`,
-                [...values, input.expectedVersion],
-              );
+            : (addressed ? addressed[1] === scopeKey : legacyForecastScopeKey(view) === scopeKey)
+              ? await query(
+                  // A cached version from a noncanonical address must be reviewed, never silently
+                  // retargeted onto a copied row with the same timestamp.
+                  `UPDATE ward_flow.forecast_miss_reasons SET reason=$5, chosen_by=$6, chosen_at=$7, actor_id=$8, updated_at=GREATEST(clock_timestamp(), updated_at + interval '1 microsecond') WHERE workspace_id=$1 AND data_mode='prototype' AND world_generation=$2 AND scope_key=$3 AND demo_day=$4 AND ${FORECAST_REASON_VERSION_SQL}=$9 RETURNING ${FORECAST_REASON_VERSION_SQL} AS version`,
+                  [...values, sourceVersion],
+                )
+              : { rows: [] };
         if (changed.rows.length === 0)
           return {
             status: 409,
