@@ -126,12 +126,27 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     renderSheet(true);
     fireEvent.click(screen.getByTestId("ward-tools-toggle-form-times"));
     expect(screen.getByTestId("ward-form-times")).toBeTruthy();
-    const outside = vi.fn();
+    // The Sheet's window listener skips an Escape that is already handled (defaultPrevented).
+    let handled: boolean | null = null;
+    const outside = (event: KeyboardEvent) => {
+      handled = event.defaultPrevented;
+    };
     window.addEventListener("keydown", outside);
     fireEvent.keyDown(screen.getByTestId("ward-tools-page"), { key: "Escape" });
     window.removeEventListener("keydown", outside);
     expect(screen.queryByTestId("ward-tools-page")).toBeNull();
-    expect(outside).not.toHaveBeenCalled();
+    expect(handled).toBe(true);
+  });
+
+  it("lets a menu inside a tool page take Escape first", () => {
+    renderSheet(true);
+    fireEvent.click(screen.getByTestId("ward-tools-toggle-contacts"));
+    const page = screen.getByTestId("ward-tools-page");
+    fireEvent.click(within(page).getByRole("button", { name: /^Contact list:/u }));
+    const menu = screen.getByRole("menu");
+    fireEvent.keyDown(menu, { key: "Escape" });
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(screen.getByTestId("ward-tools-page")).toBeTruthy();
   });
 
   it("keeps one tool open at a time, so opening another closes the first (Q310)", () => {

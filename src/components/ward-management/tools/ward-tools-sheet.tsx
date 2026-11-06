@@ -490,20 +490,26 @@ function ToolsSheetView({
     });
   };
 
-  // Escape on a tool page goes back to the list first; a second Escape closes the sheet.
+  // Escape on a tool page goes back to the list first; a second Escape closes the sheet. The listener
+  // is on document in the bubble phase: after React's handlers, so a menu or field inside the tool that
+  // handles Escape keeps it, and before the Sheet's own window listener. Only an Escape from inside the
+  // page counts, so a dialog stacked above the sheet keeps its own.
   const pageOpen = !twoPane && open !== null;
   const onEscape = useEffectEvent(() => closeTool());
   useEffect(() => {
     if (!pageOpen) return;
+    const page = document.getElementById(`ward-tools-page-${open}`);
+    if (!page) return;
     const onKey = (event: KeyboardEvent) => {
       if (event.key !== "Escape" || event.defaultPrevented) return;
+      if (!(event.target instanceof Node) || !page.contains(event.target)) return;
+      if (event.target instanceof HTMLElement && event.target.tagName === "SELECT") return;
       event.preventDefault();
-      event.stopPropagation();
       onEscape();
     };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [pageOpen]);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [pageOpen, open]);
 
   useEffect(() => {
     if (!openRequest) return;
