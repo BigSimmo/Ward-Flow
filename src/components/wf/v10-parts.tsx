@@ -256,19 +256,23 @@ export function WardCapacityRow({
 }: WardCapacityRowProps) {
   const known = percent !== null && Number.isFinite(percent);
   const glyph: WfTone | undefined = tone ?? (known && percent >= alertAt ? "warning" : undefined);
+  const pctText = known ? `${Math.round(percent)}%` : "Not recorded";
+  // CB-3 (axe 4.14 label-content-name-mismatch): the button's name starts with the words it shows.
+  const spoken = `${name}${meta ? ` ${meta}` : ""} ${pctText}. ${actionLabel ?? ""}`.trim();
   const body = (
     <>
       <span className={styles.capName}>
         <span className={styles.capNameText}>{name}</span>
+        {meta ? " " : null}
         {meta ? <span className={styles.capMeta}>{meta}</span> : null}
-      </span>
+      </span>{" "}
       <span
         className={styles.capBar}
         style={{ "--wf-cap-alert": `${Math.min(100, Math.max(0, alertAt))}%` } as CSSProperties}
       >
         <StackBar segments={segments} label="Beds" thin />
-      </span>
-      <span className={styles.capPct}>{known ? `${Math.round(percent)}%` : "Not recorded"}</span>
+      </span>{" "}
+      <span className={styles.capPct}>{pctText}</span>
       <span className={styles.capGlyph}>{glyph ? <StatusGlyph tone={glyph} /> : null}</span>
     </>
   );
@@ -280,7 +284,7 @@ export function WardCapacityRow({
     "data-testid": "wf-ward-capacity-row",
   };
   return onSelect ? (
-    <button type="button" {...shared} onClick={onSelect} aria-label={actionLabel} aria-pressed={selected}>
+    <button type="button" {...shared} onClick={onSelect} aria-label={spoken} aria-pressed={selected}>
       {body}
     </button>
   ) : (

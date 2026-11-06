@@ -975,15 +975,19 @@ export function HandoverPage() {
       size="sm"
       icon={StatusCheckIcon(signedAt !== null)}
       onClick={showSignOff}
-      aria-label={signedAt !== null ? undefined : `Sign off, ${checksDone} of ${signChecks.length} checks clear`}
+      // CB-3: the name holds the visible "Sign off 1/5" first (axe label-content-name-mismatch).
+      aria-label={
+        signedAt !== null
+          ? undefined
+          : `Sign off ${checksDone}/${signChecks.length}, ${checksDone} of ${signChecks.length} checks clear`
+      }
       data-testid="ward-handover-hero-sign-off"
     >
       {signedAt !== null ? (
         `Signed ${formatInstantWithDay(signedAt, now)}`
       ) : (
         <>
-          Sign off
-          <Count n={`${checksDone}/${signChecks.length}`} className={styles.heroSignCount} />
+          Sign off <Count n={`${checksDone}/${signChecks.length}`} className={styles.heroSignCount} />
         </>
       )}
     </Button>

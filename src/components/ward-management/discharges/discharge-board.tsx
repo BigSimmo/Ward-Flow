@@ -303,6 +303,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
       else day.expected += 1;
     }
   }
+  const phoneOverdue = chartDays[0] ? chartDays[0].expected + chartDays[0].blocked : 0;
+  const phoneTodayDay = chartDays.find((candidate) => candidate.key === 0);
+  const phoneToday = phoneTodayDay ? phoneTodayDay.expected + phoneTodayDay.blocked : 0;
   // A day two or more ahead also holds releases the list leaves out (due in 2+ days, not held up).
   // DC5 (Josh, 3 Nov 2026): choosing that day's bar opens its people, so they join the Expected
   // group, lit and first, while the day stays chosen.
@@ -515,7 +518,7 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                         setStatus("all");
                       }}
                     >
-                      <strong className={pageStyles.kpiValue}>{counts[key]}</strong>
+                      <strong className={pageStyles.kpiValue}>{counts[key]}</strong>{" "}
                       <span className={pageStyles.kpiLabel}>
                         {key === "departed" ? null : <StatusGlyph tone={stageTone(key)} size={9} />}
                         <span>
@@ -585,21 +588,15 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             <button
               type="button"
               className={pageStyles.phChartCard}
-              aria-label={`Expected discharges per day, overdue and the next ${chartDays.filter((day) => day.key !== "past").length} days`}
+              // CB-3: the name starts with the card's visible words (axe label-content-name-mismatch).
+              aria-label={`Per day, ${phoneOverdue} overdue, ${phoneToday} today. Expected discharges per day, overdue and the next ${chartDays.filter((day) => day.key !== "past").length} days`}
               onClick={() => setPhoneChart("days")}
             >
               <TrendingUp size={16} aria-hidden="true" className={pageStyles.phChartIcon} />
               <span className={pageStyles.phChartText}>
-                <span className={pageStyles.phChartTitle}>Per day</span>
+                <span className={pageStyles.phChartTitle}>Per day</span>{" "}
                 <span className={pageStyles.phChartMeta}>
-                  <b>{chartDays[0] ? chartDays[0].expected + chartDays[0].blocked : 0}</b> overdue ·{" "}
-                  <b>
-                    {(() => {
-                      const day = chartDays.find((candidate) => candidate.key === 0);
-                      return day ? day.expected + day.blocked : 0;
-                    })()}
-                  </b>{" "}
-                  today
+                  <b>{phoneOverdue}</b> overdue · <b>{phoneToday}</b> today
                 </span>
               </span>
               <ChevronRight size={16} aria-hidden="true" className={pageStyles.phChartIcon} />
@@ -607,12 +604,12 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
             <button
               type="button"
               className={pageStyles.phChartCard}
-              aria-label={`Held up by reason, ${barrierCounts.filter((barrier) => barrier.count > 0).length} reasons`}
+              aria-label={`By reason, ${barrierCounts[0] && barrierCounts[0].count > 0 ? `Most: ${barrierCounts[0].label}` : "None held up"}. Held up by reason, ${barrierCounts.filter((barrier) => barrier.count > 0).length} reasons`}
               onClick={() => setPhoneChart("barriers")}
             >
               <OctagonAlert size={16} aria-hidden="true" className={pageStyles.phChartIcon} />
               <span className={pageStyles.phChartText}>
-                <span className={pageStyles.phChartTitle}>By reason</span>
+                <span className={pageStyles.phChartTitle}>By reason</span>{" "}
                 <span className={`${pageStyles.phChartMeta} ${releaseList.phChartWrap}`}>
                   {barrierCounts[0] && barrierCounts[0].count > 0 ? `Most: ${barrierCounts[0].label}` : "None held up"}
                 </span>

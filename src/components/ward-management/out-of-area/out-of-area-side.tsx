@@ -130,15 +130,15 @@ export function HomeBedsCard({
               type="button"
               className={styles.regionRow}
               aria-pressed={region === row.region}
-              aria-label={`Highlight people from ${row.region}: ${row.away} away`}
+              // CB-3: every visible word, in order, after the action (axe label-content-name-mismatch).
+              aria-label={`Highlight people from ${row.region}: ${row.away} away${row.band ? `, ${TRAVEL_SHORT[row.band]}` : ""}`}
               onClick={() => onRegion(row.region)}
             >
-              <span className={styles.regionName}>{row.region}</span>
+              <span className={styles.regionName}>{row.region}</span>{" "}
               <span className={styles.track} aria-hidden="true">
                 <span style={{ width: `${(row.away / max) * 100}%` }} />
-              </span>
-              <span className={styles.count}>{row.away}</span>
-              <span className={styles.sub}>away</span>
+              </span>{" "}
+              <span className={styles.count}>{row.away}</span> <span className={styles.sub}>away</span>{" "}
               {row.band ? (
                 <span className={styles.regionBand}>
                   <Icon icon={row.band === "air_transport_only" ? Plane : Car} size={14} />

@@ -102,14 +102,32 @@ export function deskCapacityRows(
 }
 
 /** Read aloud as the rows show: "Metro 86% full, over 85%. East Metro 87% full, over 85%". */
+/**
+ * The card's rows as its name reads them: each place and its percent, in the order on screen, so the
+ * visible words sit in the name in one run (CB-3, axe 4.14 label-content-name-mismatch). Which
+ * places are over the line, or not recorded, is said after the card's last line (`capacityRowsOver`).
+ */
 export function capacityRowsSpoken(rows: readonly CapacityRow[]): string {
   return rows
-    .map((row) => {
-      if (row.percent === null) return `${row.name} not recorded`;
-      const over = isBedAlert(row.percent) ? `, over ${BED_ALERT_THRESHOLD_PERCENT}%` : "";
-      return `${row.name} ${formatOccupancyPercent(row.percent)} full${over}`;
-    })
-    .join(". ");
+    .map((row) => (row.percent === null ? row.name : `${row.name} ${formatOccupancyPercent(row.percent)}`))
+    .join(", ");
+}
+
+/** " Over 85%: East Metro and North Metro." and " Not recorded: ...", or nothing. */
+export function capacityRowsOver(rows: readonly CapacityRow[]): string {
+  const names = (list: readonly CapacityRow[]) =>
+    list.length < 2
+      ? (list[0]?.name ?? "")
+      : `${list
+          .slice(0, -1)
+          .map((row) => row.name)
+          .join(", ")} and ${list.at(-1)!.name}`;
+  const over = rows.filter((row) => row.percent !== null && isBedAlert(row.percent));
+  const missing = rows.filter((row) => row.percent === null);
+  return [
+    over.length ? ` Over ${BED_ALERT_THRESHOLD_PERCENT}%: ${names(over)}.` : "",
+    missing.length ? ` Not recorded: ${names(missing)}.` : "",
+  ].join("");
 }
 
 /**
@@ -248,7 +266,7 @@ export function RailReadyLine({ metro, ready }: { metro: number | null; ready: n
         <span className={parts.readyMetro}>
           Metro <b>{formatOccupancyPercent(metro)}</b>
         </span>
-      ) : null}
+      ) : null}{" "}
       <span>
         <b>{ready}</b> {ready === 1 ? "bed" : "beds"} ready now
       </span>

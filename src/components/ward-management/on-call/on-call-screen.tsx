@@ -652,7 +652,8 @@ export function OnCallScreen() {
             key={service}
             type="button"
             className={styles.jumpButton}
-            aria-label={`Jump to ${SERVICE_META[service].name}`}
+            // CB-3: the name carries the visible short form (axe label-content-name-mismatch).
+            aria-label={`Jump to ${SERVICE_META[service].name}, ${JUMP_LABEL[service]}`}
             onClick={() =>
               document
                 .getElementById(`ward-on-call-svc-${SERVICE_META[service].tone}`)

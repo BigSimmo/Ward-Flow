@@ -215,6 +215,8 @@ export function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimm
   const dueAt = currentLegalDueAt(movement);
   const hasDue = dueAt !== undefined;
   const typed = typedTimeStanding(movement, now, thresholds);
+  // Time in the ED, not a legal time: a count is right here.
+  const edWait = `${durText(now - movement.openedAt)} in ED`;
   return (
     <PhoneListRow
       as="li"
@@ -226,8 +228,9 @@ export function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimm
       name={name}
       meta={
         <>
-          <span className={styles.phoneMetaLine}>{formTitle(legalForm.code)}</span>
+          <span className={styles.phoneMetaLine}>{formTitle(legalForm.code)}</span>{" "}
           <span className={styles.phoneMetaLine}>{where}</span>
+          {step.action === "none" ? null : " "}
           {step.action === "none" ? null : (
             <span className={cx(styles.phoneMetaLine, styles.phoneStep)}>
               {step.action === "next-form" ? step.title : STEP_LABEL[step.action]}
@@ -240,19 +243,19 @@ export function PhoneFormRow({ movement, now, name, umrn, edName, wardName, dimm
         hasDue ? (
           <span className={styles.leftLine}>
             <StatusGlyph tone={STANDING_TONE[standing]} size={9} />
-            {typedClock(dueAt!, now)}
+            {typedClock(dueAt!, now)}{" "}
             <span className={styles.phoneTimeWord}>{standing === "passed" ? "ended, as typed" : "as typed"}</span>
           </span>
         ) : (
           <span className={styles.leftLine}>
-            {durText(now - movement.openedAt)}
-            <span className={styles.phoneTimeWord}>in ED</span>
+            {durText(now - movement.openedAt)} <span className={styles.phoneTimeWord}>in ED</span>
           </span>
         )
       }
       // The colour's words sit under the typed time ("within 1h"), never colour alone.
       time={typed.word}
-      aria-label={`${name}, ${umrn}, ${legalFormName(legalForm)}, ${legalDeadlineText(movement, now)}${standingSuffix(typed)}`}
+      // CB-3: the name reads the row's own words in order, then the record number and the full form name.
+      aria-label={`${legalForm.code} ${name}, ${formTitle(legalForm.code)}, ${where}${step.action === "none" ? "" : `, ${step.action === "next-form" ? step.title : STEP_LABEL[step.action]}`}, ${hasDue ? `${typedClock(dueAt!, now)} ${standing === "passed" ? "ended, as typed" : "as typed"}` : edWait}${typed.word ? ` ${typed.word}` : ""}. ${umrn}, ${legalFormName(legalForm)}, ${legalDeadlineText(movement, now)}${standingSuffix(typed)}`}
       onSelect={() => onSelect(movement)}
     />
   );

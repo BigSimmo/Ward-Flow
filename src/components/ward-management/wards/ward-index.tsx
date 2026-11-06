@@ -631,8 +631,8 @@ export function WardIndex({ units: unitsOverride }: { units?: Unit[] }) {
                 href={`/ward-flow/ward/${mostReady.unit.id}`}
                 aria-label={`Most ready: ${mostReady.unit.name}, ${mostReady.ready} ready. Open the ward.`}
               >
-                <span className={styles.heroJumpLabel}>Most ready</span>
-                <span className={styles.heroJumpName}>{mostReady.unit.name}</span>
+                <span className={styles.heroJumpLabel}>Most ready</span>{" "}
+                <span className={styles.heroJumpName}>{mostReady.unit.name}</span>{" "}
                 <b className={styles.heroJumpValue}>{mostReady.ready}</b>
               </Link>
             ) : null
@@ -1125,7 +1125,7 @@ function WardCard({
             className={styles.cardLink}
             href={`/ward-flow/ward/${unit.id}`}
             data-testid={`ward-index-link-${unit.id}`}
-            aria-label={`Open ${unit.name}`}
+            aria-label={`Open ward: ${unit.name}`}
           >
             Open ward
             <ChevronRight strokeWidth={1.75} size={14} aria-hidden="true" />

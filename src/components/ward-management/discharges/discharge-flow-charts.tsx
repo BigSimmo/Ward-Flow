@@ -97,7 +97,7 @@ export function DischargeDayChart({
                   aria-label={dayLabel(day, total)}
                   onClick={() => (pressed ? onClear() : onSelect(day.key))}
                 >
-                  <span className={styles.barLabel}>{day.label}</span>
+                  <span className={styles.barLabel}>{day.label}</span>{" "}
                   <span className={`${styles.track} ${styles.dayTrack}`} aria-hidden="true">
                     {day.expected > 0 ? (
                       <span
@@ -111,7 +111,7 @@ export function DischargeDayChart({
                         style={{ width: `${Math.max(2, (day.blocked / rowMax) * 100)}%` }}
                       />
                     ) : null}
-                  </span>
+                  </span>{" "}
                   <b className={styles.barValue} aria-hidden="true">
                     {total}
                   </b>
@@ -223,13 +223,13 @@ export function DischargeBarrierBars({
                   aria-label={`${barrier.label}: ${barrier.count} held up`}
                   onClick={() => (pressed ? onClear() : onSelect(barrier.id))}
                 >
-                  <span className={styles.barLabel}>{barrier.label}</span>
+                  <span className={styles.barLabel}>{barrier.label}</span>{" "}
                   <span className={styles.track} aria-hidden="true">
                     <span
                       className={styles.fill}
                       style={{ width: `${Math.max(4, Math.round((barrier.count / max) * 100))}%` }}
                     />
-                  </span>
+                  </span>{" "}
                   <b className={styles.barValue} aria-hidden="true">
                     {barrier.count}
                   </b>

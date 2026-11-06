@@ -36,6 +36,8 @@ export function WardHelpLink({
       <span className={classes.text}>
         <span className={classes.line}>
           <span className={classes.label}>Help</span>
+          {/* CB-3: a space (not drawn between flex items) so axe reads "Help New", not "HelpNew". */}
+          {seen ? null : " "}
           {seen ? null : (
             <span className={styles.newMark} aria-hidden="true">
               New

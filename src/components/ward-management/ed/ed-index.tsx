@@ -708,7 +708,10 @@ function PeoplePips({ row, highlight }: { row: EdRow; highlight: Highlight | nul
           <StatusGlyph tone={CLOCK_TONE[person.clock]} size={8} />
         </span>
       ))}
-      {row.people.length > PIPS_SHOWN ? <span className={styles.more}>+{row.people.length - PIPS_SHOWN}</span> : null}
+      {/* CB-3: drawn from the attribute, so a row's visible words stay the ones its name says. */}
+      {row.people.length > PIPS_SHOWN ? (
+        <span className={styles.more} data-more={`+${row.people.length - PIPS_SHOWN}`} />
+      ) : null}
     </div>
   );
 }
@@ -1209,7 +1212,8 @@ function PhoneEdList({
           }
           time={item.summary.waiting > 0 ? `${item.summary.waiting} waiting` : undefined}
           onSelect={() => onPreview(item.summary.ed.id)}
-          aria-label={`${item.short}, ${item.summary.waiting > 0 ? `${item.summary.waiting} waiting, longest ${splitDuration(item.summary.longestWaitMinutes)}` : "clear"}. Opens a preview.`}
+          // CB-3: the name reads the row's own words in order, then what a tap does.
+          aria-label={`${item.short}, ${item.summary.waiting > 0 ? `${item.noBed} no bed, ${item.held} accepted, ${item.forms} under a form, ${splitDuration(item.summary.longestWaitMinutes)}, ${item.summary.waiting} waiting. The longest wait is ${splitDuration(item.summary.longestWaitMinutes)}` : `${item.summary.service}, clear`}. Opens a preview.`}
           data-testid={`ed-index-phone-row-${item.summary.ed.id}`}
         />
       </div>

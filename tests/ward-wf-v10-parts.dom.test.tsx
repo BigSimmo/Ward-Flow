@@ -114,7 +114,8 @@ describe("WardCapacityRow, GroupHead and SinceYouLooked", () => {
         actionLabel="Open Dabakarn"
       />,
     );
-    const row = screen.getByRole("button", { name: "Open Dabakarn" });
+    // CB-3: the name starts with the words the row shows, then the action.
+    const row = screen.getByRole("button", { name: "Dabakarn 90%. Open Dabakarn" });
     expect(row).toHaveAttribute("data-dim", "true");
     // A dimmed row drops the fit tint (pass 4), so only the matching places stand out.
     expect(row).not.toHaveAttribute("data-fit");

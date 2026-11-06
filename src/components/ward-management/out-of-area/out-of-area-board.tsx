@@ -1259,12 +1259,12 @@ function DaysAwayStrip({
             key={group.id}
             type="button"
             aria-pressed={highlight === group.key}
-            aria-label={`${group.label} days away: ${group.n}`}
+            // CB-3: the visible band and count lead the name (axe label-content-name-mismatch).
+            aria-label={`${group.label}, ${group.n} away for ${group.label.toLowerCase()} days`}
             onClick={() => onToggle(group.key)}
           >
             <i className={styles[`age_${group.id}`]} aria-hidden="true" />
-            {group.label}
-            <b>{group.n}</b>
+            {group.label} <b>{group.n}</b>
           </button>
         ))}
       </span>

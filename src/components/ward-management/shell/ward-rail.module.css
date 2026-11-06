@@ -1346,6 +1346,11 @@
   outline-offset: 2px;
 }
 
+/* The account menu's initials come from data-initials (CB-3), so the name check skips them. */
+.userAvatar[data-initials]::before {
+  content: attr(data-initials);
+}
+
 .userAvatar {
   display: grid;
   place-items: center;

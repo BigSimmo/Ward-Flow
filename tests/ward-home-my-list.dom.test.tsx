@@ -26,7 +26,8 @@ describe("Home My List referral rows (D-92, Josh 31 Oct 2026)", () => {
 
     fireEvent.click(open!);
     expect(open).toHaveAttribute("aria-current", "true");
-    const name = open!.getAttribute("aria-label")!.replace(/^Open referral for /u, "");
+    // CB-3: the row's name is "Open referral for <name>: <visible title>".
+    const name = open!.getAttribute("aria-label")!.replace(/^Open referral for (.+?): .*$/u, "$1");
     const panelDecide = await screen.findAllByRole("link", { name: `Decide referral for ${name}` });
     // One Decide in the row, one in the side panel the row opened.
     expect(panelDecide.length).toBeGreaterThanOrEqual(2);
