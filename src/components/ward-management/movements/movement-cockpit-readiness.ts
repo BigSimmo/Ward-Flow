@@ -80,7 +80,7 @@ export function transportReadinessLine(movement: Movement, open: boolean): strin
     return "No transport was arranged before this movement closed";
   }
   if (movement.transport) return transportStatusLabel(movement.transport);
-  if (transportNeedState(movement) === "not_needed") return "No job; none wanted.";
+  if (transportNeedState(movement) === "not_needed") return "No job; not needed.";
   if (transportNeedState(movement) === "needed") return "No job yet.";
   return "No job has been raised.";
 }

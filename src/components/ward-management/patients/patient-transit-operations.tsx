@@ -591,7 +591,7 @@ export function PatientTransitOperations({
           {remaining !== undefined && (
             <p className={styles.hold} role="status">
               {remaining <= 0
-                ? "Pull time limit passed. Release the bed or set a new limit."
+                ? "Pull time limit passed. The bed stays pulled until released or given a new limit."
                 : `Bed pulled · ${dur(remaining)} remaining · Pull time limit ${clock(movement.pullExpiresAt!)}`}
             </p>
           )}
