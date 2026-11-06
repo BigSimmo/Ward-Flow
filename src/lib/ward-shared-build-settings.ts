@@ -8,7 +8,7 @@ const LOOPBACK_HOSTS = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
 type BuildEnvironment = Readonly<Record<string, string | undefined>>;
 
-function addressProblem(name: string, value: string | undefined): string | null {
+function addressProblem(name: string, value: string | undefined, development: boolean): string | null {
   const text = value?.trim();
   if (!text) return `${name} is not set.`;
   let url: URL;
@@ -19,17 +19,24 @@ function addressProblem(name: string, value: string | undefined): string | null 
   }
   if (url.username || url.password) return `${name} must not carry a user name or password.`;
   if (url.protocol === "https:") return null;
-  if (url.protocol === "http:" && LOOPBACK_HOSTS.has(url.hostname)) return null;
-  return `${name} must start with https:// (plain http is allowed only for this computer).`;
+  // Plain http to this computer is for `next dev` only, as the CSP allows it (security-headers.ts):
+  // a production build that names it would have its sign-in blocked in the browser.
+  if (development && url.protocol === "http:" && LOOPBACK_HOSTS.has(url.hostname)) return null;
+  return `${name} must start with https:// (plain http to this computer is allowed only in development).`;
 }
 
 /** Each missing or unusable shared-build setting, as a sentence. Empty when the build may go on. */
 export function sharedBuildSettingProblems(environment: BuildEnvironment): string[] {
   if (environment.NEXT_PUBLIC_WARD_SHARED_ENABLED !== "true") return [];
-  const problems = [addressProblem("NEXT_PUBLIC_WARD_API_BASE_URL", environment.NEXT_PUBLIC_WARD_API_BASE_URL)];
+  const development = environment.NODE_ENV === "development";
+  const problems = [
+    addressProblem("NEXT_PUBLIC_WARD_API_BASE_URL", environment.NEXT_PUBLIC_WARD_API_BASE_URL, development),
+  ];
   // Supabase is the only shipped sign-in provider, and blank selects it (resolveWardAuthProvider).
   if ((environment.NEXT_PUBLIC_WARD_AUTH_PROVIDER?.trim() || "supabase") === "supabase") {
-    problems.push(addressProblem("NEXT_PUBLIC_WARD_SUPABASE_URL", environment.NEXT_PUBLIC_WARD_SUPABASE_URL));
+    problems.push(
+      addressProblem("NEXT_PUBLIC_WARD_SUPABASE_URL", environment.NEXT_PUBLIC_WARD_SUPABASE_URL, development),
+    );
     if (!environment.NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY?.trim())
       problems.push("NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY is not set.");
   }

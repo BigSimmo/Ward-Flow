@@ -17,15 +17,21 @@ describe("shared build settings (CB-5)", () => {
     expect(() => assertSharedBuildSettings({})).not.toThrow();
   });
 
-  it("accepts a complete shared build, and plain http only for this computer", () => {
+  it("accepts a complete shared build, and plain http to this computer only in development", () => {
     expect(sharedBuildSettingProblems(READY)).toEqual([]);
-    expect(
-      sharedBuildSettingProblems({
-        ...READY,
-        NEXT_PUBLIC_WARD_API_BASE_URL: "http://127.0.0.1:8787",
-        NEXT_PUBLIC_WARD_SUPABASE_URL: "http://localhost:54321",
-      }),
-    ).toEqual([]);
+    const loopback = {
+      ...READY,
+      NEXT_PUBLIC_WARD_API_BASE_URL: "http://127.0.0.1:8787",
+      NEXT_PUBLIC_WARD_SUPABASE_URL: "http://localhost:54321",
+    };
+    expect(sharedBuildSettingProblems({ ...loopback, NODE_ENV: "development" })).toEqual([]);
+    // `next build` runs with NODE_ENV=production, where the CSP blocks plain http (security-headers.ts).
+    for (const NODE_ENV of ["production", undefined]) {
+      expect(sharedBuildSettingProblems({ ...loopback, NODE_ENV })).toEqual([
+        "NEXT_PUBLIC_WARD_API_BASE_URL must start with https:// (plain http to this computer is allowed only in development).",
+        "NEXT_PUBLIC_WARD_SUPABASE_URL must start with https:// (plain http to this computer is allowed only in development).",
+      ]);
+    }
   });
 
   it("names every missing or unusable setting, never its value", () => {
@@ -36,7 +42,7 @@ describe("shared build settings (CB-5)", () => {
       NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY: " ",
     });
     expect(problems).toEqual([
-      "NEXT_PUBLIC_WARD_API_BASE_URL must start with https:// (plain http is allowed only for this computer).",
+      "NEXT_PUBLIC_WARD_API_BASE_URL must start with https:// (plain http to this computer is allowed only in development).",
       "NEXT_PUBLIC_WARD_SUPABASE_URL is not a web address.",
       "NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY is not set.",
     ]);

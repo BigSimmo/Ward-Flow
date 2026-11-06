@@ -117,8 +117,11 @@ export default defineConfig({
       testMatch: releaseGateSpecPattern,
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
+    // Nightly only (TE-01, TE-02): off by default, so an unfiltered test:e2e or verify:release never
+    // runs them. The nightly workflow names each with --project.
     {
       name: "visual-desktop",
+      default: false,
       testMatch: visualSpecPattern,
       snapshotPathTemplate: visualBaselinePath,
       use: {
@@ -129,6 +132,7 @@ export default defineConfig({
     },
     {
       name: "visual-phone",
+      default: false,
       testMatch: visualSpecPattern,
       snapshotPathTemplate: visualBaselinePath,
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
@@ -136,6 +140,7 @@ export default defineConfig({
     {
       // The responsive audit's own cases are tagged @mockup; the axe sweep's are not, so no grep here.
       name: "tablet-webkit",
+      default: false,
       testMatch: tabletSpecPattern,
       use: { ...devices["iPad Pro 11"], viewport: { width: 834, height: 1112 } },
     },

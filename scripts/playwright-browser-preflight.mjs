@@ -37,9 +37,7 @@ const DEFAULT_CONFIG_PROJECTS = Object.freeze({
   "playwright.config.ts": [
     playwrightProjectNames.releaseGateDesktop,
     playwrightProjectNames.releaseGatePhone,
-    playwrightProjectNames.visualDesktop,
-    playwrightProjectNames.visualPhone,
-    playwrightProjectNames.tabletWebkit,
+    // visual-desktop, visual-phone and tablet-webkit are `default: false`: nightly, named only.
     playwrightProjectNames.firefoxWardResponsive,
     playwrightProjectNames.webkitWardResponsive,
     playwrightProjectNames.chromium,
