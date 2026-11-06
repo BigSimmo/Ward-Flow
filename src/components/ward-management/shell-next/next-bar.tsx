@@ -1238,7 +1238,7 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
         onClose={() => closePopover("tools")}
         title="Tools"
         headerLeading={
-          <span className={styles.drawerTile} aria-hidden="true">
+          <span className={`${styles.drawerTile} ${polish.toolsTile}`} aria-hidden="true">
             <Wrench aria-hidden="true" className={styles.drawerHeadingIcon} strokeWidth={1.75} />
           </span>
         }
@@ -1247,14 +1247,19 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
             Esc
           </kbd>
         }
-        descriptionContent={<p className={styles.activityFreshness}>{deskRoleLabel} · whole network</p>}
+        // Tools header polish (Josh, 6 Nov 2026): the desk as a quiet pill under a larger title.
+        descriptionContent={
+          <p className={polish.toolsDesk}>
+            <strong>{deskRoleLabel}</strong> · whole network
+          </p>
+        }
         placement="right"
         testId="ward-bar-tools-sheet"
         returnFocusRef={toolsReturnTarget}
         desktopBackdropClassName={styles.drawerBackdrop}
         contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide} ${toolsTwoPane ? styles.drawerSheetToolsTwoPane : ""}`}
-        headerClassName={styles.drawerHeader}
-        titleClassName={styles.drawerTitle}
+        headerClassName={`${styles.drawerHeader} ${polish.toolsHeader}`}
+        titleClassName={`${styles.drawerTitle} ${polish.toolsTitle}`}
         closeButtonClassName={styles.drawerClose}
         bodyClassName={styles.drawerBody}
         footer={

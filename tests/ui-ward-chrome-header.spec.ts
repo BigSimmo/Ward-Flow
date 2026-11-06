@@ -842,9 +842,14 @@ test("@mockup drawer workspace keeps All figures focus and every alert reachable
   await expect(tools.getByTestId("ward-tools-service-now")).toHaveCount(0);
   const figures = tools.getByTestId("ward-tools-toggle-figures");
   await figures.click();
-  await expect(figures).toHaveAttribute("aria-expanded", "true");
-  await expect(figures).toBeFocused();
+  // Josh, 6 Nov 2026: on a phone the tool opens as its own page; Escape goes back to the list first.
+  const toolPage = tools.getByTestId("ward-tools-page");
+  await expect(toolPage).toHaveAttribute("aria-label", "Key figures");
+  await expect(toolPage).toBeFocused();
   await expect(tools.getByTestId("ward-stats-drawer-content")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(toolPage).toHaveCount(0);
+  await expect(figures).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(page.getByTestId(PHONE_MENU[0])).toBeFocused();
 
