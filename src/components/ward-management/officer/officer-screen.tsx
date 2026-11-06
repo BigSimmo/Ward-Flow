@@ -41,7 +41,6 @@ import {
   requestConfirm,
   tableClasses,
   useIsPhone,
-  useIsTabletPortrait,
   useModalFocus,
   type WfTone,
 } from "@/components/wf";
@@ -388,13 +387,8 @@ export function OfficerScreen() {
   };
   const bookingMovement = bookingId === undefined ? undefined : needing.find((movement) => movement.id === bookingId);
 
-  // Tablet portrait: the panel stacks above the lists, so a chosen job scrolls into view.
+  // The phone booking sheet's ref; a chosen job opens in the kit drawer, which owns its own focus.
   const sideRef = useRef<HTMLDivElement>(null);
-  const isTabletPortrait = useIsTabletPortrait();
-  useEffect(() => {
-    if (selectedId === undefined || !isTabletPortrait) return;
-    sideRef.current?.scrollIntoView?.({ behavior: wardScrollBehavior(), block: "start" });
-  }, [selectedId, isTabletPortrait]);
   // Phone: the panel is a modal bottom sheet (takes focus, traps Tab, isolates the page, hands focus
   // back); wider screens keep it non-modal. isPhone is declared above officerPatientName, which reads it.
   // The form check opens over the phone job sheet, so it joins the shared modal contract: the
@@ -861,7 +855,9 @@ export function OfficerScreen() {
     </div>
   );
 
-  const panelOpen = selectedJob?.transport !== undefined || (isPhone && bookingMovement !== undefined);
+  // Drawer review (6 Nov 2026): a chosen job opens in the kit drawer over the page, so the list keeps
+  // its full width. Only the phone booking sheet still sits in the layout.
+  const panelOpen = isPhone && bookingMovement !== undefined;
   const anyJobEta = jobs.some((movement) => expectedArrival(movement) !== undefined);
   // Site review 12 Oct 2026: a column that says the same thing on every row ("0 of 3" thirteen
   // times) says nothing; the hero's "Jobs need forms" and the job sheet still carry the count.
@@ -1418,21 +1414,15 @@ export function OfficerScreen() {
               onSaved={(name) => (clearJob(), showToast(`Transport booking logged for ${name}.`))}
             />
           ) : null}
-          {!bookingMovement && panelOpen && selectedJob && selectedJob.transport ? (
-            <div ref={sideRef} className={styles.side}>
-              <div className={styles.scrim} aria-hidden="true" onClick={closeJob} />
-              <OfficerJobPanel
-                job={{ ...selectedJob, transport: selectedJob.transport }}
-                isPhone={isPhone}
-                name={officerPatientName(selectedJob)}
-                umrn={umrnFor(selectedJob)}
-                origin={originShortFor(selectedJob)}
-                destination={destinationLabelFor(selectedJob)}
-                context={detailContext}
-                tools={<>{detailExtraActions(selectedJob)}</>}
-                onClose={closeJob}
-              />
-            </div>
+          {!bookingMovement && selectedJob && selectedJob.transport ? (
+            <OfficerJobPanel
+              job={{ ...selectedJob, transport: selectedJob.transport }}
+              name={officerPatientName(selectedJob)}
+              umrn={umrnFor(selectedJob)}
+              context={detailContext}
+              tools={<>{detailExtraActions(selectedJob)}</>}
+              onClose={closeJob}
+            />
           ) : null}
         </div>
 
