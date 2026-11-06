@@ -206,16 +206,16 @@ describe("the clock knows what day it is, not only what time it is", () => {
     // The day zero a Sydney browser gets at 01:00 Monday 31 August AEST (15:00 UTC Sunday), which is
     // 23:00 Sunday in Perth: the demo day is Perth's Sunday, and its 01:00 is Sunday 01:00 AWST.
     const zero = demoDayZero(new Date(Date.UTC(2026, 7, 30, 15, 0)));
-    expect(formatSheetMoment(60, zero)).toBe("Sun, 30 Aug, 01:00");
-    expect(formatSheetMoment(60 + MINUTES_PER_DAY, zero)).toBe("Mon, 31 Aug, 01:00");
+    expect(formatSheetMoment(60, zero)).toBe("Sun 30 Aug, 01:00");
+    expect(formatSheetMoment(60 + MINUTES_PER_DAY, zero)).toBe("Mon 31 Aug, 01:00");
   });
 
   it("identifies saved output across a Perth year boundary without changing compact timestamps", () => {
     const zero = perthMidnight(2026, 11, 31);
-    expect(formatSheetMoment(0, zero, { includeYearAndZone: true })).toBe("Thu, 31 Dec 2026, 00:00 AWST");
-    expect(formatSheetMoment(MINUTES_PER_DAY, zero, { includeYearAndZone: true })).toBe("Fri, 1 Jan 2027, 00:00 AWST");
-    expect(formatSheetMoment(-1, zero, { includeYearAndZone: true })).toBe("Wed, 30 Dec 2026, 23:59 AWST");
-    expect(formatSheetMoment(0, zero)).toBe("Thu, 31 Dec, 00:00");
+    expect(formatSheetMoment(0, zero, { includeYearAndZone: true })).toBe("Thu 31 Dec 2026, 00:00 AWST");
+    expect(formatSheetMoment(MINUTES_PER_DAY, zero, { includeYearAndZone: true })).toBe("Fri 1 Jan 2027, 00:00 AWST");
+    expect(formatSheetMoment(-1, zero, { includeYearAndZone: true })).toBe("Wed 30 Dec 2026, 23:59 AWST");
+    expect(formatSheetMoment(0, zero)).toBe("Thu 31 Dec, 00:00");
   });
 
   it("keeps patient day labels in the session's Perth year across midnight", () => {

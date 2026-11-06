@@ -169,7 +169,7 @@ describe("deriveServiceBedAlerts", () => {
 
 describe("occupancyTone", () => {
   it("labels the badge with the occupancy percent, not a clinical code name", () => {
-    expect(occupancyTone(98.4).codeLabel).toBe("98.4%");
+    expect(occupancyTone(98.4).codeLabel).toBe("98%");
     expect(occupancyTone(98.4).code).toBe("red");
     expect(occupancyTone(92).code).toBe("yellow");
     expect(occupancyTone(80).code).toBe("green");

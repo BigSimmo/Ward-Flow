@@ -6,8 +6,10 @@
 /**
  * A few wrong tries per address, then a pause, so a demo code cannot be guessed by brute force. The
  * address is the one Railway's edge saw (`X-Real-IP`), not the first `X-Forwarded-For` entry, which
- * the caller writes. A cap across all addresses stops a guesser who rotates addresses, and a full
- * table refuses new addresses instead of forgetting everyone's count.
+ * the caller writes. A cap across all addresses slows a guesser who rotates addresses: once it is
+ * reached, a wrong code is refused with a pause, but the right code still opens the door, so one
+ * caller cannot lock every presenter out (SEC-1, 5 November 2026). A full table refuses new
+ * addresses instead of forgetting everyone's count.
  */
 const WRONG_TRY_LIMIT = 10;
 const WRONG_TRY_WINDOW_MS = 10 * 60_000;
@@ -16,7 +18,11 @@ const ADDRESS_TABLE_LIMIT = 5_000;
 const wrongTries = new Map<string, { count: number; since: number }>();
 let allWrongTries = { count: 0, since: 0 };
 
-/** The caller's address as the edge saw it: `X-Real-IP`, else the last `X-Forwarded-For` hop. */
+/**
+ * The caller's address as the edge saw it: `X-Real-IP`, else the last `X-Forwarded-For` hop.
+ * Not yet confirmed: that Railway's edge overwrites a caller-sent `X-Real-IP`. Confirm on Railway;
+ * if it does not, a caller can rotate this header to dodge the per-address limit.
+ */
 export function edgeAddress(headers: Headers): string {
   const real = headers.get("x-real-ip")?.trim();
   if (real) return real.slice(0, 64);
@@ -27,8 +33,10 @@ export function edgeAddress(headers: Headers): string {
 function pruneWrongTries(now: number) {
   for (const [address, entry] of wrongTries) if (now - entry.since > WRONG_TRY_WINDOW_MS) wrongTries.delete(address);
 }
+function overAllAddressCap(now: number): boolean {
+  return now - allWrongTries.since <= WRONG_TRY_WINDOW_MS && allWrongTries.count >= ALL_WRONG_TRY_LIMIT;
+}
 function tooManyTries(address: string, now: number): boolean {
-  if (now - allWrongTries.since <= WRONG_TRY_WINDOW_MS && allWrongTries.count >= ALL_WRONG_TRY_LIMIT) return true;
   const entry = wrongTries.get(address);
   if (!entry || now - entry.since > WRONG_TRY_WINDOW_MS) {
     if (wrongTries.size < ADDRESS_TABLE_LIMIT) return false;
@@ -53,14 +61,22 @@ export function resetWrongTriesForTests() {
   allWrongTries = { count: 0, since: 0 };
 }
 
-/** Reserve before awaiting verification; only a confirmed correct code releases the slot. */
-export function reserveDemoTry(address: string, now: number): (() => void) | null {
+/** A reserved try. `overCap`: wrong tries across all addresses hit the cap, so refuse a wrong code. */
+export type DemoTry = { release: () => void; overCap: boolean };
+
+/**
+ * Reserve before awaiting verification; only a confirmed correct code releases the slot. Null when
+ * this address has had too many wrong tries. The cap across all addresses never refuses here: the
+ * caller still checks the code, so the right code opens the door, and refuses a wrong one.
+ */
+export function reserveDemoTry(address: string, now: number): DemoTry | null {
   if (tooManyTries(address, now)) return null;
+  const overCap = overAllAddressCap(now);
   countWrongTry(address, now);
   const entry = wrongTries.get(address);
   const total = allWrongTries;
   let released = false;
-  return () => {
+  const release = () => {
     if (released) return;
     released = true;
     // A released slot holds no attempt, so drop an emptied entry and reset an emptied window.
@@ -73,4 +89,5 @@ export function reserveDemoTry(address: string, now: number): (() => void) | nul
       if (total.count === 0) allWrongTries = { count: 0, since: 0 };
     }
   };
+  return { release, overCap };
 }

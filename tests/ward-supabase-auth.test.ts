@@ -424,3 +424,73 @@ it("refuses a refresh reply that names a different account and removes the sessi
   expect(fetcher.mock.calls.filter(([u]) => String(u).endsWith("/user"))).toHaveLength(1);
   auth.dispose();
 });
+
+// TE-09 (audit, 5 Nov 2026): the this-tab-only sign-out (another tab still in use, or the stored
+// sign-in already gone) still drops the in-memory session when removing the stored copy throws,
+// and says the browser could not remove it rather than failing silently.
+it("drops the in-memory session on a this-tab-only sign-out even when removing the stored copy throws", async () => {
+  const store = storage();
+  const fetcher = vi.fn(async (endpoint: RequestInfo | URL) =>
+    Response.json(String(endpoint).endsWith("/user") ? user : session()),
+  );
+  const auth = new SupabaseWardAuth({ url, publishableKey: "sb_publishable_test", storage: store, fetch: fetcher });
+  await auth.signIn("synthetic@example.invalid", "synthetic-password");
+  store.removeItem = () => {
+    throw new Error("storage blocked");
+  };
+  await expect(auth.signOut(true)).rejects.toMatchObject({
+    kind: "unavailable",
+    message: expect.stringContaining("could not remove saved sign-in details"),
+  });
+  expect(auth.userId).toBeNull();
+  await expect(auth.token()).rejects.toMatchObject({ kind: "session" });
+  // No server sign-out: another tab may still be using this sign-in.
+  expect(fetcher.mock.calls.some(([endpoint]) => String(endpoint).includes("/logout"))).toBe(false);
+  auth.dispose();
+});
+
+// TE-09: a refresh does not write back a stored sign-in that was removed from this tab since.
+it("does not store a refreshed sign-in again once the saved copy was removed", async () => {
+  const store = storage();
+  const auth = new SupabaseWardAuth({
+    url,
+    publishableKey: "sb_publishable_test",
+    storage: store,
+    fetch: async (endpoint) =>
+      Response.json(String(endpoint).endsWith("/user") ? user : { ...session("rotated"), expires_in: 1 }),
+  });
+  await auth.signIn("synthetic@example.invalid", "synthetic-password");
+  expect(store.getItem(WARD_AUTH_STORAGE_KEY)).not.toBeNull();
+  store.removeItem(WARD_AUTH_STORAGE_KEY);
+  expect(await auth.token()).toBe("rotated");
+  expect(store.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
+  auth.dispose();
+});
+
+// SD-05: a removal the adapter made itself, after the browser refused a rotated sign-in, is flagged,
+// so the app does not read it as a sign-out elsewhere. A later successful write clears the flag.
+it("flags a stored sign-in it removed itself after a refused write", async () => {
+  const store = storage();
+  const auth = new SupabaseWardAuth({
+    url,
+    publishableKey: "sb_publishable_test",
+    storage: store,
+    fetch: async (endpoint) =>
+      Response.json(String(endpoint).endsWith("/user") ? user : { ...session(), expires_in: 1 }),
+  });
+  await auth.signIn("synthetic@example.invalid", "synthetic-password");
+  expect(auth.storageLost).toBe(false);
+  const setItem = store.setItem;
+  store.setItem = () => {
+    throw new Error("storage full");
+  };
+  await auth.token();
+  expect(store.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
+  expect(auth.storageLost).toBe(true);
+  expect(auth.userId).toBe(user.id);
+  store.setItem = setItem;
+  await auth.token();
+  expect(auth.storageLost).toBe(false);
+  expect(store.getItem(WARD_AUTH_STORAGE_KEY)).not.toBeNull();
+  auth.dispose();
+});

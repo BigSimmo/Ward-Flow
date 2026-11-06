@@ -89,6 +89,7 @@ import { instantFromEstimatedTimeInputs } from "@/components/ward-management/war
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import { plural } from "@/components/ward-management/ward-plural";
+import { compareFormalNames } from "@/components/ward-management/ward-name-collation";
 
 /**
  * Phase 8, Task 5 (spec D8-3): the out-of-area ledger — how many people are currently in a bed a
@@ -245,7 +246,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   if (sortOrder === "days") sorted.sort((a, b) => daysAway(b, now) - daysAway(a, now));
   if (sortOrder === "patient") {
     // D-83: the Name order sorts by surname, so it reads the record's formal (surname-first) name.
-    sorted.sort((a, b) => patientOf(a).formalName.localeCompare(patientOf(b).formalName, "en-AU"));
+    sorted.sort((a, b) => compareFormalNames(patientOf(a).formalName, patientOf(b).formalName));
   }
 
   const selected = selectedId ? entries.find((entry) => entry.admission.id === selectedId) : undefined;

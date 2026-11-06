@@ -79,7 +79,7 @@ export function occupancyTone(occupancyPercent: number): {
   code: ServiceBedAlertCode;
   codeLabel: string;
 } {
-  const codeLabel = `${occupancyPercent}%`;
+  const codeLabel = formatOccupancyPercent(occupancyPercent);
   if (occupancyPercent >= OCCUPANCY_CRITICAL_PERCENT) return { code: "red", codeLabel };
   if (occupancyPercent >= OCCUPANCY_ALERT_PERCENT) return { code: "yellow", codeLabel };
   return { code: "green", codeLabel };
@@ -100,9 +100,9 @@ export function isBedAlert(occupancyPercent: number): boolean {
   return occupancyPercent >= BED_ALERT_THRESHOLD_PERCENT;
 }
 
-/** One decimal place, always: `84.8%`, `78.0%`. */
+/** Whole percent, the one rule for every percentage (Josh, 5 Nov 2026, CL-9): `85%`, `78%`. */
 export function formatOccupancyPercent(occupancyPercent: number): string {
-  return `${occupancyPercent.toFixed(1)}%`;
+  return `${Math.round(occupancyPercent)}%`;
 }
 
 /** Site codes for a service row (`RPH · ARM · BENT`), or a count once there are too many to read. */

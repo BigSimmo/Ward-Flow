@@ -48,4 +48,41 @@ describe("typed-text device copy, loaded on first use", () => {
     expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).not.toContain(typed);
     expect(current!.savingOnDevice).toBe(true);
   });
+
+  // SD-07 (audit, 5 Nov 2026): offline, the copy's code cannot load. Until the copy is written the
+  // save marker must not say the stored save is the latest, and the earlier safe save stays as it was.
+  it("marks the save as not the latest while the copy's code has not loaded, and keeps the earlier save", async () => {
+    vi.doMock("@/components/ward-management/ward-flow-typed-text-scrub", () => new Promise(() => {}));
+    try {
+      const { WARD_FLOW_DEMO_STORAGE_KEY, WardFlowProvider, useWardFlow } =
+        await import("@/components/ward-management/ward-flow-provider");
+      let current: ReturnType<typeof useWardFlow> | undefined;
+      function Capture() {
+        current = useWardFlow();
+        return null;
+      }
+      render(
+        <WardFlowProvider>
+          <Capture />
+        </WardFlowProvider>,
+      );
+      await waitFor(() => expect(window.sessionStorage.getItem("ward-flow:demo-save-current")).toBe("1"));
+      const earlier = window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
+      const typed = "Synthetic typed blocker words 8vz";
+      act(() => {
+        current!.dispatch({
+          type: "RECORD_MOVEMENT_BLOCKER",
+          role: "coordinator",
+          now: current!.now,
+          movementId: current!.movements[0].id,
+          blocker: typed,
+        });
+      });
+      expect(window.sessionStorage.getItem("ward-flow:demo-save-current")).toBeNull();
+      expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).toBe(earlier);
+      expect(earlier).not.toContain(typed);
+    } finally {
+      vi.doUnmock("@/components/ward-management/ward-flow-typed-text-scrub");
+    }
+  });
 });
