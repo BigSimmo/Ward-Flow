@@ -101,8 +101,6 @@ const KNOWN_LEFTOVERS: Readonly<Record<string, Readonly<Record<string, number>>>
   "src/components/ward-redesign/pop-menu/menu-sheets.tsx": { "Open, close or hold": 1 },
   "src/components/ward-redesign/pop-shortcuts/shortcuts-sheet.tsx": { "Tasks, for Alerts": 1 },
   "src/components/ward-redesign/pop-tour/tour-steps.ts": { "Raise a referral": 2, "due out": 2 },
-  // "beds are due out" sits on a line open PR #1470 rewrites; fix it after that merges (5 Nov 2026).
-  "src/components/ward-management/capacity/capacity-bed-forecast.tsx": { "due out": 1 },
   // "FSH Adult Secure bed 03": Secure inside a ward name, which §6 keeps.
   "src/components/ward-management/community/community-screen-drawer.tsx": { "secure bed": 1 },
   // A demo broadcast's own range ("90–120 minutes late"); restating it in hours trips the invented-figure guard.

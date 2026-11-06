@@ -11,7 +11,8 @@ import styles from "./ward-shared-save-status.module.css";
 
 /** Offline with saves waiting on this page (Tier 1 item 1). "Held" is only for a leave bed (D-85). */
 function waitingMessage(waiting: number): string {
-  return `Offline. ${waiting === 1 ? "1 change is" : `${waiting} changes are`} waiting on this page and will send by themselves when the connection returns.`;
+  // ST7 (design audit, 5 Nov 2026): every offline line starts "You're offline." (DESIGN-SYSTEM §6).
+  return `You're offline. ${waiting === 1 ? "1 change is" : `${waiting} changes are`} waiting on this page and will send by themselves when you're back online.`;
 }
 
 const RELOAD_WARNING = "Not confirmed yet. Do not reload: reloading now would lose this action. Press Retry first.";
@@ -88,6 +89,12 @@ export function WardSharedSaveStatus({
   "use no memo";
   const save = useWardSharedSave();
   const [retrying, setRetrying] = useState(false);
+  // WF-07: one warning node reused in both strip layouts (was duplicated JSX).
+  const reloadWarning = save?.unconfirmedSave ? (
+    <p className={styles.warning} data-testid="ward-shared-reload-warning">
+      {RELOAD_WARNING}
+    </p>
+  ) : null;
   const stale = useSharedRefreshLate(connection.enabled, 5 * 60_000, false) && connection.receivedAt > 0;
   // Tier 1 item 4 (Josh, 4 Nov 2026): a refresh that is late but not yet failed used to show only on
   // pages with a Live chip. The strip now says when the board last updated, on every screen.
@@ -143,7 +150,7 @@ export function WardSharedSaveStatus({
     <>
       {freshness && <span> {freshness}</span>}
       {connection.error && <span> {connection.error}</span>}
-      {save?.unconfirmedSave && <p className={styles.warning}>{RELOAD_WARNING}</p>}
+      {reloadWarning}
     </>
   );
   return (
@@ -164,7 +171,7 @@ export function WardSharedSaveStatus({
           {freshness && <span> {freshness}</span>}
           {connection.error && <span> {connection.error}</span>}
         </span>
-        {save?.unconfirmedSave && <p className={styles.warning}>{RELOAD_WARNING}</p>}
+        {reloadWarning}
         {problem && (
           <span className={styles.end}>
             {!retrying && (connection.status === "unavailable" || late || stale) && (

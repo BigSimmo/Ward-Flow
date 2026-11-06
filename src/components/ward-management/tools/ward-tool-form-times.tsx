@@ -24,7 +24,7 @@ import {
   useExecutiveStatistics,
   useExecutiveStatisticsControl,
 } from "@/components/ward-management/statistics/executive-statistics-context";
-import { Badge, Button, DateField, Field, Menu, StatusGlyph, TextInput, type WfTone } from "@/components/wf";
+import { Badge, Button, DateField, Field, Menu, StatusGlyph, TimeField, type WfTone } from "@/components/wf";
 import styles from "./ward-tool-form-times.module.css";
 
 /**
@@ -129,8 +129,8 @@ function FormTimesView({ dayZero, now, onNavigate }: { dayZero: Date; now: Insta
         <Field label="Date on form">
           <DateField value={date} onValueChange={setDate} />
         </Field>
-        <Field label="Time on form">
-          <TextInput type="time" value={time} onChange={(event) => setTime(event.target.value)} />
+        <Field label="Time on form" hint="HH:MM">
+          <TimeField value={time} onValueChange={setTime} />
         </Field>
       </div>
       <div className={styles.result} role="status" data-testid="ward-form-times-result">

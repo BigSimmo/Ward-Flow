@@ -63,7 +63,7 @@
           "y": 270,
           "w": 220,
           "h": 96,
-          "label": "Withdrawn — a flag, not a state",
+          "label": "Withdrawn \u2014 a flag, not a state",
           "sub": "Stamped on every destination still waiting. The arm stays waiting; it does not end."
         }
       ],
@@ -144,7 +144,7 @@
           "w": 230,
           "h": 86,
           "label": "Destination review",
-          "sub": "Wards can be asked from here too — and only from these two."
+          "sub": "Wards can be asked from here too \u2014 and only from these two."
         },
         {
           "id": "accepted_awaiting_bed",
@@ -203,7 +203,7 @@
           "y": 420,
           "w": 310,
           "h": 90,
-          "label": "Closed — did not proceed",
+          "label": "Closed \u2014 did not proceed",
           "sub": "Not a stage. The stage it closed at is still recorded."
         }
       ],
@@ -373,7 +373,7 @@
           "offset": 80,
           "kind": "back",
           "label": "to ANY strictly earlier stage",
-          "guard": "refused once arrived; touches nothing but the stage — no bed given back, no transport cancelled"
+          "guard": "refused once arrived; touches nothing but the stage \u2014 no bed given back, no transport cancelled"
         }
       ],
       "note": "STEP_BACK_STAGE records a strictly earlier stage with a reason, leaving bed and transport intact. It refuses a closure, an arrived stage or a delivered transport leg. WITHDRAW_ACCEPTANCE can release an uncollected hold atomically after cancelling a live job. The separate scoped UNDO_TRANSPORT_STEP route may reverse the latest recorded arrival while its time-window, unchanged-snapshot, actor and restored-bed checks pass."
@@ -431,8 +431,8 @@
           "y": 250,
           "w": 300,
           "h": 86,
-          "label": "Removed — not a state",
-          "sub": "There is no “deleted” among the four admission states. The record itself is taken away."
+          "label": "Removed \u2014 not a state",
+          "sub": "There is no \u201cdeleted\u201d among the four admission states. The record itself is taken away."
         },
         {
           "id": "waitlisted",
@@ -492,7 +492,7 @@
           "action": "RECORD_AWAY_AT_EMERGENCY_DEPARTMENT",
           "route": "self",
           "offset": 0,
-          "label": "away at an ED — bed untouched"
+          "label": "away at an ED \u2014 bed untouched"
         },
         {
           "from": "occupied",
@@ -704,7 +704,7 @@
           "kind": "exit"
         }
       ],
-      "note": "Cancel and stop are not two names for one thing. Cancel deletes a job before collection and leaves the bed held; stop ends a journey already underway, closes the movement, and also leaves the bed held — but only stop demands to know where the patient is."
+      "note": "Cancel and stop are not two names for one thing. Cancel deletes a job before collection and leaves the bed held; stop ends a journey already underway, closes the movement, and also leaves the bed held \u2014 but only stop demands to know where the patient is."
     },
     {
       "id": "bedrelease",
@@ -730,7 +730,7 @@
           "w": 210,
           "h": 76,
           "label": "Expected",
-          "sub": "Carries what it is waiting on — one of seven."
+          "sub": "Carries what it is waiting on \u2014 one of seven."
         },
         {
           "id": "confirmed",
@@ -759,7 +759,7 @@
           "y": 250,
           "w": 280,
           "h": 86,
-          "label": "Stuck — a flag, not a stage",
+          "label": "Stuck \u2014 a flag, not a stage",
           "sub": "One of nine reasons. Sits on top of expected or confirmed."
         },
         {
@@ -769,7 +769,7 @@
           "y": 250,
           "w": 300,
           "h": 86,
-          "label": "Being made ready — a flag",
+          "label": "Being made ready \u2014 a flag",
           "sub": "Cleaning or repair is a separate flag. It does not rewrite the ward count, but a new pull refuses when every free bed is still being prepared."
         }
       ],
@@ -856,7 +856,7 @@
     },
     {
       "id": "expects",
-      "name": "The front door — an expect becomes a referral",
+      "name": "The front door \u2014 an expect becomes a referral",
       "subject": "A door the earlier drawing missed entirely. A referral that has been triaged but whose patient has not arrived sits on a separate list; marking them present is what moves it.",
       "width": 2011,
       "height": 240,
@@ -897,7 +897,7 @@
           "y": 60,
           "w": 280,
           "h": 90,
-          "label": "Medically cleared — or not",
+          "label": "Medically cleared \u2014 or not",
           "sub": "Three answers, not two: unrecorded, cleared, and explicitly not cleared."
         }
       ],
@@ -923,7 +923,7 @@
           "kind": "side"
         }
       ],
-      "note": "The owner's own words for this, quoted in the model: “When expects arrive and are marked as arrived, they become referrals.” Being marked present is the only door between the two lists."
+      "note": "The owner's own words for this, quoted in the model: \u201cWhen expects arrive and are marked as arrived, they become referrals.\u201d Being marked present is the only door between the two lists."
     },
     {
       "id": "legalstatus",
@@ -1204,7 +1204,7 @@
           "route": "straight",
           "label": "the situation becomes true",
           "kind": "side",
-          "guard": "nothing raises a row — it is derived, and appears on its own"
+          "guard": "nothing raises a row \u2014 it is derived, and appears on its own"
         },
         {
           "from": "showing",
@@ -1307,7 +1307,7 @@
         "moves": [
           {
             "action": "PULL_PATIENT",
-            "effect": "− 1"
+            "effect": "\u2212 1"
           },
           {
             "action": "RELEASE_PULL",
@@ -1344,7 +1344,7 @@
           },
           {
             "action": "RECORD_ADMISSION_CARE",
-            "effect": "+ 1 on the ward they leave, − 1 on the ward they arrive at",
+            "effect": "+ 1 on the ward they leave, \u2212 1 on the ward they arrive at",
             "note": "only a transfer recorded as arrived; the source ward's live bed release is completed in the same write"
           },
           {
@@ -1360,7 +1360,7 @@
         "moves": [
           {
             "action": "PATIENT_ARRIVED",
-            "effect": "Usually −1, floored at zero; a pre-counted seeded pull is not decremented twice. Arrival into no empty bed is recorded as a capacity conflict."
+            "effect": "Usually \u22121, floored at zero; a pre-counted seeded pull is not decremented twice. Arrival into no empty bed is recorded as a capacity conflict."
           },
           {
             "action": "RECORD_LEAVING",
@@ -1369,7 +1369,7 @@
           },
           {
             "action": "RECORD_ADMISSION_CARE",
-            "effect": "+ 1 on the ward they leave, − 1 on the ward they arrive at",
+            "effect": "+ 1 on the ward they leave, \u2212 1 on the ward they arrive at",
             "note": "only a transfer recorded as arrived"
           }
         ]
@@ -1393,14 +1393,14 @@
         "override": true,
         "referral": true,
         "movement": false,
-        "asks": "The same question, asked at the front door instead — is an authorised bed needed, and does this ward have one?"
+        "asks": "The same question, asked at the front door instead \u2014 is an authorised bed needed, and does this ward have one?"
       },
       {
         "gate": "Cohort",
         "override": true,
         "referral": false,
         "movement": true,
-        "asks": "Does the ward's cohort match the patient's — adult, older adult, or youth?"
+        "asks": "Does the ward's cohort match the patient's \u2014 adult, older adult, or youth?"
       },
       {
         "gate": "Age",
@@ -1526,12 +1526,12 @@
       {
         "path": "src/components/ward-management/capacity/planned-admissions-reducer.ts",
         "line": 584,
-        "sha256": "61ad20c2605a7461ce59b5fd80350ebbc3555aefe361eaa620eaa8904d713893"
+        "sha256": "fcd8e3b7667a295dc58225efa80ca7dc36863ad203ca4b6873c535c7ae5a0eb3"
       },
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-screen.tsx",
         "line": 1,
-        "sha256": "50f0cf1737791665484c12c3e3ba20a7ee18109f51356d9eaf23740f85337709"
+        "sha256": "05e526300dfd34952da0bd0fb7924d8d4941fd0dc52216ad42e884ccd2a784cb"
       },
       {
         "path": "src/components/ward-management/legal-forms/legal-forms-sheets.tsx",

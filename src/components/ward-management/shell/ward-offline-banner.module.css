@@ -1,12 +1,44 @@
+/* ST8 (design audit, 5 Nov 2026; DESIGN-SYSTEM §3, Q276): the offline note rests at the foot of the
+   window, centred, above the dock on a phone (the same sum as the toasts and the loading note), so it
+   never pushes the page down or covers the title. A full-screen view places it itself (inline style). */
 .banner {
-  margin: 0.5rem 0.75rem 0;
+  position: fixed;
+  bottom: 0.75rem;
+  left: 50%;
+  /* Above the page and its pinned bars, below sheets and toasts. */
+  z-index: var(--wf-z-chrome);
+  transform: translateX(-50%);
+  box-sizing: border-box;
+  inline-size: max-content;
+  max-inline-size: min(36rem, calc(100vw - 1.5rem));
+  margin: 0;
   padding: 0.5rem 0.75rem;
   border: 1px solid var(--wf-warning);
   border-radius: var(--wf-r-lg);
   background: var(--wf-surface);
+  box-shadow: var(--wf-e2);
   color: var(--wf-ink-1);
-  font-size: 0.8125rem;
+  font-size: var(--wf-fs-13);
   line-height: 1.4;
+  /* The note only reads; taps pass through to the page under it (PR #1474 review). */
+  pointer-events: none;
+}
+
+/* Anything in the note that can be pressed still takes the press. */
+.banner :is(a, button) {
+  pointer-events: auto;
+}
+
+/* The downtime pack is the second, quieter part of the note. */
+.bannerPack {
+  color: var(--wf-ink-2);
+}
+
+@media (max-width: 46.4375rem) {
+  .banner {
+    bottom: calc(var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + 0.5rem);
+    font-size: var(--wf-fs-12);
+  }
 }
 
 /* S-1: a quiet note, not a warning: neutral line, secondary ink, no fill of its own. */

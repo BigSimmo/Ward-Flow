@@ -115,6 +115,11 @@ describe("figures that more than one screen prints agree after random actions", 
           sum((value) => value.confirmedToday) - sum((value) => value.confirmedHeldUpToday),
         );
         if (sum((value) => value.confirmedHeldUpToday) > 0) confirmedOverlap += 1;
+        // #1470 review: the on-screen sheet's "Beds freeing today" headline and its rows share one day.
+        const { todayRows, moreTodayRows, freeingToday, heldUpToday } = sheet.discharges;
+        expect(todayRows.length + moreTodayRows, at).toBe(freeingToday);
+        if (moreTodayRows === 0)
+          expect(todayRows.filter((row) => row.status === "Held up").length, at).toBe(heldUpToday);
         expect(sheet.discharges.dischargedToday, at).toBe(
           state.admissions.filter((admission) => admission.leftAt !== null && dayOf(admission.leftAt) === dayOf(now))
             .length,

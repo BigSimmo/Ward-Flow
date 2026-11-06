@@ -5026,16 +5026,11 @@
   color: var(--wf-ink-2);
 }
 
-.a2ReferralLine[data-tone="good"] {
-  color: var(--wf-success-ink);
-}
+/* Design audit 4 (B22): the words stay neutral ink; the tone sits in the StatusGlyph before them. */
 
-.a2ReferralLine[data-tone="warn"] {
-  color: var(--wf-warning-ink);
-}
-
-.a2ReferralLine[data-tone="danger"] {
-  color: var(--wf-danger-ink);
+/* Design audit 4 (B23): the patient name button meets the 24px desktop target floor. */
+.a2Name.a2Name {
+  min-height: var(--wf-target-min);
 }
 
 /* The row sheet's "Where the referral is": four steps, a tick on each one done. */

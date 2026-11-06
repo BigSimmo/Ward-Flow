@@ -287,7 +287,7 @@ function homeScreenFor(role: WardAccessRole): WardScreenId {
     case "executive":
       return "statistics";
     case "admin":
-      return "settings";
+      return "governance"; // WF-46
   }
 }
 
@@ -311,6 +311,8 @@ export function homeHrefFor(access: WardAccess, slugForTeam: (teamName: string) 
       return `${BASE}/transport/officer`;
     case "statistics":
       return `${BASE}/statistics`;
+    case "governance":
+      return `${BASE}/governance`;
     default:
       return `${BASE}/settings`;
   }
@@ -339,6 +341,10 @@ const REDIRECT_TARGETS: Readonly<Record<string, WardScreenId>> = {
   transport: "movements",
   // B4 step 3 (19 Oct 2026): the Delays screen's address since it was renamed Waiting.
   waiting: "delays",
+  // WF-42 (Josh, 5 Nov 2026): typed Activity and Help addresses open their shell panel on the
+  // desk's own home. Every role holds Settings, so these stubs open for every desk.
+  activity: "settings",
+  help: "settings",
 };
 
 /**

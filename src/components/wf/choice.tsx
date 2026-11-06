@@ -1,8 +1,9 @@
 "use client";
 
-import { useRef, type KeyboardEvent, type ReactNode } from "react";
+import { useId, useRef, type KeyboardEvent, type ReactNode } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
+import { DisabledReason } from "./button";
 import { cx } from "./cx";
 import { Icon } from "./icon";
 import { PanelBoundary } from "./panel-boundary";
@@ -196,6 +197,12 @@ export type SegmentedProps<T extends string> = {
   /** Shown for review but not connected: each option is `aria-disabled`, still focusable, and
    *  presses still call `onChange` so the screen can say why. */
   unavailable?: boolean;
+  /**
+   * Why the choice cannot be changed now (K11, design audit 5 Nov 2026; DESIGN-SYSTEM §4 Actions):
+   * every option is `aria-disabled` and keeps its tab stop, presses do nothing, and the reason shows
+   * as text beside the control, linked by `aria-describedby`.
+   */
+  disabledReason?: string;
   className?: string;
 };
 
@@ -211,14 +218,19 @@ export function Segmented<T extends string>({
   variant = "default",
   size = "sm",
   unavailable = false,
+  disabledReason,
   className,
 }: SegmentedProps<T>) {
-  const { refs, onKeyDown } = useRoving(items, value, (id) => onChange?.(id));
+  const reasonId = useId();
+  const off = Boolean(disabledReason);
+  const { refs, onKeyDown } = useRoving(items, value, (id) => {
+    if (!off) onChange?.(id);
+  });
   const stop = tabStopIndex(items, value);
   const groupClass = cx(
     variant === "hero" ? styles.trk : styles.seg,
     size === "md" && styles.md,
-    unavailable && styles.unavailable,
+    (unavailable || off) && styles.unavailable,
     className,
   );
   const content = (item: ChoiceItem<T>) => (
@@ -250,9 +262,15 @@ export function Segmented<T extends string>({
     );
   }
 
-  return (
+  const group = (
     // eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item
-    <div role="radiogroup" aria-label={label} className={groupClass} onKeyDown={onKeyDown}>
+    <div
+      role="radiogroup"
+      aria-label={label}
+      aria-describedby={off ? reasonId : undefined}
+      className={groupClass}
+      onKeyDown={onKeyDown}
+    >
       {items.map((item, index) => {
         const checked = item.id === value;
         return (
@@ -264,16 +282,25 @@ export function Segmented<T extends string>({
             type="button"
             role="radio"
             aria-checked={checked}
-            aria-disabled={unavailable || undefined}
+            aria-disabled={unavailable || off || undefined}
             tabIndex={index === stop ? 0 : -1}
             className={cx(styles.segItem, checked && styles.segOn)}
-            onClick={() => onChange?.(item.id)}
+            onClick={() => {
+              if (!off) onChange?.(item.id);
+            }}
           >
             {content(item)}
           </button>
         );
       })}
     </div>
+  );
+  if (!off) return group;
+  return (
+    <span className={styles.withReason}>
+      {group}
+      <DisabledReason id={reasonId}>{disabledReason}</DisabledReason>
+    </span>
   );
 }
 
@@ -291,6 +318,9 @@ export type FilterChipProps = {
   /** Shown for review but not connected: `aria-disabled`, still focusable, presses still call
    *  `onPressedChange` so the screen can say why. */
   unavailable?: boolean;
+  /** Why the filter cannot be changed now (K11): `aria-disabled`, presses do nothing, and the reason
+   *  shows as text beside the chip, linked by `aria-describedby`. */
+  disabledReason?: string;
   className?: string;
 };
 
@@ -302,18 +332,24 @@ export function FilterChip({
   count,
   tone,
   unavailable = false,
+  disabledReason,
   className,
 }: FilterChipProps) {
-  return (
+  const reasonId = useId();
+  const off = Boolean(disabledReason);
+  const chip = (
     <button
       type="button"
       aria-pressed={pressed}
-      aria-disabled={unavailable || undefined}
-      className={cx(styles.chip, unavailable && styles.unavailableChip, className)}
+      aria-disabled={unavailable || off || undefined}
+      aria-describedby={off ? reasonId : undefined}
+      className={cx(styles.chip, (unavailable || off) && styles.unavailableChip, className)}
       // Simplification A1 (Josh, 19 Oct 2026): a filter with nothing to show recedes, so the eye
       // lands on the ones that matter. It stays pressable; only its colour changes.
       data-dim={!pressed && (count === 0 || count === "0") ? "true" : undefined}
-      onClick={() => onPressedChange(!pressed)}
+      onClick={() => {
+        if (!off) onPressedChange(!pressed);
+      }}
     >
       {tone ? <StatusGlyph tone={controlTone(tone)} size={9} /> : null}
       <span className={styles.chipLabel} data-text={typeof children === "string" ? children : undefined}>
@@ -321,6 +357,13 @@ export function FilterChip({
       </span>
       {count != null ? <Count n={count} className={styles.k} /> : null}
     </button>
+  );
+  if (!off) return chip;
+  return (
+    <span className={styles.withReason}>
+      {chip}
+      <DisabledReason id={reasonId}>{disabledReason}</DisabledReason>
+    </span>
   );
 }
 

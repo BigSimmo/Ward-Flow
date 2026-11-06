@@ -25,10 +25,12 @@ export const LEGAL_FILTER_OPTIONS: ReadonlyArray<{ value: string; label: string 
   ...SELECTABLE_LEGAL_FORMS.map((form) => ({ value: `Form ${form.code}`, label: legalFormName(form) })),
 ];
 
+// Design audit 4 (5 Nov 2026): no typed status symbols (DESIGN-SYSTEM §4 Status marks). The chip
+// words say the state, so the label and its query key are plain words.
 export const QUICK_CHIPS = [
-  { label: "● On this board", query: "● On this board" },
-  { label: "○ Not in Hospital", query: "○ Not in Hospital" },
-  { label: "◌ Past Patients", query: "◌ Past Patient" },
+  { label: "On this board", query: "On this board" },
+  { label: "Not in Hospital", query: "Not in Hospital" },
+  { label: "Past Patients", query: "Past Patient" },
   { label: "Form 1A", query: "Form 1A" },
   { label: "Unplaced", query: "unplaced" },
   { label: "Waiting > 24h", query: "over24" },
@@ -203,20 +205,20 @@ export function isQuickChipQuery(text: string): boolean {
 }
 
 export function matchesQuickChip(result: PatientSearchResult, chipQuery: string, now: number): boolean {
-  if (chipQuery === "● On this board") {
+  if (chipQuery === "On this board") {
     if (result.kind === "movement") return result.movement.closure === undefined && result.movement.stage !== "arrived";
     if (result.kind === "referral") {
       return !isCommunityReferral(result.referral);
     }
     return false;
   }
-  if (chipQuery === "○ Not in Hospital") {
+  if (chipQuery === "Not in Hospital") {
     if (result.kind === "referral") {
       return isCommunityReferral(result.referral);
     }
     return false;
   }
-  if (chipQuery === "◌ Past Patient") {
+  if (chipQuery === "Past Patient") {
     if (result.kind === "movement") return result.movement.closure !== undefined;
     return false;
   }

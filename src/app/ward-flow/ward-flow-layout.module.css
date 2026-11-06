@@ -79,12 +79,8 @@
   scroll-padding-top: var(--wf-header-height);
 }
 
-/* F-13: a heading scrolled or focused into view stops below the offline banner, not under it: 5rem
-   holds its three lines at the narrowest phone. The pinned holder's own height is kept by
-   .bannerHolder below. */
-.shellContent:has([data-testid="ward-offline-banner"]) {
-  scroll-padding-top: calc(var(--wf-header-height) + 5rem);
-}
+/* F-13's extra scroll room under the offline banner went with ST8 (design audit, 5 Nov 2026): the
+   offline note now rests at the foot of the window, so it no longer covers a heading at the top. */
 
 /* DA-23 (design audit, Josh, 19 Oct 2026): the bed meeting TV opens clean, with no rail, top bar or
    phone dock, rather than only after a Full screen tap. It keys on the TV screen itself
@@ -284,12 +280,15 @@
  *
  * DA-02 (overall review, 20 Oct 2026): the note floats over the top of the page instead of taking a
  * line in it, so when it goes the page no longer jumps up about 39px (measured as a 0.02 layout
- * shift on desktop and 0.04 on a phone, on every route). It sits under the header, above the pinned
- * banners (z-index 25) and below the header (30). Taps pass through it, as before.
+ * shift on desktop and 0.04 on a phone, on every route). It sits above the pinned banners (z-index
+ * 25) and below the header (30). Taps pass through it, as before.
+ *
+ * ST4 (design audit, 5 Nov 2026; DESIGN-SYSTEM §3, Q276): at every width it rests at the foot of the
+ * window, never over the page title. On a desktop it sat under the header, over the hero title.
  */
 .loadingNote {
   position: fixed;
-  top: calc(var(--wf-header-height, 3.75rem) + 0.5rem);
+  bottom: 0.75rem;
   left: 50%;
   z-index: 26;
   transform: translateX(-50%);
@@ -308,22 +307,11 @@
   pointer-events: none;
 }
 
-/* From 769px to 1000px the tablet rail sits in the page under the header, and can wrap to more than
-   one row, so a note under the header would lie over it. There the note rests at the foot of the
-   window instead (no phone dock at these widths). */
-@media (min-width: 46.5rem) and (max-width: 1000px) {
-  .loadingNote {
-    top: auto;
-    bottom: 0.75rem;
-  }
-}
-
 /* Q276 (pre-launch review E4, 2 Nov 2026): on a phone the note under the header covered the page
    title ("62 waiting in ED", the Demo pill). It rests at the foot of the window instead, as on a
    tablet, just above the dock (--wf-dock-clear counts the home indicator; same sum as the toasts). */
 @media (max-width: 46.4375rem) {
   .loadingNote {
-    top: auto;
     bottom: calc(var(--wf-dock-clear, calc(72px + max(8px, env(safe-area-inset-bottom, 0px)))) + 0.5rem);
   }
 }
@@ -425,12 +413,35 @@
   padding-bottom: 0;
 }
 
+/* ST8: offline, the holder keeps only a hidden marker (the note itself rests at the window's foot),
+   so it stays as flat as an empty holder while the lower notes wait. */
+.bannerHolder:has(> [data-wf-offline-slot]:first-child) {
+  padding-bottom: 0;
+  background: transparent;
+}
+
+/* While the offline note rests at the foot, the page ends with room for it, so its last lines are
+   never left under the note (PR #1474 review). */
+.shellContent:has(> .bannerHolder > [data-wf-offline-slot]:first-child)::after {
+  content: "";
+  display: block;
+  flex-shrink: 0;
+  block-size: 5rem;
+}
+
 /* Minimal warnings (design audit, Josh 1 Nov 2026): one pinned note at a time. The layout mounts the
    notes in priority order (broadcast, recovery, offline, downtime pack, desk preview, practice, demo
    saving) and each renders nothing when it has nothing to say, so the first one present is the most
    important and the rest wait until it goes. `!important` because a note's own display rule can be
    more specific (`.recovery:has(.recoveryClose)` sets flex) and would otherwise show it anyway. */
 .bannerHolder > * + * {
+  display: none !important;
+}
+
+/* The offline note itself is drawn into the body (ST8), outside the holder, so the rule above only
+   reaches its hidden marker. While a higher note sits before that marker, hide the drawn note too,
+   so one note still shows at a time. */
+:global(body):has(.bannerHolder > * + [data-wf-offline-slot]) > :global([data-wf-offline-note]) {
   display: none !important;
 }
 
@@ -500,5 +511,10 @@
 
   .bannerHolder {
     position: static;
+  }
+
+  /* The room left for the offline note at the foot is screen only. */
+  .shellContent:has(> .bannerHolder > [data-wf-offline-slot]:first-child)::after {
+    display: none;
   }
 }

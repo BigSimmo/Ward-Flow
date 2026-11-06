@@ -11,7 +11,8 @@
   position: relative;
   display: inline-flex;
   align-items: center;
-  height: 30px;
+  /* K1 and K3 (design audit, 5 Nov 2026): a floor, so large text grows the button in every engine. */
+  min-height: 30px;
   padding: 0 10px;
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-pill);
@@ -45,9 +46,9 @@
    invisible cover above and below that keeps the 48px tap floor. Large text grows it. */
 @media (max-width: 46.4375rem) {
   .preset {
-    height: 40px;
-    height: calc-size(auto, max(size, 40px));
     min-height: 40px;
+    height: auto;
+    height: calc-size(auto, max(size, 40px));
     padding: 0 12px;
     /* The cover sits over the next field's label, so a press just below the face still lands. */
     z-index: 1;

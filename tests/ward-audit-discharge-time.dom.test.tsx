@@ -34,7 +34,7 @@ function Harness() {
     </>
   );
 }
-it("populates the existing clock time when editing tomorrow's departure", () => {
+function openTomorrowDepartureEditor() {
   render(
     <WardFlowProvider initialNow={642}>
       <Harness />
@@ -49,5 +49,21 @@ it("populates the existing clock time when editing tomorrow's departure", () => 
   fireEvent.click(within(row).getAllByRole("button")[0]!);
   fireEvent.click(screen.getByRole("button", { name: "Discharge record" }));
   fireEvent.click(screen.getByTestId("ward-discharge-update-date-btn"));
+}
+
+it("populates the existing clock time when editing tomorrow's departure", () => {
+  openTomorrowDepartureEditor();
   expect(screen.getByTestId("ward-discharge-new-time-input")).toHaveValue("14:00");
+});
+
+it("refuses a bad time with words through the field, and keeps the form open (PR #1474 review)", () => {
+  openTomorrowDepartureEditor();
+  const input = screen.getByTestId("ward-discharge-new-time-input");
+  fireEvent.change(input, { target: { value: "11:45pm" } });
+  expect(input).toHaveValue("11:45pm");
+  fireEvent.click(screen.getByTestId("ward-discharge-save-time-btn"));
+  expect(screen.getByText("Type a 24-hour time, HH:MM")).toBeInTheDocument();
+  expect(input).toHaveAttribute("aria-invalid", "true");
+  expect(screen.getByTestId("ward-discharge-new-time-input")).toBeInTheDocument();
+  expect(screen.queryByText("Expected discharge updated.")).not.toBeInTheDocument();
 });

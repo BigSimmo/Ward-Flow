@@ -50,7 +50,7 @@
 .panel {
   position: absolute;
   top: calc(100% + 6px);
-  z-index: var(--z-popover, 95);
+  z-index: var(--wf-z-popover);
   min-width: min(220px, calc(100vw - 16px));
   max-width: min(360px, calc(100vw - 16px));
   box-sizing: border-box;
