@@ -52,8 +52,10 @@ describe("search-first Help layout", () => {
     sheet();
     fireEvent.focus(screen.getByRole("combobox"));
     const tryAsking = screen.getByRole("region", { name: "Try asking" });
-    fireEvent.click(within(tryAsking).getByRole("button", { name: "What does Held up mean?" }));
-    expect((screen.getByRole("combobox") as HTMLInputElement).value).toBe("What does Held up mean?");
+    // Home has its own walk round and questions (5 Nov 2026), which come before the general ones.
+    expect(within(tryAsking).getByRole("button", { name: "Show me around Home" })).toBeTruthy();
+    fireEvent.click(within(tryAsking).getByRole("button", { name: "How do I place a patient from Home?" }));
+    expect((screen.getByRole("combobox") as HTMLInputElement).value).toBe("How do I place a patient from Home?");
   });
 
   it("keeps Try asking open while Tab moves from the box into it, and closes it once focus leaves", () => {

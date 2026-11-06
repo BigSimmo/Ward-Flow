@@ -8,8 +8,10 @@ import {
   BookA,
   BookOpen,
   CircleHelp,
+  Compass,
   Keyboard,
   LayoutDashboard,
+  ListChecks,
   MessageCircleQuestion,
   Play,
   Settings,
@@ -20,11 +22,13 @@ import type { ReactNode } from "react";
 
 import { Button, useIsPhone } from "@/components/wf";
 
+import { checklistsForDesk } from "./ward-help-checklists";
 import { SCREEN_HELP, type GlossaryTerm } from "./ward-help-content";
-import { HOW_TOS, showMeSteps } from "./ward-help-howto";
+import { HOW_TOS, showMeSteps, type HowTo } from "./ward-help-howto";
 import { CLINICAL_REPLY, searchHelp, type HelpSearchResult } from "./ward-help-search-index";
 import type { WardTourRole } from "./ward-help-store";
 import { HELP_SYNONYMS } from "./ward-help-synonyms";
+import { tasksForDesk } from "./ward-help-task-list";
 import { nearestWord } from "./ward-help-typo";
 import { relatedTerms } from "@/components/ward-management/help-content/ward-help-glossary";
 
@@ -266,6 +270,8 @@ export function HelpFindResults({
   onShowMe,
   canShow,
   onUseTyped,
+  onOpenChecklist,
+  here,
 }: {
   found: HelpFound | undefined;
   query: string;
@@ -275,6 +281,10 @@ export function HelpFindResults({
   onShowMe: (id: string) => void;
   canShow: (id: string) => boolean;
   onUseTyped: (words: string) => void;
+  /** Opens one of this desk's checklists inside Help; without it the empty state lists none. */
+  onOpenChecklist?: (id: string) => void;
+  /** The walk round of the screen Help is open on (its how-to id), offered when nothing matches. */
+  here?: string;
 }) {
   const access = useEffectiveWardAccess();
   if (found?.kind === "clinical") {
@@ -301,6 +311,14 @@ export function HelpFindResults({
         <p className={s.emptyFind} data-testid="ward-help-found-empty">
           No match in Help for &ldquo;{query.trim()}&rdquo;. Try fewer words, or browse How to.
         </p>
+        <NoAnswer
+          role={role}
+          onChoose={onChoose}
+          onShowMe={onShowMe}
+          canShow={canShow}
+          onOpenChecklist={onOpenChecklist}
+          here={here}
+        />
       </>
     );
   }
@@ -394,6 +412,85 @@ export function HelpFindResults({
         {/* Proved by tests/ward-help-ask.dom.test.tsx, "never writes words typed in Help's search to storage or URL history". */}
         <span className={s.keysHintEnd}>Nothing you type is saved</span>
       </div>
+    </>
+  );
+}
+
+/** How many of each kind of lead the empty state offers. */
+const LEADS = 3;
+
+/** A job as a search row, so choosing it opens it in How to, the same as a found answer. */
+function asResult(howTo: HowTo): HelpSearchResult {
+  return {
+    key: `howto:${howTo.id}`,
+    group: "Guides",
+    title: howTo.title,
+    detail: howTo.answer,
+    howToId: howTo.showMe?.length ? howTo.id : undefined,
+    go: howTo.go,
+  };
+}
+
+/**
+ * NOTHING FOUND (Help expansion, 5 Nov 2026): leads this desk can follow instead of a dead end. A
+ * walk round this screen when Show me can play it here, this desk's checklists and its first jobs,
+ * then a hint for asking another way. The typed words stay in memory: nothing here reads, keeps or
+ * sends them.
+ */
+function NoAnswer({
+  role,
+  onChoose,
+  onShowMe,
+  canShow,
+  onOpenChecklist,
+  here,
+}: {
+  role: WardTourRole;
+  onChoose: (result: HelpSearchResult) => void;
+  onShowMe: (id: string) => void;
+  canShow: (id: string) => boolean;
+  onOpenChecklist?: (id: string) => void;
+  /** The walk round of the screen Help is open on, if it has one. */
+  here?: string;
+}) {
+  const access = useEffectiveWardAccess();
+  // Only this screen's own walk round: another screen's would send them away from where they asked.
+  const walk = here
+    ? HOW_TOS.find((howTo) => howTo.id === here && howTo.around && howToFor(howTo, role, access) && canShow(howTo.id))
+    : undefined;
+  const checklists = onOpenChecklist ? checklistsForDesk(role).slice(0, LEADS) : [];
+  const jobs = tasksForDesk(role, access).slice(0, LEADS);
+  const lead = (key: string, Icon: typeof Play, title: string, detail: string, onClick: () => void) => (
+    <button key={key} type="button" className={s.result} onClick={onClick}>
+      <span className={s.resultIcon} aria-hidden="true">
+        <Icon aria-hidden="true" strokeWidth={1.75} />
+      </span>
+      <span className={s.resultText}>
+        <b>{title}</b>
+        <span>{detail}</span>
+      </span>
+    </button>
+  );
+  return (
+    <>
+      {walk || checklists.length || jobs.length ? (
+        <section className={s.section} aria-label="Try one of these" data-testid="ward-help-found-leads">
+          <h3 className={s.sectionHead}>Try one of these</h3>
+          <div className={s.card}>
+            {walk ? lead(walk.id, Compass, "Show me around this screen", walk.title, () => onShowMe(walk.id)) : null}
+            {checklists.map((checklist) =>
+              lead(checklist.id, ListChecks, checklist.title, `Checklist, ${checklist.steps.length} steps`, () =>
+                onOpenChecklist?.(checklist.id),
+              ),
+            )}
+            {jobs.map((job) => lead(job.id, BookOpen, job.title, "One of your jobs", () => onChoose(asResult(job))))}
+          </div>
+        </section>
+      ) : null}
+      <p className={s.note} data-testid="ward-help-ask-another-way">
+        <b>Ask another way.</b> Use a button&rsquo;s name or the app&rsquo;s own word, such as pull rather than reserve,
+        in one or two words. Help covers how to use Ward Flow, not clinical decisions.
+      </p>
     </>
   );
 }

@@ -83,18 +83,28 @@ describe("How do I… task list", () => {
     for (const howTo of HOW_TOS) expect(HOW_TO_TOPICS, howTo.id).toContain(howTo.topic);
     const answerOnly = HOW_TOS.filter((howTo) => !howTo.showMe?.length).map((howTo) => howTo.id);
     // Legal times are shown only as typed (D-70), Undo has no single control to point at, and the
-    // paper downtime answer is for logins with no Handover screen to point at.
-    expect(answerOnly.toSorted()).toEqual([
-      "book-transport-community",
-      "book-transport-ed",
-      "book-transport-ward",
-      "cancel-transport-community",
-      "cancel-transport-ed",
-      "cancel-transport-ward",
-      "downtime-paper",
-      "mha-times",
-      "undo",
-    ]);
+    // paper downtime answer is for logins with no Handover screen to point at. The desk twins of
+    // Book and Cancel transport walked their own controls from 5 Nov 2026.
+    expect(answerOnly.toSorted()).toEqual(["downtime-paper", "mha-times", "undo"]);
+  });
+
+  it("gives every desk with few jobs more of its own, each with Show me (5 Nov 2026)", () => {
+    const own: Readonly<Record<string, readonly string[]>> = {
+      officer: ["officer-arrived", "officer-divert", "officer-cad", "officer-forms-pack", "officer-history"],
+      executive: ["executive-capacity", "statistics-compare", "statistics-weekly"],
+      admin: ["answer-access-request", "remove-role", "access-log", "governance-review"],
+      bed_manager: ["close-bed-or-ward", "site-sign-off", "planned-admission", "send-bed-call"],
+      community: ["record-team-contact", "record-cto", "take-referral", "log-call-desk"],
+      ed: ["ed-mark-arrived", "ed-medical-clearance", "ed-outcome", "ed-withdraw-referral"],
+    };
+    for (const [role, ids] of Object.entries(own)) {
+      const desk = tasksForDesk(role as Parameters<typeof tasksForDesk>[0]);
+      for (const id of ids) {
+        const task = desk.find((howTo) => howTo.id === id);
+        expect(task, `${role} ${id}`).toBeDefined();
+        expect(task?.showMe?.length, `${role} ${id}`).toBeGreaterThan(0);
+      }
+    }
   });
 
   it("lists only this desk's own tasks", () => {

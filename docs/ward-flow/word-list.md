@@ -144,6 +144,41 @@ Added 26 October 2026 with the Help glossary, so the two stay in step.
 | **Demo**                 | The Demo panel: scenario, clock and reset for the invented data. The live pill reads "Demo 10:42".   |
 | **Synthetic**            | Invented. Every patient, bed figure and record in Ward Flow is made up.                              |
 
+## Help glossary additions (5 November 2026)
+
+Added with the Help glossary for the chronology, statistics and the newly walked screens, so the two stay in
+step.
+
+| Say                     | Means                                                                                          |
+| ----------------------- | ---------------------------------------------------------------------------------------------- |
+| **Accept in principle** | A ward agrees it can take the patient. A bed is pulled as a separate step.                     |
+| **Gate**                | One of a ward's own checks for a patient, marked Pass or Does not pass. It informs the answer. |
+| **Stranded**            | A prompt, not a judgement: a long stay with no expected discharge date, or waiting on others.  |
+| **Step-down**           | A patient the ward has marked as a candidate for subacute care.                                |
+| **Stale count**         | A ward's bed figures not confirmed lately, so they may be out of date.                         |
+| **Mismatch**            | People waiting against beds that fit, for each kind of bed, on Capacity.                       |
+| **Chronology**          | One patient's events in time order, built from the records for a post-incident review.         |
+| **Audit trail**         | Coordinator changes and overrides, with their reasons.                                         |
+| **Session log**         | What this browser session recorded, for this session only.                                     |
+| **CSV**                 | A plain spreadsheet file. Download CSV saves what you are looking at.                          |
+| **Downtime pack**       | A printable copy of the last snapshot, for when the system is down.                            |
+| **Snapshot**            | A copy of the figures at one time. Only the bed coordinator takes a new one.                   |
+| **Caseload**            | The people a community team is looking after.                                                  |
+| **Read alike**          | Community team names that look similar, set side by side.                                      |
+| **Cover**               | One ward or one ED handed to another desk for at most 12 hours.                                |
+| **In use**              | Beds occupied or pulled, as a share of a ward's beds.                                          |
+| **Occupancy**           | The share of beds in use.                                                                      |
+| **Typical**             | The median: half took less time and half took more.                                            |
+| **Slowest 1 in 10**     | The time the slowest tenth took longer than.                                                   |
+| **Stay so far**         | How long people in a bed now have been there. Not a finished length of stay.                   |
+| **Open ED movement**    | A movement that started at an ED and has not closed, including people in transit.              |
+| **Fewer than 5**        | Shown in place of a small count of people, so no one can be picked out.                        |
+| **Not recorded**        | Nobody recorded this figure. Ward Flow does not guess it.                                      |
+| **Pilot measures**      | The weekly report's own measures, such as referral to arrival.                                 |
+| **Bed meeting**         | The regular meeting on beds, with an agenda built from fixed rules.                            |
+| **Ward promise**        | A time a ward said it would ring back.                                                         |
+| **Surge**               | A Settings choice that tightens some rules at once for a busy period.                          |
+
 ## Save problems
 
 Every message for a save that failed or is not confirmed says what happened, then what to do now. The

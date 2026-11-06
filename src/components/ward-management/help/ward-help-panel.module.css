@@ -458,10 +458,81 @@
 
 /* ── How do I: the tour row ─────────────────────────────────────────────────────────────────── */
 .tour {
+  display: grid;
+  gap: 10px;
+  padding: 12px 14px;
+}
+
+.tourTop {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px;
+  min-width: 0;
+}
+
+/* The tour's chapters, in walking order, a tick on each already walked. They wrap, never scroll. */
+.tourChapters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tourChapter {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--wf-surface-2);
+  box-shadow: inset 0 0 0 1px var(--wf-line);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+}
+
+.tourChapter svg {
+  width: 12px;
+  height: 12px;
+  color: var(--wf-success-ink, var(--wf-accent));
+}
+
+.tourChapterCount {
+  color: var(--wf-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.tourLink {
+  position: relative;
+  justify-self: start;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--wf-accent-ink, var(--wf-accent));
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.tourLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.tourLink:focus-visible {
+  border-radius: 4px;
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* The welcome cards, played again inside the row under a hairline. */
+.tourWelcome {
+  padding-top: 12px;
+  border-top: 1px solid var(--wf-line);
 }
 
 .tourIcon {
@@ -502,7 +573,6 @@
 .segments {
   display: flex;
   gap: 4px;
-  margin-top: 4px;
 }
 
 .segments i {
@@ -1708,16 +1778,23 @@
 
 /* ── phone sizes: 40px faces, 48px tap areas ────────────────────────────────────────────────── */
 @media (max-width: 46.4375rem) {
-  /* The row scrolls sideways when the tabs do not fit, so its end fades as the chips do. */
+  /* All four tabs fit a 390px phone: the icons step aside and the gap closes up, so "What's new" is
+     never cut off. With larger text the row still scrolls sideways and its end fades as the chips
+     do. */
   .tabs {
+    gap: var(--wf-s-4, 16px);
     padding-top: var(--wf-phone-pill-hit);
     padding-right: 24px;
-    mask-image: linear-gradient(90deg, black calc(100% - 28px), transparent);
+    mask-image: linear-gradient(90deg, black calc(100% - 24px), transparent);
   }
 
   .tabs > button {
     position: relative;
     height: var(--wf-phone-pill-h);
+  }
+
+  .tabs > button svg {
+    display: none;
   }
 
   /* Upward only: the underline sits on the row's bottom line. */
@@ -1745,7 +1822,8 @@
   }
 
   .aroundTile::after,
-  .printRow::after {
+  .printRow::after,
+  .tourLink::after {
     content: "";
     position: absolute;
     inset: 50% 0 auto;

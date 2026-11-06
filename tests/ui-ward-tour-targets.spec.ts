@@ -76,12 +76,16 @@ const LIT: Record<"desk" | "phone", Record<string, readonly string[]>> = {
       "more-alerts",
       "more-learn",
     ],
-    officer: ["you", "summary", "jobs", "next", "stepper", "alerts", "more-on-call", "more-activity", "more-learn"],
+    officer: [
+      ...["you", "summary", "jobs", "next", "stepper", "history", "copy", "alerts"],
+      ...["more-on-call", "more-activity", "more-learn"],
+    ],
     bed_manager: [
       "menu",
       "hero",
       "mismatch",
       "meeting",
+      "planned",
       "map",
       "help",
       "more-movements",
@@ -89,8 +93,18 @@ const LIT: Record<"desk" | "phone", Record<string, readonly string[]>> = {
       "more-discharges",
       "more-learn",
     ],
-    executive: ["hero", "tabs", "export", "trends", "more-capacity", "more-board-time", "more-learn"],
-    admin: ["review", "more-settings", "more-board-time", "more-learn"],
+    executive: [
+      "menu",
+      "service",
+      "hero",
+      "tabs",
+      "export",
+      "trends",
+      "more-capacity",
+      "more-board-time",
+      "more-learn",
+    ],
+    admin: ["review", "record-review", "more-settings", "more-board-time", "more-learn"],
   },
   phone: {
     coordinator: [
@@ -129,6 +143,16 @@ const LIT: Record<"desk" | "phone", Record<string, readonly string[]>> = {
     admin: ["review", "dock", "help", "more-settings", "more-learn"],
   },
 };
+
+/**
+ * A tablet (746 to 1000px, 5 Nov 2026) keeps the desktop steps, but its rail sits behind the bar's
+ * Menu button. The coordinator's welcome opens centred there, and Placement sits below the fold of
+ * the one-column Home, so those two show a centred card. Every other desktop step lights its control.
+ */
+const TABLET_CENTRED: Record<string, readonly string[]> = { coordinator: ["welcome", "shortlist"] };
+const TABLET_LIT: Record<string, readonly string[]> = Object.fromEntries(
+  Object.entries(LIT.desk).map(([name, ids]) => [name, ids.filter((id) => !TABLET_CENTRED[name]?.includes(id))]),
+);
 
 async function signIn(page: Page, desk: Desk): Promise<void> {
   await page.addInitScript((access) => {
@@ -172,9 +196,10 @@ async function walkTour(page: Page): Promise<Map<string, boolean>> {
   return seen;
 }
 
-for (const device of ["desk", "phone"] as const) {
+for (const device of ["desk", "tablet", "phone"] as const) {
   test.describe(`tour targets on a ${device} @mockup`, () => {
     if (device === "phone") test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+    else if (device === "tablet") test.use({ viewport: { width: 834, height: 1112 }, hasTouch: true });
     else test.use({ viewport: { width: 1440, height: 1024 } });
 
     for (const [name, desk] of Object.entries(DESKS)) {
@@ -184,7 +209,7 @@ for (const device of ["desk", "phone"] as const) {
         const seen = await walkTour(page);
         expect(seen.get("can-do"), "the tour ends with what the desk can do").toBeDefined();
         const walked = JSON.stringify(Object.fromEntries(seen));
-        for (const id of LIT[device][name] ?? []) {
+        for (const id of (device === "tablet" ? TABLET_LIT : LIT[device])[name] ?? []) {
           expect(seen.has(id), `${name} ${device}: step ${id} is in the tour ${walked}`).toBe(true);
           expect(seen.get(id), `${name} ${device}: step ${id} lights its control ${walked}`).toBe(true);
         }

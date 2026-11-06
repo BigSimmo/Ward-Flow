@@ -19,6 +19,7 @@ import { ASK_WARDS_WINDOW_TEXT } from "@/components/ward-management/ward-operati
 import { deskMayAct, deskOpens, EVERY_LOGIN, howToFor, type WardEventType } from "./ward-help-access";
 import type { WardTourRole } from "./ward-help-store";
 import { MORE_JOBS, SCREEN_TOURS } from "./ward-help-screen-tours";
+import { DESK_JOBS, ED_ROW_ACTIONS, MOVEMENT_ROW } from "./ward-help-howto-desks";
 import { HELP_SYNONYMS } from "./ward-help-synonyms";
 import { nearestWord } from "./ward-help-typo";
 import type { TourDevice, TourTarget } from "./ward-tour-steps";
@@ -288,6 +289,18 @@ const JOBS: readonly HowTo[] = [
     desks: ["ed"],
     acts: ["BOOK_TRANSPORT"],
     go: "home",
+    showMe: [
+      {
+        target: ED_ROW_ACTIONS,
+        title: "The patient's actions",
+        body: "At the end of each board row. On a phone, tap the patient.",
+      },
+      {
+        target: { sel: '[data-testid^="ward-ed-book-transport-toggle-"]' },
+        title: "Log transport booking",
+        body: "Record the booking made by phone. Ward Flow does not order a vehicle.",
+      },
+    ],
   },
   {
     id: "book-transport-community",
@@ -299,6 +312,16 @@ const JOBS: readonly HowTo[] = [
     desks: ["community"],
     acts: ["BOOK_TRANSPORT"],
     go: "home",
+    showMe: [
+      {
+        target: [
+          { sel: '[data-testid^="ward-community-book-transport-"]' },
+          { sel: "#main-content button", text: "Log transport" },
+        ],
+        title: "Log transport booking",
+        body: "On the patient's row, once a bed is pulled. Record the booking made by phone.",
+      },
+    ],
   },
   {
     id: "book-transport-ward",
@@ -310,6 +333,14 @@ const JOBS: readonly HowTo[] = [
     desks: ["ward"],
     acts: ["BOOK_TRANSPORT"],
     go: "movements",
+    showMe: [
+      { target: MOVEMENT_ROW, title: "Open the movement", body: "Open the patient's journey from Coming and going." },
+      {
+        target: { sel: "#main-content button", text: "Record transport booking" },
+        title: "Record transport booking",
+        body: "Shows once the bed is pulled and no booking is recorded yet.",
+      },
+    ],
   },
   {
     id: "cancel-transport-ed",
@@ -321,6 +352,17 @@ const JOBS: readonly HowTo[] = [
     desks: ["ed"],
     acts: ["CANCEL_TRANSPORT"],
     go: "movements",
+    showMe: [
+      { target: MOVEMENT_ROW, title: "Open the movement", body: "Open the referral your ED sent." },
+      {
+        target: [
+          { sel: '[data-testid="ward-patient-orphaned-transport"]' },
+          { sel: '[data-testid="ward-console-cancel-transport"]' },
+        ],
+        title: "Transport booked with no bed pulled",
+        body: "Choose a reason, then Cancel the transport job.",
+      },
+    ],
   },
   {
     id: "cancel-transport-ward",
@@ -332,6 +374,17 @@ const JOBS: readonly HowTo[] = [
     desks: ["ward"],
     acts: ["CANCEL_TRANSPORT"],
     go: "movements",
+    showMe: [
+      { target: MOVEMENT_ROW, title: "Open the movement", body: "Open the journey your ward sent." },
+      {
+        target: [
+          { sel: '[data-testid="ward-patient-orphaned-transport"]' },
+          { sel: '[data-testid="ward-console-cancel-transport"]' },
+        ],
+        title: "Transport booked with no bed pulled",
+        body: "Choose a reason, then Cancel the transport job. Only the sending ward recorded as booker may cancel.",
+      },
+    ],
   },
   {
     id: "cancel-transport-community",
@@ -343,6 +396,13 @@ const JOBS: readonly HowTo[] = [
     desks: ["community"],
     acts: ["CANCEL_TRANSPORT"],
     go: "home",
+    showMe: [
+      {
+        target: { sel: '[data-testid^="ward-community-cancel-transport-"]' },
+        title: "Cancel this team's booking",
+        body: "On your own team's active booking, before collection. Then record the reason.",
+      },
+    ],
   },
   {
     id: "cancel-transport",
@@ -375,7 +435,7 @@ const JOBS: readonly HowTo[] = [
     id: "log-call",
     topic: "Beds and referrals",
     title: "Log a call",
-    keywords: "phone rang record contact follow up callback",
+    keywords: "phone rang contact follow up callback",
     answer:
       "Open the referral and use Log a call, choosing who was rung and the outcome from the list. The next person sees who was called and when.",
     desks: ["coordinator"],
@@ -668,7 +728,7 @@ const JOBS: readonly HowTo[] = [
     id: "alerts-log",
     topic: "Finding your way",
     title: "Find an alert I already cleared",
-    keywords: "alerts log history cleared earlier past broadcast filter acknowledged",
+    keywords: "alerts log history cleared earlier past filter acknowledged",
     answer:
       "Open the Alerts page. Open is what still needs someone, with chips to show one kind at a time. Cleared lists what was acted on this session, newest first. Broadcasts holds bed calls, live and past.",
     desks: EVERY_DESK,
@@ -940,8 +1000,8 @@ const JOBS: readonly HowTo[] = [
   },
 ];
 
-/** The desks' jobs, the jobs added with the walk-rounds, then the walks round each screen. */
-export const HOW_TOS: readonly HowTo[] = [...JOBS, ...MORE_JOBS, ...SCREEN_TOURS];
+/** The desks' jobs, the jobs added with the walk-rounds, the desk jobs added later, then the walks round each screen. */
+export const HOW_TOS: readonly HowTo[] = [...JOBS, ...MORE_JOBS, ...DESK_JOBS, ...SCREEN_TOURS];
 
 /* Matching ----------------------------------------------------------------------------------- */
 

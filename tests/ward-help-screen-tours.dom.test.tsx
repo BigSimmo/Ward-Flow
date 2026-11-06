@@ -46,8 +46,31 @@ afterEach(() => {
 });
 
 const CAPACITY = { ...SCREEN_HELP.capacity, id: "capacity" };
-/** Page walk rounds: Help matches these pages by address, not by rail entry (2 Nov 2026). */
-const PAGE_WALKS = ["ward", "ed-board"];
+/**
+ * Page walk rounds: Help matches these pages by address, not by rail entry (2 Nov 2026), each with
+ * an address it plays on. Detail and stand-alone pages joined them on 5 Nov 2026.
+ */
+const PAGE_WALK_PATHS: Readonly<Record<string, string>> = {
+  ward: "/ward-flow/ward/fsh-adult-secure",
+  "ed-board": "/ward-flow/ed/fsh-ed",
+  patient: "/ward-flow/movements/m1",
+  "add-patient": "/ward-flow/people/new",
+  board: "/ward-flow/board/fsh-adult-secure",
+  "ward-answer": "/ward-flow/ward/fsh-adult-secure/answer",
+  catchments: "/ward-flow/hub/catchments",
+  "community-team": "/ward-flow/community/armadale",
+  settings: "/ward-flow/settings",
+  downtime: "/ward-flow/reports/downtime",
+  "bed-meeting-agenda": "/ward-flow/bed-meeting/agenda",
+  chronology: "/ward-flow/reports/chronology",
+  "statistics-compare": "/ward-flow/statistics/compare",
+  "statistics-services": "/ward-flow/statistics/services",
+  "statistics-wards": "/ward-flow/statistics/wards",
+  "statistics-eds": "/ward-flow/statistics/eds",
+  "statistics-teams": "/ward-flow/statistics/teams",
+  "statistics-weekly": "/ward-flow/statistics/weekly",
+};
+const PAGE_WALKS = Object.keys(PAGE_WALK_PATHS);
 
 function renderCapacity(onShowMe = vi.fn(), showMeOn = true) {
   render(
@@ -82,6 +105,37 @@ describe("Show me around: the walk-rounds", () => {
       expect(showMeSteps(tour, "phone").length, `${tour.id} phone`).toBeGreaterThanOrEqual(2);
       expect(HOW_TOS).toContain(tour);
     }
+  });
+
+  it("walks every rail screen with help, except a redirect and a sheet", () => {
+    const walked = new Set(SCREEN_TOURS.map((tour) => tour.around));
+    const unwalked = Object.keys(SCREEN_HELP).filter((screen) => !walked.has(screen));
+    expect(unwalked.sort()).toEqual(["bed-finder", "community"]);
+  });
+
+  it("keeps each walk round between two and seven steps on each device", () => {
+    for (const tour of SCREEN_TOURS) {
+      for (const device of ["desk", "phone"] as const) {
+        const steps = showMeSteps(tour, device).length;
+        expect(steps, `${tour.id} ${device}`).toBeLessThanOrEqual(7);
+      }
+    }
+  });
+
+  it("offers each page walk round on its own page, under the page's own help", async () => {
+    const { screenHelpFor } = await import("@/components/ward-management/help/ward-help-content");
+    const { walkPlaysHere } = await import("@/components/ward-management/help/ward-help-screen-tours");
+    for (const [screen, path] of Object.entries(PAGE_WALK_PATHS)) {
+      const tour = SCREEN_TOURS.find((each) => each.around === screen);
+      expect(tour, screen).toBeDefined();
+      expect(screenHelpFor(path, [])?.id, path).toBe(screen);
+      expect(walkPlaysHere(tour!, path), path).toBe(true);
+      expect(walkPlaysHere(tour!, "/ward-flow/alerts"), screen).toBe(false);
+    }
+    // The patient record's walk round never plays on Add patient, which shares its address shape.
+    const patient = SCREEN_TOURS.find((each) => each.around === "patient")!;
+    expect(walkPlaysHere(patient, "/ward-flow/people/new")).toBe(false);
+    expect(walkPlaysHere(patient, "/ward-flow/people/p1")).toBe(true);
   });
 
   it("skips a step marked for the other device", () => {
