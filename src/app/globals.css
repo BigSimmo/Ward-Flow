@@ -916,11 +916,14 @@ html {
  * form controls so iOS never zooms.
  */
 html[data-density="compact"] {
-  font-size: 15px;
+  /* Relative to the browser text size (15px at the 16px default), so BA-5's rem type follows it.
+     The 12px token keeps the 12px text floor when compact shrinks the rem. */
+  font-size: 93.75%;
+  --wf-fs-12: max(12px, 0.75rem);
 }
 
 html[data-density="spacious"] {
-  font-size: 17px;
+  font-size: 106.25%; /* 17px at the 16px default */
 }
 
 body {
