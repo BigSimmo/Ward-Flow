@@ -9,15 +9,8 @@ import { describe, expect, it } from "vitest";
 // Never add a file or raise a count to make this pass; use the wf date field or confirm dialog.
 
 const KNOWN: Record<string, { dateBoxes?: number; confirms?: number }> = {
-  "src/components/ward-management/board/ward-board-detail-panel.tsx": { dateBoxes: 1 },
-  "src/components/ward-management/capacity/planned-admissions-panel.tsx": { dateBoxes: 1 },
-  "src/components/ward-management/discharges/discharge-dependencies-panel.tsx": { dateBoxes: 1 },
-  "src/components/ward-management/discharges/discharge-detail-panes.tsx": { dateBoxes: 1 },
-  "src/components/ward-management/referrals/ward-referral-drawer-referral-step.tsx": { dateBoxes: 1 },
-  "src/components/ward-management/tools/ward-tool-form-times.tsx": { dateBoxes: 1 },
   "src/components/ward-management/use-dirty-state-guard.ts": { confirms: 2 },
-  "src/components/ward-management/ward/ward-drawer-discharge-date.tsx": { dateBoxes: 1 },
-  "src/components/wf/confirm-dialog.tsx": { confirms: 2 },
+  "src/components/wf/confirm-dialog.tsx": { confirms: 1 },
 };
 
 const SRC = join(process.cwd(), "src");

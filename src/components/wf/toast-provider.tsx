@@ -277,6 +277,17 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
     [expire, offlineNote, savesOnDevice],
   );
 
+  // A question whose dialog code could not be fetched says so, rather than quietly answering
+  // "Keep editing" (PR #1474 review).
+  const confirmUnavailable = useCallback(() => {
+    push({
+      tone: "warning",
+      title: "That question could not open",
+      body: "Nothing was changed. Check the connection and try again.",
+      skipOfflineNote: true,
+    });
+  }, [push]);
+
   const value = useMemo(
     () => ({ toasts, push, dismiss, isShown, undoAndDismiss, savesOnDevice }),
     [toasts, push, dismiss, isShown, undoAndDismiss, savesOnDevice],
@@ -287,7 +298,7 @@ export function ToastProvider({ children, offlineNote }: ToastProviderProps) {
       {children}
       <ToastRegion />
       {/* The styled confirm (kit) mounts beside the toasts: every Ward Flow page has this provider. */}
-      <ConfirmHost />
+      <ConfirmHost onUnavailable={confirmUnavailable} />
     </ToastContext.Provider>
   );
 }
