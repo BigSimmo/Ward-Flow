@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
@@ -61,7 +61,12 @@ describe("keyboard shortcuts in Help", () => {
     window.dispatchEvent(taken);
     window.localStorage.setItem("ward-flow-character-shortcuts", "off");
     fireEvent.keyDown(window, { key: "?" });
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    await waitFor(() => expect(screen.queryByTestId("ward-help-sheet")).toBeNull());
+    // TE-08: the sheet's code is loaded before each jsdom test (tests/setup/jsdom.setup.ts) and the
+    // key sets state at once, so a press that opened it would show now. A real-clock sleep added
+    // nothing. The control below proves the listener is live, so the empty result means something.
+    expect(screen.queryByTestId("ward-help-sheet")).toBeNull();
+    window.localStorage.removeItem("ward-flow-character-shortcuts");
+    fireEvent.keyDown(window, { key: "?" });
+    expect(await screen.findByTestId("ward-help-sheet")).toBeTruthy();
   });
 });
