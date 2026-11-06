@@ -846,9 +846,11 @@ function ToolsSheetView({
       .filter((entry): entry is Entry => entry !== null)
       .filter((entry) => !words || `${entry.name} ${entry.detail}`.toLowerCase().includes(words)),
   })).filter((group) => group.entries.length > 0);
-  // A group folds after five rows unless searching, opened, short, or holding the open tool
+  // On wide desktops a group folds after five rows unless searching, opened, short, or holding the open tool
   // (a Recent chip can open a tool whose row sits under Show more).
+  // Phone and tablet show every row (Josh, 6 Nov 2026): tools open as pages, so the list stays calm.
   const groupShowsAll = (group: (typeof groups)[number]) =>
+    !twoPane ||
     Boolean(words) ||
     expanded.has(group.id) ||
     group.entries.length <= GROUP_SHOWN + 1 ||
