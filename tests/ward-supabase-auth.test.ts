@@ -2,8 +2,14 @@ import { describe, expect, it, vi } from "vitest";
 import {
   SupabaseWardAuth,
   WARD_AUTH_STORAGE_KEY,
-  consumeRecoveryFragment,
+  consumeRecoveryLink,
+  createPkceVerifier,
+  pkceChallenge,
 } from "../src/components/ward-management/ward-supabase-auth";
+import {
+  WARD_RECOVERY_VERIFIER_KEY,
+  WARD_RECOVERY_VERIFIER_LIFETIME_MS,
+} from "../src/components/ward-management/ward-auth-link";
 const url = "https://zakzoemeedfepxcstsou.supabase.co";
 const user = { id: "12345678-1234-1234-1234-123456789abc" };
 const session = (access_token = "access") => ({ access_token, refresh_token: "refresh", expires_in: 3600, user });
@@ -168,33 +174,256 @@ describe("scoped browser auth", () => {
     expect(store.getItem(WARD_AUTH_STORAGE_KEY) === null).toBe(status === 401);
     auth.dispose();
   });
-  it("removes sensitive fragments synchronously before handing recovery to auth", () => {
+  it("refuses the old implicit recovery fragment and still erases it (SEC-2)", () => {
     const replace = vi.fn();
-    const result = consumeRecoveryFragment(
-      {
-        hash: "#access_token=secret&refresh_token=refresh&expires_in=3600&type=recovery",
-        pathname: "/ward-flow",
-        search: "?view=test",
-      },
-      replace,
-    );
+    const store = storage();
+    store.setItem(WARD_RECOVERY_VERIFIER_KEY, JSON.stringify({ verifier: "v".repeat(64), createdAt: Date.now() }));
+    expect(() =>
+      consumeRecoveryLink(
+        {
+          hash: "#access_token=synthetic-access&refresh_token=synthetic-refresh&expires_in=3600&type=recovery",
+          pathname: "/ward-flow",
+          search: "?view=test",
+        },
+        replace,
+        store,
+      ),
+    ).toThrow("The recovery link is invalid or expired. Request a new link.");
     expect(replace).toHaveBeenCalledWith("/ward-flow?view=test");
-    expect(result?.recovery).toBe(true);
-    expect(result?.access_token).toBe("secret");
+    // A refused fragment never spends this browser's own pending request.
+    expect(store.getItem(WARD_RECOVERY_VERIFIER_KEY)).not.toBeNull();
   });
   it("refuses an error fragment even when it also includes token fields", () => {
     const replace = vi.fn();
     expect(() =>
-      consumeRecoveryFragment(
+      consumeRecoveryLink(
         {
           hash: "#type=recovery&error=access_denied&access_token=synthetic&refresh_token=synthetic&expires_in=3600",
           pathname: "/ward-flow",
           search: "",
         },
         replace,
+        storage(),
       ),
     ).toThrow(/invalid or expired/);
     expect(replace).toHaveBeenCalledWith("/ward-flow");
+  });
+  it("erases a signup confirmation fragment quietly", () => {
+    const replace = vi.fn();
+    expect(
+      consumeRecoveryLink(
+        { hash: "#type=signup&access_token=synthetic", pathname: "/ward-flow", search: "" },
+        replace,
+        null,
+      ),
+    ).toBeNull();
+    expect(replace).toHaveBeenCalledWith("/ward-flow");
+  });
+  it("leaves an address without a link alone", () => {
+    const replace = vi.fn();
+    expect(
+      consumeRecoveryLink({ hash: "#beds", pathname: "/ward-flow", search: "?view=test" }, replace, null),
+    ).toBeNull();
+    expect(replace).not.toHaveBeenCalled();
+  });
+});
+
+describe("PKCE password recovery (SEC-2)", () => {
+  const verifier = "A".repeat(43) + "-_~.";
+  const saved = (createdAt = Date.now(), value = verifier) => {
+    const store = storage();
+    store.setItem(WARD_RECOVERY_VERIFIER_KEY, JSON.stringify({ verifier: value, createdAt }));
+    return store;
+  };
+  it("makes a 64-character base64url verifier, different each time", () => {
+    const first = createPkceVerifier();
+    expect(first).toMatch(/^[A-Za-z0-9_-]{64}$/);
+    expect(createPkceVerifier()).not.toBe(first);
+  });
+  it("derives the RFC 7636 appendix B S256 challenge", async () => {
+    expect(await pkceChallenge("dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk")).toBe(
+      "E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM",
+    );
+  });
+  it("sends the S256 challenge with the recover request and keeps the verifier in this browser", async () => {
+    const link = storage();
+    const fetcher = vi.fn(async () => Response.json({}));
+    const auth = new SupabaseWardAuth({
+      url,
+      publishableKey: "sb_publishable_test",
+      linkStorage: link,
+      fetch: fetcher,
+    });
+    await auth.recover("synthetic@example.invalid", "https://ward.example.test/ward-flow");
+    const [endpoint, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
+    expect(endpoint).toBe(
+      url + "/auth/v1/recover?redirect_to=" + encodeURIComponent("https://ward.example.test/ward-flow"),
+    );
+    const body = JSON.parse(String(init.body));
+    const kept = JSON.parse(link.getItem(WARD_RECOVERY_VERIFIER_KEY)!);
+    expect(kept.verifier).toMatch(/^[A-Za-z0-9_-]{64}$/);
+    expect(Math.abs(kept.createdAt - Date.now())).toBeLessThan(5000);
+    expect(body).toEqual({
+      email: "synthetic@example.invalid",
+      code_challenge: await pkceChallenge(kept.verifier),
+      code_challenge_method: "s256",
+    });
+    // The verifier itself never leaves the browser.
+    expect(String(init.body)).not.toContain(kept.verifier);
+    auth.dispose();
+  });
+  it("asks for no link when this browser cannot keep the verifier", async () => {
+    const fetcher = vi.fn(async () => Response.json({}));
+    const auth = new SupabaseWardAuth({ url, publishableKey: "sb_publishable_test", fetch: fetcher });
+    await expect(
+      auth.recover("synthetic@example.invalid", "https://ward.example.test/ward-flow"),
+    ).rejects.toMatchObject({
+      kind: "unavailable",
+    });
+    const blocked = {
+      setItem: () => {
+        throw new DOMException("blocked", "SecurityError");
+      },
+      removeItem: () => {},
+    };
+    const refused = new SupabaseWardAuth({
+      url,
+      publishableKey: "sb_publishable_test",
+      linkStorage: blocked,
+      fetch: fetcher,
+    });
+    await expect(
+      refused.recover("synthetic@example.invalid", "https://ward.example.test/ward-flow"),
+    ).rejects.toMatchObject({ kind: "unavailable" });
+    expect(fetcher).not.toHaveBeenCalled();
+    auth.dispose();
+    refused.dispose();
+  });
+  it("takes the code off the address and the verifier out of storage, once", () => {
+    const store = saved();
+    const replace = vi.fn();
+    const where = { hash: "", pathname: "/ward-flow", search: "?code=synthetic-code&view=test" };
+    expect(consumeRecoveryLink(where, replace, store)).toEqual({ code: "synthetic-code", verifier });
+    expect(replace).toHaveBeenCalledWith("/ward-flow?view=test");
+    expect(store.getItem(WARD_RECOVERY_VERIFIER_KEY)).toBeNull();
+    // The same link opened again finds no verifier.
+    expect(() => consumeRecoveryLink(where, vi.fn(), store)).toThrow(
+      "Open this link on the device and browser where you asked for it, or ask for a new link here.",
+    );
+  });
+  it("keeps the front door's own address when it carries the code", () => {
+    const replace = vi.fn();
+    consumeRecoveryLink(
+      { hash: "", pathname: "/sign-in", search: "?code=synthetic-code&next=%2Fward-flow" },
+      replace,
+      saved(),
+    );
+    expect(replace).toHaveBeenCalledWith("/sign-in?next=%2Fward-flow");
+  });
+  it("refuses a code opened in another browser or device, with a plain message and no exchange", async () => {
+    const replace = vi.fn();
+    let error: unknown;
+    try {
+      consumeRecoveryLink({ hash: "", pathname: "/ward-flow", search: "?code=synthetic-code" }, replace, storage());
+    } catch (caught) {
+      error = caught;
+    }
+    expect(error).toMatchObject({
+      kind: "session",
+      message: "Open this link on the device and browser where you asked for it, or ask for a new link here.",
+    });
+    expect(replace).toHaveBeenCalledWith("/ward-flow");
+    expect(() =>
+      consumeRecoveryLink({ hash: "", pathname: "/ward-flow", search: "?code=synthetic-code" }, vi.fn(), null),
+    ).toThrow(/device and browser where you asked/);
+  });
+  it("refuses and clears a verifier older than the link's hour", () => {
+    const store = saved(Date.now() - WARD_RECOVERY_VERIFIER_LIFETIME_MS - 1);
+    expect(() =>
+      consumeRecoveryLink({ hash: "", pathname: "/ward-flow", search: "?code=synthetic-code" }, vi.fn(), store),
+    ).toThrow("The recovery link is invalid or expired. Request a new link.");
+    expect(store.getItem(WARD_RECOVERY_VERIFIER_KEY)).toBeNull();
+    // Just inside the hour still works.
+    const fresh = saved(Date.now() - WARD_RECOVERY_VERIFIER_LIFETIME_MS + 60000);
+    expect(
+      consumeRecoveryLink({ hash: "", pathname: "/ward-flow", search: "?code=synthetic-code" }, vi.fn(), fresh),
+    ).toEqual({ code: "synthetic-code", verifier });
+  });
+  it("refuses a malformed stored verifier", () => {
+    expect(() =>
+      consumeRecoveryLink(
+        { hash: "", pathname: "/ward-flow", search: "?code=synthetic-code" },
+        vi.fn(),
+        saved(Date.now(), "short"),
+      ),
+    ).toThrow(/device and browser where you asked/);
+  });
+  it("erases a PKCE error return and reports the link as invalid", () => {
+    const replace = vi.fn();
+    const store = saved();
+    expect(() =>
+      consumeRecoveryLink(
+        {
+          hash: "",
+          pathname: "/ward-flow",
+          search: "?error=access_denied&error_code=otp_expired&error_description=Email+link+is+invalid",
+        },
+        replace,
+        store,
+      ),
+    ).toThrow(/invalid or expired/);
+    expect(replace).toHaveBeenCalledWith("/ward-flow");
+  });
+  it("exchanges the code with the verifier and holds a recovery-only session", async () => {
+    const tab = storage();
+    const fetcher = vi.fn(async (endpoint: RequestInfo | URL) =>
+      String(endpoint).includes("grant_type=pkce")
+        ? Response.json({ ...session("recovery-access"), user: { ...user, email: "synthetic@example.invalid" } })
+        : Response.json({}, { status: 500 }),
+    );
+    const auth = new SupabaseWardAuth({ url, publishableKey: "sb_publishable_test", storage: tab, fetch: fetcher });
+    await auth.restore({ code: "synthetic-code", verifier });
+    const [endpoint, init] = fetcher.mock.calls[0] as unknown as [string, RequestInit];
+    expect(endpoint).toBe(url + "/auth/v1/token?grant_type=pkce");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(String(init.body))).toEqual({ auth_code: "synthetic-code", code_verifier: verifier });
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(auth.isRecovery).toBe(true);
+    expect(auth.userId).toBe(user.id);
+    expect(auth.accountEmail).toBe("synthetic@example.invalid");
+    expect(JSON.parse(tab.getItem(WARD_AUTH_STORAGE_KEY)!).recovery).toBe(true);
+    // A recovery session never opens the workspace.
+    await expect(auth.token()).rejects.toMatchObject({ kind: "session" });
+    auth.dispose();
+  });
+  it("checks the account with /user when the exchange reply does not name it", async () => {
+    const fetcher = vi.fn(async (endpoint: RequestInfo | URL) =>
+      Response.json(String(endpoint).endsWith("/user") ? user : session("recovery-access")),
+    );
+    const auth = new SupabaseWardAuth({ url, publishableKey: "sb_publishable_test", fetch: fetcher });
+    await auth.restore({ code: "synthetic-code", verifier });
+    expect(fetcher.mock.calls.map(([endpoint]) => String(endpoint))).toEqual([
+      url + "/auth/v1/token?grant_type=pkce",
+      url + "/auth/v1/user",
+    ]);
+    expect(auth.isRecovery).toBe(true);
+    auth.dispose();
+  });
+  it.each([400, 403, 404, 422])("reports a refused code (%i) as an invalid link", async (status) => {
+    const tab = storage();
+    const auth = new SupabaseWardAuth({
+      url,
+      publishableKey: "sb_publishable_test",
+      storage: tab,
+      fetch: async () => Response.json({}, { status }),
+    });
+    await expect(auth.restore({ code: "synthetic-code", verifier })).rejects.toMatchObject({
+      kind: "session",
+      message: "The recovery link is invalid or expired. Request a new link.",
+    });
+    expect(auth.isRecovery).toBe(false);
+    expect(tab.getItem(WARD_AUTH_STORAGE_KEY)).toBeNull();
+    auth.dispose();
   });
 });
 

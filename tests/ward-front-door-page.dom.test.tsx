@@ -3,7 +3,7 @@ import { createRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { WardBrowserAuthAdapter } from "../src/components/ward-management/ward-supabase-auth";
-import { WardAuthError } from "../src/components/ward-management/ward-auth-link";
+import { WardAuthError, WARD_RECOVERY_VERIFIER_KEY } from "../src/components/ward-management/ward-auth-link";
 
 const createWardAuth = vi.hoisted(() => vi.fn<() => Promise<WardBrowserAuthAdapter>>());
 vi.mock("@/components/ward-management/ward-auth-session", () => ({ createWardAuth }));
@@ -147,6 +147,48 @@ describe("the account door", () => {
     fireEvent.submit(fields[0]!.closest("form")!);
     await waitFor(() => expect(auth.updatePassword).toHaveBeenCalledWith("synthetic-new-password-1"));
     await waitFor(() => expect(replace).toHaveBeenCalledWith("/ward-flow"));
+  });
+
+  it("exchanges a recovery code only with this browser's verifier, and takes it off the address (SEC-2)", async () => {
+    const verifier = "f".repeat(64);
+    localStorage.setItem(WARD_RECOVERY_VERIFIER_KEY, JSON.stringify({ verifier, createdAt: Date.now() }));
+    const history = vi.spyOn(window.history, "replaceState").mockImplementation(() => {});
+    vi.spyOn(window, "location", "get").mockReturnValue({
+      ...window.location,
+      hash: "",
+      pathname: "/sign-in",
+      search: "?code=synthetic-code&next=%2Fward-flow",
+      replace,
+    } as Location);
+    const auth = adapter();
+    createWardAuth.mockResolvedValue(auth);
+    render(<FrontDoorPage next="/ward-flow" mode="account" tv={false} />);
+    await waitFor(() => expect(auth.restore).toHaveBeenCalledWith({ code: "synthetic-code", verifier }));
+    expect(history.mock.calls.map((call) => call[2])).toEqual(["/sign-in?next=%2Fward-flow"]);
+    expect(localStorage.getItem(WARD_RECOVERY_VERIFIER_KEY)).toBeNull();
+  });
+
+  it("does not sign in with a recovery code from another device or browser (SEC-2)", async () => {
+    localStorage.removeItem(WARD_RECOVERY_VERIFIER_KEY);
+    vi.spyOn(window.history, "replaceState").mockImplementation(() => {});
+    vi.spyOn(window, "location", "get").mockReturnValue({
+      ...window.location,
+      hash: "",
+      pathname: "/sign-in",
+      search: "?code=synthetic-code&next=%2Fward-flow",
+      replace,
+    } as Location);
+    const auth = adapter();
+    createWardAuth.mockResolvedValue(auth);
+    render(<FrontDoorPage next="/ward-flow" mode="account" tv={false} />);
+    expect(
+      await screen.findByText(
+        "Open this link on the device and browser where you asked for it, or ask for a new link here.",
+      ),
+    ).toBeVisible();
+    expect(auth.restore).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Forgot password?" })).toBeVisible();
+    expect(replace).not.toHaveBeenCalled();
   });
 
   it("shows the sign-in as unavailable when it is not set up", async () => {

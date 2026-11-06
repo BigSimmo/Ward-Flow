@@ -1,4 +1,5 @@
 import type { WardBrowserAuthAdapter } from "./ward-supabase-auth";
+import { deviceStorage } from "./ward-auth-link";
 import { endWardFlowBrowserSession } from "./ward-browser-data";
 
 // H-0305: a browser that blocks storage throws on reaching window.sessionStorage at all. Then
@@ -29,6 +30,7 @@ export const createWardAuth = async (): Promise<WardBrowserAuthAdapter> =>
     url: process.env.NEXT_PUBLIC_WARD_SUPABASE_URL ?? "",
     publishableKey: process.env.NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY ?? "",
     storage: tabStorage,
+    linkStorage: deviceStorage,
     coordinatorEmail: process.env.NEXT_PUBLIC_WARD_COORDINATOR_EMAIL,
     // Sign-out, expiry and a refused session all clear Ward Flow's browser storage.
     onSessionEnded: endWardFlowBrowserSession,
