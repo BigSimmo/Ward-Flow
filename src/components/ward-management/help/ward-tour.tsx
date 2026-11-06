@@ -84,7 +84,10 @@ export function WardTour({ onClose }: { onClose: () => void }) {
   // Find the step's control, light it and keep the card clear of it (`ward-spotlight.ts`).
   const target = step?.target;
   const targets = useMemo(() => (target ? [target] : undefined), [target]);
-  const { box, missing, held } = useSpotlight(targets, `${step?.id ?? ""}|${pathname}`, device);
+  const { box, missing, held, element } = useSpotlight(targets, `${step?.id ?? ""}|${pathname}`, device);
+  // A step with Try it lets its lit control be used while the card stays open, as Show me does: the
+  // rest of the page stays inert, and only that control takes clicks and focus.
+  const tryRoot = step?.tryIt && element ? element : null;
   usePlacedCard(cardRef, spotRef, box, device, `${step?.id ?? ""}|${menu}`, missing);
 
   const finish = useCallback(() => {
@@ -114,6 +117,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
     panelRef: cardRef,
     initialFocusRef: nextRef,
     keyPhase: "capture",
+    interactionRoots: [tryRoot],
   });
 
   // A step change can take away the focused button (Back on the first step), so focus goes to Next.
@@ -192,7 +196,13 @@ export function WardTour({ onClose }: { onClose: () => void }) {
 
   return (
     <OverlayPortal layer="modal" name="ward-tour">
-      <div ref={rootRef} className={styles.layer} data-testid="ward-tour" data-device={device}>
+      <div
+        ref={rootRef}
+        className={styles.layer}
+        style={tryRoot ? { pointerEvents: "none" } : undefined}
+        data-testid="ward-tour"
+        data-device={device}
+      >
         {/* Keyed apart, so a new spot is never the dim's box reused and flown in from the corner. */}
         {box ? (
           <div
@@ -216,6 +226,7 @@ export function WardTour({ onClose }: { onClose: () => void }) {
         <div
           ref={cardRef}
           className={styles.card}
+          style={tryRoot ? { pointerEvents: "auto" } : undefined}
           role="dialog"
           aria-modal="true"
           aria-labelledby="ward-tour-title"
