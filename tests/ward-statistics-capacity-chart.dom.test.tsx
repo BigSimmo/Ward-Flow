@@ -267,3 +267,35 @@ it("exports a formula-like ward name neutralised", async () => {
     vi.unstubAllGlobals();
   }
 });
+
+it("gives the network ED median to the minute, the same figure All EDs shows (design audit C16)", () => {
+  const base = seedWardFlowState().movements[0];
+  const ed = allEmergencyDepartments()[0];
+  const movements: Movement[] = [60, 120].map((wait, index) => ({
+    ...base,
+    id: `WF-stat-median-${index}`,
+    originEdId: ed.id,
+    openedAt: (NOW_ANCHOR - wait) as Instant,
+    stage: "placement_requested",
+  }));
+  const { container } = render(
+    <WardFlowProvider initialNow={NOW_ANCHOR}>
+      <StatisticsScreen movements={movements} />
+    </WardFlowProvider>,
+  );
+  const table = container.querySelector<HTMLTableElement>("#edPressureTable")!;
+  const row = [...table.tBodies[0].rows].find((row) => row.textContent?.includes(ed.siteCode))!;
+  const medianColumn = [...table.tHead!.rows[0].cells].findIndex((cell) =>
+    cell.textContent?.trim().startsWith("Median"),
+  );
+  // 60 and 120 minutes: the median is 1h 30m, not rounded to "2h".
+  expect(row.cells[medianColumn].textContent).toBe("1h 30m");
+});
+
+it("says a scope with no beds is empty, with no Clear filters when no filter is on (design audit C18)", () => {
+  render(<StatisticsCapacityChart units={[]} bedReleases={[]} />);
+  expect(screen.getByText("No inpatient beds here.")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Clear filters" })).toBeNull();
+  // The axis is not drawn over an empty chart: `hidden` alone loses to the module's display: grid.
+  expect(screen.queryByText("Ready", { selector: "span" })).toBeNull();
+});

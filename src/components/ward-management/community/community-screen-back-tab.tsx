@@ -236,7 +236,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                   </>
                 ) : (
                   <>
-                    No one referred to this team who is currently in a bed or has one pulled has a discharge date the
+                    Nobody referred to this team who is currently in a bed or has one pulled has a discharge date the
                     ward has written down.
                   </>
                 )}

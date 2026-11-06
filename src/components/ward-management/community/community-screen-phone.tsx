@@ -605,7 +605,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
         coverage={coveragePanel}
         samples={[
           { id: "activity", label: "Activity sample", onPress: () => setActiveDrawer("activityDrawer") },
-          { id: "tasks", label: "Tasks sample", onPress: () => setActiveDrawer("tasksDrawer") },
+          { id: "tasks", label: "Alerts sample", onPress: () => setActiveDrawer("tasksDrawer") },
           { id: "tools", label: "Tools sample", onPress: () => setActiveDrawer("toolsDrawer") },
         ]}
         actions={[

@@ -116,7 +116,7 @@ export function ShiftChecks({
           ) : null}
         </div>
         {heldUp.total === 0 ? (
-          <p className={styles.mutedXs}>No bed release has a recorded blocker.</p>
+          <p className={styles.mutedXs}>No discharge is recorded as held up.</p>
         ) : (
           groups.map((group) =>
             group.rows.length === 0 ? null : (

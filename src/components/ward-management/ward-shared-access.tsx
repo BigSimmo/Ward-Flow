@@ -780,6 +780,7 @@ export function WardSessionEndingNotice({ endsAt }: { endsAt: number | null }) {
   const at = new Date(endsAt).toLocaleTimeString("en-AU", {
     hour: "2-digit",
     minute: "2-digit",
+    hourCycle: "h23",
     timeZone: "Australia/Perth",
   });
   const notice = (

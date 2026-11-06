@@ -687,7 +687,7 @@ export function HubScreen() {
             <PeopleList
               heading={selected.kind === "ward" ? "Heading here" : "Waiting here"}
               people={selectedPeople}
-              empty={selected.kind === "ward" ? "No one is heading here." : "No one is waiting here."}
+              empty={selected.kind === "ward" ? "Nobody is heading here." : "Nobody is waiting here."}
             />
           )}
           {selected.kind === "ed" ? (

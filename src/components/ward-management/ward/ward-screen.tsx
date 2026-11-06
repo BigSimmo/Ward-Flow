@@ -2520,10 +2520,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             now={now}
             extended={cockpitHold?.movementId === cockpitAcceptMovement.id && cockpitHold.extended}
             holdChoices={[
-              { extended: false, label: `${configuration.pullHoldMinutes} minutes, standard` },
+              { extended: false, label: `${durMinutes(configuration.pullHoldMinutes)} standard` },
               {
                 extended: true,
-                label: `${configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES} minutes, extra travel`,
+                label: `${durMinutes(configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES)} with extra travel`,
               },
             ]}
             dialogRef={cockpitAcceptRef}

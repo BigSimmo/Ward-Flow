@@ -169,7 +169,8 @@ export function PersonEntry({
 
         <div className={styles.detailChips}>
           {age !== null && <span className={`${styles.detailChip} ${redesign.chip}`}>{age} yrs</span>}
-          <span className={`${styles.detailChip} ${redesign.chip}`}>{occupant.sex}</span>
+          {/* B11 (Josh, 5 Nov 2026): named, so it reads apart from the Gender chip beside it. */}
+          <span className={`${styles.detailChip} ${redesign.chip}`}>Sex: {occupant.sex}</span>
           <span className={`${styles.detailChip} ${redesign.chip}`}>Gender: {occupant.gender ?? "Not recorded"}</span>
           <span className={`${styles.detailChip} ${redesign.chip}`}>{occupant.homeRegion ?? "Region unrecorded"}</span>
           {resolvedPatient?.umrn && (

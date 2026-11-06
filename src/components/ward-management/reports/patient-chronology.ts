@@ -628,7 +628,7 @@ function referralRows(referral: Referral, units: readonly Unit[]): RowDraft[] {
       rows.push({
         record,
         recordedAt: finite(addressing.decidedAt),
-        who: "No one (automatic)",
+        who: "Nobody (automatic)",
         action: "Referral cancelled",
         after: place,
         reason: "Accepted somewhere else",

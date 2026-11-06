@@ -80,7 +80,7 @@ function movementVerdict(
       ? { tone: "good", short: "Bed pulled", title: `Bed pulled at ${acceptedUnit.name}.`, gates: [] }
       : {
           tone: "warn",
-          short: "Accepted, Awaiting Bed",
+          short: "Accepted, awaiting bed",
           title: `Acceptance recorded at ${acceptedUnit.name}; no bed pulled.`,
           gates: [],
         };
@@ -153,6 +153,18 @@ function movementNextSteps(
   }
 
   if (movement.stage === "pulled") {
+    // #1476 review: the step follows the transport record, so a booked (not cancelled) job or a
+    // recorded "no transport needed" asks for the handover, not another booking.
+    const booked = movement.transport !== undefined && transportLeg(movement.transport) !== "Cancelled";
+    if (booked || movement.transportNeed?.needed === false) {
+      return [
+        {
+          w: "Mark handover ready",
+          d: `${booked ? "Transport is booked" : "No transport needed"}. Mark the handover ready for collection from ${collectionPoint(originKind)}.`,
+          tone: "good" as const,
+        },
+      ];
+    }
     return [
       {
         w: "Book transport",

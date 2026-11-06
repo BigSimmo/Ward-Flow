@@ -130,7 +130,10 @@ describe("the Delays board's data views", () => {
       </WardFlowProvider>,
     );
     expect(screen.getByRole("button", { name: "Longest wait" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(waiting()).getByRole("heading", { level: 2 })).toHaveTextContent(/^Waiting$/u);
     fireEvent.click(screen.getByRole("button", { name: "By hold-up" }));
+    // #1476 review: the grouped heading says reason, not blocker (word list, DESIGN-SYSTEM §6).
+    expect(within(waiting()).getByRole("heading", { level: 2 })).toHaveTextContent(/^Waiting by reason$/u);
     first.unmount();
     renderDelays();
     expect(screen.getByRole("button", { name: "By hold-up" })).toHaveAttribute("aria-pressed", "true");

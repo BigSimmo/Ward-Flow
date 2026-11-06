@@ -375,7 +375,7 @@ export function EdIndex() {
             isPhone
               ? waiting > 0 && longestRow
                 ? `Longest ${splitDuration(longest)} at ${longestRow.short} · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
-                : `No one waiting · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
+                : `Nobody waiting · target ${waitLine(accessTarget)} · ${paused ? "paused" : "updating"}`
               : `${withWaiting.length} with someone waiting`
           }
           aside={
@@ -598,8 +598,8 @@ export function EdIndex() {
                   />
                 ))}
               {shown.some((row) => row.summary.waiting === 0) ? (
-                <div className={styles.clearLine} aria-label="Departments with no one waiting" role="group">
-                  <span className={styles.clearLabel}>No one waiting</span>
+                <div className={styles.clearLine} aria-label="Departments with nobody waiting" role="group">
+                  <span className={styles.clearLabel}>Nobody waiting</span>
                   {shown
                     .filter((row) => row.summary.waiting === 0)
                     .map((row) => (
@@ -690,7 +690,7 @@ function Legend({ accessTarget }: { accessTarget: number }) {
 
 /** One pip per person waiting, longest first, shaped by how long they have waited. */
 function PeoplePips({ row, highlight }: { row: EdRow; highlight: Highlight | null }) {
-  if (row.people.length === 0) return <p className={styles.noneWaiting}>No one waiting</p>;
+  if (row.people.length === 0) return <p className={styles.noneWaiting}>Nobody waiting</p>;
   const shown = row.people.slice(0, PIPS_SHOWN);
   return (
     <div
@@ -1221,7 +1221,7 @@ function PhoneEdList({
       {waitingRows.map(row)}
       {clearRows.length > 0 ? (
         <>
-          <GroupHead title="No one waiting" tone="success" count={clearRows.length} />
+          <GroupHead title="Nobody waiting" tone="success" count={clearRows.length} />
           {clearRows.map(row)}
         </>
       ) : null}

@@ -471,25 +471,34 @@ function CapacityChartView({
 
       <CardBody flush className={styles.workspace}>
         <div className={styles.plot}>
-          <div className={styles.axis} aria-hidden="true">
-            <span />
-            <div className={styles.axisTicks}>
-              {ticks.map((tick) => (
-                <span key={tick} style={{ left: `${(tick / maximum) * 100}%` }}>
-                  {tick}
-                  {scale === "share" ? "%" : ""}
-                </span>
-              ))}
+          {rows.length > 0 ? (
+            <div className={styles.axis} aria-hidden="true">
+              <span />
+              <div className={styles.axisTicks}>
+                {ticks.map((tick) => (
+                  <span key={tick} style={{ left: `${(tick / maximum) * 100}%` }}>
+                    {tick}
+                    {scale === "share" ? "%" : ""}
+                  </span>
+                ))}
+              </div>
+              <span className={styles.axisReady}>Ready</span>
+              <span />
             </div>
-            <span className={styles.axisReady}>Ready</span>
-            <span />
-          </div>
+          ) : null}
           {rows.length === 0 ? (
+            // Design audit C18 (5 Nov 2026): with no filter on, say what is empty and offer no Clear.
             <div className={styles.empty}>
-              <strong>{groupBy === "hospital" ? "No matching hospitals" : "No matching wards"}</strong>
-              <Button size="sm" variant="ghost" onClick={reset}>
-                Clear filters
-              </Button>
+              {service !== "all" || overOnly ? (
+                <>
+                  <strong>{groupBy === "hospital" ? "No matching hospitals" : "No matching wards"}</strong>
+                  <Button size="sm" variant="ghost" onClick={reset}>
+                    Clear filters
+                  </Button>
+                </>
+              ) : (
+                <strong>No inpatient beds here.</strong>
+              )}
             </div>
           ) : (
             // A highlight never hides a row, so every row shows while one is on.

@@ -154,7 +154,7 @@ export function WardHomeTodayStrip({
         </p>
         <p className={styles.todayLine}>
           {arrivals === 0
-            ? "No one booked in"
+            ? "Nobody booked in"
             : nextEta === undefined
               ? "Arrival time not recorded"
               : `Next due ${formatInstantWithDay(nextEta, now)}`}

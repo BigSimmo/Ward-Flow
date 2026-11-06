@@ -457,7 +457,7 @@ export function PriorityQueue({
               ) : all.length === 0 ? (
                 <p className={styles.emptyLine}>
                   <StatusGlyph tone="success" size={9} />
-                  {isReferral ? "No referral waiting on a decision" : "No one at this stage"}
+                  {isReferral ? "No referral waiting on a decision" : "Nobody at this stage"}
                 </p>
               ) : (
                 (shown as Movement[]).map(movementRow)

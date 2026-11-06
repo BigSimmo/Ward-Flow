@@ -607,14 +607,14 @@ function DischargeRecordFacts({ record, now }: { record: DischargeRecord; now: I
       </div>
       {record.blockReason !== null ? (
         <div>
-          <dt>Waiting on</dt>
+          <dt>Held up by</dt>
           <dd>{record.blockReason}</dd>
         </div>
       ) : null}
       {record.leftAt !== null ? (
         <>
           <div>
-            <dt>Departed</dt>
+            <dt>Left ward</dt>
             <dd>{formatInstantWithDay(record.leftAt, now)}</dd>
           </div>
           <div>

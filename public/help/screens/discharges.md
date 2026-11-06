@@ -7,7 +7,7 @@ Planned discharges, held-up discharges first.
 ## What is on the screen
 
 1. Discharges today. Held up, confirmed, expected, and discharged in the last day.
-2. Held up first. Discharges with something in the way come first. Open one to see what is holding it up and the bed.
+2. Held up first. Discharges with something in the way come first. Open one to see what is holding it up and which bed it frees.
 3. Held up by reason. What is holding discharges up, counted by reason.
 4. Print list. A paper copy of the list for the ward or the bed meeting.
 
@@ -18,7 +18,7 @@ Planned discharges, held-up discharges first.
 ## Jobs done here
 
 - Chase overdue discharge dates. On Discharges, the line under the counts says how many dates have passed on how many wards. Press Ask N wards to send those wards one desk alert asking them to confirm or record a new date. To ask about one person, open them and use Message ward beside the hold-up.
-- Clear a held-up discharge. Open Discharges, where held-up discharges come first. Open one to see what is holding it up and the bed, and update the hold-up once it is sorted.
+- Clear a held-up discharge. Open Discharges, where held-up discharges come first. Open one to see what is holding it up and which bed it frees, and update the hold-up once it is sorted.
 
 In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
 

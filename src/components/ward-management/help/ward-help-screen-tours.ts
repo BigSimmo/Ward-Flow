@@ -80,9 +80,9 @@ const AROUND: readonly Around[] = [
       },
       {
         device: "desk",
-        target: id("capacity-bed-meeting-tv"),
+        target: id("capacity-bed-meeting"),
         title: "Bed meeting and TV",
-        body: "Bed meeting opens the meeting view. Open on TV puts it on the meeting room screen, read only.",
+        body: "Bed meeting opens a menu: Print the meeting sheet and Open the meeting agenda. Open on TV shows only when a TV is available, and puts the meeting on the room screen, read only.",
       },
     ],
   },
@@ -145,7 +145,7 @@ const AROUND: readonly Around[] = [
         device: "desk",
         target: id("ward-referral-meeting"),
         title: "Bed meeting",
-        body: "Opens the bed meeting agenda at its referrals, the ones to talk through at the meeting.",
+        body: "The ... menu opens the bed meeting agenda at its referrals, the ones to talk through at the meeting.",
       },
     ],
   },
@@ -226,7 +226,7 @@ const AROUND: readonly Around[] = [
       {
         target: id("ward-discharge-group-blocked"),
         title: "Held up first",
-        body: "Discharges with something in the way come first. Open one to see what is holding it up and the bed.",
+        body: "Discharges with something in the way come first. Open one to see what is holding it up and which bed it frees.",
       },
       {
         device: "desk",
@@ -703,7 +703,7 @@ export const MORE_JOBS: readonly HowTo[] = [
     title: "Clear a held-up discharge",
     keywords: "discharge held up blocked barrier blocker release delay",
     answer:
-      "Open Discharges, where held-up discharges come first. Open one to see what is holding it up and the bed, and update the hold-up once it is sorted.",
+      "Open Discharges, where held-up discharges come first. Open one to see what is holding it up and which bed it frees, and update the hold-up once it is sorted.",
     desks: ["ward", "coordinator"],
     acts: ["CLEAR_STAY_DISCHARGE_BLOCKER", "SET_DISCHARGE_BARRIER"],
     go: "discharges",
@@ -720,7 +720,7 @@ export const MORE_JOBS: readonly HowTo[] = [
       {
         target: { sel: '[data-testid="ward-discharge-group-blocked"]' },
         title: "Open one",
-        body: "Held up comes first. Open a discharge to see what is holding it up and the bed.",
+        body: "Held up comes first. Open a discharge to see what is holding it up and which bed it frees.",
       },
     ],
   },

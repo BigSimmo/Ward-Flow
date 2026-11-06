@@ -317,7 +317,7 @@ export function EdOverview({
                   </span>
                   <span className={styles.longest}>
                     {department.waiting === 0 ? (
-                      <span className={styles.quiet}>No one waiting</span>
+                      <span className={styles.quiet}>Nobody waiting</span>
                     ) : (
                       <>
                         {department.breaches > 0 ? <StatusGlyph tone="danger" size={8} /> : null}

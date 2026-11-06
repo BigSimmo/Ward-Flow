@@ -750,20 +750,22 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   }
 
   /* ---- desktop ---- */
-  const pill = (key: HighlightKey, label: string, tone?: WfTone) => (
-    <button
-      key={key}
-      type="button"
-      className={styles.pill}
-      aria-pressed={highlight === key}
-      data-testid={`ward-out-of-area-highlight-${key}`}
-      onClick={() => toggleHighlight(key)}
-    >
-      <span className={styles.pillCount}>{countOf(key)}</span>
-      {tone ? <StatusGlyph tone={tone} size={9} /> : null}
-      {label}
-    </button>
-  );
+  // A highlight with nobody in it is hidden (design audit B19), unless it is the one switched on.
+  const pill = (key: HighlightKey, label: string, tone?: WfTone) =>
+    countOf(key) === 0 && highlight !== key ? null : (
+      <button
+        key={key}
+        type="button"
+        className={styles.pill}
+        aria-pressed={highlight === key}
+        data-testid={`ward-out-of-area-highlight-${key}`}
+        onClick={() => toggleHighlight(key)}
+      >
+        <span className={styles.pillCount}>{countOf(key)}</span>
+        {tone ? <StatusGlyph tone={tone} size={9} /> : null}
+        {label}
+      </button>
+    );
 
   const planCard = selected ? (
     <Card
@@ -1042,24 +1044,25 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                 <b title={info.formalName}>{info.formalName}</b>
                                 <span className={styles.legalUmrn}>
                                   {/* UX audit (21 Oct 2026): a stay with none recorded says so in the table,
-                                      so the gap shows before a return trip is planned. The no-break space
-                                      keeps the dot with the legal text when the line wraps. */}
-                                  <span>
-                                    {legalOf(entry) ?? "Legal not recorded"}
-                                    {" ·"}{" "}
+                                      so the gap shows before a return trip is planned. Design audit B18
+                                      (5 Nov 2026): the dot travels with the UMRN, so a wrapped line never
+                                      ends in a dangling dot. */}
+                                  <span>{legalOf(entry) ?? "Legal not recorded"}</span>{" "}
+                                  <span className={styles.umrnPair}>
+                                    {"· "}
+                                    {href ? (
+                                      <Link
+                                        href={href}
+                                        className={styles.umrnLink}
+                                        onClick={(event) => event.stopPropagation()}
+                                        title={`Open profile for ${info.formalName} (${info.umrn})`}
+                                      >
+                                        {info.umrn}
+                                      </Link>
+                                    ) : (
+                                      <span className={styles.mono}>{info.umrn}</span>
+                                    )}
                                   </span>
-                                  {href ? (
-                                    <Link
-                                      href={href}
-                                      className={styles.umrnLink}
-                                      onClick={(event) => event.stopPropagation()}
-                                      title={`Open profile for ${info.formalName} (${info.umrn})`}
-                                    >
-                                      {info.umrn}
-                                    </Link>
-                                  ) : (
-                                    <span className={styles.mono}>{info.umrn}</span>
-                                  )}
                                 </span>
                               </span>
                             </td>

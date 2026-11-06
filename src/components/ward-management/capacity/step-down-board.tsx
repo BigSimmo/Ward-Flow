@@ -9,6 +9,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/wf";
 import { REFERRAL_CAP_REASONS, type ReferralCapReason } from "@/components/ward-management/ward-change-reasons";
 import type { Movement } from "@/components/ward-management/ward-model";
+import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -147,7 +148,12 @@ export function StepDownRowDetail({
                     <li key={incoming.id} className={styles.ward} data-testid="step-down-swap-option">
                       <span>
                         {patientOf(incoming).formalName} (
-                        {incoming.security === "Secure" ? "Secure" : incoming.highAcuity ? "High acuity" : "Open"})
+                        {incoming.security === "Secure"
+                          ? securityWord(incoming.security)
+                          : incoming.highAcuity
+                            ? "High acuity"
+                            : "Open"}
+                        )
                       </span>
                       {incomingCapped ? (
                         <label className={styles.capReason}>

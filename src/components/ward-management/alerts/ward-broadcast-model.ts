@@ -289,7 +289,7 @@ export const WA_BROADCAST_TEMPLATES: readonly BroadcastTemplate[] = [
     targetScopeLabel: "Locked and forensic",
     defaultDurationMinutes: 60,
     defaultMessage:
-      "Demo alert. Not a live broadcast. Secure wards with a bed today, answer how many and when it is ready.",
+      "Demo alert. Not a live broadcast. Locked wards with a bed today, answer how many and when it is ready.",
   },
 ];
 

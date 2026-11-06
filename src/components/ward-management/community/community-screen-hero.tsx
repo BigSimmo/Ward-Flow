@@ -340,7 +340,7 @@ export function CommunityScreenTabRow({
             { id: "counts", label: "Catchment counts", onSelect: () => setActiveModalType("handover") },
             { id: "reach", label: "How to reach the team", onSelect: () => openTeamSection("home") },
             { id: "activity", label: "Activity sample", onSelect: () => setActiveDrawer("activityDrawer") },
-            { id: "tasks", label: "Tasks sample", onSelect: () => setActiveDrawer("tasksDrawer") },
+            { id: "tasks", label: "Alerts sample", onSelect: () => setActiveDrawer("tasksDrawer") },
             { id: "tools", label: "Tools sample", onSelect: () => setActiveDrawer("toolsDrawer") },
           ]}
           trigger={(props) => (

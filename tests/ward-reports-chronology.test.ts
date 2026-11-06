@@ -470,7 +470,7 @@ describe("PIR chronology: one person's records", () => {
     );
     expect(row).toMatchObject({
       recordedAt: NOW_ANCHOR - 15,
-      who: "No one (automatic)",
+      who: "Nobody (automatic)",
       reason: "Accepted somewhere else",
     });
   });

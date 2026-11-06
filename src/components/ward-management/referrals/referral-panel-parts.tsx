@@ -9,6 +9,7 @@
 import Link from "next/link";
 import {
   BedSingle,
+  Ellipsis,
   ChevronLeft,
   ChevronRight,
   Clock3,
@@ -31,8 +32,9 @@ import { demographicLabel } from "./referral-board-model";
 import { ReferralWorkedOn } from "./referral-worked-on-note";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import { referralPresentation } from "@/components/ward-management/ward-partial-view-presenters";
-import { Button, Count, Icon, StatusGlyph, buttonClass, buttonCountClass, cx, durMinutes } from "@/components/wf";
+import { Button, Icon, Menu, StatusGlyph, buttonClass, cx, durMinutes } from "@/components/wf";
 import { BED_MEETING_REFERRALS_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
+import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 
 import s from "./referral-panel.module.css";
 
@@ -229,18 +231,43 @@ export function HeroTools({
       >
         Next overdue
       </Button>
-      <Link
-        href={BED_MEETING_REFERRALS_HREF}
-        className={buttonClass({ variant: "onHero", size: "sm" })}
-        title="Bed meeting agenda (M)"
-        data-testid="ward-referral-meeting"
-      >
-        <Icon icon={ListOrdered} size={16} />
-        <span>Bed meeting</span>
-        {/* Audit A3: the button's own on-hero count style, so it reads like "Next overdue" beside it. */}
-        <Count n={meetingCount} className={buttonCountClass} />
-      </Link>
+      <HeroMoreMenu meetingCount={meetingCount} />
     </div>
+  );
+}
+
+/**
+ * MU1 (Josh, 5 Nov 2026): Next overdue is the hero's one button; the bed meeting agenda moves under
+ * "...". Optional router, so the board also renders outside the app router (its tests).
+ */
+function HeroMoreMenu({ meetingCount }: { meetingCount: number }) {
+  const router = useOptionalRouter();
+  return (
+    <Menu
+      label="More referral actions"
+      align="end"
+      items={[
+        {
+          id: "meeting",
+          label: "Bed meeting agenda",
+          icon: ListOrdered,
+          meta: meetingCount > 0 ? String(meetingCount) : undefined,
+          onSelect: () =>
+            router ? router.push(BED_MEETING_REFERRALS_HREF) : window.location.assign(BED_MEETING_REFERRALS_HREF),
+        },
+      ]}
+      trigger={(props) => (
+        <button
+          type="button"
+          {...props}
+          className={buttonClass({ variant: "onHero", size: "sm" })}
+          data-testid="ward-referral-meeting"
+        >
+          <Icon icon={Ellipsis} size={16} />
+          <span className="sr-only">More referral actions</span>
+        </button>
+      )}
+    />
   );
 }
 

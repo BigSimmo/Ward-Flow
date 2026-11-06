@@ -193,6 +193,7 @@ away; pulled is a bed kept for an incoming patient; held up is a delay.
 | Stand down                     | Stand Down                                                            |
 | 4h                             | minutes for a long duration ("240 minutes")                           |
 | on the board                   | demo night (the live pill "Demo 10:42" stays, HOW-WE-WORK §6)         |
+| Nobody                         | No one ("Nobody waiting", not "No one waiting")                       |
 
 ## Plain words (wording audit, 26 October 2026)
 
@@ -200,7 +201,7 @@ Held is only for a patient's own leave or away bed (D-85). Held up is for delays
 
 | Say                            | Do not say                              |
 | ------------------------------ | --------------------------------------- |
-| Beds held up                   | beds held by blockers                   |
+| Discharges held up             | beds held by blockers                   |
 | the pull time limit passed at  | was held until (for a pulled bed)       |
 | Not recorded                   | not held (for a missing number or time) |
 | record                         | dossier                                 |

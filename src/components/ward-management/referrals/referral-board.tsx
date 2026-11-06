@@ -5,6 +5,8 @@ import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
+import { BED_MEETING_REFERRALS_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { BEDS_READY_SCOPED_TITLE } from "@/components/ward-management/ward-shared-figures";
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
@@ -295,6 +297,7 @@ export function ReferralBoard({
   // ROLE BRANCH (ward): this ward's name, and its own units for beds ready. Every unit on other desks.
   const { ownWardName, bedUnits } = useWardDeskPlace(units);
   const now = useWardFlowClock();
+  const router = useOptionalRouter();
   // ED desk view (Josh, 31 Oct 2026): leads with what this ED raised; the queue is its ED reviews.
   const edDeskView = useEdDeskReferrals(movements, now);
   const sender = useSenderPresentation();
@@ -608,7 +611,14 @@ export function ReferralBoard({
     } else if (key === "m" && !edDesk) {
       // Josh, 31 Oct 2026 (answer 35): the ED desk has no bed meeting list, so M does nothing there.
       e.preventDefault();
-      document.querySelector<HTMLAnchorElement>('[data-testid="ward-referral-meeting"]')?.click();
+      // MU1 (Josh, 5 Nov 2026): the desktop hero keeps the agenda under "...", so M goes straight
+      // there; the phone hero still has the link itself.
+      const meeting = document.querySelector('[data-testid="ward-referral-meeting"]');
+      if (meeting instanceof HTMLAnchorElement) meeting.click();
+      else if (meeting) {
+        if (router) router.push(BED_MEETING_REFERRALS_HREF);
+        else window.location.assign(BED_MEETING_REFERRALS_HREF);
+      }
     } else if (e.key === "?") {
       e.preventDefault();
       setSheet("keys");

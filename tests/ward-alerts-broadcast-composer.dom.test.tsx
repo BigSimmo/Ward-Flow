@@ -39,7 +39,7 @@ describe("broadcast audience", () => {
       "Metro adult wards",
       "Older adult wards",
       "Youth and CAMHS",
-      "Secure and forensic",
+      "Locked and forensic",
       "Regional (WACHS)",
       "ED desks",
     ]);
@@ -54,7 +54,7 @@ describe("broadcast audience", () => {
     };
     const ids = audienceRecipients(audience, groups, []).map((desk) => desk.id);
     expect(new Set(ids).size).toBe(ids.length);
-    expect(audienceLabel(audience, groups)).toBe("Metro adult wards, Secure and forensic");
+    expect(audienceLabel(audience, groups)).toBe("Metro adult wards, Locked and forensic");
     expect(audienceLabel({ ...audience, mode: "pick" }, groups)).toBe("Chosen desks");
   });
 });
@@ -78,7 +78,7 @@ describe("broadcast composer", () => {
     fireEvent.click(screen.getByRole("radio", { name: /Tell desks something/ }));
     fireEvent.click(screen.getByRole("button", { name: "Blank" }));
     expect(screen.getByText("Choose who gets it")).toBeInTheDocument();
-    expect(screen.getByText("No one chosen yet")).toBeInTheDocument();
+    expect(screen.getByText("Nobody chosen yet")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /ED desks/ }));
     expect(screen.getByText("Add a title and message")).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/^Title$/i), { target: { value: "Synthetic title" } });
