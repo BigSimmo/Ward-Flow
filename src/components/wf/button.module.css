@@ -7,9 +7,11 @@
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: var(--wf-h-md);
-  /* Q297 (pre-launch A1, 2 Nov 2026): with large text the button grows taller instead of cutting its
-     label; at normal sizes this is the same height as above. */
+  /* Q297 (pre-launch A1, 2 Nov 2026) and K1 (design audit, 5 Nov 2026): with large text the button
+     grows taller instead of cutting its label. min-height with an auto height works in every engine
+     (Safari and Firefox have no calc-size()); calc-size() stays only as an extra where supported. */
+  min-height: var(--wf-h-md);
+  height: auto;
   height: calc-size(auto, max(size, var(--wf-h-md)));
   min-width: 0;
   padding: 0 12px;
@@ -63,7 +65,8 @@
 }
 
 .sm {
-  height: var(--wf-h-sm);
+  min-height: var(--wf-h-sm);
+  height: auto;
   height: calc-size(auto, max(size, var(--wf-h-sm)));
   min-height: var(--wf-h-sm);
   padding: 0 10px;
@@ -72,7 +75,8 @@
 }
 
 .lg {
-  height: var(--wf-h-lg);
+  min-height: var(--wf-h-lg);
+  height: auto;
   height: calc-size(auto, max(size, var(--wf-h-lg)));
   padding: 0 16px;
   font-size: var(--wf-fs-14);
@@ -289,9 +293,9 @@
    grows it (Q297). Placement decisions keep their full-size button (above). */
 @media (max-width: 46.4375rem) {
   .b:not([data-placement-action]) {
-    height: 40px;
-    height: calc-size(auto, max(size, 40px));
     min-height: 40px;
+    height: auto;
+    height: calc-size(auto, max(size, 40px));
   }
   .iconOnly:not([data-placement-action]) {
     width: 40px;

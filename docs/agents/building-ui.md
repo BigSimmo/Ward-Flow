@@ -1,6 +1,6 @@
 # Ward Flow UI and local server workflow
 
-_Updated 2026-10-31 - current design rules from the redesign mock-ups and the kit (Josh, 31 Oct); 2026-10-23 - surface the D-74/D-75 mock-up evidence and approval requirements; Documentation owns._
+_Updated 2026-11-05 - small phone buttons are 40px (Q295) and DESIGN-SYSTEM.md is the standard (design audit K21); 2026-10-31 - current design rules from the redesign mock-ups and the kit (Josh, 31 Oct); 2026-10-23 - surface the D-74/D-75 mock-up evidence and approval requirements; Documentation owns._
 
 Read before UI changes, mockups, browser evidence or a local app link. [AGENTS.md](../../AGENTS.md) governs safeguards. The dedicated repository engine/tests own behaviour; current accepted appearance must be preserved.
 
@@ -28,11 +28,12 @@ React mockups, owner direction of 5 October 2026:
 - Reuse shared Ward Flow state, reducer actions and synthetic records rather than duplicating logic or data. Keep preview-only controls and fixtures small and separate. A shareable HTML preview bundles the same React components.
 - On approval, integrate the reviewed components directly and keep their working interactions. Run only checks that cover plausible changed behaviour, and avoid repeated full suites, builds or screenshot matrices. An explicit request for static images, plain HTML or another framework wins. None of this authorises publication or deployment.
 
-Design rules in force (31 October 2026). The full standard is
-[design-system-v9.md](../../design/v9/design-system-v9.md); section 14 lists the owner rulings.
+Design rules in force (31 October 2026, sizes corrected 5 November 2026). The design system of record
+is [DESIGN-SYSTEM.md](../design/DESIGN-SYSTEM.md) (Q327);
+[design-system-v9.md](../../design/v9/design-system-v9.md) section 14 keeps the earlier owner rulings.
 
-- **Control size.** No 48px controls. A phone button shows at 40px (32px small) with an invisible
-  cover that keeps the 48px tap area; phone tabs and chips are 40px in a 48px track (Q225); desktop segmented and pill
+- **Control size.** No 48px controls. A phone button, small ones included, shows at 40px (Q295) with an
+  invisible cover that keeps the 48px tap area; phone tabs and chips are 40px in a 48px track (Q225); desktop segmented and pill
   tabs are 30px at 13px. The one exception (Josh, 31 Oct): Accept, Pull and Decline stay a full 48px on phones. Text never goes below 12px.
 - **No coloured side edges** or stripes on rows, cards, tiles or stat boxes. Tone goes in the
   StatusGlyph or a small tinted tag; borders stay neutral.

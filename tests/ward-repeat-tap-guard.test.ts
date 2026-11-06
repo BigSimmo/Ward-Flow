@@ -67,7 +67,7 @@ describe("repeat tap guard", () => {
       return Promise.resolve({
         commandId: `c-${calls}`,
         status: "failed",
-        message: "Offline, so this change is waiting on this page.",
+        message: "You're offline. This change is waiting on this page.",
         confirmation,
       } as WardCommandOutcome);
     };

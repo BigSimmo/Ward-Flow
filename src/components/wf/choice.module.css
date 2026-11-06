@@ -11,7 +11,8 @@
 }
 
 .tab {
-  height: 34px;
+  /* K3 (design audit, 5 Nov 2026): min-height, never a fixed height, so large text grows a control. */
+  min-height: 34px;
   padding: 0;
   border: 0;
   background: none;
@@ -69,7 +70,7 @@
   justify-content: center;
   gap: 6px;
   flex: 0 0 auto;
-  height: var(--wf-h-sm);
+  min-height: var(--wf-h-sm);
   padding: 0 var(--wf-s-3);
   border: 0;
   border-radius: var(--wf-r-seg-item);
@@ -113,7 +114,7 @@
 
 @media (max-width: 46.4375rem) {
   .ptItem {
-    height: var(--wf-touch);
+    min-height: var(--wf-touch);
   }
 }
 
@@ -139,8 +140,11 @@
  * floor of 0.
  */
 .segItem {
-  height: var(--wf-target);
-  /* Q297 (pre-launch A1, 2 Nov 2026): large text makes the option taller instead of cutting it. */
+  /* Q297 (pre-launch A1, 2 Nov 2026) and K1 (design audit, 5 Nov 2026): large text makes the option
+     taller instead of cutting it. min-height with an auto height works in every engine; calc-size()
+     is only an extra where supported. */
+  min-height: var(--wf-target);
+  height: auto;
   height: calc-size(auto, max(size, var(--wf-target)));
   padding: 0 10px;
   border: 0;
@@ -187,7 +191,8 @@
 }
 
 .md .segItem {
-  height: 30px;
+  min-height: max(30px, var(--wf-tablet-tap, 0px));
+  height: auto;
   height: calc-size(auto, max(size, 30px));
   font-size: var(--wf-fs-13);
 }
@@ -252,7 +257,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: var(--wf-h-sm);
+  min-height: var(--wf-h-sm);
   padding: 0 12px;
   box-sizing: border-box;
   border-radius: var(--wf-r-ctl);
@@ -367,6 +372,16 @@
   color: var(--wf-ink-1);
 }
 
+/* K11 (design audit, 5 Nov 2026): a choice that cannot be changed now shows its reason beside it. */
+.withReason {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  max-width: 100%;
+}
+
 /* Hook class on the Count inside segments, so the hero track can recolour it. */
 .k {
   flex: 0 0 auto;
@@ -391,7 +406,7 @@
     inset: -4px 0;
   }
   .tab {
-    height: 44px;
+    min-height: 44px;
   }
 }
 
@@ -424,7 +439,7 @@
     scrollbar-width: none;
   }
   .tab {
-    height: 2.75rem;
+    min-height: 2.75rem;
   }
   .seg::-webkit-scrollbar,
   .trk::-webkit-scrollbar,
@@ -533,7 +548,12 @@
   .tabs {
     -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
     mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
-    animation: wfRowFade linear both;
+    /* Longhands (design audit, 5 Nov 2026): the CSS build folds `animation` and
+       `animation-timeline` into one shorthand that Chrome rejects, which dropped the fade. */
+    animation-name: wfRowFade;
+    animation-duration: 1ms;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
     animation-timeline: scroll(self inline);
   }
 }
@@ -544,17 +564,25 @@
     .trk {
       -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
       mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
-      animation: wfRowFade linear both;
+      /* Longhands (design audit, 5 Nov 2026): the CSS build folds `animation` and
+         `animation-timeline` into one shorthand that Chrome rejects, which dropped the fade. */
+      animation-name: wfRowFade;
+      animation-duration: 1ms;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
       animation-timeline: scroll(self inline);
     }
   }
 }
 
-/* Touch tablets: tabs and choice pills reach the 44px touch size (`--wf-tablet-tap`, 0 elsewhere). */
-.tab,
-.ptItem,
+/* Touch tablets: choice pills reach the 44px touch size (`--wf-tablet-tap`, 0 elsewhere). Underline
+   tabs already take 44px from the coarse-pointer rule above. Each keeps its own floor (K3). */
+.ptItem {
+  min-height: max(var(--wf-h-sm), var(--wf-tablet-tap, 0px));
+}
+
 .segItem {
-  min-height: var(--wf-tablet-tap, 0px);
+  min-height: max(var(--wf-target), var(--wf-tablet-tap, 0px));
 }
 
 /* ── Phone compact size (Josh, 12 Oct 2026) ────────────────────────────────────────────────────────
@@ -655,8 +683,8 @@
 
   .seg .segItem {
     position: relative;
-    height: var(--wf-phone-seg-item-h);
-    min-height: 0;
+    min-height: var(--wf-phone-seg-item-h);
+    height: auto;
     padding: 0 var(--wf-phone-pill-px);
     font-size: var(--wf-phone-pill-fs);
     font-weight: 600;
@@ -689,7 +717,7 @@
   .chip {
     position: relative;
     flex: 0 0 auto;
-    height: var(--wf-phone-pill-h);
+    min-height: var(--wf-phone-pill-h);
     padding: 0 var(--wf-phone-pill-px);
     font-size: var(--wf-phone-pill-fs);
     font-weight: 600;
@@ -699,6 +727,14 @@
     content: "";
     position: absolute;
     inset: calc(-1 * var(--wf-phone-pill-hit)) 0;
+  }
+}
+
+/* K3 (5 Nov 2026): a touch phone keeps the 44px chip floor of the coarse-pointer rule above, as it
+   did when the phone size was a fixed height under that min-height. */
+@media (max-width: 46.4375rem) and (pointer: coarse) {
+  .chip {
+    min-height: max(var(--wf-phone-pill-h), 2.75rem);
   }
 }
 
@@ -725,7 +761,8 @@
 @media (min-width: 46.5rem) {
   :global(html) .segItem.segItem,
   :global(html) .ptItem.ptItem {
-    height: 30px;
+    min-height: max(30px, var(--wf-tablet-tap, 0px));
+    height: auto;
     font-size: var(--wf-fs-13);
   }
 }
@@ -737,8 +774,8 @@
   }
   :global(html) .ptItem.ptItem {
     position: relative;
-    height: 40px;
-    min-height: 0;
+    min-height: 40px;
+    height: auto;
     font-weight: 600;
   }
   :global(html) .ptItem.ptItem::after {

@@ -392,6 +392,18 @@
   /* A control's floor on a touch tablet; 0 elsewhere, so desktop and phone are unchanged. */
   --wf-tablet-tap: 0px;
 
+  /* Stacking (K15, design audit 5 Nov 2026): Ward Flow's own z scale, the same values as the legacy
+     `--z-*` layers (ckb-v2-tokens.css and globals.css, which must not gain tokens, Q375). The kit
+     reads these; screens still on `--z-*` move over screen by screen, and the aliases stay until
+     nothing reads them. */
+  --wf-z-base: 0;
+  --wf-z-raised: 10;
+  --wf-z-chrome: 60;
+  --wf-z-overlay: 80;
+  --wf-z-popover: 95;
+  --wf-z-modal: 100;
+  --wf-z-toast: 110;
+
   /* rows: one density setting. Default 44, dense 36, touch 52. Compact pages keep 44. */
   --wf-row-dense: 36px;
   --wf-row-default: 44px;
