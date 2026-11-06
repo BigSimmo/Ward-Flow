@@ -7151,8 +7151,8 @@
         },
         {
           "path": "src/components/ward-management/shell/ward-broadcast-banner.tsx",
-          "line": 244,
-          "sha256": "7a516cde32a0e0b0a03f570a64771d0991e3a24978233cee5915d6d0db011562"
+          "line": 125,
+          "sha256": "d34087fc1cfb2356065997d7942882cd1bc9791e3041e71ec0fb0d279fe429be"
         },
         {
           "path": "src/components/ward-management/alerts/ward-broadcast-reducer.ts",
