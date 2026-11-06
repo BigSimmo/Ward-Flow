@@ -690,7 +690,11 @@ export function OfficerScreen() {
             aria-expanded={diversion.diversionOpen}
             data-testid={`ward-officer-divert-${job.id}`}
             disabledReason={diversion.diversionPending ? "Saving" : undefined}
-            onClick={diversion.toggleDiversion}
+            onClick={() => {
+              // The diversion form lives on the Details tab, so Divert from Forms or Activity shows it.
+              setDetailTab("details");
+              diversion.toggleDiversion();
+            }}
           >
             Divert
           </Button>
