@@ -3,12 +3,15 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { readWhatsNewEntries } from "./scripts/ward-flow/whats-new-list.mjs";
 import { buildSecurityHeaders, resolveRuntimeFlags } from "./src/lib/security-headers";
+import { assertSharedBuildSettings } from "./src/lib/ward-shared-build-settings";
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 const requestedDistDir = process.env.NEXT_DIST_DIR?.trim();
 if (requestedDistDir && !/^\.next-playwright\/[a-z0-9-]+\/dist$/i.test(requestedDistDir)) {
   throw new Error("NEXT_DIST_DIR must be an owned .next-playwright/<run-id>/dist directory.");
 }
+// CB-5: a shared build without its sign-in settings stops here with a plain message.
+assertSharedBuildSettings(process.env);
 const requestedTsConfigPath = process.env.NEXT_TSCONFIG_PATH?.trim();
 if (requestedTsConfigPath && !/^\.next-playwright\/[a-z0-9-]+\/tsconfig\.json$/i.test(requestedTsConfigPath)) {
   throw new Error("NEXT_TSCONFIG_PATH must be an owned .next-playwright/<run-id>/tsconfig.json file.");

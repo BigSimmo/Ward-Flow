@@ -239,8 +239,8 @@ export function shouldBlockProductionMockups(
   // Mockups remain unavailable in every normal production process. The one
   // exception is the repository-owned, isolated Playwright server when its
   // advisory project explicitly opts into mockup coverage. Instrumentation
-  // separately refuses PLAYWRIGHT_OFFLINE_MODE outside the inert loopback and
-  // isolated .next-playwright profile.
+  // separately refuses PLAYWRIGHT_OFFLINE_MODE outside the provider-free demo
+  // settings and the isolated .next-playwright profile.
   return !(environment.PLAYWRIGHT_OFFLINE_MODE === "true" && environment.NEXT_PUBLIC_MOCKUPS_ENABLED === "true");
 }
 
