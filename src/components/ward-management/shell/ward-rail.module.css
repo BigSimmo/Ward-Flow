@@ -2263,6 +2263,12 @@
     border: 1px solid CanvasText;
   }
 
+  /* BA-9 (front-end audit, 5 Nov 2026): focus was only a thicker border here, so it gets a ring. */
+  .railToggle:focus-visible::before {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+
   .moreTrigger,
   .moreSheet,
   .railFlyCard {

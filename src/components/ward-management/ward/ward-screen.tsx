@@ -2173,7 +2173,8 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       data-ward-rebuilt-screen="ward"
     >
       <main id="main-content" className={styles.main}>
-        <h1 className={styles.screenName}>{presentation === "answer" ? "Ward answer" : "Ward"}</h1>
+        {/* BA-14 (front-end audit, 5 Nov 2026): the screen-reader-only Ward heading names the ward. */}
+        <h1 className={styles.screenName}>{presentation === "answer" ? "Ward answer" : unit.name}</h1>
         {/* Tier 1 item 9: the one-page bed list, on paper only. */}
         {presentation === "answer" ? null : (
           <WardBedListPrint unit={unit} beds={bedsList} now={now} dayZero={dayZero} />

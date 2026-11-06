@@ -35,6 +35,8 @@ export function WaitingOwnerTiles({
       aria-label="Whose move"
       data-ward-primitive="panel"
     >
+      {/* BA-14 (front-end audit, 5 Nov 2026): a heading, so heading navigation reaches this group. */}
+      <h2 className="sr-only">Whose move</h2>
       <div className={isPhone ? styles.ownContents : styles.ownGrid}>
         {tiles.map((tile) => {
           const longest = tile.rows.reduce((most, row) => Math.max(most, row.waited), 0);

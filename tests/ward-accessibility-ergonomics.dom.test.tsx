@@ -59,6 +59,20 @@ describe("Phase 4 Accessibility & Tablet/Mobile Ergonomics DOM and CSS Contracts
       expect(within(main).getByRole("status")).toHaveTextContent("Loading ward answer…");
     });
 
+    // BA-14 (front-end audit, 5 Nov 2026): the Ward page's heading names the ward, not just "Ward".
+    it("names the ward in the Ward page's one h1", () => {
+      render(
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <WardScreen unitId="sjgm-adult-open" />
+        </WardFlowProvider>,
+      );
+      const main = screen.getByRole("main");
+      expect(within(main).getAllByRole("heading", { level: 1 })).toHaveLength(1);
+      expect(
+        within(main).getByRole("heading", { level: 1, name: unitById("sjgm-adult-open")!.name }),
+      ).toBeInTheDocument();
+    });
+
     it("renders bed cells as native buttons with aria-label, enabled when vacant, disabled when occupied", () => {
       const unit = unitById("sjgm-adult-open")!;
       render(
