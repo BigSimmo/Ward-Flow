@@ -157,7 +157,8 @@ Railway deployment, and it never touches the database.
    (`.github/workflows/daily-release.yml`, tested in `tests/ward-daily-release-retry.test.ts`).
    A run reads the switch once, when it starts, so a run already going when it is set can still
    move `live`. Before step 4, open the "Ward Flow daily release" runs list and cancel any queued or
-   running release, or wait for it to finish and note where it left `live`.
+   running release, or wait for it to finish. A cancel can take a minute, so carry on only when every
+   such run shows as finished, then read `live` again and note where it is.
 3. Check that the earlier release still works with the current database schema and settings. Pair
    the site and backend versions. An older build may lack a later fix.
 4. Move `live` back to the commit of that `live-*` release. This is the only time `live` is moved
