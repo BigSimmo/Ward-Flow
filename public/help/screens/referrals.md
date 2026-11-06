@@ -17,6 +17,7 @@ Referrals waiting for an answer, and those decided recently.
 - Ask more wards. Open the referral and choose Ask more wards, then tick the wards. They are listed A to Z and never ranked, and only a ward that fits can be ticked. The number asked at once is limited by Wards asked at once in Settings.
 - Log a call. Open the referral and use Log a call, choosing who was rung and the outcome from the list. The next person sees who was called and when.
 - Take a referral as your desk. Open the referral on Referrals and press Take this referral. It then names your desk as its owner, so others know who is following it up.
+- Log a call. Open the referral on Referrals. Under its calls, choose who was rung and what they said, then Log a call. The next person sees who was called and when.
 
 In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.
 

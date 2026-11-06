@@ -49,14 +49,9 @@ export function printScreenGuides() {
       source: "in-app Help",
       parts: desk.map((step) => `${step.title}. ${step.body}`),
       onPhone: phoneOnly.map((step) => `${step.title}. ${step.body}`),
-      // Two desks can have their own how-to for one job (Log a call). The printed guide is for
-      // every desk, so it lists each job once, in its first wording.
-      jobs: HOW_TOS.filter(
-        (howTo, index, all) =>
-          !howTo.around &&
-          howTo.go === screen &&
-          all.findIndex((other) => other.go === screen && other.title === howTo.title) === index,
-      ).map((howTo) => `${howTo.title}. ${howTo.answer}`),
+      jobs: HOW_TOS.filter((howTo) => !howTo.around && howTo.go === screen).map(
+        (howTo) => `${howTo.title}. ${howTo.answer}`,
+      ),
     };
   });
 }
