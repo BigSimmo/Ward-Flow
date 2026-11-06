@@ -85,21 +85,10 @@ export default defineConfig({
     },
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
-    // Dual-mode motion validation strategy (#75JA0P):
-    // 1. Suite-wide baseline: set contextOptions: { reducedMotion: "reduce" } to
-    //    disable CSS/web animations suite-wide so clicks cannot land mid-transition
-    //    on moving targets (preventing race conditions in ui-stress/ui-smoke).
-    // 2. Dual-mode per-test coverage: motion-sensitive journeys (e.g. ui-phone-motion,
-    //    ui-phone-scroll, answer-progress-ui-smoke, ui-accessibility) explicitly
-    //    exercise both default motion (page.emulateMedia({ reducedMotion: "no-preference" }))
-    //    and reduced motion (page.emulateMedia({ reducedMotion: "reduce" })) to guarantee
-    //    neither default active transitions nor reduced-motion accessibility fallbacks freeze
-    //    or blank out UI elements.
+    // Animations are off suite-wide so clicks cannot land mid-transition on a moving target. A
+    // journey that needs real motion turns it back on for itself with
+    // page.emulateMedia({ reducedMotion: "no-preference" }).
     contextOptions: { reducedMotion: "reduce" },
-    // Phone PWA standalone mode emulation strategy (#71NT23):
-    // Validates the phone PWA bounded scroll shell (globals.css:3755-3793) by
-    // allowing phone scroll journeys to emulate `display-mode: standalone` either
-    // through Chromium CDP session or the forceCompiledStandalonePhoneCss fixture.
     // Keep routing-based journeys isolated from production workers. The real-worker lifecycle
     // lane (ui-ward-pwa-lifecycle.spec.ts) alone opts in through test.use({ serviceWorkers: "allow" });
     // it controls faults at a loopback HTTP proxy, since page routes cannot intercept worker traffic.

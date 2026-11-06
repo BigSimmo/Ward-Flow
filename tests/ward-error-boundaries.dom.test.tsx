@@ -124,7 +124,7 @@ describe("the ward flow error panel refuses to swallow the error", () => {
     }
   });
 
-  it("logs the error OBJECT, so the stack is reachable in the console in every environment", () => {
+  it("logs the error OBJECT outside production, so the stack is reachable in the console", () => {
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
     const { error } = renderPanel();
 
@@ -133,6 +133,20 @@ describe("the ward flow error panel refuses to swallow the error", () => {
     // Asserting identity, not a string: logging `error.message` would satisfy a looser check while
     // throwing the stack away, which is most of what the console entry is for.
     expect(ourCalls[0][1]).toBe(error);
+  });
+
+  it("logs only the error type and digest in production, never the message (TE-12)", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+    try {
+      renderPanel({ message: "Synthetic Person Example has no bed" });
+      const ourCalls = consoleError.mock.calls.filter((call) => call[0] === "A log label:");
+      expect(ourCalls).toHaveLength(1);
+      expect(ourCalls[0][1]).toEqual({ name: "Error", digest: "digest-for-the-server-log" });
+      expect(JSON.stringify(consoleError.mock.calls)).not.toContain("Synthetic Person Example");
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it("puts the stack on screen outside production", () => {
