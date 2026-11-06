@@ -142,7 +142,11 @@ export function WardTour({ onClose }: { onClose: () => void }) {
     go(base.length, all);
   }
 
-  const swipe = useSwipe(last ? undefined : () => go(index + 1), index > 0 ? () => go(index - 1) : undefined);
+  // The chapter menu has no Next or Back, so a swipe over it does nothing, as the arrow keys do.
+  const swipe = useSwipe(
+    last || menu ? undefined : () => go(index + 1),
+    index > 0 && !menu ? () => go(index - 1) : undefined,
+  );
 
   function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (menu) {

@@ -64,7 +64,7 @@ const PRACTISE: ChecklistStep = {
   text: "In Help, use Practise a placement to follow a bed request to arrival, on synthetic data.",
 };
 const MAKE_IT_YOURS: ChecklistStep = {
-  text: "In Settings, choose your theme and turn on Alerts on this device if you want them.",
+  text: "In Settings, Display, choose your theme.",
   go: "settings#display",
   showMe: "theme",
 };
@@ -82,7 +82,7 @@ const GETTING_STARTED: readonly Checklist[] = [
   gettingStarted("getting-started-coordinator", "coordinator", [
     TAKE_THE_TOUR,
     {
-      text: "Open Home and learn My list: Act now, Referrals to decide and Waiting on others.",
+      text: "Open Home and learn Needs you: Act now, Referrals to decide and Waiting on others.",
       go: "home",
     },
     {
@@ -173,7 +173,7 @@ const GETTING_STARTED: readonly Checklist[] = [
     },
     { text: "Answer one request for access: Give for 90 days or Decline.", go: "settings#access" },
     {
-      text: "On Governance, choose an event under Review, then Record review.",
+      text: "On Governance, open an event under Review and read what it records.",
       go: "governance",
       showMe: "around-governance",
     },

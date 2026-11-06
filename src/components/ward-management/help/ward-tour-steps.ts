@@ -698,7 +698,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "record-review",
           { sel: '[aria-label="Governance views"]' },
           "Review and Audit trail",
-          "Choose an event under Review, then Record review. Audit trail, beside Review, lists what this session captured.",
+          "Choose an event under Review to read it. Only the bed coordinator records a review. Audit trail, beside Review, lists what this session captured.",
           "Open Audit trail, then go back to Review.",
         ),
         ...ACCESS_STEPS,
