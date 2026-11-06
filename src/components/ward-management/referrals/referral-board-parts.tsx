@@ -1,6 +1,7 @@
 "use client";
 
 import { wardAddressing } from "@/components/ward-management/ward-eligibility";
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import { lockedBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
@@ -543,7 +544,7 @@ export function referralTimeline(
     {
       at: referral.raisedAt,
       tone: "success",
-      text: `Raised by ${REFERRAL_SOURCE_WORDS[referral.source]}, ${siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode}`,
+      text: `Raised by ${REFERRAL_SOURCE_WORDS[referral.source]}, ${siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode ?? ORIGIN_NOT_RECORDED}`,
     },
   ];
   if (referral.triagedAt !== undefined) entries.push({ at: referral.triagedAt, tone: "info", text: "Triaged" });

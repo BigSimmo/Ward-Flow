@@ -4,6 +4,7 @@
 // the referrals awaiting a decision, in one card, built from the real Alerts row components.
 
 import { useState, type ReactNode } from "react";
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
@@ -261,7 +262,7 @@ export function MyListCard({
         const who = patientOf(referral);
         const name = nameFor(who.formalName, who.umrn);
         const title = `Tier ${referral.urgency} · ${referralTo(referral, units)}`;
-        const from = withSendingTeam(`from ${referral.originSiteCode}`, referral);
+        const from = withSendingTeam(`from ${referral.originSiteCode ?? ORIGIN_NOT_RECORDED}`, referral);
         const profile = referral.homeRegion ? `${referral.ageBand}, ${referral.homeRegion}` : referral.ageBand;
         const age = minutesText(Math.max(0, now - referral.raisedAt));
         const marker = followUpMarker(referral, now);

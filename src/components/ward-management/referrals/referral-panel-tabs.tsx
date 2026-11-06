@@ -12,6 +12,7 @@
 // and the history and corrections fold below.
 
 import { useState, type ReactNode } from "react";
+import { HOME_REGION_NOT_RECORDED, ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { Phone } from "lucide-react";
 
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
@@ -98,7 +99,7 @@ export function PatientTab({
   const checks = intake?.clearanceChecklist;
   const checkRows = checks ? CLEARANCE_CHECKS.filter((check) => checks[check] !== undefined) : [];
   const done = checkRows.filter((check) => checks?.[check] === "done").length;
-  const site = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode;
+  const site = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode ?? ORIGIN_NOT_RECORDED;
   const tags = needTags(referral);
   const legal = intake?.legalStatus?.trim();
   const legalMissing = !legal || /^not recorded$/i.test(legal);
@@ -126,7 +127,11 @@ export function PatientTab({
           </div>
           <div>
             <dt>Home</dt>
-            <dd>{referral.suburb.kind === "named" ? referral.suburb.name : referral.homeRegion}</dd>
+            <dd>
+              {referral.suburb.kind === "named"
+                ? referral.suburb.name
+                : (referral.homeRegion ?? HOME_REGION_NOT_RECORDED)}
+            </dd>
           </div>
         </dl>
       </Block>

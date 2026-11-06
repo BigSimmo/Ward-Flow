@@ -248,12 +248,12 @@ export type WardScopedReferral = {
   id: string;
   // Facts about the person, common to every destination.
   ageBand: Cohort;
-  homeRegion: HomeRegion;
+  homeRegion?: HomeRegion;
   // Facts about the referral itself.
   source: ReferralSource;
   raisedAt: Instant;
   urgency: UrgencyLevel;
-  originSiteCode: string;
+  originSiteCode?: string;
   transportNeeded: boolean;
   /** Singular, and that is the whole rule in one key name. */
   addressing: WardScopedAddressing;
@@ -358,12 +358,12 @@ export type CommunityScopedReferral = {
   id: string;
   // Facts about the person, common to every destination.
   ageBand: Cohort;
-  homeRegion: HomeRegion;
+  homeRegion?: HomeRegion;
   // Facts about the referral itself.
   source: ReferralSource;
   raisedAt: Instant;
   urgency: UrgencyLevel;
-  originSiteCode: string;
+  originSiteCode?: string;
   transportNeeded: boolean;
   /**
    * 🔴 **THE FIVE KEYS BELOW JOINED ON 15 OCT 2026, ON THE OWNER'S CHOICE THAT THE LIVE TEAM PAGE
@@ -558,12 +558,12 @@ export type EdScopedReferral = {
   id: string;
   // Facts about the person, common to every destination.
   ageBand: Cohort;
-  homeRegion: HomeRegion;
+  homeRegion?: HomeRegion;
   // Facts about the referral itself.
   source: ReferralSource;
   raisedAt: Instant;
   urgency: UrgencyLevel;
-  originSiteCode: string;
+  originSiteCode?: string;
   transportNeeded: boolean;
   /** Singular — this department's own arm, in full. */
   addressing: EdScopedAddressing;
@@ -588,11 +588,11 @@ export type EdScopedReferral = {
 export type CoordinatorScopedReferral = {
   id: string;
   ageBand: Cohort;
-  homeRegion: HomeRegion;
+  homeRegion?: HomeRegion;
   source: ReferralSource;
   raisedAt: Instant;
   urgency: UrgencyLevel;
-  originSiteCode: string;
+  originSiteCode?: string;
   transportNeeded: boolean;
   localBedSought?: { at: Instant; by: string };
   /** Every destination this referral was sent to, and what each answered. */

@@ -76,6 +76,7 @@ import {
   type RepatDraft,
   type ReturnStatus,
   currentReturnMovement,
+  DEPART_TIME_NOT_RECORDED,
 } from "./out-of-area-model";
 import { OutOfAreaPhone, type PhonePerson } from "./out-of-area-phone";
 import { returnEarlyFlagOf } from "./return-early";
@@ -387,13 +388,12 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   function recordReturn(entry: OutOfAreaEntry) {
     const admissionId = entry.admission.id;
     const draft = draftFor(admissionId);
-    if (missingAnswers(draft, now).length > 0) return;
+    if (missingAnswers(draft).length > 0) return;
+    // W13 (Josh's card 3, 5 Nov 2026): the provider and depart time may be absent; they warn.
     const estimatedAt = instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now);
     if (
-      estimatedAt === undefined ||
       draft.receivingWardAgreed === undefined ||
       (draft.mode !== "road" && draft.mode !== "flight") ||
-      draft.provider === undefined ||
       draft.transportLegalStatus === undefined
     ) {
       return;
@@ -412,10 +412,10 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         homeHospital: draft.homeHospital,
         receivingWardAgreed: draft.receivingWardAgreed,
         mode: draft.mode,
-        provider: draft.provider,
+        ...(draft.provider === undefined ? {} : { provider: draft.provider }),
         cadNumber: draft.cadNumber.trim(),
         transportLegalStatus: draft.transportLegalStatus,
-        estimatedAt,
+        ...(estimatedAt === undefined ? {} : { estimatedAt }),
         ...involuntaryReturnAnswers(draft),
       },
       {
@@ -429,14 +429,9 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   function sendPlanToWard(entry: OutOfAreaEntry) {
     const admissionId = entry.admission.id;
     const draft = draftFor(admissionId);
-    if (!canSendReturnPlan(draft, now)) return;
+    if (!canSendReturnPlan(draft)) return;
     const estimatedAt = instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now);
-    if (
-      estimatedAt === undefined ||
-      (draft.mode !== "road" && draft.mode !== "flight") ||
-      draft.provider === undefined ||
-      draft.transportLegalStatus === undefined
-    ) {
+    if ((draft.mode !== "road" && draft.mode !== "flight") || draft.transportLegalStatus === undefined) {
       return;
     }
     const targetHospitalName = siteByCode(draft.homeHospital)?.name ?? draft.homeHospital;
@@ -456,10 +451,10 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         homeHospital: draft.homeHospital,
         receivingWardAgreed: wardAgreed,
         mode: draft.mode,
-        provider: draft.provider,
+        ...(draft.provider === undefined ? {} : { provider: draft.provider }),
         cadNumber: draft.cadNumber.trim(),
         transportLegalStatus: draft.transportLegalStatus,
-        estimatedAt,
+        ...(estimatedAt === undefined ? {} : { estimatedAt }),
         ...involuntaryReturnAnswers(draft),
       },
       {
@@ -485,11 +480,11 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         homeHospital: existing.homeHospital,
         receivingWardAgreed: true,
         mode: existing.mode,
-        provider: existing.provider,
+        ...(existing.provider === undefined ? {} : { provider: existing.provider }),
         cadNumber: existing.cadNumber,
         transportLegalStatus: existing.transportLegalStatus,
         // The recorded departure estimate stands; agreeing the return never moves it.
-        estimatedAt: existing.estimatedAt,
+        ...(existing.estimatedAt === undefined ? {} : { estimatedAt: existing.estimatedAt }),
         // #177: the plan's Form 4C and escort answers stand too.
         ...(existing.form4CReceived === undefined ? {} : { form4CReceived: existing.form4CReceived }),
         ...(existing.escortRequired === undefined ? {} : { escortRequired: existing.escortRequired }),
@@ -631,16 +626,18 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       return { record, entry };
     })
     .filter((row): row is { record: RepatriationRecord; entry: OutOfAreaEntry } => row.entry !== undefined)
-    .sort((a, b) => a.record.estimatedAt - b.record.estimatedAt)
+    .sort((a, b) => (a.record.estimatedAt ?? Infinity) - (b.record.estimatedAt ?? Infinity))
     .map(({ record, entry }) => ({
       id: entry.admission.id,
       name: patientOf(entry).formalName,
       to: shortSiteName(record.homeHospital),
       mode: record.mode === "road" ? "Road" : "Flight",
-      time: formatInstant(record.estimatedAt),
+      time: record.estimatedAt === undefined ? DEPART_TIME_NOT_RECORDED : formatInstant(record.estimatedAt),
       day: departureDayLabel(record, now),
     }));
-  const leavingToday = repatriations.filter((record) => leavesToday(record, now) && record.estimatedAt >= now);
+  const leavingToday = repatriations.filter(
+    (record) => leavesToday(record, now) && record.estimatedAt !== undefined && record.estimatedAt >= now,
+  );
   const dueSoon = entries.filter((entry) => {
     const offset = offsetOf(entry);
     return offset === 0 || offset === 1;
@@ -659,7 +656,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     .map((entry) => ({
       id: entry.admission.id,
       name: patientOf(entry).formalName,
-      left: missingAnswers(draftFor(entry.admission.id), now).length,
+      left: missingAnswers(draftFor(entry.admission.id)).length,
     }));
 
   const counts = (
@@ -1107,7 +1104,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                 <ReturnCell
                                   status={status}
                                   record={record}
-                                  left={missingAnswers(draftFor(entry.admission.id), now).length}
+                                  left={missingAnswers(draftFor(entry.admission.id)).length}
                                 />
                               </td>
                             ) : null}

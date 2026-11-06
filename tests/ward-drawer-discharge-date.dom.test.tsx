@@ -85,10 +85,52 @@ describe("the ward sets the discharge date from the bed drawer (WT-16)", () => {
     const again = screen.getByTestId("ward-drawer-discharge-date");
     expect(within(again).getByRole("spinbutton", { name: "Discharge day" })).toHaveAttribute("aria-valuenow", "1");
     expect(within(again).getByLabelText("Expected discharge time")).toHaveValue("10:00");
-    expect(within(again).getByRole("button", { name: "Save date" })).toBeDisabled();
+    // Kit rule: unavailable with a reason (aria-disabled), never a bare native disabled.
+    expect(within(again).getByRole("button", { name: "Save date" })).toHaveAttribute("aria-disabled", "true");
     expect(again).toHaveTextContent("Change the day or time to save");
     fireEvent.change(within(again).getByLabelText("Expected discharge time"), { target: { value: "11:00" } });
     fireEvent.click(within(again).getByRole("button", { name: "Save date" }));
     expect(screen.getByTestId("edd").textContent).toBe(String(tomorrowTen + 60));
+  });
+
+  // Form rule (design audit, Josh's card 3, 5 Nov 2026): a past time warns and still saves as typed.
+  it("saves a time that has already passed, with a warning", () => {
+    setDeskRole("ward");
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <Probe />
+        <WardBedDossierDrawer
+          selectedBed={3}
+          bedItem={{
+            bedNumber: 3,
+            bedLabel: "Bed 03",
+            status: "occupied",
+            statusText: "Inpatient",
+            admissionId: admission.id,
+            patientAlias: "Synthetic person",
+          }}
+          unit={unit}
+          onClose={() => {}}
+          drawerLeavingDestination={LEAVING_DESTINATIONS[0].id}
+          setDrawerLeavingDestination={() => {}}
+          onRecordLeft={() => {}}
+          bedDrawerRef={createRef<HTMLElement>()}
+          onKeyDown={() => {}}
+        />
+      </WardFlowProvider>,
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "Leaving" }));
+    fireEvent.click(screen.getAllByTestId("ward-drawer-discharge-date-open")[0]);
+    const form = screen.getByTestId("ward-drawer-discharge-date");
+    fireEvent.change(within(form).getByLabelText("Expected discharge time"), { target: { value: "00:05" } });
+    expect(within(form).getByTestId("ward-drawer-discharge-date-hint")).toHaveTextContent(
+      "That time has passed. It saves as typed.",
+    );
+    const save = within(form).getByRole("button", { name: "Save date" });
+    expect(save).not.toHaveAttribute("aria-disabled");
+    fireEvent.click(save);
+    const todayFive = Math.floor(NOW_ANCHOR / MINUTES_PER_DAY) * MINUTES_PER_DAY + 5;
+    expect(screen.getByTestId("rejections").textContent).toBe("");
+    expect(screen.getByTestId("edd").textContent).toBe(String(todayFive));
   });
 });

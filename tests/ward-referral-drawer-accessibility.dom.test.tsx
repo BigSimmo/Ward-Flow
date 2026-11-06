@@ -73,23 +73,30 @@ describe("referral field semantics", () => {
 
 describe("referral step recovery and keyboard focus", () => {
   it.each(["next", "send"])("returns to an invalid earlier step when %s is pressed", async (action) => {
-    await setupDrawer();
-    // RF1 (3 Nov 2026): the catchment is offered as one suggestion, and its Home region field only
-    // shows after Change. Open it so the recovery can reach the field.
-    fireEvent.click(screen.getByRole("button", { name: "Change" }));
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <WardReferralDrawer onClose={vi.fn()} />
+      </WardFlowProvider>,
+    );
+    await waitFor(() => expect(screen.getByRole("combobox", { name: "Find a patient" })).toHaveFocus());
+    // Form rule (design audit FORM-REF, 5 Nov 2026): the home region now only warns, so the recovery
+    // uses the age band, which still blocks. A registered person with no bed is asked it in step 1;
+    // it opens on the band the date of birth gives, so clear it first.
+    chooseSampleReferralPerson("UM100005");
+    fireEvent.change(screen.getByLabelText("Age band"), { target: { value: "" } });
     fireEvent.click(section(action === "next" ? "Clearance" : "Wards"));
     fireEvent.click(screen.getByRole("button", { name: action === "next" ? "Next, wards" : "Send referral" }));
     expect(section("Patient")).toHaveAttribute("aria-pressed", "true");
-    const region = screen.getByLabelText("Home region");
-    expect(region).toHaveAttribute("aria-invalid", "true");
+    const ageBand = screen.getByLabelText("Age band");
+    expect(ageBand).toHaveAttribute("aria-invalid", "true");
     // Error summary mock-up (24 Oct 2026): focus lands on the step's summary, whose link reaches the field.
     const summary = screen.getByRole("group", { name: /to fix before the next step/u });
     await waitFor(() => expect(within(summary).getByRole("heading")).toHaveFocus());
-    fireEvent.click(within(summary).getByRole("link", { name: "Choose the home region" }));
-    expect(region).toHaveFocus();
-    fireEvent.change(region, { target: { value: "Perth Metropolitan" } });
-    expect(region).toHaveFocus();
-    expect(region).not.toHaveAttribute("aria-invalid");
+    fireEvent.click(within(summary).getByRole("link", { name: "Choose the age band" }));
+    expect(ageBand).toHaveFocus();
+    fireEvent.change(ageBand, { target: { value: "Adult" } });
+    expect(ageBand).toHaveFocus();
+    expect(ageBand).not.toHaveAttribute("aria-invalid");
   });
 
   it("leaves focus in a close guard opened before the recovery frame runs", async () => {

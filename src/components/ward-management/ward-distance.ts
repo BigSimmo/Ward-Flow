@@ -24,7 +24,8 @@ export type { TravelBand };
  * the nearest one, not to "unknown means far". An unrecorded pair is a gap, and a gap is shown as
  * a gap.
  */
-export function travelBand(homeRegion: HomeRegion, siteCode: string): TravelBand | undefined {
+export function travelBand(homeRegion: HomeRegion | undefined, siteCode: string): TravelBand | undefined {
+  if (homeRegion === undefined) return undefined;
   return SYNTHETIC_TRAVEL_BANDS[homeRegion]?.[siteCode];
 }
 

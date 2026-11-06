@@ -8,6 +8,7 @@
  */
 
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
+import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { referralWaitLine } from "@/components/ward-management/referrals/referral-wait";
 import { communityDeclineBlockedReason } from "@/components/ward-management/community/community-blocked-reasons";
 import { COMMUNITY_DECLINE_REASONS, type CommunityDeclineReason } from "@/components/ward-management/ward-model";
@@ -363,14 +364,15 @@ export function CommunityScreenWaitingTab({ view }: { view: CommunityScreenView 
                         <div className={styles.refClinicalSummary}>
                           Origin: {referralOriginLabel(referral)}.{" "}
                           {referral.history ||
-                            `${referral.ageBand} · ${referral.homeRegion}. ${referral.transportNeeded ? "Transport needed." : "No transport recorded."}`}
+                            `${referral.ageBand} · ${referral.homeRegion ?? HOME_REGION_NOT_RECORDED}. ${referral.transportNeeded ? "Transport needed." : "No transport recorded."}`}
                         </div>
                         <ReferralIntakeSummary intake={referral.intake} />
                         <p className={`${styles.cardDetail} ${styles.displayNone}`}>
                           {referralWaitLine(referral, now)}
                         </p>
                         <p className={`${styles.cardDetail} ${styles.displayNone}`}>
-                          {referral.ageBand} · {referral.homeRegion} · {referralOriginLabel(referral)}
+                          {referral.ageBand} · {referral.homeRegion ?? HOME_REGION_NOT_RECORDED} ·{" "}
+                          {referralOriginLabel(referral)}
                         </p>
                         <p className={`${styles.cardDetail} ${styles.displayNone}`}>
                           {referral.transportNeeded ? "Transport needed" : "No transport recorded"}

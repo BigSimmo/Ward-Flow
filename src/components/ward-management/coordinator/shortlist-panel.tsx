@@ -1,6 +1,7 @@
 "use client";
 
 import { securityWord } from "@/components/ward-management/ward-model-vocabulary";
+import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { currentLegalDueAt, formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
 
 import { Check, CircleCheck, CircleAlert, ChevronDown, ChevronUp, Info } from "lucide-react";
@@ -307,7 +308,7 @@ export function ReferralPlacementPanel({
         <dl className={drawer.grid}>
           <Fact label="Ward asked" value={referralAsked(referral, units)} />
           <Fact label="Referred from" value={referralFrom(referral)} />
-          <Fact label="Profile" value={`${referral.ageBand} · ${referral.homeRegion}`} />
+          <Fact label="Profile" value={`${referral.ageBand} · ${referral.homeRegion ?? HOME_REGION_NOT_RECORDED}`} />
           {/* Owner ruling, 2026-09-02: a coordinator may see a referred patient's suburb, a service
               area and never an address (PD-3), in the wording every reader uses. Never a filter (Q-2). */}
           <Fact label="Suburb" value={referralSuburbLabel(referral.suburb)} testId="ward-referral-placement-suburb" />

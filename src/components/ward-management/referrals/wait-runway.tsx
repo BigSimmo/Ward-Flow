@@ -7,6 +7,7 @@
 // with the core facts (who, tier, wait, from, asking for), and a group's card lists its people.
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { TriangleAlert } from "lucide-react";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -171,7 +172,7 @@ export function WaitRunway({
   ];
   const facts = (referral: Referral) => {
     const { waited, due, overdue } = waitWords(referral, now);
-    const site = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode;
+    const site = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode ?? ORIGIN_NOT_RECORDED;
     return { waited, due, overdue, site, asking: askingForShort(referral) };
   };
   const spoken = (entry: RunwayEntry) => {
