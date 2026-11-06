@@ -1204,16 +1204,22 @@ function PhoneEdList({
             item.summary.waiting > 0 ? (
               <span className={styles.longest}>
                 {clock !== "in" ? <StatusGlyph tone={CLOCK_TONE[clock]} size={9} /> : null}
+                <span className="sr-only">Longest wait </span>
                 {splitDuration(item.summary.longestWaitMinutes)}
               </span>
             ) : (
               "Clear"
             )
           }
-          time={item.summary.waiting > 0 ? `${item.summary.waiting} waiting` : undefined}
+          // CB-3: no aria-label, so the row is named by the words it shows (a row cut by the screen's
+          // edge still matches its name), with what a tap does for a screen reader.
+          time={
+            <>
+              {item.summary.waiting > 0 ? `${item.summary.waiting} waiting` : null}
+              <span className="sr-only">. Opens a preview.</span>
+            </>
+          }
           onSelect={() => onPreview(item.summary.ed.id)}
-          // CB-3: the name reads the row's own words in order, then what a tap does.
-          aria-label={`${item.short}, ${item.summary.waiting > 0 ? `${item.noBed} no bed, ${item.held} accepted, ${item.forms} under a form, ${splitDuration(item.summary.longestWaitMinutes)}, ${item.summary.waiting} waiting. The longest wait is ${splitDuration(item.summary.longestWaitMinutes)}` : `${item.summary.service}, clear`}. Opens a preview.`}
           data-testid={`ed-index-phone-row-${item.summary.ed.id}`}
         />
       </div>
