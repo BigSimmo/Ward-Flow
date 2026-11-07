@@ -53,7 +53,7 @@ const ALLOWED = new Set([
  * pin its TRUTH. This list is the tripwire: a second reader of the seed, or a move of the ledger
  * off it, fails here and sends a reviewer back to that paragraph. It replaced a sentence this
  * project had already had to correct once for being false on exactly this axis
- * (`docs/ward-flow-phase-8-decisions.md`, D8-9), which is why it gets a guard that outlives the
+ * (`docs/history/ward-flow-phase-8-decisions.md`, D8-9), which is why it gets a guard that outlives the
  * session that wrote it.
  *
  * Full paths from the repo root with forward slashes, matching `NOW_ANCHOR_ALLOWLIST`'s convention

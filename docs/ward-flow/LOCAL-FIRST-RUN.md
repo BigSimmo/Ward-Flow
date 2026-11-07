@@ -92,4 +92,4 @@ for ownership, Cloud coordination and the limited single-user exception.
 ## Do not use for first run
 
 - [`START-LOCAL-CHAT.md`](START-LOCAL-CHAT.md) — kept stub. The archived chat-control procedure it pointed to was removed in the 15 Oct 2026 docs trim
-- Dated notes under [`archive/dated-notes/`](archive/dated-notes/README.md) — historical only
+- Dated notes under [`archive/dated-notes/`](../history/archive/dated-notes/README.md) — historical only

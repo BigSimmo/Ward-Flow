@@ -12,16 +12,16 @@ At the 6 November deployment check, both production services reported SUCCESS fo
 
 ## Evidence and its limits
 
-| Evidence | Observed result | Scope |
-| --- | --- | --- |
-| Local integration checks | 12 selected stages and 25 focused cases passed | Tested `f07df20`; reused evidence |
-| PostgreSQL-backed suite | 500 cases across 47 files passed; 36 cleanup/integrity checks passed | Owned local PostgreSQL; no production database-role parity claim |
-| [PR CI](https://github.com/BigSimmo/Ward-Flow/actions/runs/42074894170) | Successful; 15 jobs passed and one expected main-reuse job skipped | PR #1473 |
-| [Merged-main CI](https://github.com/BigSimmo/Ward-Flow/actions/runs/42078753517) | All 16 observed jobs passed, including coverage and the required check | Separate merged-main evidence |
-| Earlier browser matrix | 18 workflow cases and two ED follow-ups passed | Precursor `6138941`; no fresh comprehensive route sweep |
-| Earlier full capacity profile | Ten phases, 18,765 requests without errors/interruption, 32 writes/reloads and 30 cleanup checks passed | Separate 1 GiB local envelope on `6138941`; not the final deployed engine |
-| Original 512 MiB profiles | Failed their 409.6 MiB RSS stop | Historical failures remain failed; no 512 MiB cure or production failure inferred |
-| Fresh offline guard preparation | Syntax and 37 synthetic guard checks passed | No app, browser or network execution; eight inspected authority/projection source files matched deployed source |
+| Evidence                                                                         | Observed result                                                                                         | Scope                                                                                                           |
+| -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Local integration checks                                                         | 12 selected stages and 25 focused cases passed                                                          | Tested `f07df20`; reused evidence                                                                               |
+| PostgreSQL-backed suite                                                          | 500 cases across 47 files passed; 36 cleanup/integrity checks passed                                    | Owned local PostgreSQL; no production database-role parity claim                                                |
+| [PR CI](https://github.com/BigSimmo/Ward-Flow/actions/runs/42074894170)          | Successful; 15 jobs passed and one expected main-reuse job skipped                                      | PR #1473                                                                                                        |
+| [Merged-main CI](https://github.com/BigSimmo/Ward-Flow/actions/runs/42078753517) | All 16 observed jobs passed, including coverage and the required check                                  | Separate merged-main evidence                                                                                   |
+| Earlier browser matrix                                                           | 18 workflow cases and two ED follow-ups passed                                                          | Precursor `6138941`; no fresh comprehensive route sweep                                                         |
+| Earlier full capacity profile                                                    | Ten phases, 18,765 requests without errors/interruption, 32 writes/reloads and 30 cleanup checks passed | Separate 1 GiB local envelope on `6138941`; not the final deployed engine                                       |
+| Original 512 MiB profiles                                                        | Failed their 409.6 MiB RSS stop                                                                         | Historical failures remain failed; no 512 MiB cure or production failure inferred                               |
+| Fresh offline guard preparation                                                  | Syntax and 37 synthetic guard checks passed                                                             | No app, browser or network execution; eight inspected authority/projection source files matched deployed source |
 
 Earlier private controls were in temporary storage and did not survive the runtime change. Fresh private guard preparation was placed in persistent workspace storage. It is not restored original bytes, a live browser driver, or proof of a live role/save/reload workflow.
 
@@ -29,22 +29,22 @@ Earlier private controls were in temporary storage and did not survive the runti
 
 The 14 original IDs are retained. They are not 14 currently reproduced product defects.
 
-| ID | Disposition |
-| --- | --- |
-| FIX-01 | Cache/listener/record repairs deployed; original low-memory failures and final-deployment performance limits remain explicit. |
-| FIX-02 | Executive Help gap was already corrected in source; deployment is distinct from observed Help behaviour. |
-| FIX-03 | Agenda/seclusion coverage roster was corrected; roster inclusion is not every-state acceptance. |
-| OWN-01 | Audit fixture, proxy and responsive-selector mistakes were corrected or diagnosed; original failed receipts retained. |
-| OWN-02 | Ended task-owned coordination records were reconciled with scoped proof. |
-| OWN-03 | Historical cleanup race was resolved separately; current runs retain their own physical proofs. |
-| INFRA-01 | Historical browser memory exhaustion remains recorded; no blanket attribution of unrelated failures. |
-| INFRA-02 | Original deadline overrun remains a failed historical envelope. |
-| ENV-01 | Enforced task network policy still blocked required live destinations at the last check. |
-| ENV-02 | Local online WebKit capability was restored; physical Safari and live acceptance are separate. |
-| ENV-03 | Production deployment/source identity is now verified for the nine repair files. |
-| VERIFY-01 | Target-size repairs verified within tested scopes; ARIA/contrast incompletes and complete interaction coverage remain unproved. |
+| ID        | Disposition                                                                                                                                      |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| FIX-01    | Cache/listener/record repairs deployed; original low-memory failures and final-deployment performance limits remain explicit.                    |
+| FIX-02    | Executive Help gap was already corrected in source; deployment is distinct from observed Help behaviour.                                         |
+| FIX-03    | Agenda/seclusion coverage roster was corrected; roster inclusion is not every-state acceptance.                                                  |
+| OWN-01    | Audit fixture, proxy and responsive-selector mistakes were corrected or diagnosed; original failed receipts retained.                            |
+| OWN-02    | Ended task-owned coordination records were reconciled with scoped proof.                                                                         |
+| OWN-03    | Historical cleanup race was resolved separately; current runs retain their own physical proofs.                                                  |
+| INFRA-01  | Historical browser memory exhaustion remains recorded; no blanket attribution of unrelated failures.                                             |
+| INFRA-02  | Original deadline overrun remains a failed historical envelope.                                                                                  |
+| ENV-01    | Enforced task network policy still blocked required live destinations at the last check.                                                         |
+| ENV-02    | Local online WebKit capability was restored; physical Safari and live acceptance are separate.                                                   |
+| ENV-03    | Production deployment/source identity is now verified for the nine repair files.                                                                 |
+| VERIFY-01 | Target-size repairs verified within tested scopes; ARIA/contrast incompletes and complete interaction coverage remain unproved.                  |
 | VERIFY-02 | Actual eight-role/session/payload/persistence checks remain unexecuted; an earlier unacknowledged operation has no attributable recovery target. |
-| VERIFY-04 | Three historical optional/unavailable cases remained unexecuted; they are not additional confirmed product defects. |
+| VERIFY-04 | Three historical optional/unavailable cases remained unexecuted; they are not additional confirmed product defects.                              |
 
 ## Remaining acceptance work
 

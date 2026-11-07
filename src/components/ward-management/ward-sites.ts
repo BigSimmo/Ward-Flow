@@ -14,7 +14,7 @@ export const NOW_ANCHOR = 10 * 60 + 42;
  * immediately beside a LIVE `formatInstant(now)`. A frozen date next to a moving clock reads as
  * the system knowing what day it is, and it would have been the same date at any future
  * demonstration. It is also a changeable real-world fact stated inside a component, which
- * `docs/ward-flow-changeable-data-rule.md` puts in exactly one authored place — the rule exists
+ * `docs/history/ward-flow-changeable-data-rule.md` puts in exactly one authored place — the rule exists
  * because the second component to need today's date is where the drift starts, and there was
  * already a second concept of the demonstration day in `demoDayZero`.
  *

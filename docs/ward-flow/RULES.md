@@ -7,7 +7,7 @@
 > Imported branch, provider and model instructions do not govern present work.
 > The former machine-local index is retained in Git history; no private lessons are imported.
 
-**207 historical lessons.** Generated only from the versioned `docs/ward-flow/lessons` copy.
+**207 historical lessons.** Generated only from the versioned `docs/history/lessons` copy.
 
 ⚠️ **A lesson naming a file, function or count can go stale exactly as any other claim does.**
 Re-derive before acting on one. This index proves the lessons EXIST, never that they are current.

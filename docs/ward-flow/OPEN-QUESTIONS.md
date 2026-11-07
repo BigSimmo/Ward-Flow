@@ -44,7 +44,7 @@ decided again.
 **The Aboriginal cultural safety review is never listed here as a question.** It is deferred by the
 owner, second round, his own verbatim words: _"Stop asking and add to ledger... i have deferred."_ He
 arranges it himself; it stays a hard gate before any real-patient use. Recorded at
-`docs/ward-flow-task-ledger.md` and `docs/ward-flow/archive/dated-notes/owner-answers-2026-09-17.md` ("Second
+`docs/ward-flow-task-ledger.md` and `docs/history/archive/dated-notes/owner-answers-2026-09-17.md` ("Second
 round," answer 6). Do not raise it with him again, in this file or anywhere else.
 
 ---
@@ -69,9 +69,9 @@ on it without re-deriving against current git and `docs/ward-flow-task-ledger.md
   now is?** The owner ruled on authorisation with his own clinical reasoning; `security` was raised
   in the same breath but was deliberately not extended to it by inference, and has never actually
   been put to him. Blocks writing the reasoning into the design standard and the mockup's gate-detail
-  text for `security`. Detail: `docs/ward-flow/archive/dated-notes/owner-decisions-2026-09-12-fold-and-authorisation.md`
+  text for `security`. Detail: `docs/history/archive/dated-notes/owner-decisions-2026-09-12-fold-and-authorisation.md`
   (D-9, "the same answer applies to security"). _(Updated 2026-09-16: answered — WLQ-3,
-  `docs/ward-flow/archive/dated-notes/owner-decisions-2026-09-15.md` ~:42, "the engine already classified `security`
+  `docs/history/archive/dated-notes/owner-decisions-2026-09-15.md` ~:42, "the engine already classified `security`
   as overridable; the reason now sits in design standard §8.4.")_
 - ~~Who does the Aboriginal cultural safety review, and can Ward Flow move toward real clinical use
   before it happens?~~ **CLOSED — DEFERRED BY THE OWNER, do not re-ask.** See "ANSWERED" above.
@@ -83,7 +83,7 @@ on it without re-deriving against current git and `docs/ward-flow-task-ledger.md
 - **Should the 27 ward-side queued requests be filed into the main project ledger first and then
   migrated, or redirected straight to the Ward Flow ledger?** Asked directly; not guessed at.
   Blocks draining the inbox cleanly under the new two-ledger rule. Detail:
-  `docs/ward-flow/archive/dated-notes/owner-decisions-2026-09-12-fold-and-authorisation.md` (D-11, "still owed").
+  `docs/history/archive/dated-notes/owner-decisions-2026-09-12-fold-and-authorisation.md` (D-11, "still owed").
   _(Updated 2026-09-16: answered — Owner Ruling 14, "Yes please goa head with this", directing the
   requests straight into the Ward Flow ledger (now 28 in the queue). Detail:
   `docs/ward-flow/PROJECT-ISSUES.md` ~:154 and its Ruling 14 section, ~:288 onward.)_
@@ -97,8 +97,8 @@ on it without re-deriving against current git and `docs/ward-flow-task-ledger.md
   it as answered or safe to ignore. Detail: `docs/ward-flow/handovers/ward-lead-close-out-2026-09-12.md`
   §5. _(Closed 2026-09-17: this was never actually unanswered — `OWNER-RULINGS.md` had already
   indexed `O-17.1` as "TWO TYPE SCALES — screens migrate at their own rebuild, never as a sweep"
-  (`docs/ward-flow/archive/dated-notes/owner-decisions-2026-09-1x.md` ~:2319). This document simply had not been
-  updated to say so. Records housekeeping per `docs/ward-flow/archive/dated-notes/owner-answers-2026-09-17.md` item 62.)_
+  (`docs/history/archive/dated-notes/owner-decisions-2026-09-1x.md` ~:2319). This document simply had not been
+  updated to say so. Records housekeeping per `docs/history/archive/dated-notes/owner-answers-2026-09-17.md` item 62.)_
 
 ---
 
@@ -147,7 +147,7 @@ on it without re-deriving against current git and `docs/ward-flow-task-ledger.md
   standing per-screen rule already raises grandfathered text whenever that screen is rebuilt, so
   this is unaffected; (2) hard trigger — before Ward Flow is shown to a real bed coordinator; (3)
   re-raise if any of the named selectors gains a new declaration. Detail:
-  `docs/ward-flow/archive/dated-notes/owner-decisions-2026-09-12-fold-and-authorisation.md` (D-10).
+  `docs/history/archive/dated-notes/owner-decisions-2026-09-12-fold-and-authorisation.md` (D-10).
 - **The sign-in outage fix** (`fbbb6c16cf`) — merged, but whether it actually deployed needs
   provider/deploy access to confirm. Trigger: someone with that access checks the live deploy; do
   not close it on the commit alone. Detail:
@@ -155,8 +155,8 @@ on it without re-deriving against current git and `docs/ward-flow-task-ledger.md
 - **ED-to-community referral routing** — an ED cannot refer onward to a community team; the form
   shows this as a visible deferral rather than hiding it. ⚠️ **No reopening trigger is stated
   anywhere** — that absence is itself the finding, not an oversight in this document. Detail:
-  `docs/ward-flow-ledger.md` §B (Q9). _(Closed 2026-09-17: the WLQ-19 ("revisit later") vs Ruling 16
-  ("build now") clash is settled — `docs/ward-flow/archive/dated-notes/owner-answers-2026-09-17.md` item 14: "ED to
+  `docs/history/ward-flow-ledger.md` §B (Q9). _(Closed 2026-09-17: the WLQ-19 ("revisit later") vs Ruling 16
+  ("build now") clash is settled — `docs/history/archive/dated-notes/owner-answers-2026-09-17.md` item 14: "ED to
   community team referral: build now. All teams offered, the patient's area team first; while on a
   form, not offered until the examination outcome is recorded; then allowed with legal status
   shown." Ruling 16 wins; this is no longer a deferral, it is a build item.)_
@@ -181,10 +181,10 @@ nothing confirms they still apply either.
 
 - **Where the bed board sits in the primary nav** was deferred pending a rebuild (`WB-DB-20`); the
   current build already routes a "Bed board" screen as one of sixteen third-edition screens, which
-  may have already answered this. Detail: `docs/ward-flow-ledger.md` §B (B7).
+  may have already answered this. Detail: `docs/history/ward-flow-ledger.md` §B (B7).
 - **Marking `WB-DB-10`/`P6-D5`/`P6-D6` superseded, and retiring the old ward screen into the
   board**, listed OPEN against a session and a screen ("the ward board") that may no longer exist
-  in its 2026-08-29 form. Detail: `docs/ward-flow-ledger.md` §B (B1, B3, B6).
+  in its 2026-08-29 form. Detail: `docs/history/ward-flow-ledger.md` §B (B1, B3, B6).
 - **Reconfirming "zero spelled as the word 'none'" after the fuller 31-of-69-cell measurement** —
   a recommendation was given to keep the original ruling, but it is unclear whether the owner
-  actually reconfirmed after seeing the larger number. Detail: `docs/ward-flow-ledger.md` §B (Q11).
+  actually reconfirmed after seeing the larger number. Detail: `docs/history/ward-flow-ledger.md` §B (Q11).

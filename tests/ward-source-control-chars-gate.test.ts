@@ -85,7 +85,7 @@ describe("the ward source-control-character gate is reachable and still guards",
 
   it("🔴 reports its exemption list by name, not silently — a skip list nobody can read is where corruption hides", () => {
     const { output } = runGate();
-    expect(output).toContain("docs/ward-flow/lessons/corruption-that-makes-checks-pass-harder.md");
+    expect(output).toContain("docs/history/lessons/corruption-that-makes-checks-pass-harder.md");
     expect(output).toMatch(/\d+ file\(s\) exempted/);
   });
 
@@ -99,19 +99,24 @@ describe("the ward source-control-character gate is reachable and still guards",
    */
   it("🔴 reports a docs/ward-flow population that is not near zero — the root most recently found blind", () => {
     const { output } = runGate();
-    const match = output.match(/docs\/ward-flow:\s*(\d+) file\(s\) scanned/);
+    // The lessons and archive moved from docs/ward-flow/ to docs/history/ on 8 November 2026. Both
+    // roots are scanned; each must print its own count and together they keep the old floor.
+    const live = output.match(/docs\/ward-flow:\s*(\d+) file\(s\) scanned/);
+    const history = output.match(/docs\/history:\s*(\d+) file\(s\) scanned/);
     expect(
-      match,
-      "the gate no longer prints a per-root docs/ward-flow scanned count — cannot check the floor. " +
+      live && history,
+      "the gate no longer prints per-root docs/ward-flow and docs/history scanned counts — cannot check the floor. " +
         "Output:\n" +
         output,
-    ).not.toBeNull();
-    const scanned = match ? Number(match[1]) : 0;
+    ).toBeTruthy();
+    const liveCount = live ? Number(live[1]) : 0;
+    const historyCount = history ? Number(history[1]) : 0;
+    expect(liveCount, `the gate scanned only ${liveCount} file(s) under docs/ward-flow`).toBeGreaterThan(100);
+    expect(historyCount, `the gate scanned only ${historyCount} file(s) under docs/history`).toBeGreaterThan(250);
     expect(
-      scanned,
-      `the gate scanned only ${scanned} file(s) under docs/ward-flow. There are roughly 415 tracked ` +
-        "files there after the 18 October 2026 archive move (minus a handful of explicitly skipped binaries, oversized captures and .log " +
-        "captures — see the script's SKIP_BINARY_EXTENSIONS / LOG_SKIP_REASON), so a count anywhere " +
+      liveCount + historyCount,
+      `the gate scanned only ${liveCount + historyCount} file(s) across docs/ward-flow and docs/history. ` +
+        "Roughly 415 tracked files lived under docs/ward-flow before the history move, so a count anywhere " +
         "near zero means the root that caused the 2026-09-12 incident has gone blind again.",
     ).toBeGreaterThan(250);
   });

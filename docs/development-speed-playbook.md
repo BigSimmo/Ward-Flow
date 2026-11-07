@@ -339,7 +339,7 @@ in-flight work under its own message. This repo has hit that.
 
 ## 11. Levers already measured and refuted — do not revive
 
-Re-litigating these is itself a cost. From `docs/ward-flow/archive/testing-historical-diagnostics.md` and the removed `docs/process-hardening.md` (see `docs/ARCHIVE.md`):
+Re-litigating these is itself a cost. From `docs/history/archive/testing-historical-diagnostics.md` and the removed `docs/process-hardening.md` (see `docs/ARCHIVE.md`):
 
 - A persistent Actions cache for the Next webpack tree (~804 MB; evicts the browser cache).
 - Transporting the 1.09 GB webpack cache to shard runners (19–67 s download, slower than a cold

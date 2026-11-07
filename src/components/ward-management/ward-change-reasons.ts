@@ -220,7 +220,7 @@ export const BED_RELEASE_BLOCKERS = [
 export type BedReleaseBlocker = (typeof BED_RELEASE_BLOCKERS)[number];
 
 /**
- * The bed-model rework of 2026-08-28 (`docs/ward-flow-phase-6-7-decisions.md`, Q4). Once a bed is
+ * The bed-model rework of 2026-08-28 (`docs/history/ward-flow-phase-6-7-decisions.md`, Q4). Once a bed is
  * released it may carry a short indication that it is being MADE READY — the owner's example was
  * cleaning. His own clinical reasoning is why this is a note and not a fifth lifecycle stage:
  *
@@ -516,7 +516,7 @@ export const GENDER_NO_LONGER_SUITS_NON_BINARY_REFUSAL =
  * "Just have 10 placeholder urgent reasons for now." So the SHAPE is his decision and the CONTENT
  * is a stand-in written by a session, and those two facts must not be allowed to merge. A chosen
  * value and a provisional value look identical in code; the difference is whether anybody can find
- * it again (`docs/ward-flow-provisional-values.md`). This block is that finding.
+ * it again (`docs/history/ward-flow-provisional-values.md`). This block is that finding.
  *
  * WHY THIS LIST EXISTS AT ALL. Urgency once outranked every wait; the queue is now wait order only
  * (never-build rule, 19 Oct 2026) and urgency is a mark. A mark that is easy to apply still inflates

@@ -59,7 +59,7 @@ in [DOCS-SYSTEM.md](DOCS-SYSTEM.md).
 | **Screens, Routes & Code Map**  | [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md) · [`ward-flow/code-map/README.md`](ward-flow/code-map/README.md) · [`codebase-index.md`](codebase-index.md) · [`site-map.md`](site-map.md) · [`ward-flow/organisation/registry.json`](ward-flow/organisation/registry.json) (`ward-flow/ORGANISATION.md`)                                                           |
 | **Reference Data & Sources**    | [`ward-flow/reference-data/PACK_README.md`](ward-flow/reference-data/PACK_README.md) (`ward-flow/reference-data/README.md`) · [`ward-flow/reference-data/PROVENANCE-AUDIT-2026-09-18.md`](ward-flow/reference-data/PROVENANCE-AUDIT-2026-09-18.md) (`ward-flow/reference-data/SOURCES.md`)                                                                               |
 | **Backend, CI & Hosting**       | [`../backend/ward-flow/README.md`](../backend/ward-flow/README.md) · [`ward-flow/PUBLIC-CI.md`](ward-flow/PUBLIC-CI.md) · [`ward-flow/RAILWAY-OPERATIONS.md`](ward-flow/RAILWAY-OPERATIONS.md) · [`hosting.md`](hosting.md)                                                                                                                                              |
-| **Historical Archives**         | [`ARCHIVE.md`](ARCHIVE.md) (removed archives and how to restore them) · [`ward-flow/ARCHIVE-NOTE.md`](ward-flow/ARCHIVE-NOTE.md) · [`ward-flow/RULES.md`](ward-flow/RULES.md)                                                                                                                                                                                            |
+| **Historical Archives**         | [`ARCHIVE.md`](ARCHIVE.md) (the one archive index: removed and moved files, and how to restore them) · [`history/`](history/README.md) (moved history, skipped by search) · [`ward-flow/RULES.md`](ward-flow/RULES.md)                                                                                                                                                   |
 
 ## Architecture
 
@@ -93,18 +93,18 @@ in [DOCS-SYSTEM.md](DOCS-SYSTEM.md).
 
 - Generated files ([`site-map.md`](site-map.md), [`scripts-index.md`](scripts-index.md), and the Ward Flow generated indexes listed in [`DOCS-SYSTEM.md`](DOCS-SYSTEM.md)) are updated only via their generator scripts.
 - When adding a maintained doc, link it from the matching section here and follow the naming, lifecycle and evidence conventions in [DOCS-SYSTEM.md](DOCS-SYSTEM.md).
-- When a maintained doc is superseded, mark it with a top `SUPERSEDED` banner, fence retired script/path sections with paired `docs-script-refs:historical-start` / `docs-script-refs:historical-end` HTML comments, or move dated Ward Flow records to `docs/ward-flow/archive/` as documented in [`ward-flow/ARCHIVE-NOTE.md`](ward-flow/ARCHIVE-NOTE.md). Run `npm run docs:check-links` and `npm run docs:check-scripts` to verify inbound links and script references.
+- When a maintained doc is superseded, mark it with a top `SUPERSEDED` banner, fence retired script/path sections with paired `docs-script-refs:historical-start` / `docs-script-refs:historical-end` HTML comments, or move dated Ward Flow records to `docs/history/archive/` as documented in [`ward-flow/ARCHIVE-NOTE.md`](history/ARCHIVE-NOTE.md). Run `npm run docs:check-links` and `npm run docs:check-scripts` to verify inbound links and script references.
 
 ## Historical collections
 
-| Collection                                        | How to use it                                                                                             |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| [Plan navigation](ward-flow/plans/README.md)      | Dated plans and checkpoints from both existing plan roots; the task record establishes commissioned work  |
-| [Archive and restoration record](ARCHIVE.md)      | Archived handovers, reports and other dated material, with the retained Git revision                      |
-| [Earlier archive note](ward-flow/ARCHIVE-NOTE.md) | Earlier trims and their source revisions                                                                  |
-| [Lessons](ward-flow/lessons/README.md)            | Historical repository copy; its index does not turn a lesson into a current rule                          |
-| [Code map](ward-flow/code-map/README.md)          | Maintained navigation to scoped updates and the historical subsystem census                               |
-| [Legacy decision register](ward-flow-ledger.md)   | Historical decision/identity evidence; new decisions belong in the [decision log](ward-flow/decisions.md) |
+| Collection                                              | How to use it                                                                                             |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| [Plan navigation](ward-flow/plans/README.md)            | Dated plans and checkpoints from both existing plan roots; the task record establishes commissioned work  |
+| [Archive and restoration record](ARCHIVE.md)            | Archived handovers, reports and other dated material, with the retained Git revision                      |
+| [History folder](history/README.md)                     | Lessons, the old archive and superseded files, moved on 8 November 2026; search skips it by default       |
+| [Lessons](history/lessons/README.md)                    | Historical repository copy; its index does not turn a lesson into a current rule                          |
+| [Code map](ward-flow/code-map/README.md)                | Maintained navigation to scoped updates and the historical subsystem census                               |
+| [Legacy decision register](history/ward-flow-ledger.md) | Historical decision/identity evidence; new decisions belong in the [decision log](ward-flow/decisions.md) |
 
 The retained `handover/` rubric has a drawing consumer; `handovers/` was archived on 18 October.
 Folder names and old unchecked boxes do not establish active work. Keep consumer references and
@@ -144,7 +144,7 @@ Every remaining tracked document in this category (architecture and design, plus
 
 - [testing.md](testing.md) — test execution, focused/live commands, Playwright ownership, flake policy
 - [development-speed-playbook.md](development-speed-playbook.md) — going faster without weakening any gate: arbiter, receipts, narrow selection, worktree reuse
-- [ward-flow-phase-6-7-decisions.md](ward-flow-phase-6-7-decisions.md) — owner decisions settled before Phases 6 and 7 are designed
+- [ward-flow-phase-6-7-decisions.md](history/ward-flow-phase-6-7-decisions.md) — owner decisions settled before Phases 6 and 7 are designed
 
 ### Also catalogued (2026-09-02)
 
@@ -164,10 +164,10 @@ Every remaining tracked document in this category (process, plus the `agents/` r
 
 Every remaining tracked document in this category (the Ward Flow developer-gated prototype's context, decisions, roadmap, ledgers and dated handovers), one line each; the description is the document's own title, with its opening sentence where that adds something.
 
-- [ward-flow-context.md](ward-flow-context.md) — Ward Flow — complete context — Everything a session needs to work on Ward Flow, in one file.
-- [ward-flow-phase-3-rulings.md](ward-flow/archive/dated-notes/ward-flow-phase-3-rulings.md) — Ward Flow Phase 3 — every decision made on the product owner's behalf — 73 rulings, made across three sessions while executing the 12-task plan.
-- [ward-flow-phase-5-handover.md](ward-flow-phase-5-handover.md) — Ward Flow Phase 5 — session handover — Written 2026-08-26, before the merge;
-- [ward-management-decisions.md](ward-flow/archive/dated-notes/ward-management-decisions.md) — Ward Flow — architecture decisions — Decisions for the ward-management context that are hard to reverse, surprising without context, and the result of a real trade-off.
+- [ward-flow-context.md](history/ward-flow-context.md) — Ward Flow — complete context — Everything a session needs to work on Ward Flow, in one file.
+- [ward-flow-phase-3-rulings.md](history/archive/dated-notes/ward-flow-phase-3-rulings.md) — Ward Flow Phase 3 — every decision made on the product owner's behalf — 73 rulings, made across three sessions while executing the 12-task plan.
+- [ward-flow-phase-5-handover.md](history/ward-flow-phase-5-handover.md) — Ward Flow Phase 5 — session handover — Written 2026-08-26, before the merge;
+- [ward-management-decisions.md](history/archive/dated-notes/ward-management-decisions.md) — Ward Flow — architecture decisions — Decisions for the ward-management context that are hard to reverse, surprising without context, and the result of a real trade-off.
 
 ## Subdirectory map
 
@@ -185,7 +185,7 @@ The dated audits, reports and handovers left the live tree on 18 October 2026; s
 
 ### Also catalogued (2026-09-02)
 
-Every remaining tracked document in this category (dated records and the `superpowers/` folder — historical; do not update; the `ward-flow-phase-3-workspace/` folder and most of `archive/` were removed in the 15 Oct 2026 docs trim, see [`ward-flow/ARCHIVE-NOTE.md`](ward-flow/ARCHIVE-NOTE.md)), one line each; the description is the document's own title, with its opening sentence where that adds something.
+Every remaining tracked document in this category (dated records and the `superpowers/` folder — historical; do not update; the `ward-flow-phase-3-workspace/` folder and most of `archive/` were removed in the 15 Oct 2026 docs trim, see [`ward-flow/ARCHIVE-NOTE.md`](history/ARCHIVE-NOTE.md)), one line each; the description is the document's own title, with its opening sentence where that adds something.
 
 - [superpowers/specs/2026-08-18-ward-flow-metro-patient-flow-design.md](superpowers/specs/2026-08-18-ward-flow-metro-patient-flow-design.md) — Ward Flow — metro psychiatry patient flow, design — Status: Approved design, awaiting implementation plan.
 - [superpowers/specs/2026-08-25-ward-flow-phase-4-specialist-boards-design.md](superpowers/specs/2026-08-25-ward-flow-phase-4-specialist-boards-design.md) — Ward Flow Phase 4 — specialist boards, design — Date: 2026-08-25. Product owner:

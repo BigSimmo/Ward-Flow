@@ -6,7 +6,7 @@
 **Pinned tree.** Every `file:line` below was read at `73e617fbdc` (`ward/audit-fixes-20260916`, y2 and y3 folded).
 This line moved five times while the plan was being written, so re-grep before editing.
 
-**Sources.** Owner words, which bind: [`owner-answers-2026-09-17.md`](../archive/dated-notes/owner-answers-2026-09-17.md). · R-numbers:
+**Sources.** Owner words, which bind: [`owner-answers-2026-09-17.md`](../../history/archive/dated-notes/owner-answers-2026-09-17.md). · R-numbers:
 [`2026-09-16-fix-plan-referral-model.md`](2026-09-16-fix-plan-referral-model.md). · Shared tokens:
 [`2026-09-17-build-plan-legal-clinical.md`](2026-09-17-build-plan-legal-clinical.md) §4.
 

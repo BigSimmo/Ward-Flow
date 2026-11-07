@@ -1,0 +1,3 @@
+# Search tools (ripgrep and editors that read .ignore) skip the history folder by default.
+# It is kept in Git and still checked; search it on purpose with `rg --no-ignore-dot docs/history`.
+docs/history/

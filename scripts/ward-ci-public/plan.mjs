@@ -22,7 +22,7 @@ const matchesOrganisationRoot = (file) => {
 };
 
 const sha = /^[0-9a-f]{40}$/i;
-const docsOnly = (file) => file === "README.md" || /^docs\/ward-flow\/.*\.md$/u.test(file);
+const docsOnly = (file) => file === "README.md" || /^docs\/(?:ward-flow|history)\/.*\.md$/u.test(file);
 const maintainedPolicyRoots = new Set([
   "AGENTS.md",
   "PROJECT-INSTRUCTIONS-CONTINUATION.md",
@@ -98,10 +98,10 @@ export function documentChecks(entries) {
   const files = entries.map(({ file }) => file);
   return {
     owner_index: files.some((file) => {
-      const source = file.replace(/^docs\/ward-flow\/(?:archive\/dated-notes\/)?/u, "");
+      const source = file.replace(/^(?:docs\/ward-flow\/|docs\/history\/archive\/dated-notes\/)/u, "");
       return (
         file === "scripts/ward-flow/owner-rulings-index.mjs" ||
-        (file.startsWith("docs/ward-flow/") &&
+        ((file.startsWith("docs/ward-flow/") || file.startsWith("docs/history/archive/dated-notes/")) &&
           !source.includes("/") &&
           (source === "decisions.md" ||
             source === "OWNER-RULINGS.md" ||
@@ -111,7 +111,7 @@ export function documentChecks(entries) {
     }),
     rules_index: files.some(
       (file) =>
-        /^docs\/ward-flow\/(?:RULES\.md|lessons\/[^/]+\.md)$/u.test(file) ||
+        /^docs\/(?:ward-flow\/RULES\.md|history\/lessons\/[^/]+\.md)$/u.test(file) ||
         file === "scripts/ward-flow/rules-index.mjs",
     ),
     // A registry edit always runs the check, even one that narrows the roots this reads.

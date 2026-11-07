@@ -1,0 +1,46 @@
+name: Ward Flow scheduled-job keep-alive
+
+# GitHub switches off a public repository's scheduled workflows after 60 days without repository
+# activity, which would silently stop the daily release, uptime check and living-page reminder. Once a
+# week this re-enables every workflow in this folder that has a schedule (itself included), which
+# resets that 60-day clock. It leaves alone any workflow the owner switched off by hand. It reads
+# only the workflow files: no install, no provider and no secrets. Free GitHub-hosted runner.
+on:
+  schedule:
+    # Sundays 23:00 UTC = Mondays 7 am Perth.
+    - cron: "0 23 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+concurrency:
+  group: ward-workflow-keepalive
+  cancel-in-progress: false
+
+jobs:
+  keepalive:
+    name: Keep scheduled workflows on
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          sparse-checkout: .github/workflows
+      - name: Re-enable scheduled workflows
+        run: |
+          for file in $(grep -l '^  schedule:' .github/workflows/*.yml); do
+            name=$(basename "$file")
+            state=$(gh api "repos/$GH_REPO/actions/workflows/$name" --jq .state)
+            if [ "$state" = "disabled_manually" ]; then
+              echo "$name: switched off by hand, left alone."
+              continue
+            fi
+            gh api -X PUT "repos/$GH_REPO/actions/workflows/$name/enable"
+            echo "$name: was $state, enabled."
+          done

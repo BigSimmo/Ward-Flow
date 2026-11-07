@@ -22,7 +22,7 @@
 import { readFileSync, readdirSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
-const STORE = join(process.cwd(), "docs", "ward-flow", "lessons");
+const STORE = join(process.cwd(), "docs", "history", "lessons");
 const OUT = join(process.cwd(), "docs", "ward-flow", "RULES.md");
 
 /** Theme → keywords matched against name + description. Order matters: first match wins. */
@@ -120,7 +120,7 @@ function render(entries) {
     "> Imported branch, provider and model instructions do not govern present work.",
     "> The former machine-local index is retained in Git history; no private lessons are imported.",
     "",
-    `**${entries.length} historical lessons.** Generated only from the versioned \`docs/ward-flow/lessons\` copy.`,
+    `**${entries.length} historical lessons.** Generated only from the versioned \`docs/history/lessons\` copy.`,
     "",
     "⚠️ **A lesson naming a file, function or count can go stale exactly as any other claim does.**",
     "Re-derive before acting on one. This index proves the lessons EXIST, never that they are current.",

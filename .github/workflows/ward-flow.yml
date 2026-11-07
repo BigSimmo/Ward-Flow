@@ -166,6 +166,8 @@ jobs:
         env:
           WARD_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
         run: node scripts/doc-facts.mjs
+      - name: Warn about living pages that need a re-check
+        run: node scripts/check-living-docs-freshness.mjs --annotate
       - name: Check owner rulings index
         if: ${{ needs.plan.outputs.owner_index == 'true' }}
         run: node scripts/ward-flow/owner-rulings-index.mjs --check

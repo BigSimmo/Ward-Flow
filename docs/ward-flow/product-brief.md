@@ -108,7 +108,7 @@ journeys that matter most:
 ### 1. The outside reviews Josh has parked (hard prerequisites)
 
 Josh parked these before any real patient (owner answer OA-63,
-[`owner-answers-2026-09-17.md`](archive/dated-notes/owner-answers-2026-09-17.md)). They are not
+[`owner-answers-2026-09-17.md`](../history/archive/dated-notes/owner-answers-2026-09-17.md)). They are not
 started.
 
 1. **Medical device check with the TGA.** Whether Ward Flow counts as a medical device, and what

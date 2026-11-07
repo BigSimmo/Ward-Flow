@@ -196,7 +196,7 @@ export function answeredAddressingLabel(addressing: ReferralAddressing): string 
  * and the ED's cohort picker silently offered no way to raise a Youth referral even though
  * `Movement.cohort` (and the East Metropolitan Youth Unit, EMyU, at Bentley) both accept one. No
  * evidence was found that excluding Youth from the ED picker was a deliberate clinical decision —
- * nothing in `docs/ward-flow-phase-6-7-decisions.md` or this file says so — so the fix here is to
+ * nothing in `docs/history/ward-flow-phase-6-7-decisions.md` or this file says so — so the fix here is to
  * derive the picker from `COHORTS` directly (offering all three) rather than pin the omission
  * with a comment. If excluding Youth from the ED is ever a real decision, it belongs here as an
  * explicit, commented exclusion with a test pinning it — not as a stale hand-written array.

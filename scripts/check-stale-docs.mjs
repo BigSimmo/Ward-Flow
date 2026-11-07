@@ -36,8 +36,9 @@ const root = fileURLToPath(new URL("..", import.meta.url));
 // not a problem. Keep this list in sync with AGENTS.md's "immutable ledger" conventions.
 const EXCLUDED_PREFIXES = [
   // Ward Flow's records kept from PsychSift's retired issue and review systems (26 Sept 2026).
-  "docs/ward-flow/archive/psychsift-era-records/",
+  "docs/history/archive/psychsift-era-records/",
   "docs/archive/",
+  "docs/history/",
   "docs/adr/", // architecture decision records are intentionally frozen once accepted
   // A plan/spec with unchecked tasks is scaffolding, not debris — the same reason
   // scripts/check-dead-code-candidate.mjs refuses to call a symbol dead when a plan here

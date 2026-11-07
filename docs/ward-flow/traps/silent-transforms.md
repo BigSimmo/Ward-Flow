@@ -227,7 +227,7 @@ recommended refusing the coordinator there.
 
 **Eleven lines above the map is a comment saying the exemption is deliberate** — naming decision
 `CO-D2`, and the parallel that the coordinator may likewise cancel a transport it did not book.
-`CO-D2` is a real recorded ruling (`docs/ward-flow-ledger.md`, ~`:740`, 2026-08-30), not a comment
+`CO-D2` is a real recorded ruling (`docs/history/ward-flow-ledger.md`, ~`:740`, 2026-08-30), not a comment
 asserting one. The recommendation would have overturned a standing decision neither chat knew was
 there.
 

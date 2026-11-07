@@ -3,7 +3,7 @@
  * covers them, with an explicit review state on every answer.
  *
  * Sources: `docs/ward-flow-catchment-data.md` (the owner's five catchment documents, structured)
- * and `docs/ward-flow-referral-destination-spec.md` Parts 4, 5 and 6 (the requirements).
+ * and `docs/history/ward-flow-referral-destination-spec.md` Parts 4, 5 and 6 (the requirements).
  *
  * Four decisions are load-bearing and are all in the spec rather than invented here:
  *

@@ -103,7 +103,7 @@ describe("maintained document CI scope", () => {
   it.each([
     "docs/ward-flow/decisions.md",
     "docs/ward-flow/owner-decisions-2026-09-16.md",
-    "docs/ward-flow/archive/dated-notes/owner-questions-queued-2026-09-10.md",
+    "docs/history/archive/dated-notes/owner-questions-queued-2026-09-10.md",
     "docs/ward-flow/OWNER-RULINGS.md",
     "docs/ward-flow/additional-owner-ruling.md",
   ])("checks owner index for %s without application jobs", (file) => {
@@ -111,7 +111,7 @@ describe("maintained document CI scope", () => {
     expect(classifyChanges(entries(file))).toMatchObject({ unit: false, browser: false });
   });
   it("checks lesson inputs/outputs without rerunning app browsers", () => {
-    expect(documentChecks(entries("docs/ward-flow/lessons/example.md"))).toMatchObject({
+    expect(documentChecks(entries("docs/history/lessons/example.md"))).toMatchObject({
       rules_index: true,
       organisation: true,
     });
@@ -152,7 +152,7 @@ describe("maintained document CI scope", () => {
     expect(documentChecks(entries(file)).organisation).toBe(true);
   });
   it.each([
-    "docs/ward-flow/lessons/nested/example.md",
+    "docs/history/lessons/nested/example.md",
     "src/components/ward-management/board/ward-board.tsx",
     "scripts/ward-flow/organisation/core.mjs",
     "design/v9/notes/board.png",

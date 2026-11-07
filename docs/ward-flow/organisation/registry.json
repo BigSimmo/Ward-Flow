@@ -20,6 +20,7 @@
     "src/app/mockups/ward-flow-digest/**",
     "design/**",
     "docs/ward-flow/**",
+    "docs/history/**",
     "docs/ward-*.md",
     "docs/superpowers/plans/*ward-*",
     "docs/superpowers/specs/*ward-*",
@@ -86,14 +87,7 @@
       "extensions": [".json", ".yaml", ".yml"]
     }
   ],
-  "denials": [
-    "**/private/**",
-    "**/sensitive/**",
-    "**/*.secret.*",
-    "docs/ward-flow/lessons/**",
-    "**/*.tsv",
-    "**/*.jsonl"
-  ],
+  "denials": ["**/private/**", "**/sensitive/**", "**/*.secret.*", "docs/history/lessons/**", "**/*.tsv", "**/*.jsonl"],
   "rules": [
     {
       "id": "ward-modules",
@@ -204,6 +198,16 @@
       "module": "documentation",
       "reference": "docs/ward-flow-task-ledger.md",
       "reviewedBy": "Codex C1 source-boundary review, 2026-09-22"
+    },
+    {
+      "id": "ward-docs-history",
+      "pattern": "docs/history/**",
+      "priority": 0,
+      "owner": "ward-flow",
+      "system": "documentation-knowledge",
+      "module": "documentation",
+      "reference": "docs/history/README.md",
+      "reviewedBy": "Documentation history move, 2026-11-08"
     },
     {
       "id": "ward-doc-siblings",
