@@ -12,6 +12,8 @@ describe("the prototype footer (DA-33)", () => {
     expect(footer).toHaveTextContent("Ward Flow prototype · Synthetic data only");
     expect(footer.outerHTML).not.toContain("WA Health");
     expect(footer).toHaveTextContent("Not approved for clinical use");
+    expect(footer).toHaveTextContent("Demo board clock");
+    expect(footer).toHaveTextContent("scenario set on");
   });
 
   it("keeps configurable content and attributes live while preserving the disclosure", () => {

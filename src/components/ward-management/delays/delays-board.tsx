@@ -746,16 +746,17 @@ export function DelaysBoard({
               type="button"
               className={styles.gin}
               aria-expanded={open}
-              aria-label={`${band.title}, ${list.length} ${list.length === 1 ? "person" : "people"}${includes ? `, ${includes}` : ", all in an ED"}, ${open ? band.note : "folded"}`}
+              // CB-3 (axe 4.14 label-content-name-mismatch): the band's visible words first, in order,
+              // then how many people that is and whether all are in an ED.
+              aria-label={`${band.title}, ${list.length}${includes && !isPhone ? `, ${includes}` : ""}, ${open ? (isPhone && includes) || band.note : "folded"}. ${list.length} ${list.length === 1 ? "person" : "people"}${includes ? "" : ", all in an ED"}`}
               onClick={() => setBandOpen((current) => ({ ...current, [band.id]: !open }))}
               data-testid={`delays-band-${band.id}`}
             >
               <ChevronDown size={14} aria-hidden="true" className={open ? undefined : styles.folded} />
               <Glyph tone={band.tone} />
-              <span className={styles.gTitle}>{band.title}</span>
-              <span className={styles.k}>{list.length}</span>
+              <span className={styles.gTitle}>{band.title}</span> <span className={styles.k}>{list.length}</span>{" "}
               {includes && !isPhone ? <span className={styles.mut}>{includes}</span> : null}
-              <span className={styles.sp} />
+              <span className={styles.sp} />{" "}
               <span className={styles.mut}>{open ? (isPhone && includes) || band.note : "folded"}</span>
             </button>
           </td>
@@ -1079,16 +1080,12 @@ export function DelaysBoard({
               : "Waiting"
         }
         title={heroTitle}
+        // The footer carries the synthetic notice on every width; the phone hero no longer repeats it
+        // (design audit A36, 5 Nov 2026).
         titleMeta={
-          isPhone ? (
-            <>
-              Prototype data, invented records · <b>{breached}</b> {formsPast}
-            </>
-          ) : (
-            <>
-              <b>{breached}</b> {formsPast}
-            </>
-          )
+          <>
+            <b>{breached}</b> {formsPast}
+          </>
         }
         testId="delays-hero"
         className={styles.delaysHero}
@@ -1210,7 +1207,7 @@ export function DelaysBoard({
               tabIndex={-1}
             >
               <div className={`${styles.chead} ${wardPin.pinnedSwitch} ${polish.tableHead}`}>
-                <h2>{flat ? "Waiting" : "Waiting by blocker"}</h2>
+                <h2>{flat ? "Waiting" : "Waiting by reason"}</h2>
                 <span
                   className={styles.meta}
                   data-testid="delays-shown-count"
@@ -1245,7 +1242,6 @@ export function DelaysBoard({
                   <PhoneFilterFold
                     count={filterCount}
                     title="Filter the list"
-                    description="Filters narrow the list. The list says how many they hide."
                     className={styles.phoneFold}
                     data-testid="delays-filter-fold"
                   >
@@ -1298,7 +1294,7 @@ export function DelaysBoard({
                         <abbr title="Urgency tier">T</abbr>
                       </th>
                       <th scope="col" role="columnheader">
-                        {flat ? "Blocker" : "Wards"}
+                        {flat ? "Held up by" : "Wards"}
                       </th>
                       <th scope="col" role="columnheader">
                         Legal
@@ -1415,7 +1411,6 @@ export function DelaysBoard({
                 open={phoneSheet === "spread"}
                 onClose={() => setPhoneSheet(null)}
                 title="Wait spread and the hours ahead"
-                description="Dots and columns follow the same filters as the list"
                 height="tall"
               >
                 <DelaysBoardGraphs

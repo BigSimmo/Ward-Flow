@@ -415,7 +415,8 @@ export class SharedWorkspaceClient {
   }
   /** Reads the archive again when the server's count for it changed, then shows it. */
   private async readArchive(count: number) {
-    if (this.archiveAsked === count || this.disposed) return;
+    if (this.archiveAsked === count || this.disposed || !this.rawPayload) return;
+    const generation = this.rawPayload.state.worldGeneration;
     this.archiveAsked = count;
     const epoch = this.archiveEpoch;
     const accessContext = this.view.snapshot?.accessContext;
@@ -436,7 +437,9 @@ export class SharedWorkspaceClient {
           epoch !== this.archiveEpoch ||
           !held ||
           held.accessContext !== accessContext ||
+          held.payload.state.worldGeneration !== generation ||
           !this.rawPayload ||
+          this.rawPayload.state.worldGeneration !== generation ||
           !response.ok
         )
           return null;
@@ -466,7 +469,7 @@ export class SharedWorkspaceClient {
           : null;
       const archive = {
         count,
-        generation: this.rawPayload.state.worldGeneration,
+        generation,
         accessContext,
         records,
         held: folded.held,
@@ -570,9 +573,10 @@ export class SharedWorkspaceClient {
     }
     const held = this.view.snapshot;
     if (snapshot.revision >= (held?.revision ?? 0)) {
-      if (held && snapshot.payload.state.worldGeneration !== held.payload.state.worldGeneration) this.worldEpoch++;
-      // Cached and in-flight archive rows belong to the access view that requested them.
-      if (held && snapshot.accessContext !== held.accessContext) {
+      const generationChanged = held && snapshot.payload.state.worldGeneration !== held.payload.state.worldGeneration;
+      if (generationChanged) this.worldEpoch++;
+      // Cached and in-flight archive rows belong to the access view and world that requested them.
+      if (held && (snapshot.accessContext !== held.accessContext || generationChanged)) {
         this.archive = null;
         this.archiveAsked = null;
         this.archiveEpoch++;
@@ -836,10 +840,11 @@ export class SharedWorkspaceClient {
     }
     return { response, value };
   }
-  async refresh() {
+  async refresh(): Promise<"skipped" | void> {
     // Audit 4 A4-03: a save waiting on Retry does not stop the board being read: reads change
     // nothing. Held saves go once a read succeeds; the server still refuses a stale one (CS-19).
-    if (this.busy || this.disposed || this.gated()) return;
+    if (this.busy) return "skipped" as const; // SD-04: a save or read in flight is not a failed read
+    if (this.disposed || this.gated()) return;
     this.busy = true;
     let resend = false;
     const poll = (this.pollAbort = new AbortController());

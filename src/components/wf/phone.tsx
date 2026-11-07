@@ -407,6 +407,7 @@ export function PhoneListRow({
   const content = (
     <>
       {present(leading) ? <span className={styles.rowLeading}>{leading}</span> : null}
+      {present(leading) ? " " : null}
       <span className={styles.rowText}>
         <span className={styles.rowName}>{name}</span>
         {present(meta) ? (
@@ -593,7 +594,7 @@ export function PhoneHero({
           {shown.map((figure) => {
             const content = (
               <>
-                <span className={styles.heroValue}>{figure.value}</span>
+                <span className={styles.heroValue}>{figure.value}</span>{" "}
                 <span className={styles.heroLabel}>
                   {figure.tone ? <StatusGlyph tone={figure.tone} size={10} /> : null}
                   <span className={styles.heroLabelText}>{figure.label}</span>

@@ -113,6 +113,8 @@ describe("Alerts redesign: the coordinator's page", () => {
 
   it("names its one action row Hand back after Take, beside More actions", () => {
     renderAs({ role: "coordinator", scope: { kind: "statewide" } });
+    // Drawer review (6 Nov 2026): the alert opens in the kit drawer once a row is chosen.
+    fireEvent.click(screen.getAllByTestId("ward-alerts-open")[0]!);
     const take = within(panel()).queryByRole("button", { name: /^Take / });
     if (take) fireEvent.click(take);
     expect(within(panel()).getByRole("button", { name: /^Hand back / })).toHaveTextContent("Hand back");
@@ -127,7 +129,9 @@ describe("Alerts redesign: nurse in charge (ROLE BRANCH ward)", () => {
     renderAs({ role: "ward", scope: { kind: "ward", unitIds: [ward.id] } }, { quiet: true });
     expect(screen.getByRole("heading", { level: 1, name: `No alert for ${ward.name}` })).toBeInTheDocument();
     // Q184: one calm empty state in place of the two empty groups.
-    expect(screen.getByTestId("ward-alerts-nothing")).toHaveTextContent(`Nothing is late or blocked for ${ward.name}.`);
+    expect(screen.getByTestId("ward-alerts-nothing")).toHaveTextContent(
+      `No late or blocked network alerts for ${ward.name}.`,
+    );
     const checked = screen.getByRole("region", { name: `Checked for ${ward.name}` });
     expect(within(checked).getByRole("list", { name: "Conditions checked" })).toBeInTheDocument();
     // The checks show once: not also as the hero's chip.
@@ -152,7 +156,8 @@ describe("Alerts redesign: nurse in charge (ROLE BRANCH ward)", () => {
     renderAs({ role: "coordinator", scope: { kind: "statewide" } }, { quiet: true });
     expect(screen.getByRole("heading", { level: 1, name: "No alert needs you" })).toBeInTheDocument();
     expect(screen.getByTestId("ward-alerts-nothing")).toHaveTextContent("Nothing is late or blocked for Statewide.");
-    expect(screen.getByText("Pick an alert to see it here")).toBeInTheDocument();
+    // Drawer review (6 Nov 2026): no side rail, so no "Pick an alert" placeholder beside the queue.
+    expect(screen.queryByText("Pick an alert to see it here")).not.toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Today" })).toBeInTheDocument();
   });
 
@@ -194,6 +199,8 @@ describe("Alerts redesign: nurse in charge (ROLE BRANCH ward)", () => {
 describe("Alerts redesign: transport officer (ROLE BRANCH officer)", () => {
   it("opens the officer's jobs from each alert, with the coordinator's actions left out", () => {
     renderAs({ role: "officer", scope: { kind: "jobs" } });
+    // Drawer review (6 Nov 2026): the alert opens in the kit drawer once a row is chosen.
+    fireEvent.click(screen.getAllByTestId("ward-alerts-open")[0]!);
     const detail = panel();
     expect(within(detail).getByRole("link", { name: "Open my jobs" })).toHaveAttribute("href", officerHref());
     expect(within(detail).queryByRole("link", { name: /^Patient/u })).not.toBeInTheDocument();

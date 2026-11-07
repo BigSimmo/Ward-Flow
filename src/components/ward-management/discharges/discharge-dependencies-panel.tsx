@@ -9,7 +9,7 @@ import { useWardFormSave } from "../use-ward-form-save";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 import { wardRaise } from "@/components/ward-management/ward-flow-raise";
 import type { BedRelease } from "@/components/ward-management/ward-model";
-import { Badge, Button, Select } from "@/components/wf";
+import { Badge, Button, Select, TimeField } from "@/components/wf";
 import {
   DEFAULT_DEPENDENCY_OWNER,
   DISCHARGE_DEPENDENCY_KINDS,
@@ -240,13 +240,12 @@ export function DischargeDependenciesPanel({
             </label>
             <label>
               Time
-              <input
+              <TimeField
                 disabled={save.pending}
-                className={styles.time}
-                type="time"
+                boxClassName={styles.time}
                 aria-label="Time (hh:mm)"
                 value={time}
-                onChange={(event) => setTime(event.target.value)}
+                onValueChange={setTime}
               />
             </label>
             <Button size="sm" disabled={save.pending || !/^\d{2}:\d{2}$/.test(time)} onClick={changeTime}>

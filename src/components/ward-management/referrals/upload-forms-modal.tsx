@@ -1,7 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
-import { FileUp, FileText, CheckCircle2, X } from "lucide-react";
+import { FileUp, FileText, CircleCheck, X } from "lucide-react";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { Button, DisabledReason } from "@/components/wf";
 import { type Movement } from "@/components/ward-management/ward-model";
@@ -133,7 +133,7 @@ function UploadFormsDialog({ onClose, movement, role = "ward" }: UploadFormsModa
               gap: "0.5rem",
             }}
           >
-            <CheckCircle2
+            <CircleCheck
               aria-hidden="true"
               size={18}
               style={{ color: "var(--wf-success)", marginTop: "2px", flexShrink: 0 }}

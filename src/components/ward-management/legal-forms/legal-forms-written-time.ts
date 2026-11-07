@@ -2,6 +2,8 @@ import type { Instant } from "@/components/ward-management/ward-clock";
 import type { LegalClockAgeBand, LegalClockRegion } from "@/components/ward-management/ward-legal-clock";
 import type { LegalForm } from "@/components/ward-management/ward-model";
 
+import { WRITTEN_LATER_THAN_NOW } from "@/components/ward-management/ward-legal-form-time-order";
+
 import { instantFromDateAndTimeInputs } from "./legal-forms-view";
 
 /**
@@ -52,7 +54,7 @@ export function writtenTimeCheck(
     typedWrittenAt === undefined
       ? "Enter the time written on the form"
       : writtenLater
-        ? "The time written cannot be later than now"
+        ? WRITTEN_LATER_THAN_NOW
         : undefined;
   return { typedWrittenAt, writtenLater, writtenProblem };
 }

@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { NextRequest } from "next/server";
-import { movedRouteTarget, proxy, shouldBlockProductionMockups } from "../src/proxy";
+import { hasMalformedWardFlowEncoding, movedRouteTarget, proxy, shouldBlockProductionMockups } from "../src/proxy";
 import { DEVELOPER_GATED_PATH_PREFIXES } from "@/lib/developer-area/headers";
 
 // The proxy owns the per-request nonce CSP (see src/proxy.ts). CI's verify:ui
@@ -277,5 +277,27 @@ describe("developer-gated area comments name the constant instead of counting (L
       expect(source).not.toMatch(/\btwo (?:prototypes|developer-gated|subtrees)/i);
       expect(source).not.toMatch(/\bthe two (?:subtrees|prefixes)\b/i);
     }
+  });
+});
+
+// F3 (frontend audit, 5 Nov 2026; A1K-05, H-0195): Next fails decoding a bad percent-encoding in a
+// dynamic segment before the page runs, so the proxy answers a real 404 first.
+describe("proxy malformed Ward Flow addresses", () => {
+  it("rewrites a bad percent-encoding to the not-found page with a 404 status", async () => {
+    for (const path of ["/ward-flow/people/%E0%A4", "/ward-flow/movements/WF-%E0%A4%A", "/ward-flow/board/%ZZ"]) {
+      const res = await proxy(requestFor(path));
+      expect(res.status).toBe(404);
+      expect(res.headers.get("x-middleware-rewrite")).toContain("/ward-flow-malformed-address");
+      expect(res.headers.get("content-security-policy")).toContain("default-src 'self'");
+    }
+  });
+
+  it("lets a well-formed address through, even an unknown id", async () => {
+    for (const path of ["/ward-flow/people/nope", "/ward-flow/people/PT-004", "/ward-flow/movements/WF-%41"]) {
+      const res = await proxy(requestFor(path));
+      expect(res.status).toBe(200);
+      expect(res.headers.get("x-middleware-rewrite")).toBeNull();
+    }
+    expect(hasMalformedWardFlowEncoding("/other/%E0%A4")).toBe(false);
   });
 });

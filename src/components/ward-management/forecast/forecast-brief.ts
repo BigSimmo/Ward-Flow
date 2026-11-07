@@ -47,7 +47,7 @@ function edRisk(risk: EdAccessRisk, edName: (edId: string) => string): string {
   if (!first || first.atRisk === 0) {
     return risk.alreadyOver > 0
       ? `${risk.alreadyOver} ${risk.alreadyOver === 1 ? "person has" : "people have"} already passed ${target} in ED.`
-      : `No one in ED will pass ${target} in the next day on what is recorded.`;
+      : `Nobody in ED will pass ${target} in the next day on what is recorded.`;
   }
   const people = first.atRisk === 1 ? "1 person" : `${first.atRisk} people`;
   const verb = first.atRisk === 1 ? "passes" : "pass";
@@ -65,7 +65,7 @@ function bestAction(levers: readonly ForecastLever[]): string {
     case "confirm_dates":
       return `Ask ${top.wards.length} ${top.wards.length === 1 ? "ward" : "wards"} to confirm tomorrow's discharges. ${upTo}`;
     case "clear_held_up":
-      return `Clear held-up releases, starting with ${reasonWord(top.reasons[0]!.reason)}. ${upTo}`;
+      return `Clear held-up discharges, starting with ${reasonWord(top.reasons[0]!.reason)}. ${upTo}`;
     case "review_overdue":
       return `Check ${top.beds} overdue ${top.beds === 1 ? "release" : "releases"} with wards. It widens the range only.`;
   }

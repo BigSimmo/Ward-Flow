@@ -33,9 +33,11 @@
   stroke-width: 1;
 }
 
+/* Axes in Geist with tabular digits (DESIGN-SYSTEM §4 Charts; mono is for figures). */
 .axis {
   fill: var(--wf-ink-3);
-  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+  font: 500 var(--wf-fs-12) / 1 var(--wf-font);
+  font-variant-numeric: tabular-nums;
 }
 
 .name {

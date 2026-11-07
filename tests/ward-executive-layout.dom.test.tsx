@@ -59,6 +59,13 @@ import { setForceDynamicLoading } from "./setup/jsdom.setup";
 import { ExecutiveStatisticsLivePreviewProvider } from "../src/components/ward-management/statistics/executive-statistics-context";
 import { WardExecutiveChromeMount } from "../src/components/ward-management/shell/ward-workspace-host";
 import { TOUR_SEEN_STORAGE_KEY } from "../src/components/ward-management/help/ward-help-store";
+
+/** Below two panes a tool opens as its own page (Josh, 6 Nov 2026): go back to the list, then open the row. */
+function openToolRow(tools: HTMLElement, id: string) {
+  const back = within(tools).queryByRole("button", { name: "All tools" });
+  if (back) fireEvent.click(back);
+  fireEvent.click(within(tools).getByTestId(`ward-tools-toggle-${id}`));
+}
 let report: ExecutiveReportingFoundation;
 beforeAll(() => {
   const source = seedWardFlowState();
@@ -241,7 +248,7 @@ describe("the real layout's authenticated executive branch", () => {
     // Tools overhaul (2 Nov 2026): the executive desk's rows are Key figures, Find a bed, On-call,
     // Suburb lookup, Form times and Messages (link rows follow the desk's page access). Suggested chips repeat some
     // names, so each row is opened by its own toggle.
-    fireEvent.click(within(tools).getByTestId("ward-tools-toggle-bed-finder"));
+    openToolRow(tools, "bed-finder");
     const finder = screen.getByTestId("ward-tools-bed-finder");
     fireEvent.click(
       within(within(finder).getByRole("radiogroup", { name: "Legal status" })).getByRole("radio", {
@@ -249,16 +256,16 @@ describe("the real layout's authenticated executive branch", () => {
       }),
     );
     expect(within(finder).getByRole("list", { name: "Ready beds by ward" })).toBeInTheDocument();
-    fireEvent.click(within(tools).getByTestId("ward-tools-toggle-figures"));
+    openToolRow(tools, "figures");
     expect(screen.getByTestId("ward-stats-drawer-content")).toBeInTheDocument();
-    fireEvent.click(within(tools).getByTestId("ward-tools-toggle-contacts"));
+    openToolRow(tools, "contacts");
     expect(within(tools).getByRole("button", { name: "Contact list: Key lines" })).toBeInTheDocument();
-    fireEvent.click(within(tools).getByTestId("ward-tools-toggle-messages"));
+    openToolRow(tools, "messages");
     expect(screen.getByTestId("ward-tools-messages")).toHaveTextContent("synthetic prototype");
-    fireEvent.click(within(tools).getByTestId("ward-tools-toggle-catchment"));
+    openToolRow(tools, "catchment");
     expect(await within(tools).findByTestId("suburb-lookup-card")).toBeInTheDocument();
-    fireEvent.click(within(tools).getByTestId("ward-tools-toggle-form-times"));
-    expect(within(tools).getByTestId("ward-tools-toggle-form-times")).toHaveAttribute("aria-expanded", "true");
+    openToolRow(tools, "form-times");
+    expect(within(tools).getByTestId("ward-tools-page")).toHaveAttribute("aria-label", "Form times");
     // Remind me, Due back and the demo row read the live World, so the executive desktop has none.
     expect(within(tools).queryByTestId("ward-tools-toggle-remind")).toBeNull();
     expect(within(tools).queryByTestId("ward-tools-toggle-leave-due")).toBeNull();

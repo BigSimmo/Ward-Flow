@@ -90,7 +90,7 @@ describe("Top 25 item 14: admission arrival checklist", () => {
     const card = screen.getByTestId("ward-ed-admission-checklist");
     expect(within(card).getByText("Arrival checklist, 1 of 5 recorded")).toBeTruthy();
     expect(within(card).queryByText(/not wired/i)).toBeNull();
-    fireEvent.click(within(card).getByRole("button", { name: "Record contraband search done" }));
+    fireEvent.click(within(card).getByRole("button", { name: "Record done: contraband search" }));
     expect(raise).toHaveBeenCalledWith(
       expect.objectContaining({
         type: "RECORD_ARRIVAL_CHECK",

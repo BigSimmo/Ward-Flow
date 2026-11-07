@@ -66,7 +66,7 @@ export function WardMovementNotFound({
               list={{ href: "/ward-flow/search", label: "All patients" }}
               search={reason === "no-such-umrn" ? searchLink : null}
             >
-              {reason === "no-such-umrn" ? `No one with UMRN ${requestedId}.` : "No patient matches this link."}
+              {reason === "no-such-umrn" ? `Nobody with UMRN ${requestedId}.` : "No patient matches this link."}
             </WardNotFoundBody>
           ) : (
             <WardNotFoundBody

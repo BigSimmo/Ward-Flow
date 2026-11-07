@@ -451,7 +451,7 @@ function statusFor(
     });
     if (lapsed && hold) {
       status.tone = "danger";
-      status.verdict = "Bed pull expired";
+      status.verdict = "Pull expired, bed still pulled";
       status.meta = `${hold.label}. Move or release the bed.`;
     } else if (ctx.handoverRefusal) {
       // The engine refuses the next forward step, so the three gates are not the whole answer.

@@ -1,3 +1,4 @@
+import { perthClockTime } from "@/components/ward-management/ward-clock";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import type { UndoToastApi as ToastApi } from "@/components/ward-management/use-undoable-step";
 
@@ -6,8 +7,8 @@ import type { UndoToastApi as ToastApi } from "@/components/ward-management/use-
  * drafts are listed (Settings > Drafts). Q392 keeps drafts in this tab only; this does not change that.
  */
 export function noticeDraftKept(toast: ToastApi | null, kept: boolean, at: Date = new Date()): string {
-  const time = at.toLocaleTimeString("en-AU", { hour: "2-digit", minute: "2-digit", hour12: false });
-  const line = kept ? `Draft saved at ${time}` : "Draft not kept: signed in again.";
+  // Perth clock, as the board reads, whatever the device's zone (CL-2, 5 Nov 2026).
+  const line = kept ? `Draft saved at ${perthClockTime(at)}` : "Draft not kept: signed in again.";
   if (kept)
     toast?.push({
       tone: "success",

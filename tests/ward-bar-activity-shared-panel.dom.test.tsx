@@ -15,7 +15,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
 import { openActivityPanel } from "@/components/ward-management/shell/ward-activity-panel-store";
 import { WardLiveRegion, resetWardLiveRegionForTests } from "@/components/ward-management/shell/ward-live-region";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";

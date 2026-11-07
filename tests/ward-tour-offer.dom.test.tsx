@@ -21,9 +21,12 @@ vi.mock("@/components/ward-management/help/ward-help-store", async (importOrigin
 import { TOUR_AUTO_DONE_STORAGE_KEY, WardTourAutoStart } from "@/components/ward-management/help/ward-tour-auto-start";
 import { resetTourSeenForTests } from "@/components/ward-management/help/ward-help-store";
 
-/** P188: the tour is offered first; this presses "Start the tour" on the card. */
+/** P188: the tour is offered first; this reads the three welcome cards and presses "Start the tour". */
 async function startFromOffer() {
-  fireEvent.click(await screen.findByRole("button", { name: "Start the tour" }));
+  await screen.findByTestId("ward-tour-offer");
+  fireEvent.click(screen.getByTestId("ward-tour-welcome-next"));
+  fireEvent.click(screen.getByTestId("ward-tour-welcome-next"));
+  fireEvent.click(screen.getByRole("button", { name: "Start the tour" }));
 }
 
 const settle = () => new Promise((resolve) => setTimeout(resolve, 700));
@@ -39,10 +42,14 @@ describe("P188: the tour is offered, not forced", () => {
     const onStart = vi.fn();
     render(<WardTourAutoStart onStart={onStart} />);
     const card = await screen.findByTestId("ward-tour-offer");
+    // Nov 2026: three welcome cards come first; the last offers the tour.
+    expect(card.textContent).toMatch(/^Welcome to Ward Flow/u);
+    fireEvent.click(screen.getByTestId("ward-tour-welcome-next"));
+    fireEvent.click(screen.getByTestId("ward-tour-welcome-next"));
     // The time follows the desk's tour length on this device (2 Nov 2026), as the first step says.
-    expect(card.textContent).toMatch(
-      /^Want a quick tour\? It takes about (a minute|\d+ minutes)\.Start the tourNot now$/,
-    );
+    expect(card.textContent).toMatch(/The tour takes about (a minute|\d+ minutes), and you can stop at any step\./u);
+    expect(screen.getByRole("button", { name: "Start the tour" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Not now" })).toBeTruthy();
     await settle();
     expect(onStart).not.toHaveBeenCalled();
   });

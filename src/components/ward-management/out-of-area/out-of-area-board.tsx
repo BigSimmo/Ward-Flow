@@ -5,30 +5,29 @@ import { wardRaise } from "../ward-flow-raise";
 import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 
-import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Copy, Download, Map as MapIcon, Route, Search, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, Download, Map as MapIcon, Route, Search } from "lucide-react";
 
 import {
   Button,
   Card,
   CardFoot,
   CheckingFoot,
-  Drawer,
   EmptyState,
   Hero,
   LiveChip,
+  PanelDrawer,
   Segmented,
   SrOnly,
   StatusGlyph,
+  StatusPill,
   Tabs,
   TextInput,
   cx,
   tableClasses,
   type WfTone,
   useIsPhone,
-  useIsTabletPortrait,
 } from "@/components/wf";
 import { daysInBed, type Admission } from "@/components/ward-management/ward-admissions";
 import {
@@ -76,10 +75,18 @@ import {
   type RepatDraft,
   type ReturnStatus,
   currentReturnMovement,
+  DEPART_TIME_NOT_RECORDED,
 } from "./out-of-area-model";
 import { OutOfAreaPhone, type PhonePerson } from "./out-of-area-phone";
 import { returnEarlyFlagOf } from "./return-early";
-import { ReturnPlan, TravelIcon, canSendReturnPlan, whoseMove, type PlanPatient } from "./out-of-area-return-plan";
+import {
+  ReturnPlan,
+  ReturnPlanActions,
+  TravelIcon,
+  canSendReturnPlan,
+  whoseMove,
+  type PlanPatient,
+} from "./out-of-area-return-plan";
 import { HomeBedsCard, ReadyCard, ShiftCard, type ReadyRow, type ShiftReturnRow } from "./out-of-area-side";
 import styles from "./out-of-area-board.module.css";
 import { isOnOrder, stayLegalShort, stayLegalStatus } from "@/components/ward-management/ward-stay-legal";
@@ -88,6 +95,7 @@ import { instantFromEstimatedTimeInputs } from "@/components/ward-management/war
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { useAddressTab } from "@/components/ward-management/ward-url-state";
 import { plural } from "@/components/ward-management/ward-plural";
+import { compareFormalNames } from "@/components/ward-management/ward-name-collation";
 
 /**
  * Phase 8, Task 5 (spec D8-3): the out-of-area ledger — how many people are currently in a bed a
@@ -127,11 +135,20 @@ function getPatientProfileHref(info: ResolvedPatientInfo): string | null {
 type SortOrder = "ledger" | "days" | "patient";
 type HighlightKey = "due" | "air" | "road" | "noplan" | "notagreed" | "bed" | `age:${DaysAwayGroupId}`;
 
+// Design audit 4 (B21): no plan yet is a gap (the ring), not declined or closed (the cross).
 const STATUS_TONE: Record<ReturnStatus, WfTone> = {
-  none: "closed",
+  none: "neutral",
   started: "neutral",
   not_agreed: "neutral",
   agreed: "neutral",
+};
+
+/** Drawer review (6 Nov 2026): the return plan's tag carries the tone; the panel's borders stay neutral. */
+const STATUS_TAG_TONE: Record<ReturnStatus, WfTone> = {
+  none: "neutral",
+  started: "info",
+  not_agreed: "warning",
+  agreed: "success",
 };
 
 function isTyping(target: EventTarget | null): boolean {
@@ -165,7 +182,6 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   );
   const now = useWardFlowClock();
   const isPhone = useIsPhone();
-  const isTabletPortrait = useIsTabletPortrait();
   const repatriations: RepatriationRecord[] = liveRepatriations ?? [];
 
   const { entries, notBanded } = outOfAreaLedger(admissions ?? liveAdmissions, units, now);
@@ -213,7 +229,6 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   const [tab, setTab] = useAddressTab("tab", OUT_OF_AREA_TABS, "now");
 
   const selectionOriginRef = useRef<HTMLElement | null>(null);
-  const detailColumnRef = useRef<HTMLDivElement | null>(null);
   const searchRef = useRef<HTMLInputElement | null>(null);
 
   const people = new Map<string, ResolvedPatientInfo>(
@@ -243,7 +258,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   if (sortOrder === "days") sorted.sort((a, b) => daysAway(b, now) - daysAway(a, now));
   if (sortOrder === "patient") {
     // D-83: the Name order sorts by surname, so it reads the record's formal (surname-first) name.
-    sorted.sort((a, b) => patientOf(a).formalName.localeCompare(patientOf(b).formalName, "en-AU"));
+    sorted.sort((a, b) => compareFormalNames(patientOf(a).formalName, patientOf(b).formalName));
   }
 
   const selected = selectedId ? entries.find((entry) => entry.admission.id === selectedId) : undefined;
@@ -326,15 +341,6 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   };
 
   useEffect(() => {
-    if (selectedId === null || isPhone || isTabletPortrait) return;
-    if (typeof window.matchMedia !== "function" || !window.matchMedia("(max-width: 1000px)").matches) return;
-    const frame = window.requestAnimationFrame(() => {
-      detailColumnRef.current?.scrollIntoView({ behavior: wardScrollBehavior(), block: "start" });
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [selectedId, isPhone, isTabletPortrait]);
-
-  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && selectedId !== null) {
         setSelectedId(null);
@@ -385,13 +391,12 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   function recordReturn(entry: OutOfAreaEntry) {
     const admissionId = entry.admission.id;
     const draft = draftFor(admissionId);
-    if (missingAnswers(draft, now).length > 0) return;
+    if (missingAnswers(draft).length > 0) return;
+    // W13 (Josh's card 3, 5 Nov 2026): the provider and depart time may be absent; they warn.
     const estimatedAt = instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now);
     if (
-      estimatedAt === undefined ||
       draft.receivingWardAgreed === undefined ||
       (draft.mode !== "road" && draft.mode !== "flight") ||
-      draft.provider === undefined ||
       draft.transportLegalStatus === undefined
     ) {
       return;
@@ -410,10 +415,10 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         homeHospital: draft.homeHospital,
         receivingWardAgreed: draft.receivingWardAgreed,
         mode: draft.mode,
-        provider: draft.provider,
+        ...(draft.provider === undefined ? {} : { provider: draft.provider }),
         cadNumber: draft.cadNumber.trim(),
         transportLegalStatus: draft.transportLegalStatus,
-        estimatedAt,
+        ...(estimatedAt === undefined ? {} : { estimatedAt }),
         ...involuntaryReturnAnswers(draft),
       },
       {
@@ -427,14 +432,9 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   function sendPlanToWard(entry: OutOfAreaEntry) {
     const admissionId = entry.admission.id;
     const draft = draftFor(admissionId);
-    if (!canSendReturnPlan(draft, now)) return;
+    if (!canSendReturnPlan(draft)) return;
     const estimatedAt = instantFromEstimatedTimeInputs(draft.estimatedTime, draft.estimatedDay, now);
-    if (
-      estimatedAt === undefined ||
-      (draft.mode !== "road" && draft.mode !== "flight") ||
-      draft.provider === undefined ||
-      draft.transportLegalStatus === undefined
-    ) {
+    if ((draft.mode !== "road" && draft.mode !== "flight") || draft.transportLegalStatus === undefined) {
       return;
     }
     const targetHospitalName = siteByCode(draft.homeHospital)?.name ?? draft.homeHospital;
@@ -454,10 +454,10 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         homeHospital: draft.homeHospital,
         receivingWardAgreed: wardAgreed,
         mode: draft.mode,
-        provider: draft.provider,
+        ...(draft.provider === undefined ? {} : { provider: draft.provider }),
         cadNumber: draft.cadNumber.trim(),
         transportLegalStatus: draft.transportLegalStatus,
-        estimatedAt,
+        ...(estimatedAt === undefined ? {} : { estimatedAt }),
         ...involuntaryReturnAnswers(draft),
       },
       {
@@ -483,11 +483,11 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
         homeHospital: existing.homeHospital,
         receivingWardAgreed: true,
         mode: existing.mode,
-        provider: existing.provider,
+        ...(existing.provider === undefined ? {} : { provider: existing.provider }),
         cadNumber: existing.cadNumber,
         transportLegalStatus: existing.transportLegalStatus,
         // The recorded departure estimate stands; agreeing the return never moves it.
-        estimatedAt: existing.estimatedAt,
+        ...(existing.estimatedAt === undefined ? {} : { estimatedAt: existing.estimatedAt }),
         // #177: the plan's Form 4C and escort answers stand too.
         ...(existing.form4CReceived === undefined ? {} : { form4CReceived: existing.form4CReceived }),
         ...(existing.escortRequired === undefined ? {} : { escortRequired: existing.escortRequired }),
@@ -539,7 +539,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     };
   };
 
-  const renderPlan = (entry: OutOfAreaEntry, header: ReactNode | undefined, idPrefix: string) => (
+  const renderPlan = (entry: OutOfAreaEntry, header: ReactNode | undefined, idPrefix: string, showActions = true) => (
     <ReturnPlan
       entry={entry}
       patient={planPatient(entry)}
@@ -567,6 +567,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       onUndoFlagEarly={() => undoFlagEarly(entry)}
       header={header}
       idPrefix={idPrefix}
+      showActions={showActions}
     />
   );
 
@@ -629,16 +630,18 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
       return { record, entry };
     })
     .filter((row): row is { record: RepatriationRecord; entry: OutOfAreaEntry } => row.entry !== undefined)
-    .sort((a, b) => a.record.estimatedAt - b.record.estimatedAt)
+    .sort((a, b) => (a.record.estimatedAt ?? Infinity) - (b.record.estimatedAt ?? Infinity))
     .map(({ record, entry }) => ({
       id: entry.admission.id,
       name: patientOf(entry).formalName,
       to: shortSiteName(record.homeHospital),
       mode: record.mode === "road" ? "Road" : "Flight",
-      time: formatInstant(record.estimatedAt),
+      time: record.estimatedAt === undefined ? DEPART_TIME_NOT_RECORDED : formatInstant(record.estimatedAt),
       day: departureDayLabel(record, now),
     }));
-  const leavingToday = repatriations.filter((record) => leavesToday(record, now) && record.estimatedAt >= now);
+  const leavingToday = repatriations.filter(
+    (record) => leavesToday(record, now) && record.estimatedAt !== undefined && record.estimatedAt >= now,
+  );
   const dueSoon = entries.filter((entry) => {
     const offset = offsetOf(entry);
     return offset === 0 || offset === 1;
@@ -657,7 +660,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
     .map((entry) => ({
       id: entry.admission.id,
       name: patientOf(entry).formalName,
-      left: missingAnswers(draftFor(entry.admission.id), now).length,
+      left: missingAnswers(draftFor(entry.admission.id)).length,
     }));
 
   const counts = (
@@ -751,73 +754,96 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
   }
 
   /* ---- desktop ---- */
-  const pill = (key: HighlightKey, label: string, tone?: WfTone) => (
-    <button
-      key={key}
-      type="button"
-      className={styles.pill}
-      aria-pressed={highlight === key}
-      data-testid={`ward-out-of-area-highlight-${key}`}
-      onClick={() => toggleHighlight(key)}
-    >
-      <span className={styles.pillCount}>{countOf(key)}</span>
-      {tone ? <StatusGlyph tone={tone} size={9} /> : null}
-      {label}
-    </button>
-  );
+  // A highlight with nobody in it is hidden (design audit B19), unless it is the one switched on.
+  const pill = (key: HighlightKey, label: string, tone?: WfTone) =>
+    countOf(key) === 0 && highlight !== key ? null : (
+      <button
+        key={key}
+        type="button"
+        className={styles.pill}
+        aria-pressed={highlight === key}
+        data-testid={`ward-out-of-area-highlight-${key}`}
+        onClick={() => toggleHighlight(key)}
+      >
+        <span className={styles.pillCount}>{countOf(key)}</span>
+        {tone ? <StatusGlyph tone={tone} size={9} /> : null}
+        {label}
+      </button>
+    );
 
-  const planCard = selected ? (
-    <Card
-      className={cx(styles.sideCard, styles.planCard)}
-      aria-labelledby="ward-out-of-area-plan-title"
-      data-testid="ward-out-of-area-subject"
-    >
-      {renderPlan(
-        selected,
-        <div className={styles.planHead}>
-          <span className={styles.planWho}>
-            <h2 id="ward-out-of-area-plan-title" className={styles.planName}>
-              <SrOnly>Return plan for </SrOnly>
-              {planPatient(selected).displayName}
-            </h2>
-            <span className={styles.mono}>{planPatient(selected).umrn}</span>
+  // Drawer review (6 Nov 2026): the return plan opens in the kit drawer at every width, as Home,
+  // Capacity and Transport do. The register keeps the full width and the page's one scroll; the
+  // drawer's body is the only scroll inside it, and its foot holds the next step.
+  const planDrawer = selected
+    ? (() => {
+        const patient = planPatient(selected);
+        const status = statusOf(selected);
+        const pager = (
+          <span className={styles.drawerPager}>
+            <span role="status" className={styles.planPosition}>
+              <SrOnly>Synthetic patient </SrOnly>
+              {selectedIndex + 1} of {sorted.length}
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              iconOnly
+              icon={ChevronLeft}
+              aria-label="Inspect previous patient"
+              disabled={selectedIndex <= 0}
+              onClick={() => step(-1)}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              iconOnly
+              icon={ChevronRight}
+              aria-label="Inspect next patient"
+              disabled={selectedIndex < 0 || selectedIndex >= sorted.length - 1}
+              onClick={() => step(1)}
+            />
           </span>
-          <span role="status" className={styles.planPosition}>
-            <SrOnly>Synthetic patient </SrOnly>
-            {selectedIndex + 1} of {sorted.length}
-          </span>
-          <Button
-            variant="ghost"
-            size="sm"
-            iconOnly
-            icon={ChevronLeft}
-            aria-label="Inspect previous patient"
-            disabled={selectedIndex <= 0}
-            onClick={() => step(-1)}
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            iconOnly
-            icon={ChevronRight}
-            aria-label="Inspect next patient"
-            disabled={selectedIndex < 0 || selectedIndex >= sorted.length - 1}
-            onClick={() => step(1)}
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            iconOnly
-            icon={X}
-            aria-label="Return to cohort overview"
-            title="Close (Escape)"
-            onClick={returnToOverview}
-          />
-        </div>,
-        "ward-out-of-area-plan",
-      )}
-    </Card>
-  ) : null;
+        );
+        return (
+          <PanelDrawer
+            open
+            onClose={returnToOverview}
+            title={patient.displayName}
+            titleId="ward-out-of-area-plan-title"
+            subtitle={
+              <span className={styles.drawerSubtitle}>
+                <span className={styles.mono}>{patient.umrn}</span>
+                <span aria-hidden="true">·</span>
+                <span>{patient.legal ?? "Legal not recorded"}</span>
+              </span>
+            }
+            tag={<StatusPill tone={STATUS_TAG_TONE[status]}>{RETURN_STATUS_SHORT[status]}</StatusPill>}
+            closeLabel="Return to cohort overview"
+            testId="ward-out-of-area-subject"
+            className={styles.planDrawer}
+            bodyClassName={styles.planDrawerBody}
+            bodyLabel="Return plan"
+            foot={
+              <ReturnPlanActions
+                draft={draftFor(selected.admission.id)}
+                record={recordOf(selected.admission.id)}
+                now={now}
+                pending={repatSave.pending}
+                earlyFlag={returnEarlyFlagOf(returnEarlyFlags, selected.admission.id)}
+                onFlagEarly={(homeHospital) => flagEarly(selected, homeHospital)}
+                onUndoFlagEarly={() => undoFlagEarly(selected)}
+                onRecord={() => recordReturn(selected)}
+                onSendToWard={() => sendPlanToWard(selected)}
+                onMarkWardAgreed={() => markWardAgreed(selected)}
+                pager={pager}
+              />
+            }
+          >
+            {renderPlan(selected, undefined, "ward-out-of-area-plan", false)}
+          </PanelDrawer>
+        );
+      })()
+    : null;
 
   return (
     <div className={styles.screen} data-testid="ward-out-of-area-board" data-ward-design="v8-a">
@@ -885,7 +911,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             <CheckingFoot
               items={[
                 { id: "due", label: "Discharge date passed", value: countOf("due"), tone: "warning" },
-                { id: "noplan", label: "No return plan", value: countOf("noplan"), tone: "closed" },
+                { id: "noplan", label: "No return plan", value: countOf("noplan"), tone: "neutral" },
               ]}
             />
           }
@@ -952,7 +978,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                   {pill("due", "Date passed", "warning")}
                   {pill("air", "Air only")}
                   {pill("road", TRAVEL_SHORT.three_hours_or_more)}
-                  {pill("noplan", "No plan", "closed")}
+                  {pill("noplan", "No plan", "neutral")}
                   {pill("notagreed", "Not agreed", "neutral")}
                   {pill("bed", "Awaiting home bed", "neutral")}
                 </div>
@@ -1043,24 +1069,27 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                 <b title={info.formalName}>{info.formalName}</b>
                                 <span className={styles.legalUmrn}>
                                   {/* UX audit (21 Oct 2026): a stay with none recorded says so in the table,
-                                      so the gap shows before a return trip is planned. The no-break space
-                                      keeps the dot with the legal text when the line wraps. */}
-                                  <span>
+                                      so the gap shows before a return trip is planned. Design audit B18
+                                      (5 Nov 2026), drawer review (6 Nov 2026): the dot stays with the legal
+                                      words, so a wrapped line never starts with a dot. */}
+                                  <span className={styles.umrnPair}>
                                     {legalOf(entry) ?? "Legal not recorded"}
-                                    {" ·"}{" "}
+                                    <span aria-hidden="true"> ·</span>
+                                  </span>{" "}
+                                  <span className={styles.umrnPair}>
+                                    {href ? (
+                                      <Link
+                                        href={href}
+                                        className={styles.umrnLink}
+                                        onClick={(event) => event.stopPropagation()}
+                                        title={`Open profile for ${info.formalName} (${info.umrn})`}
+                                      >
+                                        {info.umrn}
+                                      </Link>
+                                    ) : (
+                                      <span className={styles.mono}>{info.umrn}</span>
+                                    )}
                                   </span>
-                                  {href ? (
-                                    <Link
-                                      href={href}
-                                      className={styles.umrnLink}
-                                      onClick={(event) => event.stopPropagation()}
-                                      title={`Open profile for ${info.formalName} (${info.umrn})`}
-                                    >
-                                      {info.umrn}
-                                    </Link>
-                                  ) : (
-                                    <span className={styles.mono}>{info.umrn}</span>
-                                  )}
                                 </span>
                               </span>
                             </td>
@@ -1086,7 +1115,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                               <span className={styles.two}>
                                 <span className={cx(styles.status, offset !== null && offset < 0 && styles.inkWarning)}>
                                   {offset === null ? (
-                                    <StatusGlyph tone="closed" size={9} />
+                                    <StatusGlyph tone="neutral" size={9} />
                                   ) : offset < 0 ? (
                                     <StatusGlyph tone="warning" size={9} />
                                   ) : null}
@@ -1105,7 +1134,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                                 <ReturnCell
                                   status={status}
                                   record={record}
-                                  left={missingAnswers(draftFor(entry.admission.id), now).length}
+                                  left={missingAnswers(draftFor(entry.admission.id)).length}
                                 />
                               </td>
                             ) : null}
@@ -1119,7 +1148,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                 <CardFoot
                   meta={
                     <span className={styles.footNote}>
-                      <StatusGlyph tone="closed" size={9} />
+                      <StatusGlyph tone="neutral" size={9} />
                       <span>
                         <b>{bedDays}</b> {bedDays === 1 ? "bed day" : "bed days"} across {entries.length}{" "}
                         {entries.length === 1 ? "person" : "people"}
@@ -1135,54 +1164,39 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
             )}
           </Card>
 
-          {/* The shorter right column pins under the top bar on desktop (data-wf-rail, ward-shell.module.css).
-              It holds a stack of cards rather than one long list, so the whole rail scrolls inside itself. */}
-          <div ref={detailColumnRef} className={styles.side} data-wf-rail>
-            {selected && !isTabletPortrait ? (
-              planCard
-            ) : (
-              <>
-                <ShiftCard
-                  idPrefix="ward-out-of-area"
-                  label={shiftLabel(now)}
-                  returns={shiftReturns}
-                  leaving={leavingToday.length}
-                  dueSoon={dueSoon}
-                  onPick={(id) => selectPlacement(id)}
-                />
-                <HomeBedsCard
-                  idPrefix="ward-out-of-area"
-                  rows={regionRows}
-                  region={region}
-                  onRegion={toggleRegion}
-                  foldUnchosen
-                />
-                {/* Pressing Date passed lights the same people in the register, so the list steps aside. */}
-                {highlight === "due" ? null : (
-                  <ReadyCard
-                    idPrefix="ward-out-of-area"
-                    testId="ward-out-of-area-subject"
-                    bodyTestId="ward-out-of-area-subject-empty"
-                    rows={readyRows}
-                    started={startedRows}
-                    onPick={(id) => selectPlacement(id)}
-                  />
-                )}
-              </>
+          {/* Drawer review (6 Nov 2026): the overview cards sit in a row under the register, not a
+              sticky rail with its own scroll, so the register keeps the full width. A chosen person's
+              plan opens in the drawer over the page. */}
+          <div className={styles.side}>
+            <ShiftCard
+              idPrefix="ward-out-of-area"
+              label={shiftLabel(now)}
+              returns={shiftReturns}
+              leaving={leavingToday.length}
+              dueSoon={dueSoon}
+              onPick={(id) => selectPlacement(id)}
+            />
+            <HomeBedsCard
+              idPrefix="ward-out-of-area"
+              rows={regionRows}
+              region={region}
+              onRegion={toggleRegion}
+              foldUnchosen
+            />
+            {/* Pressing Date passed lights the same people in the register, so the list steps aside. */}
+            {highlight === "due" ? null : (
+              <ReadyCard
+                idPrefix="ward-out-of-area"
+                // The open plan drawer carries the subject test id while a person is chosen.
+                testId={selected ? "ward-out-of-area-ready" : "ward-out-of-area-subject"}
+                bodyTestId="ward-out-of-area-subject-empty"
+                rows={readyRows}
+                started={startedRows}
+                onPick={(id) => selectPlacement(id)}
+              />
             )}
           </div>
-          {isTabletPortrait && selected ? (
-            // Tablet portrait (v10): the register keeps the width and the plan slides over it.
-            <Drawer
-              open
-              onClose={returnToOverview}
-              title={planPatient(selected).displayName}
-              description="Return plan"
-              testId="ward-out-of-area-plan-sheet"
-            >
-              {planCard}
-            </Drawer>
-          ) : null}
+          {planDrawer}
         </div>
 
         <WardPrototypeFooter
@@ -1257,12 +1271,12 @@ function DaysAwayStrip({
             key={group.id}
             type="button"
             aria-pressed={highlight === group.key}
-            aria-label={`${group.label} days away: ${group.n}`}
+            // CB-3: the visible band and count lead the name (axe label-content-name-mismatch).
+            aria-label={`${group.label}, ${group.n} away for ${group.label.toLowerCase()} days`}
             onClick={() => onToggle(group.key)}
           >
             <i className={styles[`age_${group.id}`]} aria-hidden="true" />
-            {group.label}
-            <b>{group.n}</b>
+            {group.label} <b>{group.n}</b>
           </button>
         ))}
       </span>

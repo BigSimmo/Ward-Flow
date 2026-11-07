@@ -647,10 +647,7 @@
   color: var(--wf-ink-2);
 }
 
-/* The open event keeps an accent edge on its first cell; no fill. */
-.eventSelected > :first-child {
-  box-shadow: inset 3px 0 0 var(--wf-accent);
-}
+/* The open event takes the selected tint in patient-chronology-start.module.css; no side edge (31 Oct 2026). */
 
 .eventButton {
   display: inline-flex;

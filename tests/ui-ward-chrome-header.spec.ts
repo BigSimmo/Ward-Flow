@@ -820,7 +820,7 @@ test("@mockup the Tasks and Referrals drawers opened offline show Try again and 
 
   await page.getByTestId("ward-bar-tasks-trigger").click();
   const tasks = page.getByTestId("ward-bar-tasks-sheet");
-  await expect(tasks.getByTestId("ward-load-retry")).toContainText("Tasks and alerts did not load");
+  await expect(tasks.getByTestId("ward-load-retry")).toContainText("Alerts did not load");
   await expect(page.getByText("Something went wrong")).toHaveCount(0);
 
   await context.setOffline(false);
@@ -842,9 +842,14 @@ test("@mockup drawer workspace keeps All figures focus and every alert reachable
   await expect(tools.getByTestId("ward-tools-service-now")).toHaveCount(0);
   const figures = tools.getByTestId("ward-tools-toggle-figures");
   await figures.click();
-  await expect(figures).toHaveAttribute("aria-expanded", "true");
-  await expect(figures).toBeFocused();
+  // Josh, 6 Nov 2026: on a phone the tool opens as its own page; Escape goes back to the list first.
+  const toolPage = tools.getByTestId("ward-tools-page");
+  await expect(toolPage).toHaveAttribute("aria-label", "Key figures");
+  await expect(toolPage).toBeFocused();
   await expect(tools.getByTestId("ward-stats-drawer-content")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(toolPage).toHaveCount(0);
+  await expect(figures).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(page.getByTestId(PHONE_MENU[0])).toBeFocused();
 
@@ -882,7 +887,7 @@ test("@mockup compact Referrals opens from Tools and retains a draft across sect
   const toolsBox = await tools.boundingBox();
   expect(toolsBox?.height).toBeGreaterThanOrEqual(566);
   await tools.getByRole("button", { name: /New referral/u }).click();
-  const referral = page.getByRole("dialog", { name: "Referrals", exact: true });
+  const referral = page.getByRole("dialog", { name: "New referral", exact: true });
   await expect(page.getByRole("dialog")).toHaveCount(1);
   const sections = referral.getByRole("group", { name: "Referral sections" });
   // v10 phone (11 Oct 2026): each step opens as a sheet over the step list; closing it returns to
@@ -892,7 +897,7 @@ test("@mockup compact Referrals opens from Tools and retains a draft across sect
   await referral.locator("#refDocInput").fill("Synthetic draft clinician");
   await closeStep.click();
   await sections.getByRole("button", { name: "Wards", exact: true }).click();
-  await expect(referral.getByRole("list", { name: "Placement Destination Options" })).toBeVisible();
+  await expect(referral.getByRole("list", { name: "Destinations" })).toBeVisible();
   await closeStep.click();
   await sections.getByRole("button", { name: "Referral", exact: true }).click();
   await expect(referral.locator("#refDocInput")).toHaveValue("Synthetic draft clinician");

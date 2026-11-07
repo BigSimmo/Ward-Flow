@@ -58,6 +58,7 @@ import { CommunityAboutThisData, CommunityWorthAttention, type CommunityPhoneLis
 import v6 from "./community-team-v6.module.css";
 import { DEMO_COMMUNITY_CASELOAD, DEMO_COMMUNITY_UMRNS, resolveCommunityTeamConfig } from "./community-demo-cohort";
 import {
+  originIsEdOrCrisis,
   referralOriginLabel,
   caseloadStatutoryFormCode,
   caseloadRowsForTeam,
@@ -93,8 +94,8 @@ import { CommunityScreenWaitingTab } from "./community-screen-waiting-tab";
 import { CommunityScreenInBedTab } from "./community-screen-in-bed-tab";
 import { CommunityScreenBackTab } from "./community-screen-back-tab";
 import { CommunityScreenCaseloadTab } from "./community-screen-caseload-tab";
-import { MIDLAND_DEMO_TEAM } from "./team-2026/midland-demo";
-import { recordMidlandContact } from "./team-2026/midland-decisions";
+import { MIDLAND_DEMO_TEAM, REFERRALS as MIDLAND_REFERRALS } from "./team-2026/midland-demo";
+import { openReferrals, recordMidlandContact, useMidlandDecisions } from "./team-2026/midland-decisions";
 import { MidlandTeamSections } from "./team-2026/midland-sections";
 import {
   CommunityScreenTransportBookDialog,
@@ -447,6 +448,7 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   // The live Midland page carries the locked mock-up's demo team (Q126, Q132: Midland only). Supplied
   // records, and the older demonstration cohort, keep their own lists.
   const midlandDemo = !hasExplicitProps && !demonstration && MIDLAND_DEMO_TEAM.test(teamId);
+  const midlandDecisions = useMidlandDecisions();
 
   const { demoTeamReferrals, demoVisibleReferrals, demoVisibleInpatients, demoVisibleEgress, demoVisibleCaseload } =
     useCommunityScreenDemoLists({ teamId, triageFilter, inpatientFilter, egressFilter, caseloadFilter });
@@ -774,23 +776,14 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   const p2ReferralsCount = waitingReferrals.filter((r) => r.urgency === 2).length;
   const p3ReferralsCount = waitingReferrals.filter((r) => r.urgency === 3).length;
   const edReferralsCount = waitingReferrals.filter(
-    (r) =>
-      r.source === "ed_medical" ||
-      r.source === "crisis_service" ||
-      referralOriginLabel(r).toLowerCase().includes("ed") ||
-      referralOriginLabel(r).toLowerCase().includes("crisis"),
+    (r) => r.source === "ed_medical" || r.source === "crisis_service" || originIsEdOrCrisis(referralOriginLabel(r)),
   ).length;
   const visibleWaitingReferrals = waitingReferrals.filter((r) => {
     if (triageFilter === "p1") return r.urgency === 1;
     if (triageFilter === "p2") return r.urgency === 2;
     if (triageFilter === "p3") return r.urgency === 3;
     if (triageFilter === "ed") {
-      return (
-        r.source === "ed_medical" ||
-        r.source === "crisis_service" ||
-        referralOriginLabel(r).toLowerCase().includes("ed") ||
-        referralOriginLabel(r).toLowerCase().includes("crisis")
-      );
+      return r.source === "ed_medical" || r.source === "crisis_service" || originIsEdOrCrisis(referralOriginLabel(r));
     }
     return true;
   });
@@ -798,7 +791,14 @@ function useCommunityScreenView({ teamId, admissions, referrals, demonstration =
   // Use the same unfiltered queue as the rendered list. Priority chips narrow visible rows,
   // while the tab and urgent total continue to describe the whole queue.
   const usesDemoReferrals = isDemoMode && !hasAnyReferralsForTeam;
-  const waitingCount = usesDemoReferrals ? demoTeamReferrals.length : waitingReferrals.length;
+  // Audit B2 (5 Nov 2026): the Midland page lists the mock-up team's referrals, so its hero, tab and
+  // phone figures count those same open referrals, and a decision lowers every count at once.
+  const midlandToAnswer = openReferrals(MIDLAND_REFERRALS, midlandDecisions).length;
+  const waitingCount = midlandDemo
+    ? midlandToAnswer
+    : usesDemoReferrals
+      ? demoTeamReferrals.length
+      : waitingReferrals.length;
   const urgentAnswerCount = usesDemoReferrals
     ? demoTeamReferrals.filter((referral) => referral.urgency === 1 || referral.urgency === 2).length
     : urgentWaitingCount;

@@ -40,6 +40,7 @@
 }
 
 .live i {
+  position: relative;
   display: inline-block;
   width: 0.55em;
   height: 0.55em;
@@ -47,21 +48,34 @@
   border-radius: 50%;
   background: var(--wf-success);
   vertical-align: 0.08em;
+}
+
+/* PERF-05: transform and opacity run on the compositor, so the unattended TV no longer restyles
+   every frame for the live dot (an animated box-shadow did, about 22 times the idle work). */
+.live i::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--wf-success) 55%, transparent);
   animation: tv-live-pulse 2.4s ease-in-out infinite;
 }
 
 @keyframes tv-live-pulse {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--wf-success) 55%, transparent);
+  0% {
+    transform: scale(1);
+    opacity: 1;
   }
-  60% {
-    box-shadow: 0 0 0 0.45em color-mix(in srgb, var(--wf-success) 0%, transparent);
+  60%,
+  100% {
+    transform: scale(2.64);
+    opacity: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .live i {
+  .live i::after {
     animation: none;
+    opacity: 0;
   }
 }

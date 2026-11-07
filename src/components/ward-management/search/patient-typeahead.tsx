@@ -1,5 +1,6 @@
 "use client";
 
+import { Search } from "lucide-react";
 import { revealWardOption } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
@@ -280,10 +281,7 @@ export function PatientTypeahead({
       </label>
 
       <div className={styles.controlBox}>
-        <svg className={styles.icon} width="18" height="18" viewBox="0 0 20 20" aria-hidden="true">
-          <circle cx="8.5" cy="8.5" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.7" />
-          <path d="M12.8 12.8 17 17" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-        </svg>
+        <Search className={styles.icon} size={18} strokeWidth={1.75} aria-hidden="true" />
 
         <input
           id={id}

@@ -73,7 +73,8 @@ export function PresentationCell({
           className={handover.cellButton}
           data-empty={chosen.length ? undefined : "true"}
           data-testid={`ward-ed-presentation-${movementId}`}
-          aria-label={`Presentation for ${patientName}: ${chosen.length ? chosen.join(", ") : "none chosen"}`}
+          // CB-3: an empty picker's name says "Add" as it shows (axe label-content-name-mismatch).
+          aria-label={`${chosen.length ? "" : "Add "}Presentation for ${patientName}: ${chosen.length ? chosen.join(", ") : "none chosen"}`}
           title={chosen.length > 1 ? chosen.join(", ") : undefined}
         >
           <span className={handover.cellPickValue}>{chosen.length ? chosen.join(", ") : "Add"}</span>

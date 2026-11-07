@@ -170,6 +170,12 @@ const CONSTANT_EXCLUSIONS: ReadonlyArray<{ id: string; why: string; file?: RegEx
     name: /^ACCEPT_SECOND_TAP_GUARD_MS$/,
   },
   {
+    id: "recovery-verifier-lifetime",
+    why: "How long this browser keeps the one-use PKCE secret for a password recovery link it asked for (SEC-2, Josh, 6 Nov 2026); a sign-in security timer, never shown, not a clinical limit.",
+    file: /^ward-auth-link\.ts$/,
+    name: /^WARD_RECOVERY_VERIFIER_LIFETIME_MS$/,
+  },
+  {
     id: "repeat-tap-window",
     why: "How long the same action asked for again gets the first one's answer, so a double tap records once (Tier 1 item 2, Josh, 4 Nov 2026); a UI pause, not a limit.",
     file: /^ward-repeat-tap-guard\.ts$/,

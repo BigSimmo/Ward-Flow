@@ -175,8 +175,8 @@ describe("All EDs — design review (Josh, 31 Oct 2026): title count and the nob
 
   it("puts each department with nobody waiting on one line, with its own Enter button and no card", () => {
     renderIndex();
-    const line = screen.getByRole("group", { name: "Departments with no one waiting" });
-    expect(within(line).getByText("No one waiting")).toBeInTheDocument();
+    const line = screen.getByRole("group", { name: "Departments with nobody waiting" });
+    expect(within(line).getByText("Nobody waiting")).toBeInTheDocument();
     const clear = clearOnly();
     expect(clear.length).toBeGreaterThan(0);
     for (const entry of clear) {

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({
@@ -16,7 +16,10 @@ import { shortcutsForDesk } from "@/components/ward-management/help/ward-help-co
  * they are a view inside Help, with Back to Help.
  */
 describe("keyboard shortcuts in Help", () => {
-  afterEach(() => window.localStorage.removeItem("ward-flow-character-shortcuts"));
+  afterEach(() => {
+    vi.useRealTimers();
+    window.localStorage.removeItem("ward-flow-character-shortcuts");
+  });
 
   async function openKeys() {
     render(<WardHelpHost />);
@@ -48,20 +51,33 @@ describe("keyboard shortcuts in Help", () => {
     expect(screen.getByRole("tablist", { name: "Help sections" })).toBeTruthy();
   });
 
-  it("leaves ? alone in a field, when a page took it, or with single-key shortcuts off", async () => {
+  it("leaves ? alone in a field, when a page took it, or with single-key shortcuts off", () => {
+    vi.useFakeTimers();
     render(
       <>
         <input aria-label="field" />
         <WardHelpHost />
       </>,
     );
-    fireEvent.keyDown(screen.getByLabelText("field"), { key: "?" });
+    // TE-08: "?" is judged on a zero-delay timer (ward-shortcuts-key.ts), so each press runs that
+    // timer on fake time before checking. The last press is the control: it proves the listener is
+    // live, so the empty results mean something.
+    const press = (target: Window | Element) => {
+      fireEvent.keyDown(target, { key: "?" });
+      act(() => vi.advanceTimersByTime(0));
+    };
+    press(screen.getByLabelText("field"));
+    expect(screen.queryByTestId("ward-help-sheet")).toBeNull();
     const taken = new KeyboardEvent("keydown", { key: "?", cancelable: true });
     taken.preventDefault();
     window.dispatchEvent(taken);
+    act(() => vi.advanceTimersByTime(0));
+    expect(screen.queryByTestId("ward-help-sheet")).toBeNull();
     window.localStorage.setItem("ward-flow-character-shortcuts", "off");
-    fireEvent.keyDown(window, { key: "?" });
-    await new Promise((resolve) => setTimeout(resolve, 300));
-    await waitFor(() => expect(screen.queryByTestId("ward-help-sheet")).toBeNull());
+    press(window);
+    expect(screen.queryByTestId("ward-help-sheet")).toBeNull();
+    window.localStorage.removeItem("ward-flow-character-shortcuts");
+    press(window);
+    expect(screen.getByTestId("ward-help-sheet")).toBeTruthy();
   });
 });

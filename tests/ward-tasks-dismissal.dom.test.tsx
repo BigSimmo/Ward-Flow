@@ -8,7 +8,7 @@ import { seedWardFlowStateAt } from "@/components/ward-management/ward-flow-redu
 import { NOW_ANCHOR, activeWardNetwork } from "@/components/ward-management/ward-sites";
 import { dueSoonThresholdsOf } from "@/components/ward-management/ward-clock";
 import { Sheet } from "@/components/wf/sheet";
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
 import { AlertsDrawer } from "@/components/ward-redesign/pop-alerts/alerts-drawer";
 import { ConfirmHost } from "@/components/wf";
 

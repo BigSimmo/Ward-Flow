@@ -123,7 +123,9 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   newest CI-passed `main` commit and writes a GitHub Release (`live-YYYY-MM-DD-HHMM`) with a short
   "what changed" note; the coordinator posts its New and Fixed lines in project chat. "Release now"
   for an urgent fix means a manual run of that workflow after Josh says so. Never push to `live` by
-  hand; rolling back to an earlier `live-*` tag needs Josh's yes.
+  hand; rolling back to an earlier `live-*` tag needs Josh's yes, and starts by pausing the daily
+  release with the `WARD_RELEASE_PAUSED` repository variable
+  ([runbook](OPERATIONS-RUNBOOK.md#rolling-back-the-app)).
 - **One claim board across machines: GitHub.** Claude threads and Codex work on different
   machines, so the open PRs and branches are the shared claim board (Q374). Comments on the pinned
   issue "Who is editing what" are no longer needed.
@@ -199,12 +201,13 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   made, saving stops. See [current persistence guidance](STATUS.md#remaining-work-and-local-remediation).
 - **Privacy wording.** Never write that something is not stored, private or anonymised unless a test
   proves it. No patient names or typed text in URLs, logs, screenshots, commit messages or memory.
-- **Design tokens only, no hex.** The written standard is
-  [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md); its section 14 lists the
-  owner rulings in force. Standard rows use `--wf-row-default: 44px`, touch and phone rows
+- **Design tokens only, no hex.** The design system of record is
+  [`docs/design/DESIGN-SYSTEM.md`](../design/DESIGN-SYSTEM.md) (Q327);
+  [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md) section 14 keeps the earlier
+  owner rulings. Standard rows use `--wf-row-default: 44px`, touch and phone rows
   `--wf-row-touch: 52px`, and desktop buttons `--wf-target: 28px`.
 - **Control size (Josh, 31 October 2026: "no 48px controls").** On a phone a kit button shows at
-  40px (32px for a small one) and keeps a 48px tap area through an invisible cover above and below
+  40px, a small one included (Q295, 2 Nov 2026), and keeps a 48px tap area through an invisible cover above and below
   it. Phone tabs and chips are 40px inside a 48px track (Q225, 2 Nov 2026); desktop segmented and pill tabs are 30px at 13px.
   Never draw a control 48px tall to meet the tap floor: give it the cover. `--ward-tap` and
   `--spacing-tap` (48px) are now the tap-area value, not a visible height. The one exception
@@ -228,6 +231,9 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
   about code size; staff wording is a product decision. One squeeze turned "beds still pulled" into
   "beds pulled" (commit `0f38d544`), and it has been put back. Split at-cap files first (F-17).
 - New events go in EVENT_ROLE (`ward-flow-event-roles.ts`) and `tests/ward-event-permissions.test.ts`.
+- **Live pill "Demo 10:42" (Josh, 5 November 2026, design audit card 9).** The hero's live pill keeps
+  the word Demo and the board time ("Demo 10:42"). It is the live-state word: it says nothing is live.
+  Elsewhere the clock is Board time, never Demo time ([DESIGN-SYSTEM §6](../design/DESIGN-SYSTEM.md#6-words)).
 - **Phone size limits (owner rule [D-82](decisions.md#d-82-a-pr-may-raise-a-phone-size-limit-by-up-to-5-kb-per-screen-without-asking-26-october-2026), 26 October 2026).**
   The five phone first-load script limits live in `script-budget.json` and are checked by
   `scripts/check-script-budget.mjs`. A PR may raise a screen's limit by up to **5 KB in total per

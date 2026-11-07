@@ -130,6 +130,10 @@
   text-decoration: underline;
 }
 
+.footAction {
+  margin-inline-start: auto;
+}
+
 /* ---------- Beds that fit ---------- */
 
 .gapCard {
@@ -400,6 +404,21 @@
   white-space: nowrap;
 }
 
+/* PERF-08 (6 Nov 2026): a desktop browser at phone width gets this desktop row until React swaps in
+ * the phone rows. Below the phone line the row stacks (time beside the title, action underneath),
+ * so that first paint stays readable rather than one letter per line. */
+@media (max-width: 46.4375rem) {
+  .hrow {
+    grid-template-columns: 1rem minmax(0, 1fr) auto;
+  }
+
+  .hrowAction {
+    grid-column: 2 / -1;
+    justify-content: flex-start;
+    white-space: normal;
+  }
+}
+
 /* Placement and Referral placement sit in a narrower column on this Home, so their facts wrap
    rather than lose their ends ("Adult · Perth Metr…"). Scoped here; the shared panel is unchanged. */
 .rightCol dl dd,
@@ -570,12 +589,14 @@
     border-radius: var(--wf-r-track);
     box-shadow: none;
   }
-  .viewSwitch.viewSwitch > * {
+  /* K3 (design audit, 5 Nov 2026): a 32px floor rather than a fixed height. Tripled so it outranks
+     the kit's phone segmented floor (40px), which a fixed height no longer overrides. */
+  .viewSwitch.viewSwitch.viewSwitch > * {
     position: relative;
     flex: 1 1 auto;
     justify-content: center;
-    height: 32px;
-    min-height: 0;
+    min-height: 32px;
+    height: auto;
     padding-inline: 8px;
     border-radius: var(--wf-r-seg-item);
     font-size: var(--wf-fs-13);

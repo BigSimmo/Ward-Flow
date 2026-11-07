@@ -22,7 +22,7 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
 import { resetServiceScopeForTests } from "@/components/ward-management/shell/ward-service-store";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";

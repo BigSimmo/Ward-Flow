@@ -168,8 +168,9 @@ export type WardGlobalSearchProps = {
   /** Opens the full Tasks list (the header's drawer). Absent means no "See all tasks" control. */
   onSeeAllTasks?: () => void;
   /**
-   * The header drawer is Alerts on the bed coordinator's desk (D-61) and Tasks elsewhere. Search
-   * uses the same name, so the tab, the row tag and "See all" match the drawer (UX audit, 21 Oct 2026).
+   * Whether the header drawer is the bed coordinator's actionable Alerts queue (D-61). The drawer
+   * is called Alerts on every desk (design audit 2, 5 Nov 2026), so search always says Alerts and
+   * this flag no longer changes a word. Kept so callers need no change.
    */
   tasksAreAlerts?: boolean;
   /** Booked planned admissions, so search finds the same overdue rows the task count holds. */
@@ -239,10 +240,13 @@ const KIND_FILTERS: readonly { key: KindFilter; label: string; groups: readonly 
   { key: "places", label: "Places", groups: ["beds", "wards", "eds", "teams", "suburbs"] },
   { key: "forms", label: "Forms", groups: ["forms"] },
   { key: "views", label: "Views", groups: ["views"] },
-  { key: "tasks", label: "Tasks", groups: ["tasks"] },
+  { key: "tasks", label: "Alerts", groups: ["tasks"] },
   { key: "contacts", label: "Contacts", groups: ["contacts"] },
   { key: "help", label: "Help", groups: ["help"] },
 ];
+
+/** The header drawer is Alerts on every desk (DESIGN-SYSTEM §6). */
+const ALERTS_WORD = { many: "Alerts", one: "Alert" } as const;
 
 const FULL_RESULTS_PER_GROUP = 40;
 
@@ -314,7 +318,6 @@ export function WardGlobalSearch({
   tasks,
   aboveSheets = false,
   onSeeAllTasks,
-  tasksAreAlerts = false,
   plannedAdmissions,
   now,
   scope,
@@ -331,10 +334,8 @@ export function WardGlobalSearch({
   helpPreview,
 }: WardGlobalSearchProps) {
   const id = useId();
-  const tasksWord = useMemo(
-    () => (tasksAreAlerts ? { many: "Alerts", one: "Alert" } : { many: "Tasks", one: "Task" }),
-    [tasksAreAlerts],
-  );
+  // One word on every desk: the header drawer is Alerts (DESIGN-SYSTEM §6, design audit 2).
+  const tasksWord = ALERTS_WORD;
   const listId = `${id}-list`;
   const hintId = `${id}-hint`;
   const demoOffId = `${id}-demo-off`;
@@ -461,7 +462,7 @@ export function WardGlobalSearch({
             ? [
                 {
                   kind: "task",
-                  kindLabel: "Task",
+                  kindLabel: "Alert",
                   id: task.id,
                   title: task.title,
                   meta: needsYouMeta(task, lookup, nameFor),
@@ -599,7 +600,7 @@ export function WardGlobalSearch({
           allNeeds.length > needs.length ? `${tasksWord.many} · ${needs.length} of ${allNeeds.length}` : tasksWord.many,
         items: needs.map((task) => ({
           kind: "task",
-          kindLabel: "Task",
+          kindLabel: "Alert",
           id: task.id,
           title: task.title,
           // D-39: a person is named by UMRN, never by a WF journey number, in every shape of id.

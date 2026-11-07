@@ -252,7 +252,7 @@ function TeamsIndexView({
         stats: (
           <>
             <HeroStat value={shown(withDateTotal)} label="With a date" />
-            <HeroStat value={activeCount} label="Teams with a patient in a bed" />
+            <HeroStat value={activeCount} label="Teams that have someone in a bed" />
             <HeroStat value={shown(dueOutWeekTotal)} label="Discharges due within 7 days" />
           </>
         ),
@@ -261,7 +261,7 @@ function TeamsIndexView({
         <>
           <HeroStat value={shown(inBedTotal)} label="Team patients in a bed" />
           <HeroStat value={shown(withDateTotal)} label="With a discharge date" />
-          <HeroStat value={activeCount} label="Teams with a patient in" />
+          <HeroStat value={activeCount} label="Teams that have someone in a bed" />
           <HeroStat value={shown(noTeamInBed)} label="In a bed, no team named" />
         </>
       }
@@ -376,7 +376,7 @@ function TeamsIndexView({
                     unit="in a bed"
                     sub={
                       nobody
-                        ? "Nobody in a bed"
+                        ? "No team patients in a bed here"
                         : [`${shown(withDate)} with a discharge date`, busy.map((entry) => entry.team.name).join(", ")]
                             .filter(Boolean)
                             .join(" · ")
@@ -394,8 +394,8 @@ function TeamsIndexView({
           <StatCard
             id="all-teams"
             className={index.anchorTarget}
-            title="Teams with someone in a bed"
-            meta={`${active.length} of ${teams.length} teams`}
+            title="Teams that have someone in a bed"
+            meta={`${active.length} of ${teams.length} teams have someone in a bed`}
             action={
               <Segmented<"bed" | "all">
                 label="Teams shown"
@@ -410,12 +410,13 @@ function TeamsIndexView({
             data-testid="ward-statistics-teams-all"
           >
             {listed.length === 0 ? (
-              <p className={redesign.empty}>No one in a bed has a named community team.</p>
+              <p className={redesign.empty}>Nobody in a bed has a named community team.</p>
             ) : (
               <div className={redesign.tableWrap} tabIndex={0} role="region" aria-label="Teams, scrollable">
                 <table className={cx(tableClasses.table, redesign.table)} data-testid="ward-statistics-teams-table">
                   <caption className={styles.srOnly}>
-                    Community teams: people in a bed, those with a discharge date and those due out within 7 days
+                    Community teams: people in a bed, those with a discharge date and those due for discharge within 7
+                    days
                   </caption>
                   <thead>
                     <tr>

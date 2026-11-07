@@ -1,5 +1,7 @@
 // @ts-check
+import { constants as bufferConstants } from "node:buffer";
 import { createHash } from "node:crypto";
+import { isDeepStrictEqual, types } from "node:util";
 
 /**
  * How a shared workspace is kept from migration 10: each referral, bed (ward), movement, patient,
@@ -21,6 +23,89 @@ import { createHash } from "node:crypto";
  *   the workspace revision at which each of those last changed, so a clash check can see a reset
  *   or a clock change someone else made.
  */
+
+// Keep each temporary native JSON string below 6 * this many UTF-16 units plus quotes.
+const JSON_LENGTH_CHUNK = 16_384;
+const JSON_LENGTH_DEPTH = 128;
+const isRawJson = Object.getOwnPropertyDescriptor(JSON, "isRawJSON")?.value;
+
+/**
+ * The native serializer owns every escape; avoid splitting a surrogate pair across chunks.
+ * @param {string} value
+ */
+function quotedJsonLength(value) {
+  let length = 2;
+  for (let start = 0; start < value.length;) {
+    let end = Math.min(start + JSON_LENGTH_CHUNK, value.length);
+    const last = value.charCodeAt(end - 1);
+    const next = value.charCodeAt(end);
+    if (end < value.length && last >= 0xd800 && last <= 0xdbff && next >= 0xdc00 && next <= 0xdfff) end -= 1;
+    length += JSON.stringify(value.slice(start, end)).length - 2;
+    if (length > bufferConstants.MAX_STRING_LENGTH) return null;
+    start = end;
+  }
+  return length;
+}
+
+/**
+ * `undefined` is an omitted value; `null` asks the caller to use the original native operation.
+ * @param {unknown} value
+ * @param {Set<object>} ancestors
+ * @param {number} depth
+ * @returns {number | undefined | null}
+ */
+function dataJsonLength(value, ancestors, depth) {
+  if (value === undefined) return undefined;
+  if (value === null) return 4;
+  if (typeof value === "string") return quotedJsonLength(value);
+  if (typeof value === "boolean" || typeof value === "number") return JSON.stringify(value).length;
+  if (typeof value !== "object" || depth >= JSON_LENGTH_DEPTH || types.isProxy(value)) return null;
+  if (typeof isRawJson === "function" && isRawJson(value)) return null;
+  const array = Array.isArray(value);
+  const prototype = Object.getPrototypeOf(value);
+  if (array ? prototype !== Array.prototype : prototype !== Object.prototype && prototype !== null) return null;
+  if (array && Object.getPrototypeOf(Array.prototype) !== Object.prototype) return null;
+  if (
+    Object.getOwnPropertyDescriptor(value, "toJSON") ||
+    (prototype && Object.getOwnPropertyDescriptor(prototype, "toJSON")) ||
+    (array && Object.getOwnPropertyDescriptor(Object.prototype, "toJSON")) ||
+    ancestors.has(value)
+  )
+    return null;
+  ancestors.add(value);
+  try {
+    let length = 2;
+    let count = 0;
+    const keys = array ? [] : Object.keys(value);
+    const size = array ? value.length : keys.length;
+    for (let index = 0; index < size; index++) {
+      const key = array ? String(index) : keys[index];
+      const descriptor = Object.getOwnPropertyDescriptor(value, key);
+      if (!descriptor || !Object.hasOwn(descriptor, "value")) return null;
+      const part = dataJsonLength(descriptor.value, ancestors, depth + 1);
+      if (part === null) return null;
+      if (array) length += (count++ ? 1 : 0) + (part ?? 4);
+      else if (part !== undefined) {
+        const keyLength = quotedJsonLength(key);
+        if (keyLength === null) return null;
+        length += (count++ ? 1 : 0) + keyLength + 1 + part;
+      }
+      if (length > bufferConstants.MAX_STRING_LENGTH) return null;
+    }
+    return length;
+  } finally {
+    ancestors.delete(value);
+  }
+}
+
+/**
+ * Exact legacy JSON.stringify(value).length, in UTF-16 code units, without a joined JSON string
+ * for ordinary immutable JSON data. Unsupported shapes use the original native operation once.
+ */
+export function jsonCharacterLength(value) {
+  const length = dataJsonLength(value, new Set(), 0);
+  return typeof length === "number" ? length : JSON.stringify(value).length;
+}
 
 const MARKER = "$records";
 const REVISIONS = "$revisions";
@@ -154,9 +239,10 @@ function canonical(value) {
     );
   return value;
 }
-// Engine records are immutable JSON values: a shared body is already equal. Distinct bodies
-// still use canonical JSON equality, including its existing handling of primitive values.
-const same = (a, b) => a === b || JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
+// Engine records are immutable JSON values: shared or deep-equal bodies need no serialisation.
+// Keep canonical JSON equality for the remaining cases, including its primitive semantics.
+const same = (a, b) =>
+  a === b || isDeepStrictEqual(a, b) || JSON.stringify(canonical(a)) === JSON.stringify(canonical(b));
 
 /** The fields of `core.state` still kept as a whole (not yet as rows). */
 function wholeFields(core) {

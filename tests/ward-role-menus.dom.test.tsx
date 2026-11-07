@@ -36,7 +36,7 @@ import {
   type SharedAccessApi,
 } from "@/components/ward-management/shell/ward-shared-access-context";
 import { WardPhoneMenu } from "@/components/ward-management/shell/ward-phone-menu";
-import { WardRail } from "@/components/ward-management/shell/ward-rail";
+import { NextRailBody as WardRail } from "@/components/ward-management/shell-next/next-rail-body";
 import {
   OUT_OF_SIDEBAR_IDS,
   ROLE_MENUS,

@@ -2,7 +2,7 @@
 
 import { Fragment, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { BedDouble, Check, ChevronRight, Download, ListFilter, Minus, Plus, X } from "lucide-react";
+import { BedSingle, Check, ChevronRight, Download, ListFilter, Minus, Plus, X } from "lucide-react";
 
 import {
   Button,
@@ -368,7 +368,7 @@ function CapacityChartView({
           closeDetails();
         }
       }}
-      icon={BedDouble}
+      icon={BedSingle}
       title={title}
       action={
         <span className={styles.headControls}>
@@ -435,10 +435,10 @@ function CapacityChartView({
         <span role="group" aria-label="Bed status legend" className={styles.legendSlot}>
           <Legend
             items={[
-              { id: "ready", label: BED_STATE_LABELS.ready, fill: "data-1" },
+              { id: "occupied", label: BED_STATE_LABELS.occupied, fill: "data-3" },
               { id: "pulled", label: BED_STATE_LABELS.pulled, hatch: true },
               { id: "closed", label: BED_STATE_LABELS.closed, fill: "data-2" },
-              { id: "occupied", label: BED_STATE_LABELS.occupied, fill: "data-3" },
+              { id: "ready", label: BED_STATE_LABELS.ready, fill: "data-1" },
             ]}
           />
         </span>
@@ -471,25 +471,34 @@ function CapacityChartView({
 
       <CardBody flush className={styles.workspace}>
         <div className={styles.plot}>
-          <div className={styles.axis} aria-hidden="true">
-            <span />
-            <div className={styles.axisTicks}>
-              {ticks.map((tick) => (
-                <span key={tick} style={{ left: `${(tick / maximum) * 100}%` }}>
-                  {tick}
-                  {scale === "share" ? "%" : ""}
-                </span>
-              ))}
+          {rows.length > 0 ? (
+            <div className={styles.axis} aria-hidden="true">
+              <span />
+              <div className={styles.axisTicks}>
+                {ticks.map((tick) => (
+                  <span key={tick} style={{ left: `${(tick / maximum) * 100}%` }}>
+                    {tick}
+                    {scale === "share" ? "%" : ""}
+                  </span>
+                ))}
+              </div>
+              <span className={styles.axisReady}>Ready</span>
+              <span />
             </div>
-            <span className={styles.axisReady}>Ready</span>
-            <span />
-          </div>
+          ) : null}
           {rows.length === 0 ? (
+            // Design audit C18 (5 Nov 2026): with no filter on, say what is empty and offer no Clear.
             <div className={styles.empty}>
-              <strong>{groupBy === "hospital" ? "No matching hospitals" : "No matching wards"}</strong>
-              <Button size="sm" variant="ghost" onClick={reset}>
-                Clear filters
-              </Button>
+              {service !== "all" || overOnly ? (
+                <>
+                  <strong>{groupBy === "hospital" ? "No matching hospitals" : "No matching wards"}</strong>
+                  <Button size="sm" variant="ghost" onClick={reset}>
+                    Clear filters
+                  </Button>
+                </>
+              ) : (
+                <strong>No inpatient beds here.</strong>
+              )}
             </div>
           ) : (
             // A highlight never hides a row, so every row shows while one is on.
@@ -526,21 +535,26 @@ function CapacityChartView({
                     className={styles.row}
                     data-dim={highlighting && !isLit(row) ? "true" : undefined}
                     aria-pressed={selected?.id === row.id}
-                    aria-label={`${row.name}: ${row.ready} ready, ${row.pulled} pulled, ${row.closed} closed, ${row.occupied} occupied of ${row.beds} beds. Show details.`}
+                    // CB-3: the row's visible words in order, then the breakdown (axe label-content-name-mismatch).
+                    aria-label={`${row.name}: ${sub}, ${row.ready} ready, ${row.pulled} pulled, ${row.closed} closed, ${row.occupied} occupied of ${row.beds} beds. Show details.`}
                     onClick={() => setSelectedId(selected?.id === row.id ? null : row.id)}
                   >
                     <span className={styles.rowName}>
-                      <strong>{row.name}</strong>
-                      <small>{sub}</small>
-                    </span>
+                      <strong>{row.name}</strong> <small>{sub}</small>
+                    </span>{" "}
                     <span className={styles.barArea} aria-hidden="true">
                       {ticks.map((tick) => (
                         <i className={styles.guide} key={tick} style={{ left: `${(tick / maximum) * 100}%` }} />
                       ))}
                       {scale === "share" ? <i className={styles.alertMark} style={{ left: `${alertLine}%` }} /> : null}
                       <span className={styles.bar} style={{ width: `${(row.beds / denominator) * 100}%` }}>
-                        {row.ready > 0 && (
-                          <span className={styles.ready} style={{ width: `${(row.ready / (row.beds || 1)) * 100}%` }} />
+                        {/* C3 mock-up (5 Nov 2026): in use first from the left (occupied, then pulled), so the 85% alert
+                            line marks where in-use beds cross it; closed and ready sit at the right end. */}
+                        {row.occupied > 0 && (
+                          <span
+                            className={styles.occupied}
+                            style={{ width: `${(row.occupied / (row.beds || 1)) * 100}%` }}
+                          />
                         )}
                         {row.pulled > 0 && (
                           <span
@@ -552,14 +566,11 @@ function CapacityChartView({
                         {row.closed > 0 && (
                           <span className={styles.held} style={{ width: `${(row.closed / (row.beds || 1)) * 100}%` }} />
                         )}
-                        {row.occupied > 0 && (
-                          <span
-                            className={styles.occupied}
-                            style={{ width: `${(row.occupied / (row.beds || 1)) * 100}%` }}
-                          />
+                        {row.ready > 0 && (
+                          <span className={styles.ready} style={{ width: `${(row.ready / (row.beds || 1)) * 100}%` }} />
                         )}
                       </span>
-                    </span>
+                    </span>{" "}
                     <span className={styles.readyCount} data-empty={row.ready === 0}>
                       {over ? <StatusGlyph tone="warning" size={9} /> : null}
                       {row.ready}

@@ -5,10 +5,10 @@ import { recordIdFromAddress } from "@/components/ward-management/shell/ward-rec
 
 export const metadata: Metadata = {
   title: "Discharges — Ward Flow",
-  description: "Synthetic discharge and departure board for the Ward Flow prototype — blocked releases first.",
+  description: "Synthetic discharges for the Ward Flow prototype, held-up discharges first.",
 };
 
-/** `?admissionId=` (a synthetic admission id, never a name) opens that stay, as a Tasks row does. */
+/** `?admissionId=` (a synthetic admission id, never a name) opens that stay, as an Alerts row does. */
 export default async function WardDischargesPage({
   searchParams,
 }: {

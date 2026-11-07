@@ -71,7 +71,7 @@ describe("an ED desk shows no false zero for another department (WT-24)", () => 
     render(overview);
     expect(screen.queryByRole("navigation", { name: "Emergency departments" })).toBeNull();
     expect(screen.queryByText("RPH")).toBeNull();
-    expect(screen.queryByText("No one waiting")).toBeNull();
+    expect(screen.queryByText("Nobody waiting")).toBeNull();
     // Its own figure stays in the hero, beside the title (handover build, 1 Nov 2026).
     expect(screen.getByText("On the board").parentElement).toHaveTextContent("2On the board");
   });
@@ -80,7 +80,7 @@ describe("an ED desk shows no false zero for another department (WT-24)", () => 
     render(overview);
     const strip = screen.getByRole("navigation", { name: "Emergency departments" });
     const rph = within(strip).getByText("RPH").closest("li")!;
-    expect(within(rph).getByText("No one waiting")).toBeInTheDocument();
+    expect(within(rph).getByText("Nobody waiting")).toBeInTheDocument();
     expect(within(strip).getAllByRole("link")).toHaveLength(2);
   });
 });

@@ -1,5 +1,8 @@
-/** One read at a time. Failed reads back off; a successful foreground read restores the cadence. */
-export function startWardPolling(options: { refresh: () => Promise<boolean>; visible: () => boolean }) {
+/**
+ * One read at a time. Failed reads back off; a successful foreground read restores the cadence. A read
+ * the client skipped (a save in flight, audit SD-04) is neither: it keeps the current delay.
+ */
+export function startWardPolling(options: { refresh: () => Promise<boolean | "skipped">; visible: () => boolean }) {
   const delays = [3_000, 15_000, 60_000];
   let failures = 0;
   let stopped = false;
@@ -14,7 +17,8 @@ export function startWardPolling(options: { refresh: () => Promise<boolean>; vis
     if (!options.visible()) return schedule();
     reading = true;
     try {
-      failures = (await options.refresh()) ? 0 : Math.min(failures + 1, 2);
+      const read = await options.refresh();
+      if (read !== "skipped") failures = read ? 0 : Math.min(failures + 1, 2);
     } catch {
       failures = Math.min(failures + 1, 2);
     } finally {

@@ -68,7 +68,7 @@ describe("the application shell boundary", () => {
     vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(false);
     render(<AppShellErrorBoundary error={chunkError()} retry={vi.fn()} />);
 
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("You are offline");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("You're offline");
     expect(screen.getByRole("alert").textContent).toContain("reload by itself when the connection returns");
     expect(screen.queryByText(/unexpected error occurred in the application shell/)).toBeNull();
     expect(reload).not.toHaveBeenCalled();
@@ -114,7 +114,7 @@ describe("the ward flow boundary panel", () => {
     vi.spyOn(window.navigator, "onLine", "get").mockReturnValue(false);
     render(<WardFlowErrorPanel {...props} error={chunkError()} />);
 
-    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("You are offline");
+    expect(screen.getByRole("heading", { level: 1 }).textContent).toBe("You're offline");
     goOnline();
     expect(reload).toHaveBeenCalledTimes(1);
   });

@@ -22,12 +22,14 @@ import { WardBroadcastBanner } from "@/components/ward-management/shell/ward-bro
 import { WardOfflineBanner, WardPracticeLine } from "@/components/ward-management/shell/ward-offline-banner";
 import { WardDowntimePackLine } from "@/components/ward-management/shell/ward-downtime-pack-line";
 import { WARD_OFFLINE_SAVED_NOTE } from "@/components/ward-management/ward-offline-copy";
-import { WardDemoNotSavedNote } from "@/components/ward-management/shell/ward-demo-saving";
+import { WardDemoNotSavedNote, WardDemoTypedTextNote } from "@/components/ward-management/shell/ward-demo-saving";
 import { WardRecoveryNotice } from "@/components/ward-management/shell/ward-recovery-notice";
+import { WardOtherTabDayNote } from "@/components/ward-management/shell/ward-other-tab-day";
 import { WardFeatureFlagLink } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardOfflineLinks } from "@/components/ward-management/shell/ward-offline-links";
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
 import { NextRail as WardRail } from "@/components/ward-management/shell-next/next-rail";
+import { NextShellBoundary } from "@/components/ward-management/shell-next/next-shell-boundary";
 import { WardMainFocusTarget } from "@/components/ward-management/shell/ward-main-focus-target";
 import { WardSkipToActNow } from "@/components/ward-management/shell/ward-skip-to-act-now";
 import { TvLockGuard } from "@/components/ward-management/bed-meeting/tv-lock-guard";
@@ -222,8 +224,13 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
               <WardSkipToActNow />
               {/* P073: "Skip to main content" moves focus into the page's main. */}
               <WardMainFocusTarget />
+              {/* TE-06: the route `error.tsx` cannot wrap this layout, so the rail and the top bar each have
+              a light boundary (next-shell-boundary.tsx). A broken one shows a short line with Reload page
+              and the rest of the ward keeps working. */}
               <div className={styles.shellRow}>
-                <WardRail />
+                <NextShellBoundary label="The sidebar">
+                  <WardRail />
+                </NextShellBoundary>
                 {/* Gives the rail its stored or tablet shape before the first paint (ward-rail-early.ts),
               so the sidebar does not fold and slide the page once the app loads. */}
                 <WardFirstDocumentOnly>
@@ -234,7 +241,9 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                   />
                 </WardFirstDocumentOnly>
                 <div className={styles.shellContent} data-wf-scroller="">
-                  <WardBarMount />
+                  <NextShellBoundary label="The top bar">
+                    <WardBarMount />
+                  </NextShellBoundary>
                   {/* A1-17: until the page's code is running, taps do nothing; say so rather than look
                 ready. Hidden once the header is ready (`data-wf-bar-ready`, ward-early-tap.ts). */}
                   <p className={styles.loadingNote} role="status" data-testid="ward-loading-note" data-print-hide>
@@ -257,14 +266,17 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                 (ward-flow-layout.module.css), so a lower note never hides a higher one. A pull-now broadcast
                 comes first, so a recovery note waiting to be closed never hides it. Keep this order. */}
                   <div className={styles.bannerHolder} data-wf-bar-notes="">
+                    {/* SD-02 (Josh, 5 Nov 2026): lost device saving outranks every other note. */}
+                    <WardDemoNotSavedNote />
                     <WardBroadcastBanner />
                     <WardRecoveryNotice />
+                    <WardOtherTabDayNote />
                     <WardOfflineBanner practice={false} />
                     {/* Fix plan item 9: retakes the downtime pack hourly and at shift change, and offers it to print or save. */}
                     <WardDowntimePackLine />
                     <WardAccessBanner />
                     <WardPracticeLine />
-                    <WardDemoNotSavedNote />
+                    <WardDemoTypedTextNote />
                   </div>
                   <WardPhoneDesktopOnly />
                   {/* A closed screen replaces the whole ground, which it draws itself (shell/ward-access.tsx).

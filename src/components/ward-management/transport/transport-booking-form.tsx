@@ -40,6 +40,7 @@ import {
   legalNowTransportStatus,
   transportAnswersBlockedReason,
   transportAnswersMissing,
+  transportAnswerWarnings,
   transportCadToFollow,
   transportStatusClashes,
   type TransportAnswer,
@@ -80,7 +81,8 @@ export type TransportBookingSubmission = {
   escortRequired: boolean;
   cadNumber: string;
   transportLegalStatus: TransportLegalStatus;
-  estimatedAt: Instant;
+  /** Absent when no estimated time was given; it warns (card 3). */
+  estimatedAt?: Instant;
   exception?: { gaps: ["legal_status_differs"]; reason: TransportExceptionReason };
 };
 
@@ -209,12 +211,14 @@ export function transportBookingSubmission(
 ): TransportBookingSubmission | undefined {
   const { provider, escortRequired, cadNumber, transportLegalStatus, estimatedTime, estimatedDay } = answers;
   const estimatedAt = instantFromEstimatedTimeInputs(estimatedTime, estimatedDay, now);
+  // W32 (Josh's card 3, 5 Nov 2026): the estimated time warns; a typed time must be readable. Who is
+  // collecting still blocks: it is the booking itself.
   if (
     provider === undefined ||
     escortRequired === undefined ||
     (cadNumber.trim().length > 0 && cadNumberProblem(cadNumber) !== undefined) ||
     transportLegalStatus === undefined ||
-    estimatedAt === undefined
+    (estimatedTime.trim() !== "" && estimatedAt === undefined)
   )
     return undefined;
   const clash = record !== undefined && transportStatusClashes(record, transportLegalStatus);
@@ -224,7 +228,7 @@ export function transportBookingSubmission(
     escortRequired,
     cadNumber: cadNumber.trim(),
     transportLegalStatus,
-    estimatedAt,
+    ...(estimatedAt === undefined ? {} : { estimatedAt }),
     ...(clash && legalReason !== "" ? { exception: { gaps: ["legal_status_differs"], reason: legalReason } } : {}),
   };
 }
@@ -287,6 +291,7 @@ export function TransportBookingForm({
   const cadProblem = answers.cadNumber.trim() ? cadNumberProblem(answers.cadNumber) : undefined;
   const missing = transportAnswersMissing(answers, now);
   const missingNames = missing.map((answer) => ANSWER_PARTS[answer][0]);
+  const warningNames = transportAnswerWarnings(answers);
   const clash = record !== undefined && transportStatusClashes(record, answers.transportLegalStatus);
   const reasonMissing = clash && legalReason === "";
   const estimatedAt = instantFromEstimatedTimeInputs(answers.estimatedTime, answers.estimatedDay, now);
@@ -326,9 +331,17 @@ export function TransportBookingForm({
       ) : (
         <p className={styles.allAnswered} data-testid={tid("left")} role="status">
           <StatusGlyph tone="success" size={9} />
-          Every answer given. Check them, then save.
+          Every required answer given. Check them, then save.
         </p>
       )}
+      {/* W32 (Josh's card 3, 5 Nov 2026): the estimated time warns, never blocks. */}
+      {warningNames.length > 0 ? (
+        <p className={styles.left} data-testid={`${tid("left")}-warnings`}>
+          <span>
+            <StatusGlyph tone="warning" size={9} /> Not recorded: {warningNames.join(", ")}. You can still save.
+          </span>
+        </p>
+      ) : null}
 
       {/* The person is named by the screen around the form (popup title, sheet or panel). */}
       <Field label="Who is collecting" id={did("provider")}>

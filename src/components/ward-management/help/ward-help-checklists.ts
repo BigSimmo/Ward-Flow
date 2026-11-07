@@ -1,6 +1,7 @@
 /**
  * GUIDED CHECKLISTS IN HELP (Josh, 2 Nov 2026, approved word for word): short lists of what to do at
- * the start of a shift, at handover, before the bed meeting and if Ward Flow is down. Each step may
+ * the start of a shift, at handover, before the bed meeting and if Ward Flow is down. Each desk also
+ * has a Getting started list for its first week (5 Nov 2026), listed first. Each step may
  * name where it is done (`go`: "home", a rail entry id or "settings#<tab>") and a Show me (`showMe`:
  * a `HOW_TOS` id). Ticks are reminders only: ticking a step records no event and changes nothing.
  *
@@ -17,7 +18,19 @@ import { howToHref } from "./ward-help-href";
 import { HOW_TOS } from "./ward-help-howto";
 import type { WardTourRole } from "./ward-help-store";
 
-export type ChecklistId = "start-of-shift" | "handover" | "bed-meeting" | "downtime";
+export type ChecklistId =
+  | "getting-started-coordinator"
+  | "getting-started-ward"
+  | "getting-started-ed"
+  | "getting-started-community"
+  | "getting-started-officer"
+  | "getting-started-bed-manager"
+  | "getting-started-executive"
+  | "getting-started-admin"
+  | "start-of-shift"
+  | "handover"
+  | "bed-meeting"
+  | "downtime";
 
 type ChecklistStep = {
   readonly text: string;
@@ -39,7 +52,138 @@ export type Checklist = {
 /** Said under every checklist's title. */
 export const CHECKLIST_SUBTITLE = "Reminders only. Ticking a step records nothing.";
 
-export const CHECKLISTS: readonly Checklist[] = [
+/** Said under every Getting started checklist's title. */
+export const GETTING_STARTED_SUBTITLE = "For your first week. Reminders only. Ticking a step records nothing.";
+
+const TAKE_THE_TOUR: ChecklistStep = {
+  text: "Take the tour once: open Help and press Take the tour.",
+  note: "Replay it from Help or Settings at any time.",
+  showMe: "tour",
+};
+const PRACTISE: ChecklistStep = {
+  text: "In Help, use Practise a placement to follow a bed request to arrival, on synthetic data.",
+};
+const MAKE_IT_YOURS: ChecklistStep = {
+  text: "In Settings, Display, choose your theme.",
+  note: "On a phone, Theme is under On this phone in Settings.",
+  go: "settings#display",
+  showMe: "theme",
+};
+
+function gettingStarted(id: ChecklistId, desk: WardTourRole, steps: readonly ChecklistStep[]): Checklist {
+  return { id, title: "Getting started", subtitle: GETTING_STARTED_SUBTITLE, desks: [desk], steps };
+}
+
+/**
+ * GETTING STARTED (Help and tour extension, 5 Nov 2026): one first-week list per desk, four to six
+ * practical steps, each with the place it is done and a Show me where one exists. Listed before the
+ * shift checklists, which keep their approved words.
+ */
+const GETTING_STARTED: readonly Checklist[] = [
+  gettingStarted("getting-started-coordinator", "coordinator", [
+    TAKE_THE_TOUR,
+    {
+      text: "Open Home and learn Needs you: Act now, Referrals to decide and Waiting on others.",
+      go: "home",
+    },
+    {
+      text: "Walk round Capacity with Show me, then read its Mismatch card.",
+      go: "capacity",
+      showMe: "around-capacity",
+    },
+    {
+      text: "Open Movements and follow one patient from referral to arrival.",
+      go: "movements",
+      showMe: "around-movements",
+    },
+    PRACTISE,
+    MAKE_IT_YOURS,
+  ]),
+  gettingStarted("getting-started-ward", "ward", [
+    TAKE_THE_TOUR,
+    { text: "On My ward, press Confirm numbers after a bed change.", go: "home", showMe: "confirm-numbers" },
+    { text: "Open the bed board and select a bed to see what you can record.", go: "home", showMe: "bed-board" },
+    { text: "Find the referrals sent to your ward and how to answer them.", showMe: "answer-ward-referrals" },
+    {
+      text: "Open Coming and going to see who is arriving and leaving.",
+      go: "movements",
+      showMe: "around-movements",
+    },
+    PRACTISE,
+  ]),
+  gettingStarted("getting-started-ed", "ed", [
+    TAKE_THE_TOUR,
+    { text: "On your ED board, read each person's Next step.", go: "home" },
+    { text: "Use Find a bed to see which wards meet the checks you choose.", showMe: "find-bed" },
+    { text: "Start a New referral for someone on your board.", showMe: "ed-raise" },
+    { text: "Open My referrals to follow each answer.", go: "referrals", showMe: "around-referrals" },
+    PRACTISE,
+  ]),
+  gettingStarted("getting-started-community", "community", [
+    TAKE_THE_TOUR,
+    { text: "On My team, open the Caseload and In hospital tabs.", go: "home" },
+    { text: "Open Referrals to follow your team's referrals.", go: "referrals", showMe: "around-referrals" },
+    { text: "Start a New referral to a ward.", showMe: "new-referral" },
+    { text: "Learn how to book transport for a team journey.", showMe: "book-transport-community" },
+    PRACTISE,
+  ]),
+  gettingStarted("getting-started-officer", "officer", [
+    TAKE_THE_TOUR,
+    {
+      text: "On My jobs, select a job to see its pickup, destination and booking.",
+      go: "home",
+      showMe: "transport-job",
+    },
+    { text: "Check the jobs that still need forms. A chip at the top of My jobs counts them.", go: "home" },
+    { text: "Open On-call to find who answers each line.", go: "on-call", showMe: "around-on-call" },
+    {
+      text: "In Settings, turn on Alerts on this device if you want them.",
+      go: "settings#alerts",
+      showMe: "notifications",
+    },
+  ]),
+  gettingStarted("getting-started-bed-manager", "bed_manager", [
+    TAKE_THE_TOUR,
+    { text: "On Capacity, read Beds ready and Mismatch.", go: "capacity", showMe: "around-capacity" },
+    {
+      text: "Open Movements to see every patient moving to a bed at your site.",
+      go: "movements",
+      showMe: "around-movements",
+    },
+    { text: "On Waiting, try the saved views.", go: "delays", showMe: "around-delays" },
+    { text: "Open Discharges: held-up discharges come first.", go: "discharges", showMe: "around-discharges" },
+    { text: "Pin the wards you check most, so they stay under My wards.", showMe: "pin-ward" },
+  ]),
+  gettingStarted("getting-started-executive", "executive", [
+    TAKE_THE_TOUR,
+    {
+      text: "On Statistics, try each view: Network, Compare, Services, Wards, EDs, Teams and Weekly.",
+      go: "statistics",
+      showMe: "statistics",
+    },
+    { text: "Read a figure's note to see what it counts and what it leaves out.", go: "statistics" },
+    { text: "Open Capacity for each ward's beds, as counts.", go: "capacity", showMe: "around-capacity" },
+    { text: "Choose one health service in the header, then the whole state again.", showMe: "service-in-view" },
+  ]),
+  gettingStarted("getting-started-admin", "admin", [
+    TAKE_THE_TOUR,
+    {
+      text: "In Settings, Access, give a demo account a role. Every role has an end date.",
+      go: "settings#access",
+      showMe: "give-access",
+    },
+    { text: "Answer one request for access: Give for 90 days or Decline.", go: "settings#access" },
+    {
+      text: "On Governance, open an event under Review and read what it records.",
+      go: "governance",
+      showMe: "around-governance",
+    },
+    { text: "Open the Audit trail tab to see what this session captured.", go: "governance" },
+  ]),
+];
+
+/** The shift checklists (Josh, 2 Nov 2026, approved word for word). */
+const SHIFT_CHECKLISTS: readonly Checklist[] = [
   {
     id: "start-of-shift",
     title: "Start of shift",
@@ -51,7 +195,7 @@ export const CHECKLISTS: readonly Checklist[] = [
         note: "Each row opens the record it is about.",
         go: "home",
       },
-      { text: "Open Alerts or Tasks in the header for everything addressed to this desk.", showMe: "alerts" },
+      { text: "Open Alerts in the header for everything addressed to this desk.", showMe: "alerts" },
       {
         text: "On Capacity, ask for an update when a ward's figure is old.",
         go: "capacity",
@@ -118,6 +262,9 @@ export const CHECKLISTS: readonly Checklist[] = [
     ],
   },
 ];
+
+/** Every checklist, Getting started first: a desk sees its own in this order. */
+export const CHECKLISTS: readonly Checklist[] = [...GETTING_STARTED, ...SHIFT_CHECKLISTS];
 
 /** A step as one desk sees it: its place in the list, with only the links that desk may use. */
 type DeskChecklistStep = {

@@ -10,8 +10,9 @@ import { useState } from "react";
 import { ArrowLeftRight, List, Phone, Users } from "lucide-react";
 import { Button, Card, CardHead, Count, Segmented, SrOnly, StatusGlyph, type WfTone } from "@/components/wf";
 import home from "@/components/ward-management/ward/ward-home-tab.module.css";
-import { CLIENTS, DEMO_FIGURES, REFERRALS, SENT, STAFF, shortName } from "./midland-demo";
-import { clockTime } from "@/components/ward-management/ward-saved-at-toast";
+import { DEMO_FIGURES, SENT, staffName } from "./midland-demo";
+import { useMidlandDay, useMidlandDemo } from "./use-midland-demo";
+import { perthClockTime } from "@/components/ward-management/ward-clock";
 import { openReferrals, recordMidlandContact, todaysMidlandContacts, useMidlandDecisions } from "./midland-decisions";
 import { Initials } from "./parts";
 import t from "./team-2026.module.css";
@@ -67,17 +68,18 @@ function ListRow(props: {
   primary?: boolean;
   go: () => void;
 }) {
+  const day = useMidlandDay();
   return (
     <li className={`${t.lr}${props.tone === "danger" ? ` ${t.urgent}` : ""}`}>
       <StatusGlyph tone={props.tone} size={12} />
       <span className={t.lrMain}>
         <span className={t.lrTitle}>{props.title}</span>
         <span className={t.lrDetail}>
-          <b>{props.name}</b> <span className={t.mono}>{props.umrn}</span> · {props.detail}
+          <b>{props.name}</b> <span className={t.mono}>{props.umrn}</span> · {day(props.detail)}
         </span>
       </span>
       <span className={t.lrWhen}>
-        <b className={t.mono}>{props.when}</b>
+        <b className={t.mono}>{day(props.when)}</b>
         <span>{props.whenSub}</span>
       </span>
       <Button variant={props.primary ? "pri" : "sec"} size="sm" onClick={props.go}>
@@ -103,24 +105,25 @@ function ListGroup(props: { tone: WfTone; title: string; hint: string; children:
 }
 
 const TODAY_LOG = [
-  ["10:31", "Contact recorded", "Calderbrook, Jonah · clozapine bloods taken · Doyle, M."],
+  ["10:31", "Contact recorded", "Calderbrook, Jonah · clozapine bloods taken · Doyle, Marcus"],
   ["10:05", "Referral received", "Rendlesham, Otto · from Moodjar ward"],
-  ["09:40", "Follow-up booked", "Yarrowdale, Ben · Tue 3 Nov 10:00 · Nair, P."],
+  ["09:40", "Follow-up booked", "Yarrowdale, Ben · Tue 3 Nov 10:00 · Nair, Priya"],
   ["09:12", "Admitted", "Brackwater, Meredith · RGH Adult Secure"],
-  ["08:55", "Referral accepted", "Pembury, Ada · case manager Kuroki, H."],
-  ["08:40", "Depot fridge checked", "Doyle, M."],
+  ["08:55", "Referral accepted", "Pembury, Ada · case manager Kuroki, Hana"],
+  ["08:40", "Depot fridge checked", "Doyle, Marcus"],
 ] as const;
 
 function FlowRow(props: { title: string; detail: string; when: string; tone: WfTone; action: string; go: () => void }) {
+  const day = useMidlandDay();
   return (
     <li className={home.flowRow}>
       <StatusGlyph tone={props.tone} size={10} />
       <span className={home.flowMain}>
         <span className={home.flowTitleLine}>
           <span className={home.flowTitle}>{props.title}</span>
-          <span className={home.flowWhen}>{props.when}</span>
+          <span className={home.flowWhen}>{day(props.when)}</span>
         </span>
-        <span className={home.flowDetail}>{props.detail}</span>
+        <span className={home.flowDetail}>{day(props.detail)}</span>
       </span>
       <Button size="sm" onClick={props.go}>
         {props.action}
@@ -151,6 +154,8 @@ const ADMITTED_THIS_WEEK = [
 ];
 
 export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
+  const { CLIENTS, REFERRALS, STAFF } = useMidlandDemo();
+  const day = useMidlandDay();
   const decisions = useMidlandDecisions();
   // Today's recorded contacts lead Today's log, with time and desk role; the Act-now row shows it is
   // done. A contact from an earlier day is not today's, so the follow-up comes back the next day.
@@ -163,7 +168,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
     ...contacts.map(
       (c) =>
         [
-          clockTime(new Date(c.at)),
+          perthClockTime(new Date(c.at)),
           "Contact recorded",
           `${c.about === "a" ? "Thornbury, Cleo" : "Team contact"} · by Community`,
         ] as const,
@@ -210,7 +215,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
           />
           <Tile
             go={() => go("referrals")}
-            n={f.referrals}
+            n={open.length}
             label="Referrals"
             right={`oldest ${f.oldestReferral}`}
             bar={[
@@ -284,12 +289,12 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                       tone={cleoContact ? "success" : "danger"}
                       title={
                         cleoContact
-                          ? `Contact recorded at ${clockTime(new Date(cleoContact.at))}`
+                          ? `Contact recorded at ${perthClockTime(new Date(cleoContact.at))}`
                           : "7-day follow-up due today"
                       }
                       name="Thornbury, Cleo"
                       umrn="UM200288"
-                      detail="left RGH Adult Secure · Byrne, T."
+                      detail="left RGH Adult Secure · Byrne, Tom"
                       when="Day 7"
                       whenSub="of 7"
                       action={cleoContact ? "Open" : "Record contact"}
@@ -319,7 +324,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                       title="Leaving hospital, no follow-up booked"
                       name="Greymantle, Ottoline"
                       umrn="UM100095"
-                      detail="Moodjar · Mallard, J."
+                      detail="Moodjar · Mallard, Jodie"
                       when="Wed 4 Nov"
                       whenSub="in 2 days"
                       action="Book"
@@ -347,7 +352,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                       title="CTO review due"
                       name="Jessop, Rowan"
                       umrn="UM200204"
-                      detail="+2 more · Doyle, M. · ends 9 Nov"
+                      detail="+2 more · Doyle, Marcus · ends 9 Nov"
                       when="Wed 4 Nov"
                       whenSub="in 2 days"
                       action="Open"
@@ -359,7 +364,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                       title="Not seen in 4 weeks"
                       name="Dunmore, Felicity"
                       umrn="UM200140"
-                      detail="+1 more · Mallard, J."
+                      detail="+1 more · Mallard, Jodie"
                       when="31d"
                       whenSub="since seen"
                       action="Open"
@@ -387,7 +392,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                     <span className={`${t.mono} ${t.logT}`}>{when}</span>
                     <span className={t.person}>
                       <span className={t.logA}>{what}</span>
-                      <span className={t.sub}>{detail}</span>
+                      <span className={t.sub}>{day(detail)}</span>
                     </span>
                   </li>
                 ))}
@@ -494,7 +499,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
                       <FlowRow
                         key={name}
                         title={name}
-                        detail={`${client?.where ?? ""} · ${client?.cm ? shortName(client.cm) : "no case manager"}`}
+                        detail={`${client?.where ?? ""} · ${client?.cm ? staffName(client.cm) : "no case manager"}`}
                         when="6 days ago"
                         tone="neutral"
                         action="Open"
@@ -550,7 +555,7 @@ export function TeamHome({ go, now }: { go: TeamGo; now: string }) {
               <div>
                 <dt>Duty officer</dt>
                 <dd>
-                  Byrne, T. · <span className={t.mono}>ext 4105</span>
+                  Byrne, Tom · <span className={t.mono}>ext 4105</span>
                 </dd>
               </div>
               <div>

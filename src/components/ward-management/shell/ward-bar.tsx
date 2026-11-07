@@ -82,11 +82,9 @@ import {
   fixedServiceFor,
   focusAlertsQueue,
   isDrawerPanel,
-  isPendingNavigation,
   isReferralSheetPath,
   phoneBarAction,
   roleReferralCategory,
-  routeBarAction,
   wardBarRouteTitle,
   withRoleCategory,
   type ReferralOpenRequest,
@@ -103,9 +101,6 @@ import {
 } from "./ward-bar-controls";
 import { usePhoneActivitySheet } from "./ward-phone-menu";
 import styles from "./ward-bar.module.css";
-
-// Moved to `ward-bar-model.ts`; re-exported so existing importers keep working.
-export { drawerCloseHistoryStep, isPendingNavigation };
 
 /**
  * Ward Flow's third-edition bar (`docs/ward-flow/plans/2026-09-10-third-edition-build-master-
@@ -1106,9 +1101,8 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
           aria-label={`Board time ${liveClockFace} AWST${online ? "" : ". Offline"}`}
         >
           <span className={styles.demoClockDot} data-offline={online ? undefined : "true"} aria-hidden="true" />
-          <span className={styles.demoClockLabel}>Board time</span>
-          <span className={styles.demoClockTime}>{liveClockFace}</span>
-          <span className={styles.demoClockTz}>AWST</span>
+          <span className={styles.demoClockLabel}>Board time</span>{" "}
+          <span className={styles.demoClockTime}>{liveClockFace}</span> <span className={styles.demoClockTz}>AWST</span>
         </WardDemoClockPopover>
 
         {/* The shell's synthetic-data marker for screen readers (visually hidden, so no pill shows). */}
@@ -1332,25 +1326,4 @@ export function WardBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
       <WardHelpHost />
     </WardBarFrame>
   );
-}
-
-/**
- * `layout.tsx`'s (`src/app/ward-flow/layout.tsx`) own mount of the bar, wired to
- * `resolveWardPrimaryAction` — the "layout.tsx resolves the current route's action from
- * `WARD_PRIMARY_ACTIONS` and passes it" step D-16 calls for.
- *
- * ⚠️ **WHY THIS IS A SEPARATE COMPONENT, NOT A FEW LINES INSIDE `layout.tsx` ITSELF.** Resolving a
- * pathname needs `usePathname()`, a Client Component hook — but `layout.tsx` cannot become one:
- * it is itself an `async` Server Component that reads `next/headers` (`await headers()`), and a
- * Client Component can never import a module that uses a server-only API (the import would be
- * bundled for the browser, where `next/headers` does not exist). The since-retired
- * `DeveloperAreaGate` used to be the server-only part here. `WardBar` itself stays exactly
- * the pure, resolved-prop consumer its own doc comment describes — this wrapper is the one place
- * between the route and it that is allowed to call a hook, mirroring `WardShellHeader`
- * (`ward-shell.tsx`), the shell's other per-route resolver already mounted the identical way from
- * the same Server Component layout.
- */
-export function WardBarMount(props: Omit<WardBarProps, "primaryAction">) {
-  const pathname = usePathname() ?? "";
-  return <WardBar {...props} primaryAction={routeBarAction(pathname)} />;
 }

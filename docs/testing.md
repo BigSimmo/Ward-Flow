@@ -168,7 +168,7 @@ not establish physical Safari or installed-PWA acceptance.
 
 ### Playwright project cadence
 
-`playwright.config.ts` declares ten always-present projects plus the conditional
+`playwright.config.ts` declares thirteen always-present projects plus the conditional
 `chromium-mockups-known`, `ward-shared-mode` and `ward-shared-phone` projects. Declaring a project is not proof CI executes it.
 
 | Project                                                       | Execution in the dedicated Ward Flow repository                                                                                                                                                                                                                                                                                                                                |
@@ -179,6 +179,8 @@ not establish physical Safari or installed-PWA acceptance.
 | `ward-shared-mode`                                            | Conditional: shared mode against a local backend and PostgreSQL, only through `node tests/support/ward-shared-mode-run.mjs` (needs `WARD_E2E_DATABASE_URL`); CI runs it in the separate backend/shared-production job. It builds and serves production Next plus a production backend through loopback HTTPS and local fake authentication, including save/reload persistence. |
 | `ward-shared-phone`                                           | Conditional: the phone (iPhone 13) shared-mode specs, run by the same `node tests/support/ward-shared-mode-run.mjs` after `ward-shared-mode`, in the same backend/shared-production job.                                                                                                                                                                                       |
 | `chromium`                                                    | `test:e2e:pr` selects the production CSRF spec; CI invokes that spec explicitly in browser group 1.                                                                                                                                                                                                                                                                            |
+| `visual-desktop`, `visual-phone`                              | Nightly only (`ward-flow-nightly-browsers.yml`), `default: false`, so they run only when named: image baselines for ten key screens, desktop Chromium 1440 and phone WebKit 390, from `tests/visual-baselines/` (front-end audit TE-01).                                                                                                                                       |
+| `tablet-webkit`                                               | Nightly only (same workflow), `default: false`: the axe sweep and the responsive audit on iPad WebKit at 834x1112 (front-end audit TE-02).                                                                                                                                                                                                                                     |
 | `firefox-ward-responsive`, `webkit-ward-responsive`           | Manual/selective responsive checks through the existing wrapper.                                                                                                                                                                                                                                                                                                               |
 | `firefox`, `webkit`, `mobile-webkit`, `mobile-pwa-standalone` | Available for explicit project selection; no general main/weekly release matrix invokes them in the current workflows.                                                                                                                                                                                                                                                         |
 
@@ -190,8 +192,12 @@ in another engine. Phone WebKit in the release gate is emulation, not physical S
 ## Appearance verification
 
 The former `ui-style-contract`, `ui-visual-baseline` and visual-artifact specs were removed from this
-dedicated repository. There is no active visual-baseline CI job or automatic screenshot adoption
-workflow. The retained generic `playwright.visual.config.ts` is not evidence of a running gate.
+dedicated repository. Image baselines came back on 6 November 2026 (front-end audit TE-01) as a
+nightly check only, `tests/ward-visual-baselines.spec.ts`, never on a pull request. Its baselines
+must be made on the hosted Linux runner that compares them: run the "Ward Flow nightly browsers"
+workflow by hand with "update baselines" ticked, download the `ward-visual-baselines` artifact and
+commit `tests/visual-baselines/` in a pull request. A baseline made on another machine will not
+match. Until baselines are committed, the nightly compare fails, which is expected.
 Verify changed Ward appearance through the affected Ward journey and direct browser inspection,
 including meaningful computed styles, geometry, keyboard interaction and accessibility where affected.
 Follow the bounded screenshot and viewport rules in [HOW-WE-WORK §5](ward-flow/HOW-WE-WORK.md#5-testing).

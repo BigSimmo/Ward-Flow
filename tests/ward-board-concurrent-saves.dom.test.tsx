@@ -68,8 +68,8 @@ it("reports the first move's refusal even when a second move was sent before it 
     </WardFlowProvider>,
   );
   fireEvent.click(screen.getByTestId("ward-open-bed-board"));
-  const occupied = beds().filter((cell) => !/free|closed|pulled/.test(label(cell)));
-  const free = beds().filter((cell) => /, ready$/.test(label(cell)));
+  const occupied = beds().filter((cell) => !/ready|closed|pulled/i.test(label(cell)));
+  const free = beds().filter((cell) => /, Ready, Free to place$/.test(label(cell)));
   expect(occupied.length).toBeGreaterThanOrEqual(2);
   expect(free.length).toBeGreaterThanOrEqual(2);
 

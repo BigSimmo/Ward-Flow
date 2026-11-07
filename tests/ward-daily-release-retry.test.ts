@@ -16,6 +16,7 @@ type State = {
   tags: Record<string, string>;
   calls: string[];
   createFailures: number;
+  lostCreateAck: number;
   updateFailures: number;
   publishFailures: number;
   lostUpdateAck: number;
@@ -26,6 +27,7 @@ type State = {
   acceptance?: string;
   acceptanceAnswers?: string[];
   acceptanceFailures: number;
+  publishTagCollision?: string;
 };
 const directories: string[] = [];
 afterEach(() =>
@@ -97,13 +99,17 @@ else if (route.startsWith('git/ref/tags/')) {
     tag_name: fields.tag_name, target_commitish: fields.target_commitish,
     draft: fields.draft === 'true', body: fields.body, name: fields.name };
   state.records.push(record);
-  if (!record.draft) state.tags[record.tag_name] = record.target_commitish;
+  // GitHub ignores target_commitish when the named tag already exists.
+  if (!record.draft && !state.tags[record.tag_name]) state.tags[record.tag_name] = record.target_commitish;
+  inject('lostCreateAck');
   finish(record);
 } else if (/^releases\\/\\d+$/.test(route) && method === 'PATCH') {
   const record = state.records.find(item => item.id === Number(route.split('/')[1]));
   if (!record || fields.draft !== 'false') fail('Unexpected release publication');
-  inject('publishFailures'); record.draft = false;
-  state.tags[record.tag_name] = record.target_commitish;
+  inject('publishFailures');
+  if (state.publishTagCollision) state.tags[record.tag_name] = state.publishTagCollision;
+  record.draft = false;
+  if (!state.tags[record.tag_name]) state.tags[record.tag_name] = record.target_commitish;
   inject('lostPublishAck'); finish(record);
 } else fail('Unexpected mock API route: ' + method + ' ' + route);
 `;
@@ -119,6 +125,7 @@ function harness(overrides: Partial<State> = {}) {
     tags: { "live-previous": previous },
     calls: [],
     createFailures: 0,
+    lostCreateAck: 0,
     updateFailures: 0,
     publishFailures: 0,
     lostUpdateAck: 0,
@@ -275,6 +282,29 @@ describe("daily release record and live-ref recovery", () => {
     expect(h.read().records.find((record) => record.id === draft?.id)?.draft).toBe(false);
   });
 
+  it("reuses the retained draft after losing its create acknowledgement", () => {
+    const h = harness({ lostCreateAck: 1 });
+    expect(h.run().status).not.toBe(0);
+    expect(h.read().current).toBe(previous);
+    const saved = h.read().records.find((record) => record.target_commitish === target)!;
+    expect(saved.draft).toBe(true);
+    expect(h.run().status).toBe(0);
+    const records = h.read().records.filter((record) => record.target_commitish === target);
+    expect(records).toHaveLength(1);
+    expect(records[0]).toMatchObject({ id: saved.id, body: saved.body, draft: false });
+  });
+
+  it("fails visibly if another writer creates a conflicting tag at publication", () => {
+    const h = harness({ publishTagCollision: previous });
+    const result = h.run();
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("Release tag points at another commit");
+    expect(result.stdout).not.toContain("Published the retained release record");
+    expect(h.read().current).toBe(target);
+    expect(h.read().tags[`live-${target}`]).toBe(previous);
+    expect(h.read().records.find((record) => record.target_commitish === target)?.draft).toBe(false);
+  });
+
   it.each(["publishFailures", "lostUpdateAck", "lostPublishAck"] as const)(
     "repairs %s without replacing notes or creating another record",
     (failure) => {
@@ -395,5 +425,31 @@ describe("daily release record and live-ref recovery", () => {
     h.change({ calls: [] });
     expect(h.run("BigSimmo/Other").status).not.toBe(0);
     expect(h.read().calls).toEqual([]);
+  });
+
+  // CB-2 (front-end audit, 5 Nov 2026): after a rollback live sits behind main, and main still holds
+  // the bad commit. While WARD_RELEASE_PAUSED is set, no run may move live forward again.
+  it("holds a rolled-back live while releases are paused, on the schedule and by hand", () => {
+    const h = harness({ current: previous, target });
+    const scheduled = h.run("BigSimmo/Ward-Flow", { RELEASE_PAUSED: "true", EVENT_NAME: "schedule" });
+    expect(scheduled.status).toBe(0);
+    expect(scheduled.stdout).toContain("Releases are paused");
+    expect(h.read().calls).toEqual([]);
+    expect(h.read().current).toBe(previous);
+
+    const byHand = h.run("BigSimmo/Ward-Flow", { RELEASE_PAUSED: "yes", EVENT_NAME: "workflow_dispatch" });
+    expect(byHand.status).not.toBe(0);
+    expect(byHand.stderr).toContain("Releases are paused");
+    expect(h.read().calls).toEqual([]);
+    expect(h.read().current).toBe(previous);
+  });
+
+  it("releases as usual once the pause is cleared", () => {
+    const h = harness({ current: previous, target });
+    expect(h.run("BigSimmo/Ward-Flow", { RELEASE_PAUSED: "false", EVENT_NAME: "schedule" }).status).toBe(0);
+    expect(h.read().current).toBe(target);
+    const h2 = harness({ current: previous, target });
+    expect(h2.run("BigSimmo/Ward-Flow", { RELEASE_PAUSED: "", EVENT_NAME: "schedule" }).status).toBe(0);
+    expect(h2.read().current).toBe(target);
   });
 });

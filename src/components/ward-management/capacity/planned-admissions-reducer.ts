@@ -17,6 +17,7 @@ import {
   isPlannedAdmissionReason,
   isPlannedAdmissionStayDays,
   normalisePlannedAdmissionInitials,
+  plannedInitialsRefusal,
   PLANNED_ADMISSION_WINDOW_DAYS,
   type Admission,
   type PlannedAdmission,
@@ -336,7 +337,11 @@ export function reducePlannedAdmissionEvent(
       } else {
         initials = normalisePlannedAdmissionInitials(event.initials);
         if (initials === null)
-          return reject(state, event, "BOOK_PLANNED_ADMISSION initials must be one to three letters");
+          return reject(
+            state,
+            event,
+            `BOOK_PLANNED_ADMISSION: ${(typeof event.initials === "string" && plannedInitialsRefusal(event.initials)) || "Initials are one to three letters."}`,
+          );
       }
       // A linked patient's gender is the record's, as their age group is: the event's own value
       // is ignored. Initials only carry what the person booking picked, or nothing.

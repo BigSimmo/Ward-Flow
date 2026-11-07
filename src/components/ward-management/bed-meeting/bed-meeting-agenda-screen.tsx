@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useId, useMemo, useRef, useState, type ReactNode } from "react";
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import Link from "next/link";
 import { Check, Plus } from "lucide-react";
 
@@ -345,19 +346,21 @@ function BedMeetingAgenda() {
         aside={
           // Phone (Josh, 31 Oct 2026): Home's hero pills, side by side.
           <div className={`${styles.heroPillGroup} ${phoneRows.heroPills}`}>
-            <BedMeetingSheetLauncher
-              now={now}
-              buttonClassName={`${buttonClass({ variant: "onHero", size: "sm" })} ${phoneRows.heroPill}`}
-              buildSheet={buildSheet}
-              actions={actionRows.map((row) => ({
-                id: `${row.subject.id}-${row.action.kind}`,
-                name: patientOf(row.record).formalName,
-                action: bedMeetingActionLabel(row.action.kind),
-                owner: ownerText(row.action),
-                due: `${row.action.dueAt < now ? "was due" : "due"} ${formatInstantWithDay(row.action.dueAt, now)}`,
-                overdue: row.action.dueAt < now,
-              }))}
-            />
+            {bedMeetingTvOn ? null : (
+              <BedMeetingSheetLauncher
+                now={now}
+                buttonClassName={`${buttonClass({ variant: "onHero", size: "sm" })} ${phoneRows.heroPill}`}
+                buildSheet={buildSheet}
+                actions={actionRows.map((row) => ({
+                  id: `${row.subject.id}-${row.action.kind}`,
+                  name: patientOf(row.record).formalName,
+                  action: bedMeetingActionLabel(row.action.kind),
+                  owner: ownerText(row.action),
+                  due: `${row.action.dueAt < now ? "was due" : "due"} ${formatInstantWithDay(row.action.dueAt, now)}`,
+                  overdue: row.action.dueAt < now,
+                }))}
+              />
+            )}
             {/* The meeting room screen, behind the `bed-meeting-tv` flag as on Capacity. */}
             {bedMeetingTvOn ? (
               <Link
@@ -571,7 +574,8 @@ function BedMeetingAgenda() {
                           {overdue ? <span className={styles.urgency}>Overdue</span> : null}
                         </span>
                         <span className={styles.detail}>
-                          {waited} · {due} · {referral.originSiteCode} · {askingForShort(referral)}
+                          {waited} · {due} · {referral.originSiteCode ?? ORIGIN_NOT_RECORDED} ·{" "}
+                          {askingForShort(referral)}
                         </span>
                       </div>
                       <Link

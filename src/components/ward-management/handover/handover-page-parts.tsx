@@ -148,7 +148,7 @@ export function HandoverChoiceMenu({
           data-value={value}
           data-print-hide
         >
-          {context ? <span className={styles.choiceContext}>{context}</span> : null}
+          {context ? <span className={styles.choiceContext}>{context}</span> : null}{" "}
           <span className={styles.choiceValue}>{current}</span>
         </Button>
       )}

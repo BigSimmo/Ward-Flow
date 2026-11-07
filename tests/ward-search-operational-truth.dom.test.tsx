@@ -55,7 +55,9 @@ describe("search operational facts on visible cards", () => {
     expect(rows).toHaveLength(1);
     // The census says "In transit" in words (9 Oct 2026 rebuild); the record's own label was "In-Transit".
     expect(rows[0]).not.toHaveTextContent("In transit");
-    expect(screen.getByRole("region", { name: "Patient details" })).not.toHaveTextContent("Vehicle dispatched");
+    // Drawer review (6 Nov 2026): the details open in the kit drawer once the row is chosen.
+    fireEvent.click(rows[0]!);
+    expect(screen.getByTestId("ward-patient-search-details")).not.toHaveTextContent("Vehicle dispatched");
     fireEvent.change(screen.getByLabelText("Setting"), { target: { value: "ed" } });
     expect(screen.getByTestId(`ward-patient-search-case-${movement.id}`)).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("Setting"), { target: { value: "transit" } });
@@ -71,7 +73,8 @@ it("a collected movement is visible in the transit filter and excluded from ED",
   search(movement.id);
   fireEvent.change(screen.getByLabelText("Setting"), { target: { value: "transit" } });
   expect(screen.getByTestId(`ward-patient-search-case-${movement.id}`)).toHaveTextContent("In transit");
-  expect(screen.getByRole("region", { name: "Patient details" })).toHaveTextContent("Collected");
+  fireEvent.click(screen.getByTestId(`ward-patient-search-case-${movement.id}`));
+  expect(screen.getByTestId("ward-patient-search-details")).toHaveTextContent("Collected");
   fireEvent.change(screen.getByLabelText("Setting"), { target: { value: "ed" } });
   expect(screen.queryByTestId(`ward-patient-search-case-${movement.id}`)).not.toBeInTheDocument();
 });

@@ -76,7 +76,7 @@ function BedFacts({ facts, now }: { facts: BedReleaseAuditFacts | null; now: Ins
         ["State", facts.state ?? "Not recorded"],
         ["Expected", when(facts.expectedAt, now)],
         ["Waiting on", display(facts.waitingOn)],
-        ["Blocker", display(facts.blocker)],
+        ["Held up by", display(facts.blocker)],
         ["Preparing", display(facts.preparing)],
         ["Preparation note", display(facts.preparationNote)],
       ]}
@@ -92,14 +92,14 @@ function RequestedBedFacts({ request, now }: { request: BedReleaseAuditRequest; 
       facts.push(
         ["Expected", when(request.expectedAt, now)],
         ["Waiting on", display(request.waitingOn)],
-        ["Blocker", display(request.blocker)],
+        ["Held up by", display(request.blocker)],
       );
       break;
     case "REVERT_BED_RELEASE":
       facts.push(["Waiting on", display(request.waitingOn)]);
       break;
     case "BLOCK_BED_RELEASE":
-      facts.push(["Blocker", display(request.blocker)]);
+      facts.push(["Held up by", display(request.blocker)]);
       break;
     case "SET_BED_PREPARATION":
       facts.push(["Preparing", display(request.preparing)], ["Preparation note", display(request.note)]);

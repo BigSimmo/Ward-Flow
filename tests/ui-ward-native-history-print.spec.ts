@@ -91,7 +91,7 @@ test.describe("native history and handover print @mockup", () => {
         .getByRole("dialog", { name: "Tools", exact: true })
         .getByRole("button", { name: /New referral/u })
         .click();
-      const referral = page.getByRole("dialog", { name: "Referrals", exact: true });
+      const referral = page.getByRole("dialog", { name: "New referral", exact: true });
       await referral
         .getByRole("group", { name: "Referral sections" })
         .getByRole("button", { name: "Referral", exact: true })

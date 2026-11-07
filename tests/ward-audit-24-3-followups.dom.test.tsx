@@ -262,7 +262,7 @@ describe("SV-5 confirm bed release and SV-7 Retry on the ward screen", () => {
     });
     fireEvent.click(screen.getByTestId("ward-open-bed-board"));
     const occupied = Array.from(document.querySelectorAll<HTMLElement>("[data-testid^='ward-board-bed-']")).find(
-      (bed) => !/free|closed|pulled/.test(bed.getAttribute("aria-label") ?? ""),
+      (bed) => !/ready|closed|pulled/i.test(bed.getAttribute("aria-label") ?? ""),
     )!;
     fireEvent.click(occupied);
     fireEvent.click(await screen.findByTestId("ward-observation-change"));

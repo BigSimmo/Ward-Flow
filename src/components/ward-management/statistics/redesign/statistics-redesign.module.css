@@ -230,6 +230,62 @@
       center / 12px 100% no-repeat scroll,
     var(--wf-surface);
 }
+/*
+ * Design audit C7 (5 Nov 2026): a faint shadow was the only sign a wide table scrolls, and the last
+ * head read "L". Each edge now fades while there is more that way, as the kit's chip rows do. The
+ * fade follows the table's own sideways scroll, so it needs no script; with no overflow the
+ * timeline is inactive and nothing fades. Written as longhands: the `animation` shorthand resets
+ * `animation-timeline`.
+ */
+@property --stats-table-fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --stats-table-fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+@keyframes statsTableEdgeFade {
+  0% {
+    --stats-table-fade-start: 0px;
+    --stats-table-fade-end: 32px;
+  }
+  8% {
+    --stats-table-fade-start: 32px;
+  }
+  92% {
+    --stats-table-fade-end: 32px;
+  }
+  100% {
+    --stats-table-fade-start: 32px;
+    --stats-table-fade-end: 0px;
+  }
+}
+@supports (animation-timeline: scroll()) {
+  .tableWrap {
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black var(--stats-table-fade-start),
+      black calc(100% - var(--stats-table-fade-end)),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      black var(--stats-table-fade-start),
+      black calc(100% - var(--stats-table-fade-end)),
+      transparent 100%
+    );
+    animation-name: statsTableEdgeFade;
+    animation-duration: auto;
+    animation-timing-function: linear;
+    animation-fill-mode: both;
+    animation-timeline: scroll(self inline);
+  }
+}
 .table {
   width: 100%;
   border-collapse: collapse;
@@ -737,6 +793,23 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* WF-41 (5 Nov 2026): live review saw the ED pressure table clip at ~610px of card width while
+   halves still ran two-up. Stack any half-grid that holds a pressure table through desktop widths
+   so Awaiting / 8h+ stay in view; keep overflow inside the wrap. */
+@media (max-width: 80rem) {
+  .halves:has(table[id="edPressureTable"]),
+  .halves:has(table[id="wardPressureTable"]) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .tableWrap:has(> table[id="edPressureTable"]),
+  .tableWrap:has(> table[id="wardPressureTable"]) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 @media (max-width: 560px) {
   .body {
     gap: 10px;

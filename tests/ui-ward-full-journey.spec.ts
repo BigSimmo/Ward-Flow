@@ -273,7 +273,7 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     // Any ward the slide-out offers this person serves: this step proves the community-sourced
     // entry path reaches the coordinator's board, not which ward answers it.
     await steps.getByRole("button", { name: "Wards", exact: true }).click();
-    await tapChoice(sheet.getByRole("list", { name: "Placement Destination Options" }).getByRole("checkbox").first());
+    await tapChoice(sheet.getByRole("list", { name: "Destinations" }).getByRole("checkbox").first());
     // No transport needed: patient or carer accompanied.
     await sheet.getByLabel("Transport", { exact: true }).selectOption("Family or carer");
 
@@ -512,7 +512,8 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await officerScreen.getByTestId(`ward-officer-select-${movementId}`).click();
 
     // v6 (7 Oct 2026): the four stage actions sit in the selected job's panel, not its row.
-    const jobPanel = officerScreen.getByTestId("ward-officer-detail");
+    // Drawer review (6 Nov 2026): the job opens in the kit right drawer, portalled outside the screen.
+    const jobPanel = page.getByTestId("ward-officer-detail");
     const acceptTransport = jobPanel.getByTestId(`ward-officer-accept-${movementId}`);
     await expect(acceptTransport).not.toHaveAttribute("aria-disabled", "true");
     await clearToasts(page);

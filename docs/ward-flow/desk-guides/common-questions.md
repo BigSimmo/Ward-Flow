@@ -98,7 +98,7 @@ Source: Help, screen questions (`screenHelpFor`). Screen: Handover.
 
 ### Why does a figure say "fewer than 5"?
 
-> Small counts of people read "fewer than 5", so no one can be picked out.
+> Small counts of people read "fewer than 5", so nobody can be picked out.
 
 Source: Help, Executive desk guide limits (`DESK_GUIDES.executive`).
 

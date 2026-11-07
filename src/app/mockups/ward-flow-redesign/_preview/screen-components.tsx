@@ -15,6 +15,10 @@ const BuiltHome = dynamic<MockupPageProps>(() => import("./built-home").then((mo
 const NewReferralRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/new-referral/new-referral-redesign").then((module) => module.NewReferralRedesign),
 );
+// 6 Nov 2026: a new mock-up, the combined triage and risk assessment (Option D), not built into the app.
+const TriageRiskRedesign = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-redesign/triage-risk/triage-risk-redesign").then((module) => module.TriageRiskRedesign),
+);
 // Built into the app (31 Oct 2026): Waiting draws the real screen, kept here as the backdrop for
 // the Loading (Waiting) pop-up.
 const WaitingPage = dynamic<MockupPageProps>(() =>
@@ -443,4 +447,5 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "statistics-network": StatisticsNetworkScreen,
   "ed-department": EdDepartmentScreen,
   transport: TransportScreen,
+  "triage-risk": TriageRiskRedesign,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;

@@ -6,7 +6,7 @@ import type {
   WardCredentialForm,
   WardCredentialMessageKind,
 } from "@/components/ward-management/use-ward-supabase-shared";
-import { consumeRecoveryFragment, WardAuthError } from "@/components/ward-management/ward-auth-link";
+import { consumeRecoveryLink, deviceStorage, WardAuthError } from "@/components/ward-management/ward-auth-link";
 import { createWardAuth } from "@/components/ward-management/ward-auth-session";
 import { requestFrontDoorPass } from "./front-door-pass-client";
 import type { WardBrowserAuthAdapter } from "@/components/ward-management/ward-supabase-auth";
@@ -78,12 +78,14 @@ export function useFrontDoorAuth(next: string): { phase: Phase; form: WardCreden
   useEffect(() => {
     let closed = false;
     void (async () => {
-      let recovery: ReturnType<typeof consumeRecoveryFragment> = null;
+      let recovery: ReturnType<typeof consumeRecoveryLink> = null;
       let linkError: unknown = null;
       try {
-        // Erase a recovery link's tokens from the address before anything else runs.
-        recovery = consumeRecoveryFragment(window.location, (url) =>
-          window.history.replaceState(window.history.state, "", url),
+        // Erase a recovery link's code from the address before anything else runs.
+        recovery = consumeRecoveryLink(
+          window.location,
+          (url) => window.history.replaceState(window.history.state, "", url),
+          deviceStorage,
         );
       } catch (error) {
         linkError = error;

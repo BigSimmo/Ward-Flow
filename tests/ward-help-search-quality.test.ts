@@ -84,6 +84,67 @@ describe("Help search golden set", () => {
   });
 });
 
+/**
+ * Desk jobs added 5 Nov 2026, asked from the desk that does them: the officer, executive, access
+ * admin, bed manager, ward, community and ED. Misspellings and everyday words included.
+ */
+const DESK_GOLDEN: readonly (readonly [question: string, role: Parameters<typeof askHelp>[1], top: string])[] = [
+  ["arrived at the ward", "officer", "officer-arrived"],
+  ["dropped off patient", "officer", "officer-arrived"],
+  ["pressed wrong button", "officer", "officer-undo-step"],
+  ["detour", "officer", "officer-divert"],
+  ["divrt", "officer", "officer-divert"],
+  ["redirected journey", "officer", "officer-divert"],
+  ["cad numbr", "officer", "officer-cad"],
+  ["paperwork", "officer", "officer-forms-pack"],
+  ["upload form", "officer", "officer-forms-pack"],
+  ["finished jobs", "officer", "officer-history"],
+  ["end of shift summary", "officer", "officer-copy-handover"],
+  ["occupancy", "executive", "executive-capacity"],
+  ["how many beds free", "executive", "executive-capacity"],
+  ["compare wards", "executive", "statistics-compare"],
+  ["weekly report", "executive", "statistics-weekly"],
+  ["approve access request", "admin", "answer-access-request"],
+  ["new starter", "admin", "answer-access-request"],
+  ["revoke role", "admin", "remove-role"],
+  ["leaver", "admin", "remove-role"],
+  ["who viewed a record", "admin", "access-log"],
+  ["acess log", "admin", "access-log"],
+  ["audit trail", "admin", "governance-review"],
+  ["shut a bed", "bed_manager", "close-bed-or-ward"],
+  ["close a ward", "bed_manager", "close-bed-or-ward"],
+  ["site sign off", "bed_manager", "site-sign-off"],
+  ["planed admission", "bed_manager", "planned-admission"],
+  ["elective booking", "bed_manager", "planned-admission"],
+  ["broadcast", "bed_manager", "send-bed-call"],
+  ["seclusoin room out of service", "bed_manager", "seclusion-room-status"],
+  ["respond to bed call", "ward", "answer-bed-call"],
+  ["record contact", "community", "record-team-contact"],
+  ["cto", "community", "record-cto"],
+  ["take referral", "community", "take-referral"],
+  ["log a call", "ed", "log-call-desk"],
+  ["patient arrived in ed", "ed", "ed-mark-arrived"],
+  ["medicaly cleared", "ed", "ed-medical-clearance"],
+  ["record outcome", "ed", "ed-outcome"],
+  ["left the department", "ed", "ed-left-department"],
+  ["cmht referral", "ed", "ed-refer-community"],
+  ["withdraw referral", "ed", "ed-withdraw-referral"],
+];
+
+describe("Help search golden set, by desk", () => {
+  it("covers every desk with few jobs", () => {
+    const roles = new Set(DESK_GOLDEN.map(([, role]) => role));
+    for (const role of ["officer", "executive", "admin", "bed_manager", "community", "ed"] as const)
+      expect(roles.has(role), role).toBe(true);
+  });
+
+  it.each(DESK_GOLDEN)("%s (%s) -> %s", (question, role, top) => {
+    const first = askHelp(question, role)[0];
+    expect(first?.howTo.id).toBe(top);
+    expect(first?.forThisDesk).toBe(true);
+  });
+});
+
 describe("synonyms", () => {
   it("is one data list with each word once, never mapped to itself", () => {
     const words = HELP_SYNONYMS.map(([word]) => word);

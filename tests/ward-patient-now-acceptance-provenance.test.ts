@@ -71,7 +71,7 @@ describe("patient profile acceptance and actual bed commitments", () => {
     expect(f.state.admissions.some((a) => a.movementId === f.movementId && a.state === "pulled")).toBe(false);
     for (const id of [f.movementId, f.patientId]) {
       const record = f.resolve(id);
-      expect(record.verdict.short).toBe("Accepted, Awaiting Bed");
+      expect(record.verdict.short).toBe("Accepted, awaiting bed");
       expect(record.verdict.title).toContain("no bed pulled");
       expect(record.verdict.title).not.toContain("Bed allocated");
     }
@@ -110,6 +110,6 @@ describe("patient profile acceptance and actual bed commitments", () => {
       reason: "pull_made_in_error",
     });
     expect(f.state.movements.at(-1)!.admissionId).toBeUndefined();
-    for (const id of [f.movementId, f.patientId]) expect(f.resolve(id).verdict.short).toBe("Accepted, Awaiting Bed");
+    for (const id of [f.movementId, f.patientId]) expect(f.resolve(id).verdict.short).toBe("Accepted, awaiting bed");
   });
 });

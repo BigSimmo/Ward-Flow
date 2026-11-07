@@ -186,7 +186,7 @@ describe("the movement page does not print sentences the record contradicts", ()
       if (claimsStability.test(text)) {
         offenders.push(`${movement.id}: asserts the status did not change, which the record cannot support`);
       }
-      if (!/No change to it has been recorded|None recorded since the movement opened/u.test(text)) {
+      if (!/No change recorded/u.test(text)) {
         offenders.push(`${movement.id}: says nothing about the change being UNRECORDED rather than absent`);
       }
     }

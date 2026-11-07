@@ -43,23 +43,31 @@ describe("discharges board patient detail and navigation bridge", () => {
     expect(leftCell.closest("button")).toBeNull();
     fireEvent.click(leftCell);
 
-    // Detail drawer should now be open with that patient's record
-    const details = screen.getByRole("region", { name: "Selected discharge details" });
+    // Detail drawer should now be open with that patient's record (drawer review, 6 Nov 2026: the
+    // kit drawer's head names the person).
+    const details = screen.getByTestId("ward-discharge-detail");
     expect(details).toBeInTheDocument();
-    expect(within(details).getByRole("heading", { level: 3 })).toHaveTextContent(name);
+    expect(within(details).getByRole("heading", { level: 2 })).toHaveTextContent(name);
     expect(within(details).getByText(/UMRN UM\d+/)).toBeInTheDocument();
   });
 
   it("renders linked patient bridge and allows navigating to full admission record from release view", () => {
     renderBoard();
 
-    // In default Anonymous releases view, find a release row with a button
-    const firstReleaseButton = screen.getAllByRole("button", { name: /Dabakarn|Moodjar|Mental Health Unit/ })[0];
-    fireEvent.click(firstReleaseButton);
+    // Open release rows until one has a linked record (drawer review, 6 Nov 2026: the hidden resting
+    // panel's Blocked shortcuts are gone, so the rows themselves open the drawer).
+    const worklist = screen.getByRole("region", { name: "Discharge worklist" });
+    const openers = within(worklist)
+      .getAllByRole("row")
+      .flatMap((row) => within(row).queryAllByRole("button").slice(0, 1));
+    const linked = openers.find((opener) => {
+      fireEvent.click(opener);
+      return screen.queryByRole("button", { name: /^Discharge record/ }) !== null;
+    });
+    expect(linked, "no release row opens with a linked discharge record").toBeDefined();
 
-    // Detail drawer opens with release info; its footer carries the Discharge record bridge
-    const details = screen.getByRole("region", { name: "Selected discharge details" });
-    expect(details).toBeInTheDocument();
+    // Detail drawer opens with release info; its foot carries the Discharge record bridge
+    expect(screen.getByTestId("ward-discharge-detail")).toBeInTheDocument();
 
     const bridgeButton = screen.getByRole("button", { name: /^Discharge record/ });
     expect(bridgeButton).toBeInTheDocument();
@@ -69,6 +77,7 @@ describe("discharges board patient detail and navigation bridge", () => {
 
     // Population should now have switched to Admission records and rendered full record
     expect(screen.getByRole("button", { name: /^Recorded/ })).toHaveAttribute("aria-pressed", "true");
+    const details = screen.getByTestId("ward-discharge-detail");
     expect(within(details).getByText("Expected discharge")).toBeInTheDocument();
     expect(within(details).getByText("Date recorded")).toBeInTheDocument();
   });
@@ -81,15 +90,14 @@ describe("discharges board patient detail and navigation bridge", () => {
     const tbody = document.querySelector("table tbody");
     const rows = within(tbody as HTMLElement).getAllByRole("row");
     expect(rows.length).toBeGreaterThan(1);
-    const details = screen.getByRole("region", { name: "Selected discharge details" });
-
     for (const [row, key] of [
       [rows[1], "Enter"],
       [rows[0], " "],
     ] as const) {
       const name = within(row).getByRole("button").textContent ?? "";
       fireEvent.keyDown(row, { key });
-      expect(within(details).getByRole("heading", { level: 3 })).toHaveTextContent(name);
+      const details = screen.getByTestId("ward-discharge-detail");
+      expect(within(details).getByRole("heading", { level: 2 })).toHaveTextContent(name);
       expect(within(details).getByText(/UMRN UM\d+/)).toBeInTheDocument();
     }
   });

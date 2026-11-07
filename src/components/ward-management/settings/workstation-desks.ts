@@ -242,7 +242,7 @@ const DESK_ACTIONS: readonly { event: WardFlowEvent["type"]; label: string }[] =
   { event: "PULL_PATIENT", label: "Pull a patient into a ready bed" },
   { event: "DECLINE", label: "Decline for the ward" },
   { event: "SET_BED_PREPARATION", label: "Mark a bed being made ready" },
-  { event: "RAISE_REFERRAL", label: "Raise a referral" },
+  { event: "RAISE_REFERRAL", label: "New referral" },
   { event: "RECORD_EXAMINATION", label: "Record an examination" },
   { event: "RECORD_MEDICAL_CLEARANCE", label: "Record medical clearance" },
   { event: "RECORD_LEGAL_FORM_RECEIVED", label: "Record a legal form received" },

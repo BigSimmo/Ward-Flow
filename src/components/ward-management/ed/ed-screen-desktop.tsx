@@ -129,6 +129,10 @@ export function renderEdBoardTableRow(
           <span className={styles.a2ReferralLine} data-tone={referral.tone}>
             {referral.hold && referral.hold.state !== "held" ? (
               <StatusGlyph tone={referral.hold.state === "lapsed" ? "danger" : "warning"} size={8} />
+            ) : referral.tone === "good" ? (
+              <StatusGlyph tone="success" size={8} />
+            ) : referral.tone === "warn" ? (
+              <StatusGlyph tone="warning" size={8} />
             ) : null}{" "}
             {referral.line}
           </span>

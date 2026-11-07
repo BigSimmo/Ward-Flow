@@ -7,6 +7,7 @@ import { BedSingle, Car, Check, Clock, Flag, House, Plane } from "lucide-react";
 
 import {
   Button,
+  DrawerFootRow,
   Field,
   Icon,
   Select,
@@ -35,7 +36,11 @@ import {
   TRAVEL_SHORT,
   confirmedAgeText,
   dischargeShort,
+  departTimeUnreadable,
   missingAnswers,
+  DEPART_TIME_NOT_RECORDED,
+  planWarningsLine,
+  PROVIDER_NOT_RECORDED,
   shortSiteName,
   type BedOption,
   type RepatDraft,
@@ -43,22 +48,23 @@ import {
 import { ReturnTracker, returnStepsDone } from "./out-of-area-return-tracker";
 import styles from "./out-of-area-board.module.css";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
-import { cadNumberProblem } from "@/components/ward-management/ward-cad-number";
+import { CAD_TO_FOLLOW, cadNumberProblem } from "@/components/ward-management/ward-cad-number";
 import { HomeServiceReturnPanel } from "./home-service-return-panel-lazy";
 import type { ReturnEarlyFlagRecord } from "./return-early";
 import { UNDO_WINDOW_MINUTES } from "@/components/ward-management/ward-undo";
 import { OfficerBookingContacts } from "@/components/ward-management/officer/officer-booking-contacts";
+import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 
-export function returnPlanMissingToSend(draft: RepatDraft, now: Instant = 0): string[] {
-  return missingAnswers(draft, now).filter((answer) => answer !== "ward agreement");
+export function returnPlanMissingToSend(draft: RepatDraft): string[] {
+  return missingAnswers(draft).filter((answer) => answer !== "ward agreement");
 }
 
-export function canSendReturnPlan(draft: RepatDraft, now: Instant = 0): boolean {
-  return returnPlanMissingToSend(draft, now).length === 0;
+export function canSendReturnPlan(draft: RepatDraft): boolean {
+  return returnPlanMissingToSend(draft).length === 0;
 }
 
-export function returnPlanBlockReason(draft: RepatDraft, now: Instant = 0): string | undefined {
-  const missing = returnPlanMissingToSend(draft, now);
+export function returnPlanBlockReason(draft: RepatDraft): string | undefined {
+  const missing = returnPlanMissingToSend(draft);
   return missing.length ? `Answer the ${missing.length} left first.` : undefined;
 }
 
@@ -209,6 +215,11 @@ export type ReturnPlanProps = {
   idPrefix: string;
   /** Phone: show the person's name and UMRN inside the facts, since the sheet header carries them. */
   compactIdentity?: boolean;
+  /**
+   * Drawer review (6 Nov 2026): false when the page draws the actions into the drawer's own foot
+   * (`ReturnPlanActions`); the phone sheet keeps them pinned under the plan.
+   */
+  showActions?: boolean;
 };
 
 /**
@@ -238,15 +249,15 @@ export function ReturnPlan({
   idPrefix,
   compactIdentity = false,
   pending = false,
+  showActions = true,
 }: ReturnPlanProps) {
-  const flagEarly = (hospital: string) => (
-    <FlagEarly flag={earlyFlag} hospital={hospital} now={now} onFlag={onFlagEarly} onUndo={onUndoFlagEarly} />
-  );
   const site = siteByCode(entry.unit.siteCode);
-  const missing = missingAnswers(draft, now);
+  const missing = missingAnswers(draft);
   // A typed CAD number the rule refuses is named beside the field; blank stays a plain "missing".
   const cadProblem = draft.cadNumber.trim() ? cadNumberProblem(draft.cadNumber) : undefined;
   const cadError = cadProblem ? `${cadProblem.charAt(0).toUpperCase()}${cadProblem.slice(1)}.` : undefined;
+  // A typed depart time that cannot be read blocks and is named beside the field; blank only warns.
+  const departError = departTimeUnreadable(draft) ? "Enter the depart time as HH:MM, or leave it blank." : undefined;
   const move = whoseMove(draft, record);
   const returnMovement = useOptionalWardFlowSelect("movements")?.movements.find(
     (movement) => movement.id === returnMovementId,
@@ -348,13 +359,7 @@ export function ReturnPlan({
       />
 
       {record ? (
-        <RecordedReturn
-          record={record}
-          returnMovementId={returnMovementId}
-          now={now}
-          onMarkWardAgreed={onMarkWardAgreed}
-          flagEarly={flagEarly(record.homeHospital)}
-        />
+        <RecordedReturn record={record} returnMovementId={returnMovementId} now={now} />
       ) : (
         <>
           <div className={styles.steps}>
@@ -395,7 +400,7 @@ export function ReturnPlan({
                 </fieldset>
               ) : (
                 <p className={styles.planHint}>
-                  <StatusGlyph tone="closed" size={9} />
+                  <StatusGlyph tone="neutral" size={9} />
                   {entry.band === "air_transport_only"
                     ? "Air only placement, travel times are not compared"
                     : `No shorter travel recorded for ${entry.admission.homeRegion}`}
@@ -546,7 +551,7 @@ export function ReturnPlan({
                   onChange={(event) => onDraft({ cadNumber: event.target.value })}
                 />
               </Field>
-              <Field label="Depart" className={styles.formRow}>
+              <Field label="Depart" className={styles.formRow} error={departError}>
                 <TextInput
                   icon={Clock}
                   inputMode="numeric"
@@ -570,45 +575,187 @@ export function ReturnPlan({
               />
             </section>
           </div>
-          <div className={styles.planFoot}>
-            <span className={styles.need} title={missing.length ? `Still needed: ${missing.join(", ")}` : undefined}>
-              {missing.length ? (
-                <>
-                  <span className={styles.count}>{missing.length}</span> to answer
-                </>
-              ) : (
-                <>
-                  <StatusGlyph tone="success" size={10} /> Ready to record
-                </>
-              )}
-            </span>
-            {flagEarly(draft.homeHospital)}
-            <Button
-              variant="sec"
-              size="sm"
-              data-testid="ward-out-of-area-repat-send"
-              disabledReason={pending ? "Saving" : returnPlanBlockReason(draft, now)}
-              title={returnPlanBlockReason(draft, now)}
-              reasonDisplay="tooltip"
-              onClick={onSendToWard}
+          {/* W13 (Josh's card 3, 5 Nov 2026): the provider and depart time warn, and a blank CAD is
+              "CAD to follow". The plan still records. */}
+          {planWarningsLine(draft, now) ? (
+            <p
+              className={cx(styles.planHint, styles.planWarnings, styles.inkWarning)}
+              data-testid="ward-out-of-area-repat-warnings"
             >
-              Record sent to ward
-            </Button>
-            <Button
-              variant="pri"
-              size="sm"
-              data-testid="ward-out-of-area-repat-submit"
-              disabledReason={
-                pending ? "Saving" : missing.length ? `Answer the ${missing.length} left first.` : undefined
-              }
-              reasonDisplay="tooltip"
-              onClick={onRecord}
-            >
-              Record return
-            </Button>
-          </div>
+              <StatusGlyph tone="warning" size={9} />
+              {planWarningsLine(draft, now)}
+            </p>
+          ) : null}
         </>
       )}
+      {showActions ? (
+        <div className={cx(styles.planFoot, styles.planFootStack)}>
+          <ReturnPlanActions
+            draft={draft}
+            record={record}
+            now={now}
+            pending={pending}
+            earlyFlag={earlyFlag}
+            onFlagEarly={onFlagEarly}
+            onUndoFlagEarly={onUndoFlagEarly}
+            onRecord={onRecord}
+            onSendToWard={onSendToWard}
+            onMarkWardAgreed={onMarkWardAgreed}
+          />
+        </div>
+      ) : null}
+    </>
+  );
+}
+
+/** Where each blocking answer lives in the plan, so the foot's next step can take the user to it. */
+const ANSWER_FIELD: Record<string, string> = {
+  "receiving hospital": "ward-out-of-area-repat-home-hospital",
+  "ward agreement": "ward-out-of-area-repat-ward-agreed",
+  "road or flight": "ward-out-of-area-repat-mode",
+  "legal status": "ward-out-of-area-repat-legal",
+  "CAD number": "ward-out-of-area-repat-cad",
+  "depart time": "ward-out-of-area-repat-estimated-time",
+};
+
+function focusAnswer(answer: string) {
+  const testId = ANSWER_FIELD[answer];
+  if (!testId || typeof document === "undefined") return;
+  const holder = document.querySelector<HTMLElement>(`[data-testid="${testId}"]`);
+  const field = holder?.matches("input, select, textarea")
+    ? holder
+    : holder?.querySelector<HTMLElement>("input:not([disabled]), select, textarea");
+  if (!field) return;
+  field.scrollIntoView?.({ block: "center", behavior: wardScrollBehavior() });
+  field.focus({ preventScroll: true });
+}
+
+export type ReturnPlanActionsProps = Pick<
+  ReturnPlanProps,
+  | "draft"
+  | "record"
+  | "now"
+  | "pending"
+  | "earlyFlag"
+  | "onFlagEarly"
+  | "onUndoFlagEarly"
+  | "onRecord"
+  | "onSendToWard"
+  | "onMarkWardAgreed"
+> & {
+  /** "1 of 15" with Previous and Next, beside the count still to answer. */
+  pager?: ReactNode;
+};
+
+/**
+ * Drawer review (6 Nov 2026): the plan's actions. One filled primary, the next step: go to the
+ * first answer that still blocks, then Record sent to ward, then Record return once the ward has
+ * agreed. The rest are quiet buttons of the same height in one row. Only the receiving hospital,
+ * road or flight, and the legal status (Mental Health Act 2014) block; the provider, depart time and
+ * CAD number only warn.
+ */
+export function ReturnPlanActions({
+  draft,
+  record,
+  now,
+  pending = false,
+  earlyFlag,
+  onFlagEarly,
+  onUndoFlagEarly,
+  onRecord,
+  onSendToWard,
+  onMarkWardAgreed,
+  pager,
+}: ReturnPlanActionsProps) {
+  const flagEarly = (hospital: string) => (
+    <FlagEarly flag={earlyFlag} hospital={hospital} now={now} onFlag={onFlagEarly} onUndo={onUndoFlagEarly} />
+  );
+
+  if (record) {
+    return (
+      <>
+        {pager ? <div className={styles.actsMeta}>{pager}</div> : null}
+        {record.receivingWardAgreed ? null : (
+          <Button
+            variant="pri"
+            className={styles.actsPrimary}
+            data-testid="ward-out-of-area-mark-ward-agreed"
+            onClick={onMarkWardAgreed}
+          >
+            Mark ward agreed
+          </Button>
+        )}
+        <DrawerFootRow className={styles.actsRow}>{flagEarly(record.homeHospital)}</DrawerFootRow>
+      </>
+    );
+  }
+
+  const missing = missingAnswers(draft);
+  const blocking = returnPlanMissingToSend(draft);
+  const sendReason = returnPlanBlockReason(draft);
+  const send = (variant: "pri" | "sec") => (
+    <Button
+      variant={variant}
+      className={variant === "pri" ? styles.actsPrimary : undefined}
+      data-testid="ward-out-of-area-repat-send"
+      disabledReason={pending ? "Saving" : sendReason}
+      title={sendReason}
+      reasonDisplay="tooltip"
+      onClick={onSendToWard}
+    >
+      Record sent to ward
+    </Button>
+  );
+  const submit = (variant: "pri" | "sec") => (
+    <Button
+      variant={variant}
+      className={variant === "pri" ? styles.actsPrimary : undefined}
+      data-testid="ward-out-of-area-repat-submit"
+      disabledReason={pending ? "Saving" : missing.length ? `Answer the ${missing.length} left first.` : undefined}
+      reasonDisplay="tooltip"
+      onClick={onRecord}
+    >
+      Record return
+    </Button>
+  );
+  const next = blocking[0];
+  const primary = next ? (
+    <Button
+      variant="pri"
+      className={styles.actsPrimary}
+      data-testid="ward-out-of-area-repat-next"
+      onClick={() => focusAnswer(next)}
+    >
+      Go to {next}
+    </Button>
+  ) : draft.receivingWardAgreed === true ? (
+    submit("pri")
+  ) : (
+    send("pri")
+  );
+  const quiet = next ? send("sec") : draft.receivingWardAgreed === true ? send("sec") : submit("sec");
+
+  return (
+    <>
+      <div className={styles.actsMeta}>
+        <span className={styles.need} title={missing.length ? `Still needed: ${missing.join(", ")}` : undefined}>
+          {missing.length ? (
+            <>
+              <span className={styles.count}>{missing.length}</span> to answer
+            </>
+          ) : (
+            <>
+              <StatusGlyph tone="success" size={10} /> Ready to record
+            </>
+          )}
+        </span>
+        {pager}
+      </div>
+      {primary}
+      <DrawerFootRow className={styles.actsRow}>
+        {flagEarly(draft.homeHospital)}
+        {quiet}
+      </DrawerFootRow>
     </>
   );
 }
@@ -638,7 +785,7 @@ function FlagEarly({
           Flagged early {formatInstantWithDay(flag.at, now)}
         </span>
         {onUndo && now - flag.at < UNDO_WINDOW_MINUTES ? (
-          <Button variant="ghost" size="sm" data-testid="ward-out-of-area-flag-early-undo" onClick={onUndo}>
+          <Button variant="ghost" data-testid="ward-out-of-area-flag-early-undo" onClick={onUndo}>
             Undo
           </Button>
         ) : null}
@@ -649,7 +796,6 @@ function FlagEarly({
   return (
     <Button
       variant="sec"
-      size="sm"
       icon={Flag}
       data-testid="ward-out-of-area-flag-early"
       disabledReason={chosen ? undefined : "Choose the receiving hospital first."}
@@ -668,14 +814,10 @@ function RecordedReturn({
   record,
   returnMovementId,
   now,
-  onMarkWardAgreed,
-  flagEarly,
 }: {
   record: RepatriationRecord;
   returnMovementId: string | undefined;
   now: Instant;
-  onMarkWardAgreed?: () => void;
-  flagEarly: ReactNode;
 }) {
   return (
     <div className={styles.doneBox} data-testid="ward-out-of-area-recorded">
@@ -692,7 +834,7 @@ function RecordedReturn({
         <dd>{record.receivingWardAgreed ? "Agreed" : "Not yet agreed"}</dd>
         <dt>Transport</dt>
         <dd>
-          {record.mode === "road" ? "Road" : "Flight"} · {record.provider}
+          {record.mode === "road" ? "Road" : "Flight"} · {record.provider ?? PROVIDER_NOT_RECORDED}
         </dd>
         <dt>Legal status</dt>
         <dd>{LEGAL_LABELS[record.transportLegalStatus]}</dd>
@@ -717,33 +859,24 @@ function RecordedReturn({
           </>
         ) : null}
         <dt>CAD</dt>
-        <dd className={styles.mono}>{record.cadNumber}</dd>
+        <dd className={record.cadNumber ? styles.mono : undefined}>{record.cadNumber || CAD_TO_FOLLOW}</dd>
         <dt>Depart</dt>
-        <dd className={styles.mono}>{formatInstantWithDay(record.estimatedAt, now)}</dd>
+        <dd className={record.estimatedAt === undefined ? undefined : styles.mono}>
+          {record.estimatedAt === undefined ? DEPART_TIME_NOT_RECORDED : formatInstantWithDay(record.estimatedAt, now)}
+        </dd>
       </dl>
-      <div className={styles.planFoot}>
-        {flagEarly}
-        {record.receivingWardAgreed ? (
-          <>
-            <span className={styles.need}>
-              <StatusGlyph tone="neutral" size={10} /> Movement opened
-            </span>
-            {returnMovementId ? (
-              <Link className={buttonClass({ variant: "sec", size: "sm" })} href={movementHref(returnMovementId)}>
-                Open movement
-              </Link>
-            ) : null}
-          </>
-        ) : (
-          <>
-            <span className={styles.need}>
-              <StatusGlyph tone="neutral" size={10} /> Awaiting the receiving ward
-            </span>
-            <Button variant="sec" size="sm" data-testid="ward-out-of-area-mark-ward-agreed" onClick={onMarkWardAgreed}>
-              Mark ward agreed
-            </Button>
-          </>
-        )}
+      {/* Drawer review (6 Nov 2026): the state stays with the record; Mark ward agreed and Flag early
+          sit in the foot. */}
+      <div className={styles.doneState}>
+        <span className={styles.need}>
+          <StatusGlyph tone="neutral" size={10} />
+          {record.receivingWardAgreed ? "Movement opened" : "Awaiting the receiving ward"}
+        </span>
+        {record.receivingWardAgreed && returnMovementId ? (
+          <Link className={buttonClass({ variant: "sec", size: "sm" })} href={movementHref(returnMovementId)}>
+            Open movement
+          </Link>
+        ) : null}
       </div>
     </div>
   );

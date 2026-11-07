@@ -34,18 +34,23 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
-import { WardRail, setRailOpenPreference } from "@/components/ward-management/shell/ward-rail";
+import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
+import { NextRailBody as WardRail } from "@/components/ward-management/shell-next/next-rail-body";
+// CB-1 (Josh, 6 Nov 2026): the Metro occupancy case stays on the retired rail until Josh decides. The
+// live rail reads Metro aloud as "Metro 86%", without the "full" this case pins, and prints it as
+// "Metro 86%" on its own line (WF-44), so it has no equivalent of the retired wording.
+import { WardRail as RetiredWardRail } from "@/components/ward-management/shell/ward-rail";
+import { setRailOpenPreference } from "@/components/ward-management/shell/ward-rail-preferences";
 import { deriveServiceBedAlerts } from "@/components/ward-management/shell/ward-service-bed-alerts";
 import { resetServiceScopeForTests, setServiceScope } from "@/components/ward-management/shell/ward-service-store";
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
-function renderRail(initialNow: number = NOW_ANCHOR) {
+function renderRail(initialNow: number = NOW_ANCHOR, Rail: () => ReactNode = WardRail) {
   return render(
     <WardFlowProvider initialNow={initialNow}>
-      <WardRail />
+      <Rail />
     </WardFlowProvider>,
   );
 }
@@ -200,15 +205,15 @@ describe("rail bed alerts (live figures)", () => {
 
   it("labels Metro occupancy from the three metro services only — not a fixed 96.4%", () => {
     setRailOpenPreference(true);
-    renderRail();
+    renderRail(NOW_ANCHOR, RetiredWardRail);
     const expected = seededBedAlerts();
     const trigger = screen.getByTestId("ward-rail-capacity-alerts-trigger");
     expect(trigger.textContent).not.toContain("96.4%");
     expect(expected.metroOccupancyPercent).not.toBeNull();
     // The new sidebar's capacity card (Josh, 30 Oct 2026): one row per place, its name, meter and
-    // occupancy, read aloud as "Metro 85.9% full".
-    expect(trigger).toHaveTextContent(`Metro${expected.metroOccupancyPercent}%`);
-    expect(trigger.getAttribute("aria-label")).toContain(`Metro ${expected.metroOccupancyPercent}% full`);
+    // occupancy as a whole percent (CL-9), read aloud as "Metro 86% full".
+    expect(trigger).toHaveTextContent(`Metro${Math.round(expected.metroOccupancyPercent!)}%`);
+    expect(trigger.getAttribute("aria-label")).toContain(`Metro ${Math.round(expected.metroOccupancyPercent!)}% full`);
   });
 });
 

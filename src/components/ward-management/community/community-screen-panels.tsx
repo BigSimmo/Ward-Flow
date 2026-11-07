@@ -9,6 +9,7 @@
  * "this file" or "this screen" in them still means the community team screen as a whole.
  */
 
+import { Users } from "lucide-react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
@@ -340,9 +341,7 @@ export function communityOnDutyPanel(view: CommunityScreenView) {
       <div className={styles.cardPanel}>
         <div className={styles.panelHead}>
           <h2 className={styles.panelTitle}>
-            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
-              <path d="M6 7a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM11.5 8a2 2 0 100-4 2 2 0 000 4zM1.5 14c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4M10.5 10.5c2 .3 3.5 1.6 3.5 3.5" />
-            </svg>
+            <Users size={16} strokeWidth={1.75} aria-hidden="true" />
             <span>Catchment multidisciplinary team roster &amp; duty allocations</span>
           </h2>
           <span className={styles.badgePill} id="teamStaffCountBadge">

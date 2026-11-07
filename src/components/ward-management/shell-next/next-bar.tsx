@@ -255,7 +255,7 @@ type WardBarProps = {
   onServiceChange?: (service: HealthService | null) => void;
 };
 
-function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarProps) {
+export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarProps) {
   const pathname = usePathname() ?? "";
   const router = useRouter();
   // A1-17: the shared phone query, so the server's phone guess draws the phone bar first.
@@ -530,15 +530,12 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
           `Activity opened. Synthetic data: changes, recent activity and ${scopedNotices.length} notices.`,
         );
       } else if (id === "tasks") {
-        announceToWardShell(
-          oneAlertsQueue
-            ? `Alerts opened. ${tasksActiveCount} invented alerts outstanding.`
-            : `Tasks opened. ${tasksActiveCount} invented tasks outstanding.`,
-        );
+        announceToWardShell(`Alerts opened. ${tasksActiveCount} invented alerts outstanding.`);
       } else if (id === "tools") {
         announceToWardShell("Tools opened. Quick actions, look ups, print and share, and demo controls are here.");
       } else if (id === "referral") {
-        announceToWardShell("Referral drawer opened. Statewide psychiatric bed placement engine.");
+        // BA-12 (front-end audit, 5 Nov 2026): the sheet's own name, with no engine jargon.
+        announceToWardShell("New referral opened.");
       }
       // No opening announcement for the Service selector — the standard's §7.4 list of the shell's
       // fixed sentences names an announcement for CHOOSING or CLEARING a service, never for opening
@@ -640,7 +637,7 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
       setReferralRequest((current) => ({ ...request, id: current.id + 1 }));
       referralReturnFocusRef.current = null;
       setOpenPanel("referral");
-      announceToWardShell("Referral drawer opened. Statewide psychiatric bed placement engine.");
+      announceToWardShell("New referral opened.");
     });
     return () => {
       window.cancelAnimationFrame(frame);
@@ -1095,9 +1092,8 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
           aria-label={`Board time ${liveClockFace} AWST${online ? "" : ". Offline"}`}
         >
           <span className={styles.demoClockDot} data-offline={online ? undefined : "true"} aria-hidden="true" />
-          <span className={styles.demoClockLabel}>Board time</span>
-          <span className={styles.demoClockTime}>{liveClockFace}</span>
-          <span className={styles.demoClockTz}>AWST</span>
+          <span className={styles.demoClockLabel}>Board time</span>{" "}
+          <span className={styles.demoClockTime}>{liveClockFace}</span> <span className={styles.demoClockTz}>AWST</span>
         </WardDemoClockPopover>
 
         {/* The shell's synthetic-data marker for screen readers (visually hidden, so no pill shows). */}
@@ -1242,7 +1238,7 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
         onClose={() => closePopover("tools")}
         title="Tools"
         headerLeading={
-          <span className={styles.drawerTile} aria-hidden="true">
+          <span className={`${styles.drawerTile} ${polish.toolsTile}`} aria-hidden="true">
             <Wrench aria-hidden="true" className={styles.drawerHeadingIcon} strokeWidth={1.75} />
           </span>
         }
@@ -1251,14 +1247,19 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
             Esc
           </kbd>
         }
-        descriptionContent={<p className={styles.activityFreshness}>{deskRoleLabel} · whole network</p>}
+        // Tools header polish (Josh, 6 Nov 2026): the desk as a quiet pill under a larger title.
+        descriptionContent={
+          <p className={polish.toolsDesk}>
+            <strong>{deskRoleLabel}</strong> · whole network
+          </p>
+        }
         placement="right"
         testId="ward-bar-tools-sheet"
         returnFocusRef={toolsReturnTarget}
         desktopBackdropClassName={styles.drawerBackdrop}
         contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide} ${toolsTwoPane ? styles.drawerSheetToolsTwoPane : ""}`}
-        headerClassName={styles.drawerHeader}
-        titleClassName={styles.drawerTitle}
+        headerClassName={`${styles.drawerHeader} ${polish.toolsHeader}`}
+        titleClassName={`${styles.drawerTitle} ${polish.toolsTitle}`}
         closeButtonClassName={styles.drawerClose}
         bodyClassName={styles.drawerBody}
         footer={
@@ -1298,7 +1299,7 @@ function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: WardBarP
         id="ward-bar-referral-drawer"
         open={openPanel === "referral"}
         onClose={() => (referralCloseRef.current ? referralCloseRef.current() : closeReferral())}
-        ariaLabel="Referrals"
+        ariaLabel="New referral"
         headerHidden
         placement="right"
         testId="ward-bar-referral-sheet"

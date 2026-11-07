@@ -66,7 +66,7 @@ const BED_MAP_DETAILS: Record<BedMapKind, string> = {
   leave: "Held for a patient on leave; counted in Occupied",
   pulled: BED_STATE_DETAILS.pulled,
   ready: BED_STATE_DETAILS.ready,
-  prep: "Released and still being made ready; no one can be pulled into it yet",
+  prep: "Released and still being made ready; nobody can be pulled into it yet",
   closed: BED_STATE_DETAILS.closed,
 };
 

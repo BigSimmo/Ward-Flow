@@ -132,7 +132,7 @@ export function DischargeWeekendPrep({
   ).size;
   const holidays = [...new Set(groups.flatMap((group) => group.closure.closedFor))].filter((day) => day !== "Weekend");
   const title = holidays.length > 0 ? `Closed for ${holidays.join(" and ")}` : "Closed this weekend";
-  const summary = `${groups.length} ${groups.length === 1 ? "service" : "services"} closed · ${beforeReopen} due out before ${groups.length === 1 ? "it reopens" : "they reopen"}`;
+  const summary = `${groups.length} ${groups.length === 1 ? "service" : "services"} closed · ${beforeReopen} ${beforeReopen === 1 ? "discharge" : "discharges"} before ${groups.length === 1 ? "it reopens" : "they reopen"}`;
   const open = foldable ? phoneOpen : true;
   const toggle = () => setPhoneOpen((was) => !was);
   const rowsFor = (group: WeekendPrepGroup, close?: () => void) => (
@@ -169,7 +169,7 @@ export function DischargeWeekendPrep({
               </span>
               <span className={styles.rowSide}>
                 <span className={styles.rowOut}>Out {shortMoment(release.expectedAt, dayZero)}</span>
-                {/* DC3 (3 Nov 2026): the heading already counts who is due out before it
+                {/* DC3 (3 Nov 2026): the heading already counts the discharges before it
                     reopens, so only the rare row after reopening says so. */}
                 {before ? (
                   <span className="sr-only">Before reopening</span>
@@ -232,11 +232,12 @@ export function DischargeWeekendPrep({
                           type="button"
                           {...props}
                           className={styles.pill}
-                          aria-label={`${closureFact(group.closure, dayZero)}. ${group.rows.length} waiting`}
+                          // CB-3: the visible service and count lead the name (axe label-content-name-mismatch).
+                          aria-label={`${service}, ${group.rows.length} waiting. ${closureFact(group.closure, dayZero)}.`}
                           data-testid={`ward-discharge-weekend-${group.closure.owner}`}
                         >
                           <OwnerIcon size={14} strokeWidth={1.75} aria-hidden="true" className={styles.pillIcon} />
-                          <span className={styles.pillName}>{service}</span>
+                          <span className={styles.pillName}>{service}</span>{" "}
                           <span className={styles.pillCount}>{group.rows.length}</span>
                           <ChevronDown size={14} strokeWidth={1.75} aria-hidden="true" className={styles.pillChevron} />
                         </button>

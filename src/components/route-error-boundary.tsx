@@ -43,7 +43,9 @@ export function RouteErrorBoundary({
   const { copied, copyFailed, copyDiagnostics } = useCopyDiagnostics(error);
 
   useEffect(() => {
-    console.error(logLabel, error);
+    // TE-12 (front-end audit, 5 Nov 2026): production logs the type and digest only, never the
+    // message, which can carry record content. Development logs the whole object with its stack.
+    console.error(logLabel, process.env.NODE_ENV === "production" ? { name: error.name, digest: error.digest } : error);
     headingRef.current?.focus({ preventScroll: true });
   }, [error, logLabel]);
 

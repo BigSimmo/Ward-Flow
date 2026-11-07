@@ -254,11 +254,12 @@ test.describe("@mockup Ward screen", () => {
 
     // The header has no Synthetic pill now (Josh, 30-31 Oct 2026): on a desktop the board clock
     // opens Tools at its Demo row, a layout-level sibling of `wardScreen`, so `page`-scoped.
+    // Since #1488 the demo controls open like any tool: in the pane on a desktop, as a page below.
     await page.getByTestId("ward-bar-demo-clock").click();
 
     // The menu must never be mistaken for a clinical action, checked in words, not merely by
     // colour: its heading row and its opening notice both say so explicitly.
-    const menu = page.getByTestId("ward-bar-tools-sheet").getByRole("region", { name: "Demo" });
+    const menu = page.getByTestId("ward-bar-tools-sheet").getByRole("region", { name: "Scenario and clock" });
     await expect(menu).toContainText(/synthetic data only/i);
     const panel = menu.getByTestId("ward-tools-demo-panel");
     await expect(panel).toBeVisible();
@@ -290,7 +291,7 @@ test.describe("@mockup Ward screen", () => {
     await expect(sheet).toBeVisible();
     await sheet.getByRole("button", { name: /Open demo controls$/ }).click();
 
-    const menu = sheet.getByRole("region", { name: "Demo" });
+    const menu = sheet.getByRole("region", { name: "Scenario and clock" });
     await expect(menu.getByTestId("ward-tools-demo-panel")).toBeVisible();
     await expect.poll(() => sheet.evaluate((node) => node.contains(document.activeElement))).toBe(true);
   });
@@ -406,7 +407,7 @@ test.describe("@mockup Transport officer screen", () => {
 
     // Transport mock-up (Josh, 1 Nov 2026): the foot pins the one next step at every width, so
     // desktop shows the same single En route step, in view without scrolling.
-    await page.getByTestId("ward-officer-detail-close").click();
+    await page.getByTestId("ward-officer-detail").getByTestId("wf-drawer-close").click();
     await page.setViewportSize({ width: 1440, height: 1024 });
     await page.getByTestId("ward-officer-select-WF-005").click();
     const desktopSteps = page

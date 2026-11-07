@@ -10,7 +10,8 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 22px;
+  /* K3 (design audit, 5 Nov 2026): a floor, so large text grows the chip instead of cutting it. */
+  min-height: 22px;
   padding: 0 8px;
   box-sizing: border-box;
   border-radius: var(--wf-r-xs);
@@ -47,7 +48,7 @@
 }
 
 .toggle > .lv {
-  height: var(--wf-h-chip);
+  min-height: var(--wf-h-chip);
 }
 
 /* Header touch (11 Oct 2026): the pill stays small, but presses up to 48px tall land on it. */
@@ -175,7 +176,7 @@
 }
 
 .chip {
-  height: 22px;
+  min-height: 22px;
   align-items: center;
   padding: 0 8px;
   box-sizing: border-box;

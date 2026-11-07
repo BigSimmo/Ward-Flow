@@ -31,6 +31,14 @@ export type PhoneRoundRow = {
   accessibleName: string;
 };
 
+/** The note line's words: the arrival, the ready or closed word, or the row's own note. */
+function roundNote(row: PhoneRoundRow): string {
+  if (row.bed.stayDays === 0 && row.note === row.stateWord) return "Arrived today";
+  if (row.note !== row.name) return row.note;
+  if (row.free) return "Ready";
+  return row.bed.status === "closed" ? "Not offered" : row.stateWord;
+}
+
 /** A ready bed whose name line already reads "Ready": no second note line and no "Ready" days column. */
 function readyOnce(row: PhoneRoundRow): boolean {
   return row.free && row.name === "Ready" && row.note === row.name && !row.criteriaTag;
@@ -63,6 +71,13 @@ export function WardPhoneRoundList<Row extends PhoneRoundRow>({
       >
         {ordered.slice(0, ordered.length - hidden).map((row) => {
           const marks = mark(Number(row.bed.bedNumber));
+          const days = row.days || (row.free && !readyOnce(row) ? "Ready" : "");
+          // axe 4.14 (label-content-name-mismatch): no aria-label, so the row is named by the words it
+          // shows, in order, and a row cut by the screen's edge still matches its name. The round's own
+          // words (and a tag's full phrase) follow for a screen reader only.
+          const spoken = [row.criteriaTag?.phrase ?? "", rowLabel("", { ...marks, changed: false })]
+            .filter(Boolean)
+            .join(", ");
           return (
             <li key={row.bed.bedNumber}>
               <button
@@ -71,15 +86,15 @@ export function WardPhoneRoundList<Row extends PhoneRoundRow>({
                 data-act={row.glyph === "danger" ? "true" : undefined}
                 data-dim={isLit(row) ? undefined : "true"}
                 data-reviewed={marks.reviewed ? "true" : undefined}
-                aria-label={rowLabel(row.accessibleName, marks)}
                 onClick={() => {
                   walkFrom(Number(row.bed.bedNumber));
                 }}
               >
-                <span className={styles.phoneRowNo} aria-hidden="true">
-                  {row.number}
-                </span>
-                <span className={styles.phoneRowText} aria-hidden="true">
+                {/* The spaces keep the words apart; the row is a grid, where they take no room. */}
+                <span className={styles.phoneRowNo}>
+                  <span className="sr-only">Bed</span> {row.number}
+                </span>{" "}
+                <span className={styles.phoneRowText}>
                   <span className={styles.phoneRowName}>
                     {readyOnce(row) && row.glyph ? (
                       <>
@@ -87,30 +102,25 @@ export function WardPhoneRoundList<Row extends PhoneRoundRow>({
                       </>
                     ) : null}
                     {row.name}
-                  </span>
-                  <WalkRoundRowMarks mark={marks} />
+                  </span>{" "}
+                  <WalkRoundRowMarks mark={marks} />{" "}
                   {/* Phone audit (Josh, 1 Nov 2026): a ready bed says "Ready" once, in its name line. */}
                   {readyOnce(row) ? null : (
                     <span className={styles.phoneRowNote}>
                       {row.glyph ? <StatusGlyph tone={row.glyph} size={9} /> : null}
-                      <span>
-                        {row.bed.stayDays === 0 && row.note === row.stateWord
-                          ? "Arrived today"
-                          : row.note === row.name
-                            ? row.free
-                              ? "Ready"
-                              : row.bed.status === "closed"
-                                ? "Not offered"
-                                : row.stateWord
-                            : row.note}
-                      </span>
-                      {row.criteriaTag ? <CriteriaLedTag chip={row.criteriaTag} /> : null}
+                      <span>{roundNote(row)}</span> {row.criteriaTag ? <CriteriaLedTag chip={row.criteriaTag} /> : null}
                     </span>
                   )}
-                </span>
-                <span className={styles.phoneRowDays} aria-hidden="true">
-                  {row.days || (row.free && !readyOnce(row) ? "Ready" : "")}
-                  {row.days && !row.free ? <span className={styles.phoneRowDaysSub}>stay</span> : null}
+                </span>{" "}
+                <span className={styles.phoneRowDays}>
+                  {days}
+                  {row.days && !row.free ? (
+                    <>
+                      {" "}
+                      <span className={styles.phoneRowDaysSub}>stay</span>
+                    </>
+                  ) : null}
+                  {spoken ? <span className="sr-only">{`, ${spoken}`}</span> : null}
                 </span>
                 <WalkRoundTick mark={marks} />
               </button>

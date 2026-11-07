@@ -14,7 +14,7 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));
 
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
 import { WardBedBoard } from "@/components/ward-management/ward/ward-bed-board";

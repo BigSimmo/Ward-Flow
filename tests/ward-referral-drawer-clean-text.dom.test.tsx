@@ -99,7 +99,7 @@ describe("P148 the drawer cleans referral text before it sends", () => {
       timeout: 10_000,
     });
     next("Next, wards");
-    const locations = screen.getByRole("list", { name: "Placement Destination Options" });
+    const locations = screen.getByRole("list", { name: "Destinations" });
     fireEvent.click(within(locations).getByRole("checkbox", { name: /Dabakarn/ }));
     fireEvent.click(screen.getByRole("button", { name: "Send referral" }));
     fireEvent.change(screen.getByLabelText("Your name"), { target: { value: `  Demo Sender${BIDI_OVERRIDE} ` } });

@@ -8,6 +8,8 @@ import { useEffect, type ComponentType, type ReactNode } from "react";
 
 import { openWardMenu } from "@/components/ward-management/shell/ward-drawer-bus";
 
+import { useOpenOnLoad } from "./open-on-load";
+
 const PopAlerts = dynamic<{ page: ReactNode }>(() =>
   import("@/components/ward-redesign/pop-alerts/pop-alerts").then((module) => module.PopAlerts),
 );
@@ -97,6 +99,23 @@ function PopMenuNext({ page }: { page: ReactNode }) {
   return <>{page}</>;
 }
 
+/**
+ * Mock-up (7 Nov 2026): the New chooser, opened on load the way a press on the bar's New referral
+ * does (on a phone, + then New referral), so the shell's own intercept (`preview-shell.tsx`) draws it:
+ * a menu on desktop, a sheet on a phone.
+ */
+// A phone has no bar button: the dock's + opens Create, whose New referral opens the chooser.
+const NEW_CHOICE_STEPS = {
+  "new-choice": [
+    '[data-testid="ward-bar-primary-action"]:not([aria-haspopup]) || [data-testid="ward-phone-create"]',
+    '?[data-testid="ward-phone-create-referral"]',
+  ],
+} as const;
+function PopNewChoice({ page }: { page: ReactNode }) {
+  useOpenOnLoad("new-choice", NEW_CHOICE_STEPS);
+  return <>{page}</>;
+}
+
 function PopMenuForFrame({ page }: { page: ReactNode }) {
   // As `preview-shell.tsx` reads it: the router's copy, else the browser's (the static preview).
   const shellParam =
@@ -122,6 +141,7 @@ export const MOCKUP_POPUP_COMPONENTS: Readonly<Record<string, ComponentType<{ pa
   demo: PopDemo,
   menu: PopMenuForFrame,
   create: PopCreate,
+  "new-choice": PopNewChoice,
   "service-picker": PopServicePicker,
   "more-pages": PopMorePages,
   tour: PopTour,

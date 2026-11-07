@@ -16,9 +16,10 @@ export function drawerFootStatus(f: {
   flowError: string | null;
   confirmationOpen: boolean;
   contactNeeded: number;
-  contactAttempted: boolean;
   itemsLeft: number;
   itemsTotal: number;
+  /** FORM-REF: gaps that warn in Before you send and never stop Send. */
+  warningCount: number;
 }): { tone: WfTone; first: string; second: string; alert?: boolean } {
   if (f.view === "inbox") {
     return {
@@ -48,24 +49,24 @@ export function drawerFootStatus(f: {
   // its place, so the warning goes as soon as the contact fields are valid, not at the next Send.
   const contactSnapshot = f.flowError !== null && isMissingContactMessage(f.flowError);
   if (f.flowError && !contactSnapshot) return { tone: "danger", first: f.flowError, second, alert: true };
+  // FORM-REF (Josh, 5 Nov 2026): contact details and the other operational gaps warn, never block.
   if (f.confirmationOpen) {
     return {
-      tone: f.contactNeeded ? (f.contactAttempted ? "danger" : "neutral") : "success",
+      tone: f.contactNeeded ? "warning" : "success",
       first: f.contactNeeded
-        ? `${f.contactNeeded} contact ${f.contactNeeded === 1 ? "detail" : "details"} needed`
+        ? `Ready to send · ${f.contactNeeded} contact ${f.contactNeeded === 1 ? "detail" : "details"} not recorded`
         : "Ready to send",
       second,
     };
   }
   return {
-    tone: f.itemsLeft ? "neutral" : "success",
+    tone: f.itemsLeft ? "neutral" : f.warningCount ? "warning" : "success",
     // Audit 11 Oct 2026: the same unit as Ready to send, so "4 of 9" and this line agree.
-    // P155: once every step is done only the contact details asked at Send remain, so say that.
     first:
-      f.itemsLeft > 0 && f.itemsLeft === f.contactNeeded
-        ? `${f.contactNeeded} contact ${f.contactNeeded === 1 ? "detail" : "details"} needed at Send`
-        : f.itemsLeft > 0
-          ? `${f.itemsLeft} of ${f.itemsTotal} items still needed`
+      f.itemsLeft > 0
+        ? `${f.itemsLeft} of ${f.itemsTotal} items still needed`
+        : f.warningCount
+          ? `All required items in · ${f.warningCount} not recorded`
           : "All items in",
     second,
   };

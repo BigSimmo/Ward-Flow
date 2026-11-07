@@ -118,6 +118,22 @@ describe("officer diversion control — T4b", () => {
     );
   });
 
+  it("shows the diversion form when Divert is pressed from the Forms tab (drawer review, 6 Nov 2026)", async () => {
+    const user = userEvent.setup();
+    const { state, movementId } = collectedState();
+    mockedUseWardFlow.mockReturnValue({
+      ...state,
+      dispatch: vi.fn(),
+      rejections: state.rejections,
+    } as unknown as ReturnType<typeof useWardFlow>);
+
+    render(<OfficerScreen />);
+    await user.click(screen.getByTestId(`ward-officer-select-${movementId}`));
+    await user.click(screen.getByRole("tab", { name: /Forms/ }));
+    await user.click(screen.getByTestId(`ward-officer-divert-${movementId}`));
+    expect(screen.getByTestId(`ward-officer-diversion-${movementId}`)).toBeInTheDocument();
+  });
+
   it("holds the diversion form from opening until it closes (audit CS3-01)", async () => {
     const user = userEvent.setup();
     const { state, movementId } = collectedState();

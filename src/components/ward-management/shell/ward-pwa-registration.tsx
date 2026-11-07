@@ -16,6 +16,9 @@
  * - Keeps the browser's install event for the Settings install hint (`ward-pwa-install.ts`).
  * - Opens the page a tapped phone alert asks for when this window was not controlled yet.
  *
+ * The registration, clean-up and update offer live in `ward-pwa-update.ts`, loaded on demand after
+ * the page is up, so their code is not on every screen's first load (6 Nov 2026).
+ *
  * Not registered by the dev server: its build files are not hashed for good, and an offline page
  * would hide a stopped dev server.
  */
@@ -24,13 +27,11 @@ import { useRouter } from "next/navigation";
 
 import { useOptionalToast } from "@/components/wf";
 
-import { PHONE_PUSH_SCOPE, PHONE_PUSH_WORKER_URL } from "./ward-phone-push";
+import { PHONE_PUSH_SCOPE } from "./ward-phone-push";
 import { listenForInstallPrompt } from "./ward-pwa-install";
 
 /** Must match OPEN_MESSAGE in public/ward-flow-push-sw.js. */
 const WARD_PWA_OPEN_MESSAGE = "ward-flow-open";
-/** Scopes registered before Ward Flow left /mockups (19 October 2026); the slashed one is pre-F-11. */
-export const LEGACY_PWA_SCOPES = ["/mockups/ward-flow", "/mockups/ward-flow/"] as const;
 
 /** The Ward Flow path a worker message asks for, or null for anything else. */
 export function wardPwaOpenTarget(data: unknown, origin: string): string | null {
@@ -45,42 +46,6 @@ export function wardPwaOpenTarget(data: unknown, origin: string): string | null 
   } catch {
     return null;
   }
-}
-
-/** The one-time notice when removing the old registration ended this phone's alerts. */
-export const PHONE_ALERTS_MOVED_NOTICE = {
-  title: "Turn phone alerts on again",
-  body: "An update moved Ward Flow's alerts. Switch them on again in Settings, Alerts.",
-} as const;
-
-async function hadPushSubscription(registration: ServiceWorkerRegistration): Promise<boolean> {
-  try {
-    return Boolean(await registration.pushManager?.getSubscription());
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Registers the Ward Flow worker and drops the old registrations. Resolves null when unsupported.
- * `onAlertsEnded` runs when a dropped registration held a phone alerts subscription, which the
- * browser ends with it. The server forgets that endpoint once a send to it fails.
- */
-async function registerWardPwaWorker(onAlertsEnded?: () => void): Promise<ServiceWorkerRegistration | null> {
-  if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return null;
-  const legacyScopes = new Set<string>(LEGACY_PWA_SCOPES.map((scope) => new URL(scope, window.location.origin).href));
-  const existing = await navigator.serviceWorker.getRegistrations();
-  const ended = await Promise.all(
-    existing
-      .filter((registration) => legacyScopes.has(registration.scope))
-      .map(async (registration) => {
-        const subscribed = await hadPushSubscription(registration);
-        await registration.unregister();
-        return subscribed;
-      }),
-  );
-  if (ended.some(Boolean)) onAlertsEnded?.();
-  return navigator.serviceWorker.register(PHONE_PUSH_WORKER_URL, { scope: PHONE_PUSH_SCOPE, updateViaCache: "none" });
 }
 
 export function WardPwaRegistration() {
@@ -103,74 +68,25 @@ export function WardPwaRegistration() {
     if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
     const container = navigator.serviceWorker;
     let cancelled = false;
-    let reloadRequested = false;
-    let offered: ServiceWorker | null = null;
-    let noticeId: string | null = null;
-    const lifecycle = new AbortController();
-
-    const offer = (registration: ServiceWorkerRegistration, worker: ServiceWorker | null) => {
-      // Only an update waits: a first install has no active worker yet and takes over at once.
-      const notices = toastRef.current;
-      if (cancelled || !worker || !registration.active || registration.active === worker) return;
-      if (offered === worker || !notices) return;
-      offered = worker;
-      if (noticeId) notices.dismiss(noticeId);
-      noticeId = notices.push({
-        tone: "info",
-        title: "New version of Ward Flow ready",
-        skipOfflineNote: true,
-        action: {
-          label: "Reload",
-          onAction: () => {
-            reloadRequested = true;
-            worker.postMessage({ type: "SKIP_WAITING" });
-          },
-        },
-      });
-    };
-
-    const onControllerChange = () => {
-      if (!reloadRequested) return;
-      // Consume the one requested reload before the browser can cancel it for unsaved work.
-      // A later controller event must never replay a cancelled navigation.
-      reloadRequested = false;
-      window.location.reload();
-    };
+    let stopWatching: (() => void) | undefined;
     const onMessage = (event: MessageEvent) => {
       const target = wardPwaOpenTarget(event.data, window.location.origin);
       if (target) routerRef.current.push(target);
     };
-    container.addEventListener("controllerchange", onControllerChange);
     container.addEventListener("message", onMessage);
-
-    void (async () => {
-      try {
-        const registration = await registerWardPwaWorker(() => {
-          toastRef.current?.push({ tone: "warning", duration: 0, ...PHONE_ALERTS_MOVED_NOTICE });
-        });
-        if (!registration || cancelled) return;
-        const watchInstalling = () => {
-          const installing = registration.installing;
-          if (!installing) return;
-          const onStateChange = () => {
-            if (installing.state === "installed") offer(registration, registration.waiting ?? installing);
-          };
-          installing.addEventListener("statechange", onStateChange, { signal: lifecycle.signal });
-          onStateChange();
-        };
-        registration.addEventListener("updatefound", watchInstalling, { signal: lifecycle.signal });
-        // updatefound may have fired before register() resolved. Watch that update too.
-        watchInstalling();
-        offer(registration, registration.waiting);
-      } catch {
-        // No worker (private mode, blocked, or offline at first load): Ward Flow works without one.
-      }
-    })();
+    // Registration and the update offer load on demand (`ward-pwa-update.ts`), off the first load.
+    // The tapped-alert message above stays here, so it still works when that file cannot load offline.
+    import("./ward-pwa-update")
+      .then(({ watchWardPwaWorker }) => {
+        if (!cancelled) stopWatching = watchWardPwaWorker(container, () => toastRef.current);
+      })
+      .catch(() => {
+        // Offline before that file was ever fetched: the worker registered on an earlier load still runs.
+      });
 
     return () => {
       cancelled = true;
-      lifecycle.abort();
-      container.removeEventListener("controllerchange", onControllerChange);
+      stopWatching?.();
       container.removeEventListener("message", onMessage);
     };
   }, []);

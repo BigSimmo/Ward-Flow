@@ -150,7 +150,7 @@ export function WardSearchCommands({
             </span>
           ) : null}
           <span className={styles.shortcutRow}>
-            <span>Tasks drawer</span>
+            <span>Alerts drawer</span>
             <kbd className={styles.hintKbd}>Shift+T</kbd>
           </span>
           <span className={styles.shortcutRow}>

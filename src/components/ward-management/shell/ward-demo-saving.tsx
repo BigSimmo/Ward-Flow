@@ -21,8 +21,17 @@ const WardDemoSavingNote = dynamic(
   { loading: () => null },
 );
 
-/** A quiet, persistent note under the header once typed text is held or saving has stopped. */
+/**
+ * The note once saving has stopped. It outranks every other pinned note, broadcasts included (Josh,
+ * 5 Nov 2026, audit SD-02): it warns of lost work, so the layout mounts it first.
+ */
 export function WardDemoNotSavedNote() {
   const saving = useContext(WardDemoNotSavedContext);
-  return saving === undefined ? null : <WardDemoSavingNote saving={saving} />;
+  return saving === false ? <WardDemoSavingNote saving={false} /> : null;
+}
+
+/** The quieter note while the day still saves except typed text. It keeps the lowest rank. */
+export function WardDemoTypedTextNote() {
+  const saving = useContext(WardDemoNotSavedContext);
+  return saving === true ? <WardDemoSavingNote saving /> : null;
 }

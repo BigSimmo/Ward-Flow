@@ -44,7 +44,7 @@ export function bedKindsServed(unit: Unit): string {
   return kinds.length > 0 ? kinds.join(" & ") : "Adult (no beds)";
 }
 
-/** "6 short", "1 spare" or "Enough": a gap in words, never a bare minus sign. */
+/** "6 short", "1 spare that fit" or "Enough": a gap in words, never a bare minus sign (WF-16). */
 function formatGap(gap: number): string {
   return gap === 0 ? "Enough" : `${Math.abs(gap)} ${gapWord(gap).text}`;
 }
@@ -57,7 +57,7 @@ export function gapRangeWord(gap: number): string {
 export function gapWord(gap: number): { tone: WfTone; text: string } {
   if (gap < 0) return { tone: "warning", text: "short" };
   if (gap === 0) return { tone: "success", text: "Enough" };
-  return { tone: "success", text: "spare" };
+  return { tone: "success", text: "spare that fit" };
 }
 
 /**
@@ -75,7 +75,7 @@ export function rowSentence(row: BedKindGap): string {
   if (row.gap === 0) {
     return `${row.waiting} waiting (${who}), exactly ${row.bedsThatFit} ${bedWord} that fit — net available capacity today.`;
   }
-  return `${row.bedsThatFit} ${bedWord} that fit, more than the ${row.waiting} waiting (${who}) — ${magnitude} spare.`;
+  return `${row.bedsThatFit} ${bedWord} that fit, more than the ${row.waiting} waiting (${who}) — ${magnitude} spare that fit.`;
 }
 
 export function totalsSentence(totals: { waiting: number; bedsThatFit: number; gap: number }): string {
@@ -86,5 +86,5 @@ export function totalsSentence(totals: { waiting: number; bedsThatFit: number; g
   if (totals.gap === 0) {
     return `Across all four bed kinds, ${totals.waiting} people are waiting and exactly ${totals.bedsThatFit} beds fit — net available capacity today.`;
   }
-  return `Across all four bed kinds, ${totals.bedsThatFit} beds fit, more than the ${totals.waiting} people waiting — ${magnitude} spare overall.`;
+  return `Across all four bed kinds, ${totals.bedsThatFit} beds fit, more than the ${totals.waiting} people waiting — ${magnitude} spare that fit overall.`;
 }

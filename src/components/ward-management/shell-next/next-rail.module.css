@@ -18,10 +18,23 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .capacityHead > :last-child {
   margin-left: 0;
+}
+
+/* D7 (design audit, 5 Nov 2026): a long tag ("2 at or over 85% full") pushed the round chevron out
+   of the card and over the sidebar's edge on every 1440 page. The tag (the head's middle part) now
+   shrinks and wraps its words inside the card, so the chevron stays in the card's padding. */
+.capacityHead > :nth-child(2) {
+  min-width: 0;
+  height: auto;
+  min-height: var(--wf-h-chip);
+  padding-block: 0.125rem;
+  line-height: var(--wf-lh-12);
+  white-space: normal;
 }
 
 .capacityRows {
@@ -30,6 +43,8 @@
 }
 
 .capacityReady {
+  display: block;
+  min-width: 0;
   color: var(--wf-ink-3);
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
@@ -217,28 +232,54 @@
 }
 
 .liveDot {
+  position: relative;
   flex: none;
   width: 7px;
   height: 7px;
   border-radius: 50%;
   background: var(--wf-success);
+}
+
+/* PERF-05: the ring grows and fades with transform and opacity, which the compositor runs, so the
+   always-on dot no longer restyles the page every frame the way an animated box-shadow did. */
+.liveDot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--wf-success) 45%, transparent);
   animation: railLivePulse 2.4s ease-out infinite;
 }
 
 @keyframes railLivePulse {
   0% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--wf-success) 45%, transparent);
+    transform: scale(1);
+    opacity: 1;
   }
-  70% {
-    box-shadow: 0 0 0 5px transparent;
-  }
+  70%,
   100% {
-    box-shadow: 0 0 0 0 transparent;
+    transform: scale(2.43);
+    opacity: 0;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .liveDot {
+  .liveDot::after {
     animation: none;
+    opacity: 0;
   }
+}
+
+/* WF-44: Metro occupancy and ready beds stack, so the Metro figure cannot overlap a service row. */
+.readyStack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.125rem;
+  min-width: 0;
+}
+
+.readyMetro {
+  color: var(--wf-ink-2);
+  white-space: nowrap;
 }

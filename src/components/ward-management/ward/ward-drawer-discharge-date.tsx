@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Button, Stepper } from "@/components/wf";
+import { Button, Stepper, TimeField } from "@/components/wf";
 import { dayOf, formatInstantWithDay, type Instant } from "../ward-clock";
 import { clockInputValue } from "../capacity/planned-admissions-draft";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
@@ -17,6 +17,9 @@ import styles from "./ward-drawer-discharge-date.module.css";
  * discharge date here, with the same days and typed time as the Patient page. The time is the
  * one typed; nothing is worked out. Changing a recorded date opens on that date, so a nudge is
  * one change, and Save waits until it is moved.
+ *
+ * Form rule (design audit, Josh's card 3, 5 Nov 2026): a time that has already passed warns and
+ * still saves as typed. Save is unavailable only with no readable time or no change.
  */
 export function WardDrawerDischargeDate({
   admissionId,
@@ -46,7 +49,7 @@ export function WardDrawerDischargeDate({
       : dayFromToday < 0
         ? `${-dayFromToday} days ago`
         : dayOptionLabel(dayFromToday, now, dayZero);
-  const future = parsed !== undefined && parsed > now;
+  const past = parsed !== undefined && parsed <= now;
   const unchanged = parsed !== undefined && parsed === recordedAt;
   const hasDate = recordedAt !== null;
   // The recorded day and time, when it is still on the day list; otherwise today and a blank time.
@@ -75,7 +78,7 @@ export function WardDrawerDischargeDate({
   }
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!future || unchanged || parsed === undefined || !gate.allowed) return;
+    if (unchanged || parsed === undefined || !gate.allowed) return;
     save.submit(
       () =>
         raise("UPDATE_EXPECTED_DISCHARGE", {
@@ -116,20 +119,34 @@ export function WardDrawerDischargeDate({
       </div>
       <label>
         Expected discharge time
-        <input disabled={save.pending} type="time" value={time} onChange={(event) => setTime(event.target.value)} />
+        <TimeField disabled={save.pending} value={time} onValueChange={setTime} />
       </label>
-      <p className={styles.hint} aria-live="polite">
+      <p className={styles.hint} aria-live="polite" data-testid="ward-drawer-discharge-date-hint">
         {parsed === undefined
           ? "Type the time"
-          : !future
-            ? "That time has already passed"
-            : unchanged
-              ? "Change the day or time to save"
+          : unchanged
+            ? "Change the day or time to save"
+            : past
+              ? `${formatInstantWithDay(parsed, now)}. That time has passed. It saves as typed.`
               : formatInstantWithDay(parsed, now)}
       </p>
       {save.error ? <p role="alert">{save.error}</p> : null}
       <div className={styles.actions}>
-        <Button variant="pri" size="sm" type="submit" disabled={!future || unchanged || save.pending}>
+        <Button
+          variant="pri"
+          size="sm"
+          type="submit"
+          reasonDisplay="tooltip"
+          disabledReason={
+            save.pending
+              ? "Saving"
+              : parsed === undefined
+                ? "Type the time"
+                : unchanged
+                  ? "Change the day or time to save"
+                  : undefined
+          }
+        >
           Save date
         </Button>
         <Button variant="sec" size="sm" onClick={() => setOpen(false)}>

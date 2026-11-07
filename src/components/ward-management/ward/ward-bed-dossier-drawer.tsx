@@ -965,7 +965,7 @@ export function WardBedDossierDrawer({
               <dl className={styles.heroFacts}>
                 <div>
                   <dt>Pulled for</dt>
-                  <dd>No one</dd>
+                  <dd>Nobody</dd>
                 </div>
                 <div>
                   <dt>Candidate</dt>

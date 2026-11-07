@@ -449,6 +449,9 @@ button.runwayCardRow:focus-visible {
   [data-referral-layout="queue-panel"] .layout.layout.layout.layout {
     grid-template-columns: minmax(0, 1fr) clamp(23rem, 34%, 28rem);
     gap: var(--wf-s-3);
+    /* BA-11 (front-end audit, 5 Nov 2026): the queue and panel stop at about 1,920px, so on a 2560
+       screen the Patient and "Since referral" columns are not 1,400px apart. */
+    max-inline-size: 120rem;
   }
 }
 
@@ -503,7 +506,10 @@ button.runwayCardRow:focus-visible {
 
 .viewTabs [role="tab"],
 .panelTabs [role="tab"] {
-  height: calc(var(--wf-h-sm) - 6px);
+  /* K3 (design audit, 5 Nov 2026): a floor, not a fixed height, so the kit tab's own 34px floor
+     does not win and large text still grows the tab. */
+  min-height: calc(var(--wf-h-sm) - 6px);
+  height: auto;
   margin: 0;
   padding: 0 var(--wf-s-3);
   border: 0;

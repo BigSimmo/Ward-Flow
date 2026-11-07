@@ -143,11 +143,8 @@ export const STAFF = [
   },
 ];
 export const STAFF_BY_ID: Record<string, (typeof STAFF)[number]> = Object.fromEntries(STAFF.map((s) => [s.id, s]));
-export const shortName = (id: string | null | undefined): string => {
-  if (!id) return "";
-  const [sur, given] = STAFF_BY_ID[id]!.name.split(", ");
-  return `${sur}, ${(given ?? "").replace("Dr ", "")[0] ?? ""}.`;
-};
+/** A staff member's name as written ("Byrne, Tom", "Hartwell, Dr Imogen"): in full, never initialled (DS §4, Q226). */
+export const staffName = (id: string | null | undefined): string => (id ? STAFF_BY_ID[id]!.name : "");
 export const TODAY: Record<string, readonly ["success" | "info" | "neutral", string]> = {
   on: ["success", "On duty"],
   duty: ["success", "Duty officer"],
@@ -595,13 +592,13 @@ export const REFERRALS = [
       ["pass", "Not open to another team", "No open episode found"],
       ["pass", "Referral letter attached", "GP letter and medication list"],
       ["pass", "Consent to the referral", "Recorded by GP on Fri 30 Oct"],
-      ["info", "Triage", "Routine, by Vance, K. on Fri 30 Oct"],
+      ["info", "Triage", "Routine, by Vance, Kara on Fri 30 Oct"],
     ],
     timeline: [
       ["Mon 2 Nov 09:41", "Answer time passed", ""],
-      ["Fri 30 Oct 15:02", "Blood results added", "Vance, K."],
-      ["Fri 30 Oct 14:20", "Phoned GP for bloods", "Vance, K."],
-      ["Fri 30 Oct 11:05", "Triaged routine", "Vance, K."],
+      ["Fri 30 Oct 15:02", "Blood results added", "Vance, Kara"],
+      ["Fri 30 Oct 14:20", "Phoned GP for bloods", "Vance, Kara"],
+      ["Fri 30 Oct 11:05", "Triaged routine", "Vance, Kara"],
       ["Fri 30 Oct 09:41", "Referral received", "e-referral, Dr M. Castell"],
     ],
     firstContact: "Within 14 days",
@@ -659,10 +656,10 @@ export const REFERRALS = [
       ["pass", "Not open to another team", "No open episode found"],
       ["pass", "Discharge summary attached", "ED summary and safety plan"],
       ["info", "Interpreter", "Not booked yet"],
-      ["info", "Triage", "Urgent, by Vance, K. today 09:10"],
+      ["info", "Triage", "Urgent, by Vance, Kara today 09:10"],
     ],
     timeline: [
-      ["Mon 2 Nov 09:10", "Triaged urgent", "Vance, K."],
+      ["Mon 2 Nov 09:10", "Triaged urgent", "Vance, Kara"],
       ["Sun 1 Nov 08:55", "Receipt sent to ED", "Automatic"],
       ["Sun 1 Nov 08:40", "Referral received", "Dr S. Ito, RPH ED"],
     ],
@@ -696,7 +693,10 @@ export const REFERRALS = [
         "Admitted 3 weeks ago with a relapse of schizophrenia after stopping medication. Expected home Thu 5 Nov.",
       ],
       ["Background", "Known to this team 2015–2023, closed when well. Lives with his brother in Swan View."],
-      ["Assessment", "Settled on paliperidone depot, next due Thu 19 Nov. Insight improving. Voluntary since Fri."],
+      [
+        "Assessment",
+        "Settled on paliperidone depot, next due Thu 19 Nov. Insight improving. Voluntary since Fri 30 Oct.",
+      ],
       ["Recommendation", "Case manager to meet him before discharge, 7-day follow-up, and a depot clinic booking."],
     ],
     docs: [
@@ -733,16 +733,16 @@ export const ANSWERED = [
     u: "UM200196",
     ask: "Case management",
     ans: "Accepted",
-    by: "Vance, K.",
+    by: "Vance, Kara",
     when: "Fri 30 Oct",
-    to: "Kuroki, H.",
+    to: "Kuroki, Hana",
   },
   {
     n: "Tolland, Reece",
     u: "UM200203",
     ask: "Psychiatrist review",
     ans: "Declined",
-    by: "Vance, K.",
+    by: "Vance, Kara",
     when: "Thu 29 Oct",
     to: "Out of catchment, sent to Armadale",
   },
@@ -751,7 +751,7 @@ export const ANSWERED = [
     u: "UM200238",
     ask: "Case management",
     ans: "Accepted",
-    by: "Vance, K.",
+    by: "Vance, Kara",
     when: "Sat 31 Oct",
     to: "Not allocated yet",
   },
@@ -760,7 +760,7 @@ export const ANSWERED = [
     u: "UM200152",
     ask: "Case management",
     ans: "Accepted",
-    by: "Vance, K.",
+    by: "Vance, Kara",
     when: "Thu 29 Oct",
     to: "Not allocated yet",
   },
@@ -784,7 +784,7 @@ export const EXTRA: Record<string, ReferralExtra> = {
     hist: {
       years: "2019–2020",
       what: "Depression. Closed well to her GP in Mar 2020.",
-      cm: "Mallard, J.",
+      cm: "Mallard, Jodie",
       cmNow: "Still on the team · 17 of 18",
     },
     pickLabel: "Psychiatrist",
@@ -840,7 +840,7 @@ export const EXTRA: Record<string, ReferralExtra> = {
     hist: {
       years: "2015–2023",
       what: "Schizophrenia. Closed well in Jun 2023 to his GP and depot clinic.",
-      cm: "Nair, P.",
+      cm: "Nair, Priya",
       cmNow: "Still on the team · 20 of 20, full",
     },
     pickLabel: "Case manager",

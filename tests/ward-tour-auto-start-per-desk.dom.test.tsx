@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 /**
@@ -28,12 +28,28 @@ import {
 } from "@/components/ward-management/help/ward-tour-auto-start";
 import { resetTourSeenForTests } from "@/components/ward-management/help/ward-help-store";
 
-/** P188: the tour is offered first; this presses "Start the tour" on the card. */
+/** P188: the tour is offered first; this reads the three welcome cards and presses "Start the tour". */
 async function startFromOffer() {
+  fireEvent.click(await screen.findByTestId("ward-tour-welcome-next"));
+  fireEvent.click(screen.getByTestId("ward-tour-welcome-next"));
   fireEvent.click(await screen.findByRole("button", { name: "Start the tour" }));
 }
 
-const settle = () => new Promise((resolve) => setTimeout(resolve, 700));
+/**
+ * TE-08 (front-end audit, 5 Nov 2026): mounts on fake time and carries the auto-start's settle timer
+ * (500 ms) well past its end before the caller asserts that nothing started. A real-clock sleep let
+ * a late start pass by accident under load.
+ */
+function mountAndSettle<T>(mount: () => T): T {
+  vi.useFakeTimers();
+  try {
+    const result = mount();
+    act(() => vi.advanceTimersByTime(2000));
+    return result;
+  } finally {
+    vi.useRealTimers();
+  }
+}
 
 beforeEach(() => {
   desk.role = "coordinator";
@@ -51,14 +67,14 @@ describe("tour auto-start once per device (G3)", () => {
     expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe("coordinator");
 
     desk.role = "ward";
-    const second = render(<WardTourAutoStart onStart={onStart} />);
-    await settle();
+    const second = mountAndSettle(() => render(<WardTourAutoStart onStart={onStart} />));
     expect(screen.queryByRole("button", { name: "Start the tour" })).toBeNull();
+    // The offer marks its desk the moment it shows, so an unchanged mark proves none was raised.
+    expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe("coordinator");
     second.unmount();
 
     desk.role = "coordinator";
-    render(<WardTourAutoStart onStart={onStart} />);
-    await settle();
+    mountAndSettle(() => render(<WardTourAutoStart onStart={onStart} />));
     expect(onStart).toHaveBeenCalledTimes(1);
   });
 
@@ -68,9 +84,9 @@ describe("tour auto-start once per device (G3)", () => {
     await startFromOffer();
     expect(onStart).toHaveBeenCalledTimes(1);
     desk.role = "ed";
-    rerender(<WardTourAutoStart onStart={onStart} />);
-    await settle();
+    mountAndSettle(() => rerender(<WardTourAutoStart onStart={onStart} />));
     expect(screen.queryByRole("button", { name: "Start the tour" })).toBeNull();
+    expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe("coordinator");
     expect(onStart).toHaveBeenCalledTimes(1);
   });
 
@@ -80,9 +96,9 @@ describe("tour auto-start once per device (G3)", () => {
     window.localStorage.setItem(TOUR_AUTO_DONE_STORAGE_KEY, "yes");
     const onStart = vi.fn();
     desk.role = "community";
-    render(<WardTourAutoStart onStart={onStart} />);
-    await settle();
+    mountAndSettle(() => render(<WardTourAutoStart onStart={onStart} />));
     expect(screen.queryByRole("button", { name: "Start the tour" })).toBeNull();
+    expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe("yes");
     expect(onStart).not.toHaveBeenCalled();
   });
 });

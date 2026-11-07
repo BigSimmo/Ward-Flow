@@ -152,8 +152,9 @@ describe("planned admissions panel", () => {
     chooseRequired();
     fireEvent.change(screen.getByTestId("ward-planned-who"), { target: { value: "initials" } });
     fireEvent.change(screen.getByTestId("ward-planned-initials"), { target: { value: "Alice" } });
-    fireEvent.click(screen.getByTestId("ward-planned-submit"));
-    expect(screen.getByTestId("ward-planned-form-refusal")).toHaveTextContent("one to three letters");
+    // WF-07: Book stays disabled for over-long initials and names the real cause (no submit 422).
+    expect(screen.getByTestId("ward-planned-submit")).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText(/at most three letters/i)).toBeVisible();
 
     fireEvent.change(screen.getByTestId("ward-planned-initials"), { target: { value: "x.y" } });
     fireEvent.change(screen.getByTestId("ward-planned-sex"), { target: { value: "Female" } });
@@ -302,4 +303,39 @@ it("distinguishes existing patients by record number and carries the selected id
   fireEvent.change(select, { target: { value: option.value } });
   expect(screen.getByTestId("ward-planned-selected-identity")).toHaveTextContent(option.textContent!);
   expect(screen.getByTestId("ward-planned-submit")).toHaveAccessibleDescription(/UM\d{6}/);
+});
+
+describe("WF-07 planned initials refusal", () => {
+  it("clears a sticky over-long initials message when the draft is fixed to TH", () => {
+    renderPanel();
+    fireEvent.click(screen.getByTestId("ward-planned-book"));
+    fireEvent.change(screen.getByTestId("ward-planned-who"), { target: { value: "initials" } });
+    fireEvent.change(screen.getByTestId("ward-planned-initials"), { target: { value: "ABCD" } });
+    expect(screen.getByTestId("ward-planned-submit")).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByText(/at most three/i)).toBeVisible();
+    fireEvent.change(screen.getByTestId("ward-planned-initials"), { target: { value: "TH" } });
+    expect(screen.queryByText(/at most three/i)).toBeNull();
+  });
+});
+
+describe("planned admissions: the newest refusal shows (CodeRabbit on PR #1471)", () => {
+  it("replaces an earlier save refusal with a later local one", () => {
+    renderPanel();
+    fireEvent.click(screen.getByTestId("ward-planned-book"));
+    chooseRequired();
+    fireEvent.change(screen.getByTestId("ward-planned-who"), { target: { value: "initials" } });
+    fireEvent.change(screen.getByTestId("ward-planned-initials"), { target: { value: "gh" } });
+    fireEvent.change(screen.getByTestId("ward-planned-day"), { target: { value: "0" } });
+    fireEvent.change(screen.getByTestId("ward-planned-time"), { target: { value: "00:01" } });
+    fireEvent.click(screen.getByTestId("ward-planned-submit"));
+    const first = screen.getByTestId("ward-planned-form-refusal").textContent ?? "";
+    expect(first).not.toBe("");
+    expect(first).not.toMatch(/whole number of days/u);
+
+    fireEvent.change(screen.getByTestId("ward-planned-stay"), { target: { value: "abc" } });
+    fireEvent.click(screen.getByTestId("ward-planned-submit"));
+    expect(screen.getByTestId("ward-planned-form-refusal")).toHaveTextContent(
+      /Enter the expected stay as a whole number of days/u,
+    );
+  });
 });

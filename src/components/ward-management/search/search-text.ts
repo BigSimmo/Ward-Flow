@@ -14,7 +14,7 @@
  * Nothing here ranks or scores; callers keep their own order. Typed words are never stored.
  */
 import { allowedSlips, editDistance } from "@/components/ward-management/help/ward-help-typo";
-import { foldPatientSearchText } from "@/components/ward-management/ward-patients";
+import { foldPatientSearchHaystack, foldPatientSearchText } from "@/components/ward-management/ward-patients";
 
 /** The typed text as folded words, in the order typed. */
 export function queryWords(query: string): string[] {
@@ -29,8 +29,10 @@ function digitsOf(value: string): string {
 type Fields = readonly (string | null | undefined)[];
 
 function folded(fields: Fields): { text: string[]; digits: string[] } {
-  const text = fields.filter((field): field is string => Boolean(field)).map(foldPatientSearchText);
-  return { text, digits: text.map(digitsOf).filter(Boolean) };
+  const present = fields.filter((field): field is string => Boolean(field));
+  // Haystack form, so "o brien" finds O'Brien (CL-5); digits from the plain form, never doubled.
+  const text = present.map(foldPatientSearchHaystack);
+  return { text, digits: present.map(foldPatientSearchText).map(digitsOf).filter(Boolean) };
 }
 
 /** A typed number is matched as digits once it has three or more; "4" stays a plain word. */

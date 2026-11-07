@@ -42,7 +42,7 @@ describe("ADD_BROADCAST_ALERT_UNITS", () => {
     const next = add(dispatch({}), [second, edId, first]);
     const alert = next.broadcastAlerts.at(-1)!;
     expect(alert.targetUnitIds).toEqual([first, second, edId]);
-    expect(alert.targetScopeLabel).toBe("3 units");
+    expect(alert.targetScopeLabel).toBe("3 desks");
     expect(askedDesks(alert, next.units)).toEqual([first, second, edId]);
   });
 

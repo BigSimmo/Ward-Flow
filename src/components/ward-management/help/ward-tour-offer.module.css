@@ -1,32 +1,231 @@
-/* P188: the small card that offers the tour on a desk's first visit, instead of opening it. */
-.offer {
+/* The welcome before the first-run tour (ward-tour-welcome.tsx): three short cards in one panel,
+   centred over a soft scrim, then "Start the tour" or "Not now". Replaces P188's corner card; still
+   offered once per device. Help's tour row shows the same panel inline, with no layer. */
+.layer {
   position: fixed;
-  right: 1rem;
-  bottom: 1rem;
-  pointer-events: auto;
-  max-width: min(22.5rem, calc(100vw - 2rem));
-  padding: 0.875rem 1rem;
+  inset: 0;
+  z-index: var(--z-modal, 100);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: var(--wf-scrim-strong);
+}
+
+.panel {
+  display: grid;
+  gap: 0.875rem;
+  width: min(26rem, 100%);
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 1.5rem 1.25rem 1rem;
   border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-overlay);
   box-shadow: var(--wf-e3);
   color: var(--wf-ink-1);
   font-size: var(--wf-fs-14);
+  line-height: 1.45;
+  /* A sideways swipe is the card's own; up and down still scroll a long card. */
+  touch-action: pan-y;
 }
 
-/* Above the phone's bottom tab bar, as the what's new note does. */
-/* Lifted over the phone dock wherever the dock shows (up to 48rem, the app's phone width). */
+/* Inline in Help's tour row: the row's own card holds it, so no second frame or shadow. */
+.panel[data-inline] {
+  width: 100%;
+  padding: 0.25rem 0 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Phone: docked to the foot, as Help and the tour's own phone cards sit, clear of the home bar. */
 @media (max-width: 46.4375rem) {
-  .offer {
-    bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  .layer {
+    place-items: end stretch;
+    padding: 0.5rem 0.5rem calc(0.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .panel:not([data-inline]) {
+    width: 100%;
   }
 }
 
-.text {
-  margin: 0 0 0.625rem;
+.slide {
+  display: grid;
+  justify-items: start;
+  gap: 0.5rem;
+  min-height: 11.5rem;
+  animation: ward-welcome-in var(--wf-t-enter, 220ms) var(--wf-ease-out);
+}
+
+.panel[data-inline] .slide {
+  min-height: 0;
+}
+
+/* In Help the welcome sits inside the tour row, so its title takes the row's size. */
+.panel[data-inline] .title {
+  font-size: var(--wf-fs-16);
+}
+
+.slide[data-from="next"] {
+  --from: 1.5rem;
+}
+
+.slide[data-from="back"] {
+  --from: -1.5rem;
+}
+
+@keyframes ward-welcome-in {
+  from {
+    opacity: 0;
+    transform: translateX(var(--from, 0));
+  }
+}
+
+.art {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 0.25rem;
+  border-radius: var(--wf-r-md);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink, var(--wf-accent));
+}
+
+.art svg {
+  width: 20px;
+  height: 20px;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--wf-fs-20);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.body {
+  margin: 0;
+  color: var(--wf-ink-2);
+}
+
+/* Where you are: one dot per card, each a button to that card. The face is 8px; the button round it
+   gives a 24px target. */
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+}
+
+.dot {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.dot::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--wf-line-2);
+  content: "";
+  transition:
+    background-color var(--wf-t-micro, 120ms) var(--wf-ease-out),
+    width var(--wf-t-micro, 120ms) var(--wf-ease-out);
+}
+
+.dot[aria-current]::before {
+  width: 20px;
+  border-radius: 4px;
+  background: var(--wf-accent);
 }
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
   gap: 0.5rem;
+}
+
+.primary,
+.secondary,
+.ghost {
+  position: relative;
+  min-height: 40px;
+  padding: 0 0.875rem;
+  border-radius: var(--wf-r-ctl, 8px);
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.primary {
+  border: 1px solid var(--wf-accent);
+  background: var(--wf-accent);
+  color: light-dark(var(--wf-on-accent), var(--wf-canvas));
+}
+
+.secondary {
+  border: 1px solid var(--wf-line-ctl);
+  background: transparent;
+  color: var(--wf-ink-1);
+}
+
+/* Not now: the quiet way out, kept apart at the left. */
+.ghost {
+  margin-right: auto;
+  border: 0;
+  background: transparent;
+  color: var(--wf-ink-2);
+}
+
+.secondary:hover,
+.ghost:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible,
+.ghost:focus-visible,
+.dot:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Josh, 31 Oct 2026: no 48px controls. On touch the 40px faces get an invisible 48px tap cover. */
+@media (pointer: coarse) {
+  .primary::after,
+  .secondary::after,
+  .ghost::after {
+    position: absolute;
+    inset: -4px 0;
+    content: "";
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slide {
+    animation: none;
+  }
+
+  .dot::before {
+    transition: none;
+  }
+}
+
+@media print {
+  .layer {
+    display: none;
+  }
 }

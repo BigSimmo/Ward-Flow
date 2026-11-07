@@ -148,7 +148,7 @@ describe("the site bed manager's Discharges screen (D-80)", () => {
     const name = opener!.textContent ?? "";
     fireEvent.click(opener!);
 
-    const detail = screen.getByRole("region", { name: "Selected discharge details" });
+    const detail = screen.getByTestId("ward-discharge-detail");
     expect(detail).not.toHaveTextContent("This record could not be opened.");
     expect(within(detail).getByRole("heading", { name })).toBeInTheDocument();
     expect(screen.getByTestId("last-opening")).toHaveTextContent("bed_manager:accepted");

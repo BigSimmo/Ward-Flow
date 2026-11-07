@@ -5,7 +5,7 @@ import { wardPlaceLookup } from "@/components/ward-management/ward-access-places
 import { journeySentByKind } from "@/components/ward-management/ward-journey-sender";
 import { journeySentByDesk } from "@/components/ward-management/ward-referral-sender";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { ArrowRight, BedSingle, Check, Hospital, ShieldCheck, Ambulance } from "lucide-react";
+import { ArrowRight, BedSingle, Check, Hospital, Info, ShieldCheck, Ambulance } from "lucide-react";
 import { useWardFlowClock, useWardFlowSelect } from "../ward-flow-provider";
 import { candidateReason, eligibility, gateMark } from "../ward-eligibility";
 import { stageCopy } from "../ward-derivations";
@@ -524,7 +524,16 @@ export function PatientTransitOperations({
               <ul className={styles.gates}>
                 {eligibility(movement, destination, now).gates.map((g) => (
                   <li key={g.gate} data-pass={g.pass} data-mark={gateMark(g)}>
-                    <span>{gateMark(g) === "info" ? "i" : g.pass ? "✓" : "!"}</span>
+                    <span aria-hidden="true">
+                      {gateMark(g) === "info" ? (
+                        <Info size={12} strokeWidth={1.75} aria-hidden="true" />
+                      ) : (
+                        <StatusGlyph tone={g.pass ? "success" : "closed"} />
+                      )}
+                    </span>
+                    <span className="sr-only">
+                      {gateMark(g) === "info" ? "For information: " : g.pass ? "Met: " : "Not met: "}
+                    </span>
                     <p>{g.detail}</p>
                   </li>
                 ))}
@@ -582,7 +591,7 @@ export function PatientTransitOperations({
           {remaining !== undefined && (
             <p className={styles.hold} role="status">
               {remaining <= 0
-                ? "Pull time limit passed. The bed stays pulled until a person releases it or sets a new limit."
+                ? "Pull time limit passed. The bed stays pulled until released or given a new limit."
                 : `Bed pulled · ${dur(remaining)} remaining · Pull time limit ${clock(movement.pullExpiresAt!)}`}
             </p>
           )}
@@ -878,10 +887,7 @@ export function PatientTransitOperations({
             {MOVEMENT_STAGES.indexOf(movement.stage) > 0 && (
               <details>
                 <summary>Step back with recorded reason</summary>
-                <p className={styles.deckHint}>
-                  Corrects the stage record. Pulled beds and transport bookings remain until explicitly released or
-                  cancelled.
-                </p>
+                <p className={styles.deckHint}>Corrects the stage record only. Pulled beds and bookings stay.</p>
                 <label>
                   Earlier movement stage
                   <select value={backTo} onChange={(e) => setBackTo(e.target.value as MovementStage)}>
@@ -999,7 +1005,6 @@ export function PatientTransitOperations({
         <div>
           <span className={styles.eyebrow}>PATIENT NOW / BEDFLOW</span>
           <h2 id={`${baseId}-transit-title`}>Transit operations</h2>
-          <p>Coordinate the next step with the patient’s clinical context in view.</p>
         </div>
       </header>
       {/* Audit 24-1 (B-05): the sheet that hosts this deck covers the page header on a phone, so the
@@ -1013,11 +1018,7 @@ export function PatientTransitOperations({
         {errors.length > 0 ? (
           <p role="alert">{errors.map((e) => e.reason).join(" · ")}</p>
         ) : latestAudit ? (
-          <p>
-            {latestAudit.outcome === "accepted"
-              ? "Recorded in the shared patient movement."
-              : "Review the action outcome in the audit record."}
-          </p>
+          <p>{latestAudit.outcome === "accepted" ? "Recorded." : "Check the audit record."}</p>
         ) : null}
       </div>
       {showMetrics ? (

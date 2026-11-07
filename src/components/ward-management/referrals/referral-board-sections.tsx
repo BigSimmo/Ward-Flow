@@ -7,6 +7,7 @@
 // The referral board's two queue sections (waiting and recently decided), with the outcome detail
 // and due timer they draw. Moved out of `referral-board.tsx` to keep it under the line cap.
 import { openInformationNeeds } from "./referral-information-needs";
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { personLine } from "./referral-panel-parts";
 import { referralFollowUpLine } from "./referral-owner-and-calls-model";
 import { ReferralNoReplyFlag } from "./referral-no-reply-flag";
@@ -227,7 +228,8 @@ export function QueuedSection({
                 const patientInfo = resolveSubjectPatient(referral, queuedResolverState);
                 const summary = sender.referralFor(referral);
                 const refusals = summary === undefined ? refusalLines(referral, units) : [];
-                const sendingHospital = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode;
+                const sendingHospital =
+                  siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode ?? ORIGIN_NOT_RECORDED;
                 const selected = referral.id === selectedId;
                 const priority = getReferralPriority(referral, now);
                 const ready = summary === undefined ? readyUnitCount(referral, units, now) : undefined;
@@ -323,7 +325,7 @@ export function QueuedSection({
                           className={cx(a.truncate, a.mono)}
                           title={`${sendingHospital}, ${REFERRAL_SOURCE_WORDS[referral.source]}`}
                         >
-                          <span aria-hidden="true">{referral.originSiteCode}</span>
+                          <span aria-hidden="true">{referral.originSiteCode ?? ORIGIN_NOT_RECORDED}</span>
                           <span className="sr-only">{sendingHospital}</span>
                         </span>
                         <span className={cx(a.sub, a.fromSource)}>{REFERRAL_SOURCE_WORDS[referral.source]}</span>
@@ -449,7 +451,7 @@ export function QueuedSection({
                         />
                       </span>
                       <span className={a.cardRoute}>
-                        <b>{referral.originSiteCode}</b> to{" "}
+                        <b>{referral.originSiteCode ?? ORIGIN_NOT_RECORDED}</b> to{" "}
                         {summary === undefined ? askingForShort(referral) : "Awaiting answer"}
                       </span>
                       {/* v10 phone row: age band and sex, then how many bed needs, never the region. */}

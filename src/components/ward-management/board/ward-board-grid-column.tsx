@@ -6,6 +6,7 @@
 // The bed board's middle column: the bed grid with its filter, order and legend, and the people
 // count beneath it. Split out of ward-board.tsx to keep that file under the line cap; WardBoard
 // still owns every value and passes it in.
+import { ArrowDownUp } from "lucide-react";
 import { STAY_BANDS } from "@/components/ward-management/ward-admissions";
 import { BED_STATE_LABELS } from "@/components/ward-management/ward-bed-states";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -87,8 +88,13 @@ export function WardBoardGridColumn({
   const foldedCount = filteredTiles.length - drawnKeys.size;
   const bedsClass = `${styles.beds} ${redesign.beds}`;
   const countText = (filter: BoardFilter) => (filterCounts[filter] === 0 ? "none" : filterCounts[filter]);
-  // Final polish (31 Oct 2026): the kit's select, as the other redesigned pages, in place of the
-  // browser's own. Same id, name and spoken label.
+  // MU5 (Josh, 5 Nov 2026): the toolbar's Order is three kit segments with short names. The phone
+  // keeps its sort icon over the browser's own select, with the long names.
+  const BOARD_ORDER_SHORT: Record<BoardOrder, string> = {
+    stay: "Longest stay",
+    leaving: "Soonest to leave",
+    recorded: "Bed order",
+  };
   const orderOptions = BOARD_ORDERS.map((order) => (
     <option key={order} value={order}>
       {BOARD_ORDER_LABELS[order]}
@@ -134,19 +140,7 @@ export function WardBoardGridColumn({
           </Select>
           <span className={styles.phoneSort}>
             {orderSelect}
-            <svg
-              viewBox="0 0 24 24"
-              width="20"
-              height="20"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.75"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M7 4v16M7 20l-3-3M7 20l3-3M17 20V4M17 4l-3 3M17 4l3 3" />
-            </svg>
+            <ArrowDownUp size={20} strokeWidth={1.75} aria-hidden="true" />
           </span>
         </div>
       ) : (
@@ -164,19 +158,13 @@ export function WardBoardGridColumn({
               count: countText(filter),
             }))}
           />
-          <label className={redesign.order} htmlFor="ward-board-order-select">
-            <span>Order</span>
-            <Select
-              id="ward-board-order-select"
-              name="wardBoardOrder"
-              value={bedOrder}
-              onChange={(event) => setBedOrder(event.target.value as BoardOrder)}
-              aria-label="Order the beds"
-              boxClassName={redesign.orderBox}
-            >
-              {orderOptions}
-            </Select>
-          </label>
+          <Segmented<BoardOrder>
+            label="Order the beds"
+            size="sm"
+            value={bedOrder}
+            onChange={setBedOrder}
+            items={BOARD_ORDERS.map((order) => ({ id: order, label: BOARD_ORDER_SHORT[order] }))}
+          />
         </div>
       )}
       {/* The legend explains the shades. It is not what makes the board readable without colour —
@@ -184,9 +172,7 @@ export function WardBoardGridColumn({
       <ul className={styles.legend} data-testid="ward-board-legend">
         {STAY_BANDS.map((band) => (
           <li key={band.id} className={styles.legendItem}>
-            <span className={`${styles.legendSwatch} ${BAND_CLASS[band.id]}`} aria-hidden="true">
-              <span className={styles.legendGlyph}>●</span>
-            </span>
+            <span className={`${styles.legendSwatch} ${BAND_CLASS[band.id]}`} aria-hidden="true" />
             <span className="sr-only">Stay length: </span>
             {band.label}
           </li>
@@ -316,35 +302,8 @@ export function WardBoardGridColumn({
                       <span />
                     </span>
                     <span className={styles.bedNote}>{tile.bandLabel}</span>
-                    {/* The band in words, for the screen reader only: the visible number already
-                            states it.
-
-                            🔴 **THE ORIGINAL SENTENCE HERE SAID PRINTING BOTH "WOULD CROWD OUT THE NUMBER
-                            THIS WHOLE TILE EXISTS TO SHOW". MEASURED IN A BROWSER, THAT IS FALSE.**
-                            Revealing the band on every occupied tile: **zero horizontal overflow, and
-                            the number's width unchanged to the pixel** (38→38, 19→19).
-                            ⚠️ **Both fit.** The tile is not crowded and never was.
-
-                            ✅ **THE REAL COST IS VERTICAL, AND IT IS WHY THE LABEL STAYS `sr-only`:** every
-                            occupied tile grows **88px → 117px**, one to 138px, all seventeen — about a
-                            third taller, and the grid a third longer. **On a phone that is a materially
-                            longer scroll through the beds, and that is the cost we declined.**
-
-                            ⚠️ **THE MEASUREMENT, carried with the conclusion so nobody re-runs it:**
-                            Chromium, **375px viewport**, 17 occupied tiles, tile **109×88px**, three
-                            columns of 109px. 🔴 **Note 109 and not 80: `minmax(5rem, 1fr)` under
-                            `auto-fill` makes 5rem a FLOOR, not the width** — two earlier versions of this
-                            comment named 390px and then 80px, and both were wrong.
-
-                            ⚠️ **DESKTOP IS UNMEASURED.** This is a phone cost only; at a wider viewport the
-                            same label might cost nothing anybody notices. **Nobody has the desktop
-                            answer, and a viewport-conditional label is deliberately NOT explored — a
-                            breakpoint-conditional difference is invisible to every gate here.**
-
-                            🔴 **The reason the label stays in that channel at all is an ASYMMETRY OF NEED,
-                            untouched by any of the above: a sighted reader sees the number and derives
-                            the band; a screen-reader user cannot scan a grid of numbers to form one.** */}
-                    <span className="sr-only">{tile.bandLabel}</span>
+                    {/* BA-13 (front-end audit, 5 Nov 2026): the band label above is now visible on every
+                            occupied tile, so its screen-reader-only copy (read the band twice) is gone. */}
                     {tile.pastDate && (
                       <span className={styles.pastMark} data-testid={`ward-board-bed-${index + 1}-past`}>
                         <StatusGlyph tone="warning" size={10} className={styles.statusGlyph} /> <span>Past date</span>

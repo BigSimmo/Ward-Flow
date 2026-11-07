@@ -569,8 +569,8 @@ describe("WardGlobalSearch", () => {
     fireEvent.change(screen.getByTestId("ward-global-search-input"), { target: { value: "task" } });
 
     const popup = screen.getByTestId("ward-global-search-popup");
-    expect(within(popup).getByTestId("ward-global-search-intent")).toHaveTextContent("Tasks");
-    expect(within(popup).getByTestId("ward-global-search-group-tasks")).toHaveTextContent("Tasks");
+    expect(within(popup).getByTestId("ward-global-search-intent")).toHaveTextContent("Alerts");
+    expect(within(popup).getByTestId("ward-global-search-group-tasks")).toHaveTextContent("Alerts");
     const taskItems = screen.getAllByTestId(/^ward-global-search-result-task-/);
     expect(taskItems.length).toBeGreaterThan(0);
     expect(taskItems[0]).toHaveAttribute("href", expect.stringMatching(/\/ward-flow\/movements\//));
@@ -601,7 +601,7 @@ describe("WardGlobalSearch palette (option B)", () => {
     fireEvent.focus(input);
 
     const group = screen.getByTestId("ward-global-search-group-needs");
-    expect(group).toHaveTextContent("Tasks");
+    expect(group).toHaveTextContent("Alerts");
     const rows = screen.getAllByTestId(/^ward-global-search-result-task-/);
     expect(rows.length).toBe(Math.min(3, inbox.length));
     expect(rows[0]).toHaveAttribute("href", movementHref(inbox[0].movementId));
@@ -624,7 +624,7 @@ describe("WardGlobalSearch palette (option B)", () => {
     );
     fireEvent.focus(screen.getByTestId("ward-global-search-input"));
 
-    expect(screen.getByTestId("ward-global-search-group-needs")).toHaveTextContent(`Tasks · 3 of ${inbox.length}`);
+    expect(screen.getByTestId("ward-global-search-group-needs")).toHaveTextContent(`Alerts · 3 of ${inbox.length}`);
     const lookup = { patients: wardPatients, movements: wardMovements };
     const named = inbox
       .slice(0, 3)

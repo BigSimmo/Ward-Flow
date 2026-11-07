@@ -9,6 +9,7 @@ import { referralDraftAgeText } from "./referral-draft-store";
 import { DisabledReason, StatusGlyph } from "@/components/wf";
 import { sectionLabel } from "./ward-referral-drawer-model";
 import { drawerRailHeading } from "./referral-drawer-foot-status";
+import { sendWarningsLine } from "./referral-send-warnings";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 
 /** v10 phone: opens and closes the send checklist. */
@@ -58,15 +59,10 @@ export function ReferralSummaryRail({
     itemsLeft,
     itemsReady,
     readyRows,
-    needed,
-    sectionIds,
     destType,
     communityNeeds,
+    sendWarnings,
   } = s;
-  // Overall review (20 Oct 2026): "0 of 18" sat beside steps whose "needed" figures add to 13. The
-  // difference is the contact details asked at Send, so the rail names them when any are still empty.
-  const stepsLeft = sectionIds.reduce((sum, id) => sum + needed[id], 0);
-  const contactLeft = itemsLeft - stepsLeft;
   return (
     <aside
       className={styles.rail}
@@ -91,7 +87,7 @@ export function ReferralSummaryRail({
         <>
           <section className={styles.railCard}>
             <div className={styles.railHead}>
-              <h3 className={styles.cardTitle}>{drawerRailHeading(itemsLeft)}</h3>
+              <h3 className={styles.cardTitle}>{drawerRailHeading(itemsLeft + sendWarnings.length)}</h3>
             </div>
             {draftKeptAt !== null ? (
               <p className={styles.draftStatus} data-testid="ward-referral-draft-status">
@@ -101,9 +97,11 @@ export function ReferralSummaryRail({
             ) : null}
             {/* UX audit 21 Oct 2026: the drawer stated one count five ways. The footer keeps the count
                 and the stepper keeps each step's share; the rail only adds what neither shows. */}
-            {contactLeft > 0 ? (
-              <p className={styles.railCount} data-testid="ward-referral-count-split">
-                Your contact {contactLeft === 1 ? "detail is" : "details are"} asked at Send.
+            {/* FORM-REF (Josh, 5 Nov 2026): what is not recorded warns here, and Send still goes ahead. */}
+            {sendWarnings.length ? (
+              <p className={styles.railWarnings} data-testid="ward-referral-send-warnings">
+                <StatusGlyph tone="warning" size={9} />
+                {sendWarningsLine(sendWarnings)}
               </p>
             ) : null}
             <span className={styles.railProgress} aria-hidden="true">

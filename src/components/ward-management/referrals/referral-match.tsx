@@ -766,19 +766,7 @@ export function ReferralMatchView({
               data-testid="ward-referral-match-accept-emergency_department"
               onClick={() => setEdAcceptConfirmOpen(true)}
             >
-              <svg
-                viewBox="0 0 24 24"
-                width="15"
-                height="15"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <polyline points="20 6 9 17 4 12" />
-              </svg>
+              <Check size={15} strokeWidth={1.75} aria-hidden="true" />
               <span>Accept presentation</span>
             </Button>
           ) : (

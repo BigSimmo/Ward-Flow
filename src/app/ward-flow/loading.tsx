@@ -29,14 +29,15 @@ export default function WardFlowLoading() {
         <span className={styles.spin} aria-hidden="true" />
         Loading page
         {/* Q275 (pre-launch review E3, 2 Nov 2026): a page change that never finished showed this
-            forever. After 10 s this line shows (a CSS delay, so the boundary ships no extra code); its
-            Try again button is handled by the layout's inline script (ward-loading-note-early.ts),
-            which reloads the address. */}
+            forever. After 15 s this line shows (a CSS delay, so the boundary ships no extra code); its
+            Reload button is handled by the layout's inline script (ward-loading-note-early.ts),
+            which reloads the address. Josh (5 Nov 2026, design audit card 8): the same words and
+            the same 15 s as the first-load note (WARD_LOADING_SLOW_MS, DESIGN-SYSTEM §6). */}
         <span className={styles.slow} data-testid="ward-loading-slow">
-          This is taking longer than usual.
+          Still loading. Check the connection.
           {/* eslint-disable-next-line local/require-button-wiring -- wired by WARD_LOADING_NOTE_EARLY_SCRIPT */}
           <button type="button" className={styles.retry} data-wf-loading-reload="">
-            Try again
+            Reload
           </button>
         </span>
       </p>

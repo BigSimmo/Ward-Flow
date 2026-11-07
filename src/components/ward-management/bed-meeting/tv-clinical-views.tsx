@@ -374,7 +374,7 @@ export function EdClinicalTvView({
       />
       <section ref={ref} className={styles.board} aria-label="Patient progress" data-testid="ed-clinical-board">
         {rows.length === 0 ? (
-          <p className={styles.empty}>No one waiting for a mental health bed</p>
+          <p className={styles.empty}>Nobody waiting for a mental health bed</p>
         ) : (
           <table className={styles.table} data-kind="ed">
             <thead>

@@ -19,9 +19,10 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
 import { WardLiveRegion, resetWardLiveRegionForTests } from "@/components/ward-management/shell/ward-live-region";
-import { TABLET_LANDSCAPE_RAIL_QUERY, WardRail } from "@/components/ward-management/shell/ward-rail";
+import { TABLET_LANDSCAPE_RAIL_QUERY } from "@/components/ward-management/shell-next/next-rail-body";
+import { NextRailBody as WardRail } from "@/components/ward-management/shell-next/next-rail-body";
 import { RAIL_GROUPS } from "@/components/ward-management/shell/ward-rail-entries";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";

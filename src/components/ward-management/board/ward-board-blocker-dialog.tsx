@@ -101,7 +101,7 @@ export function WardBoardBlockerDialog({
       <div ref={panelRef} className={blocker.body}>
         {item.text ? <p className={blocker.subject}>{item.text}</p> : null}
         <fieldset className={blocker.options}>
-          <legend className={blocker.legend}>What is holding up the bed release?</legend>
+          <legend className={blocker.legend}>What is holding up the discharge?</legend>
           {BED_RELEASE_BLOCKERS.map((b) => (
             <Radio
               key={b}

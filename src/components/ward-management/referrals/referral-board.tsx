@@ -1,9 +1,12 @@
 "use client";
 
 import { useLocationSearch } from "@/components/ward-management/ward-url-state";
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 
 import { areCharacterShortcutsEnabled } from "@/components/ward-management/shell/ward-character-shortcuts";
 import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
+import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
+import { BED_MEETING_REFERRALS_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { BEDS_READY_SCOPED_TITLE } from "@/components/ward-management/ward-shared-figures";
 import { useCallback, useEffect, useEffectEvent, useMemo, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
@@ -101,6 +104,7 @@ import { edSingleColumn, useEdDeskReferrals } from "./referral-ed-desk";
 import { EdNextOverdue, ReferralEdRaisedSection } from "./referral-ed-raised-section";
 import { createBrowserStore } from "@/lib/client-store-factory";
 import { focusIsLost, rememberOpener, returnFocusToOpener, useIsPhone, type FocusOpener } from "@/components/wf";
+import { focusAfterDecision, focusQueueFallback, nextQueuedId } from "./referral-focus-fallback";
 import mph from "./referral-match-phone.module.css";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { movementHref, patientHref } from "@/components/ward-management/shell/ward-facade";
@@ -294,6 +298,7 @@ export function ReferralBoard({
   // ROLE BRANCH (ward): this ward's name, and its own units for beds ready. Every unit on other desks.
   const { ownWardName, bedUnits } = useWardDeskPlace(units);
   const now = useWardFlowClock();
+  const router = useOptionalRouter();
   // ED desk view (Josh, 31 Oct 2026): leads with what this ED raised; the queue is its ED reviews.
   const edDeskView = useEdDeskReferrals(movements, now);
   const sender = useSenderPresentation();
@@ -378,7 +383,8 @@ export function ReferralBoard({
     const opener = triggerRef.current;
     if (returnFocusToOpener(opener)) return;
     window.requestAnimationFrame(() => {
-      if (focusIsLost(detailRef.current)) returnFocusToOpener(opener);
+      // BA-3: a detail the page opened by itself has no opener, so the queue takes focus instead.
+      if (focusIsLost(detailRef.current) && !returnFocusToOpener(opener)) focusQueueFallback();
     });
   }, []);
   const clearHighlights = useCallback(() => {
@@ -501,6 +507,13 @@ export function ReferralBoard({
     setSelectedReferralId(referral.id);
     setDecidedHereId(referral.id);
     watchDecision(referral.id, `${title} · ${nameOf(referral)}`, completion);
+    // BA-1: the pressed Accept or Decline is gone, so focus moves to the next referral or the outcome.
+    focusAfterDecision(
+      nextQueuedId(
+        queued.map((queuedReferral) => queuedReferral.id),
+        referral.id,
+      ),
+    );
   };
 
   function selectAt(step: 1 | -1) {
@@ -607,7 +620,14 @@ export function ReferralBoard({
     } else if (key === "m" && !edDesk) {
       // Josh, 31 Oct 2026 (answer 35): the ED desk has no bed meeting list, so M does nothing there.
       e.preventDefault();
-      document.querySelector<HTMLAnchorElement>('[data-testid="ward-referral-meeting"]')?.click();
+      // MU1 (Josh, 5 Nov 2026): the desktop hero keeps the agenda under "...", so M goes straight
+      // there; the phone hero still has the link itself.
+      const meeting = document.querySelector('[data-testid="ward-referral-meeting"]');
+      if (meeting instanceof HTMLAnchorElement) meeting.click();
+      else if (meeting) {
+        if (router) router.push(BED_MEETING_REFERRALS_HREF);
+        else window.location.assign(BED_MEETING_REFERRALS_HREF);
+      }
     } else if (e.key === "?") {
       e.preventDefault();
       setSheet("keys");
@@ -683,7 +703,7 @@ export function ReferralBoard({
       <dl className={cx(a.strip, panel.facts)}>
         <div>
           <dt>From</dt>
-          <dd>{siteByCode(r.originSiteCode)?.name ?? r.originSiteCode}</dd>
+          <dd>{siteByCode(r.originSiteCode)?.name ?? r.originSiteCode ?? ORIGIN_NOT_RECORDED}</dd>
           <dd className={a.stripSub}>{REFERRAL_SOURCE_WORDS[r.source]}</dd>
         </div>
         {/* U3: once every request is answered there is nothing being asked for, so the cell goes. */}
@@ -693,9 +713,7 @@ export function ReferralBoard({
             <dd>{askingForShort(r)}</dd>
             <dd className={a.stripSub}>
               {/* "Locked", the word the Needs column uses (F-24), not "Secure". */}
-              {needWords(r)
-                .map((word) => (word === "Secure bed" ? "Locked bed" : word))
-                .join(", ") || "No bed needs"}
+              {needWords(r).join(", ") || "No bed needs"}
             </dd>
           </div>
         ) : null}
@@ -1194,10 +1212,10 @@ export function ReferralBoard({
                       return stages ? (
                         <section className={mph.journey} aria-labelledby="ward-referral-phone-journey">
                           <p className={mph.ch} id="ward-referral-phone-journey">
-                            Journey
+                            Movement
                           </p>
                           <JourneyStrip
-                            label="Referral journey"
+                            label="Referral movement"
                             stages={stages}
                             formatDuration={journeyDuration}
                             note={false}
@@ -1411,11 +1429,7 @@ export function ReferralBoard({
                       icon={ClipboardList}
                       title={
                         // ROLE BRANCH (ward): an empty queue says where the ward's answer is recorded.
-                        wardEmpty
-                          ? "Accept and Decline open here"
-                          : readOnly
-                            ? "Select a queued referral to review its facts."
-                            : "Select a queued referral to review its facts and record a decision."
+                        wardEmpty ? "Accept and Decline open here" : "Select a queued referral."
                       }
                       meta={wardEmpty ? undefined : `${queued.length} awaiting decision · ${decidedTotal} decided`}
                     />
@@ -1437,7 +1451,7 @@ export function ReferralBoard({
             open
             onClose={() => setPulling(undefined)}
             title="Pull the bed"
-            description="Anything already recorded is filled in. Check the details, then pull the bed."
+            description="Check the details, then pull the bed."
             testId="ward-referral-pull-sheet"
           >
             <PullAcceptedReferral item={pulling} onDone={() => setPulling(undefined)} />

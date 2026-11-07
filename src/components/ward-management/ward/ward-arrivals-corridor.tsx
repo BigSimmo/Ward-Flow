@@ -1,5 +1,6 @@
 "use client";
 
+import { Clock, ArrowRight } from "lucide-react";
 import React from "react";
 import { Button, Dialog } from "@/components/wf";
 import styles from "./ward-arrivals-corridor.module.css";
@@ -222,10 +223,7 @@ export function WardArrivalsCorridor({
       </div>
 
       {accepted.length === 0 ? (
-        <p className={styles.placeholder}>
-          No patient is currently accepted, pulled or en route to {unit.name}. Absence here means none, not that none
-          was asked for.
-        </p>
+        <p className={styles.placeholder}>Nobody accepted, pulled or en route to {unit.name}.</p>
       ) : (
         <div className={styles.inboundStream}>
           {accepted.map((movement) => {
@@ -286,9 +284,7 @@ export function WardArrivalsCorridor({
                     {patientInfo.umrn ? <span className={styles.patientUmrn}>UMRN: {patientInfo.umrn}</span> : null}
                   </div>
                   <div className={styles.patientOrigin}>
-                    <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M2 8h12M10 4l4 4-4 4" />
-                    </svg>
+                    <ArrowRight size={13} strokeWidth={1.75} aria-hidden="true" />
                     <span>
                       Origin: <strong>{originPlaceLabel(movement)}</strong>
                     </span>
@@ -389,10 +385,7 @@ export function WardArrivalsCorridor({
                     />
                   </div>
                   <div className={styles.corridorSubtext}>
-                    <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
-                      <circle cx="8" cy="8" r="6" />
-                      <path d="M8 5v3.5l2 1" />
-                    </svg>
+                    <Clock size={12} strokeWidth={1.75} aria-hidden="true" />
                     <span>
                       {movement.stage === "pulled" && movement.pullExpiresAt !== undefined
                         ? `Bed pull ${formatRemaining(minutesUntil(movement.pullExpiresAt, now))}`
@@ -559,7 +552,7 @@ export function WardArrivalsCorridor({
 
                   {canCancel ? (
                     <p className={styles.cancelNote} data-testid="ward-cancel-transport-unavailable">
-                      This ward cannot cancel a transport it did not book. Ask the sending emergency department, or the
+                      This ward cannot cancel a transport it did not book. Ask the sending emergency department or the
                       bed coordinator.
                     </p>
                   ) : null}
@@ -609,11 +602,6 @@ export function WardArrivalsCorridor({
         </section>
       ) : null}
 
-      {/* Explains the ruled four bed boxes (`ward-bed-states.ts`), Closed by contrast with the PULL */}
-      <div className={styles.explanationNote}>
-        <strong>Note:</strong> Ready, pulled, closed and occupied total {unit.beds}. Closed means empty but not offered;
-        it is separate from a bed pulled for a patient, which is allocated and waiting for them to arrive.
-      </div>
       <Dialog
         open={releaseHeldMovement !== undefined}
         onClose={() => setReleaseHeldId(null)}

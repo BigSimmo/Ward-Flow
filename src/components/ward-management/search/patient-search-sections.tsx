@@ -3,6 +3,7 @@
 // The patient search page's sections: people, results with their Show facets and rows, and the
 // access record. Moved out of `patient-search.tsx` to keep it under the line cap.
 import Link from "next/link";
+import { Lock } from "lucide-react";
 import { useMemo, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import type { Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { type PatientSearchResult } from "@/components/ward-management/ward-derivations";
@@ -81,18 +82,14 @@ export function PeopleSection({
               >
                 <div className={styles.personHeaderCluster}>
                   <span className={`${styles.presenceTag} ${styles[presence.key]}`}>
-                    {presence.key === "live"
-                      ? "● On this board"
-                      : presence.key === "community"
-                        ? "○ Not in Hosp"
-                        : "◌ Past"}
+                    {presence.key === "live" ? "On this board" : presence.key === "community" ? "Not in Hosp" : "Past"}
                   </span>
                   <span className={styles.personUmrn}>{patient.umrn}</span>
                   <span className={styles.personName}>{patientListName(patient)}</span>
                   <span className={styles.personDob}>DOB {formatDateOfBirth(patient.dateOfBirth)}</span>
                   {(patient as { confidential?: boolean }).confidential && (
                     <span className={styles.confidentialBadge} data-testid={`ward-patient-confidential-${patient.id}`}>
-                      🔒 Restricted
+                      <Lock size={14} strokeWidth={1.75} aria-hidden="true" /> Restricted
                     </span>
                   )}
                 </div>
@@ -189,7 +186,7 @@ export function ResultsSection({
             const summary = buildReferralSummary(referral);
             const isComm = isCommunityReferral(referral);
             const presenceKey = isComm ? "community" : "live";
-            const presenceLabel = isComm ? "○ Not in Hosp" : "● On this board";
+            const presenceLabel = isComm ? "Not in Hosp" : "On this board";
             const isSelected = selectedReferralId === referral.id;
             return (
               <li
@@ -345,7 +342,7 @@ function ResultRow({
     <tr className={rowClass}>
       <td className={styles.cellIdentity}>
         <div className={styles.movementIdCluster}>
-          <span className={`${styles.presenceTag} ${styles.live}`}>● On this board</span>
+          <span className={`${styles.presenceTag} ${styles.live}`}>On this board</span>
           {/* Owner, 26 Sept 2026: the patient's name, not the WF journey number. */}
           <span className={styles.movementIdText}>{patientName}</span>
         </div>

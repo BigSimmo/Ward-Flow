@@ -14,7 +14,17 @@
  */
 import { useWardAccessEnabled, useWardShellPublic } from "./ward-shell-public-context";
 import { ExecutiveStatisticsUnavailable } from "../statistics/statistics-small-numbers";
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 
@@ -798,27 +808,41 @@ function WardRecordViewLog({
   return null;
 }
 
-/** Replaces the address with the desk's own home, so Back does not return to the closed one (DR-06). */
-function OwnHomeRedirect({ href }: { href: string }) {
+/** WF-13 (live test, 4 Nov 2026): a closed page's tab names no ward, ED or team. Unknown and forbidden share it. */
+const CLOSED_TAB_TITLE = "Not part of your role — Ward Flow";
+
+/**
+ * Replaces the address with the desk's own page, so Back does not return to the closed one (DR-06).
+ * WF-40: a refused deep link says why it moved, so it does not flash then vanish silently. Ward
+ * Flow's own address (the brand, the app icon) refused nothing, so it moves without the notice
+ * (#1470 review).
+ */
+function OwnHomeRedirect({ href, refused, status }: { href: string; refused: boolean; status: string }) {
   const router = useRouter();
+  useLayoutEffect(() => {
+    if (refused) document.title = CLOSED_TAB_TITLE;
+  }, [refused]);
   useEffect(() => {
     router.replace(href);
   }, [router, href]);
   return (
     <WardGround>
       <main className={styles.closed} data-testid="ward-access-own-home">
-        <p role="status">Opening your home</p>
+        {refused ? <p data-testid="ward-access-own-home-notice">That page is not part of your role.</p> : null}
+        <p role="status">{status}</p>
       </main>
     </WardGround>
   );
 }
 
-/** WF-13 (live test, 4 Nov 2026): a closed page's tab names no ward, ED or team. */
-const CLOSED_TAB_TITLE = "Not part of your role — Ward Flow";
 function GenericClosedTitle() {
-  useEffect(() => {
+  // useLayoutEffect: overwrite the route metadata title before paint so a forbidden ward/ED/team
+  // never flashes its real name in the tab (WF-13). Unknown and forbidden then share one title.
+  // Re-run on each route change: the gate stays mounted across client navigation (PR #1470 review).
+  const pathname = usePathname();
+  useLayoutEffect(() => {
     document.title = CLOSED_TAB_TITLE;
-  });
+  }, [pathname]);
   return null;
 }
 
@@ -837,14 +861,24 @@ function ClosedScreen({ access, patientId }: { access: WardAccess; patientId?: s
   // DR-06: Ward Flow's own address (the app icon, the brand) sends a desk whose Home is closed to
   // that desk's own home instead of saying the screen is not part of the role.
   const pathname = usePathname() ?? "";
+  const address = screenForPath(pathname);
+  const atWardFlowHome = address?.screen === "home";
+  // WF-42 (Josh, 5 Nov 2026): bare /statistics stays closed to a ward, ED or team desk (D-80), and
+  // its closed screen sends that desk on to its own place's Statistics instead. This runs before the
+  // sign-in landing below, so a saved bare /statistics opens the desk's statistics, not its home.
+  const ownStatistics =
+    address?.screen === "statistics" && address.statisticsSection === undefined
+      ? ownStatisticsHrefFor(access, communityTeamSlug)
+      : undefined;
+  if (!opening && patientId === undefined && ownStatistics !== undefined)
+    return <OwnHomeRedirect href={ownStatistics} refused={false} status="Opening your statistics" />;
   // #804, #797: so does a page a sign-in landed on, often left open by the account before.
   const toOwnHome =
     !opening &&
     patientId === undefined &&
-    (screenForPath(pathname)?.screen === "home" ||
-      (signInLanding !== undefined && samePath(signInLanding, pathname))) &&
+    (atWardFlowHome || (signInLanding !== undefined && samePath(signInLanding, pathname))) &&
     !samePath(home, pathname);
-  if (toOwnHome) return <OwnHomeRedirect href={home} />;
+  if (toOwnHome) return <OwnHomeRedirect href={home} refused={!atWardFlowHome} status="Opening your home" />;
   if (opening)
     return (
       <WardGround>

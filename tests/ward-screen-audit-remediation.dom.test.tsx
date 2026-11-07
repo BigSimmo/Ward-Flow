@@ -47,7 +47,7 @@ describe("WardScreen & WardIndex audit remediation", () => {
           !label.includes("Closed") &&
           !label.includes("Pulled") &&
           !label.includes("Held up") &&
-          !label.includes("Due out") &&
+          !label.includes("Discharge due") &&
           !label.includes("Past date")
         );
       });

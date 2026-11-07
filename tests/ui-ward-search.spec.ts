@@ -296,7 +296,7 @@ test.describe("@mockup Ward patient search", () => {
    * 4. THE END OF THE LIST STAYS IN REACH. The popup test this replaces proved the active option at
    * the list's end was scrolled into the popup's own visible box. On the census the equivalent harm
    * is choosing the last row by keyboard and having either the row or its details land off screen:
-   * the details panel must stay in view beside a row chosen far down the page.
+   * the details drawer must stay in view over a row chosen far down the page.
    */
   test("choosing the last census row by keyboard keeps the row and its details panel on screen", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
@@ -312,7 +312,8 @@ test.describe("@mockup Ward patient search", () => {
     await expect(lastRow).toHaveAttribute("aria-selected", "true");
 
     const name = (await lastRow.locator("td").nth(1).locator("b").first().innerText()).split("\n")[0]!.trim();
-    const panel = page.getByRole("region", { name: "Patient details" });
+    // Drawer review (6 Nov 2026): the details open in the kit right drawer at every width.
+    const panel = page.getByTestId("ward-patient-search-details");
     await expect(panel).toContainText(name);
 
     const viewportHeight = 900;

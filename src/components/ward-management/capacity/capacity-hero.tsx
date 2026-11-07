@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { ChevronDown, Presentation, Printer } from "lucide-react";
 
 import {
@@ -145,7 +144,12 @@ export function CapacityHero({
               onPress={() => onHighlight("open")}
             />
             <HeroChip value={model.pulled} label="Beds pulled" tone={model.pulled > 0 ? "warning" : undefined} />
-            <HeroChip value={model.dueOutToday ?? "Not tracked"} label="Discharges due today" />
+            <HeroChip
+              value={model.dueOutToday ?? "Not tracked"}
+              // Same source as each ward card's "freeing today" (release plans due today).
+              // The Bed forecast's discharge counts are the next 24h windows — a different figure.
+              label="Beds freeing today"
+            />
             {oldestCount ? (
               <HeroChip
                 value={durMinutes(Math.max(0, now - oldestCount.confirmedAt))}
@@ -183,6 +187,16 @@ export function CapacityHero({
                 align="end"
                 items={[
                   { id: "sheet", label: "Print the meeting sheet", icon: Printer, onSelect: onSheet },
+                  ...(tvHref && canOpen(tvHref)
+                    ? [
+                        {
+                          id: "tv",
+                          label: "Open on TV",
+                          icon: Presentation,
+                          onSelect: () => (router ? router.push(tvHref) : window.location.assign(tvHref)),
+                        },
+                      ]
+                    : []),
                   // Only when this desk may open the agenda (access audit, 31 Oct 2026).
                   ...(canOpen(BED_MEETING_AGENDA_HREF)
                     ? [
@@ -209,15 +223,6 @@ export function CapacityHero({
                   </button>
                 )}
               />
-              {tvHref && canOpen(tvHref) ? (
-                <Link
-                  href={tvHref}
-                  className={buttonClass({ variant: "onHero" })}
-                  data-testid="capacity-bed-meeting-tv"
-                >
-                  <Presentation size={16} strokeWidth={1.75} aria-hidden="true" /> Open on TV
-                </Link>
-              ) : null}
             </>
           )}
         </>

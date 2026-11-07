@@ -3,12 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { CommunityScreen } from "@/components/ward-management/community/community-screen";
 import { COMMUNITY_TEAM_PAGES } from "@/components/ward-management/community/community-derivations";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import {
-  setRailOpenPreference,
-  TABLET_LANDSCAPE_RAIL_QUERY,
-  useRailOpenStore,
-  WardRail,
-} from "@/components/ward-management/shell/ward-rail";
+import { setRailOpenPreference, useRailOpenStore } from "@/components/ward-management/shell/ward-rail-preferences";
+import { TABLET_LANDSCAPE_RAIL_QUERY } from "@/components/ward-management/shell-next/next-rail-body";
+import { NextRailBody as WardRail } from "@/components/ward-management/shell-next/next-rail-body";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
 vi.mock("next/navigation", () => ({

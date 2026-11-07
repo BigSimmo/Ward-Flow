@@ -29,7 +29,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { discardReferralDraft } from "@/components/ward-management/referrals/referral-draft-store";
-import { WardBar, WardBarMount } from "@/components/ward-management/shell/ward-bar";
+import { NextBar as WardBar, NextBarMount as WardBarMount } from "@/components/ward-management/shell-next/next-bar";
 import { WardLiveRegion, resetWardLiveRegionForTests } from "@/components/ward-management/shell/ward-live-region";
 import type { WardPrimaryAction } from "@/components/ward-management/shell/ward-shell-types";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";

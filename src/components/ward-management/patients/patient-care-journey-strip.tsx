@@ -1,6 +1,7 @@
 "use client";
 
 // PT1 round 3: the patient's journey as one simple line in the band (Josh, 3 Nov 2026 22:29Z).
+// Its list is named "Care steps" (Josh, 5 Nov 2026 20:51Z).
 // Six steps, the current one lit. Presentation only; `patient-care-journey.ts` decides each step
 // from the record. The steps are plain text, so a screen reader hears "Step 4 of 6, On ward,
 // Day 7, current". Tapping the line opens History, where each recorded change has its time.
@@ -26,7 +27,7 @@ export function PatientCareJourneyStrip({
   const current = steps.findIndex((step) => step.state === "now");
   return (
     <div className={styles.wrap} data-testid="ward-patient-care-journey">
-      <ol className={styles.steps} aria-label="Journey">
+      <ol className={styles.steps} aria-label="Care steps">
         {steps.map((step, index) => (
           <li
             key={step.id}

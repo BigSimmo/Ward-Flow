@@ -30,7 +30,7 @@ export type WalkRoundBed = {
   name: string;
   note: string;
   /**
-   * C3 (phone simplification, 19 Oct 2026): one word for the bed's state ("Ready", "Due out",
+   * C3 (phone simplification, 19 Oct 2026): one word for the bed's state ("Ready", "Discharge due",
    * "Pulled"), from the bed's own state, so a colour never carries the meaning alone. Shown on each
    * row of the round.
    */
@@ -344,7 +344,7 @@ export function WardWalkRound({
     const facts: [string, string | null | undefined, string][] = [
       ["Observation", current.observation, "Not recorded"],
       ["Flag", current.flag, "Nothing flagged"],
-      ["Due out", current.dueOut, "No date recorded"],
+      ["Discharge due", current.dueOut, "No date recorded"],
     ];
     return (
       <section

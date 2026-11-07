@@ -61,6 +61,7 @@ import {
   openDrawerForShortcut,
 } from "./ward-rail-preferences";
 import { subscribeWardDrawer, subscribeWardMenu } from "./ward-drawer-bus";
+import { subscribeActivityPanelRequest } from "./ward-activity-panel-store";
 import { subscribeToolsTool } from "../tools/ward-tools-open";
 import { wardBackParent, noteWardRoute } from "./ward-back";
 import { replayEarlyHeaderTap } from "./ward-early-tap";
@@ -433,6 +434,15 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
   useRevealFocusedInRow();
   useEffect(() => noteWardRoute(pathname), [pathname]);
   useEffect(() => replayEarlyHeaderTap(), []);
+  // WF-42: a typed /ward-flow/activity opens this chrome's own Activity panel too.
+  useEffect(
+    () =>
+      subscribeActivityPanelRequest((request) => {
+        phoneActivityOpener.current = request.opener ?? activityTrigger.current;
+        setPanel("activity");
+      }),
+    [],
+  );
   useEffect(
     () =>
       subscribeWardMenu((opener) => {
@@ -716,9 +726,8 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                 title={`Board time ${clock} AWST${online ? "" : ". Offline"}`}
               >
                 <span className={bar.demoClockDot} data-offline={online ? undefined : "true"} aria-hidden="true" />
-                <span className={bar.demoClockLabel}>Board time</span>
-                <span className={bar.demoClockTime}>{clock}</span>
-                <span className={bar.demoClockTz}>AWST</span>
+                <span className={bar.demoClockLabel}>Board time</span>{" "}
+                <span className={bar.demoClockTime}>{clock}</span> <span className={bar.demoClockTz}>AWST</span>
               </WardDemoClockPopover>
               {/* The shell's synthetic-data marker for screen readers (visually hidden, so no pill shows). */}
               <span
@@ -944,7 +953,7 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
         contentClassName={bar.drawerSheet}
         bodyClassName={bar.drawerBody}
       >
-        <p>This is the bed coordinator&apos;s list. Individual alerts are unavailable for this desk.</p>
+        <p>Individual alerts are unavailable for this desk.</p>
       </Sheet>
       <Sheet
         id="ward-bar-tools-drawer"

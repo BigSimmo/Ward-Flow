@@ -1,0 +1,353 @@
+import { useRef, useState } from "react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, expect, it, vi } from "vitest";
+
+import {
+  Checkbox,
+  FilterChip,
+  ListPicker,
+  Radio,
+  Segmented,
+  Select,
+  Switch,
+  TextInput,
+  TimeField,
+} from "@/components/wf";
+import { DateField } from "@/components/wf/date-field";
+import { Sheet } from "@/components/wf/sheet";
+
+/**
+ * Design audit PR 3 (5 Nov 2026): kit, focus and states. Synthetic values only.
+ */
+describe("K11: kit controls that cannot be changed now carry their reason", () => {
+  const REASON = "Only the bed coordinator can change this";
+
+  function described(element: HTMLElement): string {
+    const ids = element.getAttribute("aria-describedby") ?? "";
+    return ids
+      .split(/\s+/u)
+      .map((id) => document.getElementById(id)?.textContent ?? "")
+      .join(" ");
+  }
+
+  it("Segmented: aria-disabled options keep their tab stop, refuse presses and name the reason", () => {
+    const onChange = vi.fn();
+    render(
+      <Segmented
+        label="Shift"
+        value="am"
+        onChange={onChange}
+        disabledReason={REASON}
+        items={[
+          { id: "am", label: "Morning" },
+          { id: "pm", label: "Evening" },
+        ]}
+      />,
+    );
+    const evening = screen.getByRole("radio", { name: "Evening" });
+    expect(evening).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(evening);
+    expect(onChange).not.toHaveBeenCalled();
+    expect(described(screen.getByRole("radiogroup", { name: "Shift" }))).toContain(REASON);
+    expect(screen.getByText(REASON)).toBeVisible();
+  });
+
+  it("FilterChip: refuses the press and names the reason", () => {
+    const onPressedChange = vi.fn();
+    render(
+      <FilterChip pressed={false} onPressedChange={onPressedChange} disabledReason={REASON}>
+        Over 85%
+      </FilterChip>,
+    );
+    const chip = screen.getByRole("button", { name: "Over 85%" });
+    fireEvent.click(chip);
+    expect(onPressedChange).not.toHaveBeenCalled();
+    expect(chip).toHaveAttribute("aria-disabled", "true");
+    expect(described(chip)).toContain(REASON);
+  });
+
+  it("ListPicker: the field keeps its tab stop, does not open, and names the reason", () => {
+    render(
+      <ListPicker
+        label="Site"
+        value={null}
+        onChange={() => {}}
+        options={[{ value: "a", label: "Synthetic site A" }]}
+        disabledReason={REASON}
+      />,
+    );
+    const field = screen.getByRole("combobox", { name: "Site" });
+    expect(field).not.toBeDisabled();
+    expect(field).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(field);
+    expect(field).toHaveAttribute("aria-expanded", "false");
+    expect(described(field)).toContain(REASON);
+  });
+
+  it("TextInput and DateField: read only with aria-disabled and the reason", () => {
+    render(
+      <>
+        <TextInput aria-label="Escort" defaultValue="" disabledReason={REASON} />
+        <DateField aria-label="Date written" value="" onValueChange={() => {}} disabledReason={REASON} />
+      </>,
+    );
+    for (const name of ["Escort", "Date written"]) {
+      const box = screen.getByRole("textbox", { name });
+      expect(box).toHaveAttribute("readonly");
+      expect(box).toHaveAttribute("aria-disabled", "true");
+      expect(described(box)).toContain(REASON);
+    }
+  });
+
+  it("Select: keeps its tab stop and refuses a change", () => {
+    function Harness() {
+      const [value, setValue] = useState("a");
+      return (
+        <Select
+          aria-label="Ward"
+          value={value}
+          onChange={(event) => setValue(event.target.value)}
+          disabledReason={REASON}
+        >
+          <option value="a">Synthetic ward A</option>
+          <option value="b">Synthetic ward B</option>
+        </Select>
+      );
+    }
+    render(<Harness />);
+    const select = screen.getByRole("combobox", { name: "Ward" });
+    expect(select).not.toBeDisabled();
+    expect(select).toHaveAttribute("aria-disabled", "true");
+    fireEvent.change(select, { target: { value: "b" } });
+    expect(select).toHaveValue("a");
+    expect(described(select)).toContain(REASON);
+  });
+
+  it("Select: refuses only the keys that change it, lets shortcuts through, and takes no taps", () => {
+    render(
+      <Select aria-label="Ward" defaultValue="a" disabledReason={REASON}>
+        <option value="a">Synthetic ward A</option>
+        <option value="b">Synthetic ward B</option>
+      </Select>,
+    );
+    const select = screen.getByRole("combobox", { name: "Ward" });
+    // fireEvent returns false when the handler cancelled the key.
+    const passes = (init: KeyboardEventInit) => fireEvent.keyDown(select, init);
+    for (const key of ["ArrowDown", "ArrowUp", "Home", "End", "PageUp", "PageDown", " ", "Enter", "b"])
+      expect(passes({ key }), key).toBe(false);
+    expect(passes({ key: "ArrowDown", altKey: true }), "Alt+ArrowDown opens the picker").toBe(false);
+    for (const key of ["Tab", "Escape", "F1", "F5", "F12", "Shift"]) expect(passes({ key }), key).toBe(true);
+    expect(passes({ key: "r", ctrlKey: true }), "Ctrl+R").toBe(true);
+    expect(passes({ key: "l", metaKey: true }), "Cmd+L").toBe(true);
+    expect(passes({ key: "d", altKey: true }), "Alt+D").toBe(true);
+    // Taps never reach the select (iOS Safari); the reason stays as text beside it.
+    expect(select.className).toMatch(/refusedSelect/u);
+    expect(screen.getByText(REASON)).toBeVisible();
+    expect(described(select)).toContain(REASON);
+  });
+
+  it("Checkbox, Radio and Switch: refuse the change and name the reason", () => {
+    const onCheckedChange = vi.fn();
+    render(
+      <>
+        <Checkbox label="Escort booked" disabledReason={REASON} />
+        <Radio label="Locked bed" name="bed" disabledReason={REASON} />
+        <Switch label="Show closed" checked={false} onCheckedChange={onCheckedChange} disabledReason={REASON} />
+      </>,
+    );
+    const checkbox = screen.getByRole("checkbox", { name: "Escort booked" });
+    fireEvent.click(checkbox);
+    expect(checkbox).not.toBeChecked();
+    expect(described(checkbox)).toContain(REASON);
+    const radio = screen.getByRole("radio", { name: "Locked bed" });
+    fireEvent.click(radio);
+    expect(radio).not.toBeChecked();
+    const toggle = screen.getByRole("switch", { name: "Show closed" });
+    fireEvent.click(toggle);
+    expect(onCheckedChange).not.toHaveBeenCalled();
+    expect(toggle).toHaveAttribute("aria-disabled", "true");
+    expect(described(toggle)).toContain(REASON);
+  });
+
+  it("Checkbox and Radio: a refused press never calls the caller's onChange, by click or Space", async () => {
+    const user = userEvent.setup();
+    const onCheckbox = vi.fn();
+    const onRadio = vi.fn();
+    render(
+      <>
+        <Checkbox label="Escort booked" checked={false} onChange={onCheckbox} disabledReason={REASON} />
+        <Radio label="Locked bed" name="bed" checked={false} onChange={onRadio} disabledReason={REASON} />
+      </>,
+    );
+    const checkbox = screen.getByRole("checkbox", { name: "Escort booked" });
+    const radio = screen.getByRole("radio", { name: "Locked bed" });
+    fireEvent.click(checkbox);
+    fireEvent.click(radio);
+    await user.click(screen.getByText("Escort booked"));
+    checkbox.focus();
+    await user.keyboard(" ");
+    radio.focus();
+    await user.keyboard(" ");
+    expect(onCheckbox).not.toHaveBeenCalled();
+    expect(onRadio).not.toHaveBeenCalled();
+    expect(checkbox).not.toBeChecked();
+    expect(radio).not.toBeChecked();
+  });
+});
+
+describe("W14: the kit typed time box", () => {
+  function Harness({ initial = "" }: { initial?: string }) {
+    const [time, setTime] = useState(initial);
+    return (
+      <>
+        <TimeField aria-label="Arrival time" value={time} onValueChange={setTime} />
+        <output data-testid="time-value">{time}</output>
+      </>
+    );
+  }
+
+  it("is a text box, not the browser time picker, and gives HH:MM once the time is real", () => {
+    render(<Harness />);
+    const box = screen.getByRole("textbox", { name: "Arrival time" });
+    expect(box).toHaveAttribute("type", "text");
+    expect(box).toHaveAttribute("placeholder", "HH:MM");
+    fireEvent.change(box, { target: { value: "14" } });
+    expect(screen.getByTestId("time-value")).toHaveTextContent(/^$/u);
+    expect(box).toHaveValue("14");
+    fireEvent.change(box, { target: { value: "1430" } });
+    expect(screen.getByTestId("time-value")).toHaveTextContent("14:30");
+    expect(box).toHaveValue("1430");
+  });
+
+  it.each([
+    ["three digits", "143"],
+    ["a pasted am/pm time", "2:30 pm"],
+    ["a pasted am/pm time with no space", "11:45pm"],
+    ["past the end of the day", "24:00"],
+    ["a single digit", "9"],
+  ])("never sends %s (%s) as a time", (_case, typed) => {
+    render(<Harness />);
+    const box = screen.getByRole("textbox", { name: "Arrival time" });
+    expect(box).not.toHaveAttribute("maxLength");
+    fireEvent.change(box, { target: { value: typed } });
+    // Shown as typed, never cut short or converted to a different 24-hour time.
+    expect(box).toHaveValue(typed);
+    expect(screen.getByTestId("time-value")).toHaveTextContent(/^$/u);
+    fireEvent.blur(box);
+    expect(box).toHaveValue(typed);
+  });
+
+  it("marks letters and an unreal finished time wrong at once, but not a time still being typed", () => {
+    render(<Harness />);
+    const box = screen.getByRole("textbox", { name: "Arrival time" });
+    for (const typed of ["2:30 pm", "11:45pm", "24:00"]) {
+      fireEvent.change(box, { target: { value: typed } });
+      expect(box).toHaveAttribute("aria-invalid", "true");
+    }
+    for (const typed of ["9", "143"]) {
+      fireEvent.change(box, { target: { value: typed } });
+      expect(box).not.toHaveAttribute("aria-invalid", "true");
+    }
+  });
+
+  it.each([
+    ["14:30", "14:30"],
+    ["1430", "14:30"],
+    ["9:05", "09:05"],
+    ["14.30", "14:30"],
+  ])("takes %s as %s and shows the stored time on leaving the box", (typed, stored) => {
+    render(<Harness />);
+    const box = screen.getByRole("textbox", { name: "Arrival time" });
+    fireEvent.change(box, { target: { value: typed } });
+    expect(screen.getByTestId("time-value")).toHaveTextContent(stored);
+    expect(box).not.toHaveAttribute("aria-invalid", "true");
+    fireEvent.blur(box);
+    expect(box).toHaveValue(stored);
+  });
+
+  it("marks a finished time that is not real, and keeps a value given by the caller", () => {
+    render(<Harness initial="09:05" />);
+    const box = screen.getByRole("textbox", { name: "Arrival time" });
+    expect(box).toHaveValue("09:05");
+    fireEvent.change(box, { target: { value: "25:00" } });
+    expect(box).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByTestId("time-value")).toHaveTextContent(/^$/u);
+  });
+});
+
+describe("D3: a closed pop-up whose opener has gone hands focus to the shell's Menu button", () => {
+  // The Help sheet opened from the phone Menu: the menu item that opened it has gone with the menu.
+  function Harness() {
+    const [menuOpen, setMenuOpen] = useState(true);
+    const [helpOpen, setHelpOpen] = useState(false);
+    const openerRef = useRef<HTMLElement | null>(null);
+    return (
+      <>
+        <button type="button" data-wf-focus-fallback="">
+          Menu
+        </button>
+        {menuOpen ? (
+          <button
+            type="button"
+            ref={(node) => {
+              if (node) openerRef.current = node;
+            }}
+            onClick={() => {
+              setMenuOpen(false);
+              setHelpOpen(true);
+            }}
+          >
+            Help
+          </button>
+        ) : null}
+        <Sheet open={helpOpen} onClose={() => setHelpOpen(false)} title="Help" returnFocusRef={openerRef}>
+          <button type="button" onClick={() => setHelpOpen(false)}>
+            Close help
+          </button>
+        </Sheet>
+      </>
+    );
+  }
+
+  it("returns focus to the Menu button, not the page body", async () => {
+    const user = userEvent.setup();
+    render(<Harness />);
+    await user.click(screen.getByRole("button", { name: "Help" }));
+    await user.click(await screen.findByRole("button", { name: "Close help" }));
+    await waitFor(() => expect(screen.getByRole("button", { name: "Menu" })).toHaveFocus());
+  });
+
+  it("never takes focus that has landed somewhere else", async () => {
+    function Elsewhere() {
+      const [open, setOpen] = useState(true);
+      const otherRef = useRef<HTMLButtonElement>(null);
+      return (
+        <>
+          <button type="button" data-wf-focus-fallback="">
+            Menu
+          </button>
+          <button type="button" ref={otherRef}>
+            Other
+          </button>
+          <Sheet open={open} onClose={() => setOpen(false)} title="Help">
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                otherRef.current?.focus();
+              }}
+            >
+              Close to other
+            </button>
+          </Sheet>
+        </>
+      );
+    }
+    const user = userEvent.setup();
+    render(<Elsewhere />);
+    await user.click(await screen.findByRole("button", { name: "Close to other" }));
+    await new Promise((done) => setTimeout(done, 80));
+    expect(screen.getByRole("button", { name: "Menu" })).not.toHaveFocus();
+  });
+});

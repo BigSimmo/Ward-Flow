@@ -14,7 +14,7 @@ export default function ErrorBoundary({ error, retry }: { error: Error & { diges
       <RouteErrorBoundary
         error={error}
         retry={retry}
-        title={online ? "Part of this page did not load" : "You are offline"}
+        title={online ? "Part of this page did not load" : "You're offline"}
         description={
           online
             ? "The connection dropped. Check recent saves and unfinished work before reloading the page to finish loading it."

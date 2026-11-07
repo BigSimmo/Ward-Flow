@@ -409,7 +409,8 @@ describe("unavailable browser storage", () => {
     });
     expect(() => mount()).not.toThrow();
     // A typed date of birth is one of the typed values the device copy cannot hold (Josh, 21 Oct
-    // 2026), so the stored day is cleared, which is the path a throwing removeItem must not break.
+    // 2026), so the last safe save is kept and marked as not the latest (SD-01, 5 Nov 2026), which
+    // is the path a throwing removeItem must not break.
     act(() =>
       current.dispatch({
         type: "ADD_PATIENT",

@@ -26,7 +26,7 @@ describe("Help home resolution", () => {
       deskHome: expected,
     });
   });
-  it("keeps the access admin's Settings landing distinct from its Governance tour", () => {
+  it("keeps the access admin's Governance home as both tour and desk landing (WF-46)", () => {
     expect(
       resolveTourHome({
         ...input,
@@ -35,7 +35,7 @@ describe("Help home resolution", () => {
       }),
     ).toEqual({
       home: "/ward-flow/governance",
-      deskHome: "/ward-flow/settings",
+      deskHome: "/ward-flow/governance",
     });
   });
   it.each(["ward", "ed", "community"] as const)("has no guessed %s home without a flow provider", (role) => {

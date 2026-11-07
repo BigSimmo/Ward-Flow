@@ -38,7 +38,7 @@ import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import { resolveSubjectPatient, type ResolvedPatientInfo } from "@/components/ward-management/ward-patient-resolver";
 import { ArrowLeftRight, BedSingle, ChevronRight, LayoutGrid, List, ListChecks } from "lucide-react";
 import { WardPlaceOrMove } from "./ward-place-or-move";
-import { WardHomeTileText, WardHomeTodayStrip, WardPhoneTomorrowRow } from "./ward-home-tab-today";
+import { tileStateLine, WardHomeTileText, WardHomeTodayStrip, WardPhoneTomorrowRow } from "./ward-home-tab-today";
 import { useWardTomorrowOutlook } from "./ward-home-outlook";
 import {
   Button,
@@ -509,20 +509,26 @@ export function WardHomeTab({
     const number = String(bed.bedNumber).padStart(2, "0");
     const name = free ? "Ready" : (bed.patientAlias ?? stateWord);
     // The occupant's name is shown on the tile, so a screen reader hears it too.
-    const accessibleName = [
-      bed.bedLabel,
-      free ? "" : (bed.patientAlias ?? ""),
+    const spokenState = [
       stateWord,
       days ? `day ${bed.stayDays}` : "",
       // A tile showing the short CLD chip is read out in full; otherwise the CLD state is added.
       bed.criteriaLedChip && note === bed.criteriaLedChip.label ? bed.criteriaLedChip.phrase : note,
       bed.criteriaLedChip && note !== bed.criteriaLedChip.label ? bed.criteriaLedChip.phrase : "",
-    ]
+    ];
+    const accessibleName = [bed.bedLabel, free ? "" : (bed.patientAlias ?? ""), ...spokenState]
+      .filter(Boolean)
+      .join(", ");
+    // CB-3 (axe 4.14 label-content-name-mismatch): the tile's name reads its own words first, in order.
+    const shownNote = free ? (stateWord === name ? "" : stateWord) : note === name ? "" : tileNote;
+    const tileName = [bed.bedLabel, criteriaTag?.label ?? "", name, tileStateLine(shownNote, days), ...spokenState]
       .filter(Boolean)
       .join(", ");
     return {
       bed,
       free,
+      shownNote,
+      tileName,
       // Q7 (4 Nov 2026): the Ready chip and hero pill count as the hero and board do (`boardReadyCounts`).
       readyNow: bed.status === "ready" && bed.heldFor === undefined,
       leaving,
@@ -776,7 +782,7 @@ export function WardHomeTab({
   if (lapsedHolds.length > 0) {
     actNow.push({
       key: "holds",
-      title: lapsedHolds.length === 1 ? "Bed pull expired" : "Bed pulls expired",
+      title: lapsedHolds.length === 1 ? "Pull expired, bed still pulled" : "Pulls expired, beds still pulled",
       detail: lapsedHolds
         .map(
           (bed) =>
@@ -1840,7 +1846,7 @@ export function WardHomeTab({
                     data-lit={highlighting && isLit(row) ? "true" : undefined}
                     data-dim={isLit(row) ? undefined : "true"}
                     aria-haspopup="dialog"
-                    aria-label={row.accessibleName}
+                    aria-label={row.tileName}
                     title={row.accessibleName}
                     onClick={() => {
                       onSelectBed?.(Number(row.bed.bedNumber));
@@ -1848,21 +1854,14 @@ export function WardHomeTab({
                   >
                     <span className={styles.bedTileTop} aria-hidden="true">
                       <b>{row.number}</b>
+                      {row.criteriaTag ? " " : null}
                       {row.criteriaTag ? <CriteriaLedTag chip={row.criteriaTag} className={styles.bedTileTag} /> : null}
                       {row.glyph ? <StatusGlyph tone={row.glyph} size={10} /> : null}
-                    </span>
+                    </span>{" "}
                     <WardHomeTileText
                       name={row.bed.patientAlias ? row.name : null}
                       label={row.name}
-                      note={
-                        row.free
-                          ? row.stateWord === row.name
-                            ? ""
-                            : row.stateWord
-                          : row.note === row.name
-                            ? ""
-                            : row.tileNote
-                      }
+                      note={row.shownNote}
                       days={row.days}
                     />
                   </button>
@@ -2054,10 +2053,10 @@ export function WardHomeTab({
             now={now}
             extended={acceptExtended}
             holdChoices={[
-              { extended: false, label: `${configuration.pullHoldMinutes} minutes, standard` },
+              { extended: false, label: `${durMinutes(configuration.pullHoldMinutes)} standard` },
               {
                 extended: true,
-                label: `${configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES} minutes, extra travel`,
+                label: `${durMinutes(configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES)} with extra travel`,
               },
             ]}
             dialogRef={acceptDialogRef}

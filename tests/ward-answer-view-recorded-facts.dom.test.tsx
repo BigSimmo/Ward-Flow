@@ -175,7 +175,7 @@ describe("ward answer view: the accept dialog belongs to one request (CS-08, WP-
       within(hold)
         .getAllByRole("option")
         .map((option) => option.textContent),
-    ).toEqual(["Choose a time limit", "240 minutes, standard", "300 minutes, extra travel"]);
+    ).toEqual(["Choose a time limit", "4h standard", "5h with extra travel"]);
     const waiting = screen.getByTestId(`ward-accept-${id}`);
     expect(waiting).toHaveAttribute("aria-disabled", "true");
     expect(waiting).toHaveAccessibleDescription("Choose a pull time limit first");

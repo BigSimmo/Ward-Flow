@@ -23,9 +23,25 @@ const tourFacts = {
 vi.mock("@/components/ward-management/help/ward-tour-facts", () => ({ useTourFacts: () => tourFacts }));
 
 const phone = { on: false };
+const tablet = { on: false };
 vi.mock("@/components/wf", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/wf")>()),
   useIsPhone: () => phone.on,
+  useIsTabletPortrait: () => tablet.on,
+}));
+
+// Go further's steps come from the tour content (`ward-tour-more-steps.ts`, tested on its own); here
+// each test sets them, so the player's behaviour does not hang on how many a desk has.
+const further: { steps: readonly import("@/components/ward-management/help/ward-tour-steps").TourStep[] } = {
+  steps: [],
+};
+const furtherCalls: string[] = [];
+vi.mock("@/components/ward-management/help/ward-tour-more-steps", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/components/ward-management/help/ward-tour-more-steps")>()),
+  goFurtherSteps: (_role: string, device: string) => {
+    furtherCalls.push(device);
+    return further.steps;
+  },
 }));
 
 import { WardTour, findTourTarget } from "@/components/ward-management/help/ward-tour";
@@ -39,7 +55,7 @@ import {
   saveTourStep,
 } from "@/components/ward-management/help/ward-help-store";
 import { fullTourSteps } from "@/components/ward-management/help/ward-tour-more-steps";
-import { WardWhatsNew } from "@/components/ward-management/help/ward-whats-new";
+import { TOUR_AUTO_STARTED_EVENT, WardWhatsNew } from "@/components/ward-management/help/ward-whats-new";
 
 const STEPS = fullTourSteps("coordinator", "desk", tourFacts.facts);
 
@@ -52,6 +68,9 @@ beforeEach(() => {
   tourFacts.home = "/ward-flow";
   tourFacts.deskHome = "/ward-flow";
   phone.on = false;
+  tablet.on = false;
+  further.steps = [];
+  furtherCalls.length = 0;
   push.mockReset();
   resetTourSeenForTests();
   window.localStorage.removeItem(TOUR_AUTO_DONE_STORAGE_KEY);
@@ -212,9 +231,12 @@ describe("tour player", () => {
   });
 });
 
-/** P188: the tour is offered first; this presses "Start the tour" on the card. */
+/** P188: the tour is offered first; this reads the three welcome cards and presses "Start the tour". */
 async function startFromOffer() {
-  fireEvent.click(await screen.findByRole("button", { name: "Start the tour" }));
+  await screen.findByTestId("ward-tour-offer");
+  fireEvent.click(screen.getByTestId("ward-tour-welcome-next"));
+  fireEvent.click(screen.getByTestId("ward-tour-welcome-next"));
+  fireEvent.click(screen.getByRole("button", { name: "Start the tour" }));
 }
 
 describe("tour auto-start", () => {
@@ -240,8 +262,14 @@ describe("tour auto-start", () => {
     expect(onStart).toHaveBeenCalledTimes(1);
     unmount();
     // A reload: the desk's tour is still unseen, but this desk already had it on this device.
-    render(<WardTourAutoStart onStart={onStart} />);
-    await new Promise((resolve) => setTimeout(resolve, 700));
+    // TE-08: fake time carries the 500 ms settle timer past its end, so a late start cannot slip by.
+    vi.useFakeTimers();
+    try {
+      render(<WardTourAutoStart onStart={onStart} />);
+      act(() => vi.advanceTimersByTime(2000));
+    } finally {
+      vi.useRealTimers();
+    }
     expect(onStart).toHaveBeenCalledTimes(1);
     expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe("coordinator");
     // A first visit gets the tour, so the what's new note is marked read too.
@@ -253,12 +281,18 @@ describe("tour auto-start", () => {
     const setItem = vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => {
       throw new Error("QuotaExceededError");
     });
+    const offered = vi.fn();
+    window.addEventListener(TOUR_AUTO_STARTED_EVENT, offered);
+    vi.useFakeTimers();
     try {
       render(<WardTourAutoStart onStart={onStart} />);
-      await new Promise((resolve) => setTimeout(resolve, 700));
+      act(() => vi.advanceTimersByTime(2000));
+      expect(offered).not.toHaveBeenCalled();
       expect(onStart).not.toHaveBeenCalled();
     } finally {
+      vi.useRealTimers();
       setItem.mockRestore();
+      window.removeEventListener(TOUR_AUTO_STARTED_EVENT, offered);
     }
   });
 
@@ -277,7 +311,9 @@ describe("tour auto-start", () => {
       route.pathname = "/ward-flow/statistics";
       rerender(<WardTourAutoStart onStart={onStart} />);
       act(() => vi.advanceTimersByTime(2000));
-      fireEvent.click(screen.getByRole("button", { name: "Start the tour" }));
+      // The welcome cards load on demand, so real time runs again while they arrive.
+      vi.useRealTimers();
+      await startFromOffer();
       expect(onStart).toHaveBeenCalledTimes(1);
     } finally {
       vi.useRealTimers();
@@ -308,8 +344,18 @@ describe("tour auto-start", () => {
     unmount();
     route.pathname = "/ward-flow";
     act(() => markTourSeen("coordinator"));
-    render(<WardTourAutoStart onStart={onStart} />);
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    // TE-08: the old 50 ms wait ended before the 500 ms settle timer, so it proved nothing.
+    const offered = vi.fn();
+    window.addEventListener(TOUR_AUTO_STARTED_EVENT, offered);
+    vi.useFakeTimers();
+    try {
+      render(<WardTourAutoStart onStart={onStart} />);
+      act(() => vi.advanceTimersByTime(2000));
+    } finally {
+      vi.useRealTimers();
+      window.removeEventListener(TOUR_AUTO_STARTED_EVENT, offered);
+    }
+    expect(offered).not.toHaveBeenCalled();
     expect(onStart).not.toHaveBeenCalled();
   });
 
@@ -318,5 +364,200 @@ describe("tour auto-start", () => {
     render(<WardTour onClose={vi.fn()} />);
     fireEvent.click(screen.getByTestId("ward-tour-skip"));
     expect(readTourStep("coordinator")).toBe(0);
+  });
+});
+
+/** A sideways (or other) stroke across an element, as a finger on a touch screen makes it. */
+function swipe(element: HTMLElement, dx: number, dy = 0) {
+  fireEvent.touchStart(element, { touches: [{ clientX: 200, clientY: 300 }] });
+  fireEvent.touchEnd(element, { changedTouches: [{ clientX: 200 + dx, clientY: 300 + dy }] });
+}
+
+function chapterOf(id: string | undefined) {
+  return STEPS.find((each) => each.id === id)?.chapter;
+}
+
+describe("welcome cards before the first-run tour", () => {
+  it("shows three cards in order, with dots, Back, Next and the arrow keys, then Start the tour", async () => {
+    const onStart = vi.fn();
+    render(<WardTourAutoStart onStart={onStart} />);
+    const dialog = await screen.findByTestId("ward-tour-offer");
+    expect(dialog.getAttribute("role")).toBe("dialog");
+    expect(dialog.dataset.card).toBe("what");
+    expect(screen.getByRole("heading", { name: "Welcome to Ward Flow" })).toBeTruthy();
+    // No dead Back on the first card; Not now is always there.
+    expect(screen.queryByRole("button", { name: "Back" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Not now" })).toBeTruthy();
+    const dots = screen.getAllByRole("button", { name: /^Card \d of 3/u });
+    expect(dots).toHaveLength(3);
+    expect(dots[0]?.getAttribute("aria-current")).toBe("step");
+
+    fireEvent.click(screen.getByTestId("ward-tour-welcome-next"));
+    expect(dialog.dataset.card).toBe("prototype");
+    expect(dialog.textContent).toMatch(/synthetic/u);
+    expect(dialog.textContent).toMatch(/no real patients/u);
+    // The move is said once, for a screen reader.
+    expect(screen.getByTestId("ward-tour-welcome-live").textContent).toBe("Card 2. A prototype with made-up data");
+
+    fireEvent.keyDown(dialog, { key: "ArrowRight" });
+    expect(dialog.dataset.card).toBe("help");
+    expect(dialog.textContent).toMatch(/Help is at the foot of the menu on the left/u);
+    expect(dialog.textContent).toMatch(/The tour takes about/u);
+    fireEvent.keyDown(dialog, { key: "ArrowLeft" });
+    expect(dialog.dataset.card).toBe("prototype");
+    fireEvent.click(screen.getByRole("button", { name: "Back" }));
+    expect(dialog.dataset.card).toBe("what");
+    fireEvent.click(screen.getByRole("button", { name: /^Card 3 of 3/u }));
+    expect(dialog.dataset.card).toBe("help");
+    expect(screen.queryByTestId("ward-tour-welcome-next")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Start the tour" }));
+    expect(onStart).toHaveBeenCalledTimes(1);
+    expect(screen.queryByTestId("ward-tour-offer")).toBeNull();
+  });
+
+  it("moves with a swipe on a touch screen, and ignores an up and down stroke", async () => {
+    phone.on = true;
+    render(<WardTourAutoStart onStart={vi.fn()} />);
+    const dialog = await screen.findByTestId("ward-tour-offer");
+    swipe(dialog, -120);
+    expect(dialog.dataset.card).toBe("prototype");
+    swipe(dialog, 20, -200);
+    expect(dialog.dataset.card).toBe("prototype");
+    swipe(dialog, 120);
+    expect(dialog.dataset.card).toBe("what");
+    // A phone has no side menu, so the last card says where Help is there.
+    swipe(dialog, -120);
+    swipe(dialog, -120);
+    expect(dialog.textContent).toMatch(/Help is in the menu, the button at the top left/u);
+  });
+
+  it("takes focus, keeps the page behind inert, and closes as Not now on Escape", async () => {
+    const onStart = vi.fn();
+    const page = document.createElement("button");
+    page.dataset.testControl = "";
+    document.body.append(page);
+    render(<WardTourAutoStart onStart={onStart} />);
+    await screen.findByTestId("ward-tour-offer");
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByTestId("ward-tour-welcome-next")));
+    expect(page.closest("[inert]")).not.toBeNull();
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    expect(screen.queryByTestId("ward-tour-offer")).toBeNull();
+    expect(onStart).not.toHaveBeenCalled();
+    // Still once per device: the offer has been made.
+    expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe("coordinator");
+  });
+});
+
+describe("tour chapter menu", () => {
+  it("says where you are in the chapter, lists every chapter and jumps to one", () => {
+    render(<WardTour onClose={vi.fn()} />);
+    act(() => fireEvent.click(screen.getByTestId("ward-tour-next")));
+    const firstChapter = chapterOf(STEPS[1]?.id);
+    const inFirst = STEPS.filter((each) => each.chapter === firstChapter).length;
+    expect(screen.getByTestId("ward-tour-chapter").textContent).toContain(firstChapter);
+    expect(screen.getByTestId("ward-tour-chapter-step").textContent).toBe(
+      `${STEPS.findIndex((each) => each.id === STEPS[1]?.id) - STEPS.findIndex((each) => each.chapter === firstChapter) + 1} of ${inFirst}`,
+    );
+    // The overall place stays under the header.
+    expect(screen.getByTestId("ward-tour-meta").textContent).toMatch(new RegExp(`^Step 2 of ${STEPS.length}`, "u"));
+
+    const toggle = screen.getByTestId("ward-tour-chapter");
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    fireEvent.click(toggle);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    const names = [...new Set(STEPS.map((each) => each.chapter))];
+    const items = Array.from(screen.getByTestId("ward-tour-chapters").querySelectorAll("button"));
+    expect(items.map((item) => item.textContent?.replace(/\d+ steps?.*$/u, ""))).toEqual(names);
+    expect(items.find((item) => item.getAttribute("aria-current") === "step")?.textContent).toContain(firstChapter);
+    // Focus starts on the chapter you are in, and the arrow keys move through the list.
+    expect(document.activeElement?.getAttribute("aria-current")).toBe("step");
+
+    const lastChapter = names.at(-1);
+    fireEvent.click(items.at(-1)!);
+    expect(screen.queryByTestId("ward-tour-chapters")).toBeNull();
+    expect(card().dataset.step).toBe(STEPS.find((each) => each.chapter === lastChapter)?.id);
+    expect(document.activeElement).toBe(toggle);
+  });
+
+  it("closes the menu on Escape before the tour", () => {
+    const onClose = vi.fn();
+    render(<WardTour onClose={onClose} />);
+    fireEvent.click(screen.getByTestId("ward-tour-chapter"));
+    expect(screen.getByTestId("ward-tour-chapters")).toBeTruthy();
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    expect(screen.queryByTestId("ward-tour-chapters")).toBeNull();
+    expect(onClose).not.toHaveBeenCalled();
+    fireEvent.keyDown(document.body, { key: "Escape" });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("tour swipe and device", () => {
+  it("goes Next on a swipe left and Back on a swipe right, and ignores a scroll", () => {
+    render(<WardTour onClose={vi.fn()} />);
+    swipe(card(), 120);
+    expect(card().dataset.step).toBe(STEPS[0]?.id);
+    swipe(card(), -120);
+    expect(card().dataset.step).toBe(STEPS[1]?.id);
+    swipe(card(), -30, -240);
+    expect(card().dataset.step).toBe(STEPS[1]?.id);
+    swipe(card(), 120);
+    expect(card().dataset.step).toBe(STEPS[0]?.id);
+  });
+
+  it("reads the screen as a phone, a tablet or a desk", () => {
+    const { rerender } = render(<WardTour onClose={vi.fn()} />);
+    expect(screen.getByTestId("ward-tour").dataset.device).toBe("desk");
+    tablet.on = true;
+    rerender(<WardTour onClose={vi.fn()} />);
+    expect(screen.getByTestId("ward-tour").dataset.device).toBe("tablet");
+    expect(furtherCalls).toContain("tablet");
+    phone.on = true;
+    rerender(<WardTour onClose={vi.fn()} />);
+    expect(screen.getByTestId("ward-tour").dataset.device).toBe("phone");
+  });
+});
+
+describe("Go further after the first-run tour", () => {
+  const extra = [
+    { id: "further-a", chapter: "Your desk", title: "Further A", body: "First extra step." },
+    { id: "further-b", chapter: "Your desk", title: "Further B", body: "Second extra step." },
+  ] as unknown as import("@/components/ward-management/help/ward-tour-steps").TourStep[];
+
+  it("offers no Go further when there are no extra steps", () => {
+    render(<WardTour onClose={vi.fn()} />);
+    for (let index = 1; index < STEPS.length; index++) fireEvent.click(screen.getByTestId("ward-tour-next"));
+    expect(screen.queryByTestId("ward-tour-further")).toBeNull();
+    expect(screen.getByTestId("ward-tour-done")).toBeTruthy();
+  });
+
+  it("offers the extra steps beside Done at the end, and plays them with the same player", () => {
+    further.steps = extra;
+    const onClose = vi.fn();
+    render(<WardTour onClose={onClose} />);
+    for (let index = 1; index < STEPS.length; index++) fireEvent.click(screen.getByTestId("ward-tour-next"));
+    expect(card().dataset.step).toBe("can-do");
+    // Not offered before the end.
+    expect(screen.getByTestId("ward-tour-further").textContent).toBe("Go further, 2 more steps");
+    expect(screen.getByTestId("ward-tour-done")).toBeTruthy();
+    fireEvent.click(screen.getByTestId("ward-tour-further"));
+    expect(card().dataset.step).toBe("further-a");
+    expect(screen.getByTestId("ward-tour-meta").textContent).toMatch(
+      new RegExp(`^Step ${STEPS.length + 1} of ${STEPS.length + 2}`, "u"),
+    );
+    expect(screen.queryByTestId("ward-tour-further")).toBeNull();
+    fireEvent.click(screen.getByTestId("ward-tour-next"));
+    expect(card().dataset.step).toBe("further-b");
+    expect(screen.queryByTestId("ward-tour-further")).toBeNull();
+    fireEvent.click(screen.getByTestId("ward-tour-done"));
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(readTourStep("coordinator")).toBe(0);
+  });
+
+  it("picks up inside Go further when the tour was closed there", () => {
+    further.steps = extra;
+    saveTourStep("coordinator", STEPS.length, "further-a");
+    render(<WardTour onClose={vi.fn()} />);
+    expect(card().dataset.step).toBe("further-a");
   });
 });

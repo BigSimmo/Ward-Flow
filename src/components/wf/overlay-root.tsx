@@ -8,10 +8,10 @@ export type OverlayLayer = "overlay" | "popover" | "modal" | "toast";
 
 const LAYERS: readonly OverlayLayer[] = ["overlay", "popover", "modal", "toast"];
 const Z_INDEX: Record<OverlayLayer, string> = {
-  overlay: "var(--z-overlay)",
-  popover: "var(--z-popover)",
-  modal: "var(--z-modal)",
-  toast: "var(--z-toast)",
+  overlay: "var(--wf-z-overlay)",
+  popover: "var(--wf-z-popover)",
+  modal: "var(--wf-z-modal)",
+  toast: "var(--wf-z-toast)",
 };
 
 let mountedRoots = 0;

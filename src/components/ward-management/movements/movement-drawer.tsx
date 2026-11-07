@@ -69,7 +69,7 @@ const URGENT_FLAG_UNCHOSEN = "Choose why this patient is being flagged urgent fi
  * ED, the receiving ward or transport, so the pop-up names the owner and offers nothing it is not
  * allowed to record. There is no Call ward desk: the model holds no ward desk number.
  *
- * The record sections below keep the five the drawing ships (Person, Journey, Which wards were
+ * The record sections below keep the five the drawing ships (Person, Movement, Which wards were
  * asked, Escalation, Transport leg). *Watch and flag* is not built (owner, 1 Nov 2026: the foot
  * no longer explains that; it keeps only the one-line synthetic-data notice).
  */
@@ -569,7 +569,7 @@ export function MovementDrawer({
 
       <MovementLoopChecks movement={movement} units={units} now={now} />
 
-      <ol className={d.journeySteps} aria-label="Journey stage">
+      <ol className={d.journeySteps} aria-label="Movement stage">
         {STEPS.map((s, index) => (
           <li
             key={s.stage}
@@ -677,7 +677,7 @@ export function MovementDrawer({
           </p>
         </Section>
 
-        <Section title="Journey">
+        <Section title="Movement">
           {movement.stageChanges.length === 0 ? (
             <p className={d.muted}>No stage changes yet.</p>
           ) : (
@@ -899,7 +899,7 @@ function MovementPhoneSheet({
           </div>
         ) : hasBlocker ? (
           <div className={d.phBox}>
-            <h3 className={d.phLabel}>Barrier</h3>
+            <h3 className={d.phLabel}>Held up</h3>
             <p className={d.phLine}>
               <StatusGlyph tone={waitTone === "danger" ? "danger" : "warning"} size={9} />
               <strong>{movement.blocker}</strong>

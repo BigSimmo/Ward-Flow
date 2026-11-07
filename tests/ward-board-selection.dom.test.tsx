@@ -141,16 +141,24 @@ describe("ward board order explanation", () => {
   it("describes the active order without contradicting the selected control", () => {
     renderWardBoard(UNIT_ID);
 
-    const order = screen.getByRole("combobox", { name: "Order the beds" });
+    // MU5 (Josh, 5 Nov 2026): three kit segments in place of the select.
+    const order = screen.getByRole("radiogroup", { name: "Order the beds" });
+    expect(
+      within(order)
+        .getAllByRole("radio")
+        .map((radio) => radio.textContent),
+    ).toEqual(["Longest stay", "Soonest to leave", "Bed order"]);
+    expect(within(order).getByRole("radio", { name: "Longest stay" })).toHaveAttribute("aria-checked", "true");
     const count = screen.getByTestId("ward-board-people-count");
 
     expect(count).toHaveTextContent("Beds with no recorded stay follow.");
 
-    fireEvent.change(order, { target: { value: "leaving" } });
+    fireEvent.click(within(order).getByRole("radio", { name: "Soonest to leave" }));
+    expect(within(order).getByRole("radio", { name: "Soonest to leave" })).toHaveAttribute("aria-checked", "true");
     expect(count).toHaveTextContent("Beds with no expected date follow.");
     expect(count).not.toHaveTextContent("no recorded stay");
 
-    fireEvent.change(order, { target: { value: "recorded" } });
+    fireEvent.click(within(order).getByRole("radio", { name: "Bed order" }));
     expect(count).toHaveTextContent("Recorded order, not bed locations.");
     expect(count).not.toHaveTextContent("no expected date");
   });
@@ -192,7 +200,10 @@ describe("ward board selection — choosing a tile shows that tile's own occupan
 
     // And the sex and home region are this admission's, not some other occupant's.
     // One sex chip and the region chip (UX audit, 21 Oct 2026: the repeated "sex · Gender" line went).
-    expect(within(detail).getAllByText(admission!.sex, { exact: true }).length).toBeGreaterThan(0);
+    // B11 (Josh, 5 Nov 2026): the chip says "Sex: Female", so it reads apart from the Gender chip.
+    expect(within(detail).getByText(`Sex: ${admission!.sex}`, { exact: true })).toBeInTheDocument();
+    expect(within(detail).getByText(/^Gender: /)).toBeInTheDocument();
+    expect(within(detail).queryByText(admission!.sex, { exact: true })).toBeNull();
     expect(within(detail).getAllByText(admission!.homeRegion!, { exact: true }).length).toBeGreaterThan(0);
   });
 

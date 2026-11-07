@@ -47,7 +47,7 @@ const STAGE_BLURBS: Record<MovementStage, string> = {
   pulled: "A bed is pulled for this patient, and the pull has a time limit.",
   handover_ready: "Bed and paperwork are ready; only the physical move is outstanding.",
   moving: "A vehicle has collected the patient and the move is under way.",
-  arrived: "The patient has arrived — this leg of the journey is complete.",
+  arrived: "The patient has arrived, and this leg of the movement is complete.",
 };
 
 export type JourneyStage = {

@@ -711,8 +711,11 @@ function WardSharedWorkspaceContent({
                   className={styles.dismissRecovery}
                   onClick={(event) => {
                     const opener = event.currentTarget;
-                    void import("./shell/ward-activity-panel-store").then(({ openActivityPanel }) =>
-                      openActivityPanel({ tab: "recent", commandId: result.commandId, opener }),
+                    // TE-05: offline the panel's code may not load; say so rather than doing nothing.
+                    void import("./shell/ward-activity-panel-store").then(
+                      ({ openActivityPanel }) =>
+                        openActivityPanel({ tab: "recent", commandId: result.commandId, opener }),
+                      () => announceToWardShell("The change could not open. Check the connection, then try again."),
                     );
                   }}
                 >
@@ -779,6 +782,7 @@ export function WardSessionEndingNotice({ endsAt }: { endsAt: number | null }) {
   const at = new Date(endsAt).toLocaleTimeString("en-AU", {
     hour: "2-digit",
     minute: "2-digit",
+    hourCycle: "h23",
     timeZone: "Australia/Perth",
   });
   const notice = (

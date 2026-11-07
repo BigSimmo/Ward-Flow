@@ -182,7 +182,7 @@ function excludedBeyondTodayCount(): number {
 
 /** The "This shift" card's held-up release count. */
 function heldUpCount(): number {
-  const section = screen.getByRole("region", { name: "Held-up releases" });
+  const section = screen.getByRole("region", { name: "Held-up discharges" });
   return Number(/(\d+)\s*held-up/u.exec(section.textContent ?? "")?.[1]);
 }
 

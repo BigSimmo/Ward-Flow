@@ -5,7 +5,7 @@
 
 import type { ReactNode } from "react";
 import { StatusGlyph, type WfTone } from "@/components/wf";
-import { STAFF_BY_ID, shortName, type DemoClient } from "./midland-demo";
+import { STAFF_BY_ID, staffName, type DemoClient } from "./midland-demo";
 import t from "./team-2026.module.css";
 
 export function Person({ name, umrn, sub }: { name: string; umrn: string; sub?: string }) {
@@ -33,13 +33,13 @@ export function Initials({ id, className }: { id: string; className?: string }) 
   return <span className={`${t.av} ${className ?? ""}`}>{STAFF_BY_ID[id]?.ini}</span>;
 }
 
-/** Case manager cell: avatar and short name, or "Psychiatrist only", or a Not allocated tag. */
+/** Case manager cell: avatar and full name, or "Psychiatrist only", or a Not allocated tag. */
 export function CaseManagerCell({ client }: { client: Pick<DemoClient, "cm" | "psychOnly"> }) {
   if (client.cm) {
     return (
       <span className={t.cm}>
         <Initials id={client.cm} />
-        {shortName(client.cm)}
+        {staffName(client.cm)}
       </span>
     );
   }

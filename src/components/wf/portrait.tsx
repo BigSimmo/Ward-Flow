@@ -6,6 +6,7 @@ import { useState, type ReactNode } from "react";
 import { Button } from "./button";
 import { cx } from "./cx";
 import { PhoneSheet } from "./phone";
+import { ShowMoreRow, foldLimit } from "./show-more-row";
 import { StatusGlyph, type WfTone } from "./status-glyph";
 import styles from "./portrait.module.css";
 
@@ -35,6 +36,9 @@ type PortraitRowData = {
   selected?: boolean;
   dim?: boolean;
 };
+
+/** Rows an open group shows before its "Show N more" row (the about-eight list rule, design audit A13). */
+const PORTRAIT_GROUP_LIMIT = 8;
 
 export type PortraitGroup = {
   id: string;
@@ -68,12 +72,20 @@ export function PortraitList({
       else next.add(id);
       return next;
     });
+  // Open groups the person has asked to see in full.
+  const [full, setFull] = useState<ReadonlySet<string>>(() => new Set());
 
   return (
     <section className={styles.list} aria-label={label} data-testid="wf-portrait-list">
       {groups.map((group) => {
         if (group.rows.length === 0) return null;
         const isFolded = toggled.has(group.id) !== Boolean(group.folded);
+        const limit = full.has(group.id) ? group.rows.length : foldLimit(group.rows.length, PORTRAIT_GROUP_LIMIT);
+        // The open row stays on screen past the fold, so choosing it never hides it. While a
+        // highlight is on (some rows dimmed), the highlighted rows stay on screen too.
+        const highlighting = group.rows.some((row) => row.dim);
+        const shown = group.rows.filter((row, index) => index < limit || row.selected || (highlighting && !row.dim));
+        const hidden = group.rows.length - shown.length;
         return (
           <div key={group.id} className={styles.group}>
             <button
@@ -90,7 +102,7 @@ export function PortraitList({
             </button>
             {isFolded ? null : (
               <ul className={styles.rows}>
-                {group.rows.map((row) => (
+                {shown.map((row) => (
                   <li
                     key={row.id}
                     className={cx(styles.row, row.actNow && styles.actNow)}
@@ -119,6 +131,11 @@ export function PortraitList({
                 ))}
               </ul>
             )}
+            {!isFolded && hidden > 0 ? (
+              <ShowMoreRow onClick={() => setFull((current) => new Set(current).add(group.id))} expanded={false}>
+                {`Show ${hidden} more`}
+              </ShowMoreRow>
+            ) : null}
           </div>
         );
       })}

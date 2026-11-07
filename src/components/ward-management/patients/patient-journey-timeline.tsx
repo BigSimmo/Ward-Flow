@@ -11,7 +11,7 @@
 import { useState } from "react";
 import { Button, ShowMoreRow, StatusGlyph, type WfTone } from "@/components/wf";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { calendarDateOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
 import { originName } from "@/components/ward-management/ward-movement-origin";
 import { STAGES } from "./patient-now-records";
@@ -91,7 +91,7 @@ export function PatientJourneyTimeline({
   now: number;
   onOpenHistory: () => void;
 }) {
-  const { units } = useWardFlowSelect("units");
+  const { units, dayZero } = useWardFlowSelect("units", "dayZero");
   const [expanded, setExpanded] = useState(false);
   const unitName = (id: string) => units.find((unit) => unit.id === id)?.name;
   const events = journeyEvents(movement, unitName);
@@ -117,7 +117,7 @@ export function PatientJourneyTimeline({
               <StatusGlyph tone={event.tone} size={10} />
             </span>
             <span className={styles.timelineText}>{event.text}</span>
-            <time className={styles.timelineTime} dateTime={new Date(event.at).toISOString()}>
+            <time className={styles.timelineTime} dateTime={calendarDateOf(event.at, dayZero).toISOString()}>
               {formatInstantWithDay(event.at, now)}
             </time>
           </li>

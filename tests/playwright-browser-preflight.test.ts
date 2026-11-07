@@ -48,9 +48,15 @@ describe("playwright browser preflight", () => {
     ).toEqual([playwrightProjectNames.chromiumMockups, playwrightProjectNames.chromiumMockupsKnown]);
   });
 
-  it("defaults to every actual configured project and maps each to its configured browser", async () => {
+  it("defaults to every configured default project and maps each project to its configured browser", async () => {
     const projects = await configuredProjects();
-    const names = projects.map((project) => project.name);
+    // A `default: false` project (the nightly visual and tablet ones) runs only when named.
+    const names = projects.filter((project) => project.default !== false).map((project) => project.name);
+    expect(projects.filter((project) => project.default === false).map((project) => project.name)).toEqual([
+      playwrightProjectNames.visualDesktop,
+      playwrightProjectNames.visualPhone,
+      playwrightProjectNames.tabletWebkit,
+    ]);
     expect(names.length).toBeGreaterThan(0);
     expect(requestedPlaywrightBrowserProjects([], { NODE_ENV: "test" })).toEqual(names);
     expect(requestedPlaywrightBrowserProjects(["tests/ui-smoke.spec.ts"], { NODE_ENV: "test" })).toEqual(names);
@@ -72,7 +78,7 @@ describe("playwright browser preflight", () => {
         writeFileSync(list, text);
         const projects = await configuredProjects(list);
         expect(requestedPlaywrightBrowserProjects([], { NODE_ENV: "test", WARD_JOURNEY_KNOWN_FAILURES: list })).toEqual(
-          projects.map((project) => project.name),
+          projects.filter((project) => project.default !== false).map((project) => project.name),
         );
       }
     } finally {

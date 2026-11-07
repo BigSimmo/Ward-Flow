@@ -25,7 +25,6 @@ import { ReadmissionFlag } from "@/components/ward-management/ward-readmission-f
 import { ageSexLabel, RISK_FLAG_LABELS, formatDob } from "./ward-referral-drawer-model";
 import { Field, SelectBox, CardHead } from "./ward-referral-drawer-fields";
 import { ReferralCatchmentCard } from "./ward-referral-drawer-catchment";
-import { catchmentForSuburb } from "./referral-catchment-suggestion";
 import type { WardReferralDrawerState } from "./use-ward-referral-drawer-state";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { siteDirectory } from "@/components/ward-management/ward-sites";
@@ -89,10 +88,7 @@ export function ReferralPatientStep({
     patientRecord,
     effectiveCohort,
     isMedicalCleared,
-    catchmentTeam,
-    catchmentConfirmed,
     catchmentNotKnown,
-    homeRegion,
     activeSection,
     setActiveSection,
     unidentified,
@@ -177,12 +173,6 @@ export function ReferralPatientStep({
   useEffect(() => {
     if (showResults && highlight >= 0) revealWardOption(document.getElementById(`${searchId}-opt-${highlight}`));
   }, [highlight, showResults, searchId]);
-  const offeringCatchment =
-    !catchmentNotKnown &&
-    !catchmentConfirmed &&
-    !s.catchmentEditing &&
-    !!catchmentTeam.trim() &&
-    !!(homeRegion || catchmentForSuburb(s.catchmentSuburb, catchmentTeam)?.region);
   // The step's faults in field order, worded as the fields word them, for the error summary.
   const problems: ErrorSummaryItem[] = patientShowErrors
     ? [
@@ -198,19 +188,11 @@ export function ReferralPatientStep({
         ...(!liveMovement && someoneChosen && !ageBand
           ? [{ id: `${sectionId}-age-band`, text: "Choose the age band" }]
           : []),
-        ...(!catchmentNotKnown && !catchmentTeam.trim()
-          ? [{ id: `${sectionId}-team`, text: "Choose the catchment" }]
+        // FORM-REF (Josh, 5 Nov 2026): the catchment and home region warn in Before you send, and
+        // never stop the next step. A community team referral still needs its team.
+        ...(catchmentNotKnown && s.destType === "community"
+          ? [{ id: `${sectionId}-team`, text: "Choose the community team, or send to a ward or ED" }]
           : []),
-        // RF1: while the card offers a whole suggested catchment, the one fix is to use or change it,
-        // so the summary links that button rather than fields that are not on screen yet.
-        ...(offeringCatchment
-          ? [{ id: `${sectionId}-use-catchment`, text: "Use the suggested catchment or change it" }]
-          : [
-              ...(!homeRegion ? [{ id: `${sectionId}-region`, text: "Choose the home region" }] : []),
-              ...(!catchmentNotKnown && !catchmentConfirmed
-                ? [{ id: `${sectionId}-confirm-catchment`, text: "Confirm the catchment before continuing" }]
-                : []),
-            ]),
       ]
     : [];
   return (
@@ -221,7 +203,7 @@ export function ReferralPatientStep({
     >
       <ErrorSummary items={problems} action="before the next step" />
       <section className={styles.refCard}>
-        <CardHead icon={newPatientOpen ? UserPlus : User} title={newPatientOpen ? "New patient" : "Patient"}>
+        <CardHead icon={newPatientOpen ? UserPlus : User} title={newPatientOpen ? "Add patient" : "Patient"}>
           {/* RF3 (Current Issues, 3 Nov 2026): while a new patient is being added, the card is only that
               form, with its own close; the search and the chosen person come back when it closes. */}
           <button
@@ -649,11 +631,11 @@ export function ReferralPatientStep({
             <div className={styles.suggestion} data-testid="ward-referral-open-journey">
               <StatusGlyph tone="warning" size={9} />
               <span className={styles.suggestionText}>
-                <strong>Already on an open ED journey at {journeyElsewhere.edName}</strong>
+                <strong>Already on an open ED movement at {journeyElsewhere.edName}</strong>
                 <small>
                   {originName
-                    ? `Sending from ${originName} starts a second journey.`
-                    : "Sending starts a second journey."}
+                    ? `Sending from ${originName} starts a second movement.`
+                    : "Sending starts a second movement."}
                 </small>
               </span>
               <button

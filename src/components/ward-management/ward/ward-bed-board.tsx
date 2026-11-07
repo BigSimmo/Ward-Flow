@@ -1,7 +1,7 @@
 "use client";
 
 import { LayoutGrid, List } from "lucide-react";
-import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import type { Unit } from "@/components/ward-management/ward-model";
@@ -79,9 +79,9 @@ function surname(name: string | undefined): string {
 
 /**
  * U1 (site review, 12 Oct 2026), D-83 (Josh, 26 Oct 2026; fresh audit FA-W-9): an occupied bed reads
- * surname first, then the given name in full. Only the surname shortens, so eight "Ferrowm…" beds in
- * move mode read "Ferrowm…, Elena" and "Ferrowm…, Iris" and stay distinguishable beside their bed
- * numbers.
+ * surname first, then the given name. Both show in full and wrap onto a second line when long (Josh,
+ * 6 Nov 2026), so eight Ferrowmoor beds in move mode read "Ferrowmoor, Elena" and "Ferrowmoor, Iris"
+ * and stay distinguishable beside their bed numbers.
  */
 function occupantParts(
   name: string | undefined,
@@ -130,79 +130,21 @@ function CellWord({ bed, collidingPairs }: { bed: BedItem; collidingPairs?: Read
     bed.status === "ready" || bed.status === "closed" || bed.status === "incoming"
       ? null
       : occupantParts(bed.patientAlias, bed.umrn, collidingPairs);
-  // An empty bed's word ("Making ready") wraps rather than cuts; only a surname is fitted.
-  if (occupant === null)
-    return (
-      <span className={styles.cellWord} data-wrap="true">
-        {cellWord(bed)}
-      </span>
-    );
+  // An empty bed's word ("Making ready") wraps rather than cuts, as a name does.
+  if (occupant === null) return <span className={styles.cellWord}>{cellWord(bed)}</span>;
   return <CellName surname={occupant.surname} given={occupant.given} />;
 }
 
-let measureCanvas: HTMLCanvasElement | null = null;
-
-/** Width of `text` in `font`, or null where the browser cannot measure (tests). */
-function textWidth(text: string, font: string): number | null {
-  measureCanvas ??= document.createElement("canvas");
-  const context = measureCanvas.getContext("2d");
-  if (!context) return null;
-  context.font = font;
-  return context.measureText(text).width;
-}
-
 /**
- * The longest start of `surname` that fits `room` with an ellipsis, or the whole surname when it
- * fits. The browser's own ellipsis stops at the last whole letter and leaves the rest of its box
- * empty, which showed as a gap before the given name (13 Oct 2026). Cutting the word here ends the box at
- * the ellipsis instead.
+ * Surname, then the given name on its own line (D-83, WH8). Both show in full and wrap inside the
+ * cell rather than cut (Josh, 6 Nov 2026: names in full everywhere, TV included), so the visible
+ * words always match the accessible name (axe 4.14 label-content-name-mismatch).
  */
-export function fitSurname(surname: string, room: number, measure: (text: string) => number): string {
-  if (measure(surname) <= room) return surname;
-  for (let length = surname.length - 1; length > 1; length -= 1) {
-    const candidate = `${surname.slice(0, length).trimEnd()}…`;
-    if (measure(candidate) <= room) return candidate;
-  }
-  return `${surname.charAt(0)}…`;
-}
-
 function CellName({ surname, given }: { surname: string; given: string }) {
-  const nameRef = useRef<HTMLSpanElement>(null);
-  const wordRef = useRef<HTMLSpanElement>(null);
-  const initialRef = useRef<HTMLSpanElement>(null);
-  const [fitted, setFitted] = useState<{ surname: string; text: string } | null>(null);
-  const shown = fitted?.surname === surname ? fitted.text : surname;
-  useLayoutEffect(() => {
-    const name = nameRef.current;
-    const word = wordRef.current;
-    const tail = initialRef.current;
-    if (!name || !word || !tail || typeof ResizeObserver !== "function") return;
-    const fit = () => {
-      // The name box fills the free space beside the glyph, so its width does not depend on the
-      // text inside it. Two pixels of slack cover canvas and page measuring apart, so the CSS
-      // ellipsis never cuts a second time.
-      // scrollWidth is the given name's full width even when a narrow cell is cutting it. When
-      // the given name alone fills the cell, the surname drops to its first letter and the given
-      // name takes its own ellipsis, so nothing spills into the next bed.
-      // WH8: the given name sits on its own line under the surname, so the surname has the whole width.
-      const room = Math.max(0, name.clientWidth - 2);
-      const font = getComputedStyle(word).font;
-      if (textWidth(surname, font) === null) return;
-      setFitted({ surname, text: fitSurname(surname, room, (text) => textWidth(text, font) ?? 0) });
-    };
-    fit();
-    const observer = new ResizeObserver(fit);
-    observer.observe(name);
-    void document.fonts?.ready.then(fit);
-    return () => observer.disconnect();
-    // The ", {given}" tail takes room too, so a new given name is measured again.
-  }, [surname, given]);
   return (
-    <span ref={nameRef} className={styles.cellName}>
-      <span ref={wordRef} className={styles.cellWord}>
-        {shown}
-      </span>
-      <span ref={initialRef} className={styles.cellInitial}>
+    <span className={styles.cellName}>
+      <span className={styles.cellWord}>{surname}</span>{" "}
+      <span className={styles.cellInitial}>
         <span className={styles.srComma}>, </span>
         {given}
       </span>
@@ -241,25 +183,31 @@ function cellLabel(
   bed: BedItem,
   fits: boolean,
   nameFor: (name: string, umrn: string | undefined | null) => string,
+  shownSub: string,
+  collidingPairs?: ReadonlySet<string>,
 ): string {
-  // A2-20: the accessible name follows Discreet names, as the visible cell does. Codex on #551: it uses the
-  // cell's Ready and Pulled words too, so a pulled bed is never announced as free.
+  // A2-20: the accessible name follows Discreet names. Codex on #551: it uses the cell's Ready and
+  // Pulled words too, so a pulled bed is never announced as free.
+  // axe 4.14 (label-content-name-mismatch): the name holds the cell's visible words in the order
+  // shown (number, short tag, name or state word, then the quiet line or the fit reason), and the
+  // spoken extras (the full criteria led phrase, "fits") come after them.
   const alias = bed.patientAlias === undefined ? undefined : nameFor(bed.patientAlias, bed.umrn);
-  const state =
-    bed.status === "ready"
-      ? bed.heldFor
-        ? `pulled for ${bed.heldFor}`
-        : bed.preparing
-          ? "being made ready"
-          : "ready"
-      : bed.status === "closed"
-        ? "closed"
-        : bed.status === "incoming"
-          ? `pulled${alias ? `, ${alias}` : ""}`
-          : `${alias ?? "occupant not recorded"}${bed.status === "leave" ? ", on leave" : ""}`;
+  const occupant =
+    bed.status === "ready" || bed.status === "closed" || bed.status === "incoming"
+      ? null
+      : occupantParts(alias, bed.umrn, collidingPairs);
+  const word =
+    bed.status === "ready" || bed.status === "closed" || bed.status === "incoming"
+      ? cellWord(bed)
+      : occupant
+        ? `${occupant.surname}, ${occupant.given}`
+        : alias
+          ? surname(alias)
+          : "occupant not recorded";
+  const chip = bed.criteriaLedChip;
   // D-64: the cell shows the short criteria led discharge tag, and the full phrase is spoken and in the tooltip.
-  const criteria = bed.criteriaLedChip ? `, ${bed.criteriaLedChip.phrase}` : "";
-  return `Bed ${bedNumberLabel(bed.bedNumber)}, ${state}${criteria}${fits ? ", fits" : ""}`;
+  const extras = [chip?.phrase, fits ? "fits" : undefined].filter(Boolean);
+  return `Bed ${bedNumberLabel(bed.bedNumber)}${chip ? `, ${chip.short}` : ""}, ${word}, ${shownSub}${extras.length ? `, ${extras.join(", ")}` : ""}`;
 }
 
 function matchesQuery(bed: BedItem, query: string): boolean {
@@ -532,7 +480,8 @@ export function WardBedBoard({
                   const source = picked?.kind === "stay" && picked.fromBed === Number(bed.bedNumber);
                   const glyph = bedGlyphTone(bed);
                   const dim = picked ? !fits && !source : !matchesQuery(bed, query);
-                  const label = cellLabel(bed, fits, nameFor);
+                  const shownSub = fits && picked ? fitReason(bed, picked, isMixed) : cellSub(bed);
+                  const label = cellLabel(bed, fits, nameFor, shownSub, collidingPairs);
                   const chosen = confirming !== null && Number(confirming.bedNumber) === Number(bed.bedNumber);
                   return (
                     <button
@@ -572,26 +521,21 @@ export function WardBedBoard({
                           : undefined
                       }
                     >
+                      {/* axe 4.14 joins visible words with no gap; these spaces take no room in the flex cell. */}
                       <span className={styles.cellTop}>
-                        <span className={styles.cellNo}>{bedNumberLabel(bed.bedNumber)}</span>
+                        <span className={styles.cellNo}>{bedNumberLabel(bed.bedNumber)}</span>{" "}
                         {bed.criteriaLedChip ? (
                           <CriteriaLedTag chip={bed.criteriaLedChip} short />
                         ) : glyph ? (
                           <StatusGlyph tone={glyph} size={10} />
                         ) : null}
-                      </span>
+                      </span>{" "}
                       <span className={styles.cellState}>
                         <CellWord bed={bed} collidingPairs={collidingPairs} />
+                      </span>{" "}
+                      <span className={fits && picked ? styles.cellReason : styles.cellSub} aria-hidden="true">
+                        {shownSub}
                       </span>
-                      {fits && picked ? (
-                        <span className={styles.cellReason} aria-hidden="true">
-                          {fitReason(bed, picked, isMixed)}
-                        </span>
-                      ) : (
-                        <span className={styles.cellSub} aria-hidden="true">
-                          {cellSub(bed)}
-                        </span>
-                      )}
                     </button>
                   );
                 })}

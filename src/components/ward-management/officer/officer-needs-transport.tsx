@@ -208,7 +208,9 @@ export function NeedsTransportCard({
                     {isPhone ? (
                       <>
                         {" · "}
-                        <span className={styles.mono}>{clock.figure}</span> {clock.label}
+                        {/* The row is a flex line, so a plain space would collapse ("6h 50mwaiting"). */}
+                        <span className={styles.mono}>{clock.figure}</span>
+                        {`\u00a0${clock.label}`}
                       </>
                     ) : null}
                   </span>
@@ -274,7 +276,9 @@ export function returnPlanBooking(record: RepatriationRecord | undefined, now: I
     cadNumber: record.cadNumber,
     transportLegalStatus: record.transportLegalStatus,
     escortRequired: record.escortRequired,
-    ...(record.estimatedAt >= now ? etaPresetAnswers(now, record.estimatedAt - now) : {}),
+    ...(record.estimatedAt !== undefined && record.estimatedAt >= now
+      ? etaPresetAnswers(now, record.estimatedAt - now)
+      : {}),
   };
 }
 

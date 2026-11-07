@@ -8,6 +8,11 @@ import { tryWriteDemoState, WARD_FLOW_DEMO_STORAGE_KEY } from "@/components/ward
 import { seedWardFlowState } from "@/components/ward-management/ward-flow-reducer";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { WardRecoveryNoticeContext } from "@/components/ward-management/shell/ward-recovery-notice";
+import {
+  OTHER_TAB_DAY_NOTICE,
+  WardOtherTabDayNote,
+  resetOtherTabDayForTests,
+} from "@/components/ward-management/shell/ward-other-tab-day";
 
 function Notice() {
   return <p data-testid="notice">{useContext(WardRecoveryNoticeContext) ?? ""}</p>;
@@ -71,6 +76,7 @@ beforeEach(() => {
 afterEach(() => {
   vi.unstubAllGlobals();
   window.sessionStorage.clear();
+  resetOtherTabDayForTests();
 });
 
 describe("a newly opened demo tab", () => {
@@ -126,5 +132,52 @@ describe("an open demo tab with a worked day", () => {
     await settle();
     const answer = posted.find((m) => m.eventType === "SYNC_SAVED_STATE");
     expect(answer?.payload).toBe(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY));
+  });
+});
+
+// SD-03 and F5 (audit, 5 Nov 2026): a tab that owns its day never takes another tab's save. When the
+// other tab saves a different day, this tab says the two have split instead of drifting silently.
+describe("two demo tabs that have both acted", () => {
+  it("says so when another open tab saves a different day", async () => {
+    const otherDay = savedDayWithOffset(45);
+    window.sessionStorage.clear();
+    savedDayWithOffset(30);
+    render(
+      <WardFlowProvider>
+        <WardOtherTabDayNote />
+      </WardFlowProvider>,
+    );
+    await settle();
+    expect(screen.queryByTestId("ward-other-tab-day")).toBeNull();
+    const otherTab = new FakeChannel("ward-flow-sync");
+    otherTab.postMessage({
+      type: "WARD_FLOW_DISPATCH",
+      eventType: "SYNC_SAVED_STATE",
+      senderId: "other-tab",
+      payload: otherDay,
+    });
+    await settle();
+    // This tab keeps its own day, and now says the tabs have split.
+    expect(savedOffset()).toBe(30);
+    expect(screen.getByTestId("ward-other-tab-day")).toHaveTextContent(OTHER_TAB_DAY_NOTICE);
+  });
+
+  it("stays quiet when the other tab's save is this tab's own day", async () => {
+    const sameDay = savedDayWithOffset(30);
+    render(
+      <WardFlowProvider>
+        <WardOtherTabDayNote />
+      </WardFlowProvider>,
+    );
+    await settle();
+    const otherTab = new FakeChannel("ward-flow-sync");
+    otherTab.postMessage({
+      type: "WARD_FLOW_DISPATCH",
+      eventType: "SYNC_SAVED_STATE",
+      senderId: "other-tab",
+      payload: sameDay,
+    });
+    await settle();
+    expect(screen.queryByTestId("ward-other-tab-day")).toBeNull();
   });
 });
