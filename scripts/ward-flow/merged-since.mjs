@@ -25,7 +25,11 @@ export function parseMergeLog(raw, secondParentSubject = () => "") {
     const squash = /^(.*) \(#(\d+)\)$/u.exec(subject);
     if (merge) {
       number = Number(merge[1]);
-      title = body.split("\n").find((line) => line.trim())?.trim() || secondParentSubject(sha).trim();
+      title =
+        body
+          .split("\n")
+          .find((line) => line.trim())
+          ?.trim() || secondParentSubject(sha).trim();
     } else if (squash) {
       number = Number(squash[2]);
       title = squash[1].trim();

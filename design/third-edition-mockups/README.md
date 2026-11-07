@@ -266,7 +266,7 @@ and approved back in, and nothing anywhere goes red. That has happened here.
 
 | Need                                | Read                                                                                                                                        |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| The owner's rulings, dated          | [`../archive/dated-notes/owner-decisions-2026-09-09.md`](../../docs/history/archive/dated-notes/owner-decisions-2026-09-09.md)            |
+| The owner's rulings, dated          | [`../archive/dated-notes/owner-decisions-2026-09-09.md`](../../docs/history/archive/dated-notes/owner-decisions-2026-09-09.md)              |
 | What every chat is working on       | gone — `docs/ward-flow/control/work-claims.md` was deleted with WLQ-33; use [`../STATUS.md`](../../docs/ward-flow/STATUS.md) and the ledger |
 | How a branch is folded, and by whom | `../archive/dated-notes/HOW-TO-FOLD-2026-09-10.md` (removed in the 15 Oct 2026 docs trim)                                                   |
 | The kit's own status and open items | [`third-edition-kit/HANDOVER.md`](third-edition-kit/HANDOVER.md)                                                                            |

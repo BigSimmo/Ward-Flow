@@ -135,4 +135,3 @@ git checkout cac245bccbbc30115fe4ef9a38b8cfee0f149e92 -- docs/ward-flow/plans/20
 ### Fourth pass, 18 October 2026
 
 A fourth pass removed 116 more dated audits, reports, handovers, plans and build contracts. The list and the restore command are in this page; the files are kept in Git history at `main` commit `0a469c6`.
-

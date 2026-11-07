@@ -86,7 +86,8 @@ function listFiles() {
       } else if (
         /owner.*ruling.*\.md$/i.test(f) ||
         // Early ruling records archived from docs/archive/ on 24 Oct 2026 (Josh's yes).
-        (prefix === "../history/archive/dated-notes/" && /^ward-(?:flow|management)-.*(?:rulings|decisions).*\.md$/.test(f))
+        (prefix === "../history/archive/dated-notes/" &&
+          /^ward-(?:flow|management)-.*(?:rulings|decisions).*\.md$/.test(f))
       ) {
         secondary.push(relPath);
       }

@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { parseMergeLog, toMarkdown } from "../scripts/ward-flow/merged-since.mjs";
 
-const record = (sha: string, date: string, subject: string, body = "") => `${sha}\x1f${date}\x1f${subject}\x1f${body}\x1e`;
+const record = (sha: string, date: string, subject: string, body = "") =>
+  `${sha}\x1f${date}\x1f${subject}\x1f${body}\x1e`;
 
 describe("merged-since", () => {
   it("reads titles from merge bodies, squash subjects and the untitled-merge fallback", () => {

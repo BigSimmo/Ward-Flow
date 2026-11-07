@@ -11,16 +11,17 @@ _Updated 2026-11-08 - documentation audit fixes: one home per kind of truth, his
 3. **Names only for secrets** - never paste values, JWTs, or dashboard passwords.
 4. **One home per kind of truth** (Josh, 7 November 2026). Do not create another status store.
 
-   | Question                 | The one home                                                                         |
-   | ------------------------ | ------------------------------------------------------------------------------------ |
-   | Where are we now?        | The **Now** section of [`ward-flow/STATUS.md`](ward-flow/STATUS.md)                  |
-   | What is the plan?        | [`ward-flow/roadmap.md`](ward-flow/roadmap.md)                                       |
-   | What is in flight?       | Open pull requests, summarised in the Now section                                    |
-   | What did Josh decide?    | [`ward-flow/decisions.md`](ward-flow/decisions.md); no new `owner-*.md` files        |
-   | How do we work?          | [`AGENTS.md`](../AGENTS.md) and the topic files it links                             |
-   | What happened before?    | [`history/`](history/README.md) and [`ARCHIVE.md`](ARCHIVE.md)                       |
+   | Question              | The one home                                                                  |
+   | --------------------- | ----------------------------------------------------------------------------- |
+   | Where are we now?     | The **Now** section of [`ward-flow/STATUS.md`](ward-flow/STATUS.md)           |
+   | What is the plan?     | [`ward-flow/roadmap.md`](ward-flow/roadmap.md)                                |
+   | What is in flight?    | Open pull requests, summarised in the Now section                             |
+   | What did Josh decide? | [`ward-flow/decisions.md`](ward-flow/decisions.md); no new `owner-*.md` files |
+   | How do we work?       | [`AGENTS.md`](../AGENTS.md) and the topic files it links                      |
+   | What happened before? | [`history/`](history/README.md) and [`ARCHIVE.md`](ARCHIVE.md)                |
 
    Notion is optional ([task receipts](task-receipts.md)).
+
 5. **One map improvement per pass** when cheap.
 6. **Ward Flow repository lock** - confirm `git remote get-url origin` is `https://github.com/BigSimmo/Ward-Flow.git` before editing. Use a separate worktree based on this repository's `main`; confirm the branch and tip before acting. `D:\Worktrees\Database\ward-lead` and `BigSimmo/Database` are legacy sources, not Ward Flow destinations.
 7. **Recheck triggers** - relevant source, boot command or entry path changes refresh affected maintained guidance; operator changes restamp runbooks. Update the existing task receipt at meaningful lifecycle events; preserve dated status evidence.
@@ -34,16 +35,16 @@ Stage **docs paths only** - never mix unrelated product WIP. A push or pull requ
 
 ## Ward Flow live set
 
-| Doc                                                            | Role                                         |
-| -------------------------------------------------------------- | -------------------------------------------- |
-| [`ward-flow/STATUS.md`](ward-flow/STATUS.md)                   | Where things stand now (re-checked weekly)   |
-| [`ward-flow/roadmap.md`](ward-flow/roadmap.md)                 | The plan                                     |
-| [`ward-flow/decisions.md`](ward-flow/decisions.md)             | Every decision                               |
-| [`ward-flow/README.md`](ward-flow/README.md)                   | Product and design entry point               |
-| [`ward-flow/LOCAL-FIRST-RUN.md`](ward-flow/LOCAL-FIRST-RUN.md) | UI boot                                      |
-| [`ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md)         | Builder workflow handbook                    |
-| [`task-receipts.md`](task-receipts.md)                         | Task and evidence handoff                    |
-| [`ARCHIVE.md`](ARCHIVE.md)                                     | The one archive index, and how to restore    |
+| Doc                                                            | Role                                       |
+| -------------------------------------------------------------- | ------------------------------------------ |
+| [`ward-flow/STATUS.md`](ward-flow/STATUS.md)                   | Where things stand now (re-checked weekly) |
+| [`ward-flow/roadmap.md`](ward-flow/roadmap.md)                 | The plan                                   |
+| [`ward-flow/decisions.md`](ward-flow/decisions.md)             | Every decision                             |
+| [`ward-flow/README.md`](ward-flow/README.md)                   | Product and design entry point             |
+| [`ward-flow/LOCAL-FIRST-RUN.md`](ward-flow/LOCAL-FIRST-RUN.md) | UI boot                                    |
+| [`ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md)         | Builder workflow handbook                  |
+| [`task-receipts.md`](task-receipts.md)                         | Task and evidence handoff                  |
+| [`ARCHIVE.md`](ARCHIVE.md)                                     | The one archive index, and how to restore  |
 
 [`ward-flow-task-ledger.md`](ward-flow-task-ledger.md) keeps dated task detail and evidence; it is not the list of current work.
 

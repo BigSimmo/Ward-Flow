@@ -59,7 +59,7 @@ in [DOCS-SYSTEM.md](DOCS-SYSTEM.md).
 | **Screens, Routes & Code Map**  | [`ward-flow/SCREEN-MAP.md`](ward-flow/SCREEN-MAP.md) · [`ward-flow/code-map/README.md`](ward-flow/code-map/README.md) · [`codebase-index.md`](codebase-index.md) · [`site-map.md`](site-map.md) · [`ward-flow/organisation/registry.json`](ward-flow/organisation/registry.json) (`ward-flow/ORGANISATION.md`)                                                           |
 | **Reference Data & Sources**    | [`ward-flow/reference-data/PACK_README.md`](ward-flow/reference-data/PACK_README.md) (`ward-flow/reference-data/README.md`) · [`ward-flow/reference-data/PROVENANCE-AUDIT-2026-09-18.md`](ward-flow/reference-data/PROVENANCE-AUDIT-2026-09-18.md) (`ward-flow/reference-data/SOURCES.md`)                                                                               |
 | **Backend, CI & Hosting**       | [`../backend/ward-flow/README.md`](../backend/ward-flow/README.md) · [`ward-flow/PUBLIC-CI.md`](ward-flow/PUBLIC-CI.md) · [`ward-flow/RAILWAY-OPERATIONS.md`](ward-flow/RAILWAY-OPERATIONS.md) · [`hosting.md`](hosting.md)                                                                                                                                              |
-| **Historical Archives**         | [`ARCHIVE.md`](ARCHIVE.md) (the one archive index: removed and moved files, and how to restore them) · [`history/`](history/README.md) (moved history, skipped by search) · [`ward-flow/RULES.md`](ward-flow/RULES.md)                                                                                                                                                                                            |
+| **Historical Archives**         | [`ARCHIVE.md`](ARCHIVE.md) (the one archive index: removed and moved files, and how to restore them) · [`history/`](history/README.md) (moved history, skipped by search) · [`ward-flow/RULES.md`](ward-flow/RULES.md)                                                                                                                                                   |
 
 ## Architecture
 
@@ -97,14 +97,14 @@ in [DOCS-SYSTEM.md](DOCS-SYSTEM.md).
 
 ## Historical collections
 
-| Collection                                        | How to use it                                                                                             |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
-| [Plan navigation](ward-flow/plans/README.md)      | Dated plans and checkpoints from both existing plan roots; the task record establishes commissioned work  |
-| [Archive and restoration record](ARCHIVE.md)      | Archived handovers, reports and other dated material, with the retained Git revision                      |
-| [History folder](history/README.md)               | Lessons, the old archive and superseded files, moved on 8 November 2026; search skips it by default       |
-| [Lessons](history/lessons/README.md)            | Historical repository copy; its index does not turn a lesson into a current rule                          |
-| [Code map](ward-flow/code-map/README.md)          | Maintained navigation to scoped updates and the historical subsystem census                               |
-| [Legacy decision register](history/ward-flow-ledger.md)   | Historical decision/identity evidence; new decisions belong in the [decision log](ward-flow/decisions.md) |
+| Collection                                              | How to use it                                                                                             |
+| ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| [Plan navigation](ward-flow/plans/README.md)            | Dated plans and checkpoints from both existing plan roots; the task record establishes commissioned work  |
+| [Archive and restoration record](ARCHIVE.md)            | Archived handovers, reports and other dated material, with the retained Git revision                      |
+| [History folder](history/README.md)                     | Lessons, the old archive and superseded files, moved on 8 November 2026; search skips it by default       |
+| [Lessons](history/lessons/README.md)                    | Historical repository copy; its index does not turn a lesson into a current rule                          |
+| [Code map](ward-flow/code-map/README.md)                | Maintained navigation to scoped updates and the historical subsystem census                               |
+| [Legacy decision register](history/ward-flow-ledger.md) | Historical decision/identity evidence; new decisions belong in the [decision log](ward-flow/decisions.md) |
 
 The retained `handover/` rubric has a drawing consumer; `handovers/` was archived on 18 October.
 Folder names and old unchecked boxes do not establish active work. Keep consumer references and

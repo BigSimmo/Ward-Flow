@@ -87,14 +87,7 @@
       "extensions": [".json", ".yaml", ".yml"]
     }
   ],
-  "denials": [
-    "**/private/**",
-    "**/sensitive/**",
-    "**/*.secret.*",
-    "docs/history/lessons/**",
-    "**/*.tsv",
-    "**/*.jsonl"
-  ],
+  "denials": ["**/private/**", "**/sensitive/**", "**/*.secret.*", "docs/history/lessons/**", "**/*.tsv", "**/*.jsonl"],
   "rules": [
     {
       "id": "ward-modules",

@@ -204,7 +204,6 @@ These rows record decisions, not a new assertion that their implementation is co
 | D-92–D-94 | Later prototype interface decisions are recorded in [decisions.md](decisions.md).                             | Consult each original ruling; this summary supplies no implementation or deployment verdict. |
 | D-95      | One page scroll on desktop; a click outside closes a hand-built drawer (3 November 2026).                     | Recorded 8 November 2026 from decisions.md; not re-checked against source.                   |
 
-
 ## Remaining work and local remediation
 
 The remediation checkpoint (archived; see [ARCHIVE.md](../ARCHIVE.md)) and [`docs/ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) (§7.78–§7.82) record actual fixes
@@ -238,7 +237,6 @@ and checks against stable task IDs. Confirmed source defects are fixed locally; 
 - **Outstanding ownership:** historical Notion holds and unpublished candidates
   remain with their original owners. Local fixes do not reconcile those records.
 
-
 ## Before any real patient
 
 The [production-readiness register](governance/PRODUCTION-READINESS.md) distinguishes
@@ -247,4 +245,3 @@ clinical safety, WA privacy/information governance, legal forms, cultural safety
 reference-data verification, intended-purpose/TGA assessment and accountable
 support. Internal D-37 statements record intended standards; they are neither
 external approval nor proof those standards are implemented.
-

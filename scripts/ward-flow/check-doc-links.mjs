@@ -142,10 +142,7 @@ export function checkLinksIn(file, source, { anchors = false, root = PROJECT_ROO
       continue;
     }
     if (/^[a-z][a-z\d+.-]*:/i.test(raw) || raw.startsWith("//")) continue;
-    if (
-      relative(root, file).replaceAll("\\", "/") === "docs/history/lessons/MEMORY.md" &&
-      EXTERNAL_BY_DESIGN.has(raw)
-    )
+    if (relative(root, file).replaceAll("\\", "/") === "docs/history/lessons/MEMORY.md" && EXTERNAL_BY_DESIGN.has(raw))
       continue;
     let target;
     let fragment;
