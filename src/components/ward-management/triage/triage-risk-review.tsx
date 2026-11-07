@@ -14,13 +14,34 @@ import {
   HOW,
   INTERPRETER,
   OTHERS_PRESENT,
-  PROBLEMS,
   PURPOSE,
   RISK_TO_PROBLEM,
   SOURCES,
-  WHERE,
 } from "./triage-risk-data";
-import { autoRows, Choice, GuideBox, MultiChips, Reveal, Row, type FormApi } from "./triage-risk-parts";
+import {
+  ALL_PROGRAMS,
+  labelOf,
+  PROBLEMS_COMMON,
+  PROGRAMS,
+  PSOLIS_PROBLEMS,
+  REFERRAL_TYPES,
+  REFERRAL_TYPES_COMMON,
+  STREAMS,
+  VENUES,
+  VENUES_COMMON,
+  type StreamCode,
+} from "./triage-psolis-lists";
+import {
+  autoRows,
+  Choice,
+  GuideBox,
+  MultiChips,
+  PickMany,
+  PickOne,
+  Reveal,
+  Row,
+  type FormApi,
+} from "./triage-risk-parts";
 import type { TextKey, TriageState } from "./triage-risk-state";
 import { addHeading, checkReviewTime, expandShortcut, reviewTimeStamp, wordCount } from "./triage-risk-text";
 import styles from "./triage-risk-form.module.css";
@@ -69,6 +90,57 @@ function reviewDone(state: TriageState, now: number) {
 }
 
 const HOW_NAME: Readonly<Record<string, string>> = Object.fromEntries(HOW);
+
+/** The stream a program belongs to, so Change offers only that stream's programs. */
+function streamOf(program: string | null): StreamCode | null {
+  if (!program) return null;
+  const found = (Object.keys(PROGRAMS) as StreamCode[]).find((stream) =>
+    PROGRAMS[stream].some(([code]) => code === program),
+  );
+  return found ?? null;
+}
+
+/**
+ * Program, a desk setting from webPSOLIS Stream and Program: one fact line with Change, which offers
+ * only the programs of the desk's stream. Never a clinical answer.
+ */
+function ProgramLine({ form }: { form: FormApi }) {
+  const { state, set } = form;
+  const [changing, setChanging] = useState(false);
+  const label = labelOf(ALL_PROGRAMS, state.program);
+  // A program set by the desk names its stream; with none, the site's one stream.
+  const programs = PROGRAMS[streamOf(state.program) ?? STREAMS[0][0]];
+  const open = changing || !label;
+  return (
+    <div className={styles.oneLine} data-testid="triage-program">
+      <span>
+        Program <b>{label || "not set"}</b>
+      </span>
+      {label ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className={styles.pushEnd}
+          aria-expanded={open}
+          aria-controls="triage-program-choice"
+          onClick={() => setChanging(!changing)}
+        >
+          {changing ? "Done" : "Change"}
+        </Button>
+      ) : null}
+      {open ? (
+        <div id="triage-program-choice" className={styles.programChoice}>
+          <Choice
+            label="Program"
+            options={programs.map(([code, name]) => [code, name] as const)}
+            value={state.program}
+            onChange={(v) => set("program", v)}
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 /** "Dr P. Singh, ED registrar · (08) 5550 0190", from what is typed. */
 function referrerLine(state: TriageState): string {
@@ -172,12 +244,15 @@ export function ReviewBody({
   return (
     <>
       <ReferrerLine form={form} />
+      <ProgramLine form={form} />
       {done ? (
         <div className={styles.oneLine} data-testid="triage-review-line">
           <span className={styles.from}>Reviewed</span>
           <span>
-            <b className={styles.mono}>{state.text.revTime}</b> · {HOW_NAME[state.how ?? ""]} · {state.where}
+            <b className={styles.mono}>{state.text.revTime}</b> · {HOW_NAME[state.how ?? ""]} ·{" "}
+            {labelOf(VENUES, state.where)}
           </span>
+          {state.referralType ? <span>Referral: {labelOf(REFERRAL_TYPES, state.referralType)}</span> : null}
           {state.arrivedBy || accompanied ? (
             <span>
               Arrived {state.arrivedBy ? `by ${state.arrivedBy.toLowerCase()}` : ""}
@@ -217,6 +292,16 @@ export function ReviewBody({
         </div>
       ) : null}
       <div className={styles.rows} id="triage-review-fields" hidden={folded}>
+        <Row label="Referral type" hint="Who or what referred them" top>
+          <PickOne
+            label="Referral type"
+            noun="referral types"
+            list={REFERRAL_TYPES}
+            common={REFERRAL_TYPES_COMMON}
+            value={state.referralType}
+            onChange={(v) => set("referralType", v)}
+          />
+        </Row>
         <Row label="Reviewed" hint="Date and time" htmlFor="triage-rev-time">
           <div className={styles.inline}>
             <TextInput
@@ -250,8 +335,15 @@ export function ReviewBody({
         <Row label="How">
           <Choice label="How" options={HOW} value={state.how} onChange={(v) => set("how", v)} />
         </Row>
-        <Row label="Where they were">
-          <Choice label="Where they were" options={WHERE} value={state.where} onChange={(v) => set("where", v)} />
+        <Row label="Where they were" top>
+          <PickOne
+            label="Where they were"
+            noun="venues"
+            list={VENUES}
+            common={VENUES_COMMON}
+            value={state.where}
+            onChange={(v) => set("where", v)}
+          />
         </Row>
         <Row label="Arrived by" top>
           <Choice
@@ -390,11 +482,20 @@ export function AssessmentBody({ form }: { form: FormApi }) {
       </div>
       <div className={styles.rows}>
         <Row label="Problems" top>
-          <MultiChips
+          <PickMany
+            id="triage-problems"
             label="Problems"
-            options={PROBLEMS}
+            noun="problems"
+            list={PSOLIS_PROBLEMS}
+            common={PROBLEMS_COMMON}
             values={state.problems}
-            onToggle={(v) => set("problems", toggleIn(state.problems, v))}
+            onChange={(v) => set("problems", v)}
+            other={{
+              code: "other",
+              label: "Other problem, in a few words",
+              value: state.text.problemOther,
+              onChange: (v) => form.setText("problemOther", v),
+            }}
           />
           {suggested.length ? (
             <div className={styles.suggest} data-refocus="problem-suggest">
@@ -407,7 +508,7 @@ export function AssessmentBody({ form }: { form: FormApi }) {
                   className={phoneRows.chip}
                   onClick={() => set("problems", [...state.problems, problem])}
                 >
-                  + {problem}
+                  + {labelOf(PSOLIS_PROBLEMS, problem)}
                 </Button>
               ))}
             </div>

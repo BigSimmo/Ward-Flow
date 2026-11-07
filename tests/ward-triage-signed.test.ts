@@ -35,6 +35,10 @@ function sign(state: WardFlowState, overrides: Partial<TriageSignedEvent> = {}, 
     legal: "cto",
     review: "72h",
     riskFlags: ["violence.now.intent", "violence.bg.prev"],
+    problems: ["suicidal", "aod"],
+    actions: ["bed-request", "police"],
+    venue: "ed",
+    referralType: "self",
     ...overrides,
   });
 }
@@ -58,6 +62,10 @@ describe("RECORD_TRIAGE_SIGNED — who may sign", () => {
       legal: "cto",
       review: "72h",
       riskFlags: [],
+      problems: [],
+      actions: [],
+      venue: null,
+      referralType: null,
     });
     expect(refused.triages ?? []).toEqual([]);
     expect(refused.rejections.length).toBe(seed.rejections.length + 1);
@@ -94,6 +102,10 @@ describe("RECORD_TRIAGE_SIGNED — what is recorded", () => {
         legal: "cto",
         review: "72h",
         riskFlags: ["violence.now.intent", "violence.bg.prev"],
+        problems: ["suicidal", "aod"],
+        actions: ["bed-request", "police"],
+        venue: "ed",
+        referralType: "self",
       },
     ]);
     expect(JSON.stringify(state)).not.toContain("typed assessment text");
@@ -107,6 +119,15 @@ describe("RECORD_TRIAGE_SIGNED — what is recorded", () => {
     ["a review off the list", { review: "tomorrow" as never }],
     ["a factor off the RAMP list", { riskFlags: ["general.now.notreal"] }],
     ["typed text as a factor", { riskFlags: ["Says he will hurt staff"] }],
+    ["a problem off the list", { problems: ["suicidal", "not-a-problem"] as never }],
+    ["typed text as a problem", { problems: ["Hearing voices telling him to leave"] as never }],
+    ["problems that are not a list", { problems: "suicidal" as never }],
+    ["too many problems", { problems: Array.from({ length: 61 }, () => "suicidal") }],
+    ["an action off the list", { actions: ["not-an-action"] as never }],
+    ["typed text as an action", { actions: ["Rang his sister at 3 pm"] as never }],
+    ["a venue off the list", { venue: "Kings Park bench" as never }],
+    ["a referral type off the list", { referralType: "Neighbour called" as never }],
+    ["a missing problems list", { problems: undefined as never }],
   ])("refuses %s and records nothing", (_label, overrides) => {
     const refused = sign(seed, overrides);
     expect(refused.triages ?? []).toEqual([]);
@@ -122,6 +143,39 @@ describe("RECORD_TRIAGE_SIGNED — what is recorded", () => {
     expect(isValidStoredWardFlowState(withText)).toBe(false);
     const orphan = { ...signed, triages: [{ ...signed.triages[0], patientId: "PT-NOT-REAL" }] };
     expect(isValidStoredWardFlowState(orphan)).toBe(false);
+  });
+
+  it("keeps problems and actions in the order chosen, once each, and venue and referral type may be none", () => {
+    const state = sign(seed, {
+      problems: ["aod", "suicidal", "aod"],
+      actions: ["police", "bed-request", "police"],
+      venue: null,
+      referralType: null,
+    });
+    const [record] = state.triages!;
+    expect(record!.problems).toEqual(["aod", "suicidal"]);
+    expect(record!.actions).toEqual(["police", "bed-request"]);
+    expect(record!.venue).toBeNull();
+    expect(record!.referralType).toBeNull();
+  });
+
+  it("restores an older saved copy whose triage has no problems, actions, venue or referral type", () => {
+    const signed = JSON.parse(JSON.stringify(sign(seed)));
+    const { problems, actions, venue, referralType, ...older } = signed.triages[0];
+    expect([problems, actions, venue, referralType]).toEqual([
+      ["suicidal", "aod"],
+      ["bed-request", "police"],
+      "ed",
+      "self",
+    ]);
+    expect(isValidStoredWardFlowState({ ...signed, triages: [older] })).toBe(true);
+    for (const bad of [
+      { problems: ["Typed problem"] },
+      { actions: ["not-an-action"] },
+      { venue: "Typed place" },
+      { referralType: "Typed referrer" },
+    ])
+      expect(isValidStoredWardFlowState({ ...signed, triages: [{ ...older, ...bad }] })).toBe(false);
   });
 
   it("lists a person's triages newest first", () => {
@@ -141,13 +195,49 @@ describe("the form's signed fields carry no typed text", () => {
       f: { ...exampleTriage().f, "general.now.intox": "u" as const, "suicide.now.idea": "n" as const },
     };
     const fields = triageSignedFields(state)!;
-    expect(Object.keys(fields).sort()).toEqual(["legal", "outcome", "patientId", "review", "riskFlags", "urgency"]);
+    expect(Object.keys(fields).sort()).toEqual([
+      "actions",
+      "legal",
+      "outcome",
+      "patientId",
+      "problems",
+      "referralType",
+      "review",
+      "riskFlags",
+      "urgency",
+      "venue",
+    ]);
     expect(fields.riskFlags.sort()).toEqual(
       ["general.now.agit", "other.now.leave", "other.now.nonadn", "violence.now.intent"].sort(),
     );
     const sent = JSON.stringify(fields);
     for (const typed of Object.values(state.text).filter((value) => value.trim().length > 3))
       expect(sent).not.toContain(typed.trim().slice(0, 20));
+  });
+
+  it("send problems, actions, venue and referral type as known codes only, in the order chosen", () => {
+    const state = {
+      ...exampleTriage(),
+      urgency: "C" as const,
+      outcome: "Accepted",
+      review: "72h",
+      where: "ed",
+      referralType: "self",
+      problems: ["aod", "Typed problem", "suicidal", "aod"],
+      actions: ["police", "not-an-action", "bed-request"],
+    };
+    const fields = triageSignedFields(state)!;
+    expect(fields.problems).toEqual(["aod", "suicidal"]);
+    expect(fields.actions).toEqual(["police", "bed-request"]);
+    expect(fields.venue).toBe("ed");
+    expect(fields.referralType).toBe("self");
+    expect(triageSignedFields({ ...state, where: "Typed place", referralType: "Typed" })).toMatchObject({
+      venue: null,
+      referralType: null,
+    });
+    // The reducer accepts exactly what the form sends (on a person this workspace has).
+    const signed = sign(seed, { ...fields, patientId: PATIENT_ID });
+    expect(signed.triages).toHaveLength(1);
   });
 
   it("are not ready until urgency, outcome, legal status and review are chosen", () => {

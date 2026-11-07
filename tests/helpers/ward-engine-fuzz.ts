@@ -1622,7 +1622,8 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       return { type: "END_COMMUNITY_TREATMENT_ORDER", patientId: patient?.id ?? MISSING_ID };
     },
   ],
-  // Triage and risk (7 Nov 2026): a signed triage on a person, now and then naming a factor off the list.
+  // Triage and risk (7 Nov 2026): a signed triage on a person, now and then naming a factor, problem,
+  // action or venue off its list.
   [
     0.5,
     (state, random) => ({
@@ -1633,6 +1634,10 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       legal: pick(random, ["vol", "cto", "nyr"] as const),
       review: "24h",
       riskFlags: chance(random, 0.9) ? ["general.now.agit"] : ["general.now.notreal"],
+      problems: chance(random, 0.9) ? ["suicidal", "aod"] : ["not-a-problem" as never],
+      actions: chance(random, 0.9) ? ["bed-request"] : ["not-an-action" as never],
+      venue: pick(random, ["ed", null, "not-a-venue" as never] as const),
+      referralType: pick(random, ["self", null] as const),
     }),
   ],
   // #816: archive a record added in error. Mostly a newly added one, which nothing names yet.

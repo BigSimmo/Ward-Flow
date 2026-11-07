@@ -49,6 +49,7 @@ import {
   REVIEW,
   type FlagGroup,
 } from "./triage-risk-data";
+import { labelOf, PSOLIS_ACTIONS } from "./triage-psolis-lists";
 import { UrgencyHint } from "./triage-risk-decision";
 import { autoRows, Choice, GuideBox, MultiChips, Reveal, Row, useDisclosure, type FormApi } from "./triage-risk-parts";
 import { useHeadedBox } from "./triage-risk-review";
@@ -58,6 +59,9 @@ import styles from "./triage-risk-form.module.css";
 
 /** How many factor names a long "Covers" line shows before "Show all". */
 const COVERS_SHOWN = 6;
+
+/** Action codes from `PSOLIS_ACTIONS` as chip options, showing each one's plain label. */
+const actionOptions = (codes: readonly string[]) => codes.map((code) => [code, labelOf(PSOLIS_ACTIONS, code)] as const);
 
 const toggleIn = (list: readonly string[], value: string) =>
   list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
@@ -270,10 +274,10 @@ function FdvBlock({ form }: { form: FormApi }) {
     const rows = event.currentTarget.parentElement?.querySelectorAll<HTMLElement>("[data-fdv-question]");
     rows?.[index + 1]?.focus();
   };
-  const followUp = (label: string, options: readonly (readonly [string, string])[]) => (
+  const followUp = (label: string, codes: readonly string[]) => (
     <MultiChips
       label={label}
-      options={options}
+      options={actionOptions(codes)}
       values={state.actions}
       onToggle={(v) => set("actions", toggleIn(state.actions, v))}
     />
@@ -389,10 +393,7 @@ function FdvBlock({ form }: { form: FormApi }) {
             Positive screen: complete the FDV951, offer social work or an FDV service. With reasonable belief of
             significant harm, consent to refer is preferred but not required.
           </span>
-          {followUp("FDV actions", [
-            ["FDV951 started", "FDV951 started"],
-            ["Social work referral", "Social work"],
-          ])}
+          {followUp("FDV actions", ["ref-primary"])}
         </Reveal>
       ) : null}
       {outcome === "Suspected, not disclosed" ? (
@@ -401,10 +402,7 @@ function FdvBlock({ form }: { form: FormApi }) {
             Suspected, not disclosed: note what raised your concern in the assessment. Do not press for disclosure. Ask
             again when they are alone and it is safe, and discuss with social work or a senior.
           </span>
-          {followUp("FDV follow-up", [
-            ["Social work referral", "Social work"],
-            ["Senior consulted", "Senior"],
-          ])}
+          {followUp("FDV follow-up", ["ref-primary", "senior"])}
         </Reveal>
       ) : null}
     </>
@@ -564,7 +562,7 @@ export function RiskBody({ form, onAllFactors }: { form: FormApi; onAllFactors: 
           <span className={styles.grow}>Children or dependants: say who and where they are now in the assessment.</span>
           <MultiChips
             label="Child protection"
-            options={["Child protection notified"]}
+            options={actionOptions(["child-protection"])}
             values={state.actions}
             onToggle={(v) => set("actions", toggleIn(state.actions, v))}
           />

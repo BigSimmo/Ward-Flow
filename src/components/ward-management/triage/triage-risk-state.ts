@@ -32,6 +32,17 @@ import {
   parseHeadedText,
   type DomainEntry,
 } from "./triage-risk-text";
+import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
+
+import {
+  ACTION_CODES,
+  DESK_PROGRAM,
+  PROBLEM_CODES,
+  REFERRAL_TYPE_CODES,
+  REFERRED_TO_ACTIONS,
+  TRIAGE_MAX_PICKS,
+  VENUE_CODES,
+} from "./triage-psolis-lists";
 import { OUTCOMES, TRIAGE_LEGAL_CODES, TRIAGE_REVIEW_CODES, type TriageSignedEvent } from "./triage-record";
 
 /** A RAMP factor: present ("y"), not present ("n") or not known ("u"); absent means not marked. */
@@ -51,13 +62,23 @@ export type TextKey =
   | "interpLang"
   | "refName"
   | "refRole"
-  | "refPhone";
+  | "refPhone"
+  /** The detail for an "Other" pick (7 Nov 2026), kept in React only like every typed box. */
+  | "venueOther"
+  | "referralOther"
+  | "problemOther"
+  | "actionOther";
 
 export type TriageState = {
   /** Who the triage is for, from the record. Not an answer: it sets the banner and what the record offers. */
   person: TriagePerson;
   how: string | null;
+  /** Venue, as a code from `VENUES` (`triage-psolis-lists.ts`). */
   where: string | null;
+  /** Referral type, as a code from `REFERRAL_TYPES`. */
+  referralType: string | null;
+  /** Program, as a code from `PROGRAMS`: filled from the desk, changeable to that stream's programs. */
+  program: string | null;
   present: string | null;
   others: string[];
   /** How they arrived (Review details). */
@@ -69,6 +90,7 @@ export type TriageState = {
   amhw: string | null;
   interp: string | null;
   trans: boolean;
+  /** Problem codes from `PSOLIS_PROBLEMS`, in the order chosen. */
   problems: string[];
   aware: string[];
   mseMode: "box" | "dom";
@@ -76,6 +98,7 @@ export type TriageState = {
   mse: Record<string, DomainEntry>;
   urgency: Tier | null;
   outcome: string | null;
+  /** Action codes from `PSOLIS_ACTIONS`, in the order chosen. */
   actions: string[];
   /** Urgency A: no one needed to be told (with a reason). */
   urgNone: boolean;
@@ -124,17 +147,24 @@ const NO_TEXT: Record<TextKey, string> = {
   refName: "",
   refRole: "",
   refPhone: "",
+  venueOther: "",
+  referralOther: "",
+  problemOther: "",
+  actionOther: "",
 };
 
 /**
  * Nothing clinical chosen. The episode comes from the referral when the referral names one; a person
  * with no such referral starts with no episode either.
  */
-export function blankTriage(person: TriagePerson): TriageState {
+export function blankTriage(person: TriagePerson, desk?: WardFlowRole): TriageState {
   return {
     person,
     how: null,
     where: null,
+    referralType: null,
+    // Program is a desk setting, not a clinical answer, so it is filled in (with Change).
+    program: (desk && DESK_PROGRAM[desk]?.program) ?? null,
     present: null,
     others: [],
     arrivedBy: null,
@@ -370,6 +400,7 @@ export function requirements(state: TriageState, now: number): Requirement[] {
   add("rev", "Interpreter", state.interp && (state.interp === "no" || state.text.interpLang.trim()), false);
   add("note", "Assessment", isWritten(t.note), true);
   add("note", "Problems", state.problems.length, false);
+  if (state.problems.includes("other")) add("note", "Other problem: say what", t.problemOther.trim(), false);
   for (const heading of emptyHeadings(t.note, GUIDES.note)) add("note", `Empty heading: ${heading}`, false, false);
   const answered = mseAnsweredCount(state);
   add(
@@ -393,7 +424,16 @@ export function requirements(state: TriageState, now: number): Requirement[] {
     );
   add("dec", "Outcome", state.outcome, true);
   add("dec", "Mental Health Act", state.legal, true);
-  if (state.actions.includes("Bed request")) add("dec", "Medical clearance", state.medical, true);
+  if (state.actions.includes("bed-request")) add("dec", "Medical clearance", state.medical, true);
+  if (state.actions.includes("other")) add("dec", "Other action: say what", t.actionOther.trim(), false);
+  if (state.outcome === "Referred on")
+    add(
+      "dec",
+      "Referred on: who to",
+      state.actions.some((code) => (REFERRED_TO_ACTIONS as readonly string[]).includes(code)),
+      false,
+      { selector: "[data-testid='triage-actions-more']" },
+    );
   add("risk", "Rest of history", state.restPast, true, radio("triage-rest-past"));
   const unchecked = carriedUnchecked(state);
   if (unchecked.length)
@@ -449,14 +489,44 @@ export const areaShortName = (area: string) => (AREA_NAME[area] ?? area).split("
  */
 export function triageSignedFields(
   state: TriageState,
-): Pick<TriageSignedEvent, "patientId" | "urgency" | "outcome" | "legal" | "review" | "riskFlags"> | null {
+): Pick<
+  TriageSignedEvent,
+  | "patientId"
+  | "urgency"
+  | "outcome"
+  | "legal"
+  | "review"
+  | "riskFlags"
+  | "problems"
+  | "actions"
+  | "venue"
+  | "referralType"
+> | null {
   const { urgency, outcome, legal, review } = state;
   if (!urgency || !isOneOf(OUTCOMES, outcome) || !isOneOf(TRIAGE_LEGAL_CODES, legal)) return null;
   if (!isOneOf(TRIAGE_REVIEW_CODES, review)) return null;
   const riskFlags = allFactors(state)
     .filter((factor) => factor.mark === "y")
     .map((factor) => factor.key);
-  return { patientId: state.person.id, urgency, outcome, legal, review, riskFlags };
+  // Problems, actions, venue and referral type are codes from the webPSOLIS lists (Josh, 7 Nov
+  // 2026): only known codes are sent, in the order chosen, so the reducer's check never refuses them.
+  // The lists' codes are closed unions on the event (`triage-record.ts`).
+  type Codes<K extends "problems" | "actions"> = readonly TriageSignedEvent[K][number][];
+  type Code<K extends "venue" | "referralType"> = readonly NonNullable<TriageSignedEvent[K]>[];
+  const known = <T extends string>(list: readonly T[], codes: readonly string[]): T[] =>
+    [...new Set(codes.filter((code): code is T => isOneOf(list, code)))].slice(0, TRIAGE_MAX_PICKS);
+  return {
+    patientId: state.person.id,
+    urgency,
+    outcome,
+    legal,
+    review,
+    riskFlags,
+    problems: known(PROBLEM_CODES as Codes<"problems">, state.problems),
+    actions: known(ACTION_CODES as Codes<"actions">, state.actions),
+    venue: isOneOf(VENUE_CODES as Code<"venue">, state.where) ? state.where : null,
+    referralType: isOneOf(REFERRAL_TYPE_CODES as Code<"referralType">, state.referralType) ? state.referralType : null,
+  };
 }
 
 const isOneOf = <T extends string>(list: readonly T[], value: string | null): value is T =>

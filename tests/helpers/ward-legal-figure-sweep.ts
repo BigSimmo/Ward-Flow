@@ -1221,6 +1221,10 @@ function candidatesForMovements(
         legal: "cto",
         review: "72h",
         riskFlags: ["violence.now.intent"],
+        problems: ["suicidal"],
+        actions: ["bed-request"],
+        venue: "ed",
+        referralType: "self",
       }));
     case "ARCHIVE_PATIENT":
       // #816. One candidate per patient. The reducer keeps any record that care names, so only a

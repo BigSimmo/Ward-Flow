@@ -1443,16 +1443,17 @@ Source-contract SHA256: 725b593d7e2ffb36dfb415342edb0171d31d75fce007399b4a80e4bc
   Before: No signed triage, or earlier signed triages, on the person
   After: One more signed triage record on the person: time, desk role and closed-list codes
   Scope: ed, community, ward and coordinator in the role table, the same desks as RAISE_REFERRAL; a shared desk is sent a record only with a person it is sent.
-  payload: patientId; now; role; urgency (A to G); outcome (listed); legal (listed code); review (listed code); flags (RAMP factor keys marked present).
+  payload: patientId; now; role; urgency (A to G); outcome (listed); legal (listed code); review (listed code); flags (RAMP factor keys marked present); problems and actions (webPSOLIS list codes, in the order chosen); venue and referralType (webPSOLIS list code or null).
   guards: The person exists on this workspace.
   guards: Urgency is one of A to G.
   guards: Outcome, legal status and review are each from their fixed lists.
   guards: Every flag is a RAMP factor key; unknown fields are dropped.
+  guards: Problems and actions are arrays of at most 60 codes from their webPSOLIS lists (kept once each, in the order chosen); venue and referral type are null or a code from their list. Typed text is refused.
   effects: Appends a triages record (codes only); the patient record's Now tab lists it. No Undo: it is a signed record. Typed text (assessment, mental state, formulation, plan) stays in the form and is never in the event.
   tests: tests/ward-triage-signed.test.ts
   tests: tests/ward-event-permissions.test.ts
   Reviewed source: src/components/ward-management/ward-flow-reducer.ts:2367; SHA256 f55b75681362fa62d620efbea619995810b477aa18d784a972a937c64f03fd4d
-  Reviewed source: src/components/ward-management/triage/triage-signed-reducer.ts:31; SHA256 57d05dfce58ca23e17e66256ea286e5dc8ec5d27d2b05e905eb30a5a722f9b13
+  Reviewed source: src/components/ward-management/triage/triage-signed-reducer.ts:46; SHA256 88ebffb9dc86dd544d9bdac7f561fcf4998a3af62d9a19ffe4211c5325142666
   Reviewed source: src/components/ward-management/ward-access-state.ts:326; SHA256 70fad871bc5e0978d2a090979bdf99aefc8f8f2dbb82ffa361aa7ec63dd6b84c
 - RECORD_CLINICAL_CONTACT — diagram-reviewed; event roles: community, coordinator
   Diagram action notes reviewed against the recorded source revision. Source digests detect subsequent edits; this is not runtime acceptance.

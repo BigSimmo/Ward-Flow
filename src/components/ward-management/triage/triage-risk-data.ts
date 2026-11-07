@@ -62,21 +62,6 @@ export const GUIDES: Readonly<Record<"note" | "rp", readonly GuideGroup[]>> = {
 
 export const FORMULATION_HEADINGS = ["Risk", "Protective", "Warning signs", "Would change it"] as const;
 
-export const PROBLEMS = [
-  "Psychosis",
-  "Mood",
-  "Anxiety",
-  "Self-harm",
-  "Aggression",
-  "Alcohol or drugs",
-  "Cognitive",
-  "Accommodation",
-  "Cultural",
-  "Assault victim",
-  "Adverse drug reaction",
-  "Physical health",
-] as const;
-
 type Factor = readonly [id: string, name: string];
 export type RiskArea = { id: string; name: string; bg: readonly Factor[]; now: readonly Factor[] };
 
@@ -603,12 +588,12 @@ export const MSE_NEGATIVES: readonly (readonly [domain: string, phrase: string, 
 /** Factors a disclosed or suspected family violence screen contradicts as "Not present". */
 export const FDV_FACTORS = ["other.now.fdvn", "other.bg.fdvh"] as const;
 
-/** A current flag (or area prefix) that suggests a problem chip. */
+/** A current flag (or area prefix) that suggests a problem, as a PSOLIS problem code (`triage-psolis-lists.ts`). */
 export const RISK_TO_PROBLEM: readonly (readonly [prefix: string, problem: string])[] = [
-  ["suicide.now", "Self-harm"],
-  ["violence.now", "Aggression"],
-  ["general.now.intox", "Alcohol or drugs"],
-  ["other.now.self", "Physical health"],
+  ["suicide.now", "harm-self"],
+  ["violence.now", "harm-others"],
+  ["general.now.intox", "aod"],
+  ["other.now.self", "physical"],
 ];
 
 /** Flags that bring the "Consider A or B. You choose." hint. A hint only, never a choice. */
@@ -636,23 +621,11 @@ export const FDV_NOT_ASKED = [
   ["interp", "No interpreter"],
 ] as const;
 
-/** Who was told, for urgency A: one of these, or None needed with a reason. */
+/** Who was told, for urgency A, as action codes (`PSOLIS_ACTIONS`): one of these, or None needed with a reason. */
 export const WHO_TOLD = [
-  ["Police notified", "Police"],
-  ["Ambulance notified", "Ambulance"],
-  ["Senior consulted", "Senior"],
-] as const;
-
-export const ACTIONS = [
-  ["Intake meeting", "Intake meeting"],
-  ["Bed request", "Bed request"],
-  ["Police notified", "Police"],
-  ["Ambulance notified", "Ambulance"],
-  ["Aboriginal MH worker notified", "Aboriginal MH worker"],
-  ["Child protection notified", "Child protection"],
-  ["Senior consulted", "Senior consulted"],
-  ["Refer community team", "Refer community team"],
-  ["GP letter", "GP letter"],
+  ["police", "Police"],
+  ["ambulance", "Ambulance"],
+  ["senior", "Senior"],
 ] as const;
 
 /**
@@ -675,7 +648,6 @@ export const HOW = [
   ["other", "Other"],
 ] as const;
 
-export const WHERE = ["ED", "Ward", "Clinic", "Home", "Custody", "Other"] as const;
 export const PURPOSE = ["Referral", "Assessment", "Information", "GP advice", "GP liaison"] as const;
 export const EPISODE = [
   ["ED", "ED episode"],
@@ -823,7 +795,7 @@ export const HOW_TO = [
   ],
 ] as const;
 
-/** Where each PSOLIS field went on this form. */
+/** Where each PSOLIS field went on this form. Copy and the summary write the exact PSOLIS value for each pick-list. */
 export const PSOLIS_FIELD_MAP = [
   ["DMR publishing", "Episode (one tap)"],
   ["Start date and time", "Reviewed, with Now"],
@@ -833,21 +805,22 @@ export const PSOLIS_FIELD_MAP = [
   ["Interpreter required, language", "Interpreter needed, with the language"],
   ["Triaged by, designation", "From your login"],
   ["Medium", "How"],
-  ["Stream, program", "From your desk"],
-  ["Venue, collected at", "Where they were"],
+  ["Stream, program", "From your desk, with Change (that stream's programs only)"],
+  ["Venue, collected at", "Where they were: common venues, then More for the PSOLIS list"],
   ["Consumer and associate present", "Person present, others present"],
-  ["Referral medium, type, name, contact", "From the referral: referrer name, role and phone, with Change"],
+  ["Referral type", "Referral type: common types, then More for the PSOLIS list"],
+  ["Referral medium, name, contact", "From the referral: referrer name, role and phone, with Change"],
   ["Purpose", "Purpose"],
   ["Reason", "Assessment box (Why now, Request)"],
   ["Urgency", "Urgency tiles"],
   ["Outcome", "Outcome"],
-  ["Problems and comments", "Problem chips; detail in the box"],
+  ["Problems and comments", "Problem chips from the PSOLIS list, then More; detail in the box"],
   [
     "History, medical, treatments, drug and alcohol, social, forensic, MSE, formulation, communication (9 boxes)",
     "One Assessment box with a guide",
   ],
   ["Mental state examination", "Mental state section: tap what you observed, add detail"],
-  ["Action plan, referred on", "Action chips"],
+  ["Action plan, referred on", "Action chips from the PSOLIS list, then More"],
   ["Participants", "Author added; consult line"],
   ["Advance health directive, legal status", "Triage decision"],
   ["Consumer and carer aware", "Aware of referral chips"],

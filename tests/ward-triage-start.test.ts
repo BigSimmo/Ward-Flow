@@ -217,3 +217,52 @@ describe("the document", () => {
     expect(text).toMatch(/\nNot signed\. Reviewer: Dr S\. Chen/);
   });
 });
+
+describe("webPSOLIS pick-lists on the form (7 Nov 2026)", () => {
+  const person = triagePersonFromWorld(world({}));
+
+  it("fills only the program from the desk, as a code, and nothing clinical", () => {
+    const state = blankTriage(person, "ed");
+    expect(state.program).toBe("rph-ed-triage");
+    expect(state.where).toBeNull();
+    expect(state.referralType).toBeNull();
+    expect(state.problems).toEqual([]);
+    expect(state.actions).toEqual([]);
+    expect(blankTriage(person, "officer").program).toBeNull();
+  });
+
+  it("asks for medical clearance on a bed request, by code", () => {
+    const state = { ...blankTriage(person), actions: ["bed-request"] };
+    const need = requirements(state, Date.now()).find((r) => r.label === "Medical clearance");
+    expect(need?.blocks).toBe(true);
+    expect(need?.ok).toBe(false);
+  });
+
+  it("counts a told code for urgency A", () => {
+    const told = requirements({ ...blankTriage(person), urgency: "A", actions: ["police"] }, Date.now());
+    expect(told.find((r) => r.label === "Who was told (urgency A)")?.ok).toBe(true);
+  });
+
+  it("asks, without blocking, for the detail of an Other pick", () => {
+    const state = { ...blankTriage(person), problems: ["other"], actions: ["other"] };
+    const reqs = requirements(state, Date.now());
+    for (const label of ["Other problem: say what", "Other action: say what"]) {
+      const req = reqs.find((r) => r.label === label);
+      expect(req, label).toMatchObject({ ok: false, blocks: false });
+    }
+    const typed = requirements(
+      { ...state, text: { ...state.text, problemOther: "Synthetic detail", actionOther: "Synthetic step" } },
+      Date.now(),
+    );
+    expect(typed.filter((r) => r.label.startsWith("Other ")).every((r) => r.ok)).toBe(true);
+  });
+
+  it("asks, without blocking, who a Referred on outcome went to", () => {
+    const state = { ...blankTriage(person), outcome: "Referred on" };
+    const ask = (actions: string[]) =>
+      requirements({ ...state, actions }, Date.now()).find((r) => r.label === "Referred on: who to");
+    expect(ask([])).toMatchObject({ ok: false, blocks: false });
+    expect(ask(["ref-community-mh"])?.ok).toBe(true);
+    expect(requirements(blankTriage(person), Date.now()).some((r) => r.label === "Referred on: who to")).toBe(false);
+  });
+});
