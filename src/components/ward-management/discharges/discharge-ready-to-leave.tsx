@@ -75,7 +75,8 @@ export function ReadyToLeave({
           tone={done === items.length ? "success" : undefined}
         />
       </header>
-      <p>
+      {/* Drawer review (6 Nov 2026): a small muted note, never larger than the section title. */}
+      <p className={styles.demoNote}>
         Temporary checklist for this page only. Starting ticks are invented for the demo; changes do not record
         discharge completion.
       </p>

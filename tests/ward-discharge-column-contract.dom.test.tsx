@@ -111,8 +111,6 @@ describe("the discharges board's column contract", () => {
 
   it.each(GROUPS)("keeps person, timing and hold-up columns aligned in %s", (key) => {
     renderBoard();
-    // The unconditional named detail region stays mounted throughout this all-row walk.
-    const details = screen.getByRole("region", { name: "Selected discharge details" });
     expect(headersFor(key)).toEqual(WORKLIST_COLUMNS);
     // Each group shows its first rows, then Show more (redesign): open the rest before walking them.
     const more = screen.queryByTestId(`ward-discharge-more-${key}`)?.querySelector("button");
@@ -137,7 +135,8 @@ describe("the discharges board's column contract", () => {
         else expect(blockerCell.textContent).toMatch(/^Not held up(, CLD|$)/);
       }
       fireEvent.click(within(row).getAllByRole("button")[0]);
-      expect(details).toBeInTheDocument();
+      // Drawer review (6 Nov 2026): the chosen release opens in the kit drawer (PanelDrawer).
+      const details = screen.getByTestId("ward-discharge-detail");
       const reported = within(details).getByText("Last reported", { selector: "dt" }).nextElementSibling;
       expect(reported?.textContent, "freshness remains available in the selected release detail").toMatch(
         /Confirmed \d{2}:\d{2}|Never confirmed/u,

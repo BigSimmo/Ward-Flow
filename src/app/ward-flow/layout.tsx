@@ -29,6 +29,7 @@ import { WardFeatureFlagLink } from "@/components/ward-management/shell/ward-fea
 import { WardOfflineLinks } from "@/components/ward-management/shell/ward-offline-links";
 import { WardLiveRegion } from "@/components/ward-management/shell/ward-live-region";
 import { NextRail as WardRail } from "@/components/ward-management/shell-next/next-rail";
+import { NextShellBoundary } from "@/components/ward-management/shell-next/next-shell-boundary";
 import { WardMainFocusTarget } from "@/components/ward-management/shell/ward-main-focus-target";
 import { WardSkipToActNow } from "@/components/ward-management/shell/ward-skip-to-act-now";
 import { TvLockGuard } from "@/components/ward-management/bed-meeting/tv-lock-guard";
@@ -223,8 +224,13 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
               <WardSkipToActNow />
               {/* P073: "Skip to main content" moves focus into the page's main. */}
               <WardMainFocusTarget />
+              {/* TE-06: the route `error.tsx` cannot wrap this layout, so the rail and the top bar each have
+              a light boundary (next-shell-boundary.tsx). A broken one shows a short line with Reload page
+              and the rest of the ward keeps working. */}
               <div className={styles.shellRow}>
-                <WardRail />
+                <NextShellBoundary label="The sidebar">
+                  <WardRail />
+                </NextShellBoundary>
                 {/* Gives the rail its stored or tablet shape before the first paint (ward-rail-early.ts),
               so the sidebar does not fold and slide the page once the app loads. */}
                 <WardFirstDocumentOnly>
@@ -235,7 +241,9 @@ export default async function WardFlowMockupLayout({ children }: { children: Rea
                   />
                 </WardFirstDocumentOnly>
                 <div className={styles.shellContent} data-wf-scroller="">
-                  <WardBarMount />
+                  <NextShellBoundary label="The top bar">
+                    <WardBarMount />
+                  </NextShellBoundary>
                   {/* A1-17: until the page's code is running, taps do nothing; say so rather than look
                 ready. Hidden once the header is ready (`data-wf-bar-ready`, ward-early-tap.ts). */}
                   <p className={styles.loadingNote} role="status" data-testid="ward-loading-note" data-print-hide>

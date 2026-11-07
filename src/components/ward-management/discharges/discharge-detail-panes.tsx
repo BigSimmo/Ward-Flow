@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { DischargeCareJourney } from "./discharge-care-journey";
 import Link from "next/link";
-import { ChevronRight, ClipboardList } from "lucide-react";
 import { releaseBand, type ReleaseBand } from "@/components/ward-management/ward-bed-availability";
 import { formatInstant } from "@/components/ward-management/ward-clock";
 import { parseReleaseDayInstant } from "@/components/ward-management/ward/release-day";
@@ -14,12 +13,10 @@ import { WardFreshness } from "@/components/ward-management/ward-freshness";
 import type { BedRelease } from "@/components/ward-management/ward-model";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
 import {
-  Badge,
   Button,
-  EmptyState,
   Field,
-  PillTabs,
   StatusGlyph,
+  StatusPill,
   TIME_FIELD_ERROR,
   TimeField,
   buttonClass,
@@ -45,59 +42,89 @@ import { HELD_UP, pastWords, type ReleasePanelPart } from "./discharge-release-a
 import type { DischargeWorkspaceState } from "./use-discharge-workspace-state";
 import { DischargeMessageWard } from "./discharge-message-ward";
 
-/* The discharge detail panel's three states, moved unchanged from `discharge-board.tsx`. */
+/*
+ * The discharge detail panel, moved from `discharge-board.tsx`. Drawer review (6 Nov 2026): it opens
+ * in the kit PanelDrawer at every width. The drawer draws the head (name, one subtitle line, status
+ * tag) and the tabs; these panes draw only the body.
+ */
 
-const DETAIL_TABS = [
-  ["milestones", "Milestones"],
-  ["barriers", "Held up"],
-  ["transport", "Transport"],
-  ["dossier", "Record"],
-] as const;
-
-function tabPanelProps(
-  prefix: string,
-  tab: DischargeWorkspaceState["drawerTab"],
-  active: DischargeWorkspaceState["drawerTab"],
-) {
-  return {
-    role: "tabpanel",
-    id: `${prefix}-panel-${tab}`,
-    "aria-labelledby": `${prefix}-tab-${tab}`,
-    tabIndex: 0,
-    hidden: active !== tab,
-  } as const;
+/** The drawer's tabs: milestones, held up, transport and the record. */
+export function dischargeDrawerTabs(hasBlocker: boolean) {
+  return [
+    { id: "milestones" as const, label: "Milestones" },
+    {
+      id: "barriers" as const,
+      // Post-merge audit (4 Nov 2026): Held up carries the amber glyph while a blocker is recorded.
+      label: hasBlocker ? (
+        <>
+          <StatusGlyph tone="warning" size={9} />
+          Held up
+        </>
+      ) : (
+        "Held up"
+      ),
+    },
+    { id: "transport" as const, label: "Transport" },
+    { id: "dossier" as const, label: "Record" },
+  ];
 }
 
-/** The detail panel's tabs: milestones, barriers, transport and dossier. */
-function DischargeDetailTabs({
-  idPrefix,
-  hasBlocker,
-  drawerTab,
-  setDrawerTab,
-}: {
-  idPrefix: string;
-  hasBlocker: boolean;
-  drawerTab: DischargeWorkspaceState["drawerTab"];
-  setDrawerTab: DischargeWorkspaceState["setDrawerTab"];
-}) {
-  // Mock-up (1 Nov 2026): the kit's pill tabs, a rounded track with the chosen tab raised, as Home's
-  // Activity panel. Barriers carries the amber held-up glyph while a blocker is recorded
-  // (post-merge audit, 4 Nov 2026: held up is amber everywhere; red is only for past the date).
+export type DischargeDrawerHead = { title: ReactNode; subtitle: ReactNode; tag: ReactNode; hasBlocker: boolean };
+
+function subtitleLine(parts: (ReactNode | null | undefined | false)[]) {
+  const shown = parts.filter(Boolean) as ReactNode[];
   return (
-    <PillTabs
-      items={DETAIL_TABS.map(([id, label]) => ({
-        id,
-        label,
-        tone: id === "barriers" && hasBlocker ? ("warning" as const) : undefined,
-      }))}
-      value={drawerTab}
-      onChange={setDrawerTab}
-      label="Discharge inspection sections"
-      idPrefix={idPrefix}
-      fill
-      className={pageStyles.detailTabs}
-    />
+    <span className={pageStyles.drawerSubtitle}>
+      {shown.map((part, index) => (
+        <span key={index} className={pageStyles.drawerSubtitlePart}>
+          {index > 0 ? <span aria-hidden="true">· </span> : null}
+          {part}
+        </span>
+      ))}
+    </span>
   );
+}
+
+/** The head of an admission record opened from History. */
+export function recordDrawerHead(s: DischargeWorkspaceState, record: DischargeRecord): DischargeDrawerHead {
+  return {
+    title: recordName(record),
+    subtitle: subtitleLine([
+      record.identity.kind === "linked" ? (
+        <span className={pageStyles.mono}>UMRN {record.identity.patient.umrn}</span>
+      ) : null,
+      unitLabel(s.selectedUnit, record.unitId),
+    ]),
+    tag: s.detailTone ? <StatusPill tone={s.detailTone}>{s.detailBadgeLabel}</StatusPill> : null,
+    hasBlocker: Boolean(record.blockReason),
+  };
+}
+
+/**
+ * The head of a bed release opened from Now, the same on a phone and a wider screen: the person,
+ * surname first (or the ward when no person is linked), then UMRN, ward and service on one line.
+ */
+export function releaseDrawerHead(s: DischargeWorkspaceState, release: BedRelease): DischargeDrawerHead {
+  const record = s.linkedReleaseRecord;
+  const personName = record ? recordName(record) : null;
+  const wardName = unitLabel(s.selectedUnit, release.unitId);
+  const heldUp = release.state !== "discharged" && release.blocker !== null;
+  return {
+    title: personName ?? wardName,
+    subtitle: subtitleLine([
+      record?.identity.kind === "linked" ? (
+        <span className={pageStyles.mono}>UMRN {record.identity.patient.umrn}</span>
+      ) : null,
+      personName ? wardName : null,
+      healthServiceLabel(s.selectedUnit),
+    ]),
+    tag: s.detailTone ? <StatusPill tone={s.detailTone}>{heldUp ? HELD_UP : s.detailBadgeLabel}</StatusPill> : null,
+    hasBlocker: Boolean(release.blocker),
+  };
+}
+
+function paneClass(tab: DischargeWorkspaceState["drawerTab"], active: DischargeWorkspaceState["drawerTab"]) {
+  return tab === active ? pageStyles.tabPane : pageStyles.tabPaneHidden;
 }
 
 /** An admission record opened from History: identity, milestones, barriers, transport and dossier. */
@@ -121,7 +148,6 @@ export function DischargeRecordDetail({
   }, []);
   const actor = s.recordActorFor(activeRecord.unitId);
   const canUpdateDate = actor.role === "ward" || actor.role === "coordinator";
-  const tabIdPrefix = useId();
   const {
     dayZero,
     dispatch,
@@ -131,37 +157,10 @@ export function DischargeRecordDetail({
     newTimeDraft,
     setNewTimeDraft,
     drawerTab,
-    setDrawerTab,
     selectedUnit,
-    detailTone,
-    detailBadgeLabel,
   } = s;
-  const tabList = (hasBlocker: boolean) => (
-    <DischargeDetailTabs
-      idPrefix={tabIdPrefix}
-      hasBlocker={hasBlocker}
-      drawerTab={drawerTab}
-      setDrawerTab={setDrawerTab}
-    />
-  );
   return (
     <>
-      <div className={pageStyles.identity}>
-        <div className={pageStyles.identityText}>
-          <h3 className={pageStyles.patientFullName}>{recordName(activeRecord)}</h3>
-          <p className={pageStyles.identityMeta}>
-            {activeRecord.identity.kind === "linked" && (
-              <span className={pageStyles.mono}>UMRN {activeRecord.identity.patient.umrn}</span>
-            )}
-            <span>{unitLabel(selectedUnit, activeRecord.unitId)}</span>
-          </p>
-        </div>
-        {detailTone ? (
-          <Badge tone={detailTone} size="sm">
-            {detailBadgeLabel}
-          </Badge>
-        ) : null}
-      </div>
       <dl className={pageStyles.detailStats}>
         <div>
           <dt>Expected out</dt>
@@ -173,12 +172,7 @@ export function DischargeRecordDetail({
         </div>
       </dl>
 
-      {tabList(Boolean(activeRecord.blockReason))}
-
-      <div
-        {...tabPanelProps(tabIdPrefix, "milestones", drawerTab)}
-        className={drawerTab === "milestones" ? pageStyles.tabPane : pageStyles.tabPaneHidden}
-      >
+      <div className={paneClass("milestones", drawerTab)}>
         <RecordedDischargeMilestones
           title="Milestones"
           milestones={[
@@ -218,10 +212,7 @@ export function DischargeRecordDetail({
         </dl>
       </div>
 
-      <div
-        {...tabPanelProps(tabIdPrefix, "barriers", drawerTab)}
-        className={drawerTab === "barriers" ? pageStyles.tabPane : pageStyles.tabPaneHidden}
-      >
+      <div className={paneClass("barriers", drawerTab)}>
         {activeRecord.blockReason ? (
           <div className={pageStyles.barrierBox}>
             <div className={pageStyles.barrierText}>
@@ -243,10 +234,7 @@ export function DischargeRecordDetail({
         )}
       </div>
 
-      <div
-        {...tabPanelProps(tabIdPrefix, "transport", drawerTab)}
-        className={drawerTab === "transport" ? pageStyles.tabPane : pageStyles.tabPaneHidden}
-      >
+      <div className={paneClass("transport", drawerTab)}>
         <dl className={pageStyles.factList}>
           <dt>Booking reference</dt>
           <dd>Not recorded</dd>
@@ -260,10 +248,7 @@ export function DischargeRecordDetail({
         </dl>
       </div>
 
-      <div
-        {...tabPanelProps(tabIdPrefix, "dossier", drawerTab)}
-        className={drawerTab === "dossier" ? pageStyles.tabPane : pageStyles.tabPaneHidden}
-      >
+      <div className={paneClass("dossier", drawerTab)}>
         <dl className={pageStyles.factList}>
           <dt>Expected discharge</dt>
           <dd>
@@ -439,20 +424,20 @@ export function DischargeReleaseDetail({
   s,
   detailRelease,
   openOn,
+  departure,
 }: {
   s: DischargeWorkspaceState;
   detailRelease: BedRelease;
   openOn: ReleasePanelPart | null;
+  /** "Going to", chosen before Record discharge; it sits in the body, not the crowded foot. */
+  departure?: ReactNode;
 }) {
-  const tabIdPrefix = useId();
   const {
     dayZero,
     now,
     isPhone,
     phoneReleaseMore,
     setPhoneReleaseMore,
-    drawerTab,
-    setDrawerTab,
     readyChange,
     setReadyChange,
     ticksFor,
@@ -460,8 +445,6 @@ export function DischargeReleaseDetail({
     linkedReleaseRecord,
     releaseOnCto,
     selectedUnit,
-    detailTone,
-    detailBadgeLabel,
     releasePaneClass,
   } = s;
   const barrierRef = useRef<HTMLDivElement>(null);
@@ -489,132 +472,77 @@ export function DischargeReleaseDetail({
     return () => window.clearTimeout(timer);
   }, [openOn]);
   const overdue = detailRelease.state !== "discharged" && detailRelease.expectedAt < now;
-  const heldUp = detailRelease.state !== "discharged" && detailRelease.blocker !== null;
-  const badgeLabel = heldUp ? HELD_UP : detailBadgeLabel;
-  const tabList = (hasBlocker: boolean) => (
-    <DischargeDetailTabs
-      idPrefix={tabIdPrefix}
-      hasBlocker={hasBlocker}
-      drawerTab={drawerTab}
-      setDrawerTab={setDrawerTab}
-    />
-  );
-  const releasePanelProps = (tab: DischargeWorkspaceState["drawerTab"]) =>
-    isPhone ? {} : tabPanelProps(tabIdPrefix, tab, drawerTab);
-  const personName = linkedReleaseRecord ? recordName(linkedReleaseRecord) : null;
   const wardName = unitLabel(selectedUnit, detailRelease.unitId);
   return (
     <>
+      {/* The drawer's head names the person, then UMRN, ward and service, the same at every width. */}
       {isPhone ? (
-        <>
-          {/* Redesign (Josh, 30 Oct): the person leads, surname first; the ward second. */}
-          <div className={pageStyles.phIdentity}>
-            {/* Phone audit (Josh, 1 Nov 2026): the status tag sits beside the name, then one context line. */}
-            <div className={pageStyles.phTitle}>
-              <h3 className={pageStyles.patientFullName}>{personName ?? wardName}</h3>
-              {detailTone ? (
-                <Badge tone={detailTone} size="sm">
-                  {badgeLabel}
-                </Badge>
-              ) : null}
-            </div>
-            <p className={pageStyles.phIdentityMeta}>
-              {[
-                personName ? wardName : null,
-                healthServiceLabel(selectedUnit),
-                linkedReleaseRecord?.identity.kind === "linked" ? linkedReleaseRecord.identity.patient.umrn : null,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
-            </p>
+        <dl className={pageStyles.phFacts}>
+          <div>
+            <dt>{detailRelease.state === "discharged" ? "Released" : "Expected out"}</dt>
+            <dd className={pageStyles.mono}>
+              {recordedMoment(
+                detailRelease.state === "discharged" ? detailRelease.confirmedAt : detailRelease.expectedAt,
+                dayZero,
+              )}
+            </dd>
           </div>
-          <dl className={pageStyles.phFacts}>
-            <div>
-              <dt>{detailRelease.state === "discharged" ? "Released" : "Expected out"}</dt>
-              <dd className={pageStyles.mono}>
-                {recordedMoment(
-                  detailRelease.state === "discharged" ? detailRelease.confirmedAt : detailRelease.expectedAt,
-                  dayZero,
-                )}
-              </dd>
-            </div>
-            {/* One cell for how the release stands against its date (was When and Against date). */}
-            <div>
-              <dt>When</dt>
-              <dd>
-                {detailRelease.state === "discharged" ? (
-                  "Departed"
-                ) : overdue ? (
-                  <>
-                    <StatusGlyph tone="danger" size={9} /> {pastWords(now - detailRelease.expectedAt)}
-                  </>
-                ) : (
-                  `${BAND_LABELS[releaseBand(detailRelease, now) as ReleaseBand]} · in ${durMinutes(detailRelease.expectedAt - now)}`
-                )}
-              </dd>
-            </div>
-            <div className={releaseList.factWide}>
-              <dt>Destination</dt>
-              <dd>
-                {LEAVING_DESTINATIONS.find((item) => item.id === linkedReleaseRecord?.leavingDestination)?.label ??
-                  "Not recorded"}
-              </dd>
-            </div>
-          </dl>
-        </>
+          {/* One cell for how the release stands against its date (was When and Against date). */}
+          <div>
+            <dt>When</dt>
+            <dd>
+              {detailRelease.state === "discharged" ? (
+                "Departed"
+              ) : overdue ? (
+                <>
+                  <StatusGlyph tone="danger" size={9} /> {pastWords(now - detailRelease.expectedAt)}
+                </>
+              ) : (
+                `${BAND_LABELS[releaseBand(detailRelease, now) as ReleaseBand]} · in ${durMinutes(detailRelease.expectedAt - now)}`
+              )}
+            </dd>
+          </div>
+          <div className={releaseList.factWide}>
+            <dt>Destination</dt>
+            <dd>
+              {LEAVING_DESTINATIONS.find((item) => item.id === linkedReleaseRecord?.leavingDestination)?.label ??
+                "Not recorded"}
+            </dd>
+          </div>
+        </dl>
       ) : (
-        <>
-          <div className={pageStyles.identity}>
-            <div className={pageStyles.identityText}>
-              <div className={pageStyles.identityTitle}>
-                <h3 className={pageStyles.patientFullName}>{personName ?? wardName}</h3>
-                {detailTone ? (
-                  <Badge tone={detailTone} size="sm">
-                    {badgeLabel}
-                  </Badge>
-                ) : null}
-              </div>
-              <p className={pageStyles.identityMeta}>
-                {linkedReleaseRecord?.identity.kind === "linked" && (
-                  <span className={pageStyles.mono}>{linkedReleaseRecord.identity.patient.umrn}</span>
-                )}
-                <span>{wardName}</span>
-                <span>{healthServiceLabel(selectedUnit)}</span>
-              </p>
-            </div>
+        <dl className={pageStyles.factTiles}>
+          <div>
+            <dt>{detailRelease.state === "discharged" ? "Released" : "Expected out"}</dt>
+            <dd className={pageStyles.mono}>
+              {recordedMoment(
+                detailRelease.state === "discharged" ? detailRelease.confirmedAt : detailRelease.expectedAt,
+                dayZero,
+              )}
+            </dd>
           </div>
-          <dl className={pageStyles.factTiles}>
-            <div>
-              <dt>{detailRelease.state === "discharged" ? "Released" : "Expected out"}</dt>
+          {overdue ? (
+            <div data-tone="danger">
+              <dt>Overdue by</dt>
               <dd>
-                {recordedMoment(
-                  detailRelease.state === "discharged" ? detailRelease.confirmedAt : detailRelease.expectedAt,
-                  dayZero,
-                )}
+                <StatusGlyph tone="danger" size={9} />
+                {pastWords(now - detailRelease.expectedAt).replace(/ past$/, "")}
               </dd>
             </div>
-            {overdue ? (
-              <div data-tone="danger">
-                <dt>Overdue by</dt>
-                <dd>
-                  <StatusGlyph tone="danger" size={9} />
-                  {pastWords(now - detailRelease.expectedAt).replace(/ past$/, "")}
-                </dd>
-              </div>
-            ) : detailRelease.state !== "discharged" ? (
-              <div>
-                <dt>Due in</dt>
-                <dd>{durMinutes(detailRelease.expectedAt - now)}</dd>
-              </div>
-            ) : (
-              <div>
-                <dt>Stage</dt>
-                <dd>Departed</dd>
-              </div>
-            )}
-          </dl>
-        </>
+          ) : detailRelease.state !== "discharged" ? (
+            <div>
+              <dt>Due in</dt>
+              <dd className={pageStyles.mono}>{durMinutes(detailRelease.expectedAt - now)}</dd>
+            </div>
+          ) : (
+            <div>
+              <dt>Stage</dt>
+              <dd>Departed</dd>
+            </div>
+          )}
+        </dl>
       )}
+      {departure}
 
       {isPhone && linkedReleaseRecord?.identity.kind === "linked" ? (
         // A4-22 (audit round 2): on the phone the link opens the person's own page
@@ -627,9 +555,7 @@ export function DischargeReleaseDetail({
         </Link>
       ) : null}
 
-      {isPhone ? null : tabList(Boolean(detailRelease.blocker))}
-
-      <div {...releasePanelProps("milestones")} className={releasePaneClass("milestones")}>
+      <div className={releasePaneClass("milestones")}>
         <RecordedDischargeMilestones
           title="Milestones"
           milestones={[
@@ -688,7 +614,7 @@ export function DischargeReleaseDetail({
         />
       </div>
 
-      <div ref={panelRef} {...releasePanelProps("barriers")} className={releasePaneClass("barriers")}>
+      <div ref={panelRef} className={releasePaneClass("barriers")}>
         <div ref={barrierRef} tabIndex={-1} className={releaseList.focusTarget} aria-label="Held up">
           {detailRelease.blocker ? (
             <div className={pageStyles.barrierBox}>
@@ -738,7 +664,7 @@ export function DischargeReleaseDetail({
           {phoneReleaseMore ? "Hide transport and record" : "Show transport and record"}
         </button>
       ) : null}
-      <div {...releasePanelProps("transport")} className={releasePaneClass("transport")}>
+      <div className={releasePaneClass("transport")}>
         <dl className={pageStyles.factList}>
           <dt>Booking reference</dt>
           <dd>Not recorded</dd>
@@ -749,7 +675,7 @@ export function DischargeReleaseDetail({
         </dl>
       </div>
 
-      <div {...releasePanelProps("dossier")} className={releasePaneClass("dossier")}>
+      <div className={releasePaneClass("dossier")}>
         <dl className={pageStyles.factList}>
           <dt>{detailRelease.state === "discharged" ? "Recorded release" : "Expected release"}</dt>
           <dd>
@@ -788,46 +714,5 @@ export function DischargeReleaseDetail({
         </dl>
       </div>
     </>
-  );
-}
-
-/** Nothing selected: the prompt and, on Now, the first blocked releases. */
-export function DischargeRestingDetail({ s }: { s: DischargeWorkspaceState }) {
-  const { units, population, records, releaseGroups, visibleReleaseGroups, selectRelease } = s;
-  return (
-    <div className={pageStyles.resting}>
-      <EmptyState icon={ClipboardList} title="Select a record to view dates, hold-ups and ward follow-up." />
-      {population === "releases" && visibleReleaseGroups.includes("blocked") && releaseGroups.blocked.length > 0 && (
-        <div className={pageStyles.restingQueue}>
-          <h3 className={pageStyles.sectionLabel}>
-            Blocked <span className={pageStyles.groupCount}>{releaseGroups.blocked.length}</span>
-          </h3>
-          <ul>
-            {releaseGroups.blocked.slice(0, 4).map((rel) => {
-              const u = units.find((candidate) => candidate.id === rel.unitId);
-              const l = records.find((candidate) => candidate.admissionId === rel.admissionId);
-              return (
-                <li key={rel.id}>
-                  <button
-                    type="button"
-                    className={pageStyles.restingItem}
-                    onClick={(e) => selectRelease(rel.id, e.currentTarget)}
-                  >
-                    <StatusGlyph tone="warning" size={9} />
-                    <span className={pageStyles.restingItemText}>
-                      <span className={pageStyles.restingItemTitle}>
-                        {unitLabel(u, rel.unitId)} {l ? `· ${recordName(l)}` : ""}
-                      </span>
-                      <span className={pageStyles.secondary}>{rel.blocker}</span>
-                    </span>
-                    <ChevronRight size={16} aria-hidden="true" className={pageStyles.restingArrow} />
-                  </button>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-    </div>
   );
 }

@@ -2885,3 +2885,113 @@
     height: var(--wf-h-md);
   }
 }
+
+/* ---- Job drawer (drawer review, 6 Nov 2026) ----
+   The job opens in the kit PanelDrawer at every width. The body is the drawer's one scroll; the
+   head, tabs and foot stay put. */
+.jobDrawer {
+  width: min(100%, 30rem);
+}
+
+.jobDrawerBody {
+  gap: var(--wf-s-4);
+  padding: var(--wf-s-4);
+}
+
+.drawerSubtitle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 6px;
+  min-width: 0;
+  white-space: normal;
+}
+
+/* Route: one line, the trip, then provider, road time and ETA, then the visible road caveat. */
+.routeLine {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.routeTrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--wf-s-2);
+  margin: 0;
+  color: var(--wf-ink-1);
+  font: 600 var(--wf-fs-16) / var(--wf-lh-16, 1.35) var(--wf-font);
+}
+
+.routeTrip > span[aria-hidden] {
+  color: var(--wf-ink-3);
+  font-weight: 400;
+}
+
+.routeMeta {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.routeMeta b {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+
+.routeCaveat {
+  margin: 2px 0 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.jobDrawerBody .progress {
+  padding: var(--wf-s-3) 0;
+  border-block: 1px solid var(--wf-line);
+}
+
+/* Forms still to upload: a neutral row, tone only in the glyph (D-94). */
+.jobDrawerBody .formsLine {
+  background: var(--wf-surface);
+}
+
+.jobDrawerBody .formsLine:hover {
+  background: var(--wf-surface-2, var(--wf-surface));
+}
+
+/* The foot: the one next step full width and filled, then the quiet tools in one row of equal
+   buttons. Every button is the same height. */
+.jobDrawerTools > * {
+  flex: 1 1 0;
+}
+
+[data-drawer-foot] .phStageRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  width: 100%;
+}
+
+[data-drawer-foot] .phNextStep.phNextStep {
+  width: 100%;
+  height: var(--wf-h-lg, 2.75rem);
+}
+
+[data-drawer-foot] .nextNote {
+  margin: 0;
+}
+
+@media (max-width: 46.4375rem) {
+  .jobDrawer {
+    width: 100%;
+  }
+
+  .jobDrawerBody .factList > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}
+
+.jobDrawerBody > .detailTab {
+  margin-top: var(--wf-s-1);
+}

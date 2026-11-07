@@ -31,12 +31,6 @@ type Known = { file: string; kind: Kind; sites: readonly string[]; reason: strin
 
 const KNOWN: readonly Known[] = [
   {
-    file: "src/components/ward-management/alerts/alert-detail.tsx",
-    kind: "raw",
-    sites: ['group === "act" ? "danger"'],
-    reason: "phone alert detail head: an 'Act now' chip carries the triangle",
-  },
-  {
     file: "src/components/ward-management/delays/delays-board-panels.tsx",
     kind: "wait",
     sites: ["<Glyph tone={waitTone(row.waited)} />"],

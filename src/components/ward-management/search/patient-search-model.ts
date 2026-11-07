@@ -82,16 +82,6 @@ export function countGroups(rows: readonly CensusRow[]): Record<CensusGroup, num
   return counts;
 }
 
-/**
- * The stylesheet decides when the page is one column, from the page's own width, and hides the side
- * card then. A tap opens the drawer exactly when that card cannot be seen.
- */
-export function previewCardHidden(): boolean {
-  if (typeof document === "undefined") return false;
-  const card = document.querySelector<HTMLElement>("[data-preview-card]");
-  return card !== null && getComputedStyle(card).display === "none";
-}
-
 export function resultId(result: PatientSearchResult): string {
   return result.kind === "movement" ? result.movement.id : result.referral.id;
 }

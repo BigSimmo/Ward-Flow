@@ -127,7 +127,6 @@ import styles from "./alerts.module.css";
 import parts from "./alerts-screen-parts.module.css";
 import {
   Card,
-  Drawer,
   PhoneSheet,
   StatusGlyph,
   TabPanel,
@@ -203,9 +202,8 @@ function AlertsWorkspace() {
   const raise = useWardRaise(deskRole);
   const live = usePageLive();
   const now = live.now;
-  // Phone layout: the selected alert opens in a sheet instead of the side panel.
   const isPhone = useIsPhone();
-  // Tablet portrait (v10): the queue takes the width and an alert opens as a slide-over.
+  // Tablet portrait (v10) has its own Checking card; wider pages show a quiet ward's checks in the column.
   const isTabletPortrait = useIsTabletPortrait();
   const slideOver = isPhone || isTabletPortrait;
   const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
@@ -583,17 +581,31 @@ function AlertsWorkspace() {
     return ranked.length > 0 ? ranked : countedActive;
   }, [countedActive]);
 
-  const chosen = allEntries.find((entry) => entry.item.id === chosenId);
-  // On the desktop the panel always shows an alert: the chosen one, else the first in line.
-  const selected = chosen ?? (slideOver ? undefined : (nextQueue[0] ?? allEntries[0]));
+  // Drawer review (6 Nov 2026): the chosen alert opens in the kit right drawer at every width, so the
+  // queue keeps the full width and the page's one scroll. Nothing opens until a row is chosen.
+  const selected = allEntries.find((entry) => entry.item.id === chosenId);
+
+  // A release can remove the chosen alert, and with it the row that opened the drawer. Focus then
+  // returns to the page's main region rather than falling to the body (CodeRabbit, #1495).
+  // While the chosen alert's row is still in the queue the Sheet's own opener rule applies (null).
+  const chosenIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    chosenIdRef.current = chosenId ?? null;
+  }, [chosenId]);
+  const alertsMainRef = useRef<HTMLElement | null>(null);
+  const resolveAlertReturnFocus = useCallback(() => {
+    const id = chosenIdRef.current;
+    const row = id ? document.querySelector(`[data-alert-id="${CSS.escape(id)}"]`) : null;
+    return row ? null : alertsMainRef.current;
+  }, []);
 
   const select = useCallback(
     (entry: QueueEntry, options: { release?: boolean } = {}) => {
       setChosenId(entry.item.id);
-      if (slideOver) setSheetOpen(true);
+      setSheetOpen(true);
       if (options.release) setReleaseRequest((count) => count + 1);
     },
-    [slideOver, setSheetOpen],
+    [setSheetOpen],
   );
 
   // Change 7 (D-77): `?alert=<id>&release=1` chooses the alert and focuses its release reason. Read
@@ -1210,12 +1222,14 @@ function AlertsWorkspace() {
   ];
   const shownTab: AlertsTab = tab === "broadcasts" && !showBroadcasts ? "now" : tab;
 
-  // Josh review (4 Nov 2026): the panel opens on the patient header. The CS-15 "First in line, not
-  // chosen yet" line above it is gone; the row stays marked in the list.
+  // Josh review (4 Nov 2026): the panel opens on the patient header; the row stays marked in the list.
   const selectedPanel = selected ? (
     <>
       <AlertDetail
         key={selected.item.id}
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        resolveReturnFocusTarget={resolveAlertReturnFocus}
         item={selected.item}
         movement={selected.movement}
         subject={selected.subject}
@@ -1288,7 +1302,7 @@ function AlertsWorkspace() {
   return (
     <div className={styles.screen} data-testid="ward-alerts-page" data-ward-design="v8">
       {pull.sheet}
-      <main id="main-content" className={styles.main}>
+      <main id="main-content" ref={alertsMainRef} tabIndex={-1} className={styles.main}>
         <AlertsHero
           isPhone={isPhone}
           wardName={wardName}
@@ -1402,6 +1416,14 @@ function AlertsWorkspace() {
               ) : null}
             </Card>
 
+            {/* A quiet ward's checks, once its side panel is gone; tablet portrait and phone keep the
+                Checking card below. */}
+            {quietWard && !slideOver ? (
+              <Card as="div">
+                <AlertsSidePanelEmpty wardName={wardName} quiet checks={checkingList} />
+              </Card>
+            ) : null}
+
             {isPhone ? (
               <>
                 {quietWard ? null : (
@@ -1421,28 +1443,9 @@ function AlertsWorkspace() {
               <div className={styles.phoneChecks}>{checkingList}</div>
             </PhoneSheet>
           </div>
-
-          {slideOver ? null : (
-            <aside className={styles.panel} aria-label="Selected alert" data-wf-rail>
-              <Card as="div" className={styles.panelCard}>
-                {selectedPanel ?? (
-                  <AlertsSidePanelEmpty wardName={wardName} quiet={allEntries.length === 0} checks={checkingList} />
-                )}
-              </Card>
-            </aside>
-          )}
         </div>
 
-        {slideOver && selected ? (
-          <Drawer
-            open={sheetOpen}
-            onClose={() => setSheetOpen(false)}
-            title={selected.item.title}
-            mobileSize="viewport"
-          >
-            {selectedPanel}
-          </Drawer>
-        ) : null}
+        {selectedPanel}
 
         {/* Broadcast composer sheet */}
         {isBroadcastModalOpen && (

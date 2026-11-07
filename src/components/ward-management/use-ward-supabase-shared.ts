@@ -43,7 +43,7 @@ function sessionEndsAt(token: string): number | null {
 
 /** Set once the shared client has loaded on the first sign-in. */
 let loadedClient: typeof SharedWorkspaceClient | null = null;
-import { WardAuthError, consumeRecoveryFragment, WARD_AUTH_STORAGE_KEY } from "./ward-auth-link";
+import { WardAuthError, consumeRecoveryLink, deviceStorage, WARD_AUTH_STORAGE_KEY } from "./ward-auth-link";
 import type { WardBrowserAuthAdapter } from "./ward-supabase-auth";
 import { createWardAuth, tabStorage } from "./ward-auth-session";
 import { renewFrontDoorPass } from "@/components/ward-management/front-door/front-door-pass-client";
@@ -465,10 +465,12 @@ export function useWardSupabaseShared(
         // An expired or malformed link is still erased, but its error is reported only after
         // auth and the sign-in/recovery actions exist, so the user can request a new link.
         let fragmentError: unknown = null;
-        let recovery: ReturnType<typeof consumeRecoveryFragment> = null;
+        let recovery: ReturnType<typeof consumeRecoveryLink> = null;
         try {
-          recovery = consumeRecoveryFragment(window.location, (url) =>
-            window.history.replaceState(window.history.state, "", url),
+          recovery = consumeRecoveryLink(
+            window.location,
+            (url) => window.history.replaceState(window.history.state, "", url),
+            deviceStorage,
           );
         } catch (error) {
           fragmentError = error;

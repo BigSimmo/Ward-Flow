@@ -1,19 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { Button, StatusGlyph } from "@/components/wf";
-import {
-  useOptionalWardFlowSelect,
-  useWardFlowClock,
-  useWardFlowSelect,
-} from "@/components/ward-management/ward-flow-provider";
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import {
   COORDINATOR_DESK_ACKNOWLEDGER_ID,
   broadcastKind,
-  formatTimeRemaining,
-  type WardBroadcastAlert,
 } from "@/components/ward-management/alerts/ward-broadcast-model";
 import {
   bannerEntriesForDesk,
@@ -26,9 +19,11 @@ import { wardChromeRole, type WardChromeRole } from "@/components/ward-managemen
 import type { WardAccess } from "@/components/ward-management/ward-role-access";
 import { useAccessShellRole, useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
-import { calendarDateOf, type Instant } from "@/components/ward-management/ward-clock";
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
-import styles from "./ward-broadcast-banner.module.css";
+import type { WardBroadcastBannerPreviewProps } from "./ward-broadcast-banner-preview";
+// The banner's styles stay in the shell's first stylesheet, in the same order as before, though only
+// the lazy body (and the preview, ward-broadcast-banner-preview.tsx) reads their class names.
+import "./ward-broadcast-banner.module.css";
 
 // The banner's body (answers, counts, actions) is its own chunk so the shared shell does not carry it
 // on every first load. It stays server-rendered, so a live alert paints in the first HTML with no
@@ -37,142 +32,14 @@ const loadBannerBody = () => import("./ward-broadcast-banner-body");
 const BannerBody = dynamic(() => loadBannerBody().then((m) => m.BannerBody));
 preloadWhenIdle(loadBannerBody);
 
-export interface WardBroadcastBannerProps {
+// Preview mode (#25), for tests and previews only, loads on demand so no screen carries it.
+const BannerPreview = dynamic(() =>
+  import("./ward-broadcast-banner-preview").then((m) => m.WardBroadcastBannerPreview),
+);
+
+export interface WardBroadcastBannerProps extends Partial<WardBroadcastBannerPreviewProps> {
   /** Overrides the desk read from the route. Tests and previews only. */
   currentUnitId?: string;
-  /** Optional controlled alert (#25). When omitted, reads from WardFlowProvider context. */
-  activeAlert?: WardBroadcastAlert | null;
-  /** Optional reference clock for controlled mode (#25). */
-  now?: string | Instant;
-  /** Optional quick +2h extension callback (#25). */
-  onExtend?: () => void;
-  /** Optional stand-down / resolved callback (#25). */
-  onClear?: () => void;
-}
-
-function toControlledMinutes(val: string | Instant): number {
-  if (typeof val === "number") return Number.isFinite(val) ? val : 0;
-  const parsed = Date.parse(val);
-  if (Number.isNaN(parsed)) return 0;
-  return Math.floor(parsed / 60_000);
-}
-
-/**
- * TC-08 (audit 24 Oct 2026, H-0777): an expiry and the time it is read against must be on one clock.
- * A numeric expiry is a board `Instant` (demo minutes), so it is read against the board clock: the
- * `now` prop when it is an Instant, else the provider's clock. An ISO expiry is read against the
- * `now` prop when it is a string, else the board clock as a calendar moment (H-0221): the device's
- * real time never decides it, and with no board clock nothing shows. The old code
- * read a board Instant against `Date.now()` minutes, and an ISO expiry against a board Instant, so
- * preview mode could show an alert decades long or already gone.
- */
-function computeControlledRemainingMinutes(
-  expiresAt: string | Instant,
-  now?: string | Instant,
-  boardNow?: Instant,
-  dayZero?: Date,
-): number {
-  const expMin = toControlledMinutes(expiresAt);
-  if (typeof expiresAt === "number") {
-    const boardClock = typeof now === "number" ? now : boardNow;
-    if (boardClock === undefined || !Number.isFinite(boardClock)) return 0;
-    return expMin - boardClock;
-  }
-  if (typeof now === "string") return expMin - toControlledMinutes(now);
-  const boardClock = typeof now === "number" ? now : boardNow;
-  if (boardClock === undefined || !Number.isFinite(boardClock) || !dayZero) return 0;
-  return expMin - Math.floor(calendarDateOf(boardClock, dayZero).getTime() / 60_000);
-}
-
-/**
- * THE ONE GLOBAL ALERT SLOT (option A, 10 Oct 2026). Sits under the top bar on every page and
- * shows the most urgent live alert for the desk this route is. Red (a thin edge, never a fill) only
- * when this desk must act now. No full screen flash: one pulse on arrival, then a steady edge.
- */
-export function WardBroadcastBanner(props: WardBroadcastBannerProps) {
-  if (props.activeAlert !== undefined) {
-    return (
-      <ControlledBroadcastBanner
-        activeAlert={props.activeAlert}
-        now={props.now}
-        onExtend={props.onExtend}
-        onClear={props.onClear}
-      />
-    );
-  }
-  return <ContextBroadcastBanner currentUnitId={props.currentUnitId} />;
-}
-
-function ControlledBroadcastBanner({
-  activeAlert,
-  now,
-  onExtend,
-  onClear,
-}: {
-  activeAlert: WardBroadcastAlert | null;
-  now?: string | Instant;
-  onExtend?: () => void;
-  onClear?: () => void;
-}) {
-  const [, setClockTick] = useState(0);
-  // The board clock, when a provider is in reach; NaN outside one (no board time to read).
-  const boardNow = useWardFlowClock(Number.NaN);
-  const dayZero = useOptionalWardFlowSelect("dayZero")?.dayZero;
-  useEffect(() => {
-    if (now !== undefined || !activeAlert) return;
-    const timer = window.setInterval(() => setClockTick((t) => t + 1), 30_000);
-    return () => window.clearInterval(timer);
-  }, [activeAlert, now]);
-
-  if (!activeAlert || activeAlert.status === "stood_down" || activeAlert.status === "expired") {
-    return null;
-  }
-  const remainingMinutes = computeControlledRemainingMinutes(activeAlert.expiresAt, now, boardNow, dayZero);
-  if (remainingMinutes <= 0) {
-    return null;
-  }
-  const timeLabel = formatTimeRemaining(remainingMinutes as Instant, 0 as Instant);
-  const isCritical = activeAlert.severity === "critical";
-
-  return (
-    <section
-      className={styles.banner}
-      data-tone={isCritical ? "critical" : "warning"}
-      data-severity={activeAlert.severity}
-      data-testid="ward-broadcast-banner"
-      role={isCritical ? "alert" : "status"}
-      aria-live={isCritical ? "assertive" : "polite"}
-      aria-atomic="true"
-      aria-label={activeAlert.title ?? activeAlert.message}
-    >
-      <span className="sr-only">These counts are invented figures.</span>
-      <div className={styles.row}>
-        <div className={styles.lead}>
-          <StatusGlyph tone={isCritical ? "danger" : "warning"} size={12} />
-          <strong className={styles.headline}>{activeAlert.title ?? activeAlert.message}</strong>
-          {activeAlert.author ? <span className={styles.meta}>{activeAlert.author}</span> : null}
-        </div>
-        <div className={styles.actions}>
-          <span className={styles.meta} title="Time until this alert ends">
-            <span className={styles.mono}>{timeLabel}</span>
-          </span>
-          {onExtend ? (
-            <Button size="sm" onClick={onExtend}>
-              Extend <span>+2h</span>
-            </Button>
-          ) : null}
-          {onClear ? (
-            <Button size="sm" variant="ghost" onClick={onClear}>
-              Stand down
-            </Button>
-          ) : null}
-        </div>
-      </div>
-      {activeAlert.title && activeAlert.title !== activeAlert.message ? (
-        <p className={styles.message}>{activeAlert.message}</p>
-      ) : null}
-    </section>
-  );
 }
 
 /**
@@ -201,6 +68,20 @@ function bannerDesk(
           ? OFFICER_DESK_ID
           : null;
   return { role: accessRole, id };
+}
+
+/**
+ * THE ONE GLOBAL ALERT SLOT (option A, 10 Oct 2026). Sits under the top bar on every page and
+ * shows the most urgent live alert for the desk this route is. Red (a thin edge, never a fill) only
+ * when this desk must act now. No full screen flash: one pulse on arrival, then a steady edge.
+ *
+ * Given `activeAlert` it draws that one alert instead (preview mode, #25), through
+ * `WardBroadcastBannerPreview` (`ward-broadcast-banner-preview.tsx`), which loads on demand so this
+ * every-screen module does not carry it (6 Nov 2026).
+ */
+export function WardBroadcastBanner({ currentUnitId, activeAlert, ...preview }: WardBroadcastBannerProps) {
+  if (activeAlert !== undefined) return <BannerPreview activeAlert={activeAlert} {...preview} />;
+  return <ContextBroadcastBanner currentUnitId={currentUnitId} />;
 }
 
 function ContextBroadcastBanner({ currentUnitId }: { currentUnitId?: string }) {

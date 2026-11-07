@@ -512,7 +512,8 @@ test.describe("@mockup Ward Flow full journey — referral to discharge planning
     await officerScreen.getByTestId(`ward-officer-select-${movementId}`).click();
 
     // v6 (7 Oct 2026): the four stage actions sit in the selected job's panel, not its row.
-    const jobPanel = officerScreen.getByTestId("ward-officer-detail");
+    // Drawer review (6 Nov 2026): the job opens in the kit right drawer, portalled outside the screen.
+    const jobPanel = page.getByTestId("ward-officer-detail");
     const acceptTransport = jobPanel.getByTestId(`ward-officer-accept-${movementId}`);
     await expect(acceptTransport).not.toHaveAttribute("aria-disabled", "true");
     await clearToasts(page);

@@ -8,7 +8,7 @@ import { CAD_TO_FOLLOW, cadNumberToFollow, providerNeedsCadNumber } from "@/comp
 import { TransportCadToFollow } from "@/components/ward-management/transport/transport-cad-to-follow";
 import { Check, Lock } from "lucide-react";
 
-import { Button, Icon, Select, StatusGlyph, TabPanel, Tabs, Timeline, type TimelineItem } from "@/components/wf";
+import { Button, Icon, Select, StatusGlyph, Timeline, type TimelineItem } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { transportEtaRemainingLabel } from "@/components/ward-management/ward-board-time-features";
 import { type Movement, type Unit } from "@/components/ward-management/ward-model";
@@ -32,7 +32,6 @@ import {
 } from "@/components/ward-management/ward-operational-defaults";
 
 import { FormsPack, PACK_SLOTS, packCount, packRequired } from "./officer-forms-pack";
-import { HowWorkedOut } from "@/components/ward-management/capacity/capacity-how-worked-out";
 import { OfficerOnly } from "./officer-crew-only";
 import { ProviderNumber } from "./officer-booking-contacts";
 import styles from "./officer.module.css";
@@ -257,43 +256,31 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
   const tab = detailTab;
   const transportLoggedRecorded = transportLegalStatusLabel(transport) !== "Not recorded";
 
-  return (
+  // Drawer review (6 Nov 2026): one route line replaces the two-stop card, so progress shows once (the
+  // stepper). The road caveat stays visible beside the minutes, never folded away.
+  const journey = (
     <>
-      <div className={styles.routeCard}>
-        <span className={styles.routePin} aria-hidden="true" />
-        <span className={styles.routeStop}>
+      <div className={styles.routeLine} data-testid={`ward-officer-route-${movement.id}`}>
+        <p className={styles.routeTrip}>
           <b>{originShortFor(movement)}</b>
-          <span>{originLabelFor(movement)}</span>
-        </span>
-        <span className={styles.routeStopTime}>
-          {transport.collectedAt !== undefined
-            ? `Left ${formatInstantWithDay(transport.collectedAt, now)}`
-            : "Not collected"}
-        </span>
-        <span className={styles.routePin} data-to="" aria-hidden="true" />
-        <span className={styles.routeStop}>
+          <span aria-hidden="true">→</span>
+          <span className="sr-only">to</span>
           <b>{destinationLabelFor(movement)}</b>
-          <span>
-            {transport.provider}
-            {roadRoute ? ` · about ${roadRoute.min} min by road` : ""}
-          </span>
-        </span>
-        <span className={styles.routeStopTime}>
+        </p>
+        <p className={styles.routeMeta}>
+          {transport.provider}
+          {roadRoute ? ` · about ${roadRoute.min} min by road` : ""}
+          {" · "}
           {eta !== undefined ? (
             <>
-              <b>{formatInstantWithDay(eta, now)}</b> {transportEtaRemainingLabel(eta, now)}
+              ETA <b className={styles.mono}>{formatInstantWithDay(eta, now)}</b> {transportEtaRemainingLabel(eta, now)}
             </>
           ) : (
             "No ETA yet"
           )}
-        </span>
+        </p>
+        {roadRoute ? <p className={styles.routeCaveat}>{REFERENCE_DISTANCE_CAVEAT}</p> : null}
       </div>
-      {/* As Capacity's road-time card (Josh's rebuild): the caveat folds to one line. */}
-      {roadRoute ? (
-        <HowWorkedOut label="Road time is an estimate">
-          <p>{REFERENCE_DISTANCE_CAVEAT}</p>
-        </HowWorkedOut>
-      ) : null}
 
       <ol className={styles.progress} aria-label={`Progress, ${Math.max(0, legIndex)} of 4 done`}>
         {stepLabels.map((label, index) => {
@@ -447,162 +434,172 @@ export function renderDetail(movement: Movement, ctx: OfficerJobDetailContext) {
           </div>
         </section>
       ) : null}
-
-      <Tabs
-        label="Job details"
-        idPrefix={`ward-officer-detail-${movement.id}`}
-        className={styles.detailTabs}
-        value={tab}
-        onChange={setDetailTab}
-        items={[
-          { id: "details", label: "Details" },
-          { id: "forms", label: "Forms", count: packOpen > 0 ? packOpen : undefined },
-          { id: "activity", label: "Activity", count: activity.length > 0 ? activity.length : undefined },
-        ]}
-      />
-
-      <TabPanel idPrefix={`ward-officer-detail-${movement.id}`} id="details" hidden={tab !== "details"}>
-        <section className={styles.detailTab} aria-label="Booking">
-          {packOpen > 0 ? (
-            <button type="button" className={styles.formsLine} onClick={() => setDetailTab("forms")}>
-              <StatusGlyph tone="warning" size={8} />
-              <span>
-                <b>
-                  {packOpen} {packOpen === 1 ? "form" : "forms"} to upload
-                </b>{" "}
-                {transport.collectedAt === undefined ? "before collection" : "still outstanding"}
-              </span>
-              <span className={styles.formsLineGo}>View</span>
-            </button>
-          ) : null}
-          <dl className={styles.factList}>
-            <div>
-              <dt>Provider</dt>
-              <dd>
-                {transport.provider}
-                {/* TR2 (3 Nov 2026): the number sits with the provider, one tap to copy. */}
-                <ProviderNumber provider={transport.provider} />
-              </dd>
-            </div>
-            <div data-testid={`ward-officer-cad-number-${movement.id}`}>
-              <dt>CAD number</dt>
-              <dd className={styles.glyphLine}>
-                {cadNumberToFollow(transport) ? (
-                  <span className={styles.detailTag} data-tone="warning">
-                    <StatusGlyph tone="warning" size={8} />
-                    {CAD_TO_FOLLOW}
-                  </span>
-                ) : (
-                  <span className={styles.mono}>
-                    {transport.cadNumber ??
-                      (providerNeedsCadNumber(transport.provider) ? cadNumberLabel(transport) : "Not needed")}
-                  </span>
-                )}
-              </dd>
-            </div>
-            <div>
-              <dt>Escort</dt>
-              <dd>{transport.escortRequired ? "Required" : "Not required"}</dd>
-            </div>
-            {/* D-80 item 7: the referral's risk categories. Shown only when the referrer recorded some. */}
-            {movement.collectionRiskFlags?.length ? (
-              <div data-testid={`ward-officer-risk-flags-${movement.id}`}>
-                <dt>Risk flags</dt>
-                <dd>{movement.collectionRiskFlags.map((flag) => RISK_FLAG_LABELS[flag]).join(", ")}</dd>
-              </div>
-            ) : null}
-            <div>
-              <dt>Form named at booking</dt>
-              <dd>{formRequiredLabel(transport)}</dd>
-            </div>
-            <div data-testid={`ward-officer-transport-legal-status-${movement.id}`}>
-              <dt>Transport logged as</dt>
-              <dd className={transportLoggedRecorded ? undefined : styles.factMuted}>
-                {transportStatusClashes(movement, transport.transportLegalStatus) ? (
-                  <StatusGlyph tone="warning" size={9} />
-                ) : null}
-                {transportLegalStatusLabel(transport)}
-                {transportStatusClashes(movement, transport.transportLegalStatus)
-                  ? `, Legal now ${legalNowText(movement)}`
-                  : null}
-              </dd>
-            </div>
-            <div data-testid={`ward-officer-estimated-at-${movement.id}`}>
-              <dt>Estimated time</dt>
-              <dd className={transport.estimatedAt === undefined ? styles.factMuted : undefined}>
-                {transport.estimatedAt === undefined ? "Not recorded" : estimatedTimeLabel(transport, now)}
-              </dd>
-            </div>
-            {/* Audit A4-2: the officer sees when the bed hold ends, and whether the ETA is after it. */}
-            {movement.pullExpiresAt !== undefined && transport.collectedAt === undefined ? (
-              <div data-testid={`ward-officer-hold-ends-${movement.id}`}>
-                <dt>Bed pulled until</dt>
-                <dd>
-                  {holdEndsBeforeEta(movement, transport.estimatedAt) !== undefined ? (
-                    <StatusGlyph tone="warning" size={9} />
-                  ) : null}
-                  {formatInstantWithDay(movement.pullExpiresAt, now)}
-                  {holdEndsBeforeEta(movement, transport.estimatedAt) !== undefined ? ", before the ETA" : null}
-                </dd>
-              </div>
-            ) : null}
-            {movement.arrivalDetails ? (
-              <div data-testid={`ward-officer-arrival-details-${movement.id}`}>
-                <dt>Ward ETA</dt>
-                <dd title={OPERATIONAL_DEFAULT_LABEL}>
-                  {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST ·{" "}
-                  {movement.arrivalDetails.mode} · late after{" "}
-                  {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES, now)}
-                </dd>
-              </div>
-            ) : null}
-            {(transport.exceptions ?? []).map((exception) => (
-              <div key={`${exception.step}-${exception.at}`} data-testid={`ward-officer-exception-${movement.id}`}>
-                <dt>
-                  {exception.step === "collected" ? "Collected" : "Booked"} {formatInstantWithDay(exception.at, now)}{" "}
-                  with
-                </dt>
-                <dd>{transportExceptionText(exception)}</dd>
-              </div>
-            ))}
-            {transport.identityChecked ? (
-              <div data-testid={`ward-officer-identity-checked-${movement.id}`}>
-                <dt>Identity checked</dt>
-                <dd>With the sending team, {formatInstantWithDay(transport.identityChecked.at, now)}</dd>
-              </div>
-            ) : null}
-          </dl>
-          {/* CAD to follow (Josh, 27 Oct 2026): the officer often hears the number first. */}
-          {cadNumberToFollow(transport) && !movement.closure ? (
-            <OfficerOnly>
-              <TransportCadToFollow
-                movementId={movement.id}
-                transportId={transport.id}
-                role="officer"
-                testId={`ward-officer-cad-to-follow-${movement.id}`}
-              />
-            </OfficerOnly>
-          ) : null}
-        </section>
-      </TabPanel>
-
-      <TabPanel idPrefix={`ward-officer-detail-${movement.id}`} id="forms" hidden={tab !== "forms"}>
-        {packRequired(movement) ? (
-          <FormsPack movement={movement} now={now} who={officerPatientName(movement)} />
-        ) : (
-          <section className={styles.section} aria-label="Forms">
-            <span className={styles.muted}>None needed for a voluntary transfer.</span>
-          </section>
-        )}
-      </TabPanel>
-
-      <TabPanel idPrefix={`ward-officer-detail-${movement.id}`} id="activity" hidden={tab !== "activity"}>
-        {activity.length > 0 ? (
-          <Timeline items={activity} holdNew={false} label={`Activity for ${officerPatientName(movement)}`} />
-        ) : (
-          <span className={styles.muted}>Nothing recorded yet.</span>
-        )}
-      </TabPanel>
     </>
   );
+
+  const tabs = [
+    { id: "details" as const, label: "Details" },
+    { id: "forms" as const, label: "Forms", count: packOpen > 0 ? packOpen : undefined },
+    { id: "activity" as const, label: "Activity", count: activity.length > 0 ? activity.length : undefined },
+  ];
+
+  const details = (
+    <section className={styles.detailTab} aria-label="Booking">
+      {packOpen > 0 ? (
+        <button type="button" className={styles.formsLine} onClick={() => setDetailTab("forms")}>
+          <StatusGlyph tone="warning" size={8} />
+          <span>
+            <b>
+              {packOpen} {packOpen === 1 ? "form" : "forms"} to upload
+            </b>{" "}
+            {transport.collectedAt === undefined ? "before collection" : "still outstanding"}
+          </span>
+          <span className={styles.formsLineGo}>View</span>
+        </button>
+      ) : null}
+      <dl className={styles.factList}>
+        {/* Drawer review (6 Nov 2026): the legal status leads the list, out of the head. */}
+        <div data-testid={`ward-officer-legal-${movement.id}`}>
+          <dt>Legal now</dt>
+          <dd>{legalNowText(movement)}</dd>
+        </div>
+        <div>
+          <dt>Collect from</dt>
+          <dd>{originLabelFor(movement)}</dd>
+        </div>
+        <div>
+          <dt>Provider</dt>
+          <dd>
+            {transport.provider}
+            {/* TR2 (3 Nov 2026): the number sits with the provider, one tap to copy. */}
+            <ProviderNumber provider={transport.provider} />
+          </dd>
+        </div>
+        <div data-testid={`ward-officer-cad-number-${movement.id}`}>
+          <dt>CAD number</dt>
+          <dd className={styles.glyphLine}>
+            {/* Drawer review: the warning shows once, on the add-a-number field below. */}
+            {cadNumberToFollow(transport) ? (
+              <span className={styles.factMuted}>{CAD_TO_FOLLOW}</span>
+            ) : (
+              <span className={styles.mono}>
+                {transport.cadNumber ??
+                  (providerNeedsCadNumber(transport.provider) ? cadNumberLabel(transport) : "Not needed")}
+              </span>
+            )}
+          </dd>
+        </div>
+        <div>
+          <dt>Escort</dt>
+          <dd>{transport.escortRequired ? "Required" : "Not required"}</dd>
+        </div>
+        {/* D-80 item 7: the referral's risk categories. Shown only when the referrer recorded some. */}
+        {movement.collectionRiskFlags?.length ? (
+          <div data-testid={`ward-officer-risk-flags-${movement.id}`}>
+            <dt>Risk flags</dt>
+            <dd>{movement.collectionRiskFlags.map((flag) => RISK_FLAG_LABELS[flag]).join(", ")}</dd>
+          </div>
+        ) : null}
+        <div>
+          <dt>Form named at booking</dt>
+          <dd>{formRequiredLabel(transport)}</dd>
+        </div>
+        <div data-testid={`ward-officer-transport-legal-status-${movement.id}`}>
+          <dt>Transport logged as</dt>
+          <dd className={transportLoggedRecorded ? undefined : styles.factMuted}>
+            {transportStatusClashes(movement, transport.transportLegalStatus) ? (
+              <StatusGlyph tone="warning" size={9} />
+            ) : null}
+            {transportLegalStatusLabel(transport)}
+            {transportStatusClashes(movement, transport.transportLegalStatus)
+              ? `, Legal now ${legalNowText(movement)}`
+              : null}
+          </dd>
+        </div>
+        <div data-testid={`ward-officer-estimated-at-${movement.id}`}>
+          <dt>Estimated time</dt>
+          <dd className={transport.estimatedAt === undefined ? styles.factMuted : undefined}>
+            {transport.estimatedAt === undefined ? "Not recorded" : estimatedTimeLabel(transport, now)}
+          </dd>
+        </div>
+        {/* Audit A4-2: the officer sees when the bed hold ends, and whether the ETA is after it. */}
+        {movement.pullExpiresAt !== undefined && transport.collectedAt === undefined ? (
+          <div data-testid={`ward-officer-hold-ends-${movement.id}`}>
+            <dt>Bed pulled until</dt>
+            <dd>
+              {holdEndsBeforeEta(movement, transport.estimatedAt) !== undefined ? (
+                <StatusGlyph tone="warning" size={9} />
+              ) : null}
+              {formatInstantWithDay(movement.pullExpiresAt, now)}
+              {holdEndsBeforeEta(movement, transport.estimatedAt) !== undefined ? ", before the ETA" : null}
+            </dd>
+          </div>
+        ) : null}
+        {movement.arrivalDetails ? (
+          <div data-testid={`ward-officer-arrival-details-${movement.id}`}>
+            <dt>Ward ETA</dt>
+            <dd title={OPERATIONAL_DEFAULT_LABEL}>
+              {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt, now)} AWST ·{" "}
+              {movement.arrivalDetails.mode} · late after{" "}
+              {formatInstantWithDay(movement.arrivalDetails.estimatedArrivalAt + LATE_ARRIVAL_GRACE_MINUTES, now)}
+            </dd>
+          </div>
+        ) : null}
+        {(transport.exceptions ?? []).map((exception) => (
+          <div key={`${exception.step}-${exception.at}`} data-testid={`ward-officer-exception-${movement.id}`}>
+            <dt>
+              {exception.step === "collected" ? "Collected" : "Booked"} {formatInstantWithDay(exception.at, now)} with
+            </dt>
+            <dd>{transportExceptionText(exception)}</dd>
+          </div>
+        ))}
+        {transport.identityChecked ? (
+          <div data-testid={`ward-officer-identity-checked-${movement.id}`}>
+            <dt>Identity checked</dt>
+            <dd>With the sending team, {formatInstantWithDay(transport.identityChecked.at, now)}</dd>
+          </div>
+        ) : null}
+      </dl>
+      {/* CAD to follow (Josh, 27 Oct 2026): the officer often hears the number first. */}
+      {cadNumberToFollow(transport) && !movement.closure ? (
+        <OfficerOnly>
+          <TransportCadToFollow
+            movementId={movement.id}
+            transportId={transport.id}
+            role="officer"
+            testId={`ward-officer-cad-to-follow-${movement.id}`}
+          />
+        </OfficerOnly>
+      ) : null}
+    </section>
+  );
+
+  const forms = packRequired(movement) ? (
+    <FormsPack movement={movement} now={now} who={officerPatientName(movement)} />
+  ) : (
+    <section className={styles.section} aria-label="Forms">
+      <span className={styles.muted}>None needed for a voluntary transfer.</span>
+    </section>
+  );
+
+  const activityPanel =
+    activity.length > 0 ? (
+      <Timeline items={activity} holdNew={false} label={`Activity for ${officerPatientName(movement)}`} />
+    ) : (
+      <p className={styles.muted}>Nothing recorded yet.</p>
+    );
+
+  const panel = tab === "forms" ? forms : tab === "activity" ? activityPanel : details;
+  return {
+    tabs,
+    panel:
+      tab === "details" ? (
+        <>
+          {journey}
+          {panel}
+        </>
+      ) : (
+        panel
+      ),
+  };
 }

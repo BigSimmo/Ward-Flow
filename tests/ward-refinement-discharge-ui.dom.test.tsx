@@ -97,7 +97,7 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     renderDischarges({ controls: true });
     showRecorded();
     openFarahRecord();
-    expect(screen.getByRole("region", { name: "Selected discharge details" })).toHaveTextContent("UMRN UM100010");
+    expect(screen.getByTestId("ward-discharge-detail")).toHaveTextContent("UMRN UM100010");
 
     // DA-10: Reset demo asks first; the reset happens on the dialog's own Reset demo button.
     fireEvent.click(screen.getByRole("button", { name: "Reset demo" }));
@@ -106,12 +106,12 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     );
 
     expect(screen.getByRole("button", { name: /^Now, \d+ to work now$/u })).toHaveAttribute("aria-pressed", "true");
-    expect(screen.getByRole("heading", { name: "Record detail" })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Selected discharge details" })).not.toHaveTextContent("UM100010");
+    // Drawer review (6 Nov 2026): clearing the identity closes the detail drawer.
+    expect(screen.queryByTestId("ward-discharge-detail")).toBeNull();
 
     showRecorded();
     openFarahRecord();
-    expect(screen.getByRole("region", { name: "Selected discharge details" })).toHaveTextContent("UMRN UM100010");
+    expect(screen.getByTestId("ward-discharge-detail")).toHaveTextContent("UMRN UM100010");
   });
 
   it("keeps bed releases and recorded discharges as separate counted populations", () => {
@@ -165,20 +165,20 @@ describe("Q004 Capacity and Discharges refinement journeys", () => {
     expect(community.length).toBeLessThan(seededRecentDepartureCount());
 
     openFarahRecord();
-    const details = screen.getByRole("region", { name: "Selected discharge details" });
+    const details = screen.getByTestId("ward-discharge-detail");
     // D-39: the admission number is no longer shown beside the person.
     expect(details).not.toHaveTextContent("AD-LEFT-01");
     expect(details).toHaveTextContent("UMRN UM100010");
 
     pick("Going to", "Left against advice");
-    expect(screen.getByRole("heading", { name: "Record detail" })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Selected discharge details" })).not.toHaveTextContent("UM100010");
+    // Drawer review (6 Nov 2026): clearing the identity closes the detail drawer.
+    expect(screen.queryByTestId("ward-discharge-detail")).toBeNull();
 
     pick("Going to", "All");
     openFarahRecord();
-    expect(screen.getByRole("region", { name: "Selected discharge details" })).toHaveTextContent("UMRN UM100010");
+    expect(screen.getByTestId("ward-discharge-detail")).toHaveTextContent("UMRN UM100010");
     fireEvent.click(screen.getByRole("button", { name: /^Now, \d+ to work now$/u }));
-    expect(screen.getByRole("heading", { name: "Record detail" })).toBeInTheDocument();
-    expect(screen.getByRole("region", { name: "Selected discharge details" })).not.toHaveTextContent("UM100010");
+    // Drawer review (6 Nov 2026): clearing the identity closes the detail drawer.
+    expect(screen.queryByTestId("ward-discharge-detail")).toBeNull();
   });
 });

@@ -290,7 +290,7 @@ export function OutOfAreaPhone({
         onClick={() => stepTo(-1)}
       />
       <span className={styles.mono}>
-        {index + 1}/{stepList.length}
+        {index + 1} of {stepList.length}
       </span>
       <Button
         variant="ghost"
