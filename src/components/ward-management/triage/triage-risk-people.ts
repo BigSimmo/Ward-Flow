@@ -41,6 +41,8 @@ export type WorldPersonInput = {
   openReferral: TriageReferral | null;
   /** The person's last signed triage on the workspace, already read for the form; none when left out. */
   last?: PreviousTriage | null;
+  /** Health and safety alerts on the record (`recordExtrasFor`), allergies included; none when left out. */
+  alerts?: readonly string[];
 };
 
 const NOT_RECORDED = "Not recorded";
@@ -85,8 +87,15 @@ export function previousTriageFrom(record: TriageSignedRecord, dayZero: Date): P
   };
 }
 
+const isAllergy = (alert: string) => /allerg/i.test(alert);
+
 /** One world record as the banner reads it, with its last signed triage when there is one. */
 export function triagePersonFromWorld(input: WorldPersonInput): TriagePerson {
+  // The record's alerts, as the patient summary shows them: allergies on their own chip, the rest as
+  // alerts. No allergy on the record reads "Not recorded", never "none".
+  const recorded = input.alerts ?? [];
+  const allergies = recorded.filter(isAllergy);
+  const alerts = recorded.filter((alert) => !isAllergy(alert));
   const sex = SEX_WORD[input.gender] ?? (input.gender ? input.gender : "Sex not recorded");
   const legal = input.legalStatus && input.legalStatus !== NOT_RECORDED ? input.legalStatus : null;
   return {
@@ -99,9 +108,10 @@ export function triagePersonFromWorld(input: WorldPersonInput): TriagePerson {
     team: NOT_RECORDED,
     legal,
     legalTag: "As typed · Not legally checked.",
-    alert: null,
-    alertCount: 0,
-    allergies: NOT_RECORDED,
+    alert: alerts[0] ?? null,
+    alertCount: alerts.length,
+    alerts,
+    allergies: allergies.length ? allergies.join(" · ") : NOT_RECORDED,
     referral: input.openReferral,
     last: input.last ?? null,
     recordHref: `/ward-flow/people/${input.recordAddress}`,

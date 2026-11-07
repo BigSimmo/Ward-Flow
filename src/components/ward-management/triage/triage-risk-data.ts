@@ -782,6 +782,8 @@ export type TriagePerson = {
   legalTag: string;
   alert: string | null;
   alertCount: number;
+  /** Every alert on the record, allergies aside, for the Alerts tab; `alert` alone when left out. */
+  alerts?: readonly string[];
   allergies: string;
   referral: TriageReferral | null;
   /** The last signed triage on record, or null ("No previous triage on record"). */

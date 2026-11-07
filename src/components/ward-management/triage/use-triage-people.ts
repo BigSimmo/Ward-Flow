@@ -10,6 +10,7 @@ import { useMemo } from "react";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { referralState } from "@/components/ward-management/ward-referrals";
 import { patientKeyFor, sampleProfile } from "@/components/ward-management/referrals/ward-referral-drawer-model";
+import { recordExtrasFor } from "@/components/ward-management/patients/patient-record-extras";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import type { Referral } from "@/components/ward-management/ward-model";
 
@@ -87,6 +88,7 @@ export function useTriagePeople(): {
         recordAddress: encodeRecordAddress(key.startsWith("WF-") ? key : patient.id),
         openReferral: open ? asReferral(open) : null,
         last: lastSigned ? previousTriageFrom(lastSigned, dayZero) : null,
+        alerts: recordExtrasFor(patient.id)?.alerts,
       });
       byId.set(patient.id, person);
       return person;

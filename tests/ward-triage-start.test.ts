@@ -75,6 +75,23 @@ describe("a world person on the banner", () => {
     expect(person.recordHref).toBe("/ward-flow/people/code900");
   });
 
+  it("shows the record's alerts, allergies on their own chip", () => {
+    const person = triagePersonFromWorld(
+      world({ alerts: ["Penicillin allergy", "Type 2 diabetes, insulin", "Falls risk"] }),
+    );
+    expect(person.allergies).toBe("Penicillin allergy");
+    expect(person.alert).toBe("Type 2 diabetes, insulin");
+    expect(person.alertCount).toBe(2);
+    expect(person.alerts).toEqual(["Type 2 diabetes, insulin", "Falls risk"]);
+  });
+
+  it("reads no alert and allergies not recorded when the record has none", () => {
+    const person = triagePersonFromWorld(world({}));
+    expect(person.alert).toBeNull();
+    expect(person.alertCount).toBe(0);
+    expect(person.allergies).toBe("Not recorded");
+  });
+
   it("says when legal status, sex or age are not recorded", () => {
     const person = triagePersonFromWorld(world({ gender: "", age: "" }));
     expect(person.legal).toBeNull();

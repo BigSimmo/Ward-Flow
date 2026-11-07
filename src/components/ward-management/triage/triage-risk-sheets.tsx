@@ -412,7 +412,10 @@ export function SummaryDrawer({
           <RecordPane
             title="Alerts"
             rows={[
-              ["Alerts", person.alert ?? "None on the synthetic record"],
+              [
+                "Alerts",
+                person.alerts?.length ? person.alerts.join(" · ") : (person.alert ?? "None on the synthetic record"),
+              ],
               ["Allergies", person.allergies],
             ]}
           />
