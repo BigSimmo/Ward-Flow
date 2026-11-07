@@ -518,9 +518,9 @@ export function WardBedDossierDrawer({
   const showDateControl = () => {
     setTab("leave");
     setTimeout(() => {
-      const open = bedDrawerRef.current?.querySelector<HTMLButtonElement>(
-        '[data-testid="ward-drawer-discharge-date-open"]',
-      );
+      // The kit drawer is portalled on tablet and desktop, so the phone ref is empty there.
+      const scope = bedDrawerRef.current ?? document.querySelector('[data-testid="bed-telemetry-drawer"]');
+      const open = scope?.querySelector<HTMLButtonElement>('[data-testid="ward-drawer-discharge-date-open"]');
       open?.scrollIntoView?.({ block: "center" });
       open?.focus();
     }, 0);
