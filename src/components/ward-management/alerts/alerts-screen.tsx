@@ -585,6 +585,20 @@ function AlertsWorkspace() {
   // queue keeps the full width and the page's one scroll. Nothing opens until a row is chosen.
   const selected = allEntries.find((entry) => entry.item.id === chosenId);
 
+  // A release can remove the chosen alert, and with it the row that opened the drawer. Focus then
+  // returns to the page's main region rather than falling to the body (CodeRabbit, #1495).
+  // While the chosen alert's row is still in the queue the Sheet's own opener rule applies (null).
+  const chosenIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    chosenIdRef.current = chosenId ?? null;
+  }, [chosenId]);
+  const alertsMainRef = useRef<HTMLElement | null>(null);
+  const resolveAlertReturnFocus = useCallback(() => {
+    const id = chosenIdRef.current;
+    const row = id ? document.querySelector(`[data-alert-id="${CSS.escape(id)}"]`) : null;
+    return row ? null : alertsMainRef.current;
+  }, []);
+
   const select = useCallback(
     (entry: QueueEntry, options: { release?: boolean } = {}) => {
       setChosenId(entry.item.id);
@@ -1215,6 +1229,7 @@ function AlertsWorkspace() {
         key={selected.item.id}
         open={sheetOpen}
         onClose={() => setSheetOpen(false)}
+        resolveReturnFocusTarget={resolveAlertReturnFocus}
         item={selected.item}
         movement={selected.movement}
         subject={selected.subject}
@@ -1287,7 +1302,7 @@ function AlertsWorkspace() {
   return (
     <div className={styles.screen} data-testid="ward-alerts-page" data-ward-design="v8">
       {pull.sheet}
-      <main id="main-content" className={styles.main}>
+      <main id="main-content" ref={alertsMainRef} tabIndex={-1} className={styles.main}>
         <AlertsHero
           isPhone={isPhone}
           wardName={wardName}

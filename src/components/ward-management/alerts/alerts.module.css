@@ -12,6 +12,11 @@
   font-family: var(--wf-font);
 }
 
+/* Focus lands here only when a released alert's row has gone; the page itself needs no ring. */
+.main:focus {
+  outline: none;
+}
+
 .main {
   display: flex;
   flex-direction: column;

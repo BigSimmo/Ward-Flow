@@ -93,6 +93,7 @@ export function AlertDetail({
   open,
   onClose,
   testId,
+  resolveReturnFocusTarget,
 }: {
   item: InboxItem;
   movement: Movement | undefined;
@@ -113,6 +114,8 @@ export function AlertDetail({
   open: boolean;
   onClose: () => void;
   testId?: string;
+  /** Where focus goes when the drawer closes and its opener row has gone (a release removes it). */
+  resolveReturnFocusTarget?: () => HTMLElement | null;
 }) {
   const [releaseReason, setReleaseReason] = useState<ReleasePullReason | "">("");
   const [panelTab, setPanelTab] = useState<PanelTab>("act");
@@ -556,6 +559,7 @@ export function AlertDetail({
     <PanelDrawer
       open={open}
       onClose={onClose}
+      resolveReturnFocusTarget={resolveReturnFocusTarget}
       title={subject.displayName}
       titleId={titleId}
       subtitle={

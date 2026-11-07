@@ -252,7 +252,44 @@
 /* Drawer review (6 Nov 2026): the census takes the full width. A chosen person opens in the kit
    right drawer at every width above the phone, so there is no side card or sticky rail. */
 .layout {
+  display: grid;
+  gap: var(--wf-s-3);
   min-width: 0;
+}
+
+/* "This shift" sits above the census on wide pages: the items flow into columns so the band stays
+   short, and the table keeps the full width. Under 68rem it stays hidden, as the side card was. */
+.shiftCard {
+  display: none;
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.shiftCard .summaryList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+}
+
+.summaryFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-3);
+  padding: 6px var(--wf-s-4);
+  border-top: 1px solid var(--wf-line);
+}
+
+.summaryFoot p {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+@container patient-search (min-width: 68rem) {
+  .shiftCard {
+    display: block;
+  }
 }
 
 /* Tablet portrait: the state switch takes its own row under the search, as the five pills did
@@ -759,14 +796,6 @@ tr:has(+ .moreRow) > td {
 
 .summaryValue {
   font: 600 var(--wf-fs-14) / 1 var(--wf-mono);
-}
-
-.panelFoot {
-  margin: 0;
-  padding: 10px var(--wf-s-4);
-  border-top: 1px solid var(--wf-line);
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
 }
 
 .detail {

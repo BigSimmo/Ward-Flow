@@ -15,6 +15,7 @@ import {
 import { UserPlus } from "lucide-react";
 
 import {
+  Card,
   Hero,
   HeroTrack,
   Icon,
@@ -103,6 +104,7 @@ import {
   PhoneCensus,
   DobField,
   DobToggle,
+  ShiftSummary,
 } from "./patient-census-view";
 
 import styles from "./search.module.css";
@@ -265,6 +267,7 @@ export function PatientSearchPage() {
   );
   const [showAllWard, setShowAllWard] = useState(returned?.showAllWard ?? false);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
+  const [flashKey, setFlashKey] = useState<string | null>(null);
   // Identity remains in this mounted component only; return memory holds numeric offsets.
   const censusScrollIdentity = JSON.stringify([
     text,
@@ -853,6 +856,22 @@ export function PatientSearchPage() {
     );
   };
 
+  // "This shift" shortcuts (longest wait, first expired pull) open the person and bring the row
+  // into view with a brief flash, as before the drawer move.
+  const jumpToRow = (row: CensusRow) => {
+    setTab("now");
+    setOpenGroups((current) => ({ ...current, [row.group]: true }));
+    if (row.group === "ward") setShowAllWard(true);
+    selectRow(row);
+    setFlashKey(row.key);
+    window.setTimeout(() => {
+      document
+        .querySelector(`[data-id="${CSS.escape(row.key)}"]`)
+        ?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() });
+    }, 30);
+    window.setTimeout(() => setFlashKey(null), 1800);
+  };
+
   const jumpToGroup = (group: CensusGroup) => {
     setTab("now");
     setOpenGroups((current) => ({ ...current, [group]: true }));
@@ -1309,6 +1328,28 @@ export function PatientSearchPage() {
         ) : null}
         {isPhone ? null : (
           <div className={cs.layout}>
+            {/* CodeRabbit (#1495): the "This shift" summary stays on wide pages, now a full-width
+                band above the census instead of a side card. Hidden under 68rem, as before. */}
+            <Card
+              className={cs.shiftCard}
+              role="region"
+              aria-label="This shift"
+              data-testid="ward-patient-search-shift"
+            >
+              <ShiftSummary
+                rows={census.rows}
+                closedToday={census.closedToday}
+                now={now}
+                highlight={highlight}
+                highlightCounts={highlightCounts}
+                onSelect={jumpToRow}
+                onHighlight={(chip) => {
+                  setTab("now");
+                  setHighlight((current) => (current === chip ? null : chip));
+                }}
+                onHistory={() => setTab("history")}
+              />
+            </Card>
             <CensusTable
               readScrollPosition={readCensusScroll}
               recordScrollPosition={recordCensusScroll}
@@ -1329,7 +1370,7 @@ export function PatientSearchPage() {
               showAllWard={showAllWard}
               onShowAllWard={() => setShowAllWard(true)}
               selectedKey={selectedId}
-              flashKey={null}
+              flashKey={flashKey}
               onSelect={selectRow}
               tab={tab}
               onTab={setTab}

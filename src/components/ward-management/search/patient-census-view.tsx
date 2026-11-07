@@ -755,11 +755,13 @@ export function ShiftSummary(props: ShiftSummaryProps) {
           );
         })}
       </ul>
-      <p className={styles.panelFoot}>Choose a row to see the patient here</p>
-      {/* B4: everyone waiting, with why, is the Delays list. */}
-      <Link href={waitingHref()} className={buttonClass({ variant: "ghost", size: "sm" })}>
-        Waiting list
-      </Link>
+      <div className={styles.summaryFoot}>
+        <p>Choose a row to open the patient</p>
+        {/* B4: everyone waiting, with why, is the Delays list. */}
+        <Link href={waitingHref()} className={buttonClass({ variant: "ghost", size: "sm" })}>
+          Waiting list
+        </Link>
+      </div>
     </div>
   );
 }
