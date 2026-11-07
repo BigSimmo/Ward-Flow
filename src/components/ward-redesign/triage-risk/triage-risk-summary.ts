@@ -251,9 +251,9 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
                 "Interpreter",
                 state.interp
                   ? [
-                      state.interp === "yes"
-                        ? `Needed${language ? `, ${language}` : ", language not given"}`
-                        : "Not needed",
+                      state.interp === "no"
+                        ? "Not needed"
+                        : `${state.interp === "unavail" ? "Needed, not available" : "Needed"}${language ? `, ${language}` : ", language not given"}`,
                     ]
                   : gap,
               ],

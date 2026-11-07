@@ -55,9 +55,13 @@ export function DecisionBody({ form }: { form: FormApi }) {
             id: tier,
             label: (
               <span className={styles.tier}>
-                <span className={styles.tierLetter}>{tier}</span>
-                <span className={styles.tierWindow}>{short}</span>
-                <SrOnly>, {long}</SrOnly>
+                <span className={styles.tierLetter} aria-hidden="true">
+                  {tier}
+                </span>
+                <span className={styles.tierWindow} aria-hidden="true">
+                  {short}
+                </span>
+                <SrOnly>{`${tier} ${short}, ${long}`}</SrOnly>
               </span>
             ),
           }))}

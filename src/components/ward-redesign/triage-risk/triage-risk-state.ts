@@ -399,7 +399,7 @@ export function requirements(state: TriageState, now: number): Requirement[] {
   add("rev", "Purpose", state.purpose, true);
   add("rev", "Episode", state.episode, true);
   add("rev", "Aboriginal status", state.atsi, false);
-  add("rev", "Interpreter", state.interp && (state.interp !== "yes" || state.text.interpLang.trim()), false);
+  add("rev", "Interpreter", state.interp && (state.interp === "no" || state.text.interpLang.trim()), false);
   add("note", "Assessment", isWritten(t.note), true);
   add("note", "Problems", state.problems.length, false);
   for (const heading of emptyHeadings(t.note, GUIDES.note)) add("note", `Empty heading: ${heading}`, false, false);

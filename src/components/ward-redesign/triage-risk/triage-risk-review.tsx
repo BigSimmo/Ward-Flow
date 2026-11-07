@@ -193,8 +193,11 @@ export function ReviewBody({
           <span>
             {state.purpose} · {state.episode} episode
           </span>
-          {state.interp === "yes" ? (
-            <span>Interpreter{language ? `: ${language}` : ", language not given"}</span>
+          {state.interp === "yes" || state.interp === "unavail" ? (
+            <span>
+              Interpreter{state.interp === "unavail" ? " needed, not available" : ""}
+              {language ? `: ${language}` : ", language not given"}
+            </span>
           ) : null}
           {state.sources.length ? <span>Sources: {state.sources.join(", ").toLowerCase()}</span> : null}
           {state.atsi ? null : (
@@ -321,7 +324,7 @@ export function ReviewBody({
               value={state.interp}
               onChange={(v) => set("interp", v)}
             />
-            {state.interp === "yes" ? (
+            {state.interp === "yes" || state.interp === "unavail" ? (
               <TextInput
                 aria-label="Interpreter language"
                 placeholder="Language"

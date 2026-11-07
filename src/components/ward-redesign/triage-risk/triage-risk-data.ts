@@ -628,6 +628,7 @@ export const FDV_NOT_ASKED = [
   ["declined", "Declined"],
   ["unwell", "Too unwell"],
   ["phone", "Phone, not private"],
+  ["interp", "No interpreter"],
 ] as const;
 
 /** Urgency tiers A to G. The clinician always chooses; the form only hints. */
@@ -710,10 +711,14 @@ export const AMHW = [
   ["declined", "Declined"],
   ["na", "Not available"],
 ] as const;
-/** Interpreter needed: No, or Yes with the language (7 Nov 2026). */
+/**
+ * Interpreter needed: No, Yes, or Needed, not available, each of the last two with the language
+ * (7 Nov 2026). Josh kept "Needed, not available": it records a real barrier to the assessment.
+ */
 export const INTERPRETER = [
   ["no", "No"],
   ["yes", "Yes"],
+  ["unavail", "Needed, not available"],
 ] as const;
 /** How the person arrived (7 Nov 2026). */
 export const ARRIVED_BY = [

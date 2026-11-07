@@ -112,7 +112,8 @@ export function FactorRow({ form, flag }: { form: FormApi; flag: string }) {
         pressed={known}
         onPressedChange={() => form.update((s) => toggleNotKnown(s, flag))}
       >
-        Not known<SrOnly>: {FACTOR_NAME[flag]}</SrOnly>
+        <span aria-hidden="true">Not known</span>
+        <SrOnly>{`Not known: ${FACTOR_NAME[flag]}`}</SrOnly>
       </FilterChip>
     </span>
   );
@@ -223,7 +224,9 @@ function FdvBlock({ form }: { form: FormApi }) {
   const anyYes = ["q1", "q2", "q3"].some((q) => state.fdv[q] === "y");
   const questions = FDV_QUESTIONS.filter(([id]) => id !== "q4" || anyYes);
   const notAlone = state.fdvAlone === "no";
-  const notPrivate = (state.how === "phone" || state.others.length > 0) && !state.fdvNot && !notAlone;
+  // No accredited interpreter: the questions cannot be asked through anyone else, so nudge as for privacy.
+  const noInterpreter = state.interp === "unavail";
+  const notPrivate = (state.how === "phone" || state.others.length > 0 || noInterpreter) && !state.fdvNot && !notAlone;
   const answer = (id: string, value: string | null) =>
     update((s) => {
       const fdv = { ...s.fdv };
@@ -287,9 +290,11 @@ function FdvBlock({ form }: { form: FormApi }) {
           <span className={styles.grow}>
             {notAlone
               ? "Not alone: do not ask now. Tap Could not ask and choose why."
-              : state.how === "phone"
-                ? "By phone: if you cannot be sure they are alone and can speak freely, choose No."
-                : "Others were present: ask only once they are alone, or choose No."}
+              : noInterpreter
+                ? "No interpreter available: do not ask through family or friends. Tap Could not ask."
+                : state.how === "phone"
+                  ? "By phone: if you cannot be sure they are alone and can speak freely, choose No."
+                  : "Others were present: ask only once they are alone, or choose No."}
           </span>
         </div>
       ) : null}
