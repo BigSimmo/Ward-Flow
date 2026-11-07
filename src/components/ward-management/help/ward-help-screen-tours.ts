@@ -493,7 +493,7 @@ const AROUND: readonly Around[] = [
         device: "desk",
         target: id("ward-out-of-area-subject"),
         title: "Return plan",
-        body: "Choose a person and their return plan opens here.",
+        body: "Choose a person and their return plan opens in a side panel.",
       },
     ],
   },

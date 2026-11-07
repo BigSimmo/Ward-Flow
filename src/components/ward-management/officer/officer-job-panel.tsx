@@ -6,17 +6,16 @@
 
 import { useEffect, type ReactNode } from "react";
 import Link from "next/link";
-import { FileText, X } from "lucide-react";
+import { FileText } from "lucide-react";
 
-import { Button, Card, CardBody, CardFoot, CardHead, Icon, StatusGlyph, buttonClass, cx } from "@/components/wf";
+import { DrawerFootRow, Icon, PanelDrawer, StatusGlyph, StatusPill, buttonClass } from "@/components/wf";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
-import { legalNowText } from "@/components/ward-management/ward-transport-checks";
 import { transportLeg } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
 
 import { renderDetail, renderPhoneNextStep, type OfficerJobDetailContext } from "./officer-job-detail";
 import { PACK_SLOTS } from "./officer-forms-pack";
-import { LEG_TONE, officerLeg, transportLegalStatusLabel } from "./officer-screen-helpers";
+import { LEG_TONE, officerLeg } from "./officer-screen-helpers";
 import styles from "./officer.module.css";
 
 /**
@@ -54,101 +53,76 @@ export function formsMissingNote(forms: number) {
 
 type OfficerJobPanelProps = {
   job: Movement & { transport: NonNullable<Movement["transport"]> };
-  isPhone: boolean;
   name: string;
   umrn: string | undefined;
-  origin: string;
-  destination: string;
   context: OfficerJobDetailContext;
   tools: ReactNode;
   onClose: () => void;
 };
 
-export function OfficerJobPanel({
-  job,
-  isPhone,
-  name,
-  umrn,
-  origin,
-  destination,
-  context,
-  tools,
-  onClose,
-}: OfficerJobPanelProps) {
+export function OfficerJobPanel({ job, name, umrn, context, tools, onClose }: OfficerJobPanelProps) {
   const transport = job.transport;
-  const legal = transportLegalStatusLabel(transport);
-  useOfficerPanelHeight("ward-officer-detail", isPhone, job.id);
+  const leg = officerLeg(transport) ?? "Requested";
+  const detail = renderDetail(job, context);
+  if (!detail) return null;
+  const { tabs, panel } = detail;
+  // Drawer review (6 Nov 2026): the job opens in the kit drawer at every width, as Home and
+  // Capacity do, so the jobs list keeps the page's one scroll and the panel never scrolls inside it.
+  // One short subtitle (UMRN and escort); the legal status leads the Details list.
+  const subtitle = [
+    umrn ? (
+      <span key="umrn" className={styles.mono}>
+        {umrn}
+      </span>
+    ) : null,
+    transport.escortRequired ? <span key="escort">Escort</span> : null,
+  ]
+    .filter(Boolean)
+    .flatMap((part, index) =>
+      index === 0
+        ? [part]
+        : [
+            <span key={`dot-${index}`} aria-hidden="true">
+              ·
+            </span>,
+            part,
+          ],
+    );
   return (
-    <Card
-      className={styles.detail}
-      role={isPhone ? "dialog" : undefined}
-      aria-modal={isPhone ? true : undefined}
-      aria-labelledby="ward-officer-detail-heading"
-      data-testid="ward-officer-detail"
-    >
-      <span className={styles.grab} aria-hidden="true" />
-      <CardHead
-        id="ward-officer-detail-heading"
-        className={styles.detailHead}
-        title={
-          <span className={styles.detailTitle}>
-            {name}
-            <span className={styles.detailTag}>
-              <StatusGlyph tone={LEG_TONE[officerLeg(transport) ?? "Requested"]} size={9} />
-              {transportLeg(transport)}
-            </span>
-          </span>
-        }
-        meta={
-          <>
-            {/* The UMRN is withheld on some desks; no stray " · " is left in its place. */}
-            {umrn ? <span className={styles.mono}>{umrn}</span> : null}
-            {isPhone ? (
-              <>
-                {umrn ? " · " : null}
-                {origin} to {destination}
-                {transport.escortRequired ? " · Escort" : ""}
-              </>
-            ) : (
-              <>
-                {umrn ? " · " : null}
-                {/* TR2 (3 Nov 2026): when the booking has no legal status, show Legal now, not a blank. */}
-                {legal === "Not recorded" ? legalNowText(job) : legal}
-                {transport.escortRequired ? " · Escort" : ""}
-              </>
-            )}
-          </>
-        }
-        aside={
-          <>
-            {/* TR2 (3 Nov 2026): the full record, one tap from the job, beside close. */}
+    <PanelDrawer
+      open
+      onClose={onClose}
+      title={name}
+      titleId="ward-officer-detail-heading"
+      subtitle={<span className={styles.drawerSubtitle}>{subtitle}</span>}
+      tag={<StatusPill tone={LEG_TONE[leg]}>{transportLeg(transport)}</StatusPill>}
+      closeLabel="Close job panel"
+      tabs={tabs}
+      tab={context.detailTab}
+      onTabChange={context.setDetailTab}
+      tabsLabel="Job details"
+      testId="ward-officer-detail"
+      className={styles.jobDrawer}
+      bodyClassName={styles.jobDrawerBody}
+      foot={
+        <>
+          {renderPhoneNextStep(job, context)}
+          <DrawerFootRow className={styles.jobDrawerTools}>
+            {tools}
+            {/* TR2 (3 Nov 2026): the full record, one tap from the job. */}
             <Link
-              className={buttonClass({ variant: "ghost", size: "sm", iconOnly: true })}
+              className={buttonClass({ variant: "sec" })}
               href={movementHref(job.id)}
-              aria-label="Open the movement record"
-              title="Open the movement record"
               data-testid={`ward-officer-record-${job.id}`}
             >
               <Icon icon={FileText} size={16} />
+              Movement record
             </Link>
-            <Button
-              variant="ghost"
-              size="sm"
-              iconOnly
-              icon={X}
-              onClick={onClose}
-              aria-label="Close job panel"
-              data-testid="ward-officer-detail-close"
-            />
-          </>
-        }
-      />
-      <CardBody className={cx(styles.detailBody, styles.detailScroll)}>{renderDetail(job, context)}</CardBody>
-      {/* One pinned foot at every width: Inspect form and Divert, then the one next step as the primary. */}
-      <CardFoot className={cx(styles.detailFooter, styles.detailFoot)}>
-        <span className={styles.footTools}>{tools}</span>
-        {renderPhoneNextStep(job, context)}
-      </CardFoot>
-    </Card>
+          </DrawerFootRow>
+        </>
+      }
+    >
+      {panel}
+    </PanelDrawer>
   );
 }

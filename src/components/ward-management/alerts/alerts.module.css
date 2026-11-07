@@ -12,6 +12,11 @@
   font-family: var(--wf-font);
 }
 
+/* Focus lands here only when a released alert's row has gone; the page itself needs no ring. */
+.main:focus {
+  outline: none;
+}
+
 .main {
   display: flex;
   flex-direction: column;
@@ -281,9 +286,11 @@ button.check[aria-pressed="true"] {
 
 /* ---------- Layout ---------- */
 
+/* Drawer review (6 Nov 2026): the queue takes the full width; a chosen alert opens in the kit right
+   drawer at every width, so there is no side panel or sticky rail. */
 .grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 23rem;
+  grid-template-columns: minmax(0, 1fr);
   align-items: start;
   gap: var(--wf-s-3);
   min-width: 0;
@@ -1023,12 +1030,6 @@ button.check[aria-pressed="true"] {
 
 /* ---------- Selected alert panel ---------- */
 
-.panel {
-  position: sticky;
-  top: var(--wf-s-3);
-  min-width: 0;
-}
-
 .panelCard {
   min-width: 0;
   overflow: hidden;
@@ -1350,29 +1351,14 @@ button.check[aria-pressed="true"] {
 
 /* ---------- Narrower desktops ---------- */
 
-/* The "where" column leaves first; the panel narrows. */
+/* The "where" column leaves first. */
 @media (max-width: 70rem) {
-  .grid {
-    grid-template-columns: minmax(0, 1fr) 21rem;
-  }
-
   .row {
     grid-template-columns: 1rem minmax(0, 1.6fr) minmax(0, 1fr) 6rem 9rem;
   }
 
   .cellWhere {
     display: none;
-  }
-}
-
-/* Below the shell boundary the panel sits under the queue. */
-@media (max-width: 62.5rem) {
-  .grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .panel {
-    position: static;
   }
 }
 

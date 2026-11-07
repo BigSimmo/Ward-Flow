@@ -184,6 +184,10 @@
   width: 100%;
   justify-content: center;
 }
+/* The inline reason's 160px flex basis is a width in a row; in this column it became a 160px gap. */
+.releaseAction > span > span {
+  flex: 0 0 auto;
+}
 .actionsRow.actionsRow > button {
   width: auto;
 }

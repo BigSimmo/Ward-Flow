@@ -427,7 +427,8 @@ describe("opening a chosen alert from the drawer (change 7, D-77)", () => {
     address.query = "view=list";
     try {
       const { rerender } = renderScreen();
-      expect(screen.queryByRole("combobox", { name: "Reason for release" })).not.toHaveFocus();
+      // Drawer review (6 Nov 2026): no alert is open until the address or a row chooses one.
+      expect(screen.queryByRole("combobox", { name: "Reason for release" })).not.toBeInTheDocument();
       address.query = `alert=${encodeURIComponent(hold.id)}&release=1`;
       rerender(
         <WardFlowProvider initialNow={NOW}>

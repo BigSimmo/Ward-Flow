@@ -1663,7 +1663,7 @@
       "control": "Record escalation"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-06",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1682,8 +1682,8 @@
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
-          "line": 727,
-          "sha256": "2587f644a86e751b4d4e3bb49d609b0f72b9a74ead8af9b9f222edb63fab9712"
+          "line": 739,
+          "sha256": "2896fb56b60b90364f4e0395a5a009b0c8b58e1d6996d62e6ebabc10c507cefb"
         },
         {
           "path": "src/components/ward-management/delays/delays-screen.tsx",
@@ -1949,7 +1949,7 @@
       "control": "Release the pulled bed"
     },
     "review": {
-      "reviewedOn": "2026-11-05",
+      "reviewedOn": "2026-11-06",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -1963,8 +1963,8 @@
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
-          "line": 712,
-          "sha256": "2587f644a86e751b4d4e3bb49d609b0f72b9a74ead8af9b9f222edb63fab9712"
+          "line": 724,
+          "sha256": "2896fb56b60b90364f4e0395a5a009b0c8b58e1d6996d62e6ebabc10c507cefb"
         },
         {
           "path": "src/components/ward-management/ward/ward-screen.tsx",
@@ -2206,7 +2206,7 @@
       "control": "Transport booked The officer booking form guards entered answers and pending saves on outer close or job change. Keep editing retains the draft; only an accepted current save clears the booking without a discard question. A held uncertain command stays owned for same-command recovery rather than sending a duplicate."
     },
     "review": {
-      "reviewedOn": "2026-11-05",
+      "reviewedOn": "2026-11-06",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -2220,8 +2220,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-needs-transport.tsx",
-          "line": 347,
-          "sha256": "e0ff79f4613ad3c4ad0f2e8677f76f39146a2c377b4fcd6ab9ebd0b8e4892ab6"
+          "line": 349,
+          "sha256": "50c998a1d411de3ce21ee5dceb76831390ae3912f63e1383b37709357d2cbf0d"
         },
         {
           "path": "src/components/ward-management/community/use-community-screen-overlays.ts",
@@ -2374,7 +2374,7 @@
       "control": "Accepted"
     },
     "review": {
-      "reviewedOn": "2026-11-05",
+      "reviewedOn": "2026-11-06",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -2388,8 +2388,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 500,
-          "sha256": "04e077f414d9b5ae60bcbcd70f3037ca8f9d4fed98bc944badc688979e37f99c"
+          "line": 494,
+          "sha256": "7e034ad72e47bb4dab7b7200e6d23daa1b8e16416f69fbe8e00c9f4f8cb61199"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2443,7 +2443,7 @@
       "control": "En route"
     },
     "review": {
-      "reviewedOn": "2026-11-05",
+      "reviewedOn": "2026-11-06",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -2457,8 +2457,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 507,
-          "sha256": "04e077f414d9b5ae60bcbcd70f3037ca8f9d4fed98bc944badc688979e37f99c"
+          "line": 501,
+          "sha256": "7e034ad72e47bb4dab7b7200e6d23daa1b8e16416f69fbe8e00c9f4f8cb61199"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2520,7 +2520,7 @@
       "control": "Collected"
     },
     "review": {
-      "reviewedOn": "2026-11-05",
+      "reviewedOn": "2026-11-06",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -2534,8 +2534,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 523,
-          "sha256": "04e077f414d9b5ae60bcbcd70f3037ca8f9d4fed98bc944badc688979e37f99c"
+          "line": 517,
+          "sha256": "7e034ad72e47bb4dab7b7200e6d23daa1b8e16416f69fbe8e00c9f4f8cb61199"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2597,7 +2597,7 @@
       "control": "Confirm Arrival"
     },
     "review": {
-      "reviewedOn": "2026-11-05",
+      "reviewedOn": "2026-11-06",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -2611,8 +2611,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 542,
-          "sha256": "04e077f414d9b5ae60bcbcd70f3037ca8f9d4fed98bc944badc688979e37f99c"
+          "line": 536,
+          "sha256": "7e034ad72e47bb4dab7b7200e6d23daa1b8e16416f69fbe8e00c9f4f8cb61199"
         },
         {
           "path": "src/components/ward-management/tools/ward-tool-feed.tsx",
@@ -4023,7 +4023,7 @@
       "control": "No longer held up"
     },
     "review": {
-      "reviewedOn": "2026-11-05",
+      "reviewedOn": "2026-11-06",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4042,8 +4042,8 @@
         },
         {
           "path": "src/components/ward-management/discharges/discharge-board.tsx",
-          "line": 1408,
-          "sha256": "6aa24bd14c6526f436f9f9502502951e7523ef1fcdda58fe016b13ddb546d319"
+          "line": 489,
+          "sha256": "e0ffaafb2ba89f4f0ddd7ee3fd751f98915f9cbb0b2c24da25256fac05cf7f28"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
@@ -4749,7 +4749,7 @@
       "control": "Acknowledge Alert"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-06",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4768,8 +4768,8 @@
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
-          "line": 659,
-          "sha256": "2587f644a86e751b4d4e3bb49d609b0f72b9a74ead8af9b9f222edb63fab9712"
+          "line": 671,
+          "sha256": "2896fb56b60b90364f4e0395a5a009b0c8b58e1d6996d62e6ebabc10c507cefb"
         },
         {
           "path": "src/components/ward-management/ward-inbox-reducer.ts",
@@ -5762,7 +5762,7 @@
       "control": "Update expected departure The ward drawer fixes its day choices when the editor opens, so a save made just after midnight keeps the day that was chosen."
     },
     "review": {
-      "reviewedOn": "2026-11-05",
+      "reviewedOn": "2026-11-06",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -5791,8 +5791,8 @@
         },
         {
           "path": "src/components/ward-management/discharges/discharge-detail-panes.tsx",
-          "line": 319,
-          "sha256": "f8e814a5dff7204389bad0293c5e8fcd78c8460cd4d3a681c214b34f78434cfb"
+          "line": 304,
+          "sha256": "e5336a5cf0037d9c50af5a381b33e5ac5f8278de1a800067197254a82a19aec3"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
@@ -6805,7 +6805,7 @@
       "control": "Record repatriation After the latest linked return journey is closed did_not_proceed, the Out of area screen reopens the return-plan form rather than treating the older agreed plan as still active. Historical records remain; retry acceptance and creation of another journey remain engine decisions."
     },
     "review": {
-      "reviewedOn": "2026-11-05",
+      "reviewedOn": "2026-11-06",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -6819,8 +6819,8 @@
         },
         {
           "path": "src/components/ward-management/out-of-area/out-of-area-board.tsx",
-          "line": 408,
-          "sha256": "9148c4adf240ed564b87c45d48b4b1e6edef3e5b43ef35e55693c0e830853ad3"
+          "line": 411,
+          "sha256": "22f140fb0cec615168b30cf5ae3568eebad9008f078a15da9106dd5a161ec1ee"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-stay-events.ts",
@@ -7004,7 +7004,7 @@
       "control": "+ Broadcast Network Alert"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-06",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -7018,8 +7018,8 @@
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
-          "line": 816,
-          "sha256": "2587f644a86e751b4d4e3bb49d609b0f72b9a74ead8af9b9f222edb63fab9712"
+          "line": 828,
+          "sha256": "2896fb56b60b90364f4e0395a5a009b0c8b58e1d6996d62e6ebabc10c507cefb"
         },
         {
           "path": "src/components/ward-management/alerts/ward-broadcast-reducer.ts",
@@ -7132,7 +7132,7 @@
       "control": "Stand Down Directive"
     },
     "review": {
-      "reviewedOn": "2026-11-03",
+      "reviewedOn": "2026-11-06",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -7146,8 +7146,8 @@
         },
         {
           "path": "src/components/ward-management/alerts/alerts-screen.tsx",
-          "line": 850,
-          "sha256": "2587f644a86e751b4d4e3bb49d609b0f72b9a74ead8af9b9f222edb63fab9712"
+          "line": 862,
+          "sha256": "2896fb56b60b90364f4e0395a5a009b0c8b58e1d6996d62e6ebabc10c507cefb"
         },
         {
           "path": "src/components/ward-management/shell/ward-broadcast-banner.tsx",

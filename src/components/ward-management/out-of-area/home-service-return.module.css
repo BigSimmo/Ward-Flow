@@ -1,12 +1,13 @@
-/* Closing-the-loop (package E): return requested vs home service agreed. */
+/* Closing-the-loop (package E): return requested vs home service agreed. Drawer review (6 Nov 2026):
+   a plain section of the plan between hairlines, not a card inside the panel, with the plan's own
+   16px inset so its left edge lines up with the facts and steps. */
 .panel {
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-2);
-  margin: var(--wf-s-3) 0;
-  padding: var(--wf-s-3);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
+  margin: 0;
+  padding: var(--wf-s-3) var(--wf-s-4);
+  border-bottom: 1px solid var(--wf-line);
   background: var(--wf-surface);
 }
 
