@@ -398,7 +398,7 @@ describe("PR15 discharge and referral provenance", () => {
     // Referrals redesign (Josh, 31 Oct 2026): the Patient tab's Referrer block names the gap in words,
     // and "Why referred" carries the time the referral was raised.
     fireEvent.click(screen.getByRole("tab", { name: "Patient" }));
-    const detail = screen.getByRole("region", { name: "Selected referral detail" });
+    const detail = screen.getByTestId("ward-referral-detail");
     expect(detail.textContent).toMatch(/ReferrerNot recorded/);
     expect(detail.textContent).toContain("Direct contact not recorded");
     expect(detail.textContent).toContain("Why referred");

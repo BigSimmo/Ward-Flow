@@ -177,8 +177,10 @@ describe("approved four-tab referral drawer journey", () => {
     // Phone review F-06 (Oct 2026): queue rows read family name first, as the census does.
     expect(board).toHaveTextContent("Wren, Tobias");
     fireEvent.click(within(board).getAllByRole("button", { name: /Wren, Tobias/ })[0]);
-    fireEvent.click(within(board).getByRole("tab", { name: "Patient" }));
-    expect(board).toHaveTextContent("Synthetic patient story for inbox review");
+    // Drawer review (6 Nov 2026): the chosen referral opens in the kit drawer, outside the board.
+    const drawer = screen.getByTestId("ward-referral-detail");
+    fireEvent.click(within(drawer).getByRole("tab", { name: "Patient" }));
+    expect(drawer).toHaveTextContent("Synthetic patient story for inbox review");
   }, 90_000);
 });
 

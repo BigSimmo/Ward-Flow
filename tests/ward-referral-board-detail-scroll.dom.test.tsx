@@ -46,9 +46,11 @@ describe("Referral board detail panel scroll (H-0369)", () => {
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getAllByTestId(/^ward-referral-board-row-/)[0]!);
-    const detail = screen.getByRole("region", { name: "Selected referral detail" });
-    expect(detail, "no referral was selected, so this proves nothing").toHaveAttribute("data-has-selection", "true");
-    const scroll = trackScroll(detail);
+    // Drawer review (6 Nov 2026): the referral opens in the kit drawer, whose body is its one scroll.
+    const detail = screen.getByTestId("ward-referral-detail");
+    const body = detail.querySelector<HTMLElement>("[data-drawer-scroll]");
+    expect(body, "no referral was selected, so this proves nothing").not.toBeNull();
+    const scroll = trackScroll(body!);
     scroll.scrollTo(240);
 
     fireEvent.click(screen.getAllByRole("button", { name: "Referral" })[0]!);

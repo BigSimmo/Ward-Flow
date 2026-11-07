@@ -70,7 +70,9 @@ describe("Delays escalation follows the existing desk permission", () => {
     expect(sent.filter((event) => event.type === "RECORD_ESCALATION")).toHaveLength(0);
   });
 
-  it("widens the ward desk's list to the full width while the person panel is closed (Josh, 31 Oct 2026)", () => {
+  // Drawer review (6 Nov 2026): the person opens in the kit drawer over the list, so the ward desk's
+  // list keeps the full width with a person open or not, and nothing opens by itself.
+  it("keeps the ward desk's list at the full width, with the person in the drawer (Josh, 31 Oct 2026)", () => {
     installMatchMediaStub(false);
     act(() => {
       setWardFeatureFlagOnDevice("role-access", true);
@@ -81,13 +83,14 @@ describe("Delays escalation follows the existing desk permission", () => {
         <DelaysScreen />
       </WardFlowProvider>,
     );
-    // On a laptop the ward desk opens on its first person, so the panel starts in the second column.
     const split = () => document.getElementById("delays-table")!.parentElement!;
-    expect(split(), "the open person panel takes the second column").not.toHaveAttribute("data-single");
-    fireEvent.click(screen.getByTestId("delays-close-detail"));
+    expect(screen.queryByRole("region", { name: "Why this person is waiting" })).toBeNull();
     expect(split()).toHaveAttribute("data-single");
     openPerson(movement.id);
-    expect(split()).not.toHaveAttribute("data-single");
+    expect(screen.getByTestId(`delays-detail-${movement.id}`)).toBeInTheDocument();
+    expect(split()).toHaveAttribute("data-single");
+    fireEvent.click(screen.getByTestId("wf-drawer-close"));
+    expect(screen.queryByTestId(`delays-detail-${movement.id}`)).toBeNull();
   });
 
   it.each(["bed_manager", "coordinator"] as const)("keeps the action visible and gates %s before dispatch", (role) => {

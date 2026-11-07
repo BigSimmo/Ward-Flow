@@ -112,7 +112,7 @@ describe("Referrals as the nurse in charge", () => {
     // The ward keeps its decision pane, which is not a read-only desk.
     const rows = screen.getAllByTestId(/^ward-referral-board-select-(?!decided)/);
     fireEvent.click(rows[0]!);
-    const detail = screen.getByRole("region", { name: "Selected referral detail" });
+    const detail = screen.getByTestId("ward-referral-detail");
     expect(within(detail).queryByTestId("ward-referral-read-only-foot")).not.toBeInTheDocument();
     // Its own Accept and Decline: the decision's Decline, or the bottom bar's way back to it.
     expect(
@@ -127,7 +127,7 @@ describe("Referrals as the nurse in charge", () => {
     expect(screen.getByTestId("ward-referral-board-own-ward-empty")).toHaveTextContent(
       `No referral or bed offer for ${WARD.name}.`,
     );
-    expect(screen.queryByRole("region", { name: "Selected referral detail" })).not.toBeInTheDocument();
+    expect(screen.queryByTestId("ward-referral-detail")).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-referral-board-order-note")).not.toBeInTheDocument();
   });
 

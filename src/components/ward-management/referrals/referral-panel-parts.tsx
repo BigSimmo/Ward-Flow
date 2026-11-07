@@ -6,6 +6,7 @@
 // tick marks the end of the tier's window. PanelNav replaces the panel's footer row (Summary, Next)
 // with one compact row under the header: previous and next with "n of N", then Summary and Patient.
 
+import type { ReactNode } from "react";
 import Link from "next/link";
 import {
   BedSingle,
@@ -48,6 +49,22 @@ function shortWhen(at: Instant, now: Instant): string {
   const words = formatInstantWithDay(at, now);
   const comma = words.indexOf(", ");
   return comma === -1 ? words : words.slice(comma + 2);
+}
+
+/**
+ * Drawer review (6 Nov 2026): only the figures take Geist Mono. A whole phrase in mono read as
+ * "Sent 3  days  ago", its wide spaces looking doubled.
+ */
+function monoFigures(words: string, mono: string | undefined): ReactNode {
+  return words.split(/(\d[\d:.]*)/).map((part, index) =>
+    index % 2 === 1 ? (
+      <span key={index} className={mono}>
+        {part}
+      </span>
+    ) : (
+      part
+    ),
+  );
 }
 
 function clockTime(now: Instant): string {
@@ -117,9 +134,7 @@ export function LiveDecisionClock({ referral, now }: { referral: Referral; now: 
         <span className={s.clockDue} style={{ left: `${Math.round((window / scale) * 100)}%` }} />
       </div>
       <div className={s.clockFoot}>
-        <span>
-          Sent <span className={s.mono}>{shortWhen(referral.raisedAt, now)}</span>
-        </span>
+        <span>Sent {monoFigures(shortWhen(referral.raisedAt, now), s.mono)}</span>
         <span>
           {running ? (
             <>
@@ -127,9 +142,7 @@ export function LiveDecisionClock({ referral, now }: { referral: Referral; now: 
             </>
           ) : null}
         </span>
-        <span>
-          Due <span className={s.mono}>{shortWhen(dueAt, now)}</span>
-        </span>
+        <span>Due {monoFigures(shortWhen(dueAt, now), s.mono)}</span>
       </div>
       {/* Smart features idea 3: who has this in hand. A courtesy note; the clock keeps running. */}
       <ReferralWorkedOn referral={referral} />

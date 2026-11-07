@@ -86,8 +86,9 @@ describe("Delays — the drawing's panel names (task D1)", () => {
    * renames ("Waiting" beside "What the blocker is") could each individually be present while the
    * drawing's actual sequence was silently reshuffled.
    *
-   * Nobody is selected on a fresh render, so the side column shows the registers rail. Choosing a
-   * person replaces the rail with their panel; there is no "Nobody selected" panel (next `describe`).
+   * Nobody is selected on a fresh render, so the side column shows the registers rail. Drawer review
+   * (6 Nov 2026): choosing a person opens their kit drawer over the page and leaves the page's panels
+   * as they are; there is no "Nobody selected" panel (next `describe`).
    */
   it("renders the drawing's panels, in the drawing's order", () => {
     renderScreen();
@@ -102,16 +103,17 @@ describe("Delays — the drawing's panel names (task D1)", () => {
       }),
     ).toBeInTheDocument();
 
-    // Choosing somebody turns the rail into their panel, in the same place.
+    // Choosing somebody opens their drawer; the page's panels stay as drawn.
     const [firstSelectButton] = screen.getAllByTestId(/^delays-select-/u);
     fireEvent.click(firstSelectButton);
-    expect(panelTitlesInOrder()).toEqual(["Whose move", "Waiting", "Why this person is waiting", "Delay graphs"]);
+    expect(screen.getByRole("region", { name: "Why this person is waiting" })).toBeInTheDocument();
+    expect(panelTitlesInOrder()).toEqual(["Whose move", "Waiting", "Escalations and resolved", "Delay graphs"]);
 
     // Switching graph changes what the graph panel draws, never which panels exist.
     fireEvent.click(
       within(screen.getByRole("tablist", { name: "Delay graph" })).getByRole("tab", { name: "Next 4 hours" }),
     );
-    expect(panelTitlesInOrder()).toEqual(["Whose move", "Waiting", "Why this person is waiting", "Delay graphs"]);
+    expect(panelTitlesInOrder()).toEqual(["Whose move", "Waiting", "Escalations and resolved", "Delay graphs"]);
   });
 
   /**

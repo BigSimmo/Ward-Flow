@@ -89,7 +89,7 @@ describe("the Delays board's data views", () => {
     ).toBe(true);
   });
 
-  it("opens a timeline under the chosen row, naming arrival, now, and any recorded legal time", () => {
+  it("opens the chosen person's timeline in their drawer, naming arrival, now, and any recorded legal time", () => {
     renderDelays();
     const withDue = ROWS.filter((row) => row.dueIn !== undefined && row.dueIn >= 0)[0];
     expect(withDue, "no open person carries a future legal time").toBeDefined();
@@ -373,7 +373,10 @@ describe("the Delays board's data views", () => {
         );
       expect(quietButton, "Longest quiet lists nobody").toBeDefined();
       fireEvent.click(quietButton!);
-      const sheet = screen.getByRole("region", { name: "Why this person is waiting" });
+      // Drawer review (6 Nov 2026): the person opens in the kit drawer; focus goes to its Close button.
+      const sheet = screen
+        .getByRole("region", { name: "Why this person is waiting" })
+        .closest<HTMLElement>('[role="dialog"]')!;
       expect(sheet.contains(document.activeElement), "focus stayed on the covered table").toBe(true);
       // The sheet is in the shared modal stack, which answers Escape at the window.
       fireEvent.keyDown(window, { key: "Escape" });

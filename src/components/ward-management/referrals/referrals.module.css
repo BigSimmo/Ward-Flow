@@ -4996,3 +4996,109 @@
     min-height: max(3rem, var(--ward-tap, var(--spacing-tap, 3rem)));
   }
 }
+
+/* ─── Drawer review (6 Nov 2026): the chosen referral in the kit drawer ─────────────────────────
+   The drawer portals out of `.screen`, so it carries the page's tokens itself. The queue takes the
+   full width; the drawer's body is its one scroll. Neutral borders only: tone stays in the tier tag
+   and the glyphs (D-94). */
+.detailDrawer {
+  composes: wardTokens from "../ward-tokens.module.css";
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+}
+
+.detailDrawer.detailDrawer {
+  width: min(100%, 36rem);
+}
+
+.drawerContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  padding: var(--wf-s-4);
+}
+
+/* The head line: UMRN and who, then the queue pager at the end of the same line. */
+.drawerSubtitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-1) var(--wf-s-2);
+}
+
+.drawerWho {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.drawerPager {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+
+.drawerPagerCount {
+  min-width: 3.5rem;
+  color: var(--wf-ink-2);
+  font-family: var(--wf-mono);
+  font-feature-settings: "tnum" 1;
+  font-size: var(--wf-fs-12);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* The foot: one filled primary across the width, then the quiet buttons at one height. */
+.drawerFootNote {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+
+.drawerPrimary {
+  display: flex;
+}
+
+.drawerPrimary > * {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+.drawerFootRow.drawerFootRow {
+  align-items: stretch;
+}
+
+/* Accept and Decline render into this slot from the decision view; `display: contents` makes them
+   items of the foot row, so Accept can lead the foot across the width. */
+.decisionSlot {
+  display: contents;
+}
+
+/* The match view's grid, which the page drew through `.screen .registerDetail`. */
+.drawerContent .matchPanel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-auto-rows: max-content;
+  align-content: start;
+  gap: var(--ward-space-12, 0.75rem);
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* A note that used to fill the empty detail column, now a plain line under the queue. */
+.registerNote {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
+.registerNote p {
+  margin: 0;
+}

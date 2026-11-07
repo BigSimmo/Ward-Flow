@@ -446,8 +446,10 @@ button.runwayCardRow:focus-visible {
 /* ─── Layout: queue table and the decision panel ───────────────────────────── */
 
 @media (min-width: 64rem) {
+  /* Drawer review (6 Nov 2026): the decision opens in the kit drawer, so the queue takes the full
+     width at every size and the page keeps one scroll. */
   [data-referral-layout="queue-panel"] .layout.layout.layout.layout {
-    grid-template-columns: minmax(0, 1fr) clamp(23rem, 34%, 28rem);
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--wf-s-3);
     /* BA-11 (front-end audit, 5 Nov 2026): the queue and panel stop at about 1,920px, so on a 2560
        screen the Patient and "Since referral" columns are not 1,400px apart. */
@@ -771,8 +773,15 @@ button.runwayCardRow:focus-visible {
     padding-block: 11px;
     margin-block: -11px;
   }
+  /* Drawer review (6 Nov 2026): the 40px box overlaps the UMRN line, so a ring on the button cut
+     through the UMRN. The ring goes round the whole name block instead. */
   .rowSelect:focus-visible {
-    outline-offset: -2px;
+    outline: none;
+  }
+  .who:has(> .rowSelect:focus-visible) {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+    border-radius: var(--wf-r-xs);
   }
 }
 

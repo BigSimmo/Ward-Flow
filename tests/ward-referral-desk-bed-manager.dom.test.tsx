@@ -113,7 +113,7 @@ describe("the site bed manager's Referrals desk", () => {
     renderAs(bedManagerAt(QUEUED_SITE));
     const rows = await screen.findAllByTestId(/^ward-referral-board-select-(?!decided)/);
     fireEvent.click(rows[0]!);
-    const detail = screen.getByRole("region", { name: "Selected referral detail" });
+    const detail = screen.getByTestId("ward-referral-detail");
     const notes = within(detail).getAllByTestId("ward-referral-read-only");
     expect(notes).toHaveLength(1);
     expect(notes[0]).toHaveTextContent("Read only. The coordinator and the receiving ward answer this referral.");
@@ -135,10 +135,11 @@ describe("the site bed manager's Referrals desk", () => {
     expect(hero).not.toHaveTextContent(/Oldest/);
     expect(within(hero).queryByRole("group", { name: "Highlight referrals" })).not.toBeInTheDocument();
     expect(screen.queryByTestId("ward-referral-board-order-note")).not.toBeInTheDocument();
-    const detail = screen.getByRole("region", { name: "Selected referral detail" });
-    expect(detail).toHaveTextContent("Read only");
-    expect(detail).toHaveTextContent("The coordinator and the receiving ward answer each referral.");
-    expect(detail).not.toHaveTextContent(/Select a queued referral/);
+    // Drawer review (6 Nov 2026): no empty detail column; the note sits under the full-width queue.
+    const note = screen.getByTestId("ward-referral-read-only-empty");
+    expect(note).toHaveTextContent("Read only");
+    expect(note).toHaveTextContent("The coordinator and the receiving ward answer each referral.");
+    expect(screen.queryByText(/Select a queued referral/)).not.toBeInTheDocument();
   });
 
   it("on the phone, names its site code and read only, with no Beds ready figure", async () => {

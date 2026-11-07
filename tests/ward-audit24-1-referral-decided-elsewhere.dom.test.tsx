@@ -76,24 +76,24 @@ function queueIds() {
     .map((row) => row.getAttribute("data-referral-id")!);
 }
 
-const detail = () => screen.getByRole("region", { name: "Selected referral detail" });
+// Drawer review (6 Nov 2026): the chosen referral opens in the kit drawer; nothing opens by itself.
+const drawerOpen = () => screen.queryByTestId("ward-referral-detail") !== null;
 
 describe("Referrals board: a referral decided elsewhere (B-03)", () => {
   it.each([
-    ["chosen by the coordinator", true],
-    ["opened by default", false],
-  ])("names them and selects nobody when %s", (_label, choose) => {
+    ["chosen second in the queue", 1],
+    ["chosen first in the queue", 0],
+  ])("names them and selects nobody when %s", (_label, index) => {
     const adjust = renderBoard();
-    const [, second] = queueIds();
-    const target = choose ? second! : queueIds()[0]!;
-    if (choose) fireEvent.click(screen.getByTestId(`ward-referral-board-select-${target}`));
+    const target = queueIds()[index]!;
+    fireEvent.click(screen.getByTestId(`ward-referral-board-select-${target}`));
     const name = screen.getByTestId(`ward-referral-board-select-${target}`).textContent ?? "";
-    expect(detail()).toHaveAttribute("data-has-selection", "true");
+    expect(drawerOpen()).toBe(true);
 
     act(() => adjust(decidedElsewhere(target)));
 
     expect(queueIds()).not.toContain(target);
-    expect(detail()).toHaveAttribute("data-has-selection", "false");
+    expect(drawerOpen()).toBe(false);
     const notice = screen.getByTestId("ward-referral-decided-elsewhere");
     expect(name.length).toBeGreaterThan(0);
     expect(notice.textContent).toContain("was decided elsewhere.");
@@ -104,6 +104,6 @@ describe("Referrals board: a referral decided elsewhere (B-03)", () => {
     // Choosing another referral clears the notice.
     fireEvent.click(screen.getByTestId(`ward-referral-board-select-${queueIds()[0]}`));
     expect(screen.queryByTestId("ward-referral-decided-elsewhere")).not.toBeInTheDocument();
-    expect(detail()).toHaveAttribute("data-has-selection", "true");
+    expect(drawerOpen()).toBe(true);
   });
 });

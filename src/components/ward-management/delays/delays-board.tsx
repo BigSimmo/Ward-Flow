@@ -23,14 +23,7 @@ import { patientAgeText } from "@/components/ward-management/ward-patients";
 import { type Movement, type Unit } from "@/components/ward-management/ward-model";
 import { bandIncludes, originCode, tightHours, WAIT_BANDS, windowText, type WaitBandId } from "./wait-bands";
 import { FormalName, ShowMoreRow } from "@/components/wf";
-import {
-  readDelaysFlat,
-  transitNote,
-  useDelaysFlatStore,
-  useSheetLayout,
-  useSideScroll,
-  writeDelaysFlat,
-} from "./delays-board-stores";
+import { readDelaysFlat, transitNote, useDelaysFlatStore, useSideScroll, writeDelaysFlat } from "./delays-board-stores";
 import { urgencyTierLabel } from "@/components/ward-management/ward-priority";
 import {
   CheckingFoot,
@@ -75,7 +68,6 @@ import {
   isOver24hInEd,
   isOver8hInEd,
 } from "./delays-board-model";
-import { useWardModalFocus } from "@/components/ward-management/ward-modal-focus";
 import { replaceSearchParams, useLocationSearch } from "@/components/ward-management/ward-url-state";
 import { filtersFromSearch, filtersKey, filtersKeyOf, filtersToParams, flatOrderFromSearch } from "./delays-url-state";
 import { DelaysBoardGraphs } from "./delays-board-graphs";
@@ -92,7 +84,6 @@ import {
   useReturnToPlace,
 } from "@/components/ward-management/use-return-to-place";
 import { WaitBar, phoneUpdate, updateCell } from "./delays-board-rows";
-import { RowTimeline } from "./delays-board-rows";
 import { legalCell, phonePrefix } from "./delays-board-rows";
 import { currentLegalDueAt } from "@/components/ward-management/legal-forms/legal-form-progression";
 import waitingKeys from "./waiting.module.css";
@@ -252,8 +243,6 @@ export function DelaysBoard({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const tableRef = useRef<HTMLElement>(null);
   const [sideScrollRef, sideScroll] = useSideScroll();
-  const panelRef = useRef<HTMLElement>(null);
-  const sheet = useSheetLayout();
   // v10 phone: the registers, the longest quiet list and the graphs sit one tap away as cards.
   const isPhone = useIsPhone();
   const isTabletPortrait = useIsTabletPortrait();
@@ -278,13 +267,8 @@ export function DelaysBoard({
   const selected = selectedId === null ? null : (shown.find((row) => row.movement.id === selectedId) ?? null);
   // Drop the hidden choice too, so Escape, the pressed graph dot and a later clear all agree it closed.
   if (selectedId !== null && selected === null) setSelectedId(null);
-  // Role view (nurse in charge): the side column opens on the first person, not on the registers.
-  const [autoOpened, setAutoOpened] = useState(false);
-  // Only where the panel is a side column: as a sheet (phone, tablet, narrow laptop) it would cover the list.
-  if (wardDesk && !autoOpened && !sheet && !isPhone && !portrait && shown[0]) {
-    setAutoOpened(true);
-    setSelectedId(shown[0].movement.id);
-  }
+  // Drawer review (6 Nov 2026): the person opens in the kit drawer, a modal over the list, so nothing
+  // opens until a person is chosen (the ward desk used to open its first person in a side column).
   const filtered = hasFilters(filters);
 
   const set = (patch: Partial<BoardFilters>) => {
@@ -295,22 +279,11 @@ export function DelaysBoard({
   };
   const isOpenGroup = (cause: DelayCause) => openGroups[cause] ?? OPEN_BY_DEFAULT.includes(cause);
 
-  // On a phone or tablet the person's panel is a sheet, so an explicit row choice brings it into view.
-  const explicitSelect = useRef(false);
+  // The drawer (kit Sheet) moves focus in, traps it and returns it to the row on close.
   const select = (id: string) => {
     rememberReturnRow(WAITING_ROUTE, id);
-    explicitSelect.current = selectedId !== id;
     setSelectedId((current) => (current === id ? null : id));
   };
-  useEffect(() => {
-    if (!explicitSelect.current || selectedId === null) return;
-    explicitSelect.current = false;
-    if (!sheet) return;
-    // Focus is the shared modal lifecycle's job (useWardModalFocus below); this only scrolls.
-    window.requestAnimationFrame(() => {
-      document.getElementById("delays-person-panel")?.scrollIntoView({ block: "start" });
-    });
-  }, [selectedId, sheet]);
   const close = useCallback(() => {
     const previous = selectedId;
     setSelectedId(null);
@@ -325,8 +298,6 @@ export function DelaysBoard({
     if (row === undefined) return;
     // Opening someone the filters hide shows everyone first, so their row is there to open.
     if (!shown.some((candidate) => candidate.movement.id === id)) setFilters(NO_FILTERS);
-    // On a phone or tablet the panel is a sheet over the table, so focus goes to the sheet instead.
-    explicitSelect.current = true;
     rememberReturnRow(WAITING_ROUTE, id);
     setSelectedId(id);
     setOpenGroups((current) => ({ ...current, [row.cause]: true }));
@@ -337,17 +308,8 @@ export function DelaysBoard({
       setBandOpen((current) => ({ ...current, [band.id]: true }));
       setBandMore((current) => ({ ...current, [band.id]: true }));
     }
-    if (sheet) return;
-    window.requestAnimationFrame(() => {
-      const button = document.querySelector<HTMLButtonElement>(`[data-testid="delays-select-${id}"]`);
-      button?.scrollIntoView({ block: "center", behavior: wardScrollBehavior() });
-      button?.focus({ preventScroll: true });
-    });
+    // The person opens in the drawer, which takes focus; the list behind keeps their row unfolded.
   };
-
-  // As a sheet the panel joins the shared modal stack: focus stays inside it and only the topmost
-  // sheet answers Escape. Beside the table (wider screens) it is an ordinary panel.
-  useWardModalFocus(sheet && selected !== null, panelRef, close);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -617,13 +579,6 @@ export function DelaysBoard({
           {isPhone ? phoneUpdate(row) : updateCell(row, now)}
         </td>
       </tr>,
-      isSelected ? (
-        <tr role="row" key={`${movement.id}-timeline`} className={styles.xrow}>
-          <td role="cell" colSpan={6}>
-            <RowTimeline row={row} units={units} now={now} />
-          </td>
-        </tr>
-      ) : null,
     ];
   };
 
@@ -1192,11 +1147,10 @@ export function DelaysBoard({
 
           <div
             className={`${styles.split} ${polish.split}`}
-            data-person-open={selected !== null || undefined}
             data-portrait={portrait ? "slide" : undefined}
             // Role view (nurse in charge, Josh 31 Oct 2026): no registers rail, so with the person panel
             // closed the list takes the full width instead of leaving an empty column.
-            data-single={(wardDesk && selected === null) || undefined}
+            data-single={wardDesk || undefined}
           >
             <section
               ref={tableRef}
@@ -1313,29 +1267,16 @@ export function DelaysBoard({
               {referralsLine}
             </section>
 
-            {selected !== null ? (
-              <>
-                <div
-                  className={styles.backdrop}
-                  onClick={close}
-                  aria-hidden="true"
-                  data-sheet-scrim=""
-                  data-testid="delays-detail-backdrop"
-                />
-                <PersonPanel
-                  row={selected}
-                  units={units}
-                  now={now}
-                  onClose={close}
-                  onEscalate={onEscalate}
-                  panelRef={panelRef}
-                />
-              </>
-            ) : isPhone || portrait || wardDesk ? null : (
-              // Role view (nurse in charge): escalation and the quiet list are the coordinator's chase.
-              registers
-            )}
+            {isPhone || portrait || wardDesk
+              ? null
+              : // Role view (nurse in charge): escalation and the quiet list are the coordinator's chase.
+                registers}
           </div>
+
+          {/* Drawer review (6 Nov 2026): the person opens in the kit drawer, over the full-width list. */}
+          {selected !== null ? (
+            <PersonPanel row={selected} units={units} now={now} onClose={close} onEscalate={onEscalate} />
+          ) : null}
 
           {/* Role view (nurse in charge): registers, quiet list, graphs and network delays are the coordinator's. */}
           {isPhone && !wardDesk ? (
