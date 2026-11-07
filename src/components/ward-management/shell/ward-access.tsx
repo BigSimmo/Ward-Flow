@@ -697,12 +697,16 @@ export function WardAccessGate({ children }: { children: ReactNode }) {
     <OperationalWardAccessGate>{children}</OperationalWardAccessGate>
   );
 }
+function samePath(a: string, b: string): boolean {
+  return a.split("?")[0].replace(/\/+$/, "") === b.split("?")[0].replace(/\/+$/, "");
+}
+
 /** A desk switch ends when its new page arrives, so going Back later finds the page as it is. */
 function useEndArrivedSwitch(pathname: string): void {
   const { switchFrom, signInLanding } = useWardAccessSnapshot();
   useEffect(() => {
-    if (switchFrom !== undefined && switchFrom !== pathname) markDeskSwitch();
-    if (signInLanding !== undefined && signInLanding !== pathname) markSignInLanding();
+    if (switchFrom !== undefined && !samePath(switchFrom, pathname)) markDeskSwitch();
+    if (signInLanding !== undefined && !samePath(signInLanding, pathname)) markSignInLanding();
   }, [switchFrom, signInLanding, pathname]);
 }
 function ExecutiveAccessGate({ access, children }: { access: WardAccess; children: ReactNode }) {
@@ -792,10 +796,6 @@ function WardRecordViewLog({
     session?.logRecordView(patientId, surface);
   }, [session, patientId, surface, generation]);
   return null;
-}
-
-function samePath(a: string, b: string): boolean {
-  return a.replace(/\/+$/, "") === b.replace(/\/+$/, "");
 }
 
 /** Replaces the address with the desk's own home, so Back does not return to the closed one (DR-06). */

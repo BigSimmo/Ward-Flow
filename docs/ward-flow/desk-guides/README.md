@@ -24,6 +24,9 @@ Re-check every guide after clinician testing, and whenever a step on screen chan
 | Access admin                        | [access-admin.md](access-admin.md)                 | Settings    |
 | Bed meeting TV board (display only) | [tv-board.md](tv-board.md)                         | Bed meeting |
 
+> [!NOTE]
+> **Eight staff accounts, nine desks:** The eight staff desks have individual accounts seeded in Supabase (`*@stoicable.com`). The ninth desk (Bed meeting TV board) is a shared kiosk display opened from Capacity or direct URL `/ward-flow/bed-meeting`. It requires no dedicated account; sign in using a Coordinator or Site Bed Manager account. TV Unlock requires the account's password.
+
 ## Where these come from
 
 - The desks and what each may open are in the role access table,
