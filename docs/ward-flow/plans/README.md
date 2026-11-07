@@ -40,7 +40,7 @@ These statuses describe the linked records, not a new assessment of implementati
 ### Earlier historical inputs
 
 - **Completed and archived:** WF-DOCS-20261008 documentation repair (see [ARCHIVE.md](../../ARCHIVE.md)): reviewed current-guidance corrections and maintained documentation gates; same task checkpoint and evidence.
-- **Historical owner-answer context:** [Owner answers, second round](../archive/dated-notes/owner-answers-2026-09-17.md) ("Second round" section): R2-1 to R2-24 context; build briefs came from Ward Lead.
+- **Historical owner-answer context:** [Owner answers, second round](../../history/archive/dated-notes/owner-answers-2026-09-17.md) ("Second round" section): R2-1 to R2-24 context; build briefs came from Ward Lead.
 - **Historical retirement plan:** Retiring PsychSift from the Ward Flow folder (archived; see [ARCHIVE.md](../../ARCHIVE.md)): what Ward Flow used, what was safe to remove, what had to be untangled first, and the Railway leftovers at that time.
 - **Historical removed plan:** Removing the rest of PsychSift, plan v1 (`docs/ward-flow/plans/2026-09-25-psychsift-removal-plan-v1.md`, removed in the 15 Oct 2026 docs trim): where the retirement stood after batch 3a, why the shared building blocks stayed put, the files that dragged PsychSift in, the mixed tests, and the proposed removal pass.
 

@@ -5,6 +5,10 @@ where the product is going. Newest at the bottom. Detailed clinical and product 
 screen or the engine behaves stay in [`OWNER-RULINGS.md`](OWNER-RULINGS.md); this log points there
 when a decision here depends on one.
 
+**This log is the one home for new decisions (Josh, 7 November 2026).** Record every new decision or
+ruling here. Do not start new `owner-*.md` files; the existing ones stay as dated records, indexed by
+[`OWNER-RULINGS.md`](OWNER-RULINGS.md).
+
 **How to add an entry.** Add a numbered entry at the bottom with the date, who decided, the
 decision in one or two sentences, and why. Never rewrite an old entry. If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
@@ -275,7 +279,7 @@ is inferred.
 - **Why:** a shared token layer (since 5 Sept) sets both border tokens to the same value on every
   Ward Flow screen, measured on 26 Sept, so the check could only ever read "identical" and measured
   nothing. Archive and measurement:
-  `docs/ward-flow/archive/retired-tests/2026-09-26-forced-colours-ward-border-probe.md`.
+  `docs/history/archive/retired-tests/2026-09-26-forced-colours-ward-border-probe.md`.
 - **Left open:** whether the screen-local forced-colours repoint blocks are now dead code.
 - **Subsequent note (25 October 2026):** The archive file named above was removed with the old
   history documents in #296. It remains in git history only.
@@ -943,7 +947,7 @@ is inferred.
 ## D-81. Pulled, with a pull time limit, for a bed kept for an incoming patient (24 October 2026)
 
 - **Date:** 24 October 2026 (`2026-10-24`), 10:42 PM AWST (14:42 UTC). **Decided by:** Josh, on the decision card in the usability review project thread.
-- **Decision:** a bed kept for an incoming patient is called "Pulled", and how long it is kept is the "Pull time limit". "Held" and "hold" are used only for a bed kept for its own patient while they are on leave or away, as Josh ruled on 1 September 2026 ([pull and hold ruling](archive/dated-notes/owner-rulings-2026-09-01-pull-and-hold.md)). This replaces the "Bed held" words in D-77 item 2 on the ED board, and the "bed hold" words in D-72 and D-75 where they mean a bed kept for an incoming patient. The rules in those entries are unchanged.
+- **Decision:** a bed kept for an incoming patient is called "Pulled", and how long it is kept is the "Pull time limit". "Held" and "hold" are used only for a bed kept for its own patient while they are on leave or away, as Josh ruled on 1 September 2026 ([pull and hold ruling](../history/archive/dated-notes/owner-rulings-2026-09-01-pull-and-hold.md)). This replaces the "Bed held" words in D-77 item 2 on the ED board, and the "bed hold" words in D-72 and D-75 where they mean a bed kept for an incoming patient. The rules in those entries are unchanged.
 - **Boundary:** visible words only. Code names, event names, flags and stored values keep their names, and recorded notice and audit text is not rewritten. Nothing is re-sorted or ranked.
 - **Why:** one screen said "Bed held" and another "Pulled" about the same incoming bed, and "held" already meant a bed kept for a patient on leave. One word for each meaning stops the two being confused.
 

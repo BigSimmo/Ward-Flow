@@ -22,7 +22,7 @@ function fixture() {
   return root;
 }
 it("triggers lessons only from lessons, output or generator inputs", () => {
-  expect(selectedDocChecks(["docs/ward-flow/lessons/a.md"], true)).toContain("scripts/ward-flow/rules-index.mjs");
+  expect(selectedDocChecks(["docs/history/lessons/a.md"], true)).toContain("scripts/ward-flow/rules-index.mjs");
   expect(selectedDocChecks(["src/components/ward-management/board.tsx"], true)).toEqual([]);
 });
 it("checks each mandatory generator and its shared input helper", () => {

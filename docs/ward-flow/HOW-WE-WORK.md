@@ -5,7 +5,7 @@ hands back Ward Flow work.** Written 17 September 2026; repository and integrati
 updated 2 October 2026. The current repository's `AGENTS.md` governs operational safeguards;
 this guide supersedes older process notes within that boundary. Start at [`README.md`](README.md).
 
-_Updated 2026-10-31 - section 6 brings the design rules up to date: 40px phone controls with a 48px tap area, no coloured side edges, visual changes start as an approved mock-up (Josh, 31 Oct); 2026-10-26 - a line-cap fix never changes on-screen words (Josh, 26 Oct, decision list item 36); phone size limits may rise up to 5 KB per screen per PR without asking (D-82); 2026-10-23 - align saving guidance and mockup navigation with D-72, D-74 and D-75, checked against source at `fe67b59670ccbf2d4c88156a3f3982624b0b82e9`; Documentation owns._
+_Updated 2026-11-08 - sections 1, 4, 8 and 9 follow the documentation audit: the status page's Now section, decisions recorded only in decisions.md, and history moved to docs/history (Josh, 7 November 2026); Documentation owns._
 
 > **The current rules are in this `BigSimmo/Ward-Flow` repository's `AGENTS.md`**, and Josh's
 > standing rulings are in [`decisions.md`](decisions.md). Where this file differs from `AGENTS.md`,
@@ -14,12 +14,10 @@ _Updated 2026-10-31 - section 6 brings the design rules up to date: 40px phone c
 
 ## 1. Picking up work
 
-1. Read [`README.md`](README.md), then the agreed task scope and existing task/checkpoint
-   under [`../task-receipts.md`](../task-receipts.md). Use the ledger
-   [`../ward-flow-task-ledger.md`](../ward-flow-task-ledger.md) and relevant [`plans/`](plans/README.md)
-   to locate existing IDs and decisions. [`STATUS.md`](STATUS.md) preserves dated decision-state observations; check the latest
-   [decisions](decisions.md) and the task source identified by the receipt contract before treating
-   an old item as outstanding. Task metadata, owner decisions and verification evidence are separate.
+1. Read [`README.md`](README.md), the **Now** section of [`STATUS.md`](STATUS.md) and the agreed
+   task scope. Work in flight is in open pull requests; the plan is in [`roadmap.md`](roadmap.md);
+   every decision is in [`decisions.md`](decisions.md). Check the latest decisions before treating an
+   old item as outstanding. Task metadata, owner decisions and verification evidence are separate.
 2. Check your folder: `git -C <worktree> status` and `git -C <worktree> log -5`. If files you did not
    touch are modified or staged, preserve them and resolve ownership before writes. Former
    Database fold-debt hooks are historical and are not part of this repository's startup.
@@ -129,7 +127,6 @@ doc checks report their advisory/strict mode, so a warning or skipped check is n
 - **One claim board across machines: GitHub.** Claude threads and Codex work on different
   machines, so the open PRs and branches are the shared claim board (Q374). Comments on the pinned
   issue "Who is editing what" are no longer needed.
-- Historical fold incidents: `archive/dated-notes/HOW-TO-FOLD-2026-09-10.md` (removed in the 15 Oct 2026 docs trim).
 
 ## 5. Testing
 
@@ -268,17 +265,16 @@ would add overhead, and distinguish requested routing from observed execution.
   paths, commands and uncertainty when they help him assess the result or act. Give the result first.
 - The thread that needs the answer asks, in its own thread, as **one numbered list**. Each question is one line in plain English with **one
   recommendation** and a one-word reply he can send. AGENTS.md "Writing to Josh" governs; older writing guides are archived.
-- Record his reply **verbatim** in a dated file, `owner-answers-YYYY-MM-DD.md`. A second round on the
-  same day is appended under its own heading, numbered `R2-n`. The asking thread's reading of each answer
-  follows, marked as a reading.
-- In the same commit, add a one-line "Superseded <date> by <file> item N" under every earlier ruling
-  it overrides, in that ruling's own maintained file. Update the existing task record/receipt;
-  add or clear the matching line in STATUS.md's decision table or "Waiting on Josh" list.
+- Record each decision as a new numbered entry in [`decisions.md`](decisions.md), quoting his reply
+  **verbatim**, then the asking thread's reading of it, marked as a reading. Do not start new
+  `owner-*.md` files (Josh, 7 November 2026); the existing ones stay as dated records.
+- In the same commit, mark every earlier ruling it overrides "Replaced by D-n" in that ruling's own
+  file, and add or clear the matching line in the status page's "Waiting on Josh" list.
 - An item the owner has deferred and told us not to raise again is never re-asked.
 
 ## 9. Superseding a document
 
-Delete or move a document only with Josh's yes, recorded in [ARCHIVE.md](../ARCHIVE.md) (§10). Otherwise keep it and put this banner at the top:
+Delete or move a document only with Josh's yes, recorded in [ARCHIVE.md](../ARCHIVE.md) (§10). Moved history goes to [`docs/history/`](../history/README.md). Otherwise keep it and put this banner at the top:
 
 > SUPERSEDED on <date> by <path>. Kept for history; do not follow.
 

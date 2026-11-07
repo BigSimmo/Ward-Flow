@@ -30,4 +30,4 @@ docs/ward-flow/control/evidence/bundles/** -text
 # Line-ending normalisation would make every CRLF lesson differ on a fresh checkout and
 # leave `sync-lessons.mjs --check` permanently red — and a check that can never pass gets
 # switched off, which is one of the lessons in these very files.
-docs/ward-flow/lessons/** -text
+docs/history/lessons/** -text

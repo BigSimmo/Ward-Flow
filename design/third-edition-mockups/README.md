@@ -63,7 +63,7 @@ them again.**
 
 ### Reference only, not a design source — marked 2026-09-17
 
-`docs/ward-flow/archive/dated-notes/owner-answers-2026-09-17.md` item 42: "The five extra drawings are reference only;
+`docs/history/archive/dated-notes/owner-answers-2026-09-17.md` item 42: "The five extra drawings are reference only;
 the ED 'third edition' is the ED drawing." **`emergency-department-third-edition.html` is confirmed
 as the ED drawing** — it is the one already registered at `/ed/[edId]` in `SCREEN-VERIFICATION.md`.
 The five reference-only files, none of them a design source for any screen — do not build against
@@ -74,7 +74,7 @@ them:
 - `sovereign-chrome-and-drawers-perfected.html`
 - `sovereign-sidebar-ultimate.html`
 - `settings-perfected-third-edition.html` — **reference only, confirmed 17 Sept 2026, round 2.**
-  `docs/ward-flow/archive/dated-notes/owner-answers-2026-09-17.md` R2-15 said to keep the Gemini rebuild of Settings if it
+  `docs/history/archive/dated-notes/owner-answers-2026-09-17.md` R2-15 said to keep the Gemini rebuild of Settings if it
   is the most up-to-date one. **Which of the two Settings files is Gemini's rebuild is now recorded:
   `settings-third-edition.html` is Gemini's rebuild, not this file.** Confirmed by git date — the
   Gemini rebuild commit for `settings-third-edition.html` (`f0e5ea88f9`, 16 September 2026) is newer
@@ -266,7 +266,7 @@ and approved back in, and nothing anywhere goes red. That has happened here.
 
 | Need                                | Read                                                                                                                                        |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| The owner's rulings, dated          | [`../archive/dated-notes/owner-decisions-2026-09-09.md`](../../docs/ward-flow/archive/dated-notes/owner-decisions-2026-09-09.md)            |
+| The owner's rulings, dated          | [`../archive/dated-notes/owner-decisions-2026-09-09.md`](../../docs/history/archive/dated-notes/owner-decisions-2026-09-09.md)              |
 | What every chat is working on       | gone — `docs/ward-flow/control/work-claims.md` was deleted with WLQ-33; use [`../STATUS.md`](../../docs/ward-flow/STATUS.md) and the ledger |
 | How a branch is folded, and by whom | `../archive/dated-notes/HOW-TO-FOLD-2026-09-10.md` (removed in the 15 Oct 2026 docs trim)                                                   |
 | The kit's own status and open items | [`third-edition-kit/HANDOVER.md`](third-edition-kit/HANDOVER.md)                                                                            |

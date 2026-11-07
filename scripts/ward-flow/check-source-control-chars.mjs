@@ -90,7 +90,7 @@ const INLINE_MARKER = "control-characters: intentional";
 
 const EXEMPT = new Map([
   // 🔴 ADDED 2026-09-12, and a third candidate was REFUSED — which is the only reason to trust the
-  // two that were granted. Versioning the lesson store into docs/ward-flow/lessons/ brought three
+  // two that were granted. Versioning the lesson store into docs/history/lessons/ brought three
   // files here carrying control characters. Two hold them as their SUBJECT MATTER. The third,
   // communication-style-plain-and-brief.md, held a BACKSPACE where an escape had been eaten out of
   // the path ...scripts/backup-work.sh — real corruption, in a backup command, inside a file about
@@ -101,11 +101,11 @@ const EXEMPT = new Map([
   // file below would be waved through. That is the cost of naming a file rather than a byte, and
   // it is stated here rather than discovered later.
   [
-    "docs/ward-flow/lessons/corruption-that-makes-checks-pass-harder.md",
+    "docs/history/lessons/corruption-that-makes-checks-pass-harder.md",
     "Three literal NUL bytes (0x00) that ARE the lesson: the file documents corruption that made checks pass harder, and carries the bytes so a reader sees what git, prettier and review all failed to show.",
   ],
   [
-    "docs/ward-flow/lessons/git-queries-that-answer-instead-of-erroring.md",
+    "docs/history/lessons/git-queries-that-answer-instead-of-erroring.md",
     "One literal BACKSPACE (0x08) that IS the lesson: it records a generated regex in which an escape became byte 0x08 silently. Quoting the byte is the evidence; describing it would not be.",
   ],
 ]);
@@ -185,6 +185,9 @@ const ROOTS = [
     // not skipping.
     maxBytes: 1_000_000,
   },
+  // docs/history/ holds the lessons and archive moved out of docs/ward-flow/ on 8 November 2026.
+  // It keeps the same extension list and size ceiling, so the move does not narrow the scan.
+  { dir: "docs/history", extensions: DOCS_EXTENSIONS, maxBytes: 1_000_000 },
 ];
 
 function walk(dir, extensions, out = []) {

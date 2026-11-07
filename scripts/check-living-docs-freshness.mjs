@@ -14,10 +14,15 @@
  * works on shallow clones) and reports pages older than --days (default 14) or missing the
  * marker. Refresh a page by checking it against the app and updating the date.
  *
+ * Some pages carry a shorter limit of their own (PAGE_DAYS): the status page must be re-checked every
+ * 7 days (documentation audit, approved by Josh 7 November 2026). A page's own limit applies when it
+ * is shorter than --days.
+ *
  * Advisory: exit 0 unless --strict is passed, then exit 1 when anything is stale or missing.
+ * --annotate also prints one GitHub Actions warning per problem, so pull requests show it.
  *
  * Usage:
- *   node scripts/check-living-docs-freshness.mjs [--days 14] [--strict] [--json]
+ *   node scripts/check-living-docs-freshness.mjs [--days 14] [--strict] [--json] [--annotate]
  */
 import { execFileSync } from "node:child_process";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
@@ -38,6 +43,8 @@ export const LIVING_DOCS = [
   "docs/ward-flow/DATABASE.md",
   "docs/ward-flow/LOCAL-FIRST-RUN.md",
 ];
+// Pages that go stale fastest get a shorter limit than the default.
+export const PAGE_DAYS = { "docs/ward-flow/STATUS.md": 7 };
 // Every page in these folders is living too.
 export const LIVING_DIRS = ["docs/ward-flow/desk-guides"];
 
@@ -79,7 +86,8 @@ function headCommitDate(root) {
 export function run({ root = DEFAULT_ROOT, days = 14, reference = headCommitDate(root) } = {}) {
   const results = listLivingDocs(root).map((path) => {
     const lastChecked = readLastChecked(readFileSync(join(root, path), "utf8"));
-    return { path, lastChecked, ...assess({ lastChecked, reference, days }) };
+    const limit = Math.min(days, PAGE_DAYS[path] ?? days);
+    return { path, lastChecked, limit, ...assess({ lastChecked, reference, days: limit }) };
   });
   return { reference, days, results, problems: results.filter((r) => r.status !== "ok") };
 }
@@ -91,7 +99,9 @@ function main(argv) {
     console.error("--days needs a non-negative number");
     return 2;
   }
-  const report = run({ days });
+  // --today measures age against the current date instead of the HEAD commit date. The weekly
+  // reminder uses it so a quiet `main` cannot keep a stale page looking fresh.
+  const report = run(argv.includes("--today") ? { days, reference: new Date().toISOString() } : { days });
   if (argv.includes("--json")) {
     console.log(JSON.stringify(report, null, 2));
   } else if (report.problems.length === 0) {
@@ -104,8 +114,11 @@ function main(argv) {
       const detail =
         p.status === "missing"
           ? "no <!-- last-checked: YYYY-MM-DD --> marker"
-          : `last checked ${p.lastChecked} (${p.ageDays} days)`;
+          : `last checked ${p.lastChecked} (${p.ageDays} days; limit ${p.limit})`;
       console.log(`  ${p.path}: ${detail}`);
+      if (argv.includes("--annotate")) {
+        console.log(`::warning file=${p.path},title=Living page needs a re-check::${p.path}: ${detail}`);
+      }
     }
     console.log("Check each page against the current app, then update its last-checked date. (advisory)");
   }

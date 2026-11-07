@@ -11,7 +11,7 @@ describe("historical Ward rules index", () => {
   it("uses repository lessons without a private Database store and detects changed or missing inputs", () => {
     const fixture = mkdtempSync(path.join(tmpdir(), "ward-rules-index-"));
     const docs = path.join(fixture, "docs/ward-flow");
-    const lessons = path.join(docs, "lessons");
+    const lessons = path.join(fixture, "docs/history/lessons");
     const script = path.join(root, "scripts/ward-flow/rules-index.mjs");
     const run = (...args: string[]) =>
       spawnSync(process.execPath, [script, ...args], {
@@ -23,6 +23,7 @@ describe("historical Ward rules index", () => {
       // No private store exists. Missing committed input must fail closed.
       expect(run("--check").status).toBe(2);
       mkdirSync(lessons, { recursive: true });
+      mkdirSync(docs, { recursive: true });
       writeFileSync(path.join(lessons, "README.md"), "# Historical source instructions\n");
       writeFileSync(path.join(lessons, "MEMORY.md"), "# Historical directory index\n");
       writeFileSync(
@@ -37,7 +38,7 @@ describe("historical Ward rules index", () => {
       const output = readFileSync(path.join(docs, "RULES.md"), "utf8");
       expect(output).toContain("2 historical lessons");
       expect(output).toContain("not current operational authority");
-      expect(output).toContain("docs/ward-flow/lessons");
+      expect(output).toContain("docs/history/lessons");
       expect(output).toContain("Unfiled — 1");
       expect(output).not.toContain("D--Repos-Database/memory");
       expect(run("--check").status).toBe(0);

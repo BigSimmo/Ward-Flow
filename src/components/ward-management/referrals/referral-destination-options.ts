@@ -23,7 +23,7 @@ import { referralDestinationKindLabel } from "@/components/ward-management/ward-
 /**
  * WHAT A REFERRING CLINICIAN IS SHOWN ABOUT EACH DESTINATION, AT THE MOMENT OF CHOOSING.
  *
- * Spec Part 7 ("What the referrer IS shown", `docs/ward-flow-referral-destination-spec.md`), owner
+ * Spec Part 7 ("What the referrer IS shown", `docs/history/ward-flow-referral-destination-spec.md`), owner
  * 2026-08-30: _"add all relevant catchment and referral info for the referrer to aid the process."_
  * The catchment work was designed to help a coordinator route; it helps the CLINICIAN, while they
  * choose, which is what this module serves.

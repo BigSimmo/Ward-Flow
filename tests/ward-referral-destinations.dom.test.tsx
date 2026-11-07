@@ -24,7 +24,7 @@ import { FIXTURE_HISTORY } from "./helpers/ward-referral-history";
 /**
  * THE REFERRAL DESTINATION PICKER — what a referring clinician is shown at the moment of choosing.
  *
- * Spec Part 7, "What the referrer IS shown" (`docs/ward-flow-referral-destination-spec.md`), and
+ * Spec Part 7, "What the referrer IS shown" (`docs/history/ward-flow-referral-destination-spec.md`), and
  * FD-21: several destinations chosen in ONE act, up to `PARALLEL_REFERRAL_CAP`.
  *
  * Every test here pins a property the owner named in words, not an implementation detail:

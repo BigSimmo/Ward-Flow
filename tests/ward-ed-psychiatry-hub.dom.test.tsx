@@ -889,7 +889,7 @@ describe("the inbox's decline control", () => {
     // ⚠️ **NO ASSERTION ON THE BUTTON'S WORDING.** One stood here and was removed on 2026-09-01:
     // `tests/ward-referral-control-labels.dom.test.tsx` records that the owner surveyed 30 plain
     // ward button labels, chose to pin exactly TWO, and that the rest are "DECLINED, not deferred"
-    // (`docs/ward-flow-remaining-work.md`). Pinning a nineteenth here credited him with a decision
+    // (`docs/history/ward-flow-remaining-work.md`). Pinning a nineteenth here credited him with a decision
     // he expressly declined to make.
     // Wired means wired: neither attribute, and `require-button-wiring` fails on the pair anyway.
     expect(decline, "the control is still advertising itself as unavailable").not.toHaveAttribute("aria-disabled");

@@ -79,7 +79,7 @@ catchment data). They are listed in [`STATUS.md`](STATUS.md).
 - **Behaviour: the working engine** under `src/components/ward-management/` and its tests. Where a
   drawing and the engine disagree on behaviour, the engine wins and the difference is written down.
 - **Decisions: the owner's words.** The newest are in
-  [`OWNER-RULINGS.md`](OWNER-RULINGS.md) (historical dump: [`archive/dated-notes/owner-answers-2026-09-17.md`](archive/dated-notes/owner-answers-2026-09-17.md)), including its "Second round". A later
+  [`OWNER-RULINGS.md`](OWNER-RULINGS.md) (historical dump: [`archive/dated-notes/owner-answers-2026-09-17.md`](../history/archive/dated-notes/owner-answers-2026-09-17.md)), including its "Second round". A later
   answer beats an earlier ruling.
 
 <details>

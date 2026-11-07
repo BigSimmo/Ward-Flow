@@ -1,6 +1,10 @@
 # Ward Flow: task lifecycle and receipt handoff
 
-Owning repository: `BigSimmo/Ward-Flow`. These rules cover only this project. The [canonical task source](https://app.notion.com/p/ba8c768f8b2c49638772b39900cb7ab9) uses data source `collection://ef3ca511-c488-4aba-ba1f-a5e20767a333` and an exclusive Project value `Ward Flow`. The verified [project ledger](https://app.notion.com/p/3ec7889e8a2281538d33eeb82d4e5d5c) uses the exclusive Project and Conversation filters; it is a view of the shared canonical source, not a duplicate database. Existing records are evidence and task detail; the receipt is a reconciliation handoff, not another competing task ledger.
+Owning repository: `BigSimmo/Ward-Flow`. These rules cover only this project.
+
+**Where work is tracked (Josh, 7 November 2026):** what is in flight lives in open pull requests and the **Now** section of [the status page](ward-flow/STATUS.md); the plan lives in the [roadmap](ward-flow/roadmap.md). Notion is optional: use it when a task already has a Notion record, never as the only record of current work.
+
+The optional [Notion task source](https://app.notion.com/p/ba8c768f8b2c49638772b39900cb7ab9) uses data source `collection://ef3ca511-c488-4aba-ba1f-a5e20767a333` and an exclusive Project value `Ward Flow`. The verified [project ledger](https://app.notion.com/p/3ec7889e8a2281538d33eeb82d4e5d5c) uses the exclusive Project and Conversation filters; it is a view of the shared canonical source, not a duplicate database. Existing records are evidence and task detail; the receipt is a reconciliation handoff, not another competing task ledger.
 
 Reuse [the product task ledger](ward-flow-task-ledger.md) and existing task checkpoint IDs. Do not add Ward tasks to the inherited PsychSift outstanding-issues system.
 

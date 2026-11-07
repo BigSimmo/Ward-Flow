@@ -35,7 +35,7 @@ import type {
  *
  * **Owner ruling, 2026-08-30: a ward cannot see where else a patient has been referred. The
  * coordinator may see everything.** His reason: so a ward does not spend its time on a patient who
- * is being placed elsewhere. Spec Part 7 (`docs/ward-flow-referral-destination-spec.md`).
+ * is being placed elsewhere. Spec Part 7 (`docs/history/ward-flow-referral-destination-spec.md`).
  *
  * The rule is **ward-facing only, deliberate, and behavioural rather than cosmetic**, which makes
  * it the single most likely rule in that document to be undone by somebody being helpful — every

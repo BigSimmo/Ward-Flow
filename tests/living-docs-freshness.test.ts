@@ -25,6 +25,18 @@ describe("check-living-docs-freshness", () => {
     });
   });
 
+  it("gives the status page its own 7-day limit", () => {
+    const root = mkdtempSync(join(tmpdir(), "living-docs-"));
+    mkdirSync(join(root, "docs/ward-flow"), { recursive: true });
+    writeFileSync(join(root, "README.md"), "<!-- last-checked: 2026-10-24 -->\n");
+    writeFileSync(join(root, "docs/ward-flow/STATUS.md"), "<!-- last-checked: 2026-10-24 -->\n");
+    const report = run({ root, days: 14, reference: "2026-11-02" });
+    expect(report.problems).toEqual([
+      expect.objectContaining({ path: "docs/ward-flow/STATUS.md", status: "stale", ageDays: 9, limit: 7 }),
+    ]);
+    expect(run({ root, days: 3, reference: "2026-10-28" }).problems).toHaveLength(2);
+  });
+
   it("checks listed pages and every page in a living folder", () => {
     const root = mkdtempSync(join(tmpdir(), "living-docs-"));
     mkdirSync(join(root, "docs/ward-flow/desk-guides"), { recursive: true });

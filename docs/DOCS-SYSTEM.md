@@ -2,17 +2,30 @@
 
 How Documentation keeps Ward Flow docs accurate on this tip. **Process doc - no product DDL.**
 
-_Updated 2026-11-03 - explicit journey/Help delivery checks, frozen evidence and semantic update responsibilities; Documentation owns._
+_Updated 2026-11-08 - documentation audit fixes: one home per kind of truth, history folder, status page limit, one date line per page; Documentation owns._
 
 ## Principles
 
 1. **One live source per topic** - archive or stub duplicates. Facts that change with the code live only in [`FACTS.md`](FACTS.md); see [Facts and retired terms](#facts-and-retired-terms).
-2. **Stamp what you touch** - `_Updated YYYY-MM-DD - <why>; Documentation owns._`
+2. **One date line per page** - keep a single `_Updated YYYY-MM-DD - <why>; Documentation owns._` line near the top and replace it when you edit; do not stack a new line per edit, because Git already records each change. Living pages also carry the `last-checked` marker (pipeline step 7).
 3. **Names only for secrets** - never paste values, JWTs, or dashboard passwords.
-4. **One task identity** - follow `docs/task-receipts.md` and reuse existing ledger/checkpoint IDs. `docs/ward-flow/STATUS.md` preserves dated history; current task state needs current source and acceptance evidence. Do not create another status store.
+4. **One home per kind of truth** (Josh, 7 November 2026). Do not create another status store.
+
+   | Question              | The one home                                                                  |
+   | --------------------- | ----------------------------------------------------------------------------- |
+   | Where are we now?     | The **Now** section of [`ward-flow/STATUS.md`](ward-flow/STATUS.md)           |
+   | What is the plan?     | [`ward-flow/roadmap.md`](ward-flow/roadmap.md)                                |
+   | What is in flight?    | Open pull requests, summarised in the Now section                             |
+   | What did Josh decide? | [`ward-flow/decisions.md`](ward-flow/decisions.md); no new `owner-*.md` files |
+   | How do we work?       | [`AGENTS.md`](../AGENTS.md) and the topic files it links                      |
+   | What happened before? | [`history/`](history/README.md) and [`ARCHIVE.md`](ARCHIVE.md)                |
+
+   Notion is optional ([task receipts](task-receipts.md)).
+
 5. **One map improvement per pass** when cheap.
 6. **Ward Flow repository lock** - confirm `git remote get-url origin` is `https://github.com/BigSimmo/Ward-Flow.git` before editing. Use a separate worktree based on this repository's `main`; confirm the branch and tip before acting. `D:\Worktrees\Database\ward-lead` and `BigSimmo/Database` are legacy sources, not Ward Flow destinations.
 7. **Recheck triggers** - relevant source, boot command or entry path changes refresh affected maintained guidance; operator changes restamp runbooks. Update the existing task receipt at meaningful lifecycle events; preserve dated status evidence.
+8. **Say the evidence limit once.** A document records what was checked; only source, tests and observed runs prove behaviour. State a page's evidence boundary once, near the top, rather than repeating "does not establish" or "is not proof" in every paragraph.
 
 ## Pipeline
 
@@ -22,15 +35,18 @@ Stage **docs paths only** - never mix unrelated product WIP. A push or pull requ
 
 ## Ward Flow live set
 
-| Doc                                                            | Role                                |
-| -------------------------------------------------------------- | ----------------------------------- |
-| [`ward-flow/README.md`](ward-flow/README.md)                   | Product and design entry point      |
-| [`ward-flow/LOCAL-FIRST-RUN.md`](ward-flow/LOCAL-FIRST-RUN.md) | UI boot                             |
-| [`ward-flow/ARCHIVE-NOTE.md`](ward-flow/ARCHIVE-NOTE.md)       | Live vs archive map                 |
-| [`task-receipts.md`](task-receipts.md)                         | Current task/evidence handoff       |
-| [`ward-flow/STATUS.md`](ward-flow/STATUS.md)                   | Historical status and owner context |
-| [`ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md)         | Builder workflow handbook           |
-| [`ward-flow-task-ledger.md`](ward-flow-task-ledger.md)         | Task ledger                         |
+| Doc                                                            | Role                                       |
+| -------------------------------------------------------------- | ------------------------------------------ |
+| [`ward-flow/STATUS.md`](ward-flow/STATUS.md)                   | Where things stand now (re-checked weekly) |
+| [`ward-flow/roadmap.md`](ward-flow/roadmap.md)                 | The plan                                   |
+| [`ward-flow/decisions.md`](ward-flow/decisions.md)             | Every decision                             |
+| [`ward-flow/README.md`](ward-flow/README.md)                   | Product and design entry point             |
+| [`ward-flow/LOCAL-FIRST-RUN.md`](ward-flow/LOCAL-FIRST-RUN.md) | UI boot                                    |
+| [`ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md)         | Builder workflow handbook                  |
+| [`task-receipts.md`](task-receipts.md)                         | Task and evidence handoff                  |
+| [`ARCHIVE.md`](ARCHIVE.md)                                     | The one archive index, and how to restore  |
+
+[`ward-flow-task-ledger.md`](ward-flow-task-ledger.md) keeps dated task detail and evidence; it is not the list of current work.
 
 ## Generated documentation & manifests
 
@@ -57,8 +73,8 @@ the descriptions and command map are curated and editable. Run `npm run docs:mai
 3. **Architecture & codebase index (`npm run docs:check-index`):** executes `node scripts/check-codebase-index-coverage.mjs` to verify maintained index sections mention the required current source roots. This is directory coverage, not proof that architectural prose is true.
 4. **Scripts & command inventory (`npm run docs:check-inventory`):** executes `node scripts/update-docs-inventory.mjs --check` to compare the exact tracked-script and package-command counts in `docs/scripts-index.md`. The rest of that catalogue is curated; count equality does not establish catalogue completeness or semantic freshness.
 5. **Ward Flow relative doc links, including history:** run `node scripts/ward-flow/check-doc-links.mjs` directly (no `--file`) to check `docs/ward-flow/` with archived sections. `npm run docs:check-links` excludes marked history sections.
-6. **Staged checks, committed-tree checks and advisory freshness:** `.githooks/pre-commit` runs `node scripts/check-staged-docs.mjs` against an index snapshot without mutating working files. Selected Ward indexes (`--ward-indexes`) block on failure; general site-map, inventory and codebase-index checks remain advisory unless `PRECOMMIT_DOCS_SYNC_STRICT=1`. The local CI definition also checks the committed screen map, drawing manifest, screen-verification index, exact script counts and architecture directory coverage directly, including documentation-only scope. The site-map check runs after dependencies install; changes to its route, generator and root output inputs select that installation. Owner-rulings, rules and organisation retain their independent scope selection. This describes workflow wiring, not an observed hosted result. Separately, `node scripts/check-stale-docs.mjs` reports old, unreferenced documents; it is advisory and does not detect generated-file drift.
-7. **Living-docs freshness (`npm run docs:freshness`):** pages that describe the app as it is now (entry READMEs, STATUS, demo script, operations runbook, staff release notes, DATABASE, local first run and every desk guide; the list is in `scripts/check-living-docs-freshness.mjs`) carry an invisible `<!-- last-checked: YYYY-MM-DD -->` marker near the top. The check warns when a marker is missing or more than 14 days older than the HEAD commit. It works on shallow clones and runs inside `docs:maintain:check`. It is advisory; `--strict` makes it fail. Update the date only after checking the page against the current app.
+6. **Staged checks, committed-tree checks and advisory freshness:** `.githooks/pre-commit` runs `node scripts/check-staged-docs.mjs` against an index snapshot without mutating working files. Selected Ward indexes (`--ward-indexes`) block on failure; general site-map, inventory and codebase-index checks remain advisory unless `PRECOMMIT_DOCS_SYNC_STRICT=1`. The local CI definition also checks the committed screen map, drawing manifest, screen-verification index, exact script counts and architecture directory coverage directly, including documentation-only scope. The site-map check runs after dependencies install; changes to its route, generator and root output inputs select that installation. Owner-rulings, rules and organisation retain their independent scope selection. This describes workflow wiring, not an observed hosted result. Separately, `node scripts/check-stale-docs.mjs` reports old, unreferenced documents; it is advisory, needs full Git history (it refuses on a shallow clone rather than report a false picture) and does not detect generated-file drift. Run it by hand for a periodic clean-up; the living-page reminder in step 7 is what runs automatically.
+7. **Living-docs freshness (`npm run docs:freshness`):** pages that describe the app as it is now (entry READMEs, STATUS, demo script, operations runbook, staff release notes, DATABASE, local first run and every desk guide; the list is in `scripts/check-living-docs-freshness.mjs`) carry an invisible `<!-- last-checked: YYYY-MM-DD -->` marker near the top. The check warns when a marker is missing or older than the page's limit: 7 days for `STATUS.md`, 14 days for the rest (`PAGE_DAYS` in the script). It works on shallow clones. It runs inside `docs:maintain:check`, as a GitHub warning on every pull request (`--annotate`), and weekly in `.github/workflows/docs-freshness.yml`, which opens or updates one `docs-stale` issue that emails Josh and closes it when every page is fresh. It is advisory; `--strict` makes it fail. Update the date only after checking the page against the current app.
 8. **Ward organisation registry (`npm run ward:organise:check`):** executes `node scripts/ward-flow/organisation.mjs --check` against [`ward-flow/organisation/registry.json`](ward-flow/organisation/registry.json) to validate canonical source paths, hashes, and ownership classifications.
 9. **Facts and retired terms (`npm run docs:facts`):** executes `node scripts/doc-facts.mjs` to verify [`FACTS.md`](FACTS.md) and every fact marker match the source, and to warn on retired terms (failing only on lines a pull request adds). See [Facts and retired terms](#facts-and-retired-terms).
 
@@ -138,7 +154,7 @@ When retiring or superseding a document (or preserving inherited PsychSift mater
 1. Place a top-of-file `> **SUPERSEDED ...**` or `> **Historical ...**` callout banner naming the current live replacement.
 2. Wrap historical body sections that reference retired `npm run` scripts or removed PsychSift paths in paired HTML comments (`docs-script-refs:historical-start` and `docs-script-refs:historical-end`, each on its own comment line).
    Paired markers exclude historical command and path references from `docs:check-scripts` and `docs:check-links`; a prose banner alone does not exclude text.
-3. Remove dated Ward Flow records from the live tree once nothing cites them, with the owner's approval, and list them in [`ARCHIVE.md`](ARCHIVE.md) with the Git tag or commit that keeps them. Earlier moves are in [`ward-flow/ARCHIVE-NOTE.md`](ward-flow/ARCHIVE-NOTE.md).
+3. Move dated Ward Flow records that something still reads into [`history/`](history/README.md), and remove ones nothing cites, each with the owner's approval. List every move or removal in [`ARCHIVE.md`](ARCHIVE.md), the one archive index, with the Git tag or commit that keeps the earlier state. Search tools skip `docs/history/` through the root `.ignore` file; the checks still cover it.
 
 Use the existing [`ward-flow/organisation/registry.json`](ward-flow/organisation/registry.json)
 `canonicalSources` for reviewed canonical references and this index for navigation. Add metadata
@@ -152,8 +168,6 @@ Ward Flow is in `BigSimmo/Ward-Flow`. `BigSimmo/Database` is the separate PsychS
 
 ## Related
 
-- Historical references name external **Documentation Operating System**, **Docs Freshness Audit**
-  and a Documentation bot. This repository does not establish their installation, owner, schedule or
-  successful execution. Verify those independently before relying on them. The tracked `.claude/`
-  folder contains client hook configuration; configuration alone does not prove native loading,
-  memory delivery or semantic documentation maintenance. No `.agents` skill installation is supplied.
+The tracked `.claude/` folder holds client hook configuration only. No external documentation bot or
+scheduled documentation audit runs for this repository; the automatic upkeep is the CI checks above
+and the weekly living-page reminder.
