@@ -23,7 +23,7 @@ export async function readCheatSheets() {
 export async function readScreenGuides() {
   const { tsImport } = await import("tsx/esm/api");
   const contentModule = await tsImport(
-    path.join(root, "src/components/ward-management/help-content/ward-help-print.ts"),
+    pathToFileURL(path.join(root, "src/components/ward-management/help-content/ward-help-print.ts")).href,
     {
       parentURL: import.meta.url,
       tsconfig: path.join(root, "tsconfig.json"),
