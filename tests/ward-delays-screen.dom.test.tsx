@@ -132,30 +132,23 @@ describe("the Delays screen", () => {
     expect(frame).not.toHaveBeenCalled();
     expect(scrollIntoView).not.toHaveBeenCalled();
 
-    selectPerson(wardMovements.find(isOpen)!.id);
-    // One frame scrolls the details into view. The shared modal focus contract takes its own
-    // frame to settle focus inside the sheet, so the count is not pinned to one.
-    expect(frame).toHaveBeenCalled();
-    expect(scrollIntoView).toHaveBeenCalledTimes(1);
-    expect(scrollIntoView).toHaveBeenCalledWith({ block: "start" });
-    // The sheet joins the shared modal stack, which puts focus on its first control.
-    const sheet = screen.getByRole("region", { name: "Why this person is waiting" });
+    const sheet = selectPerson(wardMovements.find(isOpen)!.id);
+    // Drawer review (6 Nov 2026): the person opens in the kit drawer, which joins the shared modal
+    // stack and puts focus on its Close button; the page no longer scrolls a panel into view.
     expect(sheet.contains(document.activeElement), "focus stayed on the covered table").toBe(true);
   });
 
-  it("dismisses the slide-over detail inspection panel when clicking the backdrop", () => {
+  // Drawer review (6 Nov 2026): the person opens in the kit drawer, whose own backdrop closes it.
+  it("dismisses the person drawer when clicking its backdrop", () => {
     renderScreen();
-    expect(screen.queryByTestId("delays-detail-backdrop")).toBeNull();
-
     const openPatient = wardMovements.find(isOpen)!;
-    selectPerson(openPatient.id);
-
-    const backdrop = screen.getByTestId("delays-detail-backdrop");
-    expect(backdrop).toBeInTheDocument();
+    const drawer = selectPerson(openPatient.id);
     expect(screen.getByRole("region", { name: "Why this person is waiting" })).toBeInTheDocument();
 
+    const backdrop = drawer.parentElement!;
+    fireEvent.pointerDown(backdrop);
     fireEvent.click(backdrop);
-    expect(screen.queryByTestId("delays-detail-backdrop")).toBeNull();
+    expect(screen.queryByTestId(`delays-detail-${openPatient.id}`)).toBeNull();
     expect(screen.queryByRole("region", { name: "Why this person is waiting" })).toBeNull();
   });
 

@@ -75,7 +75,7 @@ async function openFirstReferral(): Promise<{ id: string; detail: HTMLElement }>
   expect(rows.length).toBeGreaterThan(0);
   const id = rows[0]!.getAttribute("data-testid")!.replace("ward-referral-board-select-", "");
   fireEvent.click(rows[0]!);
-  return { id, detail: screen.getByRole("region", { name: "Selected referral detail" }) };
+  return { id, detail: screen.getByTestId("ward-referral-detail") };
 }
 
 const buttonNames = (region: HTMLElement) =>

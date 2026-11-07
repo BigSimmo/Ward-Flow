@@ -86,19 +86,20 @@ describe("Referrals, ED desk", () => {
     expect(within(raised).getAllByRole("link", { name: /^Movement, / })).toHaveLength(Math.min(peelOpen.length, 8));
     if (peelOpen.length > 8) expect(within(raised).getByRole("button", { name: /^Show \d+ more$/ })).toBeTruthy();
 
-    // No ED review asked and nothing chosen: the decision pane is left out.
-    const detail = document.querySelector<HTMLElement>('[aria-label="Selected referral detail"]');
-    expect(detail?.hidden).toBe(true);
+    // No ED review asked and nothing chosen: no decision drawer (drawer review, 6 Nov 2026).
+    expect(screen.queryByTestId("ward-referral-detail")).toBeNull();
   });
 
-  it("keeps Next overdue, the highlights and the decision pane while an ED review is asked of it", () => {
+  it("keeps Next overdue, the highlights and the decision drawer while an ED review is asked of it", () => {
     renderBoard(oneQueued);
     const hero = screen.getByTestId("ward-referral-kpis");
     expect(hero.textContent).toContain("1 ED review asked of you");
     expect(screen.getByTestId("ward-referral-next-overdue")).toBeTruthy();
     expect(screen.queryByTestId("ward-referral-meeting")).toBeNull();
     expect(screen.getByRole("group", { name: "Highlight referrals" })).toBeTruthy();
-    expect(screen.getByRole("region", { name: "Selected referral detail" }).hidden).toBe(false);
+    // Drawer review (6 Nov 2026): the review opens in the drawer once chosen.
+    fireEvent.click(screen.getAllByTestId(/^ward-referral-board-select-(?!decided)/)[0]!);
+    expect(screen.getByTestId("ward-referral-detail")).toBeInTheDocument();
   });
 
   it("leaves M, the bed meeting key, off on the ED desk", () => {

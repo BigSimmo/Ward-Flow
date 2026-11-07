@@ -17,8 +17,9 @@ function mount() {
     </WardFlowProvider>,
   );
 }
-function detail() {
-  return screen.getByRole("region", { name: "Selected referral detail" });
+// Drawer review (6 Nov 2026): the chosen referral opens in the kit drawer, which is gone when closed.
+function drawerOpen() {
+  return screen.queryByTestId("ward-referral-detail") !== null;
 }
 async function navigate(id: string) {
   await act(async () => {
@@ -34,7 +35,7 @@ describe("navigation 97 referral targets", () => {
     );
     mount();
     expect(await screen.findByText(/requested referral is unavailable/)).toBeInTheDocument();
-    expect(detail()).toHaveAttribute("data-has-selection", "false");
+    expect(drawerOpen()).toBe(false);
   });
   it("honours a new same-route target after manual selection and after close", async () => {
     window.history.replaceState(null, "", "/ward-flow/referrals");
@@ -52,8 +53,8 @@ describe("navigation 97 referral targets", () => {
       </WardFlowProvider>,
     );
     expect(screen.getByTestId(`ward-referral-inspector-priority-${id}`)).toBeInTheDocument();
-    fireEvent.keyDown(window, { key: "Escape" });
-    await waitFor(() => expect(detail()).toHaveAttribute("data-has-selection", "false"));
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: "Escape" });
+    await waitFor(() => expect(drawerOpen()).toBe(false));
     await navigate("RF-SYNTHETIC-MISSING");
     await navigate(id);
     await waitFor(() => expect(screen.getByTestId(`ward-referral-inspector-priority-${id}`)).toBeInTheDocument());
