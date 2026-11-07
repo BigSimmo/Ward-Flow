@@ -21,6 +21,7 @@ export type PsolisOption = readonly [code: string, label: string, psolis: string
 /** Gaps the source photos did not show. Keep each until Josh sends the missing part. */
 export const PSOLIS_LIST_GAPS = [
   "Referral type: the list's label on PSOLIS was not visible, and one item after UNKNOWN was not seen",
+  "Referral type: the first item, the release-order referral, is held until Josh rules on its wording",
   "Venue: one item after LOCK UP was not seen, and the list continues past REHAB CENTRE",
   "Problems: possibly one item after PHYSICAL PROBLEMS, and the list may continue past SUICIDAL IDEATION",
   "Action plan: one item after REFERRED TO COMMUNITY, PRIMARY CARE, NGO ETC, and the list continues past MHERL NOTIFIED",
@@ -61,7 +62,8 @@ export const VENUES_COMMON = ["ed", "general-hospital", "psych-hospital", "home"
  * the working name. Partial: see `PSOLIS_LIST_GAPS`.
  */
 export const REFERRAL_TYPES = [
-  ["bro", "Breach release order", "BREACH RELEASE ORDER"],
+  // HELD: PSOLIS lists a first item here, the release-order referral. Its wording trips the
+  // no-invented-figures guard (Josh: that word comes out everywhere), so it waits for his ruling.
   ["bail", "Condition of bail", "CONDITION OF BAIL"],
   ["correctional", "Correctional facility", "CORRECTIONAL FACILITY"],
   ["court", "Court", "COURT"],
