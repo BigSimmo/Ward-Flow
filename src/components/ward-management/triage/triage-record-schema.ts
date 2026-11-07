@@ -3,10 +3,10 @@ import * as z from "zod/mini";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
 
 import {
+  OUTCOMES,
   TRIAGE_FLAG_KEY,
   TRIAGE_LEGAL_CODES,
   TRIAGE_MAX_FLAGS,
-  TRIAGE_OUTCOMES,
   TRIAGE_REVIEW_CODES,
   TRIAGE_URGENCIES,
 } from "./triage-record";
@@ -22,7 +22,7 @@ export const storedTriageRecords = z.array(
     at: z.number(),
     by: z.enum(Object.keys(WARD_FLOW_ROLE_LABELS) as [string, ...string[]]),
     urgency: z.enum(TRIAGE_URGENCIES as [string, ...string[]]),
-    outcome: z.enum(TRIAGE_OUTCOMES as [string, ...string[]]),
+    outcome: z.enum(OUTCOMES as unknown as [string, ...string[]]),
     legal: z.enum(TRIAGE_LEGAL_CODES as [string, ...string[]]),
     review: z.enum(TRIAGE_REVIEW_CODES as [string, ...string[]]),
     riskFlags: z.array(z.string().check(z.regex(TRIAGE_FLAG_KEY))).check(z.maxLength(TRIAGE_MAX_FLAGS)),

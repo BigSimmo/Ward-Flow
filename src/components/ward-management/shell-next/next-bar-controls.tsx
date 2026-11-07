@@ -461,6 +461,12 @@ function WardBarNewMenuButton({
     else window.setTimeout(onReferral, 0);
   };
   const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    // Escape on the button closes an open menu, before focus has moved into it.
+    if (event.key === "Escape" && open !== null) {
+      event.preventDefault();
+      close(true);
+      return;
+    }
     if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
     event.preventDefault();
     setOpen({ trigger: event.currentTarget, row: event.key === "ArrowUp" ? 1 : 0 });

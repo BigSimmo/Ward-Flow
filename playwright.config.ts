@@ -20,7 +20,7 @@ const chromiumExecutablePath = process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH;
 // `tests/playwright-project-isolation.test.ts` asserts every spec on disk is matched.
 const productionSpecPattern = /.*api-csrf-proxy\.spec\.ts/;
 const mockupSpecPattern =
-  /.*ui-(ward-native-history-print|ward-management|ward-chrome-header|ward-coordinator|ward-roles|ward-discharges|ward-capacity-morning-moved|ward-referrals|ward-forced-colors|ward-full-journey|ward-search|ward-statistics-compare|ward-statistics-journey|ward-table-thresholds|ward-responsive-audit|ward-tour-targets|ward-help-show-me|ward-design-sweep|ward-pwa-lifecycle|ward-seclusion)\.spec\.ts/;
+  /.*ui-(ward-native-history-print|ward-management|ward-chrome-header|ward-coordinator|ward-roles|ward-discharges|ward-capacity-morning-moved|ward-referrals|ward-forced-colors|ward-full-journey|ward-search|ward-statistics-compare|ward-statistics-journey|ward-table-thresholds|ward-responsive-audit|ward-tour-targets|ward-help-show-me|ward-design-sweep|ward-pwa-lifecycle|ward-seclusion|ward-triage)\.spec\.ts/;
 // A bounded Ward-only cross-browser proof; keep prototype cases separate from the inherited
 // production projects. The spec checks responsive geometry and keyboard access to local scrollers.
 const wardResponsiveSpecPattern = /.*ui-ward-responsive-audit\.spec\.ts/;
@@ -52,7 +52,7 @@ const knownFailurePattern = knownFailurePatternFromEnvironment();
 export default defineConfig({
   testDir: "./tests",
   testMatch:
-    /.*(?:release-gate-journeys|release-gate-axe-sweep|ward-visual-baselines|ward-shared-(?:mode|recovery|performance)|api-csrf-proxy|ui-ward-(?:native-history-print|management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds|responsive-audit|tour-targets|help-show-me|design-sweep|pwa-lifecycle|seclusion))\.spec\.ts/,
+    /.*(?:release-gate-journeys|release-gate-axe-sweep|ward-visual-baselines|ward-shared-(?:mode|recovery|performance)|api-csrf-proxy|ui-ward-(?:native-history-print|management|chrome-header|coordinator|roles|discharges|capacity-morning-moved|referrals|forced-colors|full-journey|search|statistics-compare|statistics-journey|table-thresholds|responsive-audit|tour-targets|help-show-me|design-sweep|pwa-lifecycle|seclusion|triage))\.spec\.ts/,
   timeout: 60_000,
   retries: 0,
   // Fail the run if a stray `test.only` is committed: otherwise it silently

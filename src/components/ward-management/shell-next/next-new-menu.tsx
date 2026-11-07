@@ -115,7 +115,18 @@ function ChoiceMenu({ trigger, onClose, onChoose, initial = 0 }: Omit<NewMenuPro
   }, [panelNode, trigger]);
 
   useEffect(() => {
-    if (panelNode) itemRefs.current[active]?.focus({ preventScroll: true });
+    if (!panelNode) return;
+    // The panel can still be hidden for a frame while it is placed (seen with reduced motion), and a
+    // hidden row cannot take focus, so try again on the next few frames until focus lands.
+    let frame = 0;
+    let tries = 0;
+    const focusActive = () => {
+      const item = itemRefs.current[active];
+      item?.focus({ preventScroll: true });
+      if (item && document.activeElement !== item && tries++ < 10) frame = window.requestAnimationFrame(focusActive);
+    };
+    focusActive();
+    return () => window.cancelAnimationFrame(frame);
   }, [active, panelNode]);
 
   useEffect(() => {

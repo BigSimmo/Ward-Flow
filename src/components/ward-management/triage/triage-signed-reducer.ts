@@ -3,10 +3,10 @@ import type { WardFlowState } from "@/components/ward-management/ward-flow-reduc
 
 import { FACTOR_NAME } from "./triage-risk-data";
 import {
+  OUTCOMES,
   TRIAGE_FLAG_KEY,
   TRIAGE_LEGAL_CODES,
   TRIAGE_MAX_FLAGS,
-  TRIAGE_OUTCOMES,
   TRIAGE_REVIEW_CODES,
   TRIAGE_URGENCIES,
   type TriageSignedEvent,
@@ -32,7 +32,7 @@ export function reduceTriageSigned(state: WardFlowState, event: TriageSignedEven
   if (typeof event.patientId !== "string" || !state.patients.some((patient) => patient.id === event.patientId))
     return reject(state, event, "RECORD_TRIAGE_SIGNED names no person on this workspace");
   if (!isOneOf(TRIAGE_URGENCIES, event.urgency)) return reject(state, event, "Choose an urgency from A to G");
-  if (!isOneOf(TRIAGE_OUTCOMES, event.outcome)) return reject(state, event, "Choose an outcome from the list");
+  if (!isOneOf(OUTCOMES, event.outcome)) return reject(state, event, "Choose an outcome from the list");
   if (!isOneOf(TRIAGE_LEGAL_CODES, event.legal)) return reject(state, event, "Choose a legal status from the list");
   if (!isOneOf(TRIAGE_REVIEW_CODES, event.review)) return reject(state, event, "Choose when risk is reviewed");
   const flags = Array.isArray(event.riskFlags) ? event.riskFlags : null;

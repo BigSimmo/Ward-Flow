@@ -26,14 +26,12 @@ export const TIERS = [
   ["G", "No action", "No further action"],
 ] as const;
 export type Tier = (typeof TIERS)[number][0];
-export type TriageUrgency = Tier;
 export const TRIAGE_URGENCIES: readonly Tier[] = TIERS.map(([tier]) => tier);
 export const TIER_LONG = Object.fromEntries(TIERS.map(([tier, , long]) => [tier, long])) as Record<Tier, string>;
 export const TIER_SHORT = Object.fromEntries(TIERS.map(([tier, short]) => [tier, short])) as Record<Tier, string>;
 
 export const OUTCOMES = ["Accepted", "Referred on", "Advice only", "No further action"] as const;
-export type TriageOutcome = (typeof OUTCOMES)[number];
-export const TRIAGE_OUTCOMES: readonly TriageOutcome[] = OUTCOMES;
+type TriageOutcome = (typeof OUTCOMES)[number];
 
 /**
  * Legal status in full words, as chosen on the form; nothing is computed or checked. A form number
@@ -76,7 +74,7 @@ export type TriageSignedEvent = {
   role: WardFlowRole;
   now: Instant;
   patientId: string;
-  urgency: TriageUrgency;
+  urgency: Tier;
   outcome: TriageOutcome;
   legal: TriageLegalCode;
   review: TriageReviewCode;
@@ -89,7 +87,7 @@ export type TriageSignedRecord = {
   patientId: string;
   at: Instant;
   by: WardFlowRole;
-  urgency: TriageUrgency;
+  urgency: Tier;
   outcome: TriageOutcome;
   legal: TriageLegalCode;
   review: TriageReviewCode;

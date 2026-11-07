@@ -32,7 +32,7 @@ import {
   parseHeadedText,
   type DomainEntry,
 } from "./triage-risk-text";
-import { TRIAGE_LEGAL_CODES, TRIAGE_OUTCOMES, TRIAGE_REVIEW_CODES, type TriageSignedEvent } from "./triage-record";
+import { OUTCOMES, TRIAGE_LEGAL_CODES, TRIAGE_REVIEW_CODES, type TriageSignedEvent } from "./triage-record";
 
 /** A RAMP factor: present ("y"), not present ("n") or not known ("u"); absent means not marked. */
 type FactorMark = "y" | "n" | "u";
@@ -451,7 +451,7 @@ export function triageSignedFields(
   state: TriageState,
 ): Pick<TriageSignedEvent, "patientId" | "urgency" | "outcome" | "legal" | "review" | "riskFlags"> | null {
   const { urgency, outcome, legal, review } = state;
-  if (!urgency || !isOneOf(TRIAGE_OUTCOMES, outcome) || !isOneOf(TRIAGE_LEGAL_CODES, legal)) return null;
+  if (!urgency || !isOneOf(OUTCOMES, outcome) || !isOneOf(TRIAGE_LEGAL_CODES, legal)) return null;
   if (!isOneOf(TRIAGE_REVIEW_CODES, review)) return null;
   const riskFlags = allFactors(state)
     .filter((factor) => factor.mark === "y")

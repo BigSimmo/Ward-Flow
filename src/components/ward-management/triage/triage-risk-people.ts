@@ -56,7 +56,7 @@ export function dobAsShown(iso: string): string {
 }
 
 /** "07 Nov", on the board's synthetic Perth clock. */
-export function triageDay(at: number, dayZero: Date): string {
+function triageDay(at: number, dayZero: Date): string {
   const day = perthCalendarDay(calendarDateOf(at, dayZero));
   return `${String(day.day).padStart(2, "0")} ${MONTHS[day.monthIndex]}`;
 }
