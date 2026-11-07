@@ -311,3 +311,25 @@
 .decidedBy {
   display: contents;
 }
+
+/* Drawer review (6 Nov 2026): in the Referrals drawer the decision's buttons render into the drawer
+   foot. The band's own paint goes (the drawer foot is the band) and its buttons join the foot row:
+   the main button leads across the width, Decline sits with the other quiet buttons. */
+.foot[data-in-drawer] {
+  display: contents;
+}
+
+.foot[data-in-drawer] > * {
+  flex: 1 1 0;
+  justify-content: center;
+  min-width: 0;
+}
+
+.foot[data-in-drawer] > :last-child {
+  order: -1;
+  flex: 1 1 100%;
+}
+
+.foot[data-in-drawer] > :last-child > button {
+  width: 100%;
+}

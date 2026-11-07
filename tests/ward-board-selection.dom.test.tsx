@@ -56,6 +56,17 @@ function occupantsFor(unitId: string): Admission[] {
   return admissionsForUnit(wardAdmissions, unitId).filter(bedIsOccupied);
 }
 
+/**
+ * Drawer review (6 Nov 2026): the bed's record is the kit drawer (`ward-board-detail` is the dialog)
+ * and the kind of bed it describes sits on its body. "none" when no drawer is open.
+ */
+function detailKind(): string {
+  return (
+    screen.queryByTestId("ward-board-detail")?.querySelector("[data-detail-kind]")?.getAttribute("data-detail-kind") ??
+    "none"
+  );
+}
+
 function tileButtons(container: HTMLElement): HTMLButtonElement[] {
   return [...container.querySelectorAll<HTMLButtonElement>("[data-bed-kind] button")];
 }
@@ -89,35 +100,27 @@ describe("ward board selection — nothing is chosen for the reader", () => {
     }
   });
 
-  it("opens on the first bed that needs a look, and Close leaves the panel empty and stated", () => {
+  it("opens nothing until a bed is chosen, and Close takes the drawer away", () => {
     const { container } = renderWardBoard(UNIT_ID);
 
     // Non-vacuity: there are tiles to have chosen from.
     expect(tileButtons(container).length).toBeGreaterThan(0);
 
     /*
-     * CHANGED BY THE OWNER, 31 Oct 2026 (Stays and discharges redesign, point 16, approved "Yes to
-     * all"): the record column still stays on screen (30 August ruling), but on a laptop it now opens
-     * on the first bed that needs a look instead of sitting empty. It is the board's own "needs a
-     * look" filter that picks it, never a person chosen for its own sake, and it happens once: Close
-     * leaves the panel empty for the rest of the visit, with the absence STATED, as before.
+     * CHANGED, drawer review 6 Nov 2026 (Josh: a right drawer for every detail panel; the lists take
+     * the full width). The record no longer opens by itself on the first bed that needs a look
+     * (redesign point 16): a drawer that opened unasked would cover the board on arrival. Nothing is
+     * chosen for the reader, and Close takes the drawer away entirely.
      */
-    const pressed = tileButtons(container).filter((button) => button.getAttribute("aria-pressed") === "true");
-    expect(pressed).toHaveLength(1);
-    expect(screen.getByTestId("ward-board-detail")).not.toHaveAttribute("data-detail-kind", "none");
-    const lookFilterCount = Number(
-      (screen.getByRole("radio", { name: /^Needs a look/u }).textContent ?? "").match(/\d+/u)?.[0] ?? "0",
-    );
-    expect(lookFilterCount, "the board opened a bed although none needs a look").toBeGreaterThan(0);
-
-    fireEvent.click(screen.getByTestId("ward-board-detail-close"));
-    expect(container.querySelector('[data-testid="ward-board-detail-person"]')).toBeNull();
-    expect(container.querySelector('[data-testid="ward-board-detail-close"]')).toBeNull();
     expect(tileButtons(container).filter((button) => button.getAttribute("aria-pressed") === "true")).toHaveLength(0);
+    expect(screen.queryByTestId("ward-board-detail")).toBeNull();
 
-    // The absence is STATED. A blank column reads as a panel that failed to load.
-    const hint = screen.getByTestId("ward-board-select-hint");
-    expect(hint).toHaveTextContent("Choose a bed to view its record.");
+    fireEvent.click(tileButtonOfKind(container, "occupied"));
+    expect(detailKind()).toBe("occupied");
+    fireEvent.click(screen.getByRole("button", { name: "Close bed record" }));
+    expect(container.querySelector('[data-testid="ward-board-detail-person"]')).toBeNull();
+    expect(screen.queryByTestId("ward-board-detail")).toBeNull();
+    expect(tileButtons(container).filter((button) => button.getAttribute("aria-pressed") === "true")).toHaveLength(0);
   });
 
   it("never invents a bed number for a stay that records none", () => {
@@ -185,7 +188,7 @@ describe("ward board selection — choosing a tile shows that tile's own occupan
     await user.click(button);
 
     const detail = screen.getByTestId("ward-board-detail");
-    expect(detail.getAttribute("data-detail-kind")).toBe("occupied");
+    expect(detailKind()).toBe("occupied");
     expect(button.getAttribute("aria-pressed")).toBe("true");
     // Exactly one tile is pressed — selection is single, and a second pressed tile would mean two
     // readers of this board could disagree about what is open.
@@ -215,7 +218,7 @@ describe("ward board selection — choosing a tile shows that tile's own occupan
     await user.click(button);
 
     const detail = screen.getByTestId("ward-board-detail");
-    expect(detail.getAttribute("data-detail-kind")).toBe("waiting");
+    expect(detailKind()).toBe("waiting");
     // Widened 2026-09-09: RED on "No admission yet — nobody has arrived", a faithful restatement.
     expectSays(detail.textContent ?? "", "the waiting tile", [
       "not arrived",
@@ -256,7 +259,7 @@ describe("ward board selection — a bed with no occupant is a class, not a loca
     await user.click(tileButtonOfKind(container, "empty"));
 
     const detail = screen.getByTestId("ward-board-detail");
-    expect(detail.getAttribute("data-detail-kind")).toBe("empty");
+    expect(detailKind()).toBe("empty");
     expect(detail.textContent).toContain(`${emptyCount}`);
     expect(detail.textContent).toContain("Free bed, one of");
     // Same sentence as the bed-class tile above — one paragraph, rendered for every non-occupied
@@ -279,20 +282,11 @@ describe("ward board selection — the keyboard contract", () => {
     fireEvent.keyDown(screen.getByTestId("ward-board-detail"), { key: "Escape" });
 
     /*
-     * The panel is now PERMANENT and empty rather than absent — owner, 2026-08-30, asking for the
-     * side panels to match the home page's, which keeps its right region always present with an
-     * empty-state sentence.
-     *
-     * The decision this test was written to protect is unchanged and is still asserted below:
-     * nobody is chosen for the reader, and the absence is STATED rather than left as a blank box.
-     * Auto-selecting an occupant would read as the system having picked a person out of the ward;
-     * an unexplained empty column would read as a panel that failed to load. Both are still
-     * refused. What changed is where the sentence lives — it moved INTO the panel it describes,
-     * because the hint and the panel were otherwise carrying the same words a column apart.
+     * Nobody is chosen for the reader. Since the drawer review (6 Nov 2026) the record is the kit
+     * drawer, so closing it leaves no column behind, and the bed grid itself is the prompt.
      */
     expect(container.querySelector('[data-testid="ward-board-detail-person"]')).toBeNull();
-    expect(container.querySelector('[data-testid="ward-board-detail-close"]')).toBeNull();
-    expect(screen.getByTestId("ward-board-select-hint")).toHaveTextContent("Choose a bed to view its record.");
+    expect(screen.queryByTestId("ward-board-detail")).toBeNull();
     expect(document.activeElement).toBe(button);
     expect(button.getAttribute("aria-pressed")).toBe("false");
   });
@@ -303,27 +297,18 @@ describe("ward board selection — the keyboard contract", () => {
 
     const button = tileButtonOfKind(container, "occupied");
     await user.click(button);
-    await user.click(screen.getByTestId("ward-board-detail-close"));
+    await user.click(screen.getByRole("button", { name: "Close bed record" }));
 
     /*
-     * The panel is now PERMANENT and empty rather than absent — owner, 2026-08-30, asking for the
-     * side panels to match the home page's, which keeps its right region always present with an
-     * empty-state sentence.
-     *
-     * The decision this test was written to protect is unchanged and is still asserted below:
-     * nobody is chosen for the reader, and the absence is STATED rather than left as a blank box.
-     * Auto-selecting an occupant would read as the system having picked a person out of the ward;
-     * an unexplained empty column would read as a panel that failed to load. Both are still
-     * refused. What changed is where the sentence lives — it moved INTO the panel it describes,
-     * because the hint and the panel were otherwise carrying the same words a column apart.
+     * Nobody is chosen for the reader. Since the drawer review (6 Nov 2026) the record is the kit
+     * drawer, so closing it leaves no column behind, and the bed grid itself is the prompt.
      */
     expect(container.querySelector('[data-testid="ward-board-detail-person"]')).toBeNull();
-    expect(container.querySelector('[data-testid="ward-board-detail-close"]')).toBeNull();
-    expect(screen.getByTestId("ward-board-select-hint")).toHaveTextContent("Choose a bed to view its record.");
+    expect(screen.queryByTestId("ward-board-detail")).toBeNull();
     expect(document.activeElement).toBe(button);
   });
 
-  it("is reachable and operable by keyboard alone, and does not trap focus in the panel", async () => {
+  it("is reachable and operable by keyboard alone, as a modal drawer that hands focus back", async () => {
     const user = userEvent.setup();
     const { container } = renderWardBoard(UNIT_ID);
 
@@ -332,33 +317,20 @@ describe("ward board selection — the keyboard contract", () => {
     expect(document.activeElement).toBe(button);
     // A real button, so Enter and Space both activate it — nothing here relies on a click.
     await user.keyboard("{Enter}");
-    expect(screen.getByTestId("ward-board-detail")).toBeTruthy();
+    const detail = screen.getByTestId("ward-board-detail");
 
     /*
-     * NOT a focus trap: tabbing on from the panel eventually lands OUTSIDE it rather than cycling
-     * back in.
-     *
-     * ⚠️ Written as "tab until it escapes" rather than "one tab escapes", and the change is a
-     * correction rather than a loosening. The original asserted that a SINGLE tab from Close left
-     * the panel, which was true only because Close happened to be the last focusable control in it.
-     * That made the test fail the moment a discharge control was added after it — a false red on a
-     * legitimate change, and the kind that gets "fixed" by deleting the assertion.
-     *
-     * The property that actually matters is that focus can LEAVE. Bounded at ten steps so a real
-     * trap fails the test rather than hanging it.
+     * CHANGED, drawer review 6 Nov 2026: the record is the kit drawer, a modal dialog over the page,
+     * so the board behind it is inert and Tab never lands on it (the old inline column was not
+     * modal and let Tab leave it). Focus moves into the drawer on open, the board behind is marked
+     * inert, and Escape and Close hand focus back to the tile (tested above). The Tab cycle itself
+     * is the kit Sheet's, tested in sheet-focus.dom.test.tsx.
      */
-    const close = screen.getByTestId("ward-board-detail-close");
-    close.focus();
-    const detail = screen.getByTestId("ward-board-detail");
-    let escaped = false;
-    for (let step = 0; step < 10; step += 1) {
-      await user.tab();
-      if (!detail.contains(document.activeElement)) {
-        escaped = true;
-        break;
-      }
-    }
-    expect(escaped, "focus never left the detail panel within ten tabs — it is a trap").toBe(true);
+    expect(detail.contains(document.activeElement)).toBe(true);
+    expect(screen.getByTestId("ward-board").closest("[inert]")).not.toBeNull();
+    await user.keyboard("{Escape}");
+    expect(screen.queryByTestId("ward-board-detail")).toBeNull();
+    expect(document.activeElement).toBe(button);
   });
 
   it("deselects when the same tile is chosen again", async () => {
@@ -372,21 +344,11 @@ describe("ward board selection — the keyboard contract", () => {
 
     expect(button.getAttribute("aria-pressed")).toBe("false");
     /*
-     * The panel is now PERMANENT and empty rather than absent — owner, 2026-08-30, asking for the
-     * side panels to match the home page's, which keeps its right region always present with an
-     * empty-state sentence.
-     *
-     * The decision this test was written to protect is unchanged and is still asserted below:
-     * nobody is chosen for the reader, and the absence is STATED rather than left as a blank box.
-     * Auto-selecting an occupant would read as the system having picked a person out of the ward;
-     * an unexplained empty column would read as a panel that failed to load. Both are still
-     * refused. What changed is where the sentence lives — it moved INTO the panel it describes,
-     * because the hint and the panel were otherwise carrying the same words a column apart.
+     * Nobody is chosen for the reader. Since the drawer review (6 Nov 2026) the record is the kit
+     * drawer, so closing it leaves no column behind, and the bed grid itself is the prompt.
      */
     expect(container.querySelector('[data-testid="ward-board-detail-person"]')).toBeNull();
-    expect(container.querySelector('[data-testid="ward-board-detail-close"]')).toBeNull();
-    expect(screen.getByTestId("ward-board-select-hint")).toHaveTextContent("Choose a bed to view its record.");
-    expect(screen.getByTestId("ward-board-select-hint")).toBeTruthy();
+    expect(screen.queryByTestId("ward-board-detail")).toBeNull();
   });
 });
 

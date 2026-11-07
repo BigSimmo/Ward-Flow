@@ -4,7 +4,7 @@ import type { WardCommandDispatch } from "../ward-shared-client";
 
 import React, { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, History as HistoryIcon, MapPin, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, History as HistoryIcon, MapPin } from "lucide-react";
 import styles from "./ward-bed-dossier-drawer.module.css";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { bedGlyphTone, eddMovedBadge, type BedItem } from "./ward-bed-tone";
@@ -44,7 +44,9 @@ import {
   Button,
   Dialog,
   Icon,
+  PanelDrawer,
   StatusGlyph,
+  StatusPill,
   buttonClass,
   cx,
   durMinutes,
@@ -246,7 +248,10 @@ export function WardBedDossierDrawer({
     setQuickBlockerOpen(false);
   }
 
-  useWardModalFocus(true, bedDrawerRef, onClose);
+  // Drawer review (6 Nov 2026): on tablet and desktop the record is the kit PanelDrawer, whose Sheet
+  // owns the focus trap, Escape, the outside click and the return of focus. Only the phone's own
+  // sheet still joins the shared modal contract here.
+  useWardModalFocus(isPhone && !personGone, bedDrawerRef, onClose);
   useEffect(() => {
     if (personGone) goneCloseRef.current?.focus();
   }, [personGone]);
@@ -513,9 +518,9 @@ export function WardBedDossierDrawer({
   const showDateControl = () => {
     setTab("leave");
     setTimeout(() => {
-      const open = bedDrawerRef.current?.querySelector<HTMLButtonElement>(
-        '[data-testid="ward-drawer-discharge-date-open"]',
-      );
+      // The kit drawer is portalled on tablet and desktop, so the phone ref is empty there.
+      const scope = bedDrawerRef.current ?? document.querySelector('[data-testid="bed-telemetry-drawer"]');
+      const open = scope?.querySelector<HTMLButtonElement>('[data-testid="ward-drawer-discharge-date-open"]');
       open?.scrollIntoView?.({ block: "center" });
       open?.focus();
     }, 0);
@@ -597,53 +602,28 @@ export function WardBedDossierDrawer({
   if (personGone) {
     const bedWords = `bed ${String(selectedBed).padStart(2, "0")}`;
     return (
-      <>
-        <div
-          className={`${styles.drawerScrim} ${styles.show}`}
-          onClick={onClose}
-          aria-hidden="true"
-          data-sheet-scrim=""
-        />
-        {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape bubbling up from the Close button */}
-        <aside
-          ref={bedDrawerRef}
-          className={`${styles.drawer} ${styles.show}`}
-          data-testid="bed-telemetry-drawer"
-          aria-labelledby="drawer-bed-title"
-          role="dialog"
-          aria-modal="true"
-          tabIndex={-1}
-          onKeyDown={(event) => {
-            onKeyDown(event);
-            if (event.key === "Escape") {
-              event.preventDefault();
-              event.stopPropagation();
-            }
-          }}
-        >
-          <div className={styles.grab} aria-hidden="true" />
-          <header className={styles.drawerHead}>
-            <div className={styles.drawerHeading}>
-              <h2 id="drawer-bed-title" className={styles.drawerTitle}>
-                {bedLabel}
-              </h2>
-            </div>
-          </header>
-          <div className={styles.drawerBody}>
-            <p role="status" className={cx(styles.card, styles.goneNotice)} data-testid="ward-drawer-person-gone">
-              {openedFor.admissionId === undefined
-                ? `Someone has been placed in ${bedWords}.`
-                : `${openedFor.alias ?? "The person you opened"} is no longer in ${bedWords}.`}{" "}
-              Close and reopen the bed to see who is there now.
-            </p>
-          </div>
-          <footer className={styles.drawerFoot}>
-            <Button ref={goneCloseRef} variant="pri" size="lg" className={styles.pill} onClick={onClose}>
-              Close
-            </Button>
-          </footer>
-        </aside>
-      </>
+      <PanelDrawer
+        open
+        onClose={onClose}
+        title={bedLabel}
+        titleId="drawer-bed-title"
+        closeLabel="Close bed drawer"
+        testId="bed-telemetry-drawer"
+        className={styles.kitDrawer}
+        bodyClassName={styles.kitBody}
+        foot={
+          <Button ref={goneCloseRef} variant="pri" className={styles.kitFootMain} onClick={onClose}>
+            Close
+          </Button>
+        }
+      >
+        <p role="status" className={styles.goneNotice} data-testid="ward-drawer-person-gone">
+          {openedFor.admissionId === undefined
+            ? `Someone has been placed in ${bedWords}.`
+            : `${openedFor.alias ?? "The person you opened"} is no longer in ${bedWords}.`}{" "}
+          Close and reopen the bed to see who is there now.
+        </p>
+      </PanelDrawer>
     );
   }
 
@@ -869,87 +849,122 @@ export function WardBedDossierDrawer({
     </section>
   );
 
-  return (
+  const foot = (
     <>
-      <div
-        className={`${styles.drawerScrim} ${styles.show}`}
-        onClick={onClose}
-        aria-hidden="true"
-        data-sheet-scrim=""
-      />
-      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- catches Escape or arrow keys bubbling up from the focused control inside */}
-      <aside
-        ref={bedDrawerRef}
-        className={`${styles.drawer} ${styles.show}`}
-        data-testid="bed-telemetry-drawer"
-        aria-labelledby="drawer-bed-title"
-        role="dialog"
-        aria-modal="true"
-        tabIndex={-1}
-        onKeyDown={(event) => {
-          if (event.key === "Escape" && event.target instanceof HTMLElement && event.target.tagName === "SELECT") {
-            return;
-          }
-          onKeyDown(event);
-          if (event.key === "Escape") {
-            event.preventDefault();
-            event.stopPropagation();
-          }
-        }}
-      >
-        <div className={styles.grab} aria-hidden="true" />
-        <header className={styles.drawerHead}>
-          <span className={cx(styles.drawerBedBadge, isReady && styles.drawerBedBadgeReady)}>
-            {tone ? <StatusGlyph tone={tone} /> : null}
-            {bedLabel}
-          </span>
-          <div className={styles.drawerHeading}>
-            <h2 id="drawer-bed-title" className={styles.drawerTitle}>
-              {isReady ? readyWord : occupantAlias}
-            </h2>
-            <p className={styles.drawerKicker}>{subline}</p>
-            {/* WT-15: these links do not close the drawer first; closing steps history back and cancelled the navigation. */}
-            {personHref ? (
-              <Link className={styles.headPatient} href={personHref}>
-                Patient page
-                <Icon icon={ChevronRight} size={14} />
-              </Link>
+      {isReady ? (
+        <div className={styles.bandActions}>
+          {isPreparing && onMarkReady ? (
+            <Button variant="pri" className={cx(styles.pill, styles.bandMain)} onClick={onMarkReady}>
+              Ready
+            </Button>
+          ) : null}
+          <div className={styles.bandRow}>
+            <Link
+              className={buttonClass({
+                variant: isPreparing && onMarkReady ? "sec" : "pri",
+                className: cx(styles.pill, !(isPreparing && onMarkReady) && styles.bandMain),
+              })}
+              href="/ward-flow/referrals"
+            >
+              Review current referrals
+            </Link>
+            {onOpenBoard && !isPreparing ? (
+              <Button variant="sec" className={styles.pill} onClick={onOpenBoard}>
+                Place someone here
+              </Button>
             ) : null}
           </div>
+        </div>
+      ) : (
+        <>
+          {isOccupied && bedItem?.admissionId ? (
+            <>
+              {/* The destination is chosen on Leaving, so the footer always says which one
+                  "Record that they have left" will record. */}
+              <p className={styles.footDestination} id="drawer-leaving-summary">
+                Going to <strong>{leavingLabel}</strong>
+                {tab !== "leave" ? (
+                  <button
+                    type="button"
+                    className={styles.footChange}
+                    onClick={() => {
+                      setTab("leave");
+                    }}
+                  >
+                    Change
+                  </button>
+                ) : null}
+              </p>
+              {criteriaDepartureNote ? (
+                <p
+                  className={styles.footCriteria}
+                  id="drawer-leaving-criteria"
+                  data-testid="ward-drawer-leaving-criteria"
+                >
+                  {criteriaDepartureNote}
+                </p>
+              ) : null}
+            </>
+          ) : null}
+          <BedActions band actions={bedActions} mainId={mainId} />
+          {roleLockNote}
+        </>
+      )}
+      <BedClosureControls {...bedClosure} />
+    </>
+  );
+
+  // Drawer review (6 Nov 2026): the record opens in the kit PanelDrawer, as Transport, Discharges
+  // and the bed board do. Head: the person (or the bed's state), one quiet line, and the bed as the
+  // status tag. Foot: the light kit band, one filled step then equal quiet ones.
+  const nav =
+    personHref || onPrevBed || onNextBed ? (
+      <div className={styles.kitNav}>
+        {/* WT-15: these links do not close the drawer first; closing steps history back and cancelled the navigation. */}
+        {personHref ? (
+          <Link className={styles.headPatient} href={personHref}>
+            Patient page
+            <Icon icon={ChevronRight} size={14} />
+          </Link>
+        ) : (
+          <span />
+        )}
+        <span className={styles.kitNavBeds}>
           {onPrevBed ? (
             <Button
               variant="ghost"
+              size="sm"
               iconOnly
               icon={ChevronLeft}
               aria-label="Previous bed"
-              className={styles.pill}
               onClick={onPrevBed}
             />
           ) : null}
           {onNextBed ? (
-            <Button
-              variant="ghost"
-              iconOnly
-              icon={ChevronRight}
-              aria-label="Next bed"
-              className={styles.pill}
-              onClick={onNextBed}
-            />
+            <Button variant="ghost" size="sm" iconOnly icon={ChevronRight} aria-label="Next bed" onClick={onNextBed} />
           ) : null}
-          {/* H-0097: the drawer opens on Close, not on "Previous bed". */}
-          <Button
-            variant="ghost"
-            iconOnly
-            icon={X}
-            aria-label="Close bed drawer"
-            className={styles.pill}
-            onClick={onClose}
-            data-sheet-autofocus="true"
-          />
-        </header>
+        </span>
+      </div>
+    ) : null;
 
+  return (
+    <>
+      <PanelDrawer
+        open
+        onClose={onClose}
+        title={isReady ? readyWord : occupantAlias}
+        titleId="drawer-bed-title"
+        subtitle={subline}
+        tag={<StatusPill tone={tone ?? undefined}>{bedLabel}</StatusPill>}
+        closeLabel="Close bed drawer"
+        testId="bed-telemetry-drawer"
+        className={styles.kitDrawer}
+        bodyClassName={styles.kitBody}
+        foot={foot}
+      >
+        {nav}
         {isReady ? (
-          <div className={styles.drawerBody}>
+          <>
             <section className={styles.hero} aria-label="This bed" data-testid="bed-record-hero">
               <div className={styles.heroTop}>
                 <span className={styles.heroWhen}>
@@ -974,9 +989,9 @@ export function WardBedDossierDrawer({
               </dl>
               {readyNote}
             </section>
-          </div>
+          </>
         ) : (
-          <div className={styles.drawerBody}>
+          <>
             {hero}
             <div className={styles.tabsWrap}>
               {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused tab, option or item */}
@@ -1168,72 +1183,9 @@ export function WardBedDossierDrawer({
               </>,
             )}
             {history}
-          </div>
+          </>
         )}
-
-        <footer className={cx(styles.drawerFoot, styles.footBand)}>
-          {isReady ? (
-            <div className={styles.bandActions}>
-              {isPreparing && onMarkReady ? (
-                <Button variant="pri" className={cx(styles.pill, styles.bandMain)} onClick={onMarkReady}>
-                  Ready
-                </Button>
-              ) : null}
-              <div className={styles.bandRow}>
-                <Link
-                  className={buttonClass({
-                    variant: isPreparing && onMarkReady ? "onHero" : "pri",
-                    className: cx(styles.pill, !(isPreparing && onMarkReady) && styles.bandMain),
-                  })}
-                  href="/ward-flow/referrals"
-                >
-                  Review current referrals
-                </Link>
-                {onOpenBoard && !isPreparing ? (
-                  <Button variant="onHero" className={styles.pill} onClick={onOpenBoard}>
-                    Place someone here
-                  </Button>
-                ) : null}
-              </div>
-            </div>
-          ) : (
-            <>
-              {isOccupied && bedItem?.admissionId ? (
-                <>
-                  {/* The destination is chosen on Leaving, so the footer always says which one
-                      "Record that they have left" will record. */}
-                  <p className={styles.footDestination} id="drawer-leaving-summary">
-                    Going to <strong>{leavingLabel}</strong>
-                    {tab !== "leave" ? (
-                      <button
-                        type="button"
-                        className={styles.footChange}
-                        onClick={() => {
-                          setTab("leave");
-                        }}
-                      >
-                        Change
-                      </button>
-                    ) : null}
-                  </p>
-                  {criteriaDepartureNote ? (
-                    <p
-                      className={styles.footCriteria}
-                      id="drawer-leaving-criteria"
-                      data-testid="ward-drawer-leaving-criteria"
-                    >
-                      {criteriaDepartureNote}
-                    </p>
-                  ) : null}
-                </>
-              ) : null}
-              <BedActions band actions={bedActions} mainId={mainId} />
-              {roleLockNote}
-            </>
-          )}
-          <BedClosureControls {...bedClosure} />
-        </footer>
-      </aside>
+      </PanelDrawer>
       {confirmDialog}
     </>
   );

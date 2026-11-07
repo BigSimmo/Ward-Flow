@@ -69,7 +69,7 @@ describe("Referrals v10: Accept then Undo", () => {
 
 describe("Audit 1 (CS-15): a decision names the person and does not open the next one", () => {
   it("keeps the detail on the person decided, and the toast names them", () => {
-    // Side by side, where the board opens the first in queue before anyone has chosen.
+    // Side by side (the first in queue is chosen below).
     const split = (query: string) => ({
       matches: query === "(min-width: 64rem)",
       media: query,
@@ -86,6 +86,8 @@ describe("Audit 1 (CS-15): a decision names the person and does not open the nex
     );
     const [first, second] = queueIds();
     const name = screen.getByTestId(`ward-referral-board-select-${first}`).textContent ?? "";
+    // Drawer review (6 Nov 2026): nothing opens by itself, so the first in queue is chosen.
+    fireEvent.click(screen.getByTestId(`ward-referral-board-select-${first}`));
     const accept = document.querySelector<HTMLButtonElement>('button[data-testid^="ward-referral-match-accept-"]');
     expect(accept, "the first in queue can be accepted").not.toBeNull();
     fireEvent.click(accept!);

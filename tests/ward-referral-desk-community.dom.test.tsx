@@ -126,7 +126,7 @@ describe("the community clinician's Referrals board", () => {
     const rows = await screen.findAllByTestId(/^ward-referral-board-select-(?!decided)/);
     const id = rows[0]!.getAttribute("data-testid")!.replace("ward-referral-board-select-", "");
     fireEvent.click(rows[0]!);
-    const detail = screen.getByRole("region", { name: "Selected referral detail" });
+    const detail = screen.getByTestId("ward-referral-detail");
     expect(within(detail).queryByTestId("ward-referral-read-only")).not.toBeInTheDocument();
     expect(within(detail).queryByTestId("ward-referral-read-only-foot")).not.toBeInTheDocument();
     fireEvent.click(within(detail).getByRole("tab", { name: /^Patient/ }));
@@ -142,7 +142,7 @@ describe("the community clinician's Referrals board", () => {
     renderBoard({ refer: true });
     const rows = await screen.findAllByTestId(/^ward-referral-board-select-(?!decided)/);
     fireEvent.click(rows[0]!);
-    const detail = screen.getByRole("region", { name: "Selected referral detail" });
+    const detail = screen.getByTestId("ward-referral-detail");
     expect(await within(detail).findByTestId("ward-referral-match-not-a-bed-question")).toBeInTheDocument();
     expect(within(detail).queryByTestId("ward-referral-match-accept-community_team")).not.toBeInTheDocument();
     expect(within(detail).queryByTestId("ward-referral-match-decline-controls-community_team")).not.toBeInTheDocument();

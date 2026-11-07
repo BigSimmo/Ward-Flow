@@ -35,7 +35,9 @@ afterEach(() => {
 });
 
 describe("phone referral board with a referral open", () => {
-  it("moves focus into the detail and takes the queue out of the Tab order", () => {
+  // Drawer review (6 Nov 2026): the referral opens in the kit drawer (a sheet rising from the foot on
+  // a phone), which moves focus in, makes the page behind it inert and returns focus on close.
+  it("moves focus into the detail and takes the queue out of the Tab order", async () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
         <ReferralBoard />
@@ -45,10 +47,9 @@ describe("phone referral board with a referral open", () => {
     expect(queue).not.toHaveAttribute("inert");
 
     fireEvent.click(screen.getAllByTestId(/^ward-referral-board-row-/)[0]!);
-    const detail = screen.getByRole("region", { name: "Selected referral detail" });
-    expect(detail, "no referral was selected, so this proves nothing").toHaveAttribute("data-has-selection", "true");
-    expect(detail).toHaveFocus();
-    expect(queue).toHaveAttribute("inert");
+    const detail = screen.getByTestId("ward-referral-detail");
+    await waitFor(() => expect(detail.contains(document.activeElement)).toBe(true));
+    await waitFor(() => expect(queue.closest("[inert]")).not.toBeNull());
   });
 
   it("returns focus to the referral's own row when Escape closes it (A3, 2 Nov 2026)", async () => {
@@ -61,10 +62,10 @@ describe("phone referral board with a referral open", () => {
     const testId = select.getAttribute("data-testid")!;
     select.focus();
     fireEvent.click(select);
-    const detail = screen.getByRole("region", { name: "Selected referral detail" });
-    expect(detail).toHaveFocus();
-    fireEvent.keyDown(detail, { key: "Escape" });
-    await waitFor(() => expect(detail).toHaveAttribute("data-has-selection", "false"));
+    const detail = screen.getByTestId("ward-referral-detail");
+    await waitFor(() => expect(detail.contains(document.activeElement)).toBe(true));
+    fireEvent.keyDown(document.activeElement!, { key: "Escape" });
+    await waitFor(() => expect(screen.queryByTestId("ward-referral-detail")).toBeNull());
     await waitFor(() => expect(document.activeElement).toHaveAttribute("data-testid", testId));
   });
 });

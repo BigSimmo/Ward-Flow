@@ -26,32 +26,58 @@
   min-width: 0;
 }
 
+/* Drawer review (6 Nov 2026): one column. "At a glance" is an unscrolled summary above the list,
+   which takes the full width; a chosen place opens in the kit drawer (hub-screen.tsx). */
 .hubShell {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 468px;
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--wf-s-3);
   min-width: 0;
 }
 
 .hubLeft,
-.previewCard,
 .glanceCard {
   min-width: 0;
   overflow: hidden;
 }
 
-.hubRight {
-  display: flex;
-  flex-direction: column;
+.hubGlance {
+  min-width: 0;
+}
+
+/* The summary's sections sit side by side on a wide screen, each in its own column. */
+@media (min-width: 64.0625rem) {
+  .overviewBody {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  }
+
+  .overviewBody > .glanceSection + .glanceSection {
+    border-left: 1px solid var(--wf-line);
+  }
+}
+
+/* The place drawer's body: the facts and lists sit on the drawer's own inset. */
+.drawerBody {
+  display: grid;
   gap: var(--wf-s-3);
   min-width: 0;
 }
 
-/* The column is the shared sticky rail (data-wf-rail), capped at the window height. Its cards keep
-   their own height so the rail scrolls, rather than squashing the preview and hiding its actions. */
-.hubRight > * {
-  flex-shrink: 0;
+.drawerBody .detailBadges {
+  margin-top: 0;
+}
+
+.drawerBody :is(.factRow, .detailSection) {
+  padding-inline: 0;
+}
+
+.drawerBody .detailSection:last-child {
+  border-bottom: 0;
+}
+
+.drawerBody .closedReason {
+  text-align: left;
 }
 
 .headMeta {
@@ -402,53 +428,6 @@
   color: var(--wf-ink-2);
 }
 
-/* Preview card */
-.previewHead {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-3);
-}
-
-.previewTitleBlock {
-  flex: 1 1 auto;
-  min-width: 0;
-}
-
-.previewEyebrow {
-  display: block;
-  font-size: var(--wf-fs-11);
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-  color: var(--wf-ink-2);
-  white-space: nowrap;
-}
-
-.previewTitle {
-  margin: 2px 0 0;
-  font-size: var(--wf-fs-16);
-  line-height: var(--wf-lh-16);
-  font-weight: 600;
-  color: var(--wf-ink-1);
-  overflow-wrap: anywhere;
-}
-
-.previewSite {
-  margin: 2px 0 0;
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-2);
-}
-
-.detailBody {
-  min-width: 0;
-}
-
-.detailBody:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: -2px;
-}
-
 .factList {
   margin: 0;
 }
@@ -518,13 +497,6 @@
   color: var(--wf-ink-1);
 }
 
-.detailCta {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-2);
-  padding: var(--wf-s-3);
-}
-
 /* PL1 follow-up (4 Nov 2026): the people a place's panel names, each opening the person. */
 .listSection {
   padding-top: var(--wf-s-3);
@@ -563,13 +535,6 @@
   line-height: 1.5;
 }
 
-.ctaActions {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--wf-s-2);
-}
-
 /* At a glance */
 .asAt {
   margin: 0;
@@ -586,11 +551,6 @@
 
 .overviewBody {
   min-width: 0;
-}
-
-.overviewBody:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: -2px;
 }
 
 .glanceSection {
@@ -726,18 +686,6 @@
   white-space: nowrap;
 }
 
-@media (max-width: 80rem) {
-  .hubShell {
-    grid-template-columns: minmax(0, 1fr) 380px;
-  }
-}
-
-@media (max-width: 64rem) {
-  .hubShell {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 @media (max-width: 46.4375rem) {
   .main {
     padding: var(--wf-s-3);
@@ -793,7 +741,7 @@
  * (hub-screen.tsx). Review point 21: each row is the place's two lines, with a stale count's
  * "Stale 5h" on the right of them (round 2). Desktop is unchanged. */
 @media (max-width: 46.4375rem) {
-  .hubRight {
+  .hubGlance {
     display: none;
   }
 
@@ -955,27 +903,6 @@
   color: var(--wf-ink-3);
 }
 
-/* In the preview sheet the card loses its chrome and its own Open row: the sheet's footer has it. */
-.phonePreviewSheet .previewCard {
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-}
-
-.phonePreviewSheet .previewHead {
-  padding: 0 0 var(--wf-s-2);
-  border: 0;
-}
-
-.phonePreviewSheet .previewHead > :first-child,
-.phonePreviewSheet :is(.previewEyebrow, .previewTitle, .previewSite) {
-  display: none;
-}
-
-.phonePreviewSheet .detailBody {
-  padding: 0;
-}
-
 @media (max-width: 46.4375rem) {
   .hubLeft {
     border: 0;
@@ -1048,38 +975,6 @@
   .phoneSearchBox input::-webkit-search-cancel-button {
     appearance: none;
     display: none;
-  }
-}
-
-/* Phone (v10) preview sheet: Open sits in the sheet footer, so the card's own Open row hides. */
-.phonePreviewSheet .detailCta {
-  display: none;
-}
-
-.phonePreviewLinks {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wf-s-1) var(--wf-s-4);
-}
-
-.phonePreviewLinks > :is(a, button) {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--spacing-tap, 3rem);
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--wf-accent-ink);
-  font: 600 var(--wf-fs-13) / 1 var(--wf-font);
-  text-decoration: none;
-  cursor: pointer;
-}
-
-/* Audit 11 Oct 2026: on a desk the rail stays in view while the long list scrolls. */
-@media (min-width: 73.8125rem) {
-  .hubRight {
-    position: sticky;
-    top: var(--wf-s-3);
   }
 }
 
@@ -1221,11 +1116,6 @@
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
   text-align: right;
-}
-
-.phonePreviewSheet .closedReason {
-  margin-top: var(--wf-s-2);
-  text-align: left;
 }
 
 /* Josh review (4 Nov 2026): on phone the list card's own white box no longer shows behind the

@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createRef, type ReactNode } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -25,7 +25,7 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 afterEach(() => cleanup());
 
 describe("H-0097: the bed drawer opens on Close", () => {
-  it("starts focus on Close, not on Previous bed", () => {
+  it("starts focus on Close, not on Previous bed", async () => {
     const occupant = {
       bedNumber: 3,
       bedLabel: "Bed 03",
@@ -54,7 +54,8 @@ describe("H-0097: the bed drawer opens on Close", () => {
       </WardFlowProvider>,
     );
     expect(screen.getByRole("button", { name: "Previous bed" })).toBeInTheDocument();
-    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Close bed drawer" }));
+    // Drawer review (6 Nov 2026): the kit drawer's Sheet moves focus to Close once it has mounted.
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByRole("button", { name: "Close bed drawer" })));
   });
 });
 

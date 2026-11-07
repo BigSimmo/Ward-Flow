@@ -73,12 +73,15 @@ describe("Patient search record drawer", () => {
     expect(screen.getByTestId("ward-patient-search-case-WF-318")).toHaveAttribute("aria-selected", "true");
   });
 
-  it("stays open while the page passes through the phone layout and widens again", () => {
+  // CodeRabbit (#1495): the phone keeps its own sheet, so the drawer closes at phone width. Widening
+  // again leaves it shut with the row still chosen, one tap from reopening.
+  it("closes at phone width and keeps the row chosen when the page widens again", () => {
     openRecordInDrawer();
     setPhone(true);
-    expect(screen.getByTestId("ward-patient-search-details")).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-patient-search-details")).not.toBeInTheDocument();
 
     setPhone(false);
-    expect(screen.getByTestId("ward-patient-search-details")).toBeInTheDocument();
+    expect(screen.queryByTestId("ward-patient-search-details")).not.toBeInTheDocument();
+    expect(screen.getByTestId("ward-patient-search-case-WF-318")).toHaveAttribute("aria-selected", "true");
   });
 });

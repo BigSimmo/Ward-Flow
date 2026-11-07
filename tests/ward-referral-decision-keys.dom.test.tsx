@@ -76,10 +76,14 @@ function renderBoard() {
       <Decisions />
     </WardFlowProvider>,
   );
+  // Drawer review (6 Nov 2026): nothing opens by itself, so the first queued referral is chosen
+  // (a scoped desk draws its rows a moment later and chooses its own).
+  const first = screen.queryAllByTestId(/^ward-referral-board-select-(?!decided)/)[0];
+  if (first) fireEvent.click(first);
 }
 
 const answered = () => screen.getByTestId("answered-count").textContent;
-const detail = () => screen.getByRole("region", { name: "Selected referral detail" });
+const detail = () => screen.getByTestId("ward-referral-detail");
 
 describe("decision keys on the Referrals board", () => {
   it("lists A and D in the board's shortcuts", () => {

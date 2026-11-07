@@ -9,6 +9,7 @@ import {
 } from "@/components/ward-management/ward-ready-bed-promises";
 import { ReferralIntakeSummary } from "./referral-intake-summary";
 import { useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { ignoreUnavailableActivation } from "@/components/ui-primitives";
 import {
   WARD_REQUEST_WITHDRAWAL_REASONS,
@@ -112,6 +113,12 @@ type ReferralMatchViewProps = {
    * rendered under the lists. Same handlers, same dispatches as the desktop view.
    */
   phone?: ReactNode;
+  /**
+   * Drawer review (6 Nov 2026): the board's drawer foot. When given, the ward decision's Accept and
+   * Decline render there (one foot band, Accept first) instead of pinned at the foot of this view.
+   * A desk that does not answer the ward keeps them here, greyed inside its fieldset.
+   */
+  footSlot?: HTMLElement | null;
 };
 
 /** Moved to `./referral-history-corrections`; re-exported so imports keep working. */
@@ -139,6 +146,7 @@ export function ReferralMatchView({
   hideDossierHeader = false,
   onDecision,
   phone,
+  footSlot,
 }: ReferralMatchViewProps) {
   // Keep every hook above the destination-specific early returns.
   // #794: only the coordinator or the desk a destination belongs to may answer it.
@@ -1239,83 +1247,93 @@ export function ReferralMatchView({
         </>
       )}
 
-      <DecidedBy allowed={answers("ward")} quiet>
-        <div className={ph.foot}>
-          {askMore.open ? (
-            <AskMoreWardsFoot ask={askMore} />
-          ) : phoneDeclining ? (
-            <>
-              <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(false)}>
-                Back
-              </button>
-              <Button
-                variant="sec"
-                size="md"
-                data-placement-action="decline"
-                disabledReason={declineReason === undefined ? DECLINE_REASON_UNCHOSEN : undefined}
-                reasonDisplay="tooltip"
-                type="button"
-                data-tone="danger"
-                data-testid="ward-referral-match-decline"
-                onClick={
-                  declineReason === undefined
-                    ? ignoreUnavailableActivation
-                    : () => {
-                        handleDecline("psychiatric_ward");
-                        setPhoneDeclining(false);
-                      }
-                }
-              >
-                <span className={ph.ell}>Decline referral</span>
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button
-                variant="sec"
-                size="md"
-                data-placement-action
-                type="button"
-                data-testid="ward-referral-match-decline-open"
-                onClick={() => setPhoneDeclining(true)}
-              >
-                Decline
-              </Button>
-              {/* D-77: the one button. A ward that fits accepts; one that needs the gender placement
+      {(() => {
+        const inDrawer = Boolean(footSlot) && answers("ward");
+        const decisionFoot = (
+          <div className={ph.foot} data-in-drawer={inDrawer ? "true" : undefined}>
+            {askMore.open ? (
+              <AskMoreWardsFoot ask={askMore} />
+            ) : phoneDeclining ? (
+              <>
+                <button type="button" className={ph.sec} onClick={() => setPhoneDeclining(false)}>
+                  Back
+                </button>
+                <Button
+                  variant="sec"
+                  size="md"
+                  data-placement-action="decline"
+                  disabledReason={declineReason === undefined ? DECLINE_REASON_UNCHOSEN : undefined}
+                  reasonDisplay="tooltip"
+                  type="button"
+                  data-tone="danger"
+                  data-testid="ward-referral-match-decline"
+                  onClick={
+                    declineReason === undefined
+                      ? ignoreUnavailableActivation
+                      : () => {
+                          handleDecline("psychiatric_ward");
+                          setPhoneDeclining(false);
+                        }
+                  }
+                >
+                  <span className={ph.ell}>Decline referral</span>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button
+                  variant="sec"
+                  size="md"
+                  data-placement-action
+                  type="button"
+                  data-testid="ward-referral-match-decline-open"
+                  onClick={() => setPhoneDeclining(true)}
+                >
+                  Decline
+                </Button>
+                {/* D-77: the one button. A ward that fits accepts; one that needs the gender placement
                 check opens that form; one that does not fit opens Clinical override, which still
                 needs a recorded reason before it accepts. */}
-              <Button
-                variant={pickNeedsOverride ? "sec" : "pri"}
-                size="md"
-                data-placement-action
-                disabledReason={pick === undefined ? acceptUnavailable : undefined}
-                reasonDisplay="tooltip"
-                type="button"
-                data-testid="ward-referral-match-phone-accept"
-                onClick={
-                  pick === undefined
-                    ? ignoreUnavailableActivation
-                    : pickPlain
-                      ? () => handleAccept(pick.unit.id)
-                      : revealPickForm
-                }
-              >
-                <span className={ph.ell}>
-                  {pick === undefined
-                    ? candidates.length === 0
-                      ? "Accept"
-                      : "Choose a ward first"
-                    : pickNeedsOverride
-                      ? `Clinical override for ${pick.unit.name}`
-                      : pickGenderForm
-                        ? `Check placement at ${pick.unit.name}`
-                        : `Accept at ${pick.unit.name}`}
-                </span>
-              </Button>
-            </>
-          )}
-        </div>
-      </DecidedBy>
+                <Button
+                  variant={pickNeedsOverride ? "sec" : "pri"}
+                  size="md"
+                  data-placement-action
+                  disabledReason={pick === undefined ? acceptUnavailable : undefined}
+                  reasonDisplay="tooltip"
+                  type="button"
+                  data-testid="ward-referral-match-phone-accept"
+                  onClick={
+                    pick === undefined
+                      ? ignoreUnavailableActivation
+                      : pickPlain
+                        ? () => handleAccept(pick.unit.id)
+                        : revealPickForm
+                  }
+                >
+                  <span className={ph.ell}>
+                    {pick === undefined
+                      ? candidates.length === 0
+                        ? "Accept"
+                        : "Choose a ward first"
+                      : pickNeedsOverride
+                        ? `Clinical override for ${pick.unit.name}`
+                        : pickGenderForm
+                          ? `Check placement at ${pick.unit.name}`
+                          : `Accept at ${pick.unit.name}`}
+                  </span>
+                </Button>
+              </>
+            )}
+          </div>
+        );
+        return inDrawer && footSlot ? (
+          createPortal(decisionFoot, footSlot)
+        ) : (
+          <DecidedBy allowed={answers("ward")} quiet>
+            {decisionFoot}
+          </DecidedBy>
+        );
+      })()}
       {phone === undefined && !hideDossierHeader ? (
         <ReferralHistoryAndCorrections referral={referral} now={now} dispatch={dispatch} />
       ) : null}

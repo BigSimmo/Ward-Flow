@@ -344,8 +344,9 @@ test.describe("@mockup Ward shell bar", () => {
     await expect(page.getByTestId("ward-rail")).toBeVisible();
   });
 
-  // The October 2026 board retired the Focus table / Action workspace toggle. Its side column now
-  // swaps the registers rail for the person panel, so that swap is what must leave the shell alone.
+  // The October 2026 board retired the Focus table / Action workspace toggle. Since the drawer review
+  // (6 Nov 2026) the person opens in the kit drawer over the page and the registers rail stays put
+  // underneath, so opening and closing the drawer is what must leave the shell alone.
   test("opening a person keeps the shared navigation and page design", async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto("/ward-flow/waiting", { waitUntil: "networkidle" });
@@ -374,7 +375,7 @@ test.describe("@mockup Ward shell bar", () => {
       .first()
       .click();
     await expect(person).toBeVisible();
-    await expect(rail).toHaveCount(0);
+    await expect(rail).toHaveCount(1);
     await expect.poll(readChrome).toEqual(before);
     expect((await graph.boundingBox())!.width).toBe(graphWidth);
     await page.keyboard.press("Escape");

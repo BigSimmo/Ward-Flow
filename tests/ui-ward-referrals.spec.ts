@@ -1096,11 +1096,11 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     await expect(page.getByTestId("ward-referral-match-decided")).toHaveText(`Accepted at ${acceptedUnitName}.`);
     await expectNoReloadSince(page, "accepting at the far unit");
 
-    // At 375px the referral opens as a full-screen slide-over above the rail (`referrals.module.css`,
-    // max-width 63.9375rem, since 81553692fb). A phone user closes it with its own control before
-    // reaching for the rail, and so does this journey — then proves it is gone.
+    // The referral opens in the kit drawer (drawer review, 6 Nov 2026), a sheet over the rail on a
+    // phone. A phone user closes it with its own control before reaching for the rail, and so does
+    // this journey, then proves it is gone.
     await page.getByRole("button", { name: "Close referral detail (Esc)", exact: true }).click();
-    await expect(page.getByTestId("ward-referral-detail-backdrop")).toHaveCount(0);
+    await expect(page.getByTestId("ward-referral-detail")).toHaveCount(0);
 
     // On to the ledger, through the coordinator's own rail rather than a typed URL.
     //

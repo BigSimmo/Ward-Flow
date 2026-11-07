@@ -2,7 +2,7 @@
 // the page after an ED acceptance is confirmed, or after Escape closes the detail the page opened by
 // itself. Synthetic seed data only.
 import "@testing-library/jest-dom/vitest";
-import { act, cleanup, fireEvent, render, screen, within } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -62,7 +62,7 @@ function renderBoard() {
   );
 }
 
-const detail = () => screen.getByRole("region", { name: "Selected referral detail" });
+const detail = () => screen.getByTestId("ward-referral-detail");
 const queueRows = () =>
   screen.queryAllByTestId(/^ward-referral-board-select-(?!decided)/).filter((row) => row.closest("[hidden]") === null);
 
@@ -91,9 +91,8 @@ describe("Referrals board keeps keyboard focus after a decision (BA-1)", () => {
     nextFrame();
     expect(document.activeElement).not.toBe(document.body);
     const active = document.activeElement as HTMLElement;
-    // The next queued referral's row, or the detail when the queue is now empty.
-    const landed = queueRows().includes(active) || active === detail();
-    expect(landed).toBe(true);
+    // Drawer review (6 Nov 2026): the drawer stays on the person decided, so focus stays inside it.
+    expect(detail().contains(active)).toBe(true);
   });
 
   it("picks the referral after the decided one, else the one before", () => {
@@ -104,17 +103,22 @@ describe("Referrals board keeps keyboard focus after a decision (BA-1)", () => {
   });
 });
 
-describe("Escape on the auto-opened referral keeps focus on the board (BA-3)", () => {
-  it("sends focus to the first queued referral when the page opened the detail itself", async () => {
+// Drawer review (6 Nov 2026): the detail no longer opens by itself (it is a modal drawer), so BA-3's
+// auto-opened case is gone. Escape closes the drawer and focus returns to the row that opened it.
+describe("Escape on the referral drawer keeps focus on the board (BA-3)", () => {
+  it("opens nothing by itself, and Escape returns focus to the row that opened the drawer", async () => {
     renderBoard();
+    expect(screen.queryByTestId("ward-referral-detail")).toBeNull();
+    const row = queueRows()[0]!;
+    row.focus();
+    fireEvent.click(row);
     await within(detail()).findAllByTestId(/^ward-referral-match-/);
-    // Nobody pressed a row: the detail opened on the first referral by default.
     within(detail()).getAllByRole("button")[0]!.focus();
     act(() => {
-      fireEvent.keyDown(window, { key: "Escape" });
+      fireEvent.keyDown(document.activeElement!, { key: "Escape" });
     });
     nextFrame();
-    expect(document.activeElement).not.toBe(document.body);
-    expect(queueRows()[0]).toHaveFocus();
+    await waitFor(() => expect(screen.queryByTestId("ward-referral-detail")).toBeNull());
+    await waitFor(() => expect(row).toHaveFocus());
   });
 });
