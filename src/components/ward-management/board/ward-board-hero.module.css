@@ -131,14 +131,22 @@
   color: var(--wf-ink-3);
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
+/* Drawer review (6 Nov 2026): the list grows to show every ward rather than scrolling inside
+   itself; two columns where there is room keep it short. */
 .switchList {
   display: grid;
-  max-height: 19rem;
-  overflow-y: auto;
   margin: 0;
   padding: 0 var(--wf-s-2) var(--wf-s-2);
   list-style: none;
-  scrollbar-width: thin;
+}
+@media (min-width: 46.5rem) {
+  .switchBody:has(.switchList > li:nth-child(7)) {
+    width: min(36rem, calc(100vw - 2rem));
+  }
+  .switchList:has(> li:nth-child(7)) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: var(--wf-s-1);
+  }
 }
 .switchList a {
   display: flex;
