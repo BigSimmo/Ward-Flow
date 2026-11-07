@@ -55,7 +55,7 @@ import { readFileSync, readdirSync, writeFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
 
 const DOCS_DIR = join(process.cwd(), "docs", "ward-flow");
-const DATED_NOTES_DIR = join(DOCS_DIR, "archive", "dated-notes");
+const DATED_NOTES_DIR = join(process.cwd(), "docs", "history", "archive", "dated-notes");
 const OUT = join(DOCS_DIR, "OWNER-RULINGS.md");
 const TRUNCATE_AT = 320;
 
@@ -71,7 +71,7 @@ function listFiles() {
   const outName = "OWNER-RULINGS.md";
   const scanDirs = [
     { dir: DOCS_DIR, prefix: "" },
-    ...(existsSync(DATED_NOTES_DIR) ? [{ dir: DATED_NOTES_DIR, prefix: "archive/dated-notes/" }] : []),
+    ...(existsSync(DATED_NOTES_DIR) ? [{ dir: DATED_NOTES_DIR, prefix: "../history/archive/dated-notes/" }] : []),
   ];
 
   const primary = [];
@@ -86,7 +86,7 @@ function listFiles() {
       } else if (
         /owner.*ruling.*\.md$/i.test(f) ||
         // Early ruling records archived from docs/archive/ on 24 Oct 2026 (Josh's yes).
-        (prefix === "archive/dated-notes/" && /^ward-(?:flow|management)-.*(?:rulings|decisions).*\.md$/.test(f))
+        (prefix === "../history/archive/dated-notes/" && /^ward-(?:flow|management)-.*(?:rulings|decisions).*\.md$/.test(f))
       ) {
         secondary.push(relPath);
       }
@@ -260,7 +260,7 @@ function render(perFile, patterns) {
     "> `node scripts/ward-flow/owner-rulings-index.mjs` regenerates it; `--check` fails when it is out",
     "> of date. Edit a ruling in its own source file under `docs/ward-flow/`, never here.",
     "",
-    `Scanned \`docs/ward-flow/decisions.md\`, \`docs/ward-flow/owner-*.md\` and \`docs/ward-flow/archive/dated-notes/owner-*.md\` — **${perFile.length} files**. The brief also asked about`,
+    `Scanned \`docs/ward-flow/decisions.md\`, \`docs/ward-flow/owner-*.md\` and \`docs/history/archive/dated-notes/owner-*.md\` — **${perFile.length} files**. The brief also asked about`,
     "`docs/ward-flow/*owner*ruling*.md`: that pattern matched " +
       (patterns.secondary.length === 0
         ? "**zero files beyond the first set** — every file it catches already starts with `owner-`."

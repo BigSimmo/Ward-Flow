@@ -29,7 +29,7 @@ const scanAll = process.argv.includes("--all");
 
 const DATED_DOC = /\b20\d{2}-\d{2}(-\d{2})?\b/;
 // 🔴 "lessons" ADDED 2026-09-12, when the lesson store was versioned into
-// docs/ward-flow/lessons/ and this gate went red on the same night. A lesson is a record of a
+// docs/history/lessons/ and this gate went red on the same night. A lesson is a record of a
 // past incident and QUOTES the command that was run at the time — the single stale reference
 // was `npm run gate`, inside the lesson about a pipe that reported a refusal as success. That
 // command is the evidence; rewriting it to a script that exists today would falsify the record
@@ -37,7 +37,7 @@ const DATED_DOC = /\b20\d{2}-\d{2}(-\d{2})?\b/;
 // in the ALLOWLIST comment below.
 // ⚠️ The cost: a lesson RECOMMENDING a command that no longer exists is no longer caught here.
 // `--all` still scans these, so it is skipped by default rather than made unreachable.
-const HISTORICAL_DIRS = new Set(["archive", "audit", "lessons"]);
+const HISTORICAL_DIRS = new Set(["archive", "audit", "lessons", "history"]);
 
 // Root prose is selected explicitly; the original source README has a maintained
 // boundary surrounding a marked historical record, not live foreign setup advice.
@@ -74,7 +74,7 @@ export function stripHistoricalSections(markdown, includeHistorical = false) {
 
 /** Find nested native instructions without traversing dependencies or other worktrees. */
 export function collectInstructionDocs(dir, root = dir, targets = []) {
-  const excluded = new Set(["node_modules", ".git", ".next", ".worktrees", "worktrees", "archive", "audit"]);
+  const excluded = new Set(["node_modules", ".git", ".next", ".worktrees", "worktrees", "archive", "audit", "history"]);
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
     if (entry.isDirectory() && !excluded.has(entry.name))
       collectInstructionDocs(path.join(dir, entry.name), root, targets);

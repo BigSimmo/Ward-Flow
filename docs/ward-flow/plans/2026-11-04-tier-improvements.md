@@ -47,6 +47,6 @@ alert delivery, hosted PostgreSQL and release need their own observed acceptance
 
 ## Historical context
 
-The [historical remaining-work document](../../ward-flow-remaining-work.md) and
+The [historical remaining-work document](../../history/ward-flow-remaining-work.md) and
 [historical task ledger](../../ward-flow-task-ledger.md) remain preserved. They are leads,
 not a current defect list. Existing provider, persistence and clinical rules remain authoritative.

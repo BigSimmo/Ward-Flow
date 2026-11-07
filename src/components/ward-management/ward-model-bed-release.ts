@@ -26,7 +26,7 @@ export type ArrivalCheck = (typeof ARRIVAL_CHECKS)[number];
 /**
  * A bed release's lifecycle, in order. Hand-listed (never derived), like `DECLINE_REASONS`, since a
  * UI picker needs a runtime list. **Three stages since 2026-08-28** (owner decision,
- * `docs/ward-flow-phase-6-7-decisions.md`): each says how CERTAIN the discharge is, nothing else.
+ * `docs/history/ward-flow-phase-6-7-decisions.md`): each says how CERTAIN the discharge is, nothing else.
  * `"blocked"` became a flag (`BedRelease.blocker`/`blockedBy`) on an expected or confirmed release,
  * because a release in state `"blocked"` matched neither branch of `capacityBreakdown` and silently
  * dropped the ward's confirmed count; `CapacityBreakdown.blockedToday` now counts stuck beds beside it.

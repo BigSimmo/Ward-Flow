@@ -232,14 +232,14 @@ Status: confirmed.
 
 READ:
 
-- The ledger calls itself the single decision home: `WD:docs/ward-flow-ledger.md:1-14`.
-- It exists only on WD, specifications can override it, reasoning exists in plans, status is manually annotated, and decision and implementation states are mixed: `WD:docs/ward-flow-ledger.md:28-30,73-87,705-731,804-817`; `WQ:docs/ward-flow-document-inventory.md:5-24`.
-- It records duplicate IDs, miscitations, false closure, `DECIDED` mistaken for `IMPLEMENTED`, backwards claims, and incorrect corrections: `WD:docs/ward-flow-ledger.md:32-57,709-791`.
+- The ledger calls itself the single decision home: `WD:docs/history/ward-flow-ledger.md:1-14`.
+- It exists only on WD, specifications can override it, reasoning exists in plans, status is manually annotated, and decision and implementation states are mixed: `WD:docs/history/ward-flow-ledger.md:28-30,73-87,705-731,804-817`; `WQ:docs/ward-flow-document-inventory.md:5-24`.
+- It records duplicate IDs, miscitations, false closure, `DECIDED` mistaken for `IMPLEMENTED`, backwards claims, and incorrect corrections: `WD:docs/history/ward-flow-ledger.md:32-57,709-791`.
 
 RAN:
 
 - The ledger had 76 reachable revisions within approximately 18.2 hours.
-- The claim that every defect row has a `fix-sha` and computed status was false: `WD:docs/ward-flow-ledger.md:705`.
+- The claim that every defect row has a `fix-sha` and computed status was false: `WD:docs/history/ward-flow-ledger.md:705`.
 - No corresponding field or computing mechanism was found.
 
 INFERRED: a reader can select a legitimate-looking source and still obtain the wrong current decision.
@@ -388,7 +388,7 @@ Remedy: use leases with task ID, owner, base, paths, heartbeat, expiry, and recl
 
 Status: confirmed.
 
-Evidence: it says Task 17 landed, lists Task 17 as absent, says nothing is blocked, retains a live-blocker section, and includes Task 17 in the build order: `WQ:docs/ward-flow-remaining-work.md:1-8,21-38,149-221,281-313`.
+Evidence: it says Task 17 landed, lists Task 17 as absent, says nothing is blocked, retains a live-blocker section, and includes Task 17 in the build order: `WQ:docs/history/ward-flow-remaining-work.md:1-8,21-38,149-221,281-313`.
 
 Remedy: generate remaining work from the task register. Do not maintain manual prose status.
 
@@ -396,7 +396,7 @@ Remedy: generate remaining work from the task register. Do not maintain manual p
 
 Status: confirmed.
 
-Evidence: one session allocates IDs, messaging is the collision defence, and the author later violated the rule: `WD:docs/ward-flow-ledger.md:73-104`.
+Evidence: one session allocates IDs, messaging is the collision defence, and the author later violated the rule: `WD:docs/history/ward-flow-ledger.md:73-104`.
 
 Remedy: use generated ULID, UUID, or namespaced IDs and validate uniqueness at integration.
 
@@ -498,7 +498,7 @@ Remedy: generate the count and list from Git.
 
 Status: confirmed.
 
-Evidence: `WD:docs/ward-flow-ledger.md:18-26`.
+Evidence: `WD:docs/history/ward-flow-ledger.md:18-26`.
 
 Remedy: remove the prose count or generate it.
 

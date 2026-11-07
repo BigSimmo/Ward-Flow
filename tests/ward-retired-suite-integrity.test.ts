@@ -71,9 +71,9 @@ const ROOT = process.cwd();
 const TESTS_DIR = join(ROOT, "tests");
 const REACHABILITY_TEST = join(TESTS_DIR, "ward-component-reachability.test.ts");
 const RETIRED_RECORD = existsSync(
-  join(ROOT, "docs", "ward-flow", "archive", "dated-notes", "retired-coverage-record-2026-09-06.md"),
+  join(ROOT, "docs", "history", "archive", "dated-notes", "retired-coverage-record-2026-09-06.md"),
 )
-  ? join(ROOT, "docs", "ward-flow", "archive", "dated-notes", "retired-coverage-record-2026-09-06.md")
+  ? join(ROOT, "docs", "history", "archive", "dated-notes", "retired-coverage-record-2026-09-06.md")
   : join(ROOT, "docs", "ward-flow", "retired-coverage-record-2026-09-06.md");
 
 const CANDIDATE_FILE_PATTERN = /^ward-.*\.test\.tsx?$/;

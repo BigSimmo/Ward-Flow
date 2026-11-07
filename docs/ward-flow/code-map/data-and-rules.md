@@ -65,7 +65,7 @@ capacity figure anywhere in this group is real.
   network: 19 `Site` records (metro and WACHS), 23 inpatient `Unit`s and 10 `EmergencyDepartment`s,
   built from `wardSites`. `NOW_ANCHOR = 642` (10:42, the synthetic "now" every seed's
   `confirmedAt` is authored against) and `DEMONSTRATION_DAY_LABEL = "15 Aug 2026"` live here — the
-  one authored place for the demonstration date, per `docs/ward-flow-changeable-data-rule.md`.
+  one authored place for the demonstration date, per `docs/history/ward-flow-changeable-data-rule.md`.
   `WARD_LOCKED_BED_SPLITS` is the one place to edit a unit's locked/open bed split; five units
   (`rph-adult-secure`, `scgh-adult-open`, `bty-youth`, `alb-adult-open`, `brm-adult-secure`) carry a
   `referenceUnitId` and were deliberately reshaped to sit ONE OFF their reference-pack published bed

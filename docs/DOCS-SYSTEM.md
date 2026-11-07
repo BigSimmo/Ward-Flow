@@ -26,7 +26,7 @@ Stage **docs paths only** - never mix unrelated product WIP. A push or pull requ
 | -------------------------------------------------------------- | ----------------------------------- |
 | [`ward-flow/README.md`](ward-flow/README.md)                   | Product and design entry point      |
 | [`ward-flow/LOCAL-FIRST-RUN.md`](ward-flow/LOCAL-FIRST-RUN.md) | UI boot                             |
-| [`ward-flow/ARCHIVE-NOTE.md`](ward-flow/ARCHIVE-NOTE.md)       | Live vs archive map                 |
+| [`ward-flow/ARCHIVE-NOTE.md`](history/ARCHIVE-NOTE.md)       | Live vs archive map                 |
 | [`task-receipts.md`](task-receipts.md)                         | Current task/evidence handoff       |
 | [`ward-flow/STATUS.md`](ward-flow/STATUS.md)                   | Historical status and owner context |
 | [`ward-flow/HOW-WE-WORK.md`](ward-flow/HOW-WE-WORK.md)         | Builder workflow handbook           |
@@ -138,7 +138,7 @@ When retiring or superseding a document (or preserving inherited PsychSift mater
 1. Place a top-of-file `> **SUPERSEDED ...**` or `> **Historical ...**` callout banner naming the current live replacement.
 2. Wrap historical body sections that reference retired `npm run` scripts or removed PsychSift paths in paired HTML comments (`docs-script-refs:historical-start` and `docs-script-refs:historical-end`, each on its own comment line).
    Paired markers exclude historical command and path references from `docs:check-scripts` and `docs:check-links`; a prose banner alone does not exclude text.
-3. Remove dated Ward Flow records from the live tree once nothing cites them, with the owner's approval, and list them in [`ARCHIVE.md`](ARCHIVE.md) with the Git tag or commit that keeps them. Earlier moves are in [`ward-flow/ARCHIVE-NOTE.md`](ward-flow/ARCHIVE-NOTE.md).
+3. Remove dated Ward Flow records from the live tree once nothing cites them, with the owner's approval, and list them in [`ARCHIVE.md`](ARCHIVE.md) with the Git tag or commit that keeps them. Earlier moves are in [`ward-flow/ARCHIVE-NOTE.md`](history/ARCHIVE-NOTE.md).
 
 Use the existing [`ward-flow/organisation/registry.json`](ward-flow/organisation/registry.json)
 `canonicalSources` for reviewed canonical references and this index for navigation. Add metadata

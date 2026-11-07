@@ -12,6 +12,6 @@ the owner's rule word for word:
 
 **Reading (this session's, not the owner's words):** a sweep or helper that finds a held PR green leaves
 auto-merge off and reports it. The session that marked the PR ready, or the owner, arms it once the hold
-is lifted. Recorded in `AGENTS.md` hard rule 6 and `docs/ward-flow/lessons/parallel-chats-and-cross-chat-sync.md`
+is lifted. Recorded in `AGENTS.md` hard rule 6 and `docs/history/lessons/parallel-chats-and-cross-chat-sync.md`
 (PR #523). It supersedes no earlier ruling: hard rule 6 already said automation must not disable or
 re-enable auto-merge on an armed PR; this adds that a held PR is not armed at all.

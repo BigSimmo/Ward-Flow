@@ -28,7 +28,7 @@ const RUNNER = readFileSync("scripts/run-playwright.mjs", "utf8");
 const DOCS_THAT_DESCRIBE_THE_CONTRACT = [
   "AGENTS.md",
   "docs/development-speed-playbook.md",
-  "docs/ward-flow-phase-5-handover.md",
+  "docs/history/ward-flow-phase-5-handover.md",
 ];
 
 describe("run-playwright.mjs exit-code contract", () => {

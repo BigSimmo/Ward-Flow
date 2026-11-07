@@ -4,7 +4,7 @@ _Updated 2026-10-24 - historical diagnostics moved to the Ward archive; `test:fo
 
 Current Ward Flow commands, browser cadence and CI topology below were checked
 against the remediation source on 20 October 2026. Hosted performance for this topology has not been measured. Older diagnostic and performance
-material moved on 24 October 2026 to [testing: historical diagnostics](ward-flow/archive/testing-historical-diagnostics.md); it does not select a gate. Follow
+material moved on 24 October 2026 to [testing: historical diagnostics](history/archive/testing-historical-diagnostics.md); it does not select a gate. Follow
 [AGENTS.md](../AGENTS.md) and [HOW-WE-WORK.md](ward-flow/HOW-WE-WORK.md) for authority and gate rules.
 
 > [!NOTE]

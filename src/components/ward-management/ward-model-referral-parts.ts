@@ -117,7 +117,7 @@ export type CommunityDeclineReason = (typeof COMMUNITY_DECLINE_REASONS)[number];
 
 /**
  * Phase 7 fix round B (this task): "A sixth answer, given mid-build" in
- * `docs/ward-flow-phase-6-7-decisions.md`. A referral records the broad area a person is from —
+ * `docs/history/ward-flow-phase-6-7-decisions.md`. A referral records the broad area a person is from —
  * a REGION, chosen from this fixed list, never an address, never a postcode, never free text.
  * Real Western Australian regions, permitted by roadmap decision 12 ("real WA place names for
  * geography and distance only") — a region name is public geography, not a fact the prototype
@@ -292,7 +292,7 @@ export type ReferralAddressingState = (typeof REFERRAL_ADDRESSING_STATES)[number
  * part worth keeping.
  *
  * The set moved from three to four mid-build (Task 2, "A fifth answer, given mid-build" in
- * `docs/ward-flow-phase-6-7-decisions.md`, spec D5), from four to five in Phase 7 fix round B
+ * `docs/history/ward-flow-phase-6-7-decisions.md`, spec D5), from four to five in Phase 7 fix round B
  * ("A sixth answer, given mid-build" in the same doc), which added `homeRegion`, and was restated
  * — not widened — when the destination union landed on 2026-08-30. Each widening is deliberate and
  * rare on purpose: widening this set is a governance decision, not an implementation one, and the

@@ -14,11 +14,11 @@ export function selectedDocChecks(files, wardIndexes = false) {
         ],
         [
           "scripts/ward-flow/rules-index.mjs",
-          /^(?:docs\/ward-flow\/lessons\/|docs\/ward-flow\/RULES\.md$|scripts\/ward-flow\/rules-index\.mjs$)/u,
+          /^(?:docs\/history\/lessons\/|docs\/ward-flow\/RULES\.md$|scripts\/ward-flow\/rules-index\.mjs$)/u,
         ],
         [
           "scripts/ward-flow/owner-rulings-index.mjs",
-          /^(?:docs\/ward-flow\/(?:archive\/dated-notes\/)?owner-.*\.md$|docs\/ward-flow\/(?:decisions|OWNER-RULINGS)\.md$|scripts\/ward-flow\/owner-rulings-index\.mjs$)/u,
+          /^(?:docs\/history\/archive\/dated-notes\/owner-.*\.md$|docs\/ward-flow\/owner-.*\.md$|docs\/ward-flow\/(?:decisions|OWNER-RULINGS)\.md$|scripts\/ward-flow\/owner-rulings-index\.mjs$)/u,
         ],
         [
           "scripts/ward-flow/mockup-manifest.mjs",

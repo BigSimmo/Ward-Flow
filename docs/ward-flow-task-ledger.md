@@ -4,7 +4,7 @@
 source and Ward project view. This file keeps local task detail and dated evidence; it is not an
 exhaustive live backlog. Reuse the existing task identity and verify current scope before acting.
 New decisions belong in the [decision log](ward-flow/decisions.md); the
-[legacy register](ward-flow-ledger.md) preserves older decision and identity evidence.
+[legacy register](history/ward-flow-ledger.md) preserves older decision and identity evidence.
 
 _Updated 2026-10-21 - clarify task and decision navigation; Documentation owns. Dated task evidence below is unchanged._
 
@@ -31,7 +31,7 @@ _Updated 2026-10-21 - clarify task and decision navigation; Documentation owns. 
 
 The [task/receipt workflow](task-receipts.md) identifies the canonical Ward Flow task source and
 project-filtered view. This file supplies local task detail and dated history. The decision register
-is [ward-flow-ledger.md](ward-flow-ledger.md); cite decisions rather than copying them.
+is [ward-flow-ledger.md](history/ward-flow-ledger.md); cite decisions rather than copying them.
 
 `docs/outstanding-issues.md` is an inherited, retired PsychSift ledger. Its former 529-row count and
 reconciliation process do not describe the dedicated Ward Flow repository or its current task system.
@@ -332,7 +332,7 @@ The following outstanding tasks from recent engine audits, accessibility reviews
 
 ## §7.81 — Post-#316 Estate Reconciliation & 16 October Adversarial Audit Remediations (16 October 2026)
 
-- **Merged PRs #317–#364 (`origin/main` at `5ddeb7d5`, PR #363, which merged after #364)**: Landed role-access scoping and shared desk idle lock (`WardAccessScope`, `WardIdleLock`), screen monolith decompositions across ED, Community, Referral Drawer, and Ward Screen (`fix list 2.5 and 9.6`), third-edition statistics CSS consolidation, and ledger/archive history split (`docs/ward-flow/archive/task-ledger-history-2026-08-to-2026-10-13.md`).
+- **Merged PRs #317–#364 (`origin/main` at `5ddeb7d5`, PR #363, which merged after #364)**: Landed role-access scoping and shared desk idle lock (`WardAccessScope`, `WardIdleLock`), screen monolith decompositions across ED, Community, Referral Drawer, and Ward Screen (`fix list 2.5 and 9.6`), third-edition statistics CSS consolidation, and ledger/archive history split (`docs/history/archive/task-ledger-history-2026-08-to-2026-10-13.md`).
 - **Adversarial Audit Remediation (`feat/adversarial-swarm-fixes-20261016`)**: Resolved the 10 verified defects and 4 hardening improvements across reducer undo/capacity/discharge-criteria invariants, `EdPatientDialog` top-layer closure before `ArrivalTimeModal`, `WardIdleLock` focus trapping (Escape no longer unlocks; only its button does), `CommunityScreen` `FD-13` contact modal honesty and keyboard shortcut guards, `ReferralConfirmation` drawer close on navigation, `WardBoard` `dispatchAndReport` wrapping and `resolveSubjectPatient` fallback, `.claude` worktree test guards, and baseline documentation sync through `5ddeb7d5` (PR #363). PR #365 review fixes: arrival support notifications stay with the receiving ward, a released bed also frees the referral arm's hold, cut arrivals leave the sex mix from their own recorded sex only, service desks see referrals from ED-only sites, and the role picker and break glass client from PR #363 replace this branch's duplicate.
 
 ### Audit-resolution documentation follow-up (R21, R28, R29, R30; 16 October 2026)

@@ -83,7 +83,7 @@ run individually per file; nothing here was executed. Back to [the code map inde
   is stale. Deliberately excludes `how-to-write-to-the-owner.md` (instructions _to_ the owner, not
   a record of what he ruled).
 - **`scripts/ward-flow/rules-index.mjs`** (130 lines) — Reads every lesson's frontmatter from the
-  versioned historical copy (`docs/ward-flow/lessons/`) and generates
+  versioned historical copy (`docs/history/lessons/`) and generates
   `docs/ward-flow/RULES.md`, grouped by keyword-matched theme; anything unmatched is listed under
   "Unfiled" rather than silently dropped. `--check` is the gate mode.
 - **`scripts/ward-flow/screen-map.mjs`** (176 lines) — Generates `docs/ward-flow/SCREEN-MAP.md`
@@ -117,7 +117,7 @@ run individually per file; nothing here was executed. Back to [the code map inde
   patient-search drawings by name.
 - **`scripts/ward-flow/sync-lessons.mjs`** - Retired importer. Ordinary and `--check` runs
   deliberately exit 1 without reading a private lesson store or writing files. The tracked
-  `docs/ward-flow/lessons/` files are the authoritative Ward Flow lesson source; maintain them
+  `docs/history/lessons/` files are the authoritative Ward Flow lesson source; maintain them
   directly and use the in-repository lesson audit below. This stub is not a freshness gate.
 
 ## `scripts/ward-flow/` — checks, ratchets and gates
@@ -382,7 +382,7 @@ and audit scripts this list once named were retired on 15 and 18 October 2026.)
   (codebase-index coverage; stale script references in docs) that each carry exactly one incidental
   Ward Flow comment: the former excludes `.audit-reports` as "Local ward-flow audit scratch...not a
   product module"; the latter explains why "lessons" was added to a dated-doc allowlist after
-  `docs/ward-flow/lessons/` was versioned in.
+  `docs/history/lessons/` was versioned in.
 - **`scripts/check-mockup-retirement.mjs`** (995 lines), **`scripts/check-type-scale.mjs`** (72
   lines) and **`scripts/check-dead-code-candidate.mjs`** (633 lines) — General repo gates
   (mockup-route retirement safety, off-scale Tailwind text utilities, dead-code candidate
@@ -567,7 +567,7 @@ file in the repository against (`schemaVersion: 1`, `product: "ward-flow"`). Top
 - **`sourceClasses`** — three classes by extension: `code` (`.ts .tsx .js .mjs .mts .css .py .sh
 .html`), `documentation` (`.md .txt`), `structured-reference` (`.json .yaml .yml`).
 - **`denials`** — globs excluded outright regardless of root match, including
-  `docs/ward-flow/lessons/**` (the working lesson store, deliberately not organisation-tracked)
+  `docs/history/lessons/**` (the working lesson store, deliberately not organisation-tracked)
   and `**/*.tsv`/`**/*.jsonl`.
 - **`rules`** — 88 `id`-keyed entries (each with `pattern`, `priority`, `owner`, `system`, `module`,
   `reference`, `reviewedBy`), the bulk of the file. Names the **six systems** the top of this doc's

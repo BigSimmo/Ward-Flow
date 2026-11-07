@@ -499,10 +499,10 @@ superseded by §7.8, the 17 September round-2 status refresh.
   see "What is built" above). The earlier instruction not to build against "the fourteen replaced
   drawings" is retired. FYI, not a blocker: the owner may override any screen.
 - **Locked-bed (security) gate.** Overridable with a recorded reason (WLQ-3), as built. The "stays
-  absolute" row in `docs/ward-flow-ledger.md` was recorded in error and is marked so.
+  absolute" row in `docs/history/ward-flow-ledger.md` was recorded in error and is marked so.
 - **Fold rule.** One ward line (above). A temporary integration branch is allowed only if it is folded
   home before anyone reports done. Every worker worktree gets a registry row or a line in this file first.
-- **Ledger.** `docs/ward-flow-task-ledger.md` is the ledger. `docs/ward-flow-ledger.md` is the decision
+- **Ledger.** `docs/ward-flow-task-ledger.md` is the ledger. `docs/history/ward-flow-ledger.md` is the decision
   register. `PROJECT-ISSUES.md` is a historical worksheet.
 - **Answered clarifications.** 17 (R2-11), 28 (R2-10, no transport needed), 39 (R2-15), 46 (R2-16),
   49 (R2-18, a fixed list). Non-binary placement is allowed with a coordinator's reason (R2-2). Form 3D
@@ -538,7 +538,7 @@ repository-wide `docs/outstanding-issues.md` is not used for Ward Flow (owner ru
    unedited.
 2. **Task ledger §3.** DECISION-01 to 09 now carry a banner: the recommendation text is an AI's and is
    superseded by owner items 1, 3, 8 and 9 and R2-2. The `claude/Ward-design:` prefix on the
-   decision-register pointer is fixed to a plain path, and `docs/ward-flow-ledger.md` §B is added as a
+   decision-register pointer is fixed to a plain path, and `docs/history/ward-flow-ledger.md` §B is added as a
    source.
 3. **OPEN-QUESTIONS.md.** Now keeps only two items under "Needs the owner". Marked as answered: gender
    wiring (item 8), community cancel (item 24, R2-9), ED drawing (item 42), and cultural review (R2-6,

@@ -10,7 +10,7 @@ import { collectWardModuleGraph } from "./helpers/ward-module-graph";
  *
  * **Owner ruling, 2026-08-30: a ward cannot see where else a patient has been referred. The
  * coordinator may see everything.** His reason: so a ward does not spend its time on a patient who
- * is being placed elsewhere. Spec Part 7 (`docs/ward-flow-referral-destination-spec.md`).
+ * is being placed elsewhere. Spec Part 7 (`docs/history/ward-flow-referral-destination-spec.md`).
  *
  * `src/components/ward-management/ward-referral-visibility.ts` already holds that rule in the DATA:
  * `WardScopedReferral` has no `destinations` field, `CoordinatorScopedReferral` does, and

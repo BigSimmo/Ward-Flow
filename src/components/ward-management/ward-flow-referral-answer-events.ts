@@ -543,7 +543,7 @@ export function reduceReferralAnswerEvent(
        * A referral from ED medical staff must come from a hospital that has an ED. Each field was
        * valid alone; only their combination is impossible, and no screen could catch it. Reads the
        * site's own record in `wardSites`, never a hand-written list of codes
-       * (`docs/ward-flow-changeable-data-rule.md`).
+       * (`docs/history/ward-flow-changeable-data-rule.md`).
        */
       if (event.source === "ed_medical" && originSite && !originSite.emergencyDepartment) {
         return reject(

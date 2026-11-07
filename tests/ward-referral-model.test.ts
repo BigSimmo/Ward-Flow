@@ -367,7 +367,7 @@ describe("front-door contract — fixed lists", () => {
   /**
    * Fix round B (this task's new field): `HOME_REGIONS` is the fixed list `homeRegion` is
    * membership-checked against — real Western Australian regions, never an address, never free
-   * text. See `docs/ward-flow-phase-6-7-decisions.md` ("A sixth answer, given mid-build").
+   * text. See `docs/history/ward-flow-phase-6-7-decisions.md` ("A sixth answer, given mid-build").
    */
   it("HOME_REGIONS is exactly the ten WA regions, Perth Metropolitan first", () => {
     expect(HOME_REGIONS).toEqual([
@@ -1025,7 +1025,7 @@ describe("referrals fixture — the awkward cases (seed rule 4)", () => {
  *
  * `involuntaryBedNeeded` was added mid-build, deliberately, once (Task 2, "A fifth answer, given
  * mid-build") and `homeRegion` a second time in Phase 7 fix round B (this task, "A sixth answer,
- * given mid-build") — both recorded in `docs/ward-flow-phase-6-7-decisions.md`. This list widens
+ * given mid-build") — both recorded in `docs/history/ward-flow-phase-6-7-decisions.md`. This list widens
  * from four to five fields here on purpose; widening it again is a governance decision, not an
  * implementation one, and this test is what makes that true rather than aspirational.
  *

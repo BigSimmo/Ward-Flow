@@ -7,7 +7,7 @@
 
 **Status:** design complete, nothing built. **Approved by the owner:** _"Build community hub. I give
 permission."_ (`FD-29`). **On placeholder teams** (`CM-8` sense — his to replace).
-**Register of record:** `docs/ward-flow-ledger.md` on `claude/Ward-design`.
+**Register of record:** `docs/history/ward-flow-ledger.md` on `claude/Ward-design`.
 
 ## What this hub sees that nobody else does
 

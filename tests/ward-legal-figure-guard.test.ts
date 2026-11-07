@@ -243,11 +243,11 @@ const MODEL_CONSTANT_PROVENANCE: Record<string, string> = {
   // attached to a `LegalForm`. See the constant's own doc comment in ward-model.ts.
   ED_ACCESS_TARGET_MINUTES: "product owner, 2026-08-22 — ED access target, counted up from openedAt",
 
-  // Product owner's own spec, `docs/ward-flow-context.md` (line 205 states the constant; line 287
+  // Product owner's own spec, `docs/history/ward-flow-context.md` (line 205 states the constant; line 287
   // states the rule: "Parallel referrals are supported, capped at three"). An operational
   // courtesy limit between services — explicitly NOT a clinical or statutory quantity, and it
   // measures a count of units, not a duration.
-  PARALLEL_REFERRAL_CAP: "product owner's spec, docs/ward-flow-context.md — count of units, not a duration",
+  PARALLEL_REFERRAL_CAP: "product owner's spec, docs/history/ward-flow-context.md — count of units, not a duration",
 
   // v10 pass 3, 10 Oct 2026: the longest typed name or initials kept for an override's second
   // sign-off. A software text-length limit on a form field, not a clinical or legal figure.
@@ -279,7 +279,7 @@ const MODEL_CONSTANT_PROVENANCE: Record<string, string> = {
     "coordinator-usable slider band around PULL_HOLD_MINUTES — not statutory, not independently sourced",
 
   // Product owner, 2026-08-30, ruling `FD-19` in the archived identity register
-  // (`docs/ward-flow/archive/decision-identity-register-2026-08-to-2026-09.md`): "a ward→ED-medical
+  // (`docs/history/archive/decision-identity-register-2026-08-to-2026-09.md`): "a ward→ED-medical
   // trip frees the bed ONLY IF the stay is expected to exceed 48 hours, and that is overridable".
   //
   // ⚠️ THIS IS THE ONE ENTRY IN THIS LIST THAT IS A DURATION IN THE SAME UNITS A STATUTORY PERIOD
