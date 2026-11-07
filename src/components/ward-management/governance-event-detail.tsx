@@ -101,7 +101,6 @@ export function EventTable({
                 data-dim={isDim?.(event) ? "true" : undefined}
                 className={cx(thirdEdition.eventRow, local.eventRow)}
                 aria-pressed={selected?.id === event.id}
-                aria-controls="governance-event-detail"
                 onClick={() => onChoose(event)}
               >
                 <span className={thirdEdition.eventTime}>{when(event.at, now)}</span>
@@ -361,9 +360,9 @@ export function EventDetail({
         )}
 
         {/* The review history: a plain hairline section, not a card in the drawer. */}
-        <section className={thirdEdition.reviewSection} aria-labelledby="governance-review-title">
+        <section className={thirdEdition.reviewSection} aria-labelledby="governance-event-review-title">
           <div className={thirdEdition.stack}>
-            <h3 className={thirdEdition.blockTitle} id="governance-review-title">
+            <h3 className={thirdEdition.blockTitle} id="governance-event-review-title">
               Your review
             </h3>
             <span className={thirdEdition.quietText}>

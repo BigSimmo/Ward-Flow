@@ -461,11 +461,12 @@ function GovernanceSession({
     return subject.kind === "movement" ? [person, subject.movementId] : [person];
   }
 
-  const choose = (event: AuditEvent | null) => {
+  // Arrow keys move the choice without opening the drawer, so focus stays in the list (CodeRabbit, #1497).
+  const choose = (event: AuditEvent | null, open = event !== null) => {
     reviewCommandRef.current += 1;
     setAutoOpened(false);
     setSelection(event);
-    setDrawerOpen(event !== null);
+    setDrawerOpen(open);
     setPending(null);
     if (event) setAnnouncement(`Selected ${actionLabels[event.action]}.`);
   };
@@ -510,7 +511,7 @@ function GovernanceSession({
     if (next < 0) return;
     event.preventDefault();
     rows[next]?.focus();
-    choose(list[next] ?? null);
+    choose(list[next] ?? null, false);
   }
 
   function recordReview(
@@ -657,7 +658,8 @@ function GovernanceSession({
   const placedDetail =
     selected && drawerOpen ? (
       <EventDetail
-        onClose={() => choose(null)}
+        // Closing keeps the row chosen, so Record review in the header still works (#1497).
+        onClose={() => setDrawerOpen(false)}
         recordViews={
           record ? <WhoOpenedList views={viewsOfRecord(accessReview.views, record, now)} now={now} /> : undefined
         }

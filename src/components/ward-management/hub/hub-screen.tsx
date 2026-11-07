@@ -312,6 +312,8 @@ export function HubScreen() {
   const listed = queryMatches !== undefined ? results.filter((entry) => queryMatches.has(entry.id)) : results;
   const selected =
     listed.find((entry) => entry.id === selectedId) ??
+    // A pinned or recent place opens itself even when a filter hides it (CodeRabbit, #1497).
+    (previewOpen && selectedId ? byId.get(selectedId) : undefined) ??
     (isPhone ? undefined : searching ? visibleEntries[0] : (pinned[0] ?? ownEntries[0] ?? visibleEntries[0]));
   // Phone "Check first": only a place the current filter shows, so its tap opens a preview.
   const checkFirst = attention.filter((item) => results.some((entry) => entry.id === item.entry.id));
@@ -639,7 +641,7 @@ export function HubScreen() {
                   Statistics
                 </Link>
               ) : null}
-              <Button variant="sec" aria-pressed={isPinned(selected.id)} onClick={() => toggleHubPin(selected.id)}>
+              <Button variant="sec" onClick={() => toggleHubPin(selected.id)}>
                 <Star size={14} aria-hidden="true" />
                 {isPinned(selected.id) ? "Unpin" : "Pin"}
               </Button>

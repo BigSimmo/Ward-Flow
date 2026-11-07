@@ -292,7 +292,7 @@ export function WardBoardDetailPanel({
             type="button"
             className={FOOT_SECONDARY}
             aria-expanded={editingDate}
-            aria-controls="ward-board-date-edit"
+            aria-controls={editingDate ? "ward-board-date-edit" : undefined}
             onClick={startDateEdit}
           >
             Move the date

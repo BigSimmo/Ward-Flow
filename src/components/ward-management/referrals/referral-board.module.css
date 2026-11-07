@@ -775,7 +775,7 @@ button.runwayCardRow:focus-visible {
   }
   /* Drawer review (6 Nov 2026): the 40px box overlaps the UMRN line, so a ring on the button cut
      through the UMRN. The ring goes round the whole name block instead. */
-  .rowSelect:focus-visible {
+  .who > .rowSelect:focus-visible {
     outline: none;
   }
   .who:has(> .rowSelect:focus-visible) {
