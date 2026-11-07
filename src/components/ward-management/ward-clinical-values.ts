@@ -53,7 +53,8 @@ type ClinicalValueGroup =
   | "Arrivals and answers"
   | "Discharge, leave and absence"
   | "Access and privacy"
-  | "Observation levels";
+  | "Observation levels"
+  | "Triage urgency";
 
 export type ClinicalValueEntry = ClinicalValueSignature & {
   /** What the rule does, in the words Settings lists it under. */
@@ -546,6 +547,38 @@ export const CLINICAL_VALUES = {
     group: "Observation levels",
     value: 30,
     unit: "minutes",
+  },
+  // ---- Triage urgency (triage and risk build, 7 Nov 2026) ------------------------------------------
+  // The windows the triage form names beside urgencies B to E. Josh chose (7 Nov 2026) to list them
+  // here, synthetic until he signs them. They describe the urgency the clinician chooses; nothing
+  // computes, flags or escalates from them, and A, F and G carry no window.
+  triageUrgencyB: {
+    status: "synthetic",
+    name: "Triage urgency B: seen within",
+    group: "Triage urgency",
+    value: 2,
+    unit: "hours",
+  },
+  triageUrgencyC: {
+    status: "synthetic",
+    name: "Triage urgency C: seen within",
+    group: "Triage urgency",
+    value: 12,
+    unit: "hours",
+  },
+  triageUrgencyD: {
+    status: "synthetic",
+    name: "Triage urgency D: seen within",
+    group: "Triage urgency",
+    value: 48,
+    unit: "hours",
+  },
+  triageUrgencyE: {
+    status: "synthetic",
+    name: "Triage urgency E: seen within",
+    group: "Triage urgency",
+    value: 14,
+    unit: "days",
   },
 } satisfies Record<string, ClinicalValueEntry>;
 

@@ -1,8 +1,9 @@
 /**
- * Triage and risk mock-up: the form's state, what is still needed before signing, and the summary.
- * Ported from the approved prototype (`d-lean.html`). State lives in React only: nothing typed here
- * goes to browser storage (HOW-WE-WORK §6), so the prototype's session draft and saved preferences
- * are not ported. Synthetic data only.
+ * Triage and risk (built 7 Nov 2026): the form's state, what is still needed before signing, and the
+ * summary. Ported from the approved prototype (`d-lean.html`). The form's state lives in React only;
+ * signing records codes alone (`RECORD_TRIAGE_SIGNED`, `triageSignedEvent` below), so no typed text
+ * here is put in the workspace or browser storage (HOW-WE-WORK §6). The prototype's session draft and
+ * saved preferences are not ported. Synthetic data only.
  */
 import {
   ACUTE_FLAGS,
@@ -11,12 +12,10 @@ import {
   FACTOR_NAME,
   FDV_FACTORS,
   GUIDES,
-  LAST_TRIAGE,
   LEGAL_WITH_FORM,
   MSE,
   MSE_NEGATIVES,
   MSE_SIGNALS,
-  PATIENT,
   WHO_TOLD,
   type SectionId,
   type Tier,
@@ -33,6 +32,7 @@ import {
   parseHeadedText,
   type DomainEntry,
 } from "./triage-risk-text";
+import { OUTCOMES, TRIAGE_LEGAL_CODES, TRIAGE_REVIEW_CODES, type TriageSignedEvent } from "./triage-record";
 
 /** A RAMP factor: present ("y"), not present ("n") or not known ("u"); absent means not marked. */
 type FactorMark = "y" | "n" | "u";
@@ -127,10 +127,10 @@ const NO_TEXT: Record<TextKey, string> = {
 };
 
 /**
- * Nothing clinical chosen. The episode comes from the referral when the referral names one (the
- * Example's R-1182 is from ED); a person with no such referral starts with no episode either.
+ * Nothing clinical chosen. The episode comes from the referral when the referral names one; a person
+ * with no such referral starts with no episode either.
  */
-export function blankTriage(person: TriagePerson = PATIENT): TriageState {
+export function blankTriage(person: TriagePerson): TriageState {
   return {
     person,
     how: null,
@@ -184,42 +184,6 @@ export function blankTriage(person: TriagePerson = PATIENT): TriageState {
   };
 }
 
-/** The synthetic worked example the prototype opens on (How to: Example or Start blank). */
-export function exampleTriage(): TriageState {
-  return {
-    ...blankTriage(PATIENT),
-    how: "phone",
-    where: "ED",
-    present: "yes",
-    others: ["Other service"],
-    arrivedBy: "Ambulance",
-    purpose: "Referral",
-    atsi: "n",
-    interp: "no",
-    problems: ["Psychosis", "Aggression", "Alcohol or drugs"],
-    aware: ["opposed", "carer"],
-    f: {
-      "violence.now.intent": "y",
-      "general.now.agit": "y",
-      "other.now.nonadn": "y",
-      "other.now.leave": "y",
-    },
-    legal: "cto",
-    ahd: "none",
-    sources: ["Person", "Family or carer", "Records"],
-    text: {
-      ...blankTriage(PATIENT).text,
-      accompanied: "Mother",
-      revTime: "06/11/2026 09:42",
-      note: "Why now: Five days of rising agitation and poor sleep after a missed depot dose.\nRequest: ED asks for admission and a bed review today.\nViews: Does not want admission. Mother supports admission.\nHistory: Schizoaffective disorder. Two admissions this year, both after stopping treatment. On CTO with depot, last dose missed.\nAlcohol and drugs: Daily cannabis; denies other use today.\n",
-      rp: "Risk: Raised risk of violence to staff and family now, above his baseline, in the context of relapse and threats today.\nProtective: Engaged with CMHT; mother supportive.\n",
-      legalForm: "Form 5A · 28/01/2027 23:59",
-      mseBox:
-        'Speech: Pressured, hard to interrupt\nMood and affect: Irritable. "I just need sleep"\nThought content: Grandiose delusions. King of the city; special mission\nPerception: No perceptual disturbance\nInsight and judgement: No insight',
-    },
-  };
-}
-
 export type FactorRow = { key: string; area: string; kind: "bg" | "now"; name: string; mark?: FactorMark };
 
 export function allFactors(state: TriageState): FactorRow[] {
@@ -258,18 +222,19 @@ export function fdvOutcome(state: TriageState): string | null {
 
 /** What is new today against the last RAMP's current flags, and what was not seen today. */
 export function sinceLastText(state: TriageState): string {
-  if (!state.person.lastTriage) return "";
+  const last = state.person.last;
+  if (!last) return "";
   const now = allFactors(state)
     .filter((f) => f.kind === "now" && f.mark === "y")
     .map((f) => f.key);
-  const fresh = now.filter((k) => !(LAST_TRIAGE.nowFlags as readonly string[]).includes(k));
+  const fresh = now.filter((k) => !last.nowFlags.includes(k));
   // Codex review (#1494): a previous flag counts as not seen today only when today's answers say so:
   // not marked present or not known, and Rest of current risk answered Not present. Not known, Not
   // assessed or no answer yet is uncertainty, never absence.
-  const gone = state.rest === "np" ? LAST_TRIAGE.nowFlags.filter((k) => !now.includes(k) && state.f[k] !== "u") : [];
+  const gone = state.rest === "np" ? last.nowFlags.filter((k) => !now.includes(k) && state.f[k] !== "u") : [];
   const names = (keys: readonly string[]) => keys.map((k) => FACTOR_NAME[k].toLowerCase()).join(", ");
   const parts = [
-    fresh.length ? `New since 12 Oct: ${names(fresh)}.` : "",
+    fresh.length ? `New since ${last.when}: ${names(fresh)}.` : "",
     gone.length ? `Not seen today: ${names(gone)}.` : "",
   ];
   return parts.filter(Boolean).join(" ");
@@ -477,3 +442,22 @@ export function sectionStatus(reqs: readonly Requirement[], section: SectionId, 
 
 export const hasLegalForm = (state: TriageState) => Boolean(state.legal && LEGAL_WITH_FORM.includes(state.legal));
 export const areaShortName = (area: string) => (AREA_NAME[area] ?? area).split(" ")[0];
+
+/**
+ * What signing records: the person and the codes, never the typed text (see the file comment).
+ * Null until urgency, outcome, legal status and review are all chosen, which the sign gate needs.
+ */
+export function triageSignedFields(
+  state: TriageState,
+): Pick<TriageSignedEvent, "patientId" | "urgency" | "outcome" | "legal" | "review" | "riskFlags"> | null {
+  const { urgency, outcome, legal, review } = state;
+  if (!urgency || !isOneOf(OUTCOMES, outcome) || !isOneOf(TRIAGE_LEGAL_CODES, legal)) return null;
+  if (!isOneOf(TRIAGE_REVIEW_CODES, review)) return null;
+  const riskFlags = allFactors(state)
+    .filter((factor) => factor.mark === "y")
+    .map((factor) => factor.key);
+  return { patientId: state.person.id, urgency, outcome, legal, review, riskFlags };
+}
+
+const isOneOf = <T extends string>(list: readonly T[], value: string | null): value is T =>
+  value !== null && (list as readonly string[]).includes(value);

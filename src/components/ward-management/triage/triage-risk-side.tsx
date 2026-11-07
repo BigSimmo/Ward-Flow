@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Triage and risk mock-up: the Summary button at the foot of the section list (7 Nov 2026), which
+ * Triage and risk: the Summary button at the foot of the section list (7 Nov 2026), which
  * replaces the floating one so nothing on the form is covered. Josh (7 Nov) kept the left column to
  * the sections only: the Before you sign list, the Now box and the last triage at a glance were each
  * removed as low value there. The last triage stays one tap away in the summary's Last triage tab.

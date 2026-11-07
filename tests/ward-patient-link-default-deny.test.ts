@@ -434,6 +434,40 @@ const ALLOWLIST: ReadonlyArray<{ file: string; reason: string }> = [
       "from the booking picker, a yes/no that shows no ward, bed or referral, and (2) name a booked person through " +
       "usePatientOf, never printing the id. Void if rendered on a ward screen.",
   },
+  // Triage and risk build (PR #1500): Josh approved these five on 7 Nov 2026, each read as stated.
+  {
+    file: "triage/triage-record.ts",
+    reason:
+      "Triage record (Josh, 7 Nov 2026): a signed triage is about one person, so its record carries " +
+      "that person's id, and the patient record lists that person's own signed triages by comparing " +
+      "ids. Codes only; it joins no referral, stay or movement.",
+  },
+  {
+    file: "triage/triage-signed-reducer.ts",
+    reason:
+      "RECORD_TRIAGE_SIGNED reducer (Josh, 7 Nov 2026): refuses a triage unless its patientId names a " +
+      "person in state.patients, then copies that id onto the record. A yes/no on ids; renders nothing.",
+  },
+  {
+    file: "ward-access-state.ts",
+    reason:
+      "Shared scoping of signed triages only (Josh, 7 Nov 2026): a triage record is sent to a desk only " +
+      "when its patientId names a person that desk is already sent. It narrows, never widens, what a " +
+      "desk sees.",
+  },
+  {
+    file: "triage/triage-risk-people.ts",
+    reason:
+      "Start a triage (Josh, 7 Nov 2026): maps a found person, or one person's own open referral, to the " +
+      "row the start step shows. One person at a time, as the search box's approved read; no history.",
+  },
+  {
+    file: "triage/use-triage-people.ts",
+    reason:
+      "Referrals awaiting triage (Josh, 7 Nov 2026): reads each queued referral's own patientId to name " +
+      "that person once and offer their triage, the same bounded read as search/patient-typeahead.tsx: " +
+      "one person's own single linked referral, never a history across several.",
+  },
 ].map((entry) => ({ ...entry, file: resolve(WARD_DIR, entry.file) }));
 
 const shortPath = (file: string) => relative(process.cwd(), file).replace(/\\/g, "/");
@@ -473,7 +507,8 @@ describe("D-14 default-deny: the patient link is read only where explicitly perm
     // 48 → 49 on 2026-10-22: the reducer's protected record path moved to its own slice file, unchanged.
     // 49 → 51 on 2026-10-24: Josh as Ward Lead allowed two synthetic seed builders (PR #657).
     // 51 → 52 on 2026-10-26: F-17 moved the seeded referrals out of ward-movements.ts unchanged. No new reader.
-    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(53);
+    // 53 → 58 on 2026-11-07: Josh as Ward Lead allowed the five triage and risk files (PR #1500).
+    expect(ALLOWLIST.length, "the allowlist changed size — re-read this file's own header").toBe(58);
     for (const { file, reason } of ALLOWLIST) {
       expect(existsSync(file), `${shortPath(file)} is allow-listed but does not exist`).toBe(true);
       expect(reason.length, `${shortPath(file)} is allow-listed with no real reason beside it`).toBeGreaterThan(30);

@@ -33,8 +33,8 @@ import {
   StatusGlyph,
   Textarea,
   TextInput,
+  phoneRows,
 } from "@/components/wf";
-import { phoneRows } from "@/components/wf/phone-rows";
 
 import {
   COPY_TO,
@@ -45,7 +45,6 @@ import {
   FLAGS_NOW,
   FLAGS_PAST,
   GUIDES,
-  LAST_TRIAGE,
   MSE_TO_RISK,
   REVIEW,
   type FlagGroup,
@@ -55,7 +54,7 @@ import { autoRows, Choice, GuideBox, MultiChips, Reveal, Row, useDisclosure, typ
 import { useHeadedBox } from "./triage-risk-review";
 import { fdvOutcome, restConfirmed, restSets, sinceLastText, type TriageState } from "./triage-risk-state";
 import { boxLine, hasPhrase, wordCount } from "./triage-risk-text";
-import styles from "./triage-risk-redesign.module.css";
+import styles from "./triage-risk-form.module.css";
 
 /** How many factor names a long "Covers" line shows before "Show all". */
 const COVERS_SHOWN = 6;
@@ -88,7 +87,13 @@ function FactorChip({ form, flag }: { form: FormApi; flag: string }) {
   const mark = state.f[flag];
   const carried = mark === "y" && state.fromLast.includes(flag);
   const sub =
-    mark === "u" ? "not known" : carried ? (state.confirmed.includes(flag) ? "confirmed today" : "carried 12 Oct") : "";
+    mark === "u"
+      ? "not known"
+      : carried
+        ? state.confirmed.includes(flag)
+          ? "confirmed today"
+          : `carried ${state.person.last?.when ?? ""}`.trim()
+        : "";
   return (
     <span title={FLAG_INFO[flag]} className={styles.flagWrap} data-factor={flag}>
       <FilterChip
@@ -419,11 +424,13 @@ export function RiskBody({ form, onAllFactors }: { form: FormApi; onAllFactors: 
         : Boolean(state.mse[domain]?.chips.includes(phrase));
     return has && state.f[flag] !== "y";
   }).filter(([, , flag], index, all) => all.findIndex(([, , other]) => other === flag) === index);
+  const last = state.person.last;
   const carryForward = () => {
+    if (!last) return;
     update((s) => {
       const f = { ...s.f };
       const fromLast: string[] = [];
-      for (const key of LAST_TRIAGE.pastFlags) {
+      for (const key of last.pastFlags) {
         if (!f[key]) {
           f[key] = "y";
           fromLast.push(key);
@@ -432,7 +439,7 @@ export function RiskBody({ form, onAllFactors }: { form: FormApi; onAllFactors: 
       // Flags only: Rest of history is always answered today.
       return { ...s, f, fromLast, confirmed: [] };
     });
-    say("Flags carried from 12 Oct. Confirm each today, and answer Rest of history.");
+    say(`Flags carried from ${last.when}. Confirm each today, and answer Rest of history.`);
   };
   const undoCarry = () =>
     update((s) => {
@@ -450,7 +457,7 @@ export function RiskBody({ form, onAllFactors }: { form: FormApi; onAllFactors: 
       <SubHead
         tag="Past risk"
         kind="past"
-        note={state.person.lastTriage ? "History. Carried from the last RAMP, then checked" : "History, answered today"}
+        note={last ? "History. Carried from the last RAMP, then checked" : "History, answered today"}
         action={
           <Button
             variant="ghost"
@@ -488,7 +495,8 @@ export function RiskBody({ form, onAllFactors }: { form: FormApi; onAllFactors: 
       {carried ? (
         <div className={styles.carried}>
           <span className={styles.grow}>
-            Carried from 12 Oct. Check each with the person, then mark it confirmed today. Tap a flag to change it.
+            Carried from {last?.when ?? "the last triage"}. Check each with the person, then mark it confirmed today.
+            Tap a flag to change it.
           </span>
           <Button variant="ghost" size="sm" onClick={undoCarry}>
             Undo
@@ -510,15 +518,17 @@ export function RiskBody({ form, onAllFactors }: { form: FormApi; onAllFactors: 
             </div>
           ) : null}
         </div>
-      ) : state.person.lastTriage ? (
+      ) : last ? (
         <div className={styles.carry}>
           <div className={styles.grow}>
-            <b>{LAST_TRIAGE.label}</b>
-            <span>{LAST_TRIAGE.pastSummary}</span>
+            <b>{last.label}</b>
+            <span>{last.pastSummary}</span>
           </div>
-          <Button size="sm" className={phoneRows.chip} onClick={carryForward}>
-            Carry forward
-          </Button>
+          {last.pastFlags.length ? (
+            <Button size="sm" className={phoneRows.chip} onClick={carryForward}>
+              Carry forward
+            </Button>
+          ) : null}
         </div>
       ) : (
         // Only a person with a previous triage on record is offered its flags; everyone else is
@@ -706,7 +716,8 @@ export function PlanBody({ form }: { form: FormApi }) {
         <Row label="Review risk by" hint="Next RAMP due; sooner after any big change">
           <Choice label="Review risk by" options={REVIEW} value={state.review} onChange={(v) => set("review", v)} />
           {urgent && state.review !== "24h" ? (
-            <UrgencyHint>{`Urgency ${state.urgency}: consider a risk review within 24 hours. You choose.`}</UrgencyHint>
+            // No typed window here (invented-figures guard): the choices above carry the times.
+            <UrgencyHint>{`Urgency ${state.urgency}: consider the earliest risk review. You choose.`}</UrgencyHint>
           ) : null}
         </Row>
         <Row label="Plan copy to" labelId="triage-l-copy">

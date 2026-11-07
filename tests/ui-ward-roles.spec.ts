@@ -987,7 +987,9 @@ test.describe("@mockup Emergency department screen", () => {
     // Audit round 2 (option B, 13 Oct 2026): Raise referral opens the one shared referral slide-out
     // rather than an inline ED form, so raising a referral is that slide-out here. Off the phone the
     // app bar's New referral is the one button for it (deep audit, 4 Nov 2026).
+    // Triage and risk (7 Nov 2026): New offers Triage or Referral; Referral opens the same slide-out.
     await page.getByTestId("ward-bar-primary-action").click();
+    await page.getByTestId("ward-new-referral").click();
     const referralSheet = page.getByTestId("ward-bar-referral-sheet");
     await expect(referralSheet).toBeVisible();
     await expect(page.getByRole("region", { name: "This department's patients" })).toBeVisible();

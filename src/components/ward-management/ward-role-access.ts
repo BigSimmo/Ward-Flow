@@ -99,6 +99,8 @@ export type WardScreenId =
   | "referral-new"
   | "patient-new"
   | "patient"
+  | "triage-new"
+  | "triage"
   | "movements"
   | "delays"
   | "legal-forms"
@@ -132,6 +134,8 @@ export const WARD_SCREEN_IDS: readonly WardScreenId[] = [
   "referral-new",
   "patient-new",
   "patient",
+  "triage-new",
+  "triage",
   "movements",
   "delays",
   "legal-forms",
@@ -201,6 +205,10 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     "referral-new": "all",
     "patient-new": "all",
     patient: "own",
+    // Triage and risk (built 7 Nov 2026): the desks that open the referral intake may triage, the
+    // same list as RECORD_TRIAGE_SIGNED. The form opens only for a person this desk is sent.
+    "triage-new": "all",
+    triage: "own",
     movements: "own",
     delays: "own",
     "legal-forms": "own",
@@ -221,6 +229,10 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     "referral-new": "all",
     "patient-new": "all",
     patient: "own",
+    // Triage and risk (built 7 Nov 2026): the desks that open the referral intake may triage, the
+    // same list as RECORD_TRIAGE_SIGNED. The form opens only for a person this desk is sent.
+    "triage-new": "all",
+    triage: "own",
     movements: "own",
     delays: "own",
     "legal-forms": "own",
@@ -239,6 +251,10 @@ export const ROLE_SCREENS: Record<WardAccessRole, ScreenTable> = {
     "referral-new": "all",
     "patient-new": "all",
     patient: "own",
+    // Triage and risk (built 7 Nov 2026): the desks that open the referral intake may triage, the
+    // same list as RECORD_TRIAGE_SIGNED. The form opens only for a person this desk is sent.
+    "triage-new": "all",
+    triage: "own",
     // D-80: the team books transport for its own journeys (D-76), so it follows them here.
     movements: "own",
     delays: "own",
@@ -398,8 +414,14 @@ export function screenForPath(pathname: string): ScreenAddress | undefined {
     case "referrals":
       if (second === "new") return { screen: "referral-new" };
       return second === undefined ? { screen: "referrals" } : undefined;
+    case "triage":
+      // Start a triage (built 7 Nov 2026).
+      return second === "new" && third === undefined ? { screen: "triage-new" } : undefined;
     case "people":
       if (second === "new") return { screen: "patient-new" };
+      // One person's triage form: the guard checks the person, as on the patient page.
+      if (second !== undefined && third === "triage" && parts[3] === undefined)
+        return { screen: "triage", patientId: recordIdFromAddress(second) };
       // D-39 links carry an address code; the page and its access check work on the record id.
       return second === undefined ? undefined : { screen: "patient", patientId: recordIdFromAddress(second) };
     case "movements":

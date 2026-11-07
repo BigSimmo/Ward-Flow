@@ -657,7 +657,9 @@ test.describe("@mockup Ward referrals — the front door, phone to board to acce
     await page.goto("/ward-flow/referrals", { waitUntil: "load" });
     await expect(page.getByTestId("ward-referral-board-screen")).toBeVisible({ timeout: 15_000 });
     await plantSentinel(page);
+    // Triage and risk (7 Nov 2026): the bar's New offers Triage or Referral; Referral is today's slide-out.
     await page.getByTestId("ward-bar-primary-action").click();
+    await page.getByTestId("ward-new-referral").click();
     await expect(page.getByTestId("ward-bar-referral-sheet")).toBeVisible();
     await expect(page).toHaveURL(/\/ward-flow\/referrals$/);
     await expectNoReloadSince(page, "board -> referral slide-out");

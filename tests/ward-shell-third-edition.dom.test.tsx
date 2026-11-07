@@ -1039,11 +1039,13 @@ describe("assertion 9 — item 43: the unwired primary action shows visible text
     );
   }
 
+  // Triage and risk (built 7 Nov 2026): the referral action's button reads "New" (Triage or Referral).
   it("v10: Statistics carries New referral as its header primary, never Export the figures", () => {
     const action = resolveWardPrimaryAction("/ward-flow/statistics");
     expect(action?.kind).toBe("new-referral");
     renderShellAt("/ward-flow/statistics");
-    expect(screen.getByTestId("ward-bar-primary-action")).toHaveTextContent("New referral");
+    expect(screen.getByTestId("ward-bar-primary-action").textContent?.trim()).toBe("New");
+    expect(screen.getByTestId("ward-bar-primary-action")).toHaveAttribute("aria-haspopup", "menu");
     expect(screen.queryByText("Export the figures")).toBeNull();
   });
 

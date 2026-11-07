@@ -1,11 +1,13 @@
 import { describe, expect, it } from "vitest";
 
-import { foldedSections, foldLine } from "@/components/ward-redesign/triage-risk/triage-risk-fold";
-import { blankTriage, exampleTriage, sinceLastText } from "@/components/ward-redesign/triage-risk/triage-risk-state";
-import { partText, summaryModel, summaryText } from "@/components/ward-redesign/triage-risk/triage-risk-summary";
+import { foldedSections, foldLine } from "@/components/ward-management/triage/triage-risk-fold";
+import { blankTriage, sinceLastText } from "@/components/ward-management/triage/triage-risk-state";
+import { partText, summaryModel, summaryText } from "@/components/ward-management/triage/triage-risk-summary";
 
-// Triage and risk mock-up (7 Nov 2026): finished sections fold to one line, and each summary part
-// copies alone for its PSOLIS box. Synthetic patient only.
+import { EXAMPLE_PERSON, exampleTriage } from "./helpers/triage-example";
+
+// Triage and risk (approved mock-up, built into the app 7 Nov 2026): finished sections fold to one
+// line, and each summary part copies alone for its PSOLIS box. Synthetic patient only.
 
 const allDone = { rev: true, note: true, mse: true, dec: true, risk: true, plan: true };
 
@@ -52,7 +54,7 @@ describe("the folded line", () => {
   });
 
   it("has nothing to say for a section that does not fold", () => {
-    expect(foldLine(blankTriage(), "risk")).toEqual([]);
+    expect(foldLine(blankTriage(EXAMPLE_PERSON), "risk")).toEqual([]);
   });
 });
 
@@ -82,17 +84,19 @@ describe("copy one part for its PSOLIS box", () => {
 // say it is absent, never when it is unknown or not yet assessed.
 describe("what changed since the last triage", () => {
   it("does not call a previous flag absent when Rest of current risk is not answered or Not assessed", () => {
-    const blank = blankTriage();
+    const blank = blankTriage(EXAMPLE_PERSON);
     expect(sinceLastText(blank)).not.toMatch(/Not seen today/);
     expect(sinceLastText({ ...blank, rest: "na" })).not.toMatch(/Not seen today/);
   });
 
   it("does not call a flag absent when it is marked Not known", () => {
-    const state = { ...blankTriage(), rest: "np", f: { "general.now.agit": "u" as const } };
+    const state = { ...blankTriage(EXAMPLE_PERSON), rest: "np", f: { "general.now.agit": "u" as const } };
     expect(sinceLastText(state)).not.toMatch(/Not seen today/);
   });
 
   it("names a previous flag as not seen today once Rest of current risk is Not present", () => {
-    expect(sinceLastText({ ...blankTriage(), rest: "np" })).toMatch(/Not seen today: distress or agitation\./);
+    expect(sinceLastText({ ...blankTriage(EXAMPLE_PERSON), rest: "np" })).toMatch(
+      /Not seen today: distress or agitation\./,
+    );
   });
 });

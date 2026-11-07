@@ -256,6 +256,9 @@ export function wardBarRouteTitle(pathname: string, place: WardPlace | undefined
     (/^\/ward-flow\/reports\/chronology\/?$/u.test(pathname) ? "Patient chronology" : undefined) ??
     (pathname === WARD_ADD_PERSON_HREF ? "Add patient" : undefined) ??
     (/^\/ward-flow\/people\/[^/]+\/?$/u.test(pathname) ? "Patient" : undefined) ??
+    // Triage and risk (built 7 Nov 2026): the form and Start a triage name the page on every width.
+    (/^\/ward-flow\/people\/[^/]+\/triage\/?$/u.test(pathname) ? "Triage and risk" : undefined) ??
+    (/^\/ward-flow\/triage\/new\/?$/u.test(pathname) ? "Start a triage" : undefined) ??
     (place?.kind === "ward" && /\/answer\/?$/u.test(pathname) ? "Ward answer" : undefined) ??
     (/^\/ward-flow\/board\//u.test(pathname) ? (place?.name ?? "Bed board") : undefined) ??
     place?.name ??

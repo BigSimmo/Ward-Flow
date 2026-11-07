@@ -129,6 +129,9 @@ describe("the access table", () => {
         patient: "own",
         "patient-new": "all",
         "referral-new": "all",
+        // Triage and risk (7 Nov 2026): the referral intake's desks, the form for their own people.
+        "triage-new": "all",
+        triage: "own",
         referrals: "own",
         search: "own",
         seclusion: "own",
@@ -148,6 +151,9 @@ describe("the access table", () => {
         patient: "own",
         "patient-new": "all",
         "referral-new": "all",
+        // Triage and risk (7 Nov 2026): the referral intake's desks, the form for their own people.
+        "triage-new": "all",
+        triage: "own",
         referrals: "own",
         search: "own",
         settings: "own",
@@ -163,6 +169,9 @@ describe("the access table", () => {
         patient: "own",
         "patient-new": "all",
         "referral-new": "all",
+        // Triage and risk (7 Nov 2026): the referral intake's desks, the form for their own people.
+        "triage-new": "all",
+        triage: "own",
         referrals: "own",
         search: "own",
         settings: "own",

@@ -322,6 +322,11 @@ const FIELD_RULES: { readonly [K in keyof WardFlowState]-?: (context: Context) =
   // stay this desk is already sent in full, so the flag never tells a desk about a person it cannot see.
   returnEarlyFlags: (context) =>
     (context.state.returnEarlyFlags ?? []).filter((record) => wholeStay(context, record.admissionId)),
+  // Triage and risk (7 Nov 2026): codes about one person, sent only with a person this desk is sent.
+  triages: (context) =>
+    (context.state.triages ?? []).filter((record) =>
+      context.scoped.patients.some((patient) => patient.id === record.patientId),
+    ),
   // Shared mode (Josh, 4 Nov 2026, "Show it without the name"): the home hospital's wards, community and
   // Transport hear a flag on a stay they cannot see as a nameless notice: a site and a time, no stay id.
   returnEarlyNotices: (context) =>
@@ -420,6 +425,7 @@ export function scopeWardFlowState(
   if (state.undoRecords === undefined) delete next.undoRecords;
   if (state.siteHandoverSignOffs === undefined) delete next.siteHandoverSignOffs;
   if (state.returnEarlyFlags === undefined) delete next.returnEarlyFlags;
+  if (state.triages === undefined) delete next.triages;
   if ((next.returnEarlyNotices as unknown[]).length === 0) delete next.returnEarlyNotices;
   return {
     state: closeReferences(next as WardFlowState, scoped.datesOnlyAdmissionIds, state, access.role !== "executive"),

@@ -100,6 +100,10 @@ governance sign-off before real patient use (D-54).
 | Observation levels | General observation interval | 1 hour | Synthetic value | Audit F3, Option A (26 Oct 2026): General observation interval: hourly. Pending Josh's approval comment on the PR | None recorded | `observationGeneral` |
 | Observation levels | Intermittent observation, shorter interval | 15 minutes | Signed for the prototype by Josh (product owner), 2026-10-21 | Fix plan item 10 (21 Oct 2026) | None recorded | `observationIntermittentShort` |
 | Observation levels | Intermittent observation, longer interval | 30 minutes | Signed for the prototype by Josh (product owner), 2026-10-21 | Fix plan item 10 (21 Oct 2026) | None recorded | `observationIntermittentLong` |
+| Triage urgency | Triage urgency B: seen within | 2 hours | Synthetic value | WA mental health triage scale urgency categories, as on the triage form (SMHMR900); listed 7 Nov 2026, awaiting Josh's sign-off | None recorded | `triageUrgencyB` |
+| Triage urgency | Triage urgency C: seen within | 12 hours | Synthetic value | WA mental health triage scale urgency categories, as on the triage form (SMHMR900); listed 7 Nov 2026, awaiting Josh's sign-off | None recorded | `triageUrgencyC` |
+| Triage urgency | Triage urgency D: seen within | 48 hours | Synthetic value | WA mental health triage scale urgency categories, as on the triage form (SMHMR900); listed 7 Nov 2026, awaiting Josh's sign-off | None recorded | `triageUrgencyD` |
+| Triage urgency | Triage urgency E: seen within | 14 days | Synthetic value | WA mental health triage scale urgency categories, as on the triage form (SMHMR900); listed 7 Nov 2026, awaiting Josh's sign-off | None recorded | `triageUrgencyE` |
 
 <!-- clinical-values:end -->
 <!-- prettier-ignore-end -->

@@ -4,9 +4,10 @@
 
 // The bar's own controls, moved out of `ward-bar.tsx` to keep it under the line cap: the phone
 // Menu entry, the Service selector with its sheet, the drawer buttons and the primary action.
+import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Bell, Plus, Check, ChevronDown, Menu as MenuIcon, RotateCcwClock, Wrench } from "lucide-react";
-import { useState, type RefObject } from "react";
+import { useCallback, useState, type KeyboardEvent, type RefObject } from "react";
 
 import { ContextualBackLink, navigateContextuallyBack } from "@/components/contextual-back-link";
 import { waitingText, type waitingInEds } from "@/components/ward-management/ward-shared-figures";
@@ -16,8 +17,11 @@ import type {
   ReferralSheetRequest,
 } from "@/components/ward-management/referrals/referral-sheet-link";
 
-import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
+import { WARD_REFERRAL_INTAKE_HREF, WARD_TRIAGE_NEW_HREF } from "@/components/ward-management/ward-nav";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
+import { useRoleGate } from "@/components/ward-management/ward-role-gate";
+import type { NewMenuKind } from "@/components/ward-management/shell-next/next-new-menu";
+import { NEW_MENU_ID } from "@/components/ward-management/shell-next/next-new-menu-id";
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { NextPhoneMenu } from "@/components/ward-management/shell-next/next-phone-menu";
 import { hasMovedInWardFlow, markWardRouteReplace } from "@/components/ward-management/shell/ward-back";
@@ -424,7 +428,87 @@ export function WardBarDrawerTriggers({
   );
 }
 
-/** The bar's one primary action: New referral, or a not-wired action's popover. */
+// The New menu (built 7 Nov 2026) loads on first use, so a phone's first load does not carry it.
+const loadNewMenu = () => import("@/components/ward-management/shell-next/next-new-menu");
+const NewMenu = dynamic(() => loadNewMenu().then((module) => module.NewMenu), { ssr: false });
+
+/**
+ * The bar's New button (Josh's approved mock-up, built 7 Nov 2026): "New" with a caret, opening the
+ * Triage or Referral menu. Referral opens today's referral slide-out unchanged; Triage opens Start a
+ * triage. A desk that may refer but not triage keeps today's New referral button (see below).
+ */
+function WardBarNewMenuButton({
+  primaryTriggerRef,
+  onReferral,
+}: {
+  primaryTriggerRef: RefObject<HTMLButtonElement | null>;
+  onReferral: () => void;
+}) {
+  const router = useRouter();
+  // The button the menu sits under and the row that takes focus on opening, or null while closed.
+  const [open, setOpen] = useState<{ trigger: HTMLElement; row: number } | null>(null);
+  const close = useCallback(
+    (returnFocus: boolean) => {
+      setOpen(null);
+      if (returnFocus) primaryTriggerRef.current?.focus();
+    },
+    [primaryTriggerRef],
+  );
+  // The menu loads on first use. When it cannot (offline before it has loaded), New opens the
+  // referral slide-out as New referral did, which shows its own Try again.
+  const openMenu = (trigger: HTMLElement, row: number) =>
+    void loadNewMenu().then(
+      () => setOpen({ trigger, row }),
+      () => onReferral(),
+    );
+  const choose = (kind: NewMenuKind) => {
+    setOpen(null);
+    if (kind === "triage") router.push(WARD_TRIAGE_NEW_HREF);
+    // After the menu has gone, so the slide-out hands focus back to the button as today.
+    else window.setTimeout(onReferral, 0);
+  };
+  const onKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    // Escape on the button closes an open menu, before focus has moved into it.
+    if (event.key === "Escape" && open !== null) {
+      event.preventDefault();
+      close(true);
+      return;
+    }
+    if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
+    event.preventDefault();
+    openMenu(event.currentTarget, event.key === "ArrowUp" ? 1 : 0);
+  };
+  return (
+    <div className={styles.primaryWrap}>
+      <button
+        type="button"
+        ref={primaryTriggerRef}
+        // Josh, 30 Oct 2026: even padding and its neighbours' height (`preview-bar.module.css`).
+        className={`${styles.primary} ${styles.referralPrimary} ${polish.primaryEven}`}
+        data-testid="ward-bar-primary-action"
+        aria-haspopup="menu"
+        aria-expanded={open !== null}
+        aria-controls={open !== null ? NEW_MENU_ID : undefined}
+        onPointerEnter={() => void loadNewMenu()}
+        onFocus={() => void loadNewMenu()}
+        onKeyDown={onKeyDown}
+        onClick={(event) => {
+          if (open !== null) setOpen(null);
+          else openMenu(event.currentTarget, 0);
+        }}
+      >
+        <Plus className={styles.primaryIcon} aria-hidden="true" strokeWidth={1.75} />
+        <span className={styles.primaryMain}>New</span>
+        <ChevronDown className={styles.triggerCaret} aria-hidden="true" strokeWidth={1.75} />
+      </button>
+      {open !== null ? (
+        <NewMenu trigger={open.trigger} phone={false} initial={open.row} onClose={close} onChoose={choose} />
+      ) : null}
+    </div>
+  );
+}
+
+/** The bar's one primary action: New (Triage or Referral), New referral, or a not-wired action's popover. */
 export function WardBarPrimaryAction({
   primaryAction,
   primaryTriggerRef,
@@ -447,12 +531,20 @@ export function WardBarPrimaryAction({
   // Opted out of the React Compiler, like the component above.
   "use no memo";
   const canOpen = useCanOpenHref();
+  const gate = useRoleGate();
   // A desk that cannot open the intake (bed manager, #820) gets no New referral button.
   if (primaryAction?.kind === "new-referral" && !canOpen(WARD_REFERRAL_INTAKE_HREF)) return null;
+  // Triage and risk (7 Nov 2026): a desk that may also triage gets New, with Triage and Referral.
+  const canTriage = canOpen(WARD_TRIAGE_NEW_HREF) && gate("RECORD_TRIAGE_SIGNED").allowed;
   return (
     <>
       {primaryAction && primaryAction.kind !== "none" ? <span className={styles.vsep} aria-hidden="true" /> : null}
-      {primaryAction?.kind === "new-referral" ? (
+      {primaryAction?.kind === "new-referral" && canTriage ? (
+        <WardBarNewMenuButton
+          primaryTriggerRef={primaryTriggerRef}
+          onReferral={() => openReferral({ category: roleCategory }, primaryTriggerRef.current)}
+        />
+      ) : primaryAction?.kind === "new-referral" ? (
         // UX audit (21 Oct 2026): New referral opens the form at once. The drawer's own "Refer to"
         // switch (Ward, Community, ED) is the one place the destination is chosen, so the bar no
         // longer asks the same question in a menu first.

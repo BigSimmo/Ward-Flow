@@ -1,17 +1,18 @@
 "use client";
 
 /**
- * Triage and risk mock-up: the slide-outs, on the kit PanelDrawer.
+ * Triage and risk: the slide-outs, on the kit PanelDrawer.
  *
  * - Summary: the record (Summary, Referral, Last triage, Alerts, Profile), opened from the banner
  *   links, the section index and the phone bar. Summary holds "Before you sign" and the document
  *   the form builds as you go, which prints as SMHMR900 and SMHMR905.
- * - How to: the steps, the practice form switch and where each PSOLIS field went.
+ * - How to: the steps, Start a new triage and where each PSOLIS field went.
  * - All RAMP factors: every factor by area.
  *
  * Synthetic data only.
  */
 import { Copy, FilePlus2 } from "lucide-react";
+import Link from "next/link";
 import { useState, type ReactNode } from "react";
 
 import {
@@ -20,23 +21,19 @@ import {
   ChipGroup,
   DrawerFootRow,
   PanelDrawer,
-  Segmented,
   StatusGlyph,
+  buttonClass,
   tableClasses,
+  phoneRows,
 } from "@/components/wf";
-import { phoneRows } from "@/components/wf/phone-rows";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 import {
-  ALERTS,
   AREA_NAME,
   AREAS,
-  CONTACTS,
   FACTOR_NAME,
   HOW_TO,
-  LAST_TRIAGE,
   PSOLIS_FIELD_MAP,
-  REFERRER_URGENCY,
   type SectionId,
   type TriagePerson,
 } from "./triage-risk-data";
@@ -51,7 +48,7 @@ import {
   type DocValue,
   type SignedBy,
 } from "./triage-risk-summary";
-import styles from "./triage-risk-redesign.module.css";
+import styles from "./triage-risk-form.module.css";
 
 const summaryTabs = (alertCount: number) => [
   { id: "sum", label: "Summary" },
@@ -293,8 +290,8 @@ function BeforeYouSign({ reqs, jump }: { reqs: readonly Requirement[]; jump: Jum
   );
 }
 
-/** A record tab for a person the worked Example does not cover: what the synthetic record holds. */
-function OtherPersonPane({
+/** A record tab: what the synthetic record holds. */
+function RecordPane({
   title,
   rows,
   note,
@@ -310,13 +307,6 @@ function OtherPersonPane({
       {note ? <p className={styles.quiet}>{note}</p> : null}
     </>
   );
-}
-
-const notWired = (form: FormApi) => () => form.say("Not wired in this prototype.");
-
-function CopyNumber({ form, label, number }: { form: FormApi; label: string; number: string }) {
-  const copy = () => copyText(number, `Copied ${number}`, `Copy not allowed here: ${number}`, form.say);
-  return <Button size="sm" variant="ghost" iconOnly icon={Copy} aria-label={`Copy ${label} number`} onClick={copy} />;
 }
 
 export function SummaryDrawer({
@@ -379,9 +369,10 @@ export function SummaryDrawer({
             <SummaryDocument form={form} jump={signed ? undefined : jump} signed={signed} copyWhenSigned />
           </>
         ) : null}
-        {tab === "ref" && !person.example ? (
-          <OtherPersonPane
-            title={person.referral ? `Referral ${person.referral.id}` : "No open referral"}
+        {tab === "ref" ? (
+          <RecordPane
+            // D-39: record numbers stay off screens; the referral is named by where it came from.
+            title={person.referral ? `Referral from ${person.referral.from}` : "No open referral"}
             rows={
               person.referral
                 ? [
@@ -394,130 +385,45 @@ export function SummaryDrawer({
             }
           />
         ) : null}
-        {tab === "ref" && person.example ? (
-          <>
-            <h3 className={styles.paneHead}>Referral R-1182</h3>
-            <Facts
-              rows={[
-                [
-                  "From",
-                  <>
-                    Dr P. Singh, ED registrar · Synthetic ED <span className={styles.mono}>(08) 5550 0190</span>
-                    <CopyNumber form={form} label="referrer" number="(08) 5550 0190" />
-                  </>,
-                ],
-                [
-                  "Received",
-                  <>
-                    <span className={styles.mono}>06/11 08:55</span> · eReferral
-                  </>,
-                ],
-                ["Type", "Emergency department"],
-                ["Asks for", "Admission and bed review today"],
-                ["Urgency asked", `${REFERRER_URGENCY} within 12 hours`],
-                [
-                  "Reason",
-                  "Five days of rising agitation after a missed depot. Threatening staff in ED. Mother worried at home.",
-                ],
-                ["Legal", `${person.legal}, Form 5A (as typed). Not legally checked.`],
-                ["Medically", "Bloods pending; obs stable"],
-                ["Now at", "Synthetic ED · bay 7, security nearby"],
-                [
-                  "Documents",
-                  <ChipGroup key="docs" label="Documents">
-                    <Button size="sm" className={phoneRows.chip} onClick={notWired(form)}>
-                      ED notes (synthetic preview)
-                    </Button>
-                    <Button size="sm" className={phoneRows.chip} onClick={notWired(form)}>
-                      Obs chart
-                    </Button>
-                  </ChipGroup>,
-                ],
-              ]}
-            />
-          </>
-        ) : null}
-        {tab === "last" && !person.lastTriage ? (
-          <OtherPersonPane
+        {tab === "last" && !person.last ? (
+          <RecordPane
             title="No previous triage on record"
             rows={[["Past risk", "Answered fresh today. Nothing is carried forward."]]}
           />
         ) : null}
-        {tab === "last" && person.lastTriage ? (
-          <>
-            <h3 className={styles.paneHead}>Last triage and RAMP · 12 Oct · Synthetic CMHT</h3>
-            <Facts
-              rows={[
-                ["Urgency", LAST_TRIAGE.urgencyText],
-                ["Outcome", LAST_TRIAGE.outcome],
-                ["Flags then", LAST_TRIAGE.pastFlags.map((k) => FACTOR_NAME[k]).join(" · ")],
-                ["Formulation", LAST_TRIAGE.formulation],
-                ["Safety plan", LAST_TRIAGE.safetyPlan],
-              ]}
-            />
-            <h3 className={styles.paneHead}>Admissions</h3>
-            <Facts
-              rows={[
-                ["Last admission", "Sep 2026 · 14 days · Synthetic Hospital · CTO on discharge"],
-                ["This year", "2 admissions, both after stopping treatment"],
-              ]}
-            />
-          </>
+        {tab === "last" && person.last ? (
+          <RecordPane
+            title={person.last.label}
+            rows={[
+              ["Urgency", person.last.urgencyText],
+              ["Outcome", person.last.outcome],
+              ["Legal", `${person.last.legal} (as chosen then). Not legally checked.`],
+              ["Review risk by", person.last.review],
+              [
+                "Flags then",
+                [...person.last.pastFlags, ...person.last.nowFlags].map((k) => FACTOR_NAME[k]).join(" · ") ||
+                  "None marked present",
+              ],
+            ]}
+            note="A signed triage keeps its codes only. Its typed assessment, formulation and plan are not carried."
+          />
         ) : null}
-        {tab === "alerts" && !person.example ? (
-          <OtherPersonPane
+        {tab === "alerts" ? (
+          <RecordPane
             title="Alerts"
             rows={[
-              ["Alerts", person.alert ?? "None on the synthetic record"],
+              [
+                "Alerts",
+                person.alerts?.length ? person.alerts.join(" · ") : (person.alert ?? "None on the synthetic record"),
+              ],
               ["Allergies", person.allergies],
             ]}
           />
         ) : null}
-        {tab === "alerts" && person.example ? (
+        {tab === "profile" ? (
           <>
-            <h3 className={styles.paneHead}>Alerts · newest first</h3>
-            <ul className={styles.alertList}>
-              {ALERTS.map((alert) => (
-                <li key={alert.title}>
-                  <StatusGlyph tone={alert.tone} size={10} />
-                  <span>
-                    <b>{alert.title}</b>
-                    <span className={styles.quietBlock}>{alert.detail}</span>
-                  </span>
-                  <span className={styles.mono}>{alert.when}</span>
-                </li>
-              ))}
-            </ul>
-            <p className={styles.quiet}>Allergies: {person.allergies}</p>
-          </>
-        ) : null}
-        {tab === "profile" && !person.example ? (
-          <OtherPersonPane
-            title="Identity"
-            rows={[
-              ["Name", `${person.name} · ${person.meta}`],
-              [
-                "UMRN",
-                <span key="u" className={styles.mono}>
-                  {person.umrn}
-                </span>,
-              ],
-              [
-                "DOB",
-                <span key="d" className={styles.mono}>
-                  {person.dob}
-                </span>,
-              ],
-              ["Now at", person.nowAt],
-              ["Legal", legalWords(person)],
-            ]}
-            note="Contacts and care details are drawn for the worked Example only."
-          />
-        ) : null}
-        {tab === "profile" && person.example ? (
-          <>
-            <h3 className={styles.paneHead}>Identity</h3>
-            <Facts
+            <RecordPane
+              title="Identity"
               rows={[
                 ["Name", `${person.name} · ${person.meta}`],
                 [
@@ -532,42 +438,14 @@ export function SummaryDrawer({
                     {person.dob}
                   </span>,
                 ],
-                [
-                  "Medicare",
-                  <span key="m" className={styles.mono}>
-                    SYN 2345 67890 1
-                  </span>,
-                ],
-                ["Address", "Unit 4, 12 Sample Road, Midland WA 6056"],
-                ["Aboriginal status", "Neither (recorded 12 Oct; ask again today)"],
-                ["Language", "English · no interpreter"],
+                ["Now at", person.nowAt],
+                ["Legal", legalWords(person)],
               ]}
+              note="Contacts and care details are on the patient record."
             />
-            <h3 className={styles.paneHead}>Contacts</h3>
-            <Facts
-              rows={CONTACTS.map(([label, number, who]) => [
-                label,
-                <>
-                  {who ? `${who} ` : ""}
-                  <span className={styles.mono}>{number}</span>
-                  <CopyNumber form={form} label={label} number={number} />
-                </>,
-              ])}
-            />
-            <h3 className={styles.paneHead}>Care</h3>
-            <Facts
-              rows={[
-                ["Community team", "Active · Synthetic East CMHT since 2019"],
-                ["Legal", `${person.legal}, Form 5A (as typed). Not legally checked.`],
-                ["Directive", "None recorded"],
-                ["Nominated person", "None recorded"],
-                ["Last contact", "30 Oct · depot clinic, missed"],
-                ["Allergies", person.allergies],
-              ]}
-            />
-            <Button className={styles.startSelf} onClick={notWired(form)}>
-              Open full profile
-            </Button>
+            <Link href={person.recordHref} className={buttonClass({ className: styles.startSelf })}>
+              Open patient record
+            </Link>
           </>
         ) : null}
       </div>
@@ -578,14 +456,10 @@ export function SummaryDrawer({
 export function HowToDrawer({
   open,
   onClose,
-  example,
-  onExample,
   onStartNew,
 }: {
   open: boolean;
   onClose: () => void;
-  example: "example" | "blank";
-  onExample: (value: "example" | "blank") => void;
   /** Start a triage for someone else: the Start a triage step (7 Nov 2026: moved here from the banner). */
   onStartNew: () => void;
 }) {
@@ -617,22 +491,11 @@ export function HowToDrawer({
             </li>
           ))}
         </ol>
-        <div className={styles.stack}>
-          <p className={styles.quiet}>
-            <b>Practice form.</b> Synthetic example, or start blank. Nothing clinical is pre-selected when blank.
-          </p>
-          <Segmented
-            size="md"
-            label="Start state"
-            items={[
-              { id: "example", label: "Example" },
-              { id: "blank", label: "Start blank" },
-            ]}
-            value={example}
-            onChange={onExample}
-          />
-          <p className={styles.quiet}>Draft is not saved in this mock-up.</p>
-        </div>
+        <p className={styles.quiet}>
+          <b>Saving.</b> Save draft is not wired, so leaving the page drops what you typed. Signing records only the
+          urgency, outcome, legal status, review and risk flags on the patient. The typed assessment, mental state,
+          formulation and plan are not part of that record.
+        </p>
         <p className={styles.quiet}>
           <b>Phrases.</b> In the Assessment box type .all; in Formulation and plan type .form, .plan or .all. Each adds
           only the headings that are missing.

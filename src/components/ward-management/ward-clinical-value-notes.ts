@@ -28,6 +28,9 @@ export interface ClinicalValueNote {
 }
 
 const OBSERVATION_LEVEL_SOURCE = "Fix plan item 10 (21 Oct 2026)";
+/** The triage form's urgency windows (Josh, 7 Nov 2026: list them here, synthetic until signed). */
+const TRIAGE_URGENCY_SOURCE =
+  "WA mental health triage scale urgency categories, as on the triage form (SMHMR900); listed 7 Nov 2026, awaiting Josh's sign-off";
 
 const CLINICAL_VALUE_NOTES = {
   tierOneOverdue: {
@@ -229,6 +232,10 @@ const CLINICAL_VALUE_NOTES = {
   observationIntermittentLong: {
     source: OBSERVATION_LEVEL_SOURCE,
   },
+  triageUrgencyB: { source: TRIAGE_URGENCY_SOURCE },
+  triageUrgencyC: { source: TRIAGE_URGENCY_SOURCE },
+  triageUrgencyD: { source: TRIAGE_URGENCY_SOURCE },
+  triageUrgencyE: { source: TRIAGE_URGENCY_SOURCE },
 } satisfies Record<ClinicalValueId, ClinicalValueNote>;
 
 /** Every value as a list, with its id, in the order Settings and the doc show them. */

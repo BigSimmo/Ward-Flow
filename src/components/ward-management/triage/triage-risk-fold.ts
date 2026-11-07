@@ -1,5 +1,5 @@
 /**
- * Triage and risk mock-up: which finished sections fold to one line (7 Nov 2026), and the line each
+ * Triage and risk (built 7 Nov 2026): which finished sections fold to one line (7 Nov 2026), and the line each
  * shows. Pure, so the rules are tested apart from the page. Synthetic data only.
  *
  * - Assessment, Mental state and Triage decision fold once complete, as Review details already does.

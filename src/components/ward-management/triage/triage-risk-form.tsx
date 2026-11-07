@@ -1,23 +1,20 @@
 "use client";
 
 /**
- * Triage and risk (mock-up, 6 Nov 2026): one entry that prints as the mental health triage
- * (SMHMR900) and the risk assessment and management plan (SMHMR905). Ported from the approved
- * single-file prototype "Option D" (`d-lean.html`) onto the kit, for Josh's review. Not built into
- * the app (D-74): nothing is saved, signing is not wired, and every patient detail is synthetic.
+ * Triage and risk: one entry that prints as the mental health triage (SMHMR900) and the risk
+ * assessment and management plan (SMHMR905). Josh approved the mock-up (Option D, ported from
+ * `d-lean.html` onto the kit) and it was built into the app on 7 Nov 2026, at
+ * `/ward-flow/people/[patientId]/triage`, with Start a triage at `/ward-flow/triage/new`.
  *
  * Layout: the patient banner (kit Hero), a section index on the left (step chips on a phone), one
- * form column of six numbered sections, and the record in a tabbed slide-out. State lives in React
- * only; nothing typed goes to browser storage (HOW-WE-WORK §6).
- *
- * 7 Nov 2026: New, then Triage, in the app bar opens `?start=new`: a Start a triage step (who it is
- * for), then the form blank for that person. Sign asks to confirm, then shows the Signed state: the
- * form read-only, the summary and the next actions. Without `?start=new` the page opens on the
- * worked Example for review.
+ * form column of six numbered sections, and the record in a tabbed slide-out. The form's answers
+ * live in React only. Signing records codes alone on the person (`RECORD_TRIAGE_SIGNED`: urgency,
+ * outcome, legal status, review and the risk flags marked present); the typed text is never in it,
+ * so it never reaches the workspace or browser storage (HOW-WE-WORK §6). Every person is synthetic.
  */
 import { BellRing, BookUser, CircleHelp, FileText, Inbox } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import {
@@ -34,13 +31,15 @@ import {
   buttonClass,
   useIsPhone,
   useOptionalToast,
+  phoneRows,
 } from "@/components/wf";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { calendarDateOf, perthCalendarDay, perthClockTime } from "@/components/ward-management/ward-clock";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
+import { confirmedWardCommand } from "@/components/ward-management/ward-command-completion";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { announce } from "@/components/wf/live-announcer";
-import { phoneRows } from "@/components/wf/phone-rows";
-import { useMinuteNow } from "@/components/wf/use-minute-now";
+import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
+import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 
 import { DecisionBody } from "./triage-risk-decision";
 import { FOLDABLE, foldedSections, foldLine } from "./triage-risk-fold";
@@ -53,7 +52,6 @@ import {
   TIER_LONG,
   TIER_SHORT,
   type SectionId,
-  type TriagePerson,
 } from "./triage-risk-data";
 import { MentalStateBody } from "./triage-risk-mse";
 import { SectionCard, StatusMark, type FormApi } from "./triage-risk-parts";
@@ -62,17 +60,18 @@ import { PlanBody, RiskBody } from "./triage-risk-risk";
 import { AllFactorsDrawer, HowToDrawer, SummaryDocument, SummaryDrawer } from "./triage-risk-sheets";
 import { SideSummary } from "./triage-risk-side";
 import { TriageStart } from "./triage-risk-start";
+import { TRIAGE_NEW_HREF, triageHrefFor, useTriagePeople } from "./use-triage-people";
 import { summaryModel, summaryText } from "./triage-risk-summary";
 import {
   allFactors,
   blankTriage,
-  exampleTriage,
   requirements,
   sectionStatus,
+  triageSignedFields,
   type Target,
   type TriageState,
 } from "./triage-risk-state";
-import styles from "./triage-risk-redesign.module.css";
+import styles from "./triage-risk-form.module.css";
 import startStyles from "./triage-risk-start.module.css";
 
 const LEGAL_NAME: Readonly<Record<string, string>> = Object.fromEntries(LEGAL);
@@ -111,21 +110,41 @@ type Sheet = "sum" | "how" | "all" | null;
 const NOT_WIRED = "Not wired in this prototype.";
 
 /** "07/11/2026 10:42", the form's date and time, on the board's synthetic Perth clock whatever the device's zone. */
+/**
+ * The board's moment as a Perth wall-clock Date: its local fields read the Perth day and time. The
+ * reviewed time is typed and parsed as wall-clock text, so Now and the future check use the same
+ * frame on any device.
+ */
+function boardWallClock(boardNow: number, dayZero: Date): Date {
+  const moment = calendarDateOf(boardNow, dayZero);
+  const day = perthCalendarDay(moment);
+  const [hour = 0, minute = 0] = perthClockTime(moment).split(":").map(Number);
+  return new Date(day.year, day.monthIndex, day.day, hour, minute);
+}
+
 function stampOf(date: Date): string {
   const two = (n: number) => String(n).padStart(2, "0");
   const day = perthCalendarDay(date);
   return `${two(day.day)}/${two(day.monthIndex + 1)}/${day.year} ${perthClockTime(date)}`;
 }
 
+const NOT_SIGNED = "Not signed. Try again.";
+
 /**
- * `?start=new` opens the Start a triage step. As the viewer's shell reads `shell`: the router's copy,
- * else the browser's (the shareable static preview has no search-params context).
+ * Sends the signed triage and reports how it went: accepted, or refused or failed with the reason.
+ * Kept outside the form so the component stays compiler-friendly.
  */
-function useStartParam(): string | null {
-  return (
-    useSearchParams()?.get("start") ??
-    (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("start"))
-  );
+function signTriage(
+  send: () => Parameters<typeof confirmedWardCommand>[0],
+  settle: (outcome: { status: string; message?: string }) => void,
+) {
+  try {
+    const completion = confirmedWardCommand(send());
+    if ("then" in completion) void completion.then(settle, () => settle({ status: "failed", message: NOT_SIGNED }));
+    else settle(completion);
+  } catch {
+    settle({ status: "failed", message: NOT_SIGNED });
+  }
 }
 
 /** Back to the top: the app shell scrolls its content column, a phone scrolls the window. */
@@ -135,17 +154,6 @@ function scrollPageTop() {
   window.scrollTo({ top: 0, behavior });
 }
 
-/** Takes `start` off the address once a person is chosen, so New, then Triage, can open the step again. */
-function dropStartParam() {
-  try {
-    const url = new URL(window.location.href);
-    if (!url.searchParams.has("start")) return;
-    url.searchParams.delete("start");
-    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
-  } catch {
-    // An address that cannot be rewritten keeps its parameter; the step still works.
-  }
-}
 const reducedMotion = () =>
   typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
@@ -338,29 +346,41 @@ function useFocusKeeper(state: TriageState) {
   }, [state]);
 }
 
-export function TriageRiskRedesign() {
-  const startParam = useStartParam();
-  const [step, setStep] = useState<"start" | "form">(startParam === "new" ? "start" : "form");
-  // New, then Triage, again while this page is open: the address gains `start=new` once more.
-  const [seenParam, setSeenParam] = useState(startParam);
-  if (startParam !== seenParam) {
-    setSeenParam(startParam);
-    if (startParam === "new") setStep("start");
-  }
-  const [form, setForm] = useState<{ key: number; state: TriageState }>(() => ({ key: 0, state: exampleTriage() }));
-  const choose = (person: TriagePerson) => {
-    dropStartParam();
-    setForm((current) => ({ key: current.key + 1, state: blankTriage(person) }));
-    setStep("form");
-    scrollPageTop();
-  };
-  if (step === "start") return <TriageStart onChoose={choose} />;
+/** Start a triage (`/ward-flow/triage/new`): choosing a person opens their form, blank. */
+export function TriageStartScreen() {
+  const router = useRouter();
+  return <TriageStart onChoose={(person) => router.push(triageHrefFor(person.id))} />;
+}
+
+/**
+ * The triage form for one synthetic person (`/ward-flow/people/[patientId]/triage`). It opens blank,
+ * with nothing pre-selected; a person this desk is not sent reads as not found, as the record does.
+ */
+export function TriageScreen({ patientId }: { patientId: string }) {
+  const router = useRouter();
+  const { byId } = useTriagePeople();
+  const person = byId.get(patientId);
+  // The form keeps the person it opened with; a signed triage then changes `last` on the world copy.
+  const [opened] = useState(() => (person ? blankTriage(person) : null));
+  const initial = opened ?? (person ? blankTriage(person) : null);
+  if (!initial)
+    return (
+      <main id="main-content" className={startStyles.main} data-testid="triage-not-found">
+        <Hero level={1} eyebrow="Triage and risk · Synthetic" title="No such person" />
+        <p className={startStyles.quiet}>
+          No synthetic person on this workspace has that record. Start a triage to search for them.
+        </p>
+        <Link href={TRIAGE_NEW_HREF} className={buttonClass({ variant: "pri" })}>
+          Start a triage
+        </Link>
+      </main>
+    );
   return (
     <TriageForm
-      key={form.key}
-      initial={form.state}
+      key={initial.person.id}
+      initial={initial}
       onStartNew={() => {
-        setStep("start");
+        router.push(TRIAGE_NEW_HREF);
         scrollPageTop();
       }}
     />
@@ -375,12 +395,18 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
   const [signedAt, setSignedAt] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
   const { now: boardNow, dayZero } = useWardFlowSelect("now", "dayZero");
-  const [start, setStart] = useState<"example" | "blank">(initial.person.example && initial.how ? "example" : "blank");
+  const routeRole = useRouteRole();
+  // Raised by name as this desk at the board clock, as every screen does (tests/ward-flow-raise.test.ts).
+  const raise = useWardRaise(routeRole);
+  const signGate = useRoleGate({ patientId: person.id })("RECORD_TRIAGE_SIGNED");
+  const [signing, setSigning] = useState(false);
   const [editingReview, setEditingReview] = useState(false);
   const [sheet, setSheet] = useState<Sheet>(null);
   const [tab, setTab] = useState("sum");
   const [active, setActive] = useState<SectionId>("rev");
-  const now = useMinuteNow();
+  // Josh (7 Nov 2026): the form runs on the board clock, as signing does. Now stamps it and the
+  // future-time check measures against it, as Perth wall-clock time whatever the device's own zone.
+  const now = boardWallClock(boardNow, dayZero).getTime();
   const navLock = useRef(0);
   useFocusKeeper(state);
   const engagement = useEngagedSection();
@@ -390,7 +416,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
   const say = useCallback(
     (message: string) => {
       if (toast) toast.push({ tone: "info", title: message });
-      else announce(message);
+      else announceToWardShell(message);
     },
     [toast],
   );
@@ -473,21 +499,26 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
     return () => window.removeEventListener("keydown", onKey);
   }, [sheet, openSummary]);
 
-  const loadStart = (value: "example" | "blank") => {
-    setStart(value);
-    // The Example is always Harlow's worked triage; Start blank keeps whoever this triage is for.
-    setState(value === "example" ? exampleTriage() : blankTriage(person.example ? undefined : person));
-    setEditingReview(false);
-    setSignedAt(null);
-    if (value === "blank") say("Blank form. Nothing clinical is pre-selected.");
-  };
-
-  const confirmSign = () => {
-    setConfirming(false);
+  const signedNow = () => {
     setSheet(null);
     setSignedAt(stampOf(calendarDateOf(boardNow, dayZero)));
     scrollPageTop();
-    announce(`Signed. Triage for ${person.name} is read-only.`);
+    announceToWardShell(`Signed. Triage for ${person.name} is read-only.`);
+  };
+  // Signing records the person and the codes only (`triageSignedFields`); the typed text stays here.
+  const confirmSign = () => {
+    setConfirming(false);
+    const fields = triageSignedFields(state);
+    if (!fields || signing) return;
+    setSigning(true);
+    signTriage(
+      () => raise("RECORD_TRIAGE_SIGNED", fields),
+      (outcome) => {
+        setSigning(false);
+        if (outcome.status === "accepted") signedNow();
+        else say(outcome.message ?? NOT_SIGNED);
+      },
+    );
   };
   const copySummary = () =>
     copyTextToClipboard(summaryText(summaryModel(state, signedAt ? { at: signedAt, by: SIGNED_IN } : undefined))).then(
@@ -495,16 +526,29 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
       () => say("Copy not allowed here. Select the summary text instead."),
     );
 
+  // A desk that may not sign, or a signing still being saved, says why instead of what is left.
+  const cannotSign = !signGate.allowed
+    ? (signGate.reason ?? "This desk cannot sign a triage.")
+    : signing
+      ? "Signing…"
+      : null;
+  const sayCannotSign = () => say(cannotSign ?? "");
   const signButton = (where: "foot" | "bar" | "sheet") => (
     <Button
       variant="pri"
-      disabledReason={left ? `${left} left before signing` : undefined}
+      disabledReason={cannotSign ?? (left ? `${left} left before signing` : undefined)}
       reasonDisplay="tooltip"
-      onUnavailablePress={() => {
-        const names = needed.map((r) => r.label);
-        say(`Still needed: ${names.slice(0, 3).join(", ")}${names.length > 3 ? ` and ${names.length - 3} more` : ""}`);
-        if (where !== "sheet") openSummary("sum");
-      }}
+      onUnavailablePress={
+        cannotSign
+          ? sayCannotSign
+          : () => {
+              const names = needed.map((r) => r.label);
+              say(
+                `Still needed: ${names.slice(0, 3).join(", ")}${names.length > 3 ? ` and ${names.length - 3} more` : ""}`,
+              );
+              if (where !== "sheet") openSummary("sum");
+            }
+      }
       onClick={() => {
         setSheet(null);
         setConfirming(true);
@@ -638,11 +682,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                   />
                 ) : null}
                 {person.alert ? <HeroChip value="Alert" tone="warning" label={person.alert} /> : null}
-                {person.example ? (
-                  <HeroChip value="Allergies" label="2" />
-                ) : (
-                  <HeroChip value="Allergies" label={person.allergies} />
-                )}
+                <HeroChip value="Allergies" label={person.allergies} />
                 {person.legal ? (
                   <HeroChip value={<LegalName name={person.legal} />} label={person.legalTag} />
                 ) : (
@@ -701,7 +741,10 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                 </Link>
                 <Button onClick={onStartNew}>Start another triage</Button>
               </div>
-              <p className={startStyles.quiet}>This mock-up keeps nothing after you leave the page.</p>
+              <p className={startStyles.quiet} data-testid="triage-signed-record-line">
+                Signed to the patient record: urgency, outcome, legal status, review and risk flags only. The typed
+                assessment, mental state, formulation and plan are not part of that record.
+              </p>
             </CardBody>
           </Card>
         ) : null}
@@ -728,7 +771,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
           {/* Once signed the form is read-only: every control in the fieldset is disabled, the text stays readable. */}
           <fieldset
             className={`${styles.form} ${startStyles.readOnly}`}
-            disabled={signed}
+            disabled={signed || signing}
             aria-label={signed ? "Signed triage, read-only" : undefined}
             data-testid="triage-form"
           >
@@ -843,8 +886,6 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
       <HowToDrawer
         open={sheet === "how"}
         onClose={() => setSheet(null)}
-        example={start}
-        onExample={loadStart}
         onStartNew={() => {
           setSheet(null);
           onStartNew();

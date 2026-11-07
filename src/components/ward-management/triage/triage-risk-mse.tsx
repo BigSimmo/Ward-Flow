@@ -1,14 +1,13 @@
 "use client";
 
 /**
- * Triage and risk mock-up: 3 Mental state. "One box" (the default) is one textarea, with a
+ * Triage and risk: 3 Mental state. "One box" (the default) is one textarea, with a
  * Tap-in phrases panel whose phrases land on their domain's line; "By domain" is one row per
  * domain with chips and a detail box. Switching converts the text both ways. Synthetic data only.
  */
 import { useState } from "react";
 
-import { Button, ChipGroup, FilterChip, Segmented, StatusGlyph, Textarea, TextInput } from "@/components/wf";
-import { phoneRows } from "@/components/wf/phone-rows";
+import { Button, ChipGroup, FilterChip, Segmented, StatusGlyph, Textarea, TextInput, phoneRows } from "@/components/wf";
 
 import { MSE, type MseDomain } from "./triage-risk-data";
 import { autoRows, Hint, type FormApi } from "./triage-risk-parts";
@@ -23,7 +22,7 @@ import {
   toggleDomainChip,
   type DomainEntry,
 } from "./triage-risk-text";
-import styles from "./triage-risk-redesign.module.css";
+import styles from "./triage-risk-form.module.css";
 
 const BY_PHONE = "Not observed (by phone)";
 

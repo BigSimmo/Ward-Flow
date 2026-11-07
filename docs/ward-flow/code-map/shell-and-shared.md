@@ -228,6 +228,7 @@ Every `page.tsx` is a bullet in §1.4 below; this table is the URL-first view (5
 | `/out-of-area`                    | `OutOfAreaBoard`                                                        |
 | `/people/[patientId]`             | `PatientNowScreen`, or `WardMovementNotFound`                           |
 | `/people/new`                     | `AddPatientForm`                                                        |
+| `/people/[patientId]/triage`      | `TriageScreen` (triage and risk form, built 7 Nov 2026)                 |
 | `/queue`                          | redirect → `/waiting`                                                   |
 | `/referrals`                      | `ReferralBoard`                                                         |
 | `/referrals/new`                  | `ReferralBoard` with the referral slide-out open (`shell/ward-bar.tsx`) |
@@ -248,6 +249,7 @@ Every `page.tsx` is a bullet in §1.4 below; this table is the URL-first view (5
 | `/statistics/ward/[unitId]`       | `StatisticsWardScreen`                                                  |
 | `/statistics/wards`               | `StatisticsWardsIndex`                                                  |
 | `/statistics/weekly`              | `WeeklyReportScreen`                                                    |
+| `/triage/new`                     | `TriageStartScreen` (Start a triage, built 7 Nov 2026)                  |
 | `/transport`                      | redirect → `/movements`                                                 |
 | `/transport/officer`              | `OfficerScreen`                                                         |
 | `/waiting`                        | `DelaysScreen` (the Waiting list; B4 step 3, 19 Oct 2026)               |
@@ -344,6 +346,13 @@ mode="governance"`.
   prefix is passed as `patientId`, a `WF-` prefix as `movementId`); an id starting with neither →
   `WardMovementNotFound`. Doc comment: deliberately `/people/`, not `/patients/`, because the old
   `/patients/[patientId]` route actually looked a _Movement_ up by id.
+- **`src/app/ward-flow/people/[patientId]/triage/page.tsx`** (31) — `/people/[patientId]/triage` →
+  `TriageScreen` (`@/components/ward-management/triage/triage-risk-form`), the triage and risk form
+  (SMHMR900 and SMHMR905) for one person, opened blank. Josh's approved mock-up, built 7 Nov 2026. A
+  `PT-` record code only; a UMRN or any other id → not found. Signing records `RECORD_TRIAGE_SIGNED`
+  (codes only, `triage/triage-record.ts`).
+- **`src/app/ward-flow/triage/new/page.tsx`** (14) — `/triage/new` → `TriageStartScreen`, Start a
+  triage: who it is for. Opened by New, then Triage, in the app bar and New triage in the phone's Create sheet.
 - **`src/app/ward-flow/queue/page.tsx`** (13) — redirect → `/waiting`.
 - **`src/app/ward-flow/referrals/page.tsx`** (13) — `/referrals` → `ReferralBoard
 defaultSelectFirst` (`@/components/ward-management/referrals/referral-board`).

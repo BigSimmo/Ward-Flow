@@ -83,6 +83,9 @@ const PatientHistoryTab = dynamic(() => loadHistoryTab().then((m) => m.PatientHi
 const PatientCommunityTab = dynamic(() => loadCommunityTab().then((m) => m.PatientCommunityTab));
 const PatientDetailsTab = dynamic(() => loadDetailsTab().then((m) => m.PatientDetailsTab));
 const PatientDocumentsTab = dynamic(() => loadDocumentsTab().then((m) => m.PatientDocumentsTab));
+// Triage and risk (built 7 Nov 2026): the signed triages and the Triage action, on Now. Loaded with
+// the page's other lazy parts so the movement page's phone first load does not grow.
+const PatientTriageCard = dynamic(() => import("../triage/patient-triage-card").then((m) => m.PatientTriageCard));
 preloadWhenIdle(
   loadTransitOperations,
   loadUploadForms,
@@ -1209,6 +1212,7 @@ export function PatientNowScreen({
               <MeetingActionsDue
                 subject={resolved.liveAdmission && { kind: "admission", id: resolved.liveAdmission.id }}
               />
+              <PatientTriageCard patientId={livePatient?.id} />
               {nowPanel}
             </div>
 

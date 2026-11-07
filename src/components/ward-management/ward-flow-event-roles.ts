@@ -571,6 +571,10 @@ export const EVENT_ROLE: Record<WardFlowEvent["type"], readonly WardFlowRole[]> 
   // ward's. The statewide coordinator may too, as it may sign any sheet; the shared server refuses
   // every other desk, and a bed manager any site but its own (`commandScopeRefusal`).
   RECORD_SITE_HANDOVER_SIGN_OFF: ["bed_manager", "coordinator"],
+  // Triage and risk (built 7 Nov 2026): the desks that may raise a referral may sign a triage, the
+  // same list as RAISE_REFERRAL. Not the bed manager, officer, executive or access admin, which do
+  // not open the referral intake either.
+  RECORD_TRIAGE_SIGNED: ["ed", "community", "ward", "coordinator"],
   // Contacting a team is this record. The team that made the call, or the coordinator logging it.
   // Decision 43 (Josh, 31 Oct 2026): the ED no longer holds it. It was unused: the only place to
   // record a contact is the community team page, which an ED desk cannot open.

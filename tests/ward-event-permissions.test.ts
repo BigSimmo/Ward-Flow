@@ -501,6 +501,9 @@ describe("who may raise which event", () => {
     RECORD_DIRECTORY_CHECK: ["coordinator", "bed_manager", "ward", "ed", "community", "officer"],
     RECORD_HANDOVER_SIGN_OFF: ["coordinator", "ward"],
     RECORD_SITE_HANDOVER_SIGN_OFF: ["bed_manager", "coordinator"],
+    // Triage and risk (7 Nov 2026): the desks that raise a referral, never the bed manager, officer,
+    // executive or access admin.
+    RECORD_TRIAGE_SIGNED: ["ed", "community", "ward", "coordinator"],
     RECORD_CLINICAL_CONTACT: ["community", "coordinator"],
     DISPATCH_BROADCAST_ALERT: ["coordinator", "bed_manager"],
     ACKNOWLEDGE_BROADCAST_ALERT: ["coordinator", "ward", "ed", "officer", "community", "bed_manager"],

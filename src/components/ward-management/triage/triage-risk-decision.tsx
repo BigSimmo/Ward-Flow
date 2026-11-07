@@ -1,19 +1,18 @@
 "use client";
 
 /**
- * Triage and risk mock-up: 4 Triage decision. Urgency A to G is always the clinician's choice; the
+ * Triage and risk: 4 Triage decision. Urgency A to G is always the clinician's choice; the
  * form only hints. Legal form and date are kept only as typed, never checked or counted down, and no
  * Mental Health Act section numbers are shown. Synthetic data only.
  */
 import { Info } from "lucide-react";
 
-import { ChipGroup, FilterChip, Icon, Segmented, SrOnly, StatusGlyph, TextInput } from "@/components/wf";
-import { phoneRows } from "@/components/wf/phone-rows";
+import { ChipGroup, FilterChip, Icon, Segmented, SrOnly, StatusGlyph, TextInput, phoneRows } from "@/components/wf";
 
 import { ACTIONS, AHD, LEGAL, OUTCOMES, TIERS, WHO_TOLD, type Tier } from "./triage-risk-data";
 import { Choice, MultiChips, Reveal, Row, type FormApi } from "./triage-risk-parts";
 import { acuteFlagNames, hasLegalForm } from "./triage-risk-state";
-import styles from "./triage-risk-redesign.module.css";
+import styles from "./triage-risk-form.module.css";
 
 const toggleIn = (list: readonly string[], value: string) =>
   list.includes(value) ? list.filter((v) => v !== value) : [...list, value];

@@ -41,6 +41,7 @@ import {
 import { BROADCAST_ANSWER_LABELS } from "./alerts/ward-broadcast-model";
 import { validateConfiguration } from "./ward-configuration";
 import { WARD_CLOSURE_REASONS, type WardClosureReason } from "./capacity/ward-closure";
+import { storedTriageRecords } from "./triage/triage-record-schema";
 import {
   ACCEPTANCE_CONDITION_AGREED_WITH,
   ACCEPTANCE_CONDITION_KINDS,
@@ -999,14 +1000,18 @@ function typedRecordsResolve(
     supportNotifications?: WardFlowState["supportNotifications"];
     homeServiceReturns?: WardFlowState["homeServiceReturns"];
     returnEarlyFlags?: WardFlowState["returnEarlyFlags"];
+    patients?: WardFlowState["patients"];
+    triages?: WardFlowState["triages"];
   },
 ): boolean {
   const admissionIds = new Set(state.admissions.map((admission) => admission.id));
+  const patientIds = new Set<string>((state.patients ?? []).map((patient) => patient.id));
   const movementIds = new Set(state.movements.map((movement) => movement.id));
   return (
     state.repatriations.every((row) => admissionIds.has(row.admissionId)) &&
     (state.homeServiceReturns ?? []).every((row) => admissionIds.has(row.admissionId)) &&
     (state.returnEarlyFlags ?? []).every((row) => admissionIds.has(row.admissionId)) &&
+    (state.triages ?? []).every((row) => patientIds.has(row.patientId)) &&
     (state.supportNotifications ?? []).every(
       (row) =>
         (row.occasion === "discharge" ? admissionIds : movementIds).has(row.subjectId) &&
@@ -1053,6 +1058,8 @@ const storedState = z.looseObject({
   // Shared mode nameless notices (4 Nov 2026): a key, a site and a time. No stay id, no name.
   returnEarlyNotices: z.optional(z.array(z.strictObject({ key: id, homeHospital: id, at: finite }))),
   handoverSignOffs: z.array(stamped),
+  // Triage and risk (7 Nov 2026): signed triages, absent in older saves. Codes only, no typed text.
+  triages: z.optional(storedTriageRecords),
   // Q61 (31 Oct 2026): site handover sign-offs, absent in older saves. Ids, times and a role only.
   siteHandoverSignOffs: z.optional(
     z.array(

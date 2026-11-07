@@ -1,10 +1,15 @@
 /**
- * Triage and risk mock-up (Option D, 6 Nov 2026): the static lists behind the combined mental health
- * triage (SMHMR900) and risk assessment (SMHMR905) form. Ported from the approved single-file
- * prototype (`d-lean.html`). Synthetic data only: the patient, the referral, the previous triage and
- * every contact here are invented. Nothing here is validated clinical decision support, and there is
- * no low, medium or high rating and no computed score.
+ * Triage and risk (Josh's approved mock-up, Option D, 6 Nov 2026; built into the app 7 Nov 2026):
+ * the static lists behind the combined mental health triage (SMHMR900) and risk assessment
+ * (SMHMR905) form. Ported from the approved single-file prototype (`d-lean.html`). The people come
+ * from the synthetic world, never from here. Nothing here is validated clinical decision support,
+ * and there is no low, medium or high rating and no computed score.
  */
+import type { Tier } from "./triage-record";
+
+// The closed lists a signed triage records are kept with the record (`triage-record.ts`), so the
+// reducer, the stored-state check and the patient record read them without this file.
+export { LEGAL, OUTCOMES, REVIEW, TIER_LONG, TIER_SHORT, TIERS, type Tier } from "./triage-record";
 
 /** A guide heading for a free-text box: the heading typed into the box, and what it should cover. */
 type GuideItem = readonly [heading: string, cover: string];
@@ -631,20 +636,6 @@ export const FDV_NOT_ASKED = [
   ["interp", "No interpreter"],
 ] as const;
 
-/** Urgency tiers A to G. The clinician always chooses; the form only hints. */
-export const TIERS = [
-  ["A", "Now", "Immediate"],
-  ["B", "2 h", "Within 2 hours"],
-  ["C", "12 h", "Within 12 hours"],
-  ["D", "48 h", "Within 48 hours"],
-  ["E", "2 wk", "Within 2 weeks"],
-  ["F", "Recontact", "Further triage contact"],
-  ["G", "No action", "No further action"],
-] as const;
-export type Tier = (typeof TIERS)[number][0];
-export const TIER_LONG = Object.fromEntries(TIERS.map(([tier, , long]) => [tier, long])) as Record<Tier, string>;
-export const TIER_SHORT = Object.fromEntries(TIERS.map(([tier, short]) => [tier, short])) as Record<Tier, string>;
-
 /** Who was told, for urgency A: one of these, or None needed with a reason. */
 export const WHO_TOLD = [
   ["Police notified", "Police"],
@@ -664,15 +655,6 @@ export const ACTIONS = [
   ["GP letter", "GP letter"],
 ] as const;
 
-/** Legal status in full words, as typed from the record; nothing is computed or checked. */
-export const LEGAL = [
-  ["vol", "Voluntary"],
-  ["ref", "Referred (Form 1A)"],
-  ["det", "Detained"],
-  ["cto", "Community treatment order"],
-  ["ito", "Inpatient treatment order"],
-  ["nyr", "Not yet recorded"],
-] as const;
 /**
  * Short legal names for smaller screens (Josh, 7 Nov 2026: full words on larger screens, "CTO" on
  * smaller). Only the hero figure and chip use them; the form and the document keep full words.
@@ -685,14 +667,6 @@ export const LEGAL_SHORT: Readonly<Record<string, string>> = {
 };
 /** Legal statuses with a form, whose form and date are kept only as typed. */
 export const LEGAL_WITH_FORM: readonly string[] = ["ref", "det", "cto", "ito"];
-
-export const REVIEW = [
-  ["24h", "24 hours"],
-  ["72h", "72 hours"],
-  ["7d", "7 days"],
-  ["move", "At transfer"],
-  ["dis", "At discharge"],
-] as const;
 
 export const HOW = [
   ["person", "In person"],
@@ -743,7 +717,6 @@ export const ARRIVED_BY = [
 ] as const;
 /** Others present at the review. */
 export const OTHERS_PRESENT = ["Family or carer", "Other service", "Police", "Security"] as const;
-export const OUTCOMES = ["Accepted", "Referred on", "Advice only", "No further action"] as const;
 export const AHD = [
   ["none", "None known"],
   ["ahd", "Advance health directive"],
@@ -754,26 +727,26 @@ export const COPY_TO = ["Person", "Carer", "GP"] as const;
 /** Sources used (collateral), chosen in Review details. */
 export const SOURCES = ["Person", "Family or carer", "GP", "Records", "Police", "Other"] as const;
 
-/** The referrer's asked urgency (synthetic referral R-1182). */
-export const REFERRER_URGENCY: Tier = "C";
-
-/** The synthetic previous triage and risk plan (12 Oct, Synthetic CMHT). */
-export const LAST_TRIAGE = {
-  label: "Last RAMP · 12 Oct · Synthetic CMHT",
-  when: "12 Oct",
-  team: "Synthetic CMHT",
-  urgency: "D" as Tier,
-  urgencyText: "D within 48 hours",
-  outcome: "Community follow-up; depot restarted",
-  formulation: "Risk to others rises with relapse and stopping treatment; settles on depot with family support.",
-  safetyPlan: "Depot fortnightly; mother to call the team if sleep drops; crisis line on the fridge.",
-  pastFlags: ["violence.bg.prev", "violence.bg.weap", "other.bg.abs", "general.bg.aod"],
-  pastSummary:
-    "Previous violence · Previous use of weapons · Absconding · Significant alcohol or drug use. Carries these flags only; you answer Rest of history today.",
-  /** Current flags seen then, only to say what is new today. Never carried forward. */
-  nowFlags: ["general.now.agit"],
-  history: "History (12 Oct, Synthetic CMHT, check): Lives with mother; no dependants. No current charges.",
-} as const;
+/**
+ * The last signed triage on record for the person, read from the workspace (`RECORD_TRIAGE_SIGNED`).
+ * Codes only: the earlier formulation, plan and history were typed and are never kept, so a later
+ * triage carries forward flags alone and every typed answer is written fresh.
+ */
+export type PreviousTriage = {
+  /** "Last triage · 07 Nov · Dr S. Chen". */
+  label: string;
+  /** "07 Nov", for "Carried from 07 Nov". */
+  when: string;
+  urgencyText: string;
+  outcome: string;
+  legal: string;
+  review: string;
+  /** Past (history) factors marked present then: the only thing Carry forward brings. */
+  pastFlags: readonly string[];
+  pastSummary: string;
+  /** Current factors marked present then, only to say what is new today. Never carried forward. */
+  nowFlags: readonly string[];
+};
 
 /** The referral a triage answers, as the record holds it. */
 export type TriageReferral = {
@@ -797,7 +770,7 @@ export type TriageReferral = {
 export type TriagePerson = {
   /** The record id the patient record opens on. */
   id: string;
-  /** Surname first: "Harlow, Jesse". */
+  /** Surname first: "Ridgewell, Ada". */
   name: string;
   meta: string;
   umrn: string;
@@ -809,74 +782,18 @@ export type TriagePerson = {
   legalTag: string;
   alert: string | null;
   alertCount: number;
+  /** Every alert on the record, allergies aside, for the Alerts tab; `alert` alone when left out. */
+  alerts?: readonly string[];
   allergies: string;
   referral: TriageReferral | null;
-  /** Whether a synthetic previous triage is on record (only the Example has one). */
-  lastTriage: boolean;
+  /** The last signed triage on record, or null ("No previous triage on record"). */
+  last: PreviousTriage | null;
   /** The app address of the person's record. */
   recordHref: string;
-  /** Only the worked Example carries the full synthetic record (alerts, contacts, profile). */
-  example: boolean;
 };
 
-/** Synthetic patient banner and record: the worked Example. */
-export const PATIENT: TriagePerson = {
-  id: "196zcp24w5t0",
-  name: "Harlow, Jesse",
-  meta: "Male · 34y",
-  umrn: "SYN 40-2271",
-  dob: "14/03/1992",
-  nowAt: "Synthetic ED · bay 7",
-  team: "Active",
-  legal: "Community treatment order",
-  legalTag: "Form 5A, as typed · Not legally checked.",
-  alert: "Violence to staff, Mar 2025",
-  alertCount: 3,
-  allergies: "Penicillin (rash) · Haloperidol (dystonia)",
-  referral: {
-    id: "R-1182",
-    from: "Synthetic ED",
-    urgency: REFERRER_URGENCY,
-    episode: "ED",
-    referrer: { name: "Dr P. Singh", role: "ED registrar", phone: "(08) 5550 0190" },
-    received: "eReferral 06/11 08:55",
-  },
-  lastTriage: true,
-  recordHref: "/ward-flow/people/196zcp24w5t0",
-  example: true,
-};
-
-/** The signed-in clinician in the preview world (synthetic), who reviews and signs. */
+/** The signed-in clinician in the synthetic world, who reviews and signs. */
 export const SIGNED_IN = "Dr S. Chen";
-
-export const ALERTS = [
-  {
-    title: "Violence to staff",
-    detail:
-      "Assaulted a staff member during an inpatient stay. Security nearby on admission. Source: Synthetic Hospital.",
-    when: "Mar 2025",
-    tone: "warning",
-  },
-  {
-    title: "Absconding",
-    detail: "Left a locked unit over a fence. Check doors and observation level. Source: Synthetic Hospital.",
-    when: "Aug 2024",
-    tone: "warning",
-  },
-  {
-    title: "Depot missed",
-    detail: "Fortnightly depot due 30 Oct, not given. Source: Synthetic East CMHT.",
-    when: "30 Oct",
-    tone: "neutral",
-  },
-] as const;
-
-export const CONTACTS = [
-  ["Phone", "0491 570 156", ""],
-  ["Carer · mother", "0491 570 159", "R. Harlow"],
-  ["Case manager", "(08) 5550 0142", "K. Morgan, Synthetic East CMHT"],
-  ["GP", "(08) 5550 0177", "Dr L. Hart, Sample Medical"],
-] as const;
 
 export const HOW_TO = [
   [

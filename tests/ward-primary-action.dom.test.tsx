@@ -45,6 +45,19 @@ function renderBar(primaryAction?: WardPrimaryAction) {
   );
 }
 
+/** New, then Referral: the way into today's referral slide-out since 7 Nov 2026. */
+async function openReferralFromNew(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByTestId("ward-bar-primary-action"));
+  await user.click(await screen.findByTestId("ward-new-referral"));
+}
+
+/** The bar's referral action reads "New" with a caret and opens the Triage or Referral menu. */
+function expectNewMenuTrigger() {
+  const trigger = screen.getByTestId("ward-bar-primary-action");
+  expect(trigger.textContent?.trim()).toBe("New");
+  expect(trigger).toHaveAttribute("aria-haspopup", "menu");
+}
+
 afterEach(() => {
   resetWardLiveRegionForTests();
   // The slide-out keeps an unsent draft in memory between opens; each test starts with none.
@@ -66,17 +79,21 @@ describe("WardBar primary action — the five kinds, D-16", () => {
    * UX audit (21 Oct 2026): New referral opens the slide-out at once. The bar used to ask "To a
    * ward / To community / To an ED" in a menu and the slide-out then asked the same question again,
    * so the destination is now chosen only on the slide-out's own "Refer to" switch.
+   *
+   * Triage and risk (Josh's approved mock-up, built 7 Nov 2026): the button reads "New" with a caret
+   * and offers Triage or Referral. Referral opens the same slide-out, unchanged, with no destination
+   * menu of its own; the destination is still chosen only on the slide-out's switch.
    */
-  it('renders the "new-referral" trigger as a button that opens the slide-out with no menu first', async () => {
+  it('renders the "new-referral" trigger as New, whose Referral opens the slide-out with no destination menu', async () => {
     const user = userEvent.setup();
     renderBar({ kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU });
 
     const trigger = screen.getByTestId("ward-bar-primary-action");
-    expect(trigger).toHaveTextContent("New referral");
+    expect(trigger.textContent?.trim()).toBe("New");
     expect(trigger.tagName).toBe("BUTTON");
-    expect(trigger).not.toHaveAttribute("aria-haspopup");
+    expect(trigger).toHaveAttribute("aria-haspopup", "menu");
 
-    await user.click(trigger);
+    await openReferralFromNew(user);
     expect(screen.queryByTestId("ward-bar-primary-panel")).toBeNull();
     const drawer = await screen.findByTestId("ward-bar-referral-sheet");
     expect(within(drawer).getByTestId("ward-referral-refer-to-ward")).toHaveAttribute("aria-pressed", "true");
@@ -88,7 +105,7 @@ describe("WardBar primary action — the five kinds, D-16", () => {
       const user = userEvent.setup();
       renderBar({ kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU });
 
-      await user.click(screen.getByTestId("ward-bar-primary-action"));
+      await openReferralFromNew(user);
       const drawer = await screen.findByTestId("ward-bar-referral-sheet");
       await user.click(within(drawer).getByTestId(`ward-referral-refer-to-${destination}`));
       expect(within(drawer).getByTestId(`ward-referral-refer-to-${destination}`)).toHaveAttribute(
@@ -146,7 +163,7 @@ describe("WardBar primary action — the five kinds, D-16", () => {
 });
 
 describe("WardBarMount — the layout-level route resolution, D-16", () => {
-  it("resolves the coordinator home route to the New referral menu", () => {
+  it("resolves the coordinator home route to the New menu (Triage or Referral)", () => {
     route.pathname = "/ward-flow";
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -154,12 +171,12 @@ describe("WardBarMount — the layout-level route resolution, D-16", () => {
         <WardBarMount />
       </WardFlowProvider>,
     );
-    expect(screen.getByTestId("ward-bar-primary-action")).toHaveTextContent("New referral");
+    expectNewMenuTrigger();
   });
 
   // Device audit, 11 Oct 2026 (stable shell): the header primary stays New referral everywhere;
   // Record a decision lives on the movement page itself.
-  it("resolves a movement detail route to New referral, like every other page", () => {
+  it("resolves a movement detail route to New (the referral action), like every other page", () => {
     route.pathname = "/ward-flow/movements/mv-0001";
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
@@ -167,13 +184,13 @@ describe("WardBarMount — the layout-level route resolution, D-16", () => {
         <WardBarMount />
       </WardFlowProvider>,
     );
-    expect(screen.getByTestId("ward-bar-primary-action")).toHaveTextContent("New referral");
+    expectNewMenuTrigger();
   });
 
   // Universal header (Josh, 9 Oct 2026): every page offers New referral. A route the list does not
   // cover, or one marked "none", falls back to it on desktop as it already did on the phone.
   it.each(["/ward-flow/handover", "/ward-flow/discharges", "/ward-flow/people/pt-0001"])(
-    "resolves %s, which has no action of its own, to New referral",
+    "resolves %s, which has no action of its own, to New (the referral action)",
     (pathname) => {
       route.pathname = pathname;
       render(
@@ -182,7 +199,7 @@ describe("WardBarMount — the layout-level route resolution, D-16", () => {
           <WardBarMount />
         </WardFlowProvider>,
       );
-      expect(screen.getByTestId("ward-bar-primary-action")).toHaveTextContent("New referral");
+      expectNewMenuTrigger();
     },
   );
 
