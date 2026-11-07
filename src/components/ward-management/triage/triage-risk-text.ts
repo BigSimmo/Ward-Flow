@@ -57,13 +57,16 @@ export function hasPhrase(line: string, phrase: string, domain?: string): boolea
         text = text.replace(phraseRe(other, "gi"), " ");
     }
   }
-  text = text.replace(new RegExp(`(^|[^a-z])(${NEGATIONS.join("|")})\\s+${escapeRegExp(phrase)}(?![a-z])`, "gi"), " ");
+  text = text.replace(
+    new RegExp(String.raw`(^|[^a-z])(${NEGATIONS.join("|")})\s+${escapeRegExp(phrase)}(?![a-z])`, "gi"),
+    " ",
+  );
   return phraseRe(phrase).test(text);
 }
 
 /** Removes one phrase from a line, tidying the comma or full stop around it. */
 function dropPhrase(line: string, phrase: string): string {
-  const match = line.match(new RegExp(`(^|,\\s*|[.;]\\s*)${escapeRegExp(phrase)}(?![a-z])`, "i"));
+  const match = line.match(new RegExp(String.raw`(^|,\s*|[.;]\s*)${escapeRegExp(phrase)}(?![a-z])`, "i"));
   if (!match || match.index === undefined) return line;
   const pre = line.slice(0, match.index);
   let post = line.slice(match.index + match[0].length);
@@ -108,7 +111,7 @@ export function toggleBoxPhrase(box: string, domain: string, phrase: string): { 
     next = current ? `${current}, ${lowerFirst(phrase)}` : phrase;
   }
   if (next) return { box: box.replace(lineRe, (_whole, head: string) => `${head} ${next}`), replaced };
-  const emptied = box.replace(new RegExp(`^${escapeRegExp(label)}:.*(\\n|$)`, "mi"), "").replace(/\n$/, "");
+  const emptied = box.replace(new RegExp(String.raw`^${escapeRegExp(label)}:.*(\n|$)`, "mi"), "").replace(/\n$/, "");
   return { box: emptied, replaced };
 }
 
@@ -198,7 +201,7 @@ function headingsKnown(): readonly string[] {
  */
 export function parseHeadedText(text: string): [string, string][] {
   const known = headingsKnown();
-  const re = new RegExp(`^(${known.map(escapeRegExp).join("|")})(\\s*\\([^)]{0,60}\\))?\\s*:\\s*(.*)$`, "i");
+  const re = new RegExp(String.raw`^(${known.map(escapeRegExp).join("|")})(\s*\([^)]{0,60}\))?\s*:\s*(.*)$`, "i");
   const out: [string, string][] = [];
   for (const raw of text.split(/\n/)) {
     const line = raw.trim();
