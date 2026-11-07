@@ -18,7 +18,7 @@
  * Synthetic data only.
  */
 import { Check, Info } from "lucide-react";
-import { useRef, type KeyboardEvent, type ReactNode } from "react";
+import { useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 
 import {
   AppliedFilter,
@@ -56,6 +56,9 @@ import { useHeadedBox } from "./triage-risk-review";
 import { fdvOutcome, restConfirmed, restSets, sinceLastText, type TriageState } from "./triage-risk-state";
 import { boxLine, hasPhrase, wordCount } from "./triage-risk-text";
 import styles from "./triage-risk-redesign.module.css";
+
+/** How many factor names a long "Covers" line shows before "Show all". */
+const COVERS_SHOWN = 6;
 
 const toggleIn = (list: readonly string[], value: string) =>
   list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
@@ -165,6 +168,7 @@ function SubHead({ tag, note, kind, action }: { tag: string; note: string; kind:
  */
 function Covers({ form, kind }: { form: FormApi; kind: "now" | "bg" }) {
   const { state } = form;
+  const [showAll, setShowAll] = useState(false);
   const value = kind === "now" ? state.rest : state.restPast;
   if (!value) return null;
   const sets = restSets(state, kind);
@@ -176,12 +180,29 @@ function Covers({ form, kind }: { form: FormApi; kind: "now" | "bg" }) {
     form.set("restCov", keys);
     form.say(`Rest of current risk confirmed for ${keys.length} factors.`);
   };
+  // 7 Nov 2026: a long list shows its first few names, except while a confirmation still asks
+  // about all of them.
+  const confirming = notPresent && kind === "now" && !restConfirmed(state);
+  const short = list.length > COVERS_SHOWN + 2 && !confirming;
+  const names = short && !showAll ? list.slice(0, COVERS_SHOWN) : list;
   return (
     <div className={styles.covers} data-refocus={`covers-${kind}`}>
       <span>
         <b>Covers {list.length}</b> unmarked {kind === "now" ? "current" : "history"} factors as {word}:{" "}
-        {list.map((f) => f.name).join(", ") || "none"}.
+        {names.map((f) => f.name).join(", ") || "none"}
+        {short && !showAll ? ` and ${list.length - COVERS_SHOWN} more.` : "."}
       </span>
+      {short ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className={`${phoneRows.chip} ${styles.coversMore}`}
+          aria-expanded={showAll}
+          onClick={() => setShowAll((open) => !open)}
+        >
+          {showAll ? "Show fewer" : `Show all ${list.length}`}
+        </Button>
+      ) : null}
       {notPresent && sets.conflicts.length ? (
         <span className={styles.conflicts}>
           <StatusGlyph tone="warning" size={8} />

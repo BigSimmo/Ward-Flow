@@ -11,7 +11,7 @@
  *
  * Synthetic data only.
  */
-import { Copy } from "lucide-react";
+import { Copy, FilePlus2 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 
 import {
@@ -43,7 +43,14 @@ import {
 import { Choice, type FormApi } from "./triage-risk-parts";
 import { FactorRow } from "./triage-risk-risk";
 import { allFactors, type Requirement, type Target } from "./triage-risk-state";
-import { summaryModel, summaryText, type DocBlock, type DocValue, type SignedBy } from "./triage-risk-summary";
+import {
+  partText,
+  summaryModel,
+  summaryText,
+  type DocBlock,
+  type DocValue,
+  type SignedBy,
+} from "./triage-risk-summary";
 import styles from "./triage-risk-redesign.module.css";
 
 const summaryTabs = (alertCount: number) => [
@@ -123,27 +130,43 @@ function DocSection({
   letter,
   title,
   onEdit,
+  onCopy,
   children,
 }: {
   letter: string;
   title: string;
   /** Left out once signed: the record is read-only. */
   onEdit?: () => void;
+  /** Copies this part alone, for its own PSOLIS box. */
+  onCopy: () => void;
   children: ReactNode;
 }) {
   return (
-    <section className={styles.docSection}>
-      <h3 className={styles.docHead}>
-        <span className={styles.mono} aria-hidden="true">
-          {letter}
-        </span>
-        {title}
-        {onEdit ? (
-          <Button variant="ghost" size="sm" className={styles.pushEnd} onClick={onEdit} aria-label={`Edit ${title}`}>
-            Edit
+    <section className={styles.docSection} aria-labelledby={`triage-doc-${letter}`}>
+      <div className={styles.docHead}>
+        <h3 className={styles.docHeadTitle} id={`triage-doc-${letter}`}>
+          <span className={styles.mono} aria-hidden="true">
+            {letter}
+          </span>
+          {title}
+        </h3>
+        <span className={`${styles.docTools} ${styles.pushEnd}`}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCopy}
+            aria-label={`Copy ${title}`}
+            data-testid={`triage-copy-part-${letter}`}
+          >
+            Copy
           </Button>
-        ) : null}
-      </h3>
+          {onEdit ? (
+            <Button variant="ghost" size="sm" onClick={onEdit} aria-label={`Edit ${title}`}>
+              Edit
+            </Button>
+          ) : null}
+        </span>
+      </div>
       {children}
     </section>
   );
@@ -194,6 +217,9 @@ export function SummaryDocument({ form, jump, signed }: { form: FormApi; jump?: 
             letter={part.letter}
             title={part.title}
             onEdit={jump && !signed ? () => jump(part.edit) : undefined}
+            onCopy={() =>
+              copyText(partText(part), `${part.title} copied.`, "Copy not allowed here. Select the text instead.", say)
+            }
           >
             {part.blocks.map((block, index) => (
               <Block key={`${part.letter}-${index}`} block={block} />
@@ -236,7 +262,7 @@ function BeforeYouSign({ reqs, jump }: { reqs: readonly Requirement[]; jump: Jum
         <span className={`${styles.mono} ${styles.pushEnd}`}>{counts}</span>
       </div>
       {needed.length || toCheck.length ? (
-        <ChipGroup label="Go to what is left">
+        <ChipGroup label="Go to what is left" className={styles.gapChips}>
           {[...needed, ...toCheck].map((r, index) => (
             <Button
               key={`${index}-${r.label}`}
@@ -538,11 +564,14 @@ export function HowToDrawer({
   onClose,
   example,
   onExample,
+  onStartNew,
 }: {
   open: boolean;
   onClose: () => void;
   example: "example" | "blank";
   onExample: (value: "example" | "blank") => void;
+  /** Start a triage for someone else: the Start a triage step (7 Nov 2026: moved here from the banner). */
+  onStartNew: () => void;
 }) {
   return (
     <PanelDrawer
@@ -554,6 +583,15 @@ export function HowToDrawer({
       testId="triage-how-sheet"
     >
       <div className={styles.pane}>
+        <div className={styles.startNew}>
+          <p className={`${styles.quiet} ${styles.grow}`}>
+            <b>Someone else?</b> Choose who the triage is for, and the form opens blank. New, then Triage, in the app
+            bar does the same.
+          </p>
+          <Button size="sm" icon={FilePlus2} onClick={onStartNew} data-testid="triage-start-new">
+            Start a new triage
+          </Button>
+        </div>
         <ol className={styles.steps}>
           {HOW_TO.map(([title, text]) => (
             <li key={title}>

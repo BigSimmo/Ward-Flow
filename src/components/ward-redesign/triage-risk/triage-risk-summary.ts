@@ -40,7 +40,7 @@ export type DocBlock =
   | { kind: "missing"; text: string }
   | { kind: "tags"; label: string; items: readonly string[] };
 
-type DocPart = { letter: string; title: string; edit: SectionId; blocks: DocBlock[] };
+export type DocPart = { letter: string; title: string; edit: SectionId; blocks: DocBlock[] };
 
 export type SummaryModel = {
   kicker: string;
@@ -371,19 +371,27 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
   };
 }
 
+function blockLines(block: DocBlock): string[] {
+  if (block.kind === "facts") return block.rows.map(([label, v]) => `${label.trim()}: ${valueText(v)}`);
+  if (block.kind === "tags") return [`${block.label}: ${block.items.join(", ")}`];
+  if (block.kind === "missing") return [block.text];
+  return [valueText(block.value)];
+}
+
+/**
+ * One part as plain text for its own PSOLIS box (7 Nov 2026): its lines in document order, one per
+ * line, without the part heading (the box already has one). It never holds the UMRN; the copy
+ * helper adds the synthetic first line.
+ */
+export function partText(part: DocPart): string {
+  return part.blocks.flatMap(blockLines).join("\n");
+}
+
 /** The summary as plain text, in the same structure: lines kept, a blank line between sections. */
 export function summaryText(model: SummaryModel): string {
-  const blockLines = (block: DocBlock): string[] => {
-    if (block.kind === "facts") return block.rows.map(([label, v]) => `${label.trim()}: ${valueText(v)}`);
-    if (block.kind === "tags") return [`${block.label}: ${block.items.join(", ")}`];
-    if (block.kind === "missing") return [block.text];
-    return [valueText(block.value)];
-  };
   return [
     [model.kicker, model.name, model.keyLine].join("\n"),
-    ...model.parts.map((part) =>
-      [`${part.letter}. ${part.title.toUpperCase()}`, ...part.blocks.flatMap(blockLines)].join("\n"),
-    ),
+    ...model.parts.map((part) => [`${part.letter}. ${part.title.toUpperCase()}`, partText(part)].join("\n")),
     ["SIGNATURE", ...model.signature].join("\n"),
     model.foot.join(" · "),
   ].join("\n\n");

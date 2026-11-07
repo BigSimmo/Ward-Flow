@@ -15,7 +15,7 @@
  * form read-only, the summary and the next actions. Without `?start=new` the page opens on the
  * worked Example for review.
  */
-import { BellRing, BookUser, CircleHelp, FilePlus2, FileText, Inbox } from "lucide-react";
+import { BellRing, BookUser, CircleHelp, FileText, Inbox } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -43,6 +43,7 @@ import { phoneRows } from "@/components/wf/phone-rows";
 import { useMinuteNow } from "@/components/wf/use-minute-now";
 
 import { DecisionBody } from "./triage-risk-decision";
+import { FOLDABLE, foldedSections, foldLine } from "./triage-risk-fold";
 import {
   LEGAL,
   REVIEW,
@@ -171,6 +172,103 @@ function goToTarget(section: SectionId, target: Target | undefined, openAllFacto
   goToSection(section);
 }
 
+const TABBABLE =
+  "button:not([disabled]):not([tabindex='-1']), input:not([disabled]), textarea:not([disabled]), [tabindex='0']";
+
+/** Puts focus on a section's first control once it has opened (scrolling it into view if needed). */
+function focusSectionStart(section: SectionId) {
+  window.setTimeout(() => {
+    const body = document.querySelector(`#triage-${section} [data-fold-body]`);
+    const first = [...(body?.querySelectorAll<HTMLElement>(TABBABLE) ?? [])].find(shown);
+    first?.focus();
+  }, 0);
+}
+
+const sectionOf = (target: EventTarget | null): SectionId | null =>
+  target instanceof Element
+    ? ((target.closest<HTMLElement>("[data-section]")?.dataset.section as SectionId | undefined) ?? null)
+    : null;
+const isFoldChange = (target: EventTarget | null) =>
+  target instanceof Element && Boolean(target.closest("[data-fold-change]"));
+
+/**
+ * The section being worked in (7 Nov 2026): the last one that took focus, or a press on a browser
+ * that does not focus on a press. Focus leaving for the page or a slide-out releases it, so a
+ * finished section folds; focus still inside keeps it open. `opening` holds a section a jump or
+ * Change is opening until focus lands in it.
+ */
+function useEngagedSection() {
+  const [engaged, setEngaged] = useState<SectionId | null>(null);
+  const [opening, setOpening] = useState<SectionId | null>(null);
+  useEffect(() => {
+    // During a press the change waits for the press to end: a section folding above the pointer on
+    // pointerdown would move the page under it, and the click would land on something else.
+    let pressing = false;
+    let queued: (() => void) | null = null;
+    const apply = (change: () => void) => {
+      if (pressing) queued = change;
+      else change();
+    };
+    const engage = (id: SectionId | null) => () => {
+      setEngaged(id);
+      if (id) setOpening((current) => (current === id ? null : current));
+    };
+    const onFocusIn = (event: FocusEvent) => {
+      if (isFoldChange(event.target)) return;
+      apply(engage(sectionOf(event.target)));
+    };
+    const onFocusOut = (event: FocusEvent) => {
+      if (event.relatedTarget) return;
+      // Focus went to the page itself (a press on plain text): released, unless it is still inside.
+      window.setTimeout(() => {
+        if (document.hasFocus() && !sectionOf(document.activeElement)) apply(engage(null));
+      }, 0);
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      if (isFoldChange(event.target)) return;
+      pressing = true;
+      const id = sectionOf(event.target);
+      if (id) queued = engage(id);
+    };
+    let fallback = 0;
+    const finish = () => {
+      window.clearTimeout(fallback);
+      if (!pressing) return;
+      pressing = false;
+      const change = queued;
+      queued = null;
+      change?.();
+    };
+    // After the click has run; a press that makes no click (a drag) ends a moment later.
+    const onClick = () => window.setTimeout(finish, 0);
+    const onPointerEnd = () => {
+      if (!pressing) return;
+      window.clearTimeout(fallback);
+      fallback = window.setTimeout(finish, 400);
+    };
+    document.addEventListener("focusin", onFocusIn);
+    document.addEventListener("focusout", onFocusOut);
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("pointerup", onPointerEnd);
+    document.addEventListener("pointercancel", onPointerEnd);
+    document.addEventListener("click", onClick);
+    return () => {
+      window.clearTimeout(fallback);
+      document.removeEventListener("click", onClick);
+      document.removeEventListener("focusin", onFocusIn);
+      document.removeEventListener("focusout", onFocusOut);
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("pointerup", onPointerEnd);
+      document.removeEventListener("pointercancel", onPointerEnd);
+    };
+  }, []);
+  const open = useCallback((section: SectionId) => {
+    setEngaged(null);
+    setOpening(section);
+  }, []);
+  return { engaged, opening, open };
+}
+
 type FocusMemory = { el: HTMLElement; box: string | null; index: number; label: string; section: string | null };
 
 /**
@@ -266,6 +364,8 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
   const now = useMinuteNow();
   const navLock = useRef(0);
   useFocusKeeper(state);
+  const engagement = useEngagedSection();
+  const openSection = engagement.open;
   const signed = signedAt !== null;
 
   const say = useCallback(
@@ -279,11 +379,16 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
     setTab(next);
     setSheet("sum");
   }, []);
-  const jump = useCallback((section: SectionId, target?: Target) => {
-    setSheet(null);
-    if (section === "rev") setEditingReview(true);
-    window.setTimeout(() => goToTarget(section, target, () => setSheet("all")), 0);
-  }, []);
+  const jump = useCallback(
+    (section: SectionId, target?: Target) => {
+      setSheet(null);
+      if (section === "rev") setEditingReview(true);
+      // A folded section opens before the scroll, so the jump lands on its field.
+      openSection(section);
+      window.setTimeout(() => goToTarget(section, target, () => setSheet("all")), 0);
+    },
+    [openSection],
+  );
   const formApi: FormApi = useMemo(
     () => ({
       state,
@@ -309,6 +414,13 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
     ReturnType<typeof sectionStatus>
   >;
   const sectionsDone = SECTIONS.filter((s) => status[s.id].done).length;
+  // Folds only when nothing is needed or left to check, so a fold never hides a check.
+  const folded = foldedSections({
+    done: Object.fromEntries(FOLDABLE.map((id) => [id, status[id].done && status[id].toCheck === 0])),
+    engaged: engagement.engaged,
+    opening: engagement.opening,
+    signed,
+  });
   const flagCount = allFactors(state).filter((f) => f.mark === "y").length;
 
   // The index marks the section in view.
@@ -368,7 +480,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
     <Button
       variant="pri"
       disabledReason={left ? `${left} left before signing` : undefined}
-      reasonDisplay={where === "foot" ? "inline" : "tooltip"}
+      reasonDisplay="tooltip"
       onUnavailablePress={() => {
         const names = needed.map((r) => r.label);
         say(`Still needed: ${names.slice(0, 3).join(", ")}${names.length > 3 ? ` and ${names.length - 3} more` : ""}`);
@@ -400,6 +512,19 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
     >
       {isPhone ? phoneLabel : label}
       {extra}
+    </Button>
+  );
+
+  const howToButton = (
+    <Button
+      variant="onHero"
+      size="sm"
+      icon={CircleHelp}
+      className={phoneRows.heroPill}
+      onClick={() => setSheet("how")}
+      aria-haspopup="dialog"
+    >
+      How to
     </Button>
   );
 
@@ -447,29 +572,9 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
           eyebrow={`Triage and risk · Synthetic · ${signed ? "Signed" : left ? `${left} left before signing` : "Ready to sign"}`}
           title={<FormalName name={person.name} />}
           titleMeta={person.meta}
-          aside={
-            <div className={phoneRows.heroPills}>
-              <Button
-                variant="onHero"
-                size="sm"
-                icon={FilePlus2}
-                className={phoneRows.heroPill}
-                onClick={onStartNew}
-                data-testid="triage-start-new"
-              >
-                {isPhone ? "New triage" : "Start a new triage"}
-              </Button>
-              <Button
-                variant="onHero"
-                size="sm"
-                icon={CircleHelp}
-                className={phoneRows.heroPill}
-                onClick={() => setSheet("how")}
-              >
-                How to
-              </Button>
-            </div>
-          }
+          // 7 Nov 2026: one quiet on-hero action. Start a new triage moved into How to (and New, then
+          // Triage, in the app bar); on a phone How to joins the record row so the banner keeps one row.
+          aside={isPhone ? undefined : howToButton}
           stats={
             isPhone ? undefined : (
               <>
@@ -549,7 +654,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                 ) : undefined,
               )}
               {bannerLink("Patient profile", "Profile", BookUser, () => openSummary("profile"))}
-              {isPhone ? null : bannerLink("Referral", "Referral", Inbox, () => openSummary("ref"))}
+              {isPhone ? howToButton : bannerLink("Referral", "Referral", Inbox, () => openSummary("ref"))}
             </div>
           }
           condensed={`${person.name} · ${person.umrn} · ${signed ? "Signed" : left ? `${left} left before signing` : "Ready to sign"}`}
@@ -620,15 +725,49 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                     Risk assessment and management plan <span className={styles.mono}>SMHMR905</span>
                   </h2>
                 ) : null}
-                <SectionCard id={s.id} n={s.n} title={s.label} sub={SUB[s.id]} status={status[s.id]}>
+                <SectionCard
+                  id={s.id}
+                  n={s.n}
+                  title={s.label}
+                  sub={SUB[s.id]}
+                  status={status[s.id]}
+                  fold={
+                    FOLDABLE.includes(s.id)
+                      ? {
+                          folded: folded.has(s.id),
+                          line: foldLine(state, s.id),
+                          onOpen: () => {
+                            openSection(s.id);
+                            focusSectionStart(s.id);
+                          },
+                        }
+                      : undefined
+                  }
+                >
                   {sectionBody[s.id]}
                   {s.id === "plan" && !isPhone && !signed ? (
-                    <div className={styles.signFoot}>
-                      <span className={styles.grow}>
-                        {left
-                          ? `Needed: ${needed.map((r) => r.label).join(", ")}.`
-                          : "Everything needed is in. Signing creates both records."}{" "}
-                        Draft is not saved in this mock-up.
+                    <div className={styles.signFoot} data-testid="triage-sign-foot">
+                      {/* 7 Nov 2026: one short line; the full list is the summary's Before you sign. */}
+                      <span className={`${styles.grow} ${styles.inline}`}>
+                        {left ? (
+                          <>
+                            <span>
+                              <b className={styles.mono}>{left}</b> left before signing
+                            </span>
+                            <span aria-hidden="true">·</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className={styles.showLeft}
+                              onClick={() => openSummary("sum")}
+                              aria-haspopup="dialog"
+                            >
+                              Show what&apos;s left
+                            </Button>
+                          </>
+                        ) : (
+                          "Everything needed is in. Signing creates both records."
+                        )}
                       </span>
                       <Button variant="ghost" onClick={() => say(NOT_WIRED)}>
                         Awaiting information
@@ -681,7 +820,16 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
         jump={jump}
         signButton={signed ? null : signButton("sheet")}
       />
-      <HowToDrawer open={sheet === "how"} onClose={() => setSheet(null)} example={start} onExample={loadStart} />
+      <HowToDrawer
+        open={sheet === "how"}
+        onClose={() => setSheet(null)}
+        example={start}
+        onExample={loadStart}
+        onStartNew={() => {
+          setSheet(null);
+          onStartNew();
+        }}
+      />
       <AllFactorsDrawer form={formApi} open={sheet === "all"} onClose={() => setSheet(null)} />
       <Dialog
         open={confirming}

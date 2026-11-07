@@ -141,10 +141,11 @@ export function MentalStateBody({ form }: { form: FormApi }) {
             value={state.text.mseBox}
             onChange={(event) => form.setText("mseBox", event.target.value)}
           />
+          {/* 7 Nov 2026: one short foot; the placeholder and Show phrases already say how to add. */}
           <div className={styles.boxFoot}>
-            <span>Show phrases to tap them in under each domain. Tap again to remove.</span>
+            <span>{phrasesOpen ? "Tap a phrase again to remove it." : "One line per domain."}</span>
             <span className={styles.mono} data-testid="triage-mse-count">
-              {mseAnsweredCount(state)} of {MSE.length} domains answered or marked Not assessed
+              {mseAnsweredCount(state)} of {MSE.length} domains
             </span>
           </div>
           {phrasesOpen ? (

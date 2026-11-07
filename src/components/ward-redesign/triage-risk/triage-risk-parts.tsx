@@ -158,13 +158,20 @@ export function StatusMark({ status, withText = true }: { status: SectionStatus;
   );
 }
 
-/** A numbered form section on the kit card. */
+/**
+ * A finished section folded to one line (7 Nov 2026): the facts it holds and Change. Change, or
+ * tabbing onto it, opens the section and puts focus on its first control.
+ */
+export type SectionFold = { folded: boolean; line: readonly string[]; onOpen: () => void };
+
+/** A numbered form section on the kit card; with `fold`, it can fold to one line once finished. */
 export function SectionCard({
   id,
   n,
   title,
   sub,
   status,
+  fold,
   children,
 }: {
   id: SectionId;
@@ -172,9 +179,11 @@ export function SectionCard({
   title: string;
   sub: string;
   status: SectionStatus;
+  fold?: SectionFold;
   children: ReactNode;
 }) {
   const headingId = `triage-h-${id}`;
+  const bodyId = `triage-body-${id}`;
   return (
     <Card
       id={`triage-${id}`}
@@ -196,7 +205,38 @@ export function SectionCard({
         meta={<span className={styles.secSub}>{sub}</span>}
         aside={<StatusMark status={status} />}
       />
-      <CardBody className={styles.sectionBody}>{children}</CardBody>
+      <CardBody className={styles.sectionBody}>
+        {fold?.folded ? (
+          <div className={styles.oneLine} data-testid={`triage-fold-${id}`}>
+            {fold.line.map((bit) => (
+              <span key={bit}>{bit}</span>
+            ))}
+            <Button
+              variant="ghost"
+              size="sm"
+              className={styles.pushEnd}
+              data-fold-change=""
+              aria-expanded={false}
+              aria-controls={bodyId}
+              aria-label={`Change ${title}`}
+              onClick={fold.onOpen}
+              onFocus={(event) => {
+                // Tabbing in opens it; a press is handled by the click.
+                if (event.currentTarget.matches(":focus-visible")) fold.onOpen();
+              }}
+            >
+              Change
+            </Button>
+          </div>
+        ) : null}
+        {fold ? (
+          <div id={bodyId} className={styles.foldBody} hidden={fold.folded} data-fold-body="">
+            {children}
+          </div>
+        ) : (
+          children
+        )}
+      </CardBody>
     </Card>
   );
 }

@@ -1069,10 +1069,28 @@
 .docHead {
   display: flex;
   align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-target);
+}
+
+.docHeadTitle {
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
   margin: 0;
   font-size: var(--wf-fs-12);
   font-weight: 600;
+  color: var(--wf-ink-3);
+}
+
+/* Copy and Edit sit quiet at the part's right; ink-3 until hovered or focused. */
+.docTools {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.docTools > button:not(:hover, :focus-visible) {
   color: var(--wf-ink-3);
 }
 
@@ -1469,4 +1487,69 @@
   .edgeTab {
     display: none;
   }
+}
+
+/* Finished sections fold to one line (7 Nov 2026); the body stays mounted so its own choices keep. */
+.foldBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.foldBody[hidden] {
+  display: none;
+}
+
+/* A row inside a reveal keeps its control on the same line as the rows outside it (the reveal's
+   12px padding and 1px edge come off the label column). */
+.reveal > .row {
+  grid-template-columns: calc(10rem - var(--wf-s-3) - 1px) minmax(0, 1fr);
+}
+
+/* The sign line's Show what's left sits on the text line, without the button's side padding. */
+.showLeft.showLeft {
+  margin-left: calc(-1 * var(--wf-s-1));
+}
+
+.signFoot b {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+/* How to: Start a new triage, first (moved from the banner). */
+.startNew {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+@media (max-width: 46.4375rem) {
+  .reveal > .row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Covers' Show all sits under its line, flush with the text. */
+.coversMore {
+  margin: calc(-1 * var(--wf-s-1)) 0 0 calc(-1 * var(--wf-s-2));
+}
+
+/* Before you sign: each item keeps its words on one line and the list wraps, so no item is
+   squeezed to a few letters on a phone. */
+.gapChips.gapChips {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.gapChips > button {
+  flex: none;
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
 }
