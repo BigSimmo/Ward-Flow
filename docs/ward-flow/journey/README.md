@@ -200,3 +200,7 @@ Source digests for Alerts UI were re-reviewed after wording-only edits; event ha
 - Shell footer: **Demo board clock · scenario set on {demo day}**.
 
 These are display-label honesty fixes. They do not change EVENT_ROLE handlers or journey graph edges.
+
+## Source review — 8 Nov 2026 (documentation history move)
+
+Source digests for `ward-change-reasons.ts`, `ward-flow-referral-answer-events.ts` and `ward-model-referral-parts.ts` were re-reviewed after comment-only edits: five comments now cite `docs/history/` paths for moved decision files. No code, event handler, role or cited line changed.

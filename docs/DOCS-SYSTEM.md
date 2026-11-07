@@ -24,6 +24,7 @@ _Updated 2026-11-08 - documentation audit fixes: one home per kind of truth, his
 5. **One map improvement per pass** when cheap.
 6. **Ward Flow repository lock** - confirm `git remote get-url origin` is `https://github.com/BigSimmo/Ward-Flow.git` before editing. Use a separate worktree based on this repository's `main`; confirm the branch and tip before acting. `D:\Worktrees\Database\ward-lead` and `BigSimmo/Database` are legacy sources, not Ward Flow destinations.
 7. **Recheck triggers** - relevant source, boot command or entry path changes refresh affected maintained guidance; operator changes restamp runbooks. Update the existing task receipt at meaningful lifecycle events; preserve dated status evidence.
+8. **Say the evidence limit once.** A document records what was checked; only source, tests and observed runs prove behaviour. State a page's evidence boundary once, near the top, rather than repeating "does not establish" or "is not proof" in every paragraph.
 
 ## Pipeline
 

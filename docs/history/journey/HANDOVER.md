@@ -1,5 +1,5 @@
 > **Historical record.** This retained handover predates the current event catalogue repair.
-> Use [the maintained journey guide](README.md) and current source; old gaps and completion claims
+> Use [the maintained journey guide](../../ward-flow/journey/README.md) and current source; old gaps and completion claims
 > do not establish present behaviour or commission work.
 
 # Ward Journey Explorer — handover
