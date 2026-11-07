@@ -1556,6 +1556,11 @@
 
 /* Legal status: full words on larger screens, the short form ("CTO") below 75rem (Josh, 7 Nov 2026).
    The full name is only visually hidden on smaller screens, so screen readers still hear it. */
+/* Anchors the visually hidden full name, so it never widens a scrolling row. */
+.legalName {
+  position: relative;
+}
+
 .legalShort {
   display: none;
 }

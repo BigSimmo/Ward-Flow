@@ -176,7 +176,18 @@ function DocSection({
  * The document the form builds as it is filled in. Copy writes the same model as plain text. Once
  * signed it is read-only (no Edit) and shown in full.
  */
-export function SummaryDocument({ form, jump, signed }: { form: FormApi; jump?: Jump; signed?: SignedBy }) {
+export function SummaryDocument({
+  form,
+  jump,
+  signed,
+  copyWhenSigned = false,
+}: {
+  form: FormApi;
+  jump?: Jump;
+  signed?: SignedBy;
+  /** The slide-out keeps its whole-document Copy once signed; the signed page has its own Copy summary. */
+  copyWhenSigned?: boolean;
+}) {
   const { state, say } = form;
   const [open, setFull] = useState(false);
   const full = open || Boolean(signed);
@@ -205,7 +216,7 @@ export function SummaryDocument({ form, jump, signed }: { form: FormApi; jump?: 
               {model.keyLine}
             </p>
           </div>
-          {signed ? null : (
+          {signed && !copyWhenSigned ? null : (
             <Button variant="ghost" size="sm" icon={Copy} onClick={copy} data-testid="triage-copy-summary">
               Copy
             </Button>
@@ -317,6 +328,7 @@ export function SummaryDrawer({
   reqs,
   jump,
   signButton,
+  signed,
 }: {
   form: FormApi;
   open: boolean;
@@ -326,8 +338,10 @@ export function SummaryDrawer({
   reqs: readonly Requirement[];
   jump: Jump;
   signButton: ReactNode;
+  /** Once signed, every view and copy shows the signed record, read-only (Codex review, #1494). */
+  signed?: SignedBy;
 }) {
-  const left = reqs.filter((r) => r.blocks && !r.ok).length;
+  const left = signed ? 0 : reqs.filter((r) => r.blocks && !r.ok).length;
   const person = form.state.person;
   return (
     <PanelDrawer
@@ -337,7 +351,7 @@ export function SummaryDrawer({
       subtitle="This triage, the referral and the record. Synthetic."
       tag={
         <Badge tone={left ? "neutral" : "success"} className={styles.noShrink}>
-          {left ? `${left} needed` : "Ready to sign"}
+          {signed ? "Signed" : left ? `${left} needed` : "Ready to sign"}
         </Badge>
       }
       tabs={summaryTabs(person.alertCount)}
@@ -348,7 +362,9 @@ export function SummaryDrawer({
       testId="triage-summary-sheet"
       foot={
         <>
-          <span className={styles.footText}>{left ? `${left} needed before signing` : "Ready to sign"}</span>
+          <span className={styles.footText}>
+            {signed ? `Signed ${signed.at} by ${signed.by}` : left ? `${left} needed before signing` : "Ready to sign"}
+          </span>
           <DrawerFootRow>
             <Button onClick={onClose}>Back to form</Button>
             {signButton}
@@ -359,8 +375,8 @@ export function SummaryDrawer({
       <div className={styles.pane}>
         {tab === "sum" ? (
           <>
-            <BeforeYouSign reqs={reqs} jump={jump} />
-            <SummaryDocument form={form} jump={jump} />
+            {signed ? null : <BeforeYouSign reqs={reqs} jump={jump} />}
+            <SummaryDocument form={form} jump={signed ? undefined : jump} signed={signed} copyWhenSigned />
           </>
         ) : null}
         {tab === "ref" && !person.example ? (

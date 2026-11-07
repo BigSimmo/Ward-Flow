@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { foldedSections, foldLine } from "@/components/ward-redesign/triage-risk/triage-risk-fold";
-import { blankTriage, exampleTriage } from "@/components/ward-redesign/triage-risk/triage-risk-state";
+import { blankTriage, exampleTriage, sinceLastText } from "@/components/ward-redesign/triage-risk/triage-risk-state";
 import { partText, summaryModel, summaryText } from "@/components/ward-redesign/triage-risk/triage-risk-summary";
 
 // Triage and risk mock-up (7 Nov 2026): finished sections fold to one line, and each summary part
@@ -75,5 +75,24 @@ describe("copy one part for its PSOLIS box", () => {
 
   it("gives Mental state as one line per domain, eight lines", () => {
     expect(partText(model.parts[2]!).split("\n")).toHaveLength(8);
+  });
+});
+
+// Codex review on #1494 (7 Nov 2026): a previous flag is "not seen today" only when today's answers
+// say it is absent, never when it is unknown or not yet assessed.
+describe("what changed since the last triage", () => {
+  it("does not call a previous flag absent when Rest of current risk is not answered or Not assessed", () => {
+    const blank = blankTriage();
+    expect(sinceLastText(blank)).not.toMatch(/Not seen today/);
+    expect(sinceLastText({ ...blank, rest: "na" })).not.toMatch(/Not seen today/);
+  });
+
+  it("does not call a flag absent when it is marked Not known", () => {
+    const state = { ...blankTriage(), rest: "np", f: { "general.now.agit": "u" as const } };
+    expect(sinceLastText(state)).not.toMatch(/Not seen today/);
+  });
+
+  it("names a previous flag as not seen today once Rest of current risk is Not present", () => {
+    expect(sinceLastText({ ...blankTriage(), rest: "np" })).toMatch(/Not seen today: distress or agitation\./);
   });
 });

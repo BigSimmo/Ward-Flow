@@ -263,7 +263,10 @@ export function sinceLastText(state: TriageState): string {
     .filter((f) => f.kind === "now" && f.mark === "y")
     .map((f) => f.key);
   const fresh = now.filter((k) => !(LAST_TRIAGE.nowFlags as readonly string[]).includes(k));
-  const gone = LAST_TRIAGE.nowFlags.filter((k) => !now.includes(k));
+  // Codex review (#1494): a previous flag counts as not seen today only when today's answers say so:
+  // not marked present or not known, and Rest of current risk answered Not present. Not known, Not
+  // assessed or no answer yet is uncertainty, never absence.
+  const gone = state.rest === "np" ? LAST_TRIAGE.nowFlags.filter((k) => !now.includes(k) && state.f[k] !== "u") : [];
   const names = (keys: readonly string[]) => keys.map((k) => FACTOR_NAME[k].toLowerCase()).join(", ");
   const parts = [
     fresh.length ? `New since 12 Oct: ${names(fresh)}.` : "",

@@ -86,12 +86,12 @@ function LegalName({ name }: { name: string }) {
   const short = LEGAL_SHORT[name];
   if (!short) return <>{name}</>;
   return (
-    <>
+    <span className={styles.legalName}>
       <span className={styles.legalFull}>{name}</span>
       <span className={styles.legalShort} aria-hidden="true">
         {short}
       </span>
-    </>
+    </span>
   );
 }
 const REVIEW_SHORT: Readonly<Record<string, string>> = Object.fromEntries(
@@ -838,6 +838,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
         reqs={reqs}
         jump={jump}
         signButton={signed ? null : signButton("sheet")}
+        signed={signedAt ? { at: signedAt, by: SIGNED_IN } : undefined}
       />
       <HowToDrawer
         open={sheet === "how"}
