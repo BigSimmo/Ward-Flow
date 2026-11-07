@@ -12,7 +12,7 @@ Synthetic prototype, not a medical device. This file is the written v9 standard.
 
 ## Changes 10 Oct 2026
 
-Elevate is adopted. Josh approved every Elevate recommendation on 10 October ("Go ahead with all your recommendations"). The appraisal and its board are at https://claude.ai/artifact/KVE47Vcu2F7577MxNtVZCu. It brings one action blue, a lit hero, glass you can see by day and a quiet slate for closed (section 3), the Elevate parts (section 12), Glare mode (section 13), and the fixes now written into sections 3 to 9. The page review calls that were pending are now decided (section 14).
+Elevate is adopted. Josh approved every Elevate recommendation on 10 October ("Go ahead with all your recommendations"). The appraisal and its board are at https://claude.ai/artifact/KVE47Vcu2F7577MxNtVZCu. It brings one action blue, a lit hero, glass you can see by day and a quiet slate for closed (section 3), the Elevate parts (section 12), Glare mode (now shown as Bright light) (section 13), and the fixes now written into sections 3 to 9. The page review calls that were pending are now decided (section 14).
 
 ## Changes 31 Oct 2026
 
@@ -305,7 +305,7 @@ Adopted 10 Oct. They live in the sheet and on the board, and reach `src/componen
 
 ## 13. Modes and parked parts
 
-- **Glare mode** is adopted. `data-mode="glare"` on the root, for ward PCs near windows. Surfaces go solid, with no glass or blur. Lines go darker, text goes one weight heavier and glyphs go to 12px.
+- **Glare mode** (now shown as Bright light) is adopted. `data-mode="glare"` on the root, for ward PCs near windows. Surfaces go solid, with no glass or blur. Lines go darker, text goes one weight heavier and glyphs go to 12px.
 - **Night shift mode** is planned, after a contrast check.
 - **Wall mode** is parked until there is a bed meeting screen.
 - **Parked, not in the sheet:** FlowMap, DeparturesBoard, the hero that folds into the bar, and presence on a record, which needs shared state first.
@@ -323,7 +323,7 @@ Adopted 10 Oct. They live in the sheet and on the board, and reach `src/componen
 - T1 pill neutral (10 Oct).
 - Delays filters hide rows (owner ruling, kept now highlight is the default elsewhere).
 - From the 10 Oct page review, decided: a faint overdue zone on time axes only, highlight by default on queues, strip figures at 15 with 20 only in one focal strip per page, 8px people pips, and the shared parts in section 10 built when each page is next touched.
-- Elevate adopted (10 Oct): one action blue, the lit hero, glass you can see by day, closed in slate, the parts in section 12, Glare mode, and the fixes in sections 3 to 9.
+- Elevate adopted (10 Oct): one action blue, the lit hero, glass you can see by day, closed in slate, the parts in section 12, Glare mode (now Bright light), and the fixes in sections 3 to 9.
 - Tier time thresholds remain synthetic and need clinical sign-off.
 - No 48px controls (31 Oct). A phone button is drawn at 40px (32px small) with an invisible cover that keeps the 48px tap area; tabs 32px in a 40px track; desktop segmented and pill tabs 30px at 13px. Placement decisions (Accept, Pull and Decline) keep their full-size button, a full 48px on phones: the one exception (Josh, 31 Oct, 10:34). The 12px floor stays (section 5).
 - No coloured side edges, stripes or tone-coloured borders on rows, cards, tiles or stat boxes (31 Oct: "it feels tacky"; section 3).
@@ -338,7 +338,7 @@ Adopted 10 Oct. They live in the sheet and on the board, and reach `src/componen
 
 ## 15. Next steps
 
-1. **Load v9 in the app.** Done in phase 1: `src/app/ward-flow-v9-tokens.css` loads after the v6 tokens. Phase 2 added the one theme key (`clinical-kb-theme`, written only by `setThemePreference` in `src/lib/theme-client.ts`) and a Glare mode switch in Settings (`clinical-kb-glare`, painted before first render as `data-mode="glare"`).
+1. **Load v9 in the app.** Done in phase 1: `src/app/ward-flow-v9-tokens.css` loads after the v6 tokens. Phase 2 added the one theme key (`clinical-kb-theme`, written only by `setThemePreference` in `src/lib/theme-client.ts`) and a Glare (now Bright light) mode switch in Settings (`clinical-kb-glare`, painted before first render as `data-mode="glare"`).
 2. **Move the shared parts** onto it so every page lifts at once: hero chip, Badge, status words, tabs with the capsule, focus, live chip, toast and density. The shared parts for **Sections 8 to 14** of `design-system-v9.md` live in `src/components/wf/v10-parts.tsx` (historically referred to in `v10-parts.tsx` and `STATUS.md` as "v10 sections 8 to 14"; there is no separate `design/v10/` directory).
 3. **Point the in-app Design showcase at the v9 tokens file**, so it can no longer teach v6.
 4. **Rebuild pages against v9**, weakest first, as the 10 October appraisal set out. Bring in each Elevate part with the first page that needs it.
@@ -348,7 +348,7 @@ Adopted 10 Oct. They live in the sheet and on the board, and reach `src/componen
 ## 16. Verified and not verified
 
 - **Verified.** Before this PR was slimmed, the reference board on the backup branch rendered from its sheet in Chromium (Playwright) in day and night, desktop and phone, with no script errors and no sideways scroll. Every `var(--wf-*)` that sheet reads is defined. Contrast figures for the new values come from the token values. The HTML board and unused v9 CSS are kept on `backup/claude/design-system-v7-4ygmui-pre-slim-20261010` and are not part of this lean PR.
-- **Not verified.** The app pages have only had a first visual check on v9 tokens (six pages, day and night, 1440 and 390). High contrast and print were checked by reading the rules, not on a ward PC or a printer. Backdrop blur performance on ward PCs is unmeasured. Edge support for `light-dark()` on WA Health desktops is unconfirmed. Glare mode has not been tried on a ward PC near a window.
+- **Not verified.** The app pages have only had a first visual check on v9 tokens (six pages, day and night, 1440 and 390). High contrast and print were checked by reading the rules, not on a ward PC or a printer. Backdrop blur performance on ward PCs is unmeasured. Edge support for `light-dark()` on WA Health desktops is unconfirmed. Glare (now Bright light) mode has not been tried on a ward PC near a window.
 
 ## 17. Redesign patterns (31 Oct 2026)
 

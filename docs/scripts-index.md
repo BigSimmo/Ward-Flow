@@ -2,7 +2,7 @@
 
 _Updated 2026-10-24 - CI section names every workflow and the two unlisted `ward-ci-public` scripts; Documentation owns._
 
-Curated map of `scripts/` (157 files) and the `package.json` script surface (87 entries),
+Curated map of `scripts/` (158 files) and the `package.json` script surface (87 entries),
 grouped by what each part protects. `package.json` is the command surface; this page says why
 each group exists. `npm run docs:check-inventory` compares the two counts above exactly,
 and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs
@@ -114,7 +114,7 @@ set. CI directly checks reference-pack integrity and scope-selected owner-ruling
 organisation outputs. The full `docs:maintain:check` aggregate additionally runs
 `ward-flow/screen-map.mjs`, `ward-flow/mockup-manifest.mjs` and
 `ward-flow/screen-verification.mjs` (using `ward-flow/screen-pairs.mjs` and the verification library).
-`check-stale-docs.mjs` is a separate advisory age-and-reference report, not a generator drift check. `check-living-docs-freshness.mjs` (`npm run docs:freshness`) is the advisory re-check reminder for living pages: it reads each page's `<!-- last-checked: YYYY-MM-DD -->` marker.
+`check-stale-docs.mjs` is a separate advisory age-and-reference report, not a generator drift check. `check-living-docs-freshness.mjs` (`npm run docs:freshness`) is the advisory re-check reminder for living pages: it reads each page's `<!-- last-checked: YYYY-MM-DD -->` marker. The status page has a 7-day limit, the rest 14; `--annotate` adds GitHub warnings in CI, and `.github/workflows/docs-freshness.yml` opens a weekly `docs-stale` reminder issue. `ward-flow/merged-since.mjs` lists the pull requests merged since a date or revision, for the status page's Now section.
 `ward-flow/sync-lessons.mjs` is a retired stub that only refuses; a documentation test still
 checks that refusal.
 

@@ -1,0 +1,61 @@
+name: Ward Flow living-page reminder
+
+# Documentation audit, approved by Josh 7 November 2026. Once a week, checks the "living" pages
+# (status, runbook, demo script, desk guides and the other pages listed in
+# scripts/check-living-docs-freshness.mjs) against their last-checked dates. When any page is past
+# its limit (7 days for the status page, 14 for the rest), it opens one `docs-stale` issue that
+# @mentions the owner, so GitHub emails him, or updates the open one. When every page is fresh again,
+# it closes that issue. It reads the repository only: no install, no provider and no secrets.
+# Public repository: free. GitHub turns scheduled workflows off after 60 days without repository
+# activity.
+on:
+  schedule:
+    # Mondays 22:00 UTC = Tuesdays 6 am Perth.
+    - cron: "0 22 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: ward-docs-freshness
+  cancel-in-progress: false
+
+jobs:
+  remind:
+    name: Living-page reminder
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      LABEL: docs-stale
+      OWNER: BigSimmo
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+        with:
+          node-version-file: .nvmrc
+      - name: Open, update or close the reminder issue
+        run: |
+          report=$(node scripts/check-living-docs-freshness.mjs --json)
+          count=$(printf '%s' "$report" | jq '.problems | length')
+          open=$(gh issue list --label "$LABEL" --state open --json number --jq '.[0].number // empty')
+          if [ "$count" -eq 0 ]; then
+            echo "Every living page is within its limit."
+            if [ -n "$open" ]; then
+              gh issue close "$open" --comment "Every living page has been re-checked. Closed automatically."
+            fi
+            exit 0
+          fi
+          list=$(printf '%s' "$report" | jq -r '.problems[] | "- `\(.path)`: " + (if .status == "missing" then "no last-checked marker" else "last checked \(.lastChecked), \(.ageDays) days ago (limit \(.limit))" end)')
+          body=$(printf '@%s These Ward Flow pages describe the app as it is now and are past their re-check date:\n\n%s\n\nCheck each page against current `main`, then update its `<!-- last-checked: YYYY-MM-DD -->` date. The status page lists merges since a date with `node scripts/ward-flow/merged-since.mjs --since <date> --ref origin/main`.\n' "$OWNER" "$list")
+          gh label create "$LABEL" --color FBCA04 --description "A living documentation page is past its re-check date" --force
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --body "$body"
+          else
+            gh issue create --label "$LABEL" --title "Ward Flow pages need a re-check" --body "$body"
+          fi

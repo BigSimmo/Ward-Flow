@@ -5,6 +5,10 @@ where the product is going. Newest at the bottom. Detailed clinical and product 
 screen or the engine behaves stay in [`OWNER-RULINGS.md`](OWNER-RULINGS.md); this log points there
 when a decision here depends on one.
 
+**This log is the one home for new decisions (Josh, 7 November 2026).** Record every new decision or
+ruling here. Do not start new `owner-*.md` files; the existing ones stay as dated records, indexed by
+[`OWNER-RULINGS.md`](OWNER-RULINGS.md).
+
 **How to add an entry.** Add a numbered entry at the bottom with the date, who decided, the
 decision in one or two sentences, and why. Never rewrite an old entry. If a decision is reversed,
 add a new entry that says which one it replaces, and mark the old one "Replaced by D-n".
