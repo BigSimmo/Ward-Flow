@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, type MouseEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AppRouterContext, type AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
 import { NavigationPromisesContext, PathnameContext } from "next/dist/shared/lib/hooks-client-context.shared-runtime";
 
-import { useOptionalToast } from "@/components/wf";
+import { useIsPhone, useOptionalToast } from "@/components/wf";
+import { NewChoice, type NewChoiceKind } from "@/components/ward-redesign/new-choice/new-choice";
 import { PreviewBarMount as WardBarMount } from "@/components/ward-redesign/shell/preview-bar";
 import { PreviewRail as WardRail } from "@/components/ward-redesign/shell/preview-rail";
 // shell-next (30 Oct 2026): `?shell=next` draws the sidebar and header redesign instead.
@@ -14,7 +15,7 @@ import { NextRail } from "@/components/ward-redesign/shell-next/next-rail";
 import { WardGround } from "@/components/ward-management/ward-shell";
 
 import layoutStyles from "../../../ward-flow/ward-flow-layout.module.css";
-import { mockupHrefForAppPath } from "./screens";
+import { MOCKUP_BASE, mockupHrefForAppPath } from "./screens";
 
 const NOT_DRAWN = "That page is not drawn in this mock-up.";
 const NOT_DRAWN_FOR_ROLE = "That page is not drawn for this desk in the mock-up.";
@@ -33,6 +34,17 @@ const ACTIVITY_TRIGGERS = '[data-testid="ward-bar-activity-trigger"], [data-test
  */
 const OWN_ACTIVITY_PANEL = "[data-mockup-activity-panel]";
 const OPEN_ACTIVITY_EVENT = "wf-mockup:open-activity";
+
+/**
+ * Mock-up (7 Nov 2026): the bar's New referral button (the new-referral kind has no popup of its
+ * own), the phone Create sheet's New referral and the phone menu's New referral open the New chooser
+ * (Triage or Referral) instead of the referral slide-out.
+ */
+const NEW_TRIGGERS = [
+  '[data-testid="ward-bar-primary-action"]:not([aria-haspopup])',
+  '[data-testid="ward-phone-create-referral"]',
+  '[data-testid="ward-phone-new-referral"]',
+].join(", ");
 
 /**
  * Preview only. Draws a redesigned page inside the app's own rail and header, so the mock-up is
@@ -60,6 +72,47 @@ export function PreviewShell({
   const Rail = nextShell ? NextRail : WardRail;
   const BarMount = nextShell ? NextBarMount : WardBarMount;
   const toast = useOptionalToast();
+  const isPhone = useIsPhone();
+  // The New chooser, and the one click that must reach the shell's own New referral handler.
+  const [chooser, setChooser] = useState<{ trigger: HTMLElement } | null>(null);
+  const passNewClick = useRef(false);
+  useEffect(() => {
+    const trigger = chooser?.trigger;
+    if (!trigger || isPhone) return;
+    trigger.setAttribute("aria-expanded", "true");
+    trigger.setAttribute("aria-controls", "new-choice-menu");
+    return () => {
+      trigger.removeAttribute("aria-expanded");
+      trigger.removeAttribute("aria-controls");
+    };
+  }, [chooser, isPhone]);
+  const closeChooser = useCallback(
+    (returnFocus: boolean) => {
+      const trigger = chooser?.trigger;
+      setChooser(null);
+      // The phone Sheet hands focus back itself.
+      if (returnFocus && !isPhone && trigger?.isConnected) trigger.focus();
+    },
+    [chooser, isPhone],
+  );
+  const chooseNew = (kind: NewChoiceKind) => {
+    const trigger = chooser?.trigger;
+    setChooser(null);
+    if (kind === "triage") {
+      realRouter.push(`${MOCKUP_BASE}/triage-risk?start=new${nextShell ? "&shell=next" : ""}`);
+      return;
+    }
+    // Referral: the original button's own handler opens the slide-out exactly as today.
+    window.setTimeout(() => {
+      if (!trigger?.isConnected) return;
+      passNewClick.current = true;
+      try {
+        trigger.click();
+      } finally {
+        passNewClick.current = false;
+      }
+    }, 0);
+  };
   const router = useMemo<AppRouterInstance>(() => {
     const go = (href: string, replace: boolean) => {
       const target = keepShell(mockupHrefForAppPath(href, rolePrefix), nextShell);
@@ -77,6 +130,14 @@ export function PreviewShell({
   }, [realRouter, toast, rolePrefix, nextShell]);
 
   const keepLinksInMockups = (event: MouseEvent<HTMLDivElement>) => {
+    // Mock-up only: New referral opens the New chooser first (Triage or Referral).
+    const newTrigger = (event.target as Element).closest?.<HTMLElement>(NEW_TRIGGERS);
+    if (newTrigger && !passNewClick.current) {
+      event.preventDefault();
+      event.stopPropagation();
+      setChooser((open) => (open?.trigger === newTrigger ? null : { trigger: newTrigger }));
+      return;
+    }
     // Mock-up only: the Activity button opens the page's redesigned panel when the page has one.
     if ((event.target as Element).closest?.(ACTIVITY_TRIGGERS) && document.querySelector(OWN_ACTIVITY_PANEL)) {
       event.preventDefault();
@@ -106,6 +167,9 @@ export function PreviewShell({
               <WardGround>{children}</WardGround>
             </div>
           </div>
+          {chooser ? (
+            <NewChoice trigger={chooser.trigger} phone={isPhone} onClose={closeChooser} onChoose={chooseNew} />
+          ) : null}
         </PathnameContext.Provider>
       </NavigationPromisesContext.Provider>
     </AppRouterContext.Provider>
