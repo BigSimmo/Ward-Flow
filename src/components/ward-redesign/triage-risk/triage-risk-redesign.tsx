@@ -45,6 +45,7 @@ import { useMinuteNow } from "@/components/wf/use-minute-now";
 import { DecisionBody } from "./triage-risk-decision";
 import { FOLDABLE, foldedSections, foldLine } from "./triage-risk-fold";
 import {
+  LEGAL_SHORT,
   LEGAL,
   REVIEW,
   SECTIONS,
@@ -75,6 +76,24 @@ import styles from "./triage-risk-redesign.module.css";
 import startStyles from "./triage-risk-start.module.css";
 
 const LEGAL_NAME: Readonly<Record<string, string>> = Object.fromEntries(LEGAL);
+
+/**
+ * A legal status in full words on larger screens and its short form ("CTO") on smaller ones (Josh,
+ * 7 Nov 2026). Both are in the page; CSS shows one. The full name stays for screen readers at
+ * every width, so the short form is hidden from them.
+ */
+function LegalName({ name }: { name: string }) {
+  const short = LEGAL_SHORT[name];
+  if (!short) return <>{name}</>;
+  return (
+    <>
+      <span className={styles.legalFull}>{name}</span>
+      <span className={styles.legalShort} aria-hidden="true">
+        {short}
+      </span>
+    </>
+  );
+}
 const REVIEW_SHORT: Readonly<Record<string, string>> = Object.fromEntries(
   REVIEW.map(([v, label]) => [v, label.replace("At ", "")]),
 );
@@ -582,7 +601,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                   label="Urgency"
                   value={state.urgency ? `${state.urgency} ${TIER_SHORT[state.urgency]}` : "–"}
                 />
-                <HeroStat label="Legal" value={state.legal ? LEGAL_NAME[state.legal] : "–"} />
+                <HeroStat label="Legal" value={state.legal ? <LegalName name={LEGAL_NAME[state.legal]} /> : "–"} />
                 <HeroStat label="Risk flags" value={flagCount} />
                 <HeroStat label="Review" value={state.review ? REVIEW_SHORT[state.review] : "–"} />
               </>
@@ -625,7 +644,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                   <HeroChip value="Allergies" label={person.allergies} />
                 )}
                 {person.legal ? (
-                  <HeroChip value={person.legal} label={person.legalTag} />
+                  <HeroChip value={<LegalName name={person.legal} />} label={person.legalTag} />
                 ) : (
                   <HeroChip value="Legal status" label="Not recorded. Not legally checked." />
                 )}

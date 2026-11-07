@@ -673,6 +673,16 @@ export const LEGAL = [
   ["ito", "Inpatient treatment order"],
   ["nyr", "Not yet recorded"],
 ] as const;
+/**
+ * Short legal names for smaller screens (Josh, 7 Nov 2026: full words on larger screens, "CTO" on
+ * smaller). Only the hero figure and chip use them; the form and the document keep full words.
+ */
+export const LEGAL_SHORT: Readonly<Record<string, string>> = {
+  "Community treatment order": "CTO",
+  "Inpatient treatment order": "ITO",
+  "Referred (Form 1A)": "Referred",
+  "Not yet recorded": "Not recorded",
+};
 /** Legal statuses with a form, whose form and date are kept only as typed. */
 export const LEGAL_WITH_FORM: readonly string[] = ["ref", "det", "cto", "ito"];
 
