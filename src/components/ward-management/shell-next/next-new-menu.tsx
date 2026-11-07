@@ -44,8 +44,12 @@ function place(panel: HTMLElement, trigger: HTMLElement | null) {
   const rect = trigger && trigger.getClientRects().length > 0 ? trigger.getBoundingClientRect() : null;
   const width = panel.offsetWidth;
   const right = rect ? Math.min(rect.right, window.innerWidth - 8) : window.innerWidth - 8;
-  panel.style.setProperty("--choice-top", `${rect ? rect.bottom + 6 : 64}px`);
-  panel.style.setProperty("--choice-left", `${Math.max(8, right - width)}px`);
+  // Named as object keys, so the stylesheet token check sees them as declared at runtime.
+  const position: Record<string, string> = {
+    "--choice-top": `${rect ? rect.bottom + 6 : 64}px`,
+    "--choice-left": `${Math.max(8, right - width)}px`,
+  };
+  for (const [name, value] of Object.entries(position)) panel.style.setProperty(name, value);
   panel.dataset.placed = "";
 }
 

@@ -39,7 +39,6 @@ import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provid
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
 import { announce } from "@/components/wf/live-announcer";
 import { phoneRows } from "@/components/wf/phone-rows";
-import { useMinuteNow } from "@/components/wf/use-minute-now";
 
 import { DecisionBody } from "./triage-risk-decision";
 import { FOLDABLE, foldedSections, foldLine } from "./triage-risk-fold";
@@ -110,6 +109,18 @@ type Sheet = "sum" | "how" | "all" | null;
 const NOT_WIRED = "Not wired in this prototype.";
 
 /** "07/11/2026 10:42", the form's date and time, on the board's synthetic Perth clock whatever the device's zone. */
+/**
+ * The board's moment as a Perth wall-clock Date: its local fields read the Perth day and time. The
+ * reviewed time is typed and parsed as wall-clock text, so Now and the future check use the same
+ * frame on any device.
+ */
+function boardWallClock(boardNow: number, dayZero: Date): Date {
+  const moment = calendarDateOf(boardNow, dayZero);
+  const day = perthCalendarDay(moment);
+  const [hour = 0, minute = 0] = perthClockTime(moment).split(":").map(Number);
+  return new Date(day.year, day.monthIndex, day.day, hour, minute);
+}
+
 function stampOf(date: Date): string {
   const two = (n: number) => String(n).padStart(2, "0");
   const day = perthCalendarDay(date);
@@ -390,7 +401,9 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
   const [sheet, setSheet] = useState<Sheet>(null);
   const [tab, setTab] = useState("sum");
   const [active, setActive] = useState<SectionId>("rev");
-  const now = useMinuteNow();
+  // Josh (7 Nov 2026): the form runs on the board clock, as signing does. Now stamps it and the
+  // future-time check measures against it, as Perth wall-clock time whatever the device's own zone.
+  const now = boardWallClock(boardNow, dayZero).getTime();
   const navLock = useRef(0);
   useFocusKeeper(state);
   const engagement = useEngagedSection();

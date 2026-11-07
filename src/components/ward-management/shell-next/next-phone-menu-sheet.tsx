@@ -478,7 +478,8 @@ function CreateSheet({
         {canTriage ? (
           <Link
             href={WARD_TRIAGE_NEW_HREF}
-            className={styles.createPrimary}
+            // Josh (7 Nov 2026): one filled button per sheet. New triage is the outlined one.
+            className={canRefer ? `${styles.createPrimary} ${styles.createOutline}` : styles.createPrimary}
             data-testid="ward-phone-create-triage"
             onClick={onClose}
           >

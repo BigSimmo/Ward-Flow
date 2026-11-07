@@ -584,6 +584,18 @@
   height: 16px;
 }
 
+/* New triage beside New referral (Josh, 7 Nov 2026): outlined, so the sheet keeps one filled button. */
+.createOutline {
+  border-color: var(--wf-line-2);
+  background: var(--wf-surface);
+  box-shadow: none;
+  color: var(--wf-ink-1);
+}
+
+.createOutline svg {
+  color: var(--wf-accent);
+}
+
 /* Create is a short sheet: its rows end 16px above the safe area, with no tall empty foot. */
 .createBody {
   padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));

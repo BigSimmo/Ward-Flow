@@ -236,7 +236,7 @@ export function ReviewBody({
             <Button
               size="sm"
               className={phoneRows.chip}
-              onClick={() => setText("revTime", reviewTimeStamp(new Date()))}
+              onClick={() => setText("revTime", reviewTimeStamp(new Date(form.now)))}
             >
               Now
             </Button>
