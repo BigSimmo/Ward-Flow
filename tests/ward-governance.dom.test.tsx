@@ -169,9 +169,12 @@ describe("GovernanceView", () => {
     fireEvent.click(within(reviewPanel).getByRole("button", { name: "Reviewed" }));
 
     expect(within(reviewPanel).getByRole("status")).toHaveTextContent("Reviewed recorded.");
-    expect(reviewPanel).toHaveTextContent("1 recorded review · role recorded");
+    // Drawer review (6 Nov 2026): Reviewed and Follow-up sit in the drawer's foot; the count and
+    // the history sit in its body.
+    const detail = screen.getByTestId("ward-governance-override-detail");
+    expect(detail).toHaveTextContent("1 recorded review · role recorded");
     expect(overrideEvent).toHaveTextContent("Reviewed");
-    const history = within(reviewPanel).getByRole("region", { name: "Review history" });
+    const history = within(detail).getByRole("region", { name: "Review history" });
     const recordedReview = within(history).getByRole("listitem");
     expect(recordedReview).toHaveTextContent("Reviewed");
     expect(recordedReview).toHaveTextContent("10:42 · Bed coordinator");
@@ -238,14 +241,17 @@ describe("GovernanceView", () => {
         .filter((button) => button.getAttribute("data-audit-row") === "audit-1"),
     ).toHaveLength(0);
     expect(resetRegister.querySelectorAll('[data-audit-row^="audit-seed"]').length).toBeGreaterThan(0);
-    // Redesign (Josh, 31 Oct 2026): the reset starts a fresh session, so the pane opens on the newest
-    // event in the reset world, never on the captured event that no longer exists, and nothing has
-    // been reviewed yet.
-    const pressed = resetRegister.querySelectorAll('[data-audit-row][aria-pressed="true"]');
+    // Redesign (Josh, 31 Oct 2026): the reset starts a fresh session, so the page pins the newest
+    // event in the reset world, never the captured event that no longer exists, and nothing has
+    // been reviewed yet. Drawer review (6 Nov 2026): the drawer opens only when the row is chosen.
+    const pressed = resetRegister.querySelectorAll<HTMLButtonElement>('[data-audit-row][aria-pressed="true"]');
     expect(pressed).toHaveLength(1);
     expect(pressed[0]?.getAttribute("data-audit-row")).toMatch(/^audit-seed/);
-    const reviewPanel = screen.getByTestId("ward-governance-decision-record");
-    expect(reviewPanel).toHaveTextContent("No review recorded for this event.");
+    expect(screen.queryByTestId("ward-governance-override-detail")).not.toBeInTheDocument();
+    fireEvent.click(pressed[0]!);
+    expect(screen.getByTestId("ward-governance-override-detail")).toHaveTextContent(
+      "No review recorded for this event.",
+    );
   });
 
   it("does not offer a legacy facts tab or a change-audit panel", () => {

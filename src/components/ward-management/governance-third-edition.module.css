@@ -161,8 +161,7 @@
 .rowButton:focus-visible,
 .eventRow:focus-visible,
 .registerBody:focus-visible,
-.reviewBody:focus-visible,
-.detailBody:focus-visible {
+.reviewBody:focus-visible {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 2px;
   border-radius: var(--wf-r-sm);
@@ -213,13 +212,22 @@
   font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
-/* Detail panel. */
-.detailHead {
+/* The event drawer's body (drawer review, 6 Nov 2026): one column on the drawer's own inset. */
+.drawerBody {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
+  flex-direction: column;
   gap: var(--wf-s-3);
-  padding: var(--wf-s-4) var(--wf-s-4) var(--wf-s-2);
+  min-width: 0;
+}
+
+/* The review history: a plain hairline section under the facts, not a card in the drawer. */
+.reviewSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  min-width: 0;
 }
 
 .eyebrow {
@@ -229,20 +237,6 @@
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
-}
-
-.detailTitle {
-  margin: 0;
-  font: 650 var(--wf-fs-20) / var(--wf-lh-20) var(--wf-font);
-  color: var(--wf-ink-1);
-}
-
-.detailBody {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-3);
-  padding: 0 var(--wf-s-4) var(--wf-s-4);
-  min-width: 0;
 }
 
 .factGrid,
@@ -581,23 +575,8 @@
   font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
 }
 
-.recordPane {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-3);
-  padding: var(--wf-s-4);
-  border-left: 1px solid var(--wf-line);
-  min-width: 0;
-}
-
 .reviewBody {
   min-height: 3rem;
-}
-
-.reviewActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--wf-s-2);
 }
 
 .feedback {
@@ -877,11 +856,6 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .recordPane {
-    border-left: 0;
-    border-top: 1px solid var(--wf-line);
-  }
-
   /* Phone and tablet: every control keeps the 48px tap floor. */
   .rowButton,
   .eventRow {
@@ -904,7 +878,6 @@
 
 @media print {
   .heroActions,
-  .reviewActions,
   .filterRow,
   .modal,
   .toastSlot {
@@ -1009,23 +982,6 @@
 .umrn {
   font-family: var(--wf-mono);
   font-variant-numeric: tabular-nums;
-}
-
-/* The rail at rest: what to do next (audit settings-12: the counts stay in the hero). */
-.restSummary {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-3);
-  min-width: 0;
-}
-
-.restClear {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-2);
-  margin: 0;
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-13);
 }
 
 /* v10 phone (11 Oct 2026): event rows read action, person, then outcome and who; Registers and
