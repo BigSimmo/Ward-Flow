@@ -716,7 +716,8 @@ export function PlanBody({ form }: { form: FormApi }) {
         <Row label="Review risk by" hint="Next RAMP due; sooner after any big change">
           <Choice label="Review risk by" options={REVIEW} value={state.review} onChange={(v) => set("review", v)} />
           {urgent && state.review !== "24h" ? (
-            <UrgencyHint>{`Urgency ${state.urgency}: consider a risk review within 24 hours. You choose.`}</UrgencyHint>
+            // No typed window here (invented-figures guard): the choices above carry the times.
+            <UrgencyHint>{`Urgency ${state.urgency}: consider the earliest risk review. You choose.`}</UrgencyHint>
           ) : null}
         </Row>
         <Row label="Plan copy to" labelId="triage-l-copy">

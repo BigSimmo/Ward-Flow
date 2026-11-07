@@ -34,6 +34,7 @@ import {
 } from "@/components/wf";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { calendarDateOf, perthCalendarDay, perthClockTime } from "@/components/ward-management/ward-clock";
+import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { confirmedWardCommand } from "@/components/ward-management/ward-command-completion";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
@@ -393,8 +394,10 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
   const person = state.person;
   const [signedAt, setSignedAt] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
-  const { now: boardNow, dayZero, dispatch } = useWardFlowSelect("now", "dayZero", "dispatch");
+  const { now: boardNow, dayZero } = useWardFlowSelect("now", "dayZero");
   const routeRole = useRouteRole();
+  // Raised by name as this desk at the board clock, as every screen does (tests/ward-flow-raise.test.ts).
+  const raise = useWardRaise(routeRole);
   const signGate = useRoleGate({ patientId: person.id })("RECORD_TRIAGE_SIGNED");
   const [signing, setSigning] = useState(false);
   const [editingReview, setEditingReview] = useState(false);
@@ -509,7 +512,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
     if (!fields || signing) return;
     setSigning(true);
     signTriage(
-      () => dispatch({ type: "RECORD_TRIAGE_SIGNED", role: routeRole, now: boardNow, ...fields }),
+      () => raise("RECORD_TRIAGE_SIGNED", fields),
       (outcome) => {
         setSigning(false);
         if (outcome.status === "accepted") signedNow();

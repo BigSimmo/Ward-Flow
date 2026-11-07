@@ -371,7 +371,8 @@ export function SummaryDrawer({
         ) : null}
         {tab === "ref" ? (
           <RecordPane
-            title={person.referral ? `Referral ${person.referral.id}` : "No open referral"}
+            // D-39: record numbers stay off screens; the referral is named by where it came from.
+            title={person.referral ? `Referral from ${person.referral.from}` : "No open referral"}
             rows={
               person.referral
                 ? [
