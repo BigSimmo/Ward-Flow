@@ -123,6 +123,11 @@ const EXCLUSIONS: readonly Exclusion[] = [
     strip: /\bwaiting over 24 hours\b/gi,
   },
   {
+    id: "psolis-referral-type",
+    why: 'Josh, 7 Nov 2026 (Q393): the webPSOLIS referral type "BREACH RELEASE ORDER" names a legal referral source, not a missed target. This exact value and its label only.',
+    whole: /^(?:BREACH RELEASE ORDER|Breach release order)$/,
+  },
+  {
     id: "internal-name",
     why:
       "A CSS class, element id, test id or state key: an identifier with a hyphen, underscore or inner capital, " +
