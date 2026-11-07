@@ -11,6 +11,8 @@
  * Offline: reads local Git history only. A shallow clone lists only what it holds and says so.
  */
 import { execFileSync } from "node:child_process";
+import { resolve } from "node:path";
+import { pathToFileURL } from "node:url";
 
 /** Parses `git log --first-parent --format=%H%x1f%cs%x1f%s%x1f%b%x1e` output into merge records. */
 export function parseMergeLog(raw, secondParentSubject = () => "") {
@@ -75,4 +77,5 @@ function main(argv) {
   return 0;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) process.exitCode = main(process.argv.slice(2));
+if (process.argv[1] && pathToFileURL(resolve(process.argv[1])).href === import.meta.url)
+  process.exitCode = main(process.argv.slice(2));

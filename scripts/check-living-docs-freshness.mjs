@@ -99,7 +99,9 @@ function main(argv) {
     console.error("--days needs a non-negative number");
     return 2;
   }
-  const report = run({ days });
+  // --today measures age against the current date instead of the HEAD commit date. The weekly
+  // reminder uses it so a quiet `main` cannot keep a stale page looking fresh.
+  const report = run(argv.includes("--today") ? { days, reference: new Date().toISOString() } : { days });
   if (argv.includes("--json")) {
     console.log(JSON.stringify(report, null, 2));
   } else if (report.problems.length === 0) {

@@ -41,7 +41,7 @@ jobs:
           node-version-file: .nvmrc
       - name: Open, update or close the reminder issue
         run: |
-          report=$(node scripts/check-living-docs-freshness.mjs --json)
+          report=$(node scripts/check-living-docs-freshness.mjs --json --today)
           count=$(printf '%s' "$report" | jq '.problems | length')
           open=$(gh issue list --label "$LABEL" --state open --json number --jq '.[0].number // empty')
           if [ "$count" -eq 0 ]; then
