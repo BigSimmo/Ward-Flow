@@ -1,5 +1,5 @@
 /**
- * Triage and risk mock-up: the summary document, as data. The slide-out draws it and Copy writes it
+ * Triage and risk (built 7 Nov 2026): the summary document, as data. The slide-out draws it and Copy writes it
  * as plain text from the same model, so the copy keeps its lines: "Label: value" lines and a blank
  * line between sections. Synthetic data only.
  */
@@ -159,7 +159,7 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
           bits.push({
             quiet: state.confirmed.includes(f.key)
               ? " (carried, confirmed today)"
-              : " (carried from 12 Oct, not re-checked)",
+              : ` (carried from ${state.person.last?.when ?? "the last triage"}, not re-checked)`,
           });
         return bits;
       })
@@ -173,7 +173,7 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
       ? told.length
         ? told.join(", ")
         : state.urgNone
-          ? `No one needed: ${t.urgNoneWhy.trim() || "reason not given"}`
+          ? `None needed: ${t.urgNoneWhy.trim() || "reason not given"}`
           : ""
       : told.join(", ");
   const decisionNotes: string[] = [];

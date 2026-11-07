@@ -15,9 +15,26 @@ const BuiltHome = dynamic<MockupPageProps>(() => import("./built-home").then((mo
 const NewReferralRedesign = dynamic<MockupPageProps>(() =>
   import("@/components/ward-redesign/new-referral/new-referral-redesign").then((module) => module.NewReferralRedesign),
 );
-// 6 Nov 2026: a new mock-up, the combined triage and risk assessment (Option D), not built into the app.
-const TriageRiskRedesign = dynamic<MockupPageProps>(() =>
-  import("@/components/ward-redesign/triage-risk/triage-risk-redesign").then((module) => module.TriageRiskRedesign),
+// Triage and risk is built into the app (7 Nov 2026): the preview draws the real form, for the same
+// synthetic person the patient record entry draws, and the real Start a triage step.
+const TriageRiskScreen = dynamic<MockupPageProps>(() =>
+  Promise.all([
+    import("@/components/ward-management/triage/triage-risk-form"),
+    import("@/components/ward-management/shell/ward-record-address"),
+  ]).then(
+    ([screen, address]) =>
+      function TriageRiskPreview() {
+        return <screen.TriageScreen patientId={address.decodeRecordAddress("196zcp24w5t0") ?? "196zcp24w5t0"} />;
+      },
+  ),
+);
+const TriageStartScreen = dynamic<MockupPageProps>(() =>
+  import("@/components/ward-management/triage/triage-risk-form").then(
+    (module) =>
+      function TriageStartPreview() {
+        return <module.TriageStartScreen />;
+      },
+  ),
 );
 // Built into the app (31 Oct 2026): Waiting draws the real screen, kept here as the backdrop for
 // the Loading (Waiting) pop-up.
@@ -447,5 +464,6 @@ export const MOCKUP_PAGES: Readonly<Record<string, ComponentType<MockupPageProps
   "statistics-network": StatisticsNetworkScreen,
   "ed-department": EdDepartmentScreen,
   transport: TransportScreen,
-  "triage-risk": TriageRiskRedesign,
+  "triage-risk": TriageRiskScreen,
+  "triage-start": TriageStartScreen,
 } satisfies Record<BuiltPageSlug, ComponentType<MockupPageProps>>;

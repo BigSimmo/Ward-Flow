@@ -14,6 +14,9 @@ type DrillDown = { readonly pattern: RegExp; readonly parent: (match: RegExpExec
 /** Screens below a list, each with the page it falls back to. Order matters: `/people/new` first. */
 const DRILL_DOWNS: readonly DrillDown[] = [
   { pattern: /^\/ward-flow\/people\/new\/?$/u, parent: patientSearchHref },
+  // Triage and risk (built 7 Nov 2026): a person's triage falls back to their record, the start step Home.
+  { pattern: /^\/ward-flow\/people\/([^/]+)\/triage\/?$/u, parent: (match) => `${BASE}/people/${match[1]}` },
+  { pattern: /^\/ward-flow\/triage\/new\/?$/u, parent: () => BASE },
   { pattern: /^\/ward-flow\/people\/[^/]+\/?$/u, parent: () => `${BASE}/movements` },
   { pattern: /^\/ward-flow\/movements\/[^/]+\/?$/u, parent: () => `${BASE}/movements` },
   { pattern: /^\/ward-flow\/ward\/([^/]+)\/answer\/?$/u, parent: (match) => unitHref(decodeSegment(match[1])) },

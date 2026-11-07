@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { exampleTriage, requirements, restSets } from "@/components/ward-redesign/triage-risk/triage-risk-state";
-import { summaryModel, summaryText } from "@/components/ward-redesign/triage-risk/triage-risk-summary";
+import { requirements, restSets } from "@/components/ward-management/triage/triage-risk-state";
+import { summaryModel, summaryText } from "@/components/ward-management/triage/triage-risk-summary";
 import {
   boxToDomains,
   checkReviewTime,
@@ -12,9 +12,12 @@ import {
   reviewTimeStamp,
   toggleBoxPhrase,
   toggleDomainChip,
-} from "@/components/ward-redesign/triage-risk/triage-risk-text";
+} from "@/components/ward-management/triage/triage-risk-text";
 
-// The pure text rules of the triage and risk mock-up (6 Nov 2026). Synthetic mental state text only.
+import { exampleTriage } from "./helpers/triage-example";
+
+// The pure text rules of the triage and risk form (approved mock-up 6 Nov 2026, built 7 Nov 2026).
+// Synthetic mental state text only.
 
 const BOX = [
   "Speech: Pressured, hard to interrupt",

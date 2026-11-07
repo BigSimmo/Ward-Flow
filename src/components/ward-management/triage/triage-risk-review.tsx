@@ -1,6 +1,6 @@
 "use client";
 
-/** Triage and risk mock-up: 1 Review details and 2 Assessment (SMHMR900). Synthetic data only. */
+/** Triage and risk: 1 Review details and 2 Assessment (SMHMR900). Synthetic data only. */
 import { useRef, useState, type ChangeEvent, type RefObject } from "react";
 
 import { Button, ChipGroup, FilterChip, Kbd, StatusGlyph, Textarea, TextInput } from "@/components/wf";
@@ -14,7 +14,6 @@ import {
   GUIDES,
   HOW,
   INTERPRETER,
-  LAST_TRIAGE,
   OTHERS_PRESENT,
   PROBLEMS,
   PURPOSE,
@@ -25,7 +24,7 @@ import {
 import { autoRows, Choice, GuideBox, MultiChips, Reveal, Row, type FormApi } from "./triage-risk-parts";
 import type { TextKey, TriageState } from "./triage-risk-state";
 import { addHeading, checkReviewTime, expandShortcut, reviewTimeStamp, wordCount } from "./triage-risk-text";
-import styles from "./triage-risk-redesign.module.css";
+import styles from "./triage-risk-form.module.css";
 
 const toggleIn = (list: readonly string[], value: string) =>
   list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
@@ -357,7 +356,7 @@ export function ReviewBody({
 }
 
 export function AssessmentBody({ form }: { form: FormApi }) {
-  const { state, set, update, say } = form;
+  const { state, set, update } = form;
   const noteRef = useRef<HTMLTextAreaElement>(null);
   const box = useHeadedBox(form, "note", noteRef);
   const suggested = RISK_TO_PROBLEM.filter(([prefix]) =>
@@ -365,12 +364,6 @@ export function AssessmentBody({ form }: { form: FormApi }) {
   )
     .map(([, problem]) => problem)
     .filter((problem, index, all) => !state.problems.includes(problem) && all.indexOf(problem) === index);
-  const insertHistory = () => {
-    const note = state.text.note;
-    if (/^History \(12 Oct/m.test(note)) return say("Last history is already in.");
-    form.setText("note", `${note && !note.endsWith("\n") ? `${note}\n` : note}${LAST_TRIAGE.history}\n`);
-    say("Inserted with its source and date.");
-  };
   const toggleAware = (value: string) =>
     update((s) => {
       if (s.aware.includes(value)) return { ...s, aware: s.aware.filter((v) => v !== value) };
@@ -380,18 +373,8 @@ export function AssessmentBody({ form }: { form: FormApi }) {
     });
   return (
     <>
-      <GuideBox
-        groups={GUIDES.note}
-        text={state.text.note}
-        onHeading={box.onHeading}
-        extra={
-          state.person.lastTriage ? (
-            <Button variant="ghost" size="sm" onClick={insertHistory}>
-              Insert last history (12 Oct)
-            </Button>
-          ) : undefined
-        }
-      />
+      {/* A signed triage keeps codes only, so there is no earlier history text to insert. */}
+      <GuideBox groups={GUIDES.note} text={state.text.note} onHeading={box.onHeading} />
       <Textarea
         ref={noteRef}
         aria-label="Assessment"

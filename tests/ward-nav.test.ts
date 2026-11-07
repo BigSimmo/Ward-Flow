@@ -77,6 +77,7 @@ import { allEmergencyDepartments, allUnits, NOW_ANCHOR } from "@/components/ward
 import { wardMovements } from "@/components/ward-management/ward-movements";
 import { wardPatients } from "@/components/ward-management/ward-patients-seed";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
+import { TriageScreen, TriageStartScreen } from "@/components/ward-management/triage/triage-risk-form";
 import { DelaysScreen } from "@/components/ward-management/delays/delays-screen";
 import { CapacityScreen } from "@/components/ward-management/capacity/capacity-screen";
 import { LegalFormsScreen } from "@/components/ward-management/legal-forms/legal-forms-screen";
@@ -451,6 +452,8 @@ const WARD_DYNAMIC_ROUTE_INSTANCES: ReadonlyMap<string, () => number> = new Map(
   ["/ward-flow/ed/[edId]", () => allEmergencyDepartments().length],
   ["/ward-flow/movements/[movementId]", () => wardMovements.length],
   ["/ward-flow/people/[patientId]", () => wardPatients.length],
+  // Triage and risk (7 Nov 2026): one triage form per person, so the same population as the record.
+  ["/ward-flow/people/[patientId]/triage", () => wardPatients.length],
   ["/ward-flow/community/[teamId]", () => COMMUNITY_TEAM_PAGES.length],
   ["/ward-flow/statistics/ward/[unitId]", () => allUnits().length],
   ["/ward-flow/statistics/ed/[edId]", () => allEmergencyDepartments().length],
@@ -578,6 +581,13 @@ const WARD_DYNAMIC_ROUTE_ORPHANS: ReadonlyMap<string, string> = new Map([
       "figure was 0 of 12 for a different and worse reason — there was nowhere for them to point.",
   ],
   [
+    "/ward-flow/people/[patientId]/triage",
+    // Triage and risk (7 Nov 2026): the same people as the record, reached the same way.
+    "0 of 104 instances reachable without state — a person's triage is reached from their record's " +
+      "Triage action or by choosing them on Start a triage, whose search lists nobody until a query is " +
+      "typed, so no concrete href names a person. The same owner's flow as the patient record above.",
+  ],
+  [
     "/ward-flow/statistics/ward/[unitId]",
     "0 of 22 instances reachable without state — and unlike every other entry here, this one records " +
       "a limit of the SCAN rather than a gap in the navigation. The comparisons page " +
@@ -688,6 +698,7 @@ describe("Ward Flow dynamic routes — what links them, and what they leave orph
       "/ward-flow/ed/[edId]",
       "/ward-flow/movements/[movementId]",
       "/ward-flow/people/[patientId]",
+      "/ward-flow/people/[patientId]/triage",
       "/ward-flow/statistics/community/[teamId]",
       "/ward-flow/statistics/ed/[edId]",
       "/ward-flow/statistics/service/[serviceId]",
@@ -1345,6 +1356,12 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   // Since 8 Oct 2026 this route is the Referrals board with the referral slide-out opened over it.
   { route: `${ROUTE_PREFIX}/referrals/new`, render: () => createElement(ReferralBoard) },
   { route: `${ROUTE_PREFIX}/people/new`, render: () => createElement(AddPatientForm) },
+  // Triage and risk (built 7 Nov 2026): a person's triage form and Start a triage.
+  {
+    route: `${ROUTE_PREFIX}/people/[patientId]/triage`,
+    render: () => createElement(TriageScreen, { patientId: wardPatients[0].id }),
+  },
+  { route: `${ROUTE_PREFIX}/triage/new`, render: () => createElement(TriageStartScreen) },
   { route: `${ROUTE_PREFIX}/referrals`, render: () => createElement(ReferralBoard) },
   { route: `${ROUTE_PREFIX}/out-of-area`, render: () => createElement(OutOfAreaBoard) },
   { route: `${ROUTE_PREFIX}/wards`, render: () => createElement(WardIndex) },
@@ -1464,7 +1481,8 @@ describe("Ward Flow route/render-map coverage (D8 nav check — sanity check on 
     // 43: the Network screen was retired and `/network` became a redirect to Home, and the bed meeting
     // agenda (`/bed-meeting/agenda`) was added, both 19 Oct 2026. Moved in both files together.
     // 44: the seclusion, restraint and incident view (`/seclusion`, D-72), 21 Oct 2026.
-    expect(RENDERABLE_ROUTES.length).toBe(44);
+    // 46: the triage and risk form (`/people/[patientId]/triage`) and Start a triage (`/triage/new`), 7 Nov 2026.
+    expect(RENDERABLE_ROUTES.length).toBe(46);
   });
 });
 

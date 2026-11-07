@@ -549,6 +549,17 @@
 }
 
 /* ── Create ─────────────────────────────────────────────────────────────────────────────── */
+/* Triage and risk (built 7 Nov 2026): New referral and New triage side by side in Create. */
+.createPair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--wf-s-2);
+}
+
+.createSingle {
+  display: contents;
+}
+
 .createPrimary {
   display: flex;
   flex: none;
@@ -564,6 +575,7 @@
   font: inherit;
   font-size: var(--wf-fs-14);
   font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
 }
 

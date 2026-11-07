@@ -103,7 +103,7 @@ export const PAIRS = [
 export const SUPERSEDED = ["patient-search-console.html", "patient-search-working.html"];
 
 /**
- * Complete 58-route roster mapping every commissioned Ward Flow route (56 under
+ * Complete 60-route roster mapping every commissioned Ward Flow route (58 under
  * `/ward-flow/**` plus `/ward-flow-sign-in` and `/mockups/ward-flow-digest`)
  * to its screen folder and current React component file relative to
  * `src/components/ward-management/` (`null` for server redirect stubs and the HTML digest route handler).
@@ -141,6 +141,8 @@ export const ROUTE_COMPONENTS = [
   { route: "/out-of-area", folder: "out-of-area", react: "out-of-area/out-of-area-board.tsx" },
   { route: "/people/[patientId]", folder: "patients", react: "patients/patient-now-screen.tsx" },
   { route: "/people/new", folder: "patients", react: "patients/add-patient.tsx" },
+  // Triage and risk (Josh's approved mock-up, built 7 Nov 2026).
+  { route: "/people/[patientId]/triage", folder: "triage", react: "triage/triage-risk-form.tsx" },
   { route: "/queue", folder: "delays", react: null },
   { route: "/referrals", folder: "referrals", react: "referrals/referral-board.tsx" },
   { route: "/referrals/new", folder: "referrals", react: "referrals/referral-board.tsx" },
@@ -171,6 +173,7 @@ export const ROUTE_COMPONENTS = [
   { route: "/statistics/weekly", folder: "reports", react: "reports/weekly-report-screen.tsx" },
   { route: "/transport", folder: "movements", react: null },
   { route: "/transport/officer", folder: "officer", react: "officer/officer-screen.tsx" },
+  { route: "/triage/new", folder: "triage", react: "triage/triage-risk-form.tsx" },
   { route: "/waiting", folder: "delays", react: "delays/delays-screen.tsx" },
   { route: "/ward/[unitId]", folder: "ward", react: "ward/ward-screen.tsx" },
   { route: "/ward/[unitId]/answer", folder: "ward", react: "ward/ward-screen.tsx" },

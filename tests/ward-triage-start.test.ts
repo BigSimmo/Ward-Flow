@@ -1,24 +1,21 @@
 import { describe, expect, it } from "vitest";
 
-import { PATIENT } from "@/components/ward-redesign/triage-risk/triage-risk-data";
+import { demoDayZero } from "@/components/ward-management/ward-clock";
 import {
   dobAsShown,
   legalLine,
+  previousTriageFrom,
   searchTriagePeople,
-  startPeople,
   triagePersonFromWorld,
   type WorldPersonInput,
-} from "@/components/ward-redesign/triage-risk/triage-risk-people";
-import {
-  blankTriage,
-  exampleTriage,
-  requirements,
-  sinceLastText,
-} from "@/components/ward-redesign/triage-risk/triage-risk-state";
-import { summaryModel, summaryText } from "@/components/ward-redesign/triage-risk/triage-risk-summary";
+} from "@/components/ward-management/triage/triage-risk-people";
+import { blankTriage, requirements, sinceLastText } from "@/components/ward-management/triage/triage-risk-state";
+import { summaryModel, summaryText } from "@/components/ward-management/triage/triage-risk-summary";
 
-// The Start a triage step and a new triage's blank state (triage and risk mock-up, 7 Nov 2026).
-// Synthetic people only.
+import { EXAMPLE_PERSON, exampleTriage } from "./helpers/triage-example";
+
+// The Start a triage step and a new triage's blank state (approved mock-up, built into the app on
+// 7 Nov 2026). Synthetic people only.
 
 const world = (overrides: Partial<WorldPersonInput>): WorldPersonInput => ({
   patientId: "PT-900",
@@ -34,11 +31,11 @@ const world = (overrides: Partial<WorldPersonInput>): WorldPersonInput => ({
   ...overrides,
 });
 
-const PEOPLE = startPeople([
+const PEOPLE = [
   triagePersonFromWorld(world({})),
   triagePersonFromWorld(world({ patientId: "PT-901", name: "Slateridge, Bo", umrn: "UM900002", dob: "1970-12-30" })),
   triagePersonFromWorld(world({ patientId: "PT-902", name: "Moss, Ridley", umrn: "UM900003" })),
-]);
+];
 
 describe("Start a triage search", () => {
   it("lists nobody until something is typed", () => {
@@ -59,9 +56,9 @@ describe("Start a triage search", () => {
     expect(searchTriagePeople(PEOPLE, "30/12/1970").map((p) => p.name)).toEqual(["Slateridge, Bo"]);
   });
 
-  it("keeps the worked Example first and only once", () => {
-    expect(startPeople([PATIENT, ...PEOPLE.slice(1)]).filter((p) => p.umrn === PATIENT.umrn)).toHaveLength(1);
-    expect(PEOPLE[0]).toBe(PATIENT);
+  it("searches world people only: no worked Example is added", () => {
+    expect(searchTriagePeople(PEOPLE, "Harlow")).toEqual([]);
+    expect(PEOPLE.map((p) => p.id)).toEqual(["PT-900", "PT-901", "PT-902"]);
   });
 });
 
@@ -74,7 +71,7 @@ describe("a world person on the banner", () => {
     expect(person.nowAt).toBe("Peel Health Campus ED");
     expect(person.legal).toBe("Form 1A");
     expect(legalLine(person)).toBe("Form 1A, as typed. Not legally checked.");
-    expect(person.lastTriage).toBe(false);
+    expect(person.last).toBeNull();
     expect(person.recordHref).toBe("/ward-flow/people/code900");
   });
 
@@ -103,7 +100,7 @@ describe("a new triage", () => {
   });
 
   it("asks why urgency differs only when the referral asked for a tier", () => {
-    const asked = requirements({ ...blankTriage(PATIENT), urgency: "A" }, Date.now());
+    const asked = requirements({ ...blankTriage(EXAMPLE_PERSON), urgency: "A" }, Date.now());
     expect(asked.some((r) => r.label === "Why urgency differs")).toBe(true);
     const none = requirements({ ...state, urgency: "A" }, Date.now());
     expect(none.some((r) => r.label === "Why urgency differs")).toBe(false);
@@ -123,7 +120,7 @@ describe("a new triage", () => {
   });
 
   it("prefills the referrer from the referral only, and chooses nothing", () => {
-    const harlow = blankTriage(PATIENT);
+    const harlow = blankTriage(EXAMPLE_PERSON);
     expect(harlow.text.refName).toBe("Dr P. Singh");
     expect(harlow.arrivedBy).toBeNull();
     expect(harlow.interp).toBeNull();
@@ -131,8 +128,41 @@ describe("a new triage", () => {
     expect(state.text.refName).toBe("");
   });
 
-  it("keeps the Example's referral episode", () => {
-    expect(blankTriage(PATIENT).episode).toBe("ED");
+  it("keeps a referral's episode", () => {
+    expect(blankTriage(EXAMPLE_PERSON).episode).toBe("ED");
+  });
+});
+
+describe("a previous triage, read from a signed record", () => {
+  const signed = {
+    patientId: "PT-900",
+    at: 60 * 10,
+    by: "ward" as const,
+    urgency: "C" as const,
+    outcome: "Accepted" as const,
+    legal: "cto" as const,
+    review: "72h" as const,
+    riskFlags: ["violence.bg.prev", "general.now.agit"],
+  };
+  const last = previousTriageFrom(signed, demoDayZero(new Date("2026-11-07T04:00:00Z")));
+
+  it("carries only past flags forward and keeps current flags for what is new today", () => {
+    expect(last.pastFlags).toEqual(["violence.bg.prev"]);
+    expect(last.nowFlags).toEqual(["general.now.agit"]);
+    expect(last.pastSummary).toMatch(/^Previous violence\. Carries these flags only/);
+  });
+
+  it("names its codes in words and the synthetic reviewer", () => {
+    expect(last.urgencyText).toBe("C within 12 hours");
+    expect(last.legal).toBe("Community treatment order");
+    expect(last.review).toBe("72 hours");
+    expect(last.label).toMatch(/^Last triage · \d{2} [A-Z][a-z]{2} · Dr S\. Chen$/);
+  });
+
+  it("puts that triage on the person, so the next one compares with it", () => {
+    const person = triagePersonFromWorld(world({ last }));
+    const state = { ...blankTriage(person), rest: "np", f: {} };
+    expect(sinceLastText(state)).toMatch(/^Not seen today: distress or agitation\.$/);
   });
 });
 

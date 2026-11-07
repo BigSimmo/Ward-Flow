@@ -1,22 +1,24 @@
 "use client";
 
 /**
- * Mock-up (7 Nov 2026): the app bar's New referral button starts more than referrals, so it opens a
- * small chooser first: Triage or Referral. Desktop: a menu under the button, right-aligned to it.
- * Phone: the kit Sheet from the bottom with the same two rows. Not built into the app (D-91): the
- * viewer's shell opens it in place of the referral slide-out. Proposal once built: the bar button
- * reads "New" with a caret.
+ * The app bar's New menu (Josh's approved mock-up, built 7 Nov 2026): the bar's primary button reads
+ * "New" with a caret, because it starts more than referrals, and opens this small menu: Triage or
+ * Referral. Desktop and tablet: a menu under the button, right-aligned to it, with the arrow keys,
+ * Home and End, type-ahead, Enter, Escape back to the button and a press outside to close. A phone
+ * gets the kit Sheet from the bottom with the same two rows. Loaded on first use, so a phone's first
+ * load does not carry it (`next-bar-controls.tsx`).
  */
 import { ClipboardList, Inbox, type LucideIcon } from "lucide-react";
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type RefObject } from "react";
 
 import { Icon, OverlayPortal, Sheet } from "@/components/wf";
 
-import styles from "./new-choice.module.css";
+import { NEW_MENU_ID } from "./next-new-menu-id";
+import styles from "./next-new-menu.module.css";
 
-export type NewChoiceKind = "triage" | "referral";
+export type NewMenuKind = "triage" | "referral";
 
-const NEW_CHOICES: readonly { kind: NewChoiceKind; icon: LucideIcon; title: string; line: string }[] = [
+const NEW_CHOICES: readonly { kind: NewMenuKind; icon: LucideIcon; title: string; line: string }[] = [
   {
     kind: "triage",
     icon: ClipboardList,
@@ -26,13 +28,15 @@ const NEW_CHOICES: readonly { kind: NewChoiceKind; icon: LucideIcon; title: stri
   { kind: "referral", icon: Inbox, title: "Referral", line: "Refer to a ward, community team or ED" },
 ];
 
-type NewChoiceProps = {
+type NewMenuProps = {
   /** The button that opened it: the menu sits under it, and Escape returns focus to it. */
   trigger: HTMLElement | null;
   phone: boolean;
   /** `returnFocus` is true for Escape, false for an outside press or Tab. */
   onClose: (returnFocus: boolean) => void;
-  onChoose: (kind: NewChoiceKind) => void;
+  onChoose: (kind: NewMenuKind) => void;
+  /** The row that takes focus on opening: the first, or the last when the arrow up opened it. */
+  initial?: number;
 };
 
 /** Where the menu sits: under the trigger, its right edge on the trigger's, kept inside the window. */
@@ -52,7 +56,7 @@ function ChoiceRows({
   setActive,
   asMenu,
 }: {
-  onChoose: (kind: NewChoiceKind) => void;
+  onChoose: (kind: NewMenuKind) => void;
   itemRefs?: RefObject<Array<HTMLButtonElement | null>>;
   active?: number;
   setActive?: (index: number) => void;
@@ -70,7 +74,7 @@ function ChoiceRows({
           role={asMenu ? "menuitem" : undefined}
           tabIndex={asMenu ? (index === active ? 0 : -1) : undefined}
           className={styles.row}
-          data-testid={`new-choice-${choice.kind}`}
+          data-testid={`ward-new-${choice.kind}`}
           onMouseEnter={setActive ? () => setActive(index) : undefined}
           onClick={() => onChoose(choice.kind)}
         >
@@ -88,14 +92,17 @@ function ChoiceRows({
 }
 
 /** Desktop: a menu with arrow keys, Home and End; Escape closes and returns focus; an outside press closes. */
-function ChoiceMenu({ trigger, onClose, onChoose }: Omit<NewChoiceProps, "phone">) {
+function ChoiceMenu({ trigger, onClose, onChoose, initial = 0 }: Omit<NewMenuProps, "phone">) {
   const headingId = useId();
   const panel = useRef<HTMLDivElement>(null);
+  // The overlay host can arrive a render after this component mounts (the first menu on a page with
+  // no overlay root yet), so placing and the first focus wait for the panel itself to mount.
+  const [panelNode, setPanelNode] = useState<HTMLDivElement | null>(null);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState(Math.min(Math.max(initial, 0), NEW_CHOICES.length - 1));
 
   useLayoutEffect(() => {
-    const node = panel.current;
+    const node = panelNode;
     if (!node) return;
     const fit = () => place(node, trigger);
     fit();
@@ -105,11 +112,11 @@ function ChoiceMenu({ trigger, onClose, onChoose }: Omit<NewChoiceProps, "phone"
       window.removeEventListener("resize", fit);
       window.removeEventListener("scroll", fit, true);
     };
-  }, [trigger]);
+  }, [panelNode, trigger]);
 
   useEffect(() => {
-    itemRefs.current[active]?.focus({ preventScroll: true });
-  }, [active]);
+    if (panelNode) itemRefs.current[active]?.focus({ preventScroll: true });
+  }, [active, panelNode]);
 
   useEffect(() => {
     const onDown = (event: PointerEvent) => {
@@ -151,16 +158,21 @@ function ChoiceMenu({ trigger, onClose, onChoose }: Omit<NewChoiceProps, "phone"
   };
 
   return (
-    <OverlayPortal layer="popover" name="new-choice">
+    <OverlayPortal layer="popover" name="ward-bar-new">
       {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused item */}
       <div
-        ref={panel}
-        id="new-choice-menu"
+        ref={(node) => {
+          panel.current = node;
+          setPanelNode(node);
+        }}
+        id={NEW_MENU_ID}
         role="menu"
         aria-labelledby={headingId}
         className={styles.panel}
+        // The popover layer passes presses through; the menu itself takes them.
+        style={{ pointerEvents: "auto" }}
         onKeyDown={onKeyDown}
-        data-testid="new-choice-menu"
+        data-testid="ward-bar-new-menu"
       >
         <div id={headingId} role="presentation" className={styles.heading}>
           New
@@ -171,13 +183,13 @@ function ChoiceMenu({ trigger, onClose, onChoose }: Omit<NewChoiceProps, "phone"
   );
 }
 
-/** The chooser: a menu under the button on desktop, the kit Sheet on a phone. */
-export function NewChoice({ trigger, phone, onClose, onChoose }: NewChoiceProps) {
+/** The menu: under the button on desktop and tablet, the kit Sheet on a phone. */
+export function NewMenu({ trigger, phone, onClose, onChoose, initial }: NewMenuProps) {
   const triggerRef = useRef<HTMLElement | null>(trigger);
   useEffect(() => {
     triggerRef.current = trigger;
   }, [trigger]);
-  if (!phone) return <ChoiceMenu trigger={trigger} onClose={onClose} onChoose={onChoose} />;
+  if (!phone) return <ChoiceMenu trigger={trigger} onClose={onClose} onChoose={onChoose} initial={initial} />;
   return (
     <Sheet
       open
@@ -186,7 +198,7 @@ export function NewChoice({ trigger, phone, onClose, onChoose }: NewChoiceProps)
       description="Start a triage or a referral"
       mobileBreakpoint="phone"
       returnFocusRef={triggerRef}
-      testId="new-choice-sheet"
+      testId="ward-new-sheet"
       bodyClassName={styles.sheetBody}
     >
       <div className={styles.sheetRows}>

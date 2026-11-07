@@ -1,5 +1,5 @@
 /**
- * Triage and risk mock-up: the pure text rules, ported from the approved prototype (`d-lean.html`).
+ * Triage and risk (built 7 Nov 2026): the pure text rules, ported from the approved prototype (`d-lean.html`).
  *
  * - Mental state "One box": each domain keeps one line, `Label: phrase, phrase`, in domain order.
  *   A tapped phrase lands on its domain's line, a second tap removes it, and a phrase that cannot

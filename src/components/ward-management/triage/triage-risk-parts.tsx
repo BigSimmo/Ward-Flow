@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Triage and risk mock-up: the small shared parts each section is built from, all on the kit
+ * Triage and risk: the small shared parts each section is built from, all on the kit
  * (Card, Segmented, FilterChip, Button, StatusGlyph). Nothing here is pre-selected: a choice with no
  * answer shows no option chosen, and a second press on the chosen option clears it.
  */
@@ -24,7 +24,7 @@ import { phoneRows } from "@/components/wf/phone-rows";
 import type { GuideGroup, SectionId } from "./triage-risk-data";
 import type { SectionStatus, Target, TextKey, TriageState } from "./triage-risk-state";
 import { headingFilled, guideHeadings } from "./triage-risk-text";
-import styles from "./triage-risk-redesign.module.css";
+import styles from "./triage-risk-form.module.css";
 
 /** What each section needs from the form: the state and the ways to change it. */
 export type FormApi = {

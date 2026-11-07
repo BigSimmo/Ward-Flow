@@ -97,6 +97,8 @@ export function subjectId(event: WardFlowEvent): string {
     case "RECORD_COMMUNITY_TREATMENT_ORDER":
     case "END_COMMUNITY_TREATMENT_ORDER":
     case "ARCHIVE_PATIENT":
+    // Triage and risk (7 Nov 2026): a signed triage is filed against its person.
+    case "RECORD_TRIAGE_SIGNED":
       return event.patientId;
     case "ACCEPT_REFERRAL":
     case "HOLD_REFERRAL_BED":

@@ -116,20 +116,22 @@ describe("WardBar Single-Row Stress Test & CSS Contracts", () => {
       expect(trigger.querySelector('[class*="referralChevron"] .lucide-chevron-down')).toBeInTheDocument();
     });
 
-    it("renders New referral primary action with exact text available", () => {
+    // Triage and risk (built 7 Nov 2026): the referral action reads "New" with a caret.
+    it("renders the New primary action with exact text available", () => {
       renderBar({ kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU });
       const trigger = screen.getByTestId("ward-bar-primary-action");
-      expect(trigger).toHaveTextContent("New referral");
-      expect(within(trigger).getByText("referral")).toBeInTheDocument();
+      expect(trigger.textContent?.trim()).toBe("New");
       expect(within(trigger).getByText("New")).toBeInTheDocument();
+      expect(trigger).toHaveAttribute("aria-haspopup", "menu");
     });
 
-    it("opens the referral slide-out straight away, with no destination menu first", async () => {
+    it("opens the referral slide-out from New, then Referral, with no destination menu first", async () => {
       const user = userEvent.setup();
       renderBar({ kind: "new-referral", label: "New referral", menu: WARD_NEW_REFERRAL_MENU });
 
       const trigger = screen.getByTestId("ward-bar-primary-action");
       await user.click(trigger);
+      await user.click(await screen.findByTestId("ward-new-referral"));
       expect(screen.queryByTestId("ward-bar-primary-panel")).toBeNull();
       expect(await screen.findByTestId("ward-bar-referral-sheet")).toBeInTheDocument();
       // The slide-out's own switch carries all three destinations.
@@ -225,8 +227,8 @@ describe("WardBar Single-Row Stress Test & CSS Contracts", () => {
       );
 
       const trigger = screen.getByTestId("ward-bar-primary-action");
-      expect(trigger).toHaveTextContent("New referral");
-      expect(within(trigger).getByText("referral")).toBeInTheDocument();
+      expect(trigger.textContent?.trim()).toBe("New");
+      expect(trigger).toHaveAttribute("aria-haspopup", "menu");
     });
   });
 });

@@ -53,13 +53,15 @@ export const MOCKUP_SCREENS: readonly MockupScreen[] = [
   { slug: "legal-forms", label: "Legal forms", group: "Reference", appPath: "/ward-flow/legal-forms" },
   { slug: "patient", label: "Patient record", group: "Places and records", appPath: "/ward-flow/people/196zcp24w5t0" },
   { slug: "add-patient", label: "Add patient", group: "Places and records", appPath: "/ward-flow/people/new" },
-  // 6 Nov 2026: a new mock-up of a combined triage and risk assessment, for Josh's review (not built).
+  // Triage and risk: Josh approved the mock-up and it was built into the app on 7 Nov 2026 (D-91), so
+  // these entries draw the real screens.
   {
     slug: "triage-risk",
     label: "Triage and risk",
     group: "Places and records",
     appPath: "/ward-flow/people/196zcp24w5t0/triage",
   },
+  { slug: "triage-start", label: "Start a triage", group: "Places and records", appPath: "/ward-flow/triage/new" },
   // Q218 (Josh, 2 Nov 2026): the pages with no approved redesign are drawn from main in the newest
   // shell, so the master design no longer shows their older (BL86) content.
   { slug: "eds", label: "All EDs", group: "Coordinator", appPath: "/ward-flow/ed" },
@@ -137,7 +139,7 @@ export const MOCKUP_POPUPS: readonly MockupPopup[] = [
   { slug: "pop-demo", label: "Demo menu", group: "Shell popups", over: "home", pop: "demo" },
   { slug: "pop-menu", label: "Phone menu", group: "Shell popups", over: "home", pop: "menu" },
   { slug: "pop-create", label: "Create", group: "Shell popups", over: "home", pop: "create" },
-  // 7 Nov 2026: New referral opens a chooser first (Triage or Referral), drawn by the viewer's shell.
+  // Built into the app (7 Nov 2026): the bar's New opens its Triage or Referral menu.
   { slug: "pop-new-choice", label: "New: triage or referral", group: "Shell popups", over: "home", pop: "new-choice" },
   { slug: "pop-service-picker", label: "Service picker", group: "Shell popups", over: "home", pop: "service-picker" },
   { slug: "pop-more-pages", label: "More pages", group: "Shell popups", over: "home", pop: "more-pages" },
@@ -254,6 +256,8 @@ export function mockupHrefForAppPath(href: string, rolePrefix?: string): string 
   if (rolePrefix) return null;
   const exact = MOCKUP_SCREENS.find((screen) => screen.appPath === path && !screen.role);
   if (exact) return `${MOCKUP_BASE}/${exact.slug}`;
+  // Every person's triage form is drawn as the one triage entry, as every record is drawn as the patient's.
+  if (/^\/ward-flow\/people\/[^/]+\/triage$/u.test(path)) return `${MOCKUP_BASE}/triage-risk`;
   const prefixed = PREFIX_SCREENS.find(([prefix]) => path.startsWith(prefix));
   return prefixed ? `${MOCKUP_BASE}/${prefixed[1]}` : null;
 }

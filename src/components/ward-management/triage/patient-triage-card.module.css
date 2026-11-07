@@ -1,0 +1,32 @@
+/* Triage and risk on the patient record (built 7 Nov 2026). Tokens only, neutral borders, 12px floor. */
+
+.card {
+  margin-block-end: var(--wf-s-3);
+}
+
+.body {
+  display: grid;
+  gap: var(--wf-s-2);
+}
+
+.signed {
+  margin: 0;
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+}
+
+.quiet {
+  margin: 0;
+  color: var(--wf-ink-2);
+}

@@ -711,6 +711,8 @@ describe("front-door contract — an ED may close to all admissions, never refus
     RECORD_HANDOVER_SIGN_OFF: false,
     // Q61 (31 Oct 2026): a site handover sign-off names wards and bed calls; it refuses nobody.
     RECORD_SITE_HANDOVER_SIGN_OFF: false,
+    // Triage and risk (7 Nov 2026): a signed triage records one person's assessment; it refuses nobody.
+    RECORD_TRIAGE_SIGNED: false,
     RECORD_CLINICAL_CONTACT: false,
     DISPATCH_BROADCAST_ALERT: false,
     ACKNOWLEDGE_BROADCAST_ALERT: false,
