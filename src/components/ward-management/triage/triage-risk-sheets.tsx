@@ -24,8 +24,8 @@ import {
   StatusGlyph,
   buttonClass,
   tableClasses,
+  phoneRows,
 } from "@/components/wf";
-import { phoneRows } from "@/components/wf/phone-rows";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
 import {

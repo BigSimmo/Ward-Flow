@@ -3,8 +3,7 @@
 /** Triage and risk: 1 Review details and 2 Assessment (SMHMR900). Synthetic data only. */
 import { useRef, useState, type ChangeEvent, type RefObject } from "react";
 
-import { Button, ChipGroup, FilterChip, Kbd, StatusGlyph, Textarea, TextInput } from "@/components/wf";
-import { phoneRows } from "@/components/wf/phone-rows";
+import { Button, ChipGroup, FilterChip, Kbd, StatusGlyph, Textarea, TextInput, phoneRows } from "@/components/wf";
 
 import {
   AMHW,

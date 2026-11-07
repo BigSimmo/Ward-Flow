@@ -18,8 +18,8 @@ import {
   Segmented,
   SrOnly,
   StatusGlyph,
+  phoneRows,
 } from "@/components/wf";
-import { phoneRows } from "@/components/wf/phone-rows";
 
 import type { GuideGroup, SectionId } from "./triage-risk-data";
 import type { SectionStatus, Target, TextKey, TriageState } from "./triage-risk-state";

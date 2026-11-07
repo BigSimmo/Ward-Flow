@@ -7,8 +7,7 @@
  */
 import { Info } from "lucide-react";
 
-import { ChipGroup, FilterChip, Icon, Segmented, SrOnly, StatusGlyph, TextInput } from "@/components/wf";
-import { phoneRows } from "@/components/wf/phone-rows";
+import { ChipGroup, FilterChip, Icon, Segmented, SrOnly, StatusGlyph, TextInput, phoneRows } from "@/components/wf";
 
 import { ACTIONS, AHD, LEGAL, OUTCOMES, TIERS, WHO_TOLD, type Tier } from "./triage-risk-data";
 import { Choice, MultiChips, Reveal, Row, type FormApi } from "./triage-risk-parts";

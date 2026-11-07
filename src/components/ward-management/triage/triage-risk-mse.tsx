@@ -7,8 +7,7 @@
  */
 import { useState } from "react";
 
-import { Button, ChipGroup, FilterChip, Segmented, StatusGlyph, Textarea, TextInput } from "@/components/wf";
-import { phoneRows } from "@/components/wf/phone-rows";
+import { Button, ChipGroup, FilterChip, Segmented, StatusGlyph, Textarea, TextInput, phoneRows } from "@/components/wf";
 
 import { MSE, type MseDomain } from "./triage-risk-data";
 import { autoRows, Hint, type FormApi } from "./triage-risk-parts";

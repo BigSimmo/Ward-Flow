@@ -33,8 +33,8 @@ import {
   StatusGlyph,
   Textarea,
   TextInput,
+  phoneRows,
 } from "@/components/wf";
-import { phoneRows } from "@/components/wf/phone-rows";
 
 import {
   COPY_TO,

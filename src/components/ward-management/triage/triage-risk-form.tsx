@@ -31,6 +31,7 @@ import {
   buttonClass,
   useIsPhone,
   useOptionalToast,
+  phoneRows,
 } from "@/components/wf";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 import { calendarDateOf, perthCalendarDay, perthClockTime } from "@/components/ward-management/ward-clock";
@@ -38,8 +39,7 @@ import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { confirmedWardCommand } from "@/components/ward-management/ward-command-completion";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { useRoleGate, useRouteRole } from "@/components/ward-management/ward-role-gate";
-import { announce } from "@/components/wf/live-announcer";
-import { phoneRows } from "@/components/wf/phone-rows";
+import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 
 import { DecisionBody } from "./triage-risk-decision";
 import { FOLDABLE, foldedSections, foldLine } from "./triage-risk-fold";
@@ -416,7 +416,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
   const say = useCallback(
     (message: string) => {
       if (toast) toast.push({ tone: "info", title: message });
-      else announce(message);
+      else announceToWardShell(message);
     },
     [toast],
   );
@@ -503,7 +503,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
     setSheet(null);
     setSignedAt(stampOf(calendarDateOf(boardNow, dayZero)));
     scrollPageTop();
-    announce(`Signed. Triage for ${person.name} is read-only.`);
+    announceToWardShell(`Signed. Triage for ${person.name} is read-only.`);
   };
   // Signing records the person and the codes only (`triageSignedFields`); the typed text stays here.
   const confirmSign = () => {
