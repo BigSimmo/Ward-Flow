@@ -24,7 +24,7 @@ history following each file, into [`history/`](history/README.md), which search 
   and `ward-flow-remaining-work.md` → `docs/history/`
 - `docs/ward-flow/ARCHIVE-NOTE.md` → `docs/history/ARCHIVE-NOTE.md`; its record of earlier trims is copied below, so this page is the one archive index
 
-The tree exactly as it was before the move is tagged `docs-history-2026-11-08` (`main` commit `6b1352c9`).
+The tree exactly as it was before the move is `main` commit `6b1352c9`.
 
 ## Removed on 24 October 2026
 

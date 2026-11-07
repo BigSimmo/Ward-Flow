@@ -26,4 +26,4 @@ Nothing here describes the app as it is now. For current work start at
   checking these files, so a move or edit that breaks them still fails.
 - **Do not update these files** except to fix a broken link or a generator input. Record new
   decisions in [`decisions.md`](../ward-flow/decisions.md).
-- **The tree before the move** is tagged `docs-history-2026-11-08`.
+- **The tree before the move** is `main` commit `6b1352c9` (`git show 6b1352c9:<path>` reads any old file).
