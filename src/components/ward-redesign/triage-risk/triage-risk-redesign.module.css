@@ -111,7 +111,8 @@
 /* Index beside the form. */
 .layout {
   display: grid;
-  grid-template-columns: 12.5rem minmax(0, 1fr);
+  /* 13.5rem: the section list's card padding keeps "Formulation and plan" on one line. */
+  grid-template-columns: 13.5rem minmax(0, 1fr);
   gap: var(--wf-s-6);
   align-items: start;
   min-width: 0;
@@ -1450,10 +1451,16 @@
 /* The left column (7 Nov 2026): fits the window and scrolls inside, the Summary button pinned at its
    foot; the floating Summary button is for tablet widths only. */
 @media (min-width: 62.5625rem) {
+  /* Josh (7 Nov 2026): the section list sits on its own white card, as the side blocks did. */
   .index {
     max-height: calc(100dvh - var(--wf-header-height) - var(--wf-s-4) * 2);
     overflow-y: auto;
     scrollbar-width: thin;
+    padding: var(--wf-s-2);
+    box-sizing: border-box;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
   }
   .indexFoot {
     align-items: stretch;

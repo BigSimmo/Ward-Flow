@@ -1,59 +1,16 @@
 /*
- * Triage and risk mock-up: the left column's live blocks (7 Nov 2026). Tokens only, neutral borders,
+ * Triage and risk mock-up: the Summary button at the foot of the section list (7 Nov 2026). Tokens only, neutral borders,
  * 12px floor. Hidden with the rest of the index foot below 62.5rem, where the phone bar or the
  * tablet's Summary button takes over.
  */
-
-.block {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-1);
-  min-width: 0;
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-md);
-  background: var(--wf-surface);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-  color: var(--wf-ink-2);
-}
-
-.head {
-  margin: 0;
-  font-size: var(--wf-fs-12);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--wf-ink-3);
-}
-
-.facts {
-  display: flex;
-  flex-direction: column;
-  gap: var(--wf-s-1);
-  margin: 0;
-}
-
-.facts dt {
-  color: var(--wf-ink-3);
-}
-
-.facts dd {
-  margin: 0;
-  color: var(--wf-ink-1);
-  overflow-wrap: anywhere;
-}
-
-.quiet {
-  color: var(--wf-ink-3);
-}
 
 /* Pinned to the foot of the left column while the form scrolls. */
 .summary {
   position: sticky;
   bottom: 0;
   padding: var(--wf-s-2) 0;
-  background: var(--wf-canvas);
+  /* On the section list's white card. */
+  background: var(--wf-surface);
 }
 
 .summaryButton {
@@ -64,9 +21,4 @@
 
 .summaryButton * {
   white-space: nowrap;
-}
-
-.open {
-  align-self: flex-start;
-  margin-top: var(--wf-s-1);
 }

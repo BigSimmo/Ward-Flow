@@ -291,11 +291,8 @@ export function SummaryDrawer({
   reqs,
   jump,
   signButton,
-  lead,
 }: {
   form: FormApi;
-  /** Phone only: the Now box, at the top of the Summary tab (the page has no left column there). */
-  lead?: ReactNode;
   open: boolean;
   tab: string;
   onTab: (tab: string) => void;
@@ -336,7 +333,6 @@ export function SummaryDrawer({
       <div className={styles.pane}>
         {tab === "sum" ? (
           <>
-            {lead}
             <BeforeYouSign reqs={reqs} jump={jump} />
             <SummaryDocument form={form} jump={jump} />
           </>
