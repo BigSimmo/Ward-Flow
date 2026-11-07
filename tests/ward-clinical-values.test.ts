@@ -131,6 +131,11 @@ describe("clinical values file", () => {
       observationGeneral: 1,
       observationIntermittentShort: 15,
       observationIntermittentLong: 30,
+      // Triage urgency (Josh, 7 Nov 2026): the triage form's windows for B to E, synthetic until signed.
+      triageUrgencyB: 2,
+      triageUrgencyC: 12,
+      triageUrgencyD: 48,
+      triageUrgencyE: 14,
     });
     expect(unsignedClinicalValueCount()).toBe(
       CLINICAL_VALUE_LIST.filter((entry) => entry.status === "synthetic").length,

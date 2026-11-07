@@ -1622,6 +1622,19 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
       return { type: "END_COMMUNITY_TREATMENT_ORDER", patientId: patient?.id ?? MISSING_ID };
     },
   ],
+  // Triage and risk (7 Nov 2026): a signed triage on a person, now and then naming a factor off the list.
+  [
+    0.5,
+    (state, random) => ({
+      type: "RECORD_TRIAGE_SIGNED",
+      patientId: pick(random, state.patients)?.id ?? MISSING_ID,
+      urgency: pick(random, ["A", "B", "C", "D", "E", "F", "G"] as const),
+      outcome: "Accepted",
+      legal: pick(random, ["vol", "cto", "nyr"] as const),
+      review: "24h",
+      riskFlags: chance(random, 0.9) ? ["general.now.agit"] : ["general.now.notreal"],
+    }),
+  ],
   // #816: archive a record added in error. Mostly a newly added one, which nothing names yet.
   [
     1,

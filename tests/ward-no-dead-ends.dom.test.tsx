@@ -87,6 +87,7 @@ import { WardPatientWorkspace } from "@/components/ward-management/ward-manageme
 import { OutOfAreaBoard } from "@/components/ward-management/out-of-area/out-of-area-board";
 import { PatientNowScreen } from "@/components/ward-management/patients/patient-now-screen";
 import { AddPatientForm } from "@/components/ward-management/patients/add-patient";
+import { TriageScreen, TriageStartScreen } from "@/components/ward-management/triage/triage-risk-form";
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
 import { SeclusionScreen } from "@/components/ward-management/restrictive-practice/seclusion-screen";
@@ -168,6 +169,12 @@ const ROUTE_RENDERERS: ReadonlyMap<string, { concrete: string; render: () => Rea
     { concrete: `/ward-flow/people/${patient.id}`, render: () => <PatientNowScreen patientId={patient.id} /> },
   ],
   ["/ward-flow/people/new", { concrete: "/ward-flow/people/new", render: () => <AddPatientForm /> }],
+  // Triage and risk (built 7 Nov 2026): start a triage, and one person's triage form.
+  ["/ward-flow/triage/new", { concrete: "/ward-flow/triage/new", render: () => <TriageStartScreen /> }],
+  [
+    "/ward-flow/people/[patientId]/triage",
+    { concrete: `/ward-flow/people/${patient.id}/triage`, render: () => <TriageScreen patientId={patient.id} /> },
+  ],
   ["/ward-flow/referrals", { concrete: "/ward-flow/referrals", render: () => <ReferralBoard /> }],
   [
     "/ward-flow/referrals/new",

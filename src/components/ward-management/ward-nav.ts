@@ -431,6 +431,13 @@ export const WARD_DEVELOPER_HUB_HREF = "/ward-flow";
 export const WARD_ADD_PERSON_HREF = "/ward-flow/people/new";
 
 /**
+ * Start a triage (Josh's approved triage and risk mock-up, built 7 Nov 2026). An action, like the
+ * referral intake: the app bar's New menu (Triage), the phone's Create sheet (New triage) and the
+ * form's own Start a new triage open it. A person's form is `/ward-flow/people/[patientId]/triage`.
+ */
+export const WARD_TRIAGE_NEW_HREF = "/ward-flow/triage/new";
+
+/**
  * Static Ward Flow routes intentionally absent from `WARD_VIEWS` and `WARD_NAV`, each with the
  * reason it is exempt — mirrors `REACHABILITY_ALLOWLIST` in `tests/route-reachability.test.ts`.
  * Every key must be a real static route under `src/app/ward-flow/` (checked by
@@ -459,6 +466,10 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
   [
     WARD_ADD_PERSON_HREF,
     "An action taken from the patient search, not a section of the app: the search's empty state carries the 'Add this person' <Link> that is the only way in, and it appears exactly when it is needed — you have searched, nobody came up, and this is the person who does not exist yet. Listing it in the rail would invite adding a person nobody had looked for first, which is how a duplicate record gets made.",
+  ],
+  [
+    WARD_TRIAGE_NEW_HREF,
+    "An action, not a section: reached from the bar's New menu, the phone's Create sheet and a record's Triage action.",
   ],
   [
     "/ward-flow/hub/catchments",
@@ -815,6 +826,9 @@ export function resolveWardScreenTitle(pathname: string, units: readonly Unit[] 
   if (normalized === "/ward-flow/referrals/new") return "New referral";
   if (isUnder("/ward-flow/referrals")) return "Referrals";
   if (normalized === "/ward-flow/people/new") return "Add patient";
+  // Triage and risk (built 7 Nov 2026).
+  if (normalized === "/ward-flow/triage/new") return "Start a triage";
+  if (/^\/ward-flow\/people\/[^/]+\/triage$/u.test(normalized)) return "Triage and risk";
   if (isUnder("/ward-flow/people")) return "Patients";
   if (isUnder("/ward-flow/transport/officer")) return "Transport";
   if (isUnder("/ward-flow/transport")) return "Transport";

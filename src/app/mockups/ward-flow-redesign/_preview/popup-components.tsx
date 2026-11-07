@@ -100,16 +100,12 @@ function PopMenuNext({ page }: { page: ReactNode }) {
 }
 
 /**
- * Mock-up (7 Nov 2026): the New chooser, opened on load the way a press on the bar's New referral
- * does (on a phone, + then New referral), so the shell's own intercept (`preview-shell.tsx`) draws it:
- * a menu on desktop, a sheet on a phone.
+ * Built into the app (7 Nov 2026): the bar's New menu (Triage or Referral), opened on load the way a
+ * press on the real New button does. A phone has no bar button: the dock's + opens Create, which
+ * offers New triage beside New referral.
  */
-// A phone has no bar button: the dock's + opens Create, whose New referral opens the chooser.
 const NEW_CHOICE_STEPS = {
-  "new-choice": [
-    '[data-testid="ward-bar-primary-action"]:not([aria-haspopup]) || [data-testid="ward-phone-create"]',
-    '?[data-testid="ward-phone-create-referral"]',
-  ],
+  "new-choice": ['[data-testid="ward-bar-primary-action"][aria-haspopup="menu"] || [data-testid="ward-phone-create"]'],
 } as const;
 function PopNewChoice({ page }: { page: ReactNode }) {
   useOpenOnLoad("new-choice", NEW_CHOICE_STEPS);

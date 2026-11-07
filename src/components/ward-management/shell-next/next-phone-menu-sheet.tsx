@@ -18,6 +18,7 @@ import {
 import {
   BedSingle,
   CircleHelp,
+  ClipboardList,
   Inbox,
   Clock3,
   LogOut,
@@ -33,7 +34,7 @@ import type { LucideIcon } from "lucide-react";
 import { Sheet } from "@/components/wf/sheet";
 import { Dot } from "@/components/wf";
 import type { WardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { WARD_ADD_PERSON_HREF } from "@/components/ward-management/ward-nav";
+import { WARD_ADD_PERSON_HREF, WARD_TRIAGE_NEW_HREF } from "@/components/ward-management/ward-nav";
 import { wardNavCountLabel, type WardNavCount } from "@/components/ward-management/ward-nav-counts";
 import type { SearchResultItem } from "@/components/ward-management/ward-global-search";
 import { preloadWhenIdle } from "@/components/ward-management/preload-when-idle";
@@ -418,7 +419,7 @@ function CreateSheet({
   byId: ReadonlyMap<string, RailEntry>;
   onNewReferral: () => void;
 }) {
-  const { canRefer, ids } = usePhoneCreateOptions(byId);
+  const { canRefer, canTriage, ids } = usePhoneCreateOptions(byId);
   // shell-2: on a ward's own page, Update a bed opens that ward's beds, not the statewide list.
   const currentUnitId = /^\/ward-flow\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
   const rows = CREATE_LINKS.flatMap((item) => {
@@ -458,23 +459,38 @@ function CreateSheet({
       closeButtonClassName={styles.close}
       bodyClassName={`${styles.body} ${styles.createBody}`}
     >
-      {canRefer ? (
-        <button
-          type="button"
-          className={styles.createPrimary}
-          data-testid="ward-phone-create-referral"
-          onClick={() => {
-            onClose();
-            onNewReferral();
-          }}
-        >
-          <Inbox aria-hidden="true" strokeWidth={1.75} />
-          New referral
-        </button>
-      ) : null}
+      {/* Triage and risk (built 7 Nov 2026): New triage beside New referral. */}
+      <div className={canRefer && canTriage ? styles.createPair : styles.createSingle}>
+        {canRefer ? (
+          <button
+            type="button"
+            className={styles.createPrimary}
+            data-testid="ward-phone-create-referral"
+            onClick={() => {
+              onClose();
+              onNewReferral();
+            }}
+          >
+            <Inbox aria-hidden="true" strokeWidth={1.75} />
+            New referral
+          </button>
+        ) : null}
+        {canTriage ? (
+          <Link
+            href={WARD_TRIAGE_NEW_HREF}
+            // Josh (7 Nov 2026): one filled button per sheet. New triage is the outlined one.
+            className={canRefer ? `${styles.createPrimary} ${styles.createOutline}` : styles.createPrimary}
+            data-testid="ward-phone-create-triage"
+            onClick={onClose}
+          >
+            <ClipboardList aria-hidden="true" strokeWidth={1.75} />
+            New triage
+          </Link>
+        ) : null}
+      </div>
       {rows.length > 0 ? (
         <ul className={`${styles.list} ${styles.rich}`}>{rows}</ul>
-      ) : canRefer ? null : (
+      ) : canRefer || canTriage ? null : (
         // An officer or executive desk has nothing to start, so the sheet says so rather than open empty.
         <p className={styles.empty}>Nothing to start from this desk.</p>
       )}

@@ -91,6 +91,7 @@ import { OutOfAreaBoard } from "@/components/ward-management/out-of-area/out-of-
 import { WardIndex } from "@/components/ward-management/wards/ward-index";
 import { ReferralBoard } from "@/components/ward-management/referrals/referral-board";
 import { AddPatientForm } from "@/components/ward-management/patients/add-patient";
+import { TriageScreen, TriageStartScreen } from "@/components/ward-management/triage/triage-risk-form";
 import { WardBoard } from "@/components/ward-management/board/ward-board";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 import { WardPatientWorkspace } from "@/components/ward-management/ward-management-console";
@@ -288,6 +289,12 @@ const RENDERABLE_ROUTES: RouteRender[] = [
   // Since 8 Oct 2026 this route is the Referrals board with the referral slide-out opened over it.
   { route: `${ROUTE_PREFIX}/referrals/new`, render: () => createElement(ReferralBoard) },
   { route: `${ROUTE_PREFIX}/people/new`, render: () => createElement(AddPatientForm) },
+  // Triage and risk (built 7 Nov 2026): start a triage, and one person's triage form.
+  { route: `${ROUTE_PREFIX}/triage/new`, render: () => createElement(TriageStartScreen) },
+  {
+    route: `${ROUTE_PREFIX}/people/[patientId]/triage`,
+    render: () => createElement(TriageScreen, { patientId: seedWardFlowState().patients[0].id }),
+  },
   { route: `${ROUTE_PREFIX}/referrals`, render: () => createElement(ReferralBoard) },
   { route: `${ROUTE_PREFIX}/out-of-area`, render: () => createElement(OutOfAreaBoard) },
   { route: `${ROUTE_PREFIX}/wards`, render: () => createElement(WardIndex) },

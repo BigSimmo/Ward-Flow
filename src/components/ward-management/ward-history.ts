@@ -208,6 +208,8 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   RECORD_HANDOVER_SIGN_OFF: { category: "patient", plainWording: "Ward transfer handover signed off" },
   // Q61 (31 Oct 2026): a site's handover, signed by its site bed manager. About no one patient.
   RECORD_SITE_HANDOVER_SIGN_OFF: { category: "neither", plainWording: "Site handover signed off" },
+  // Triage and risk (7 Nov 2026): a signed triage on one person.
+  RECORD_TRIAGE_SIGNED: { category: "patient", plainWording: "Triage and risk assessment signed" },
   RECORD_CLINICAL_CONTACT: { category: "patient", plainWording: "Clinical liaison contact recorded" },
   DISPATCH_BROADCAST_ALERT: { category: "neither", plainWording: "Statewide broadcast directive dispatched" },
   ACKNOWLEDGE_BROADCAST_ALERT: { category: "neither", plainWording: "Broadcast directive acknowledged" },

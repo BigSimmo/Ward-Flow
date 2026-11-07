@@ -1546,7 +1546,7 @@
       {
         "path": "src/components/ward-management/patients/patient-now-screen.tsx",
         "line": 1,
-        "sha256": "3d1b1140f1527ccc2f7fa69a17f3259ba28e85ee6dc6f3d18c392a36e70e1393"
+        "sha256": "88866ce5c86509ee73d1a1b1bc8560a4e700cf26094abd4629748f33d92c47c0"
       },
       {
         "path": "src/components/ward-management/shell/ward-broadcast-banner-body.tsx",
@@ -1601,12 +1601,12 @@
       {
         "path": "src/components/ward-management/ward-flow-event-roles.ts",
         "line": 1,
-        "sha256": "3eb41a56cb181aefe22ddccbbc6a1c684a25cad9aace23506f1288dcd7a833cc"
+        "sha256": "cc5549140f3fa595009399af81c72bb624f8a03c53d5ff75368f8df51f51a302"
       },
       {
         "path": "src/components/ward-management/ward-flow-events.ts",
         "line": 1,
-        "sha256": "0b503ec858d0f204eaf48d236d0e92e9c19056a53135ef874910ca1103d37091"
+        "sha256": "c613d30cc07b3e475debe936467f97154b6f1940d03d562010568883ca389689"
       },
       {
         "path": "src/components/ward-management/ward-flow-placement-events.ts",
@@ -1636,7 +1636,7 @@
       {
         "path": "src/components/ward-management/ward-flow-reducer.ts",
         "line": 1160,
-        "sha256": "48079548436fef27111c12e4bc316504ec6835586a38429ae0a91cc7d15c7884"
+        "sha256": "f55b75681362fa62d620efbea619995810b477aa18d784a972a937c64f03fd4d"
       },
       {
         "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
@@ -1651,7 +1651,7 @@
       {
         "path": "src/components/ward-management/ward-flow-storage-validation.ts",
         "line": 455,
-        "sha256": "e4a4ca3d936d6dea7e3ccd915bda5dd2631111df017c1519f92c97164812a56e"
+        "sha256": "5e826cb7bfd2d8643b941381d6cb3a0da705d2475ec525140094127fdeab84b3"
       },
       {
         "path": "src/components/ward-management/ward-flow-transport-events.ts",

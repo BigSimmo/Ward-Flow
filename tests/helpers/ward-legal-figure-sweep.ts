@@ -1208,6 +1208,20 @@ function candidatesForMovements(
       return state.patients.map((patient) => ({ type, role, now, patientId: patient.id }));
     case "END_COMMUNITY_TREATMENT_ORDER":
       return state.patients.map((patient) => ({ type, role, now, patientId: patient.id }));
+    case "RECORD_TRIAGE_SIGNED":
+      // Triage and risk (7 Nov 2026). One candidate per patient: closed-list codes and factor keys,
+      // and a legal status code only. A form time is typed on the form and never reaches the record.
+      return state.patients.map((patient) => ({
+        type,
+        role,
+        now,
+        patientId: patient.id,
+        urgency: "C",
+        outcome: "Accepted",
+        legal: "cto",
+        review: "72h",
+        riskFlags: ["violence.now.intent"],
+      }));
     case "ARCHIVE_PATIENT":
       // #816. One candidate per patient. The reducer keeps any record that care names, so only a
       // record added in error (the sweep's own ADD_PATIENT) leaves, and it carries no legal figure.
