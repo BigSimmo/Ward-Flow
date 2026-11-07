@@ -741,7 +741,7 @@ test.describe("@mockup Ward shell bar — item 43: the unwired primary action's 
   });
 
   for (const [route, formerLabel, routeLabel] of FORMER_UNWIRED_ROUTES) {
-    test(`on ${routeLabel}, the header primary is New referral, not "${formerLabel}", and it opens the referral slide-out, which closes on Escape with focus returning to the button`, async ({
+    test(`on ${routeLabel}, the header primary is New, not "${formerLabel}", and its Referral opens the referral slide-out, which closes on Escape with focus returning to the button`, async ({
       page,
     }) => {
       await page.setViewportSize({ width: 1440, height: 900 });
@@ -749,18 +749,23 @@ test.describe("@mockup Ward shell bar — item 43: the unwired primary action's 
 
       const trigger = page.getByTestId("ward-bar-primary-action");
       await expect(trigger, `the primary action is not visible on ${route}`).toBeVisible();
-      await expect(trigger).toHaveText(/New\s*referral/u);
+      // Triage and risk (7 Nov 2026): the primary reads New and offers Triage or Referral.
+      await expect(trigger).toHaveText(/^\s*New\s*$/u);
       await expect(trigger).not.toHaveText(formerLabel);
 
-      // UX audit (21 Oct 2026): no destination menu; the slide-out's own "Refer to" switch chooses.
+      // UX audit (21 Oct 2026): the slide-out's own "Refer to" switch chooses where it goes.
       const sheet = page.getByTestId("ward-bar-referral-sheet");
+      const referralRow = page.getByTestId("ward-new-referral");
       await expect(sheet, "the referral slide-out must start closed").toHaveCount(0);
 
       // A real click, not a DOM presence check: reachability is the property that matters. Retried
       // as one step, because a dev-server reload just after load can close the slide-out again.
       await expect(async () => {
-        if (!(await sheet.isVisible())) await trigger.click();
-        await expect(sheet, "the referral slide-out did not open after a real click on New referral").toBeVisible({
+        if (!(await sheet.isVisible())) {
+          if (await referralRow.isVisible()) await referralRow.click();
+          else await trigger.click();
+        }
+        await expect(sheet, "the referral slide-out did not open after New, then Referral").toBeVisible({
           timeout: 2_000,
         });
       }).toPass({ timeout: 20_000 });
@@ -813,8 +818,13 @@ test("@mockup the Tasks and Referrals drawers opened offline show Try again and 
   await gotoWardChrome(page);
   await context.setOffline(true);
 
-  await page.getByTestId("ward-bar").getByRole("button", { name: "New referral" }).click();
+  // Triage and risk (7 Nov 2026): offline before the New menu has loaded, New opens the referral
+  // slide-out directly; once loaded, Referral in the menu does.
+  await page.getByTestId("ward-bar-primary-action").click();
   const referral = page.getByTestId("ward-bar-referral-sheet");
+  const referralRow = page.getByTestId("ward-new-referral");
+  await expect(referral.or(referralRow).first()).toBeVisible();
+  if (await referralRow.isVisible()) await referralRow.click();
   await expect(referral.getByTestId("ward-load-retry")).toContainText("Referrals did not load");
   await referral.getByRole("button", { name: "Close" }).click();
   await expect(referral).toHaveCount(0);

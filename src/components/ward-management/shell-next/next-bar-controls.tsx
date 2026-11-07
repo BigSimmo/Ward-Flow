@@ -454,6 +454,13 @@ function WardBarNewMenuButton({
     },
     [primaryTriggerRef],
   );
+  // The menu loads on first use. When it cannot (offline before it has loaded), New opens the
+  // referral slide-out as New referral did, which shows its own Try again.
+  const openMenu = (trigger: HTMLElement, row: number) =>
+    void loadNewMenu().then(
+      () => setOpen({ trigger, row }),
+      () => onReferral(),
+    );
   const choose = (kind: NewMenuKind) => {
     setOpen(null);
     if (kind === "triage") router.push(WARD_TRIAGE_NEW_HREF);
@@ -469,7 +476,7 @@ function WardBarNewMenuButton({
     }
     if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
     event.preventDefault();
-    setOpen({ trigger: event.currentTarget, row: event.key === "ArrowUp" ? 1 : 0 });
+    openMenu(event.currentTarget, event.key === "ArrowUp" ? 1 : 0);
   };
   return (
     <div className={styles.primaryWrap}>
@@ -486,8 +493,8 @@ function WardBarNewMenuButton({
         onFocus={() => void loadNewMenu()}
         onKeyDown={onKeyDown}
         onClick={(event) => {
-          const trigger = event.currentTarget;
-          setOpen((current) => (current === null ? { trigger, row: 0 } : null));
+          if (open !== null) setOpen(null);
+          else openMenu(event.currentTarget, 0);
         }}
       >
         <Plus className={styles.primaryIcon} aria-hidden="true" strokeWidth={1.75} />
