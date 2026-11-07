@@ -165,4 +165,23 @@ describe("shared mode: a triage goes only with a person the desk is sent", () =>
     expect(scopeWardFlowState(state, officer, { now: NOW_ANCHOR, places }).state.triages ?? []).toEqual([]);
     expect("triages" in scopeWardFlowState(seed, statewide, { now: NOW_ANCHOR, places }).state).toBe(false);
   });
+
+  it("sends a ward desk the triage only when that ward is sent the person", () => {
+    const state = sign(seed);
+    const places = wardPlaceLookup(state.units);
+    const results = state.units.map(
+      (unit) =>
+        scopeWardFlowState(
+          state,
+          { role: "ward", scope: { kind: "ward", unitIds: [unit.id] } },
+          { now: NOW_ANCHOR, places },
+        ).state,
+    );
+    const sent = results.filter((scoped) => scoped.patients.some((patient) => patient.id === PATIENT_ID));
+    const notSent = results.filter((scoped) => !scoped.patients.some((patient) => patient.id === PATIENT_ID));
+    expect(sent.length).toBeGreaterThan(0);
+    expect(notSent.length).toBeGreaterThan(0);
+    for (const scoped of sent) expect(scoped.triages).toHaveLength(1);
+    for (const scoped of notSent) expect(scoped.triages ?? []).toEqual([]);
+  });
 });

@@ -9,7 +9,16 @@
  * load does not carry it (`next-bar-controls.tsx`).
  */
 import { ClipboardList, Inbox, type LucideIcon } from "lucide-react";
-import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent, type RefObject } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type RefObject,
+} from "react";
 
 import { Icon, OverlayPortal, Sheet } from "@/components/wf";
 
@@ -102,6 +111,10 @@ function ChoiceMenu({ trigger, onClose, onChoose, initial = 0 }: Omit<NewMenuPro
   // The overlay host can arrive a render after this component mounts (the first menu on a page with
   // no overlay root yet), so placing and the first focus wait for the panel itself to mount.
   const [panelNode, setPanelNode] = useState<HTMLDivElement | null>(null);
+  const setPanel = useCallback((node: HTMLDivElement | null) => {
+    panel.current = node;
+    setPanelNode(node);
+  }, []);
   const itemRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const [active, setActive] = useState(Math.min(Math.max(initial, 0), NEW_CHOICES.length - 1));
 
@@ -176,10 +189,7 @@ function ChoiceMenu({ trigger, onClose, onChoose, initial = 0 }: Omit<NewMenuPro
     <OverlayPortal layer="popover" name="ward-bar-new">
       {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus -- roving tab stop: arrow keys bubble up from the focused item */}
       <div
-        ref={(node) => {
-          panel.current = node;
-          setPanelNode(node);
-        }}
+        ref={setPanel}
         id={NEW_MENU_ID}
         role="menu"
         aria-labelledby={headingId}

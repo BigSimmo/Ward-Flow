@@ -236,7 +236,7 @@ bar's Tools drawer. The rail's "clinical persona" popover is cosmetic.
 
 ## 3. Routes, shell and navigation
 
-### 3.1 Routes (58 `page.tsx` under `src/app/ward-flow/`, 60 total including sign-in and digest)
+### 3.1 Routes (<!-- fact:ward-route-count -->58<!-- /fact --> `page.tsx` under `src/app/ward-flow/`, <!-- fact:app-route-count -->62<!-- /fact --> total including sign-in and digest)
 
 Every page file is a server component that renders one client screen (or redirects).
 

@@ -16,7 +16,7 @@ import type { Referral } from "@/components/ward-management/ward-model";
 
 import type { TriagePerson, TriageReferral } from "./triage-risk-data";
 import { previousTriageFrom, triagePersonFromWorld } from "./triage-risk-people";
-import { triagesFor } from "./triage-record";
+import { triagesFor, type TriageSignedRecord } from "./triage-record";
 
 /** Start a triage: the step that asks who the triage is for (`ward-nav.ts`). */
 export { WARD_TRIAGE_NEW_HREF as TRIAGE_NEW_HREF } from "@/components/ward-management/ward-nav";
@@ -44,8 +44,14 @@ const asReferral = (referral: Referral): TriageReferral => ({
   received: null,
 });
 
-/** Still waiting for an answer and not yet triaged. */
-const awaitingTriage = (referral: Referral) => referral.triagedAt === undefined && referralState(referral) === "queued";
+/**
+ * Still waiting for an answer and not yet triaged. A triage assesses the person, so one signed at or
+ * after a referral was raised answers that referral (and any other raised before it).
+ */
+const awaitingTriage = (referral: Referral, triages: readonly TriageSignedRecord[] | undefined) =>
+  referral.triagedAt === undefined &&
+  referralState(referral) === "queued" &&
+  !((triagesFor(triages, referral.patientId)[0]?.at ?? -Infinity) >= referral.raisedAt);
 
 /**
  * Every synthetic person this desk is sent, as the banner reads them; the referrals awaiting triage;
@@ -94,7 +100,7 @@ export function useTriagePeople(): {
       return person;
     });
     const awaiting = referrals
-      .filter((referral) => referral.patientId && awaitingTriage(referral))
+      .filter((referral) => referral.patientId && awaitingTriage(referral, triages))
       .flatMap((referral) => {
         const person = byId.get(referral.patientId!);
         return person ? [{ ...person, referral: asReferral(referral) }] : [];

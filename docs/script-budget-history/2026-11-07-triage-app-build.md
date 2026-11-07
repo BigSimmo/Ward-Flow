@@ -10,7 +10,7 @@ Raised, each to the measured size plus about 0.2 KB:
 - My ward `/ward-flow/ward/rph-adult-secure`: 593.5 KB (591.4). Budget 592.4 raised to 593.8.
 - Movement `/ward-flow/movements/WF-001`: 588.1 KB (586.6). Budget 587.8 raised to 588.4.
 - Capacity `/ward-flow/capacity`: 657.8 KB (655.9). Budget 657.1 raised to 658.0.
-- ED detail `/ward-flow/ed/arm-ed`: 652.1 KB (647.9). Budget 649.0 raised to 652.3.
+- ED detail `/ward-flow/ed/arm-ed`: 652.1 KB (647.9). Budget 650.1 raised to 652.3.
 - Bed meeting TV `/ward-flow/bed-meeting`: 569.6 KB (567.5). Budget 568.9 raised to 569.8.
 - Statistics `/ward-flow/statistics`: 608.6 KB (606.1). Budget 607.8 raised to 608.9.
 

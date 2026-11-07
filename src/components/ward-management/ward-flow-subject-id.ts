@@ -97,9 +97,11 @@ export function subjectId(event: WardFlowEvent): string {
     case "RECORD_COMMUNITY_TREATMENT_ORDER":
     case "END_COMMUNITY_TREATMENT_ORDER":
     case "ARCHIVE_PATIENT":
-    // Triage and risk (7 Nov 2026): a signed triage is filed against its person.
-    case "RECORD_TRIAGE_SIGNED":
       return event.patientId;
+    // Triage and risk (7 Nov 2026): a signed triage is filed against its person. A malformed one
+    // (no person named) is refused, and its rejection must not carry an `undefined` subject.
+    case "RECORD_TRIAGE_SIGNED":
+      return typeof event.patientId === "string" ? event.patientId : "none";
     case "ACCEPT_REFERRAL":
     case "HOLD_REFERRAL_BED":
     case "DECLINE_REFERRAL":

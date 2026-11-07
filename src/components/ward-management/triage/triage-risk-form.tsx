@@ -771,7 +771,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
           {/* Once signed the form is read-only: every control in the fieldset is disabled, the text stays readable. */}
           <fieldset
             className={`${styles.form} ${startStyles.readOnly}`}
-            disabled={signed}
+            disabled={signed || signing}
             aria-label={signed ? "Signed triage, read-only" : undefined}
             data-testid="triage-form"
           >
