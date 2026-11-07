@@ -275,16 +275,27 @@ export function useDeskRoleLabel(role: WardChromeRole): string {
  * shared workspace (`fromServer`) the server's access already carries any cover, so the local
  * demo's covers are dropped and never widen it.
  */
-export function setWardAccess(access: WardAccess, { fromServer = false }: { fromServer?: boolean } = {}): void {
+export function setWardAccess(
+  access: WardAccess,
+  {
+    fromServer = false,
+    landingPath,
+  }: {
+    fromServer?: boolean;
+    landingPath?: string;
+  } = {},
+): void {
   if (!accessIsValid(access)) return;
   load();
   persist(access);
   clearPersonalKeys();
+  const cleanLanding = landingPath ? landingPath.split("?")[0].replace(/\/+$/, "") : undefined;
   emit({
     desk: access,
     records: expireGrants(snapshot.records),
     previewOf: null,
     covers: fromServer ? [] : snapshot.covers,
+    signInLanding: cleanLanding !== undefined ? cleanLanding : snapshot.signInLanding,
   });
 }
 
@@ -305,8 +316,9 @@ export function markDeskSwitch(leaving?: string): void {
  * home instead of reading "Not part of your role". Cleared once the person moves on.
  */
 export function markSignInLanding(path?: string): void {
-  if (snapshot.signInLanding === path) return;
-  emit({ ...snapshot, signInLanding: path });
+  const clean = path ? path.split("?")[0].replace(/\/+$/, "") : undefined;
+  if (snapshot.signInLanding === clean) return;
+  emit({ ...snapshot, signInLanding: clean });
 }
 
 /** The coordinator previews another role, read only, and can return in one tap (feature 4). */

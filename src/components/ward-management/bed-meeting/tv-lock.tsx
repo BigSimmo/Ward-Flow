@@ -143,7 +143,7 @@ export function TvLockControl({ href, className, shared }: { href: string; class
         open={asking}
         onClose={close}
         title="Unlock this TV"
-        description="Unlocking lets this screen leave the TV view."
+        description="Enter your account password to leave the TV view."
         size="sm"
         className={styles.unlock}
         data-testid="tv-unlock-dialog"
