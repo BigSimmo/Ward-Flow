@@ -224,6 +224,12 @@ export function WardBoardDetailPanel({
         time: departureTimeInputValue(admission.expectedDischargeAt ?? now),
         day: admission.expectedDischargeAt === null ? "today" : "recorded",
       });
+    // The form opens in the drawer body while this button sits in the foot, so take focus to it (CodeRabbit, #1497).
+    setTimeout(() => {
+      const field = document.querySelector<HTMLElement>("#ward-board-date-edit :is(input, select, button)");
+      field?.scrollIntoView?.({ block: "nearest" });
+      field?.focus();
+    }, 0);
   };
 
   const foot =

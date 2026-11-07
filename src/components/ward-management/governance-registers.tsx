@@ -763,6 +763,7 @@ function GovernanceSession({
               <Button
                 variant="light"
                 size="sm"
+                data-testid="ward-governance-record-review"
                 disabledReason={
                   !reviewGate.allowed ? reviewGate.reason : selected === null ? "Choose an event first" : undefined
                 }

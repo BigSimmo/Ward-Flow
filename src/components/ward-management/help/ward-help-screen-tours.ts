@@ -550,15 +550,17 @@ const AROUND: readonly Around[] = [
         body: "Newest first. Choose an event, then Record review.",
       },
       {
+        // Drawer review (6 Nov 2026): the event's detail opens in a drawer only once someone chooses
+        // it, so the walk lights the list rather than a detail pane that is no longer on the page.
         device: "desk",
-        target: id("ward-governance-override-detail"),
-        title: "Event detail",
-        body: "Choose an event under Review and its detail shows here.",
+        target: { sel: "[data-audit-row]" },
+        title: "Waiting for review",
+        body: "Newest first. Choose an event and its detail opens beside the list.",
       },
       {
         device: "desk",
         acts: ["REVIEW_AUDIT_EVENT"],
-        target: id("ward-governance-decision-record"),
+        target: id("ward-governance-record-review"),
         title: "Your review",
         body: "Record review once you have looked at it.",
       },
