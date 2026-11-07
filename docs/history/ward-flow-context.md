@@ -557,7 +557,7 @@ model work but would cost more than it returns on screens.
 | `docs/superpowers/plans/2026-08-18-ward-flow-phase-2-coordinator-screen.md` | Executing Phase 2                                                                           |
 | `docs/archive/ward-flow-phase-handoff.md`                                   | Phase 1 rulings and parked findings in full                                                 |
 | `docs/archive/ward-management-context.md`                                   | The domain glossary — ~30 terms                                                             |
-| `docs/history/archive/dated-notes/ward-management-decisions.md`           | Four ADRs, including the corrected authorisation rule                                       |
+| `docs/history/archive/dated-notes/ward-management-decisions.md`             | Four ADRs, including the corrected authorisation rule                                       |
 | `docs/archive/ward-management-mode-map.md`                                  | The route model as currently built. Carries a superseded banner                             |
 | `docs/archive/ward-flow-phase-2-kickoff.md`                                 | The session-start brief                                                                     |
 
