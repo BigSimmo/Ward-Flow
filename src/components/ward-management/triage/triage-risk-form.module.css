@@ -1601,6 +1601,24 @@
   width: min(18rem, 100%);
 }
 
+/* Phone: the More field shows at 40px with an invisible cover keeping the 48px tap area (Q295,
+   docs/agents/building-ui.md), rather than the kit text field's 44px. */
+@media (max-width: 46.4375rem) {
+  .pickMore div:has(> [role="combobox"]) {
+    min-height: 40px;
+  }
+
+  .pickMore [role="combobox"] {
+    position: relative;
+  }
+
+  .pickMore [role="combobox"]::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+}
+
 .otherInput {
   width: min(24rem, 100%);
 }
