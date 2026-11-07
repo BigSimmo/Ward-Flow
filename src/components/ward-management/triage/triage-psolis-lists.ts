@@ -236,12 +236,8 @@ export const DESK_PROGRAM: Readonly<Partial<Record<WardFlowRole, { stream: Strea
   coordinator: { stream: "rph-adult", program: "rph-cl-triage" },
 };
 
-/** Every program code, across streams. */
-export const PROGRAM_CODES: readonly string[] = Object.values(PROGRAMS).flatMap((list) => list.map(([code]) => code));
-
 /** The codes of a list, for closed-list checks. */
-export const codesOf = (list: readonly (readonly [string, ...unknown[]])[]): readonly string[] =>
-  list.map(([code]) => code);
+const codesOf = (list: readonly (readonly [string, ...unknown[]])[]): readonly string[] => list.map(([code]) => code);
 
 export const VENUE_CODES = codesOf(VENUES);
 export const REFERRAL_TYPE_CODES = codesOf(REFERRAL_TYPES);

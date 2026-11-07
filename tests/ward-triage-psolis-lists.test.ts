@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  PSOLIS_LIST_GAPS,
   ACTIONS_COMMON,
   ALL_PROGRAMS,
   DESK_PROGRAM,
@@ -37,6 +38,12 @@ const LISTS: Record<string, readonly Option[]> = {
 const codes = (list: readonly Option[]) => list.map(([code]) => code);
 
 describe("the PSOLIS pick-lists", () => {
+  it("keeps the gaps the source did not show on record until Josh sends the rest", () => {
+    expect(PSOLIS_LIST_GAPS.length).toBeGreaterThan(0);
+    for (const list of ["Referral type", "Venue", "Problems", "Action plan"])
+      expect(PSOLIS_LIST_GAPS.some((gap) => gap.startsWith(list))).toBe(true);
+  });
+
   it.each(Object.entries(LISTS))("%s has unique codes, labels and PSOLIS values", (_, list) => {
     expect(new Set(codes(list)).size).toBe(list.length);
     expect(new Set(list.map(([, label]) => label)).size).toBe(list.length);
