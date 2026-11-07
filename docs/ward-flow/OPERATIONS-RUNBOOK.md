@@ -4,7 +4,7 @@
 
 Written 24 October 2026 from repository docs and config; not tested against the live services.
 
-_Updated 2026-11-06 — one rollback route with a release pause switch (front-end audit CB-2); 2026-11-05 — health diagnostics and release identities reconciled against source; Documentation owns. No live service check was performed._
+_Updated 2026-11-07 — weekly keep-alive for scheduled workflows; 2026-11-06 — one rollback route with a release pause switch (front-end audit CB-2); 2026-11-05 — health diagnostics and release identities reconciled against source; Documentation owns. No live service check was performed._
 
 **Who this is for:** whoever looks after the hosted synthetic prototype. **Status:** current
 guidance, pulled together from the dated records linked below. Those records hold the detail and
@@ -111,8 +111,12 @@ Weekly, or before a demonstration. All read-only.
 6. **Quiet periods.** Two things stop by themselves when nobody is working on Ward Flow:
    - GitHub turns off every scheduled workflow after 60 days without repository activity:
      backend uptime, the daily release, receipt pruning, the dependency audit and the scheduled CI
-     run. In each workflow's Actions page, check it still shows recent scheduled runs. Turn a
-     disabled one back on there; a manual run alone does not re-enable the schedule.
+     run. `.github/workflows/workflow-keepalive.yml` re-enables them every Sunday night to reset
+     that clock, and leaves alone any you switched off by hand. If its own weekly run stops, check
+     each workflow's Actions page for recent scheduled runs. Turn back on only a workflow GitHub
+     disabled for inactivity; leave one that was switched off on purpose alone. (To hold releases,
+     use `WARD_RELEASE_PAUSED` below, not disabling.) A manual run alone does not re-enable the
+     schedule.
    - A Supabase project on the Free plan pauses after about a week without activity. The backend
      token-authorised `/healthz` diagnostics should then report `database: unavailable`, or signed-in
      `/readyz` should fail. An ordinary `/healthz` call still reports process liveness. Shared saves
