@@ -1,6 +1,6 @@
 # Triage form: webPSOLIS pick-lists, review and handover
 
-Audience: the next Ward Flow chat and Josh. Status: reviewed, not built. Owner: Claude (7 Nov 2026). Synthetic data only.
+Audience: the next Ward Flow chat and Josh. Status: reviewed and decided, not built. Owner: Claude (7 Nov 2026). Synthetic data only.
 
 Original objective: Josh supplied photos of the webPSOLIS SSCD "New Triage" form's dropdowns (7 Nov 2026) to add to Ward Flow's triage and risk form. This note reviews them, records the option lists, recommends how each belongs in the form, and hands the build to a new chat. The triage form was built in #1500 (merged 7 Nov 2026, main `6b1352c93`).
 
@@ -62,7 +62,7 @@ The current form (`src/components/ward-management/triage/triage-risk-data.ts`) h
 2. **Long lists: common first, then search.** Show about six tiles or chips, then a "More" button opening a searchable list (`@/components/wf` kit, typing filters). This is one pattern for Venue, Referral, Problems and Actions.
 3. **"Other" needs detail.** Choosing Other opens a short typed box. Typed text stays in React state only, as it does today.
 4. **Order matters.** Problems and actions keep the order they were chosen, and Copy follows it.
-5. **What is saved (Josh to decide, question 2).** Problems, actions, venue and referral type are codes from fixed lists, so they could join `RECORD_TRIAGE_SIGNED` the same way urgency does: checked against the list, no typed text. That would need:
+5. **What is saved (Josh: yes, decision 2).** Problems, actions, venue and referral type are codes from fixed lists, so they join `RECORD_TRIAGE_SIGNED` the same way urgency does: checked against the list, no typed text. That needs:
    - the schema (`triage-record-schema.ts`);
    - the reducer check;
    - a journey map update (`docs/ward-flow/journey/`, `verify.mjs --write`, review stamps);
@@ -70,24 +70,26 @@ The current form (`src/components/ward-management/triage/triage-risk-data.ts`) h
 6. **Site-specific values stay synthetic.** Program names are site settings keyed by stream, never typed into screens. The invented-figures and record-number guards still apply.
 7. **Update `PSOLIS_FIELD_MAP`** so Help still says where each PSOLIS box comes from.
 
-## Questions for Josh
+## Josh's decisions (7 Nov 2026)
 
-1. Send the missing parts of the lists? Recommended: yes. Show the open dropdown only, cropped, with no patient on screen. Needed:
-   - the label of the referral list;
-   - its item after UNKNOWN;
+1. **Missing list parts:** build with what we have. The lists the photos show completely are built now. The gaps stay marked in the list file, to fill in when Josh sends the rest:
+   - the label of the referral list, and its item after UNKNOWN;
    - the Venue item after LOCK UP, and the end of the list;
    - the end of the Problems list;
    - the Action plan item after "REFERRED TO COMMUNITY, PRIMARY CARE, NGO ETC", and the end of the list;
-   - the full Medium, Purpose, Reason, Consumer present, Associate present and Outcome lists.
-2. Save problems, actions, venue and referral type as codes on the signed triage? Recommended: yes. They are fixed-list codes with no typed text, and later triages can show them.
-3. Show plain labels on screen but copy the exact PSOLIS value? Recommended: yes. Easier to read, and the copied value still matches PSOLIS.
-4. Program from the desk, with Change? Recommended: yes. That is one fewer question per triage.
+   - the full Medium, Purpose, Reason, Consumer present, Associate present and Outcome lists. Until then, the form keeps its current Medium (`HOW`), Purpose and Outcome lists.
+
+   Any later photos must show the open dropdown only, cropped, with no patient on screen.
+
+2. **Save as codes:** yes. Problems, actions, venue and referral type join `RECORD_TRIAGE_SIGNED` as codes checked against their fixed lists, with no typed text (step 5 above).
+3. **Wording:** plain sentence-case labels on screen; Copy and the summary write the exact PSOLIS value.
+4. **Program:** filled in from the desk, with **Change** showing only that stream's programs.
 
 ## Handover: starting the new chat
 
 Paste this into a new Ward Flow chat:
 
-> Continue the triage form's PSOLIS pick-lists. Read `docs/ward-flow/handover/2026-11-07-triage-psolis-picklists.md` first, and AGENTS.md. Work on a new branch from Ward Flow `main`. Build the "Recommended way to build it" section for the lists marked complete, and leave marked gaps until I send the rest. Synthetic data only: do not ask for or use the original photos. Questions 2 to 4 in the note: [my answers].
+> Continue the triage form's PSOLIS pick-lists. Read `docs/ward-flow/handover/2026-11-07-triage-psolis-picklists.md` first, and AGENTS.md. Work on a new branch from Ward Flow `main`. Build the "Recommended way to build it" section following "Josh's decisions": build with the lists we have and leave the marked gaps; save problems, actions, venue and referral type as codes; plain labels on screen with exact PSOLIS values in Copy; Program from the desk with Change. Synthetic data only: do not ask for or use the original photos.
 
 Where things are:
 
