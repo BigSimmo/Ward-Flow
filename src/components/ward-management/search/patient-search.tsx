@@ -815,7 +815,7 @@ export function PatientSearchPage() {
   // The drawer belongs to the row that opened it. If that row leaves the results the drawer closes,
   // and the open flag is cleared here (during render, not in an effect) so the shortcut comes back
   // and the drawer cannot reopen by itself if the row later returns.
-  const drawerOpen = detailsOpen && requestedSelectedId !== null && selectedId === requestedSelectedId;
+  const drawerOpen = !isPhone && detailsOpen && requestedSelectedId !== null && selectedId === requestedSelectedId;
   if (detailsOpen && !drawerOpen) setDetailsOpen(false);
 
   const preview: PreviewSelection | null =
