@@ -469,7 +469,7 @@ export const WARD_NAV_INTENTIONALLY_UNLISTED: ReadonlyMap<string, string> = new 
   ],
   [
     WARD_TRIAGE_NEW_HREF,
-    "An action, not a section of the app: the app bar's New menu offers Triage beside Referral, the phone's Create sheet offers New triage, and a patient record's Triage action opens that person's form. Listing it in the rail beside the boards would present a form as though it were a board.",
+    "An action, not a section: reached from the bar's New menu, the phone's Create sheet and a record's Triage action.",
   ],
   [
     "/ward-flow/hub/catchments",
