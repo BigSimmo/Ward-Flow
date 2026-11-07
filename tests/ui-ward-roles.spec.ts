@@ -407,7 +407,7 @@ test.describe("@mockup Transport officer screen", () => {
 
     // Transport mock-up (Josh, 1 Nov 2026): the foot pins the one next step at every width, so
     // desktop shows the same single En route step, in view without scrolling.
-    await page.getByTestId("ward-officer-detail-close").click();
+    await page.getByTestId("ward-officer-detail").getByTestId("wf-drawer-close").click();
     await page.setViewportSize({ width: 1440, height: 1024 });
     await page.getByTestId("ward-officer-select-WF-005").click();
     const desktopSteps = page
