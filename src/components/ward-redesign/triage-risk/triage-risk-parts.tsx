@@ -22,7 +22,7 @@ import {
 import { phoneRows } from "@/components/wf/phone-rows";
 
 import type { GuideGroup, SectionId } from "./triage-risk-data";
-import type { FactorMark, SectionStatus, Target, TextKey, TriageState } from "./triage-risk-state";
+import type { SectionStatus, Target, TextKey, TriageState } from "./triage-risk-state";
 import { headingFilled, guideHeadings } from "./triage-risk-text";
 import styles from "./triage-risk-redesign.module.css";
 
@@ -40,9 +40,6 @@ export type FormApi = {
   now: number;
   /** Closes any slide-out and goes to a section, or to the field a target names. */
   jump: (section: SectionId, target?: Target) => void;
-  /** What a tap on a risk flag records (Tap marks). A way of entering, not an answer. */
-  tapMark: FactorMark;
-  setTapMark: (mark: FactorMark) => void;
 };
 
 type Option = readonly [value: string, label: string] | string;

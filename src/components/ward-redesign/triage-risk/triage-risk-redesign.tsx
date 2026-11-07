@@ -9,43 +9,69 @@
  * Layout: the patient banner (kit Hero), a section index on the left (step chips on a phone), one
  * form column of six numbered sections, and the record in a tabbed slide-out. State lives in React
  * only; nothing typed goes to browser storage (HOW-WE-WORK §6).
+ *
+ * 7 Nov 2026: New, then Triage, in the app bar opens `?start=new`: a Start a triage step (who it is
+ * for), then the form blank for that person. Sign asks to confirm, then shows the Signed state: the
+ * form read-only, the summary and the next actions. Without `?start=new` the page opens on the
+ * worked Example for review.
  */
-import { BellRing, BookUser, CircleHelp, FileText, Inbox } from "lucide-react";
+import { BellRing, BookUser, CircleHelp, FilePlus2, FileText, Inbox } from "lucide-react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 
 import {
   Button,
+  Card,
+  CardBody,
+  Dialog,
   FormalName,
   Hero,
   HeroChip,
   HeroChips,
   HeroStat,
   Meter,
+  buttonClass,
   useIsPhone,
   useOptionalToast,
 } from "@/components/wf";
+import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
+import { calendarDateOf, perthCalendarDay, perthClockTime } from "@/components/ward-management/ward-clock";
+import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { announce } from "@/components/wf/live-announcer";
 import { phoneRows } from "@/components/wf/phone-rows";
 import { useMinuteNow } from "@/components/wf/use-minute-now";
 
 import { DecisionBody } from "./triage-risk-decision";
-import { LEGAL, PATIENT, REVIEW, SECTIONS, TIER_SHORT, type SectionId } from "./triage-risk-data";
+import {
+  LEGAL,
+  REVIEW,
+  SECTIONS,
+  SIGNED_IN,
+  TIER_LONG,
+  TIER_SHORT,
+  type SectionId,
+  type TriagePerson,
+} from "./triage-risk-data";
 import { MentalStateBody } from "./triage-risk-mse";
 import { SectionCard, StatusMark, type FormApi } from "./triage-risk-parts";
 import { AssessmentBody, ReviewBody } from "./triage-risk-review";
 import { PlanBody, RiskBody } from "./triage-risk-risk";
-import { AllFactorsDrawer, HowToDrawer, SummaryDrawer } from "./triage-risk-sheets";
+import { AllFactorsDrawer, HowToDrawer, SummaryDocument, SummaryDrawer } from "./triage-risk-sheets";
+import { NowBox, SideSummary, SignChecklist } from "./triage-risk-side";
+import { TriageStart } from "./triage-risk-start";
+import { summaryModel, summaryText } from "./triage-risk-summary";
 import {
   allFactors,
   blankTriage,
   exampleTriage,
   requirements,
   sectionStatus,
-  type FactorMark,
   type Target,
   type TriageState,
 } from "./triage-risk-state";
 import styles from "./triage-risk-redesign.module.css";
+import startStyles from "./triage-risk-start.module.css";
 
 const LEGAL_NAME: Readonly<Record<string, string>> = Object.fromEntries(LEGAL);
 const REVIEW_SHORT: Readonly<Record<string, string>> = Object.fromEntries(
@@ -62,6 +88,44 @@ const SUB: Readonly<Record<SectionId, string>> = {
 
 type Sheet = "sum" | "how" | "all" | null;
 
+const NOT_WIRED = "Not wired in this prototype.";
+
+/** "07/11/2026 10:42", the form's date and time, on the board's synthetic Perth clock whatever the device's zone. */
+function stampOf(date: Date): string {
+  const two = (n: number) => String(n).padStart(2, "0");
+  const day = perthCalendarDay(date);
+  return `${two(day.day)}/${two(day.monthIndex + 1)}/${day.year} ${perthClockTime(date)}`;
+}
+
+/**
+ * `?start=new` opens the Start a triage step. As the viewer's shell reads `shell`: the router's copy,
+ * else the browser's (the shareable static preview has no search-params context).
+ */
+function useStartParam(): string | null {
+  return (
+    useSearchParams()?.get("start") ??
+    (typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("start"))
+  );
+}
+
+/** Back to the top: the app shell scrolls its content column, a phone scrolls the window. */
+function scrollPageTop() {
+  const behavior = reducedMotion() ? "auto" : "smooth";
+  document.querySelector("[data-wf-scroller]")?.scrollTo({ top: 0, behavior });
+  window.scrollTo({ top: 0, behavior });
+}
+
+/** Takes `start` off the address once a person is chosen, so New, then Triage, can open the step again. */
+function dropStartParam() {
+  try {
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("start")) return;
+    url.searchParams.delete("start");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  } catch {
+    // An address that cannot be rewritten keeps its parameter; the step still works.
+  }
+}
 const reducedMotion = () =>
   typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
@@ -158,18 +222,51 @@ function useFocusKeeper(state: TriageState) {
 }
 
 export function TriageRiskRedesign() {
+  const startParam = useStartParam();
+  const [step, setStep] = useState<"start" | "form">(startParam === "new" ? "start" : "form");
+  // New, then Triage, again while this page is open: the address gains `start=new` once more.
+  const [seenParam, setSeenParam] = useState(startParam);
+  if (startParam !== seenParam) {
+    setSeenParam(startParam);
+    if (startParam === "new") setStep("start");
+  }
+  const [form, setForm] = useState<{ key: number; state: TriageState }>(() => ({ key: 0, state: exampleTriage() }));
+  const choose = (person: TriagePerson) => {
+    dropStartParam();
+    setForm((current) => ({ key: current.key + 1, state: blankTriage(person) }));
+    setStep("form");
+    scrollPageTop();
+  };
+  if (step === "start") return <TriageStart onChoose={choose} />;
+  return (
+    <TriageForm
+      key={form.key}
+      initial={form.state}
+      onStartNew={() => {
+        setStep("start");
+        scrollPageTop();
+      }}
+    />
+  );
+}
+
+function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew: () => void }) {
   const isPhone = useIsPhone();
   const toast = useOptionalToast();
-  const [state, setState] = useState<TriageState>(exampleTriage);
-  const [start, setStart] = useState<"example" | "blank">("example");
+  const [state, setState] = useState<TriageState>(initial);
+  const person = state.person;
+  const [signedAt, setSignedAt] = useState<string | null>(null);
+  const [confirming, setConfirming] = useState(false);
+  const { now: boardNow, dayZero } = useWardFlowSelect("now", "dayZero");
+  const [start, setStart] = useState<"example" | "blank">(initial.person.example && initial.how ? "example" : "blank");
   const [editingReview, setEditingReview] = useState(false);
   const [sheet, setSheet] = useState<Sheet>(null);
   const [tab, setTab] = useState("sum");
   const [active, setActive] = useState<SectionId>("rev");
-  const [tapMark, setTapMark] = useState<FactorMark>("y");
   const now = useMinuteNow();
   const navLock = useRef(0);
   useFocusKeeper(state);
+  const signed = signedAt !== null;
 
   const say = useCallback(
     (message: string) => {
@@ -187,7 +284,7 @@ export function TriageRiskRedesign() {
     if (section === "rev") setEditingReview(true);
     window.setTimeout(() => goToTarget(section, target, () => setSheet("all")), 0);
   }, []);
-  const form: FormApi = useMemo(
+  const formApi: FormApi = useMemo(
     () => ({
       state,
       update: (change) => setState(change),
@@ -198,10 +295,8 @@ export function TriageRiskRedesign() {
       openSummary,
       now,
       jump,
-      tapMark,
-      setTapMark,
     }),
-    [state, say, isPhone, openSummary, now, jump, tapMark],
+    [state, say, isPhone, openSummary, now, jump],
   );
 
   const reqs = useMemo(() => requirements(state, now), [state, now]);
@@ -215,12 +310,6 @@ export function TriageRiskRedesign() {
   >;
   const sectionsDone = SECTIONS.filter((s) => status[s.id].done).length;
   const flagCount = allFactors(state).filter((f) => f.mark === "y").length;
-
-  const nextNeeded = () => {
-    const first = needed[0];
-    if (!first) return say("Everything needed is in.");
-    jump(first.section, first.target);
-  };
 
   // The index marks the section in view.
   useEffect(() => {
@@ -255,10 +344,25 @@ export function TriageRiskRedesign() {
 
   const loadStart = (value: "example" | "blank") => {
     setStart(value);
-    setState(value === "example" ? exampleTriage() : blankTriage());
+    // The Example is always Harlow's worked triage; Start blank keeps whoever this triage is for.
+    setState(value === "example" ? exampleTriage() : blankTriage(person.example ? undefined : person));
     setEditingReview(false);
+    setSignedAt(null);
     if (value === "blank") say("Blank form. Nothing clinical is pre-selected.");
   };
+
+  const confirmSign = () => {
+    setConfirming(false);
+    setSheet(null);
+    setSignedAt(stampOf(calendarDateOf(boardNow, dayZero)));
+    scrollPageTop();
+    announce(`Signed. Triage for ${person.name} is read-only.`);
+  };
+  const copySummary = () =>
+    copyTextToClipboard(summaryText(summaryModel(state, signedAt ? { at: signedAt, by: SIGNED_IN } : undefined))).then(
+      () => say("Summary copied."),
+      () => say("Copy not allowed here. Select the summary text instead."),
+    );
 
   const signButton = (where: "foot" | "bar" | "sheet") => (
     <Button
@@ -272,7 +376,7 @@ export function TriageRiskRedesign() {
       }}
       onClick={() => {
         setSheet(null);
-        say("Not wired in this prototype.");
+        setConfirming(true);
       }}
     >
       {where === "bar" ? "Sign" : "Sign and send"}
@@ -300,12 +404,12 @@ export function TriageRiskRedesign() {
   );
 
   const sectionBody: Record<SectionId, ReactNode> = {
-    rev: <ReviewBody form={form} editing={editingReview} onEditing={setEditingReview} />,
-    note: <AssessmentBody form={form} />,
-    mse: <MentalStateBody form={form} />,
-    dec: <DecisionBody form={form} />,
-    risk: <RiskBody form={form} onAllFactors={() => setSheet("all")} />,
-    plan: <PlanBody form={form} />,
+    rev: <ReviewBody form={formApi} editing={editingReview} onEditing={setEditingReview} />,
+    note: <AssessmentBody form={formApi} />,
+    mse: <MentalStateBody form={formApi} />,
+    dec: <DecisionBody form={formApi} />,
+    risk: <RiskBody form={formApi} onAllFactors={() => setSheet("all")} />,
+    plan: <PlanBody form={formApi} />,
   };
 
   const indexGroup = (part: "triage" | "risk", title: string, code: string) => (
@@ -340,19 +444,31 @@ export function TriageRiskRedesign() {
       <main id="main-content" className={styles.main}>
         <Hero
           level={1}
-          eyebrow={`Triage and risk · Synthetic · ${left ? `${left} left before signing` : "Ready to sign"}`}
-          title={<FormalName name={PATIENT.name} />}
-          titleMeta={PATIENT.meta}
+          eyebrow={`Triage and risk · Synthetic · ${signed ? "Signed" : left ? `${left} left before signing` : "Ready to sign"}`}
+          title={<FormalName name={person.name} />}
+          titleMeta={person.meta}
           aside={
-            <Button
-              variant="onHero"
-              size="sm"
-              icon={CircleHelp}
-              className={phoneRows.heroPill}
-              onClick={() => setSheet("how")}
-            >
-              How to
-            </Button>
+            <div className={phoneRows.heroPills}>
+              <Button
+                variant="onHero"
+                size="sm"
+                icon={FilePlus2}
+                className={phoneRows.heroPill}
+                onClick={onStartNew}
+                data-testid="triage-start-new"
+              >
+                {isPhone ? "New triage" : "Start a new triage"}
+              </Button>
+              <Button
+                variant="onHero"
+                size="sm"
+                icon={CircleHelp}
+                className={phoneRows.heroPill}
+                onClick={() => setSheet("how")}
+              >
+                How to
+              </Button>
+            </div>
           }
           stats={
             isPhone ? undefined : (
@@ -371,28 +487,50 @@ export function TriageRiskRedesign() {
             <div className={styles.bannerBar}>
               <p className={styles.idLine}>
                 <span>
-                  UMRN <b className={styles.mono}>{PATIENT.umrn}</b>
+                  UMRN <b className={styles.mono}>{person.umrn}</b>
                 </span>
                 <span>
-                  DOB <b className={styles.mono}>{PATIENT.dob}</b>
+                  DOB <b className={styles.mono}>{person.dob}</b>
                 </span>
                 {isPhone ? null : (
                   <>
                     <span>
-                      Now at <b>{PATIENT.nowAt}</b>
+                      Now at <b>{person.nowAt}</b>
                     </span>
                     <span>
-                      Community team <b>{PATIENT.team}</b>
+                      Community team <b>{person.team}</b>
                     </span>
                   </>
                 )}
               </p>
               {/* Alert first, then allergies, legal status in full words (as typed), then the rest. */}
               <HeroChips label="Alerts, allergies and legal" className={styles.bannerTags}>
-                <HeroChip value="Alert" tone="warning" label={PATIENT.alert} />
-                <HeroChip value="Allergies" label="2" />
-                <HeroChip value={PATIENT.legal} label={PATIENT.legalTag} />
-                <HeroChip value="+2" label="more alerts" onPress={() => openSummary("alerts")} />
+                {signed ? (
+                  <HeroChip
+                    value="Signed"
+                    tone="success"
+                    label={`${signedAt} by ${SIGNED_IN}`}
+                    testId="triage-signed-tag"
+                  />
+                ) : null}
+                {person.alert ? <HeroChip value="Alert" tone="warning" label={person.alert} /> : null}
+                {person.example ? (
+                  <HeroChip value="Allergies" label="2" />
+                ) : (
+                  <HeroChip value="Allergies" label={person.allergies} />
+                )}
+                {person.legal ? (
+                  <HeroChip value={person.legal} label={person.legalTag} />
+                ) : (
+                  <HeroChip value="Legal status" label="Not recorded. Not legally checked." />
+                )}
+                {person.alertCount > 1 ? (
+                  <HeroChip
+                    value={`+${person.alertCount - 1}`}
+                    label="more alerts"
+                    onPress={() => openSummary("alerts")}
+                  />
+                ) : null}
               </HeroChips>
             </div>
           }
@@ -403,37 +541,75 @@ export function TriageRiskRedesign() {
                 "Alerts",
                 BellRing,
                 () => openSummary("alerts"),
-                <>
-                  {" "}
-                  <span className={styles.heroCount}>{PATIENT.alertCount}</span>
-                </>,
+                person.alertCount ? (
+                  <>
+                    {" "}
+                    <span className={styles.heroCount}>{person.alertCount}</span>
+                  </>
+                ) : undefined,
               )}
               {bannerLink("Patient profile", "Profile", BookUser, () => openSummary("profile"))}
               {isPhone ? null : bannerLink("Referral", "Referral", Inbox, () => openSummary("ref"))}
             </div>
           }
-          condensed={`${PATIENT.name} · ${PATIENT.umrn} · ${left ? `${left} left before signing` : "Ready to sign"}`}
+          condensed={`${person.name} · ${person.umrn} · ${signed ? "Signed" : left ? `${left} left before signing` : "Ready to sign"}`}
         />
+
+        {signed ? (
+          <Card className={startStyles.card} aria-labelledby="triage-signed-title" data-testid="triage-signed">
+            <CardBody className={startStyles.signed}>
+              <div className={startStyles.signedHead}>
+                <h2 className={startStyles.signedTitle} id="triage-signed-title">
+                  Triage signed
+                </h2>
+              </div>
+              <p className={startStyles.quiet}>
+                One entry, printed as SMHMR900 and SMHMR905. The form below is read-only.
+              </p>
+              <SummaryDocument form={formApi} signed={{ at: signedAt, by: SIGNED_IN }} />
+              <div className={startStyles.actions} role="group" aria-label="Next">
+                <Button variant="pri" onClick={copySummary} data-testid="triage-signed-copy">
+                  Copy summary
+                </Button>
+                <Button onClick={() => say(NOT_WIRED)}>Make a bed request</Button>
+                <Link href={person.recordHref} className={buttonClass()}>
+                  Open patient record
+                </Link>
+                <Button onClick={onStartNew}>Start another triage</Button>
+              </div>
+              <p className={startStyles.quiet}>This mock-up keeps nothing after you leave the page.</p>
+            </CardBody>
+          </Card>
+        ) : null}
 
         <div className={styles.layout}>
           <nav className={styles.index} aria-label="Sections">
             {indexGroup("triage", "Triage", "SMHMR900")}
             {indexGroup("risk", "Risk", "SMHMR905")}
+            {/* 7 Nov 2026: the live checklist, the Now box and the Summary button replace Go to next
+                needed, Open summary and the floating Summary button, which covered the form. */}
             <div className={styles.indexFoot}>
               <span className={styles.mono}>
                 {sectionsDone} of {SECTIONS.length} sections
               </span>
               <Meter value={percent} max={100} fill="data-1" label="Needed answers in" />
-              <Button variant="ghost" size="sm" onClick={nextNeeded}>
-                Go to next needed
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => openSummary("sum")} aria-haspopup="dialog">
-                Open summary
-              </Button>
+              {isPhone ? null : (
+                <>
+                  {signed ? null : <SignChecklist reqs={reqs} jump={jump} onMore={() => openSummary("sum")} />}
+                  <NowBox state={state} />
+                  <SideSummary left={left} signed={signed} onOpen={() => openSummary("sum")} />
+                </>
+              )}
             </div>
           </nav>
 
-          <div className={styles.form}>
+          {/* Once signed the form is read-only: every control in the fieldset is disabled, the text stays readable. */}
+          <fieldset
+            className={`${styles.form} ${startStyles.readOnly}`}
+            disabled={signed}
+            aria-label={signed ? "Signed triage, read-only" : undefined}
+            data-testid="triage-form"
+          >
             {SECTIONS.map((s, index) => (
               <div key={s.id} className={styles.formPart}>
                 {index === 0 ? (
@@ -448,7 +624,7 @@ export function TriageRiskRedesign() {
                 ) : null}
                 <SectionCard id={s.id} n={s.n} title={s.label} sub={SUB[s.id]} status={status[s.id]}>
                   {sectionBody[s.id]}
-                  {s.id === "plan" && !isPhone ? (
+                  {s.id === "plan" && !isPhone && !signed ? (
                     <div className={styles.signFoot}>
                       <span className={styles.grow}>
                         {left
@@ -456,10 +632,10 @@ export function TriageRiskRedesign() {
                           : "Everything needed is in. Signing creates both records."}{" "}
                         Draft is not saved in this mock-up.
                       </span>
-                      <Button variant="ghost" onClick={() => say("Not wired in this prototype.")}>
+                      <Button variant="ghost" onClick={() => say(NOT_WIRED)}>
                         Awaiting information
                       </Button>
-                      <Button onClick={() => say("Not wired in this prototype.")}>Save draft</Button>
+                      <Button onClick={() => say(NOT_WIRED)}>Save draft</Button>
                       {signButton("foot")}
                     </div>
                   ) : null}
@@ -470,11 +646,11 @@ export function TriageRiskRedesign() {
               Ward Flow prototype. Synthetic patient and figures only. Not validated clinical decision support. One
               entry prints as SMHMR900 and SMHMR905.
             </p>
-          </div>
+          </fieldset>
         </div>
       </main>
 
-      {isPhone ? (
+      {signed ? null : isPhone ? (
         <div className={styles.phoneBar} data-testid="triage-phone-bar">
           <button type="button" className={styles.phoneLeft} onClick={() => openSummary("sum")} aria-haspopup="dialog">
             {left ? (
@@ -491,23 +667,50 @@ export function TriageRiskRedesign() {
           {signButton("bar")}
         </div>
       ) : (
+        // Tablet only: from 62.5rem up the Summary button sits at the foot of the left column.
         <Button className={styles.edgeTab} icon={FileText} onClick={() => openSummary("sum")} aria-haspopup="dialog">
           Summary <span className={styles.edgeCount}>{left ? `${left} needed` : "Ready"}</span>
         </Button>
       )}
 
       <SummaryDrawer
-        form={form}
+        form={formApi}
         open={sheet === "sum"}
         tab={tab}
         onTab={setTab}
         onClose={() => setSheet(null)}
         reqs={reqs}
         jump={jump}
-        signButton={signButton("sheet")}
+        signButton={signed ? null : signButton("sheet")}
+        lead={isPhone ? <NowBox state={state} /> : undefined}
       />
       <HowToDrawer open={sheet === "how"} onClose={() => setSheet(null)} example={start} onExample={loadStart} />
-      <AllFactorsDrawer form={form} open={sheet === "all"} onClose={() => setSheet(null)} />
+      <AllFactorsDrawer form={formApi} open={sheet === "all"} onClose={() => setSheet(null)} />
+      <Dialog
+        open={confirming}
+        onClose={() => setConfirming(false)}
+        title={`Sign triage for ${person.name}?`}
+        description="Signing creates both records, SMHMR900 and SMHMR905. Check what you chose."
+        size="sm"
+        data-testid="triage-sign-dialog"
+        primary={{ label: "Sign", onAction: confirmSign }}
+        secondary={[{ label: "Keep editing", onAction: () => setConfirming(false), autoFocus: true }]}
+      >
+        <dl className={startStyles.confirmFacts}>
+          <div>
+            <dt>Urgency</dt>
+            <dd>{state.urgency ? `${state.urgency} · ${TIER_LONG[state.urgency]}` : "–"}</dd>
+          </div>
+          <div>
+            <dt>Outcome</dt>
+            <dd>{state.outcome ?? "–"}</dd>
+          </div>
+          <div>
+            <dt>Reviewer</dt>
+            <dd>{SIGNED_IN}</dd>
+          </div>
+        </dl>
+      </Dialog>
     </div>
   );
 }

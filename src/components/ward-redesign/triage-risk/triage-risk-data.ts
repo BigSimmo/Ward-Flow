@@ -710,11 +710,24 @@ export const AMHW = [
   ["declined", "Declined"],
   ["na", "Not available"],
 ] as const;
+/** Interpreter needed: No, or Yes with the language (7 Nov 2026). */
 export const INTERPRETER = [
-  ["no", "Not needed"],
-  ["acc", "Accredited interpreter"],
-  ["na", "Needed, not available"],
+  ["no", "No"],
+  ["yes", "Yes"],
 ] as const;
+/** How the person arrived (7 Nov 2026). */
+export const ARRIVED_BY = [
+  "Self",
+  "Family or friend",
+  "Ambulance",
+  "Police",
+  "Mental health team",
+  "GP or other service",
+  "Transfer from another hospital",
+  "Other",
+] as const;
+/** Others present at the review. */
+export const OTHERS_PRESENT = ["Family or carer", "Other service", "Police", "Security"] as const;
 export const OUTCOMES = ["Accepted", "Referred on", "Advice only", "No further action"] as const;
 export const AHD = [
   ["none", "None known"],
@@ -723,7 +736,8 @@ export const AHD = [
   ["unk", "Not asked"],
 ] as const;
 export const COPY_TO = ["Person", "Carer", "GP"] as const;
-export const SOURCES = ["Person", "Carer", "Referrer", "CMHT", "GP", "Police", "Records"] as const;
+/** Sources used (collateral), chosen in Review details. */
+export const SOURCES = ["Person", "Family or carer", "GP", "Records", "Police", "Other"] as const;
 
 /** The referrer's asked urgency (synthetic referral R-1182). */
 export const REFERRER_URGENCY: Tier = "C";
@@ -739,8 +753,53 @@ export const LAST_TRIAGE = {
   history: "History (12 Oct, Synthetic CMHT, check): Lives with mother; no dependants. No current charges.",
 } as const;
 
-/** Synthetic patient banner and record. */
-export const PATIENT = {
+/** The referral a triage answers, as the record holds it. */
+export type TriageReferral = {
+  id: string;
+  /** Who sent it, in words. */
+  from: string;
+  /** The urgency the referrer asked for, when they asked for a tier. */
+  urgency: Tier | null;
+  /** The episode the referral opens, when it names one. */
+  episode: string | null;
+  /** Who referred, when the referral names them (synthetic). */
+  referrer: { name: string; role: string; phone: string } | null;
+  /** When it came in, as the referral records it. */
+  received: string | null;
+};
+
+/**
+ * Who a triage is for, read from the record (synthetic). The banner, the record tabs and the summary
+ * read this; nothing in it is an answer on the form.
+ */
+export type TriagePerson = {
+  /** The record id the patient record opens on. */
+  id: string;
+  /** Surname first: "Harlow, Jesse". */
+  name: string;
+  meta: string;
+  umrn: string;
+  dob: string;
+  nowAt: string;
+  team: string;
+  /** Legal status as typed on the record, or null when none is recorded. */
+  legal: string | null;
+  legalTag: string;
+  alert: string | null;
+  alertCount: number;
+  allergies: string;
+  referral: TriageReferral | null;
+  /** Whether a synthetic previous triage is on record (only the Example has one). */
+  lastTriage: boolean;
+  /** The app address of the person's record. */
+  recordHref: string;
+  /** Only the worked Example carries the full synthetic record (alerts, contacts, profile). */
+  example: boolean;
+};
+
+/** Synthetic patient banner and record: the worked Example. */
+export const PATIENT: TriagePerson = {
+  id: "196zcp24w5t0",
   name: "Harlow, Jesse",
   meta: "Male · 34y",
   umrn: "SYN 40-2271",
@@ -752,8 +811,21 @@ export const PATIENT = {
   alert: "Violence to staff, Mar 2025",
   alertCount: 3,
   allergies: "Penicillin (rash) · Haloperidol (dystonia)",
-  author: "Dr A. Nguyen",
-} as const;
+  referral: {
+    id: "R-1182",
+    from: "Synthetic ED",
+    urgency: REFERRER_URGENCY,
+    episode: "ED",
+    referrer: { name: "Dr P. Singh", role: "ED registrar", phone: "(08) 5550 0190" },
+    received: "eReferral 06/11 08:55",
+  },
+  lastTriage: true,
+  recordHref: "/ward-flow/people/196zcp24w5t0",
+  example: true,
+};
+
+/** The signed-in clinician in the preview world (synthetic), who reviews and signs. */
+export const SIGNED_IN = "Dr S. Chen";
 
 export const ALERTS = [
   {
@@ -791,7 +863,7 @@ export const HOW_TO = [
   ],
   [
     "Review details",
-    "When, how and where you reviewed, who was present, the purpose and the episode. Ask Aboriginal status every time.",
+    "When, how and where you reviewed, how they arrived, who was present, the referrer, the purpose and the episode, and the sources you used. Ask Aboriginal status every time.",
   ],
   ["Assessment", "Write as you talk in one box. Open What to cover for prompts. Tap the problems."],
   [
@@ -803,8 +875,8 @@ export const HOW_TO = [
     "Choose urgency A to G yourself and say why if it differs from the referrer. Set the outcome, actions and legal status.",
   ],
   [
-    "Risk and FDV",
-    "Tap marks sets what a tap records: Present, Not present or Not known. Past risk: carry forward the last RAMP, confirm each flag today, and answer Rest of history yourself. Current risk: assess today, mark what is present, answer Rest of current risk and confirm what it covers. Then record whether you asked alone and ask the three family violence questions word for word.",
+    "Risk assessment",
+    "Tap a flag to mark it present. Unsure about one? Mark it not known in All RAMP factors. Rest of history and Rest of current risk answer everything else. Past risk: carry forward the last RAMP where there is one and confirm each flag today. Current risk: assess today and confirm what Rest of current risk covers. Then record whether you asked alone and ask the three family violence questions word for word.",
   ],
   [
     "Formulation and plan",
@@ -818,12 +890,14 @@ export const PSOLIS_FIELD_MAP = [
   ["Start date and time", "Reviewed, with Now"],
   ["End date and time", "Stamped when you sign"],
   ["Is transcribed", "Notes source chip"],
+  ["Arrival mode, accompanied by", "Arrived by, accompanied by (Review details)"],
+  ["Interpreter required, language", "Interpreter needed, with the language"],
   ["Triaged by, designation", "From your login"],
   ["Medium", "How"],
   ["Stream, program", "From your desk"],
   ["Venue, collected at", "Where they were"],
-  ["Consumer and associate present", "Person present, also present"],
-  ["Referral medium, type, name, contact", "From the referral"],
+  ["Consumer and associate present", "Person present, others present"],
+  ["Referral medium, type, name, contact", "From the referral: referrer name, role and phone, with Change"],
   ["Purpose", "Purpose"],
   ["Reason", "Assessment box (Why now, Request)"],
   ["Urgency", "Urgency tiles"],
@@ -842,7 +916,8 @@ export const PSOLIS_FIELD_MAP = [
   ["RAMP: current factors", "Current risk, assessed today"],
   ["RAMP: FDV", "Risk factors, family violence block"],
   ["RAMP: other (specify)", "Other risk: add any number, past or current"],
-  ["RAMP: overview, protective, overall risk, plan, sources", "Formulation and plan"],
+  ["RAMP: overview, protective, overall risk, plan", "Formulation and plan"],
+  ["RAMP: sources", "Sources used chips (Review details)"],
   ["RAMP: schedule, next due", "Review risk by"],
   ["RAMP: consultation", "Consulted with (from Senior consulted)"],
   ["Address, phone, contacts", "Not entered here; Patient profile"],
@@ -853,7 +928,7 @@ export const SECTIONS = [
   { id: "note", n: 2, label: "Assessment", part: "triage" },
   { id: "mse", n: 3, label: "Mental state", part: "triage" },
   { id: "dec", n: 4, label: "Triage decision", part: "triage" },
-  { id: "risk", n: 5, label: "Risk and FDV", part: "risk" },
+  { id: "risk", n: 5, label: "Risk assessment", part: "risk" },
   { id: "plan", n: 6, label: "Formulation and plan", part: "risk" },
 ] as const;
 export type SectionId = (typeof SECTIONS)[number]["id"];

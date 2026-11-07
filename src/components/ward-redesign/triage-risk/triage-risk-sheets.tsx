@@ -35,24 +35,28 @@ import {
   FACTOR_NAME,
   HOW_TO,
   LAST_TRIAGE,
-  PATIENT,
   PSOLIS_FIELD_MAP,
   REFERRER_URGENCY,
   type SectionId,
+  type TriagePerson,
 } from "./triage-risk-data";
 import { Choice, type FormApi } from "./triage-risk-parts";
-import { FactorChip, MarkBar } from "./triage-risk-risk";
+import { FactorRow } from "./triage-risk-risk";
 import { allFactors, type Requirement, type Target } from "./triage-risk-state";
-import { summaryModel, summaryText, type DocBlock, type DocValue } from "./triage-risk-summary";
+import { summaryModel, summaryText, type DocBlock, type DocValue, type SignedBy } from "./triage-risk-summary";
 import styles from "./triage-risk-redesign.module.css";
 
-const SUMMARY_TABS = [
+const summaryTabs = (alertCount: number) => [
   { id: "sum", label: "Summary" },
   { id: "ref", label: "Referral" },
   { id: "last", label: "Last triage" },
-  { id: "alerts", label: "Alerts", count: PATIENT.alertCount },
+  { id: "alerts", label: "Alerts", ...(alertCount ? { count: alertCount } : {}) },
   { id: "profile", label: "Profile" },
 ];
+
+/** Who the triage is for, in record words: legal status as typed, never checked. */
+const legalWords = (person: TriagePerson) =>
+  person.legal ? `${person.legal}, ${person.legalTag}` : "Not recorded. Not legally checked.";
 
 /** Where a summary or "Before you sign" item goes: its section, and the field when there is one. */
 export type Jump = (section: SectionId, target?: Target) => void;
@@ -123,7 +127,8 @@ function DocSection({
 }: {
   letter: string;
   title: string;
-  onEdit: () => void;
+  /** Left out once signed: the record is read-only. */
+  onEdit?: () => void;
   children: ReactNode;
 }) {
   return (
@@ -133,20 +138,26 @@ function DocSection({
           {letter}
         </span>
         {title}
-        <Button variant="ghost" size="sm" className={styles.pushEnd} onClick={onEdit} aria-label={`Edit ${title}`}>
-          Edit
-        </Button>
+        {onEdit ? (
+          <Button variant="ghost" size="sm" className={styles.pushEnd} onClick={onEdit} aria-label={`Edit ${title}`}>
+            Edit
+          </Button>
+        ) : null}
       </h3>
       {children}
     </section>
   );
 }
 
-/** The document the form builds as it is filled in. Copy writes the same model as plain text. */
-function SummaryDocument({ form, jump }: { form: FormApi; jump: Jump }) {
+/**
+ * The document the form builds as it is filled in. Copy writes the same model as plain text. Once
+ * signed it is read-only (no Edit) and shown in full.
+ */
+export function SummaryDocument({ form, jump, signed }: { form: FormApi; jump?: Jump; signed?: SignedBy }) {
   const { state, say } = form;
-  const [full, setFull] = useState(false);
-  const model = summaryModel(state);
+  const [open, setFull] = useState(false);
+  const full = open || Boolean(signed);
+  const model = summaryModel(state, signed);
   const copy = () =>
     copyText(summaryText(model), "Summary copied.", "Copy not allowed here. Select the summary text instead.", say);
 
@@ -164,34 +175,49 @@ function SummaryDocument({ form, jump }: { form: FormApi; jump: Jump }) {
             <div className={styles.docTitle} id="triage-doc-title">
               {model.name} {/* The UMRN stays on screen and is left out of a copy (ward-clipboard.ts). */}
               <span className={styles.mono}>
-                {PATIENT.umrn} · {PATIENT.meta.split(" · ")[1]}
+                {state.person.umrn} · {state.person.meta.split(" · ")[1]}
               </span>
             </div>
-            <div className={styles.quiet}>{model.meta}</div>
+            <p className={styles.docKey} data-testid="triage-doc-key">
+              {model.keyLine}
+            </p>
           </div>
-          <Button variant="ghost" size="sm" icon={Copy} onClick={copy} data-testid="triage-copy-summary">
-            Copy
-          </Button>
+          {signed ? null : (
+            <Button variant="ghost" size="sm" icon={Copy} onClick={copy} data-testid="triage-copy-summary">
+              Copy
+            </Button>
+          )}
         </div>
-        <Facts rows={model.keys.map(([label, value]) => [label, <Value key={label} value={value} />] as const)} />
         {model.parts.map((part) => (
-          <DocSection key={part.letter} letter={part.letter} title={part.title} onEdit={() => jump(part.edit)}>
+          <DocSection
+            key={part.letter}
+            letter={part.letter}
+            title={part.title}
+            onEdit={jump && !signed ? () => jump(part.edit) : undefined}
+          >
             {part.blocks.map((block, index) => (
               <Block key={`${part.letter}-${index}`} block={block} />
             ))}
           </DocSection>
         ))}
+        <section className={styles.docSign} aria-label="Signature">
+          {model.signature.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
+        </section>
         <p className={styles.docFoot}>{model.foot.join(" · ")}</p>
       </article>
-      <Button
-        variant="ghost"
-        size="sm"
-        className={styles.centre}
-        onClick={() => setFull((v) => !v)}
-        aria-expanded={full}
-      >
-        {full ? "Show less" : "Show full summary"}
-      </Button>
+      {signed ? null : (
+        <Button
+          variant="ghost"
+          size="sm"
+          className={styles.centre}
+          onClick={() => setFull((v) => !v)}
+          aria-expanded={full}
+        >
+          {full ? "Show less" : "Show full summary"}
+        </Button>
+      )}
     </>
   );
 }
@@ -230,6 +256,25 @@ function BeforeYouSign({ reqs, jump }: { reqs: readonly Requirement[]; jump: Jum
   );
 }
 
+/** A record tab for a person the worked Example does not cover: what the synthetic record holds. */
+function OtherPersonPane({
+  title,
+  rows,
+  note,
+}: {
+  title: string;
+  rows: readonly (readonly [string, ReactNode])[];
+  note?: string;
+}) {
+  return (
+    <>
+      <h3 className={styles.paneHead}>{title}</h3>
+      <Facts rows={rows} />
+      {note ? <p className={styles.quiet}>{note}</p> : null}
+    </>
+  );
+}
+
 const notWired = (form: FormApi) => () => form.say("Not wired in this prototype.");
 
 function CopyNumber({ form, label, number }: { form: FormApi; label: string; number: string }) {
@@ -246,8 +291,11 @@ export function SummaryDrawer({
   reqs,
   jump,
   signButton,
+  lead,
 }: {
   form: FormApi;
+  /** Phone only: the Now box, at the top of the Summary tab (the page has no left column there). */
+  lead?: ReactNode;
   open: boolean;
   tab: string;
   onTab: (tab: string) => void;
@@ -257,18 +305,19 @@ export function SummaryDrawer({
   signButton: ReactNode;
 }) {
   const left = reqs.filter((r) => r.blocks && !r.ok).length;
+  const person = form.state.person;
   return (
     <PanelDrawer
       open={open}
       onClose={onClose}
-      title={PATIENT.name}
+      title={person.name}
       subtitle="This triage, the referral and the record. Synthetic."
       tag={
         <Badge tone={left ? "neutral" : "success"} className={styles.noShrink}>
           {left ? `${left} needed` : "Ready to sign"}
         </Badge>
       }
-      tabs={SUMMARY_TABS}
+      tabs={summaryTabs(person.alertCount)}
       tab={tab}
       onTabChange={onTab}
       tabsLabel="Slide-out"
@@ -287,11 +336,27 @@ export function SummaryDrawer({
       <div className={styles.pane}>
         {tab === "sum" ? (
           <>
+            {lead}
             <BeforeYouSign reqs={reqs} jump={jump} />
             <SummaryDocument form={form} jump={jump} />
           </>
         ) : null}
-        {tab === "ref" ? (
+        {tab === "ref" && !person.example ? (
+          <OtherPersonPane
+            title={person.referral ? `Referral ${person.referral.id}` : "No open referral"}
+            rows={
+              person.referral
+                ? [
+                    ["From", person.referral.from],
+                    ["Urgency asked", person.referral.urgency ?? "No triage urgency asked"],
+                    ["Legal", legalWords(person)],
+                    ["Now at", person.nowAt],
+                  ]
+                : [["Referral", "This triage starts without a referral."]]
+            }
+          />
+        ) : null}
+        {tab === "ref" && person.example ? (
           <>
             <h3 className={styles.paneHead}>Referral R-1182</h3>
             <Facts
@@ -316,7 +381,7 @@ export function SummaryDrawer({
                   "Reason",
                   "Five days of rising agitation after a missed depot. Threatening staff in ED. Mother worried at home.",
                 ],
-                ["Legal", `${PATIENT.legal}, Form 5A (as typed). Not legally checked.`],
+                ["Legal", `${person.legal}, Form 5A (as typed). Not legally checked.`],
                 ["Medically", "Bloods pending; obs stable"],
                 ["Now at", "Synthetic ED · bay 7, security nearby"],
                 [
@@ -334,7 +399,13 @@ export function SummaryDrawer({
             />
           </>
         ) : null}
-        {tab === "last" ? (
+        {tab === "last" && !person.lastTriage ? (
+          <OtherPersonPane
+            title="No previous triage on record"
+            rows={[["Past risk", "Answered fresh today. Nothing is carried forward."]]}
+          />
+        ) : null}
+        {tab === "last" && person.lastTriage ? (
           <>
             <h3 className={styles.paneHead}>Last triage and RAMP · 12 Oct · Synthetic CMHT</h3>
             <Facts
@@ -361,7 +432,16 @@ export function SummaryDrawer({
             />
           </>
         ) : null}
-        {tab === "alerts" ? (
+        {tab === "alerts" && !person.example ? (
+          <OtherPersonPane
+            title="Alerts"
+            rows={[
+              ["Alerts", person.alert ?? "None on the synthetic record"],
+              ["Allergies", person.allergies],
+            ]}
+          />
+        ) : null}
+        {tab === "alerts" && person.example ? (
           <>
             <h3 className={styles.paneHead}>Alerts · newest first</h3>
             <ul className={styles.alertList}>
@@ -376,25 +456,48 @@ export function SummaryDrawer({
                 </li>
               ))}
             </ul>
-            <p className={styles.quiet}>Allergies: {PATIENT.allergies}</p>
+            <p className={styles.quiet}>Allergies: {person.allergies}</p>
           </>
         ) : null}
-        {tab === "profile" ? (
+        {tab === "profile" && !person.example ? (
+          <OtherPersonPane
+            title="Identity"
+            rows={[
+              ["Name", `${person.name} · ${person.meta}`],
+              [
+                "UMRN",
+                <span key="u" className={styles.mono}>
+                  {person.umrn}
+                </span>,
+              ],
+              [
+                "DOB",
+                <span key="d" className={styles.mono}>
+                  {person.dob}
+                </span>,
+              ],
+              ["Now at", person.nowAt],
+              ["Legal", legalWords(person)],
+            ]}
+            note="Contacts and care details are drawn for the worked Example only."
+          />
+        ) : null}
+        {tab === "profile" && person.example ? (
           <>
             <h3 className={styles.paneHead}>Identity</h3>
             <Facts
               rows={[
-                ["Name", `${PATIENT.name} · ${PATIENT.meta}`],
+                ["Name", `${person.name} · ${person.meta}`],
                 [
                   "UMRN",
                   <span key="u" className={styles.mono}>
-                    {PATIENT.umrn}
+                    {person.umrn}
                   </span>,
                 ],
                 [
                   "DOB",
                   <span key="d" className={styles.mono}>
-                    {PATIENT.dob}
+                    {person.dob}
                   </span>,
                 ],
                 [
@@ -423,11 +526,11 @@ export function SummaryDrawer({
             <Facts
               rows={[
                 ["Community team", "Active · Synthetic East CMHT since 2019"],
-                ["Legal", `${PATIENT.legal}, Form 5A (as typed). Not legally checked.`],
+                ["Legal", `${person.legal}, Form 5A (as typed). Not legally checked.`],
                 ["Directive", "None recorded"],
                 ["Nominated person", "None recorded"],
                 ["Last contact", "30 Oct · depot clinic, missed"],
-                ["Allergies", PATIENT.allergies],
+                ["Allergies", person.allergies],
               ]}
             />
             <Button className={styles.startSelf} onClick={notWired(form)}>
@@ -562,7 +665,10 @@ export function AllFactorsDrawer({ form, open, onClose }: { form: FormApi; open:
       }
     >
       <div className={styles.pane}>
-        <MarkBar form={form} />
+        <p className={styles.quiet}>
+          Tap a factor to mark it present. Mark one Not known here only when you could not find out. Everything left
+          unmarked takes your Rest of history or Rest of current risk answer.
+        </p>
         {AREAS.map((area) => {
           const count = factors.filter((f) => f.area === area.id && f.mark === "y").length;
           return (
@@ -576,7 +682,7 @@ export function AllFactorsDrawer({ form, open, onClose }: { form: FormApi; open:
                   <span className={styles.miniLabel}>{kind === "bg" ? "Background" : "Now"}</span>
                   <ChipGroup label={`${area.name}: ${kind === "bg" ? "background" : "now"}`}>
                     {area[kind].map(([id]) => (
-                      <FactorChip key={id} form={form} flag={`${area.id}.${kind}.${id}`} />
+                      <FactorRow key={id} form={form} flag={`${area.id}.${kind}.${id}`} />
                     ))}
                   </ChipGroup>
                 </div>

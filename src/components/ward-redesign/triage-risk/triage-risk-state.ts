@@ -16,10 +16,11 @@ import {
   MSE,
   MSE_NEGATIVES,
   MSE_SIGNALS,
-  REFERRER_URGENCY,
+  PATIENT,
   WHO_TOLD,
   type SectionId,
   type Tier,
+  type TriagePerson,
 } from "./triage-risk-data";
 import {
   boxLine,
@@ -34,16 +35,33 @@ import {
 } from "./triage-risk-text";
 
 /** A RAMP factor: present ("y"), not present ("n") or not known ("u"); absent means not marked. */
-export type FactorMark = "y" | "n" | "u";
+type FactorMark = "y" | "n" | "u";
 
 export type TextKey =
-  "revTime" | "note" | "rp" | "legalForm" | "urgReason" | "urgNoneWhy" | "consultWho" | "otherRisk" | "mseBox";
+  | "revTime"
+  | "note"
+  | "rp"
+  | "legalForm"
+  | "urgReason"
+  | "urgNoneWhy"
+  | "consultWho"
+  | "otherRisk"
+  | "mseBox"
+  | "accompanied"
+  | "interpLang"
+  | "refName"
+  | "refRole"
+  | "refPhone";
 
 export type TriageState = {
+  /** Who the triage is for, from the record. Not an answer: it sets the banner and what the record offers. */
+  person: TriagePerson;
   how: string | null;
   where: string | null;
   present: string | null;
   others: string[];
+  /** How they arrived (Review details). */
+  arrivedBy: string | null;
   purpose: string | null;
   /** From the referral (ED), changeable. */
   episode: string | null;
@@ -101,17 +119,27 @@ const NO_TEXT: Record<TextKey, string> = {
   consultWho: "",
   otherRisk: "",
   mseBox: "",
+  accompanied: "",
+  interpLang: "",
+  refName: "",
+  refRole: "",
+  refPhone: "",
 };
 
-/** Nothing clinical chosen. The episode comes from the referral (ED). */
-export function blankTriage(): TriageState {
+/**
+ * Nothing clinical chosen. The episode comes from the referral when the referral names one (the
+ * Example's R-1182 is from ED); a person with no such referral starts with no episode either.
+ */
+export function blankTriage(person: TriagePerson = PATIENT): TriageState {
   return {
+    person,
     how: null,
     where: null,
     present: null,
     others: [],
+    arrivedBy: null,
     purpose: null,
-    episode: "ED",
+    episode: person.referral?.episode ?? null,
     atsi: null,
     amhw: null,
     interp: null,
@@ -146,18 +174,25 @@ export function blankTriage(): TriageState {
     review: null,
     copyGiven: [],
     sources: [],
-    text: { ...NO_TEXT },
+    // The referrer is a fact from the referral, shown as a line with Change; nothing clinical is chosen.
+    text: {
+      ...NO_TEXT,
+      refName: person.referral?.referrer?.name ?? "",
+      refRole: person.referral?.referrer?.role ?? "",
+      refPhone: person.referral?.referrer?.phone ?? "",
+    },
   };
 }
 
 /** The synthetic worked example the prototype opens on (How to: Example or Start blank). */
 export function exampleTriage(): TriageState {
   return {
-    ...blankTriage(),
+    ...blankTriage(PATIENT),
     how: "phone",
     where: "ED",
     present: "yes",
     others: ["Other service"],
+    arrivedBy: "Ambulance",
     purpose: "Referral",
     atsi: "n",
     interp: "no",
@@ -171,9 +206,10 @@ export function exampleTriage(): TriageState {
     },
     legal: "cto",
     ahd: "none",
-    sources: ["Referrer", "Person", "Records"],
+    sources: ["Person", "Family or carer", "Records"],
     text: {
-      ...NO_TEXT,
+      ...blankTriage(PATIENT).text,
+      accompanied: "Mother",
       revTime: "06/11/2026 09:42",
       note: "Why now: Five days of rising agitation and poor sleep after a missed depot dose.\nRequest: ED asks for admission and a bed review today.\nViews: Does not want admission. Mother supports admission.\nHistory: Schizoaffective disorder. Two admissions this year, both after stopping treatment. On CTO with depot, last dose missed.\nAlcohol and drugs: Daily cannabis; denies other use today.\n",
       rp: "Risk: Raised risk of violence to staff and family now, above his baseline, in the context of relapse and threats today.\nProtective: Engaged with CMHT; mother supportive.\n",
@@ -222,6 +258,7 @@ export function fdvOutcome(state: TriageState): string | null {
 
 /** What is new today against the last RAMP's current flags, and what was not seen today. */
 export function sinceLastText(state: TriageState): string {
+  if (!state.person.lastTriage) return "";
   const now = allFactors(state)
     .filter((f) => f.kind === "now" && f.mark === "y")
     .map((f) => f.key);
@@ -362,7 +399,7 @@ export function requirements(state: TriageState, now: number): Requirement[] {
   add("rev", "Purpose", state.purpose, true);
   add("rev", "Episode", state.episode, true);
   add("rev", "Aboriginal status", state.atsi, false);
-  add("rev", "Interpreter", state.interp, false);
+  add("rev", "Interpreter", state.interp && (state.interp !== "yes" || state.text.interpLang.trim()), false);
   add("note", "Assessment", isWritten(t.note), true);
   add("note", "Problems", state.problems.length, false);
   for (const heading of emptyHeadings(t.note, GUIDES.note)) add("note", `Empty heading: ${heading}`, false, false);
@@ -375,7 +412,8 @@ export function requirements(state: TriageState, now: number): Requirement[] {
     state.mseMode === "box" ? { selector: "#triage-mse-box" } : undefined,
   );
   add("dec", "Urgency", state.urgency, true);
-  if (state.urgency && state.urgency !== REFERRER_URGENCY)
+  const asked = state.person.referral?.urgency;
+  if (state.urgency && asked && state.urgency !== asked)
     add("dec", "Why urgency differs", t.urgReason.trim().length > 3, true);
   if (state.urgency === "A")
     add(

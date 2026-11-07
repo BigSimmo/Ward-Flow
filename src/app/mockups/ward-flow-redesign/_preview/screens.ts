@@ -137,6 +137,8 @@ export const MOCKUP_POPUPS: readonly MockupPopup[] = [
   { slug: "pop-demo", label: "Demo menu", group: "Shell popups", over: "home", pop: "demo" },
   { slug: "pop-menu", label: "Phone menu", group: "Shell popups", over: "home", pop: "menu" },
   { slug: "pop-create", label: "Create", group: "Shell popups", over: "home", pop: "create" },
+  // 7 Nov 2026: New referral opens a chooser first (Triage or Referral), drawn by the viewer's shell.
+  { slug: "pop-new-choice", label: "New: triage or referral", group: "Shell popups", over: "home", pop: "new-choice" },
   { slug: "pop-service-picker", label: "Service picker", group: "Shell popups", over: "home", pop: "service-picker" },
   { slug: "pop-more-pages", label: "More pages", group: "Shell popups", over: "home", pop: "more-pages" },
   { slug: "pop-tour", label: "Tour", group: "Shell popups", over: "home", pop: "tour" },

@@ -10,7 +10,7 @@ import { Info } from "lucide-react";
 import { ChipGroup, FilterChip, Icon, Segmented, SrOnly, StatusGlyph, TextInput } from "@/components/wf";
 import { phoneRows } from "@/components/wf/phone-rows";
 
-import { ACTIONS, AHD, LEGAL, OUTCOMES, REFERRER_URGENCY, TIERS, WHO_TOLD, type Tier } from "./triage-risk-data";
+import { ACTIONS, AHD, LEGAL, OUTCOMES, TIERS, WHO_TOLD, type Tier } from "./triage-risk-data";
 import { Choice, MultiChips, Reveal, Row, type FormApi } from "./triage-risk-parts";
 import { acuteFlagNames, hasLegalForm } from "./triage-risk-state";
 import styles from "./triage-risk-redesign.module.css";
@@ -30,6 +30,7 @@ export function UrgencyHint({ children }: { children: string }) {
 export function DecisionBody({ form }: { form: FormApi }) {
   const { state, set, setText, update } = form;
   const acute = acuteFlagNames(state);
+  const asked = state.person.referral?.urgency ?? null;
   const toggleAction = (value: string) =>
     update((s) => {
       const actions = toggleIn(s.actions, value);
@@ -45,7 +46,7 @@ export function DecisionBody({ form }: { form: FormApi }) {
     }));
   return (
     <div className={styles.rows}>
-      <Row label="Urgency" hint={`Referrer asked ${REFERRER_URGENCY}`} top>
+      <Row label="Urgency" hint={asked ? `Referrer asked ${asked}` : "No urgency asked"} top>
         <Segmented
           size="md"
           label="Urgency"
@@ -105,7 +106,7 @@ export function DecisionBody({ form }: { form: FormApi }) {
           </div>
         </Reveal>
       ) : null}
-      {state.urgency && state.urgency !== REFERRER_URGENCY ? (
+      {state.urgency && asked && state.urgency !== asked ? (
         <Reveal>
           <Row label="Why it differs" htmlFor="triage-urg-reason">
             <TextInput

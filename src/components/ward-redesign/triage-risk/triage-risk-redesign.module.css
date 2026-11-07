@@ -7,6 +7,9 @@
 .screen {
   min-width: 0;
   min-height: 100%;
+  /* As Add patient: the page and the hero's curved edge share one canvas, in both themes. */
+  background: var(--wf-canvas);
+  --wf-page-canvas: var(--wf-canvas);
   color: var(--wf-ink-1);
   font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
 }
@@ -1333,5 +1336,130 @@
 @media (prefers-reduced-motion: reduce) {
   .indexLink {
     transition: none;
+  }
+}
+
+/* Review details (7 Nov 2026): the referrer's three fields while changing, and the language box. */
+.referrerFields {
+  display: grid;
+  flex: 1 1 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+}
+
+.languageInput {
+  width: 12rem;
+  max-width: 100%;
+}
+
+@media (max-width: 46.4375rem) {
+  .referrerFields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Risk (7 Nov 2026): a flag toggles Present; Not known only in All RAMP factors, beside each factor. */
+.factorRow {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.notKnownChip {
+  color: var(--wf-ink-3);
+}
+
+.notKnownLink {
+  align-self: flex-start;
+  color: var(--wf-ink-3);
+}
+
+/* Family and domestic violence, condensed (7 Nov 2026). */
+.fdvGuide {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}
+
+.fdvKeys {
+  color: var(--wf-ink-3);
+}
+
+.fdvAlone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+}
+
+.fdvAloneLabel {
+  font-weight: 600;
+}
+
+/* The document (7 Nov 2026): key line, signature block and a print-friendly layout. */
+.docKey {
+  margin: var(--wf-s-1) 0 0;
+  font-weight: 500;
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.docSign {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line-2);
+}
+
+.docSign p {
+  margin: 0;
+}
+
+.docSign p:first-child {
+  font-weight: 600;
+}
+
+@media print {
+  .doc,
+  .doc[data-capped] {
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    background: none;
+    color: var(--wf-ink-1);
+  }
+  .doc[data-capped]::after {
+    display: none;
+  }
+  .docSection,
+  .docSign {
+    break-inside: avoid;
+  }
+  .docHead button,
+  .docTop button {
+    display: none;
+  }
+}
+
+/* The left column (7 Nov 2026): fits the window and scrolls inside, the Summary button pinned at its
+   foot; the floating Summary button is for tablet widths only. */
+@media (min-width: 62.5625rem) {
+  .index {
+    max-height: calc(100dvh - var(--wf-header-height) - var(--wf-s-4) * 2);
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  .indexFoot {
+    align-items: stretch;
+    padding-bottom: 0;
+  }
+  .edgeTab {
+    display: none;
   }
 }

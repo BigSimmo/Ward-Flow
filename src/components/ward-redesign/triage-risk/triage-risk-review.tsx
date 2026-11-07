@@ -8,15 +8,18 @@ import { phoneRows } from "@/components/wf/phone-rows";
 
 import {
   AMHW,
+  ARRIVED_BY,
   ATSI,
   EPISODE,
   GUIDES,
   HOW,
   INTERPRETER,
   LAST_TRIAGE,
+  OTHERS_PRESENT,
   PROBLEMS,
   PURPOSE,
   RISK_TO_PROBLEM,
+  SOURCES,
   WHERE,
 } from "./triage-risk-data";
 import { autoRows, Choice, GuideBox, MultiChips, Reveal, Row, type FormApi } from "./triage-risk-parts";
@@ -69,6 +72,86 @@ function reviewDone(state: TriageState, now: number) {
 
 const HOW_NAME: Readonly<Record<string, string>> = Object.fromEntries(HOW);
 
+/** "Dr P. Singh, ED registrar · (08) 5550 0190", from what is typed. */
+function referrerLine(state: TriageState): string {
+  const t = state.text;
+  const who = [t.refName.trim(), t.refRole.trim()].filter(Boolean).join(", ");
+  return [who, t.refPhone.trim()].filter(Boolean).join(" · ");
+}
+
+/**
+ * The referrer, from the referral where it names them: one fact line with Change, or the three
+ * fields while changing (or when nothing is known yet). Synthetic only.
+ */
+function ReferrerLine({ form }: { form: FormApi }) {
+  const { state, setText } = form;
+  const referral = state.person.referral;
+  const line = referrerLine(state);
+  const [changing, setChanging] = useState(false);
+  const open = changing || !line;
+  return (
+    <div className={styles.oneLine} data-testid="triage-referrer">
+      <span className={styles.from}>{referral ? "From referral" : "No referral"}</span>
+      {referral ? (
+        <span>
+          <b>{referral.from}</b>
+          {referral.received ? ` · ${referral.received}` : ""}
+        </span>
+      ) : null}
+      {open ? null : (
+        <span>
+          Referrer <b>{line}</b>
+        </span>
+      )}
+      <span className={`${styles.inline} ${styles.pushEnd}`}>
+        {line ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            aria-expanded={open}
+            aria-controls="triage-referrer-fields"
+            onClick={() => setChanging(!changing)}
+          >
+            {changing ? "Done" : "Change"}
+          </Button>
+        ) : null}
+        {referral ? (
+          <Button variant="ghost" size="sm" onClick={() => form.openSummary("ref")}>
+            View referral
+          </Button>
+        ) : null}
+      </span>
+      {open ? (
+        <div className={styles.referrerFields} id="triage-referrer-fields">
+          <TextInput
+            aria-label="Referrer name"
+            placeholder="Referrer name"
+            autoComplete="off"
+            value={state.text.refName}
+            onChange={(event) => setText("refName", event.target.value)}
+          />
+          <TextInput
+            aria-label="Referrer role"
+            placeholder="Role"
+            autoComplete="off"
+            value={state.text.refRole}
+            onChange={(event) => setText("refRole", event.target.value)}
+          />
+          <TextInput
+            aria-label="Referrer phone"
+            placeholder="Phone"
+            inputMode="tel"
+            autoComplete="off"
+            className={styles.mono}
+            value={state.text.refPhone}
+            onChange={(event) => setText("refPhone", event.target.value)}
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export function ReviewBody({
   form,
   editing,
@@ -86,26 +169,23 @@ export function ReviewBody({
   const time = checkReviewTime(state.text.revTime, form.now);
   // A wrong time shows once the field is left or the time is complete; a future time at once.
   const showError = Boolean(time.message) && (time.future || !timeFocused || state.text.revTime.trim().length >= 16);
+  const accompanied = state.text.accompanied.trim();
+  const language = state.text.interpLang.trim();
   return (
     <>
-      <div className={styles.oneLine}>
-        <span className={styles.from}>From referral</span>
-        <span>
-          <b>Synthetic ED</b> · Dr P. Singh, ED registrar
-        </span>
-        <span>
-          eReferral <span className={styles.mono}>06/11 08:55</span>
-        </span>
-        <Button variant="ghost" size="sm" className={styles.pushEnd} onClick={() => form.openSummary("ref")}>
-          View referral
-        </Button>
-      </div>
+      <ReferrerLine form={form} />
       {done ? (
-        <div className={styles.oneLine}>
+        <div className={styles.oneLine} data-testid="triage-review-line">
           <span className={styles.from}>Reviewed</span>
           <span>
             <b className={styles.mono}>{state.text.revTime}</b> · {HOW_NAME[state.how ?? ""]} · {state.where}
           </span>
+          {state.arrivedBy || accompanied ? (
+            <span>
+              Arrived {state.arrivedBy ? `by ${state.arrivedBy.toLowerCase()}` : ""}
+              {accompanied ? `${state.arrivedBy ? ", " : ""}with ${accompanied}` : ""}
+            </span>
+          ) : null}
           <span>
             Person {state.present === "yes" ? "present" : "not present"}
             {state.others.length ? `, with ${state.others.join(", ").toLowerCase()}` : ""}
@@ -113,6 +193,10 @@ export function ReviewBody({
           <span>
             {state.purpose} · {state.episode} episode
           </span>
+          {state.interp === "yes" ? (
+            <span>Interpreter{language ? `: ${language}` : ", language not given"}</span>
+          ) : null}
+          {state.sources.length ? <span>Sources: {state.sources.join(", ").toLowerCase()}</span> : null}
           {state.atsi ? null : (
             <span className={styles.inlineMark}>
               <StatusGlyph tone="warning" size={8} />
@@ -168,30 +252,50 @@ export function ReviewBody({
         <Row label="Where they were">
           <Choice label="Where they were" options={WHERE} value={state.where} onChange={(v) => set("where", v)} />
         </Row>
+        <Row label="Arrived by" top>
+          <Choice
+            label="Arrived by"
+            options={ARRIVED_BY}
+            value={state.arrivedBy}
+            onChange={(v) => set("arrivedBy", v)}
+          />
+        </Row>
+        <Row label="Accompanied by" htmlFor="triage-accompanied">
+          <TextInput
+            id="triage-accompanied"
+            placeholder="Who came with them, if anyone"
+            autoComplete="off"
+            value={state.text.accompanied}
+            onChange={(event) => setText("accompanied", event.target.value)}
+          />
+        </Row>
         <Row label="Person present">
-          <div className={styles.inline}>
-            <Choice
-              id="triage-present"
-              label="Person present"
-              options={[
-                ["yes", "Yes"],
-                ["no", "No"],
-              ]}
-              value={state.present}
-              onChange={(v) => set("present", v)}
-            />
-            <MultiChips
-              label="Also present"
-              options={["Carer or family", "Other service"]}
-              values={state.others}
-              onToggle={(v) => set("others", toggleIn(state.others, v))}
-            />
-          </div>
+          <Choice
+            id="triage-present"
+            label="Person present"
+            options={[
+              ["yes", "Yes"],
+              ["no", "No"],
+            ]}
+            value={state.present}
+            onChange={(v) => set("present", v)}
+          />
+        </Row>
+        <Row label="Others present" hint="At the review">
+          <MultiChips
+            label="Others present"
+            options={OTHERS_PRESENT}
+            values={state.others}
+            onToggle={(v) => set("others", toggleIn(state.others, v))}
+          />
         </Row>
         <Row label="Purpose">
           <Choice label="Purpose" options={PURPOSE} value={state.purpose} onChange={(v) => set("purpose", v)} />
         </Row>
-        <Row label="Episode" hint="From referral: ED. Change if needed">
+        <Row
+          label="Episode"
+          hint={state.person.referral?.episode ? `From referral: ${state.person.referral.episode}` : undefined}
+        >
           <Choice label="Episode" options={EPISODE} value={state.episode} onChange={(v) => set("episode", v)} />
         </Row>
         <Row label="Aboriginal or Torres Strait Islander" hint="Ask every time">
@@ -209,8 +313,33 @@ export function ReviewBody({
             </Row>
           </Reveal>
         ) : null}
-        <Row label="Interpreter" hint="Never a family member or friend">
-          <Choice label="Interpreter" options={INTERPRETER} value={state.interp} onChange={(v) => set("interp", v)} />
+        <Row label="Interpreter needed" hint="Accredited, never family or friends">
+          <div className={styles.inline}>
+            <Choice
+              label="Interpreter needed"
+              options={INTERPRETER}
+              value={state.interp}
+              onChange={(v) => set("interp", v)}
+            />
+            {state.interp === "yes" ? (
+              <TextInput
+                aria-label="Interpreter language"
+                placeholder="Language"
+                autoComplete="off"
+                boxClassName={styles.languageInput}
+                value={state.text.interpLang}
+                onChange={(event) => setText("interpLang", event.target.value)}
+              />
+            ) : null}
+          </div>
+        </Row>
+        <Row label="Sources used" hint="Collateral" top>
+          <MultiChips
+            label="Sources used"
+            options={SOURCES}
+            values={state.sources}
+            onToggle={(v) => set("sources", toggleIn(state.sources, v))}
+          />
         </Row>
         <Row label="Notes source">
           <ChipGroup label="Notes source">
@@ -253,9 +382,11 @@ export function AssessmentBody({ form }: { form: FormApi }) {
         text={state.text.note}
         onHeading={box.onHeading}
         extra={
-          <Button variant="ghost" size="sm" onClick={insertHistory}>
-            Insert last history (12 Oct)
-          </Button>
+          state.person.lastTriage ? (
+            <Button variant="ghost" size="sm" onClick={insertHistory}>
+              Insert last history (12 Oct)
+            </Button>
+          ) : undefined
         }
       />
       <Textarea
