@@ -1322,12 +1322,13 @@ a.askChip {
   border-radius: 11px;
 }
 
-/* Tablet and desktop: a light glass panel under the search box, over a softly frosted page. */
+/* Tablet and desktop: a light glass panel under the search box. The page behind stays readable
+   under a see-through dark tint with only a light blur, not a heavy frost (Josh, 7 Nov 2026). */
 @media (min-width: 46.5rem) {
   .scrim {
-    background: color-mix(in srgb, var(--wf-canvas) 45%, transparent);
-    -webkit-backdrop-filter: blur(14px) saturate(1.3);
-    backdrop-filter: blur(14px) saturate(1.3);
+    background: var(--wf-scrim-strong);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
   }
 
   .popup {
