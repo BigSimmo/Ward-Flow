@@ -1,3 +1,4 @@
+import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-values";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 
@@ -15,13 +16,20 @@ import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles"
  * and the shared scoping read it without the form.
  */
 
+// The windows for B to E come from the clinical values list (Josh, 7 Nov 2026), never typed here.
+const DAYS_PER_WEEK = 7;
+const URGENCY_B = CLINICAL_VALUES.triageUrgencyB.value;
+const URGENCY_C = CLINICAL_VALUES.triageUrgencyC.value;
+const URGENCY_D = CLINICAL_VALUES.triageUrgencyD.value;
+const URGENCY_E_WEEKS = CLINICAL_VALUES.triageUrgencyE.value / DAYS_PER_WEEK;
+
 /** Urgency tiers A to G: code, short and long words. The clinician always chooses; the form only hints. */
 export const TIERS = [
   ["A", "Now", "Immediate"],
-  ["B", "2 h", "Within 2 hours"],
-  ["C", "12 h", "Within 12 hours"],
-  ["D", "48 h", "Within 48 hours"],
-  ["E", "2 wk", "Within 2 weeks"],
+  ["B", `${URGENCY_B} h`, `Within ${URGENCY_B} hours`],
+  ["C", `${URGENCY_C} h`, `Within ${URGENCY_C} hours`],
+  ["D", `${URGENCY_D} h`, `Within ${URGENCY_D} hours`],
+  ["E", `${URGENCY_E_WEEKS} wk`, `Within ${URGENCY_E_WEEKS} weeks`],
   ["F", "Recontact", "Further triage contact"],
   ["G", "No action", "No further action"],
 ] as const;
