@@ -811,7 +811,7 @@ function TvDoor({
             >
               <header className={styles.cardHead}>
                 <h2>Sign in this TV</h2>
-                <p>Use the bed meeting account.</p>
+                <p>Use a Coordinator or Site Bed Manager account.</p>
               </header>
               <SignInMessage form={form} notice={notice} online={online} />
               <EmailField

@@ -27,15 +27,16 @@ export function nextQueuedId(queuedIds: readonly string[], decidedId: string): s
 
 /**
  * BA-1: Accept or Decline removes the pressed button, so focus fell to the page. Next frame, once the
- * decision has drawn, focus goes to the next referral in the queue, or else to the detail (which now
- * shows the outcome). The detail itself stays on the person decided (CS-15).
+ * decision has drawn, focus goes to the detail, which stays on the person decided and shows the
+ * outcome (CS-15). Drawer review (6 Nov 2026): the detail is a modal drawer, so focus stays inside it
+ * while it is open; the next referral's row takes focus only when no drawer is open.
  */
 export function focusAfterDecision(nextId: string | undefined): void {
   window.requestAnimationFrame(() => {
     if (!focusIsLost()) return;
     focusFirst([
-      nextId === undefined ? null : rowSelect(nextId),
       document.querySelector<HTMLElement>('[role="region"][aria-label="Selected referral detail"]'),
+      nextId === undefined ? null : rowSelect(nextId),
     ]);
   });
 }

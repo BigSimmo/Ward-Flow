@@ -29,7 +29,6 @@ import {
   CardFoot,
   CardHead,
   Count,
-  Drawer,
   Field,
   Hero,
   HeroStat,
@@ -243,6 +242,9 @@ function GovernanceSession({
   const [selection, setSelection] = useState<AuditEvent | null | undefined>(undefined);
   // True while the selection is the one the desktop pane opened on by itself, not one the user chose.
   const [autoOpened, setAutoOpened] = useState(false);
+  // Drawer review (6 Nov 2026): the event opens in the kit drawer only when someone chooses it. On a
+  // wide screen the newest waiting event is still pinned on arrival (row marked, Record review ready).
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [siteId, setSiteId] = useState<string | null>(null);
   const [pending, setPending] = useState<{
     command: number;
@@ -316,7 +318,10 @@ function GovernanceSession({
     allowed && opening && rows.some((event) => event.id === opening.id && event.generation === opening.generation)
       ? opening
       : null;
-  // Pin the event the pane opened on, so a newer event arriving cannot retarget a review in progress.
+  // A chosen event that has left the register (a reset) closes its drawer.
+  if (drawerOpen && !selected) setDrawerOpen(false);
+  // Pin the event the page opened on (its row marked, Record review ready), so a newer event
+  // arriving cannot retarget a review in progress. The drawer stays shut until someone chooses.
   if (selection === undefined && opening) {
     setSelection(opening);
     setAutoOpened(true);
@@ -456,10 +461,12 @@ function GovernanceSession({
     return subject.kind === "movement" ? [person, subject.movementId] : [person];
   }
 
-  const choose = (event: AuditEvent | null) => {
+  // Arrow keys move the choice without opening the drawer, so focus stays in the list (CodeRabbit, #1497).
+  const choose = (event: AuditEvent | null, open = event !== null) => {
     reviewCommandRef.current += 1;
     setAutoOpened(false);
     setSelection(event);
+    setDrawerOpen(open);
     setPending(null);
     if (event) setAnnouncement(`Selected ${actionLabels[event.action]}.`);
   };
@@ -504,7 +511,7 @@ function GovernanceSession({
     if (next < 0) return;
     event.preventDefault();
     rows[next]?.focus();
-    choose(list[next] ?? null);
+    choose(list[next] ?? null, false);
   }
 
   function recordReview(
@@ -646,72 +653,40 @@ function GovernanceSession({
     ) : null;
   const reviewedOf = reviewable.length;
 
-  // The rail at rest. Audit settings-12: the hero already carries the counts and the reviewed
-  // ring, so the rail no longer repeats them; it says what to do, or that everything is reviewed.
-  const restSummary = (
-    <div className={thirdEdition.restSummary} data-testid="ward-governance-rest-summary">
-      {toReview.length === 0 ? (
-        <p className={thirdEdition.restClear}>
-          <StatusGlyph tone="success" size={9} />
-          Every captured event is reviewed.
-        </p>
-      ) : (
-        <p className={thirdEdition.quietText}>Choose an event</p>
-      )}
-    </div>
-  );
-
   // D-80 item 14: who opened the chosen row's record, when the row has one.
   const record = selected ? recordOf(selected) : null;
-  const detail = (
-    <EventDetail
-      recordViews={
-        record ? <WhoOpenedList views={viewsOfRecord(accessReview.views, record, now)} now={now} /> : undefined
-      }
-      rest={restSummary}
-      selected={selected}
-      units={units}
-      movements={movements}
-      api={api}
-      events={events}
-      history={history}
-      now={now}
-      patientOf={patientOf}
-      reviewState={reviewState}
-      canReview={canReview}
-      onReview={recordReview}
-      onChoose={choose}
-      roleReason={reviewGate.allowed ? undefined : reviewGate.reason}
-      feedback={
-        pending
-          ? confirmed
-            ? `${reviewLabels[pending.decision]} recorded.`
-            : reviewSettled
-              ? "Review not confirmed. The record may have changed; select it again."
-              : "Recording review…"
-          : ""
-      }
-    />
-  );
-
-  // Tablet portrait (v10): no rail beside the table, so the chosen event slides over from the
-  // right and the session summary stays in the page below the table.
   const placedDetail =
-    isTabletPortrait && selected ? (
-      <>
-        <Drawer
-          open
-          onClose={() => choose(null)}
-          title={actionLabels[selected.action]}
-          description={categoryLabels[selected.category]}
-          testId="ward-governance-event-sheet"
-        >
-          {detail}
-        </Drawer>
-      </>
-    ) : (
-      detail
-    );
+    selected && drawerOpen ? (
+      <EventDetail
+        // Closing keeps the row chosen, so Record review in the header still works (#1497).
+        onClose={() => setDrawerOpen(false)}
+        recordViews={
+          record ? <WhoOpenedList views={viewsOfRecord(accessReview.views, record, now)} now={now} /> : undefined
+        }
+        selected={selected}
+        units={units}
+        movements={movements}
+        api={api}
+        events={events}
+        history={history}
+        now={now}
+        patientOf={patientOf}
+        reviewState={reviewState}
+        canReview={canReview}
+        onReview={recordReview}
+        onChoose={choose}
+        roleReason={reviewGate.allowed ? undefined : reviewGate.reason}
+        feedback={
+          pending
+            ? confirmed
+              ? `${reviewLabels[pending.decision]} recorded.`
+              : reviewSettled
+                ? "Review not confirmed. The record may have changed; select it again."
+                : "Recording review…"
+            : ""
+        }
+      />
+    ) : null;
 
   const phoneTree = (
     <GovernancePhone
@@ -788,6 +763,7 @@ function GovernanceSession({
               <Button
                 variant="light"
                 size="sm"
+                data-testid="ward-governance-record-review"
                 disabledReason={
                   !reviewGate.allowed ? reviewGate.reason : selected === null ? "Choose an event first" : undefined
                 }
@@ -840,7 +816,7 @@ function GovernanceSession({
       />
 
       {tab === "review" ? (
-        <div className={thirdEdition.govLayout}>
+        <div className={thirdEdition.stackGap}>
           <Card
             className={cx(thirdEdition.registerCard, adminEmpty && eventList.fullWidth)}
             aria-labelledby="governance-review-title"
@@ -1087,7 +1063,7 @@ function GovernanceSession({
       ) : null}
 
       {tab === "audit" ? (
-        <div className={thirdEdition.govLayout}>
+        <div className={thirdEdition.stackGap}>
           <Card className={thirdEdition.registerCard} aria-labelledby="governance-captured-title">
             <CardHead
               id="governance-captured-title"

@@ -150,6 +150,7 @@ describe("bed meeting TV", () => {
     const tv = screen.getByRole("main", { name: "TV signed out" });
     expect(within(tv).getByRole("heading", { level: 1, name: "This TV is signed out" })).toBeVisible();
     expect(within(tv).getByRole("heading", { level: 2, name: "Sign in this TV" })).toBeVisible();
+    expect(tv).toHaveTextContent("Use a Coordinator or Site Bed Manager account.");
     expect(tv).toHaveTextContent("Names show in full on this screen.");
     fireEvent.change(within(tv).getByLabelText("Email"), { target: { value: "tv@example.test" } });
     fireEvent.change(within(tv).getByLabelText("Password"), { target: { value: "synthetic-password" } });

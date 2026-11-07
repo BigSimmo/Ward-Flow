@@ -196,15 +196,24 @@
 
 /* ---------------------------------------------------------------- split and table card */
 
+/* Drawer review (6 Nov 2026): the patient flow opens in the kit drawer, so the list takes the full
+   width at every size and the page keeps one scroll. */
 .split {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 336px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   align-items: start;
 }
 
-.splitFull {
-  grid-template-columns: minmax(0, 1fr);
+/* The flow drawer's body: its sections sit on the drawer's own inset. */
+.flowDrawerBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.flowDrawerBody .section {
+  padding-inline: 0;
 }
 
 .tableCard {
@@ -558,7 +567,7 @@
 }
 
 .next_box {
-  margin: 0 12px;
+  margin: 0;
   padding: 10px 12px;
   border-radius: var(--wf-r-md);
   display: flex;
@@ -583,12 +592,11 @@
   color: var(--wf-ink-1);
 }
 
-/* v10: Act now takes an inset marker and subtle tint; the rest a plain hairline. */
+/* Drawer review (6 Nov 2026): every next step is a plain hairline box; the tone lives in the
+   label's glyph, never in a tint (D-94). */
 .box_act {
   border-color: var(--wf-line);
-
-  background: var(--wf-act-tint);
-  position: relative;
+  background: var(--wf-surface);
 }
 
 .box_act .nextLabel,
@@ -985,14 +993,6 @@
   padding: 8px;
 }
 
-/* Beside the side rail, the table needs about 900px for its six columns, so the sign-off card
- * moves under it below 1440px instead of squeezing every column to an ellipsis. */
-@media (max-width: 75rem) {
-  .split {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 /* v10 tablet portrait: the tab row and the table controls wrap instead of running off the card. */
 @media (max-width: 62.5rem) {
   .toolbar {
@@ -1355,18 +1355,6 @@
   gap: 6px;
 }
 
-@media (max-width: 85rem) {
-  .split {
-    grid-template-columns: minmax(0, 1fr) 300px;
-  }
-}
-
-@media (max-width: 75rem) {
-  .split {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
 /* 1 Nov 2026, round 3: filter, print, sign off. */
 .contextRow {
   display: grid;
@@ -1417,11 +1405,6 @@
 
 .contextRow > .sinceRail {
   display: block;
-}
-
-/* An empty rail gives its width back to the table at every width. */
-.split.splitFull {
-  grid-template-columns: minmax(0, 1fr);
 }
 
 /* iPad portrait: the hero's Sign off opens sign-off, so the rail's own trigger stays hidden. */

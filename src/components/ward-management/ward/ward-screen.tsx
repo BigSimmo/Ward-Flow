@@ -811,11 +811,11 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
 
   // Focus moves to the first control whenever the drawer shows a bed, including a step to another bed.
   useEffect(() => {
-    if (selectedBed !== null && bedDrawerRef.current) {
+    // The kit drawer is portalled on tablet and desktop, so the phone ref is empty there (CodeRabbit, #1497).
+    const scope = bedDrawerRef.current ?? document.querySelector<HTMLElement>('[data-testid="bed-telemetry-drawer"]');
+    if (selectedBed !== null && scope) {
       const focusable = Array.from(
-        bedDrawerRef.current.querySelectorAll<HTMLElement>(
-          'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
-        ),
+        scope.querySelectorAll<HTMLElement>('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'),
       ).filter((el) => !el.hasAttribute("disabled"));
       focusable[0]?.focus();
     }

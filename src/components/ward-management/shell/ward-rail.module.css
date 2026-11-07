@@ -74,6 +74,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .rail,
+  .brand,
   .railLink,
   .railToggle,
   .capacityChevron {
@@ -151,6 +152,77 @@
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-11);
   font-weight: 600;
+}
+
+/*
+ * The brand corner joins the header's navy band (Josh, 7 Nov 2026). On desktop the brand row sits
+ * level with the header, so while the header is navy (`data-band="ink"`, at rest over a page hero)
+ * the corner takes the same navy and hero ink rather than staying a light notch at the top left.
+ * The collapse control takes hero ink only on the open rail; a closed rail moves it to the foot,
+ * over the light rail, where it keeps its normal ink.
+ * Once the page scrolls and the header turns light, the corner turns light with it. The second
+ * selector mirrors the header's own pre-hydration arm (ward-bar.module.css, band header block).
+ */
+@media (min-width: 62.5625rem) {
+  .brand {
+    transition:
+      background-color var(--wf-t-enter) var(--wf-ease-out),
+      border-color var(--wf-t-enter) var(--wf-ease-out);
+  }
+
+  :global(:root:has([data-wf-bar][data-band="ink"])) .brand,
+  :global(
+      :root:has([data-wf-scroller] [data-wf-hero="band"]:not([data-band="off"])):not(:has([data-wf-bar][data-band]))
+    )
+    .brand {
+    --wf-focus-ring: var(--wf-hero-ink);
+    background: var(--wf-hero-1);
+    border-bottom-color: var(--wf-hero-1);
+  }
+
+  :global(:root:has([data-wf-bar][data-band="ink"])) .brandLink,
+  :global(
+      :root:has([data-wf-scroller] [data-wf-hero="band"]:not([data-band="off"])):not(:has([data-wf-bar][data-band]))
+    )
+    .brandLink {
+    color: var(--wf-hero-ink);
+  }
+
+  :global(:root:has([data-wf-bar][data-band="ink"])) .brandStateText,
+  :global(
+      :root:has([data-wf-scroller] [data-wf-hero="band"]:not([data-band="off"])):not(:has([data-wf-bar][data-band]))
+    )
+    .brandStateText {
+    border-color: var(--wf-on-hero-line);
+    color: var(--wf-hero-ink-2);
+  }
+
+  :global(:root:has([data-wf-bar][data-band="ink"])) .rail:not([data-rail="closed"]) .railToggle,
+  :global(
+      :root:has([data-wf-scroller] [data-wf-hero="band"]:not([data-band="off"])):not(:has([data-wf-bar][data-band]))
+    )
+    .rail:not([data-rail="closed"])
+    .railToggle {
+    color: var(--wf-hero-ink-2);
+  }
+
+  :global(:root:has([data-wf-bar][data-band="ink"])) .rail:not([data-rail="closed"]) .railToggle:hover,
+  :global(
+      :root:has([data-wf-scroller] [data-wf-hero="band"]:not([data-band="off"])):not(:has([data-wf-bar][data-band]))
+    )
+    .rail:not([data-rail="closed"])
+    .railToggle:hover {
+    color: var(--wf-hero-ink);
+  }
+
+  :global(:root:has([data-wf-bar][data-band="ink"])) .rail:not([data-rail="closed"]) .railToggle:hover::before,
+  :global(
+      :root:has([data-wf-scroller] [data-wf-hero="band"]:not([data-band="off"])):not(:has([data-wf-bar][data-band]))
+    )
+    .rail:not([data-rail="closed"])
+    .railToggle:hover::before {
+    background: var(--wf-on-hero-fill);
+  }
 }
 
 /* Collapse control: a 30px face inside the full 48px target. */

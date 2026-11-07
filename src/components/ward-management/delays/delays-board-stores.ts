@@ -4,7 +4,7 @@
  * The Waiting board's browser stores and small hooks, split out of `delays-board.tsx` to keep that
  * file under 1,500 lines.
  */
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useState } from "react";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { type Movement } from "@/components/ward-management/ward-model";
 import { createBrowserStore } from "@/lib/client-store-factory";
@@ -60,27 +60,6 @@ export function transitNote(movement: Movement, now: Instant): string | undefine
   if (collectedAt === undefined || movement.transport?.cancelledAt !== undefined || movement.stage === "arrived")
     return undefined;
   return `In transit since ${formatInstantWithDay(collectedAt, now)}`;
-}
-
-/** Below 64rem the person's panel is a sheet over the table (see delays-board.module.css). */
-const SHEET_QUERY = "(max-width: 64rem)";
-
-function isSheetLayout(): boolean {
-  return typeof window.matchMedia === "function" && window.matchMedia(SHEET_QUERY).matches;
-}
-
-function subscribeSheetLayout(onChange: () => void): () => void {
-  if (typeof window.matchMedia !== "function") return () => undefined;
-  const query = window.matchMedia(SHEET_QUERY);
-  query.addEventListener("change", onChange);
-  return () => {
-    query.removeEventListener("change", onChange);
-  };
-}
-
-/** True at or below 64rem, where the person's panel is a sheet over the table. */
-export function useSheetLayout(): boolean {
-  return useSyncExternalStore(subscribeSheetLayout, isSheetLayout, () => false);
 }
 
 /** DA-26 (design audit): which edges of a sideways-scrolling area still hide content. */

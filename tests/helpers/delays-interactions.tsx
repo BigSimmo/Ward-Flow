@@ -25,7 +25,10 @@ export function showEveryDelayRow(): void {
   }
 }
 
-/** Opens a person's row and returns their panel in the rail. Clears filters that hide them first. */
+/**
+ * Opens a person's row and returns their drawer (head, body and foot; drawer review, 6 Nov 2026).
+ * Clears filters that hide them first.
+ */
 export function inspectDelayPerson(id: string): HTMLElement {
   if (screen.queryByTestId(`delays-select-${id}`) === null) showEveryDelayRow();
   const hidden = screen.queryByTestId("delays-hidden-note");
@@ -35,5 +38,5 @@ export function inspectDelayPerson(id: string): HTMLElement {
   }
   const trigger = screen.getByTestId(`delays-select-${id}`);
   if (trigger.getAttribute("aria-expanded") !== "true") fireEvent.click(trigger);
-  return screen.getByRole("region", { name: "Why this person is waiting" });
+  return screen.getByTestId(`delays-detail-${id}`);
 }

@@ -1200,62 +1200,36 @@
   }
 }
 
-/* WH1 (Josh, 3 Nov 2026): the footer is the Capacity drawer's dark band, with one filled step full
-   width and the plain steps under it. Text inside reads in the band's own inks; the More list's
-   pop-up keeps the page's inks. */
-.drawer {
-  --band-ink-2: var(--wf-ink-2);
-  --band-ink-3: var(--wf-ink-3);
+/* Drawer review (6 Nov 2026): on tablet and desktop the record is the kit PanelDrawer. Its body is
+   the one scroll; the foot is the light kit band with one filled step full width and the quiet steps
+   under it at one height (the dark band went, as on every kit drawer). */
+.kitDrawer {
+  width: min(100%, 31.25rem);
 }
 
-.footBand.footBand {
-  border-top: 0;
-  background: linear-gradient(180deg, var(--wf-hero-1), var(--wf-hero-2));
-  color: var(--wf-hero-ink);
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
-  --wf-ink-2: var(--wf-hero-ink-2);
-  --wf-ink-3: var(--wf-hero-ink-3);
+.kitBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
 }
 
-.footBand :global([role="menu"]) {
-  --wf-ink-2: var(--band-ink-2);
-  --wf-ink-3: var(--band-ink-3);
+.kitNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-h-sm);
 }
 
-.footBand :is(a, button):focus-visible {
-  outline: 2px solid var(--wf-hero-ink);
-  outline-offset: 2px;
-  box-shadow: none;
+.kitNavBeds {
+  display: flex;
+  gap: var(--wf-s-1);
 }
 
-.footBand .footDestination {
-  color: var(--wf-hero-ink-2);
-}
-
-.footBand .footDestination strong {
-  color: var(--wf-hero-ink);
-}
-
-.footBand .footChange {
-  color: var(--wf-hero-ink);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-
-.footBand .footChange:hover {
-  background: color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
-}
-
-.footBand .footCriteria {
-  color: var(--wf-hero-ink-2);
-}
-
-.footBand [data-testid="ward-drawer-close-bed"] {
-  border-color: color-mix(in srgb, var(--wf-hero-ink) 20%, transparent);
-  background: color-mix(in srgb, var(--wf-hero-ink) 8%, transparent);
-  color: var(--wf-hero-ink);
-  box-shadow: none;
+.kitFootMain.kitFootMain {
+  width: 100%;
+  justify-content: center;
 }
 
 .bandActions {

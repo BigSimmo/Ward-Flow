@@ -16,7 +16,7 @@
   /* WH5: Ward flow's three lists keep one line at 1440 with the side menu open. */
   grid-template-columns: minmax(0, 5fr) minmax(23.5rem, 2fr);
   gap: var(--wf-s-3);
-  align-items: stretch;
+  align-items: start;
   min-width: 0;
 }
 
@@ -505,15 +505,13 @@
   border-top: 1px solid var(--wf-line);
 }
 
-/* Ward flow: the panel sits beside the board at the board's height and its list scrolls. */
+/* Ward flow: the panel sits beside the board and grows with the page (drawer review, 6 Nov 2026:
+   one page scroll, no list scrolling inside a card). */
 .flowWrap {
   position: relative;
-  min-height: 26rem;
 }
 
 .flowCard {
-  position: absolute;
-  inset: 0;
   display: flex;
   flex-direction: column;
 }
@@ -543,8 +541,6 @@
 
 .flowBody {
   flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
   padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
 }
 
@@ -1159,27 +1155,6 @@ label.todoMain:has(.todoTick:focus-visible) {
 @media (max-width: 70rem) {
   .homeTop {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .flowWrap {
-    min-height: 0;
-  }
-
-  .flowCard {
-    position: static;
-  }
-
-  .flowBody {
-    max-height: 28rem;
-  }
-}
-
-/* Stacked full width (tablet and narrow desktop) there is no neighbouring card to match, so the
-   pane grows with the page instead of scrolling inside a 28rem box (D-95, 3 Nov 2026). */
-@media (min-width: 46.5rem) and (max-width: 70rem) {
-  .flowBody {
-    max-height: none;
-    overflow-y: visible;
   }
 }
 

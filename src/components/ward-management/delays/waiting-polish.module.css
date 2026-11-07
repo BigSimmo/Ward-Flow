@@ -713,6 +713,12 @@ button.strip:disabled {
 .split.split[data-single] {
   grid-template-columns: minmax(0, 1fr);
 }
+/* Drawer review (6 Nov 2026): the person opens in the kit drawer, so the registers column beside the
+   list no longer pins; it grows with the page and the page keeps one scroll. */
+.split.split > [data-ward-primitive="panel"]:not(:first-child) {
+  position: relative;
+  top: auto;
+}
 .pHead {
   align-items: flex-start;
   padding: var(--wf-s-4) var(--wf-s-4) var(--wf-s-3);
@@ -732,6 +738,8 @@ button.strip:disabled {
   padding: var(--wf-s-3) var(--wf-s-4) var(--wf-s-4);
 }
 .pCause.pCause {
+  /* Drawer review (6 Nov 2026): the wait wraps under the cause rather than being cut ("15h 52m in E"). */
+  flex-wrap: wrap;
   align-items: flex-start;
   background: var(--wf-surface);
 }
@@ -740,10 +748,40 @@ button.strip:disabled {
   flex-direction: column;
   align-items: flex-start;
   gap: 4px;
+  min-width: 0;
 }
 .pCause > span:last-child {
+  flex: none;
   margin-left: auto;
   white-space: nowrap;
+}
+
+/* Drawer review (6 Nov 2026): the person drawer's head tag, foot and timeline. */
+.pTier {
+  display: inline-flex;
+  flex: none;
+}
+.pPrimary {
+  display: flex;
+}
+.pPrimary > * {
+  flex: 1 1 auto;
+}
+.pFootRow.pFootRow {
+  align-items: stretch;
+}
+.pTimeline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+.pTimeline h4 {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
 }
 /* Laptop and tablet only; the phone sheet keeps its own fact table. */
 @media (min-width: 46.5rem) {

@@ -5150,7 +5150,8 @@
     white-space: nowrap;
   }
 
-  /* Zones: row one is the beds and the dossier, row two the shift work and the flow column. */
+  /* Zones: row one is the beds across the full width (drawer review, 6 Nov 2026: the bed record
+     opens in the kit drawer, not a column), row two the shift work and the flow column. */
   .screen .zones,
   .screen .zonesOpen {
     grid-template-columns: minmax(0, 1fr) 22rem;
@@ -5160,7 +5161,7 @@
   }
 
   .screen .gridColumn {
-    grid-column: 1;
+    grid-column: 1 / -1;
     grid-row: 1;
     height: auto;
     overflow: visible;

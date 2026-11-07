@@ -3,22 +3,12 @@
 // LiveDecisionClock is a fork of DecisionClock in
 // src/components/ward-management/referrals/referral-board-parts.tsx. Changed: a pulsing live dot
 // and the clock time say the wait is still counting, the bar is green, amber then red, and a "due"
-// tick marks the end of the tier's window. PanelNav replaces the panel's footer row (Summary, Next)
+// tick marks the end of the tier's window. The drawer head carries the pager; it replaced the panel's footer row (Summary, Next)
 // with one compact row under the header: previous and next with "n of N", then Summary and Patient.
 
+import type { ReactNode } from "react";
 import Link from "next/link";
-import {
-  BedSingle,
-  Ellipsis,
-  ChevronLeft,
-  ChevronRight,
-  Clock3,
-  FileText,
-  ListOrdered,
-  Lock,
-  TriangleAlert,
-  UserRound,
-} from "lucide-react";
+import { BedSingle, Ellipsis, Clock3, ListOrdered, Lock, TriangleAlert } from "lucide-react";
 
 import { formatInstantWithDay, minuteOfDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { Referral } from "@/components/ward-management/ward-model";
@@ -32,7 +22,7 @@ import { demographicLabel } from "./referral-board-model";
 import { ReferralWorkedOn } from "./referral-worked-on-note";
 import { useSenderPresentation } from "@/components/ward-management/ward-sender-presentation";
 import { referralPresentation } from "@/components/ward-management/ward-partial-view-presenters";
-import { Button, Icon, Menu, StatusGlyph, buttonClass, cx, durMinutes } from "@/components/wf";
+import { Button, Icon, Menu, StatusGlyph, buttonClass, durMinutes } from "@/components/wf";
 import { BED_MEETING_REFERRALS_HREF } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
 import { useOptionalRouter } from "@/components/ward-management/ward/ward-screen-helpers";
 
@@ -48,6 +38,22 @@ function shortWhen(at: Instant, now: Instant): string {
   const words = formatInstantWithDay(at, now);
   const comma = words.indexOf(", ");
   return comma === -1 ? words : words.slice(comma + 2);
+}
+
+/**
+ * Drawer review (6 Nov 2026): only the figures take Geist Mono. A whole phrase in mono read as
+ * "Sent 3  days  ago", its wide spaces looking doubled.
+ */
+function monoFigures(words: string, mono: string | undefined): ReactNode {
+  return words.split(/(\d[\d:.]*)/).map((part, index) =>
+    index % 2 === 1 ? (
+      <span key={index} className={mono}>
+        {part}
+      </span>
+    ) : (
+      part
+    ),
+  );
 }
 
 function clockTime(now: Instant): string {
@@ -117,9 +123,7 @@ export function LiveDecisionClock({ referral, now }: { referral: Referral; now: 
         <span className={s.clockDue} style={{ left: `${Math.round((window / scale) * 100)}%` }} />
       </div>
       <div className={s.clockFoot}>
-        <span>
-          Sent <span className={s.mono}>{shortWhen(referral.raisedAt, now)}</span>
-        </span>
+        <span>Sent {monoFigures(shortWhen(referral.raisedAt, now), s.mono)}</span>
         <span>
           {running ? (
             <>
@@ -127,77 +131,10 @@ export function LiveDecisionClock({ referral, now }: { referral: Referral; now: 
             </>
           ) : null}
         </span>
-        <span>
-          Due <span className={s.mono}>{shortWhen(dueAt, now)}</span>
-        </span>
+        <span>Due {monoFigures(shortWhen(dueAt, now), s.mono)}</span>
       </div>
       {/* Smart features idea 3: who has this in hand. A courtesy note; the clock keeps running. */}
       <ReferralWorkedOn referral={referral} />
-    </div>
-  );
-}
-
-/** One compact row under the header: previous, "n of N", next, then Summary and the patient record. */
-export function PanelNav({
-  position,
-  total,
-  onPrevious,
-  onNext,
-  onSummary,
-  patientHref,
-}: {
-  position: number | undefined;
-  total: number;
-  onPrevious: () => void;
-  onNext: () => void;
-  onSummary: () => void;
-  patientHref?: string;
-}) {
-  return (
-    <div className={s.nav}>
-      <div className={s.navStep} role="group" aria-label="Move through the queue">
-        <button
-          type="button"
-          className={s.navIcon}
-          onClick={onPrevious}
-          aria-label="Previous referral (K)"
-          title="Previous (K)"
-          disabled={total < 2}
-        >
-          <ChevronLeft size={16} aria-hidden="true" />
-        </button>
-        <span className={s.navCount}>{position === undefined ? `${total} in queue` : `${position} of ${total}`}</span>
-        <button
-          type="button"
-          className={s.navIcon}
-          onClick={onNext}
-          aria-label="Next referral (J)"
-          title="Next (J)"
-          disabled={total < 2}
-        >
-          <ChevronRight size={16} aria-hidden="true" />
-        </button>
-      </div>
-      <span className={s.navSpacer} />
-      <button
-        type="button"
-        className={buttonClass({ variant: "ghost", size: "sm" })}
-        onClick={onSummary}
-        title="Referral (S)"
-      >
-        <FileText size={14} aria-hidden="true" />
-        Referral
-      </button>
-      {patientHref ? (
-        <Link
-          href={patientHref}
-          className={cx(buttonClass({ variant: "ghost", size: "sm" }))}
-          data-testid="ward-referral-open-patient"
-        >
-          <UserRound size={14} aria-hidden="true" />
-          Patient
-        </Link>
-      ) : null}
     </div>
   );
 }

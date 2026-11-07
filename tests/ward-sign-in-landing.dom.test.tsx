@@ -74,6 +74,24 @@ describe("a sign-in that lands on a page closed to the new desk", () => {
     expect(screen.queryByText("Not part of your role")).toBeNull();
   });
 
+  it("opens the ED desk's own home when landing on bed-meeting with query parameters", () => {
+    nav.pathname = "/ward-flow/bed-meeting";
+    signInAs({ role: "ed", scope: { kind: "ed", edId: "rph-ed" } }, "/ward-flow/bed-meeting?ward=rph-adult");
+    renderGate();
+    expect(nav.replace).toHaveBeenCalledWith("/ward-flow/ed/rph-ed");
+    expect(screen.getByText("Opening your home")).toHaveAttribute("role", "status");
+    expect(screen.queryByText("Not part of your role")).toBeNull();
+  });
+
+  it("opens the desk's own home when the landed path includes query parameters", () => {
+    nav.pathname = "/ward-flow/capacity";
+    signInAs(WARD2, "/ward-flow/capacity?view=site");
+    renderGate();
+    expect(nav.replace).toHaveBeenCalledWith("/ward-flow/ward/fsh-adult-secure");
+    expect(screen.getByText("Opening your home")).toHaveAttribute("role", "status");
+    expect(screen.queryByText("Not part of your role")).toBeNull();
+  });
+
   it("still refuses a closed page the person moves to later", () => {
     signInAs(WARD2, "/ward-flow/somewhere-else");
     renderGate();

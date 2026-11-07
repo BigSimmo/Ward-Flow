@@ -9,8 +9,19 @@ import Link from "next/link";
 import { movementHref } from "../shell/ward-facade";
 import dynamic from "next/dynamic";
 import { useId } from "react";
-import { Check, ClipboardCopy, Clock, Route, Ambulance, UserRound, X } from "lucide-react";
-import { Badge, Button, Card, Count, Icon, SrOnly, StatusGlyph, buttonClass, durMinutes } from "@/components/wf";
+import { Check, ClipboardCopy, Route, Ambulance, UserRound } from "lucide-react";
+import {
+  Button,
+  Card,
+  Count,
+  DrawerFootRow,
+  Icon,
+  PanelDrawer,
+  StatusGlyph,
+  StatusPill,
+  buttonClass,
+  durMinutes,
+} from "@/components/wf";
 import { formatInstant, formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import type { MovementStage } from "@/components/ward-management/ward-model";
 import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
@@ -98,7 +109,15 @@ function WardCapacity({ ward, now }: { ward: HandoverWard | undefined; now: Inst
   );
 }
 
+/**
+ * One patient's flow, in the kit right drawer at every width above a phone (drawer review, 6 Nov
+ * 2026). It used to sit in the sticky "Patient flow" rail beside the list, which would scroll on its
+ * own as it grew; now the list keeps the full width and one page scroll. The head names the patient
+ * with one line (UMRN, ED, time waiting) and the tier as the tag; the foot holds Open patient, then
+ * Copy ISBAR and Movements. J and K still step through the list while it is open (handover-page.tsx).
+ */
 export function HandoverFlowPanel({
+  open,
   row,
   ctx,
   wardOf,
@@ -106,6 +125,7 @@ export function HandoverFlowPanel({
   onClose,
   onCopyIsbar,
 }: {
+  open: boolean;
   row: HandoverRow;
   ctx: ColumnContext;
   wardOf: (unitId: string) => HandoverWard | undefined;
@@ -160,31 +180,48 @@ export function HandoverFlowPanel({
     );
 
   return (
-    <Card
-      as="section"
-      className={styles.panel}
-      aria-label={`Patient flow, ${row.name}`}
-      data-testid="ward-handover-flow-panel"
+    <PanelDrawer
+      open={open}
+      onClose={onClose}
+      title={row.name}
+      subtitle={
+        <>
+          <span className={styles.mono}>{row.umrn}</span> · {row.edShort} ·{" "}
+          <span className={styles.mono} title={`Waiting since ${formatInstantWithDay(row.openedAt, now)}`}>
+            {durMinutes(now - row.openedAt)}
+          </span>{" "}
+          waiting
+        </>
+      }
+      tag={<StatusPill tone={rowTone(row, ctx)}>Tier {row.tier}</StatusPill>}
+      closeLabel="Close patient"
+      bodyLabel={`Patient flow, ${row.name}`}
+      testId="ward-handover-flow-panel"
+      bodyClassName={styles.flowDrawerBody}
+      foot={
+        <>
+          {openPatientHref ? (
+            <Link href={openPatientHref} className={buttonClass({ variant: "pri" })}>
+              <Icon icon={UserRound} size={16} />
+              Open patient
+            </Link>
+          ) : (
+            <Button variant="pri" disabledReason="UMRN not recorded">
+              Open patient
+            </Button>
+          )}
+          <DrawerFootRow>
+            <Button variant="sec" icon={ClipboardCopy} onClick={() => onCopyIsbar(row)}>
+              Copy ISBAR for EMR
+            </Button>
+            <Link href={movementHref(row.movement.id)} className={buttonClass({ variant: "sec" })}>
+              <Icon icon={Ambulance} size={16} />
+              Movements
+            </Link>
+          </DrawerFootRow>
+        </>
+      }
     >
-      <div className={styles.panelHead}>
-        <StatusGlyph tone={rowTone(row, ctx)} />
-        <div className={styles.panelName}>
-          <b>{row.name}</b>
-          <span>
-            <span className={styles.mono}>{row.umrn}</span> · {row.edShort}
-          </span>
-        </div>
-        <span className={styles.tier}>
-          <span aria-hidden="true">T{row.tier}</span>
-          <SrOnly>Tier {row.tier}</SrOnly>
-        </span>
-        <Badge title={`Waiting since ${formatInstantWithDay(row.openedAt, now)}`}>
-          <Icon icon={Clock} size={14} />
-          <span className={styles.mono}>{durMinutes(now - row.openedAt)}</span>
-        </Badge>
-        <Button variant="ghost" size="sm" iconOnly icon={X} aria-label="Close patient" onClick={onClose} />
-      </div>
-
       <div className={`${styles.next_box} ${styles[`box_${step.tone}`]}`}>
         <span className={styles.nextLabel}>
           {stepIcon}
@@ -273,13 +310,7 @@ export function HandoverFlowPanel({
       </div>
 
       <div className={styles.section}>
-        <span className={styles.sectionHead}>
-          ISBAR
-          <span className={styles.spacer} />
-          <Button variant="ghost" size="sm" icon={ClipboardCopy} onClick={() => onCopyIsbar(row)}>
-            Copy for EMR
-          </Button>
-        </span>
+        <span className={styles.sectionHead}>ISBAR</span>
         <dl className={styles.isbar}>
           {isbarLines(row, now, ctx.readyBeds).map((line) => (
             <div key={line.key}>
@@ -289,23 +320,7 @@ export function HandoverFlowPanel({
           ))}
         </dl>
       </div>
-
-      <div className={styles.panelFoot}>
-        <Link href={movementHref(row.movement.id)} className={buttonClass({ variant: "sec", size: "sm" })}>
-          <Icon icon={Ambulance} size={14} />
-          Movements
-        </Link>
-        {openPatientHref ? (
-          <Link href={openPatientHref} className={buttonClass({ variant: "pri", size: "sm" })}>
-            Open patient
-          </Link>
-        ) : (
-          <Button variant="pri" size="sm" disabledReason="UMRN not recorded">
-            Open patient
-          </Button>
-        )}
-      </div>
-    </Card>
+    </PanelDrawer>
   );
 }
 

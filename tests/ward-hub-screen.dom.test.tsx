@@ -89,6 +89,12 @@ const resultsList = () => {
   return list;
 };
 const results = () => within(resultsList());
+/**
+ * Drawer review (6 Nov 2026): a chosen place opens in the kit right drawer, not a preview pane
+ * beside the list. The arrow keys move the highlighted row (what Enter opens) and open nothing.
+ */
+const placeDrawer = () => screen.getByTestId("hub-place-drawer");
+const highlightedRow = () => resultsList().querySelector<HTMLElement>('[aria-current="true"]');
 const listed = (name: string) => results().queryByText(name);
 /** Opens every fold and presses Show more until every row of the current view is on the list. */
 function expandAll() {
@@ -283,7 +289,8 @@ describe("Ward Flow Master Search Hub — a directory with no bed figures of its
     const row = results().getByText("Mental Health Unit").closest("li");
     expect(row?.textContent ?? "").not.toMatch(/\bready\b|\bpulled\b|\bbeds\b/iu);
 
-    const preview = within(screen.getByRole("region", { name: /^preview, mental health unit$/iu }));
+    const preview = within(placeDrawer());
+    expect(preview.getByRole("heading", { level: 2 })).toHaveTextContent(/^Mental Health Unit$/u);
     expect(preview.queryByText(/^ready to admit$/iu)).not.toBeInTheDocument();
     expect(preview.queryByText(/^Closed, not offered$/iu)).not.toBeInTheDocument();
     // PL1 follow-up (Josh, 4 Nov 2026): the Beds line came out; beds stay on Capacity and All wards.
@@ -321,15 +328,13 @@ describe("Ward Flow Master Search Hub — an unknown or an absence is stated in 
  * elsewhere on the same screen names every unauthorised ward and the word "Voluntary", so the
  * phrases were always present whatever the preview said.
  *
- * Scoped through the preview's own heading rather than a `data-testid`, deliberately — adding a
- * hook to `hub-screen.tsx` would be editing a component this session does not own, to make a test
- * easier. The heading is the preview's identity: if it is not there, there is no preview.
+ * Drawer review (6 Nov 2026): the place's drawer, checked by its own heading first, so the text
+ * read is that ward's drawer and nothing else on the page (the drawer sits outside the page).
  */
 function previewTextFor(wardName: string): string {
-  const heading = screen.getByRole("heading", { name: wardName });
-  const container = heading.parentElement;
-  if (container === null) throw new Error(`the preview heading for ${wardName} has no container to read`);
-  return container.textContent ?? "";
+  const drawer = placeDrawer();
+  within(drawer).getByRole("heading", { level: 2, name: wardName });
+  return drawer.textContent ?? "";
 }
 
 describe("Ward Flow Master Search Hub — every flagged state carries a word, not only a colour", () => {
@@ -463,25 +468,18 @@ describe("Ward Flow Master Search Hub — a search must not change what the scre
 
 describe("Ward Flow Master Search Hub — the keyboard reaches everything the mouse does", () => {
   const search = () => screen.getByRole("searchbox", { name: /search/i });
-  // v6: the preview is its own card above "At a glance", which now stays on screen. Nothing
-  // previewed reads as the overview alone.
-  const previewed = () => {
-    const preview = screen.queryByRole("region", { name: /^preview,/i });
-    if (preview === null) return "at a glance";
-    return within(preview)
-      .getAllByRole("heading")
-      .map((node) => node.textContent)
-      .join(" | ");
-  };
+  // Drawer review (6 Nov 2026): the arrow keys move the highlighted row; the drawer stays shut.
+  const previewed = () => highlightedRow()?.textContent ?? "nothing highlighted";
 
-  it("arrow keys move the preview through the results, and the preview follows", () => {
+  it("arrow keys move the highlighted row through the results, without opening the drawer", () => {
     renderHub();
-    // Review point 21 (no empty panels): on a wider screen the preview opens on the first place listed.
+    // On a wider screen the keyboard cursor starts on the first place listed.
     const first = previewed();
-    expect(first, "nothing is previewed on arrival").not.toMatch(/at a glance/i);
+    expect(first, "nothing is highlighted on arrival").not.toMatch(/nothing highlighted/i);
 
     fireEvent.keyDown(search(), { key: "ArrowDown" });
     const second = previewed();
+    expect(screen.queryByTestId("hub-place-drawer"), "an arrow key opened the drawer").not.toBeInTheDocument();
 
     // Two different wards, not the same one twice — a handler that fired but never advanced the
     // cursor would fail this.
@@ -662,8 +660,9 @@ describe("Ward Flow Master Search Hub — pinned places and recently opened", ()
       "an arrow-key preview was recorded as a visit",
     ).not.toBeInTheDocument();
 
-    // Review point 21: with the choice cleared, the preview is back on the first place listed.
-    const preview = screen.getByRole("region", { name: /^preview,/iu });
+    // With the choice cleared, the cursor is back on the first place listed; a click opens its drawer.
+    fireEvent.click(highlightedRow()!);
+    const preview = placeDrawer();
     const opened = within(preview).getByRole("heading", { level: 2 }).textContent ?? "";
     fireEvent.click(within(preview).getByRole("link", { name: /^open /i }));
 
@@ -822,7 +821,8 @@ describe("Ward Flow Master Search Hub — the statistics link ward/ED gain, and 
   // Review point 21: groups fold and long ones show Show more, so the row is revealed first.
   const clickResultRow = clickRow;
 
-  const glance = () => within(screen.getByRole("complementary", { name: /at a glance/i }));
+  // Drawer review (6 Nov 2026): the links sit in the chosen place's drawer.
+  const glance = () => within(placeDrawer());
 
   it("gives every ward row both its place link and a statistics link built from its own id", () => {
     expect(WARD_ENTRIES.length).toBeGreaterThan(0);
@@ -916,22 +916,23 @@ describe("Ward Flow Master Search Hub — one search on the page", () => {
 
 describe("Ward Flow Master Search Hub — the preview and Enter follow what the list shows", () => {
   const search = () => screen.getByRole("searchbox", { name: /search/i });
-  const preview = () => screen.getByRole("region", { name: /^preview,/i });
-  const previewName = () => within(preview()).getAllByRole("heading")[0]?.textContent ?? "";
+  // Drawer review (6 Nov 2026): the highlighted row is what Enter opens.
+  const previewName = () => highlightedRow()?.textContent ?? "";
 
-  it("a pinned place does not take over a search: the preview and Enter use the top match", () => {
+  it("a pinned place does not take over a search: the highlight and Enter use the top match", () => {
     window.localStorage.setItem("ward-hub-pinned", JSON.stringify(["scgh-adult-open"]));
     window.dispatchEvent(new Event("ward-hub-memory-change"));
     router.push.mockClear();
     renderHub();
-    // With nothing typed, the pinned place leads the preview.
+    // With nothing typed, the pinned place leads the highlight.
     expect(previewName()).toMatch(/Mental Health Unit/);
 
     fireEvent.change(search(), { target: { value: "Dabakarn" } });
-    expect(previewName(), "the pinned place stayed in the preview while the list showed another").toMatch(/Dabakarn/);
-    const href = within(preview())
-      .getByRole("link", { name: /^open /i })
-      .getAttribute("href");
+    expect(previewName(), "the pinned place stayed highlighted while the list showed another").toMatch(/Dabakarn/);
+    const href = hubEntries({ units: allUnits(), bedReleases: [], now: NOW_ANCHOR, sites: wardSites }).find(
+      (entry) => entry.name === "Dabakarn",
+    )?.href;
+    expect(href).toBeTruthy();
     fireEvent.keyDown(search(), { key: "Enter" });
     expect(router.push).toHaveBeenCalledTimes(1);
     expect(router.push).toHaveBeenCalledWith(href);
@@ -948,13 +949,13 @@ describe("Ward Flow Master Search Hub — the preview and Enter follow what the 
     expect(router.push).not.toHaveBeenCalled();
   });
 
-  it("the arrow keys past the eighth team open the list down to the row they preview", () => {
+  it("the arrow keys past the eighth team open the list down to the row they highlight", () => {
     renderHub();
     fireEvent.click(categoryRadio("community"));
     for (let press = 0; press < 10; press += 1) fireEvent.keyDown(search(), { key: "ArrowDown" });
-    const name = previewName();
-    expect(name).not.toBe("");
-    expect(listed(name), `the previewed team "${name}" is not on the list`).toBeInTheDocument();
+    // The highlighted row is only in the DOM when the list has opened down to it.
+    expect(highlightedRow(), "the highlighted team is not on the list").not.toBeNull();
+    expect(previewName()).not.toBe("");
   });
 });
 

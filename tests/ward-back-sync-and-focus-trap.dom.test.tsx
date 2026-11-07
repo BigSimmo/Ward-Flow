@@ -154,6 +154,9 @@ describe("Issue 4: Dialog Focus Trap & Restoration", () => {
       // Device audit (11 Oct 2026): Record review needs a chosen event, so pick the first row.
       const firstRow = document.querySelector<HTMLButtonElement>("[data-audit-row]");
       if (firstRow) fireEvent.click(firstRow);
+      // The row opens the kit drawer; close it (the row stays chosen) to reach Record review.
+      const drawerClose = screen.queryByTestId("wf-drawer-close");
+      if (drawerClose) fireEvent.click(drawerClose);
       const trigger = screen.getByRole("button", { name: "Record review" });
       trigger.focus();
       expect(document.activeElement).toBe(trigger);
@@ -207,6 +210,9 @@ describe("Issue 4: Dialog Focus Trap & Restoration", () => {
       // Device audit (11 Oct 2026): Record review needs a chosen event, so pick the first row.
       const firstRow = document.querySelector<HTMLButtonElement>("[data-audit-row]");
       if (firstRow) fireEvent.click(firstRow);
+      // The row opens the kit drawer; close it (the row stays chosen) to reach Record review.
+      const drawerClose = screen.queryByTestId("wf-drawer-close");
+      if (drawerClose) fireEvent.click(drawerClose);
       const trigger = screen.getByRole("button", { name: "Record review" });
       trigger.focus();
       fireEvent.click(trigger);

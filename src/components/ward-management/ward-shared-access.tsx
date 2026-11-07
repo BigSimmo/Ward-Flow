@@ -310,10 +310,12 @@ export function WardSharedAccess({ connection, children }: { connection: WardSha
   useEffect(() => {
     if (!serverAccess) return;
     const { desk, previewOf, covers } = readWardAccessSnapshot();
-    if (!sameDesk(previewOf ?? desk, serverAccess) || covers.length > 0) {
-      setWardAccess(serverAccess, { fromServer: true });
+    const isNewDesk = !sameDesk(previewOf ?? desk, serverAccess);
+    if (isNewDesk || covers.length > 0) {
+      const landingPath = isNewDesk && typeof window !== "undefined" ? window.location.pathname : undefined;
+      setWardAccess(serverAccess, { fromServer: true, landingPath });
       // #804, #797: a page closed to this desk opens its home, not "Not part of your role".
-      if (!sameDesk(previewOf ?? desk, serverAccess)) markSignInLanding(window.location.pathname);
+      if (isNewDesk && landingPath) markSignInLanding(landingPath);
     }
   }, [serverAccess]);
   const hearsAlerts = !serverAccess || PUSH_ROLES.includes(serverAccess.role);
