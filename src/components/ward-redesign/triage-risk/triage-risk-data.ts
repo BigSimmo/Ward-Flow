@@ -745,6 +745,13 @@ export const REFERRER_URGENCY: Tier = "C";
 /** The synthetic previous triage and risk plan (12 Oct, Synthetic CMHT). */
 export const LAST_TRIAGE = {
   label: "Last RAMP · 12 Oct · Synthetic CMHT",
+  when: "12 Oct",
+  team: "Synthetic CMHT",
+  urgency: "D" as Tier,
+  urgencyText: "D within 48 hours",
+  outcome: "Community follow-up; depot restarted",
+  formulation: "Risk to others rises with relapse and stopping treatment; settles on depot with family support.",
+  safetyPlan: "Depot fortnightly; mother to call the team if sleep drops; crisis line on the fridge.",
   pastFlags: ["violence.bg.prev", "violence.bg.weap", "other.bg.abs", "general.bg.aod"],
   pastSummary:
     "Previous violence · Previous use of weapons · Absconding · Significant alcohol or drug use. Carries these flags only; you answer Rest of history today.",

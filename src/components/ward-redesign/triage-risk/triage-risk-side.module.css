@@ -48,12 +48,6 @@
   color: var(--wf-ink-3);
 }
 
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 2px;
-}
-
 /* Pinned to the foot of the left column while the form scrolls. */
 .summary {
   position: sticky;
@@ -70,4 +64,9 @@
 
 .summaryButton * {
   white-space: nowrap;
+}
+
+.open {
+  align-self: flex-start;
+  margin-top: var(--wf-s-1);
 }

@@ -58,7 +58,7 @@ import { SectionCard, StatusMark, type FormApi } from "./triage-risk-parts";
 import { AssessmentBody, ReviewBody } from "./triage-risk-review";
 import { PlanBody, RiskBody } from "./triage-risk-risk";
 import { AllFactorsDrawer, HowToDrawer, SummaryDocument, SummaryDrawer } from "./triage-risk-sheets";
-import { NowBox, SideSummary } from "./triage-risk-side";
+import { LastTriageGlance, SideSummary } from "./triage-risk-side";
 import { TriageStart } from "./triage-risk-start";
 import { summaryModel, summaryText } from "./triage-risk-summary";
 import {
@@ -595,7 +595,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
               <Meter value={percent} max={100} fill="data-1" label="Needed answers in" />
               {isPhone ? null : (
                 <>
-                  <NowBox state={state} />
+                  <LastTriageGlance state={state} onOpen={() => openSummary("last")} />
                   <SideSummary left={left} signed={signed} onOpen={() => openSummary("sum")} />
                 </>
               )}
@@ -681,7 +681,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
         reqs={reqs}
         jump={jump}
         signButton={signed ? null : signButton("sheet")}
-        lead={isPhone ? <NowBox state={state} /> : undefined}
+        lead={isPhone ? <LastTriageGlance state={state} onOpen={() => setTab("last")} /> : undefined}
       />
       <HowToDrawer open={sheet === "how"} onClose={() => setSheet(null)} example={start} onExample={loadStart} />
       <AllFactorsDrawer form={formApi} open={sheet === "all"} onClose={() => setSheet(null)} />

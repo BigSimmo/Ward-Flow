@@ -410,17 +410,11 @@ export function SummaryDrawer({
             <h3 className={styles.paneHead}>Last triage and RAMP · 12 Oct · Synthetic CMHT</h3>
             <Facts
               rows={[
-                ["Urgency", "D within 48 hours"],
-                ["Outcome", "Community follow-up; depot restarted"],
+                ["Urgency", LAST_TRIAGE.urgencyText],
+                ["Outcome", LAST_TRIAGE.outcome],
                 ["Flags then", LAST_TRIAGE.pastFlags.map((k) => FACTOR_NAME[k]).join(" · ")],
-                [
-                  "Formulation",
-                  "Risk to others rises with relapse and stopping treatment; settles on depot with family support.",
-                ],
-                [
-                  "Safety plan",
-                  "Depot fortnightly; mother to call the team if sleep drops; crisis line on the fridge.",
-                ],
+                ["Formulation", LAST_TRIAGE.formulation],
+                ["Safety plan", LAST_TRIAGE.safetyPlan],
               ]}
             />
             <h3 className={styles.paneHead}>Admissions</h3>
