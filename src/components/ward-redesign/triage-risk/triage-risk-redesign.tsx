@@ -58,7 +58,7 @@ import { SectionCard, StatusMark, type FormApi } from "./triage-risk-parts";
 import { AssessmentBody, ReviewBody } from "./triage-risk-review";
 import { PlanBody, RiskBody } from "./triage-risk-risk";
 import { AllFactorsDrawer, HowToDrawer, SummaryDocument, SummaryDrawer } from "./triage-risk-sheets";
-import { NowBox, SideSummary, SignChecklist } from "./triage-risk-side";
+import { NowBox, SideSummary } from "./triage-risk-side";
 import { TriageStart } from "./triage-risk-start";
 import { summaryModel, summaryText } from "./triage-risk-summary";
 import {
@@ -595,7 +595,6 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
               <Meter value={percent} max={100} fill="data-1" label="Needed answers in" />
               {isPhone ? null : (
                 <>
-                  {signed ? null : <SignChecklist reqs={reqs} jump={jump} onMore={() => openSummary("sum")} />}
                   <NowBox state={state} />
                   <SideSummary left={left} signed={signed} onOpen={() => openSummary("sum")} />
                 </>

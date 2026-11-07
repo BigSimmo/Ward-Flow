@@ -2,69 +2,21 @@
 
 /**
  * Triage and risk mock-up: the left column's live blocks under the section index (7 Nov 2026). A
- * short Before you sign checklist that jumps to each field, a Now box (urgency, legal status as
- * typed, current risk flags and alerts) and the Summary button, which replaces the floating one so
- * nothing on the form is covered. On a phone the Now box sits in the summary sheet instead. No
+ * Now box (urgency, legal status as typed, current risk flags and alerts) and the Summary button,
+ * which replaces the floating one so nothing on the form is covered. Josh (7 Nov) dropped the
+ * Before you sign checklist here: it repeated the index's own status. On a phone the Now box sits in the summary sheet instead. No
  * computed legal times and no scores. Synthetic data only.
  */
 import { useId } from "react";
 
-import { Badge, Button, StatusGlyph } from "@/components/wf";
+import { Badge, Button } from "@/components/wf";
 
 import { LEGAL, TIER_LONG } from "./triage-risk-data";
-import { allFactors, type Requirement, type Target, type TriageState } from "./triage-risk-state";
-import type { SectionId } from "./triage-risk-data";
+import { allFactors, type TriageState } from "./triage-risk-state";
 import styles from "./triage-risk-side.module.css";
 
 const LEGAL_NAME: Readonly<Record<string, string>> = Object.fromEntries(LEGAL);
-const CHECKLIST_LIMIT = 5;
 
-/** What is left, needed first: up to five, each going to its field, then "+n more" for the summary. */
-export function SignChecklist({
-  reqs,
-  jump,
-  onMore,
-}: {
-  reqs: readonly Requirement[];
-  jump: (section: SectionId, target?: Target) => void;
-  onMore: () => void;
-}) {
-  const left = [...reqs.filter((r) => r.blocks && !r.ok), ...reqs.filter((r) => !r.blocks && !r.ok)];
-  const shown = left.slice(0, CHECKLIST_LIMIT);
-  const more = left.length - shown.length;
-  const headId = useId();
-  return (
-    <section className={styles.block} aria-labelledby={headId} data-testid="triage-side-checklist">
-      <h2 className={styles.head} id={headId}>
-        Before you sign
-      </h2>
-      {shown.length ? (
-        <ul className={styles.list}>
-          {shown.map((r, index) => (
-            <li key={`${index}-${r.label}`}>
-              <button type="button" className={styles.item} onClick={() => jump(r.section, r.target)}>
-                <StatusGlyph tone={r.blocks ? "neutral" : "warning"} size={8} />
-                <span>{r.label}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className={styles.ready}>
-          <StatusGlyph tone="success" size={10} />
-          Ready to sign
-        </p>
-      )}
-      {more > 0 ? (
-        <button type="button" className={styles.more} onClick={onMore} aria-haspopup="dialog">
-          +{more} more
-        </button>
-      ) : null}
-    </section>
-  );
-}
-
-/** The triage at a glance: the clinician's urgency, legal status as typed, current flags and alerts. */
 export function NowBox({ state }: { state: TriageState }) {
   const person = state.person;
   const flags = allFactors(state).filter((f) => f.kind === "now" && f.mark === "y");
@@ -121,7 +73,7 @@ export function SideSummary({ left, signed, onOpen }: { left: number; signed: bo
   return (
     <div className={styles.summary}>
       <Button className={styles.summaryButton} onClick={onOpen} aria-haspopup="dialog">
-        Summary · {signed ? "signed" : left ? `${left} needed` : "ready"}
+        Summary · {signed ? "signed" : left ? `${left} left` : "ready"}
       </Button>
     </div>
   );
