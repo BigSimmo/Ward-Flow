@@ -1,0 +1,1583 @@
+/*
+ * Triage and risk mock-up (6 Nov 2026). Layout and a few form-specific parts only: every control is
+ * the kit's (Segmented, FilterChip, Button, Badge, PanelDrawer). Tokens only, no side stripes, 12px
+ * text floor. Phone is up to 46.4375rem, as the kit's queries.
+ */
+
+.screen {
+  min-width: 0;
+  min-height: 100%;
+  /* As Add patient: the page and the hero's curved edge share one canvas, in both themes. */
+  background: var(--wf-canvas);
+  --wf-page-canvas: var(--wf-canvas);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-4);
+  min-width: 0;
+  /* The foot clears the Summary button pinned at the bottom right. */
+  padding: var(--wf-s-4) var(--wf-s-4) calc(var(--wf-s-8) * 2.5);
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.grow {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.pushEnd {
+  margin-left: auto;
+}
+
+.quiet {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+.quiet b {
+  color: var(--wf-ink-2);
+}
+
+.quietBlock {
+  display: block;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.centre {
+  align-self: center;
+}
+
+.startSelf {
+  align-self: flex-start;
+}
+
+.noShrink {
+  flex: none;
+}
+
+/* Banner (kit Hero). */
+.bannerBar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.idLine {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-4);
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-hero-ink-2);
+}
+
+.idLine b {
+  font-weight: 500;
+  color: var(--wf-hero-ink);
+}
+
+.heroCount {
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+}
+
+/* Index beside the form. */
+.layout {
+  display: grid;
+  /* 13.5rem: the section list's card padding keeps "Formulation and plan" on one line. */
+  grid-template-columns: 13.5rem minmax(0, 1fr);
+  gap: var(--wf-s-6);
+  align-items: start;
+  min-width: 0;
+}
+
+.index {
+  position: sticky;
+  top: calc(var(--wf-header-height) + var(--wf-s-4));
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.indexGroup {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-3) var(--wf-s-3) var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+}
+
+.indexGroup:first-child {
+  padding-top: 0;
+}
+
+.indexLink {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 34px;
+  padding: 0 var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-13);
+  text-decoration: none;
+}
+
+.indexLink:hover {
+  background: var(--wf-hover);
+  color: var(--wf-ink-1);
+}
+
+.indexLink[aria-current] {
+  background: var(--wf-selected);
+  color: var(--wf-ink-1);
+  font-weight: 500;
+}
+
+.indexLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.indexNum {
+  width: 14px;
+  font: 500 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-ink-3);
+}
+
+.indexFoot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  margin-top: var(--wf-s-3);
+  padding: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.indexFoot > :nth-child(2) {
+  align-self: stretch;
+}
+
+/* Form column. */
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  max-width: 59rem;
+}
+
+.formPart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.part {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  margin: var(--wf-s-2) 0 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+}
+
+.part::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--wf-line-2);
+}
+
+.part .mono {
+  font-weight: 500;
+}
+
+.section {
+  scroll-margin-top: calc(var(--wf-header-height) + var(--wf-s-4));
+}
+
+.sectionBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+}
+
+.secNum {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  margin-right: var(--wf-s-3);
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-track);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-ink-3);
+  vertical-align: 1px;
+}
+
+.section[data-done] .secNum {
+  background: var(--wf-fit-tint);
+  color: var(--wf-success-ink);
+}
+
+.secSub {
+  font-size: var(--wf-fs-12);
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+/* Label beside its control. */
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  align-items: center;
+  min-width: 0;
+}
+
+.row[data-top] {
+  align-items: start;
+}
+
+.row[data-top] > .rowLabel {
+  padding-top: var(--wf-s-2);
+}
+
+.rowLabel {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+}
+
+.rowHint {
+  display: block;
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+
+.rowControl {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.rowControl > * {
+  max-width: 100%;
+}
+
+/* A long choice wraps on tablet and desktop; on a phone the kit's track slides sideways instead. */
+@media (min-width: 46.5rem) {
+  .choice {
+    flex-wrap: wrap;
+  }
+}
+
+.timeInput {
+  width: 11.5rem;
+}
+
+/* A wrapper that only names a group for "Go to"; it draws no box of its own. */
+.contents {
+  display: contents;
+}
+
+/* V4: the chosen option of a pick-one reads at a glance: accent fill and a full accent edge (kit
+   tokens; the kit's raised look stays for every other screen). */
+.choice [role="radio"][aria-checked="true"] {
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+  box-shadow: inset 0 0 0 1.5px var(--wf-accent);
+}
+
+.choice [role="radio"][aria-checked="true"]:focus-visible {
+  box-shadow:
+    inset 0 0 0 2px var(--wf-focus-gap),
+    inset 0 0 0 4px var(--wf-focus-ring);
+}
+
+.choice [role="radio"][aria-checked="true"] .tierLetter,
+.choice [role="radio"][aria-checked="true"] .tierWindow {
+  color: var(--wf-accent-ink);
+}
+
+.fieldError {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-1);
+}
+
+.oneLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.oneLine b {
+  font-weight: 500;
+  color: var(--wf-ink-1);
+}
+
+.from {
+  color: var(--wf-ink-3);
+}
+
+.inlineMark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reveal,
+.nudge,
+.restRow,
+.carry,
+.carried,
+.gaps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.reveal {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.reveal[data-act] {
+  border-color: transparent;
+  background: var(--wf-act-tint);
+}
+
+.revealText {
+  color: var(--wf-ink-2);
+}
+
+.restRow b,
+.carry b {
+  font-weight: 500;
+  color: var(--wf-ink-1);
+}
+
+.carry {
+  border-style: dashed;
+  border-color: var(--wf-line-3);
+}
+
+.carry .grow {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: var(--wf-lh-12);
+}
+
+.carry .grow b {
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.actLine {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-3);
+  font-size: var(--wf-fs-13);
+}
+
+.actLine > svg {
+  margin-top: 3px;
+}
+
+.hint {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+.urgHint,
+.since {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.urgHint svg,
+.since svg {
+  flex: none;
+  color: var(--wf-accent);
+}
+
+.since {
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-selected);
+}
+
+.suggest {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.miniLabel {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+
+.boxFoot {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  margin-top: calc(-1 * var(--wf-s-1));
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* What to cover. */
+.guideBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+}
+
+.guidePanel {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+.guidePanel[data-columns="2"] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.guideHead {
+  margin: 0 0 var(--wf-s-1);
+  padding: 0 6px;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+}
+
+.guideItem {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: var(--wf-target);
+  padding: 6px;
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: transparent;
+  color: var(--wf-ink-2);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.guideItem:hover {
+  background: var(--wf-hover);
+}
+
+.guideItem:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.guideItem > svg {
+  flex: none;
+  margin-top: 3px;
+}
+
+.guideTitle {
+  display: block;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-1);
+}
+
+.guideText {
+  display: block;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+.flagInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 6px;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+.flagInfo b {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+/* Mental state. */
+.phrasePanel,
+.domainList,
+.questions {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  overflow: hidden;
+}
+
+.phrasePanel {
+  background: var(--wf-surface-2);
+}
+
+.phraseRow,
+.domainRow {
+  display: grid;
+  grid-template-columns: 10.5rem minmax(0, 1fr);
+  gap: var(--wf-s-2) var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  min-width: 0;
+}
+
+.phraseRow:first-child,
+.domainRow:first-child {
+  border-top: 0;
+}
+
+.phraseHead {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding-top: 6px;
+}
+
+.domainLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.lookFor {
+  margin-left: calc(-1 * var(--wf-s-2));
+}
+
+.lookText {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 6px var(--wf-s-3);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-selected);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}
+
+.domainBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.domainBody .lookText {
+  order: -1;
+}
+
+.notAssessed:not([aria-pressed="true"]) {
+  border-style: dashed;
+  color: var(--wf-ink-3);
+}
+
+/* Risk flags. */
+.subHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.sectionBody > .subHead:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.subTitle {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+}
+
+.subHead > .pushEnd {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.flagGroups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+.flagGroup {
+  display: grid;
+  grid-template-columns: 10rem minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  align-items: start;
+}
+
+.flagGroupLabel {
+  padding-top: 6px;
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-2);
+}
+
+.flagWrap {
+  display: inline-flex;
+}
+
+.chipSub {
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+
+/* A2: a present flag has a tick and a full accent edge (3:1 or more against the page). */
+.flagChip.flagChip[aria-pressed="true"] {
+  border-color: var(--wf-accent);
+}
+
+.tick {
+  flex: none;
+  margin-right: 2px;
+  vertical-align: -2px;
+}
+
+.unknownChip {
+  border-style: dashed;
+  background: var(--wf-surface-2);
+}
+
+.notPresentChip.notPresentChip {
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+}
+
+.unknownChip .chipSub,
+.notPresentChip .chipSub {
+  color: var(--wf-ink-2);
+}
+
+.markBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-3);
+}
+
+.covers {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}
+
+.covers b {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.conflicts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  color: var(--wf-ink-1);
+}
+
+.conflict {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--wf-s-1);
+}
+
+.confirmList {
+  display: flex;
+  flex-basis: 100%;
+  flex-wrap: wrap;
+  gap: var(--wf-s-2) var(--wf-s-4);
+}
+
+.confirmItem {
+  flex-wrap: nowrap;
+  gap: var(--wf-s-2);
+  color: var(--wf-ink-1);
+}
+
+.question {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  min-height: 42px;
+  padding: 6px var(--wf-s-2) 6px var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.question:first-child {
+  border-top: 0;
+}
+
+.question:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+  background: var(--wf-selected);
+}
+
+.questionText {
+  flex: 1 1 14rem;
+  min-width: 0;
+  font-size: var(--wf-fs-13);
+}
+
+/* Urgency A to G. */
+.tiers {
+  max-width: 100%;
+}
+
+.tier {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.tierLetter {
+  font: 600 var(--wf-fs-14) / 1 var(--wf-mono);
+  color: var(--wf-ink-1);
+}
+
+.tierWindow {
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+
+.signFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+}
+
+.signFoot > .grow {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.footNote {
+  margin: var(--wf-s-2) 0 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+/* Summary button, bottom right on tablet and desktop. */
+.edgeTab {
+  position: fixed;
+  right: var(--wf-s-6);
+  bottom: var(--wf-s-6);
+  z-index: 29;
+  box-shadow: var(--wf-e2);
+}
+
+.edgeCount {
+  margin-left: var(--wf-s-2);
+  padding: 1px var(--wf-s-2);
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-track);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
+  color: var(--wf-ink-2);
+}
+
+/* Slide-outs. */
+/* The summary and How to slide-outs are wider than the kit's 30rem patient drawer, as drawn
+   (doubled class so it wins over the kit panel width whatever the stylesheet order). */
+.wideDrawer.wideDrawer {
+  width: min(44rem, 100%);
+}
+
+.footText {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.paneHead,
+.areaHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: var(--wf-s-2) 0 0;
+  padding-top: var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+}
+
+.pane > .paneHead:first-child,
+.pane > .stack:first-child > .areaHead {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.areaHead {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.areaHead .mono {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  gap: 6px var(--wf-s-3);
+  margin: 0;
+}
+
+.fact {
+  display: contents;
+}
+
+.fact dt {
+  font-size: var(--wf-fs-12);
+  line-height: 19px;
+  color: var(--wf-ink-3);
+}
+
+.fact dd {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-1) var(--wf-s-2);
+  margin: 0;
+  min-width: 0;
+  font-size: var(--wf-fs-13);
+  line-height: 19px;
+  overflow-wrap: anywhere;
+}
+
+.missing {
+  margin: 0;
+  color: var(--wf-ink-3);
+}
+
+.gaps {
+  flex-direction: column;
+  align-items: stretch;
+  background: var(--wf-surface);
+}
+
+.gapsHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.gapsHead .mono {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+
+.doc {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-4);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.doc[data-capped] {
+  max-height: 38rem;
+  overflow: hidden;
+}
+
+.doc[data-capped]::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 0;
+  height: 5.5rem;
+  background: linear-gradient(to bottom, transparent, var(--wf-surface));
+  pointer-events: none;
+}
+
+.docTop {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-3);
+  padding-bottom: var(--wf-s-2);
+  border-bottom: 1px solid var(--wf-line-2);
+}
+
+.docTitle {
+  margin: 2px 0;
+  font-size: var(--wf-fs-15);
+  line-height: var(--wf-lh-15);
+  font-weight: 600;
+}
+
+.docTitle .mono {
+  font-size: var(--wf-fs-12);
+  font-weight: 500;
+  color: var(--wf-ink-3);
+}
+
+.docSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+}
+
+.docHead {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: var(--wf-target);
+}
+
+.docHeadTitle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-3);
+}
+
+/* Copy and Edit sit quiet at the part's right; ink-3 until hovered or focused. */
+.docTools {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.docTools > button:not(:hover, :focus-visible) {
+  color: var(--wf-ink-3);
+}
+
+.docNote,
+.docFoot {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-3);
+}
+
+.docFoot {
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line-2);
+}
+
+.docTags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1);
+  margin: var(--wf-s-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.docTags li {
+  padding: 0 7px;
+  border-radius: var(--wf-r-tag);
+  background: var(--wf-accent-tint);
+  font-size: var(--wf-fs-12);
+  line-height: 18px;
+  color: var(--wf-accent-ink);
+}
+
+.alertList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.alertList li {
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr) auto;
+  gap: var(--wf-s-3);
+  align-items: start;
+  padding: var(--wf-s-3) 0;
+  border-top: 1px solid var(--wf-line);
+}
+
+.alertList li:first-child {
+  border-top: 0;
+}
+
+.alertList li > svg {
+  margin-top: 4px;
+}
+
+.alertList .mono {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+
+.steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.steps li {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) 0;
+  border-top: 1px solid var(--wf-line);
+  counter-increment: step;
+  font-size: var(--wf-fs-13);
+  line-height: 19px;
+  color: var(--wf-ink-2);
+}
+
+.steps li:first-child {
+  border-top: 0;
+}
+
+.steps li::before {
+  content: counter(step);
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--wf-r-xs);
+  background: var(--wf-track);
+  font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
+  color: var(--wf-ink-3);
+}
+
+.steps b {
+  color: var(--wf-ink-1);
+}
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+}
+
+.tableWrap table {
+  width: 100%;
+  font-size: var(--wf-fs-12);
+}
+
+.tableWrap td {
+  padding: 6px var(--wf-s-2);
+  border-top: 1px solid var(--wf-line);
+  vertical-align: top;
+  color: var(--wf-ink-2);
+}
+
+.tableWrap td b {
+  font-weight: 500;
+  color: var(--wf-ink-1);
+}
+
+.phoneBar,
+.phoneLeft {
+  display: none;
+}
+
+/* Content fit: the 12.5rem index beside a usable form column needs about 62.5rem (1000px), so
+   below that the index becomes one row of step chips above the form. */
+@media (max-width: 62.5rem) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--wf-s-2);
+  }
+  .index {
+    position: static;
+    flex-direction: row;
+    gap: var(--wf-s-1);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .index::-webkit-scrollbar {
+    display: none;
+  }
+  .indexGroup,
+  .indexFoot {
+    display: none;
+  }
+  .indexLink {
+    flex: none;
+    border: 1px solid var(--wf-line);
+    background: var(--wf-surface);
+  }
+  .guidePanel {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 46.4375rem) {
+  .main {
+    gap: var(--wf-s-3);
+    padding: var(--wf-s-3) var(--wf-s-4) calc(var(--wf-s-8) * 3);
+  }
+  .index {
+    position: sticky;
+    top: var(--wf-header-height);
+    z-index: 19;
+    margin: 0 calc(-1 * var(--wf-s-4));
+    padding: 6px var(--wf-s-4) var(--wf-s-2);
+    background: var(--wf-canvas);
+  }
+  .indexLink {
+    min-height: 40px;
+  }
+  /* Clears the header, the hero's pinned line and the pinned step chips. */
+  .section {
+    scroll-margin-top: calc(var(--wf-header-height) + 7.5rem);
+  }
+  .secSub {
+    display: none;
+  }
+  .row,
+  .flagGroup,
+  .phraseRow,
+  .domainRow {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+  .row[data-top] > .rowLabel,
+  .flagGroupLabel {
+    padding-top: 0;
+  }
+  .phraseHead {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--wf-s-3);
+    padding-top: 2px;
+  }
+  .lookFor {
+    margin-left: 0;
+  }
+  .timeInput {
+    flex: 1 1 0;
+    width: auto;
+  }
+  .guidePanel,
+  .guidePanel[data-columns="2"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .facts {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .fact dt {
+    margin-top: var(--wf-s-1);
+  }
+  .idLine {
+    font-size: var(--wf-fs-12);
+  }
+  /* The phone bar rests on the dock's flat edge, under the shell bar's layer (as Out of area). */
+  .phoneBar {
+    position: fixed;
+    right: 0;
+    bottom: var(--wf-dock-top, 0px);
+    left: 0;
+    z-index: 29;
+    display: flex;
+    align-items: center;
+    gap: var(--wf-s-2);
+    padding: var(--wf-s-2) var(--wf-s-4);
+    border-top: 1px solid var(--wf-line-2);
+    background: var(--wf-surface);
+  }
+  .phoneLeft {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: var(--wf-s-2);
+    min-height: 40px;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    font-size: var(--wf-fs-12);
+    color: var(--wf-ink-2);
+    text-align: left;
+    cursor: pointer;
+  }
+  .phoneLeft b {
+    font-size: var(--wf-fs-15);
+    color: var(--wf-ink-1);
+  }
+  .phoneLeft:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .indexLink {
+    transition: none;
+  }
+}
+
+/* Review details (7 Nov 2026): the referrer's three fields while changing, and the language box. */
+.referrerFields {
+  display: grid;
+  flex: 1 1 100%;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+}
+
+.languageInput {
+  width: 12rem;
+  max-width: 100%;
+}
+
+@media (max-width: 46.4375rem) {
+  .referrerFields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Risk (7 Nov 2026): a flag toggles Present; Not known only in All RAMP factors, beside each factor. */
+.factorRow {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+
+.notKnownChip {
+  color: var(--wf-ink-3);
+}
+
+.notKnownLink {
+  align-self: flex-start;
+  color: var(--wf-ink-3);
+}
+
+/* Family and domestic violence, condensed (7 Nov 2026). */
+.fdvGuide {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}
+
+.fdvKeys {
+  color: var(--wf-ink-3);
+}
+
+.fdvAlone {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+}
+
+.fdvAloneLabel {
+  font-weight: 600;
+}
+
+/* The document (7 Nov 2026): key line, signature block and a print-friendly layout. */
+.docKey {
+  margin: var(--wf-s-1) 0 0;
+  font-weight: 500;
+  color: var(--wf-ink-1);
+  overflow-wrap: anywhere;
+}
+
+.docSign {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: var(--wf-s-2);
+  border-top: 1px solid var(--wf-line-2);
+}
+
+.docSign p {
+  margin: 0;
+}
+
+.docSign p:first-child {
+  font-weight: 600;
+}
+
+@media print {
+  .doc,
+  .doc[data-capped] {
+    max-height: none;
+    overflow: visible;
+    padding: 0;
+    border: 0;
+    box-shadow: none;
+    background: none;
+    color: var(--wf-ink-1);
+  }
+  .doc[data-capped]::after {
+    display: none;
+  }
+  .docSection,
+  .docSign {
+    break-inside: avoid;
+  }
+  .docHead button,
+  .docTop button {
+    display: none;
+  }
+}
+
+/* The left column (7 Nov 2026): fits the window and scrolls inside, the Summary button pinned at its
+   foot; the floating Summary button is for tablet widths only. */
+@media (min-width: 62.5625rem) {
+  /* Josh (7 Nov 2026): the section list sits on its own white card, as the side blocks did. */
+  .index {
+    max-height: calc(100dvh - var(--wf-header-height) - var(--wf-s-4) * 2);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    padding: var(--wf-s-2);
+    box-sizing: border-box;
+    border: 1px solid var(--wf-line);
+    border-radius: var(--wf-r-md);
+    background: var(--wf-surface);
+  }
+  .indexFoot {
+    align-items: stretch;
+    padding-bottom: 0;
+  }
+  .edgeTab {
+    display: none;
+  }
+}
+
+/* Finished sections fold to one line (7 Nov 2026); the body stays mounted so its own choices keep. */
+.foldBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.foldBody[hidden] {
+  display: none;
+}
+
+/* A row inside a reveal keeps its control on the same line as the rows outside it (the reveal's
+   12px padding and 1px edge come off the label column). */
+.reveal > .row {
+  grid-template-columns: calc(10rem - var(--wf-s-3) - 1px) minmax(0, 1fr);
+}
+
+/* The sign line's Show what's left sits on the text line, without the button's side padding. */
+.showLeft.showLeft {
+  margin-left: calc(-1 * var(--wf-s-1));
+}
+
+.signFoot b {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+/* How to: Start a new triage, first (moved from the banner). */
+.startNew {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+
+@media (max-width: 46.4375rem) {
+  .reveal > .row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Covers' Show all sits under its line, flush with the text. */
+.coversMore {
+  margin: calc(-1 * var(--wf-s-1)) 0 0 calc(-1 * var(--wf-s-2));
+}
+
+/* Before you sign: each item keeps its words on one line and the list wraps, so no item is
+   squeezed to a few letters on a phone. */
+.gapChips.gapChips {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.gapChips > button {
+  flex: none;
+  max-width: 100%;
+  white-space: normal;
+  text-align: left;
+}
+
+/* Legal status: full words on larger screens, the short form ("CTO") below 75rem (Josh, 7 Nov 2026).
+   The full name is only visually hidden on smaller screens, so screen readers still hear it. */
+/* Anchors the visually hidden full name, so it never widens a scrolling row. */
+.legalName {
+  position: relative;
+}
+
+.legalShort {
+  display: none;
+}
+
+@media (max-width: 74.9375rem) {
+  .legalShort {
+    display: inline;
+  }
+  .legalFull {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+}
