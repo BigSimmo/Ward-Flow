@@ -486,14 +486,14 @@ export function HandoverPage() {
           ? { ...column, width: 252 }
           : column,
   );
-  const wide = present || columnIds.length > 8;
   const compact = customColumns === null && density === "min";
 
   /* selection */
   const selected = selectedId === null ? undefined : allRows.find((row) => row.id === selectedId);
+  // Drawer review (6 Nov 2026): a patient's flow opens in the kit drawer at every width.
   const pick = (id: string) => {
     setSelectedId(id);
-    if (wide || isPhoneWidth || portrait) setDrawerOpen(true);
+    setDrawerOpen(true);
   };
   const step = useCallback(
     (direction: 1 | -1) => {
@@ -502,14 +502,11 @@ export function HandoverPage() {
       const next = index < 0 ? 0 : Math.max(0, Math.min(visibleOrder.length - 1, index + direction));
       const id = visibleOrder[next]!.id;
       setSelectedId(id);
-      if (wide || isPhoneWidth || portrait) setDrawerOpen(true);
-      // A sheet owns the selection on phone and in presentation mode. Revealing
-      // its table row would move the locked background behind that sheet.
-      else if (typeof document !== "undefined") {
-        document.querySelector(`[data-row-id="${CSS.escape(id)}"]`)?.scrollIntoView?.({ block: "nearest" });
-      }
+      // The drawer owns the selection at every width, so the table row behind it is not revealed:
+      // scrolling it would move the locked background behind the drawer.
+      setDrawerOpen(true);
     },
-    [visibleOrder, selectedId, wide, isPhoneWidth, portrait, setDrawerOpen],
+    [visibleOrder, selectedId, setDrawerOpen],
   );
 
   /* sign-off */
@@ -618,8 +615,13 @@ export function HandoverPage() {
       if (event.metaKey || event.ctrlKey || event.altKey || isTypingTarget(event.target)) return;
       // A letter typed in an open menu (Show, Group, Sort) jumps to a choice there, never a shortcut.
       if (event.target instanceof Element && event.target.closest('[role="menu"]')) return;
-      if (document.querySelector('[role="dialog"][aria-modal="true"]') && event.key !== "Escape") return;
       const key = event.key.toLowerCase();
+      // J and K keep stepping through the list while the patient flow drawer is open (drawer review,
+      // 6 Nov 2026); every other letter waits until the dialog closes.
+      const flowDrawer = document.querySelector('[data-testid="ward-handover-flow-panel"]');
+      const modal = document.querySelector('[role="dialog"][aria-modal="true"]');
+      const steppingInFlow = modal !== null && modal === flowDrawer && (key === "j" || key === "k");
+      if (modal && event.key !== "Escape" && !steppingInFlow) return;
       if (event.key === "Escape") {
         if (drawerOpen) setDrawerOpen(false);
         else if (sheetOpen) setSheetOpen(false);
@@ -630,7 +632,11 @@ export function HandoverPage() {
       // Character shortcuts belong to this handover, not the surrounding shell or another widget.
       // Nothing focused (the document body, as after a fresh load) counts as this handover.
       const active = document.activeElement;
-      const inScope = active === null || active === document.body || shortcutScopeRef.current?.contains(active);
+      const inScope =
+        active === null ||
+        active === document.body ||
+        shortcutScopeRef.current?.contains(active) ||
+        (steppingInFlow && flowDrawer.contains(active));
       if (!singleKeyShortcutsEnabled || isPhoneWidth || !inScope) return;
       if (key === "p") {
         event.preventDefault();
@@ -716,6 +722,7 @@ export function HandoverPage() {
     ) : null;
   const flowPanel = selected ? (
     <HandoverFlowPanel
+      open={drawerOpen}
       row={selected}
       ctx={ctx}
       wardOf={wardOf}
@@ -728,27 +735,24 @@ export function HandoverPage() {
     />
   ) : null;
 
-  /* iPad portrait: the rail (sign off, or the open patient) as a slide-over. An ED desk has no
-     sign-off rest state, so its rail shows only while a patient is open. */
+  /* iPad portrait: sign off (or a journey that has left) as a slide-over. The open patient has its
+     own drawer at every width (drawer review, 6 Nov 2026), so an ED desk, with no sign-off rest
+     state, shows this rail only for a journey that has left. */
   const portraitRail = (signedLine: string | null, checksDone: number) =>
-    !signOffPanel && !flowPanel ? null : (
+    !signOffPanel && !departedPanel ? null : (
       <PortraitRail
-        title={selected ? selected.name : selectedId !== null ? "Journey no longer open" : "Sign off"}
+        title={departedPanel ? "Journey no longer open" : "Sign off"}
         summary={
-          selected
-            ? "Patient flow"
-            : selectedId !== null
-              ? "Check the patient record"
-              : (signedLine ?? `${checksDone} of ${signChecks.length} checks`)
+          departedPanel ? "Check the patient record" : (signedLine ?? `${checksDone} of ${signChecks.length} checks`)
         }
-        open={drawerOpen}
+        open={drawerOpen && !selected}
         onOpenChange={(open) => {
           // The trigger opens the rest state (sign off); closing returns to it.
           setSelectedId(null);
           setDrawerOpen(open);
         }}
       >
-        {flowPanel ?? departedPanel ?? signOffPanel}
+        {departedPanel ?? signOffPanel}
       </PortraitRail>
     );
 
@@ -1335,7 +1339,7 @@ export function HandoverPage() {
         <StatusGlyph tone="neutral" size={8} />
         <span>Form times are as typed, not legally checked</span>
         <span className={styles.spacer} />
-        <span>{wide ? "The patient opens in a drawer" : "J and K step through patients"}</span>
+        <span>J and K step through patients</span>
       </div>
     </Card>
   );
@@ -1453,14 +1457,7 @@ export function HandoverPage() {
   } else {
     body = (
       <TabPanel idPrefix="ward-handover-tab" id="pts">
-        <div className={`${styles.split} ${wide || !(flowPanel ?? departedPanel) ? styles.splitFull : ""}`}>
-          {table}
-          {wide || !(flowPanel ?? departedPanel) ? null : (
-            <aside className={styles.side} aria-label="Patient flow" data-wf-rail="1201">
-              {flowPanel ?? departedPanel}
-            </aside>
-          )}
-        </div>
+        <div className={styles.split}>{table}</div>
       </TabPanel>
     );
   }
@@ -1479,13 +1476,14 @@ export function HandoverPage() {
       {sheetOpen ? null : <HandoverOpenPromises referrals={referrals} units={units} now={now} layout="page" />}
       {sheetOpen ? null : toolbar}
       {body}
+      {flowPanel}
       {!portrait ? (
         <Drawer
-          open={drawerOpen && (wide ? (flowPanel ?? signOffPanel) : signOffPanel) !== null}
+          open={drawerOpen && !selected && (departedPanel ?? signOffPanel) !== null}
           onClose={() => setDrawerOpen(false)}
-          title={selected ? selected.name : selectedId !== null ? "Journey no longer open" : "Sign off"}
+          title={departedPanel ? "Journey no longer open" : "Sign off"}
         >
-          {flowPanel ?? departedPanel ?? signOffPanel}
+          {departedPanel ?? signOffPanel}
         </Drawer>
       ) : null}
       <WardPrototypeFooter

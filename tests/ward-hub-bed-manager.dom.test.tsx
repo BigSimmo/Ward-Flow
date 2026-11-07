@@ -61,7 +61,8 @@ function expandAll() {
     fireEvent.click(next);
   }
 }
-const preview = () => within(screen.getByRole("region", { name: /^preview,/iu }));
+// Drawer review (6 Nov 2026): a chosen place opens in the kit drawer.
+const preview = () => within(screen.getByTestId("hub-place-drawer"));
 
 afterEach(() => {
   cleanup();
@@ -88,8 +89,8 @@ describe("Places as the site bed manager (D-80)", () => {
     expandAll();
     // Listed once: no own ward repeats under Other wards.
     for (const unit of OWN_WARDS) expect(within(others).queryByText(unit.name)).not.toBeInTheDocument();
-    // The preview opens on the site's first ward.
-    expect(preview().getByRole("heading", { level: 2 })).toHaveTextContent(OWN_WARDS[0]!.name);
+    // The keyboard cursor starts on the site's first ward; the drawer waits for a choice.
+    expect(document.querySelector('#hub-results [aria-current="true"]')).toHaveTextContent(OWN_WARDS[0]!.name);
   });
 
   it("offers Confirm beds on its own ward, never Ask to confirm", async () => {

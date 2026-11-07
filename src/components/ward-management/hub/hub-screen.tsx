@@ -19,7 +19,6 @@ import {
   Activity,
   ArrowRight,
   BarChart2,
-  Building2,
   ChevronDown,
   ChevronRight,
   ListFilter,
@@ -36,15 +35,16 @@ import {
   CardHead,
   Count,
   Hero,
-  IconTile,
   Kbd,
-  PhoneSheet,
+  PanelDrawer,
+  DrawerFootRow,
   Segmented,
   ShowMoreRow,
   foldHidden,
   foldLimit,
   SrOnly,
   StatusGlyph,
+  StatusPill,
   TextInput,
   buttonClass,
   cx,
@@ -105,8 +105,9 @@ import {
  * ⚠️ **EVERY FIGURE ON THIS SCREEN IS DERIVED, NEVER COMPUTED HERE.** `hub-derivations.ts` owns the
  * arithmetic and the clinical rules; this file renders what it returns.
  *
- * Layout follows design/pages-v6/Places.png: a hero band, "The network" list on the left, the
- * selected place's preview above "At a glance" on the right. The mockup's drive-time controls
+ * Layout follows design/pages-v6/Places.png: a hero band, then "At a glance" as an unscrolled summary
+ * above "The network" list at full width. Drawer review (6 Nov 2026): a chosen place opens in the
+ * kit right drawer, so the page keeps one scroll. The mockup's drive-time controls
  * (Drive from, Nearest, From Peel) and its 24-hour ready-beds chart have no data in this app and
  * are left out rather than drawn as dead controls.
  *
@@ -152,8 +153,9 @@ export function HubScreen() {
   const [kind, setKind] = useState<HubKind | "all">("all");
   const [order, setOrder] = useState<Order>("service");
   const [selectedId, setSelectedId] = useState<string | undefined>(undefined);
-  // Phone (v10): a tap on a place opens its preview as a bottom sheet with Open in its footer.
-  const [phonePreviewOpen, setPhonePreviewOpen] = useState(false);
+  // Drawer review (6 Nov 2026): a chosen place opens in the kit drawer at every width. The arrow
+  // keys still walk the list (the highlighted row is what Enter opens) without opening the drawer.
+  const [previewOpen, setPreviewOpen] = useState(false);
   // Fold rows the reader has flipped from their default (services 3+ and, in All, EDs and teams
   // start folded).
   const [flipped, setFlipped] = useState<ReadonlySet<string>>(() => new Set());
@@ -304,9 +306,9 @@ export function HubScreen() {
   const recent = useMemo(() => recentIds.flatMap((id) => byId.get(id) ?? []), [recentIds, byId]);
   const isPinned = (id: string) => pinnedIds.includes(id);
 
-  // No empty panels: on wider screens the preview opens on the first place listed. While a search is
-  // typed, the choice and its fallback come from the matches only, so Enter never opens a place the
-  // list is not showing.
+  // On wider screens the keyboard cursor starts on the first place listed (the drawer opens only on a
+  // choice). While a search is typed, the choice and its fallback come from the matches only, so
+  // Enter never opens a place the list is not showing.
   const listed = queryMatches !== undefined ? results.filter((entry) => queryMatches.has(entry.id)) : results;
   const selected =
     listed.find((entry) => entry.id === selectedId) ??
@@ -325,13 +327,6 @@ export function HubScreen() {
           .at(-1);
 
   const refreshSave = useWardFormSave(`places-refresh:${selected?.id ?? "none"}`);
-  // Phone sheet footer: Ask to confirm (coordinator, a ward with a confirmation and no open ask), else Pin.
-  const phoneFooterAsks =
-    selected !== undefined &&
-    deskSite === undefined &&
-    selected.kind === "ward" &&
-    selected.confirmedAt !== undefined &&
-    selectedRequest === undefined;
 
   // PL1 follow-up (Josh, 4 Nov 2026): the band's title is a task. A ward whose bed confirmation is
   // stale needs a check; the coordinator asks it, and a site desk confirms its own on the ward's page.
@@ -405,6 +400,7 @@ export function HubScreen() {
 
   function select(id: string) {
     setSelectedId(id);
+    setPreviewOpen(true);
   }
 
   function toggleFold(key: string) {
@@ -459,6 +455,7 @@ export function HubScreen() {
     setQuery("");
     setKind("all");
     setSelectedId(id);
+    setPreviewOpen(true);
     // A ward in a folded service opens its service first (the site desk's own wards are never folded).
     const index = wardServices.findIndex((group) => group.entries.some((entry) => entry.id === id));
     const key = index < 0 ? undefined : `ward-${wardServices[index].label}`;
@@ -467,13 +464,10 @@ export function HubScreen() {
     scrollRowIntoView(id);
   }
 
-  const handleRowSelect = useCallback(
-    (id: string) => {
-      select(id);
-      if (isPhone) setPhonePreviewOpen(true);
-    },
-    [isPhone],
-  );
+  const handleRowSelect = useCallback((id: string) => {
+    setSelectedId(id);
+    setPreviewOpen(true);
+  }, []);
 
   function renderRow(entry: HubEntry) {
     return (
@@ -544,31 +538,11 @@ export function HubScreen() {
   }
 
   /**
-   * Phone: Statistics stays reachable as a quiet link under the preview, and Pin too when the
-   * sheet's footer holds Ask to confirm instead (QA 31 Oct: one Pin control, never two).
+   * Drawer review (6 Nov 2026): the chosen place opens in the kit right drawer at every width (a
+   * sheet rising from the foot on a phone), so the list keeps the page's full width and one scroll.
+   * The head names the place with one quiet line (kind, service, site) and a tag for the one fact
+   * that changes who may go there; the foot holds the kind's lead action, then the quieter links.
    */
-  function renderPhonePreviewLinks(selected: HubEntry, pinInFooter: boolean) {
-    return (
-      <div className={styles.phonePreviewLinks}>
-        {pinInFooter ? null : (
-          <button type="button" onClick={() => toggleHubPin(selected.id)} aria-pressed={isPinned(selected.id)}>
-            {isPinned(selected.id) ? "Unpin" : "Pin"}
-          </button>
-        )}
-        {leadReferral !== undefined && canOpen(selected.href) ? (
-          <Link href={selected.href} onClick={() => recordHubVisit(selected.id)}>
-            {selected.kind === "ward" ? "Open ward" : "Open team"}
-          </Link>
-        ) : null}
-        {selected.kind === "ward" && canOpen(wardStatisticsHref(selected.id)) ? (
-          <Link href={wardStatisticsHref(selected.id)}>View statistics</Link>
-        ) : selected.kind === "ed" && canOpen(edStatisticsHref(selected.id)) ? (
-          <Link href={edStatisticsHref(selected.id)}>View statistics</Link>
-        ) : null}
-      </div>
-    );
-  }
-
   function renderPreview(selected: HubEntry) {
     // "Open ward" and "Open team" sit beside the lead action, so the name is read out, not shown.
     const openLabel =
@@ -580,57 +554,133 @@ export function HubScreen() {
           <SrOnly>, {selected.name}</SrOnly>
         </>
       );
+    const subtitle = [KIND_WORD_LONG[selected.kind], selected.service, selected.site]
+      .filter((part) => part !== undefined && part !== "")
+      .join(" · ");
+    const statisticsHref =
+      selected.kind === "ward"
+        ? wardStatisticsHref(selected.id)
+        : selected.kind === "ed"
+          ? edStatisticsHref(selected.id)
+          : undefined;
+    const lead =
+      leadReferral !== undefined ? (
+        isPhone ? (
+          // Phone: the referral opens in the app's referral sheet, as it did from the phone preview.
+          <Button variant="pri" onClick={() => openReferralSheet(leadReferral.href)}>
+            {leadReferral.label}
+            <ArrowRight size={15} aria-hidden="true" />
+          </Button>
+        ) : (
+          <Link className={buttonClass({ variant: "pri" })} href={leadReferral.href}>
+            {leadReferral.label}
+            <ArrowRight size={15} aria-hidden="true" />
+          </Link>
+        )
+      ) : canOpen(selected.href) ? (
+        <Link
+          className={buttonClass({ variant: "pri" })}
+          href={selected.href}
+          onClick={() => recordHubVisit(selected.id)}
+        >
+          {openLabel}
+          <ArrowRight size={15} aria-hidden="true" />
+        </Link>
+      ) : (
+        // ROLE BRANCH (bed_manager and every scoped desk): greyed, with the closed page's sentence.
+        <Button variant="sec" disabledReason={closedSentence} reasonDisplay="tooltip">
+          {openLabel}
+        </Button>
+      );
     return (
-      <Card as="section" className={styles.previewCard} aria-label={`Preview, ${selected.name}`}>
-        <div className={styles.previewHead}>
-          <IconTile icon={Building2} />
-          {/* The heading's container holds every flag below it, so the preview states them in words. */}
-          <div className={styles.previewTitleBlock}>
-            <span className={styles.previewEyebrow}>
-              {KIND_WORD_LONG[selected.kind]}
-              {selected.service === undefined ? "" : ` · ${selected.service}`}
-            </span>
-            <h2 className={styles.previewTitle}>{selected.name}</h2>
-            {selected.site === undefined ? null : <p className={styles.previewSite}>{selected.site}</p>}
-            <div className={styles.detailBadges}>
-              {deskSite !== undefined ? (
-                // ROLE BRANCH (bed_manager), polish r2: plain facts read as one quiet line, as on the
-                // list row; only the warning stays a pill.
-                placeFacts(selected).length === 0 ? null : (
-                  <span className={styles.factsLine}>{placeFacts(selected).join(" · ")}</span>
-                )
+      <PanelDrawer
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        title={selected.name}
+        titleId="hub-preview-title"
+        subtitle={subtitle === "" ? undefined : subtitle}
+        tag={
+          // Mental Health Act authorisation decides who may legally be admitted, so it leads the tag.
+          selected.authorised === false ? (
+            <StatusPill tone="warning">Voluntary only</StatusPill>
+          ) : selected.stale === true ? (
+            <StatusPill tone="warning">Stale</StatusPill>
+          ) : undefined
+        }
+        closeLabel={`Close ${selected.name}`}
+        bodyLabel={`${selected.name} details`}
+        testId="hub-place-drawer"
+        foot={
+          <>
+            {lead}
+            <DrawerFootRow>
+              {/* PL1 follow-up (Josh, 4 Nov 2026): opening a ward or team stays one step away. */}
+              {leadReferral === undefined ? null : canOpen(selected.href) ? (
+                <Link
+                  className={buttonClass({ variant: "sec" })}
+                  href={selected.href}
+                  onClick={() => recordHubVisit(selected.id)}
+                >
+                  {openLabel}
+                </Link>
               ) : (
-                <>
-                  {selected.cohort === undefined ? null : <span className={styles.infoPill}>{selected.cohort}</span>}
-                  {selected.security === undefined ? null : (
-                    <span className={styles.infoPill}>{SECURITY_WORD[selected.security]}</span>
-                  )}
-                </>
+                <Button variant="sec" disabledReason={closedSentence} reasonDisplay="tooltip">
+                  {openLabel}
+                </Button>
               )}
-              {/* ⚠️ Mental Health Act authorisation is a SEPARATE fact from locked/open and decides
-                  who may legally be admitted, so it is stated in words. */}
-              {selected.authorised === false ? (
-                <span className={styles.flagPill}>
-                  <StatusGlyph tone="warning" size={8} />
-                  Not authorised — voluntary admissions only
-                </span>
+              {/* Ward and ED only: the statistics builders resolve against a real id this entry carries. */}
+              {statisticsHref !== undefined && canOpen(statisticsHref) ? (
+                <Link
+                  className={buttonClass({ variant: "sec" })}
+                  href={statisticsHref}
+                  aria-label={`View statistics, ${selected.name}`}
+                >
+                  <BarChart2 size={14} aria-hidden="true" />
+                  Statistics
+                </Link>
               ) : null}
-              {deskSite !== undefined ? null : (
-                <>
-                  {selected.forensic === true ? <span className={styles.infoPill}>Forensic ward</span> : null}
-                  {/* "Undesignated" accepts either sex, so it is not a constraint and earns no badge. */}
-                  {selected.sexDesignation === undefined || selected.sexDesignation === "Undesignated" ? null : (
-                    <span className={styles.infoPill}>{selected.sexDesignation}</span>
-                  )}
-                </>
-              )}
-            </div>
+              <Button variant="sec" aria-pressed={isPinned(selected.id)} onClick={() => toggleHubPin(selected.id)}>
+                <Star size={14} aria-hidden="true" />
+                {isPinned(selected.id) ? "Unpin" : "Pin"}
+              </Button>
+            </DrawerFootRow>
+          </>
+        }
+      >
+        <div className={styles.drawerBody}>
+          <div className={styles.detailBadges}>
+            {deskSite !== undefined ? (
+              // ROLE BRANCH (bed_manager), polish r2: plain facts read as one quiet line, as on the
+              // list row; only the warning keeps its glyph.
+              placeFacts(selected).length === 0 ? null : (
+                <span className={styles.factsLine}>{placeFacts(selected).join(" · ")}</span>
+              )
+            ) : (
+              <>
+                {selected.cohort === undefined ? null : <span className={styles.infoPill}>{selected.cohort}</span>}
+                {selected.security === undefined ? null : (
+                  <span className={styles.infoPill}>{SECURITY_WORD[selected.security]}</span>
+                )}
+              </>
+            )}
+            {/* Mental Health Act authorisation is a SEPARATE fact from locked/open and decides who
+                may legally be admitted, so it is stated in words as well as in the tag. */}
+            {selected.authorised === false ? (
+              <span className={styles.flagPill}>
+                <StatusGlyph tone="warning" size={8} />
+                Not authorised — voluntary admissions only
+              </span>
+            ) : null}
+            {deskSite !== undefined ? null : (
+              <>
+                {selected.forensic === true ? <span className={styles.infoPill}>Forensic ward</span> : null}
+                {/* "Undesignated" accepts either sex, so it is not a constraint and earns no badge. */}
+                {selected.sexDesignation === undefined || selected.sexDesignation === "Undesignated" ? null : (
+                  <span className={styles.infoPill}>{selected.sexDesignation}</span>
+                )}
+              </>
+            )}
           </div>
-          {/* No close button: the preview always shows a place (the first listed until one is
-              chosen); Escape still clears a choice. */}
-        </div>
-
-        <div className={styles.detailBody} role="region" aria-label={`${selected.name} details`} tabIndex={0}>
           {selected.kind === "ward" ? (
             <dl className={styles.factList}>
               {selected.confirmedAt === undefined ? null : (
@@ -707,75 +757,15 @@ export function HubScreen() {
           ) : selected.kind === "community" ? (
             <SuburbList suburbs={selectedSuburbs} />
           ) : null}
-        </div>
-
-        <div className={styles.detailCta}>
           {/* ROLE BRANCH (bed_manager): the closed page's sentence in full, wrapping (QA 31 Oct). The
-              greyed button below carries it for a screen reader. */}
+              greyed button in the foot carries it for a screen reader. */}
           {canOpen(selected.href) ? null : (
             <p className={styles.closedReason} aria-hidden="true">
               {closedSentence}
             </p>
           )}
-          <div className={styles.ctaActions}>
-            {/* Ward and ED only: the statistics builders resolve against a real id this entry carries. */}
-            {selected.kind === "ward" && canOpen(wardStatisticsHref(selected.id)) ? (
-              <Link
-                className={buttonClass({ variant: "ghost", size: "sm" })}
-                href={wardStatisticsHref(selected.id)}
-                aria-label={`View statistics, ${selected.name}`}
-              >
-                <BarChart2 size={14} aria-hidden="true" />
-                Statistics
-              </Link>
-            ) : selected.kind === "ed" && canOpen(edStatisticsHref(selected.id)) ? (
-              <Link
-                className={buttonClass({ variant: "ghost", size: "sm" })}
-                href={edStatisticsHref(selected.id)}
-                aria-label={`View statistics, ${selected.name}`}
-              >
-                <BarChart2 size={14} aria-hidden="true" />
-                Statistics
-              </Link>
-            ) : null}
-            {/* PL1 follow-up (Josh, 4 Nov 2026): one lead action per kind of place. A ward is referred
-                to, a team refers, and an ED is opened. Opening a ward or team stays one step away. */}
-            {leadReferral === undefined ? null : canOpen(selected.href) ? (
-              <Link
-                className={buttonClass({ variant: "sec", size: "sm" })}
-                href={selected.href}
-                onClick={() => recordHubVisit(selected.id)}
-              >
-                {openLabel}
-              </Link>
-            ) : (
-              <Button size="sm" variant="sec" disabledReason={closedSentence} reasonDisplay="tooltip">
-                {openLabel}
-              </Button>
-            )}
-            {leadReferral !== undefined ? (
-              <Link className={buttonClass({ variant: "pri", size: "sm" })} href={leadReferral.href}>
-                {leadReferral.label}
-                <ArrowRight size={15} aria-hidden="true" />
-              </Link>
-            ) : canOpen(selected.href) ? (
-              <Link
-                className={buttonClass({ variant: "pri", size: "sm" })}
-                href={selected.href}
-                onClick={() => recordHubVisit(selected.id)}
-              >
-                {openLabel}
-                <ArrowRight size={15} aria-hidden="true" />
-              </Link>
-            ) : (
-              // ROLE BRANCH (bed_manager and every scoped desk): greyed, with the closed page's sentence.
-              <Button size="sm" variant="sec" disabledReason={closedSentence} reasonDisplay="tooltip">
-                {openLabel}
-              </Button>
-            )}
-          </div>
         </div>
-      </Card>
+      </PanelDrawer>
     );
   }
 
@@ -845,6 +835,143 @@ export function HubScreen() {
         />
 
         <div className={styles.hubShell}>
+          <aside className={styles.hubGlance} aria-label="At a glance">
+            <Card as="section" className={styles.glanceCard} aria-labelledby="hub-glance-title">
+              <CardHead
+                icon={Activity}
+                id="hub-glance-title"
+                title="At a glance"
+                aside={
+                  <p className={styles.asAt}>
+                    As at <b className={styles.asAtTime}>{formatInstant(now)}</b>
+                  </p>
+                }
+              />
+              {/* Drawer review (6 Nov 2026): the summary sits above the list and never scrolls on its own. */}
+              <div className={styles.overviewBody}>
+                <div className={styles.glanceSection}>
+                  <h3 className={styles.sectionLabel}>
+                    Needs a check <Count n={attention.length} />
+                  </h3>
+                  {attention.length === 0 ? (
+                    <p className={styles.nothing}>
+                      {deskSite !== undefined
+                        ? `No ward at ${deskSite.name} is reporting a stale bed count right now.`
+                        : "No ward is reporting a stale bed count right now."}
+                    </p>
+                  ) : (
+                    <ul className={styles.queue}>
+                      {attention.slice(0, 4).map(({ entry }) => (
+                        <li key={entry.id} className={styles.decisionRow}>
+                          <StatusGlyph tone="warning" size={8} />
+                          <div className={styles.decisionBody}>
+                            <span className={styles.decisionRef}>{entry.name}</span>
+                            <p className={styles.decisionReason}>{STALE_REASON}</p>
+                          </div>
+                          <button
+                            type="button"
+                            className={buttonClass({ variant: "ghost", size: "sm" })}
+                            onClick={() => reveal(entry.id)}
+                          >
+                            Show<SrOnly> {entry.name}</SrOnly>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {attention.length > 4 ? (
+                    <p className={styles.nothing}>{attention.length - 4} more marked Stale in the list.</p>
+                  ) : null}
+                  {/* ⚠️ NAMED, NOT COUNTED: the value is knowing WHICH ward cannot take an involuntary patient. */}
+                  {unauthorised.length === 0 ? null : (
+                    <p className={styles.worthKnowing}>
+                      <StatusGlyph tone="neutral" size={8} />
+                      <span>
+                        <b>Voluntary only</b> {unauthorised.map((entry) => entry.name).join(", ")}
+                        <SrOnly>, not set up for involuntary admissions</SrOnly>
+                      </span>
+                    </p>
+                  )}
+                </div>
+
+                <div className={styles.glanceSection}>
+                  <div className={styles.sectionHeadRow}>
+                    <h3 className={styles.sectionLabel}>Wards by service</h3>
+                    <span className={styles.sectionHint}>Tap to search</span>
+                  </div>
+                  <ul className={styles.serviceList} aria-label="Wards by health service">
+                    {wardServices.map((group) => (
+                      <li key={group.label}>
+                        <button
+                          type="button"
+                          className={styles.serviceRow}
+                          onClick={() => {
+                            setQuery(group.label);
+                            if (kind !== "all" && kind !== "ward") setKind("all");
+                            inputRef.current?.focus();
+                          }}
+                        >
+                          <span>{group.label}</span>
+                          <span className={styles.serviceCount}>
+                            {group.entries.length} {group.entries.length === 1 ? "ward" : "wards"}
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Pinned and recently opened render nothing until used. */}
+                {pinned.length === 0 ? null : (
+                  <div className={styles.glanceSection}>
+                    <h3 className={styles.sectionLabel}>
+                      Pinned <Count n={pinned.length} />
+                    </h3>
+                    <ul className={styles.memoryList} aria-label="Pinned places">
+                      {pinned.map((entry) => (
+                        <li key={entry.id}>
+                          <button type="button" className={styles.memoryRow} onClick={() => select(entry.id)}>
+                            <Star className={styles.memoryStar} size={14} aria-hidden="true" />
+                            <span className={styles.memoryName}>{entry.name}</span>
+                            <span className={styles.memoryStat}>{KIND_WORD_LONG[entry.kind]}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {recent.length === 0 ? null : (
+                  <div className={styles.glanceSection}>
+                    <h3 className={styles.sectionLabel}>Recently opened</h3>
+                    <ul className={styles.memoryList} aria-label="Recently opened places">
+                      {recent.map((entry) => (
+                        <li key={entry.id}>
+                          <button type="button" className={styles.memoryRow} onClick={() => select(entry.id)}>
+                            <span className={styles.memoryName}>{entry.name}</span>
+                            <span className={styles.memoryStat}>{KIND_WORD_LONG[entry.kind]}</span>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
+                {/*
+                  THE DISCLOSURE. A screen showing invented bed figures under real Perth hospital
+                  names owes a reader an account of which is which. Counts are derived, never typed.
+                */}
+                {/* A section, so the disclosure ends here: the list now follows the summary (drawer review). */}
+                <section className={styles.srOnly}>
+                  <h4>What is invented</h4>
+                  <p>
+                    Every bed figure — ready, pulled, closed and occupied — is invented for this prototype and reflects
+                    no real hospital&rsquo;s state.
+                  </p>
+                </section>
+              </div>
+            </Card>
+          </aside>
           <Card as="section" className={styles.hubLeft} aria-label="Search results">
             {isPhone ? null : (
               <CardHead
@@ -877,10 +1004,7 @@ export function HubScreen() {
                   <button
                     type="button"
                     className={styles.phoneCheckFirst}
-                    onClick={() => {
-                      select(checkFirst[0].entry.id);
-                      setPhonePreviewOpen(true);
-                    }}
+                    onClick={() => select(checkFirst[0].entry.id)}
                   >
                     <StatusGlyph tone="warning" size={10} />
                     <span className={styles.phoneCheckText}>
@@ -1027,223 +1151,12 @@ export function HubScreen() {
               </div>
             ) : null}
           </Card>
-
-          <aside className={styles.hubRight} aria-label="At a glance" data-wf-rail>
-            {selected === undefined || isPhone ? null : renderPreview(selected)}
-
-            <Card as="section" className={styles.glanceCard} aria-labelledby="hub-glance-title">
-              <CardHead
-                icon={Activity}
-                id="hub-glance-title"
-                title="At a glance"
-                aside={
-                  <p className={styles.asAt}>
-                    As at <b className={styles.asAtTime}>{formatInstant(now)}</b>
-                  </p>
-                }
-              />
-              <div className={styles.overviewBody} role="region" aria-label="Network overview" tabIndex={0}>
-                <div className={styles.glanceSection}>
-                  <h3 className={styles.sectionLabel}>
-                    Needs a check <Count n={attention.length} />
-                  </h3>
-                  {attention.length === 0 ? (
-                    <p className={styles.nothing}>
-                      {deskSite !== undefined
-                        ? `No ward at ${deskSite.name} is reporting a stale bed count right now.`
-                        : "No ward is reporting a stale bed count right now."}
-                    </p>
-                  ) : (
-                    <ul className={styles.queue}>
-                      {attention.slice(0, 4).map(({ entry }) => (
-                        <li key={entry.id} className={styles.decisionRow}>
-                          <StatusGlyph tone="warning" size={8} />
-                          <div className={styles.decisionBody}>
-                            <span className={styles.decisionRef}>{entry.name}</span>
-                            <p className={styles.decisionReason}>{STALE_REASON}</p>
-                          </div>
-                          <button
-                            type="button"
-                            className={buttonClass({ variant: "ghost", size: "sm" })}
-                            onClick={() => reveal(entry.id)}
-                          >
-                            Show<SrOnly> {entry.name}</SrOnly>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                  {attention.length > 4 ? (
-                    <p className={styles.nothing}>{attention.length - 4} more marked Stale in the list.</p>
-                  ) : null}
-                  {/* ⚠️ NAMED, NOT COUNTED: the value is knowing WHICH ward cannot take an involuntary patient. */}
-                  {unauthorised.length === 0 ? null : (
-                    <p className={styles.worthKnowing}>
-                      <StatusGlyph tone="neutral" size={8} />
-                      <span>
-                        <b>Voluntary only</b> {unauthorised.map((entry) => entry.name).join(", ")}
-                        <SrOnly>, not set up for involuntary admissions</SrOnly>
-                      </span>
-                    </p>
-                  )}
-                </div>
-
-                <div className={styles.glanceSection}>
-                  <div className={styles.sectionHeadRow}>
-                    <h3 className={styles.sectionLabel}>Wards by service</h3>
-                    <span className={styles.sectionHint}>Tap to search</span>
-                  </div>
-                  <ul className={styles.serviceList} aria-label="Wards by health service">
-                    {wardServices.map((group) => (
-                      <li key={group.label}>
-                        <button
-                          type="button"
-                          className={styles.serviceRow}
-                          onClick={() => {
-                            setQuery(group.label);
-                            if (kind !== "all" && kind !== "ward") setKind("all");
-                            inputRef.current?.focus();
-                          }}
-                        >
-                          <span>{group.label}</span>
-                          <span className={styles.serviceCount}>
-                            {group.entries.length} {group.entries.length === 1 ? "ward" : "wards"}
-                          </span>
-                        </button>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                {/* Pinned and recently opened render nothing until used. */}
-                {pinned.length === 0 ? null : (
-                  <div className={styles.glanceSection}>
-                    <h3 className={styles.sectionLabel}>
-                      Pinned <Count n={pinned.length} />
-                    </h3>
-                    <ul className={styles.memoryList} aria-label="Pinned places">
-                      {pinned.map((entry) => (
-                        <li key={entry.id}>
-                          <button type="button" className={styles.memoryRow} onClick={() => select(entry.id)}>
-                            <Star className={styles.memoryStar} size={14} aria-hidden="true" />
-                            <span className={styles.memoryName}>{entry.name}</span>
-                            <span className={styles.memoryStat}>{KIND_WORD_LONG[entry.kind]}</span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {recent.length === 0 ? null : (
-                  <div className={styles.glanceSection}>
-                    <h3 className={styles.sectionLabel}>Recently opened</h3>
-                    <ul className={styles.memoryList} aria-label="Recently opened places">
-                      {recent.map((entry) => (
-                        <li key={entry.id}>
-                          <button type="button" className={styles.memoryRow} onClick={() => select(entry.id)}>
-                            <span className={styles.memoryName}>{entry.name}</span>
-                            <span className={styles.memoryStat}>{KIND_WORD_LONG[entry.kind]}</span>
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/*
-                  THE DISCLOSURE. A screen showing invented bed figures under real Perth hospital
-                  names owes a reader an account of which is which. Counts are derived, never typed.
-                */}
-                <div className={styles.srOnly}>
-                  <h4>What is invented</h4>
-                  <p>
-                    Every bed figure — ready, pulled, closed and occupied — is invented for this prototype and reflects
-                    no real hospital&rsquo;s state.
-                  </p>
-                </div>
-              </div>
-            </Card>
-          </aside>
         </div>
         <WardPrototypeFooter
           testId="ward-hub-governance"
           note="Real hospital network; invented bed figures and community team names · Not approved for clinical use"
         />
-        {isPhone ? (
-          <PhoneSheet
-            open={phonePreviewOpen && selected !== undefined}
-            onClose={() => setPhonePreviewOpen(false)}
-            title={selected?.name ?? "Place"}
-            description={
-              selected === undefined
-                ? undefined
-                : [KIND_WORD_LONG[selected.kind], selected.site].filter(Boolean).join(" · ")
-            }
-            className={styles.phonePreviewSheet}
-            data-testid="hub-phone-preview"
-            secondary={
-              selected === undefined
-                ? undefined
-                : phoneFooterAsks
-                  ? {
-                      label: "Ask to confirm",
-                      onAction: () =>
-                        refreshSave.submit(
-                          () =>
-                            dispatch({
-                              type: "REQUEST_CAPACITY_REFRESH",
-                              role: "coordinator",
-                              now,
-                              unitId: selected.id,
-                            }),
-                          () => {},
-                        ),
-                    }
-                  : {
-                      label: isPinned(selected.id) ? "Unpin" : "Pin",
-                      onAction: () => toggleHubPin(selected.id),
-                    }
-            }
-            primary={
-              selected === undefined
-                ? undefined
-                : leadReferral !== undefined
-                  ? {
-                      // PL1 follow-up (Josh, 4 Nov 2026): the kind's lead action; Open stays in the sheet.
-                      label: leadReferral.label,
-                      onAction: () => openReferralSheet(leadReferral.href),
-                    }
-                  : {
-                      label:
-                        selected.kind === "community"
-                          ? "Open team"
-                          : selected.kind === "ward"
-                            ? "Open ward"
-                            : "Open department",
-                      // ROLE BRANCH (bed_manager and every scoped desk): greyed, with the closed page's sentence.
-                      disabledReason: canOpen(selected.href) ? undefined : closedSentence,
-                      onAction: () => {
-                        recordHubVisit(selected.id);
-                        router.push(selected.href);
-                      },
-                    }
-            }
-          >
-            {selected === undefined ? null : (
-              <>
-                {renderPreview(selected)}
-                {renderPhonePreviewLinks(selected, !phoneFooterAsks)}
-                {/* ROLE BRANCH (bed_manager): the greyed footer Open's sentence, visible (QA 31 Oct). */}
-                {canOpen(selected.href) ? null : (
-                  <p className={styles.closedReason} aria-hidden="true">
-                    {closedSentence}
-                  </p>
-                )}
-              </>
-            )}
-          </PhoneSheet>
-        ) : null}
+        {selected === undefined ? null : renderPreview(selected)}
       </main>
     </div>
   );
