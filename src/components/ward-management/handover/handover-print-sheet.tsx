@@ -96,6 +96,11 @@ function paperItems(
 /** Page header allowance in px: title, stamp and the printed-by line, which may wrap. */
 const PAGE_HEADER_HEIGHT = 80;
 
+/** Everything a measurement feeds into cutting the pages, without the overflow read from them. */
+function pageInputs(measured: PaperMeasurements): string {
+  return JSON.stringify({ ...measured, contentOverflows: undefined });
+}
+
 const GROUP_TONE: Record<HandoverGroupId, WfTone> = {
   act: "danger",
   urg: "danger",
@@ -592,15 +597,33 @@ export function HandoverPrintSheet({
   // H-0350: one ResizeObserver for the sheet's life. Each render only re-observes when the measured
   // nodes change, instead of tearing the observer down and building a new one every render.
   const readMeasurementsRef = useRef(readMeasurements);
+  const measuredRef = useRef(measurements);
   const measureRef = useRef<{ observer: ResizeObserver | null; schedule: () => void; observed: Element[] } | null>(
     null,
   );
   useEffect(() => {
     let active = true;
     let frame = 0;
+    let staleOverflows = 0;
     const update = () => {
-      const next = readMeasurementsRef.current();
-      if (active && next) setMeasurements((old) => (JSON.stringify(old) === JSON.stringify(next) ? old : next));
+      let next = readMeasurementsRef.current();
+      if (!active || !next) return;
+      // The pages on show were cut from the previous measurement. When these heights differ, the
+      // pages are about to be cut again, so an overflow read from the outgoing pages is not yet
+      // evidence. Refusing on it latched: on paper the refusal hides the pages, a hidden page
+      // measures nothing, and a layout that fits stayed refused (print journey flake, 5 Nov 2026).
+      // Measure the re-cut pages instead; a few rounds bound a layout that never settles.
+      const old = measuredRef.current;
+      const same = old !== null && pageInputs(old) === pageInputs(next);
+      if (next.contentOverflows && !same && staleOverflows < 3) {
+        staleOverflows += 1;
+        next = { ...next, contentOverflows: false };
+        schedule();
+      } else {
+        staleOverflows = 0;
+      }
+      const value = next;
+      setMeasurements((current) => (JSON.stringify(current) === JSON.stringify(value) ? current : value));
     };
     const schedule = () => {
       cancelAnimationFrame(frame);
@@ -620,6 +643,7 @@ export function HandoverPrintSheet({
   }, []);
   useEffect(() => {
     readMeasurementsRef.current = readMeasurements;
+    measuredRef.current = measurements;
     const measure = measureRef.current;
     if (!measure) return;
     const nodes = Array.from(

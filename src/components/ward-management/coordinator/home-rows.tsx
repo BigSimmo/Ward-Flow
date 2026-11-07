@@ -13,6 +13,14 @@ import { StatusGlyph } from "@/components/wf";
 import styles from "./home-list.module.css";
 
 /**
+ * CB-3 (axe 4.14 label-content-name-mismatch): the row's name must hold its visible title, so a
+ * title the open label does not already say ("Accepted, bed not pulled") follows it.
+ */
+function rowOpenName(openLabel: string, title: string): string {
+  return openLabel.toLowerCase().includes(title.toLowerCase()) ? openLabel : `${openLabel}: ${title}`;
+}
+
+/**
  * Home's desktop row: glyph, a two-line body (what, then who and where), how long, one action. Text
  * wraps instead of being cut, and the owner shows only when it is someone other than you.
  */
@@ -69,7 +77,7 @@ export function HomeRow({
       </span>
       <span className={styles.hrowMain}>
         {href ? (
-          <Link ref={linkRef} href={href} className={styles.hrowTitle} aria-label={openLabel}>
+          <Link ref={linkRef} href={href} className={styles.hrowTitle} aria-label={rowOpenName(openLabel, title)}>
             {title}
           </Link>
         ) : (
@@ -77,7 +85,7 @@ export function HomeRow({
             type="button"
             className={styles.hrowTitle}
             aria-current={selected ? "true" : undefined}
-            aria-label={openLabel}
+            aria-label={rowOpenName(openLabel, title)}
             onClick={onOpen}
           >
             {title}
@@ -161,7 +169,7 @@ function PhoneRow({
             ref={linkRef}
             href={href}
             className={`${alertStyles.rowOpen} ${styles.compactTag}`}
-            aria-label={openLabel}
+            aria-label={rowOpenName(openLabel, title)}
           >
             <span className={alertStyles.rowOpenText}>{title}</span>
           </Link>
@@ -170,7 +178,7 @@ function PhoneRow({
             type="button"
             className={`${alertStyles.rowOpen} ${styles.compactTag}`}
             aria-current={selected ? "true" : undefined}
-            aria-label={openLabel}
+            aria-label={rowOpenName(openLabel, title)}
             onClick={onOpen}
           >
             <span className={alertStyles.rowOpenText}>{title}</span>

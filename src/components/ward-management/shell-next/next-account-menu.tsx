@@ -97,12 +97,11 @@ export function RailAccountMenu({
           aria-label={`${persona.name}, ${persona.role}.${viewing ? ` ${viewing}.` : ""} Account menu`}
           title={`${persona.name} · ${persona.role}`}
         >
-          <span className={rail.userAvatar} aria-hidden="true">
-            {persona.initials}
-          </span>
+          {/* CB-3 (axe 4.14 label-content-name-mismatch): the initials are drawn from the attribute,
+              so the visible words the name must contain are the name and role alone. */}
+          <span className={rail.userAvatar} aria-hidden="true" data-initials={persona.initials} />
           <span className={rail.userMeta}>
-            <span className={rail.userName}>{persona.name}</span>
-            <span className={rail.userRole}>{persona.role}</span>
+            <span className={rail.userName}>{persona.name}</span> <span className={rail.userRole}>{persona.role}</span>
           </span>
           <ChevronsUpDown aria-hidden="true" className={rail.userChevron} strokeWidth={1.75} />
         </button>

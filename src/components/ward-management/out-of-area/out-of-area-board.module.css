@@ -111,6 +111,11 @@
   text-underline-offset: 2px;
 }
 
+/* The separator and the UMRN wrap as one (design audit B18). */
+.umrnPair {
+  white-space: nowrap;
+}
+
 .umrnLink:hover {
   color: var(--wf-accent-ink);
   text-decoration-color: currentColor;
@@ -319,51 +324,27 @@
 /* ---- layout ---- */
 
 .layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(21rem, 25vw, 26rem);
-  gap: var(--wf-s-3);
-  align-items: start;
-}
-
-.side {
+  /* Drawer review (6 Nov 2026): the register takes the full width; a chosen person's return plan opens
+     in the kit drawer (PanelDrawer), so there is no sticky rail with its own scroll. */
   display: flex;
   flex-direction: column;
   gap: var(--wf-s-3);
   min-width: 0;
-  scroll-margin-top: var(--wf-s-4);
 }
 
-/* The column is a shared sticky rail (data-wf-rail), capped at the window height. Its cards keep
-   their own height so the rail scrolls, rather than squashing each card and clipping its rows. */
-.side > * {
-  flex-shrink: 0;
+/* The overview cards sit in a row under the register, each its own height. */
+.side {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--wf-s-3);
+  align-items: start;
+  min-width: 0;
 }
 
 .registerCard,
 .sideCard {
   min-width: 0;
-  /* OA1: clip, not hidden, so the plan's foot can stay pinned as the page scrolls. */
   overflow: clip;
-}
-
-@media (max-width: 62.5rem) {
-  .layout {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
-
-/* Tablet portrait (device audit 11 Oct 2026): the rail cards sit two-up under the register; an odd
-   last card takes the full width. */
-@media (min-width: 46.5rem) and (max-width: 62.5rem) {
-  .side {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-items: start;
-  }
-
-  .side > :last-child:nth-child(odd) {
-    grid-column: 1 / -1;
-  }
 }
 
 /* ---- register ---- */
@@ -820,43 +801,6 @@
 }
 
 /* ---- return plan ---- */
-
-.planCard {
-  display: flex;
-  flex-direction: column;
-}
-
-.planHead {
-  display: flex;
-  align-items: center;
-  gap: var(--wf-s-1);
-  min-height: 56px;
-  padding: var(--wf-s-2) var(--wf-s-3) var(--wf-s-2) var(--wf-s-4);
-  box-sizing: border-box;
-  border-bottom: 1px solid var(--wf-line);
-}
-
-.planWho {
-  display: flex;
-  flex: 1 1 auto;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-
-.planWho > .mono {
-  color: var(--wf-ink-2);
-  font-size: var(--wf-fs-12);
-}
-
-.planName {
-  margin: 0;
-  overflow: hidden;
-  color: var(--wf-ink-1);
-  font: 600 var(--wf-fs-16) / 22px var(--wf-font);
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
 .planPosition {
   margin-right: var(--wf-s-1);
@@ -1556,6 +1500,7 @@ fieldset.formRow {
 
 .phoneBarName {
   font-weight: 400;
+  overflow-wrap: anywhere;
 }
 
 .phoneToast {
@@ -1658,21 +1603,6 @@ fieldset.formRow {
 /* Layout sweep PT-25: the next step wraps rather than being cut after a few words. */
 .peekWho span {
   white-space: normal;
-}
-
-/* Layout sweep PT-23 (iPad portrait): the drawer's own title bar names the patient and closes it, so
-   the plan inside keeps only the UMRN and the pager, not a second name and a second close. */
-:global([data-testid="ward-out-of-area-plan-sheet"]) .planName {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-:global([data-testid="ward-out-of-area-plan-sheet"]) .planHead > button:last-child {
-  display: none;
 }
 
 .peekActs {
@@ -1894,10 +1824,12 @@ fieldset.formRow {
 /* Phone compact switch (Josh, 12 Oct 2026): Needs you, Everyone and Beds take the shared phone track
  * (`--wf-phone-*`), whose 48px box carries a transparent band round the 34px track. The pinned
  * switch paints that band in the canvas and sits flush under the bar; the collar runs to the sides
- * and below only, so it never covers the bar. Phone only. */
+ * and below only, so it never covers the bar. Phone only. The options keep the kit's 40px face
+ * (Q295), not 0: this rule ties the kit's `.seg .segItem`, and when this sheet loaded after the
+ * kit's a 0 squashed the options to their text (same fix as Governance and Legal forms, #1480). */
 @media (max-width: 46.4375rem) {
   .phoneTabs [role="radio"] {
-    min-height: 0;
+    min-height: var(--wf-phone-seg-item-h, 40px);
   }
 
   .phoneTabs {
@@ -1926,4 +1858,87 @@ fieldset.formRow {
   color: var(--wf-ink-2);
   font-size: var(--wf-fs-12);
   white-space: nowrap;
+}
+
+/* ---- return plan drawer (drawer review, 6 Nov 2026) ----
+   The plan opens in the kit PanelDrawer at every desktop and tablet width. The body is the one
+   scroll; every section keeps the same 16px side inset so the left edges line up. The foot holds
+   the count still to answer and the pager, the one filled next step, then quiet buttons of equal
+   height in one row. */
+.planDrawer {
+  width: min(100%, 32rem);
+}
+
+.planDrawerBody {
+  padding: 0 0 var(--wf-s-3);
+}
+
+.drawerSubtitle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 6px;
+  min-width: 0;
+  white-space: normal;
+}
+
+.drawerPager {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+}
+
+.drawerPager .planPosition {
+  margin-right: var(--wf-s-1);
+}
+
+.planWarnings {
+  padding: 0 var(--wf-s-4);
+}
+
+.actsMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 28px;
+}
+
+.actsMeta > .need {
+  overflow: visible;
+  white-space: normal;
+}
+
+.actsMeta > .drawerPager {
+  margin-left: auto;
+}
+
+.actsPrimary.actsPrimary {
+  justify-content: center;
+  width: 100%;
+  height: var(--wf-h-lg, 2.75rem);
+}
+
+.actsRow > * {
+  flex: 1 1 0;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.actsRow > .flaggedEarly {
+  justify-content: center;
+}
+
+/* The phone sheet keeps the same actions pinned under the plan, stacked. */
+.planFootStack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--wf-s-2);
+}
+
+.doneState {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  padding: var(--wf-s-2) var(--wf-s-3);
+  border-top: 1px solid var(--wf-line);
 }

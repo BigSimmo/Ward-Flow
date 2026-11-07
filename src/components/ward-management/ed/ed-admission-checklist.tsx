@@ -49,7 +49,7 @@ export function EdAdmissionChecklist({ movement, referrals }: { movement: Moveme
                   variant={isDone ? "ghost" : "sec"}
                   size="sm"
                   aria-label={
-                    isDone ? `Take back ${item.label.toLowerCase()}` : `Record ${item.label.toLowerCase()} done`
+                    isDone ? `Take back ${item.label.toLowerCase()}` : `Record done: ${item.label.toLowerCase()}`
                   }
                   onClick={() => void raise("RECORD_ARRIVAL_CHECK", { movementId: movement.id, check, done: !isDone })}
                 >

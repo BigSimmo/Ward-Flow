@@ -30,31 +30,33 @@ import { patientHref } from "@/components/ward-management/shell/ward-facade";
 function wrap(child: ReactNode) {
   return render(<WardFlowProvider initialNow={NOW_ANCHOR}>{child}</WardFlowProvider>);
 }
-function shortcut() {
-  return document.querySelector<HTMLButtonElement>('button[class*="restingItem"]');
+// Drawer review (6 Nov 2026): the resting panel and its Blocked shortcuts went with the inline detail
+// card (it was hidden on screen until a row opened). A held-up row's own button opens the drawer.
+function heldUpRowButton() {
+  const group = screen.queryByTestId("ward-discharge-group-blocked");
+  const row = group?.closest("tbody")?.querySelector<HTMLTableRowElement>("tr[data-release-id]");
+  return row ? (within(row).queryAllByRole("button")[0] ?? null) : null;
 }
 
 describe("discharge actions stay usable and accessible across filters", () => {
   it("opens a visible blocked release and restores connected focus after close", async () => {
     wrap(<DischargeBoard />);
-    const button = shortcut();
+    const button = heldUpRowButton();
     expect(button).not.toBeNull();
     fireEvent.click(button!);
     expect(screen.getByRole("button", { name: "Close" })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Close" }));
-    await waitFor(() =>
-      expect(document.activeElement).toBe(screen.getByRole("region", { name: "Discharge worklist" })),
-    );
+    await waitFor(() => expect(document.activeElement).toBe(button));
     expect(document.activeElement!.isConnected).toBe(true);
   });
-  it("does not offer release shortcuts in the recorded view", () => {
+  it("does not offer release rows in the recorded view", () => {
     wrap(<DischargeBoard />);
-    expect(shortcut()).not.toBeNull();
+    expect(heldUpRowButton()).not.toBeNull();
     // DC2 (Josh, 3 Nov 2026): the in-list Status chips are gone (the hero counts highlight and never
-    // hide), so the record view is now the only view without release shortcuts.
+    // hide), so the record view is now the only view without release rows.
     expect(screen.queryByRole("group", { name: "Status" })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /^Recorded/ }));
-    expect(shortcut()).toBeNull();
+    expect(heldUpRowButton()).toBeNull();
   });
   it("offers every blocker on Now and announces pipeline counts", () => {
     wrap(<DischargeBoard />);

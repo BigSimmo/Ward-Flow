@@ -32,7 +32,7 @@ import {
   subscribeWardDrawerClose,
   type WardDrawerId,
 } from "@/components/ward-management/shell/ward-drawer-bus";
-import { WardRail } from "@/components/ward-management/shell/ward-rail";
+import { NextRailBody as WardRail } from "@/components/ward-management/shell-next/next-rail-body";
 
 describe("Builder 2 - ED statutory form (ED-FORM-DROPDOWN)", () => {
   // Finding 9 (Josh, 27 Oct 2026): the board shows the recorded legal form. The old screen-only

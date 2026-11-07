@@ -121,6 +121,9 @@ async function walkToWards(umrn = ON_WARD_UMRN, notOnWardReason?: string) {
     fireEvent.change(screen.getByLabelText("Why is the ward referring them?"), { target: { value: notOnWardReason } });
   next("Next, referral");
   fireEvent.change(screen.getByLabelText(/Patient story/), { target: { value: "Synthetic ward to ward story" } });
+  // LEGAL-REF (5 Nov 2026): the legal status blocks until answered; "Not yet recorded" counts.
+  const legal = screen.getByLabelText("Legal status") as HTMLSelectElement;
+  if (!legal.value) fireEvent.change(legal, { target: { value: "Not yet recorded" } });
   const urgent = screen.getAllByRole("radio").find((radio) => radio.getAttribute("name")?.endsWith("-urgency"));
   if (
     urgent &&
@@ -147,7 +150,7 @@ async function walkToWards(umrn = ON_WARD_UMRN, notOnWardReason?: string) {
     timeout: 10_000,
   });
   next("Next, wards");
-  const list = screen.getByRole("list", { name: "Placement Destination Options" });
+  const list = screen.getByRole("list", { name: "Destinations" });
   // A ward never refers to itself, so the sending ward is not offered.
   expect(within(list).queryByRole("checkbox", { name: new RegExp(SENDING) })).toBeNull();
   fireEvent.click(within(list).getAllByRole("checkbox")[0]!);
@@ -243,7 +246,7 @@ describe("the New referral sheet on a ward page", () => {
     expect(screen.getByLabelText("Why is the ward referring them?")).toBeVisible();
   });
 
-  it("needs the reason for referral when the ward gives another reason, within the length left", () => {
+  it("warns on the reason for referral when the ward gives another reason, within the length left", () => {
     route.pathname = `/ward-flow/ward/${SENDING}`;
     startReferral(OFF_WARD_UMRN);
     fireEvent.change(screen.getByLabelText("Why is the ward referring them?"), {
@@ -253,8 +256,14 @@ describe("the New referral sheet on a ward page", () => {
     const reason = screen.getByLabelText(/Reason for referral/) as HTMLInputElement;
     fireEvent.change(reason, { target: { value: "" } });
     fireEvent.change(screen.getByLabelText(/Patient story/), { target: { value: "Synthetic ward to ward story" } });
+    // Form rule (design audit FORM-REF, 5 Nov 2026): a blank reason warns in "Before you send" and
+    // the next step opens; the length limit still blocks.
+    expect(screen.getByTestId("ward-referral-send-warnings")).toHaveTextContent("reason for referral");
     next("Next, clearance");
-    expect(screen.getByRole("alert")).toHaveTextContent("Give the reason for referral.");
+    expect(screen.queryByText("Give the reason for referral.")).not.toBeInTheDocument();
+    fireEvent.click(
+      within(screen.getByRole("group", { name: "Referral sections" })).getByRole("button", { name: "Referral" }),
+    );
     const room = 1000 - `Not in a bed on ${sendingWard.name}: ${NOT_ON_SENDING_WARD_OTHER}.`.length - 1;
     expect(reason.maxLength).toBe(room);
     fireEvent.change(reason, { target: { value: "x".repeat(room + 1) } });

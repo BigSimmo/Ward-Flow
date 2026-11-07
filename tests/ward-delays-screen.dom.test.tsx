@@ -237,6 +237,10 @@ describe("the Delays screen", () => {
     // The wait bands and owner cards did not disappear: they are the "Whose move" tiles and the
     // graphs under the table on the October 2026 board.
     expect(screen.getByRole("region", { name: "Whose move" })).toBeInTheDocument();
+    // BA-14 (front-end audit, 5 Nov 2026): the group has a heading, so heading navigation finds it.
+    expect(
+      within(screen.getByRole("region", { name: "Whose move" })).getByRole("heading", { level: 2, name: "Whose move" }),
+    ).toBeInTheDocument();
     expect(screen.getByRole("region", { name: "Delay graphs" })).toBeInTheDocument();
     // Renamed again, task D1: "Who is waiting" -> "Waiting", the drawing's own word.
     expect(screen.getByRole("region", { name: /Waiting/u })).toBeInTheDocument();

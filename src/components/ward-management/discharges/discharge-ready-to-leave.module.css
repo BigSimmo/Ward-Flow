@@ -89,6 +89,13 @@
   white-space: nowrap;
 }
 
+/* The demo caveat under the title: small, muted, wraps. */
+.demoNote {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
 .note {
   margin: 0;
   overflow: hidden;

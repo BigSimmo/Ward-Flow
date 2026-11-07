@@ -12,7 +12,11 @@ import {
   referralEligibility,
   type EligibilityVerdict,
 } from "@/components/ward-management/ward-eligibility";
-import { SUBURB_UNKNOWN_REASONS, suburbUnknownLabels } from "@/components/ward-management/ward-model";
+import {
+  HOME_REGION_NOT_RECORDED,
+  SUBURB_UNKNOWN_REASONS,
+  suburbUnknownLabels,
+} from "@/components/ward-management/ward-model";
 import { EXPECT_RECONSIDER_AFTER_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import type { CommunityReferralPurpose } from "@/components/ward-management/ward-model-referral-parts";
 import type {
@@ -616,8 +620,8 @@ export function edAnsweredReferralsFor(
 export function referralPersonFacts(referral: Referral): string[] {
   const ward = referral.destinations.find((addressing) => addressing.destination.kind === "psychiatric_ward");
   return ward && ward.destination.kind === "psychiatric_ward"
-    ? [referral.ageBand, ward.destination.sex, referral.homeRegion]
-    : [referral.ageBand, referral.homeRegion];
+    ? [referral.ageBand, ward.destination.sex, referral.homeRegion ?? HOME_REGION_NOT_RECORDED]
+    : [referral.ageBand, referral.homeRegion ?? HOME_REGION_NOT_RECORDED];
 }
 
 /**
@@ -648,8 +652,8 @@ export function referralPersonFacts(referral: Referral): string[] {
 export function referralPersonFactsStatingSex(referral: Referral): string[] {
   const ward = referral.destinations.find((addressing) => addressing.destination.kind === "psychiatric_ward");
   return ward && ward.destination.kind === "psychiatric_ward"
-    ? [referral.ageBand, ward.destination.sex, referral.homeRegion]
-    : [referral.ageBand, SEX_NOT_HELD, referral.homeRegion];
+    ? [referral.ageBand, ward.destination.sex, referral.homeRegion ?? HOME_REGION_NOT_RECORDED]
+    : [referral.ageBand, SEX_NOT_HELD, referral.homeRegion ?? HOME_REGION_NOT_RECORDED];
 }
 
 /**
@@ -1082,7 +1086,7 @@ export const DECLINE_REASON_LABELS: Record<DeclineReason, string> = {
   no_suitable_bed: "No suitable bed",
   age_band_not_provided_here: "Age band not provided here",
   sex_designation_unavailable: "Sex designation unavailable",
-  secure_bed_unavailable: "Secure bed unavailable",
+  secure_bed_unavailable: "Locked bed unavailable",
   belongs_to_another_service: "Belongs to another service",
   referred_elsewhere: "Referred elsewhere",
   // D-78: the ward-only reasons, in the wording the ward screens already used.

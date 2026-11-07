@@ -19,7 +19,6 @@ import type { WardFlowEvent } from "@/components/ward-management/ward-flow-event
 import { WardFlowProvider, useWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { bedFits, whyBedDoesNotFit, type BoardPick } from "@/components/ward-management/ward/ward-bed-board-logic";
-import { fitSurname } from "@/components/ward-management/ward/ward-bed-board";
 import { layoutBedNumbers } from "@/components/ward-management/ward/ward-bed-layout";
 import { WardScreen } from "@/components/ward-management/ward/ward-screen";
 
@@ -78,10 +77,10 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
 
   it("moves a stay to a free bed, lights only fitting beds while picked, and Undo puts it back", () => {
     renderBoard();
-    const occupied = firstBed((label) => !/free|closed|pulled/.test(label));
+    const occupied = firstBed((label) => !/ready|closed|pulled/i.test(label));
     const from = bedNo(occupied);
     const fromLabel = cellText(from);
-    const free = firstBed((label) => /, ready$/.test(label));
+    const free = firstBed((label) => /, Ready, Free to place$/.test(label));
     const to = bedNo(free);
 
     // Nothing picked: pressing an occupied bed opens its panel, which offers the move.
@@ -91,7 +90,7 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
     expect(screen.getByTestId(`ward-board-bed-${to}`)).toHaveAttribute("data-fits", "true");
     // An occupied bed does not fit, and is dimmed by colour, not hidden.
     const other = Array.from(document.querySelectorAll<HTMLElement>("[data-testid^='ward-board-bed-']")).find(
-      (cell) => !/free|closed|pulled/.test(cell.getAttribute("aria-label") ?? "") && bedNo(cell) !== from,
+      (cell) => !/ready|closed|pulled/i.test(cell.getAttribute("aria-label") ?? "") && bedNo(cell) !== from,
     )!;
     expect(other).toHaveAttribute("data-dim", "true");
     // P087: an unfit bed is announced as unavailable while picked; fitting beds and the source stay choosable.
@@ -104,26 +103,27 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
     // WH8 (3 Nov 2026): choosing a lit bed asks one confirm; nothing moves until it is sent.
     fireEvent.click(screen.getByTestId(`ward-board-bed-${to}`));
     expect(screen.getByTestId("ward-board-confirm")).toHaveTextContent(/^Move .* from bed \d+ to bed \d+\?/);
-    expect(cellText(to)).toMatch(/, ready, fits$/);
+    expect(cellText(to)).toMatch(/, Ready, [^,]+, fits$/);
     fireEvent.click(screen.getByTestId("ward-board-confirm-send"));
     expect(screen.queryByTestId("ward-board-confirm")).not.toBeInTheDocument();
     expect(screen.getByTestId("ward-board-say")).toHaveTextContent(/^Moved .* to bed/);
     // The person now sits in the free bed, and the bed they left is free.
-    const occupantName = fromLabel.replace(/^Bed \d+, /, "");
+    // The name sits between the bed number and the quiet line (axe 4.14: the cell's words in order).
+    const occupantName = fromLabel.replace(/^Bed \d+, /, "").replace(/, [^,]+$/, "");
     expect(cellText(to)).toContain(occupantName);
-    expect(cellText(from)).toMatch(/, ready$/);
+    expect(cellText(from)).toMatch(/, Ready, Free to place$/);
     expect(document.querySelector("[data-testid^='ward-board-bed-'][aria-disabled]")).toBeNull();
 
     const toast = screen.getByTestId("toast");
     fireEvent.click(within(toast).getByRole("button", { name: /^Undo/ }));
     expect(cellText(from)).toBe(fromLabel);
-    expect(cellText(to)).toMatch(/, ready$/);
+    expect(cellText(to)).toMatch(/, Ready, Free to place$/);
     expect(screen.getByTestId("ward-board-say")).toHaveTextContent(/^Undone/);
   });
 
   it("Put down and Escape leave everything as it was", () => {
     renderBoard();
-    const occupied = firstBed((label) => !/free|closed|pulled/.test(label));
+    const occupied = firstBed((label) => !/ready|closed|pulled/i.test(label));
     fireEvent.click(occupied);
     fireEvent.click(getBedStep("Move to another bed"));
     fireEvent.click(screen.getByRole("button", { name: "Put down" }));
@@ -164,21 +164,21 @@ describe("Ward Bed board — pick up and place, with Undo", () => {
     expect(chip, "the received referral is waiting on the board").not.toBeNull();
     fireEvent.click(chip!);
     expect(chip).toHaveAttribute("aria-pressed", "true");
-    const free = firstBed((label) => /, ready, fits$/.test(label));
+    const free = firstBed((label) => /, Ready, [^,]+, fits$/.test(label));
     const to = bedNo(free);
     fireEvent.click(free);
     expect(screen.getByTestId("ward-board-confirm")).toHaveTextContent(/This accepts the referral\./);
     fireEvent.click(screen.getByTestId("ward-board-confirm-send"));
 
     expect(screen.getByTestId("ward-board-say")).toHaveTextContent(/Referral accepted\.$/);
-    expect(cellText(to)).toMatch(/pulled for/);
+    expect(cellText(to)).toMatch(/, Pulled, /);
     // The accepted arm can separately reassign its bed; acceptance still has its own Undo.
     expect(screen.getByTestId(chip!.dataset.testid!)).toHaveTextContent("Accepted");
 
     act(() => {
       fireEvent.click(within(screen.getByTestId("toast")).getByRole("button", { name: /^Undo/ }));
     });
-    expect(cellText(to)).toMatch(/, ready$/);
+    expect(cellText(to)).toMatch(/, Ready, Free to place$/);
     expect(document.querySelector("[data-testid^='ward-board-pick-']")).not.toBeNull();
   });
 });
@@ -190,13 +190,38 @@ describe("Bed board layout and fit rules", () => {
       stayAdmissionId: kind === "o" ? `a${index + 1}` : undefined,
     }));
 
-  it("cuts a long surname so its box ends at the ellipsis, leaving no gap before the initial", () => {
-    // One unit per letter, ellipsis included: room 6 fits five letters and the ellipsis.
-    const measure = (text: string) => text.length;
-    expect(fitSurname("Ferrowmoor", 6, measure)).toBe("Ferro…");
-    expect(fitSurname("Ferrowmoor", 10, measure)).toBe("Ferrowmoor");
-    expect(fitSurname("Ferrowmoor", 1, measure)).toBe("F…");
-    expect(fitSurname("Van Dyke", 5, measure)).toBe("Van…");
+  it("shows every surname and given name in full, never cut with an ellipsis (Josh, 6 Nov 2026)", () => {
+    // A narrow cell and a working text measure: the old fit cut any surname here to "F…".
+    const getContext = vi
+      .spyOn(HTMLCanvasElement.prototype, "getContext")
+      .mockReturnValue({ font: "", measureText: (text: string) => ({ width: text.length * 8 }) } as never);
+    vi.stubGlobal(
+      "ResizeObserver",
+      class {
+        observe() {}
+        disconnect() {}
+        unobserve() {}
+      },
+    );
+    try {
+      renderBoard();
+      const named = Array.from(document.querySelectorAll<HTMLElement>("[data-testid^='ward-board-bed-']")).filter(
+        (cell) => !/ready|closed|pulled/i.test(cell.getAttribute("aria-label") ?? ""),
+      );
+      expect(named.length).toBeGreaterThan(0);
+      for (const cell of named) {
+        const label = cell.getAttribute("aria-label") ?? "";
+        expect(cell.textContent).not.toContain("…");
+        // axe 4.14: the visible surname and given name sit, whole and in order, in the accessible name.
+        const shown = cell.querySelector("[class*='cellWord']")?.textContent ?? "";
+        const given = (cell.querySelector("[class*='cellInitial']")?.textContent ?? "").replace(/^, /, "");
+        expect(shown.length).toBeGreaterThan(1);
+        expect(label).toContain(`, ${shown}, ${given}, `);
+      }
+    } finally {
+      getContext.mockRestore();
+      vi.unstubAllGlobals();
+    }
   });
 
   it("keeps every tile in its baseline bed when nothing is numbered", () => {
@@ -258,7 +283,9 @@ describe("Ward page on a phone — the round (Option B, 20 Oct 2026)", () => {
       const rows = list.getAllByRole("button", { name: /^Bed / });
       // Each bed once, all 24, and in bed order: never grouped or re-sorted.
       expect(rows).toHaveLength(24);
-      const numbers = rows.map((row) => Number(/^Bed (\d+)/.exec(row.getAttribute("aria-label") ?? "")?.[1]));
+      // The row is named by its own words (axe 4.14), so the bed number is read from its text.
+      const numbers = rows.map((row) => Number(/^Bed (\d+)/.exec(row.textContent ?? "")?.[1]));
+      expect(numbers.every(Number.isFinite), "every round row starts with its bed number").toBe(true);
       expect(numbers).toEqual([...numbers].sort((left, right) => left - right));
       expect(screen.queryByTestId("ward-phone-bed-groups")).toBeNull();
       // This shift and Ward flow are rows under My list, not chips above the tabs.

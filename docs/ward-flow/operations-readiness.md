@@ -47,9 +47,11 @@ re-check failure), the allow-listed error name and code that the log line alread
 environment and the release. No message, stack, request, user or record content is read. Each
 failure kind is sent at most once every five minutes, so a long outage stays inside a free plan.
 
-Uptime: `.github/workflows/backend-uptime.yml` checks the backend and its database every 30
-minutes and emails the owner through a GitHub issue. The signed-in site is not checked because it
-sleeps when idle.
+Uptime: `.github/workflows/backend-uptime.yml` checks the backend and its database every 10
+minutes, then signs in as a synthetic executive monitor account and loads `/v1/workspace`, and
+emails the owner through a GitHub issue. The workspace check needs the `WARD_FLOW_MONITOR_EMAIL`,
+`WARD_FLOW_MONITOR_PASSWORD` and `WARD_FLOW_SUPABASE_PUBLISHABLE_KEY` repo secrets; without them it
+is skipped with a notice. The signed-in site itself is not loaded because it sleeps when idle.
 
 ## Hosted browser acceptance
 
@@ -125,7 +127,9 @@ with the private operations receipt, without copying credentials or record conte
 
 ## Application rollback
 
-Railway's inspected history lists these prior builds as rollback-capable candidates:
+The rollback route moves `live` back to an earlier `live-*` release after pausing the daily
+release ([runbook](OPERATIONS-RUNBOOK.md#rolling-back-the-app)). Railway's inspected history lists
+these prior builds, kept here as a record of what it could still serve:
 
 | Service        | Prior deployment                       | Source                                     |
 | -------------- | -------------------------------------- | ------------------------------------------ |

@@ -127,15 +127,15 @@ describe("record preview shares current bed hold truth", () => {
     fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: id } });
     fireEvent.click(screen.getByTestId(`ward-patient-search-case-${id}`));
     // The imported legacy preview remains inert in this page's accepted design. Inspect its
-    // DOM projection separately from the actual visible Patient details preview.
+    // DOM projection separately from the actual visible Patient details drawer.
     const legacy = screen.getByTestId("ward-patient-search-preview");
     expect(legacy).toHaveTextContent("Accepted, awaiting bed");
     expect(legacy).not.toHaveTextContent("Bed pulled");
-    expect(screen.getByRole("region", { name: "Patient details" })).toHaveTextContent("Accepted, awaiting bed");
+    expect(screen.getByTestId("ward-patient-search-details")).toHaveTextContent("Accepted, awaiting bed");
     fireEvent.click(screen.getByRole("button", { name: "pull" }));
     expect(probe).toHaveAttribute("data-held", "true");
     expect(legacy).toHaveTextContent("Bed pulled");
-    expect(screen.getByRole("region", { name: "Patient details" })).toHaveTextContent("Bed pulled");
+    expect(screen.getByTestId("ward-patient-search-details")).toHaveTextContent("Bed pulled");
   });
 
   it("the actual WF-318 authored seed hold appears in both visible details and selected preview", () => {
@@ -147,7 +147,7 @@ describe("record preview shares current bed hold truth", () => {
     fireEvent.change(screen.getByLabelText(SEARCH_LABEL), { target: { value: "WF-318" } });
     fireEvent.click(screen.getByTestId("ward-patient-search-case-WF-318"));
     expect(screen.getByTestId("ward-patient-search-case-WF-318")).toHaveTextContent("Bed pulled");
-    expect(screen.getByRole("region", { name: "Patient details" })).toHaveTextContent("Bed pulled");
+    expect(screen.getByTestId("ward-patient-search-details")).toHaveTextContent("Bed pulled");
     expect(screen.getByTestId("ward-patient-search-preview")).toHaveTextContent("Bed pulled");
   });
 

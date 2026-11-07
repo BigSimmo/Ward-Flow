@@ -174,7 +174,7 @@ async function goBackToWard(page: Page) {
  * <N> ready"), and the card opens the ward's panel, whose Discharges view holds each discharge
  * record with its status. So Ready is read off the card, and "the release reached the coordinator
  * as confirmed" is read off this release's own record in that panel: Expected, then Confirmed once
- * the ward confirms it, then Departed (no longer confirmed) once the person leaves. That is the same
+ * the ward confirms it, then Left ward (no longer confirmed) once the person leaves. That is the same
  * proof the Confirmed count gave, made on the one record this journey moves rather than on a total.
  */
 
@@ -302,7 +302,7 @@ test.describe("@mockup Ward discharges — a bed release's whole lifecycle reach
     // Ready rises by exactly one, and the completed release no longer counts as confirmed: the bed is
     // free and already counted in Ready, so counting it twice would inflate the board.
     await expect.poll(() => boardReady(page)).toBe(readyBefore + 1);
-    await expect.poll(() => boardReleaseStatus(page, release.admissionId)).toBe("Departed");
+    await expect.poll(() => boardReleaseStatus(page, release.admissionId)).toBe("Left ward");
   });
 
   /**
@@ -469,9 +469,12 @@ test.describe("@mockup WA disposition pathways", () => {
       await page.getByRole("menuitemradio", { name: destination.label, exact: true }).click();
       await expect(page.getByRole("button", { name: `Going to: ${destination.label}` })).toBeVisible();
       await page.getByRole("button", { name, exact: true }).click();
+      // Drawer review (6 Nov 2026): the record opens in the kit drawer; its tabs sit in the fixed
+      // head, outside the scroll body that carries the region name.
+      const dischargeDrawer = page.getByTestId("ward-discharge-detail");
       const detail = page.getByRole("region", { name: "Selected discharge details" });
       await expect(detail).toContainText(destination.label);
-      await detail.getByRole("tab", { name: "Record", exact: true }).click();
+      await dischargeDrawer.getByRole("tab", { name: "Record", exact: true }).click();
       if (destination.id === "died-on-the-ward") {
         await expect(detail.getByRole("button", { name: "Record follow-up status" })).toHaveCount(0);
       } else {
@@ -499,8 +502,9 @@ test.describe("@mockup complete care dossier", () => {
     await page.goto(`/ward-flow/discharges?admissionId=${a.id}`);
     await page.waitForLoadState("networkidle");
     await expect(page.getByRole("region", { name: "Ward Flow data mode" })).toHaveCount(0);
+    // Drawer review (6 Nov 2026): the drawer's tabs sit in its fixed head, outside the body region.
     const detail = page.getByRole("region", { name: "Selected discharge details" });
-    await detail.getByRole("tab", { name: "Record", exact: true }).click();
+    await page.getByTestId("ward-discharge-detail").getByRole("tab", { name: "Record", exact: true }).click();
     const care = detail.getByRole("region", { name: "Care journey" });
     await care.locator("summary", { hasText: "Planning item" }).click();
     await care.getByRole("combobox", { name: "Planning item", exact: true }).selectOption("crisis_plan");

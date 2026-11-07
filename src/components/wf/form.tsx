@@ -13,6 +13,7 @@ import {
   type ReactNode,
 } from "react";
 import { Check, ChevronDown, Lock, Minus, Plus, X, type LucideIcon } from "lucide-react";
+import { DisabledReason } from "./button";
 import { cx } from "./cx";
 import { Icon } from "./icon";
 import { StatusGlyph } from "./status-glyph";
@@ -96,6 +97,12 @@ export type TextInputProps = Omit<ComponentPropsWithRef<"input">, "size"> & {
   locked?: boolean;
   /** Error look without a Field. */
   invalid?: boolean;
+  /**
+   * Why the control cannot be changed now (K11, design audit 5 Nov 2026; DESIGN-SYSTEM §4 Actions):
+   * `aria-disabled` with the tab stop kept, changes are refused, and the reason shows as text
+   * beside it, linked by `aria-describedby`. Use it in place of `disabled` wherever a reason exists.
+   */
+  disabledReason?: string;
   boxClassName?: string;
 };
 
@@ -111,10 +118,13 @@ export function TextInput({
   boxClassName,
   readOnly,
   onChange,
+  disabledReason,
   "aria-describedby": describedBy,
   ...rest
 }: TextInputProps) {
-  const fieldProps = useFieldProps(id, describedBy, invalid);
+  const reasonId = useId();
+  const off = Boolean(disabledReason);
+  const fieldProps = useFieldProps(id, cx(describedBy, off && reasonId) || undefined, invalid);
   const hasValue = rest.value != null && String(rest.value).length > 0;
   // WF-30 (live test, 4 Nov 2026): a capped input says so as it nears the cap, and says plainly when
   // the cap is reached, instead of silently dropping what is typed or pasted. An uncontrolled input
@@ -124,12 +134,20 @@ export function TextInput({
   const typed = rest.value != null ? String(rest.value).length : uncontrolledLength;
   const showsCount = max !== null && max >= 20;
   const nearCap = showsCount && typed >= Math.floor(max * 0.8);
-  return (
-    <div className={cx(styles.in, fieldProps["aria-invalid"] && styles.invalid, locked && styles.locked, boxClassName)}>
+  const box = (
+    <div
+      className={cx(
+        styles.in,
+        fieldProps["aria-invalid"] && styles.invalid,
+        (locked || off) && styles.locked,
+        boxClassName,
+      )}
+    >
       {icon ? <Icon icon={icon} size={16} className={styles.adorn} /> : null}
       <input
         className={cx(styles.control, className)}
-        readOnly={locked || readOnly}
+        readOnly={locked || off || readOnly}
+        aria-disabled={off || undefined}
         spellCheck={false}
         data-gramm="false"
         data-gramm_editor="false"
@@ -160,12 +178,24 @@ export function TextInput({
           Locked
         </span>
       ) : null}
-      {onClear && hasValue && !locked ? (
+      {onClear && hasValue && !locked && !off ? (
         <button type="button" className={styles.clear} aria-label="Clear" onClick={onClear}>
           <Icon icon={X} size={14} />
         </button>
       ) : null}
     </div>
+  );
+  return withReason(box, reasonId, disabledReason);
+}
+
+/** The control, then its reason (K11) when it has one, linked by the reason's id. */
+function withReason(control: ReactNode, reasonId: string, reason: string | undefined) {
+  if (!reason) return control;
+  return (
+    <>
+      {control}
+      <DisabledReason id={reasonId}>{reason}</DisabledReason>
+    </>
   );
 }
 
@@ -210,34 +240,115 @@ export function Textarea({
   );
 }
 
-export type SelectProps = ComponentPropsWithRef<"select"> & { invalid?: boolean; boxClassName?: string };
+export type SelectProps = ComponentPropsWithRef<"select"> & {
+  invalid?: boolean;
+  boxClassName?: string;
+  /**
+   * Why the control cannot be changed now (K11, design audit 5 Nov 2026; DESIGN-SYSTEM §4 Actions):
+   * `aria-disabled` with the tab stop kept, changes are refused, and the reason shows as text
+   * beside it, linked by `aria-describedby`. Use it in place of `disabled` wherever a reason exists.
+   */
+  disabledReason?: string;
+};
 
 /** Native select in the v6 box, with a caret. */
+/** Keys that move, open or pick in a native select. Arrows count with Alt too (Alt+Down opens it). */
+const SELECT_CHANGE_KEYS = new Set([
+  "ArrowUp",
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "Home",
+  "End",
+  "PageUp",
+  "PageDown",
+  "Enter",
+  " ",
+  "Spacebar",
+]);
+
+/**
+ * Whether a key press would change a refused Select (PR #1474 review). Tab, Escape, F1 to F12 and
+ * Ctrl, Cmd or Alt shortcuts pass through; arrows, Home, End, Page Up and Down, Space, Enter and
+ * typed characters (which jump to a matching option) are refused.
+ */
+function keyChangesSelect(event: Pick<KeyboardEvent, "key" | "altKey" | "ctrlKey" | "metaKey">): boolean {
+  if (event.key.startsWith("Arrow") && event.altKey) return true;
+  if (event.ctrlKey || event.metaKey || event.altKey) return false;
+  return SELECT_CHANGE_KEYS.has(event.key) || [...event.key].length === 1;
+}
+
 export function Select({
   id,
   invalid,
   className,
   boxClassName,
   children,
+  disabledReason,
   "aria-describedby": describedBy,
   ...rest
 }: SelectProps) {
-  const fieldProps = useFieldProps(id, describedBy, invalid);
-  return (
-    <div className={cx(styles.in, fieldProps["aria-invalid"] && styles.invalid, boxClassName)}>
-      <select className={cx(styles.control, styles.select, className)} {...fieldProps} {...rest}>
+  const reasonId = useId();
+  const off = Boolean(disabledReason);
+  const fieldProps = useFieldProps(id, cx(describedBy, off && reasonId) || undefined, invalid);
+  // A native select has no read-only state, so an unavailable one refuses the press and the keys
+  // that would change it, and keeps its tab stop. Taps never reach it (`.refusedSelect`), since iOS
+  // Safari opens the picker despite a cancelled mousedown; the reason is plain text beside it.
+  const refuse = off
+    ? {
+        "aria-disabled": true as const,
+        onMouseDown: (event: { preventDefault: () => void }) => event.preventDefault(),
+        onKeyDown: (event: KeyboardEvent<HTMLSelectElement>) => {
+          if (keyChangesSelect(event)) event.preventDefault();
+        },
+        onChange: () => undefined,
+      }
+    : {};
+  const box = (
+    <div className={cx(styles.in, fieldProps["aria-invalid"] && styles.invalid, off && styles.locked, boxClassName)}>
+      <select
+        className={cx(styles.control, styles.select, off && styles.refusedSelect, className)}
+        {...fieldProps}
+        {...rest}
+        {...refuse}
+      >
         {children}
       </select>
       <Icon icon={ChevronDown} size={16} className={styles.selectCaret} />
     </div>
   );
+  return withReason(box, reasonId, disabledReason);
 }
 
 export type CheckboxProps = Omit<ComponentPropsWithRef<"input">, "type" | "children"> & {
   label: ReactNode;
   /** Mixed state (some rows selected). */
   indeterminate?: boolean;
+  /**
+   * Why the control cannot be changed now (K11, design audit 5 Nov 2026; DESIGN-SYSTEM §4 Actions):
+   * `aria-disabled` with the tab stop kept, changes are refused, and the reason shows as text
+   * beside it, linked by `aria-describedby`. Use it in place of `disabled` wherever a reason exists.
+   */
+  disabledReason?: string;
 };
+
+/**
+ * The press guard and description an unavailable checkbox or radio takes (K11). As in Select, the
+ * caller's `onChange` and `onClick` are replaced, so a refused press never reaches the caller (PR
+ * #1474 review). React puts a controlled box back itself; an uncontrolled one has its press cancelled
+ * instead (cancelling a controlled one's press as well leaves it showing the wrong state).
+ */
+function refusedChoice(reasonId: string, describedBy: string | undefined, off: boolean, controlled: boolean) {
+  if (!off) return { "aria-describedby": describedBy };
+  return {
+    "aria-disabled": true as const,
+    "aria-describedby": cx(describedBy, reasonId),
+    onChange: () => undefined,
+    onClick: (event: { preventDefault: () => void }) => {
+      if (!controlled) event.preventDefault();
+    },
+  };
+}
 
 /** Real checkbox; the whole label row is the target. */
 export function Checkbox({
@@ -245,9 +356,13 @@ export function Checkbox({
   indeterminate = false,
   className,
   disabled,
+  disabledReason,
+  "aria-describedby": describedBy,
   ref: forwardedRef,
   ...rest
 }: CheckboxProps) {
+  const reasonId = useId();
+  const off = Boolean(disabledReason);
   const ref = useRef<HTMLInputElement | null>(null);
   const setRef = useCallback(
     (node: HTMLInputElement | null) => {
@@ -260,9 +375,16 @@ export function Checkbox({
   useEffect(() => {
     if (ref.current) ref.current.indeterminate = indeterminate;
   }, [indeterminate]);
-  return (
-    <label className={cx(styles.choice, disabled && styles.choiceDisabled, className)}>
-      <input ref={setRef} type="checkbox" className={styles.native} disabled={disabled} {...rest} />
+  const row = (
+    <label className={cx(styles.choice, (disabled || off) && styles.choiceDisabled, className)}>
+      <input
+        ref={setRef}
+        type="checkbox"
+        className={styles.native}
+        disabled={disabled && !off}
+        {...rest}
+        {...refusedChoice(reasonId, describedBy, off, rest.checked !== undefined)}
+      />
       <span className={styles.box} aria-hidden="true">
         <Check size={12} strokeWidth={3} className={cx(styles.mark, styles.tick)} aria-hidden="true" />
         <Minus size={12} strokeWidth={3} className={cx(styles.mark, styles.dash)} aria-hidden="true" />
@@ -270,19 +392,44 @@ export function Checkbox({
       {label}
     </label>
   );
+  return withReason(row, reasonId, disabledReason);
 }
 
-export type RadioProps = Omit<ComponentPropsWithRef<"input">, "type" | "children"> & { label: ReactNode };
+export type RadioProps = Omit<ComponentPropsWithRef<"input">, "type" | "children"> & {
+  label: ReactNode;
+  /**
+   * Why the control cannot be changed now (K11, design audit 5 Nov 2026; DESIGN-SYSTEM §4 Actions):
+   * `aria-disabled` with the tab stop kept, changes are refused, and the reason shows as text
+   * beside it, linked by `aria-describedby`. Use it in place of `disabled` wherever a reason exists.
+   */
+  disabledReason?: string;
+};
 
 /** Real radio; group them by `name` inside a fieldset with a legend. */
-export function Radio({ label, className, disabled, ...rest }: RadioProps) {
-  return (
-    <label className={cx(styles.choice, disabled && styles.choiceDisabled, className)}>
-      <input type="radio" className={styles.native} disabled={disabled} {...rest} />
+export function Radio({
+  label,
+  className,
+  disabled,
+  disabledReason,
+  "aria-describedby": describedBy,
+  ...rest
+}: RadioProps) {
+  const reasonId = useId();
+  const off = Boolean(disabledReason);
+  const row = (
+    <label className={cx(styles.choice, (disabled || off) && styles.choiceDisabled, className)}>
+      <input
+        type="radio"
+        className={styles.native}
+        disabled={disabled && !off}
+        {...rest}
+        {...refusedChoice(reasonId, describedBy, off, rest.checked !== undefined)}
+      />
       <span className={styles.dot} aria-hidden="true" />
       {label}
     </label>
   );
+  return withReason(row, reasonId, disabledReason);
 }
 
 export type SwitchProps = {
@@ -299,6 +446,12 @@ export type SwitchProps = {
   /** Shown for review but not connected: `aria-disabled`, still focusable, clicks still call
    *  `onCheckedChange` so the screen can say why. */
   unavailable?: boolean;
+  /**
+   * Why the control cannot be changed now (K11, design audit 5 Nov 2026; DESIGN-SYSTEM §4 Actions):
+   * `aria-disabled` with the tab stop kept, changes are refused, and the reason shows as text
+   * beside it, linked by `aria-describedby`. Use it in place of `disabled` wherever a reason exists.
+   */
+  disabledReason?: string;
   className?: string;
 };
 
@@ -313,24 +466,30 @@ export function Switch({
   onHero = false,
   disabled,
   unavailable = false,
+  disabledReason,
   className,
 }: SwitchProps) {
   const labelId = useId();
-  return (
+  const reasonId = useId();
+  const off = Boolean(disabledReason);
+  const toggle = (
     <button
       type="button"
       role="switch"
       aria-checked={checked}
       aria-labelledby={labelId}
-      {...(unavailable ? { "aria-disabled": true } : { disabled })}
+      aria-describedby={off ? reasonId : undefined}
+      {...(unavailable || off ? { "aria-disabled": true } : { disabled })}
       className={cx(
         styles.switchRow,
         !block && styles.inline,
         onHero && styles.onHero,
-        unavailable && styles.unavailable,
+        (unavailable || off) && styles.unavailable,
         className,
       )}
-      onClick={() => onCheckedChange(!checked)}
+      onClick={() => {
+        if (!off) onCheckedChange(!checked);
+      }}
     >
       <span id={labelId} className={styles.switchLabel}>
         {label}
@@ -341,6 +500,7 @@ export function Switch({
       </span>
     </button>
   );
+  return withReason(toggle, reasonId, disabledReason);
 }
 
 export type StepperProps = {

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { requestConfirm } from "@/components/wf";
 import { fieldsMatchEveryWord } from "../search/search-text";
+import { rankByNameStart } from "./referral-patient-rank";
 import type { Instant } from "../ward-clock";
 import { EMPTY_NEW_PATIENT, type useReferralRegistrationDraft } from "./use-referral-command-completion";
 import { referralDraftSessionVersion } from "./referral-draft-cache";
@@ -82,7 +83,7 @@ export function useReferralPatientSelection({
       )
       .slice(0, 8)
       .map((patient) => sampleProfile(patientKeyFor(patient.id, records) ?? "custom", records, now));
-    return [...matches, ...more];
+    return rankByNameStart([...matches, ...more], query);
   }, [searchQuery, profiles, movements, patients, referrals, dayZero, now]);
 
   function handleSelectPatient(key: string, addedInForm = false) {

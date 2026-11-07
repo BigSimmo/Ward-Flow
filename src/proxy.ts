@@ -164,11 +164,35 @@ export async function proxy(request: NextRequest) {
   const door = await frontDoorVerdict(request);
   if (door) return withCsp(door);
 
+  // A1K-05 and H-0195 (Josh, 27 Oct 2026): a malformed Ward Flow address is a real 404. Next fails
+  // decoding a bad percent-encoding in a dynamic segment before the page runs (a bare 500), so
+  // render the app's not-found page here instead, while a status can still be set.
+  if (hasMalformedWardFlowEncoding(pathname)) {
+    const url = request.nextUrl.clone();
+    url.pathname = MALFORMED_ADDRESS_REWRITE;
+    url.search = "";
+    return withCsp(NextResponse.rewrite(url, { status: 404, request: { headers: requestHeadersWithNonce() } }));
+  }
+
   if (shouldBlockProductionMockups(pathname)) {
     return withCsp(new NextResponse(null, { status: 404 }));
   }
 
   return withCsp(NextResponse.next({ request: { headers: requestHeadersWithNonce() } }));
+}
+
+/** No route answers this path, so a rewrite to it renders the app's not-found page with a 404. */
+const MALFORMED_ADDRESS_REWRITE = "/ward-flow-malformed-address";
+
+/** True for a /ward-flow path holding a percent-encoding that does not decode (for example `%E0%A4`). */
+export function hasMalformedWardFlowEncoding(pathname: string): boolean {
+  if (pathname !== "/ward-flow" && !pathname.startsWith("/ward-flow/")) return false;
+  try {
+    for (const segment of pathname.split("/")) decodeURIComponent(segment);
+    return false;
+  } catch {
+    return true;
+  }
 }
 
 /**
@@ -189,8 +213,21 @@ export async function frontDoorVerdict(
   const url = request.nextUrl.clone();
   url.pathname = FRONT_DOOR_SIGN_IN_PATH;
   url.search = "";
-  if (pathname === "/ward-flow" || pathname.startsWith("/ward-flow/"))
-    url.searchParams.set("next", safeNextPath(pathname + search));
+  if (pathname === "/ward-flow" || pathname.startsWith("/ward-flow/")) {
+    // SEC-2: a recovery link returns to /ward-flow with its code in the query. The sign-in page
+    // takes it from its own address, so it rides there and never inside `next`.
+    let rest = search;
+    const target = new URLSearchParams(search);
+    const link = ["code", "error", "error_code", "error_description"].filter((key) => target.has(key));
+    if (pathname === "/ward-flow" && link.length) {
+      for (const key of link) {
+        url.searchParams.set(key, target.get(key)!);
+        target.delete(key);
+      }
+      rest = target.toString() ? "?" + target.toString() : "";
+    }
+    url.searchParams.set("next", safeNextPath(pathname + rest));
+  }
   return NextResponse.redirect(url, 307);
 }
 
@@ -215,8 +252,8 @@ export function shouldBlockProductionMockups(
   // Mockups remain unavailable in every normal production process. The one
   // exception is the repository-owned, isolated Playwright server when its
   // advisory project explicitly opts into mockup coverage. Instrumentation
-  // separately refuses PLAYWRIGHT_OFFLINE_MODE outside the inert loopback and
-  // isolated .next-playwright profile.
+  // separately refuses PLAYWRIGHT_OFFLINE_MODE outside the provider-free demo
+  // settings and the isolated .next-playwright profile.
   return !(environment.PLAYWRIGHT_OFFLINE_MODE === "true" && environment.NEXT_PUBLIC_MOCKUPS_ENABLED === "true");
 }
 

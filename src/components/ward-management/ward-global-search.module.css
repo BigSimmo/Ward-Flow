@@ -107,6 +107,10 @@
 .controlBox:focus-within {
   border-color: var(--clinical-accent);
   box-shadow: 0 0 0 3px var(--clinical-accent-soft);
+  /* BA-9 (front-end audit, 5 Nov 2026): forced colours drops the box-shadow ring, and paints this
+     transparent outline in the system colour, so the field still shows where focus is. */
+  outline: 2px solid transparent;
+  outline-offset: 1px;
 }
 
 .icon {

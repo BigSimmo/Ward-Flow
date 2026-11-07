@@ -380,11 +380,16 @@
   list-style: none;
 }
 
+/*
+ * Design audit 4 (C23, 5 Nov 2026): every square keeps a 3:1 control edge (`--wf-line-ctl`), so the
+ * lightest stay shade still shows on white, and the bed states take the desktop bed map's data tokens
+ * (statistics-ward-phone-beds.module.css): ready and closed fills, the hatch for pulled (may move).
+ */
 .bed {
   width: 16px;
   height: 20px;
   box-sizing: border-box;
-  border: 1px solid var(--wf-line-2);
+  border: 1px solid var(--wf-line-ctl);
   border-radius: var(--wf-r-xs);
   background: var(--wf-surface-2);
 }
@@ -394,25 +399,22 @@
 }
 
 .bed[data-kind="pulled"] {
-  border-style: dashed;
-  border-color: var(--wf-ink-3);
-  background: var(--wf-surface);
+  border-color: var(--wf-data-1);
+  background: repeating-linear-gradient(135deg, var(--wf-data-1) 0 3px, var(--wf-surface) 3px 6px);
 }
 
 .bed[data-kind="closed"] {
-  background: var(--wf-track);
-  border-color: var(--wf-line);
+  background: var(--wf-data-closed);
 }
 
 .bed[data-kind="prep"] {
-  border-style: dashed;
-  border-color: var(--wf-success);
-  background: var(--wf-surface);
+  border: 1.5px dashed var(--wf-data-ready);
+  background: color-mix(in srgb, var(--wf-data-ready) 14%, var(--wf-surface));
 }
 
 .bed[data-kind="ready"] {
-  border-color: var(--wf-success);
-  background: var(--wf-surface);
+  border-color: var(--wf-data-ready);
+  background: var(--wf-data-ready);
 }
 
 .bedLegend {
@@ -427,8 +429,13 @@
   line-height: var(--wf-lh-12);
 }
 
+.bedLegend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .bedLegend b {
-  margin-left: 4px;
   color: var(--wf-ink-1);
   font: 600 var(--wf-fs-12) / 1 var(--wf-mono);
 }

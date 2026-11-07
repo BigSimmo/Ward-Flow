@@ -52,8 +52,13 @@ export function DischargeDayChart({
   const top = step * GRID_LINES;
   const pct = (value: number) => `${(value / top) * 100}%`;
   const rowMax = Math.max(1, ...totals);
-  const dayLabel = (day: DischargeDay, total: number) =>
-    `${day.name}: ${total} due, ${day.expected} not held up${day.blocked ? `, ${day.blocked} held up` : ""}`;
+  // axe 4.14: a day's name starts with the words it shows in their order ("Fri 6", then its total),
+  // then the full date and the split. A column keeps its label first in the DOM for this, and CSS
+  // draws it under the bar.
+  const dayLabel = (day: DischargeDay, total: number) => {
+    const date = day.name.startsWith(`${day.label}, `) ? day.name.slice(day.label.length + 2) : day.name;
+    return `${day.label}: ${total} due, ${date}, ${day.expected} not held up${day.blocked ? `, ${day.blocked} held up` : ""}`;
+  };
   return (
     <Card className={styles.card} aria-labelledby={headingId} data-testid="ward-discharge-day-chart">
       <header className={styles.head}>
@@ -97,7 +102,7 @@ export function DischargeDayChart({
                   aria-label={dayLabel(day, total)}
                   onClick={() => (pressed ? onClear() : onSelect(day.key))}
                 >
-                  <span className={styles.barLabel}>{day.label}</span>
+                  <span className={styles.barLabel}>{day.label}</span>{" "}
                   <span className={`${styles.track} ${styles.dayTrack}`} aria-hidden="true">
                     {day.expected > 0 ? (
                       <span
@@ -111,7 +116,7 @@ export function DischargeDayChart({
                         style={{ width: `${Math.max(2, (day.blocked / rowMax) * 100)}%` }}
                       />
                     ) : null}
-                  </span>
+                  </span>{" "}
                   <b className={styles.barValue} aria-hidden="true">
                     {total}
                   </b>
@@ -148,6 +153,9 @@ export function DischargeDayChart({
                   aria-label={dayLabel(day, total)}
                   onClick={() => (pressed ? onClear() : onSelect(day.key))}
                 >
+                  <span className={styles.dayLabel} aria-hidden="true">
+                    {day.label}
+                  </span>{" "}
                   <span className={styles.stack} aria-hidden="true">
                     <span className={styles.total}>{total}</span>
                     {day.expected > 0 ? (
@@ -156,9 +164,6 @@ export function DischargeDayChart({
                     {day.blocked > 0 ? (
                       <span className={styles.barBlocked} style={{ height: pct(day.blocked) }} />
                     ) : null}
-                  </span>
-                  <span className={styles.dayLabel} aria-hidden="true">
-                    {day.label}
                   </span>
                 </button>
               );
@@ -223,13 +228,13 @@ export function DischargeBarrierBars({
                   aria-label={`${barrier.label}: ${barrier.count} held up`}
                   onClick={() => (pressed ? onClear() : onSelect(barrier.id))}
                 >
-                  <span className={styles.barLabel}>{barrier.label}</span>
+                  <span className={styles.barLabel}>{barrier.label}</span>{" "}
                   <span className={styles.track} aria-hidden="true">
                     <span
                       className={styles.fill}
                       style={{ width: `${Math.max(4, Math.round((barrier.count / max) * 100))}%` }}
                     />
-                  </span>
+                  </span>{" "}
                   <b className={styles.barValue} aria-hidden="true">
                     {barrier.count}
                   </b>

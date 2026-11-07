@@ -3,6 +3,7 @@
 // "ED psychiatry": the department's board, with its filters, search and sort, as a table on wider
 // screens and a list on a phone. Split out of `ed-screen.tsx` unchanged (fix list 2.5 and 9.6,
 // 15 Oct 2026).
+import { Maximize2, Minimize } from "lucide-react";
 import type { ReactNode } from "react";
 import { PortraitRail, SearchField, Segmented } from "@/components/wf";
 import { EdBoardChips } from "./ed-board-chips";
@@ -64,24 +65,11 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
             }
             title={fullscreenBoard ? "Exit larger screen mode (Esc)" : "Expand board to larger screen mode"}
           >
-            <svg
-              className={styles.expandIcon}
-              viewBox="0 0 24 24"
-              width="14"
-              height="14"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
-            >
-              {fullscreenBoard ? (
-                <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-              ) : (
-                <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
-              )}
-            </svg>
+            {fullscreenBoard ? (
+              <Minimize className={styles.expandIcon} size={14} strokeWidth={1.75} aria-hidden="true" />
+            ) : (
+              <Maximize2 className={styles.expandIcon} size={14} strokeWidth={1.75} aria-hidden="true" />
+            )}
             <span>
               {boardTable
                 ? fullscreenBoard
@@ -185,7 +173,7 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
             return (
               <>
                 {boardMatchCount === 0 ? (
-                  <p className={styles.noPatientMatches}>No one matches. Everyone stays below, dimmed.</p>
+                  <p className={styles.noPatientMatches}>Nobody matches. Everyone stays below, dimmed.</p>
                 ) : null}
                 <TierKey />
                 <table
@@ -223,7 +211,7 @@ export function EdBoardSection({ ctx }: { ctx: EdScreenContext }) {
           return (
             <>
               {boardMatchCount === 0 ? (
-                <p className={styles.noPatientMatches}>No one matches. Everyone stays below, dimmed.</p>
+                <p className={styles.noPatientMatches}>Nobody matches. Everyone stays below, dimmed.</p>
               ) : null}
               <TierKey />
               <ul className={styles.phoneBoardList} aria-label="Emergency department board">

@@ -92,12 +92,13 @@ describe("Q274: the loading note offers Reload when the code never arrives", () 
   });
 });
 
-describe("Q275: a hung page change offers Try again", () => {
-  it("draws the slow line with a Try again button the early script reloads from", () => {
+// Josh (5 Nov 2026, design audit card 8): one slow message and one timer, the first-load note's.
+describe("Q275: a hung page change offers Reload", () => {
+  it("draws the slow line with a Reload button the early script reloads from", () => {
     render(<WardFlowLoading />);
     const slow = screen.getByTestId("ward-loading-slow");
-    expect(slow).toHaveTextContent("This is taking longer than usual.");
-    const retry = screen.getByRole("button", { name: "Try again", hidden: true });
+    expect(slow).toHaveTextContent("Still loading. Check the connection.");
+    const retry = screen.getByRole("button", { name: "Reload", hidden: true });
     expect(retry).toHaveAttribute("data-wf-loading-reload");
   });
 

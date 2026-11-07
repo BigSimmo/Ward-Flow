@@ -61,7 +61,7 @@ export function askWardsFields(ask: WardAsk, unitIds: readonly string[]) {
 /** The one wording every ask button uses once it has sent. */
 export function askedLine(sent: number, skipped: number): string {
   const head =
-    sent > 0 ? `Asked ${wards(sent)}. It shows on their screen for ${ASK_WARDS_WINDOW_TEXT}.` : "No one asked.";
+    sent > 0 ? `Asked ${wards(sent)}. It shows on their screen for ${ASK_WARDS_WINDOW_TEXT}.` : "Nobody asked.";
   const tail = skipped > 0 ? ` ${wards(skipped)} already asked in the last ${ASK_WARDS_WINDOW_TEXT}, so skipped.` : "";
   return head + tail;
 }

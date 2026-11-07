@@ -67,6 +67,25 @@ describe("figma token sync", () => {
     expect(diffTokens(result.css, pulled).changes).toEqual([]);
   });
 
+  // BA-5 (5 Nov 2026): type tokens are rem so text follows the browser text size; Figma keeps pixels.
+  // A fixed fixture, so a legitimate Figma edit to the live type tokens cannot break this test.
+  it("reads rem type tokens as pixels and writes a Figma size back in rem", () => {
+    const fixture =
+      ":root {\n  --wf-fs-12: 0.75rem;\n  --wf-fs-20: 1.25rem;\n  --wf-lh-16: 1.375rem;\n  --wf-r-lg: 18px;\n}\n";
+    const pulled = exportTokens(fixture) as Tokens;
+    expect(pulled.Size).toEqual({ "--wf-fs-12": 12, "--wf-fs-20": 20, "--wf-lh-16": 22, "--wf-r-lg": 18 });
+    pulled.Size["--wf-fs-20"] = 22;
+    const result = applyTokens(fixture, pulled);
+    expect(result.skipped).toEqual([]);
+    expect(result.css).toContain("--wf-fs-20: 1.375rem;");
+    expect(result.css).toContain("--wf-r-lg: 18px;");
+    expect(diffTokens(result.css, pulled).changes).toEqual([]);
+  });
+
+  it("keeps the live type tokens in rem", () => {
+    expect(css).toMatch(/--wf-fs-16: [\d.]+rem;/u);
+  });
+
   it("refuses a size edit whose literal a later alias overrides, and never rewrites the alias", () => {
     expect(css.match(/--wf-row: var\(--wf-row-[a-z]+\);/g)?.length).toBeGreaterThan(0);
     const pulled = exportTokens(css) as Tokens;

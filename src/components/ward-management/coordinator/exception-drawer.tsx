@@ -79,7 +79,7 @@ type ExceptionDrawerProps = {
  *   different facts a coordinator answers differently.
  */
 function commandInboxTitle(item: InboxItem): string {
-  if (item.id.startsWith("bed-pull-") || item.title === "Bed pull expired") {
+  if (item.id.startsWith("bed-pull-") || item.title === "Pull expired, bed still pulled") {
     return "Pull expired, bed still pulled";
   }
   return item.title;

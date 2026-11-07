@@ -210,7 +210,7 @@ export function EdHandoverBoard({ ctx }: { ctx: EdScreenContext }) {
       ) : (
         <>
           {boardMatchCount === 0 ? (
-            <p className={styles.noPatientMatches}>No one matches. Everyone stays below, dimmed.</p>
+            <p className={styles.noPatientMatches}>Nobody matches. Everyone stays below, dimmed.</p>
           ) : null}
           <div className={handover.handoverScroll}>
             <table

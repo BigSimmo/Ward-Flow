@@ -15,12 +15,12 @@ const deskHomes = vi.hoisted(() => ({
   officer: "/ward-flow/transport/officer",
   bed_manager: "/ward-flow/capacity",
   executive: "/ward-flow/statistics",
-  admin: "/ward-flow/settings",
+  admin: "/ward-flow/governance",
 }));
 vi.mock("../src/components/ward-management/help/ward-tour-facts", () => ({
   useTourFacts: () => ({
     facts: {},
-    home: route.role === "admin" ? "/ward-flow/governance" : deskHomes[route.role as keyof typeof deskHomes],
+    home: deskHomes[route.role as keyof typeof deskHomes],
     deskHome: deskHomes[route.role as keyof typeof deskHomes],
   }),
 }));
@@ -64,7 +64,7 @@ describe("quiet first-visit Help hints", () => {
       await settle();
       expect(screen.queryByTestId("ward-help-hint")).toBeNull();
       expect(localStorage.getItem(HELP_HINTS_KEY)).toBeNull();
-      route.path = role === "admin" ? "/ward-flow/governance" : "/ward-flow/settings";
+      route.path = "/ward-flow/settings";
       ui.rerender(<WardHelpHints />);
       await settle();
       // Every desk, the access admin included, gets help on a screen that is not its landing screen.
@@ -127,11 +127,11 @@ describe("quiet first-visit Help hints", () => {
     expect(screen.getByTestId("ward-help-hint").textContent).toContain("Open Settings, then Display.");
     expect(screen.getByTestId("ward-help-hint").textContent).not.toContain("Change a rule");
   });
-  // The access admin lands on Settings, so its later screen is Governance.
+  // WF-46: the access admin lands on Governance, so its later screen is Settings (same as other desks).
   it.each(["coordinator", "ward", "ed", "community", "officer", "bed_manager", "executive", "admin"])(
     "a tour offered to any desk on this device permits later-screen guidance (G3, role=%s)",
     async (role) => {
-      const later = role === "admin" ? "governance" : "settings";
+      const later = "settings";
       route.path = `/ward-flow/${later}`;
       route.role = role;
       route.toured = false;

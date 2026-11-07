@@ -299,7 +299,7 @@ export function ReferralPlacementStep({ s }: { s: WardReferralDrawerState }) {
               <span>Ready</span>
               <span>Waiting list</span>
             </div>
-            <div role="list" aria-label="Placement Destination Options">
+            <div role="list" aria-label="Destinations">
               {realTimeMatch.sortedUnits.map((unit, index) => {
                 const selected = selectedUnitIds.includes(unit.unitId);
                 const model = units.find((candidate) => candidate.id === unit.unitId);

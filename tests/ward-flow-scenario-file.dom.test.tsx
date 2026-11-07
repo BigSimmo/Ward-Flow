@@ -81,7 +81,8 @@ describe("demo scenario save and load", () => {
     act(() => current!.resetDemoState());
     expect(current!.patients.some((patient) => patient.givenName === "Josephine")).toBe(false);
     // The reseed re-enabled browser saving, which proves the next assertion is the load's doing.
-    expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).not.toBeNull();
+    const seedSave = window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY);
+    expect(seedSave).not.toBeNull();
     const generationBefore = current!.worldGeneration;
 
     let result: Awaited<ReturnType<NonNullable<NonNullable<typeof current>["loadScenarioFile"]>>> | undefined;
@@ -92,14 +93,17 @@ describe("demo scenario save and load", () => {
     expect(current!.patients.some((patient) => patient.givenName === "Josephine")).toBe(true);
     expect(current!.now).toBe(savedNow);
     expect(current!.worldGeneration).toBeGreaterThan(generationBefore);
-    expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).toBeNull();
+    // SD-01 (Josh, 5 Nov 2026): no safe copy of the loaded world can be made, so the last safe save
+    // (the reseed's) is kept as it was, never the loaded typed patient.
+    expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).toBe(seedSave);
+    expect(seedSave).not.toContain("Josephine");
 
     // A typed date of birth cannot become the placeholder and still pass the restore fence, so this
     // loaded world stays unsaved, and a later safe event does not resurrect saving for it.
     act(() => {
       current!.dispatch({ type: "ADVANCE_CLOCK", role: "demo", now: current!.now, minutes: 5 });
     });
-    expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).toBeNull();
+    expect(window.sessionStorage.getItem(WARD_FLOW_DEMO_STORAGE_KEY)).toBe(seedSave);
     expect(current!.savingOnDevice).toBe(false);
   });
 

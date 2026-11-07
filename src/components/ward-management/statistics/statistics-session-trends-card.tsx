@@ -77,7 +77,7 @@ function SessionTrendsView({
       <Tile
         testId="ward-statistics-session-trends"
         title="This session"
-        now={<Now>last {trends?.hours.length ?? hours ?? 4} hours</Now>}
+        now={<Now>Last {trends?.hours.length ?? hours ?? 4} hours</Now>}
         sub={empty ? <span data-testid="ward-statistics-session-trends-empty">Nothing recorded yet</span> : undefined}
       >
         {trends === null ? <ExecutiveStatisticsUnavailable /> : empty ? null : trendsTable(trends, now, showTotal)}

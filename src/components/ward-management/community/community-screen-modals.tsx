@@ -7,6 +7,7 @@
  */
 
 import { useCallback, useState } from "react";
+import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { Button, Dialog } from "@/components/wf";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -102,7 +103,7 @@ function AssignReferralDialog({ view, referral }: { view: CommunityScreenView; r
           </div>
           <div className={styles.factRow}>
             <dt>Region</dt>
-            <dd>{referral.homeRegion}</dd>
+            <dd>{referral.homeRegion ?? HOME_REGION_NOT_RECORDED}</dd>
           </div>
         </dl>
         <p className={styles.note}>This names the team&apos;s desk, not a clinician.</p>

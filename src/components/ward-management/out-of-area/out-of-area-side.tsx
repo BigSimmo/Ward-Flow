@@ -73,7 +73,7 @@ export function ShiftCard({
         </ul>
       ) : (
         <p className={styles.emptyLine}>
-          <StatusGlyph tone="closed" size={9} />
+          <StatusGlyph tone="neutral" size={9} />
           No returns recorded yet
         </p>
       )}
@@ -120,7 +120,7 @@ export function HomeBedsCard({
       />
       {rows.length === 0 ? (
         <p className={styles.emptyLine}>
-          <StatusGlyph tone="closed" size={9} />
+          <StatusGlyph tone="neutral" size={9} />
           Nobody is away from a recorded home region.
         </p>
       ) : (
@@ -130,15 +130,15 @@ export function HomeBedsCard({
               type="button"
               className={styles.regionRow}
               aria-pressed={region === row.region}
-              aria-label={`Highlight people from ${row.region}: ${row.away} away`}
+              // CB-3: every visible word, in order, after the action (axe label-content-name-mismatch).
+              aria-label={`Highlight people from ${row.region}: ${row.away} away${row.band ? `, ${TRAVEL_SHORT[row.band]}` : ""}`}
               onClick={() => onRegion(row.region)}
             >
-              <span className={styles.regionName}>{row.region}</span>
+              <span className={styles.regionName}>{row.region}</span>{" "}
               <span className={styles.track} aria-hidden="true">
                 <span style={{ width: `${(row.away / max) * 100}%` }} />
-              </span>
-              <span className={styles.count}>{row.away}</span>
-              <span className={styles.sub}>away</span>
+              </span>{" "}
+              <span className={styles.count}>{row.away}</span> <span className={styles.sub}>away</span>{" "}
               {row.band ? (
                 <span className={styles.regionBand}>
                   <Icon icon={row.band === "air_transport_only" ? Plane : Car} size={14} />
@@ -169,7 +169,7 @@ export function HomeBedsCard({
               </ul>
             ) : (
               <p className={styles.emptyLine}>
-                <StatusGlyph tone="closed" size={9} />
+                <StatusGlyph tone="neutral" size={9} />
                 No travel band recorded
               </p>
             )}
@@ -178,7 +178,7 @@ export function HomeBedsCard({
       )}
       {notBanded === undefined ? null : (
         <p className={styles.gapRow}>
-          <StatusGlyph tone="closed" size={9} />
+          <StatusGlyph tone="neutral" size={9} />
           <b className={styles.mono}>{notBanded}</b> records with no travel band
         </p>
       )}
@@ -243,7 +243,7 @@ export function ReadyCard({
           </ul>
         ) : (
           <p className={styles.emptyLine}>
-            <StatusGlyph tone="closed" size={9} />
+            <StatusGlyph tone="neutral" size={9} />
             Nobody is past their discharge date
           </p>
         )}

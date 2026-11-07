@@ -148,6 +148,8 @@ export function reduceReferralSendEvent(
        */
       let raisedFrom: Referral | undefined;
       let continuedAcceptance: Referral["destinations"][number] | undefined;
+      // D-76: the referring service and location a community journey starts at.
+      let recordedOrigin: { siteCode: string; teamName: string } | undefined;
       if (event.acceptedUnitId !== undefined && event.referralId === undefined)
         return reject(state, event, "Starting an accepted placement requires its referral");
       if (event.referralId !== undefined) {
@@ -167,10 +169,22 @@ export function reduceReferralSendEvent(
             (event.role === "ward" && event.actingUnitId !== event.acceptedUnitId) ||
             (department
               ? referral.source !== "ed_medical" || department.siteCode !== referral.originSiteCode
-              : referral.source !== "community" || referral.sendingTeamName === undefined) ||
+              : referral.source !== "community") ||
             !findUnit(state, event.acceptedUnitId!)
           )
             return reject(state, event, "Only the accepting ward or coordinator can start this direct ED placement");
+          // A community journey starts at the referring service and its location, so both must be on
+          // the referral. Josh, 5 Nov 2026 (finding 2): the drawer fills them from the sending desk and
+          // blocks Send when it cannot, so this refuses only a record that skipped that check.
+          if (!department) {
+            if (referral.sendingTeamName === undefined || referral.originSiteCode === undefined)
+              return reject(
+                state,
+                event,
+                `This community referral has no referring ${referral.sendingTeamName === undefined ? "service" : "location"} recorded, so its journey cannot start`,
+              );
+            recordedOrigin = { siteCode: referral.originSiteCode, teamName: referral.sendingTeamName };
+          }
           continuedAcceptance = referral.destinations.find(
             (candidate) =>
               candidate.destination.kind === "psychiatric_ward" &&
@@ -299,7 +313,7 @@ export function reduceReferralSendEvent(
             // The team's own transport answer carries over, so a carer-brought patient can arrive
             // without a booking. A needed vehicle is booked on the journey as for any other.
             {
-              originCommunity: { siteCode: raisedFrom!.originSiteCode, teamName: raisedFrom!.sendingTeamName },
+              originCommunity: recordedOrigin!,
               ...(raisedFrom!.transportNeeded ? {} : { transportNeed: { needed: false, at: event.now } }),
             }),
         openedAt,
@@ -524,8 +538,8 @@ export function reduceReferralSendEvent(
       const referralId = existingQueuedArm && linkedReferral ? linkedReferral.id : nextFrontDoorReferralId(sequence);
 
       // F6: with no linked referral, the suburb is a stated absence (`{ kind: "unknown", reason:
-      // "not_known" }`), never a hospital's name. `HOME_REGIONS` has no unknown member, so
-      // `homeRegion` keeps its "Perth Metropolitan" fallback.
+      // "not_known" }`), never a hospital's name. Form rule (FORM-REF, 5 Nov 2026): the home region
+      // is optional, so with none recorded it stays absent rather than an invented region.
       //
       // `undefined` when reusing an existing queued arm.
       const newReferral: Referral | undefined = existingQueuedArm
@@ -534,7 +548,7 @@ export function reduceReferralSendEvent(
             id: referralId,
             patientId: linkedReferral?.patientId ?? movement.patientId,
             ageBand: movement.cohort,
-            homeRegion: linkedReferral?.homeRegion ?? "Perth Metropolitan",
+            ...(linkedReferral?.homeRegion === undefined ? {} : { homeRegion: linkedReferral.homeRegion }),
             suburb: linkedReferral?.suburb ?? { kind: "unknown", reason: "not_known" },
             source: "ed_medical",
             originSiteCode: originSite?.code ?? "ARM",

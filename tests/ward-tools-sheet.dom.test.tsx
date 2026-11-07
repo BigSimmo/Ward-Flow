@@ -22,13 +22,14 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-function renderSheet(isPhone = false) {
+function renderSheet(isPhone = false, twoPane = false) {
   const onNavigate = vi.fn();
   const onNewReferral = vi.fn();
   render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <WardToolsSheet
         isPhone={isPhone}
+        twoPane={twoPane}
         roleLabel="Bed coordinator"
         onNavigate={onNavigate}
         onNewReferral={onNewReferral}
@@ -72,7 +73,7 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     // pill, so the Demo controls sit at the foot of Tools on a desktop too (the board clock opens them).
     expect(screen.getByRole("region", { name: "Demo" })).toBeTruthy();
     expect(screen.getByTestId("ward-tools-toggle-demo")).toBeTruthy();
-    for (const gone of [/New referral/u, /Handover sheet/u, /Bed meeting TV/u, /Out of area/u]) {
+    for (const gone of [/New referral/u, /Handover sheet/u, /Out of area/u]) {
       expect(screen.queryByRole("button", { name: gone })).toBeNull();
       expect(screen.queryByRole("link", { name: gone })).toBeNull();
     }
@@ -104,33 +105,59 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(onNewReferral).toHaveBeenCalledWith("community");
   });
 
-  it("opens a tool in place and closes it again", () => {
-    renderSheet();
-    const toggle = screen.getByTestId("ward-tools-toggle-bed-finder");
-    expect(toggle.getAttribute("aria-expanded")).toBe("false");
-    fireEvent.click(toggle);
-    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+  // Josh, 6 Nov 2026: below two panes a tool opens as its own page, with All tools to go back.
+  it("opens a tool as its own page and goes back to the list", () => {
+    renderSheet(true);
+    fireEvent.click(screen.getByTestId("ward-tools-toggle-bed-finder"));
+    const page = screen.getByTestId("ward-tools-page");
+    expect(page.getAttribute("aria-label")).toBe("Find a bed");
+    // The list steps aside while the page shows, so nothing expands inside it.
+    expect(screen.queryByRole("region", { name: "Look up" })).toBeNull();
     // Audit 24-1 decision 1: no legal status is assumed, so the tool opens asking for one.
     expect(within(screen.getByTestId("ward-tools-bed-finder")).getByRole("status").textContent).toMatch(
       /Choose a legal status to list wards/u,
     );
-    fireEvent.click(toggle);
-    expect(toggle.getAttribute("aria-expanded")).toBe("false");
-    expect(screen.queryByTestId("ward-tools-bed-finder")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "All tools" }));
+    expect(screen.queryByTestId("ward-tools-page")).toBeNull();
+    expect(screen.getByRole("region", { name: "Look up" })).toBeTruthy();
+  });
+
+  it("goes back from a tool page with Escape before the sheet closes", () => {
+    renderSheet(true);
+    fireEvent.click(screen.getByTestId("ward-tools-toggle-form-times"));
+    expect(screen.getByTestId("ward-form-times")).toBeTruthy();
+    // The Sheet's window listener skips an Escape that is already handled (defaultPrevented).
+    let handled: boolean | null = null;
+    const outside = (event: KeyboardEvent) => {
+      handled = event.defaultPrevented;
+    };
+    window.addEventListener("keydown", outside);
+    fireEvent.keyDown(screen.getByTestId("ward-tools-page"), { key: "Escape" });
+    window.removeEventListener("keydown", outside);
+    expect(screen.queryByTestId("ward-tools-page")).toBeNull();
+    expect(handled).toBe(true);
+  });
+
+  it("lets a menu inside a tool page take Escape first", () => {
+    renderSheet(true);
+    fireEvent.click(screen.getByTestId("ward-tools-toggle-contacts"));
+    const page = screen.getByTestId("ward-tools-page");
+    fireEvent.click(within(page).getByRole("button", { name: /^Contact list:/u }));
+    const menu = screen.getByRole("menu");
+    fireEvent.keyDown(menu, { key: "Escape" });
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(screen.getByTestId("ward-tools-page")).toBeTruthy();
   });
 
   it("keeps one tool open at a time, so opening another closes the first (Q310)", () => {
     renderSheet();
-    showAllRows();
-    const finder = screen.getByTestId("ward-tools-toggle-bed-finder");
-    const formTimes = screen.getByTestId("ward-tools-toggle-form-times");
-    fireEvent.click(finder);
+    fireEvent.click(screen.getByTestId("ward-tools-toggle-bed-finder"));
     expect(screen.getByTestId("ward-tools-bed-finder")).toBeTruthy();
-    fireEvent.click(formTimes);
-    expect(formTimes.getAttribute("aria-expanded")).toBe("true");
+    fireEvent.click(screen.getByRole("button", { name: "All tools" }));
+    fireEvent.click(screen.getByTestId("ward-tools-toggle-form-times"));
     expect(screen.getByTestId("ward-form-times")).toBeTruthy();
-    expect(finder.getAttribute("aria-expanded")).toBe("false");
     expect(screen.queryByTestId("ward-tools-bed-finder")).toBeNull();
+    expect(screen.getAllByTestId("ward-tools-page")).toHaveLength(1);
   });
 
   // Audit 24-1 decision 1 replaced the six-ward shortlist: every ward in scope is listed.
@@ -168,13 +195,12 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(within(finder).queryByText(/Showing 6 of/u)).not.toBeInTheDocument();
   });
 
-  it("offers no unbuilt rows, and keeps Bed meeting TV off the phone", () => {
+  // Josh, 6 Nov 2026: the TV board joins Tools on every size (it left in D-77 change 8).
+  it("offers no unbuilt rows", () => {
     renderSheet(true);
     // Escalation check stays out until its trigger values are signed (Tools polish, 15 Oct 2026).
     expect(screen.queryByRole("button", { name: /Escalation check/u })).toBeNull();
     expect(screen.queryByText("Not wired in this prototype.")).toBeNull();
-    expect(screen.queryByRole("button", { name: /Bed meeting TV/u })).toBeNull();
-    expect(screen.queryByRole("link", { name: /Bed meeting TV/u })).toBeNull();
   });
 
   it("opens a requested tool once, then tells the parent so a later open starts closed", async () => {
@@ -210,8 +236,27 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     expect(within(picker).getByRole("button", { name: /Standard day/u })).toBeTruthy();
   });
 
-  it("shows five rows of a long group, then Show more", async () => {
-    renderSheet();
+  it("shows every row on phone and tablet (Josh, 6 Nov 2026)", () => {
+    renderSheet(true);
+    expect(screen.queryByRole("button", { name: /^Show \d+ more$/u })).toBeNull();
+    expect(
+      within(screen.getByRole("region", { name: "Look up" })).getByRole("link", { name: /Legal forms/u }),
+    ).toBeTruthy();
+  });
+
+  it("adds Find a patient, Bed meeting agenda and TV board for the coordinator", () => {
+    renderSheet(true);
+    expect(screen.getByRole("link", { name: /Find a patient.*opens its page/u }).getAttribute("href")).toBe(
+      "/ward-flow/search",
+    );
+    expect(screen.getByRole("link", { name: /Bed meeting agenda/u }).getAttribute("href")).toBe(
+      "/ward-flow/bed-meeting/agenda",
+    );
+    expect(screen.getByRole("link", { name: /TV board/u }).getAttribute("href")).toBe("/ward-flow/bed-meeting");
+  });
+
+  it("shows five rows of a long group in two panes, then Show more", async () => {
+    renderSheet(false, true);
     const lookUp = screen.getByRole("region", { name: "Look up" });
     const more = within(lookUp).getByRole("button", { name: /^Show \d+ more$/u });
     expect(within(lookUp).queryByRole("link", { name: /Legal forms/u })).toBeNull();
@@ -234,8 +279,8 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     const recent = screen.getByRole("region", { name: "Recent" });
     fireEvent.click(within(recent).getByRole("button", { name: /Form times/u }));
     expect(screen.getByTestId("ward-form-times")).toBeTruthy();
-    // Closing it keeps the row, so focus is not lost.
-    fireEvent.click(screen.getByTestId("ward-tools-toggle-form-times"));
+    // Going back shows the row again, so focus is not lost.
+    fireEvent.click(screen.getByRole("button", { name: "All tools" }));
     expect(screen.getByTestId("ward-tools-toggle-form-times")).toBeTruthy();
   });
 
@@ -248,9 +293,9 @@ describe("Tools sheet mockup (Tools review, 15 Oct 2026)", () => {
     const rows = within(lookUp).getAllByRole("button").concat(within(lookUp).getAllByRole("link"));
     expect(within(lookUp).getAllByRole("button")[0]).toBe(screen.getByTestId("ward-tools-toggle-bed-finder"));
     expect(rows.some((row) => /Legal forms/u.test(row.textContent ?? ""))).toBe(true);
-    // A row that opens a page says so; a row that opens here is a disclosure.
+    // A row that opens a page says so; a row that opens here is a plain button with no disclosure state.
     expect(within(lookUp).getByRole("link", { name: /Legal forms.*opens its page/u })).toBeTruthy();
-    expect(screen.getByTestId("ward-tools-toggle-bed-finder").getAttribute("aria-expanded")).toBe("false");
+    expect(screen.getByTestId("ward-tools-toggle-bed-finder").hasAttribute("aria-expanded")).toBe(false);
   });
 
   it("finds a tool by its name or line, keeps its group, and says when nothing matches", () => {

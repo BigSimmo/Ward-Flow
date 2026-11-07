@@ -116,7 +116,11 @@ describe("generated referral intake survives reanchored device recovery", () => 
       if (change === "ISO spelling") target.expectedAt = target.expectedAt!.replace(".000Z", "Z");
       if (change === "new ID") referral.id = "RF-SYNTHETIC-NEW-657";
       const copy = scrubTypedTextFields(freeze(state), worlds, true);
-      expect(copy.referrals[index].intake === undefined).toBe(true);
+      // Form rule (design audit FORM-REF, 5 Nov 2026): the expected clearance time is optional now,
+      // so the fence drops the unproven time and keeps the rest of the intake, as it already did for
+      // the arrival time. Before, a missing time made the whole intake unholdable.
+      expect(copy.referrals[index].intake).toBeDefined();
+      expect(copy.referrals[index].intake!.medicalClearance).not.toHaveProperty("expectedAt");
       expect(JSON.stringify(copy)).not.toContain("2040-07-18T12:34:00.000Z");
     },
   );
@@ -132,7 +136,8 @@ describe("generated referral intake survives reanchored device recovery", () => 
     const copy = scrubTypedTextFields(freeze(next), worlds, true);
     const kept = copy.undoRecords!.find((entry) => entry.kind === "referral-decision");
     if (kept?.kind !== "referral-decision") throw new Error("Expected a referral decision snapshot");
-    expect(kept.before.intake).toBeUndefined();
+    // FORM-REF: the unproven time is dropped and the intake kept (the time is optional now).
+    expect(kept.before.intake!.medicalClearance).not.toHaveProperty("expectedAt");
     expect(kept.after.intake).toBeDefined();
     expect(kept.after.intake).toEqual(stored(decision.after.intake));
     expect(JSON.stringify(copy)).not.toContain("2041-07-18T12:34:00.000Z");
@@ -164,8 +169,9 @@ describe("generated referral intake survives reanchored device recovery", () => 
     const copy = scrubTypedTextFields(freeze(next), worlds, true);
     const kept = copy.undoRecords!.find((entry) => entry.kind === "referral-decision");
     if (kept?.kind !== "referral-decision") throw new Error("Expected a referral decision snapshot");
-    expect(kept[copyKey].intake === undefined).toBe(true);
-    expect(kept[copyKey === "before" ? "after" : "before"].intake !== undefined).toBe(true);
+    // FORM-REF: the time with unproven provenance is dropped and the intake kept (it is optional now).
+    expect(kept[copyKey].intake!.medicalClearance).not.toHaveProperty("expectedAt");
+    expect(kept[copyKey === "before" ? "after" : "before"].intake!.medicalClearance.expectedAt).toBeDefined();
     expect(copy.referrals.find((entry) => entry.id === event.referralId)?.intake !== undefined).toBe(true);
   });
 

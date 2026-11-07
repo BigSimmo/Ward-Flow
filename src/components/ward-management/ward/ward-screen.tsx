@@ -944,7 +944,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             testId="ward-unit-unresolved"
             list={{ href: "/ward-flow/wards", label: "All wards" }}
           >
-            No ward matches this link. It never falls back to a different ward.
+            No ward matches this link.
           </WardNotFoundBody>
         </main>
       </div>
@@ -2105,14 +2105,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         aria-selected={activeTab === "return"}
         tabIndex={activeTab === "return" ? 0 : -1}
         aria-controls="tab-return"
-        aria-label={`Decisions (Ward record), ${decisionsDueLabel}`}
+        aria-label={`Decisions (Ward record), ${decisionsDue > 0 ? (isPhone ? decisionsDue : `${decisionsDue} Due`) : "Done"}, ${decisionsDueLabel}`}
         onClick={() => {
           selectActiveTab("return");
         }}
       >
         <span className={styles.tabLabel} data-label="Decisions">
           Decisions
-        </span>
+        </span>{" "}
         <span className={styles.tabBadge} id="badgeReturn" title={decisionsDueLabel} aria-hidden="true">
           {decisionsDue > 0 ? (isPhone ? decisionsDue : `${decisionsDue} Due`) : "Done"}
         </span>
@@ -2147,7 +2147,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       >
         <span className={styles.tabLabel} data-label="Referrals">
           Referrals
-        </span>
+        </span>{" "}
         <span className={styles.tabBadge} title={referralsLabel} aria-hidden="true">
           {referralsWaiting}
         </span>
@@ -2160,7 +2160,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   const wardLead =
     service !== null && unitHealthService(unit) !== undefined ? (
       <p className={styles.placeholder} data-testid="ward-unit-service-sentence">
-        {`This ward is one unit in ${unitHealthService(unit)}, so its own figures below do not change with the service.`}
+        {`Part of ${unitHealthService(unit)}. Not filtered by service.`}
       </p>
     ) : null;
 
@@ -2235,7 +2235,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         {isPhone && !phoneCardOpen ? (
           /* Phone (v10): the two views pin under the header as one segmented control, outside the
              ward card so they stay in place while the page scrolls. */
-          <nav className={`${styles.tabBarWrap} ${styles.phoneTabBar}`} aria-label="Ward Operational Tabs">
+          <nav className={`${styles.tabBarWrap} ${styles.phoneTabBar}`} aria-label="Ward tabs">
             <ul
               className={styles.tabList}
               role="tablist"
@@ -2520,10 +2520,10 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
             now={now}
             extended={cockpitHold?.movementId === cockpitAcceptMovement.id && cockpitHold.extended}
             holdChoices={[
-              { extended: false, label: `${configuration.pullHoldMinutes} minutes, standard` },
+              { extended: false, label: `${durMinutes(configuration.pullHoldMinutes)} standard` },
               {
                 extended: true,
-                label: `${configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES} minutes, extra travel`,
+                label: `${durMinutes(configuration.pullHoldMinutes + EXTRA_TRAVEL_HOLD_MINUTES)} with extra travel`,
               },
             ]}
             dialogRef={cockpitAcceptRef}

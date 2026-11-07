@@ -4,10 +4,12 @@ name: Ward Flow daily release
 # this prepares a draft record, moves `live` to the newest main commit that passed CI, then publishes
 # "what changed" release note, so the live site changes once a day instead of on every merge. A manual
 # run is the "release now" button for an urgent fix. It only fast-forwards `live`: it never rewrites
-# history, checks out nothing and runs no repository code. Rolling back is moving `live` back to the
-# previous `live-*` tag, by hand, with Josh's yes. If live ever points at a commit with no release
-# record (for example a rollback to a commit that was never released), a manual run with
-# "accept_unrecorded_live" ticked releases from there instead of failing.
+# history, checks out nothing and runs no repository code. Rolling back follows the one route in
+# docs/ward-flow/OPERATIONS-RUNBOOK.md ("Rolling back the app"): first set the repository variable
+# WARD_RELEASE_PAUSED to true, so neither the 6 am run nor "release now" ships the bad commit again,
+# then move `live` back to the previous `live-*` tag with Josh's yes. If live ever points at a commit
+# with no release record (for example a rollback to a commit that was never released), a manual run
+# with "accept_unrecorded_live" ticked releases from there instead of failing.
 on:
   # 22:00 UTC is 6 am in Perth. (Paused on 31 Oct 2026 while the redesign merged, and restored after
   # that night's "release now".)
@@ -40,9 +42,26 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           REPOSITORY: ${{ github.repository }}
           ACCEPT_UNRECORDED_LIVE: ${{ inputs.accept_unrecorded_live == true }}
+          RELEASE_PAUSED: ${{ vars.WARD_RELEASE_PAUSED }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
           [ "$REPOSITORY" = "BigSimmo/Ward-Flow" ] || { echo "Unexpected release repository" >&2; exit 1; }
+
+          # CB-2 (front-end audit, 5 Nov 2026): the release pause switch, checked before any API call.
+          # Any value other than empty or "false" holds live where it is. A paused 6 am run finishes
+          # with a warning; a paused manual run fails, so "release now" never looks done when it is not.
+          case "${RELEASE_PAUSED:-}" in
+            "" | false) ;;
+            *)
+              if [ "${EVENT_NAME:-}" = schedule ]; then
+                echo "::warning::Releases are paused (WARD_RELEASE_PAUSED is set). Live was not moved."
+                exit 0
+              fi
+              echo "Releases are paused (WARD_RELEASE_PAUSED is set). Clear it, with Josh's yes, before releasing." >&2
+              exit 1
+              ;;
+          esac
 
           # A per-commit draft retains the original notes if moving live or publishing loses its
           # acknowledgement. Listing includes drafts for this job's contents-write token. An API
@@ -100,7 +119,11 @@ jobs:
             [ "$live" = "$sha" ] || { echo "Live changed before release publication" >&2; return 1; }
             if [ "$(printf '%s' "$record" | jq -r '.draft')" = true ]; then
               check_acceptance "$sha"
-              gh api -X PATCH "repos/$REPOSITORY/releases/$id" -F draft=false >/dev/null
+              record="$(gh api -X PATCH "repos/$REPOSITORY/releases/$id" -F draft=false)"
+              [ "$(printf '%s' "$record" | jq -r '.draft')" = false ] || { echo "Release publication was not confirmed" >&2; return 1; }
+              # GitHub retains an existing tag instead of applying target_commitish. Verify the
+              # published tag too, in case another writer created it after the preflight check.
+              validate_release "$record" "$sha"
               echo "Published the retained release record for $sha."
               printf '%s\n' "$record" | jq -r '.body' >> "$GITHUB_STEP_SUMMARY"
             fi

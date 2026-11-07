@@ -134,12 +134,11 @@
 }
 
 .chipName {
+  /* Names in full, wrapping, never cut (DS §4 Names). */
   min-width: 0;
-  overflow: hidden;
   font-size: var(--wf-fs-14);
   font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
 }
 
 .chipMeta {
@@ -298,21 +297,15 @@
   min-width: 0;
 }
 
+/* A name or state word shows in full and wraps inside the cell, breaking a very long single word
+   rather than cutting it (Josh, 6 Nov 2026: names in full everywhere, TV included). The cell grows
+   taller and the grid row grows with it, so nothing spills into the next bed. */
 .cellWord {
+  max-width: 100%;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
   font: 600 var(--wf-fs-14) / 1.2 var(--wf-font);
   color: var(--wf-ink-1);
-}
-
-/* The quiet line under the name, or while picking, why a lit bed fits. */
-/* An empty bed's word wraps to a second line rather than cut ("Making ready"). */
-.cellWord[data-wrap="true"] {
-  overflow: visible;
-  white-space: normal;
-  overflow-wrap: anywhere;
 }
 
 /* The line under a bed wraps rather than cut ("Not offered yet", "Not yet arrived"). */
@@ -329,9 +322,7 @@
   color: var(--wf-success-ink);
 }
 
-/* Surname, then the given name (D-83). The surname gives way first; the given name only takes an
-   ellipsis once the surname is down to one letter. The box fills the free space so the cell can
-   cut the surname to end at its ellipsis (ward-bed-board.tsx). */
+/* Surname, then the given name on its own line (D-83). Both wrap in full; neither is cut. */
 .cellName {
   display: flex;
   flex: 1 1 auto;
@@ -351,10 +342,9 @@
 
 .cellInitial {
   flex: 0 1 auto;
+  max-width: 100%;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: anywhere;
   font: 500 var(--wf-fs-13) / 1.2 var(--wf-font);
   color: var(--wf-ink-2);
 }

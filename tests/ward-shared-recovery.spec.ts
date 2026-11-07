@@ -159,11 +159,12 @@ test("Activity Undo: a desk reviews its own bed closure and waits for the server
   // Follow each device's real bed controls, choosing an actual empty bed in the fixture.
   if (phone) {
     const rows = await showPhoneBeds(page);
-    const bed = rows.getByRole("button", { name: /^Bed \d+, Ready,/u }).first();
+    // The row is named by the words it shows, in order ("Bed 07 Ready"), with no aria-label (axe 4.14).
+    const bed = rows.getByRole("button", { name: /^Bed \d+ Ready\b/u }).first();
     await expect(bed).toBeVisible();
-    const number = /^Bed (\d+),/u.exec((await bed.getAttribute("aria-label")) ?? "")?.[1];
+    const number = /Bed\s*(\d+)/u.exec((await bed.textContent()) ?? "")?.[1];
     expect(number).toBeDefined();
-    phoneReadyName = new RegExp(`^Bed ${number}, Ready,`, "u");
+    phoneReadyName = new RegExp(`^Bed ${number} Ready\\b`, "u");
     await bed.click();
     await page.getByRole("button", { name: "Update this bed", exact: true }).click();
   } else {

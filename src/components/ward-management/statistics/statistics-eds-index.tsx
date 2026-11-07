@@ -430,7 +430,7 @@ function EdsIndexView({
                   meta={
                     <span className={phone.dotName}>
                       {exactStatisticsCount(row.waiting) === 0
-                        ? "No one waiting"
+                        ? "Nobody waiting"
                         : `${shown(row.unplaced)} no ward yet`}
                     </span>
                   }

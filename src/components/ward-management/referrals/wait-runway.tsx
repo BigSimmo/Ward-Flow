@@ -7,6 +7,7 @@
 // with the core facts (who, tier, wait, from, asking for), and a group's card lists its people.
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { TriangleAlert } from "lucide-react";
 
 import type { Instant } from "@/components/ward-management/ward-clock";
@@ -171,7 +172,7 @@ export function WaitRunway({
   ];
   const facts = (referral: Referral) => {
     const { waited, due, overdue } = waitWords(referral, now);
-    const site = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode;
+    const site = siteByCode(referral.originSiteCode)?.name ?? referral.originSiteCode ?? ORIGIN_NOT_RECORDED;
     return { waited, due, overdue, site, asking: askingForShort(referral) };
   };
   const spoken = (entry: RunwayEntry) => {
@@ -283,7 +284,8 @@ export function WaitRunway({
               )} to ${durMinutes(Math.max(...group.entries.map((entry) => entry.minutes)))}${
                 anyOverdue ? ", one or more overdue" : ""
               }. Show them`
-            : spoken(first);
+            : // CB-3: a plain mark shows "T2", so its name starts with it (axe label-content-name-mismatch).
+              `${isOverdue(first.referral, now) ? "" : `T${first.referral.urgency}, `}${spoken(first)}`;
           return (
             <button
               key={group.key}

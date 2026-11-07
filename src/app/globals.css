@@ -907,6 +907,13 @@ html {
   scroll-padding-top: calc(4rem + env(safe-area-inset-top));
 }
 
+/* The 12px text floor holds whatever the root size (compact density or a smaller browser text
+   size), and the token still grows with a larger one. The token file keeps 0.75rem for Figma sync;
+   html:root outranks its :root rule whatever the load order. */
+html:root {
+  --wf-fs-12: max(12px, 0.75rem);
+}
+
 /*
  * Interface density scales the rem baseline so every rem-based size shifts
  * together. "Comfortable" is the browser default (16px) and sets no attribute,
@@ -916,11 +923,11 @@ html {
  * form controls so iOS never zooms.
  */
 html[data-density="compact"] {
-  font-size: 15px;
+  font-size: 93.75%; /* 15px at the 16px default, relative so BA-5's rem type follows the browser */
 }
 
 html[data-density="spacious"] {
-  font-size: 17px;
+  font-size: 106.25%; /* 17px at the 16px default */
 }
 
 body {
@@ -1113,9 +1120,13 @@ select {
      inset offset plus solid `--focus` read as a default browser ring and, on
      transparent inputs nested in a rounded search shell, drew a sharp box
      around the text while the icon sat outside it. */
+  /* K2 (design audit, 5 Nov 2026; Q298): the old 1px hairline measured about 2.2:1 in light, under
+     the 3:1 minimum. Fields outside the kit now take the kit's own ring: a 2px solid focus ring with
+     a 2px gap (DESIGN-SYSTEM §2 Focus). Kit fields and any field with its own focus rule keep theirs,
+     since this rule has no weight. Still one outline, no second halo. */
   box-shadow: var(--shadow-inset);
-  outline: 1px solid color-mix(in srgb, var(--clinical-accent) 32%, var(--border-strong));
-  outline-offset: 0;
+  outline: 2px solid var(--wf-focus-ring, var(--focus));
+  outline-offset: 2px;
 }
 
 /* Nested search: the rounded shell owns focus. Inner `outline-none` utilities
@@ -1738,6 +1749,20 @@ html[data-motion="reduced"] *::after {
  * While the sheet is open its module hides every other <body> child; this clears the page
  * itself so a dark screen theme does not print a dark edge around the sheet. Kept here
  * because a CSS module may not style <html> or <body> without a local class. */
+/* Ward Flow's offline note (ST8) is drawn into the body and pinned to the window's foot on screen.
+ * On paper it prints in the page's flow, as the pinned notes do, never fixed over a printed page.
+ * `!important` beats the inline placement a full-screen view gives it. */
+@media print {
+  [data-wf-offline-note] {
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    max-inline-size: none !important;
+    margin: 0.5rem 0 !important;
+    box-shadow: none !important;
+  }
+}
+
 @media print {
   html.ward-bed-meeting-printing,
   html.ward-bed-meeting-printing body {

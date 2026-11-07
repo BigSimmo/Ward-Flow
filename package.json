@@ -56,6 +56,7 @@
     "verify:ui": "npm run check:installed-lock-parity && npm run test:e2e:pr",
     "verify:release": "npm run check:installed-lock-parity && npm run lint && npm run typecheck && npm run test && npm run build && npm run test:e2e",
     "check:knip": "node scripts/check-knip-baseline.mjs",
+    "check:knip:production": "knip --production --no-exit-code --include files",
     "check:verification-plan": "node scripts/verify-pr-local.mjs --self-test",
     "check:diff-integrity": "node scripts/check-diff-integrity.mjs --self-test && node scripts/check-diff-integrity.mjs",
     "docs:check-inventory": "node scripts/update-docs-inventory.mjs --check",
@@ -104,7 +105,7 @@
   "dependencies": {
     "@sentry/core": "^11.8.0",
     "lucide-react": "^1.56.0",
-    "next": "16.4.2",
+    "next": "16.4.5",
     "postcss": "^8.5.26",
     "react": "19.3.1",
     "react-dom": "19.3.1",
@@ -112,7 +113,7 @@
     "zod": "^4.6.7"
   },
   "overrides": {
-    "axe-core": "~4.13.0",
+    "axe-core": "~4.14.0",
     "postcss": "^8.5.26",
     "esbuild": "0.28.2",
     "sharp": "0.35.5",
@@ -127,10 +128,10 @@
     "minimatch@10": "11.0.1"
   },
   "devDependencies": {
-    "@axe-core/playwright": "~4.13.0",
+    "@axe-core/playwright": "~4.14.0",
     "@babel/parser": "^8.0.7",
     "@next/bundle-analyzer": "^16.4.0",
-    "@next/env": "16.4.2",
+    "@next/env": "16.4.5",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^7.0.1",
@@ -143,7 +144,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "esbuild": "0.28.2",
     "eslint": "^10.13.0",
-    "eslint-config-next": "16.4.2",
+    "eslint-config-next": "16.4.5",
     "jsdom": "^30.1.2",
     "knip": "^6.41.0",
     "parse5": "8.0.1",

@@ -1,16 +1,17 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import {
   ArrowUpRight,
-  BarChart3,
+  ChartColumn,
   BedSingle,
   BellRing,
   CalendarCheck,
   ClipboardCheck,
   CalendarClock,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   Clock3,
   FileClock,
@@ -27,10 +28,13 @@ import {
   Printer,
   Scale,
   SearchCheck,
-  Truck,
+  Ambulance,
   Megaphone,
   Send,
   Zap,
+  ListChecks,
+  Tv,
+  UserSearch,
   type LucideIcon,
 } from "lucide-react";
 import { QuickActionsPanel, useUnconfirmedWards, WardUpdatesRequest, type QuickTile } from "./ward-tools-quick-actions";
@@ -47,7 +51,6 @@ import { homeHrefFor, seesNetworkBedFigures, type WardAccessRole } from "@/compo
 import { communityTeamSlug } from "@/components/ward-management/community/community-derivations";
 import { WardDemoPanel } from "@/components/ward-management/tools/ward-demo-panel";
 import { useWardNavCounts } from "@/components/ward-management/use-ward-nav-counts";
-import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { useExecutiveStatisticsControl } from "@/components/ward-management/statistics/executive-statistics-context";
 // D-91: the one suburb lookup card, shared with Community and the ward's Discharges tab.
@@ -89,7 +92,10 @@ type EntryKey =
   | "out-of-area"
   | "handover"
   | "downtime"
-  | "chronology";
+  | "chronology"
+  | "find-patient"
+  | "bed-meeting"
+  | "tv-board";
 
 type GroupId = "do" | "look" | "share";
 
@@ -119,23 +125,33 @@ export type WardToolsSheetProps = {
 const ROLE_ORDER: Record<WardAccessRole, Record<GroupId, readonly EntryKey[]>> = {
   coordinator: {
     do: ["quick-actions", "new-referral", "update-bed", "remind", "book-transport", "log-delay", "feed"],
-    look: ["bed-finder", "figures", "leave-due", "catchment", "contacts", "form-times", "legal-forms", "out-of-area"],
-    share: ["messages", "handover", "downtime", "chronology"],
+    look: [
+      "bed-finder",
+      "find-patient",
+      "figures",
+      "leave-due",
+      "catchment",
+      "contacts",
+      "form-times",
+      "legal-forms",
+      "out-of-area",
+    ],
+    share: ["messages", "bed-meeting", "tv-board", "handover", "downtime", "chronology"],
   },
   bed_manager: {
     do: ["quick-actions", "update-bed", "remind", "log-delay", "book-transport", "feed"],
-    look: ["bed-finder", "leave-due", "figures", "contacts", "form-times", "catchment", "legal-forms"],
-    share: ["messages", "handover", "downtime"],
+    look: ["bed-finder", "find-patient", "leave-due", "figures", "contacts", "form-times", "catchment", "legal-forms"],
+    share: ["messages", "bed-meeting", "tv-board", "handover", "downtime"],
   },
   ward: {
     do: ["quick-actions", "update-bed", "remind", "log-delay", "book-transport", "feed"],
-    look: ["leave-due", "form-times", "contacts", "bed-finder", "catchment", "legal-forms"],
-    share: ["handover", "messages", "downtime"],
+    look: ["leave-due", "find-patient", "form-times", "contacts", "bed-finder", "catchment", "legal-forms"],
+    share: ["handover", "messages", "tv-board", "downtime"],
   },
   ed: {
     do: ["quick-actions", "new-referral", "book-transport", "remind", "log-delay"],
-    look: ["bed-finder", "form-times", "contacts", "catchment", "legal-forms"],
-    share: ["handover", "downtime"],
+    look: ["bed-finder", "find-patient", "form-times", "contacts", "catchment", "legal-forms"],
+    share: ["handover", "tv-board", "downtime"],
   },
   community: {
     do: ["quick-actions", "new-referral", "remind", "log-delay"],
@@ -147,7 +163,7 @@ const ROLE_ORDER: Record<WardAccessRole, Record<GroupId, readonly EntryKey[]>> =
   executive: {
     do: ["quick-actions"],
     look: ["figures", "bed-finder", "contacts", "catchment", "form-times"],
-    share: ["messages", "downtime"],
+    share: ["messages", "bed-meeting", "downtime"],
   },
   admin: { do: [], look: ["contacts", "catchment"], share: [] },
 };
@@ -190,7 +206,7 @@ const ROLE_QUICK: Partial<Record<WardAccessRole, readonly QuickSpec[]>> = {
     "remind",
   ],
   officer: [
-    { key: "jobs", icon: Truck, name: "My jobs", detail: "Steps and check-in", href: `${root}/transport/officer` },
+    { key: "jobs", icon: Ambulance, name: "My jobs", detail: "Steps and check-in", href: `${root}/transport/officer` },
     { key: "alerts", icon: BellRing, name: "Alerts", detail: "Notices", href: `${root}/alerts` },
     "contacts",
     "remind",
@@ -198,7 +214,7 @@ const ROLE_QUICK: Partial<Record<WardAccessRole, readonly QuickSpec[]>> = {
   executive: [
     "figures",
     { key: "capacity", icon: Gauge, name: "Capacity", detail: "By service", href: `${root}/capacity` },
-    { key: "statistics", icon: BarChart3, name: "Statistics", detail: "Reports", href: `${root}/statistics` },
+    { key: "statistics", icon: ChartColumn, name: "Statistics", detail: "Reports", href: `${root}/statistics` },
     "messages",
     "contacts",
   ],
@@ -315,10 +331,11 @@ function RowText({ entry, group }: { entry: Entry; group: GroupId }) {
       <span className={styles.rowIcon} data-group={group} aria-hidden="true">
         <Icon aria-hidden="true" strokeWidth={1.75} />
       </span>
+      {/* axe 4.14 joins a row's visible words with no gap, so a space keeps "Find a bed" and its detail
+          two words; the row and its text are flex and grid, where a space takes no room. */}
       <span className={styles.rowText}>
-        <strong>{entry.name}</strong>
-        <em>{entry.detail}</em>
-      </span>
+        <strong>{entry.name}</strong> <em>{entry.detail}</em>
+      </span>{" "}
       {entry.count && entry.count.n > 0 ? (
         <Count
           n={entry.count.n}
@@ -437,25 +454,62 @@ function ToolsSheetView({
   const [expanded, setExpanded] = useState<ReadonlySet<GroupId>>(new Set());
   const searchRef = useRef<HTMLInputElement | null>(null);
 
+  // Phone and tablet (Josh, 6 Nov 2026): a tool opens as its own page inside the sheet, with a Back
+  // control, like iOS Settings. Nothing expands in the list, so the list never jumps.
+  const [listScroll, setListScroll] = useState(0);
+  const sheetScroller = (): HTMLElement | null => {
+    let node = document.querySelector<HTMLElement>('[data-testid="ward-tools-sheet-v3"]')?.parentElement ?? null;
+    while (node && !/(auto|scroll)/.test(getComputedStyle(node).overflowY)) node = node.parentElement;
+    return node;
+  };
+
   const openTool = (id: ToolsSheetToolId) => {
     // Q310: one tool at a time; opening another closes the first.
-    // The demo row always opens in place, so it toggles even in two panes.
-    const inline = !twoPane || id === "demo";
-    setOpen((current) => (current === id && inline ? null : id));
+    setOpen((current) => (current === id && !twoPane ? current : id));
     pushRecent(id);
     // A tool opened from a Recent chip may sit under Show more: keep its group open, so the row
-    // (and keyboard focus on it) stays after the tool closes.
+    // (and keyboard focus on it) stays when the person comes back.
     const home = groups.find((group) => group.entries.findIndex((entry) => entry.key === id) >= GROUP_SHOWN);
     if (home) setExpanded((current) => new Set(current).add(home.id));
-    if (!inline) return;
-    window.requestAnimationFrame(() =>
-      window.requestAnimationFrame(() =>
-        document
-          .querySelector(`[data-tool-row="${id}"]`)
-          ?.scrollIntoView({ block: "start", behavior: wardScrollBehavior() }),
-      ),
-    );
+    if (twoPane) return;
+    const scroller = sheetScroller();
+    setListScroll(scroller?.scrollTop ?? 0);
+    window.requestAnimationFrame(() => {
+      if (scroller) scroller.scrollTop = 0;
+      document.getElementById(`ward-tools-page-${id}`)?.focus({ preventScroll: true });
+    });
   };
+
+  const closeTool = () => {
+    const id = open;
+    setOpen(null);
+    window.requestAnimationFrame(() => {
+      const scroller = sheetScroller();
+      if (scroller) scroller.scrollTop = listScroll;
+      document.querySelector<HTMLElement>(`[data-testid="ward-tools-toggle-${id}"]`)?.focus({ preventScroll: true });
+    });
+  };
+
+  // Escape on a tool page goes back to the list first; a second Escape closes the sheet. The listener
+  // is on document in the bubble phase: after React's handlers, so a menu or field inside the tool that
+  // handles Escape keeps it, and before the Sheet's own window listener. Only an Escape from inside the
+  // page counts, so a dialog stacked above the sheet keeps its own.
+  const pageOpen = !twoPane && open !== null;
+  const onEscape = useEffectEvent(() => closeTool());
+  useEffect(() => {
+    if (!pageOpen) return;
+    const page = document.getElementById(`ward-tools-page-${open}`);
+    if (!page) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+      if (!(event.target instanceof Node) || !page.contains(event.target)) return;
+      if (event.target instanceof HTMLElement && event.target.tagName === "SELECT") return;
+      event.preventDefault();
+      onEscape();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [pageOpen, open]);
 
   useEffect(() => {
     if (!openRequest) return;
@@ -549,7 +603,7 @@ function ToolsSheetView({
             key: "update-bed",
             icon: BedSingle,
             name: "Update a bed",
-            detail: "Open, close or hold",
+            detail: "Open or close",
             body: <UpdateBedWards onNavigate={onNavigate} />,
           }
         : updateBedHref
@@ -557,7 +611,7 @@ function ToolsSheetView({
               key: "update-bed",
               icon: BedSingle,
               name: "Update a bed",
-              detail: "Open, close or hold",
+              detail: "Open or close",
               href: updateBedHref,
             }
           : null,
@@ -577,7 +631,7 @@ function ToolsSheetView({
         ? null
         : {
             key: "book-transport",
-            icon: Truck,
+            icon: Ambulance,
             name: "Book transport",
             detail: "Log a transfer",
             href: canOpen(`${root}/transport/officer`) ? `${root}/transport/officer` : `${root}/movements`,
@@ -613,7 +667,7 @@ function ToolsSheetView({
     figures: networkFigures
       ? {
           key: "figures",
-          icon: BarChart3,
+          icon: ChartColumn,
           name: "Key figures",
           detail: "Beds, flow and waits",
           body: <ToolFigures onNavigate={onNavigate} />,
@@ -721,6 +775,29 @@ function ToolsSheetView({
       detail: "PIR export",
       href: PATIENT_CHRONOLOGY_HREF,
     },
+    // New rows (Josh, 6 Nov 2026: "add all other useful features to tools"). Each is a page this desk
+    // may already open; canOpen drops any it may not.
+    "find-patient": {
+      key: "find-patient",
+      icon: UserSearch,
+      name: "Find a patient",
+      detail: "By name, UMRN or place",
+      href: `${root}/search`,
+    },
+    "bed-meeting": {
+      key: "bed-meeting",
+      icon: ListChecks,
+      name: "Bed meeting agenda",
+      detail: "Run the meeting",
+      href: `${root}/bed-meeting/agenda`,
+    },
+    "tv-board": {
+      key: "tv-board",
+      icon: Tv,
+      name: "TV board",
+      detail: "Large type, read only",
+      href: `${root}/bed-meeting`,
+    },
     demo: null,
   };
 
@@ -775,9 +852,11 @@ function ToolsSheetView({
       .filter((entry): entry is Entry => entry !== null)
       .filter((entry) => !words || `${entry.name} ${entry.detail}`.toLowerCase().includes(words)),
   })).filter((group) => group.entries.length > 0);
-  // A group folds after five rows unless searching, opened, short, or holding the open tool
+  // On wide desktops a group folds after five rows unless searching, opened, short, or holding the open tool
   // (a Recent chip can open a tool whose row sits under Show more).
+  // Phone and tablet show every row (Josh, 6 Nov 2026): tools open as pages, so the list stays calm.
   const groupShowsAll = (group: (typeof groups)[number]) =>
+    !twoPane ||
     Boolean(words) ||
     expanded.has(group.id) ||
     group.entries.length <= GROUP_SHOWN + 1 ||
@@ -795,11 +874,9 @@ function ToolsSheetView({
   const quickTitle = recentIds.length > 0 ? "Recent" : "Suggested";
 
   // Q311: two panes always show a tool, never an empty pane; the first quick pick opens with the sheet.
-  // The demo controls are setup, not a tool to work in, so they open in place under their row
-  // and the pane keeps showing a tool.
-  const shown: ToolsSheetToolId | null = twoPane ? (open && open !== "demo" ? open : (quickIds[0] ?? null)) : open;
+  // The demo controls open like any tool: in the pane here, as their own page below two panes.
+  const shown: ToolsSheetToolId | null = twoPane ? (open ?? quickIds[0] ?? null) : open;
   // A search with no match empties the pane too, so an old tool never sits beside "No tool matches".
-  const paneEntry = shown && matches > 0 ? usable(shown) : null;
 
   const demoEntry: Entry = {
     key: "demo",
@@ -815,6 +892,8 @@ function ToolsSheetView({
       </div>
     ),
   };
+
+  const paneEntry = shown && matches > 0 ? (shown === "demo" ? demoEntry : usable(shown)) : null;
 
   const renderRow = (entry: Entry, group: GroupId) => {
     if (entry.href) {
@@ -848,41 +927,70 @@ function ToolsSheetView({
       );
     }
     const id = entry.key as ToolsSheetToolId;
-    const inline = !twoPane || id === "demo";
-    const isOpen = inline ? open === id : shown === id;
+    const isOpen = shown === id;
     return (
-      <div key={entry.key} className={styles.tool} data-open={isOpen || undefined} data-tool-row={id}>
+      <div key={entry.key} className={styles.tool} data-open={(twoPane && isOpen) || undefined} data-tool-row={id}>
         <button
           type="button"
           className={styles.row}
-          aria-expanded={inline ? isOpen : undefined}
-          aria-current={!inline && isOpen ? "true" : undefined}
-          // Only an open tool's panel exists, so a closed row names no panel (axe aria-valid-attr-value).
-          aria-controls={isOpen ? `ward-tools-${id}` : undefined}
+          aria-current={twoPane && isOpen ? "true" : undefined}
           data-testid={`ward-tools-toggle-${id}`}
           aria-label={rowName(entry, "")}
           onClick={() => openTool(id)}
         >
           <RowText entry={entry} group={group} />
-          {!inline ? (
-            <ChevronRight className={styles.rowEnd} aria-hidden="true" strokeWidth={1.75} />
-          ) : (
-            <ChevronDown className={styles.rowCaret} aria-hidden="true" strokeWidth={1.75} />
-          )}
+          <ChevronRight className={styles.rowEnd} aria-hidden="true" strokeWidth={1.75} />
         </button>
-        {isOpen && inline ? (
-          <div id={`ward-tools-${id}`} className={styles.toolPanel}>
-            {entry.body}
-          </div>
-        ) : null}
       </div>
     );
   };
 
+  // The open tool's page on phone and tablet: Back to Tools, the tool's name, then the tool.
+  const pageEntry = !twoPane && open ? (open === "demo" ? demoEntry : usable(open)) : null;
+  const toolPage = pageEntry ? (
+    <section
+      id={`ward-tools-page-${pageEntry.key}`}
+      className={styles.page}
+      aria-label={pageEntry.name}
+      tabIndex={-1}
+      data-testid="ward-tools-page"
+    >
+      <header className={styles.pageHead}>
+        <button type="button" className={styles.back} onClick={closeTool} data-testid="ward-tools-back">
+          <ChevronLeft aria-hidden="true" strokeWidth={2} />
+          All tools
+        </button>
+        <span className={styles.pageTitle}>
+          {(() => {
+            const Icon = pageEntry.icon;
+            return (
+              <span
+                className={styles.rowIcon}
+                data-group={pageEntry.key === "demo" ? "share" : groupOf(pageEntry.key)}
+                aria-hidden="true"
+              >
+                <Icon aria-hidden="true" strokeWidth={1.75} />
+              </span>
+            );
+          })()}
+          <span className={styles.rowText}>
+            <strong>{pageEntry.name}</strong>
+            <em>{pageEntry.detail}</em>
+          </span>
+        </span>
+      </header>
+      <div className={styles.pageBody} id={`ward-tools-${pageEntry.key}`}>
+        {pageEntry.body}
+      </div>
+    </section>
+  ) : null;
+
   return (
     <div className={styles.sheet} data-two-pane={twoPane || undefined} data-testid="ward-tools-sheet-v3">
-      <div className={styles.list}>
+      {toolPage}
+      <div className={styles.list} hidden={Boolean(toolPage)}>
         <SearchField
+          className={styles.search}
           label="Search tools"
           placeholder="Search tools"
           value={query}
@@ -997,7 +1105,7 @@ function ToolsSheetView({
                 <WardRoleSwitcher withWords />
               </div>
               {/* The executive desktop keeps its own scenario controls, so the demo row shows there on phone only. */}
-              {isPhone || !executive ? renderRow(demoEntry, "look") : null}
+              {isPhone || !executive ? renderRow(demoEntry, "share") : null}
             </div>
           </section>
         ) : null}

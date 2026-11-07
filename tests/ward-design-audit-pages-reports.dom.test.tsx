@@ -33,7 +33,7 @@ describe("design audit report entry states", () => {
     expect(option).toBeDefined();
     fireEvent.mouseDown(option!);
     expect(screen.getByTestId("ward-chronology-table")).toBeInTheDocument();
-    expect(screen.queryByText("Patients on this demo night")).not.toBeInTheDocument();
+    expect(screen.queryByText("Patients on the board")).not.toBeInTheDocument();
     // The typed text never stays in the box once a person is chosen.
     expect(screen.getByRole("combobox", { name: "Find another patient" })).toHaveValue("");
   });

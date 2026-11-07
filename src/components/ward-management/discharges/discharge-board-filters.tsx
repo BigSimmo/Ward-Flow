@@ -130,7 +130,7 @@ function FilterPick({
           aria-label={`${label}: ${current}`}
         >
           {icon ? <ArrowDownUp size={14} aria-hidden="true" /> : null}
-          <span className={releaseList.pickLabel}>{label}</span>
+          <span className={releaseList.pickLabel}>{label}</span>{" "}
           <span className={releaseList.pickValue}>{current}</span>
           <ChevronDown size={14} aria-hidden="true" className={releaseList.pickChevron} />
         </button>

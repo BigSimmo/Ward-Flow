@@ -139,9 +139,9 @@ describe("patient and movement routes share lifecycle truth", () => {
     const closure = f.state.movements.find((m) => m.id === f.movement.id)!.closure!;
     for (const id of [f.patient.id, f.movement.id]) {
       const record = f.resolve(id).record;
-      expect(record.verdict.short).toBe("Movement Closed");
+      expect(record.verdict.short).toBe("Movement closed");
       expect(record.verdict.title).toBe(closure.reason);
-      expect(record.next[0].w).toBe("Movement Closed");
+      expect(record.next[0].w).toBe("Movement closed");
       expect(record.presentations[0].current).toBe(false);
       expect(record.presentations[0].outcome).toBe(closure.reason);
     }

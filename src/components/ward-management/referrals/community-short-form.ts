@@ -34,14 +34,7 @@ export function communityReferralError(purpose: CommunityReferralPurpose | "", d
 
 /** Clearance answers still needed, counted the way `clearanceError` checks them. */
 export function clearanceNeeded(draft: DocumentationDraft): number {
-  if (!draft.medical) return 1;
-  if (draft.medical === "yes") return 0;
-  return [!draft.expectedAt, !draft.contactName.trim(), !draft.contactPhone.trim()].filter(Boolean).length;
-}
-
-/** Every clearance answer asked: the question, plus the expected time and contact when not cleared. */
-export function clearanceItems(draft: DocumentationDraft): number {
-  return draft.medical === "no" ? 4 : 1;
+  return draft.medical ? 0 : 1;
 }
 
 /** Teams whose name, or a suburb they follow up in the source table, contains the search. */

@@ -11,7 +11,7 @@
 .sheetScrim {
   position: fixed;
   inset: 0;
-  z-index: var(--z-modal, 100);
+  z-index: var(--wf-z-modal);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -284,7 +284,7 @@
 .tabBar {
   position: sticky;
   bottom: 0;
-  z-index: var(--z-chrome, 60);
+  z-index: var(--wf-z-chrome);
   box-sizing: border-box;
   padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
   border-top: 1px solid var(--wf-line-2);
@@ -944,15 +944,26 @@
   clip-path: inset(50%);
   white-space: nowrap;
 }
-.heroEyebrowRow {
-  position: absolute;
-  z-index: 1;
-  top: var(--wf-s-3);
-  right: var(--wf-s-3);
-  min-height: 28px;
+/* Audit C4 (5 Nov 2026, Q290, Q293): the chip stays in flow in the title row and the title column
+   shrinks first. It was placed over the hero's top right, so a long sub line ran under it
+   ("…1 being made ready" lost "ready" on phone Statistics). Never position it over text. */
+.heroTitleBlock:has(> .heroEyebrowRow) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--wf-s-2);
+  align-items: start;
+}
+.heroTitleBlock:has(> .heroEyebrowRow) > * {
+  grid-column: 1 / -1;
 }
 .heroTitleBlock:has(> .heroEyebrowRow) > .heroTitle {
-  padding-right: 128px;
+  grid-column: 1;
+  grid-row: 1;
+}
+.heroTitleBlock:has(> .heroEyebrowRow) > .heroEyebrowRow {
+  grid-column: 2;
+  grid-row: 1;
+  min-height: 28px;
 }
 .heroFigures {
   display: flex;

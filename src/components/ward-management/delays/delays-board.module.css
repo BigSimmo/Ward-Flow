@@ -756,6 +756,13 @@ button.stat:hover .statV {
   font-size: var(--wf-fs-12);
 }
 
+/* Design audit A11 (5 Nov 2026): the rule above also reached the name's own spans (the kit
+   FormalName), so phone names read grey and small, like a disabled row. The name keeps its ink. */
+.whoBtn b span {
+  color: inherit;
+  font-size: inherit;
+}
+
 .wcell {
   display: flex;
   align-items: center;
@@ -2376,9 +2383,22 @@ button.gLaneL:hover {
     font-size: var(--wf-fs-12);
   }
 
+  /* Audit A4 (5 Nov 2026): the wait figure stays whole on line 1 and "in ED" or "since referral"
+     wraps under it, rather than the column cutting it ("15h 52m in E"). */
   .r .wt {
+    flex-wrap: wrap;
+    justify-content: flex-end;
     min-width: 0;
     font: 600 var(--wf-fs-14) / var(--wf-lh-14, 20px) var(--wf-mono);
+    text-align: right;
+  }
+
+  .r .wt > .lg {
+    display: block;
+    flex-basis: 100%;
+    font: 500 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+    color: var(--wf-ink-2);
+    white-space: normal;
   }
 
   .r .cTier > span {

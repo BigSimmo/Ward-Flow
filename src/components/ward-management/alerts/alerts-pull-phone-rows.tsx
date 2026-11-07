@@ -4,6 +4,7 @@
 // layout as every other act-now alert, with Pull bed as their one action under the lines. The desk
 // keeps Home's shared rows (`AcceptedPullRows`); the sheet stays with `useAcceptedPull`.
 
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import type { AcceptedAwaitingPull } from "@/components/ward-management/referrals/accepted-ward-referral";
 import { withSendingTeam } from "@/components/ward-management/referrals/referral-sending-team";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
@@ -48,7 +49,7 @@ export function AlertPullPhoneRows({
         const name = nameFor(who.formalName, who.umrn);
         const decidedAt = acceptedAt(entry);
         const openLabel = `Pull the bed for ${name} at ${entry.unitName}`;
-        const from = withSendingTeam(`from ${referral.originSiteCode}`, referral);
+        const from = withSendingTeam(`from ${referral.originSiteCode ?? ORIGIN_NOT_RECORDED}`, referral);
         return (
           <AlertPhoneRowLayout
             key={referral.id}
@@ -64,7 +65,7 @@ export function AlertPullPhoneRows({
                 type="button"
                 className={styles.rowOpen}
                 aria-current={pulling?.referral.id === referral.id ? "true" : undefined}
-                aria-label={openLabel}
+                aria-label={`${openLabel}: Accepted, bed not pulled`}
                 onClick={() => setPulling(entry)}
               >
                 <span className={styles.rowOpenText}>Accepted, bed not pulled</span>
@@ -77,7 +78,7 @@ export function AlertPullPhoneRows({
                 size="sm"
                 className={styles.btn}
                 data-placement-action
-                aria-label={openLabel}
+                aria-label={`Pull bed for ${name} at ${entry.unitName}`}
                 onClick={() => setPulling(entry)}
               >
                 Pull bed

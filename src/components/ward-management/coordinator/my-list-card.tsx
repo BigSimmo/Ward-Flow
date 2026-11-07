@@ -4,6 +4,7 @@
 // the referrals awaiting a decision, in one card, built from the real Alerts row components.
 
 import { useState, type ReactNode } from "react";
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 
@@ -261,7 +262,7 @@ export function MyListCard({
         const who = patientOf(referral);
         const name = nameFor(who.formalName, who.umrn);
         const title = `Tier ${referral.urgency} · ${referralTo(referral, units)}`;
-        const from = withSendingTeam(`from ${referral.originSiteCode}`, referral);
+        const from = withSendingTeam(`from ${referral.originSiteCode ?? ORIGIN_NOT_RECORDED}`, referral);
         const profile = referral.homeRegion ? `${referral.ageBand}, ${referral.homeRegion}` : referral.ageBand;
         const age = minutesText(Math.max(0, now - referral.raisedAt));
         const marker = followUpMarker(referral, now);
@@ -405,15 +406,17 @@ export function MyListCard({
       <div className={styles.needsFoot}>
         <StatusGlyph tone="neutral" size={9} />
         <span>Oldest first within each group. Snoozed items return by themselves.</span>
-        <button
-          type="button"
-          className={styles.footLink}
+        {/* Design audit A26 (5 Nov 2026): the kit small button, so it keeps the 40px phone size. */}
+        <Button
+          variant="ghost"
+          size="sm"
+          className={styles.footAction}
           aria-haspopup="dialog"
           onClick={() => setCallSheetOpen(true)}
           data-testid="home-call-sheet-open"
         >
           Call sheet
-        </button>
+        </Button>
       </div>
       {callSheetOpen ? (
         <Sheet

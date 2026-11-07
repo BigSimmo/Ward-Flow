@@ -160,6 +160,10 @@ const mockupProjectRequested =
       argument === "--project=webkit-ward-responsive" ||
       argument === "--project=release-gate-desktop" ||
       argument === "--project=release-gate-phone" ||
+      // Nightly projects (TE-01, TE-02) draw the same screens as the release gate.
+      argument === "--project=visual-desktop" ||
+      argument === "--project=visual-phone" ||
+      argument === "--project=tablet-webkit" ||
       (argument === "--project" &&
         [
           "chromium-mockups",
@@ -167,6 +171,9 @@ const mockupProjectRequested =
           "webkit-ward-responsive",
           "release-gate-desktop",
           "release-gate-phone",
+          "visual-desktop",
+          "visual-phone",
+          "tablet-webkit",
         ].includes(playwrightArgs[index + 1])),
   );
 // Fail loud on missing browser binaries before the heavy lock or production build.

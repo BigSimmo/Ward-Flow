@@ -18,7 +18,7 @@ vi.mock("next/navigation", () => ({
 
 import { SettingsScreen } from "@/components/ward-management/settings/settings-screen";
 import { applyAppearance, applyGlare } from "@/components/ward-management/shell/ward-bar";
-import { WardRail } from "@/components/ward-management/shell/ward-rail";
+import { NextRailBody as WardRail } from "@/components/ward-management/shell-next/next-rail-body";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { ToastProvider } from "@/components/wf";
 import { APP_THEME_COLORS, GLARE_STORAGE_KEY } from "@/lib/theme";

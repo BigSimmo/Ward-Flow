@@ -138,10 +138,11 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 22px;
+  /* K3 (design audit, 5 Nov 2026): a floor, so large text grows the pill instead of cutting it. */
+  min-height: 22px;
   max-width: 100%;
   min-width: 0;
-  padding: 0 9px 0 8px;
+  padding: 2px 9px 2px 8px;
   box-sizing: border-box;
   border: 1px solid transparent;
   border-radius: var(--wf-r-tag);
@@ -153,8 +154,8 @@
 }
 
 .pillSm {
-  height: 20px;
-  padding: 0 7px 0 6px;
+  min-height: 20px;
+  padding: 2px 7px 2px 6px;
 }
 
 .pillText {
@@ -521,7 +522,12 @@
       padding-inline-end: 24px;
       -webkit-mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
       mask-image: linear-gradient(to right, black calc(100% - var(--wf-row-fade)), transparent 100%);
-      animation: wfRowFade linear both;
+      /* Longhands (design audit, 5 Nov 2026): the CSS build folds `animation` and
+         `animation-timeline` into one shorthand that Chrome rejects, which dropped the fade. */
+      animation-name: wfRowFade;
+      animation-duration: 1ms;
+      animation-timing-function: linear;
+      animation-fill-mode: both;
       animation-timeline: scroll(self inline);
     }
   }

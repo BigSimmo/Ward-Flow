@@ -45,6 +45,7 @@ function chooseAndConfirmClose() {
 }
 
 afterEach(() => {
+  vi.useRealTimers();
   refusal.on = false;
   window.sessionStorage.clear();
 });
@@ -77,33 +78,36 @@ describe("ward closure panel B2a", () => {
     expect(screen.getByRole("heading", { name: `${UNIT.name} closed to admissions` })).toBeInTheDocument();
   });
 
-  it("keeps the chosen reason after the panel is left and opened again (P086)", async () => {
+  it("keeps the chosen reason after the panel is left and opened again (P086)", () => {
+    vi.useFakeTimers();
     const first = renderPanel();
     fireEvent.click(within(screen.getByTestId("ward-closure-reason")).getByRole("button", { name: "Staffing" }));
     fireEvent.click(
       within(screen.getByTestId("ward-closure-reopen-after")).getByRole("button", { name: "In 12 hours" }),
     );
-    // The draft store saves after 500 ms of no change.
-    await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
+    // The draft store saves after 500 ms of no change; fake time runs it exactly (TE-08).
+    act(() => vi.advanceTimersByTime(600));
     first.unmount();
     renderPanel();
     expect(screen.getByTestId("ward-closure-reason")).toHaveAttribute("data-value", "staffing");
     expect(screen.getByTestId("ward-closure-reopen-after")).toHaveAttribute("data-value", "12");
   });
 
-  it("forgets the saved draft when both choices are put back (P086)", async () => {
+  it("forgets the saved draft when both choices are put back (P086)", () => {
+    vi.useFakeTimers();
     const first = renderPanel();
     fireEvent.click(within(screen.getByTestId("ward-closure-reason")).getByRole("button", { name: "Staffing" }));
-    await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
+    act(() => vi.advanceTimersByTime(600));
     fireEvent.click(within(screen.getByTestId("ward-closure-reason")).getByRole("button", { pressed: true }));
-    await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
+    act(() => vi.advanceTimersByTime(600));
     first.unmount();
     renderPanel();
     expect(screen.getByTestId("ward-closure-reason")).toHaveAttribute("data-value", "");
     expect(screen.getByTestId("ward-closure-reopen-after")).toHaveAttribute("data-value", "");
   });
 
-  it("saves the same choices again after a close and a reopen (P086)", async () => {
+  it("saves the same choices again after a close and a reopen (P086)", () => {
+    vi.useFakeTimers();
     const first = renderPanel();
     chooseAndConfirmClose();
     fireEvent.click(screen.getByTestId("ward-closure-reopen"));
@@ -112,7 +116,7 @@ describe("ward closure panel B2a", () => {
     fireEvent.click(
       within(screen.getByTestId("ward-closure-reopen-after")).getByRole("button", { name: "In 8 hours" }),
     );
-    await act(() => new Promise((resolve) => setTimeout(resolve, 600)));
+    act(() => vi.advanceTimersByTime(600));
     first.unmount();
     renderPanel();
     expect(screen.getByTestId("ward-closure-reason")).toHaveAttribute("data-value", "staffing");

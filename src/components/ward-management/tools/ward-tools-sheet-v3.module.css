@@ -50,7 +50,7 @@
   box-shadow: var(--wf-e1);
 }
 
-.card > * + * {
+.card.card > * + * {
   border-top: 1px solid var(--wf-line);
 }
 
@@ -239,7 +239,7 @@
 }
 
 .paneHead strong {
-  font-size: var(--wf-fs-15, 15px);
+  font-size: var(--wf-fs-16);
 }
 
 .paneBody {
@@ -462,4 +462,203 @@
   .showMore {
     min-height: 44px;
   }
+}
+
+/* Phone and tablet (Josh, 6 Nov 2026): the open tool is its own page with Back, like iOS Settings. */
+.page {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+  outline: none;
+  animation: wf-tools-page-in var(--wf-m-base, 200ms) var(--wf-ease, ease);
+}
+
+@keyframes wf-tools-page-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page {
+    animation: none;
+  }
+}
+
+.pageHead {
+  display: grid;
+  gap: var(--wf-s-2);
+  padding-bottom: var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  justify-self: start;
+  min-height: 40px;
+  margin-left: calc(var(--wf-s-2) * -1);
+  padding: 0 var(--wf-s-2) 0 4px;
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: transparent;
+  color: var(--wf-accent-ink);
+  font: inherit;
+  font-size: var(--wf-fs-16);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.back svg {
+  width: 20px;
+  height: 20px;
+}
+
+.back:hover {
+  background: var(--wf-hover);
+}
+
+.back:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+}
+
+.pageTitle {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.pageTitle .rowIcon {
+  width: 32px;
+  height: 32px;
+}
+
+.pageTitle .rowIcon svg {
+  width: 17px;
+  height: 17px;
+}
+
+.pageTitle .rowText strong {
+  font-size: var(--wf-fs-16);
+}
+
+.pageBody {
+  display: grid;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+/* Polish (Josh, 6 Nov 2026: "improve the design and style and colour"). Phone and tablet only, where
+   tools open as pages. One hue in three steps tells the groups apart: Do now is solid action blue,
+   Look up its tint, Print and share neutral. Rows sit taller with larger tiles, and the dividers start
+   after the icon, as in iOS Settings. */
+.sheet:not([data-two-pane]) .rowIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--wf-r-sm);
+}
+
+.sheet:not([data-two-pane]) .rowIcon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.sheet:not([data-two-pane]) .rowIcon[data-group="do"] {
+  background: var(--wf-accent);
+  color: var(--wf-surface);
+}
+
+.sheet:not([data-two-pane]) .rowIcon[data-group="look"] {
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.sheet:not([data-two-pane]) .row {
+  min-height: 56px;
+  padding-block: 8px;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color var(--wf-m-fast, 120ms) var(--wf-ease, ease);
+}
+
+.sheet:not([data-two-pane]) .row:active {
+  background: var(--wf-selected);
+}
+
+.sheet:not([data-two-pane]) .rowText {
+  gap: 2px;
+}
+
+.sheet:not([data-two-pane]) .rowText strong {
+  font-size: var(--wf-fs-15);
+  line-height: 1.25;
+}
+
+.sheet:not([data-two-pane]) .rowText em {
+  font-size: var(--wf-fs-13);
+}
+
+.sheet:not([data-two-pane]) .card.card > * + * {
+  position: relative;
+  border-top: 0;
+}
+
+.sheet:not([data-two-pane]) .card.card > * + *::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: calc(var(--wf-s-3) * 2 + 32px);
+  height: 1px;
+  background: var(--wf-line);
+  pointer-events: none;
+}
+
+.sheet:not([data-two-pane]) .groupHeading {
+  padding-inline: var(--wf-s-3);
+}
+
+.sheet:not([data-two-pane]) .list {
+  gap: var(--wf-s-4);
+}
+
+/* The tool page's title: a large tile and a 20px name, so the page reads as its own place. */
+.sheet .pageTitle .rowIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--wf-r-md);
+}
+
+.sheet .pageTitle .rowIcon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.sheet .pageTitle .rowText strong {
+  font-size: var(--wf-fs-20);
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+.sheet .pageTitle .rowText em {
+  font-size: var(--wf-fs-13);
+}
+
+.back {
+  font-size: var(--wf-fs-15);
+}
+
+/* Tools header polish (Josh, 6 Nov 2026): the search box sits as a soft card, not a hard grey outline. */
+.search > :first-child {
+  border-color: var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.search > :first-child:focus-within {
+  border-color: var(--wf-accent);
 }

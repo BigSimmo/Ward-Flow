@@ -25,13 +25,8 @@ const guides = printScreenGuides();
 
 /** Screens with help but no walk round, and why. A new screen must be walked or added here. */
 const NOT_WALKED: Readonly<Record<string, string>> = {
-  command: "Home differs by desk; the desk tour walks it.",
-  wards: "A list of wards; each ward's own screen is covered by the ward desk's tour.",
-  community: "A list of teams; the community desk's tour walks its own team page.",
-  hub: "A list of places with search, preview and pin; its help lists those three actions.",
-  "referral-intake": "A form whose fields explain themselves; the Raise a new referral job walks it.",
-  officer: "The transport officer's home, walked by that desk's tour.",
-  "bed-finder": "A filter menu; the See which wards have a bed that fits job walks it.",
+  community: "Opens Places, Catchments, which has its own walk round (catchments).",
+  "bed-finder": "A sheet from Tools, not a page; the See which wards have a bed that fits job walks it.",
 };
 
 describe("Help health check", () => {

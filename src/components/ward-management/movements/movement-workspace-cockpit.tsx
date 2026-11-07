@@ -25,14 +25,14 @@ import { useWardFormSave } from "../use-ward-form-save";
 import { useHoldOpenForm } from "@/components/ward-management/use-hold-open-form";
 import {
   ArrowLeft,
-  AlertTriangle,
-  CheckCircle2,
+  TriangleAlert,
+  CircleCheck,
   CircleAlert,
   FileCheck2,
   Info,
   Hospital,
   ShieldCheck,
-  Truck,
+  Ambulance,
   Activity,
   ArrowRight,
 } from "lucide-react";
@@ -387,21 +387,17 @@ export function MovementWorkspaceCockpit({
   const untimed: string[] = [];
   if (patient.stageChanges.length === 0 && reachedIndex > 0) {
     untimed.push(
-      `This movement has reached step ${reachedIndex + 1} of ${MOVEMENT_STAGES.length}, ${stageCopy[patient.stage].label.toLowerCase()}. Nothing recorded when it moved between the steps, so no stage transition appears above.`,
+      `Reached step ${reachedIndex + 1} of ${MOVEMENT_STAGES.length}, ${stageCopy[patient.stage].label.toLowerCase()}. No step times recorded.`,
     );
   }
   if (patient.acceptedUnitId !== undefined && patient.acceptedAt === undefined) {
-    untimed.push(`${unitName(patient.acceptedUnitId)} accepted this patient. No time was recorded for the acceptance.`);
+    untimed.push(`${unitName(patient.acceptedUnitId)} accepted this patient.`);
   }
   if (patient.pullExpiresAt !== undefined) {
-    untimed.push(
-      "A bed was pulled for this patient. The record holds the moment that pull runs out, but nothing recorded the moment it was pulled.",
-    );
+    untimed.push("A bed was pulled. Only its time limit is recorded.");
   }
   if (patient.transport !== undefined && patient.transport.escortRequired) {
-    untimed.push(
-      "An escort is required for this journey. Nothing records when that was decided, or whether one has been found — the model has no field for either.",
-    );
+    untimed.push("An escort is required.");
   }
 
   const stageChipLevel: WardChipLevel = !open
@@ -431,9 +427,8 @@ export function MovementWorkspaceCockpit({
     <div data-testid="ward-console-eligibility-summary" className={styles.operationalColumn}>
       {!open ? (
         <p className={styles.actionSay}>
-          <strong>This is a calculation against the wards as they are right now</strong> — not a record of what was true
-          when this movement closed. Nothing recorded that, and there is no snapshot to show. Read it as &ldquo;what
-          these wards could take today&rdquo;, never as an offer that was open to this patient.
+          <strong>Calculated against the wards right now</strong>, not a record of what was true when this movement
+          closed.
         </p>
       ) : null}
 
@@ -448,11 +443,6 @@ export function MovementWorkspaceCockpit({
           ) : null}
         </div>
         <div className={styles.panelCardBody}>
-          <p className={styles.panelBlurb}>
-            {destination
-              ? `Every check below is about this patient against ${destination.name} specifically — the occupancy and allocatable figures are that ward's, not a network total.`
-              : "Nobody has chosen a destination for this patient, so there is nothing to check them against yet."}
-          </p>
           {destination ? (
             <div className={styles.destinationHero}>
               <div className={styles.destHeroTitle}>{destination.name}</div>
@@ -478,7 +468,7 @@ export function MovementWorkspaceCockpit({
                       {gateMark(gate) === "info" ? (
                         <Info size={15} aria-hidden="true" />
                       ) : gate.pass ? (
-                        <CheckCircle2 className={styles.gatePass} size={15} aria-hidden="true" />
+                        <CircleCheck className={styles.gatePass} size={15} aria-hidden="true" />
                       ) : (
                         <CircleAlert className={styles.gateFail} size={15} aria-hidden="true" />
                       )}
@@ -492,10 +482,10 @@ export function MovementWorkspaceCockpit({
             <p className={styles.actionSay}>
               {progressText ??
                 (patient.referredUnitIds.length > 0
-                  ? `${patient.referredUnitIds.length} ward${patient.referredUnitIds.length === 1 ? " is" : "s are"} still waiting to answer, and none has accepted, so no destination is recorded.`
+                  ? `${patient.referredUnitIds.length} ward${patient.referredUnitIds.length === 1 ? "" : "s"} yet to answer.`
                   : patient.declines.length > 0
-                    ? `Every ward that was asked has answered, and all ${patient.declines.length} declined.`
-                    : "No ward has been asked to take this patient yet.")}
+                    ? `All ${patient.declines.length} wards asked declined.`
+                    : "No ward asked yet.")}
             </p>
           )}
         </div>
@@ -594,8 +584,8 @@ export function MovementWorkspaceCockpit({
                     : patient.declines.length > 0
                       ? `No destination yet. ${patient.declines.length} ward${patient.declines.length === 1 ? " has" : "s have"} declined and none has accepted.`
                       : patient.referralAbsence?.reason === "none_raised"
-                        ? "No destination yet. It is recorded that no ward has been asked."
-                        : "No destination yet. Nothing is recorded about whether a ward has been asked."))}
+                        ? "No destination yet. No ward asked."
+                        : "No destination yet."))}
             </span>
           </div>
 
@@ -609,14 +599,12 @@ export function MovementWorkspaceCockpit({
                 {patient.closure ? ` · ${formatInstantWithDay(patient.closure.at, now)}` : ""}
               </h2>
               <p className={styles.closureReason}>
-                {patient.closure
-                  ? patient.closure.reason
-                  : "The patient has arrived. No closure record was written, so nothing on this movement says why it ended or who ended it."}
+                {patient.closure ? patient.closure.reason : "Arrived. No closure reason recorded."}
               </p>
               <p className={styles.closureMeta}>
                 {patient.closure
-                  ? `It ran ${splitDuration(ranMinutes)} from opening to closing, and stopped at step ${reachedIndex + 1} of ${MOVEMENT_STAGES.length}, ${stageCopy[patient.stage].label.toLowerCase()}.`
-                  : `It ran ${splitDuration(ranMinutes)} from opening, and the last stage recorded is ${stageCopy[patient.stage].label.toLowerCase()}.`}
+                  ? `Ran ${splitDuration(ranMinutes)}. Stopped at step ${reachedIndex + 1} of ${MOVEMENT_STAGES.length}, ${stageCopy[patient.stage].label.toLowerCase()}.`
+                  : `Ran ${splitDuration(ranMinutes)}. Last stage: ${stageCopy[patient.stage].label.toLowerCase()}.`}
               </p>
             </div>
           ) : null}
@@ -655,7 +643,7 @@ export function MovementWorkspaceCockpit({
                   <div className={styles.stepIndicatorRow}>
                     <span className={styles.stepNumber}>{idx + 1}</span>
                     {state === "done" ? (
-                      <CheckCircle2 className={styles.stepIcon} aria-hidden="true" />
+                      <CircleCheck className={styles.stepIcon} aria-hidden="true" />
                     ) : state === "current" ? (
                       <Activity className={styles.stepIcon} aria-hidden="true" />
                     ) : (
@@ -724,7 +712,7 @@ export function MovementWorkspaceCockpit({
                 label={`Deadline on the ${legalFormNameLabelFirst(patient.legalForm)}`}
                 value={typedClock(deadline, now)}
                 flagged={flagged.has("deadline")}
-                sub={`${isClockBreached(deadline, now) ? "Ended" : "Ends"} as typed — the time this record holds, not a claim about what the Act requires`}
+                sub={`${isClockBreached(deadline, now) ? "Ended" : "Ends"} as typed · not legally checked`}
               />
             ) : null}
             {patient.pullExpiresAt !== undefined ? (
@@ -739,8 +727,8 @@ export function MovementWorkspaceCockpit({
           {withheldFlags.length > 0 ? (
             <p className={styles.withheldFlagNote} data-testid="ward-console-withheld-flags">
               {withheldFlags.length === 1
-                ? `Also urgent, and not highlighted above: ${withheldFlags[0]}. At most two figures carry amber, so that this screen still points somewhere.`
-                : `Also urgent, and not highlighted above: ${withheldFlags.join("; ")}. At most two figures carry amber, so that this screen still points somewhere.`}
+                ? `Also urgent: ${withheldFlags[0]}.`
+                : `Also urgent: ${withheldFlags.join("; ")}.`}
             </p>
           ) : null}
         </section>
@@ -755,7 +743,7 @@ export function MovementWorkspaceCockpit({
             <div className={styles.panelCard}>
               <div className={styles.panelCardHeader}>
                 <div className={styles.panelTitleGroup}>
-                  <AlertTriangle className={styles.readinessCardIcon} size={18} aria-hidden="true" />
+                  <TriangleAlert className={styles.readinessCardIcon} size={18} aria-hidden="true" />
                   <h2 className={styles.panelCardTitle}>{open ? "Needs attention" : "Why this stopped"}</h2>
                 </div>
                 {open ? <span className={styles.panelCountBadge}>{attention.length}</span> : null}
@@ -778,10 +766,7 @@ export function MovementWorkspaceCockpit({
                         <WardChip level="accepted">Clear</WardChip>
                       </div>
                       <span className={styles.attentionSay}>
-                        Every check this page can make came back clear: no recorded deadline is close or past, no bed
-                        pull has run out, no ward has declined without an acceptance, no escort is outstanding, and
-                        nobody has recorded a blocker. That is the checks passing, not a guarantee that nothing is
-                        wrong.
+                        No deadline, pull, decline, escort or blocker needs attention.
                       </span>
                     </li>
                   ) : null}
@@ -801,12 +786,6 @@ export function MovementWorkspaceCockpit({
                 </div>
               </div>
               <div className={styles.panelCardBody}>
-                <p className={styles.panelBlurb}>
-                  {open
-                    ? "The four things that have to be true before this patient can travel. This says only where each one stands — the fact itself is set out in full further down, and anything needing action is in Needs attention."
-                    : "The four things that would have had to be true before this patient could travel. This movement closed, so none of them is outstanding now; this is where each one stood."}
-                </p>
-
                 <ul className={styles.readinessMatrix} data-testid="ward-console-readiness">
                   <li className={styles.readinessCard}>
                     <div className={styles.readinessCardHeader}>
@@ -815,10 +794,9 @@ export function MovementWorkspaceCockpit({
                     </div>
                     <span className={styles.readinessCardBody}>
                       {patient.statusChanges.length === 0
-                        ? "Recorded. No change to it has been recorded since this movement opened."
-                        : `Recorded, and changed ${patient.statusChanges.length} time${patient.statusChanges.length === 1 ? "" : "s"} since this movement opened.`}
+                        ? "Recorded. No change recorded."
+                        : `Recorded. Changed ${patient.statusChanges.length} time${patient.statusChanges.length === 1 ? "" : "s"}.`}
                     </span>
-                    <span className={styles.readinessCardWhere}>What the status is, under Legal and forms below.</span>
                   </li>
 
                   <li className={styles.readinessCard}>
@@ -829,22 +807,14 @@ export function MovementWorkspaceCockpit({
                     <span className={styles.readinessCardBody}>
                       {formReadinessState(patient.legalForm, now, thresholds)}
                     </span>
-                    {patient.legalForm ? (
-                      <span className={styles.readinessCardWhere}>
-                        The form and its deadline, under Legal and forms below.
-                      </span>
-                    ) : null}
                   </li>
 
                   <li className={styles.readinessCard}>
                     <div className={styles.readinessCardHeader}>
-                      <Truck size={16} className={styles.readinessCardIcon} aria-hidden="true" />
+                      <Ambulance size={16} className={styles.readinessCardIcon} aria-hidden="true" />
                       <strong>Transport</strong>
                     </div>
                     <span className={styles.readinessCardBody}>{transportReadinessState(patient, open)}</span>
-                    <span className={styles.readinessCardWhere}>
-                      The job, provider, escort and form, under Transport below.
-                    </span>
                   </li>
 
                   <li className={styles.readinessCard}>
@@ -854,13 +824,6 @@ export function MovementWorkspaceCockpit({
                     </div>
                     <span className={styles.readinessCardBody}>
                       {blockerReadinessState(patient, open, blockerIsActive)}
-                    </span>
-                    <span className={styles.readinessCardWhere}>
-                      {open
-                        ? blockerIsActive
-                          ? "Needs attention, at the top of this page, quotes it in full."
-                          : "What you can do here, below, is where one is recorded."
-                        : "What you can do here, below, shows the note itself."}
                     </span>
                   </li>
                 </ul>
@@ -878,8 +841,7 @@ export function MovementWorkspaceCockpit({
               </div>
               <div className={styles.panelCardBody}>
                 <p className={styles.panelBlurb}>
-                  What this record holds about this patient&apos;s status and the form beside it. It is not a statement
-                  of what the Mental Health Act requires.
+                  As recorded. Not a statement of what the Mental Health Act requires.
                 </p>
                 <dl className={styles.factGrid}>
                   <div className={styles.factRow}>
@@ -896,8 +858,8 @@ export function MovementWorkspaceCockpit({
                     <dt className={styles.factLabel}>Status changes</dt>
                     <dd className={styles.factValue}>
                       {patient.statusChanges.length === 0
-                        ? "None recorded since the movement opened. That is not the same as none having happened."
-                        : `${patient.statusChanges.length} recorded — listed in full below.`}
+                        ? "No change recorded."
+                        : `${patient.statusChanges.length} recorded.`}
                     </dd>
                   </div>
                 </dl>
@@ -914,15 +876,11 @@ export function MovementWorkspaceCockpit({
             <div data-testid="ward-console-transport-panel" className={styles.panelCard}>
               <div className={styles.panelCardHeader}>
                 <div className={styles.panelTitleGroup}>
-                  <Truck className={styles.readinessCardIcon} size={18} aria-hidden="true" />
+                  <Ambulance className={styles.readinessCardIcon} size={18} aria-hidden="true" />
                   <h2 className={styles.panelCardTitle}>Transport</h2>
                 </div>
               </div>
               <div className={styles.panelCardBody}>
-                <p className={styles.panelBlurb}>
-                  Only what the transport record holds, and the one place on this page that holds it. There is no
-                  estimated arrival time anywhere in this model, and no risk documentation.
-                </p>
                 <dl className={styles.factGrid}>
                   <div className={styles.factRow}>
                     <dt className={styles.factLabel}>Is transport needed?</dt>
@@ -935,26 +893,22 @@ export function MovementWorkspaceCockpit({
                   <div className={styles.factRow}>
                     <dt className={styles.factLabel}>Provider</dt>
                     <dd className={styles.factValue}>
-                      {patient.transport
-                        ? patient.transport.provider
-                        : "No provider is recorded, because no job exists."}
+                      {patient.transport ? patient.transport.provider : "No job yet."}
                     </dd>
                   </div>
                   <div className={styles.factRow}>
                     <dt className={styles.factLabel}>Escort</dt>
                     <dd className={styles.factValue}>
                       {patient.transport === undefined
-                        ? "No job exists, so nothing has been recorded about an escort."
+                        ? "No job yet."
                         : patient.transport.escortRequired
-                          ? "An escort is required for this journey. The record does not say whether one has been found — there is no field for that."
-                          : "No escort is required for this journey."}
+                          ? "Required."
+                          : "Not required."}
                     </dd>
                   </div>
                   <div className={styles.factRow}>
                     <dt className={styles.factLabel}>Form the provider asked for</dt>
-                    <dd className={styles.factValue}>
-                      {patient.transport?.formRequired ?? "None is recorded against the transport job."}
-                    </dd>
+                    <dd className={styles.factValue}>{patient.transport?.formRequired ?? "None recorded."}</dd>
                   </div>
                 </dl>
               </div>
@@ -987,12 +941,6 @@ export function MovementWorkspaceCockpit({
                       {patient.acceptedUnitId
                         ? `${unitName(patient.acceptedUnitId)}${patient.acceptedAt === undefined ? " — no time recorded" : `, ${formatInstantWithDay(patient.acceptedAt, now)}`}`
                         : "No ward has accepted this patient."}
-                    </dd>
-                  </div>
-                  <div className={styles.factRow}>
-                    <dt className={styles.factLabel}>Recorded by hand as holding this up</dt>
-                    <dd className={styles.factValue}>
-                      Kept in one place: What you can do here, below, beside the controls that change it.
                     </dd>
                   </div>
                   <div className={styles.factRow}>
@@ -1032,7 +980,7 @@ export function MovementWorkspaceCockpit({
                     ))}
                   </ol>
                 ) : (
-                  <p className={styles.actionSay}>{progressText ?? "No declines recorded for this movement."}</p>
+                  <p className={styles.actionSay}>{progressText ?? "No declines."}</p>
                 )}
               </div>
             </div>
@@ -1057,7 +1005,7 @@ export function MovementWorkspaceCockpit({
                     ))}
                   </ol>
                 ) : (
-                  <p className={styles.actionSay}>No status or urgency changes recorded for this movement.</p>
+                  <p className={styles.actionSay}>No status or urgency changes.</p>
                 )}
               </div>
             </div>
@@ -1088,11 +1036,11 @@ export function MovementWorkspaceCockpit({
                     </div>
                     <div className={styles.factRow}>
                       <dt className={styles.factLabel}>What came back</dt>
-                      <dd className={styles.factValue}>No response is recorded for this escalation.</dd>
+                      <dd className={styles.factValue}>None recorded.</dd>
                     </div>
                   </dl>
                 ) : (
-                  <p className={styles.actionSay}>No escalation recorded for this movement.</p>
+                  <p className={styles.actionSay}>No escalation recorded.</p>
                 )}
               </div>
             </div>
@@ -1122,12 +1070,6 @@ export function MovementWorkspaceCockpit({
                     </ul>
                   </div>
                 ) : null}
-                <details>
-                  <summary className={`${styles.actionSay} ${styles.coverageSummary}`}>Timeline coverage</summary>
-                  <p className={`${styles.actionSay} ${styles.coverageNote}`}>
-                    Events with recorded times appear above. Events without a recorded time are listed separately.
-                  </p>
-                </details>
               </div>
             </section>
 
@@ -1140,19 +1082,11 @@ export function MovementWorkspaceCockpit({
                     <h2 className={styles.panelCardTitle}>Check what these wards could take today</h2>
                   </div>
                   <div className={styles.panelCardBody}>
-                    <p className={styles.panelBlurb}>
-                      An eligibility calculation against the wards as they are right now. It is not a record of what was
-                      true when this movement closed, and it is not shown by default for that reason.
-                    </p>
                     {showClosedEligibility ? (
                       eligibilityBlock
                     ) : (
                       <>
-                        <p className={styles.actionSay}>
-                          Nothing recorded which wards could have taken this patient at the moment this movement closed.
-                          There is no snapshot — only a fresh calculation against today&rsquo;s occupancy, staffing and
-                          bed state.
-                        </p>
+                        <p className={styles.actionSay}>Not recorded at closure. This checks today&rsquo;s wards.</p>
                         <button
                           type="button"
                           className={styles.controlButton}
@@ -1247,9 +1181,9 @@ export function MovementWorkspaceCockpit({
           <p className={styles.panelBlurb}>
             {open
               ? orphanedJob
-                ? "Six controls, all of which record against this movement immediately, and the first is a transport job booked against a bed that is no longer pulled. Confirming a destination is not built yet."
-                : "Five controls, all of which record against this movement immediately. Two of them correct something already recorded, and each asks why. Confirming a destination is not built yet."
-              : "These controls are the same ones an open movement has. On a closed movement the reducer refuses them, and the reasons are stated rather than the buttons being hidden."}
+                ? "Six controls. Each records immediately."
+                : "Five controls. Each records immediately."
+              : "Closed: these controls are refused, with the reason."}
           </p>
 
           <div className={styles.actionStack}>
@@ -1259,11 +1193,11 @@ export function MovementWorkspaceCockpit({
               <p className={styles.actionSay}>
                 {movement.flaggedUrgent
                   ? open
-                    ? "Flagged urgent. This patient leads the queue ahead of every urgency tier, including tier 1."
-                    : "Flagged urgent. This movement is no longer in the queue, so the flag orders nothing now — removing it changes only the record."
+                    ? "Flagged urgent. Leads the queue ahead of every urgency tier."
+                    : "Flagged urgent. Closed, so the flag orders nothing."
                   : open
-                    ? "Not flagged. This patient is ordered by urgency tier and waiting time, like everybody else."
-                    : "Not flagged — and this movement is no longer running, so it is not in the queue at all. Flagging it would change nothing."}
+                    ? "Not flagged. Ordered by urgency tier and wait."
+                    : "Not flagged. Closed, so not in the queue."}
               </p>
               {!open && !movement.flaggedUrgent ? null : movement.flaggedUrgent ? (
                 <>
@@ -1359,8 +1293,7 @@ export function MovementWorkspaceCockpit({
               ) : null}
               {!open ? (
                 <p className={styles.actionSay}>
-                  This movement is no longer running — the panel at the top of the page says why. The note above is what
-                  was recorded before it stopped; nothing new can be recorded against it now.
+                  No longer running. The note above is what was recorded before it stopped.
                 </p>
               ) : (
                 <form
@@ -1788,14 +1721,10 @@ export function MovementWorkspaceCockpit({
               <h3 className={styles.actionSectionTitle}>Withdraw the ward&rsquo;s acceptance</h3>
               {!open ? (
                 <p className={styles.actionSay}>
-                  This movement is no longer running — the panel at the top of the page says why. An acceptance recorded
-                  before it stopped stands as part of that record and cannot be withdrawn now.
+                  No longer running. The acceptance stands and cannot be withdrawn now.
                 </p>
               ) : movement.acceptedUnitId === undefined ? (
-                <p className={styles.actionSay}>
-                  No ward has accepted this patient, so there is no acceptance to withdraw. If a ward said yes and this
-                  page does not show it, that is a missing record rather than something to undo here.
-                </p>
+                <p className={styles.actionSay}>No ward has accepted this patient, so there is nothing to withdraw.</p>
               ) : acceptedStageIndex < MOVEMENT_STAGES.indexOf("accepted_awaiting_bed") &&
                 movement.admissionId === undefined ? (
                 <p className={styles.actionSay}>
@@ -1887,10 +1816,7 @@ export function MovementWorkspaceCockpit({
             <section className={styles.actionSection} data-testid="ward-patient-step-back-stage">
               <h3 className={styles.actionSectionTitle}>Correct the recorded stage</h3>
               {!open ? (
-                <p className={styles.actionSay}>
-                  This movement is no longer running — the panel at the top of the page says why. Its stage record is
-                  closed and cannot be corrected here.
-                </p>
+                <p className={styles.actionSay}>No longer running. Its stage record is closed.</p>
               ) : earlierStages.length === 0 ? (
                 <p className={styles.actionSay}>
                   This movement is at the first stage, so there is nothing earlier to correct it to.
@@ -1904,7 +1830,7 @@ export function MovementWorkspaceCockpit({
                   </p>
                   {movement.admissionId !== undefined ? (
                     <p className={styles.actionSay} data-testid="ward-console-step-back-still-holding">
-                      This movement is still holding a ward bed. Correcting the stage leaves that bed pulled — use{" "}
+                      This movement still has a ward bed pulled. Correcting the stage leaves that bed pulled — use{" "}
                       <strong>Release the pulled bed</strong> if the ward should have it back.
                     </p>
                   ) : null}

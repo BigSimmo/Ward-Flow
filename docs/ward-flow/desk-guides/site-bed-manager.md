@@ -18,7 +18,7 @@ are under **Menu**.
    one looks out of date, ask the coordinator to use **Request ward update**; only the
    coordinator can send it.
 2. **Bed releases.** Flag, confirm or block a bed that is due to come free, from the ward page.
-3. **Discharge blockers.** Record or clear what is holding up a discharge, on **Discharges**.
+3. **Discharges held up.** Record or clear what is holding up a discharge, on **Discharges**.
 4. **Close or reopen a ward.** Choose a reason, then **Close [ward] to admissions**. Use
    **Reopen [ward] to admissions** when it can take patients again.
 5. **Bed meeting.** Use **Open on TV** on **Capacity** to show the board. The coordinator runs

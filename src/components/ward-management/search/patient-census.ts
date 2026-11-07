@@ -15,6 +15,7 @@
  * page's own cause ranking (`delayGroups` and `ownerOf`), so the two pages never disagree about why
  * somebody is waiting. Nothing here ranks people by need; the sort is wait, tier or name only.
  */
+import { ORIGIN_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import {
   delayGroups,
   ownerOf,
@@ -37,7 +38,13 @@ import {
 import { acceptedReferralAwaitingMovement, isOpen } from "@/components/ward-management/ward-derivations";
 import type { LeaveBed, Movement, Referral, Unit } from "@/components/ward-management/ward-model";
 import { createPatientResolver } from "@/components/ward-management/ward-patient-resolver";
-import { foldPatientSearchText, patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
+import { compareFormalNames } from "@/components/ward-management/ward-name-collation";
+import {
+  foldPatientSearchHaystack,
+  foldPatientSearchText,
+  patientAgeYears,
+  type Patient,
+} from "@/components/ward-management/ward-patients";
 import { isAwaitingAnswer, referralState } from "@/components/ward-management/ward-referrals";
 import { edById, siteByCode } from "@/components/ward-management/ward-sites";
 import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
@@ -253,7 +260,7 @@ export function buildCensus(state: {
       patientRecordId: patient?.id ?? null,
       communityTeam: patient?.catchmentCommunityTeam ?? null,
       confidential: Boolean((patient as { confidential?: boolean } | undefined)?.confidential),
-      searchText: foldPatientSearchText(`${info.displayName} ${info.formalName} ${info.umrn}`),
+      searchText: foldPatientSearchHaystack(`${info.displayName} ${info.formalName} ${info.umrn}`),
     };
   };
   const legalOnRecord = (subject: Admission) => resolve(subject).patient?.legalStatus;
@@ -392,7 +399,11 @@ export function buildCensus(state: {
     const away = occupied?.awayAtEmergencyDepartmentSince != null;
     const absent = leave?.absentWithoutLeave !== undefined;
     const onLeave = leave !== undefined && !absent;
-    const referralOrigin = community ? `${referral.originSiteCode} Community` : `${referral.originSiteCode} ED`;
+    // FORM-REF: a referral may be sent without its location; say so rather than print "undefined".
+    const referralOrigin =
+      referral.originSiteCode === undefined
+        ? ORIGIN_NOT_RECORDED
+        : `${referral.originSiteCode} ${community ? "Community" : "ED"}`;
     const where = away
       ? "At ED"
       : absent
@@ -615,7 +626,7 @@ export function buildCensus(state: {
       reservedTimePassed: false,
       acceptedUnitName: null,
       timeline: [],
-      searchText: foldPatientSearchText(`${name} ${patient.umrn}`),
+      searchText: foldPatientSearchHaystack(`${name} ${patient.umrn}`),
       placeText: foldPatientSearchText(patient.catchmentCommunityTeam ?? ""),
     });
   }
@@ -682,9 +693,11 @@ export function sortCensusRows(rows: readonly CensusRow[], sort: CensusSort, lif
     sort === "tier"
       ? (a: CensusRow, b: CensusRow) => (a.tier ?? 9) - (b.tier ?? 9) || byWait(a, b)
       : sort === "name"
-        ? (a: CensusRow, b: CensusRow) => a.name.localeCompare(b.name)
+        ? (a: CensusRow, b: CensusRow) => compareFormalNames(a.name, b.name)
         : byWait;
-  return [...rows].sort((a, b) => Number(lifted(b)) - Number(lifted(a)) || by(a, b) || a.name.localeCompare(b.name));
+  return [...rows].sort(
+    (a, b) => Number(lifted(b)) - Number(lifted(a)) || by(a, b) || compareFormalNames(a.name, b.name),
+  );
 }
 
 /**

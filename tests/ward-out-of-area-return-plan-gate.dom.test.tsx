@@ -34,7 +34,9 @@ describe("out-of-area return plan — Send to ward gate and Mark ward agreed wir
 
     const sendBtn = screen.getByTestId("ward-out-of-area-repat-send");
     expect(sendBtn).toHaveAttribute("aria-disabled", "true");
-    expect(sendBtn).toHaveAttribute("title", "Answer the 6 left first.");
+    // W13 (Josh's card 3, 5 Nov 2026): the provider and depart time warn, and a blank CAD is "CAD to
+    // follow", so 3 answers block here, not 6.
+    expect(sendBtn).toHaveAttribute("title", "Answer the 3 left first.");
     fireEvent.click(sendBtn);
     expect(screen.queryByTestId("ward-out-of-area-recorded")).not.toBeInTheDocument();
   });

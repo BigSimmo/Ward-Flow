@@ -15,7 +15,10 @@ import type { Dialog } from "./dialog";
  * - With no host mounted (a test, or a page outside the app frame) it falls back to the browser's
  *   own confirm box, so a guard never silently lets a change go.
  * - Phone size trim (31 Oct 2026): the dialog's code is fetched just after the page starts, not in
- *   the first download. If that fetch fails (offline), a question uses the browser's box instead.
+ *   the first download. If that fetch fails (offline), the question resolves as "Keep editing"
+ *   (W34, design audit 5 Nov 2026: never the browser's own box on a Ward Flow page), so the change
+ *   is kept rather than lost, and the host's `onUnavailable` shows a toast saying it could not open. The host itself mounts on every Ward Flow page through the
+ *   `ToastProvider` that the Ward Flow layout wraps round every page.
  */
 export type ConfirmRequest = {
   /** Short title, for example "Leave this page?". */
@@ -75,12 +78,17 @@ function loadDialog(): Promise<DialogPart> {
   return import("./dialog").then((module) => module.Dialog);
 }
 
-/** The dialog code could not be fetched: ask in the browser's box so the question is still answered. */
-function answerInBrowserBox(current: Pending) {
-  settle(current, typeof window !== "undefined" ? window.confirm(current.message) : false);
+/** The dialog code could not be fetched: answer "Keep editing", so nothing is lost (W34). */
+function keepEditing(current: Pending) {
+  settle(current, false);
 }
 
-export function ConfirmHost() {
+export function ConfirmHost({
+  onUnavailable,
+}: {
+  /** Called when a question cannot be shown because the dialog code failed to load (a toast says so). */
+  onUnavailable?: () => void;
+} = {}) {
   const [request, setRequest] = useState<Pending | null>(null);
   const [LoadedDialog, setLoadedDialog] = useState<DialogPart | null>(null);
 
@@ -103,13 +111,14 @@ export function ConfirmHost() {
       () => {
         if (!live || !request) return;
         setRequest(null);
-        answerInBrowserBox(request);
+        keepEditing(request);
+        onUnavailable?.();
       },
     );
     return () => {
       live = false;
     };
-  }, [LoadedDialog, request]);
+  }, [LoadedDialog, request, onUnavailable]);
 
   // The question shown is the one answered: it comes from this host's state.
   const answer = (confirmed: boolean) => {

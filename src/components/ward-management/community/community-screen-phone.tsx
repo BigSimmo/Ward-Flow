@@ -8,6 +8,7 @@
  */
 
 import { ReferralIntakeSummary } from "../referrals/referral-intake-summary";
+import { HOME_REGION_NOT_RECORDED } from "@/components/ward-management/ward-model";
 import { currentCareContact } from "../ward-care-journey";
 import { CommunityFollowUp } from "./community-follow-up";
 import { FileText, Phone, Users } from "lucide-react";
@@ -449,7 +450,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
                   tone: phoneReferral.urgency === 1 ? "danger" : undefined,
                 },
                 { label: "From", value: referralOriginLabel(phoneReferral) },
-                { label: "Home", value: phoneReferral.homeRegion },
+                { label: "Home", value: phoneReferral.homeRegion ?? HOME_REGION_NOT_RECORDED },
                 { label: "Priority", value: urgencyTierLabel(phoneReferral.urgency) },
               ]}
             />
@@ -479,7 +480,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
               <>
                 <p className={phoneCss.sheetNote}>
                   {phoneReferral.history ||
-                    `${phoneReferral.ageBand} · ${phoneReferral.homeRegion}. ${phoneReferral.transportNeeded ? "Transport needed." : "No transport recorded."}`}
+                    `${phoneReferral.ageBand} · ${phoneReferral.homeRegion ?? HOME_REGION_NOT_RECORDED}. ${phoneReferral.transportNeeded ? "Transport needed." : "No transport recorded."}`}
                 </p>
                 <ReferralIntakeSummary intake={phoneReferral.intake} />
                 <div className={phoneCss.sheetActions}>
@@ -604,7 +605,7 @@ export function CommunityScreenPhone({ view }: { view: CommunityScreenView }) {
         coverage={coveragePanel}
         samples={[
           { id: "activity", label: "Activity sample", onPress: () => setActiveDrawer("activityDrawer") },
-          { id: "tasks", label: "Tasks sample", onPress: () => setActiveDrawer("tasksDrawer") },
+          { id: "tasks", label: "Alerts sample", onPress: () => setActiveDrawer("tasksDrawer") },
           { id: "tools", label: "Tools sample", onPress: () => setActiveDrawer("toolsDrawer") },
         ]}
         actions={[

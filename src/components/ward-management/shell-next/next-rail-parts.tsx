@@ -101,15 +101,43 @@ export function deskCapacityRows(
     : [ownRow];
 }
 
-/** Read aloud as the rows show: "Metro 85.9% full, over 85%. East Metro 86.7% full, over 85%". */
+/** Read aloud as the rows show: "Metro 86% full, over 85%. East Metro 87% full, over 85%". */
+/**
+ * The card's rows as its name reads them: each place and its percent, in the order on screen, so the
+ * visible words sit in the name in one run (CB-3, axe 4.14 label-content-name-mismatch). Which
+ * places are over the line, or not recorded, is said after the card's last line (`capacityRowsOver`).
+ */
 export function capacityRowsSpoken(rows: readonly CapacityRow[]): string {
   return rows
-    .map((row) => {
-      if (row.percent === null) return `${row.name} not recorded`;
-      const over = isBedAlert(row.percent) ? `, over ${BED_ALERT_THRESHOLD_PERCENT}%` : "";
-      return `${row.name} ${formatOccupancyPercent(row.percent)} full${over}`;
-    })
-    .join(". ");
+    .map((row) => (row.percent === null ? row.name : `${row.name} ${formatOccupancyPercent(row.percent)}`))
+    .join(", ");
+}
+
+/** " Over 85%: East Metro and North Metro." and " Not recorded: ...", or nothing. */
+export function capacityRowsOver(rows: readonly CapacityRow[]): string {
+  const names = (list: readonly CapacityRow[]) =>
+    list.length < 2
+      ? (list[0]?.name ?? "")
+      : `${list
+          .slice(0, -1)
+          .map((row) => row.name)
+          .join(", ")} and ${list.at(-1)!.name}`;
+  const over = rows.filter((row) => row.percent !== null && isBedAlert(row.percent));
+  const missing = rows.filter((row) => row.percent === null);
+  return [
+    over.length ? ` Over ${BED_ALERT_THRESHOLD_PERCENT}%: ${names(over)}.` : "",
+    missing.length ? ` Not recorded: ${names(missing)}.` : "",
+  ].join("");
+}
+
+/**
+ * WF-44: the closed rail's tile names its place before the percent ("East 74%", "RPH 81%"), so
+ * it never shows a bare "74%". "East Metro" shortens to "East" to fit the tile; "Metro" stays.
+ */
+export function compactPipText(row: Pick<CapacityRow, "name" | "percent"> | undefined): string {
+  if (row?.percent == null) return "—";
+  const place = row.name.replace(/\s+Metro$/u, "").trim() || "Beds";
+  return `${place} ${Math.round(row.percent)}%`;
 }
 
 /**
@@ -228,18 +256,21 @@ export function PinButton({ id, label, pinned }: { id: string; label: string; pi
 export { RailAccountMenu } from "@/components/ward-management/shell-next/next-account-menu";
 
 /** H2 (Josh, 3 Nov 2026): the bed alerts foot line, Metro as a whole (when the rows above rank
- *  services) and the beds ready now. */
+ *  services) and the beds ready now.
+ * WF-44 (5 Nov 2026): Metro sits on its own line above the ready count, so "Metro 74.6%" never
+ * paints over the East Metro row above it on a tight rail. */
 export function RailReadyLine({ metro, ready }: { metro: number | null; ready: number }) {
   return (
-    <>
+    <span className={parts.readyStack}>
       {metro !== null ? (
-        <>
+        <span className={parts.readyMetro}>
           Metro <b>{formatOccupancyPercent(metro)}</b>
-          <span aria-hidden="true"> · </span>
-        </>
-      ) : null}
-      <b>{ready}</b> {ready === 1 ? "bed" : "beds"} ready now
-    </>
+        </span>
+      ) : null}{" "}
+      <span>
+        <b>{ready}</b> {ready === 1 ? "bed" : "beds"} ready now
+      </span>
+    </span>
   );
 }
 

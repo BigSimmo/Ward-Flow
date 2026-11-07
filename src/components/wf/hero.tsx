@@ -18,7 +18,7 @@ import styles from "./hero.module.css";
  * invented figure, and legal times only as typed (no countdowns).
  */
 export type HeroNextStep = {
-  /** One plain sentence: "5 held-up releases need chasing". No figure the page cannot back. */
+  /** One plain sentence: "5 held-up discharges need chasing". No figure the page cannot back. */
   answer: ReactNode;
   /** The hero's one primary. Leave it out when there is nothing to do ("Nothing held up"). */
   action?: {

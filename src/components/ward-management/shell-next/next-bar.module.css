@@ -62,3 +62,70 @@
   gap: 6px;
   color: var(--wf-ink-3);
 }
+
+/* Tools header polish (Josh, 6 Nov 2026: "make it more stylish and beautiful"). A solid action tile,
+   a larger title and the desk as a quiet pill. Tools only; other drawers keep their header. */
+.toolsHeader {
+  align-items: center;
+  padding-top: 16px;
+  padding-bottom: 12px;
+}
+
+.toolsHeader .toolsTile {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: linear-gradient(180deg, var(--wf-accent) 0%, var(--wf-accent-strong) 100%);
+  box-shadow: var(--wf-e1);
+  color: var(--wf-surface);
+}
+
+.toolsHeader .toolsTile svg {
+  width: 20px;
+  height: 20px;
+}
+
+.toolsTitle {
+  font-size: var(--wf-fs-20);
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.toolsDesk {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 2px 0 0;
+  padding: 2px 8px;
+  border-radius: var(--wf-r-pill);
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+  font-size: var(--wf-fs-12);
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.toolsDesk strong {
+  font-weight: 600;
+}
+
+@media (max-width: 46.4375rem) {
+  .toolsTitle {
+    font-size: var(--wf-fs-28);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+  }
+
+  .toolsHeader .toolsTile {
+    width: 44px;
+    height: 44px;
+  }
+
+  .toolsHeader .toolsTile svg {
+    width: 22px;
+    height: 22px;
+  }
+}

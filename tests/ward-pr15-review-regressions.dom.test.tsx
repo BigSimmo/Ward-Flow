@@ -288,7 +288,8 @@ describe("PR15 discharge and referral provenance", () => {
         .flatMap((row) => within(row).queryAllByRole("button"))[0],
     );
     fireEvent.click(screen.getByRole("button", { name: "Discharge record" }));
-    const detail = screen.getByRole("region", { name: "Selected discharge details" });
+    // Drawer review (6 Nov 2026): the tabs sit in the drawer, above its scroll region.
+    const detail = screen.getByTestId("ward-discharge-detail");
     expect(detail.textContent).toContain("Milestones");
     expect(detail.textContent).toContain("Expected discharge date");
     expect(detail.textContent).toContain("Discharge confirmation");

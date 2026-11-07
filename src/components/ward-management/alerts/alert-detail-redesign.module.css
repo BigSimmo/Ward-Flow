@@ -216,3 +216,79 @@
 .secRow button {
   white-space: nowrap;
 }
+
+/* ---------- Drawer review (6 Nov 2026): the alert in the kit right drawer ----------
+   The drawer owns the head, tabs, the one scroll and the light foot. The body here is neutral:
+   hairline borders, tone only in the tag and the glyphs (D-94), no tinted state card or foot. */
+
+.drawer {
+  width: min(100%, 30rem);
+}
+
+.drawerBody {
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-4);
+}
+
+.drawerSubtitle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 6px;
+  min-width: 0;
+  white-space: normal;
+}
+
+.drawerState {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  padding-bottom: var(--wf-s-3);
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.drawerStateTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  font: 600 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+  color: var(--wf-ink-1);
+}
+
+/* The picture section keeps its own head, flush with the drawer body. */
+.drawerState > section,
+.drawerSection {
+  padding: 0;
+  border-bottom: 0;
+}
+
+.drawerFacts.facts {
+  margin: 0;
+}
+
+.drawerStatus {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1) var(--wf-s-3);
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.drawerNote {
+  margin: 0;
+  color: var(--wf-ink-2);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+}
+
+/* The secondary actions share the row equally, all one height. */
+.drawerTools > * {
+  flex: 1 1 0;
+  min-height: 44px;
+}
+
+.drawerTools button,
+.drawerTools a {
+  min-height: 44px;
+  white-space: nowrap;
+}

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { deskOpens, EVERY_LOGIN } from "@/components/ward-management/help/ward-help-access";
 import {
+  GETTING_STARTED_SUBTITLE,
   CHECKLIST_SUBTITLE,
   CHECKLIST_TICK_IDS,
   CHECKLISTS,
@@ -15,15 +16,16 @@ import { HOW_TO_IDS } from "@/components/ward-management/help/ward-help-howto";
 
 describe("guided checklists (Josh, 2 Nov 2026, approved word for word)", () => {
   it("keeps the approved wording, in order", () => {
+    const approved = CHECKLISTS.filter((checklist) => !checklist.id.startsWith("getting-started-"));
     expect(
-      CHECKLISTS.map((checklist) => [checklist.id, checklist.title, checklist.steps.map((step) => step.text)]),
+      approved.map((checklist) => [checklist.id, checklist.title, checklist.steps.map((step) => step.text)]),
     ).toEqual([
       [
         "start-of-shift",
         "Start of shift",
         [
           "Open Home and work down My list: Act now first, then referrals to decide.",
-          "Open Alerts or Tasks in the header for everything addressed to this desk.",
+          "Open Alerts in the header for everything addressed to this desk.",
           "On Capacity, ask for an update when a ward's figure is old.",
           "On Waiting, use Due soon or on you, Form due and For handover.",
           "Check “Is it saved?”: a short message after each action says it was recorded.",
@@ -61,13 +63,34 @@ describe("guided checklists (Josh, 2 Nov 2026, approved word for word)", () => {
         ],
       ],
     ]);
-    expect(CHECKLISTS[0]?.steps[0]?.note).toBe("Each row opens the record it is about.");
+    expect(approved[0]?.steps[0]?.note).toBe("Each row opens the record it is about.");
     expect(CHECKLIST_SUBTITLE).toBe("Reminders only. Ticking a step records nothing.");
-    for (const checklist of CHECKLISTS) expect(checklist.subtitle).toBe(CHECKLIST_SUBTITLE);
+    for (const checklist of approved) expect(checklist.subtitle).toBe(CHECKLIST_SUBTITLE);
+  });
+
+  it("gives every desk one Getting started list, first, of four to six steps (5 Nov 2026)", () => {
+    for (const role of EVERY_LOGIN) {
+      const lists = checklistsForDesk(role);
+      const started = lists.filter((checklist) => checklist.title === "Getting started");
+      expect(started, role).toHaveLength(1);
+      expect(lists[0]?.title, role).toBe("Getting started");
+      expect(started[0]?.subtitle, role).toBe(GETTING_STARTED_SUBTITLE);
+      expect(started[0]?.steps.length, role).toBeGreaterThanOrEqual(4);
+      expect(started[0]?.steps.length, role).toBeLessThanOrEqual(6);
+      // At least half its steps take the person somewhere or show them how.
+      const linked = started[0]?.steps.filter((step) => step.go || step.showMe).length ?? 0;
+      expect(linked * 2, role).toBeGreaterThanOrEqual(started[0]?.steps.length ?? 0);
+    }
+    expect(GETTING_STARTED_SUBTITLE).toBe("For your first week. Reminders only. Ticking a step records nothing.");
+    // Practice is offered only where Help shows the practice card.
+    for (const role of ["officer", "bed_manager", "executive", "admin"] as const) {
+      expect(JSON.stringify(checklistsForDesk(role)[0]), role).not.toContain("Practise a placement");
+    }
   });
 
   it("names its desks: the coordinator, every login that opens Handover, and every desk", () => {
     const desks = Object.fromEntries(CHECKLISTS.map((checklist) => [checklist.id, checklist.desks]));
+    expect(desks["getting-started-bed-manager"]).toEqual(["bed_manager"]);
     expect(desks["start-of-shift"]).toEqual(["coordinator"]);
     expect(desks["bed-meeting"]).toEqual(["coordinator"]);
     expect(desks.downtime).toBe("all");
@@ -86,6 +109,7 @@ describe("guided checklists (Josh, 2 Nov 2026, approved word for word)", () => {
 
   it("gives each desk only its checklists, dropping links it cannot use but keeping the step", () => {
     expect(checklistsForDesk("coordinator").map((checklist) => checklist.id)).toEqual([
+      "getting-started-coordinator",
       "start-of-shift",
       "handover",
       "bed-meeting",

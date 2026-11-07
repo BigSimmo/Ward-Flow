@@ -20,8 +20,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { MovementsScreen } from "@/components/ward-management/movements/movements-screen";
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
-import { WardRail } from "@/components/ward-management/shell/ward-rail";
+import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
+import { NextRailBody as WardRail } from "@/components/ward-management/shell-next/next-rail-body";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { resetWardChecksForTests } from "@/components/ward-management/shell/ward-checks";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";

@@ -39,7 +39,10 @@ vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
 }));
 
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
+// CB-1 (Josh, 6 Nov 2026): two Service panel cases stay on the retired bar until Josh decides. The
+// live panel has no "Close Service" button and its options read "N waiting", not "N waiting in ED".
+import { WardBar as RetiredWardBar } from "@/components/ward-management/shell/ward-bar";
 import { WardLiveRegion, resetWardLiveRegionForTests } from "@/components/ward-management/shell/ward-live-region";
 import {
   SERVICE_SCOPE_STORAGE_KEY,
@@ -60,12 +63,12 @@ function ServiceScopeProbe() {
   return <span data-testid="probe">{service ?? "null"}</span>;
 }
 
-function renderBar(pathname = "/ward-flow") {
+function renderBar(pathname = "/ward-flow", Bar: typeof WardBar = WardBar) {
   route.pathname = pathname;
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
       <WardLiveRegion />
-      <WardBar primaryAction={resolveWardPrimaryAction(pathname)} />
+      <Bar primaryAction={resolveWardPrimaryAction(pathname)} />
     </WardFlowProvider>,
   );
 }
@@ -162,7 +165,7 @@ describe("WardBar's Service selector, wired to the store", () => {
   // The sentence stays for screen readers only, so what the choice narrows is still announced.
   it("shows the Service heading, with the scope note for screen readers only", async () => {
     const user = userEvent.setup();
-    renderBar();
+    renderBar("/ward-flow", RetiredWardBar);
     await user.click(screen.getByTestId("ward-bar-service-trigger"));
     const panel = screen.getByTestId("ward-bar-service-panel");
     expect(within(panel).getByText("Service")).toBeInTheDocument();
@@ -186,7 +189,7 @@ describe("WardBar's Service selector, wired to the store", () => {
     const { movements } = seedWardFlowState();
     const waiting = waitingInEds(movements, NOW_ANCHOR);
     const user = userEvent.setup();
-    renderBar();
+    renderBar("/ward-flow", RetiredWardBar);
     await user.click(screen.getByTestId("ward-bar-service-trigger"));
     const panel = screen.getByTestId("ward-bar-service-panel");
     const options = within(panel).getAllByRole("button");

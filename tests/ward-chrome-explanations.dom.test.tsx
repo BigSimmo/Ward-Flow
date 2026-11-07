@@ -17,7 +17,11 @@ vi.mock("next/navigation", () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), back: vi.fn(), prefetch: vi.fn() }),
 }));
 
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
+// CB-1 (Josh, 6 Nov 2026): the live bar's Tools dialog is described as the desk and place
+// ("Bed coordinator · whole network"), not by what the sheet covers, so that one case stays on the
+// retired bar until Josh decides. It is not a feature to add here.
+import { WardBar as RetiredWardBar } from "@/components/ward-management/shell/ward-bar";
 import { resetServiceScopeForTests } from "@/components/ward-management/shell/ward-service-store";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
@@ -42,7 +46,7 @@ describe("the Tools button and dialog explain themselves (audit P123)", () => {
   it("the dialog says what the sheet covers, not only 'Whole network'", async () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <WardBar primaryAction={{ kind: "none" }} />
+        <RetiredWardBar primaryAction={{ kind: "none" }} />
       </WardFlowProvider>,
     );
     fireEvent.click(screen.getByTestId("ward-bar-tools-trigger"));

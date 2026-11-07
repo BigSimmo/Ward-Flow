@@ -248,22 +248,24 @@
   color-scheme: light;
 }
 
-/* Type scale (7 sizes) and line heights. Theme independent. */
+/* Type scale (7 sizes) and line heights. Theme independent.
+   BA-5 (front-end audit, Josh 5 Nov 2026, card 6): in rem, so text follows the browser's own text
+   size setting. At the default 16px each value is the pixel size in its comment, so nothing moves. */
 :root {
   --wf-fs-11: var(--wf-fs-12);
-  --wf-fs-12: 12px;
-  --wf-fs-13: 13px;
-  --wf-fs-14: 14px;
-  --wf-fs-16: 16px;
-  --wf-fs-20: 20px;
-  --wf-fs-28: 28px;
+  --wf-fs-12: 0.75rem; /* 12px */
+  --wf-fs-13: 0.8125rem; /* 13px */
+  --wf-fs-14: 0.875rem; /* 14px */
+  --wf-fs-16: 1rem; /* 16px */
+  --wf-fs-20: 1.25rem; /* 20px */
+  --wf-fs-28: 1.75rem; /* 28px */
   --wf-lh-11: var(--wf-lh-12);
-  --wf-lh-12: 16px;
-  --wf-lh-13: 18px;
-  --wf-lh-14: 20px;
-  --wf-lh-16: 22px;
-  --wf-lh-20: 26px;
-  --wf-lh-28: 32px;
+  --wf-lh-12: 1rem; /* 16px */
+  --wf-lh-13: 1.125rem; /* 18px */
+  --wf-lh-14: 1.25rem; /* 20px */
+  --wf-lh-16: 1.375rem; /* 22px */
+  --wf-lh-20: 1.625rem; /* 26px */
+  --wf-lh-28: 2rem; /* 32px */
 }
 
 /*
@@ -371,9 +373,9 @@
 /* ---------- theme independent ---------- */
 :root {
   /* type: 15 is for figures (hero chips, key values). Tracking per size. */
-  --wf-fs-15: 15px;
+  --wf-fs-15: 0.9375rem; /* 15px */
   /* 12px floor: no 11px text anywhere (v9 section 3) */
-  --wf-lh-15: 20px;
+  --wf-lh-15: 1.25rem; /* 20px */
   --wf-tr-20: -0.015em;
   --wf-tr-15: -0.01em;
   --wf-tr-caps: 0.06em;
@@ -391,6 +393,18 @@
   --wf-target-min: 24px;
   /* A control's floor on a touch tablet; 0 elsewhere, so desktop and phone are unchanged. */
   --wf-tablet-tap: 0px;
+
+  /* Stacking (K15, design audit 5 Nov 2026): Ward Flow's own z scale, the same values as the legacy
+     `--z-*` layers (ckb-v2-tokens.css and globals.css, which must not gain tokens, Q375). The kit
+     reads these; screens still on `--z-*` move over screen by screen, and the aliases stay until
+     nothing reads them. */
+  --wf-z-base: 0;
+  --wf-z-raised: 10;
+  --wf-z-chrome: 60;
+  --wf-z-overlay: 80;
+  --wf-z-popover: 95;
+  --wf-z-modal: 100;
+  --wf-z-toast: 110;
 
   /* rows: one density setting. Default 44, dense 36, touch 52. Compact pages keep 44. */
   --wf-row-dense: 36px;

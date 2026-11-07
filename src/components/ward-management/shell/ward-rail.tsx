@@ -131,9 +131,6 @@ const SERVICE_SHORT_LABEL: Record<HealthService, string> = {
   Private: "Private",
 };
 
-// The rail preference store moved to `./ward-rail-preferences` so a phone keeps it without the rail.
-export { setRailOpenPreference, useRailOpenStore } from "./ward-rail-preferences";
-
 /** At 1000px and below only the first few of the role's own menu stay in the row (plus the page you are on). */
 const NARROW_CORE_ENTRY_COUNT = 3;
 /** The role menu id of the handover board, which the countdown card also opens (A5). */
@@ -146,7 +143,7 @@ const CLOSED_RAIL_CARD_MEDIA_QUERY = "(min-width: 1001px)";
  * shows the same short menu). Above 1200px the stored open or closed preference applies as before;
  * at 1000px and below the tablet portrait and phone shapes take over.
  */
-export const TABLET_LANDSCAPE_RAIL_QUERY = "(min-width: 1001px) and (max-width: 1200px)";
+const TABLET_LANDSCAPE_RAIL_QUERY = "(min-width: 1001px) and (max-width: 1200px)";
 
 // Visual abbreviations for the tablet row. Full registry names and live counts remain on the
 // accessible link and its hover card; these never define destinations.
@@ -876,7 +873,10 @@ export function WardRail({ onOpenOperatorModal }: WardRailProps = {}) {
             >
               {overLine.over > 0 ? <Dot tone="warning" /> : null}
               <span className={styles.compactAlertVal}>
-                {firstRow?.percent == null ? "—" : `${Math.round(firstRow.percent)}%`}
+                {/* WF-44: short place + percent so a closed rail never shows a bare "74%". */}
+                {firstRow?.percent == null
+                  ? "—"
+                  : `${(firstRow.name ?? "").replace(/\s+Metro$/u, "").trim() || firstRow.name || "Beds"} ${Math.round(firstRow.percent)}%`}
               </span>
             </button>
           </Tooltip>
@@ -1422,7 +1422,7 @@ function minutesFrom(from: number, to: number): number {
   return (((to - from) % 1440) + 1440) % 1440;
 }
 
-export function computeShiftProgress(nowInput?: number | Date): ShiftProgress {
+function computeShiftProgress(nowInput?: number | Date): ShiftProgress {
   const CIRCUMFERENCE = 81.68;
 
   let currentMinute: number;

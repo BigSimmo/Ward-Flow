@@ -4,14 +4,10 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 
 import { Icon, durMinutes } from "@/components/wf";
 import { siteByCode } from "../ward-sites";
-import { hoursText } from "./statistics-occupancy";
 import styles from "./statistics-v6.module.css";
 
 /** Minutes as a duration, or "none" when nothing is waiting. */
 export const waitText = (minutes: number | null) => (minutes === null ? "none" : durMinutes(Math.round(minutes)));
-
-/** A median wait to the nearest hour ("6h", "1d 4h"), or "none" when nothing is waiting. */
-export const medianText = (minutes: number | null) => (minutes === null ? "none" : hoursText(Math.round(minutes / 60)));
 
 /** "Royal Perth Hospital" reads "Royal Perth" in the narrow ED table; the site code leads the row. */
 export const shortSiteName = (name: string) =>

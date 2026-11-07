@@ -71,6 +71,11 @@ export type PanelDrawerProps<T extends string = string> = {
   bodyClassName?: string;
   /** On the Sheet panel (`role="dialog"`). */
   testId?: string;
+  /**
+   * Passed to the Sheet: where focus goes on close, tried before the opener. Return null to keep
+   * the opener. Must be referentially stable (`useCallback`).
+   */
+  resolveReturnFocusTarget?: () => HTMLElement | null;
 };
 
 export function PanelDrawer<T extends string = string>({
@@ -94,6 +99,7 @@ export function PanelDrawer<T extends string = string>({
   className,
   bodyClassName,
   testId,
+  resolveReturnFocusTarget,
 }: PanelDrawerProps<T>) {
   const ownTitleId = useId();
   const tabsId = useId();
@@ -183,6 +189,7 @@ export function PanelDrawer<T extends string = string>({
       contentClassName={cx(s.panel, className)}
       bodyClassName={s.body}
       testId={testId}
+      resolveReturnFocusTarget={resolveReturnFocusTarget}
     >
       {region ? (
         <aside aria-label={regionLabel} className={s.frame} data-testid={regionTestId} {...regionData}>

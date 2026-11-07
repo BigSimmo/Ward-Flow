@@ -1,0 +1,24 @@
+/*
+ * Triage and risk mock-up: the Summary button at the foot of the section list (7 Nov 2026). Tokens only, neutral borders,
+ * 12px floor. Hidden with the rest of the index foot below 62.5rem, where the phone bar or the
+ * tablet's Summary button takes over.
+ */
+
+/* Pinned to the foot of the left column while the form scrolls. */
+.summary {
+  position: sticky;
+  bottom: 0;
+  padding: var(--wf-s-2) 0;
+  /* On the section list's white card. */
+  background: var(--wf-surface);
+}
+
+.summaryButton {
+  width: 100%;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.summaryButton * {
+  white-space: nowrap;
+}

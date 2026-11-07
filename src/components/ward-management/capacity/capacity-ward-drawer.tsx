@@ -498,7 +498,7 @@ export function CapacityWardFoot({ row, now }: { row: NetworkWardRow; now: Insta
 /** Capacity issue 4: one colour per discharge state, the word always beside it. */
 function stageWords(record: DischargeRecord, now: Instant): string {
   const stage = dischargeRecordStage(record);
-  if (stage === "Discharge blocked") return BED_RELEASE_BLOCKED_LABEL;
+  if (stage === "Discharge held up") return BED_RELEASE_BLOCKED_LABEL;
   if (stage !== "Expected" || record.expectedDischargeAt === null) return stage;
   if (record.expectedDischargeAt < now) return "Date passed";
   const days = dayOf(record.expectedDischargeAt) - dayOf(now);
@@ -515,7 +515,7 @@ function toneOfWords(words: string): string {
   // Q8 (Josh, 4 Nov 2026): a passed date is amber, as everywhere else. Red means act now only.
   if (words === "Date passed") return local.wdTagWarn ?? "";
   if (words === "Due today" || words === "Due tomorrow") return local.wdTagInfo ?? "";
-  if (words === "Confirmed" || words === "Departed" || words === "Discharged") return local.wdTagGood ?? "";
+  if (words === "Confirmed" || words === "Left ward" || words === "Discharged") return local.wdTagGood ?? "";
   return "";
 }
 
@@ -558,8 +558,9 @@ function dischargeRecordName(record: DischargeRecord): string {
 }
 
 function dischargeRecordStage(record: DischargeRecord): string {
-  if (record.leftAt !== null) return "Departed";
-  if (record.blockReason !== null) return "Discharge blocked";
+  // Left ward, not Discharged: a record that has left also covers a death or a transfer.
+  if (record.leftAt !== null) return "Left ward";
+  if (record.blockReason !== null) return "Discharge held up";
   return record.dischargeConfirmedAt !== null ? "Confirmed" : "Expected";
 }
 
@@ -606,14 +607,14 @@ function DischargeRecordFacts({ record, now }: { record: DischargeRecord; now: I
       </div>
       {record.blockReason !== null ? (
         <div>
-          <dt>Waiting on</dt>
+          <dt>Held up by</dt>
           <dd>{record.blockReason}</dd>
         </div>
       ) : null}
       {record.leftAt !== null ? (
         <>
           <div>
-            <dt>Departed</dt>
+            <dt>Left ward</dt>
             <dd>{formatInstantWithDay(record.leftAt, now)}</dd>
           </div>
           <div>

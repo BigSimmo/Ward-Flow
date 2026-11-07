@@ -6,7 +6,7 @@ import { howToFor } from "./ward-help-access";
 
 import {
   ArrowRight,
-  BedDouble,
+  BedSingle,
   Check,
   ChevronDown,
   ChevronRight,
@@ -22,7 +22,7 @@ import {
   SlidersHorizontal,
   ThumbsDown,
   ThumbsUp,
-  Truck,
+  Ambulance,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -31,10 +31,8 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Button, buttonClass, foldLimit, ShowMoreRow, useIsPhone } from "@/components/wf";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
-import { readTourStep, type WardTourRole } from "./ward-help-store";
-import { type TourDevice } from "./ward-tour-steps";
-import { fullTourSteps } from "./ward-tour-more-steps";
-import { useTourFacts } from "./ward-tour-facts";
+import { type WardTourRole } from "./ward-help-store";
+import { TourRow } from "./ward-help-tour-row";
 import type { ScreenHelp } from "./ward-help-content";
 
 import { howToHref } from "./ward-help-href";
@@ -53,8 +51,8 @@ type Topic = (typeof HOW_TO_TOPICS)[number];
 
 /** Each topic's icon and short chip name. */
 const TOPIC_LOOK: Readonly<Record<Topic, { icon: LucideIcon; chip: string }>> = {
-  "Beds and referrals": { icon: BedDouble, chip: "Beds" },
-  Transport: { icon: Truck, chip: "Transport" },
+  "Beds and referrals": { icon: BedSingle, chip: "Beds" },
+  Transport: { icon: Ambulance, chip: "Transport" },
   "Handover and reports": { icon: ClipboardList, chip: "Handover" },
   "Finding your way": { icon: Compass, chip: "Finding your way" },
   "Settings and display": { icon: SlidersHorizontal, chip: "Settings" },
@@ -324,37 +322,6 @@ function PracticeWhenLive({
   ) : null;
 }
 
-/** The tour as one row: where this desk stopped, and Start or Resume. */
-function TourRow({ role, onTour }: { role: WardTourRole; onTour: () => void }) {
-  const device: TourDevice = useIsPhone() ? "phone" : "desk";
-  const { facts } = useTourFacts(role);
-  const total = useMemo(() => fullTourSteps(role, device, facts).length, [role, device, facts]);
-  // The tour's own saved place (`ward-help-store`), read once when Help opens.
-  const [at] = useState(() => Math.min(readTourStep(role), Math.max(0, total - 1)));
-  const minutes = Math.max(1, Math.round(((total - at) * (device === "phone" ? 12 : 15)) / 60));
-  return (
-    <div className={`${s.card} ${s.tour}`} data-testid="ward-help-tour-row">
-      <span className={s.tourIcon} aria-hidden="true">
-        <Compass aria-hidden="true" strokeWidth={1.75} />
-      </span>
-      <div className={s.tourText}>
-        <b>Tour of your desk</b>
-        <span>
-          {at > 0 ? `Stopped at ${at + 1} of ${total}` : `${total} short steps`} · about {minutes} min
-        </span>
-        <span className={s.segments} aria-hidden="true">
-          {Array.from({ length: total }, (_, index) => (
-            <i key={index} data-done={index < at ? "" : undefined} />
-          ))}
-        </span>
-      </div>
-      <Button variant="sec" onClick={onTour} data-testid="ward-help-view-tour">
-        {at > 0 ? "Resume" : "Start"}
-      </Button>
-    </div>
-  );
-}
-
 /**
  * HOW DO I…: this screen first, as a card of its own jobs, then the tour, then the desk's jobs by
  * topic. Topic chips narrow the list; grouping only, never ranking. One answer is open at a time;
@@ -607,7 +574,14 @@ export function HelpTasks({
             <div className={s.card}>
               <ul className={s.list}>{group.tasks.map(row)}</ul>
               {last && limit < shown.length ? (
-                <ShowMoreRow onClick={() => setAll(true)}>Show {shown.length - limit} more</ShowMoreRow>
+                <ShowMoreRow onClick={() => setAll(true)} expanded={false}>
+                  Show {shown.length - limit} more
+                </ShowMoreRow>
+              ) : last && topic === "all" && foldLimit(shown.length, FIRST) < shown.length ? (
+                // The longer list (5 Nov 2026) folds back, so the topics stay within reach.
+                <ShowMoreRow onClick={() => setAll(false)} expanded>
+                  Show fewer
+                </ShowMoreRow>
               ) : null}
             </div>
           </section>

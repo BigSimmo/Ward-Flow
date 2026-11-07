@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom/vitest";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import type { ReactNode } from "react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import StatisticsServicePage from "@/app/ward-flow/statistics/service/[serviceId]/page";
 import { DowntimePackScreen } from "@/components/ward-management/reports/downtime-pack-screen";
@@ -18,6 +18,15 @@ import { ToastProvider } from "@/components/wf";
  * UX simplification audit, 21 Oct 2026, Statistics and outage area: small trims that keep each
  * screen's layout. Each test pins one finding.
  */
+
+const view = vi.hoisted(() => ({ phone: false }));
+vi.mock("@/components/wf", async (original) => ({
+  ...(await original<typeof import("@/components/wf")>()),
+  useIsPhone: () => view.phone,
+}));
+afterEach(() => {
+  view.phone = false;
+});
 
 vi.mock("next/link", () => ({
   default: ({ href, children, ...rest }: { href: string; children: ReactNode }) => (
@@ -48,6 +57,15 @@ describe("Statistics and outage trims (UX audit 21 Oct 2026)", () => {
     renderInProvider(<StatisticsWardsIndexScreen />);
     expect(screen.getAllByText("Pulled bed").length).toBeGreaterThan(0);
     expect(screen.getAllByText("Discharge held up").length).toBeGreaterThan(0);
+  });
+
+  it("titles the Statistics wards page All wards on desktop and phone (B7, Josh 5 Nov 2026)", () => {
+    const { unmount } = renderInProvider(<StatisticsWardsIndexScreen />);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^All wards$/u);
+    unmount();
+    view.phone = true;
+    renderInProvider(<StatisticsWardsIndexScreen />);
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(/^All wards$/u);
   });
 
   it("folds teams with nobody in a bed until asked for", () => {

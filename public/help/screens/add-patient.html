@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en-AU">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Add patient screen — Ward Flow</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 14mm;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font:
+          11pt/1.35 Arial,
+          sans-serif;
+        color: CanvasText;
+        background: Canvas;
+      }
+      main {
+        max-width: 182mm;
+        margin: auto;
+      }
+      h1 {
+        font-size: 21pt;
+        margin: 0 0 3mm;
+      }
+      h2 {
+        font-size: 12pt;
+        margin: 5mm 0 2mm;
+      }
+      header {
+        border-bottom: 1pt solid;
+        padding-bottom: 3mm;
+      }
+      header p,
+      footer p {
+        margin: 0;
+      }
+      li {
+        margin-bottom: 2.5mm;
+      }
+      ul,
+      ol {
+        padding-left: 5mm;
+        margin: 0;
+      }
+      section,
+      li {
+        break-inside: avoid;
+      }
+      footer {
+        border-top: 0.5pt solid;
+        margin-top: 5mm;
+        padding-top: 3mm;
+        font-size: 10pt;
+      }
+      .draft {
+        font-size: 10pt;
+      }
+      @media screen {
+        body {
+          padding: 5mm;
+        }
+        .draft {
+          padding: 2mm 0;
+        }
+      }
+      @media print {
+        .draft {
+          display: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Add patient</h1>
+        <p>Ward Flow · Adds a new invented patient record. Only the core details are needed.</p>
+      </header>
+      <p class="draft">Print on A4 at 100%. Use your browser’s Print command.</p>
+      <section>
+        <h2>What is on the screen</h2>
+        <ol>
+          <li>Core details. Family name, given name, date of birth and UMRN. Everything else is optional.</li>
+          <li>Duplicate check. Checks every record as you type, so one person does not get two records.</li>
+          <li>More details. Contact and address, care links, and culture and language. All optional.</li>
+          <li>Add patient. Opens the new record. Add and start referral goes straight to a referral instead.</li>
+        </ol>
+      </section>
+      <footer>
+        <p>In Ward Flow, open Help and choose Show me around this screen to see each part lit in turn.</p>
+        <p>Prototype on synthetic data. Not for real patients.</p>
+      </footer>
+    </main>
+  </body>
+</html>

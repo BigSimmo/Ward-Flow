@@ -71,7 +71,7 @@ export function WardBoardWorkBand({
         {/* Device audit, 11 Oct 2026: the "Preview: a quiet shift" demo tab is gone from the
                   interface; the empty state below is the real one. */}
         {shiftTiles.length === 0 ? (
-          <p className={styles.workBandEmpty}>Nothing out of service, closed, arriving or due out today.</p>
+          <p className={styles.workBandEmpty}>Nothing out of service, closed, arriving or due for discharge today.</p>
         ) : (
           <div
             className={styles.shiftGrid}

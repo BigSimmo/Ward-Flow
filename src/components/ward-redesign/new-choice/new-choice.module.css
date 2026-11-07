@@ -1,0 +1,120 @@
+/*
+ * New: triage or referral (mock-up, 7 Nov 2026). Desktop: a glass menu under the bar's button,
+ * right-aligned to it. Phone: rows inside the kit Sheet. Tokens only, neutral borders, 12px floor.
+ */
+
+.panel {
+  position: fixed;
+  top: var(--choice-top, 64px);
+  left: var(--choice-left, 8px);
+  display: grid;
+  gap: 2px;
+  width: min(340px, calc(100vw - 16px));
+  box-sizing: border-box;
+  padding: var(--wf-s-1);
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background-color: var(--wf-glass);
+  background-image: var(--wf-sheen);
+  -webkit-backdrop-filter: blur(24px) saturate(1.4);
+  backdrop-filter: blur(24px) saturate(1.4);
+  box-shadow: var(--wf-e3);
+  color: var(--wf-ink-1);
+  font: 400 var(--wf-fs-13) / var(--wf-lh-13) var(--wf-font);
+  pointer-events: auto;
+  visibility: hidden;
+}
+
+.panel[data-placed] {
+  visibility: visible;
+}
+
+.heading {
+  padding: var(--wf-s-2) var(--wf-s-2) var(--wf-s-1);
+  font-size: var(--wf-fs-12);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  width: 100%;
+  min-height: 40px;
+  padding: var(--wf-s-2);
+  box-sizing: border-box;
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.row:hover,
+.row:focus-visible {
+  background: var(--wf-hover);
+}
+
+.row:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: -2px;
+}
+
+.tile {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+  color: var(--wf-ink-2);
+}
+
+.text {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.title {
+  font-weight: 600;
+}
+
+.line {
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+  overflow-wrap: anywhere;
+}
+
+.sheetBody {
+  padding-top: 0;
+}
+
+.sheetRows {
+  display: grid;
+  gap: var(--wf-s-1);
+}
+
+/* A row shows at least 40px and keeps a 48px tap area. */
+.sheetRows .row::after {
+  content: "";
+  position: absolute;
+  inset: -4px 0;
+}
+
+.sheetRows .row {
+  border: 1px solid var(--wf-line);
+  background: var(--wf-surface);
+}

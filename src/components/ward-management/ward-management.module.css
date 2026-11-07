@@ -534,11 +534,11 @@
 /*
  * The legal-risk sentence — `restrictionNotice`'s own text, and the `destinationNoLongerLawful`
  * exception beside it. Worded first and coloured second: the sentence says what is wrong on its
- * own, and the left edge only reinforces it, which is this app's ratcheted accessibility rule.
+ * own, and the tint only reinforces it (no side edge, Josh 31 Oct 2026).
  */
 .legalRisk {
   margin: var(--ward-space-12) var(--ward-space-16);
-  border-left: 0.1875rem solid var(--ward-danger);
+  border-radius: var(--radius-sm);
   padding: var(--ward-space-8) var(--ward-space-12);
   background: var(--ward-danger-soft);
   color: var(--ward-danger);

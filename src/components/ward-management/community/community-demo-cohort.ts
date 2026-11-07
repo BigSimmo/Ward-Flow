@@ -97,7 +97,7 @@ export const DEMO_COMMUNITY_REFERRALS: DemoReferral[] = [
     legalStatus: "Form 1A MHA",
     legalStatusTone: "danger",
     origin: `${siteByCode("FSH")?.name ?? "Hospital not recorded"} ED resus`,
-    clinicalSummary: `Origin: ${siteByCode("FSH")?.name ?? "Hospital not recorded"} ED resus. Acute behavioural disturbance secondary to acute psychosis. Non-voluntary admission required, triage review for urgent secure bed or assertive outreach step-down.`,
+    clinicalSummary: `Origin: ${siteByCode("FSH")?.name ?? "Hospital not recorded"} ED resus. Acute behavioural disturbance secondary to acute psychosis. Non-voluntary admission required, triage review for urgent locked bed or assertive outreach step-down.`,
     primaryActionLabel: "Accept & allocate",
     secActionLabel: "Liaison review",
     declineActionLabel: "Decline / redirect",

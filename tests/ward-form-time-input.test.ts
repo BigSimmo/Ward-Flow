@@ -25,6 +25,8 @@ describe("Form times: typed Perth wall time", () => {
     expect(formatted).toContain("25");
     expect(formatted).toContain("2026");
     expect(formatted).toContain("14:30");
+    // One rule for every written day (Josh, 5 Nov 2026): no comma after the weekday.
+    expect(formatted).toMatch(/^[A-Z][a-z]{2} 25 [A-Z][a-z]+ 2026, 14:30$/u);
   });
 
   it("converts a Date to input strings and back accurately", () => {

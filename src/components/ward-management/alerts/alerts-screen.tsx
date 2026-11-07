@@ -23,6 +23,7 @@ import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state
 import { usePrintableDisclosures } from "@/components/ward-management/use-printable-disclosures";
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { WARD_FLOW_ROLE_LABELS } from "@/components/ward-management/ward-flow-roles";
+import { ACCESS_ROLE_LABELS } from "@/components/ward-management/ward-role-access";
 import { CHROME_ROLE_LABELS } from "@/components/ward-management/ward-chrome-role";
 import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -126,7 +127,6 @@ import styles from "./alerts.module.css";
 import parts from "./alerts-screen-parts.module.css";
 import {
   Card,
-  Drawer,
   PhoneSheet,
   StatusGlyph,
   TabPanel,
@@ -156,10 +156,10 @@ function AlertsWorkspace() {
   usePrintableDisclosures();
   const access = useEffectiveWardAccess();
   const deskRole = access.role === "admin" ? "executive" : access.role;
+  const deskRoleLabel = access.role === "admin" ? ACCESS_ROLE_LABELS.admin : WARD_FLOW_ROLE_LABELS[deskRole];
   const coordDesk = access.role === "coordinator";
   const actionDisabledReason = coordDesk ? undefined : "Only the coordinator can change alerts.";
-  // Broadcasting is for the coordinator and the site bed manager (`EVENT_ROLE.DISPATCH_BROADCAST_ALERT`).
-  const broadcastDisabledReason =
+  const broadcastDisabledReason = // coordinator or site bed manager (`EVENT_ROLE.DISPATCH_BROADCAST_ALERT`)
     coordDesk || access.role === "bed_manager"
       ? undefined
       : "Only the coordinator or a site bed manager can broadcast.";
@@ -196,16 +196,14 @@ function AlertsWorkspace() {
     broadcastAlerts,
     notices,
   } = state;
-  // Nurse in charge: the ward's own name (title, side panel); undefined on any other desk.
   const wardName = ownWardName(access, units);
   // Events carry the engine clock; what the page shows follows the Live chip, which can pause.
   const clockNow = useWardFlowClock();
   const raise = useWardRaise(deskRole);
   const live = usePageLive();
   const now = live.now;
-  // Phone layout: the selected alert opens in a sheet instead of the side panel.
   const isPhone = useIsPhone();
-  // Tablet portrait (v10): the queue takes the width and an alert opens as a slide-over.
+  // Tablet portrait (v10) has its own Checking card; wider pages show a quiet ward's checks in the column.
   const isTabletPortrait = useIsTabletPortrait();
   const slideOver = isPhone || isTabletPortrait;
   const openMovements = useMemo(() => movements.filter(isOpen), [movements]);
@@ -258,7 +256,6 @@ function AlertsWorkspace() {
   const readNotices = feedNotices.filter((notice) => notice.readAt !== undefined);
   // Where this desk is, in words, for the hero eyebrow and the empty state.
   const deskPlace = accessPlaceLabel(access, units);
-  // AL2: the live broadcast sits at the top of Broadcasts; the hero's broadcast line and Today open it.
   function openLiveBroadcast() {
     setTab("broadcasts");
     window.requestAnimationFrame(() =>
@@ -403,8 +400,6 @@ function AlertsWorkspace() {
 
   const activeBroadcast = getActiveBroadcastAlert(broadcastAlerts ?? [], now);
   const deskInScope = useDeskInScope();
-  // Ops-11: acknowledgements count against the wards the directive's target covers, as the banner does.
-  // A bed call is answered by the wards it asked, never ED desks, so it counts replies as the banner does.
   const broadcastBoard =
     activeBroadcast && broadcastKind(activeBroadcast) !== "directive" ? replyBoard(activeBroadcast, units) : undefined;
   const allAcks = !activeBroadcast
@@ -412,7 +407,6 @@ function AlertsWorkspace() {
     : broadcastBoard
       ? { acknowledged: broadcastBoard.answered, of: broadcastBoard.rows.length }
       : directiveAcknowledgements(activeBroadcast, units, deskInScope);
-  // A desk that holds none of the asked desks (a community team, the jobs desk) shows no count, not "0 of 0".
   const broadcastAcks = allAcks && (allAcks.of > 0 || !deskInScope) ? allAcks : undefined;
   const livePullNows = (broadcastAlerts ?? []).filter(
     (alert) => broadcastKind(alert) === "pull_now" && isAlertLive(alert, movements, now),
@@ -587,17 +581,31 @@ function AlertsWorkspace() {
     return ranked.length > 0 ? ranked : countedActive;
   }, [countedActive]);
 
-  const chosen = allEntries.find((entry) => entry.item.id === chosenId);
-  // On the desktop the panel always shows an alert: the chosen one, else the first in line.
-  const selected = chosen ?? (slideOver ? undefined : (nextQueue[0] ?? allEntries[0]));
+  // Drawer review (6 Nov 2026): the chosen alert opens in the kit right drawer at every width, so the
+  // queue keeps the full width and the page's one scroll. Nothing opens until a row is chosen.
+  const selected = allEntries.find((entry) => entry.item.id === chosenId);
+
+  // A release can remove the chosen alert, and with it the row that opened the drawer. Focus then
+  // returns to the page's main region rather than falling to the body (CodeRabbit, #1495).
+  // While the chosen alert's row is still in the queue the Sheet's own opener rule applies (null).
+  const chosenIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    chosenIdRef.current = chosenId ?? null;
+  }, [chosenId]);
+  const alertsMainRef = useRef<HTMLElement | null>(null);
+  const resolveAlertReturnFocus = useCallback(() => {
+    const id = chosenIdRef.current;
+    const row = id ? document.querySelector(`[data-alert-id="${CSS.escape(id)}"]`) : null;
+    return row ? null : alertsMainRef.current;
+  }, []);
 
   const select = useCallback(
     (entry: QueueEntry, options: { release?: boolean } = {}) => {
       setChosenId(entry.item.id);
-      if (slideOver) setSheetOpen(true);
+      setSheetOpen(true);
       if (options.release) setReleaseRequest((count) => count + 1);
     },
-    [slideOver, setSheetOpen],
+    [setSheetOpen],
   );
 
   // Change 7 (D-77): `?alert=<id>&release=1` chooses the alert and focuses its release reason. Read
@@ -818,7 +826,7 @@ function AlertsWorkspace() {
           category: broadcastCategory,
           ...audienceState.target,
           durationMinutes: broadcastDurationMinutes,
-          dispatchedByName: coordDesk ? "State Mental Health Bed Desk Coordinator" : WARD_FLOW_ROLE_LABELS[deskRole],
+          dispatchedByName: coordDesk ? "State Mental Health Bed Desk Coordinator" : deskRoleLabel,
           kind: broadcastType === "bed_call" ? "bed_call" : "directive",
         }),
       () => {
@@ -985,18 +993,21 @@ function AlertsWorkspace() {
       )}
     </section>
   );
-  // Q184 (Josh, 1 Nov 2026): a desk with nothing late or blocked gets one calm empty state.
   const nothingNeedsYou = (
     <div className={styles.nothingEmpty} data-testid="ward-alerts-nothing">
       <StatusGlyph tone="success" size={16} />
-      <strong>Nothing needs you</strong>
-      <span>Nothing is late or blocked for {deskPlace}. You&apos;ll be told when that changes.</span>
+      <strong>{wardName !== undefined ? "Nothing late or blocked in the network queue" : "Nothing needs you"}</strong>
+      <span>
+        {wardName !== undefined ? (
+          <>No late or blocked network alerts for {deskPlace}. Your ward&apos;s own alerts stay on My ward.</>
+        ) : (
+          <>Nothing is late or blocked for {deskPlace}. You&apos;ll be told when that changes.</>
+        )}
+      </span>
     </div>
   );
   const urgencyLabels = ["Act now", "Waiting", "Targets running"] as const;
-  // Safety rule 4: a snoozed act-now alert stays listed in Act now, with its return time.
   const snoozedAct = snoozedEntries.filter((entry) => entry.group === "act");
-  // AL2: under a filter each group keeps only its matching rows, and a group left empty is not drawn.
   const filtered = lens.filter !== "all";
   const actListed = lens.pick([...actEntries, ...snoozedAct]);
   const [waitShown, runningShown, snoozedShown] = [waitEntries, runningEntries, snoozedEntries].map(lens.pick);
@@ -1211,12 +1222,14 @@ function AlertsWorkspace() {
   ];
   const shownTab: AlertsTab = tab === "broadcasts" && !showBroadcasts ? "now" : tab;
 
-  // Josh review (4 Nov 2026): the panel opens on the patient header. The CS-15 "First in line, not
-  // chosen yet" line above it is gone; the row stays marked in the list.
+  // Josh review (4 Nov 2026): the panel opens on the patient header; the row stays marked in the list.
   const selectedPanel = selected ? (
     <>
       <AlertDetail
         key={selected.item.id}
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        resolveReturnFocusTarget={resolveAlertReturnFocus}
         item={selected.item}
         movement={selected.movement}
         subject={selected.subject}
@@ -1289,7 +1302,7 @@ function AlertsWorkspace() {
   return (
     <div className={styles.screen} data-testid="ward-alerts-page" data-ward-design="v8">
       {pull.sheet}
-      <main id="main-content" className={styles.main}>
+      <main id="main-content" ref={alertsMainRef} tabIndex={-1} className={styles.main}>
         <AlertsHero
           isPhone={isPhone}
           wardName={wardName}
@@ -1403,6 +1416,14 @@ function AlertsWorkspace() {
               ) : null}
             </Card>
 
+            {/* A quiet ward's checks, once its side panel is gone; tablet portrait and phone keep the
+                Checking card below. */}
+            {quietWard && !slideOver ? (
+              <Card as="div">
+                <AlertsSidePanelEmpty wardName={wardName} quiet checks={checkingList} />
+              </Card>
+            ) : null}
+
             {isPhone ? (
               <>
                 {quietWard ? null : (
@@ -1416,37 +1437,15 @@ function AlertsWorkspace() {
                 <ChecksCard checks={checks} onOpen={() => setPhoneChecks(true)} />
               </>
             ) : (
-              /* Device audit (11 Oct 2026): on an iPad in portrait the Checking strip wraps to three lines,
-                 so it becomes the phone's one-tap card there (shown by CSS in that range only). */
               <ChecksCard checks={checks} className={styles.checkingCardPortrait} onOpen={() => setPhoneChecks(true)} />
             )}
             <PhoneSheet open={phoneChecks} onClose={() => setPhoneChecks(false)} title="Checking" height="tall">
-              {/* The list itself, not the collapsed chip, so one tap reaches it. */}
               <div className={styles.phoneChecks}>{checkingList}</div>
             </PhoneSheet>
           </div>
-
-          {slideOver ? null : (
-            <aside className={styles.panel} aria-label="Selected alert" data-wf-rail>
-              <Card as="div" className={styles.panelCard}>
-                {selectedPanel ?? (
-                  <AlertsSidePanelEmpty wardName={wardName} quiet={allEntries.length === 0} checks={checkingList} />
-                )}
-              </Card>
-            </aside>
-          )}
         </div>
 
-        {slideOver && selected ? (
-          <Drawer
-            open={sheetOpen}
-            onClose={() => setSheetOpen(false)}
-            title={selected.item.title}
-            mobileSize="viewport"
-          >
-            {selectedPanel}
-          </Drawer>
-        ) : null}
+        {selectedPanel}
 
         {/* Broadcast composer sheet */}
         {isBroadcastModalOpen && (
@@ -1488,7 +1487,7 @@ function AlertsWorkspace() {
               handleCloseBroadcastModal();
               openLiveBroadcast();
             }}
-            senderName={coordDesk ? "Bed coordinator" : WARD_FLOW_ROLE_LABELS[deskRole]}
+            senderName={coordDesk ? "Bed coordinator" : deskRoleLabel}
             now={now}
             onSend={handleDispatchBroadcast}
           />

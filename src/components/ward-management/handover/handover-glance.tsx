@@ -142,12 +142,13 @@ export function HandoverHeroCounts({
           aria-pressed={pressed === id}
           aria-label={
             id === "act"
-              ? `Act now (${counts.act} ${counts.act === 1 ? "person" : "people"}, ${actNowAlerts} ${actNowAlerts === 1 ? "alert" : "alerts"})`
+              ? // CB-3: the visible count and words lead the name (axe label-content-name-mismatch).
+                `${counts.act} Act now (${counts.act} ${counts.act === 1 ? "person" : "people"}, ${actNowAlerts} ${actNowAlerts === 1 ? "alert" : "alerts"})`
               : undefined
           }
           onClick={() => onPress(id)}
         >
-          <span className={styles.hStatV}>{counts[id]}</span>
+          <span className={styles.hStatV}>{counts[id]}</span>{" "}
           <span className={styles.hStatL}>
             <StatusGlyph tone={counts[id] > 0 ? tones[id] : "neutral"} size={9} />
             {label(id)}

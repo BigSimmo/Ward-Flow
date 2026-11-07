@@ -301,7 +301,7 @@ export type JourneyStage = {
 export function JourneyStrip({
   stages,
   formatDuration,
-  label = "Journey",
+  label = "Movement",
   surface = "page",
   note = true,
   className,
@@ -309,7 +309,7 @@ export function JourneyStrip({
   stages: JourneyStage[];
   /** Duration text ("2h 10m"). */
   formatDuration: (minutes: number) => string;
-  /** Leads the accessible name ("Journey since ED arrival"). */
+  /** Leads the accessible name ("Movement since ED arrival"). */
   label?: string;
   surface?: "hero" | "page";
   /** Show the "Now … · Short stages …" line under the strip. */

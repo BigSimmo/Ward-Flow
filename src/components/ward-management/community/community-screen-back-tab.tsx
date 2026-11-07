@@ -8,6 +8,7 @@
  * "this file" or "this screen" in them still means the community team screen as a whole.
  */
 
+import { ArrowRight } from "lucide-react";
 import { currentCareContact, currentCareContactCompleted } from "../ward-care-journey";
 import { Field, Select, StatusGlyph } from "@/components/wf";
 import { CommunityFollowUp } from "./community-follow-up";
@@ -101,9 +102,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
           <div className={styles.cardPanel}>
             <div className={styles.panelHead}>
               <h2 className={styles.panelTitle}>
-                <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8">
-                  <path d="M9 3l4 5-4 5M13 8H3" />
-                </svg>
+                <ArrowRight size={16} strokeWidth={1.75} aria-hidden="true" />
                 <span>7-day post-discharge follow-up register</span>
               </h2>
               <span className={styles.badgePill} id="egressHeadBadge">
@@ -237,7 +236,7 @@ export function CommunityScreenBackTab({ view }: { view: CommunityScreenView }) 
                   </>
                 ) : (
                   <>
-                    No one referred to this team who is currently in a bed or has one pulled has a discharge date the
+                    Nobody referred to this team who is currently in a bed or has one pulled has a discharge date the
                     ward has written down.
                   </>
                 )}

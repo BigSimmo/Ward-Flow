@@ -5,6 +5,7 @@ import { WardBoard } from "@/components/ward-management/board/ward-board";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { WARD_ADMISSIONS_ANCHOR } from "@/components/ward-management/ward-admissions-seed";
 import { wardSites } from "@/components/ward-management/ward-sites";
+import { STAY_BANDS } from "@/components/ward-management/ward-admissions";
 
 /**
  * Build plan `docs/ward-flow/plans/2026-09-17-build-plan-screens.md`, task G1 (item 51). The
@@ -96,5 +97,26 @@ describe("the bed board never drops a tile or a figure at the DOM/JS level (item
       }
       cleanup();
     }
+  });
+});
+
+// BA-13 (front-end audit, 5 Nov 2026): an occupied tile's stay band is visible text, so it must not
+// also sit in a screen-reader-only copy that makes the tile's name read it twice.
+describe("an occupied bed tile names its stay band once", () => {
+  afterEach(cleanup);
+
+  it("reads each band label once in the tile's button", () => {
+    renderWardBoard("rph-adult-secure");
+    const bands = STAY_BANDS.map((band) => band.label);
+    let occupied = 0;
+    for (const tile of screen.getAllByTestId(/^ward-board-bed-\d+$/)) {
+      if (within(tile).queryByTestId(/^ward-board-bed-\d+-days$/) === null) continue;
+      occupied += 1;
+      const text = within(tile).getByRole("button").textContent ?? "";
+      for (const band of bands) {
+        expect(text.split(band).length - 1, `${band} in ${tile.getAttribute("data-testid")}`).toBeLessThanOrEqual(1);
+      }
+    }
+    expect(occupied).toBeGreaterThan(0);
   });
 });

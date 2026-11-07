@@ -2,7 +2,7 @@
 
 _Updated 2026-10-24 - CI section names every workflow and the two unlisted `ward-ci-public` scripts; Documentation owns._
 
-Curated map of `scripts/` (157 files) and the `package.json` script surface (86 entries),
+Curated map of `scripts/` (157 files) and the `package.json` script surface (87 entries),
 grouped by what each part protects. `package.json` is the command surface; this page says why
 each group exists. `npm run docs:check-inventory` compares the two counts above exactly,
 and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs
@@ -62,10 +62,15 @@ before the production build measures the phone script budget) and `budget-rechec
 and `main-measured.mjs` (lets the budget gate reuse main's saved measurements instead of building main again).
 The other workflows need no script here: `release-tag.yml` tags each CI-passed main commit
 `release-YYYY-MM-DD-<sha>`, and `backend-uptime.yml` checks the hosted backend's `/healthz` every
-30 minutes and opens an issue for the owner when it stays down. CI also runs
+10 minutes, signs in as the synthetic monitor account to load `/v1/workspace`, and opens an issue
+for the owner when either stays down. `ward-flow-nightly-browsers.yml` runs the nightly image
+baselines and the 834px tablet checks through `run-playwright.mjs` (front-end audit TE-01, TE-02),
+and a manual run with "update baselines" writes new baselines to commit. CI also runs
 `check-script-budget.mjs` (phone first-load script budgets in `script-budget.json`),
 `check-knip-baseline.mjs` (`npm run check:knip`), `ward-flow/related-tests.mjs`,
-`ward-flow/gate-tsc.mjs` and `ward-flow/selected-baseline-verdict.mjs`.
+`ward-flow/gate-tsc.mjs` and `ward-flow/selected-baseline-verdict.mjs`. Beside the knip ratchet,
+`npm run check:knip:production` lists app files that only tests reach (advisory, never fails; the
+production patterns carry `!` in `knip.json`; front-end audit CB-13).
 
 ## Safety and data safeguards
 

@@ -25,8 +25,9 @@ No DSN, Sentry project or alert is configured or observed in this repository. Th
 browser has no Sentry client and its CSP remains same-origin.
 
 The [backend uptime workflow](../.github/workflows/backend-uptime.yml) asks the hosted
-backend's `/healthz` every 30 minutes and opens a GitHub issue that notifies the owner
-when the backend or its database stays down. It does not check the signed-in site or
+backend's `/healthz` every 10 minutes, then signs in as a synthetic monitor account and
+loads `/v1/workspace`. It opens a GitHub issue that notifies the owner when the backend, its
+database or the signed-in workspace stays down. It does not load the signed-in site's pages or
 the public demo. A named vendor is not required
 to collect operational events: first verify the named Ward hosting log sink,
 retention/access/region, health checks and alert ownership.

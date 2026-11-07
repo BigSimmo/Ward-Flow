@@ -25,7 +25,7 @@ vi.mock("next/navigation", () => ({
 
 import { OverlayRoot } from "@/components/wf/overlay-root";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
 import { PatientSearchPage } from "@/components/ward-management/search/patient-search";
 import { HubScreen } from "@/components/ward-management/hub/hub-screen";

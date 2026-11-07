@@ -75,10 +75,13 @@ describe("Handover page", () => {
     expect(screen.queryByTestId("ward-handover-sign-bar")).toBeNull();
     for (const tab of [/Patients/, /Beds/, /History/]) {
       fireEvent.click(screen.getByRole("tab", { name: tab }));
-      expect(screen.getByRole("button", { name: /^Sign off, \d+ of \d+ checks clear$/ })).toBeInTheDocument();
+      // CB-3: the name holds the visible "Sign off 1/5" first.
+      expect(screen.getByRole("button", { name: /^Sign off \d+\/\d+, \d+ of \d+ checks clear$/ })).toBeInTheDocument();
     }
     const hero = screen.getByTestId("ward-handover-hero-sign-off");
-    const [, done, total] = /^Sign off, (\d+) of (\d+) checks clear$/.exec(hero.getAttribute("aria-label") ?? "")!;
+    const [, done, total] = /^Sign off \d+\/\d+, (\d+) of (\d+) checks clear$/.exec(
+      hero.getAttribute("aria-label") ?? "",
+    )!;
     expect(hero).toHaveTextContent(`${done}/${total}`);
     fireEvent.click(hero);
     expect(screen.getByRole("tab", { name: /Patients/ })).toHaveAttribute("aria-selected", "true");

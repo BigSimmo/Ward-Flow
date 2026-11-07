@@ -29,6 +29,8 @@ import {
   dischargeShort,
   shortSiteName,
   type ReturnStatus,
+  DEPART_TIME_NOT_RECORDED,
+  PROVIDER_NOT_RECORDED,
 } from "./out-of-area-model";
 import { TravelIcon } from "./out-of-area-return-plan";
 import styles from "./out-of-area-board.module.css";
@@ -58,8 +60,9 @@ export type PhonePerson = {
 
 type PhoneTab = "needs" | "all" | "beds";
 
+// Design audit 4 (B21): no plan yet is a gap (the ring), not declined or closed (the cross).
 const STATUS_TONE: Record<ReturnStatus, WfTone> = {
-  none: "closed",
+  none: "neutral",
   started: "neutral",
   not_agreed: "neutral",
   agreed: "neutral",
@@ -240,7 +243,7 @@ export function OutOfAreaPhone({
   const planVaries = new Set(people.map((person) => person.status)).size > 1;
   const leaving = [...leavingToday]
     .filter((record) => byId.has(record.admissionId))
-    .sort((a, b) => a.estimatedAt - b.estimatedAt);
+    .sort((a, b) => (a.estimatedAt ?? Infinity) - (b.estimatedAt ?? Infinity));
   const leavingIds = new Set(leaving.map((record) => record.admissionId));
   const ready = readyIds.filter((id) => !leavingIds.has(id)).map((id) => byId.get(id)!);
   // Each person appears in one Needs you list only, and "more" counts everyone not shown above.
@@ -287,7 +290,7 @@ export function OutOfAreaPhone({
         onClick={() => stepTo(-1)}
       />
       <span className={styles.mono}>
-        {index + 1}/{stepList.length}
+        {index + 1} of {stepList.length}
       </span>
       <Button
         variant="ghost"
@@ -321,7 +324,7 @@ export function OutOfAreaPhone({
             label: "Home today",
             tone: "success",
             onPress: () => setTab("needs"),
-            actionLabel: `${leaving.length} going home today, show My list`,
+            actionLabel: `${leaving.length} Home today, going home today, show My list`,
           },
           {
             id: "date-passed",
@@ -336,8 +339,9 @@ export function OutOfAreaPhone({
             value: noPlanCount,
             // "No plan" stays on one line; the spoken label names the noun, as the desktop's "No return plan" does.
             label: "No plan",
-            actionLabel: `${noPlanCount} with no return plan, highlight them`,
-            tone: "closed",
+            actionLabel: `${noPlanCount} No plan, with no return plan, highlight them`,
+            // Design audit 4 (B21): a missing plan is waiting (the ring), not declined or closed (the cross).
+            tone: "neutral",
             onPress: () => onHighlight("noplan"),
             pressed: highlight === "noplan",
           },
@@ -372,12 +376,16 @@ export function OutOfAreaPhone({
                   return (
                     <li key={record.admissionId}>
                       <button type="button" className={styles.phoneLeave} onClick={() => open(record.admissionId)}>
-                        <span className={styles.phoneLeaveTime}>{formatInstantWithDay(record.estimatedAt, now)}</span>
+                        <span className={styles.phoneLeaveTime}>
+                          {record.estimatedAt === undefined
+                            ? DEPART_TIME_NOT_RECORDED
+                            : formatInstantWithDay(record.estimatedAt, now)}
+                        </span>
                         <span className={styles.two}>
                           <b>{person.name}</b>
                           <span>
                             {shortSiteName(record.homeHospital)} · {record.mode === "road" ? "Road" : "Flight"} ·{" "}
-                            {record.provider}
+                            {record.provider ?? PROVIDER_NOT_RECORDED}
                           </span>
                         </span>
                         <StatusGlyph tone={record.receivingWardAgreed ? "success" : "neutral"} size={10} />
@@ -485,7 +493,8 @@ export function OutOfAreaPhone({
             className={styles.phoneBarMain}
             onClick={() => open(nextUp.entry.admission.id)}
           >
-            Plan next return <span className={styles.phoneBarName}>{nextUp.name.split(",")[0]}</span>
+            {/* Names in full (audit B5): the surname alone could match two people. */}
+            Plan next return <span className={styles.phoneBarName}>{nextUp.name}</span>
           </Button>
         ) : (
           <Button

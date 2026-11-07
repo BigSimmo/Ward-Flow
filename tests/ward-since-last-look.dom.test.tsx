@@ -9,7 +9,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { CoordinatorScreen } from "@/components/ward-management/coordinator/coordinator-screen";
-import { WardBar } from "@/components/ward-management/shell/ward-bar";
+import { NextBar as WardBar } from "@/components/ward-management/shell-next/next-bar";
 import {
   LAST_LOOK_STORAGE_KEY,
   parseLastLookSnapshot,
@@ -269,10 +269,10 @@ describe("scoped Ward and ED last-look sheets", () => {
     fireEvent.click(trigger);
     expect(trigger).toHaveTextContent("0 updates");
     expect(ed.getByRole("button")).toHaveTextContent("1 update");
-    expect(screen.getByRole("dialog", { name: "Since you last looked" })).toHaveTextContent("1 journey updated");
+    expect(screen.getByRole("dialog", { name: "Since you last looked" })).toHaveTextContent("1 movement updated");
     fireEvent.click(screen.getByText("Synthetic arrival"));
     expect(trigger).toHaveTextContent("1 update");
-    expect(screen.getByRole("dialog")).toHaveTextContent("1 journey updated");
+    expect(screen.getByRole("dialog")).toHaveTextContent("1 movement updated");
     fireEvent.keyDown(document, { key: "Escape" });
     await waitFor(() => expect(screen.queryByRole("dialog")).toBeNull());
     await waitFor(() => expect(document.activeElement).toBe(trigger));

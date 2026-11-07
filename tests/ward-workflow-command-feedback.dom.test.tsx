@@ -67,8 +67,8 @@ function renderWard(
   const beds = Array.from(document.querySelectorAll<HTMLElement>("[data-testid^='ward-board-bed-']"));
   return {
     record,
-    occupied: beds.find((bed) => !/free|closed|pulled/.test(bed.getAttribute("aria-label") ?? ""))!,
-    free: beds.find((bed) => /, ready$/.test(bed.getAttribute("aria-label") ?? ""))!,
+    occupied: beds.find((bed) => !/ready|closed|pulled/i.test(bed.getAttribute("aria-label") ?? ""))!,
+    free: beds.find((bed) => /, Ready, Free to place$/.test(bed.getAttribute("aria-label") ?? ""))!,
   };
 }
 

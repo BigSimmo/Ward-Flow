@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { WardBarBack } from "@/components/ward-management/shell/ward-bar-controls";
+import { WardBarBack } from "@/components/ward-management/shell-next/next-bar-controls";
 import { hasMovedInWardFlow, noteWardRoute, resetWardRouteHistory } from "@/components/ward-management/shell/ward-back";
 
 const router = vi.hoisted(() => ({ back: vi.fn(), replace: vi.fn() }));
