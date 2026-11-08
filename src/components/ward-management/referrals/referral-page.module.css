@@ -69,9 +69,6 @@
 .offerLink:hover {
   text-decoration: underline;
 }
-.offerPhoneAnswer {
-  display: none;
-}
 .mono {
   font-family: var(--wf-mono);
   font-feature-settings: "tnum" 1;
@@ -148,18 +145,27 @@
 }
 
 /* Needs as short words ("Locked", "Transport"), one under another so the narrow column holds them. */
+/* Note 11 (Josh, 9 Nov 2026): needs read as small tags, stacked so the column stays narrow. */
 .needWords.needWords {
   flex-direction: column;
-  gap: 2px;
+  align-items: flex-start;
+  gap: 3px;
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
 }
 .needWords.needWords > span {
+  padding: 1px 6px;
+  border: 1px solid var(--wf-line);
+  border-radius: 6px;
   white-space: nowrap;
 }
-/* Room for "Transport" on one line. */
+/* Room for the "Transport" tag on one line. */
 .colNeeds.colNeeds {
-  width: 5.75rem;
+  width: 6.5rem;
+}
+/* No ward fits: the count shows in the danger colour. */
+.wrapRows.wrapRows [data-zero="true"] b {
+  color: var(--wf-danger-ink);
 }
 
 @media (max-width: 46.4375rem) {
@@ -191,16 +197,19 @@
     grid-area: wait;
     text-align: end;
   }
+  /* The bar, send time and the ward's name on Chase stay on wider screens; the chip beside Chase
+     already names the ward, and the button keeps it in its accessible name. */
+  .offersTable .offerBar,
+  .offersTable .offerSent,
+  .offersTable .offerChaseWard {
+    display: none;
+  }
+  .offersTable.offersTable .offerChip.offerChip {
+    white-space: normal;
+  }
   .offersTable .offerWards {
     grid-area: wards;
     color: var(--wf-ink-2);
-  }
-  /* The answer reads after the ward on the second line, so its own cell steps out. */
-  .offersTable .offerAnswer {
-    display: none;
-  }
-  .offersTable .offerPhoneAnswer {
-    display: inline;
   }
   .offerLink {
     min-height: 0;
@@ -283,12 +292,99 @@
   gap: var(--wf-s-2);
 }
 /* Doubled to beat the queue's wrapping rule above, so "6h 40m" and the answer stay on one line. */
-.offersTable.offersTable .offerWait.offerWait,
-.offersTable.offersTable .offerAnswer.offerAnswer,
-.offersTable.offersTable .offerAnswer.offerAnswer * {
+.offersTable.offersTable .offerWait.offerWait {
   white-space: nowrap;
 }
 .offerChased {
+  padding: 2px var(--wf-s-2);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wf-success) 14%, transparent);
+  color: var(--wf-success-ink);
+  font-size: var(--wf-fs-12);
+}
+
+/* Note 11 (Josh, 9 Nov 2026): the list's state in its header, then one chip per ward asked. */
+.offersSummary {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-1) var(--wf-s-4);
+  margin-inline-start: auto;
+  font-weight: 400;
+  letter-spacing: normal;
+  text-transform: none;
+  color: var(--wf-ink-2);
+}
+.offersSummary b {
+  color: var(--wf-ink-1);
+  font-weight: 600;
+}
+.offersSummary .offersNote {
+  margin-inline-start: 0;
+}
+/* Doubled to beat the queue's wrapping rule above. */
+.offersTable.offersTable .offerAction.offerAction,
+.offersTable.offersTable .offerAction.offerAction * {
+  white-space: nowrap;
+}
+.offerSub {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--wf-fs-12);
+  font-weight: 400;
+  color: var(--wf-ink-3);
+}
+.offersTable .offerLink {
+  min-height: 0;
+  margin-block: 0;
+}
+.offerChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--wf-s-1);
+}
+.offerChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px var(--wf-s-2);
+  border: 1px solid var(--wf-line);
+  border-radius: 999px;
+  background: var(--wf-surface);
+  font-size: var(--wf-fs-12);
+  white-space: nowrap;
+}
+.offerChipNo {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--wf-danger) 10%, transparent);
+  color: var(--wf-danger-ink);
+  text-decoration: line-through;
+  text-decoration-color: color-mix(in srgb, var(--wf-danger-ink) 55%, transparent);
+}
+.offersTable .offerWaitHead,
+.offersTable .offerWait {
+  text-align: end;
+}
+.offersTable .offerWait > .mono {
+  display: block;
+  font-weight: 600;
+}
+.offerBar {
+  display: block;
+  width: 5rem;
+  height: 4px;
+  margin: 4px 0 2px auto;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--wf-line);
+}
+.offerBar > span {
+  display: block;
+  height: 100%;
+  background: var(--wf-ink-3);
+}
+.offerSent {
+  display: block;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
 }

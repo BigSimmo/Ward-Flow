@@ -830,7 +830,8 @@ button.runwayCardRow:focus-visible {
 .arms {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: flex-start;
+  gap: 3px;
   min-width: 0;
 }
 
@@ -846,6 +847,16 @@ button.runwayCardRow:focus-visible {
 
 .arm:first-child {
   font-weight: 500;
+}
+
+/* Note 11 (Josh, 9 Nov 2026): each destination asked for is a soft tag, so a referral asking for
+   two reads at a glance. A refused one keeps its quieter struck-through look below. */
+.arm:not(.armNo) {
+  max-width: 100%;
+  padding: 1px var(--wf-s-2);
+  border-radius: 6px;
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
 }
 
 .armNo {

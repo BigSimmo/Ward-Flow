@@ -376,7 +376,7 @@ export function QueuedSection({
                           </span>
                         </span>
                       ) : (
-                        <span className={a.fit}>
+                        <span className={a.fit} data-zero={ready === 0 ? "true" : undefined}>
                           {/* Redesign (Josh, 30 Oct 2026): the figure counts wards, so it says so. */}
                           <b>{ready}</b> {ready === 1 ? "ward" : "wards"}
                           {ready === 0 && staleOnly > 0 ? (
