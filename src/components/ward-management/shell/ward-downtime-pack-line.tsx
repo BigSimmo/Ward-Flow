@@ -118,7 +118,7 @@ export function WardDowntimePackLine() {
     >
       {/* Note 14 (Josh, 8 Nov 2026): the pack reads as a toast at the foot: glyph, title, one line. */}
       <span className={styles.packGlyph} aria-hidden="true">
-        <Printer size={15} />
+        <Printer size={15} aria-hidden="true" />
       </span>
       <span className={styles.packText}>
         <span className={styles.packTitle}>
