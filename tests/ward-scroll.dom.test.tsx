@@ -113,3 +113,19 @@ describe("Holding a tapped control in place (Note 7)", () => {
     expect(document.activeElement).toBe(row);
   });
 });
+
+describe("The control that opened a panel (Safari tap)", () => {
+  it("is the tapped button even when focus sits on an earlier field", async () => {
+    const { activatedControl } = await import("@/components/wf/sheet-focus");
+    const field = document.createElement("input");
+    const button = document.createElement("button");
+    const label = document.createElement("span");
+    button.append(label);
+    document.body.append(field, button);
+    field.focus();
+    // Safari: the tap clicks the button but leaves focus on the field.
+    label.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(document.activeElement).toBe(field);
+    expect(activatedControl()).toBe(button);
+  });
+});

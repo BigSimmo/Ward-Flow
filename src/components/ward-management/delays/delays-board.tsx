@@ -13,7 +13,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNod
 import { Activity, ChevronDown, ChevronRight, Flag, X } from "lucide-react";
 
 import { formatInstantWithDay, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
-import { hasOpenSheet } from "@/components/wf/sheet-focus";
+import { activatedControl, hasOpenSheet } from "@/components/wf/sheet-focus";
 import Link from "next/link";
 import { activeActNowItems } from "@/components/ward-management/ward-act-now-items";
 import { useDueSoonThresholds, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
@@ -284,7 +284,7 @@ export function DelaysBoard({
   // scrolling, so a person opened from a graph or register does not throw the page to their table row.
   const openerRef = useRef<Element | null>(null);
   const select = (id: string) => {
-    openerRef.current = document.activeElement;
+    openerRef.current = activatedControl();
     rememberReturnRow(WAITING_ROUTE, id);
     setSelectedId((current) => (current === id ? null : id));
   };
@@ -301,7 +301,7 @@ export function DelaysBoard({
     const row = rows.find((candidate) => candidate.movement.id === id);
     if (row === undefined) return;
     // Note 7: unfolding the person's group must not move the graph or register that was tapped.
-    openerRef.current = document.activeElement;
+    openerRef.current = activatedControl();
     holdInPlace(openerRef.current);
     // Opening someone the filters hide shows everyone first, so their row is there to open.
     if (!shown.some((candidate) => candidate.movement.id === id)) setFilters(NO_FILTERS);
