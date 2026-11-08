@@ -22,7 +22,7 @@ export const SECTION_LABELS: Record<SettingsSection, string> = {
   display: "Display",
   access: "Access",
   data: "Data",
-  you: "You",
+  you: "Your desk",
   demo: "Demo tools",
 };
 
@@ -117,7 +117,7 @@ const MOVED: Partial<Record<string, Partial<SettingsSearchEntry>>> = {
   restore: { label: "Restore defaults" },
   "clear-session": { label: "Reset the demo in this tab" },
   "copy-diagnostics": { label: "Copy details for a bug report" },
-  role: { tab: "profile", label: "You" },
+  role: { tab: "profile", label: "Your desk" },
   "go-to-desk": { tab: "profile", label: "Try another desk (demo)" },
   "recent-changes": { label: "Last rule change" },
   "decision-targets": { label: "Deadlines and reply targets" },
@@ -132,7 +132,12 @@ const ADDED: readonly SettingsSearchEntry[] = [
       tab: "rules" as const,
       keywords: entry.group.toLowerCase(),
     })),
-  { id: "changed-only", label: "Show changed only", tab: "rules", keywords: "default differ filter changed" },
+  {
+    id: "changed-only",
+    label: "Only rules changed from default",
+    tab: "rules",
+    keywords: "show changed only default differ filter changed",
+  },
   { id: "alerts-check", label: "Will alerts reach you here?", tab: "alerts", keywords: "ready check notifications" },
   { id: "test-alert", label: "Send a test alert", tab: "alerts", keywords: "test notification try" },
   {

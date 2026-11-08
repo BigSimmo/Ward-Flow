@@ -140,7 +140,9 @@ export function SettingsRulesPane({
           <span>{readOnlyWords}</span>
         </p>
       ) : (
-        <p className={cx(styles.scopeLine, rx.scopeWords)}>
+        // The Help tour's "Save rule changes" step points here while nothing is unsaved: the save bar
+        // itself shows only once a rule changes (Simplify Settings, Josh, 8 Nov 2026).
+        <p className={cx(styles.scopeLine, rx.scopeWords)} data-testid="ward-settings-save-bar">
           <strong>Changes wait for Save.</strong>
           <span>Each save is recorded in the audit.</span>
         </p>
@@ -174,8 +176,8 @@ export function SettingsRulesPane({
             className={rx.changedOnlySwitch}
             label={
               awayFromDefault === 0
-                ? "Show changed only · every rule at its default"
-                : `Show changed only · ${awayFromDefault} ${awayFromDefault === 1 ? "rule differs" : "rules differ"} from the defaults`
+                ? "Only rules changed from default (none)"
+                : `Only rules changed from default (${awayFromDefault})`
             }
           />
         </span>
