@@ -12,7 +12,7 @@
  * outcome, legal status, review and the risk flags marked present); the typed text is never in it,
  * so it never reaches the workspace or browser storage (HOW-WE-WORK §6). Every person is synthetic.
  */
-import { BellRing, BookUser, CircleHelp, FileText, Inbox } from "lucide-react";
+import { BellRing, BookUser, CircleHelp, FileText } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
@@ -749,8 +749,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                   </>
                 ) : undefined,
               )}
-              {bannerLink("Patient profile", "Profile", BookUser, () => openSummary("profile"))}
-              {isPhone ? null : bannerLink("Referral", "Referral", Inbox, () => openSummary("ref"))}
+              {bannerLink("Patient and referral", "Patient", BookUser, () => openSummary("patient"))}
               <ContactsPop patientId={person.id} recordHref={person.recordHref} />
               {howToButton}
             </div>

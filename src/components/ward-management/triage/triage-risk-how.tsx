@@ -32,7 +32,7 @@ const STEPS: readonly Step[] = [
     section: null,
     title: "Check the banner",
     time: "30 s",
-    text: "Identity, legal status, allergies and alerts come from the record. Contacts and Community team open in place.",
+    text: "Identity, legal status, allergies and alerts come from the record. Contacts and Community team open in place; Patient and referral opens the summary.",
     tip: "Fix a wrong detail at the source, in the patient record, not here.",
   },
   {
@@ -60,14 +60,14 @@ const STEPS: readonly Step[] = [
     section: "dec",
     title: "Triage decision",
     time: "1 min",
-    text: "Choose urgency A to G yourself, then the outcome, actions and legal status.",
+    text: "Choose urgency A to G yourself, and say why if it differs from the referrer. Then the outcome, actions and legal status.",
     tip: "The see-by time appears on the banner once you pick a tier with a window.",
   },
   {
     section: "risk",
     title: "Risk assessment",
     time: "5 min",
-    text: "Tap the flags that are present. Answer Rest of history and Rest of current risk. Ask the three family violence questions alone, word for word.",
+    text: "Carry forward the last RAMP where there is one and confirm each flag today. Tap the flags that are present, then answer Rest of history and Rest of current risk. Ask the three family violence questions alone, word for word.",
     tip: "Unmarked is never a silent No. Unsure? Mark it Not known in All RAMP factors.",
   },
   {

@@ -83,7 +83,7 @@ export function useTriagePeople(): {
       const key = patientKeyFor(patient.id, record) ?? `patient:${patient.id}`;
       const profile = sampleProfile(key, record, now);
       const open = openReferral.get(patient.id);
-      const lastSigned = triagesFor(triages, patient.id)[0];
+      const previous = triagesFor(triages, patient.id).map((signed) => previousTriageFrom(signed, dayZero));
       const person = triagePersonFromWorld({
         patientId: patient.id,
         name: profile.name,
@@ -95,7 +95,8 @@ export function useTriagePeople(): {
         legalStatus: profile.legalStatus,
         recordAddress: encodeRecordAddress(key.startsWith("WF-") ? key : patient.id),
         openReferral: open ? asReferral(open) : null,
-        last: lastSigned ? previousTriageFrom(lastSigned, dayZero) : null,
+        last: previous[0] ?? null,
+        previous,
         alerts: recordExtrasFor(patient.id)?.alerts,
       });
       byId.set(patient.id, person);
