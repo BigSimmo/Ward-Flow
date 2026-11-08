@@ -719,6 +719,13 @@ button.strip:disabled {
   position: relative;
   top: auto;
 }
+/* Note 8, issue 5 (Josh, 8 Nov 2026): the shorter column (list or follow-up) holds in view so no
+   large gap opens beside the longer one. `useShorterColumnAnchor` picks it and sets its top. */
+.split.split.split > [data-anchor][data-anchor] {
+  position: sticky;
+  top: var(--anchor-top, 72px);
+  align-self: start;
+}
 .pHead {
   align-items: flex-start;
   padding: var(--wf-s-4) var(--wf-s-4) var(--wf-s-3);
