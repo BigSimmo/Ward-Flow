@@ -73,7 +73,8 @@
      and read as tucked underneath. They now fade out before a hairline, so the edge reads as more to
      scroll rather than an overlap. */
   .filterRow:has(> .filterEnd) > .filterChips {
-    mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
+    mask-image: linear-gradient(to right, black calc(100% - 28px), transparent);
   }
 
   .filterRow > .filterEnd {
