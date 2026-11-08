@@ -1137,7 +1137,7 @@ export function AddPatientForm() {
               />
             </Card>
 
-            <Card className={styles.submitBar}>
+            <Card className={styles.submitBar} data-wf-foot-bar="">
               <div className={styles.submitLead}>
                 {isSubmitting && slowSave ? (
                   <p data-testid="ward-add-patient-slow-save" role="status">

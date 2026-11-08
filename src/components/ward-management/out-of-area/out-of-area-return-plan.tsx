@@ -589,7 +589,7 @@ export function ReturnPlan({
         </>
       )}
       {showActions ? (
-        <div className={cx(styles.planFoot, styles.planFootStack)}>
+        <div className={cx(styles.planFoot, styles.planFootStack)} data-wf-foot-bar="">
           <ReturnPlanActions
             draft={draft}
             record={record}

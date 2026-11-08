@@ -156,15 +156,18 @@
   color: var(--wf-ink-3);
 }
 
-/* GEN1 (Josh, 3 Nov 2026): one toast place for the whole app. Tablet and desktop stack toasts
-   top right, just under the header, where they never cover a page's own foot bar or pinned
-   actions. Phone keeps the pill above the dock (below). Every toast has its close button. */
+/* Note 14 (Josh, 8 Nov 2026): one toast place for the whole app, the bottom centre of the window,
+   where the pinned notes rest too (ward-flow-layout.module.css). Toasts stack above a showing note
+   and above a page's pinned foot bar (data-wf-foot-bar), so neither Save nor the note is covered.
+   Phone keeps the pill above the dock (below). Every toast has its close button. */
 @media (min-width: 46.5rem) {
   .toastRegion {
-    top: calc(var(--wf-header-height, 3.75rem) + var(--wf-s-2));
-    bottom: auto;
-    padding-top: 0;
-    padding-bottom: 0;
+    --wf-toast-rest: calc(var(--wf-foot-bar-lift, 0px) + var(--wf-toast-note-lift, 0px));
+    top: auto;
+    right: 0;
+    bottom: var(--wf-toast-rest);
+    left: 0;
+    align-items: center;
   }
 
   /* Live audit, 8 Nov 2026: top right, an Undo toast covered an open sheet's tabs (Referral
@@ -177,6 +180,8 @@
     bottom: 0;
     left: 0;
     align-items: flex-start;
+    /* Bottom left already clears the note and the foot bar under a sheet. */
+    --wf-toast-rest: 0px;
     padding-bottom: max(1rem, env(safe-area-inset-bottom));
     /* Review (8 Nov 2026): on a tablet a 500px right drawer leaves about 268px beside it, so the
        toast narrows to stay clear of the drawer's footer actions; its text ellipsises as usual. */
@@ -318,7 +323,7 @@
     );
     left: 12px;
     right: 12px;
-    bottom: var(--wf-toast-rest);
+    bottom: calc(var(--wf-toast-rest) + var(--wf-toast-note-lift, 0px));
     padding: 0;
     align-items: center;
   }

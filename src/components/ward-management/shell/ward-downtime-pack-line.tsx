@@ -3,7 +3,7 @@
 import { useEffect, useRef, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { X } from "lucide-react";
+import { Printer, X } from "lucide-react";
 
 import {
   downtimePackHandled,
@@ -110,18 +110,25 @@ export function WardDowntimePackLine() {
   const at = formatInstantWithDay(pack.generatedAt, now);
   return (
     <p
-      className={`${styles.quiet} ${styles.recovery}`}
+      className={`${styles.quiet} ${styles.recovery} ${styles.packToast}`}
       role="status"
       data-testid="ward-downtime-pack-line"
       data-shift-change="true"
       data-print-hide
     >
-      <span>
-        Shift change downtime pack <b>{at}</b> ready. Print it or save it as a PDF in case Ward Flow goes down.{" "}
-        <Link href={DOWNTIME_PACK_HREF} data-testid="ward-downtime-pack-open">
-          Open pack
-        </Link>
+      {/* Note 14 (Josh, 8 Nov 2026): the pack reads as a toast at the foot: glyph, title, one line. */}
+      <span className={styles.packGlyph} aria-hidden="true">
+        <Printer size={15} />
       </span>
+      <span className={styles.packText}>
+        <span className={styles.packTitle}>
+          Shift change downtime pack <b>{at}</b> ready.
+        </span>{" "}
+        <span className={styles.packBody}>Print it or save it as a PDF in case Ward Flow goes down.</span>{" "}
+      </span>
+      <Link href={DOWNTIME_PACK_HREF} className={styles.packAction} data-testid="ward-downtime-pack-open">
+        Open pack
+      </Link>
       <button
         type="button"
         className={styles.recoveryClose}
