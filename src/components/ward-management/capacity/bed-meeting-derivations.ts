@@ -1,6 +1,7 @@
 import { groupDischarges } from "@/components/ward-management/discharges/discharge-board-model";
 import { delayGroups, type DelayCause } from "@/components/ward-management/delays/delays-derivations";
 import { edOpenSummaries, elapsedOpenMinutes } from "@/components/ward-management/ed/ed-home-derivations";
+import type { ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
 import { dayOf, type DueSoonThresholds, type Instant } from "@/components/ward-management/ward-clock";
@@ -151,6 +152,11 @@ export type BedMeetingInput = {
   referrals?: readonly Referral[];
   referralLimitMinutes?: number;
   /**
+   * WF-FIG-017: every journey and referral that may hold a named bed, unfiltered, so the bed
+   * figures stay whole when `movements`/`referrals` are narrowed. Defaults to those two lists.
+   */
+  namedHolds?: readonly ReservationReferral[];
+  /**
    * B1 extended (Josh, 4 Nov 2026): the agenda's group filter in words ("Tier 1, Involuntary"),
    * when the caller has already narrowed `movements` and `referrals` to it. Bed figures stay whole.
    */
@@ -172,7 +178,15 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
     service === null ? movements : movements.filter((movement) => movementBelongsToService(movement, service, units));
 
   // Capacity — the same rows and the same group totals the Capacity screen renders.
-  const rows = networkWardRows(scopedUnits, now, scopedReleases, admissions, leaveBeds);
+  // WF-FIG-017: named holds (journeys and referrals) are held, not Ready, as on Capacity.
+  const rows = networkWardRows(
+    scopedUnits,
+    now,
+    scopedReleases,
+    admissions,
+    leaveBeds,
+    input.namedHolds ?? [...movements, ...(input.referrals ?? [])],
+  );
   const totals = networkServiceGroupTotals(rows);
   const tracked = rows.map((row) => row.pendingPreparation).filter((value): value is number => value !== undefined);
   const capacity: BedMeetingCapacity = {

@@ -26,6 +26,7 @@ on:
       - "script-budget.json"
       - "scripts/check-script-budget.mjs"
       - "scripts/install-locked-dependencies.mjs"
+      - "scripts/ward-flow/whats-new-list.mjs"
       - "scripts/ward-ci-public/**"
       - ".github/workflows/ward-flow.yml"
       - ".github/workflows/ward-flow-budget-recheck.yml"

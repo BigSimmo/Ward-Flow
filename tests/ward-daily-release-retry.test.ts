@@ -68,10 +68,15 @@ if (route.startsWith('actions/workflows/')) {
     inject('acceptanceFailures');
     // Answer with slurped run pages so the workflow's real jq query decides the verdict.
     const answer = state.acceptanceAnswers?.shift() || state.acceptance || 'success';
-    const run = (conclusion, at) => ({ event: 'push', conclusion, updated_at: '2026-11-04T1' + at + ':00:00Z' });
-    const runs = answer === 'missing' ? []
+    const run = (conclusion, at, status = 'completed') =>
+      ({ event: 'push', status, conclusion, updated_at: '2026-11-04T1' + at + ':00:00Z' });
+    // 'rerunning': a failed run was re-run, so GitHub reports it in progress beside an older green.
+    let runs = answer === 'missing' ? []
       : answer === 'ambiguous' ? [run('success', 1), run('failure', 1)]
+      : answer === 'rerunning' ? [run('success', 0), run(null, 1, 'in_progress')]
       : [run('failure', 0), run(answer, 1)];
+    // Honour GitHub's status filter, as the real API does.
+    if (endpoint.includes('status=completed')) runs = runs.filter(item => item.status === 'completed');
     finish(runs.length ? runs.map(item => ({ workflow_runs: [item] })) : [{ workflow_runs: [] }]);
   } else finish(state.target);
 }
@@ -197,8 +202,13 @@ describe("daily release record and live-ref recovery", () => {
     const query = /acceptance="\$\(gh api [\s\S]*?\| jq -r '([\s\S]*?)'\)"/u.exec(workflow)?.[1];
     expect(query).toBeDefined();
     if (!query) throw new Error("Same-SHA acceptance query is missing");
-    const green = { event: "push", conclusion: "success", updated_at: "2026-11-04T10:00:00Z" };
-    const failed = { event: "schedule", conclusion: "failure", updated_at: "2026-11-04T11:00:00Z" };
+    const green = { event: "push", status: "completed", conclusion: "success", updated_at: "2026-11-04T10:00:00Z" };
+    const failed = {
+      event: "schedule",
+      status: "completed",
+      conclusion: "failure",
+      updated_at: "2026-11-04T11:00:00Z",
+    };
     const judge = (pages: object[][]) => {
       const result = spawnSync("jq", ["-r", query], {
         input: JSON.stringify(pages.map((runs) => ({ workflow_runs: runs }))),
@@ -220,9 +230,16 @@ describe("daily release record and live-ref recovery", () => {
     expect(judge([[green, { ...failed, updated_at: undefined }]])).toBe("ambiguous");
     expect(judge([[green, { ...failed, updated_at: "invalid" }]])).toBe("ambiguous");
     expect(judge([[]])).toBe("missing");
+    // DP-01/R1: a re-run takes the failed run out of "completed"; an older green must not qualify.
+    for (const status of ["queued", "in_progress", "waiting", "requested", "pending", undefined]) {
+      expect(judge([[green], [{ ...failed, status, conclusion: null }]])).toBe("running");
+    }
+    expect(judge([[green, { ...failed, event: "pull_request", status: "in_progress", conclusion: null }]])).toBe(
+      "success",
+    );
   });
 
-  it.each(["failure", "timed_out", "startup_failure", "missing", "ambiguous", "action_required"])(
+  it.each(["failure", "timed_out", "startup_failure", "missing", "ambiguous", "action_required", "rerunning"])(
     "vetoes release after %s acceptance on the same SHA",
     (acceptance) => {
       const h = harness({ acceptance });

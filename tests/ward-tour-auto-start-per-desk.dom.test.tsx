@@ -27,6 +27,11 @@ import {
   parseTourAutoDone,
 } from "@/components/ward-management/help/ward-tour-auto-start";
 import { resetTourSeenForTests } from "@/components/ward-management/help/ward-help-store";
+import { WardHelpAccountMemory } from "@/components/ward-management/help/ward-help-account-memory";
+import {
+  SharedAccessContext,
+  type SharedAccessApi,
+} from "@/components/ward-management/shell/ward-shared-access-context";
 
 /** P188: the tour is offered first; this reads the three welcome cards and presses "Start the tour". */
 async function startFromOffer() {
@@ -100,5 +105,49 @@ describe("tour auto-start once per device (G3)", () => {
     expect(screen.queryByRole("button", { name: "Start the tour" })).toBeNull();
     expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe("yes");
     expect(onStart).not.toHaveBeenCalled();
+  });
+
+  it("#1427: waits for a signed-in account's Help memory before offering the tour", async () => {
+    vi.useFakeTimers();
+    try {
+      for (const [actorId, tours, offered] of [
+        ["synthetic-account-seen", ["ward"], false],
+        ["synthetic-account-new", [], true],
+      ] as const) {
+        resetTourSeenForTests();
+        window.localStorage.clear();
+        let answer: (value: unknown) => void = () => undefined;
+        const preferences = vi.fn(
+          (body?: Record<string, unknown>) =>
+            new Promise<unknown>((resolve) => {
+              if (body) resolve({ shared: true });
+              else answer = resolve;
+            }),
+        );
+        const view = render(
+          <SharedAccessContext.Provider value={{ api: { preferences } as unknown as SharedAccessApi, actorId }}>
+            <WardHelpAccountMemory />
+            <WardTourAutoStart onStart={vi.fn()} />
+          </SharedAccessContext.Provider>,
+        );
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(2000);
+        });
+        // Still loading: nothing is offered yet.
+        expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBeNull();
+        expect(screen.queryByTestId("ward-tour-offer")).toBeNull();
+        await act(async () => {
+          answer({ shared: true, tours, tips: [], whatsNew: [], tipsOff: null });
+        });
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(2000);
+        });
+        // An account whose tour was offered elsewhere is not offered it again; a new one is.
+        expect(window.localStorage.getItem(TOUR_AUTO_DONE_STORAGE_KEY)).toBe(offered ? "coordinator" : "ward");
+        view.unmount();
+      }
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

@@ -29,6 +29,7 @@ import { isEdInitiatedWithdrawal } from "@/components/ward-management/ed/ed-scre
 import { isConfirmationFresh } from "@/components/ward-management/capacity/capacity-gap-words";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
 import type { Admission } from "@/components/ward-management/ward-admissions";
+import type { ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { type DueSoonThresholds, type Instant, splitDuration } from "@/components/ward-management/ward-clock";
 import {
   isOpen,
@@ -81,6 +82,8 @@ type TvInputs = {
   thresholds: DueSoonThresholds;
   /** The screen's own name resolver. */
   nameOf: (movement: Movement) => string;
+  /** WF-FIG-017: journeys and referrals that may hold a named bed; defaults to `movements`. */
+  namedHolds?: readonly ReservationReferral[];
 };
 
 function byWaitThenId(a: TvJourneyRow, b: TvJourneyRow): number {
@@ -167,7 +170,7 @@ export type WardTvSheet = {
 };
 
 export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
-  const { unit, movements, bedReleases, admissions, leaveBeds, now, thresholds, nameOf } = input;
+  const { unit, movements, bedReleases, admissions, leaveBeds, now, thresholds, nameOf, namedHolds } = input;
   const sheet = bedMeetingSheet({
     units: [unit],
     movements,
@@ -178,6 +181,7 @@ export function wardTvSheet(input: TvInputs & { unit: Unit }): WardTvSheet {
     thresholds,
     service: null,
     nameOf,
+    namedHolds: namedHolds ?? movements,
   });
   const open = movements.filter(isOpen);
   const row = (movement: Movement, stage: string): TvJourneyRow => ({
@@ -276,7 +280,8 @@ export function edTvSheet(input: TvInputs & { edId: string; accessTargetMinutes:
 
   const service = edHealthService(edId);
   const serviceUnits = service === undefined ? [] : units.filter((unit) => unitHealthService(unit) === service);
-  const rows = networkWardRows(serviceUnits, now, bedReleases, admissions, leaveBeds);
+  // WF-FIG-017: a journey holding a named bed takes it off Ready, as on Capacity.
+  const rows = networkWardRows(serviceUnits, now, bedReleases, admissions, leaveBeds, input.namedHolds ?? movements);
   const withBeds = rows
     .filter((row) => row.ready > 0)
     .sort((a, b) => b.ready - a.ready || a.unit.name.localeCompare(b.unit.name))
@@ -382,6 +387,7 @@ function serviceWardRows(input: MeetingInputs, scopedUnits: Unit[]): TvWardRow[]
     bedReleases.filter((release) => unitIds.has(release.unitId)),
     admissions,
     leaveBeds,
+    input.namedHolds ?? movements,
   );
   const groups = groupDischarges(
     bedReleases.filter((release) => unitIds.has(release.unitId)),
@@ -404,7 +410,7 @@ function serviceWardRows(input: MeetingInputs, scopedUnits: Unit[]): TvWardRow[]
 }
 
 function serviceRow(input: MeetingInputs, service: HealthService): TvServiceRow {
-  const sheet = bedMeetingSheet({ ...input, service });
+  const sheet = bedMeetingSheet({ ...input, service, namedHolds: input.namedHolds ?? input.movements });
   const { heldUp, confirmed, expected } = sheet.discharges;
   return {
     service,
@@ -424,7 +430,7 @@ export function meetingTvExtras(input: MeetingInputs): MeetingTvExtras {
   return {
     services: service === null ? tvHealthServices(units).map((each) => serviceRow(input, each)) : [],
     wards: service === null ? [] : serviceWardRows(input, scopedUnits),
-    gaps: bedKindGaps(scopedMovements, scopedUnits, now, input.admissions),
+    gaps: bedKindGaps(scopedMovements, scopedUnits, now, input.admissions, input.namedHolds ?? []),
     pendingPreparation: scopedUnits.reduce((sum, unit) => sum + bedsPendingPreparation(unit.id, bedReleases), 0),
     bedCount: bedCountAge(scopedUnits, now),
   };

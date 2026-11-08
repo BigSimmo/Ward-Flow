@@ -699,7 +699,13 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                   />
                 ) : null}
                 {person.alert ? <HeroChip value="Alert" tone="warning" label={person.alert} /> : null}
-                <HeroChip value="Allergies" label={person.allergies} />
+                <HeroChip
+                  value="Allergies"
+                  // A recorded allergy carries the amber mark, as the alert chip does; none reads plain.
+                  // (Chips never take the triangle: tests/wf-triangle-guard.test.ts.)
+                  tone={person.allergies === "Not recorded" ? undefined : "warning"}
+                  label={person.allergies}
+                />
                 {person.legal ? (
                   <HeroChip value={<LegalName name={person.legal} />} label={person.legalTag} />
                 ) : (

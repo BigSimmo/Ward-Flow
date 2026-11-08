@@ -276,6 +276,8 @@ export function splitPlaywrightArguments(args) {
     "--test-list-invert",
     "--only-changed",
     "--update-snapshots",
+    "--tsconfig",
+    "--add-reporter",
   ]);
   for (let index = 0; index < args.length; index++) {
     const argument = args[index];

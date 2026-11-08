@@ -37,7 +37,7 @@ import { resolveSubjectPatient } from "@/components/ward-management/ward-patient
 import { declineReasonLabels } from "@/components/ward-management/movements/movement-workspace-derivations";
 import { bedStates, readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { isConstantObservation, observationSummary } from "@/components/ward-management/ward-observation";
-import { communityOriginLabel } from "@/components/ward-management/ward-movement-origin";
+import { communityOriginLabel, sourceWardName } from "@/components/ward-management/ward-movement-origin";
 import { currentLegalDueAt, formProgression } from "@/components/ward-management/legal-forms/legal-form-progression";
 import type { SenderMovementPartialView } from "@/components/ward-management/ward-partial-view-contract";
 import { SHIFT_PATTERN } from "@/components/ward-management/ward-operational-defaults";
@@ -252,13 +252,9 @@ export function toHandoverRow(
 ): HandoverRow {
   const identity = resolveSubjectPatient(movement, { patients, referrals });
   const community = movement.originEdId === undefined ? communityOriginLabel(movement.originCommunity) : undefined;
-  const source =
-    movement.sourceAdmissionId === undefined
-      ? undefined
-      : admissions.find((admission) => admission.id === movement.sourceAdmissionId);
-  const sourceName = units.find((unit) => unit.id === source?.unitId)?.name ?? "Sending ward not recorded";
+  const sourceName = sourceWardName(movement, admissions, units);
   const ed =
-    movement.sourceAdmissionId !== undefined
+    sourceName !== undefined
       ? { short: sourceName, full: sourceName }
       : community
         ? { short: community, full: community }
@@ -466,6 +462,8 @@ export function dueShort(row: HandoverRow, now: Instant): string | null {
     return hold.state === "lapsed" ? hold.label : `Pull ends ${formatInstantWithDay(hold.expiresAt, now)}`;
   }
   if (row.formDueAt !== undefined) return `${row.formCode ?? "Form"} due ${formatInstantWithDay(row.formDueAt, now)}`;
+  // AR-1: a delivered journey is still `moving` until the ward confirms, but is no longer in transit.
+  if (collected && deliveredAwaitingWard(row.movement)) return movementStatusLabel(row.movement);
   return collected ? "In transit" : null;
 }
 
@@ -496,6 +494,9 @@ export function dueParts(row: HandoverRow, now: Instant): { when: string; what: 
   }
   if (row.formDueAt !== undefined)
     return { when: formatInstantWithDay(row.formDueAt, now), what: `${row.formCode ?? "Form"} due` };
+  // AR-1: the delivered wording, split as movementStatusLabel reads it.
+  if (collected && deliveredAwaitingWard(row.movement))
+    return { when: "Arrived at ward", what: "Awaiting ward confirmation" };
   return collected ? { when: "In transit", what: "Collected" } : null;
 }
 
