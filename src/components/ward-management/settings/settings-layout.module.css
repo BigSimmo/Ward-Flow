@@ -468,7 +468,7 @@
   inline-size: 3.25rem;
   block-size: 3.25rem;
   font-size: var(--wf-fs-16, 1rem);
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-hero-ink, #fff) 14%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-hero-ink) 14%, transparent);
 }
 
 /* Role and desk sit under the name, not beside it. */
@@ -480,12 +480,12 @@
 
 .profileHero [class*="title_"],
 .profileHero [class*="__title"] {
-  font-size: var(--wf-fs-24, 1.5rem);
+  font-size: 1.5rem;
   letter-spacing: -0.01em;
 }
 
 .heroMeta {
-  color: var(--wf-hero-ink-2, rgba(243, 247, 251, 0.7));
+  color: var(--wf-hero-ink-2);
   font-size: var(--wf-fs-13, 0.8125rem);
   font-weight: 500;
 }
@@ -506,11 +506,11 @@
 
 .heroCell + .heroCell {
   padding-inline-start: var(--wf-s-4);
-  border-inline-start: 1px solid color-mix(in srgb, var(--wf-hero-ink, #fff) 12%, transparent);
+  border-inline-start: 1px solid color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
 }
 
 .heroCell dt {
-  color: var(--wf-hero-ink-2, rgba(243, 247, 251, 0.7));
+  color: var(--wf-hero-ink-2);
   font-size: var(--wf-fs-11, 0.6875rem);
   font-weight: 600;
   letter-spacing: 0.07em;
@@ -523,7 +523,7 @@
   align-items: center;
   gap: 0 var(--wf-s-2);
   margin: 0;
-  color: var(--wf-hero-ink, #f3f7fb);
+  color: var(--wf-hero-ink);
   font-size: var(--wf-fs-13, 0.8125rem);
   line-height: 1.4;
 }
@@ -535,7 +535,7 @@
 }
 
 .heroQuiet {
-  color: var(--wf-hero-ink-2, rgba(243, 247, 251, 0.7));
+  color: var(--wf-hero-ink-2);
 }
 
 @media (max-width: 46.4375rem) {
