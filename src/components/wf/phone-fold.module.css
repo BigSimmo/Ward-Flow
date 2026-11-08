@@ -16,6 +16,11 @@
   visibility: hidden;
   opacity: 0;
   transform: translateY(-6px);
+  /* iPhone (Josh, 8 Nov 2026): Safari sometimes showed the dark line with no words in it while the
+     page was still moving. Its own layer keeps the text drawn with the line. */
+  will-change: opacity, transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   transition:
     opacity var(--wf-t-exit) var(--wf-ease-in),
     transform var(--wf-t-exit) var(--wf-ease-in),
