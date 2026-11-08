@@ -78,7 +78,7 @@ export function promisesHeroNext(
   return {
     answer: (
       <>
-        {total} ward {total === 1 ? "promise" : "promises"} to chase
+        {total} ward {total === 1 ? "reply" : "replies"} due
         {overdue > 0 ? (
           <span className={styles.heroOverdue}>
             <span>·</span>
@@ -89,7 +89,7 @@ export function promisesHeroNext(
       </>
     ),
     action: {
-      label: open ? "Hide promises" : "Show promises",
+      label: open ? "Hide replies" : "Show replies",
       pressed: open,
       testId: "ward-handover-promises-toggle",
       onClick: () => onOpenChange(!open),
@@ -154,7 +154,7 @@ export function HandoverOpenPromises({
     >
       <h2 id={`${baseId}-heading`} className={styles.heading}>
         <Icon icon={PhoneCall} size={16} className={styles.headIcon} />
-        Ward promises to chase
+        Ward replies due
         <span className={styles.count}>{rows.length}</span>
         {overdueCount > 0 ? (
           <span className={styles.overdueCount}>
