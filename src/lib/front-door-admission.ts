@@ -4,10 +4,19 @@
  *
  * These bounds are per process: 30 checks/client/minute, 300 total/minute and eight pending checks.
  * Restarts reset them; multiple processes have independent budgets. No requests wait in a queue.
+ *
+ * Without a server-verified client address, the budget is keyed on the token's claimed subject, not
+ * one shared bucket, so a script sending fake tokens cannot spend every real user's allowance
+ * (review 8 Nov 2026). The claim is unverified, so it only picks a bucket; it never grants anything.
+ * An account the provider accepted recently skips the all-clients cap and has a small reserve of
+ * pending checks, so a flood of fake tokens cannot lock out staff who already signed in.
  */
 const CHECKS_PER_CLIENT = 30;
 const CHECKS_TOTAL = 300;
 const CHECKS_IN_FLIGHT = 8;
+const KNOWN_ACCOUNT_IN_FLIGHT_RESERVE = 4;
+const KNOWN_ACCOUNT_MS = 12 * 60 * 60_000;
+const KNOWN_ACCOUNT_LIMIT = 5_000;
 const WINDOW_MS = 60_000;
 const TIMEOUT_MS = 8_000;
 type AccountCheck = { id: string } | "malformed" | "rate-limited" | "refused" | "unavailable";
@@ -33,6 +42,17 @@ function plausibleToken(token: string): boolean {
   }
 }
 
+/** The token's claimed subject, unverified: used only to choose a rate-limit bucket. */
+function claimedSubject(token: string): string | null {
+  try {
+    const payload: unknown = JSON.parse(Buffer.from(token.split(".")[1] ?? "", "base64url").toString("utf8"));
+    const sub = (payload as { sub?: unknown } | null)?.sub;
+    return typeof sub === "string" && sub.length > 0 && sub.length <= 64 ? sub : null;
+  } catch {
+    return null;
+  }
+}
+
 function configuredOrigin(): string | null {
   try {
     const url = new URL(process.env.NEXT_PUBLIC_WARD_SUPABASE_URL ?? "");
@@ -48,14 +68,25 @@ export function createFrontDoorVerifier(dependencies: { fetch?: typeof fetch; no
   let windowStart = -Infinity;
   let total = 0;
   let inFlight = 0;
-  // At most CHECKS_TOTAL entries can be charged in a window, including the shared unknown bucket.
+  // At most CHECKS_TOTAL unknown-account entries can be charged in a window; known accounts add at
+  // most KNOWN_ACCOUNT_LIMIT more.
   const clients = new Map<string, number>();
+  // Subjects the provider accepted, with when that acceptance stops counting.
+  const knownAccounts = new Map<string, number>();
 
   /**
    * A client identity may be supplied only from server-verified ingress metadata, never raw request
-   * headers. The Next route has no verified socket/proxy fact, so it uses one unknown-client bucket.
-   * Missing metadata still permits a bounded sign-in; rotating XFF cannot create new allowances.
+   * headers. The Next route has no verified socket/proxy fact, so it buckets by claimed subject.
+   * Missing metadata still permits a bounded sign-in; rotating XFF cannot create new allowances, and
+   * rotating fake subjects is held by the all-clients cap, which known accounts skip.
    */
+  function rememberAccount(subject: string, at: number) {
+    if (!knownAccounts.has(subject) && knownAccounts.size >= KNOWN_ACCOUNT_LIMIT)
+      for (const [entry, until] of knownAccounts) if (until <= at) knownAccounts.delete(entry);
+    if (knownAccounts.has(subject) || knownAccounts.size < KNOWN_ACCOUNT_LIMIT)
+      knownAccounts.set(subject, at + KNOWN_ACCOUNT_MS);
+  }
+
   return async (token: string, verifiedClientAddress?: string): Promise<AccountCheck> => {
     if (!plausibleToken(token)) return "malformed";
     const publishableKey = process.env.NEXT_PUBLIC_WARD_SUPABASE_PUBLISHABLE_KEY ?? "";
@@ -67,11 +98,24 @@ export function createFrontDoorVerifier(dependencies: { fetch?: typeof fetch; no
       total = 0;
       clients.clear();
     }
-    const client = verifiedClientAddress && verifiedClientAddress.length <= 64 ? verifiedClientAddress : "unknown";
+    const subject = claimedSubject(token);
+    const client =
+      verifiedClientAddress && verifiedClientAddress.length <= 64
+        ? verifiedClientAddress
+        : subject
+          ? `subject:${subject}`
+          : "unknown";
+    const known = subject !== null && (knownAccounts.get(subject) ?? -Infinity) > at;
     const used = clients.get(client) ?? 0;
-    if (used >= CHECKS_PER_CLIENT || total >= CHECKS_TOTAL || inFlight >= CHECKS_IN_FLIGHT) return "rate-limited";
+    if (used >= CHECKS_PER_CLIENT) return "rate-limited";
+    if (
+      known
+        ? inFlight >= CHECKS_IN_FLIGHT + KNOWN_ACCOUNT_IN_FLIGHT_RESERVE
+        : total >= CHECKS_TOTAL || inFlight >= CHECKS_IN_FLIGHT
+    )
+      return "rate-limited";
     clients.set(client, used + 1);
-    total += 1;
+    if (!known) total += 1;
     inFlight += 1;
 
     const controller = new AbortController();
@@ -93,7 +137,9 @@ export function createFrontDoorVerifier(dependencies: { fetch?: typeof fetch; no
         if (response.status === 401 || response.status === 403) return "refused";
         if (!response.ok) return "unavailable";
         const user = (await response.json()) as { id?: unknown } | null;
-        return typeof user?.id === "string" && user.id ? { id: user.id } : "refused";
+        if (typeof user?.id !== "string" || !user.id) return "refused";
+        if (user.id === subject) rememberAccount(user.id, now());
+        return { id: user.id };
       } catch {
         return "unavailable";
       } finally {

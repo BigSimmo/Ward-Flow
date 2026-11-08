@@ -177,3 +177,40 @@ describe("front-door verifier deadline", () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 });
+
+describe("front-door admission under a fake-token flood (review 8 Nov 2026)", () => {
+  const forSubject = (sub: string) =>
+    `${part({ alg: "HS256", typ: "JWT" })}.${part({ sub })}.${Buffer.from("synthetic-signature").toString("base64url")}`;
+
+  it("gives each claimed subject its own budget, so one caller cannot spend everyone's", async () => {
+    const send = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) =>
+      String((init?.headers as Record<string, string>).authorization).includes(part({ sub: "synthetic-staff" }))
+        ? Response.json({ id: "synthetic-staff" })
+        : new Response(null, { status: 401 }),
+    );
+    const verify = createFrontDoorVerifier({ fetch: send, now: () => 10_000 });
+    for (let attempt = 0; attempt < 30; attempt += 1)
+      expect(await verify(forSubject("synthetic-fake"))).toBe("refused");
+    expect(await verify(forSubject("synthetic-fake"))).toBe("rate-limited");
+    expect(await verify(forSubject("synthetic-staff"))).toEqual({ id: "synthetic-staff" });
+  });
+
+  it("lets an account the provider accepted recently through when rotating fake subjects fill the shared cap", async () => {
+    let now = 10_000;
+    const send = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) =>
+      String((init?.headers as Record<string, string>).authorization).includes(part({ sub: "synthetic-staff" }))
+        ? Response.json({ id: "synthetic-staff" })
+        : new Response(null, { status: 401 }),
+    );
+    const verify = createFrontDoorVerifier({ fetch: send, now: () => now });
+    expect(await verify(forSubject("synthetic-staff"))).toEqual({ id: "synthetic-staff" });
+    now += 60_000;
+    for (let attempt = 0; attempt < 300; attempt += 1)
+      expect(await verify(forSubject(`synthetic-fake-${attempt}`))).toBe("refused");
+    expect(await verify(forSubject("synthetic-new-fake"))).toBe("rate-limited");
+    expect(await verify(forSubject("synthetic-staff"))).toEqual({ id: "synthetic-staff" });
+    now += 12 * 60 * 60_000;
+    for (let attempt = 0; attempt < 300; attempt += 1) await verify(forSubject(`synthetic-later-fake-${attempt}`));
+    expect(await verify(forSubject("synthetic-staff"))).toBe("rate-limited");
+  });
+});

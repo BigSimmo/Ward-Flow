@@ -10,8 +10,9 @@ name: Ward Flow receipt clean-up
 # Needs one repository secret, added by the owner: WARD_SUPABASE_PRUNE_DATABASE_URL, the connection
 # for the `wardflow_pruner` login (backend/ward-flow/infra/supabase-prune-role.sql). That login can
 # only call a function that removes receipts older than 7 days; it cannot read or change anything
-# else. The migration login is never stored here. Until the secret exists, each run says so and
-# succeeds without connecting. Public repository: free.
+# else. The migration login is never stored here. Without the secret, the weekly scheduled run fails
+# (so a green run always means receipts were removed); a manual run only says so and succeeds
+# (review, 8 November 2026). Public repository: free.
 #
 # The Supabase pooler's certificate chains to the public Supabase Root 2021 CA, which Node does not
 # trust by default, so the job uses the copy in backend/ward-flow/infra (public, not a secret;
@@ -42,6 +43,9 @@ jobs:
         run: |
           if [ -n "$WARD_SUPABASE_PRUNE_DATABASE_URL" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
+          elif [ "$GITHUB_EVENT_NAME" = "schedule" ]; then
+            echo "::error::Receipt clean-up did not run: add WARD_SUPABASE_PRUNE_DATABASE_URL (the wardflow_pruner login) as a repository secret."
+            exit 1
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
             echo "::notice::Receipt clean-up skipped: add WARD_SUPABASE_PRUNE_DATABASE_URL (the wardflow_pruner login) as a repository secret."

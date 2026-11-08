@@ -94,7 +94,14 @@ const LAST_USED_EVERY_MS = 3_600_000;
 /** A membership still in use, as the viewer counts it: cover, or used since `param` (a cutoff). */
 const inUse = (param) => `(m.kind = 'cover' OR coalesce(m.last_used_at, m.granted_at) > ${param}::timestamptz)`;
 /** Open requests for access kept at once, so made-up accounts cannot fill the table. */
-const MAX_OPEN_REQUESTS = 200;
+const MAX_OPEN_REQUESTS = 500;
+/** Open requests waiting for one health service (or statewide) at once (review 8 Nov 2026). */
+const MAX_OPEN_REQUESTS_PER_PLACE = 50;
+/**
+ * An unanswered request stops counting towards the caps after this long, so junk requests cannot
+ * block new staff for good. It stays listed, newest first, until an access admin answers it.
+ */
+const REQUEST_LAPSE_MS = 14 * 24 * 60 * 60_000;
 /** The most a whole workspace may hold, as before migration 10 split it into rows. */
 const MAX_WORLD_BYTES = 8_388_608;
 /** Past this a save logs a warning, well before the limit refuses every save (config.mjs). */
@@ -2249,7 +2256,7 @@ export function createWorkspaceStore(
         view.version >= ACCESS_COVER_MIGRATION
           ? (
               await pool.query(
-                "SELECT * FROM ward_flow.access_requests WHERE workspace_id=$1 AND decision IS NULL ORDER BY requested_at, id LIMIT $2",
+                "SELECT * FROM ward_flow.access_requests WHERE workspace_id=$1 AND decision IS NULL ORDER BY requested_at DESC, id LIMIT $2",
                 [workspaceId, MAX_OPEN_REQUESTS],
               )
             ).rows
@@ -2381,12 +2388,21 @@ export function createWorkspaceStore(
       return transaction(async (client, at) => {
         const row = await lock(client, actorId, at);
         const { rows } = await client.query(
-          "SELECT count(*) FILTER (WHERE actor_id=$2)::int AS mine, count(*)::int AS open FROM ward_flow.access_requests WHERE workspace_id=$1 AND decision IS NULL",
+          "SELECT count(*) FILTER (WHERE actor_id=$2)::int AS mine FROM ward_flow.access_requests WHERE workspace_id=$1 AND decision IS NULL",
           [workspaceId, actorId],
         );
         const refusal = engine.requestRefusal(row.payload, access, rows[0].mine);
         if (refusal) return refused(422, refusal);
-        if (rows[0].open >= MAX_OPEN_REQUESTS)
+        const { rows: recent } = await client.query(
+          "SELECT role, scope FROM ward_flow.access_requests WHERE workspace_id=$1 AND decision IS NULL AND requested_at >= $2 LIMIT $3",
+          [workspaceId, new Date(at.getTime() - REQUEST_LAPSE_MS), MAX_OPEN_REQUESTS],
+        );
+        const place = engine.requestPlace(row.payload, access.scope);
+        const samePlace = recent.filter((open) => {
+          const parsed = engine.parseAccess(open.role, open.scope);
+          return parsed !== null && engine.requestPlace(row.payload, parsed.scope) === place;
+        }).length;
+        if (recent.length >= MAX_OPEN_REQUESTS || samePlace >= MAX_OPEN_REQUESTS_PER_PLACE)
           return refused(429, "Too many requests are waiting. Ask your access admin directly.");
         const { rows: stored } = await client.query(
           "INSERT INTO ward_flow.access_requests(id, workspace_id, actor_id, role, scope, requested_at) VALUES ($1,$2,$3,$4,$5,$6) ON CONFLICT DO NOTHING RETURNING *",
