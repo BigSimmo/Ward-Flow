@@ -15,7 +15,7 @@ import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { Button, Count, StatusGlyph, cx, durMinutes } from "@/components/wf";
 import { openMeetingAction } from "@/components/ward-management/bed-meeting/bed-meeting-actions";
-import { formatInstant, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { useBedMeetingRecord } from "@/components/ward-management/bed-meeting/use-bed-meeting-done";
 
 import styles from "./referral-page.module.css";
@@ -140,7 +140,7 @@ export function WardOffersTable({
                   <span className={styles.offerBar} aria-hidden="true">
                     <span style={{ width: `${Math.min(100, Math.round((waited / longest) * 100))}%` }} />
                   </span>
-                  <span className={styles.offerSent}>sent {formatInstant(sentAt(movement))}</span>
+                  <span className={styles.offerSent}>sent {formatInstantWithDay(sentAt(movement), now)}</span>
                 </td>
                 {coordinatorDesk ? (
                   <td className={styles.offerActions}>
