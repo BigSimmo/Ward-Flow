@@ -1,7 +1,8 @@
 "use client";
 
+import { WardPeekButton } from "@/components/ward-management/board/ward-peek";
 import Link from "next/link";
-import { BedSingle, CalendarCheck, FileText, Pencil, X } from "lucide-react";
+import { CalendarCheck, FileText, Pencil, X } from "lucide-react";
 
 import {
   Button,
@@ -122,12 +123,12 @@ export function PlannedMoveDrawer({
                 Patient record
               </Link>
             ) : null}
-            {canOpen(boardHref) ? (
-              <Link href={boardHref} className={buttonClass({ variant: lead === "board" ? "pri" : "sec" })}>
-                <BedSingle strokeWidth={1.75} size={14} aria-hidden="true" />
-                Ward board
-              </Link>
-            ) : null}
+            <WardPeekButton
+              unitId={planned.unitId}
+              href={boardHref}
+              label="Ward board"
+              variant={lead === "board" ? "pri" : "sec"}
+            />
             {change ? (
               <Button variant="sec" icon={Pencil} onClick={change}>
                 Change booking
@@ -291,15 +292,12 @@ export function StepDownDrawer({
                 Patient record
               </Link>
             ) : null}
-            {canOpen(boardHref) ? (
-              <Link
-                href={boardHref}
-                className={buttonClass({ variant: recordHref && canOpen(recordHref) ? "sec" : "pri" })}
-              >
-                <BedSingle strokeWidth={1.75} size={14} aria-hidden="true" />
-                Ward board
-              </Link>
-            ) : null}
+            <WardPeekButton
+              unitId={row.fromUnit.id}
+              href={boardHref}
+              label="Ward board"
+              variant={recordHref && canOpen(recordHref) ? "sec" : "pri"}
+            />
           </DrawerFootRow>
         </>
       }

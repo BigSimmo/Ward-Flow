@@ -1,4 +1,4 @@
-/* Waiting drawer footer pop-ups (Note 8 issue 7, 8 Nov 2026). */
+/* Small at-a-glance pop-ups: Waiting footer, ED and ward peeks (8 Nov 2026). */
 .panel {
   min-width: 16rem;
   max-width: min(20rem, calc(100vw - 2 * var(--wf-s-4)));

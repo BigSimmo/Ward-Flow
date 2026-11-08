@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { WardPeekButton } from "@/components/ward-management/board/ward-peek";
 import { useRef, useState } from "react";
 import { useWardRecordActors } from "@/components/ward-management/shell/ward-access";
 import {
@@ -35,7 +35,6 @@ import {
   ShowMoreRow,
   SrOnly,
   StatusGlyph,
-  buttonClass,
   type HeroNextStep,
 } from "@/components/wf";
 import { criteriaLedTileChip, dischargeCriteriaStatus } from "@/components/ward-management/ward-discharge-criteria";
@@ -509,10 +508,9 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
         {releaseAction}
       </Button>
     ) : null;
+  // Ward peek (8 Nov 2026): the ward's beds in a pop-up, the ward page one link further.
   const openWard = selectedUnitId ? (
-    <Link href={`/ward-flow/ward/${selectedUnitId}`} className={buttonClass({ variant: "sec" })}>
-      Open ward
-    </Link>
+    <WardPeekButton unitId={selectedUnitId} href={`/ward-flow/ward/${selectedUnitId}`} label="Open ward" />
   ) : null;
   const recordLink =
     detailRelease && linkedReleaseRecord ? (

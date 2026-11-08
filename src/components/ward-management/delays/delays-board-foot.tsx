@@ -5,7 +5,7 @@
 // page. Movement stays a plain link to the full record.
 import { useMemo } from "react";
 import Link from "next/link";
-import { ArrowUpRight, BedDouble, Hospital, LayoutDashboard, ListChecks } from "lucide-react";
+import { ArrowUpRight, BedSingle, Hospital, LayoutDashboard, ListChecks } from "lucide-react";
 import { Button, Popover, buttonClass } from "@/components/wf";
 import { splitDuration, type Instant } from "@/components/ward-management/ward-clock";
 import type { Movement } from "@/components/ward-management/ward-model";
@@ -15,20 +15,22 @@ import { seesNetworkBedFigures } from "@/components/ward-management/ward-role-ac
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { edHref, movementHref } from "@/components/ward-management/shell/ward-facade";
-import styles from "./waiting-foot.module.css";
+import { PatientPeekLink } from "@/components/ward-management/patients/patient-peek-link";
+import styles from "@/components/ward-management/peek-popover.module.css";
 
 const secondaryClass = buttonClass({ variant: "sec", size: "md" });
 
+/** Movement opens the Patient peek over Waiting; the full page stays on its link (new tab). */
 export function MovementRecordLink({ movement }: { movement: Movement }) {
   return (
-    <Link
+    <PatientPeekLink
+      movementId={movement.id}
       className={secondaryClass}
       href={movementHref(movement.id)}
       data-testid={`delays-foot-movement-${movement.id}`}
     >
       Movement
-      <ArrowUpRight size={14} aria-hidden="true" />
-    </Link>
+    </PatientPeekLink>
   );
 }
 
@@ -88,10 +90,10 @@ export function CoordinatorFootMenu({
                     .closest("[role=dialog]")
                     ?.parentElement?.querySelector<HTMLElement>("button[aria-haspopup]");
                   close({ restoreFocus: false });
-                  requestToolsTool("bed-finder", trigger ?? null);
+                  requestToolsTool("bed-finder", trigger ?? undefined);
                 }}
               >
-                <BedDouble size={16} aria-hidden="true" />
+                <BedSingle size={16} aria-hidden="true" />
                 <span>
                   <b>Find a bed</b>
                   <small>Opens Bed finder in Tools</small>

@@ -75,8 +75,8 @@ describe("Record departure from the release sheet", () => {
     const [before] = probe();
     fireEvent.click(row!);
 
-    // Open ward stays as the secondary way.
-    expect(screen.getByRole("link", { name: "Open ward" })).toBeInTheDocument();
+    // Open ward stays as the secondary way; since D-98 (8 Nov 2026) it opens the Ward peek first.
+    expect(screen.getByRole("button", { name: "Open ward" })).toHaveAttribute("aria-haspopup", "dialog");
     const destination = screen.getByTestId("ward-discharge-departure-destination");
     expect(destination).toHaveValue("discharged-to-the-community");
     fireEvent.change(destination, { target: { value: "transferred-to-a-general-hospital" } });

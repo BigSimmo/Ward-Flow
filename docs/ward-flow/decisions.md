@@ -1125,3 +1125,12 @@ is inferred.
   6. **WF-B008 / October WF-021, sign-in limits:** keep the per-client limits already in `src/lib/front-door-admission.ts`. Review them before any real users sign in. No denial-of-service failure has been shown on the deployed site.
   7. **N40, Tier 4 items 19–23 and 25:** on hold until Josh names them for building.
 - **Boundary:** approves no spending, provider change, merge or release.
+
+## D-98. Friction pass: Quick bar, Patient peek and Ward peek (8 November 2026)
+
+- **Date:** 8 November 2026 (`2026-11-08`), 20:21 UTC. **Decided by:** Josh, in the Ward Flow project, answering "Go ahead with all recommendations" on the friction-pass mock-ups (Notes 7 and 8).
+- **Decision:**
+  1. **Quick bar:** each desk's home shows a row of its most used Tools controls under the title; each opens Tools at that tool, never a new page. A desk only gets controls its role can open.
+  2. **Patient peek:** panel buttons that went to the Patient page (Waiting's Movement, Home's Patient record, Referrals' Patient, Handover's Open patient) open the person's placement deck in a side panel (a bottom sheet on a phone), with "Open full Patient page" one link away. **This revises D-77:** Ask wards on Movements opens in the Patient peek, not on the Patient page. The 3-ward limit (D-76) is unchanged. A new-tab click still opens the full page.
+  3. **Ward peek and pop-ups:** ward buttons in Capacity and Discharges panels show the ward's ready and in-use beds with a link to the board. Waiting's Coordinator and ED board buttons open pop-ups that do the common job (Wards tab, Find a bed, the ED's waiting and longest wait).
+- **Boundary:** no change to who may see what; each peek is offered only where the desk could open the page it replaces. Synthetic data only.
