@@ -17,3 +17,29 @@
 .details dd {
   margin: 0;
 }
+
+/* Simplify Settings (Josh, 8 Nov 2026): "What each switch does", closed until asked. */
+.more {
+  border-top: 1px solid var(--wf-line);
+}
+
+.moreSummary {
+  display: flex;
+  align-items: center;
+  min-height: var(--wf-touch);
+  padding: 0 var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  color: var(--wf-accent);
+  cursor: pointer;
+}
+
+.moreSummary:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: -2px;
+}
+
+.more > .details {
+  padding-top: 0;
+  border-top: 0;
+}

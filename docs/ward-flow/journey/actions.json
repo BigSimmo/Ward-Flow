@@ -5111,7 +5111,7 @@
       "control": "Save Configuration"
     },
     "review": {
-      "reviewedOn": "2026-11-05",
+      "reviewedOn": "2026-11-08",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -5125,8 +5125,8 @@
         },
         {
           "path": "src/components/ward-management/settings/settings-screen.tsx",
-          "line": 441,
-          "sha256": "570bf2ab971c5140b969b8418e82601bfea64a99077e57dcfad4c03c0be07da7"
+          "line": 440,
+          "sha256": "41344dbf5e4297b757bdfb09a3ce6c5a9b0fc8feb88221f03bbaf134d1fd8f07"
         }
       ]
     }
