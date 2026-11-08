@@ -9,7 +9,7 @@ Scanned `docs/ward-flow/decisions.md`, `docs/ward-flow/owner-*.md` and `docs/his
 One file matches `*owner*` but not `owner-*` and is deliberately excluded: `how-to-write-to-the-owner.md`
 — it is instructions for writing TO the owner, not a record of what he ruled.
 
-**614 rulings/items extracted, across 38 of 44 files.**
+**615 rulings/items extracted, across 38 of 44 files.**
 **6 file(s) UNPARSED** — no recognised ruling structure found; listed, not dropped. See below.
 
 ⚠️ **This index proves a ruling or item EXISTS in the named file, as of the generation run
@@ -30,7 +30,7 @@ instance is the one you mean before citing it.
 
 ---
 
-## ID index — 357 distinct IDs
+## ID index — 358 distinct IDs
 
 So an ID like `D-9` or `O-17.1` can be looked up directly, without knowing which file it lives in.
 Bare numbered rulings (files that number "1., 2., 3. …" with no owner-issued letter code) are
@@ -265,6 +265,7 @@ safe global key across 30 files.
 | `D-94` | `decisions.md`:1084 | D-94. Design rulings of 31 October 2026 |
 | `D-95` | `decisions.md`:1097 | D-95. One page scroll, and a click outside closes a drawer (3 November 2026) |
 | `D-96` | `decisions.md`:1107 | D-96. A named bed is held, and its patient is not also waiting (8 November 2026) |
+| `D-97` | `decisions.md`:1116 | D-97. Owner answers on seven open items: N21, N25, N26, N29, N40, N41 and WF-B008 (8 November 2026) |
 | `D9` ⚠️ **9 occurrences — not unique** | | |
 | ↳ | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:62 | D9-1 — The wait becomes prominent, and its ceiling is removed; it never outranks urgency (SESSION) |
 | ↳ | `../history/archive/dated-notes/ward-flow-phase-9-decisions.md`:102 | D9-2 — Declaring escalation records it and marks the screens, and changes nothing else (SESSION, and partly blocked) |
@@ -554,7 +555,7 @@ safe global key across 30 files.
 
 **Title:** Ward Flow — decision log
 
-96 item(s):
+97 item(s):
 
 - `D-1` — line 20, heading: "D-1. Ward Flow is local only, with no linked repository (Replaced by D-27)"
 - `D-2` — line 30, heading: "D-2. Railway is disconnected"
@@ -652,6 +653,7 @@ safe global key across 30 files.
 - `D-94` — line 1084, heading: "D-94. Design rulings of 31 October 2026"
 - `D-95` — line 1097, heading: "D-95. One page scroll, and a click outside closes a drawer (3 November 2026)"
 - `D-96` — line 1107, heading: "D-96. A named bed is held, and its patient is not also waiting (8 November 2026)"
+- `D-97` — line 1116, heading: "D-97. Owner answers on seven open items: N21, N25, N26, N29, N40, N41 and WF-B008 (8 November 2026)"
 
 ### `../history/archive/dated-notes/ward-management-decisions.md` (2026-08-18 – 2026-10-24 (mixed, see file))
 
