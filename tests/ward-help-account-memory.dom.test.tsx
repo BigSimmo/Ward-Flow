@@ -116,6 +116,40 @@ describe("Help remembered by account", () => {
     expect(first).toHaveBeenCalledTimes(1);
   });
 
+  it("N36: keeps a failed save's marks for the same account and retries them after a remount", async () => {
+    const tree = (actorId: string, preferences: SharedAccessApi["preferences"]) =>
+      createElement(
+        SharedAccessContext.Provider,
+        { value: { api: { preferences } as SharedAccessApi, actorId } },
+        createElement(WardHelpAccountMemory),
+      );
+    const failing = vi.fn(async (body?: Record<string, unknown>) => {
+      if (body) throw new Error("Saved history could not be saved");
+      return account();
+    });
+    const first = render(tree("synthetic-account-a", failing));
+    await waitFor(() => expect(failing).toHaveBeenCalledTimes(1));
+    vi.useFakeTimers();
+    act(() => markTourSeen("ed"));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(failing).toHaveBeenCalledTimes(2);
+    first.unmount();
+    vi.useRealTimers();
+    // Another account on this device never receives the unsaved mark.
+    const other = vi.fn(async () => account());
+    const second = render(tree("synthetic-account-b", other));
+    await waitFor(() => expect(other).toHaveBeenCalledTimes(1));
+    second.unmount();
+    expect(other).toHaveBeenCalledTimes(1);
+    // The same account, reconnected, sends it.
+    const working = vi.fn(async (body?: Record<string, unknown>) => account(body));
+    render(tree("synthetic-account-a", working));
+    await waitFor(() => expect(working).toHaveBeenCalledTimes(2));
+    expect(working.mock.calls[1]?.[0]).toEqual({ tours: ["ed"] });
+  });
+
   it("does not upload a device tips choice made before sign-in", async () => {
     setHelpTipsOff(true);
     const call = vi.fn(async () => account());

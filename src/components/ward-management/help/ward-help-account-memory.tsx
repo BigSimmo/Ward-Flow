@@ -22,6 +22,12 @@ import { markWhatsNewSeen, WHATS_NEW_SEEN_EVENT, WHATS_NEW_STORAGE_KEY, whatsNew
 const TOUR_AUTO_DONE_STORAGE_KEY = "ward_flow_choice_tour_auto_done";
 /** Marks made close together go in one save. */
 const SEND_AFTER_MS = 1_000;
+/**
+ * N36: marks made for an account that it has not confirmed yet, by account id, so a failed save is
+ * retried after a reconnect or remount instead of being read as made before sign-in. No
+ * `ward_flow_choice_` prefix, so sign-out clears it.
+ */
+const UNSENT_KEY = "ward_flow_help_unsent";
 
 type Lists = { tours: string[]; tips: string[]; whatsNew: string[] };
 export type AccountHelpMemory = Lists & { tipsOff: boolean | null };
@@ -45,6 +51,36 @@ export function deviceHelpMemory(): Lists {
 
 const strings = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+
+const lists = (value?: Partial<Record<keyof Lists, unknown>> | null): Lists => ({
+  tours: strings(value?.tours),
+  tips: strings(value?.tips),
+  whatsNew: strings(value?.whatsNew),
+});
+
+function readUnsent(): Record<string, Partial<Lists>> {
+  try {
+    const value: unknown = JSON.parse(read(UNSENT_KEY) ?? "{}");
+    return typeof value === "object" && value !== null && !Array.isArray(value)
+      ? (value as Record<string, Partial<Lists>>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Records what this account still lacks of the marks made for it on this device. */
+function keepUnsent(actorId: string, missing: Partial<Lists> | null): void {
+  const all = readUnsent();
+  if (missing) all[actorId] = missing;
+  else delete all[actorId];
+  try {
+    if (Object.keys(all).length > 0) window.localStorage.setItem(UNSENT_KEY, JSON.stringify(all));
+    else window.localStorage.removeItem(UNSENT_KEY);
+  } catch {
+    // Without storage, unsaved marks are retried only during this account session.
+  }
+}
 
 /** The account's reply, or null when Help is not remembered by account (before migration 17). */
 export function accountHelpReply(value: unknown): AccountHelpMemory | null {
@@ -106,8 +142,9 @@ export function WardHelpAccountMemory() {
   useEffect(() => {
     if (!call || !actorId) return;
     let live = true;
-    // Existing marks have no account provenance; never import them into a signed-in account.
-    const beforeSignIn = deviceHelpMemory();
+    // Existing marks have no account provenance; never import them into a signed-in account. Marks
+    // this account made here whose save has not succeeded are its own, so they stay to be sent.
+    const beforeSignIn = lists(missingFromAccount(deviceHelpMemory(), lists(readUnsent()[actorId])));
     // What the account is known to hold, so a save sends only what is new to it.
     let account: AccountHelpMemory | null = null;
     let applying = false;
@@ -115,14 +152,14 @@ export function WardHelpAccountMemory() {
     let timer: number | undefined;
     const send = () => {
       timer = undefined;
-      if (!live || !account) return;
-      const madeHere = missingFromAccount(deviceHelpMemory(), beforeSignIn);
-      const body: Record<string, unknown> = {
-        ...missingFromAccount(
-          { tours: madeHere?.tours ?? [], tips: madeHere?.tips ?? [], whatsNew: madeHere?.whatsNew ?? [] },
-          account,
-        ),
-      };
+      if (!live) return;
+      const missing = missingFromAccount(
+        lists(missingFromAccount(deviceHelpMemory(), beforeSignIn)),
+        account ?? lists(),
+      );
+      keepUnsent(actorId, missing);
+      if (!account) return;
+      const body: Record<string, unknown> = { ...missing };
       if (tipsChanged) {
         const choice = helpTipsChoice();
         if (choice !== null && choice !== account.tipsOff) body.tipsOff = choice;
@@ -132,7 +169,9 @@ export function WardHelpAccountMemory() {
       call(body).then(
         (reply) => {
           const held = accountHelpReply(reply);
-          if (live && held) account = held;
+          if (!held) return;
+          keepUnsent(actorId, missingFromAccount(lists(readUnsent()[actorId]), held));
+          if (live) account = held;
         },
         () => {
           // The device keeps its copy; another mark during this account session retries the save.
