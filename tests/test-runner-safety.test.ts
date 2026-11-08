@@ -184,7 +184,11 @@ describe("temporary path cleanup", () => {
   it("requires bounded retries for every recursive test-fixture cleanup", () => {
     const testsRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)));
     for (const filePath of sourceFiles(testsRoot)) {
-      const unsafe = unsafeRecursiveRmSyncCalls(readFileSync(filePath, "utf8"), filePath);
+      const sourceText = readFileSync(filePath, "utf8");
+      // Every call the parser can flag names rmSync, so files without it cannot fail. Skipping their
+      // parse keeps this scan of 2,000+ test files inside the timeout on a loaded, instrumented runner.
+      if (!sourceText.includes("rmSync")) continue;
+      const unsafe = unsafeRecursiveRmSyncCalls(sourceText, filePath);
       expect(unsafe, `${filePath}\n${unsafe.join("\n")}`).toEqual([]);
     }
   });
