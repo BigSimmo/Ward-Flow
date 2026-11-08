@@ -2247,3 +2247,16 @@ html.theme-transitioning *:after {
     }
   }
 }
+
+/* Note 14 (Josh, 8 Nov 2026): notifications rest at the bottom centre (ward-flow-layout.module.css,
+   wf/overlay.module.css). A page's pinned foot bar (marked data-wf-foot-bar) lifts notes and toasts
+   above it, and toasts stack above a showing note. Global because the selectors hold no local class. */
+@media (min-width: 46.5rem) {
+  html:has([data-wf-foot-bar]) {
+    --wf-foot-bar-lift: 4.5rem;
+  }
+}
+
+html:has([data-wf-bar-notes] > :not([data-wf-offline-slot]), [data-wf-offline-note]) {
+  --wf-toast-note-lift: 3.75rem;
+}

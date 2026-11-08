@@ -438,19 +438,6 @@
   }
 }
 
-/* A page's pinned foot bar (Settings' Save bar and the like, marked data-wf-foot-bar) stays clear:
-   notes and toasts rest above it. */
-@media (min-width: 46.5rem) {
-  :global(html:has([data-wf-foot-bar])) {
-    --wf-foot-bar-lift: 4.5rem;
-  }
-}
-
-/* While a note shows at the foot, toasts stack just above it (overlay.module.css). */
-:global(html:has([data-wf-bar-notes] > :not([data-wf-offline-slot]), [data-wf-offline-note])) {
-  --wf-toast-note-lift: 3.75rem;
-}
-
 /* While a note shows, the page ends with room for it, so its last lines are never left under it. */
 .shellContent:has(> .bannerHolder:not(:empty))::after {
   content: "";
