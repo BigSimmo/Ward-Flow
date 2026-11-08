@@ -113,7 +113,8 @@
     display: flex !important;
   }
 
-  .actions {
+  .actions,
+  .navBar {
     display: none !important;
   }
 
@@ -136,14 +137,60 @@
   }
 }
 
-/* The controls wrap under the title on a narrow screen, so Leave TV view, the one way back to the
-   app while the TV hides the menus (DA-23), is never pushed off the edge. */
+/* Note 13 (Josh, 8 Nov 2026): one layout on every TV screen. The title sits top left and the screen
+   controls (Full screen, Lock as TV, Leave TV view) top right, always in that order; the Screen and
+   View choices have their own row below, so changing screen or view never moves a button. On a
+   narrow screen the controls drop under the title, so Leave TV view, the one way back to the app
+   while the TV hides the menus (DA-23), is never pushed off the edge. */
 .header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    "title actions"
+    "nav nav";
+  align-items: start;
+  gap: calc(var(--tv-gap) * 0.75) var(--tv-gap);
+}
+
+.header > :first-child {
+  grid-area: title;
+}
+
+@media (max-width: 60rem) {
+  .header {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "title"
+      "actions"
+      "nav";
+  }
+}
+
+/* The navigation row: a labelled Screen choice, then the View tabs for that screen. The open screen
+   menu hangs from this row's left edge, so it is always on screen (it was cut off on the left when
+   the controls wrapped). */
+.navBar {
+  grid-area: nav;
+  position: relative;
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--tv-gap);
+  align-items: center;
+  gap: var(--wf-s-2) calc(var(--tv-gap) * 1.5);
+}
+
+.navGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.navLabel {
+  color: var(--wf-ink-3);
+  font-size: var(--tv-least);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .eyebrow {
@@ -186,6 +233,7 @@
 }
 
 .actions {
+  grid-area: actions;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -226,7 +274,15 @@
 
 /* The screen picker: plain links in a disclosure, so a TV can be pointed at one screen for good. */
 .picker {
-  position: relative;
+  position: static;
+  min-width: 0;
+}
+
+.pickerCurrent {
+  overflow: hidden;
+  max-inline-size: 28ch;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .picker > summary {
@@ -244,12 +300,12 @@
 .pickerMenu {
   position: absolute;
   z-index: 2;
-  inset-inline-end: 0;
+  inset-inline-start: 0;
   inset-block-start: calc(100% + var(--wf-s-2));
   display: grid;
   grid-template-columns: repeat(3, max-content);
   gap: var(--wf-s-4) var(--wf-s-8);
-  max-inline-size: calc(100vw - 2 * var(--tv-gap));
+  max-inline-size: 100%;
   max-block-size: 70vh;
   padding: var(--wf-s-4) var(--wf-s-6);
   overflow-y: auto;
@@ -296,20 +352,9 @@
 
 /* On a tablet the menu reflows to one column and each choice is a full touch target. */
 @media (max-width: 80rem) {
-  /* Layout sweep MEET-01: the controls can wrap under the title here, which would put the picker at
-   * the left and push a right-anchored menu off the screen. The menu hangs from the header's right
-   * edge instead, so it is on screen wherever the controls sit. */
-  .header {
-    position: relative;
-  }
-
-  .picker {
-    position: static;
-  }
-
   .pickerMenu {
     grid-template-columns: minmax(0, 1fr);
-    inline-size: min(32rem, calc(100vw - 2 * var(--tv-gap)));
+    inline-size: min(32rem, 100%);
   }
 }
 
@@ -329,6 +374,11 @@
 .pickerMenu a[aria-current="page"] {
   color: var(--wf-accent);
   font-weight: 700;
+}
+
+/* The screen on show is ticked as well as bold, so it is found at a glance. */
+.pickerMenu a[aria-current="page"]::before {
+  content: "\2713\00a0";
 }
 
 /* ------------------------------------------------------------------------------------------------
