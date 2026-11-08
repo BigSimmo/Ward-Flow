@@ -51,6 +51,7 @@ import { WARD_FLOW_ROLE_LABELS } from "../ward-flow-roles";
 import { bedMeetingTvHref } from "../ward-nav";
 import { DONE_PAUSE_MS, LONG_WAIT_MINUTES, LONG_WAIT_TEXT } from "../ward-operational-defaults";
 import { usePatientOf } from "../ward-patient-name";
+import { fieldsMatchEveryWord } from "../search/search-text";
 import { useRefocusAfterRowLeaves } from "../use-refocus-after-row-leaves";
 import {
   BED_MEETING_ACTION_DUE_HOURS,
@@ -296,7 +297,9 @@ function BedMeetingAgenda() {
     });
 
   // B1 "any patient": the chair can find anyone open on the board and record an action against them.
-  const needle = query.trim().toLowerCase();
+  // Every typed word, folded, in any order: "smith john", "Smith, John" and "obrien" all find the
+  // person, as the header search does (search audit, 8 Nov 2026).
+  const needle = query.trim();
   const found: AgendaItem[] =
     needle.length < SEARCH_MIN
       ? []
@@ -321,7 +324,7 @@ function BedMeetingAgenda() {
           .filter((item) => {
             if (!inGroups(item)) return false;
             const who = patientOf(item.record);
-            return who.formalName.toLowerCase().includes(needle) || who.umrn.toLowerCase().includes(needle);
+            return fieldsMatchEveryWord(needle, [who.formalName, who.displayName, who.umrn]);
           })
           .slice(0, 8);
 

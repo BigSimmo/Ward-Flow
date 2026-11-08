@@ -50,6 +50,7 @@ import {
   type WardIncidentCategory,
 } from "./ward-restrictive-practice";
 import styles from "./seclusion-forms-view.module.css";
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 
 /**
  * FS3 (Josh, 3 Nov 2026, Q29): seclusion and restraint IN USE NOW, as a view of the Forms page.
@@ -455,13 +456,17 @@ function StartDialog({
   const unitIds = new Set(units.map((unit) => unit.id));
   const stays = admissions
     .filter((stay) => stay.state === "occupied" && stay.unitId !== undefined && unitIds.has(stay.unitId))
-    .map((stay) => ({ stay, name: patientOf(stay).formalName, unit: units.find((unit) => unit.id === stay.unitId)! }));
+    .map((stay) => {
+      const who = patientOf(stay);
+      return { stay, name: who.formalName, umrn: who.umrn, unit: units.find((unit) => unit.id === stay.unitId)! };
+    });
   const chosen = stays.find((entry) => entry.stay.id === admissionId);
-  const needle = query.trim().toLowerCase();
+  // Search audit, 8 Nov 2026: every word in any order, and the UMRN too, as other patient pickers do.
+  const needle = query.trim();
   const matches =
     needle === ""
       ? []
-      : stays.filter((entry) => `${entry.name} ${entry.unit.name}`.toLowerCase().includes(needle)).slice(0, 6);
+      : stays.filter((entry) => fieldsMatchEveryWord(needle, [entry.name, entry.umrn, entry.unit.name])).slice(0, 6);
   const refusal = !chosen ? "Choose the patient first." : practice === "" ? "Choose what is in use." : time.refusal;
   return (
     <Dialog

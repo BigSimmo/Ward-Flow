@@ -28,7 +28,7 @@
  *     />
  */
 import { Search } from "lucide-react";
-import { useRef, type ComponentPropsWithRef, type Ref } from "react";
+import { useId, useRef, type ComponentPropsWithRef, type Ref } from "react";
 
 import { cx } from "./cx";
 import { TextInput } from "./form";
@@ -75,11 +75,13 @@ export function SearchField({
   placeholder,
   id,
   "aria-describedby": describedBy,
+  onKeyDown,
   ...inputProps
 }: SearchFieldProps) {
+  const ownId = useId();
   // Clear hands the focus back to the field; found through the wrapper so the caller keeps `inputRef`.
   const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const countId = id ? `${id}-count` : undefined;
+  const countId = `${id ?? ownId}-count`;
   const filtering = value.trim().length > 0;
   return (
     <div ref={wrapperRef} className={cx(styles.field, pinned && styles.pinned, className)}>
@@ -90,10 +92,20 @@ export function SearchField({
         type="search"
         icon={Search}
         aria-label={label}
-        aria-describedby={[describedBy, count && countId ? countId : ""].filter(Boolean).join(" ") || undefined}
+        aria-describedby={[describedBy, count ? countId : ""].filter(Boolean).join(" ") || undefined}
         placeholder={placeholder}
         value={value}
         onChange={(event) => onValueChange(event.target.value)}
+        onKeyDown={(event) => {
+          onKeyDown?.(event);
+          // Search audit, 8 Nov 2026: Escape with words typed clears them and stops there, so a
+          // search inside a sheet or dialog never closes the panel (and its unsaved choices) as
+          // well. Firefox has no native clear on Escape. An empty field lets Escape close as before.
+          if (event.key !== "Escape" || event.defaultPrevented || value.length === 0) return;
+          event.preventDefault();
+          event.stopPropagation();
+          onValueChange("");
+        }}
         onClear={() => {
           onValueChange("");
           wrapperRef.current?.querySelector("input")?.focus();

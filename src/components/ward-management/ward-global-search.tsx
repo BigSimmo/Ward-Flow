@@ -42,6 +42,7 @@ import type { InboxItem } from "@/components/ward-management/ward-derivations";
 import { WARD_ADD_PERSON_HREF, WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav";
 import { movementHref } from "@/components/ward-management/shell/ward-facade";
 import { useDeskRoleSwitch } from "@/components/ward-management/ward-role-gate";
+import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useOptionalWardFlow } from "@/components/ward-management/ward-flow-provider";
 import { DEMO_CONTROLS_OFF } from "@/components/ward-management/ward-flow-raise";
 import { dispatchPersonaSyncForRole } from "@/components/ward-management/settings/persona-sync";
@@ -344,6 +345,8 @@ export function WardGlobalSearch({
   const paletteRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
   const deskSwitch = useDeskRoleSwitch();
+  // Search audit, 8 Nov 2026: the desk's role leads with its own kind of place (`searchGroupOrder`).
+  const deskRole = useEffectiveWardAccess().role;
   const nameFor = usePatientNameDisplay();
   const wardFlow = useOptionalWardFlow();
   const demoOff = wardFlow?.demoControlsAvailable === false;
@@ -529,10 +532,13 @@ export function WardGlobalSearch({
   // never consume the only slot in which a permitted team could appear.
   const permittedGroups = useMemo(
     () =>
-      (!smartResults || refusal ? [] : smartSearchGroups(smartResults, trimmed, units, lookup, answer, help.items))
+      (!smartResults || refusal
+        ? []
+        : smartSearchGroups(smartResults, trimmed, units, lookup, answer, help.items, deskRole)
+      )
         .map((group) => ({ ...group, items: group.items.flatMap(permittedResult) }))
         .filter((group) => group.items.length > 0),
-    [smartResults, refusal, trimmed, units, lookup, answer, help, permittedResult],
+    [smartResults, refusal, trimmed, units, lookup, answer, help, permittedResult, deskRole],
   );
   const truncatedGroups = useMemo(
     () => [

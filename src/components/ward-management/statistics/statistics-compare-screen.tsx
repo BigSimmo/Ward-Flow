@@ -62,6 +62,7 @@ import {
   type StatisticsCount,
 } from "./statistics-small-numbers";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 
 /**
  * WARD AND ED COMPARISONS. The way into one unit's detail page is the one unit finder (D-91).
@@ -669,11 +670,11 @@ function WardComparison({ rows, asAt }: { rows: WardRow[]; asAt: string }) {
   const [query, setQuery] = useState("");
   const [showAll, setShowAll] = useState(false);
 
-  const needle = query.trim().toLowerCase();
+  const needle = query.trim();
   const shown = rows.filter(
     (row) =>
       (group === "all" || row.group === group) &&
-      (!needle || `${row.unit.name} ${row.site?.name ?? ""} ${row.unit.siteCode}`.toLowerCase().includes(needle)),
+      (!needle || fieldsMatchEveryWord(needle, [row.unit.name, row.site?.name, row.unit.siteCode])),
   );
 
   // The mean and spread are the whole network's, so a filter never moves the line it is read against.

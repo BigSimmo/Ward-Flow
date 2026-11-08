@@ -5,6 +5,7 @@ import { wardScrollBehavior } from "@/components/ward-management/ward-scroll";
 import Link from "next/link";
 import {
   useCallback,
+  useDeferredValue,
   useEffect,
   useLayoutEffect,
   useMemo,
@@ -226,7 +227,10 @@ export function PatientSearchPage() {
   const registerAccess = useEffectiveWardAccess();
   const now = useWardFlowClock();
   // shell-6: a "Person not found" page can hand a UMRN over in memory, never in the address.
-  const [text, setText] = useState(() => takeHandedOffPatientSearchText() ?? "");
+  const [typedText, setText] = useState(() => takeHandedOffPatientSearchText() ?? "");
+  // Search audit, 8 Nov 2026: the census, its stage counts and the people list re-scan every record
+  // per keystroke, so they read a deferred copy and the field itself never waits on them.
+  const text = useDeferredValue(typedText);
   // Return to your place (usability item 3, 24 Oct 2026): null unless Back brought us here.
   const returned = useReturnedView<PatientsPlace>(PATIENTS_ROUTE);
   const [stage, setStage] = useState<MovementStage | "">(returned?.stage ?? "");
@@ -924,7 +928,7 @@ export function PatientSearchPage() {
       handOffTypedPatientQuery("", "carried");
       return;
     }
-    handOffTypedPatientQuery(text, "carried");
+    handOffTypedPatientQuery(typedText, "carried");
   };
 
   const searchForm = (
@@ -933,9 +937,9 @@ export function PatientSearchPage() {
       role="search"
       onSubmit={(event) => {
         event.preventDefault();
-        const words = `${text} ${dobOn ? dob : ""}`.trim();
+        const words = `${typedText} ${dobOn ? dob : ""}`.trim();
         if (words.length === 0) return;
-        setAccessRecord((l) => recordSearch(l, { words, text, dob: dobOn ? dob : undefined, at: now }));
+        setAccessRecord((l) => recordSearch(l, { words, text: typedText, dob: dobOn ? dob : undefined, at: now }));
       }}
     >
       {/* D-91: the kit's one page search field, with the date of birth beside it and the count under it. */}
@@ -944,7 +948,7 @@ export function PatientSearchPage() {
           className={cs.searchMain}
           label="Find a person by name, UMRN or place"
           placeholder={dobOn ? "Family or given name" : "Name, UMRN or place"}
-          value={text}
+          value={typedText}
           onValueChange={(next) => {
             setText(next);
             setTab("now");
@@ -1085,7 +1089,7 @@ export function PatientSearchPage() {
 
             <div role="group" aria-label="Quick queries">
               {QUICK_CHIPS.map((chip) => {
-                const isActive = text === chip.query;
+                const isActive = typedText === chip.query;
                 return (
                   <button
                     tabIndex={-1}

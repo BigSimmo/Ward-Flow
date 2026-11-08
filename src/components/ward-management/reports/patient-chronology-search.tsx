@@ -7,6 +7,7 @@ import { SearchField } from "@/components/wf";
 import type { Patient } from "@/components/ward-management/ward-patients";
 
 import start from "./patient-chronology-start.module.css";
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 
 /** Search suggestions shown at once; the rest are reached by typing more. */
 const MATCH_LIMIT = 8;
@@ -35,12 +36,17 @@ export function PatientChronologySearch({
   const [text, setText] = useState("");
   const [focused, setFocused] = useState(false);
   const [active, setActive] = useState(0);
-  const needle = text.trim().toLowerCase();
+  // Search audit, 8 Nov 2026: every word in any order, so "Smith Jane", "Smith, Jane"
+  // (the formal name is a field) and "UM 100001" all match.
+  const needle = text.trim();
   const matches = needle
     ? people.filter((patient) =>
-        `${patient.familyName}, ${patient.givenName} ${patient.givenName} ${patient.familyName} ${patient.umrn}`
-          .toLowerCase()
-          .includes(needle),
+        fieldsMatchEveryWord(needle, [
+          `${patient.familyName}, ${patient.givenName}`,
+          patient.familyName,
+          patient.givenName,
+          patient.umrn,
+        ]),
       )
     : [];
   const shown = matches.slice(0, MATCH_LIMIT);

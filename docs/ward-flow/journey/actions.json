@@ -2388,8 +2388,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 498,
-          "sha256": "5cb073f8bba5d4f367f847e2119695b0eedf5801eb64087ddff31fe63cc8a06e"
+          "line": 497,
+          "sha256": "1ff9a94a64ef2ff0823eec7a366171c040d41c83954ba995b90ef8f01df43d2d"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2457,8 +2457,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 505,
-          "sha256": "5cb073f8bba5d4f367f847e2119695b0eedf5801eb64087ddff31fe63cc8a06e"
+          "line": 504,
+          "sha256": "1ff9a94a64ef2ff0823eec7a366171c040d41c83954ba995b90ef8f01df43d2d"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2534,8 +2534,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 521,
-          "sha256": "5cb073f8bba5d4f367f847e2119695b0eedf5801eb64087ddff31fe63cc8a06e"
+          "line": 520,
+          "sha256": "1ff9a94a64ef2ff0823eec7a366171c040d41c83954ba995b90ef8f01df43d2d"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2611,8 +2611,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 540,
-          "sha256": "5cb073f8bba5d4f367f847e2119695b0eedf5801eb64087ddff31fe63cc8a06e"
+          "line": 539,
+          "sha256": "1ff9a94a64ef2ff0823eec7a366171c040d41c83954ba995b90ef8f01df43d2d"
         },
         {
           "path": "src/components/ward-management/tools/ward-tool-feed.tsx",
@@ -4970,8 +4970,8 @@
         },
         {
           "path": "src/components/ward-management/ward-global-search.tsx",
-          "line": 1269,
-          "sha256": "21c5f4647bf480d48e3fae1d4e21d8af4a61cd6083aff7b3b849ac9afae0320e"
+          "line": 1275,
+          "sha256": "c675743f917a36d1cdb0ca7d7d4ddd95e5c3ab95caee2ef6dfbda2b8c8c74165"
         },
         {
           "path": "src/components/ward-management/tools/ward-demo-panel.tsx",
