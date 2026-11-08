@@ -683,6 +683,8 @@ function sharedServer(hang: string | null = null) {
     "/v1/workspace/push-status": { owned: true },
     "/v1/workspace/push-subscribe": { subscribed: true },
     "/v1/workspace/push-unsubscribe": { subscribed: false, revoked: true },
+    // API-04: one Activity page that says more rows remain behind cursor 7.
+    "/v1/workspace/audit": { events: [], complete: false, nextCursor: "7" },
   };
   sessionStorage.setItem(
     WARD_AUTH_STORAGE_KEY,
@@ -743,6 +745,18 @@ describe("shared connection phone alerts", () => {
     ]);
     unmount();
     await expect(pushApi.pushKey()).rejects.toThrow("not connected");
+  });
+
+  it("hands the Activity feed the paged audit reader, so a partial page is not shown as complete (API-04)", async () => {
+    const calls = sharedServer();
+    const { result, unmount } = await signedInShared();
+    const accessApi = result.current.accessApi!;
+    expect(typeof accessApi.readActivityAuditPage).toBe("function");
+    expect(await accessApi.readActivityAuditPage!()).toEqual({ events: [], complete: false, nextCursor: "7" });
+    await accessApi.readActivityAuditPage!("7");
+    expect(calls.filter((call) => call.path === "/v1/workspace/audit")).toHaveLength(2);
+    unmount();
+    await expect(accessApi.readActivityAuditPage!()).rejects.toThrow("not connected");
   });
 
   it("replaces account-bound APIs and refuses the outgoing account's wrappers", async () => {
