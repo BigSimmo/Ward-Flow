@@ -158,7 +158,7 @@ describe("Transport desk, the transport officer's own view (as-officer-home)", (
   it("shows every job while a highlight is on, so nothing lit is hidden", () => {
     asOfficerDesk();
     renderDesk();
-    fireEvent.change(screen.getByRole("textbox", { name: "Highlight transport jobs" }), { target: { value: "WF" } });
+    fireEvent.change(screen.getByRole("searchbox", { name: "Highlight transport jobs" }), { target: { value: "WF" } });
     expect(screen.getByTestId("ward-officer-joblist").querySelectorAll("tr")).toHaveLength(jobs.length);
   });
 
