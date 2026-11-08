@@ -150,9 +150,7 @@ function QueueRow({
         </span>
       </div>
       <div className={styles.rowFacts}>
-        <span className={styles.personLine}>
-          {referral.from} · <span className={styles.mono}>{referral.id}</span>
-        </span>
+        <span className={styles.personLine}>{referral.from}</span>
         <span className={styles.rowTags}>
           {referral.received ? (
             <span className={styles.wait}>
@@ -169,7 +167,7 @@ function QueueRow({
           icon={FileText}
           onClick={onOpenReferral}
           aria-haspopup="dialog"
-          aria-label={`Referral ${referral.id} details`}
+          aria-label={`Referral details for ${row.name}`}
           data-testid="triage-start-referral-open"
         >
           Referral
@@ -213,7 +211,7 @@ function ReferralDrawer({
     <PanelDrawer
       open={row !== null}
       onClose={onClose}
-      eyebrow={referral ? `Referral ${referral.id}` : "Referral"}
+      eyebrow="Referral"
       title={row ? <FormalName name={row.name} /> : ""}
       subtitle={row ? `${row.meta} · UMRN ${row.umrn}` : undefined}
       testId="triage-start-referral-drawer"
