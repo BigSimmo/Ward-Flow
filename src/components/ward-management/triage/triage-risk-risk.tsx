@@ -668,6 +668,7 @@ export function PlanBody({ form }: { form: FormApi }) {
         groups={GUIDES.rp}
         text={state.text.rp}
         onHeading={box.onHeading}
+        textRef={planRef}
         columns={2}
         extra={<span className={styles.quiet}>WA MP 0181/24 · NICE NG225</span>}
       />

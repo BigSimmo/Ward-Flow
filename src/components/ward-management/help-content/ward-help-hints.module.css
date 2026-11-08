@@ -78,9 +78,9 @@
   outline: 2px solid var(--wf-ink-1);
   outline-offset: 2px;
 }
-/* Lifted over the phone dock wherever the dock shows (up to 46.4375rem (743px), the app's phone width, and a
-   touch screen under 500px tall, as ward-phone-page-dock.module.css). */
-@media (max-width: 46.4375rem), (pointer: coarse) and (max-height: 500px) {
+/* Lifted over the phone dock wherever the dock shows (up to 46.4375rem (743px), the app's phone width,
+   as ward-phone-page-dock.module.css). */
+@media (max-width: 46.4375rem) {
   .hint {
     bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
   }

@@ -8,7 +8,7 @@ Every open movement with a legal form, and the expiry time a person typed from t
 
 1. Legal forms. Every open movement with a legal form, and the expiry time a person typed from that form.
 2. Times as typed. Ward Flow does not work out legal periods. The times are copied from the paper form and are not legally checked.
-3. On a form, Checklist and History. On a form lists everyone with a form now. Checklist shows what each form still needs. History holds closed moves.
+3. On a form, Checklist and History. On a form lists everyone with a form now. Checklist shows what each form still needs. History holds closed moves. Seclusion and restraint, for the desks that see it, shows the seclusion and restraint forms.
 4. Choose a patient. Grouped by the typed expiry, earliest typed time first. Choose a patient to see their form.
 
 ## Jobs done here

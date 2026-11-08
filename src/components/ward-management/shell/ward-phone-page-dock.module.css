@@ -1,16 +1,17 @@
 /*
  * The phone dock on every page (device audit option A, Josh, 11 Oct 2026): the v10 Menu foot moved
- * onto the page, with the + rising out of its curved edge. Phone only: above 48rem it is never
- * drawn, so tablet and desktop are unchanged. Q289 (pre-launch review, 2 Nov 2026): a phone on its
- * side (a touch screen under 500px tall, 844 to 932px wide) is a phone here too, so it keeps the
- * dock instead of only the hamburger. A tablet (768px tall and up) still never draws it.
+ * onto the page, with the + rising out of its curved edge. Phone only: above 46.4375rem (743px) it
+ * is never drawn, so tablet and desktop are unchanged. A phone on its side wider than that (844 to
+ * 932px) also goes without it (Josh, 8 Nov 2026, replacing Q289's dock there): it already shows the
+ * full top bar with search, alerts and +, and the two bars together left about half of a 390px-tall
+ * screen for the page. It keeps Q289's 40px touch controls (globals.css).
  */
 
 .pageDock {
   display: none;
 }
 
-@media (max-width: 46.4375rem), (pointer: coarse) and (max-height: 500px) {
+@media (max-width: 46.4375rem) {
   /* Doubled so it outranks the composed foot's own position: relative. */
   .pageDock.pageDock {
     position: fixed;
@@ -83,6 +84,15 @@
   /* A swipe that reaches the end of a popup stops there instead of carrying on to the page. */
   :global(body):has(.pageDock) :global([aria-modal="true"]) {
     overscroll-behavior: contain;
+  }
+}
+
+/* A phone on its side with the full top bar: no dock, so bars and notices that seat on the dock
+   rest on the foot instead, clear of the home indicator. */
+@media (pointer: coarse) and (max-height: 500px) and (min-width: 46.5rem) {
+  :global(body):has(.pageDock) {
+    --wf-dock-clear: env(safe-area-inset-bottom, 0px);
+    --wf-dock-top: 0px;
   }
 }
 
