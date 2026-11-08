@@ -146,12 +146,12 @@ export function useWardReferralDrawerState({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const touchStartY = useRef<number | null>(null);
   const capacityRecords = useWardCapacity();
-  // No sign-in: the route gives the role, and the role gives the profile (or why there is none).
-  const pathname = usePathname() ?? "";
-  const myProfile = profileForChromeRole(wardChromeRole(pathname));
   // Feature 11: sent as the referral's source; a ward page as its own ward (access plan 8, Josh 15 Oct 2026).
   const gate = useRoleGate();
   const access = useEffectiveWardAccess();
+  const pathname = usePathname() ?? "";
+  const deskRole = access.role === "coordinator" || access.role === "admin" ? wardChromeRole(pathname) : access.role;
+  const myProfile = profileForChromeRole(deskRole); // Live audit 8 Nov 2026: a desk names itself.
   const addPatientGate = gate("ADD_PATIENT");
   const {
     movements,
