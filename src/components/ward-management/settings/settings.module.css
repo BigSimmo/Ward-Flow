@@ -830,11 +830,14 @@
   box-sizing: border-box;
 }
 
+/* A block row, not inline: the phone hero title clips its overflow (two-line clamp), and an inline
+   avatar sat on the text baseline, so its lower edge and online dot were cut off. Josh, 8 Nov 2026. */
 .phoneWho {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: var(--wf-s-2);
   min-width: 0;
+  padding: 3px 0 3px 2px; /* room for the avatar's 2px ring and dot */
 }
 
 /* Find a setting sits on the page here, not on the band: page ink and a 44px box. */
