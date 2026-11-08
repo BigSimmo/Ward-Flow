@@ -180,9 +180,19 @@ async function walkTour(page: Page): Promise<Map<string, boolean>> {
   const seen = new Map<string, boolean>();
   for (let index = 0; index < 20; index++) {
     const id = (await card.getAttribute("data-step")) ?? "";
+    // Lit means a spotlight round something a person can see: at least 20px each way. The phone
+    // "What needs you" step once lit a 16px empty strip of the folded hero (8 Nov 2026).
+    const spot = page.locator('[data-testid="ward-tour-spot"]:not([data-held])');
     const lit = await expect
-      .poll(() => page.locator('[data-testid="ward-tour-spot"]:not([data-held])').count(), { timeout: 8_000 })
-      .toBe(1)
+      .poll(
+        async () => {
+          if ((await spot.count()) !== 1) return false;
+          const box = await spot.boundingBox();
+          return box !== null && box.width >= 20 && box.height >= 20;
+        },
+        { timeout: 8_000 },
+      )
+      .toBe(true)
       .then(
         () => true,
         () => false,

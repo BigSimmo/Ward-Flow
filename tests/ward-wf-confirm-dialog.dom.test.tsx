@@ -61,6 +61,10 @@ describe("kit styled confirm", () => {
     });
     const dialog = await screen.findByRole("alertdialog");
     expect(screen.queryByRole("button", { name: /^Close/ })).toBeNull();
+    // The dialog's Escape listener is attached by an effect that can run after the dialog is in the
+    // DOM. Opening focus lands in that same effect, so wait for it before pressing Escape; otherwise
+    // a loaded runner can press Escape too early and the question never settles.
+    await waitFor(() => expect(screen.getByRole("button", { name: "Keep editing" })).toHaveFocus());
     fireEvent.keyDown(dialog, { key: "Escape" });
     await expect(answer).resolves.toBe(false);
   });

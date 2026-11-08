@@ -1,0 +1,5 @@
+# 8 Nov 2026, phone triage choices and What to cover pop-up (PR #1507)
+
+Raised: Capacity `/ward-flow/capacity`, budget 658.0 to 659.2. Hosted CI measured 659.0 KB on this PR against 656.2 KB for main.
+
+Why it grew: none of this PR's code is on the Capacity page's first load. A search of every script that page loads finds no triage code. Instead, webpack moved shared modules between chunks: the `next/dynamic` loader runtime moved into the Capacity page chunk, which grew by about 2.2 KB. Local builds of the same commit vary with the build directory (656.8 KB in a separate worktree, 659.0 KB in the main checkout, against 654.4 KB for main in the same worktree), so the growth comes from chunking rather than added code. Trim tried: swapping the phone pop-up from the kit `Sheet` to `PanelDrawer` (the form's existing pop-up) left the measurement unchanged at 659.0 KB, so that change was not kept. The ED detail route (`/ward-flow/ed/arm-ed`) is over on main as well, and the CI judge credits that to main, not this PR, so it is left unchanged here. The raise is within the 5 KB per screen allowance in HOW-WE-WORK section 6.
