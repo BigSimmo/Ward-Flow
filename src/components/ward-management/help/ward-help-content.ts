@@ -150,7 +150,7 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
       {
         question: "Where is the timeline?",
         answer:
-          "On a computer, turn on Show timeline above the list. It shows what is coming up for each receiving ward and stays as you left it on this device.",
+          "On a computer, the timeline shows above the list. It shows what is coming up for each receiving ward. Turn off Show timeline to hide it; this device remembers that.",
       },
       {
         question: "How do I pull a bed?",
