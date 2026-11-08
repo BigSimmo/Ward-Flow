@@ -56,6 +56,7 @@ function LaneView({ lane }: { lane: Lane }) {
       aria-labelledby={`tv-lane-${lane.id}`}
       data-lane={lane.id}
       data-tone={lane.cards.length > 0 ? lane.tone : undefined}
+      data-empty={lane.cards.length === 0 ? "" : undefined}
       data-testid="tv-lane"
     >
       <h2 id={`tv-lane-${lane.id}`} className={styles.laneTitle}>

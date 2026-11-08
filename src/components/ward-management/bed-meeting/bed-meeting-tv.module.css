@@ -149,7 +149,7 @@
     "title actions"
     "nav nav";
   align-items: start;
-  gap: calc(var(--tv-gap) * 0.75) var(--tv-gap);
+  gap: calc(var(--tv-gap) * 0.5) var(--tv-gap);
 }
 
 .header > :first-child {
@@ -276,6 +276,10 @@
 .picker {
   position: static;
   min-width: 0;
+}
+
+.navBar .picker > summary {
+  font-weight: 700;
 }
 
 .pickerCurrent {
