@@ -91,6 +91,7 @@ import polish from "./waiting-polish.module.css";
 import { WaitingHeroBar, WaitingKeyRow } from "./waiting-hero-bar";
 import { useWaitingDeskWords } from "./waiting-desk-words";
 import { WaitingOwnerTiles } from "./waiting-owner-tiles";
+import { useShorterColumnAnchor } from "./waiting-column-anchor";
 import { SearchField } from "@/components/wf";
 
 /** Groups shown open on first load: the severe ones and "Waiting on you". The rest start folded. */
@@ -248,6 +249,9 @@ export function DelaysBoard({
   const isTabletPortrait = useIsTabletPortrait();
   /* iPad portrait (820px, device audit 11 Oct 2026): list rows and the registers as a slide-over. */
   const portrait = isTabletPortrait && !isPhone;
+  // Note 8, issue 5: the shorter of the list and the follow-up column holds in view as the page scrolls.
+  const splitRef = useRef<HTMLDivElement>(null);
+  useShorterColumnAnchor(splitRef, !isPhone && !portrait);
   const [railOpen, setRailOpen] = useState(false);
   const [phoneSheet, setPhoneSheet] = useState<"registers" | "quiet" | "spread" | null>(null);
   const sheetViewsLabelId = useId();
@@ -1146,6 +1150,7 @@ export function DelaysBoard({
           )}
 
           <div
+            ref={splitRef}
             className={`${styles.split} ${polish.split}`}
             data-portrait={portrait ? "slide" : undefined}
             // Role view (nurse in charge, Josh 31 Oct 2026): no registers rail, so with the person panel
