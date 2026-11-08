@@ -375,6 +375,8 @@
 .name {
   min-width: 0;
   max-width: 100%;
+  /* Live audit, 8 Nov 2026: 20 px tall on a phone; WCAG 2.5.8 asks for 24. */
+  min-height: var(--wf-target-min);
   padding: 0;
   overflow: hidden;
   border: 0;

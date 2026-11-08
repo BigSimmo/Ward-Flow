@@ -31,6 +31,9 @@ import {
   type SharedSession,
 } from "@/components/ward-management/shell/ward-shared-session-context";
 import { ToastProvider } from "@/components/wf/toast-provider";
+import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { SEED_UNITS } from "@/components/ward-management/shell/ward-access-labels";
 import { WardFlowProvider } from "@/components/ward-management/ward-flow-provider";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 
@@ -38,6 +41,8 @@ import { installMatchMediaStub } from "./setup/jsdom.setup";
 
 afterEach(() => {
   cleanup();
+  act(() => setWardFeatureFlagOnDevice("role-access", null));
+  resetWardAccessStoreForTests();
   installMatchMediaStub(false);
   router.push.mockReset();
 });
@@ -181,5 +186,49 @@ describe("phone Menu account rows (DK1)", () => {
     // Switch desk closes the sheet first, so it is clicked last.
     await user.click(row);
     expect(signedIn.switchRole).toHaveBeenCalledTimes(1);
+  });
+});
+
+/** A bed manager's desk: a desk with no drawn persona, which the public demo calls "Demo desk". */
+function deskAsBedManager() {
+  act(() => {
+    setWardFeatureFlagOnDevice("role-access", true);
+    setWardAccess({ role: "bed_manager", scope: { kind: "site", siteCode: SEED_UNITS[0]!.siteCode } });
+  });
+}
+
+describe("Demo desk wording only in the public demo", () => {
+  it("the rail says Demo desk in the local demo and Signed in on the shared signed-in site", () => {
+    deskAsBedManager();
+    const demo = renderRail();
+    let trigger = screen.getByTestId("ward-rail-persona-trigger");
+    expect(trigger).toHaveTextContent("Demo desk");
+    expect(screen.getByTestId("ward-rail")).toHaveTextContent("Demo desk");
+    demo.unmount();
+
+    renderRail(session());
+    trigger = screen.getByTestId("ward-rail-persona-trigger");
+    expect(trigger).toHaveTextContent(/bed manager/iu);
+    expect(trigger).toHaveTextContent("Signed in");
+    expect(trigger.getAttribute("aria-label")).toMatch(/^Site bed manager, Signed in\./u);
+    expect(screen.getByTestId("ward-rail")).not.toHaveTextContent(/Demo desk/u);
+    expect(openAccountMenu()).not.toHaveTextContent(/Demo desk/u);
+  });
+
+  it("the phone Menu's who row says Signed in, not Demo desk, when signed in", async () => {
+    deskAsBedManager();
+    renderPhoneMenu(session());
+    const who = await screen.findByTestId("ward-phone-menu-who", {}, { timeout: 15_000 });
+    expect(who).toHaveTextContent(/bed manager/iu);
+    expect(who).toHaveTextContent("Signed in");
+    expect(who).not.toHaveTextContent("Demo desk");
+  });
+
+  it("the phone Menu's who row keeps Demo desk in the local demo", async () => {
+    deskAsBedManager();
+    renderPhoneMenu();
+    const who = await screen.findByTestId("ward-phone-menu-who", {}, { timeout: 15_000 });
+    expect(who).toHaveTextContent(/bed manager/iu);
+    expect(who).toHaveTextContent("Demo desk");
   });
 });

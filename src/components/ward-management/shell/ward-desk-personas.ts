@@ -1,4 +1,8 @@
+import { useContext } from "react";
+
 import { CHROME_ROLE_LABELS, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
+
+import { SharedSessionContext } from "./ward-shared-session-context";
 
 export type DeskPersona = {
   readonly id: string;
@@ -15,6 +19,12 @@ export type DeskPersona = {
  * with the menu. Demo personas, synthetic. A desk with no drawn persona shows its role alone.
  * Kept apart from the rail so the tour reads the same people without loading the rail.
  */
+/** The role line of a desk with no drawn persona in the public, browser-only demo. */
+export const DEMO_DESK_ROLE = "Demo desk";
+
+/** The same desk's role line on the shared signed-in site, where a real account works as the desk. */
+export const SIGNED_IN_DESK_ROLE = "Signed in";
+
 export const DESK_PERSONAS: Record<WardChromeRole, DeskPersona> = {
   coordinator: { id: "chen", name: "Dr S. Chen", initials: "SC", role: "Bed coordinator", greeting: "Dr S. Chen" },
   ed: {
@@ -31,14 +41,14 @@ export const DESK_PERSONAS: Record<WardChromeRole, DeskPersona> = {
     id: "bed_manager",
     name: CHROME_ROLE_LABELS.bed_manager,
     initials: "BM",
-    role: "Demo desk",
+    role: DEMO_DESK_ROLE,
     greeting: CHROME_ROLE_LABELS.bed_manager,
   },
   executive: {
     id: "executive",
     name: CHROME_ROLE_LABELS.executive,
     initials: "EX",
-    role: "Demo desk",
+    role: DEMO_DESK_ROLE,
     greeting: CHROME_ROLE_LABELS.executive,
   },
 };
@@ -48,6 +58,20 @@ export const ACCESS_ADMIN_PERSONA: DeskPersona = {
   id: "admin",
   name: "Access admin",
   initials: "AA",
-  role: "Demo desk",
+  role: DEMO_DESK_ROLE,
   greeting: "Access admin",
 };
+
+/**
+ * The shared signed-in site (a session in `SharedSessionContext`) is not the public demo, so a desk
+ * with no drawn persona never reads "Demo desk" there: it keeps its role as its name and says
+ * "Signed in". The public demo, with no session, is unchanged.
+ */
+export function deskPersonaFor(persona: DeskPersona, signedIn: boolean): DeskPersona {
+  return signedIn && persona.role === DEMO_DESK_ROLE ? { ...persona, role: SIGNED_IN_DESK_ROLE } : persona;
+}
+
+/** `deskPersonaFor` for the current session: signed in when the shared workspace supplies one. */
+export function useDeskPersona(persona: DeskPersona): DeskPersona {
+  return deskPersonaFor(persona, useContext(SharedSessionContext) !== null);
+}

@@ -1,6 +1,10 @@
 import { SEED_UNITS, accessPlaceLabel } from "@/components/ward-management/shell/ward-access-labels";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
-import { ACCESS_ADMIN_PERSONA, DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
+import {
+  ACCESS_ADMIN_PERSONA,
+  DEMO_DESK_ROLE,
+  DESK_PERSONAS,
+} from "@/components/ward-management/shell/ward-desk-personas";
 import { ACCESS_ROLE_LABELS, accessIsWholeNetwork } from "@/components/ward-management/ward-role-access";
 import { useWardShellPublic } from "@/components/ward-management/shell/ward-shell-public-context";
 
@@ -19,7 +23,7 @@ export function useSettingsDeskProfile(): DeskProfile {
   if (accessIsWholeNetwork(access)) return SETTINGS_DEMO_PROFILE;
   const persona = access.role === "admin" ? ACCESS_ADMIN_PERSONA : DESK_PERSONAS[access.role];
   const role = ACCESS_ROLE_LABELS[access.role];
-  const named = persona.name !== role && persona.role !== "Demo desk";
+  const named = persona.name !== role && persona.role !== DEMO_DESK_ROLE;
   return {
     // Q226 (design review, 2 Nov 2026): named as written ("Dr S. Chen"), like the demo profile.
     name: named ? persona.name : role,
