@@ -845,59 +845,74 @@
   background: color-mix(in srgb, var(--wf-success) 14%, transparent);
   color: var(--wf-success-ink);
 }
+/* Note 9, round 2: the counts as one quiet segmented strip, the Waiting page's "Next 4 hours"
+   summary: a hairline between figures, each with its own tinted icon square. */
 .previewTiles {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--wf-s-2);
   margin: 0;
-  padding: 0;
+  padding: 4px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
   list-style: none;
 }
 .previewTile {
+  --tone: var(--wf-neutral);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px 8px;
+}
+.previewTile + .previewTile {
+  border-left: 1px solid var(--wf-line);
+  padding-left: 12px;
+}
+.previewTile[data-tone="danger"] {
+  --tone: var(--wf-danger);
+}
+.previewTile[data-tone="warning"] {
+  --tone: var(--wf-warning);
+}
+.previewTile[data-tone="info"] {
+  --tone: var(--wf-info);
+}
+.previewTileIcon {
+  display: inline-grid;
+  flex: none;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--tone) 13%, var(--wf-surface));
+  color: var(--tone);
+}
+.previewTileText {
   display: flex;
   flex-direction: column;
-  gap: 2px;
   min-width: 0;
-  padding: var(--wf-s-2) 10px;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-sm);
-  background: var(--wf-surface);
 }
-.previewTile > b {
+.previewTileText > b {
   font-size: var(--wf-fs-15);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   line-height: 1.2;
   color: var(--wf-ink-1);
 }
-.previewTile > span {
+.previewTileText > span {
   overflow: hidden;
   font-size: var(--wf-fs-12);
-  font-weight: 500;
   color: var(--wf-ink-2);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.previewTile[data-tone="danger"] {
-  border-color: transparent;
-  background: color-mix(in srgb, var(--wf-danger) 7%, var(--wf-surface));
-}
-.previewTile[data-tone="warning"] {
-  border-color: transparent;
-  background: color-mix(in srgb, var(--wf-warning) 7%, var(--wf-surface));
-}
-.previewTile[data-tone="info"] {
-  border-color: transparent;
-  background: color-mix(in srgb, var(--wf-info) 7%, var(--wf-surface));
-}
-.previewTile[data-tone="danger"] > * {
-  color: var(--wf-danger-ink);
-}
-.previewTile[data-tone="warning"] > * {
-  color: var(--wf-warning-ink);
-}
-.previewTile[data-tone="info"] > * {
-  color: var(--wf-info-ink);
+@media (max-width: 46.4375rem) {
+  .previewTile {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
 }
 .previewList {
   display: flex;

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { ChevronLeft, ChevronRight, LogIn } from "lucide-react";
+import { BedSingle, ChevronLeft, ChevronRight, FileText, Hourglass, LogIn } from "lucide-react";
 
 import { Button, FactGrid, Icon, StatusGlyph, buttonClass, useIsPhone } from "@/components/wf";
 import { legalStatusShort } from "@/components/ward-management/ward-legal-forms";
@@ -44,9 +44,15 @@ export function EdPreview({
         </div>
         <ul className={styles.previewTiles}>
           {[
-            { id: "past", tone: "danger", label: `Past ${waitLine(accessTarget)}`, value: row.pastTarget },
-            { id: "no-bed", tone: "warning", label: "No bed yet", value: row.noBed },
-            { id: "form", tone: "info", label: "Under a form", value: row.forms },
+            {
+              id: "past",
+              tone: "danger",
+              icon: Hourglass,
+              label: `Past ${waitLine(accessTarget)}`,
+              value: row.pastTarget,
+            },
+            { id: "no-bed", tone: "warning", icon: BedSingle, label: "No bed yet", value: row.noBed },
+            { id: "form", tone: "info", icon: FileText, label: "Under a form", value: row.forms },
           ].map((tile) => (
             <li
               key={tile.id}
@@ -54,8 +60,13 @@ export function EdPreview({
               data-tone={tile.value > 0 ? tile.tone : "none"}
               data-testid={`ed-preview-${tile.id}`}
             >
-              <b>{tile.value}</b>
-              <span>{tile.label}</span>
+              <span className={styles.previewTileIcon} aria-hidden="true">
+                <Icon icon={tile.icon} size={16} />
+              </span>
+              <span className={styles.previewTileText}>
+                <b>{tile.value}</b>
+                <span>{tile.label}</span>
+              </span>
             </li>
           ))}
         </ul>
