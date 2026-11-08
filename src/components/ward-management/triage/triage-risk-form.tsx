@@ -360,9 +360,11 @@ export function TriageScreen({ patientId }: { patientId: string }) {
   const router = useRouter();
   const { byId } = useTriagePeople();
   const person = byId.get(patientId);
+  // The desk sets the program (with Change); nothing clinical is filled in.
+  const desk = useRouteRole();
   // The form keeps the person it opened with; a signed triage then changes `last` on the world copy.
-  const [opened] = useState(() => (person ? blankTriage(person) : null));
-  const initial = opened ?? (person ? blankTriage(person) : null);
+  const [opened] = useState(() => (person ? blankTriage(person, desk) : null));
+  const initial = opened ?? (person ? blankTriage(person, desk) : null);
   if (!initial)
     return (
       <main id="main-content" className={startStyles.main} data-testid="triage-not-found">

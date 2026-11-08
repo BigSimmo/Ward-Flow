@@ -49,14 +49,14 @@ export function exampleTriage(): TriageState {
   return {
     ...blankTriage(EXAMPLE_PERSON),
     how: "phone",
-    where: "ED",
+    where: "ed",
     present: "yes",
     others: ["Other service"],
     arrivedBy: "Ambulance",
     purpose: "Referral",
     atsi: "n",
     interp: "no",
-    problems: ["Psychosis", "Aggression", "Alcohol or drugs"],
+    problems: ["psychotic", "aggression", "aod"],
     aware: ["opposed", "carer"],
     f: {
       "violence.now.intent": "y",

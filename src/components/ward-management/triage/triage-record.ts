@@ -2,18 +2,33 @@ import { CLINICAL_VALUES } from "@/components/ward-management/ward-clinical-valu
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles";
 
+import {
+  ACTION_CODES,
+  PROBLEM_CODES,
+  type PSOLIS_ACTIONS,
+  type PSOLIS_PROBLEMS,
+  REFERRAL_TYPE_CODES,
+  type REFERRAL_TYPES,
+  VENUE_CODES,
+  type VENUES,
+} from "./triage-psolis-lists";
+
 /**
  * TRIAGE SIGNED (Josh's approved triage and risk mock-up, built 7 Nov 2026).
  *
  * Signing a triage records one fact on the person: that a triage was signed, when, by which desk,
  * and the structured answers a later triage or the patient record reads (urgency, outcome, legal
- * status, review, and which RAMP factors were marked present). Every one of those is a code from a
- * closed list that the reducer slice checks (`triage-signed-reducer.ts`).
+ * status, review, which RAMP factors were marked present, and, from 7 Nov 2026 (Josh), the problems,
+ * actions, venue and referral type). Every one of those is a code from a closed list that the reducer
+ * slice checks (`triage-signed-reducer.ts`); the webPSOLIS lists are in `triage-psolis-lists.ts`.
  *
  * Nothing typed is in it. The assessment, mental state, formulation and plan, the reviewed time,
  * the referrer and any legal form or date as typed stay in the form's own React state and are gone
  * when the page is left. This file imports no screen code, so the reducer, the stored-state check
  * and the shared scoping read it without the form.
+ *
+ * A row saved before 7 Nov 2026 has no problems, actions, venue or referral type, so those four
+ * are optional on the stored record (`TriageSignedRecord`); a reader treats a missing one as none.
  */
 
 // The windows for B to E come from the clinical values list (Josh, 7 Nov 2026), never typed here.
@@ -73,6 +88,16 @@ export const TRIAGE_MAX_FLAGS = 80;
 /** A RAMP factor key, `area.kind.factor`, as the form names it. The reducer checks it against the list. */
 export const TRIAGE_FLAG_KEY = /^(general|suicide|violence|other)\.(bg|now)\.[a-z]{2,8}$/;
 
+/** Problem, action, venue and referral type codes: closed unions from the webPSOLIS lists. */
+export type TriageProblemCode = (typeof PSOLIS_PROBLEMS)[number][0];
+export type TriageActionCode = (typeof PSOLIS_ACTIONS)[number][0];
+export type TriageVenueCode = (typeof VENUES)[number][0];
+export type TriageReferralTypeCode = (typeof REFERRAL_TYPES)[number][0];
+export const TRIAGE_PROBLEM_CODES = PROBLEM_CODES as readonly TriageProblemCode[];
+export const TRIAGE_ACTION_CODES = ACTION_CODES as readonly TriageActionCode[];
+export const TRIAGE_VENUE_CODES = VENUE_CODES as readonly TriageVenueCode[];
+export const TRIAGE_REFERRAL_TYPE_CODES = REFERRAL_TYPE_CODES as readonly TriageReferralTypeCode[];
+
 export type TriageSignedEvent = {
   /**
    * A signed triage and risk assessment (SMHMR900 and SMHMR905) on one synthetic person. Codes,
@@ -88,6 +113,14 @@ export type TriageSignedEvent = {
   review: TriageReviewCode;
   /** RAMP factors marked present, as keys. Factors marked not present or not known are not named. */
   riskFlags: string[];
+  /** Problem codes (`PROBLEM_CODES`), in the order chosen. Never typed text. */
+  problems: TriageProblemCode[];
+  /** Action plan codes (`ACTION_CODES`), in the order chosen. Never typed text. */
+  actions: TriageActionCode[];
+  /** Venue code (`VENUE_CODES`), or null when none is chosen. */
+  venue: TriageVenueCode | null;
+  /** Referral type code (`REFERRAL_TYPE_CODES`), or null when none is chosen. */
+  referralType: TriageReferralTypeCode | null;
 };
 
 /** One signed triage, as the workspace keeps it. */
@@ -100,6 +133,14 @@ export type TriageSignedRecord = {
   legal: TriageLegalCode;
   review: TriageReviewCode;
   riskFlags: string[];
+  /**
+   * Problem and action codes in the order chosen, venue and referral type codes or null. Optional
+   * only because a row saved before 7 Nov 2026 has none; the reducer always writes all four.
+   */
+  problems?: TriageProblemCode[];
+  actions?: TriageActionCode[];
+  venue?: TriageVenueCode | null;
+  referralType?: TriageReferralTypeCode | null;
 };
 
 /** A person's signed triages, newest first. */

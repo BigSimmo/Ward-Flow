@@ -35,13 +35,23 @@ async function pickPerson(page: Page) {
 async function fillTriage(page: Page) {
   await page.locator("#triage-rev").getByRole("button", { name: "Now", exact: true }).click();
   await choose(page, "How", "In person");
-  await choose(page, "Where they were", "ED");
+  await choose(page, "Where they were", "Emergency department");
+  await choose(page, "Referral type", "Medical practitioner");
+  // Program comes from the desk as one fact line with Change.
+  await expect(page.getByTestId("triage-program")).toContainText("Program ");
   await choose(page, "Person present", "Yes");
   await choose(page, "Purpose", "Assessment");
   await choose(page, "Episode", "ED episode");
   await page
     .getByRole("textbox", { name: "Assessment", exact: true })
     .fill(`${TYPED_NOTE}\nRequest: Assessment today.`);
+  // A problem from More that is not common shows as a chosen chip, so it can be cleared.
+  await page.getByTestId("triage-problems-more").click();
+  await page.keyboard.type("grief");
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("group", { name: "Problems", exact: true }).getByRole("button", { name: "Grief or loss" }),
+  ).toHaveAttribute("aria-pressed", "true");
   await page
     .locator("#triage-mse-box")
     .fill(
@@ -57,7 +67,11 @@ async function fillTriage(page: Page) {
       ].join("\n"),
     );
   await page.getByRole("radiogroup", { name: "Urgency", exact: true }).getByRole("radio").nth(2).click();
+  // Referred on with no "Referred to" action nudges for one; Accepted does not.
+  await choose(page, "Outcome", "Referred on");
+  await expect(page.getByTestId("triage-referred-nudge")).toBeVisible();
   await choose(page, "Outcome", "Accepted");
+  await expect(page.getByTestId("triage-referred-nudge")).toHaveCount(0);
   await choose(page, "Mental Health Act", "Community treatment order");
   await choose(page, "Rest of history", "Not present");
   await page.locator('[data-factor="general.now.agit"] button').first().click();

@@ -237,8 +237,8 @@ const WARD_FLOW_TEXT_SAFE_EVENT_TYPE_TUPLE = [
   // Q61 (31 Oct 2026): a site code from the registry and a shift start. No typed text.
   "RECORD_SITE_HANDOVER_SIGN_OFF",
   // Triage and risk (7 Nov 2026): a patient id, urgency, outcome, legal status and review codes from
-  // closed lists, and RAMP factor keys, each membership-checked by its reducer slice, which keeps
-  // only those fields. The form's typed text (assessment, mental state, formulation and plan, the
+  // closed lists, RAMP factor keys, and (7 Nov 2026, PSOLIS pick-lists) problem, action, venue and
+  // referral type codes, each membership-checked by its reducer slice, which keeps only those fields. The form's typed text (assessment, mental state, formulation and plan, the
   // reviewed time, the referrer, a legal form or date) is never put in the event.
   "RECORD_TRIAGE_SIGNED",
   "RECORD_LEAVE_BED",

@@ -15,10 +15,13 @@ import {
   CardHead,
   ChipGroup,
   FilterChip,
+  ListPicker,
   Segmented,
   SrOnly,
   StatusGlyph,
+  TextInput,
   phoneRows,
+  type ListPickerOption,
 } from "@/components/wf";
 
 import type { GuideGroup, SectionId } from "./triage-risk-data";
@@ -145,6 +148,164 @@ export function MultiChips({
         </FilterChip>
       ))}
     </ChipGroup>
+  );
+}
+
+/** A webPSOLIS pick-list (`triage-psolis-lists.ts`): `[code, label, ...]`. Only the label is shown. */
+type PickList = readonly (readonly [code: string, label: string, ...rest: unknown[]])[];
+
+/** The detail an "Other" pick needs: a short typed box, kept in React state only. */
+export type OtherDetail = { code: string; label: string; value: string; onChange: (value: string) => void };
+
+/** The full list for More, each chosen one marked, grouped when `groupOf` names a group. */
+function moreOptions(
+  list: PickList,
+  chosen: readonly string[],
+  groupOf?: (code: string) => string | undefined,
+): ListPickerOption[] {
+  return list.map(([code, label]) => ({
+    value: code,
+    label,
+    group: groupOf?.(code),
+    hint: chosen.includes(code) ? "Chosen" : undefined,
+  }));
+}
+
+/** The common codes, then any chosen one that is not common, so every choice shows and can be cleared. */
+function shownCodes(list: PickList, common: readonly string[], chosen: readonly string[]) {
+  const known = new Set(list.map(([code]) => code));
+  return [
+    ...common.filter((code) => known.has(code)),
+    ...chosen.filter((code) => known.has(code) && !common.includes(code)),
+  ];
+}
+
+const labelIn = (list: PickList, code: string) => list.find(([value]) => value === code)?.[1] ?? code;
+
+/** "More": the kit's searchable long-list picker, opened from one field button. */
+function MoreList({
+  label,
+  options,
+  onChoose,
+  testId,
+}: {
+  label: string;
+  options: ListPickerOption[];
+  onChoose: (code: string) => void;
+  testId?: string;
+}) {
+  return (
+    <div className={styles.pickMore}>
+      <ListPicker
+        label={label}
+        placeholder="More"
+        value={null}
+        options={options}
+        testId={testId}
+        onChange={(code) => {
+          if (code) onChoose(code);
+        }}
+      />
+    </div>
+  );
+}
+
+function OtherBox({ other, shown }: { other?: OtherDetail; shown: boolean }) {
+  if (!other || !shown) return null;
+  return (
+    <TextInput
+      aria-label={other.label}
+      placeholder={other.label}
+      autoComplete="off"
+      boxClassName={styles.otherInput}
+      value={other.value}
+      onChange={(event) => other.onChange(event.target.value)}
+    />
+  );
+}
+
+/**
+ * One from a long webPSOLIS list: the common options as tiles, then More for the full searchable
+ * list. Nothing is chosen until pressed; a second press on the chosen tile clears it. A choice from
+ * More that is not common shows as a tile too, so it can be cleared the same way.
+ */
+export function PickOne({
+  label,
+  noun,
+  list,
+  common,
+  value,
+  onChange,
+  other,
+  id,
+}: {
+  label: string;
+  /** Plural, lower case, for "More venues". */
+  noun: string;
+  list: PickList;
+  common: readonly string[];
+  value: string | null;
+  onChange: (value: string | null) => void;
+  other?: OtherDetail;
+  id?: string;
+}) {
+  const chosen = value ? [value] : [];
+  const tiles = shownCodes(list, common, chosen).map((code) => [code, labelIn(list, code)] as const);
+  return (
+    <div className={styles.pick}>
+      <Choice id={id} label={label} options={tiles} value={value} onChange={onChange} />
+      <MoreList
+        label={`More ${noun}`}
+        options={moreOptions(list, chosen)}
+        onChoose={(code) => onChange(code)}
+        testId={id ? `${id}-more` : undefined}
+      />
+      <OtherBox other={other} shown={value === other?.code} />
+    </div>
+  );
+}
+
+/**
+ * Any number from a long webPSOLIS list: the common options as chips, then More for the full
+ * searchable list. Choices keep the order they were made (each new one is added at the end); a
+ * second press, or choosing it again from More, removes it.
+ */
+export function PickMany({
+  label,
+  noun,
+  list,
+  common,
+  values,
+  onChange,
+  groupOf,
+  other,
+  id,
+}: {
+  label: string;
+  noun: string;
+  list: PickList;
+  common: readonly string[];
+  values: readonly string[];
+  onChange: (values: string[]) => void;
+  /** Puts the More list under group headings. */
+  groupOf?: (code: string) => string | undefined;
+  other?: OtherDetail;
+  id?: string;
+}) {
+  const toggle = (code: string) =>
+    onChange(values.includes(code) ? values.filter((v) => v !== code) : [...values, code]);
+  const chips = shownCodes(list, common, values).map((code) => [code, labelIn(list, code)] as const);
+  return (
+    <div className={styles.pick} id={id}>
+      <MultiChips label={label} options={chips} values={values} onToggle={toggle} />
+      <MoreList
+        label={`More ${noun}`}
+        options={moreOptions(list, values, groupOf)}
+        onChoose={toggle}
+        testId={id ? `${id}-more` : undefined}
+      />
+      <OtherBox other={other} shown={Boolean(other && values.includes(other.code))} />
+    </div>
   );
 }
 

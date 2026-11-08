@@ -8,6 +8,7 @@
  *   lands in it.
  * - A signed triage is read-only and stays open, so nothing is hidden behind a Change that cannot work.
  */
+import { labelOf, PSOLIS_ACTIONS, PSOLIS_PROBLEMS } from "./triage-psolis-lists";
 import { GUIDES, LEGAL, MSE, TIER_LONG, type SectionId } from "./triage-risk-data";
 import { hasLegalForm, mseAnsweredCount, type TriageState } from "./triage-risk-state";
 import { boxLine, guideHeadings, headingFilled, NA, wordCount } from "./triage-risk-text";
@@ -53,7 +54,9 @@ export function foldLine(state: TriageState, section: SectionId): string[] {
     const aware = state.aware.map((a) => AWARE_NAME[a] ?? a).join(", ");
     return [
       `${wordCount(state.text.note)} words, ${covered} of ${all.length} headings`,
-      state.problems.length ? state.problems.join(", ") : "No problems tapped",
+      state.problems.length
+        ? state.problems.map((code) => labelOf(PSOLIS_PROBLEMS, code) || code).join(", ")
+        : "No problems tapped",
       aware ? `Aware: ${aware}` : "",
     ].filter(Boolean);
   }
@@ -72,7 +75,9 @@ export function foldLine(state: TriageState, section: SectionId): string[] {
       state.urgency ? `Urgency ${state.urgency}, ${TIER_LONG[state.urgency].toLowerCase()}` : "",
       state.outcome ?? "",
       legal,
-      state.actions.length ? `Actions: ${state.actions.join(", ")}` : "",
+      state.actions.length
+        ? `Actions: ${state.actions.map((code) => labelOf(PSOLIS_ACTIONS, code) || code).join(", ")}`
+        : "",
     ].filter(Boolean);
   }
   return [];

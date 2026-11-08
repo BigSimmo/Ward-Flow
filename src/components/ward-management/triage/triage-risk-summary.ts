@@ -28,6 +28,17 @@ import {
   sinceLastText,
   type TriageState,
 } from "./triage-risk-state";
+import {
+  ALL_PROGRAMS,
+  PROGRAMS,
+  PSOLIS_ACTIONS,
+  PSOLIS_PROBLEMS,
+  REFERRAL_TYPES,
+  STREAMS,
+  VENUES,
+  psolisOf,
+  type StreamCode,
+} from "./triage-psolis-lists";
 import { parseHeadedText } from "./triage-risk-text";
 
 /** A run of text; a quiet one is drawn muted (a gap, or how a flag was recorded). */
@@ -123,6 +134,25 @@ const AWARE_NAME: Readonly<Record<string, string>> = {
   carer: "Carer aware",
 };
 const value = (text: string | null | undefined): DocValue => (text ? [text] : gap);
+
+type PickList = Parameters<typeof psolisOf>[0];
+
+/**
+ * A pick as Copy writes it (Josh, 7 Nov 2026): the exact PSOLIS value, never the screen label. An
+ * "Other" pick with typed detail writes "OTHER: <detail>"; the detail comes from React state and
+ * appears only in the document and its copied text, like every typed box.
+ */
+const pickText = (list: PickList, code: string | null | undefined, other?: string): string => {
+  const written = psolisOf(list, code);
+  const detail = other?.trim();
+  return code === "other" && detail ? `${written}: ${detail}` : written;
+};
+
+/** The stream a program belongs to, for the Stream row. */
+const streamOf = (program: string | null): StreamCode | undefined =>
+  program
+    ? (Object.keys(PROGRAMS) as StreamCode[]).find((stream) => PROGRAMS[stream].some(([code]) => code === program))
+    : undefined;
 const names = (list: readonly { name: string }[]) => list.map((f) => f.name).join(", ");
 
 /**
@@ -181,7 +211,7 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
   const asked = person.referral?.urgency;
   if (state.urgency && asked && state.urgency !== asked && t.urgReason.trim())
     decisionNotes.push(`Referrer urgency ${asked}, changed to ${state.urgency}: ${t.urgReason.trim()}`);
-  if (state.actions.includes("Bed request"))
+  if (state.actions.includes("bed-request"))
     decisionNotes.push(
       `Medical clearance: ${{ yes: "cleared", pending: "pending", na: "not needed" }[state.medical ?? ""] ?? "not recorded"}.`,
     );
@@ -201,6 +231,8 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
     .filter(Boolean)
     .join(" · ");
   const language = t.interpLang.trim();
+  const problems = state.problems.map((code) => pickText(PSOLIS_PROBLEMS, code, t.problemOther));
+  const actions = state.actions.map((code) => pickText(PSOLIS_ACTIONS, code, t.actionOther));
 
   return {
     kicker: "Mental health triage and risk · synthetic",
@@ -224,7 +256,10 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
             kind: "facts",
             rows: [
               ["Reviewed", value(t.revTime.trim())],
-              ["Mode", value([state.how ? HOW_NAME[state.how] : "", state.where ?? ""].filter(Boolean).join(" · "))],
+              ["Mode", value(state.how ? HOW_NAME[state.how] : null)],
+              ["Venue", value(pickText(VENUES, state.where, t.venueOther))],
+              ["Stream", value(psolisOf(STREAMS, streamOf(state.program)))],
+              ["Program", value(psolisOf(ALL_PROGRAMS, state.program))],
               ["Arrived by", value(state.arrivedBy)],
               ...(t.accompanied.trim() ? [["Accompanied by", [t.accompanied.trim()]] as const] : []),
               [
@@ -237,6 +272,7 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
               ],
               ["Referral", value(person.referral ? `${person.referral.id} from ${person.referral.from}` : "None")],
               ...(referrer ? [["Referrer", [referrer]] as const] : []),
+              ["Referral type", value(pickText(REFERRAL_TYPES, state.referralType, t.referralOther))],
               ["Purpose", value(state.purpose)],
               ["Episode", value(state.episode ? EPISODE_NAME[state.episode] : null)],
               [
@@ -269,9 +305,7 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
         edit: "note",
         blocks: [
           story.length ? facts(story) : { kind: "missing", text: "Reason not written yet." },
-          ...(state.problems.length
-            ? [{ kind: "facts", rows: [["Problems", [state.problems.join(", ")]]] } as const]
-            : []),
+          ...(problems.length ? [{ kind: "facts", rows: [["Problems", [problems.join(", ")]]] } as const] : []),
           ...(state.aware.length
             ? [
                 {
@@ -302,7 +336,7 @@ export function summaryModel(state: TriageState, signed?: SignedBy): SummaryMode
               ...(whoTold ? [["Who was told", [whoTold]] as const] : []),
             ],
           },
-          ...(state.actions.length ? [{ kind: "tags", label: "Actions", items: state.actions } as const] : []),
+          ...(actions.length ? [{ kind: "tags", label: "Actions", items: actions } as const] : []),
           ...decisionNotes.map((text) => ({ kind: "note", value: [text] }) as const),
         ],
       },

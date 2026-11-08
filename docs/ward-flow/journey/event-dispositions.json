@@ -3725,14 +3725,15 @@
       "before": "No signed triage, or earlier signed triages, on the person",
       "after": "One more signed triage record on the person: time, desk role and closed-list codes",
       "payload": [
-        "patientId; now; role; urgency (A to G); outcome (listed); legal (listed code); review (listed code); flags (RAMP factor keys marked present)."
+        "patientId; now; role; urgency (A to G); outcome (listed); legal (listed code); review (listed code); flags (RAMP factor keys marked present); problems and actions (webPSOLIS list codes, in the order chosen); venue and referralType (webPSOLIS list code or null)."
       ],
       "scope": "ed, community, ward and coordinator in the role table, the same desks as RAISE_REFERRAL; a shared desk is sent a record only with a person it is sent.",
       "guards": [
         "The person exists on this workspace.",
         "Urgency is one of A to G.",
         "Outcome, legal status and review are each from their fixed lists.",
-        "Every flag is a RAMP factor key; unknown fields are dropped."
+        "Every flag is a RAMP factor key; unknown fields are dropped.",
+        "Problems and actions are arrays of at most 60 codes from their webPSOLIS lists (kept once each, in the order chosen); venue and referral type are null or a code from their list. Typed text is refused."
       ],
       "effects": [
         "Appends a triages record (codes only); the patient record's Now tab lists it. No Undo: it is a signed record. Typed text (assessment, mental state, formulation, plan) stays in the form and is never in the event."
@@ -3745,8 +3746,8 @@
         },
         {
           "path": "src/components/ward-management/triage/triage-signed-reducer.ts",
-          "line": 31,
-          "sha256": "57d05dfce58ca23e17e66256ea286e5dc8ec5d27d2b05e905eb30a5a722f9b13"
+          "line": 46,
+          "sha256": "88ebffb9dc86dd544d9bdac7f561fcf4998a3af62d9a19ffe4211c5325142666"
         },
         {
           "path": "src/components/ward-management/ward-access-state.ts",

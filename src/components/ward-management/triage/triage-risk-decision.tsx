@@ -9,13 +9,30 @@ import { Info } from "lucide-react";
 
 import { ChipGroup, FilterChip, Icon, Segmented, SrOnly, StatusGlyph, TextInput, phoneRows } from "@/components/wf";
 
-import { ACTIONS, AHD, LEGAL, OUTCOMES, TIERS, WHO_TOLD, type Tier } from "./triage-risk-data";
-import { Choice, MultiChips, Reveal, Row, type FormApi } from "./triage-risk-parts";
+import {
+  ACTION_GROUP_LABEL,
+  ACTIONS_COMMON,
+  PSOLIS_ACTIONS,
+  REFERRED_TO_ACTIONS,
+  type ActionGroup,
+} from "./triage-psolis-lists";
+import { AHD, LEGAL, OUTCOMES, TIERS, WHO_TOLD, type Tier } from "./triage-risk-data";
+import { Choice, PickMany, Reveal, Row, type FormApi } from "./triage-risk-parts";
 import { acuteFlagNames, hasLegalForm } from "./triage-risk-state";
 import styles from "./triage-risk-form.module.css";
 
 const toggleIn = (list: readonly string[], value: string) =>
   list.includes(value) ? list.filter((v) => v !== value) : [...list, value];
+
+const ACTION_GROUP: Readonly<Record<string, ActionGroup>> = Object.fromEntries(
+  PSOLIS_ACTIONS.map(([code, , , group]) => [code, group]),
+);
+/** The More list's heading for an action: Notified, Referred to, Advised or Done. */
+const actionGroupOf = (code: string) => {
+  const group = ACTION_GROUP[code];
+  return group ? ACTION_GROUP_LABEL[group] : undefined;
+};
+const isTold = (code: string) => WHO_TOLD.some(([action]) => action === code);
 
 export function UrgencyHint({ children }: { children: string }) {
   return (
@@ -30,18 +47,21 @@ export function DecisionBody({ form }: { form: FormApi }) {
   const { state, set, setText, update } = form;
   const acute = acuteFlagNames(state);
   const asked = state.person.referral?.urgency ?? null;
-  const toggleAction = (value: string) =>
+  const setActions = (actions: string[]) =>
     update((s) => {
-      const actions = toggleIn(s.actions, value);
       // Telling someone replaces "None needed".
-      const told = WHO_TOLD.some(([action]) => action === value) && actions.includes(value);
+      const told = actions.some((code) => isTold(code) && !s.actions.includes(code));
       return { ...s, actions, urgNone: told ? false : s.urgNone };
     });
+  const toggleAction = (value: string) => setActions(toggleIn(state.actions, value));
+  const referredNudge =
+    state.outcome === "Referred on" &&
+    !state.actions.some((code) => (REFERRED_TO_ACTIONS as readonly string[]).includes(code));
   const toggleNoneNeeded = () =>
     update((s) => ({
       ...s,
       urgNone: !s.urgNone,
-      actions: s.urgNone ? s.actions : s.actions.filter((a) => !WHO_TOLD.some(([action]) => action === a)),
+      actions: s.urgNone ? s.actions : s.actions.filter((a) => !isTold(a)),
     }));
   return (
     <div className={styles.rows}>
@@ -125,9 +145,30 @@ export function DecisionBody({ form }: { form: FormApi }) {
         <Choice label="Outcome" options={OUTCOMES} value={state.outcome} onChange={(v) => set("outcome", v)} />
       </Row>
       <Row label="Actions" top>
-        <MultiChips label="Actions" options={ACTIONS} values={state.actions} onToggle={toggleAction} />
+        <PickMany
+          id="triage-actions"
+          label="Actions"
+          noun="actions"
+          list={PSOLIS_ACTIONS}
+          common={ACTIONS_COMMON}
+          values={state.actions}
+          onChange={setActions}
+          groupOf={actionGroupOf}
+          other={{
+            code: "other",
+            label: "Other action, in a few words",
+            value: state.text.actionOther,
+            onChange: (v) => setText("actionOther", v),
+          }}
+        />
+        {referredNudge ? (
+          <p className={styles.nudgeLine} data-testid="triage-referred-nudge">
+            <StatusGlyph tone="neutral" size={8} />
+            <span>Referred on: add who to, such as Referred to community mental health.</span>
+          </p>
+        ) : null}
       </Row>
-      {state.actions.includes("Bed request") ? (
+      {state.actions.includes("bed-request") ? (
         <Reveal>
           <Row label="Medically cleared" hint="Needed for a bed request">
             <Choice
@@ -143,7 +184,7 @@ export function DecisionBody({ form }: { form: FormApi }) {
           </Row>
         </Reveal>
       ) : null}
-      {state.actions.includes("Senior consulted") ? (
+      {state.actions.includes("senior") ? (
         <Reveal>
           <Row label="Consulted with" hint="Name and outcome" htmlFor="triage-consult">
             <TextInput

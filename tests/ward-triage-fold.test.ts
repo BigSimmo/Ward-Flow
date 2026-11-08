@@ -33,7 +33,7 @@ describe("the folded line", () => {
   it("says what Assessment holds", () => {
     expect(foldLine(exampleTriage(), "note")).toEqual([
       "60 words, 5 of 10 headings",
-      "Psychosis, Aggression, Alcohol or drugs",
+      "Psychotic symptoms, Aggressive or threatening behaviour, Alcohol or drugs",
       "Aware: person opposed, carer aware",
     ]);
   });
@@ -53,6 +53,13 @@ describe("the folded line", () => {
     ]);
   });
 
+  it("names actions by their plain labels on screen, in the order chosen", () => {
+    const state = { ...exampleTriage(), actions: ["bed-request", "police", "alo"] };
+    expect(foldLine(state, "dec")).toContain(
+      "Actions: Bed request, Police notified, Aboriginal liaison officer notified",
+    );
+  });
+
   it("has nothing to say for a section that does not fold", () => {
     expect(foldLine(blankTriage(EXAMPLE_PERSON), "risk")).toEqual([]);
   });
@@ -65,8 +72,8 @@ describe("copy one part for its PSOLIS box", () => {
     const review = partText(model.parts[0]!);
     expect(review.split("\n").slice(0, 3)).toEqual([
       "Reviewed: 06/11/2026 09:42",
-      "Mode: Phone · ED",
-      "Arrived by: Ambulance",
+      "Mode: Phone",
+      "Venue: EMERGENCY DEPARTMENT",
     ]);
     expect(review).not.toMatch(/REVIEW DETAILS|UMRN|40-2271/);
   });

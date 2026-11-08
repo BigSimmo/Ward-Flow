@@ -1581,3 +1581,60 @@
     border: 0;
   }
 }
+
+/* A webPSOLIS pick-list (triage-risk-parts.tsx PickOne, PickMany): the common options, then More
+   (the kit's searchable list) and, for Other, a short typed box. Tokens only. */
+.pick {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.pick > * {
+  max-width: 100%;
+}
+
+.pickMore {
+  width: min(18rem, 100%);
+}
+
+/* Phone: the More field shows at 40px with an invisible cover keeping the 48px tap area (Q295,
+   docs/agents/building-ui.md), rather than the kit text field's 44px. */
+@media (max-width: 46.4375rem) {
+  .pickMore div:has(> [role="combobox"]) {
+    min-height: 40px;
+  }
+
+  .pickMore [role="combobox"] {
+    position: relative;
+  }
+
+  .pickMore [role="combobox"]::after {
+    content: "";
+    position: absolute;
+    inset: -4px 0;
+  }
+}
+
+.otherInput {
+  width: min(24rem, 100%);
+}
+
+.nudgeLine {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  color: var(--wf-ink-2);
+}
+
+/* Program's Change: that stream's programs on their own line under the fact line. */
+.programChoice {
+  flex-basis: 100%;
+  min-width: 0;
+}
