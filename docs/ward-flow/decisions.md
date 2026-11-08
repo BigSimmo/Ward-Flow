@@ -1103,3 +1103,25 @@ is inferred.
   3. A click or tap outside a drawer, sheet or pop-up closes it. Inline panels beside a list (Waiting, Delays, Referrals) stay open until closed or switched, and a confirmation that needs a choice ("Close without sending?") and the idle lock stay until answered.
 - **How:** a hand-built drawer whose backdrop sits beside its panel marks it `data-sheet-scrim` (`src/components/wf/sheet-focus.ts`), so the shared focus trap leaves that backdrop live.
 - **Boundary:** approves no merge or release.
+
+## D-96. A named bed is held, and its patient is not also waiting (8 November 2026)
+
+- **Date:** 8 November 2026 (`2026-11-08`), 10:53 AM AWST (02:53 UTC). **Decided by:** Josh, in the Ward Flow project, answering "Go ahead with all recommendations" after being asked to confirm this rule.
+- **Decision:**
+  1. A bed named for a referral or journey (WF-FIG-017, 7 November 2026) counts as held, not free, on every screen that counts beds: Find a bed, the forecast, Mismatch cards, the bed map, the network table, the ward drawer, the TVs, the bed meeting sheet and the shortlist.
+  2. A journey that holds a named bed is not also counted as waiting for a bed, so one patient is never counted twice.
+- **How:** `numberedReservationBeds` (`src/components/ward-management/ward-movement-bed-hold.ts`), built in PR #1506.
+- **Boundary:** a prototype rule on synthetic data; approves no merge or release.
+
+## D-97. Owner answers on seven open items: N21, N25, N26, N29, N40, N41 and WF-B008 (8 November 2026)
+
+- **Date:** 8 November 2026 (`2026-11-08`), 10:56 AM AWST (02:56 UTC). **Decided by:** Josh, in the Ward Flow project, answering "Go ahead with all recommendations" to one recommendation per item.
+- **Decision:**
+  1. **N21, eight account password resets:** Josh does these himself on his own accounts. No agent touches them.
+  2. **N25, heavy-test lock:** a lock whose owner process has stopped may be reclaimed, and only then. This is what `scripts/test-run-lock.mjs` already does (`ownerDirectoryIsStale` reclaims only when the owner PID is gone; an old heartbeat alone never frees a live owner). Never delete coordinator state by hand (development-speed-playbook section 8).
+  3. **N26, cloud environment settings (read only, 8 November 2026):** two Claude cloud environments, "Default" and "Cloud". Both are personal, have unrestricted network access, no setup script, no network secrets and no listed environment variables. Josh's PC bridge environments for Ward-Flow, Database and ai-rules are separate. Cloud sessions start shallow with Node 22, so Ward Flow work there needs Node 24 from `/opt/node24/bin`. Nothing was changed.
+  4. **N29, external domain review:** deferred until a real need. It needs spending authority and nothing depends on it.
+  5. **N41, monitoring, licence and downtime owners:** Josh owns all three while Ward Flow is a prototype.
+  6. **WF-B008 / October WF-021, sign-in limits:** keep the per-client limits already in `src/lib/front-door-admission.ts`. Review them before any real users sign in. No denial-of-service failure has been shown on the deployed site.
+  7. **N40, Tier 4 items 19–23 and 25:** on hold until Josh names them for building.
+- **Boundary:** approves no spending, provider change, merge or release.
