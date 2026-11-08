@@ -8,6 +8,10 @@ import {
   bedKindTotals,
   networkWardRows,
 } from "@/components/ward-management/capacity/capacity-derivations";
+import { meetingTvExtras, wardTvSheet } from "@/components/ward-management/bed-meeting/tv-derivations";
+import { unitHealthService } from "@/components/ward-management/ward-service-scope";
+import { DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
+import type { ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { numberedBedKind } from "@/components/ward-management/ward-bed-designation";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
@@ -93,5 +97,22 @@ describe("named reservations on Capacity (WF-FIG-017)", () => {
     const after = bedKindGaps([holdLocked], [mixed], NOW);
     expect(fits(after, "locked_adult")).toBe(fits(before, "locked_adult") - 1);
     expect(fits(after, "open_adult")).toBe(fits(before, "open_adult"));
+  });
+
+  it("a referral-only hold is held on the ward and service TVs too", () => {
+    // Synthetic accepted referral arm holding bed 1 with no journey yet.
+    const referralHold = {
+      id: "WF-SYNTH-REF-HOLD",
+      state: "accepted",
+      destination: { kind: "psychiatric_ward", unitId: unit.id },
+      heldBedNumber: 1,
+    } as unknown as ReservationReferral;
+    const tv = { units: [unit], movements: [], bedReleases: [], admissions: [], leaveBeds: [], now: NOW };
+    const common = { ...tv, thresholds: DEFAULT_DUE_SOON_THRESHOLDS, nameOf: () => "" };
+    expect(wardTvSheet({ ...common, unit }).capacity.ready).toBe(before.ready);
+    expect(wardTvSheet({ ...common, unit, namedHolds: [referralHold] }).capacity.ready).toBe(before.ready - 1);
+    const service = unitHealthService(unit)!;
+    const [ward] = meetingTvExtras({ ...common, service, namedHolds: [referralHold] }).wards;
+    expect(ward!.ready).toBe(before.ready - 1);
   });
 });
