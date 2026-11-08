@@ -113,3 +113,17 @@ were refreshed. Files: `alerts/ward-broadcast-model.ts`, `alerts/ward-broadcast-
 `shell/ward-broadcast-banner.tsx`, `ward-derivations.ts` (the inbox title "Pull expired, bed still pulled"; its
 two readers on Home were changed with it), `ward-global-search.tsx`, `ward-tasks-drawer.tsx`,
 `ward/ward-answer-view.tsx` and `ward/ward-screen.tsx`, all under `src/components/ward-management/`.
+
+## 8 November 2026 — Note 3 optional administrative details (PR #1541)
+
+Four reviewed source files changed, compared line by line with main `f2f66f9c`. `ward-flow-events.ts` only widens
+the ADD_PATIENT payload type with the 22 optional `ADMIN_DETAIL_FIELDS` (ruling NOTE3-2026-11-08); no other event's
+type, role or handler changed. `ward-patient-registration-reducer.ts` trims those fields into the new record on the
+same terms as the existing optional typed details; its guards (UMRN, names, date of birth, sex, gender, status,
+source desk) are unchanged. `ward-patient-archive.ts` adds the same fields to the registration facts, so a
+registration-only record that holds them can still be archived as erroneous; care-record refusals are unchanged.
+`patients/add-patient.tsx` regroups the form (four required fields first, optional folds below) and sends the new
+fields; it still raises one ADD_PATIENT with the same required payload. The ADD_PATIENT "needs" and ARCHIVE_PATIENT
+guard prose were updated, and the whole-file digests for these four files refreshed in `actions.json`,
+`event-dispositions.json` and `machines.json`. Evidence: `tests/ward-add-patient.dom.test.tsx` and
+`tests/ward-patient-model.test.ts`, run locally.
