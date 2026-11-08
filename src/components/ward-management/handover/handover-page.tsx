@@ -17,7 +17,6 @@ import {
   Printer,
   Timer as TimerIcon,
 } from "lucide-react";
-
 import { announceToWardShell } from "@/components/ward-management/shell/ward-live-region";
 import { WardPrototypeFooter } from "@/components/ward-management/shell/ward-prototype-footer";
 import { patientHref } from "@/components/ward-management/shell/ward-facade";
@@ -62,7 +61,6 @@ import {
   SrOnly,
   AppliedFilter,
 } from "@/components/wf";
-
 import {
   DENSITY_COLUMNS,
   DENSITY_LABEL,
