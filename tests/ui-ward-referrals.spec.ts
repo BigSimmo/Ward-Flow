@@ -621,15 +621,17 @@ async function goToBoardViaPhoneRail(page: Page) {
   // The sheet portals to `document.body` by default (`components/wf/sheet.tsx`'s `Sheet`), so its
   // content sits outside `rail`'s own DOM subtree once open — the target link is looked up from
   // `page`, unscoped, rather than from `rail`.
-  // Device audit option A (11 Oct 2026): the coordinator's phone dock carries Referrals on every
-  // phone page, and the phone menu shows each page once, so it leaves Referrals out. A phone user
-  // taps the dock; opening the menu first would only cover that link with the sheet.
-  const dockReferrals = page.getByTestId("ward-phone-dock").getByRole("link", { name: /^Referrals\b/iu });
-  if (await page.getByTestId("ward-bar-phone-menu").isVisible()) {
-    // Sending closes a sheet: wait for the dock to become visible instead of routing a
-    // transiently hidden dock through the phone menu, which deliberately omits Referrals.
-    await expect(dockReferrals).toBeVisible();
-    await dockReferrals.click();
+  // Josh, 8 Nov 2026: Referrals left the coordinator's phone dock for the Menu (the dock now holds
+  // Home, Capacity, +, Alerts, Tools), so a phone opens the Menu and taps Referrals there.
+  const phoneMenu = page.getByTestId("ward-bar-phone-menu");
+  if (await phoneMenu.isVisible()) {
+    const menu = page.getByTestId("ward-phone-menu");
+    // Retried as one step: sending closes a sheet, and the Menu tap can land while it is closing.
+    await expect(async () => {
+      if (!(await menu.isVisible())) await phoneMenu.click();
+      await expect(menu).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 20_000 });
+    await menu.locator('a[href="/ward-flow/referrals"]').filter({ visible: true }).first().click();
   } else if (await openRailSheetIfNeeded(page, rail)) {
     await page
       .getByTestId("ward-rail-more-pages")

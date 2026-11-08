@@ -581,6 +581,15 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
   if (activityOpen && !activityMounted) setActivityMounted(true);
   const activitySheet = usePhoneActivitySheet(isPhone, phoneReturnTarget, activityTriggerRef, openBarPopover);
   const activityBarReturn = activitySheet.sheetProps.returnFocusRef;
+  // Josh, 8 Nov 2026: Tools sits in the coordinator's dock, so closing it returns focus to that button.
+  const { openFromPhone: openActivityFromPhone } = activitySheet;
+  const openFromPhoneDock = useCallback(
+    (id: "tasks" | "activity" | "tools", opener?: HTMLElement) => {
+      openActivityFromPhone(id, opener);
+      if (id === "tools" && opener) toolsReturnFocusRef.current = opener;
+    },
+    [openActivityFromPhone],
+  );
   const activityReturnTarget = useMemo<RefObject<HTMLElement | null>>(
     () => ({
       get current() {
@@ -1038,7 +1047,7 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
         tasksCount={tasksActiveCount}
         activityUnread={unreadNoticeCount}
         roleCategory={roleCategory}
-        onOpenDrawer={activitySheet.openFromPhone}
+        onOpenDrawer={openFromPhoneDock}
         onOpenReferral={openReferral}
         liveOverSheet={headerLiveOverSheet}
       />
@@ -1257,7 +1266,7 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
         testId="ward-bar-tools-sheet"
         returnFocusRef={toolsReturnTarget}
         desktopBackdropClassName={styles.drawerBackdrop}
-        contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide} ${toolsTwoPane ? styles.drawerSheetToolsTwoPane : ""}`}
+        contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide} ${polish.toolsSheet} ${toolsTwoPane ? styles.drawerSheetToolsTwoPane : ""}`}
         headerClassName={`${styles.drawerHeader} ${polish.toolsHeader}`}
         titleClassName={`${styles.drawerTitle} ${polish.toolsTitle}`}
         closeButtonClassName={styles.drawerClose}

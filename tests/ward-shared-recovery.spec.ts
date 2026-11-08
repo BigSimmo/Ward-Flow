@@ -183,11 +183,28 @@ test("Activity Undo: a desk reviews its own bed closure and waits for the server
   if (phone) await expect(page.getByTestId("ward-drawer-reopen-bed")).toBeVisible();
   else await expect(page.getByTestId(bedId!)).toHaveAttribute("data-state", "closed");
   await page.getByRole("button", { name: "Close bed drawer", exact: true }).click();
-  await page
-    .getByRole("button", { name: /^Activity(?:\b|$)/u })
-    .filter({ visible: true })
-    .first()
-    .click();
+  // Josh, 8 Nov 2026: the coordinator's phone dock carries Tools in Activity's place, so a phone
+  // opens Activity from the Menu's Activity row. On a ward page Back stands in the Menu's place,
+  // and Back follows this shared desk's history from earlier tests, so the phone goes Home from the
+  // dock instead (a client-side step, so this desk's own commands stay in memory). Activity is one
+  // panel on every page, so the closure still shows there.
+  if (phone) {
+    const menu = page.getByTestId("ward-bar-phone-menu");
+    if (!(await menu.isVisible())) {
+      await page.getByTestId("ward-phone-dock-link").filter({ hasText: /^Home/u }).click();
+      await expect(page).toHaveURL(/\/ward-flow\/?(?:\?.*)?$/u);
+      await ready(page);
+    }
+    await expect(menu).toBeVisible();
+    await menu.click();
+    await page.getByTestId("ward-phone-menu-activity-row").click();
+  } else {
+    await page
+      .getByRole("button", { name: /^Activity(?:\b|$)/u })
+      .filter({ visible: true })
+      .first()
+      .click();
+  }
   const activity = page.getByTestId("ward-bar-activity-sheet");
   await activity.getByRole("tab", { name: /^Recent/u }).click();
   const own = activity.locator(`[data-own-command-id="${commandId}"]`);
@@ -201,7 +218,9 @@ test("Activity Undo: a desk reviews its own bed closure and waits for the server
   await expect(own).toContainText("Undone. The shared board confirmed the change.");
   await expect(own).not.toContainText("A later change replaced this one");
   await expectAccessible(page, info, "Activity reports the confirmed inverse");
-  await page.reload({ waitUntil: "domcontentloaded" });
+  // A phone went Home to reach the Menu, so it loads the ward page afresh rather than reloading Home.
+  if (phone) await page.goto("/ward-flow/ward/rph-adult-secure", { waitUntil: "domcontentloaded" });
+  else await page.reload({ waitUntil: "domcontentloaded" });
   await ready(page);
   if (phone) {
     const rows = await showPhoneBeds(page);

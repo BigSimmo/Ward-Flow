@@ -4,7 +4,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -15,7 +15,7 @@ import {
   type ComponentType,
   type RefObject,
 } from "react";
-import { Activity, BedSingle, Bell, House, Plus } from "lucide-react";
+import { Activity, BedSingle, Bell, House, Plus, Wrench } from "lucide-react";
 
 import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
 import { useFitDockLabels } from "@/components/ward-management/shell/use-fit-dock-labels";
@@ -81,7 +81,8 @@ type DockSlot =
   | { readonly kind: "queue" }
   | { readonly kind: "alerts" }
   | { readonly kind: "activity" }
-  | { readonly kind: "bed-finder"; readonly label: string };
+  | { readonly kind: "bed-finder"; readonly label: string }
+  | { readonly kind: "tools" };
 
 const page = (id: string, label: string): DockPage => ({ kind: "page", id, label });
 
@@ -96,8 +97,11 @@ export type ResolvedDockSlot =
 const DOCK: Record<WardChromeRole, { readonly left: readonly DockPage[]; readonly right: readonly DockSlot[] }> = {
   // The bed coordinator's dock is the perfected one (Josh, 31 Oct 2026): unchanged.
   coordinator: {
-    left: [page("command", "Home"), page("referrals", "Referrals")],
-    right: [{ kind: "queue" }, { kind: "activity" }],
+    // Josh, 8 Nov 2026: Home already lists the people to move (Flow, To decide), so the slot beside
+    // it shows the beds (Capacity). Tools, the coordinator's controls, replaces Activity, which
+    // Home's changes chip and the Menu's Activity row still open. Referrals stays in the Menu.
+    left: [page("command", "Home"), page("capacity", "Capacity")],
+    right: [{ kind: "queue" }, { kind: "tools" }],
   },
   // shell-next (Josh, 31 Oct 2026: "decide what is the most useful, specific to the role"). Alerts
   // sits straight after the + on every desk that has one.
@@ -342,6 +346,7 @@ function PhoneDock({
   onCreate,
   canCreate,
   onDrawer,
+  onCapacity,
 }: {
   places: ResolvedDockSlot[];
   /** C2: the two slots right of the +, per role. */
@@ -357,6 +362,8 @@ function PhoneDock({
   /** False on a desk with nothing to start (executive, access admin): no + is drawn. */
   canCreate: boolean;
   onDrawer: (id: DrawerId, opener?: HTMLElement) => void;
+  /** The coordinator's Capacity tab opens Capacity at a glance instead of the page. */
+  onCapacity?: (opener: HTMLElement) => void;
 }) {
   const dockRef = useRef<HTMLElement>(null);
   useFitDockLabels(dockRef, `.${styles.dockLabel}`);
@@ -383,6 +390,26 @@ function PhoneDock({
       case "page": {
         const { entry, label } = item;
         const count = countIn(counts, entry.id);
+        if (entry.id === "capacity" && onCapacity) {
+          return (
+            <button
+              key={entry.id}
+              type="button"
+              className={DOCK_ITEM}
+              aria-haspopup="dialog"
+              aria-current={isActiveRailEntry(pathname, entry) ? "page" : undefined}
+              data-testid="ward-phone-dock-capacity"
+              onClick={(event) => onCapacity(event.currentTarget)}
+            >
+              <DockFace
+                icon={entry.icon}
+                label={label}
+                count={count?.value}
+                tail={dockTail(label, count?.value, count?.noun ?? "", wardNavCountLabel(label, count))}
+              />
+            </button>
+          );
+        }
         return (
           <Link
             key={entry.id}
@@ -445,6 +472,20 @@ function PhoneDock({
               count={activityUnread}
               tail={dockTail("Activity", activityUnread, "unread", "Activity")}
             />
+          </button>
+        );
+      case "tools":
+        // Josh, 8 Nov 2026: the coordinator's Tools sheet, one tap from every phone page.
+        return (
+          <button
+            key="tools"
+            type="button"
+            className={DOCK_ITEM}
+            aria-haspopup="dialog"
+            data-testid="ward-phone-dock-tools"
+            onClick={(event) => onDrawer("tools", event.currentTarget)}
+          >
+            <DockFace icon={Wrench} label="Tools" count={undefined} tail="" />
           </button>
         );
       case "bed-finder":
@@ -568,6 +609,31 @@ preloadWhenIdle(loadMenuSheets);
 const loadMenuTop = () => import("@/components/ward-management/shell-next/next-phone-menu-top");
 const NextPhoneMenuTop = dynamic(() => loadMenuTop().then((m) => m.NextPhoneMenuTop), { ssr: false });
 preloadWhenIdle(loadMenuTop);
+// Capacity at a glance (Josh, 8 Nov 2026): the coordinator's Capacity tab opens this sheet. Its own
+// chunk, fetched once the browser is idle, so the dock's first load stays small.
+const loadCapacityGlance = () => import("@/components/ward-management/shell-next/next-capacity-glance");
+type CapacityGlanceProps = ComponentProps<(typeof import("./next-capacity-glance"))["NextCapacityGlance"]>;
+// A failed load (offline before the code arrived) still leaves the Capacity tab working: it goes
+// to the full Capacity page instead of the pop-up.
+const NextCapacityGlance = dynamic(
+  () =>
+    loadCapacityGlance().then(
+      (m) => m.NextCapacityGlance,
+      () => CapacityGlanceUnavailable,
+    ),
+  { ssr: false },
+);
+
+function CapacityGlanceUnavailable({ open, onClose }: CapacityGlanceProps) {
+  const router = useRouter();
+  useEffect(() => {
+    if (!open) return;
+    onClose();
+    router.push("/ward-flow/capacity");
+  }, [open, onClose, router]);
+  return null;
+}
+preloadWhenIdle(loadCapacityGlance);
 
 function PhoneMenuSheetsRetry(props: PhoneMenuSheetsProps) {
   const [Sheets, setSheets] = useState<ComponentType<PhoneMenuSheetsProps> | null>(null);
@@ -626,6 +692,10 @@ export function NextPhoneMenu({
   const [open, setOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
   const [switcherOpen, setSwitcherOpen] = useState(false);
+  const [capacityOpen, setCapacityOpen] = useState(false);
+  const [capacityMounted, setCapacityMounted] = useState(false);
+  if (!capacityMounted && capacityOpen) setCapacityMounted(true);
+  const capacityOpenerRef = useRef<HTMLElement | null>(null);
   // The sheets mount on the first open, not on page load: mounting the dynamic component would fetch
   // its chunk straight away instead of when the browser is idle.
   const [sheetsMounted, setSheetsMounted] = useState(false);
@@ -811,6 +881,7 @@ export function NextPhoneMenu({
           onCloseCreate={closeCreate}
           onNewReferral={onNewReferral}
           top={<NextPhoneMenuTop onGo={close} />}
+          activityRow={!dockRight.some((slot) => slot.kind === "activity")}
         />
       ) : null}
 
@@ -832,8 +903,24 @@ export function NextPhoneMenu({
           onCreate={create}
           canCreate={createOptions.any}
           onDrawer={drawer}
+          onCapacity={
+            shellRole === "coordinator"
+              ? (opener) => {
+                  capacityOpenerRef.current = opener;
+                  setCapacityOpen(true);
+                  announceToWardShell("Capacity at a glance opened.");
+                }
+              : undefined
+          }
         />
       </div>
+      {capacityMounted ? (
+        <NextCapacityGlance
+          open={capacityOpen}
+          onClose={() => setCapacityOpen(false)}
+          returnFocusRef={capacityOpenerRef}
+        />
+      ) : null}
     </>
   );
 }

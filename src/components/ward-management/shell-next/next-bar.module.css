@@ -129,3 +129,36 @@
     height: 22px;
   }
 }
+
+/* Phone (Josh, 8 Nov 2026: "perfect the tools pages on the phone"). Once a tool is open, its own
+   page head names it, so the sheet's large Tools header gives way to an iOS-style bar: "All tools"
+   on the left and Close on the right, on one row. The title stays for screen readers (it names the
+   dialog) but is clipped from view. That gives the tool about 110px more of the screen. */
+@media (max-width: 46.4375rem) {
+  .toolsSheet:has([data-testid="ward-tools-page"]) {
+    position: relative;
+  }
+
+  .toolsSheet:has([data-testid="ward-tools-page"]) .toolsHeader {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: auto;
+    z-index: 2;
+    padding: 5px 12px 0 0;
+  }
+
+  .toolsSheet:has([data-testid="ward-tools-page"]) .toolsTile,
+  .toolsSheet:has([data-testid="ward-tools-page"]) .toolsDesk {
+    display: none;
+  }
+
+  .toolsSheet:has([data-testid="ward-tools-page"]) .toolsTitle {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}

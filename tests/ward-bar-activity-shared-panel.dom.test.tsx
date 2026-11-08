@@ -65,15 +65,18 @@ describe("the app bar's Activity button opens the one shared Activity panel", ()
     expect(trigger).toHaveAttribute("aria-expanded", "false");
   });
 
-  it("opens as a sheet from the phone dock and returns focus to the dock button", async () => {
+  // Josh, 8 Nov 2026: the coordinator's dock carries Tools in Activity's place. On a phone the
+  // panel still opens as a sheet (Home's changes chip and the Menu's Activity row ask for it).
+  it("opens as a sheet on a phone, where the coordinator's dock has Tools in Activity's place", async () => {
     installMatchMediaStub(true);
     renderBar();
-    const dock = screen.getByTestId("ward-phone-menu-activity");
-    fireEvent.click(dock);
+    expect(screen.queryByTestId("ward-phone-menu-activity")).toBeNull();
+    expect(screen.getByTestId("ward-phone-dock-tools")).toBeInTheDocument();
+    act(() => openActivityPanel({}));
     const sheet = await screen.findByTestId("ward-bar-activity-sheet");
     expect(within(sheet).getByRole("tab", { name: /^Recent/u })).toBeInTheDocument();
     fireEvent.keyDown(sheet, { key: "Escape" });
-    await waitFor(() => expect(dock).toHaveFocus());
+    await waitFor(() => expect(screen.queryByTestId("ward-bar-activity-sheet")).toBeNull());
   });
 
   it("is the same instance Home's changes button opens, on the tab it asks for", async () => {

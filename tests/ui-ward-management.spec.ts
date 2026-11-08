@@ -319,14 +319,19 @@ test.describe("@mockup Ward Flow command view", () => {
       // through whichever of those three link kinds carries it. Each is still measured below.
       // shell-9 (13 Oct 2026): a "Needs you" row may carry a filter query (Delays opens on
       // ?show=severe), so its href is matched with or without one.
+      // Josh, 8 Nov 2026: the coordinator's dock Capacity tab is a button that opens Capacity at a
+      // glance, whose own link opens the full page, so that tab is how a phone reaches Capacity.
+      const capacityTab =
+        view.href === "/ward-flow/capacity" ? ['[data-testid="ward-phone-dock-capacity"]:visible'] : [];
       const link = page
         .locator(
-          ["ward-rail-link", "ward-phone-dock-link", "ward-phone-menu-need"]
-            .flatMap((testId) => [
+          [
+            ...["ward-rail-link", "ward-phone-dock-link", "ward-phone-menu-need"].flatMap((testId) => [
               `[data-testid="${testId}"][href="${view.href}"]:visible`,
               `[data-testid="${testId}"][href^="${view.href}?"]:visible`,
-            ])
-            .join(", "),
+            ]),
+            ...capacityTab,
+          ].join(", "),
         )
         .first();
       await expect(link, `${view.label} (${view.href}) must be reachable from this rail`).toBeVisible();

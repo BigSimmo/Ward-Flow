@@ -1,0 +1,64 @@
+/* Call and log (Josh, 8 Nov 2026). Steps and the list share Remind me's styles; these are its own. */
+.said {
+  display: grid;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.card {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+}
+
+.option {
+  display: flex;
+  gap: var(--wf-s-3);
+  min-height: 52px;
+  padding: var(--wf-s-2) var(--wf-s-3);
+}
+
+.option + .option {
+  border-top: 1px solid var(--wf-line);
+}
+
+.option:has(input:checked) {
+  background: var(--wf-accent-tint);
+}
+
+.optionText {
+  display: grid;
+}
+
+.optionText strong {
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.optionText span {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+/* A ward not confirmed this shift: a small amber dot, with the words for screen readers. */
+.due {
+  margin-right: 2px;
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wf-warning);
+  flex: none;
+}
+
+.saved {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}

@@ -13,7 +13,7 @@ import {
   type ComponentType,
   type RefObject,
 } from "react";
-import { Activity, BedSingle, House, Bell, Clock3, Plus } from "lucide-react";
+import { Activity, BedSingle, House, Bell, Clock3, Plus, Wrench } from "lucide-react";
 
 import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
 import { SrOnly } from "@/components/wf";
@@ -77,7 +77,8 @@ type DockSlot =
   | { readonly kind: "queue" }
   | { readonly kind: "alerts" }
   | { readonly kind: "activity" }
-  | { readonly kind: "bed-finder"; readonly label: string };
+  | { readonly kind: "bed-finder"; readonly label: string }
+  | { readonly kind: "tools" };
 
 const page = (id: string, label: string): DockPage => ({ kind: "page", id, label });
 
@@ -97,8 +98,11 @@ type ResolvedDockSlot =
  */
 const DOCK: Record<WardChromeRole, { readonly left: readonly DockPage[]; readonly right: readonly DockSlot[] }> = {
   coordinator: {
-    left: [page("command", "Home"), page("referrals", "Referrals")],
-    right: [{ kind: "queue" }, { kind: "activity" }],
+    // Josh, 8 Nov 2026: Home already lists the people to move (Flow, To decide), so the slot beside
+    // it shows the beds (Capacity). Tools, the coordinator's controls, replaces Activity, which
+    // Home's changes chip and the Menu's Activity row still open. Referrals stays in the Menu.
+    left: [page("command", "Home"), page("capacity", "Capacity")],
+    right: [{ kind: "queue" }, { kind: "tools" }],
   },
   // Nurse in charge: who is arriving and leaving all shift beats Handover.
   ward: {
@@ -436,6 +440,20 @@ function PhoneDock({
               count={activityUnread}
               tail={dockTail("Activity", activityUnread, "unread", "Activity")}
             />
+          </button>
+        );
+      case "tools":
+        // Josh, 8 Nov 2026: the coordinator's Tools sheet, one tap from every phone page.
+        return (
+          <button
+            key="tools"
+            type="button"
+            className={styles.dockItem}
+            aria-haspopup="dialog"
+            data-testid="ward-phone-dock-tools"
+            onClick={(event) => onDrawer("tools", event.currentTarget)}
+          >
+            <DockFace icon={Wrench} label="Tools" count={undefined} tail="" />
           </button>
         );
       case "bed-finder":
