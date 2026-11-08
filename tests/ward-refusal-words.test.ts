@@ -6,6 +6,7 @@ import {
   refusalReasonText,
   refusedActionText,
 } from "@/components/ward-management/ward-refusal-words";
+import { wardCommandFailure } from "@/components/ward-management/ward/use-ward-command-completion";
 
 /** H-0839: refusals on screen carry no event code, field name or revision number. */
 describe("refusal words on screen", () => {
@@ -36,5 +37,19 @@ describe("refusal words on screen", () => {
   it("names the refused action in words", () => {
     expect(refusedActionText("CONFIRM_CAPACITY")).toBe("Confirm capacity");
     expect(refusedActionText("Accepted")).toBe("Accepted");
+  });
+
+  it("keeps event codes and revision numbers out of a refused command's toast", () => {
+    expect(
+      wardCommandFailure({
+        status: "refused",
+        message: "CONFIRM_CAPACITY on unit dn-rph-older is stale: expected revision 3, current 4. Nothing was changed.",
+      } as Parameters<typeof wardCommandFailure>[0]),
+    ).toBe(`Not recorded: ${REFUSAL_CHANGED_FIRST}.`);
+    expect(
+      wardCommandFailure({ status: "refused", message: "No allocatable bed on this ward." } as Parameters<
+        typeof wardCommandFailure
+      >[0]),
+    ).toBe("Not recorded: No allocatable bed on this ward.");
   });
 });

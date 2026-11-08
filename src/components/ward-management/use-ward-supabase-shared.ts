@@ -43,7 +43,13 @@ function sessionEndsAt(token: string): number | null {
 
 /** Set once the shared client has loaded on the first sign-in. */
 let loadedClient: typeof SharedWorkspaceClient | null = null;
-import { WardAuthError, consumeRecoveryLink, deviceStorage, WARD_AUTH_STORAGE_KEY } from "./ward-auth-link";
+import {
+  WardAuthError,
+  consumeRecoveryLink,
+  deviceStorage,
+  WARD_AUTH_BUSY_MESSAGE,
+  WARD_AUTH_STORAGE_KEY,
+} from "./ward-auth-link";
 import type { WardBrowserAuthAdapter } from "./ward-supabase-auth";
 import { createWardAuth, tabStorage } from "./ward-auth-session";
 import { renewFrontDoorPass } from "@/components/ward-management/front-door/front-door-pass-client";
@@ -130,6 +136,10 @@ export type WardCredentialForm = {
 /** P191 (Josh, 27 Oct 2026): a blocked saved sign-in is retried quietly after these waits first. */
 const RESTORE_RETRY_MS = [2_000, 5_000, 10_000];
 const restoreBlocked = (error: unknown) => !(error instanceof WardAuthError) || error.kind === "unavailable";
+const restoreRetryNotice = (error: unknown) =>
+  error instanceof WardAuthError && error.message === WARD_AUTH_BUSY_MESSAGE
+    ? "Sign-in is busy right now. Ward Flow will try again in a few seconds."
+    : "The sign-in service is slow to answer. Ward Flow will try again in a few seconds.";
 const emptyView: SharedView = {
   snapshot: null,
   executiveSnapshot: null,
@@ -186,6 +196,8 @@ export function useWardSupabaseShared(
   const [farewell, setFarewell] = useState<string | null>(null);
   // P191: the saved sign-in check stayed blocked after its quiet retries, so Try again retries it.
   const [restoreFailed, setRestoreFailed] = useState(false);
+  // Live audit, 8 Nov 2026: why the connecting screen is still waiting, while P191 retries quietly.
+  const [restoreNotice, setRestoreNotice] = useState<string | null>(null);
   const [form, setForm] = useState<{
     open: boolean;
     recovery: boolean;
@@ -617,6 +629,8 @@ export function useWardSupabaseShared(
           retry: () =>
             run(async () => {
               manualRetryTook = true;
+              // The boot loop returns without clearing its notice once a manual retry takes over.
+              setRestoreNotice(null);
               if (connection.current) {
                 await connection.current.retry();
                 return;
@@ -667,13 +681,16 @@ export function useWardSupabaseShared(
           } catch (error) {
             if (manualRetryTook) return;
             if (closed || attempt >= RESTORE_RETRY_MS.length || !restoreBlocked(error)) {
+              if (!closed) setRestoreNotice(null);
               if (!closed && restoreBlocked(error)) setRestoreFailed(true);
               throw error;
             }
+            setRestoreNotice(restoreRetryNotice(error));
             await new Promise((resolve) => setTimeout(resolve, RESTORE_RETRY_MS[attempt]));
             if (closed || manualRetryTook) return;
           }
         }
+        setRestoreNotice(null);
         if (closed || manualRetryTook) return;
         if (auth.isRecovery) {
           setForm((old) => ({ ...old, open: true, recovery: true, accountEmail: auth?.accountEmail ?? null }));
@@ -753,6 +770,7 @@ export function useWardSupabaseShared(
       } else finish();
     },
     retry: () => actions.current?.retry(),
+    restoreNotice,
     /** P172: clear the outcome of an uncertain save once it has been read. */
     dismissRecovery: (shown?: string) => connection.current?.dismissRecovery(shown),
     /** Work as one of this account's roles, when it holds more than one. */

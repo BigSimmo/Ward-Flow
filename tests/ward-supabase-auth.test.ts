@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   SupabaseWardAuth,
+  WARD_AUTH_BUSY_MESSAGE,
   WARD_AUTH_STORAGE_KEY,
   consumeRecoveryLink,
   createPkceVerifier,
@@ -76,6 +77,22 @@ describe("scoped browser auth", () => {
     const calls = fetcher.mock.calls.map(([u]) => new URL(String(u)).pathname + new URL(String(u)).search);
     expect(calls.slice(2)).toEqual(["/auth/v1/token?grant_type=refresh_token", "/auth/v1/user"]);
     reloaded.dispose();
+  });
+  it("says sign-in is busy on a 429 refresh and keeps the saved session for a retry (live audit, 8 Nov 2026)", async () => {
+    const store = storage();
+    store.setItem(WARD_AUTH_STORAGE_KEY, JSON.stringify({ refresh_token: "refresh", recovery: false, user }));
+    let busy = true;
+    const fetcher = vi.fn(async (u: RequestInfo | URL) => {
+      if (busy) return new Response("{}", { status: 429 });
+      return Response.json(String(u).endsWith("/user") ? user : session());
+    });
+    const auth = new SupabaseWardAuth({ url, publishableKey: "sb_publishable_test", storage: store, fetch: fetcher });
+    await expect(auth.restore()).rejects.toMatchObject({ kind: "unavailable", message: WARD_AUTH_BUSY_MESSAGE });
+    expect(store.getItem(WARD_AUTH_STORAGE_KEY)).toContain("refresh");
+    busy = false;
+    await auth.restore();
+    expect(auth.userId).toBe(user.id);
+    auth.dispose();
   });
   it("restores a session saved before H-0044 and rewrites it without the access token", async () => {
     const store = storage();

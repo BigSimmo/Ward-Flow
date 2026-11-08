@@ -166,6 +166,22 @@
     padding-top: 0;
     padding-bottom: 0;
   }
+
+  /* Live audit, 8 Nov 2026: top right, an Undo toast covered an open sheet's tabs (Referral
+     sections). While a modal sheet or dialog is open, toasts stack bottom left instead, clear of
+     its header and of the footer actions, which sit right. A left-side sheet keeps the default. */
+  :global(html:has(:is([role="dialog"], [role="alertdialog"])[aria-modal="true"]:not([data-sheet-placement="left"])))
+    .toastRegion {
+    top: auto;
+    right: auto;
+    bottom: 0;
+    left: 0;
+    align-items: flex-start;
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    /* Review (8 Nov 2026): on a tablet a 500px right drawer leaves about 268px beside it, so the
+       toast narrows to stay clear of the drawer's footer actions; its text ellipsises as usual. */
+    --wf-toast-max: max(240px, min(560px, calc(100vw - 33rem)));
+  }
 }
 
 /* Toast: glass, one line, glyph first, actions stay until dismissed. */
@@ -174,7 +190,7 @@
   align-items: center;
   gap: var(--wf-s-2);
   min-height: var(--wf-h-lg);
-  max-width: min(560px, calc(100vw - 32px));
+  max-width: var(--wf-toast-max, min(560px, calc(100vw - 32px)));
   padding: 0 var(--wf-s-1) 0 var(--wf-s-3);
   box-sizing: border-box;
   border-radius: var(--wf-r-md);

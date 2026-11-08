@@ -74,7 +74,11 @@ import { WardMyWards } from "@/components/ward-management/shell/ward-my-wards";
 import { useWardHelpRow } from "@/components/ward-management/help/ward-help-link";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
-import { ACCESS_ADMIN_PERSONA, DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
+import {
+  ACCESS_ADMIN_PERSONA,
+  DESK_PERSONAS,
+  useDeskPersona,
+} from "@/components/ward-management/shell/ward-desk-personas";
 import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
 import type { CountMap, DrawerId, NeedRow, PhoneMenuModel } from "@/components/ward-management/shell/ward-phone-menu";
 import styles from "@/components/ward-management/shell/ward-phone-menu.module.css";
@@ -415,7 +419,7 @@ function DeskRow({ onSwitch, onClose }: { onSwitch: () => void; onClose: () => v
 function WhoLink() {
   const personaRole = useShellPersonaRole();
   const access = useEffectiveWardAccess();
-  const persona = access.role === "admin" ? ACCESS_ADMIN_PERSONA : DESK_PERSONAS[personaRole];
+  const persona = useDeskPersona(access.role === "admin" ? ACCESS_ADMIN_PERSONA : DESK_PERSONAS[personaRole]);
   return (
     <div className={styles.who} data-testid="ward-phone-menu-who">
       <span className={`${styles.avatar} ${styles.avatarInitials}`} aria-hidden="true">

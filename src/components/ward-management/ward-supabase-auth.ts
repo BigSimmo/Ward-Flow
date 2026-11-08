@@ -1,6 +1,7 @@
 /** Thin adapter for the Supabase Auth REST contract: https://github.com/supabase/auth/blob/master/openapi.yaml. */
 const WARD_SUPABASE_ORIGIN = "https://zakzoemeedfepxcstsou.supabase.co";
 import {
+  WARD_AUTH_BUSY_MESSAGE,
   WARD_AUTH_STORAGE_KEY,
   WARD_RECOVERY_LINK_INVALID,
   WARD_RECOVERY_VERIFIER_KEY,
@@ -11,7 +12,7 @@ import {
   type WardRecoveryLink,
 } from "./ward-auth-link";
 
-export { WARD_AUTH_STORAGE_KEY, WardAuthError, consumeRecoveryLink };
+export { WARD_AUTH_BUSY_MESSAGE, WARD_AUTH_STORAGE_KEY, WardAuthError, consumeRecoveryLink };
 const base64url = (bytes: Uint8Array) =>
   btoa(String.fromCharCode(...bytes))
     .replace(/\+/g, "-")
@@ -207,6 +208,9 @@ export class SupabaseWardAuth implements WardBrowserAuthAdapter {
       });
       this.assert(generation);
       if (!response.ok) {
+        // Live audit, 8 Nov 2026: many desks behind one hospital address can hit the sign-in rate
+        // limit. Nothing is spent by a 429, so callers may retry; say why instead of "unavailable".
+        if (response.status === 429) throw new WardAuthError("unavailable", WARD_AUTH_BUSY_MESSAGE);
         // SEC-2: an unknown or spent recovery code is a 404 from the PKCE exchange, not an outage.
         const rejected =
           [400, 401, 403, 422].includes(response.status) ||

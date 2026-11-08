@@ -668,7 +668,8 @@
   border: 1px solid var(--wf-line-2);
   border-radius: var(--wf-r-tag);
   background: var(--wf-surface);
-  font: 600 var(--wf-fs-12) / 18px var(--wf-font);
+  /* Live audit, 8 Nov 2026: 18px lines made this phone link 20 px tall; 22px makes 24 (WCAG 2.5.8). */
+  font: 600 var(--wf-fs-12) / 22px var(--wf-font);
 }
 
 .compactTag.compactTag > span {

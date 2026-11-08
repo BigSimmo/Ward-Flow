@@ -175,4 +175,30 @@ describe("ward capacity draft world and unit identity", () => {
       expect(Number(screen.getByTestId("capacity-world-revision").textContent)).toBeGreaterThan(currentRevision);
     },
   );
+  it("starts the draft from the current count when another desk confirmed before the dialog opened", async () => {
+    render(
+      <ToastProvider>
+        <WardFlowProvider initialNow={NOW_ANCHOR}>
+          <CapacityWorldControls unitId="rph-adult-secure" replacement="RESET_SCENARIO" />
+          <ConfirmRphAdultSecureCapacityAtZero />
+          <WardScreen unitId="rph-adult-secure" />
+        </WardFlowProvider>
+      </ToastProvider>,
+    );
+    // Concurrent-sign-in test, 8 Nov 2026: the page was open, another desk confirmed, then this
+    // desk opened the dialog. The confirm must go through, not be refused as changed meanwhile.
+    fireEvent.click(screen.getByRole("button", { name: "confirm rph-adult-secure capacity at zero", hidden: true }));
+    const revision = Number(screen.getByTestId("capacity-world-revision").textContent);
+    fireEvent.click(screen.getByRole("button", { name: "Confirm numbers" }));
+    const input = await screen.findByTestId("ward-capacity-input");
+    expect(input).toHaveValue(0);
+    expect(screen.queryByRole("button", { name: "Use current count" })).toBeNull();
+    fireEvent.change(input, { target: { value: "1" } });
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Confirm beds only" }));
+    });
+    expect(Number(screen.getByTestId("capacity-world-value").textContent)).toBe(1);
+    expect(Number(screen.getByTestId("capacity-world-revision").textContent)).toBeGreaterThan(revision);
+    expect(document.body.textContent).not.toMatch(/CONFIRM_CAPACITY|expected revision/);
+  });
 });

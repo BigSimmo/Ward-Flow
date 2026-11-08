@@ -88,3 +88,25 @@ it("never shows the did-not-open screen while a saved sign-in's first read is st
   observer.disconnect();
   expect([...seen]).toEqual([]);
 });
+it("says sign-in is busy while a rate-limited saved sign-in retries by itself (live audit, 8 Nov 2026)", async () => {
+  sessionStorage.setItem(
+    WARD_AUTH_STORAGE_KEY,
+    JSON.stringify({ refresh_token: "refresh", recovery: false, user: { id: user.id } }),
+  );
+  let refreshes = 0;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url) => {
+      if (String(url).includes("/v1/workspace")) return new Promise<Response>(() => {});
+      if (String(url).endsWith("/user")) return Response.json(user);
+      refreshes += 1;
+      return refreshes === 1
+        ? new Response("{}", { status: 429 })
+        : Response.json({ access_token: "access", refresh_token: "refresh", expires_in: 3600, user });
+    }),
+  );
+  render(<Probe />);
+  await waitFor(() => expect(screen.getByTestId("ward-shared-connecting").textContent).toContain("Sign-in is busy"));
+  await waitFor(() => expect(refreshes).toBe(2), { timeout: 4_000 });
+  await waitFor(() => expect(document.body.textContent).not.toContain("Sign-in is busy"));
+});

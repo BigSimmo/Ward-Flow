@@ -13,6 +13,12 @@
   font-size: var(--wf-fs-20);
 }
 
+/* Live audit, 8 Nov 2026: the heading takes focus on arrival so a screen reader reads it first.
+   It is not a control, so it shows no focus ring (the browser's default drew a heavy black box). */
+.closed h1:focus {
+  outline: none;
+}
+
 .closed p {
   margin: 0 0 var(--wf-s-3);
   color: var(--wf-ink-2);

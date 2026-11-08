@@ -14,6 +14,8 @@ export const WARD_AUTH_STORAGE_KEY = "ward-flow:auth:zakzoemeedfepxcstsou:v1";
 export const WARD_RECOVERY_VERIFIER_KEY = "ward-flow:auth:recovery-verifier:v1";
 /** How long a recovery request's verifier is kept: the recovery link's own lifetime. */
 export const WARD_RECOVERY_VERIFIER_LIFETIME_MS = 60 * 60 * 1000;
+/** A 429 from the sign-in service: the request was refused for rate, nothing was spent. */
+export const WARD_AUTH_BUSY_MESSAGE = "Sign-in is busy right now. Wait a moment and try again.";
 export class WardAuthError extends Error {
   constructor(
     public readonly kind: "credentials" | "session" | "unavailable" | "cancelled",

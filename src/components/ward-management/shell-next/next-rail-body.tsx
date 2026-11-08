@@ -32,7 +32,12 @@ import { useNextNavCounts } from "@/components/ward-management/shell-next/next-n
 import { formatInstant, minuteOfDay } from "@/components/ward-management/ward-clock";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import { CHROME_ROLE_LABELS, wardChromeRole, type WardChromeRole } from "@/components/ward-management/ward-chrome-role";
-import { ACCESS_ADMIN_PERSONA, DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
+import {
+  ACCESS_ADMIN_PERSONA,
+  DESK_PERSONAS,
+  SIGNED_IN_DESK_ROLE,
+  useDeskPersona,
+} from "@/components/ward-management/shell/ward-desk-personas";
 import { useDeskRoleLabel, useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { useWardFlowClock, useWardFlowSelect, useWardNetwork } from "@/components/ward-management/ward-flow-provider";
 import type { HealthService } from "@/components/ward-management/ward-model";
@@ -378,7 +383,10 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   // B6: the person follows the desk. A non-coordinator desk (role access on) is its own role.
   // #790: an access admin's chrome reads as the executive, but the rail names the admin it is.
   const deskAccess = useEffectiveWardAccess();
-  const currentPersona = deskAccess.role === "admin" ? ACCESS_ADMIN_PERSONA : DESK_PERSONAS[personaRole];
+  // Signed in to the shared site, a desk with no drawn persona says "Signed in", not "Demo desk".
+  const currentPersona = useDeskPersona(
+    deskAccess.role === "admin" ? ACCESS_ADMIN_PERSONA : DESK_PERSONAS[personaRole],
+  );
   // Q226 (2 Nov 2026): one spelling of the signed-in name, the master's ("Dr S. Chen").
   const personaName = currentPersona.name;
   // DK1: the account menu names the desk's place when the desk is this person's own.
@@ -389,7 +397,14 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
   // Overall review (20 Oct 2026): a desk page opened by its link keeps the person, their menu and
   // their Home, so the card says plainly whose desk is on screen and as whom it is being viewed.
   // WF-13 (live test, 4 Nov 2026): a page the desk may not open names no place in the rail.
-  const viewing = canOpen(pathname) ? viewingDeskLine(pathname, personaRole, units, currentPersona.role) : null;
+  const viewing = canOpen(pathname)
+    ? viewingDeskLine(
+        pathname,
+        personaRole,
+        units,
+        currentPersona.role === SIGNED_IN_DESK_ROLE ? personaName : currentPersona.role,
+      )
+    : null;
   // shell-next: whose figures these are, the bed alert rows for the desk's own place, and pins.
   const countNote = countScopeNote(deskAccess, service);
   const capacityRows = deskCapacityRows(deskAccess, units, admissions ?? [], bedReleases, bedAlerts);
