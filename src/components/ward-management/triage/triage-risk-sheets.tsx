@@ -11,7 +11,7 @@
  *
  * Synthetic data only.
  */
-import { ArrowUpRight, Copy, FilePlus2 } from "lucide-react";
+import { ArrowUpRight, Copy, FilePlus2, History, Inbox, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useId, useState, type ReactNode } from "react";
 
@@ -370,7 +370,7 @@ function AlertsPane({ person }: { person: TriagePerson }) {
   const allergies = person.allergies === "Not recorded" ? [] : person.allergies.split(" · ");
   return (
     <>
-      <FlagGroup title="Alerts" items={alerts} tone="warning" empty="None on the synthetic record" />
+      <FlagGroup title="Alerts" items={alerts} tone="warning" empty="No alerts recorded" />
       <FlagGroup title="Allergies" items={allergies} tone="danger" empty="Not recorded" />
       <FlagGroup
         title="Legal status"
@@ -379,7 +379,7 @@ function AlertsPane({ person }: { person: TriagePerson }) {
         tag="Not legally checked"
         empty="Not recorded. Not legally checked."
       />
-      <RecordLink person={person} note="From the record. Correct them on the patient record." />
+      <RecordLink person={person} note="These come from the patient record. Correct them there." />
     </>
   );
 }
@@ -393,6 +393,19 @@ function RecordLink({ person, note }: { person: TriagePerson; note: string }) {
         <ArrowUpRight size={14} aria-hidden="true" />
         Open patient record
       </Link>
+    </div>
+  );
+}
+
+/** A record tab with nothing to show: one calm card that says so and what it means for this triage. */
+function EmptyPane({ icon: IconShape, title, text }: { icon: LucideIcon; title: string; text: string }) {
+  return (
+    <div className={styles.emptyCard}>
+      <span className={styles.emptyIcon} aria-hidden="true">
+        <IconShape size={18} />
+      </span>
+      <h3 className={styles.emptyTitle}>{title}</h3>
+      <p className={styles.emptyText}>{text}</p>
     </div>
   );
 }
@@ -426,7 +439,7 @@ export function SummaryDrawer({
       open={open}
       onClose={onClose}
       title={person.name}
-      subtitle="This triage, the referral and the record. Synthetic."
+      subtitle="Record, referral and triage · Synthetic"
       tag={
         <Badge tone={left ? "neutral" : "success"} className={styles.noShrink}>
           {signed ? "Signed" : left ? `${left} needed` : "Ready to sign"}
@@ -442,7 +455,11 @@ export function SummaryDrawer({
       foot={
         <>
           <span className={styles.footText}>
-            {signed ? `Signed ${signed.at} by ${signed.by}` : left ? `${left} needed before signing` : "Ready to sign"}
+            {signed
+              ? `Signed ${signed.at} by ${signed.by}`
+              : left
+                ? `Signing unlocks once all ${left} are done.`
+                : "Everything needed is done. Ready to sign."}
           </span>
           <DrawerFootRow>
             <Button onClick={onClose}>Back to form</Button>
@@ -459,25 +476,30 @@ export function SummaryDrawer({
           </>
         ) : null}
         {tab === "ref" ? (
-          <RecordPane
-            // D-39: record numbers stay off screens; the referral is named by where it came from.
-            title={person.referral ? `Referral from ${person.referral.from}` : "No open referral"}
-            rows={
-              person.referral
-                ? [
-                    ["From", person.referral.from],
-                    ["Urgency asked", person.referral.urgency ?? "No triage urgency asked"],
-                    ["Legal", legalWords(person)],
-                    ["Now at", person.nowAt],
-                  ]
-                : [["Referral", "This triage starts without a referral."]]
-            }
-          />
+          person.referral ? (
+            <RecordPane
+              // D-39: record numbers stay off screens; the referral is named by where it came from.
+              title={`Referral from ${person.referral.from}`}
+              rows={[
+                ["From", person.referral.from],
+                ["Urgency asked", person.referral.urgency ?? "No triage urgency asked"],
+                ["Legal", legalWords(person)],
+                ["Now at", person.nowAt],
+              ]}
+            />
+          ) : (
+            <EmptyPane
+              icon={Inbox}
+              title="No open referral"
+              text="This triage starts without one. Record who asked for it in Review details."
+            />
+          )
         ) : null}
         {tab === "last" && !person.last ? (
-          <RecordPane
+          <EmptyPane
+            icon={History}
             title="No previous triage on record"
-            rows={[["Past risk", "Answered fresh today. Nothing is carried forward."]]}
+            text="Past risk is answered fresh today. Nothing is carried forward."
           />
         ) : null}
         {tab === "last" && person.last ? (
@@ -485,7 +507,6 @@ export function SummaryDrawer({
             title={person.last.label}
             badge={<Badge size="sm">{person.last.urgencyText}</Badge>}
             rows={[
-              ["Urgency", person.last.urgencyText],
               ["Outcome", person.last.outcome],
               ["Legal", `${person.last.legal} (as chosen then). Not legally checked.`],
               ["Review risk by", person.last.review],
@@ -504,7 +525,8 @@ export function SummaryDrawer({
             <RecordPane
               title="Identity"
               rows={[
-                ["Name", `${person.name} · ${person.meta}`],
+                ["Name", person.name],
+                ["Sex and age", person.meta],
                 [
                   "UMRN",
                   <span key="u" className={styles.mono}>
