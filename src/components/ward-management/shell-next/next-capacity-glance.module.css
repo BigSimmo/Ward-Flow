@@ -130,7 +130,7 @@
 .stats dd {
   margin: 0;
   font-family: var(--wf-mono);
-  font-size: var(--wf-fs-18, 18px);
+  font-size: var(--wf-fs-20);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -506,7 +506,7 @@
   margin-right: -8px;
   border: 0;
   border-radius: 50%;
-  background: var(--wf-surface-3, var(--wf-hover));
+  background: var(--wf-hover);
   color: var(--wf-ink-1);
   cursor: pointer;
 }
