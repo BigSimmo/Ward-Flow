@@ -76,6 +76,7 @@ describe("Capacity at a glance", () => {
     expect(link).toHaveTextContent(/planned discharges? could free one/u);
     fireEvent.click(link);
     const plan = screen.getByTestId("ward-phone-capacity-plan");
+    expect(within(plan).getByRole("heading", { level: 2 })).toHaveFocus();
     expect(within(plan).getByRole("heading", { level: 2 })).toHaveTextContent(
       /^Planned discharges that could free an? .+ bed today$/u,
     );
@@ -84,6 +85,7 @@ describe("Capacity at a glance", () => {
     expect(plan).toHaveTextContent("Only the ward decides when a patient leaves.");
     fireEvent.click(within(plan).getByRole("button", { name: "Capacity" }));
     expect(screen.queryByTestId("ward-phone-capacity-plan")).not.toBeInTheDocument();
+    expect(screen.getByTestId(link.getAttribute("data-testid")!)).toHaveFocus();
     expect(screen.getByRole("heading", { name: /Place someone now/u })).toBeInTheDocument();
   });
 });

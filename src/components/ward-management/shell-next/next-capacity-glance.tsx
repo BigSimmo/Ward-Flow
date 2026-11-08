@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import Link from "next/link";
 import { ArrowUpRight, ChevronLeft, ChevronRight, PhoneOutgoing, X } from "lucide-react";
 
@@ -121,6 +121,17 @@ function GlanceBody({ onClose }: { onClose: () => void }) {
   const chase = confirm.waiting[0];
   // Free the right bed (Josh, 8 Nov 2026): a short bed type opens today's discharges that free one.
   const [plan, setPlan] = useState<BedKindId | null>(null);
+  // The control that was tapped leaves the page as the view swaps, so focus moves on with it: into
+  // the planned-discharges heading, and back to that bed type's link on Capacity.
+  const planTitleRef = useRef<HTMLHeadingElement>(null);
+  const lastPlanRef = useRef<BedKindId | null>(null);
+  useEffect(() => {
+    const previous = lastPlanRef.current;
+    lastPlanRef.current = plan;
+    if (plan) planTitleRef.current?.focus();
+    else if (previous)
+      document.querySelector<HTMLElement>(`[data-testid="ward-phone-capacity-plan-${previous}"]`)?.focus();
+  }, [plan]);
   const freeingFor = (kind: BedKindId) => dischargesThatFree(kind, bedReleases, units, admissions, now);
 
   if (plan) {
@@ -136,7 +147,9 @@ function GlanceBody({ onClose }: { onClose: () => void }) {
             <X aria-hidden="true" strokeWidth={2} />
           </button>
         </div>
-        <h2 className={styles.planTitle}>{freeTheRightBedTitle(BED_KIND_LABEL[plan])}</h2>
+        <h2 className={styles.planTitle} ref={planTitleRef} tabIndex={-1}>
+          {freeTheRightBedTitle(BED_KIND_LABEL[plan])}
+        </h2>
         <div className={styles.card}>
           {rowsForPlan.length === 0 ? (
             <p className={styles.empty}>None planned for the rest of today.</p>
