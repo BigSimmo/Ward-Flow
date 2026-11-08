@@ -19,6 +19,7 @@
   composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
   --ward-tap: var(--spacing-tap, 3rem);
   --rail-closed-w: 4rem;
+  --rail-tint: color-mix(in srgb, var(--wf-info) 10%, transparent);
   --rail-warn-tint: color-mix(in srgb, var(--wf-warning) 14%, var(--wf-surface));
   --rail-warn-edge: color-mix(in srgb, var(--wf-warning) 28%, transparent);
   --rail-sel-edge: color-mix(in srgb, var(--wf-accent) 18%, transparent);
@@ -56,10 +57,14 @@
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  /* Note 3 (Josh, 8 Nov 2026): one surface top to bottom, no blue tint under the brand. */
-  background: var(--wf-glass);
+  background: linear-gradient(180deg, var(--rail-tint), transparent 30%), var(--wf-glass);
   -webkit-backdrop-filter: blur(24px) saturate(1.9);
   backdrop-filter: blur(24px) saturate(1.9);
+}
+
+/* Note 3 (Josh, 8 Nov 2026): the collapsed strip is one surface, with no blue tint under the mark. */
+.rail[data-rail="closed"]::before {
+  background: var(--wf-glass);
 }
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
@@ -154,33 +159,124 @@
   font-weight: 600;
 }
 
-/* Collapse control (Note 3, Josh, 8 Nov 2026): the last row of the foot in both shapes, built like
- * the Appearance row above it, so its icon sits on the same line as the other foot icons. */
+/*
+ * The brand corner joins the header's navy band (Josh, 7 Nov 2026). On desktop the brand row sits
+ * level with the header, so while the header is navy (`data-band="ink"`, at rest over a page hero)
+ * the corner takes the same navy and hero ink rather than staying a light notch at the top left.
+ * Note 3 (Josh, 8 Nov 2026): only the open rail joins the band; the collapsed strip stays one light
+ * surface top to bottom. The collapse control takes hero ink only on the open rail; a closed rail moves it to the foot,
+ * over the light rail, where it keeps its normal ink.
+ * Once the page scrolls and the header turns light, the corner turns light with it. The second
+ * selector mirrors the header's own pre-hydration arm (ward-bar.module.css, band header block).
+ */
+@media (min-width: 62.5625rem) {
+  .brand {
+    transition:
+      background-color var(--wf-t-enter) var(--wf-ease-out),
+      border-color var(--wf-t-enter) var(--wf-ease-out);
+  }
+
+  :global(:root:has([data-wf-bar][data-band="ink"])) .rail:not([data-rail="closed"]) .brand,
+  :global(
+      :root:has([data-wf-scroller] [data-wf-hero="band"]:not([data-band="off"])):not(:has([data-wf-bar][data-band]))
+    )
+    .rail:not([data-rail="closed"])
+    .brand {
+    --wf-focus-ring: var(--wf-hero-ink);
+    background: var(--wf-hero-1);
+    border-bottom-color: var(--wf-hero-1);
+  }
+
+  :global(:root:has([data-wf-bar][data-band="ink"])) .rail:not([data-rail="closed"]) .brandLink,
+  :global(
+      :root:has([data-wf-scroller] [data-wf-hero="band"]:not([data-band="off"])):not(:has([data-wf-bar][data-band]))
+    )
+    .rail:not([data-rail="closed"])
+    .brandLink {
+    color: var(--wf-hero-ink);
+  }
+
+  :global(:root:has([data-wf-bar][data-band="ink"])) .rail:not([data-rail="closed"]) .brandStateText,
+  :global(
+      :root:has([data-wf-scroller] [data-wf-hero="band"]:not([data-band="off"])):not(:has([data-wf-bar][data-band]))
+    )
+    .rail:not([data-rail="closed"])
+    .brandStateText {
+    border-color: var(--wf-on-hero-line);
+    color: var(--wf-hero-ink-2);
+  }
+
+  :global(:root:has([data-wf-bar][data-band="ink"])) .rail:not([data-rail="closed"]) .railToggle,
+  :global(
+      :root:has([data-wf-scroller] [data-wf-hero="band"]:not([data-band="off"])):not(:has([data-wf-bar][data-band]))
+    )
+    .rail:not([data-rail="closed"])
+    .railToggle {
+    color: var(--wf-hero-ink-2);
+  }
+
+  :global(:root:has([data-wf-bar][data-band="ink"])) .rail:not([data-rail="closed"]) .railToggle:hover,
+  :global(
+      :root:has([data-wf-scroller] [data-wf-hero="band"]:not([data-band="off"])):not(:has([data-wf-bar][data-band]))
+    )
+    .rail:not([data-rail="closed"])
+    .railToggle:hover {
+    color: var(--wf-hero-ink);
+  }
+
+  :global(:root:has([data-wf-bar][data-band="ink"])) .rail:not([data-rail="closed"]) .railToggle:hover::before,
+  :global(
+      :root:has([data-wf-scroller] [data-wf-hero="band"]:not([data-band="off"])):not(:has([data-wf-bar][data-band]))
+    )
+    .rail:not([data-rail="closed"])
+    .railToggle:hover::before {
+    background: var(--wf-on-hero-fill);
+  }
+}
+
+/* Collapse control: a 30px face inside the full 48px target. */
 .railToggle {
-  display: flex;
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
   align-items: center;
-  gap: 0.625rem;
-  width: 100%;
-  min-height: var(--wf-h-md);
-  padding: 0 0.625rem;
+  justify-content: center;
+  flex-shrink: 0;
+  width: var(--ward-tap, var(--spacing-tap, 3rem));
+  height: var(--ward-tap, var(--spacing-tap, 3rem));
+  min-width: var(--ward-tap, var(--spacing-tap, 3rem));
+  min-height: var(--ward-tap, var(--spacing-tap, 3rem));
+  margin: 0 -0.5625rem 0 auto;
+  padding: 0;
   box-sizing: border-box;
   border: 0;
-  border-radius: var(--wf-r-md);
   background: transparent;
-  color: var(--wf-ink-2);
-  font: inherit;
-  font-size: var(--wf-fs-13);
-  font-weight: 500;
+  color: var(--wf-ink-3);
   cursor: pointer;
+}
+
+.railToggle::before {
+  content: "";
+  position: absolute;
+  inset: 0.5625rem;
+  z-index: -1;
+  border-radius: var(--wf-r-sm);
   transition: background-color var(--wf-m-fast);
 }
 
 .railToggle:hover {
-  background: var(--wf-hover);
   color: var(--wf-ink-1);
 }
 
+.railToggle:hover::before {
+  background: var(--wf-hover);
+}
+
 .railToggle:focus-visible {
+  outline: none;
+}
+
+.railToggle:focus-visible::before {
   outline: 2px solid var(--wf-focus-ring);
   outline-offset: 0;
 }
@@ -189,18 +285,11 @@
   width: 1rem;
   height: 1rem;
   flex-shrink: 0;
-  color: var(--wf-ink-3);
 }
 
+.toggleText,
 .toggleKey {
-  margin-left: auto;
-  padding: 0 0.3125rem;
-  border: 1px solid var(--wf-line);
-  border-radius: var(--wf-r-sm);
-  color: var(--wf-ink-3);
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-12);
-  line-height: 1.4;
+  display: none;
 }
 
 /* ── Chosen service (item 52): a dot next to a word, never a bar ─────────────────────────────── */
@@ -1869,6 +1958,15 @@
     padding: 0 0.5rem 0.5rem;
   }
 
+  /* The toggle lives in the foot (so the collapsed strip can end on the person); the open rail
+     draws it back in the brand row's right-hand corner, where it has always been. */
+  .rail[data-rail="open"] .railToggle {
+    position: absolute;
+    top: 0.375rem;
+    right: 0.1875rem;
+    margin: 0;
+  }
+
   .rail[data-rail="closed"] .brandTitle,
   .rail[data-rail="closed"] .brandStateText,
   .rail[data-rail="closed"] .shiftCockpit,
@@ -1921,17 +2019,19 @@
     height: 1.25rem;
   }
 
-  /* The expand control is the strip's last 44px square, on the same centre line as the person. */
+  /* Note 3 (Josh, 8 Nov 2026): the expand control is a 44px square in the foot, on the strip's centre
+     line above the person, who closes the strip. */
   .rail[data-rail="closed"] .railToggle {
-    justify-content: center;
     width: 2.75rem;
+    height: 2.75rem;
+    min-width: 2.75rem;
     min-height: 2.75rem;
-    padding: 0;
+    margin: 0;
   }
 
-  .rail[data-rail="closed"] .toggleText,
-  .rail[data-rail="closed"] .toggleKey {
-    display: none;
+  .rail[data-rail="closed"] .railToggle::before {
+    inset: 0;
+    border-radius: var(--wf-r-md);
   }
 
   .rail[data-rail="closed"] .serviceLine {
@@ -2274,12 +2374,13 @@
     box-shadow: inset 0 0 0 2px CanvasText;
   }
 
+  .railToggle::before,
   .capacityPulseStrip {
     border: 1px solid CanvasText;
   }
 
   /* BA-9 (front-end audit, 5 Nov 2026): focus was only a thicker border here, so it gets a ring. */
-  .railToggle:focus-visible {
+  .railToggle:focus-visible::before {
     outline: 2px solid Highlight;
     outline-offset: 2px;
   }

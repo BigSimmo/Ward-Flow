@@ -8,11 +8,11 @@ import {
   Activity as ActivityIcon,
   Bell,
   ChevronDown,
+  ChevronLeft,
   CircleHelp,
   LayoutGrid,
   LogOut,
   Menu,
-  PanelLeftClose,
   PanelLeftOpen,
   Repeat,
   RotateCcwClock,
@@ -643,12 +643,8 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
             </div>
             <div className={rail.railFoot}>
               <div className={rail.utilityLinks}>{utility("appearance")}</div>
-              <div className={rail.userCardWrap}>
-                {/* DK1 (Josh, 3 Nov 2026): the person opens the account menu, which holds Switch desk
-                    and Sign out; they no longer have rows of their own. */}
-                <RailAccountMenu variant="rail" persona={persona} onTryAnotherDesk={switchRole} />
-              </div>
-              {/* Note 3 (Josh, 8 Nov 2026): collapse and expand sit at the foot, as on every desk's rail. */}
+              {/* Note 3 (Josh, 8 Nov 2026): the toggle sits in the foot so the collapsed strip ends on the
+            person; the open rail draws it in the brand row's corner (ward-rail.module.css). */}
               <button
                 type="button"
                 className={rail.railToggle}
@@ -656,13 +652,14 @@ export function WardExecutiveChrome({ children }: { children: ReactNode }) {
                 aria-label={preferences.open ? "Collapse menu" : "Expand menu"}
                 data-testid="ward-rail-toggle"
               >
-                {preferences.open ? (
-                  <PanelLeftClose aria-hidden="true" className={rail.toggleIcon} />
-                ) : (
-                  <PanelLeftOpen aria-hidden="true" className={rail.toggleIcon} />
-                )}
+                {preferences.open ? <ChevronLeft aria-hidden="true" /> : <PanelLeftOpen aria-hidden="true" />}
                 <span className={rail.toggleText}>{preferences.open ? "Collapse" : "Expand"} menu</span>
               </button>
+              <div className={rail.userCardWrap}>
+                {/* DK1 (Josh, 3 Nov 2026): the person opens the account menu, which holds Switch desk
+                    and Sign out; they no longer have rows of their own. */}
+                <RailAccountMenu variant="rail" persona={persona} onTryAnotherDesk={switchRole} />
+              </div>
             </div>
           </WardRailFrame>
         )}

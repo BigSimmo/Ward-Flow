@@ -9,11 +9,11 @@ import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import {
   ArrowRight,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   ClipboardList,
   LayoutGrid,
   Menu,
-  PanelLeftClose,
   PanelLeftOpen,
   SunMoon,
 } from "lucide-react";
@@ -1182,6 +1182,35 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
 
           {/* Josh, 3 Nov 2026 (DK1, "yes to all"): Settings lives in the account menu only. */}
         </div>
+        {/* Note 3 (Josh, 8 Nov 2026): the toggle sits in the foot so the collapsed strip ends on the
+            person; the open rail draws it in the brand row's corner (ward-rail.module.css). */}
+        <button
+          type="button"
+          ref={toggleRef}
+          className={styles.railToggle}
+          // UX audit (21 Oct 2026): "Close" alone named no object for a screen reader.
+          aria-label={open ? "Collapse menu" : "Expand menu"}
+          data-testid="ward-rail-toggle"
+          onClick={() => setOpen(!open)}
+          title={
+            open
+              ? "Collapse the menu to icons. The bracket key [ does the same."
+              : "Expand the menu. The bracket key [ does the same."
+          }
+        >
+          {open ? (
+            <ChevronLeft aria-hidden="true" className={styles.toggleIcon} strokeWidth={1.75} />
+          ) : (
+            <PanelLeftOpen aria-hidden="true" className={styles.toggleIcon} strokeWidth={1.75} />
+          )}
+          <span className={styles.toggleText}>
+            {open ? "Collapse" : "Expand"}
+            <span aria-hidden="true"> menu</span>
+          </span>
+          <kbd aria-hidden="true" className={styles.toggleKey}>
+            [
+          </kbd>
+        </button>
         <div className={styles.userCardWrap}>
           {/* DK1 (Josh, 3 Nov 2026): the person opens the account menu. Sign out and Switch desk
               moved into it from their own rows; the demo's desk drawer is "Try another desk (demo)". */}
@@ -1211,35 +1240,6 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
             />
           ) : null}
         </div>
-        {/* Note 3 (Josh, 8 Nov 2026): collapse and expand live at the foot in both shapes, on the
-            same line as the person, so the control is always where it was last seen. */}
-        <button
-          type="button"
-          ref={toggleRef}
-          className={styles.railToggle}
-          // UX audit (21 Oct 2026): "Close" alone named no object for a screen reader.
-          aria-label={open ? "Collapse menu" : "Expand menu"}
-          data-testid="ward-rail-toggle"
-          onClick={() => setOpen(!open)}
-          title={
-            open
-              ? "Collapse the menu to icons. The bracket key [ does the same."
-              : "Expand the menu. The bracket key [ does the same."
-          }
-        >
-          {open ? (
-            <PanelLeftClose aria-hidden="true" className={styles.toggleIcon} strokeWidth={1.75} />
-          ) : (
-            <PanelLeftOpen aria-hidden="true" className={styles.toggleIcon} strokeWidth={1.75} />
-          )}
-          <span className={styles.toggleText}>
-            {open ? "Collapse" : "Expand"}
-            <span aria-hidden="true"> menu</span>
-          </span>
-          <kbd aria-hidden="true" className={styles.toggleKey}>
-            [
-          </kbd>
-        </button>
       </div>
       <Sheet
         id="preview-rail-more-pages"
