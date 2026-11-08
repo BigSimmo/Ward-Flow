@@ -12,7 +12,7 @@
   [data-wf-print-doc] {
     font-size: 9.5pt;
     line-height: 1.35;
-    color: #000;
+    color: var(--wf-print-ink);
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
@@ -59,7 +59,7 @@
     display: block;
     padding: 0 0 2.5mm;
     margin-bottom: 1mm;
-    border-bottom: 1.5pt solid #000;
+    border-bottom: 1.5pt solid var(--wf-print-ink);
   }
 
   [data-wf-print-doc="triage"] > div:first-child > div > div:first-child {
@@ -67,7 +67,7 @@
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #444;
+    color: var(--wf-print-muted);
   }
 
   [data-wf-print-doc="triage"] #triage-doc-title {
@@ -81,14 +81,14 @@
     margin-left: 2mm;
     font-size: 9.5pt;
     font-weight: 500;
-    color: #333;
+    color: var(--wf-print-muted);
   }
 
   [data-wf-print-doc="triage"] [data-testid="triage-doc-key"] {
     margin: 0;
     font-size: 9.5pt;
     font-weight: 600;
-    color: #000;
+    color: var(--wf-print-ink);
   }
 
   /* Each part: a grey band heading, then its facts in two label and value pairs a line. */
@@ -105,7 +105,7 @@
     min-height: 0;
     margin: 0 0 1.2mm;
     padding: 0.8mm 1.5mm;
-    background: #ececec !important;
+    background: var(--wf-print-tint) !important;
     break-after: avoid;
   }
 
@@ -121,7 +121,7 @@
     font-weight: 700;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: #000;
+    color: var(--wf-print-ink);
   }
 
   [data-wf-print-doc="triage"] > section h3 span {
@@ -143,13 +143,13 @@
   }
 
   [data-wf-print-doc="triage"] > section dt {
-    color: #555;
+    color: var(--wf-print-muted);
   }
 
   [data-wf-print-doc="triage"] > section dd {
     display: block;
     margin: 0;
-    color: #000;
+    color: var(--wf-print-ink);
   }
 
   [data-wf-print-doc="triage"] > section > p,
@@ -157,7 +157,7 @@
     margin: 0.8mm 0 0;
     padding: 0 1.5mm;
     font-size: 9pt;
-    color: #000;
+    color: var(--wf-print-ink);
   }
 
   [data-wf-print-doc="triage"] > section > ul {
@@ -170,7 +170,7 @@
     padding: 0;
     background: none;
     font-size: 9pt;
-    color: #000;
+    color: var(--wf-print-ink);
   }
 
   [data-wf-print-doc="triage"] > section > ul li + li::before {
@@ -184,7 +184,7 @@
     gap: 0.5mm 4mm;
     margin-top: 4mm;
     padding: 2.5mm 3mm;
-    border: 0.75pt solid #000;
+    border: 0.75pt solid var(--wf-print-ink);
   }
 
   [data-wf-print-doc="triage"] > section[aria-label="Signature"] p {
@@ -199,17 +199,17 @@
     grid-row: 1 / span 3;
     align-self: end;
     padding-top: 1mm;
-    border-top: 0.75pt solid #000;
+    border-top: 0.75pt solid var(--wf-print-ink);
     font-size: 7.5pt;
-    color: #555;
+    color: var(--wf-print-muted);
   }
 
   [data-wf-print-doc="triage"] > p:last-child {
     margin: 2.5mm 0 0;
     padding-top: 1.5mm;
-    border-top: 0.5pt solid #999;
+    border-top: 0.5pt solid var(--wf-print-line);
     font-size: 7.5pt;
-    color: #555;
+    color: var(--wf-print-muted);
   }
 }
 
@@ -225,7 +225,7 @@
   [data-testid="ward-discharge-board"] main > section:first-of-type {
     padding: 0 0 2mm !important;
     border: 0 !important;
-    border-bottom: 1.5pt solid #000 !important;
+    border-bottom: 1.5pt solid var(--wf-print-ink) !important;
     border-radius: 0 !important;
     box-shadow: none !important;
     min-height: 0 !important;
@@ -272,7 +272,7 @@
     height: auto !important;
     padding: 0.7mm 1.5mm !important;
     vertical-align: baseline !important;
-    border-bottom: 0.5pt solid #bbb !important;
+    border-bottom: 0.5pt solid var(--wf-print-line) !important;
     line-height: 1.3 !important;
   }
 
@@ -289,12 +289,12 @@
 
   [data-testid="ward-discharge-board"] table thead th {
     font-size: 7pt !important;
-    border-bottom: 1pt solid #000 !important;
+    border-bottom: 1pt solid var(--wf-print-ink) !important;
   }
 
   [data-testid="ward-discharge-board"] table tbody > tr:first-child > th {
     padding-top: 2.5mm !important;
-    border-bottom: 1pt solid #000 !important;
+    border-bottom: 1pt solid var(--wf-print-ink) !important;
   }
 
   [data-testid="ward-discharge-board"] table tbody > tr:first-child h3 {
@@ -338,7 +338,7 @@
     min-height: 0 !important;
     padding: 0 0 2mm !important;
     border: 0 !important;
-    border-bottom: 1.5pt solid #000 !important;
+    border-bottom: 1.5pt solid var(--wf-print-ink) !important;
     border-radius: 0 !important;
   }
 
@@ -355,7 +355,7 @@
 
   [data-testid="ward-downtime-pack"] table thead th {
     font-size: 7pt !important;
-    border-bottom: 1pt solid #000 !important;
+    border-bottom: 1pt solid var(--wf-print-ink) !important;
   }
 
   [data-testid="ward-downtime-pack"] table tbody th,
@@ -370,20 +370,6 @@
   [data-testid="ward-downtime-pack"] h3 {
     break-after: avoid;
   }
-}
-
-/* The paper palette. Declared outside print so every reference resolves; only print rules use it. */
-:root {
-  --wfp-navy: #1f4d7a;
-  --wfp-band: #245a8c;
-  --wfp-tint: #e6eef8;
-  --wfp-zebra: #f4f7fb;
-  --wfp-rule: #cfdae6;
-  --wfp-red: #9a3424;
-  --wfp-red-tint: #fbe9e5;
-  --wfp-green: #1c6343;
-  --wfp-green-tint: #e4f2ea;
-  --wfp-amber: #7a5208;
 }
 
 /* =========================================================================
@@ -402,29 +388,29 @@
 
   /* ----- Triage record ----- */
   [data-wf-print-doc="triage"] > div:first-child {
-    border-bottom: 2pt solid var(--wfp-navy) !important;
+    border-bottom: 2pt solid var(--wf-print-navy) !important;
   }
 
   [data-wf-print-doc="triage"] > div:first-child > div > div:first-child {
     display: block;
     margin: 0 0 2.5mm;
     padding: 1.4mm 2.5mm;
-    background: var(--wfp-band) !important;
-    color: #fff !important;
+    background: var(--wf-print-band) !important;
+    color: var(--wf-print-on-band) !important;
   }
 
   [data-wf-print-doc="triage"] #triage-doc-title {
-    color: var(--wfp-navy) !important;
+    color: var(--wf-print-navy) !important;
   }
 
   [data-wf-print-doc="triage"] > section > div:first-child {
     padding: 1mm 2mm !important;
-    background: var(--wfp-tint) !important;
+    background: var(--wf-print-tint) !important;
     border-radius: 1mm;
   }
 
   [data-wf-print-doc="triage"] > section h3 {
-    color: var(--wfp-navy) !important;
+    color: var(--wf-print-navy) !important;
   }
 
   [data-wf-print-doc="triage"] > section h3 span {
@@ -433,8 +419,8 @@
     height: 4.4mm;
     margin-right: 2mm;
     border-radius: 50%;
-    background: var(--wfp-band) !important;
-    color: #fff !important;
+    background: var(--wf-print-band) !important;
+    color: var(--wf-print-on-band) !important;
     font-size: 7pt;
     line-height: 4.4mm;
     text-align: center;
@@ -445,7 +431,7 @@
   [data-wf-print-doc="triage"] > section dt,
   [data-wf-print-doc="triage"] > section dd {
     padding: 0.5mm 0;
-    border-bottom: 0.4pt solid var(--wfp-rule);
+    border-bottom: 0.4pt solid var(--wf-print-rule);
   }
 
   [data-wf-print-doc="triage"] > section dd {
@@ -453,43 +439,43 @@
   }
 
   [data-wf-print-doc="triage"] > section[aria-label="Signature"] {
-    border: 1pt solid var(--wfp-navy) !important;
+    border: 1pt solid var(--wf-print-navy) !important;
     border-radius: 1.5mm;
-    background: var(--wfp-zebra) !important;
+    background: var(--wf-print-zebra) !important;
   }
 
   [data-wf-print-doc="triage"] > section[aria-label="Signature"] p:first-child {
-    color: var(--wfp-navy) !important;
+    color: var(--wf-print-navy) !important;
     font-weight: 700;
   }
 
   [data-wf-print-doc="triage"] > section[aria-label="Signature"]::after {
-    border-top-color: var(--wfp-navy);
+    border-top-color: var(--wf-print-navy);
   }
 
   [data-wf-print-doc="triage"] > p:last-child {
-    border-top-color: var(--wfp-navy) !important;
+    border-top-color: var(--wf-print-navy) !important;
   }
 
   /* ----- Discharges list ----- */
   [data-testid="ward-discharge-board"] main > section:first-of-type {
-    border-bottom: 2pt solid var(--wfp-navy) !important;
+    border-bottom: 2pt solid var(--wf-print-navy) !important;
   }
 
   [data-testid="ward-discharge-board"] main > section:first-of-type h1,
   [data-testid="ward-discharge-board"] main > section:first-of-type h2 {
-    color: var(--wfp-navy) !important;
+    color: var(--wf-print-navy) !important;
   }
 
   [data-testid="ward-discharge-board"] table thead th {
-    background: var(--wfp-band) !important;
-    color: #fff !important;
+    background: var(--wf-print-band) !important;
+    color: var(--wf-print-on-band) !important;
     border-bottom: 0 !important;
   }
 
   [data-testid="ward-discharge-board"] table tbody > tr:first-child > th {
-    background: var(--wfp-tint) !important;
-    color: var(--wfp-navy) !important;
+    background: var(--wf-print-tint) !important;
+    color: var(--wf-print-navy) !important;
     border-bottom: 0 !important;
   }
 
@@ -499,8 +485,8 @@
   }
 
   [data-testid="ward-discharge-board"] table tbody[data-testid^="ward-discharge-group-blocked"] > tr:first-child > th {
-    background: var(--wfp-red-tint) !important;
-    color: var(--wfp-red) !important;
+    background: var(--wf-print-red-tint) !important;
+    color: var(--wf-print-red) !important;
   }
 
   [data-testid="ward-discharge-board"]
@@ -508,59 +494,59 @@
     tbody[data-testid^="ward-discharge-group-confirmed"]
     > tr:first-child
     > th {
-    background: var(--wfp-green-tint) !important;
-    color: var(--wfp-green) !important;
+    background: var(--wf-print-green-tint) !important;
+    color: var(--wf-print-green) !important;
   }
 
   [data-testid="ward-discharge-board"] table tbody > tr:nth-child(odd):not(:first-child) > td {
-    background: var(--wfp-zebra) !important;
+    background: var(--wf-print-zebra) !important;
   }
 
   [data-testid="ward-discharge-board"] table td {
-    border-bottom-color: var(--wfp-rule) !important;
+    border-bottom-color: var(--wf-print-rule) !important;
   }
 
   /* Overdue dates ("2d past") in the palette's red; the hold-up's name in amber. */
   [data-testid="ward-discharge-board"] table td:nth-child(2) > span:first-child:has(svg) {
-    color: var(--wfp-red) !important;
+    color: var(--wf-print-red) !important;
     font-weight: 700 !important;
   }
 
   [data-testid="ward-discharge-board"] table td:nth-child(3) > span > span:first-child {
-    color: var(--wfp-amber) !important;
+    color: var(--wf-print-amber) !important;
     font-weight: 700 !important;
   }
 
   /* ----- Downtime pack ----- */
   [data-testid="ward-downtime-pack"] > main > :first-child {
-    border-bottom: 2pt solid var(--wfp-navy) !important;
+    border-bottom: 2pt solid var(--wf-print-navy) !important;
   }
 
   [data-testid="ward-downtime-pack"] h1,
   [data-testid="ward-downtime-pack"] h2,
   [data-testid="ward-downtime-pack"] h3 {
-    color: var(--wfp-navy) !important;
+    color: var(--wf-print-navy) !important;
   }
 
   [data-testid="ward-downtime-pack"] table thead th {
-    background: var(--wfp-band) !important;
-    color: #fff !important;
+    background: var(--wf-print-band) !important;
+    color: var(--wf-print-on-band) !important;
     border-bottom: 0 !important;
   }
 
   [data-testid="ward-downtime-pack"] table tbody tr:nth-child(even) > * {
-    background: var(--wfp-zebra) !important;
+    background: var(--wf-print-zebra) !important;
   }
 
   [data-testid="ward-downtime-pack"] table td,
   [data-testid="ward-downtime-pack"] table tbody th {
-    border-bottom: 0.4pt solid var(--wfp-rule) !important;
+    border-bottom: 0.4pt solid var(--wf-print-rule) !important;
   }
 
   [data-testid="ward-downtime-pack"] [data-testid="ward-downtime-subtotal"] > *,
   [data-testid="ward-downtime-pack"] tfoot tr > * {
-    background: var(--wfp-tint) !important;
-    color: var(--wfp-navy) !important;
+    background: var(--wf-print-tint) !important;
+    color: var(--wf-print-navy) !important;
     font-weight: 700 !important;
   }
 }
@@ -574,7 +560,7 @@
   @bottom-right {
     content: "Page " counter(page) " of " counter(pages);
     font: 7pt / 1 sans-serif;
-    color: #5b6573;
+    color: var(--wf-print-muted);
   }
 }
 
@@ -582,12 +568,12 @@
   @bottom-left {
     content: "Ward Flow · synthetic prototype · not a medical record";
     font: 7pt / 1 sans-serif;
-    color: #5b6573;
+    color: var(--wf-print-muted);
   }
   @bottom-right {
     content: "Page " counter(page) " of " counter(pages);
     font: 7pt / 1 sans-serif;
-    color: #5b6573;
+    color: var(--wf-print-muted);
   }
 }
 
@@ -606,12 +592,12 @@
 
   [data-wf-print-doc="triage"] > section dd:has(> [data-wf-print-blank]),
   [data-wf-print-doc="triage"] > section dt:has(+ dd > [data-wf-print-blank]) {
-    color: #8a94a0 !important;
+    color: var(--wf-print-blank) !important;
     font-weight: 400;
   }
 
   [data-wf-print-doc="triage"] > section > p[data-wf-print-blank] {
-    color: #8a94a0 !important;
+    color: var(--wf-print-blank) !important;
     font-style: italic;
   }
 
@@ -641,7 +627,7 @@
   [data-testid="ward-downtime-pack"] [data-testid="ward-downtime-print-provenance"] {
     margin: 0.8mm 0 !important;
     font-size: 7.5pt !important;
-    color: #5b6573 !important;
+    color: var(--wf-print-muted) !important;
   }
 
   [data-testid="ward-downtime-pack"] tbody tr {
@@ -657,21 +643,21 @@
   }
 
   [data-testid="ward-bed-list-print"] h2 {
-    color: var(--wfp-navy) !important;
+    color: var(--wf-print-navy) !important;
   }
 
   [data-testid="ward-bed-list-print"] > div:first-child {
-    border-bottom-color: var(--wfp-navy) !important;
+    border-bottom-color: var(--wf-print-navy) !important;
   }
 
   [data-testid="ward-bed-list-print"] thead th {
     border-bottom: 0 !important;
-    background: var(--wfp-band) !important;
-    color: #fff !important;
+    background: var(--wf-print-band) !important;
+    color: var(--wf-print-on-band) !important;
   }
 
   [data-testid="ward-bed-list-print"] tbody tr:nth-child(even) > * {
-    background: var(--wfp-zebra) !important;
+    background: var(--wf-print-zebra) !important;
   }
 
   [data-testid="ward-bed-list-print"] tbody tr:nth-child(even) > * * {
@@ -680,6 +666,6 @@
 
   [data-testid="ward-bed-list-print"] tbody th,
   [data-testid="ward-bed-list-print"] tbody td {
-    border-bottom-color: var(--wfp-rule) !important;
+    border-bottom-color: var(--wf-print-rule) !important;
   }
 }
