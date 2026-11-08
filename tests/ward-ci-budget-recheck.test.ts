@@ -245,6 +245,14 @@ describe("budget recheck workflow", () => {
       ".github/workflows/ward-flow.yml",
     ])
       expect(paths).toContain(required);
+    // #1416: every local script next.config.ts imports feeds the production build, so it must re-measure.
+    const config = readFileSync(new URL("../next.config.ts", import.meta.url), "utf8");
+    // Any import spelling: named or side-effect, single or double quotes.
+    const scripts = [...config.matchAll(/^\s*import\s+(?:[^;]*?\s+from\s+)?(["'])\.\/(scripts\/[^"']+)\1/gmu)].map(
+      (match) => match[2],
+    );
+    expect(scripts).toContain("scripts/ward-flow/whats-new-list.mjs");
+    for (const script of scripts) expect(paths).toContain(script);
     // Docs-only merges must not re-run armed PRs' builds; no catch-all and no negation patterns.
     expect(paths.some((entry) => entry.startsWith("docs") || entry.startsWith("!") || entry === "**")).toBe(false);
     // The pull_request_target arming trigger stays unfiltered.

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { ReactNode } from "react";
 import { cx } from "./cx";
 import { SrOnly } from "./primitives";
@@ -29,15 +30,32 @@ export type HeroChipProps = {
   onPress?: () => void;
   /** With `onPress`, a pressed highlight chip (`aria-pressed`). */
   pressed?: boolean;
+  /** Makes the chip a link to the page that owns the figure. Wins over `onPress`. */
+  href?: string;
+  /** With `href`, the link's accessible name ("3 waiting in FSH ED, open Waiting"). */
+  linkLabel?: string;
   testId?: string;
   className?: string;
 };
 
 /**
  * A count chip on the hero band (v10 hero chips, 15px figure): edged pill, mono figure, then its
- * words. With `onPress` it is a button; without, a plain chip. At most five per hero.
+ * words. With `href` it is a link, with `onPress` a button; without, a plain chip. At most five
+ * per hero.
  */
-export function HeroChip({ value, label, tone, twin, twinLabel, onPress, pressed, testId, className }: HeroChipProps) {
+export function HeroChip({
+  value,
+  label,
+  tone,
+  twin,
+  twinLabel,
+  onPress,
+  pressed,
+  href,
+  linkLabel,
+  testId,
+  className,
+}: HeroChipProps) {
   const body = (
     <>
       <span className={styles.chipValue}>{value}</span>
@@ -51,6 +69,18 @@ export function HeroChip({ value, label, tone, twin, twinLabel, onPress, pressed
       {twinLabel ? <SrOnly>, {twinLabel}</SrOnly> : null}
     </>
   );
+  if (href !== undefined) {
+    return (
+      <Link
+        href={href}
+        className={cx(styles.chip, styles.chipButton, className)}
+        aria-label={linkLabel}
+        data-testid={testId}
+      >
+        {body}
+      </Link>
+    );
+  }
   if (!onPress) {
     return (
       <span className={cx(styles.chip, className)} data-testid={testId}>

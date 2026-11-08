@@ -48,7 +48,12 @@ const OUTCOME_CONSEQUENCE =
  */
 function focusFirstField(form: HTMLFormElement | null) {
   if (!form || isPhoneWidth()) return;
-  form.querySelector<HTMLElement>("input:not([type=hidden]):not(:disabled), select:not(:disabled), textarea")?.focus();
+  // #1418: a list picker's trigger is a `button role="combobox"`; it counts as a field, in document order.
+  form
+    .querySelector<HTMLElement>(
+      'input:not([type=hidden]):not(:disabled), select:not(:disabled), textarea, button[role="combobox"]:not(:disabled)',
+    )
+    ?.focus();
 }
 
 /** Every panel a row can open. Each renders only while it is the open one. */

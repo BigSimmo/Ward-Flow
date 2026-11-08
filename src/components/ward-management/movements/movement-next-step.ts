@@ -44,7 +44,10 @@ export function movementNextStep(movement: Movement): MovementNextStep | null {
         ? { label: "Ward answer", owner: "Receiving ward", kind: "wait" }
         : { label: "Pull the bed", owner: COORDINATOR_OWNER, kind: "pull" };
     case "pulled":
-      return { label: "Handover", owner: movement.originCommunity?.teamName ?? "ED team", kind: "wait" };
+      // WF-J04 (Josh, 8 Nov 2026): with no transport needed the ward records arrival straight from pulled.
+      return transportNeedState(movement) === "not_needed"
+        ? { label: "Arrival", owner: "Receiving ward", kind: "wait" }
+        : { label: "Handover", owner: movement.originCommunity?.teamName ?? "ED team", kind: "wait" };
     case "handover_ready": {
       const leg = transportLeg(movement.transport);
       if (leg === undefined) {
