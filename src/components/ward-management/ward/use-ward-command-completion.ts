@@ -7,12 +7,14 @@ import { useOptionalWardFlowSelect } from "../ward-flow-provider";
 import type { WardCommandDispatch, WardCommandOutcome } from "../ward-shared-client";
 import type { Rejection } from "@/components/ward-management/ward-model";
 import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
+import { refusalReasonText } from "@/components/ward-management/ward-refusal-words";
 
 export function wardCommandFailure(outcome?: WardCommandOutcome): string | undefined {
   if (!outcome || outcome.status === "accepted") return;
-  return outcome.status === "refused"
-    ? `Not recorded: ${outcome.message ?? "The action was refused."}`
-    : (outcome.message ?? SAVE_NOT_CONFIRMED);
+  if (outcome.status !== "refused") return outcome.message ?? SAVE_NOT_CONFIRMED;
+  // No event code or revision number reaches the screen (H-0839): a lost race reads as one.
+  const why = outcome.message ? refusalReasonText(outcome.message) : "The action was refused.";
+  return `Not recorded: ${/[.!?]$/.test(why) ? why : `${why}.`}`;
 }
 
 /** A command's refusal: the shared answer when there is one, otherwise a new local rejection. */

@@ -770,10 +770,16 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
   // Focus goes back to whichever control opened the modal (the header button or the home tab's),
   // and falls back to the header button only when that control is gone.
   const capacityOpenerRef = useRef<HTMLElement | null>(null);
+  // Concurrent sign-in test, 8 Nov 2026: each opening drafts from the count on screen, not the one
+  // read at page load, so another desk's confirm meanwhile no longer refuses this desk's next one.
+  const currentCapacity = unit?.allocatable.value ?? 0;
+  const currentCapacityRevision = unit?.allocatable.revision ?? 0;
   const openCapacityModal = useCallback(() => {
     capacityOpenerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setCapacityValue(String(currentCapacity));
+    setCapacityRevision(currentCapacityRevision);
     setConfirmNumbersOpen(true);
-  }, []);
+  }, [currentCapacity, currentCapacityRevision]);
   const closeCapacityModal = useCallback(() => {
     setConfirmNumbersOpen(false);
     setTimeout(() => {
