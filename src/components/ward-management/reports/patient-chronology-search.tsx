@@ -36,10 +36,18 @@ export function PatientChronologySearch({
   const [text, setText] = useState("");
   const [focused, setFocused] = useState(false);
   const [active, setActive] = useState(0);
-  // Search audit, 8 Nov 2026: every word in any order, so "Smith Jane" and "UM 100001" match too.
+  // Search audit, 8 Nov 2026: every word in any order, so "Smith Jane", "Smith, Jane"
+  // (the formal name is a field) and "UM 100001" all match.
   const needle = text.trim();
   const matches = needle
-    ? people.filter((patient) => fieldsMatchEveryWord(needle, [patient.familyName, patient.givenName, patient.umrn]))
+    ? people.filter((patient) =>
+        fieldsMatchEveryWord(needle, [
+          `${patient.familyName}, ${patient.givenName}`,
+          patient.familyName,
+          patient.givenName,
+          patient.umrn,
+        ]),
+      )
     : [];
   const shown = matches.slice(0, MATCH_LIMIT);
   const open = focused && needle !== "";

@@ -8,6 +8,8 @@ import { SearchField } from "@/components/wf/search-field";
 import { wardMatchesQuery } from "@/components/ward-management/referrals/find-a-ward";
 import { communityTeamsMatching } from "@/components/ward-management/referrals/community-short-form";
 import { searchGroupOrder } from "@/components/ward-management/search/ward-smart-search";
+import { PatientChronologySearch } from "@/components/ward-management/reports/patient-chronology-search";
+import type { Patient } from "@/components/ward-management/ward-patients";
 
 afterEach(cleanup);
 
@@ -81,5 +83,30 @@ describe("SearchField Escape", () => {
     const describedBy = input.getAttribute("aria-describedby");
     expect(describedBy).toBeTruthy();
     expect(document.getElementById(describedBy!)?.textContent).toContain("2");
+  });
+});
+
+describe("chronology patient search", () => {
+  const people = [
+    { id: "p1", familyName: "Quellmoor", givenName: "Ivo", umrn: "UM900001" },
+    { id: "p2", familyName: "Brakewell", givenName: "Sena", umrn: "UM900002" },
+  ] as unknown as Patient[];
+
+  it.each(["Quellmoor, Ivo", "ivo quellmoor", "quellmoor ivo", "UM 900001"])("%s finds the one person", (typed) => {
+    render(
+      <PatientChronologySearch
+        people={people}
+        chosenId=""
+        onChoose={() => {}}
+        nameOf={(p) => `${p.familyName}, ${p.givenName}`}
+        size="hero"
+        label="Find a patient"
+      />,
+    );
+    const box = screen.getByRole("combobox");
+    fireEvent.focus(box);
+    fireEvent.change(box, { target: { value: typed } });
+    expect(screen.getAllByRole("option")).toHaveLength(1);
+    cleanup();
   });
 });
