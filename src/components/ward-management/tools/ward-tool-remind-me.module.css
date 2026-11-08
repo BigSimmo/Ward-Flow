@@ -137,3 +137,15 @@
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
 }
+
+/* Phone (Josh, 8 Nov 2026: "perfect the tools pages on the phone"). The kit's phone chip row
+   scrolls sideways, which cut "Mental Health Unit" and the last reason off at the edge with no
+   hint that more sat beyond it. Here the choices wrap instead, so every option is in view; the
+   ward list already caps itself with "Show more". `div.chips` outranks the kit's single class. */
+@media (max-width: 46.4375rem) {
+  div.chips {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-2);
+    overflow-x: visible;
+  }
+}

@@ -1,0 +1,233 @@
+"use client";
+
+import { useMemo, useState } from "react";
+import { PhoneCall, X } from "lucide-react";
+
+import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { formatInstant } from "@/components/ward-management/ward-clock";
+import { shiftConfirmations } from "@/components/ward-management/capacity/shift-confirmations";
+import {
+  Button,
+  ChipGroup,
+  FilterChip,
+  Radio,
+  Segmented,
+  ShowMoreRow,
+  SrOnly,
+  Switch,
+  foldHidden,
+  foldLimit,
+} from "@/components/wf";
+import { addCallLog, removeCallLog, useCallLog, type CallOutcome } from "./ward-tool-call-log-store";
+import { addReminder, wardNames } from "./ward-tool-remind-store";
+import remind from "./ward-tool-remind-me.module.css";
+import styles from "./ward-tool-call-log.module.css";
+
+const WARD_LIMIT = 6;
+/** "A bed later today": about when, as the next whole hours a ward usually names. */
+const LATER_STEPS = ["1", "3", "5"] as const;
+type LaterStep = (typeof LATER_STEPS)[number];
+
+const OUTCOME_WORDS: Record<CallOutcome, string> = {
+  "as-shown": "Beds as shown",
+  later: "A bed later today",
+  none: "No bed today",
+  "no-answer": "No answer",
+};
+
+function laterAt(step: LaterStep, now: number): number {
+  return (Math.floor(now / 60) + Number(step)) * 60;
+}
+
+/**
+ * Call and log (Josh, 8 Nov 2026): after ringing a ward, the coordinator records what it said in
+ * three taps, and can set a ring-back. Wards not confirmed this shift come first. Kept in this
+ * browser only; it never changes a ward's figures, which only the ward confirms.
+ */
+export function ToolCallLog({ onNavigate }: { onNavigate: () => void }) {
+  void onNavigate;
+  const { units } = useWardFlowSelect("units");
+  const now = useWardFlowClock();
+  const log = useCallLog();
+
+  const [wardId, setWardId] = useState<string | null>(null);
+  const [outcome, setOutcome] = useState<CallOutcome | null>(null);
+  const [step, setStep] = useState<LaterStep>("3");
+  const [ringBack, setRingBack] = useState(true);
+  const [allWards, setAllWards] = useState(false);
+  const [saved, setSaved] = useState<string | null>(null);
+
+  const names = useMemo(() => wardNames(units), [units]);
+  // Wards not confirmed this shift first (oldest first), then the rest by name.
+  const wards = useMemo(() => {
+    const waiting = shiftConfirmations(units, now).waiting;
+    const first = new Set(waiting.map((unit) => unit.id));
+    return [
+      ...waiting,
+      ...[...units].filter((unit) => !first.has(unit.id)).sort((a, b) => a.name.localeCompare(b.name)),
+    ];
+    // The order settles per shift; a minute tick need not reshuffle it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [units]);
+  const unconfirmed = useMemo(
+    () => new Set(shiftConfirmations(units, now).waiting.map((unit) => unit.id)),
+    [units, now],
+  );
+
+  const ward = wards.find((unit) => unit.id === wardId);
+  const folded = wards.slice(0, foldLimit(wards.length, WARD_LIMIT));
+  const shownWards = allWards ? wards : ward && !folded.includes(ward) ? [...folded, ward] : folded;
+  const hiddenWards = foldHidden(wards.length, WARD_LIMIT);
+  const wardLabel = ward ? (names.get(ward.id) ?? ward.name) : "";
+
+  const bedAt = outcome === "later" ? laterAt(step, now) : undefined;
+  // A ring-back fits only when there is something to chase.
+  const offersRingBack = outcome === "later" || outcome === "no-answer";
+  const ringAt = outcome === "later" ? bedAt! : now + 30;
+  const missing = !ward ? "Pick a ward" : !outcome ? "Pick what the ward said" : undefined;
+
+  function save() {
+    if (!ward || !outcome) return;
+    addCallLog({ wardId: ward.id, wardLabel, outcome, bedAt, at: now });
+    if (offersRingBack && ringBack) {
+      addReminder({ kind: "ward", targetId: ward.id, targetLabel: wardLabel, reason: "Call back", dueAt: ringAt });
+    }
+    setSaved(
+      `Saved: ${wardLabel}, ${OUTCOME_WORDS[outcome].toLowerCase()}${offersRingBack && ringBack ? `. Ring-back set for ${formatInstant(ringAt)}` : ""}.`,
+    );
+    setWardId(null);
+    setOutcome(null);
+  }
+
+  const free = ward?.allocatable.value ?? 0;
+  const detail: Record<CallOutcome, string> = {
+    "as-shown": ward ? `The board shows ${free} free` : "The board is right",
+    later: "One should free up today",
+    none: "Nothing free today",
+    "no-answer": "Try again later",
+  };
+
+  return (
+    <div className={remind.tool}>
+      <div className={remind.step}>
+        <span className={remind.label}>Which ward</span>
+        <ChipGroup label="Which ward" className={remind.chips}>
+          {shownWards.map((unit) => (
+            <FilterChip
+              key={unit.id}
+              pressed={unit.id === wardId}
+              onPressedChange={(on) => {
+                setWardId(on ? unit.id : null);
+                setSaved(null);
+              }}
+            >
+              {unconfirmed.has(unit.id) ? <span className={styles.due} aria-hidden="true" /> : null}
+              {names.get(unit.id) ?? unit.name}
+              {unconfirmed.has(unit.id) ? <SrOnly>, not confirmed this shift</SrOnly> : null}
+            </FilterChip>
+          ))}
+        </ChipGroup>
+        {hiddenWards > 0 ? (
+          <ShowMoreRow onClick={() => setAllWards(!allWards)} expanded={allWards}>
+            {allWards ? "Show fewer" : `Show ${hiddenWards} more`}
+          </ShowMoreRow>
+        ) : null}
+      </div>
+
+      <fieldset className={styles.said}>
+        <legend className={remind.label}>What did the ward say?</legend>
+        <div className={styles.card}>
+          {(Object.keys(OUTCOME_WORDS) as CallOutcome[]).map((id) => (
+            <Radio
+              key={id}
+              name="call-log-outcome"
+              className={styles.option}
+              checked={outcome === id}
+              onChange={() => setOutcome(id)}
+              label={
+                <span className={styles.optionText}>
+                  <strong>{OUTCOME_WORDS[id]}</strong>
+                  <span>{detail[id]}</span>
+                </span>
+              }
+            />
+          ))}
+        </div>
+      </fieldset>
+
+      {outcome === "later" ? (
+        <div className={remind.step}>
+          <span className={remind.label}>About when</span>
+          <Segmented
+            items={LATER_STEPS.map((id) => ({ id, label: formatInstant(laterAt(id, now)) }))}
+            value={step}
+            onChange={setStep}
+            label="About when"
+            size="md"
+          />
+        </div>
+      ) : null}
+
+      {offersRingBack ? (
+        <Switch
+          block
+          checked={ringBack}
+          onCheckedChange={setRingBack}
+          label={
+            <>
+              Remind me to ring back at <span className={remind.mono}>{formatInstant(ringAt)}</span>
+            </>
+          }
+        />
+      ) : null}
+
+      <div className={remind.actions}>
+        <Button variant="pri" icon={PhoneCall} disabledReason={missing} onClick={save}>
+          Save call
+        </Button>
+      </div>
+      {saved ? (
+        <p className={styles.saved} role="status">
+          {saved}
+        </p>
+      ) : null}
+
+      <section className={remind.yours} aria-labelledby="call-log-yours">
+        <h4 className={remind.label} id="call-log-yours">
+          Your calls
+        </h4>
+        {log.length === 0 ? (
+          <p className={remind.quiet}>None logged.</p>
+        ) : (
+          <ul className={remind.list}>
+            {log.map((entry) => (
+              <li key={entry.id} className={remind.reminder}>
+                <span className={`${remind.time} ${remind.mono}`}>{formatInstant(entry.at)}</span>
+                <span className={remind.what}>
+                  <span>{entry.wardLabel}</span>
+                  <span className={remind.meta}>
+                    {OUTCOME_WORDS[entry.outcome]}
+                    {entry.bedAt !== undefined ? `, about ${formatInstant(entry.bedAt)}` : ""}
+                  </span>
+                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={X}
+                  onClick={() => removeCallLog(entry.id)}
+                  aria-label={`Remove call to ${entry.wardLabel} at ${formatInstant(entry.at)}`}
+                >
+                  Remove
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <p className={remind.note}>
+          Saved in this browser for your own follow-up. It does not change the ward&apos;s bed figures; only the ward
+          confirms those.
+        </p>
+      </section>
+    </div>
+  );
+}

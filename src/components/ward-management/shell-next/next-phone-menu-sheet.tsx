@@ -7,6 +7,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Fragment,
   useContext,
   useEffect,
   useState,
@@ -17,15 +18,19 @@ import {
 } from "react";
 import {
   Activity,
+  Ambulance,
   BedSingle,
+  BellRing,
   CircleHelp,
   ClipboardList,
   Inbox,
   Clock3,
   LogOut,
+  PhoneOutgoing,
   Plus,
   Repeat,
   Search,
+  Send,
   Settings,
   UserPlus,
   Wrench,
@@ -68,6 +73,7 @@ import {
 import { WardMyWards } from "@/components/ward-management/shell/ward-my-wards";
 import { useWardHelpRow } from "@/components/ward-management/help/ward-help-link";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { ACCESS_ADMIN_PERSONA, DESK_PERSONAS } from "@/components/ward-management/shell/ward-desk-personas";
 import { useShellPersonaRole } from "@/components/ward-management/settings/persona-sync";
 import type { CountMap, DrawerId, NeedRow, PhoneMenuModel } from "@/components/ward-management/shell/ward-phone-menu";
@@ -429,14 +435,18 @@ function CreateSheet({
   returnFocusRef,
   byId,
   onNewReferral,
+  coordinator = false,
 }: {
   open: boolean;
   onClose: () => void;
   returnFocusRef: RefObject<HTMLButtonElement | null>;
   byId: ReadonlyMap<string, RailEntry>;
   onNewReferral: () => void;
+  /** The coordinator's + leads with the phone work of the day (Josh, 8 Nov 2026). */
+  coordinator?: boolean;
 }) {
   const { canRefer, canTriage, ids } = usePhoneCreateOptions(byId);
+  const canOpen = useCanOpenHref();
   // shell-2: on a ward's own page, Update a bed opens that ward's beds, not the statewide list.
   const currentUnitId = /^\/ward-flow\/(?:ward|board)\/([^/?#]+)/u.exec(usePathname() ?? "")?.[1];
   const rows = CREATE_LINKS.flatMap((item) => {
@@ -461,6 +471,126 @@ function CreateSheet({
         ]
       : [];
   });
+  // Coordinator (Josh, 8 Nov 2026, "+ sheet reordered"): New referral alone on top, then the calls
+  // and asks a coordinator makes all day, then the rarer starts as quiet links underneath.
+  const coordRows = coordinator
+    ? [
+        {
+          key: "call-log",
+          icon: PhoneOutgoing,
+          label: "Log a call",
+          meta: "What a ward or team told you",
+          tool: "call-log" as const,
+        },
+        {
+          key: "ask",
+          icon: Send,
+          label: "Ask wards for a bed",
+          meta: "Choose the patient, then the wards",
+          href: "/ward-flow/waiting",
+        },
+        {
+          key: "transport",
+          icon: Ambulance,
+          label: "Book transport",
+          meta: "For a patient ready to move",
+          href: "/ward-flow/transport/officer",
+        },
+        ...(ids.includes("delays")
+          ? [
+              {
+                key: "delays",
+                icon: Clock3,
+                label: "Log a delay",
+                meta: "Choose the patient, then the reason",
+                href: byId.get("delays")?.href,
+              },
+            ]
+          : []),
+        { key: "remind", icon: BellRing, label: "Remind me", meta: "A nudge at a set time", tool: "remind" as const },
+      ].filter((row) => row.tool !== undefined || (row.href !== undefined && canOpen(row.href)))
+    : [];
+  const coordLinks = coordinator
+    ? [
+        ...(canTriage ? [{ key: "triage", label: "New triage", href: WARD_TRIAGE_NEW_HREF }] : []),
+        ...CREATE_LINKS.filter((item) => item.id !== "delays" && ids.includes(item.id)).map((item) => ({
+          key: item.id,
+          label: item.label,
+          href: item.href ?? byId.get(item.id)?.href,
+        })),
+      ].filter((link): link is { key: string; label: string; href: string } => link.href !== undefined)
+    : [];
+  if (coordinator) {
+    return (
+      <Sheet
+        id="ward-phone-create"
+        testId="ward-phone-create-sheet"
+        open={open}
+        onClose={onClose}
+        title="Create"
+        description="Start something new"
+        mobileBreakpoint="phone"
+        returnFocusRef={returnFocusRef}
+        contentClassName={styles.sheet}
+        headerClassName={styles.createHead}
+        closeButtonClassName={styles.close}
+        bodyClassName={`${styles.body} ${styles.createBody}`}
+      >
+        {canRefer ? (
+          <div className={styles.createSingle}>
+            <button
+              type="button"
+              className={styles.createPrimary}
+              data-testid="ward-phone-create-referral"
+              onClick={() => {
+                onClose();
+                onNewReferral();
+              }}
+            >
+              <Inbox aria-hidden="true" strokeWidth={1.75} />
+              New referral
+            </button>
+          </div>
+        ) : null}
+        <ul className={`${styles.list} ${styles.rich}`} data-testid="ward-phone-create-coordinator">
+          {coordRows.map((row) => (
+            <li key={row.key}>
+              {row.tool ? (
+                <button
+                  type="button"
+                  className={styles.row}
+                  onClick={(event) => {
+                    onClose();
+                    requestToolsTool(row.tool, event.currentTarget);
+                  }}
+                >
+                  <RowBody icon={row.icon} label={row.label} meta={<span>{row.meta}</span>} />
+                  <Chevron />
+                </button>
+              ) : (
+                <Link href={row.href!} className={styles.row} onClick={onClose}>
+                  <RowBody icon={row.icon} label={row.label} meta={<span>{row.meta}</span>} />
+                  <Chevron />
+                </Link>
+              )}
+            </li>
+          ))}
+        </ul>
+        {coordLinks.length > 0 ? (
+          <p className={styles.createMore}>
+            {coordLinks.map((link, index) => (
+              <Fragment key={link.key}>
+                {index > 0 ? <span className={styles.createMoreDot} aria-hidden="true" /> : null}
+                <Link href={link.href} onClick={onClose}>
+                  {link.label}
+                </Link>
+              </Fragment>
+            ))}
+          </p>
+        ) : null}
+      </Sheet>
+    );
+  }
   return (
     <Sheet
       id="ward-phone-create"
@@ -649,6 +779,7 @@ export function PhoneMenuSheets({
   onQuery,
   returnFocusRef,
   pathname,
+  shellRole,
   counts,
   entries,
   byId,
@@ -749,6 +880,7 @@ export function PhoneMenuSheets({
         returnFocusRef={returnFocusRef}
         byId={byId}
         onNewReferral={onNewReferral}
+        coordinator={shellRole === "coordinator"}
       />
     </>
   );

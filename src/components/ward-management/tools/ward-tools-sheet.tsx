@@ -24,6 +24,7 @@ import {
   MessageSquareText,
   Phone,
   PhoneCall,
+  PhoneOutgoing,
   Plus,
   Printer,
   Scale,
@@ -39,7 +40,13 @@ import {
 } from "lucide-react";
 import { QuickActionsPanel, useUnconfirmedWards, WardUpdatesRequest, type QuickTile } from "./ward-tools-quick-actions";
 
-import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import {
+  useDueSoonThresholds,
+  useWardFlowClock,
+  useWardFlowSelect,
+} from "@/components/ward-management/ward-flow-provider";
+import { legalFormPopulation } from "@/components/ward-management/legal-forms/legal-forms-derivations";
+import { clockStanding, isActNow } from "@/components/ward-management/legal-forms/legal-forms-view";
 import { WardRoleSwitcher } from "@/components/ward-management/ward-public-role-switcher";
 import { contactForTeam } from "@/components/ward-management/community/community-team-contact-mapping";
 import { DOWNTIME_PACK_HREF, PATIENT_CHRONOLOGY_HREF } from "@/components/ward-management/reports/report-routes";
@@ -65,6 +72,7 @@ import { ToolLeaveDue, useLeaveDueCount } from "./ward-tool-leave-due";
 import { ToolMessages } from "./ward-tool-messages";
 import { ToolOnCall } from "./ward-tool-on-call";
 import { ToolRemindMe, useReminderCount } from "./ward-tool-remind-me";
+import { ToolCallLog } from "./ward-tool-call-log";
 import styles from "./ward-tools-sheet-v3.module.css";
 
 const root = "/ward-flow";
@@ -72,6 +80,7 @@ const root = "/ward-flow";
 export type ToolsSheetToolId =
   | "update-bed"
   | "remind"
+  | "call-log"
   | "book-transport"
   | "feed"
   | "bed-finder"
@@ -124,7 +133,7 @@ export type WardToolsSheetProps = {
  */
 const ROLE_ORDER: Record<WardAccessRole, Record<GroupId, readonly EntryKey[]>> = {
   coordinator: {
-    do: ["quick-actions", "new-referral", "update-bed", "remind", "book-transport", "log-delay", "feed"],
+    do: ["call-log", "quick-actions", "new-referral", "update-bed", "remind", "book-transport", "log-delay", "feed"],
     look: [
       "bed-finder",
       "find-patient",
@@ -400,7 +409,23 @@ function searchWardFlow(words: string, close: () => void): boolean {
  * Viewing as and the Demo controls sit together at the foot.
  */
 /** Live counts on the rows. The executive desk has none: it never reads the operational World. */
-type SheetCounts = { bedsReady?: number; feed?: number; reminders?: number; leave?: number; unconfirmed?: number };
+type SheetCounts = {
+  bedsReady?: number;
+  feed?: number;
+  reminders?: number;
+  leave?: number;
+  unconfirmed?: number;
+  /** Open legal forms whose typed end time has passed or is close (the Legal forms "act now"). */
+  formsActNow?: number;
+};
+
+/** Open forms at "act now" on the Legal forms page: the same rule, read from the typed time only. */
+function useFormsActNow(): number {
+  const { movements } = useWardFlowSelect("movements");
+  const now = useWardFlowClock();
+  const thresholds = useDueSoonThresholds();
+  return legalFormPopulation(movements).filter((movement) => isActNow(clockStanding(movement, now, thresholds))).length;
+}
 
 export function WardToolsSheet(props: WardToolsSheetProps) {
   return useExecutiveStatisticsControl().executive ? (
@@ -416,11 +441,12 @@ function OperationalToolsSheet(props: WardToolsSheetProps) {
   const reminders = useReminderCount();
   const leave = useLeaveDueCount();
   const unconfirmed = useUnconfirmedWards().waiting.length;
+  const formsActNow = useFormsActNow();
   return (
     <ToolsSheetView
       {...props}
       executive={false}
-      counts={{ bedsReady: counts.capacity?.value, feed, reminders, leave, unconfirmed }}
+      counts={{ bedsReady: counts.capacity?.value, feed, reminders, leave, unconfirmed, formsActNow }}
     />
   );
 }
@@ -625,6 +651,17 @@ function ToolsSheetView({
           count: { n: counts.reminders ?? 0, label: "reminders set" },
           body: <ToolRemindMe onNavigate={onNavigate} />,
         },
+    // Josh, 8 Nov 2026: the coordinator's phone work is ringing wards, so logging the call leads Do now.
+    "call-log":
+      role === "coordinator" && !executive
+        ? {
+            key: "call-log",
+            icon: PhoneOutgoing,
+            name: "Call and log",
+            detail: "What a ward told you",
+            body: <ToolCallLog onNavigate={onNavigate} />,
+          }
+        : null,
     // QA 2 Nov: Book transport opens the Transport desk, so it is a link row, like Log a delay.
     "book-transport":
       role === "officer" || role === "admin" || role === "executive"
@@ -895,6 +932,44 @@ function ToolsSheetView({
 
   const paneEntry = shown && matches > 0 ? (shown === "demo" ? demoEntry : usable(shown)) : null;
 
+  type Suggestion = {
+    key: string;
+    title: string;
+    detail: string;
+    n: number;
+    tone: "danger" | "warning" | "info";
+    tool?: ToolsSheetToolId;
+    href?: string;
+  };
+  const suggestions: Suggestion[] = executive
+    ? []
+    : [
+        {
+          key: "forms",
+          title: "Forms to act on",
+          detail: "Typed end time passed or close",
+          n: counts.formsActNow ?? 0,
+          tone: "danger" as const,
+          href: `${root}/legal-forms`,
+        },
+        {
+          key: "wards",
+          title: "Wards to call",
+          detail: "Beds not confirmed this shift",
+          n: unconfirmed,
+          tone: "warning" as const,
+          tool: all["call-log"] ? ("call-log" as const) : ("quick-actions" as const),
+        },
+        {
+          key: "leave",
+          title: "Due back from leave",
+          detail: "Today, by ward",
+          n: counts.leave ?? 0,
+          tone: "info" as const,
+          tool: "leave-due" as const,
+        },
+      ].filter((item) => item.n > 0);
+
   const renderRow = (entry: Entry, group: GroupId) => {
     if (entry.href) {
       return (
@@ -1010,6 +1085,50 @@ function ToolsSheetView({
             }
           }}
         />
+
+        {/* Suggested now (Josh, 8 Nov 2026): the coordinator's few things that need them, each one tap
+            from its tool. Only what is due shows; with nothing due, the section is gone. */}
+        {!words && role === "coordinator" && suggestions.length > 0 ? (
+          <section className={styles.quick} aria-label="Suggested now">
+            <h3 className={styles.groupHeading}>Suggested now</h3>
+            <div className={styles.card}>
+              {suggestions.map((item) => {
+                const face = (
+                  <>
+                    <span className={styles.suggestDot} data-tone={item.tone} aria-hidden="true" />
+                    <span className={styles.suggestText}>
+                      <strong>{item.title}</strong>
+                      <em>{item.detail}</em>
+                    </span>
+                    <span className={styles.suggestValue} data-tone={item.tone}>
+                      {item.n}
+                    </span>
+                    {item.href ? (
+                      <ArrowUpRight className={styles.rowEnd} aria-hidden="true" strokeWidth={1.75} />
+                    ) : (
+                      <ChevronRight className={styles.rowEnd} aria-hidden="true" strokeWidth={1.75} />
+                    )}
+                  </>
+                );
+                return item.href ? (
+                  <Link key={item.key} href={item.href} className={styles.row} onClick={onNavigate}>
+                    {face}
+                  </Link>
+                ) : (
+                  <button
+                    key={item.key}
+                    type="button"
+                    className={styles.row}
+                    onClick={() => openTool(item.tool!)}
+                    data-testid={`ward-tools-suggest-${item.key}`}
+                  >
+                    {face}
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
 
         {/* Polish (3 Nov): chips show only tools this person has used; the desk order already leads with the likely ones. */}
         {!words && recentIds.length > 0 ? (

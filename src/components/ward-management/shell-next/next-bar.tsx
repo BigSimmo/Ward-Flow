@@ -1257,7 +1257,7 @@ export function NextBar({ primaryAction: pagePrimaryAction, onServiceChange }: W
         testId="ward-bar-tools-sheet"
         returnFocusRef={toolsReturnTarget}
         desktopBackdropClassName={styles.drawerBackdrop}
-        contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide} ${toolsTwoPane ? styles.drawerSheetToolsTwoPane : ""}`}
+        contentClassName={`${styles.drawerSheet} ${styles.drawerSheetWide} ${polish.toolsSheet} ${toolsTwoPane ? styles.drawerSheetToolsTwoPane : ""}`}
         headerClassName={`${styles.drawerHeader} ${polish.toolsHeader}`}
         titleClassName={`${styles.drawerTitle} ${polish.toolsTitle}`}
         closeButtonClassName={styles.drawerClose}

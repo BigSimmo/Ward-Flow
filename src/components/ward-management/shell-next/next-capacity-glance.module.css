@@ -1,0 +1,440 @@
+/* Capacity at a glance (Josh, 8 Nov 2026). A phone bottom sheet: a navy hero with the network's
+   ready beds against the people waiting, then quiet cards. No coloured boxes: tone lives in a dot,
+   a figure or a thin bar. */
+.sheet {
+  composes: wardShellTokens from "../../../app/ward-flow-shell-tokens.module.css";
+  max-height: calc(100dvh - 24px);
+  padding-bottom: 0;
+  overflow: hidden;
+  border-color: var(--wf-line-2);
+  /* The grip sits on the hero's navy, so the sheet reads as one piece from its top edge. */
+  background: linear-gradient(var(--wf-hero-1) 0 48px, var(--wf-surface-2) 48px);
+  color: var(--wf-ink-1);
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 0 0 16px;
+  background: var(--wf-surface-2);
+}
+
+/* A short screen scrolls the body; no card may squash to fit. */
+.body > * {
+  flex: none;
+}
+
+.mono {
+  font-family: var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.hero {
+  padding: 14px 20px 16px;
+  background: linear-gradient(180deg, var(--wf-hero-1) 0%, var(--wf-hero-2) 100%);
+  color: var(--wf-hero-ink);
+}
+
+.heroTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--wf-hero-ink-3);
+}
+
+.live {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--wf-hero-success);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wf-hero-success) 22%, transparent);
+}
+
+.close {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-right: -8px;
+  border: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--wf-hero-ink) 9%, transparent);
+  color: var(--wf-hero-ink);
+  cursor: pointer;
+}
+
+.close svg {
+  width: 18px;
+  height: 18px;
+}
+
+.close:focus-visible,
+.go:focus-visible,
+.call:focus-visible,
+.open:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+}
+
+.title {
+  margin: 8px 0 0;
+  font-size: var(--wf-fs-28, 28px);
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.title small {
+  font-size: var(--wf-fs-16);
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--wf-hero-ink-2);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 14px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+}
+
+.stats > div {
+  display: flex;
+  flex-direction: column-reverse;
+  padding-left: 12px;
+  border-left: 1px solid color-mix(in srgb, var(--wf-hero-ink) 12%, transparent);
+}
+
+.stats > div:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.stats dt {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-hero-ink-3);
+}
+
+.stats dd {
+  margin: 0;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-18, 18px);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.stats > div[data-tone="warning"] dd {
+  color: var(--wf-hero-warning);
+}
+
+.section {
+  display: grid;
+  gap: 8px;
+  padding: 0 16px;
+}
+
+.label {
+  display: flex;
+  align-items: baseline;
+  margin: 0 4px;
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--wf-ink-3);
+}
+
+.label i {
+  margin-left: auto;
+  font-size: var(--wf-fs-12);
+  font-style: normal;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.card {
+  overflow: hidden;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  box-shadow: var(--wf-e1);
+}
+
+.empty,
+.footNote {
+  margin: 0;
+  padding: 12px 14px;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+.footNote {
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+
+.kind {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 13px 14px;
+}
+
+.kind + .kind {
+  border-top: 1px solid var(--wf-line);
+}
+
+.kindText {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.kindHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kindHead b {
+  font-size: var(--wf-fs-15, 15px);
+  font-weight: 600;
+}
+
+.kindHead > span,
+.next {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+.kindHead em {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.next {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.next b {
+  font-weight: 550;
+  color: var(--wf-ink-1);
+}
+
+.meter {
+  position: relative;
+  height: 5px;
+  margin: 8px 0 7px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: var(--wf-track, #e6ebf0);
+}
+
+.meter > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--wf-pri-1), var(--wf-accent));
+}
+
+.go {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: none;
+  border: 1px solid var(--wf-line-2);
+  border-radius: 50%;
+  background: var(--wf-surface);
+  color: var(--wf-accent-ink);
+  box-shadow: var(--wf-e1);
+}
+
+.go svg {
+  width: 16px;
+  height: 16px;
+}
+
+.timeline {
+  margin: 0;
+  padding: 6px 14px 4px;
+  list-style: none;
+}
+
+.timeline li {
+  display: grid;
+  grid-template-columns: 48px 14px minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 10px;
+  padding: 8px 0;
+}
+
+.time {
+  padding-top: 1px;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.rail {
+  position: relative;
+  align-self: stretch;
+  min-height: 36px;
+}
+
+.rail::before {
+  content: "";
+  position: absolute;
+  top: 14px;
+  bottom: -14px;
+  left: 6px;
+  width: 1.5px;
+  background: var(--wf-line-2);
+}
+
+.timeline li:last-child .rail::before {
+  display: none;
+}
+
+.rail::after {
+  content: "";
+  position: absolute;
+  top: 4px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  box-sizing: border-box;
+  border: 2px solid var(--wf-accent);
+  border-radius: 50%;
+  background: var(--wf-surface);
+}
+
+.where {
+  display: grid;
+  min-width: 0;
+}
+
+.where b {
+  font-size: var(--wf-fs-14);
+  font-weight: 550;
+}
+
+.where span {
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+.plus {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-15, 15px);
+  font-weight: 600;
+  color: var(--wf-accent-ink);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.chase {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 16px;
+  padding: 12px 14px;
+}
+
+.chaseText {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+.chaseText b {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--wf-fs-14);
+  font-weight: 550;
+  color: var(--wf-ink-1);
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--wf-warning);
+}
+
+.call {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 0 12px;
+  flex: none;
+  border: 1px solid var(--wf-line-2);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.call svg {
+  width: 14px;
+  height: 14px;
+}
+
+.foot {
+  padding: 12px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+  border-top: 1px solid var(--wf-line);
+  background: var(--wf-surface-2);
+}
+
+.open {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 48px;
+  border-radius: var(--wf-r-md);
+  background: linear-gradient(180deg, var(--wf-pri-1), var(--wf-pri-2));
+  color: var(--wf-on-accent);
+  font-size: var(--wf-fs-15, 15px);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--wf-e1);
+}
+
+.open svg {
+  width: 15px;
+  height: 15px;
+}

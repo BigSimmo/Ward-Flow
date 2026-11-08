@@ -662,3 +662,61 @@
 .search > :first-child:focus-within {
   border-color: var(--wf-accent);
 }
+
+/* Suggested now (Josh, 8 Nov 2026): quiet rows, a small status dot and the figure in its tone,
+   never a coloured box. */
+.suggestDot {
+  width: 8px;
+  height: 8px;
+  margin: 0 5px 0 4px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--wf-accent);
+}
+
+.suggestDot[data-tone="danger"] {
+  background: var(--wf-danger);
+}
+
+.suggestDot[data-tone="warning"] {
+  background: var(--wf-warning);
+}
+
+.suggestText {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.suggestText strong {
+  font-size: var(--wf-fs-14);
+  font-weight: 600;
+}
+
+.suggestText em {
+  font-size: var(--wf-fs-12);
+  font-style: normal;
+  color: var(--wf-ink-2);
+}
+
+.suggestValue {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-16);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-accent-ink);
+}
+
+.suggestValue[data-tone="danger"] {
+  color: var(--wf-danger-ink, var(--wf-danger));
+}
+
+.suggestValue[data-tone="warning"] {
+  color: var(--wf-warning-ink, var(--wf-ink-1));
+}
+
+@media (max-width: 46.4375rem) {
+  .sheet:not([data-two-pane]) .card > .row:has(.suggestDot) {
+    min-height: 56px;
+  }
+}

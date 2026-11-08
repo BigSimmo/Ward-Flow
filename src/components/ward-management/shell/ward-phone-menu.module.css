@@ -757,3 +757,32 @@
     transition: none;
   }
 }
+
+/* The coordinator's + (Josh, 8 Nov 2026): the rarer starts as one quiet, centred line of links. */
+.createMore {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 10px;
+  margin: 0;
+  padding: 2px 0 4px;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-3);
+}
+
+.createMore a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  color: var(--wf-accent-ink);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.createMoreDot {
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: var(--wf-ink-off);
+}
