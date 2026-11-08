@@ -1641,7 +1641,7 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
         }
         const confirmed = () =>
           setToastMessage(
-            `Capacity and morning bed numbers confirmed at ${formatInstant(nowRef.current)} (due ${morningRollupTimeLabel}): ${plural(releasesCountedToday.length, "discharge", "discharges")} planned today.`,
+            `Capacity and morning bed numbers confirmed at ${formatInstant(now)} (due ${morningRollupTimeLabel}): ${plural(releasesCountedToday.length, "discharge", "discharges")} planned today.`,
           );
         if (isRollupConfirmedToday) {
           confirmed();
