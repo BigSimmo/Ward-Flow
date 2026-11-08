@@ -126,7 +126,7 @@ const FOLDS: readonly FoldSpec[] = [
       { key: "nextOfKinName", label: "Next of kin" },
       { key: "nextOfKinRelationship", label: "Relationship", hint: "e.g. Sister" },
       { key: "nextOfKinPhone", label: "Their phone", inputMode: "tel", mono: true },
-      { choice: "supportPersonRole", label: "Support person (Mental Health Act 2014)" },
+      { choice: "supportPersonRole", label: "Support person role" },
       { key: "supportPersonName", label: "Their name" },
       { key: "supportPersonPhone", label: "Their phone", inputMode: "tel", mono: true },
     ],

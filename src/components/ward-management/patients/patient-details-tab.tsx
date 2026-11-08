@@ -251,23 +251,35 @@ export function PatientDetailsTab({
     ...recorded("Mobile", patient?.mobilePhone, { mono: true }),
     ...recorded("Other phone", patient?.otherPhone, { mono: true }),
     ...recorded("Email", patient?.email),
-    { label: "Address", value: addressLine(patient), aside: patient?.postcode },
+    {
+      label: "Address",
+      value: addressLine(patient) ?? (patient?.postcode?.trim() || undefined),
+      aside: addressLine(patient) ? patient?.postcode : undefined,
+    },
     { label: "Interpreter / preferred language", value: patient?.interpreterLanguage, wide: true },
     ...recorded("Interpreter needed", patient?.interpreterRequired),
   ];
   const kin: Fact[] = [
-    ...recorded("Next of kin", patient?.nextOfKinName, { aside: patient?.nextOfKinRelationship }),
+    // Each detail can be added on its own, so a part without its companion still shows.
+    ...(patient?.nextOfKinName?.trim()
+      ? recorded("Next of kin", patient.nextOfKinName, { aside: patient.nextOfKinRelationship })
+      : recorded("Next of kin relationship", patient?.nextOfKinRelationship)),
     ...recorded("Next of kin phone", patient?.nextOfKinPhone, { mono: true }),
-    ...recorded(patient?.supportPersonRole?.trim() || "Support person", patient?.supportPersonName),
+    ...(patient?.supportPersonName?.trim()
+      ? recorded(patient.supportPersonRole?.trim() || "Support person", patient.supportPersonName)
+      : recorded("Support person", patient?.supportPersonRole)),
     ...recorded("Support person phone", patient?.supportPersonPhone, { mono: true }),
   ];
+  const medicareMore = [
+    patient?.medicareReference?.trim() && `IRN ${patient.medicareReference.trim()}`,
+    patient?.medicareExpiry?.trim(),
+  ]
+    .filter(Boolean)
+    .join(" · ");
   const funding: Fact[] = [
-    ...recorded("Medicare", patient?.medicareNumber, {
-      mono: true,
-      aside: [patient?.medicareReference && `IRN ${patient.medicareReference}`, patient?.medicareExpiry]
-        .filter(Boolean)
-        .join(" · "),
-    }),
+    ...(patient?.medicareNumber?.trim()
+      ? recorded("Medicare", patient.medicareNumber, { mono: true, aside: medicareMore || undefined })
+      : recorded("Medicare (number not recorded)", medicareMore)),
     ...recorded("Funding", patient?.healthFund),
     ...recorded("DVA file number", patient?.dvaFileNumber, { mono: true }),
     ...recorded("Pension or concession card", patient?.concessionCard, { mono: true }),
