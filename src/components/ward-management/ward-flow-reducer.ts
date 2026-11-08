@@ -34,6 +34,7 @@ import type { TriageSignedRecord } from "./triage/triage-record";
 import { classifyLegalStatus, legalStatusIsDetained } from "@/components/ward-management/ward-legal-status";
 import { appendRefreshRequest } from "./ward/ward-buzz-keys";
 import { referralState } from "./ward-referrals";
+import { endedBedSearch, withdrawAllLiveRequestsForReferrer } from "./ward-flow-movement-close";
 import {
   movementHasOpenTurnaroundRequest,
   turnaroundEligibilityAllows,
@@ -1643,29 +1644,12 @@ function raiseAndPullBed(state: WardFlowState, event: Extract<WardFlowEvent, { t
   return refusal === started.rejections.at(-1) || refusal === undefined ? pulled : refuse(refusal.reason);
 }
 
-/**
- * The single writer for a referrer's own withdrawal (`WITHDRAW_REFERRAL` before acceptance and the
- * `RECORD_REFERRER_WITHDRAWAL` cascade): every live ward request is recorded as `referrer_withdrew`
- * and the movement no longer names an accepting or reviewing ward.
- */
-export function withdrawAllLiveRequestsForReferrer(
-  movement: Movement,
-  now: Instant,
-  /** Who ended the referral. A coordinator withdrawing it is recorded as such, not as the referrer. */
-  reason: "referrer_withdrew" | "coordinator_withdrew" = "referrer_withdrew",
-): Pick<Movement, "acceptedUnitId" | "referredUnitIds" | "withdrawnReferrals" | "referralAnswerHistory"> {
-  return {
-    acceptedUnitId: undefined,
-    referredUnitIds: [],
-    withdrawnReferrals: [
-      ...movement.withdrawnReferrals,
-      ...movement.referredUnitIds.map((unitId) => ({ unitId, at: now, reason })),
-    ],
-    referralAnswerHistory: [
-      ...(movement.referralAnswerHistory ?? []),
-      ...movement.referredUnitIds.map((unitId) => ({ unitId, at: now, answer: "withdrawn" as const })),
-    ],
-  };
+/** Gives back a movement's pulled bed, its admission and its referral's named hold; safe to call
+ *  when none was pulled. Paired with `endedBedSearch` (TASK-L3-06). */
+export { endedBedSearch, withdrawAllLiveRequestsForReferrer };
+
+export function releaseMovementBed(state: WardFlowState, movement: Movement, now: Instant): WardFlowState {
+  return withoutReferralBedHold(releasePulledBedAndAdmission(state, movement, now), movement);
 }
 
 export function reduceClinicalEvent(
@@ -2403,6 +2387,8 @@ const RECORDED_FACT_EVENT_HELPERS: RecordedFactEventHelpers = {
   replaceReferral,
   replaceUnit,
   withdrawAllLiveRequestsForReferrer,
+  endedBedSearch,
+  releaseMovementBed,
 };
 
 const UNDO_EVENT_HELPERS: UndoEventHelpers = {
@@ -2433,11 +2419,10 @@ const REFERRAL_SEND_EVENT_HELPERS = {
   overrideSignOffField,
   referralReferrer,
   reject,
-  releasePulledBedAndAdmission,
-  withoutReferralBedHold,
   replaceMovement,
   replaceReferral,
-  withdrawAllLiveRequestsForReferrer,
+  endedBedSearch,
+  releaseMovementBed,
 };
 export type ReferralSendEventHelpers = typeof REFERRAL_SEND_EVENT_HELPERS;
 
