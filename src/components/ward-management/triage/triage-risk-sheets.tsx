@@ -114,8 +114,30 @@ function Value({ value }: { value: DocValue }) {
 
 function Block({ block }: { block: DocBlock }) {
   if (block.kind === "facts")
-    return <Facts rows={block.rows.map(([label, value]) => [label, <Value key={label} value={value} />] as const)} />;
-  if (block.kind === "missing") return <p className={styles.missing}>{block.text}</p>;
+    return (
+      <Facts
+        rows={block.rows.map(
+          ([label, value]) =>
+            [
+              label,
+              // A value with nothing recorded is marked so the printed copy can grey the whole line.
+              value.every((bit) => typeof bit !== "string") ? (
+                <span key={label} data-wf-print-blank="">
+                  <Value value={value} />
+                </span>
+              ) : (
+                <Value key={label} value={value} />
+              ),
+            ] as const,
+        )}
+      />
+    );
+  if (block.kind === "missing")
+    return (
+      <p className={styles.missing} data-wf-print-blank="">
+        {block.text}
+      </p>
+    );
   if (block.kind === "tags")
     return (
       <ul className={styles.docTags} aria-label={block.label}>
@@ -214,6 +236,8 @@ export function SummaryDocument({
         data-capped={full ? undefined : ""}
         aria-labelledby="triage-doc-title"
         data-testid="triage-summary-document"
+        data-print-output
+        data-wf-print-doc="triage"
       >
         <div className={styles.docTop}>
           <div className={styles.grow}>
