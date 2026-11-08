@@ -1116,6 +1116,7 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
                 <Avatar
                   name={deskProfile.name}
                   initials={deskProfile.initials}
+                  size="lg"
                   online
                   decorative
                   className={styles.avatar}

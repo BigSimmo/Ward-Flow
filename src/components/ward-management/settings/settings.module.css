@@ -840,6 +840,15 @@
   padding: 3px 0 3px 2px; /* room for the avatar's 2px ring and dot */
 }
 
+/* On the slate band the page-coloured ring read as a white (or black) halo. A soft light ring
+   instead, and the online dot cut out of the band colour. */
+.phoneWho .avatar {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--wf-hero-ink) 24%, transparent);
+}
+.phoneWho .avatar > span:last-child:not(:first-child) {
+  box-shadow: 0 0 0 2px var(--wf-hero-1);
+}
+
 /* Find a setting sits on the page here, not on the band: page ink and a 44px box. */
 .phoneFind .find {
   width: 100%;
@@ -1152,6 +1161,12 @@
   color: var(--wf-hero-ink);
   font: 500 var(--wf-fs-12) / 1 var(--wf-font);
   white-space: nowrap;
+}
+
+/* Centre the chip on the name row (3px padding + 32px avatar + 3px = 38px), not the hero's 28px
+   eyebrow line it sits in. */
+.phoneProfileChip {
+  margin-top: calc((38px - 28px) / 2);
 }
 
 /* v10 phone sheets: the switch alone shows its state; the On or Off word stays for wider screens
