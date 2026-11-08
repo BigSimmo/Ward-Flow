@@ -4,7 +4,8 @@ import { useMemo, useState } from "react";
 import { PhoneCall, X } from "lucide-react";
 
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { formatInstant } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
+import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { shiftConfirmations } from "@/components/ward-management/capacity/shift-confirmations";
 import {
   Button,
@@ -46,7 +47,7 @@ function laterAt(step: LaterStep, now: number): number {
  */
 export function ToolCallLog({ onNavigate }: { onNavigate: () => void }) {
   void onNavigate;
-  const { units } = useWardFlowSelect("units");
+  const { units, admissions, bedReleases } = useWardFlowSelect("units", "admissions", "bedReleases");
   const now = useWardFlowClock();
   const log = useCallLog();
 
@@ -80,10 +81,13 @@ export function ToolCallLog({ onNavigate }: { onNavigate: () => void }) {
   const hiddenWards = foldHidden(wards.length, WARD_LIMIT);
   const wardLabel = ward ? (names.get(ward.id) ?? ward.name) : "";
 
-  const bedAt = outcome === "later" ? laterAt(step, now) : undefined;
+  // Only times still today: past midnight is not "later today" (review, 8 Nov 2026).
+  const steps = LATER_STEPS.filter((id) => dayOf(laterAt(id, now)) === dayOf(now));
+  const chosenStep = steps.includes(step) ? step : steps[0];
+  const bedAt = outcome === "later" && chosenStep ? laterAt(chosenStep, now) : undefined;
   // A ring-back fits only when there is something to chase.
   const offersRingBack = outcome === "later" || outcome === "no-answer";
-  const ringAt = outcome === "later" ? bedAt! : now + 30;
+  const ringAt = outcome === "later" && bedAt !== undefined ? bedAt : now + 30;
   const missing = !ward ? "Pick a ward" : !outcome ? "Pick what the ward said" : undefined;
 
   function save() {
@@ -93,13 +97,14 @@ export function ToolCallLog({ onNavigate }: { onNavigate: () => void }) {
       addReminder({ kind: "ward", targetId: ward.id, targetLabel: wardLabel, reason: "Call back", dueAt: ringAt });
     }
     setSaved(
-      `Saved: ${wardLabel}, ${OUTCOME_WORDS[outcome].toLowerCase()}${offersRingBack && ringBack ? `. Ring-back set for ${formatInstant(ringAt)}` : ""}.`,
+      `Saved: ${wardLabel}, ${OUTCOME_WORDS[outcome].toLowerCase()}${offersRingBack && ringBack ? `. Ring-back set for ${formatInstantWithDay(ringAt, now)}` : ""}.`,
     );
     setWardId(null);
     setOutcome(null);
   }
 
-  const free = ward?.allocatable.value ?? 0;
+  // The same Ready count as the Capacity page, never the raw ward observation (review, 8 Nov 2026).
+  const free = ward ? readyBedsNow(ward, admissions, bedReleases) : 0;
   const detail: Record<CallOutcome, string> = {
     "as-shown": ward ? `The board shows ${free} free` : "The board is right",
     later: "One should free up today",
@@ -144,6 +149,7 @@ export function ToolCallLog({ onNavigate }: { onNavigate: () => void }) {
               className={styles.option}
               checked={outcome === id}
               onChange={() => setOutcome(id)}
+              disabledReason={id === "later" && steps.length === 0 ? "Too late in the day" : undefined}
               label={
                 <span className={styles.optionText}>
                   <strong>{OUTCOME_WORDS[id]}</strong>
@@ -159,8 +165,8 @@ export function ToolCallLog({ onNavigate }: { onNavigate: () => void }) {
         <div className={remind.step}>
           <span className={remind.label}>About when</span>
           <Segmented
-            items={LATER_STEPS.map((id) => ({ id, label: formatInstant(laterAt(id, now)) }))}
-            value={step}
+            items={steps.map((id) => ({ id, label: formatInstantWithDay(laterAt(id, now), now) }))}
+            value={chosenStep ?? step}
             onChange={setStep}
             label="About when"
             size="md"
@@ -175,7 +181,7 @@ export function ToolCallLog({ onNavigate }: { onNavigate: () => void }) {
           onCheckedChange={setRingBack}
           label={
             <>
-              Remind me to ring back at <span className={remind.mono}>{formatInstant(ringAt)}</span>
+              Remind me to ring back at <span className={remind.mono}>{formatInstantWithDay(ringAt, now)}</span>
             </>
           }
         />
@@ -202,12 +208,12 @@ export function ToolCallLog({ onNavigate }: { onNavigate: () => void }) {
           <ul className={remind.list}>
             {log.map((entry) => (
               <li key={entry.id} className={remind.reminder}>
-                <span className={`${remind.time} ${remind.mono}`}>{formatInstant(entry.at)}</span>
+                <span className={`${remind.time} ${remind.mono}`}>{formatInstantWithDay(entry.at, now)}</span>
                 <span className={remind.what}>
                   <span>{entry.wardLabel}</span>
                   <span className={remind.meta}>
                     {OUTCOME_WORDS[entry.outcome]}
-                    {entry.bedAt !== undefined ? `, about ${formatInstant(entry.bedAt)}` : ""}
+                    {entry.bedAt !== undefined ? `, about ${formatInstantWithDay(entry.bedAt, now)}` : ""}
                   </span>
                 </span>
                 <Button
@@ -215,7 +221,7 @@ export function ToolCallLog({ onNavigate }: { onNavigate: () => void }) {
                   size="sm"
                   icon={X}
                   onClick={() => removeCallLog(entry.id)}
-                  aria-label={`Remove call to ${entry.wardLabel} at ${formatInstant(entry.at)}`}
+                  aria-label={`Remove call to ${entry.wardLabel} at ${formatInstantWithDay(entry.at, now)}`}
                 >
                   Remove
                 </Button>

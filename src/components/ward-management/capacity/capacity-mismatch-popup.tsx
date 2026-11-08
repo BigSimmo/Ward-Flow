@@ -17,7 +17,9 @@ import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import type { KindForecast } from "@/components/ward-management/forecast/forecast-by-kind";
 import type { Unit } from "@/components/ward-management/ward-model";
 
+import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { bedKindBreakdown, type BedKindGap } from "./capacity-derivations";
+import { FREE_THE_RIGHT_BED_NOTE, dischargesThatFree, freeTheRightBedTitle } from "./free-the-right-bed";
 import { gapWords } from "./capacity-range-line";
 import styles from "./capacity-page.module.css";
 
@@ -47,7 +49,7 @@ export function MismatchPopup({
   /** The same wards the card's figures count, so the ready-bed list adds up to "Ready that fit". */
   units: readonly Unit[];
 }) {
-  const { movements, admissions } = useWardFlowSelect("movements", "admissions");
+  const { movements, admissions, bedReleases } = useWardFlowSelect("movements", "admissions", "bedReleases");
   const patientOf = usePatientOf();
   const canOpen = useCanOpenHref();
   const detail = useMemo(
@@ -55,6 +57,11 @@ export function MismatchPopup({
     [row, movements, units, admissions],
   );
   const short = (row?.gap ?? 0) < 0;
+  // Free the right bed (Josh, 8 Nov 2026): a short type lists today's discharges that free one.
+  const freeing = useMemo(
+    () => (row && short ? dischargesThatFree(row.id, bedReleases, units, admissions, now) : []),
+    [row, short, bedReleases, units, admissions, now],
+  );
   return (
     <PanelDrawer
       open={row !== null}
@@ -146,6 +153,40 @@ export function MismatchPopup({
               </ul>
             )}
           </section>
+
+          {short ? (
+            <section aria-labelledby="mm-pop-freeing" className={styles.popSection}>
+              <h3 id="mm-pop-freeing" className={styles.popHead}>
+                {freeTheRightBedTitle(title)} <span className={styles.popCount}>{freeing.length}</span>
+              </h3>
+              {freeing.length === 0 ? (
+                <p className={styles.popEmpty}>None planned for the rest of today.</p>
+              ) : (
+                <ul className={styles.popList} data-testid="capacity-free-the-right-bed">
+                  {freeing.map((item) => (
+                    <li key={item.releaseId}>
+                      <span className={styles.popRow}>
+                        <span className={styles.popMain}>
+                          <span className={styles.popName}>
+                            <SpelledCodes text={item.unit.name} />
+                          </span>
+                          <span className={styles.mutedXs}>
+                            {item.heldUp
+                              ? `Held up: ${item.heldUp}`
+                              : (item.waitingOn ??
+                                (item.confirmed ? "Confirmed by the ward" : "Expected, nothing outstanding"))}{" "}
+                            · reported {formatInstantWithDay(item.reportedAt, now)}
+                          </span>
+                        </span>
+                        <span className={styles.popWait}>{formatInstantWithDay(item.expectedAt, now)}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <p className={styles.popEmpty}>{FREE_THE_RIGHT_BED_NOTE}</p>
+            </section>
+          ) : null}
 
           <section aria-labelledby="mm-pop-waiting" className={styles.popSection}>
             <h3 id="mm-pop-waiting" className={styles.popHead}>

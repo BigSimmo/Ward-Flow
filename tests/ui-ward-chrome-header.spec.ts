@@ -208,8 +208,10 @@ const OPENERS: ReadonlyArray<readonly [string, string, string]> = [
  * on every phone page, and Tools is a row in the phone menu that the bar's Menu button opens.
  */
 const PHONE_BAR_MAX_WIDTH = 743;
+// Josh, 8 Nov 2026: the bed coordinator's dock carries Tools in Activity's place; Activity opens
+// from its row in the phone Menu.
 const PHONE_DOCK_BUTTONS: Readonly<Record<string, string>> = {
-  "ward-bar-activity-trigger": "ward-phone-menu-activity",
+  "ward-bar-tools-trigger": "ward-phone-dock-tools",
 };
 // One Alerts queue (D-61): the bed coordinator's dock carries a Tasks link (Q177) to the Alerts
 // screen, not a drawer button, so on a phone the bar's Alerts quick look has no opener.
@@ -221,7 +223,7 @@ function phoneOpens(testId: string, width: number): boolean {
   return width > PHONE_BAR_MAX_WIDTH || !(testId in PHONE_DOCK_LINKS);
 }
 const PHONE_MENU_ROWS: Readonly<Record<string, string>> = {
-  "ward-bar-tools-trigger": "ward-phone-menu-tools",
+  "ward-bar-activity-trigger": "ward-phone-menu-activity-row",
 };
 const PHONE_MENU: readonly [string, string, string] = ["ward-bar-phone-menu", "ward-phone-menu", "the phone Menu"];
 
@@ -234,10 +236,12 @@ test.describe("@mockup phone navigation preparation", () => {
       "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1",
   });
   for (const destination of [
-    { from: "dock", path: "/ward-flow/referrals", heading: /^Referrals$/ },
+    // Josh, 8 Nov 2026: Referrals left the coordinator's dock for the Menu, and the dock's Capacity
+    // tab now opens Capacity at a glance, so both pages are reached from the Menu here.
+    { from: "menu", path: "/ward-flow/referrals", heading: /^Referrals$/ },
     { from: "menu", path: "/ward-flow/capacity", heading: /^Capacity,/ },
   ] as const) {
-    test(`phone ${destination.from} prepares the complete page before the tap`, async ({ page, request }) => {
+    test(`phone ${destination.from} prepares ${destination.path} before the tap`, async ({ page, request }) => {
       const identity = await request.get("/api/local-project-id");
       test.skip(
         (await identity.json()).localServer.runtimeMode !== "production",
@@ -862,7 +866,8 @@ test("@mockup drawer workspace keeps All figures focus and every alert reachable
   await expect(toolPage).toHaveCount(0);
   await expect(figures).toBeFocused();
   await page.keyboard.press("Escape");
-  await expect(page.getByTestId(PHONE_MENU[0])).toBeFocused();
+  // Josh, 8 Nov 2026: Tools opens from the coordinator's dock, so focus returns to that button.
+  await expect(page.getByTestId("ward-phone-dock-tools")).toBeFocused();
 
   // One Alerts queue (D-61): the bed coordinator's dock carries Alerts (Q177), which opens the Alerts
   // drawer on a phone as on the desktop (Josh, 4 Nov 2026), and the drawer's Open Alerts goes on to

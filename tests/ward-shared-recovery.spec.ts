@@ -183,11 +183,18 @@ test("Activity Undo: a desk reviews its own bed closure and waits for the server
   if (phone) await expect(page.getByTestId("ward-drawer-reopen-bed")).toBeVisible();
   else await expect(page.getByTestId(bedId!)).toHaveAttribute("data-state", "closed");
   await page.getByRole("button", { name: "Close bed drawer", exact: true }).click();
-  await page
-    .getByRole("button", { name: /^Activity(?:\b|$)/u })
-    .filter({ visible: true })
-    .first()
-    .click();
+  // Josh, 8 Nov 2026: the coordinator's phone dock carries Tools in Activity's place, so a phone
+  // opens Activity from the Menu's Activity row.
+  if (phone) {
+    await page.getByRole("button", { name: "Menu", exact: true }).filter({ visible: true }).first().click();
+    await page.getByTestId("ward-phone-menu-activity-row").click();
+  } else {
+    await page
+      .getByRole("button", { name: /^Activity(?:\b|$)/u })
+      .filter({ visible: true })
+      .first()
+      .click();
+  }
   const activity = page.getByTestId("ward-bar-activity-sheet");
   await activity.getByRole("tab", { name: /^Recent/u }).click();
   const own = activity.locator(`[data-own-command-id="${commandId}"]`);

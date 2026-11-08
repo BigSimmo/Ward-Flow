@@ -344,11 +344,15 @@ export function Sheet({
           (target): target is HTMLElement => Boolean(target?.isConnected),
         );
       const resolveConnectedRestoreTarget = () => restoreCandidates()[0] ?? null;
-      const restoreFocus = () => {
+      // The first try leaves the shell's fallback out: a target can refuse focus for a frame while
+      // the page restyles after the panel goes (the phone dock stays hidden by its open-sheet rule
+      // until then), and the fallback would otherwise win for good. The retry below includes it.
+      const restoreFocus = (allowFallback = true) => {
         const active = document.activeElement;
         const lost = active == null || active === document.body || !active.isConnected;
         // The shell's fallback only ever picks up focus that has fallen to the page.
-        const fallbacks = lost ? Array.from(document.querySelectorAll<HTMLElement>("[data-wf-focus-fallback]")) : [];
+        const fallbacks =
+          lost && allowFallback ? Array.from(document.querySelectorAll<HTMLElement>("[data-wf-focus-fallback]")) : [];
         for (const target of [...restoreCandidates(), ...fallbacks]) {
           if (!canRestoreFocusTo(target)) continue;
           target.focus({ preventScroll: true });
@@ -390,7 +394,7 @@ export function Sheet({
         // without it the new sheet has to fight the restore back. Handing
         // focus back down to a sheet this one was stacked on still restores.
         if (restoreTarget && !canRestoreFocusTo(restoreTarget)) return;
-        restoreFocus();
+        restoreFocus(false);
         restoreTimers.timeout = window.setTimeout(() => {
           restoreTimers.timeout = null;
           if (typeof document === "undefined") return;

@@ -10,7 +10,7 @@ import { createBrowserStore } from "@/lib/client-store-factory";
 import { onWardSessionEnd } from "@/components/ward-management/ward-browser-data";
 import type { Instant } from "@/components/ward-management/ward-clock";
 
-export const CALL_OUTCOMES = ["as-shown", "later", "none", "no-answer"] as const;
+const CALL_OUTCOMES = ["as-shown", "later", "none", "no-answer"] as const;
 export type CallOutcome = (typeof CALL_OUTCOMES)[number];
 
 export type CallLogEntry = {

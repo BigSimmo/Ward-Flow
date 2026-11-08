@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, type RefObject } from "react";
+import { useMemo, useState, type RefObject } from "react";
 import Link from "next/link";
-import { ArrowUpRight, ChevronRight, PhoneOutgoing, X } from "lucide-react";
+import { ArrowUpRight, ChevronLeft, ChevronRight, PhoneOutgoing, X } from "lucide-react";
 
 import { Sheet, durMinutes } from "@/components/wf";
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
-import { formatInstant } from "@/components/ward-management/ward-clock";
+import { dayOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
@@ -17,12 +17,17 @@ import {
   bedsFreeingTodayTotal,
 } from "@/components/ward-management/capacity/capacity-derivations";
 import { shiftConfirmations } from "@/components/ward-management/capacity/shift-confirmations";
+import {
+  FREE_THE_RIGHT_BED_NOTE,
+  dischargesThatFree,
+  freeTheRightBedTitle,
+} from "@/components/ward-management/capacity/free-the-right-bed";
+import type { BedKindId } from "@/components/ward-management/capacity/capacity-derivations";
 import { BED_KIND_LABEL, bedKindOfBed } from "@/components/ward-management/forecast/forecast-by-kind";
 import { requestToolsTool } from "@/components/ward-management/tools/ward-tools-open";
 import styles from "./next-capacity-glance.module.css";
 
 const CAPACITY_HREF = "/ward-flow/capacity";
-const DAY = 24 * 60;
 
 /**
  * Capacity at a glance (Josh, 8 Nov 2026: "a more phone optimised popup screen like for activity or
@@ -84,10 +89,10 @@ function GlanceBody({ onClose }: { onClose: () => void }) {
 
   // Planned discharges today, grouped by the hour they are expected: the wards and bed types freeing.
   const timeline = useMemo(() => {
-    const today = Math.floor(now / DAY);
+    const today = dayOf(now);
     const byHour = new Map<number, { n: number; wards: Set<string>; kinds: Set<string> }>();
     for (const release of bedReleases ?? []) {
-      if (release.state === "discharged" || Math.floor(release.expectedAt / DAY) !== today) continue;
+      if (release.state === "discharged" || dayOf(release.expectedAt) !== today) continue;
       const unit = units.find((item) => item.id === release.unitId);
       if (!unit) continue;
       const hour = Math.floor(release.expectedAt / 60) * 60;
@@ -110,6 +115,72 @@ function GlanceBody({ onClose }: { onClose: () => void }) {
   const quiet = rows.filter((row) => row.waiting === 0);
   const placing = rows.filter((row) => row.waiting > 0);
   const chase = confirm.waiting[0];
+  // Free the right bed (Josh, 8 Nov 2026): a short bed type opens today's discharges that free one.
+  const [plan, setPlan] = useState<BedKindId | null>(null);
+  const freeingFor = (kind: BedKindId) => dischargesThatFree(kind, bedReleases, units, admissions, now);
+
+  if (plan) {
+    const rowsForPlan = freeingFor(plan);
+    return (
+      <div className={styles.plan} data-testid="ward-phone-capacity-plan">
+        <div className={styles.planTop}>
+          <button type="button" className={styles.back} onClick={() => setPlan(null)}>
+            <ChevronLeft aria-hidden="true" strokeWidth={2} />
+            Capacity
+          </button>
+          <button type="button" className={styles.closeLight} onClick={onClose} aria-label="Close">
+            <X aria-hidden="true" strokeWidth={2} />
+          </button>
+        </div>
+        <h2 className={styles.planTitle}>{freeTheRightBedTitle(BED_KIND_LABEL[plan])}</h2>
+        <div className={styles.card}>
+          {rowsForPlan.length === 0 ? (
+            <p className={styles.empty}>None planned for the rest of today.</p>
+          ) : (
+            <ul className={styles.planList}>
+              {rowsForPlan.map((row) => (
+                <li key={row.releaseId} className={styles.planRow}>
+                  <span className={styles.time}>{formatInstantWithDay(row.expectedAt, now)}</span>
+                  <span className={styles.where}>
+                    <b>{row.unit.name}</b>
+                    <span>
+                      {row.heldUp ? (
+                        <>
+                          <span className={styles.dot} aria-hidden="true" /> Held up: {row.heldUp}
+                        </>
+                      ) : row.waitingOn ? (
+                        row.waitingOn
+                      ) : row.confirmed ? (
+                        "Confirmed by the ward"
+                      ) : (
+                        "Expected, nothing outstanding"
+                      )}
+                    </span>
+                    <span>
+                      Reported <span className={styles.mono}>{formatInstantWithDay(row.reportedAt, now)}</span>
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    className={styles.call}
+                    aria-label={`Call and log, ${row.unit.name}`}
+                    onClick={(event) => {
+                      onClose();
+                      requestToolsTool("call-log", event.currentTarget);
+                    }}
+                  >
+                    <PhoneOutgoing aria-hidden="true" strokeWidth={2} />
+                    Call
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <p className={styles.planNote}>{FREE_THE_RIGHT_BED_NOTE}</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -177,6 +248,22 @@ function GlanceBody({ onClose }: { onClose: () => void }) {
                         <span className={styles.mono}>{durMinutes(Math.max(0, now - next.openedAt))}</span> waiting
                       </span>
                     ) : null}
+                    {(() => {
+                      if (row.gap >= 0) return null;
+                      const count = freeingFor(row.id).length;
+                      if (count === 0) return null;
+                      return (
+                        <button
+                          type="button"
+                          className={styles.planLink}
+                          onClick={() => setPlan(row.id)}
+                          data-testid={`ward-phone-capacity-plan-${row.id}`}
+                        >
+                          {count} planned {count === 1 ? "discharge" : "discharges"} could free one
+                          <ChevronRight aria-hidden="true" strokeWidth={2} />
+                        </button>
+                      );
+                    })()}
                   </div>
                   {href && canOpen(href) && who ? (
                     <Link
@@ -211,7 +298,7 @@ function GlanceBody({ onClose }: { onClose: () => void }) {
             <ol className={styles.timeline}>
               {timeline.map(([hour, slot]) => (
                 <li key={hour}>
-                  <span className={styles.time}>{formatInstant(hour)}</span>
+                  <span className={styles.time}>{formatInstantWithDay(hour, now)}</span>
                   <span className={styles.rail} aria-hidden="true" />
                   <span className={styles.where}>
                     <b>{[...slot.wards].join(", ")}</b>
@@ -235,7 +322,8 @@ function GlanceBody({ onClose }: { onClose: () => void }) {
               <span className={styles.dot} aria-hidden="true" />
               {chase.name}
             </b>
-            Last confirmed <span className={styles.mono}>{formatInstant(chase.allocatable.confirmedAt)}</span>
+            Last confirmed{" "}
+            <span className={styles.mono}>{formatInstantWithDay(chase.allocatable.confirmedAt, now)}</span>
             {confirm.waiting.length > 1 ? ` · ${confirm.waiting.length - 1} more` : ""}
           </span>
           <button

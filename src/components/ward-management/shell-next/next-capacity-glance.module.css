@@ -438,3 +438,130 @@
   width: 15px;
   height: 15px;
 }
+
+/* Free the right bed (Josh, 8 Nov 2026): a short type's link, and its page inside the sheet. */
+.planLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  justify-self: start;
+  min-height: 32px;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--wf-accent-ink);
+  font: inherit;
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.planLink svg {
+  width: 14px;
+  height: 14px;
+  flex: none;
+}
+
+.plan {
+  display: grid;
+  gap: 12px;
+  padding: 8px 16px 0;
+}
+
+.planTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: 40px;
+  margin-left: -8px;
+  padding: 0 8px 0 4px;
+  border: 0;
+  border-radius: var(--wf-r-sm);
+  background: transparent;
+  color: var(--wf-accent-ink);
+  font: inherit;
+  font-size: var(--wf-fs-16);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.back svg {
+  width: 20px;
+  height: 20px;
+}
+
+.closeLight {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  margin-right: -8px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--wf-surface-3, var(--wf-hover));
+  color: var(--wf-ink-1);
+  cursor: pointer;
+}
+
+.closeLight svg {
+  width: 18px;
+  height: 18px;
+}
+
+.planTitle {
+  margin: 0 2px;
+  font-size: var(--wf-fs-20);
+  font-weight: 650;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.planList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.planRow {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 10px;
+  padding: 12px 14px;
+}
+
+.planRow + .planRow {
+  border-top: 1px solid var(--wf-line);
+}
+
+.planRow .time {
+  align-self: start;
+  padding-top: 2px;
+}
+
+.planRow .where > span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.planNote {
+  margin: 0 4px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.back:focus-visible,
+.closeLight:focus-visible,
+.planLink:focus-visible {
+  outline: 2px solid var(--wf-accent);
+  outline-offset: 2px;
+}
