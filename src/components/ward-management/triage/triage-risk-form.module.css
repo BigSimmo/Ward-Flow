@@ -2166,3 +2166,70 @@ button.signCheckRow:focus-visible {
   color: var(--wf-ink-2);
   overflow-wrap: anywhere;
 }
+
+/* Build safety plan (9 Nov 2026): the button and its one quiet line, above the plan box. */
+.builderLine {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+}
+
+/* Means safety (9 Nov 2026): one row per means, Asked first, then what was found and who holds it. */
+.means {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.meansRow {
+  display: grid;
+  grid-template-columns: minmax(8rem, 10rem) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  min-width: 0;
+}
+
+.meansRow > .nudgeLine {
+  grid-column: 2;
+}
+
+.meansLabel {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 6px;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-1);
+}
+
+.meansAnswers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.meansWho {
+  flex: 1 1 10rem;
+  min-width: 0;
+}
+
+@media (max-width: 46.4375rem) {
+  .meansRow {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .meansRow > .nudgeLine {
+    grid-column: auto;
+  }
+
+  .meansLabel {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: var(--wf-s-2);
+    padding-top: 0;
+  }
+}

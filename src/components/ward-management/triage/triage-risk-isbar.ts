@@ -8,6 +8,7 @@ import { FACTOR_NAME, SIGNED_IN, TIER_LONG } from "./triage-risk-data";
 import { allFactors, mseLines, type TriageState } from "./triage-risk-state";
 import { summaryModel, type DocValue, type SignedBy, type SummaryModel } from "./triage-risk-summary";
 import { parseHeadedText } from "./triage-risk-text";
+import { followUpText } from "./triage-risk-safety";
 
 const NONE = "–";
 const RECENT_DISCHARGE = "other.now.recdis";
@@ -53,6 +54,7 @@ export function isbarText(state: TriageState, signed?: SignedBy): string {
   const pastFlags = present("bg").map((f) => f.name);
   const nowFlags = present("now").filter((f) => f.key !== RECENT_DISCHARGE);
   const discharged = state.f[RECENT_DISCHARGE] === "y";
+  const followUp = followUpText(state);
   const protective = parseHeadedText(state.text.rp).find(([heading]) => heading.startsWith("Protective"))?.[1];
   const stream = fact(model, "1", "Stream");
   const program = fact(model, "1", "Program");
@@ -68,6 +70,6 @@ export function isbarText(state: TriageState, signed?: SignedBy): string {
     `O Observations: ${mental.length ? mental.join("; ") : NONE}`,
     `B Background: Past risk ${pastFlags.length ? pastFlags.join(", ") : NONE}${discharged ? ` · ${FACTOR_NAME[RECENT_DISCHARGE]}` : ""}`,
     `A Assessment: Current risk ${nowFlags.length ? nowFlags.map((f) => f.name).join(", ") : NONE}${protective?.trim() ? ` · Protective: ${protective.trim()}` : ""}`,
-    `R Recommendation: Actions ${or(tags(model, "4", "Actions"))} · Review risk by ${or(fact(model, "6", "Review risk by"))}`,
+    `R Recommendation: Actions ${or(tags(model, "4", "Actions"))} · Review risk by ${or(fact(model, "6", "Review risk by"))}${followUp ? ` · Follow-up ${followUp}` : ""}`,
   ].join("\n");
 }

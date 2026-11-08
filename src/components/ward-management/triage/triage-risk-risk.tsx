@@ -53,6 +53,16 @@ import { labelOf, PSOLIS_ACTIONS } from "./triage-psolis-lists";
 import { UrgencyHint } from "./triage-risk-decision";
 import { autoRows, Choice, GuideBox, MultiChips, Reveal, Row, useDisclosure, type FormApi } from "./triage-risk-parts";
 import { useHeadedBox } from "./triage-risk-review";
+import {
+  MEANS_NOT_ASKED,
+  MEANS_ROWS,
+  MEANS_STATUS,
+  MEANS_STILL_OPEN,
+  meansPrefill,
+  meansSafetyShown,
+  meansStillOpen,
+} from "./triage-risk-safety";
+import { SafetyPlanDrawer } from "./triage-risk-safety-plan";
 import { fdvOutcome, restConfirmed, restSets, sinceLastText, type TriageState } from "./triage-risk-state";
 import { boxLine, hasPhrase, wordCount } from "./triage-risk-text";
 import styles from "./triage-risk-form.module.css";
@@ -244,6 +254,76 @@ function Covers({ form, kind }: { form: FormApi; kind: "now" | "bg" }) {
           </Button>
         )
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * Means safety (9 Nov 2026): once Plan or intent, or Access to means, is marked present. Each row is
+ * Asked first, then what was found and who holds it. An unanswered row reads Not asked yet, never
+ * No; Still accessible brings a quiet prompt, never a block. React state only.
+ */
+function MeansSafety({ form }: { form: FormApi }) {
+  const { state, update, setText } = form;
+  type Answer = TriageState["means"][string];
+  const answer = (id: string, change: (a: Answer) => Answer | null) =>
+    update((s) => {
+      const means = { ...s.means };
+      const next = change(means[id] ?? { asked: false, status: null });
+      if (next) means[id] = next;
+      else delete means[id];
+      return { ...s, means };
+    });
+  return (
+    <div className={styles.means} data-testid="triage-means-safety">
+      <div className={styles.subHead}>
+        <h3 className={styles.subTitle}>Means safety</h3>
+        <span className={styles.quiet}>Ask about each. Unanswered reads Not asked yet.</span>
+      </div>
+      {MEANS_ROWS.map(([id, label, key]) => {
+        const row = state.means[id];
+        return (
+          <div key={id} className={styles.meansRow} data-means={id}>
+            <span className={styles.meansLabel}>
+              <b>{label}</b>
+              {row?.asked ? null : <span className={styles.quiet}>{MEANS_NOT_ASKED}</span>}
+            </span>
+            <span className={styles.meansAnswers}>
+              <FilterChip
+                className={phoneRows.chip}
+                pressed={Boolean(row?.asked)}
+                onPressedChange={(on) => answer(id, (a) => (on ? { ...a, asked: true } : null))}
+              >
+                <span aria-hidden="true">Asked</span>
+                <SrOnly>{`Asked about ${label.toLowerCase()}`}</SrOnly>
+              </FilterChip>
+              {row?.asked ? (
+                <>
+                  <Choice
+                    label={`${label}: what was found`}
+                    options={MEANS_STATUS}
+                    value={row.status}
+                    onChange={(v) => answer(id, (a) => ({ ...a, status: v }))}
+                  />
+                  <TextInput
+                    boxClassName={styles.meansWho}
+                    aria-label={`${label}: who, where`}
+                    placeholder="Who, where"
+                    value={state.text[key]}
+                    onChange={(event) => setText(key, event.target.value)}
+                  />
+                </>
+              ) : null}
+            </span>
+            {meansStillOpen(state, id) ? (
+              <p className={styles.nudgeLine} data-testid="triage-means-open">
+                <StatusGlyph tone="neutral" size={8} />
+                <span>{MEANS_STILL_OPEN}</span>
+              </p>
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -568,6 +648,11 @@ export function RiskBody({ form, onAllFactors }: { form: FormApi; onAllFactors: 
           />
         </div>
       ) : null}
+      {meansSafetyShown(state) ? (
+        <Reveal>
+          <MeansSafety form={form} />
+        </Reveal>
+      ) : null}
       {since ? (
         <p className={styles.since}>
           <Icon icon={Info} size={14} />
@@ -662,8 +747,23 @@ export function PlanBody({ form }: { form: FormApi }) {
   const planRef = useRef<HTMLTextAreaElement>(null);
   const box = useHeadedBox(form, "rp", planRef);
   const urgent = state.urgency === "A" || state.urgency === "B";
+  const [building, setBuilding] = useState(false);
   return (
     <>
+      <div className={styles.builderLine}>
+        <Button size="sm" className={phoneRows.chip} onClick={() => setBuilding(true)} aria-haspopup="dialog">
+          Build safety plan
+        </Button>
+        <span className={styles.quiet}>
+          Six steps in the person&apos;s words, added under the safety plan headings.
+        </span>
+      </div>
+      <SafetyPlanDrawer
+        form={form}
+        open={building}
+        onClose={() => setBuilding(false)}
+        prefillSafer={meansPrefill(state)}
+      />
       <GuideBox
         groups={GUIDES.rp}
         text={state.text.rp}
