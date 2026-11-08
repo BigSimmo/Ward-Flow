@@ -20,6 +20,7 @@ import { deskMayAct, deskOpens, EVERY_LOGIN, howToFor, type WardEventType } from
 import type { WardTourRole } from "./ward-help-store";
 import { MORE_JOBS, SCREEN_TOURS } from "./ward-help-screen-tours";
 import { DESK_JOBS, ED_ROW_ACTIONS, MOVEMENT_ROW } from "./ward-help-howto-desks";
+import { CRAWL_JOBS } from "./ward-help-howto-more";
 import { HELP_SYNONYMS } from "./ward-help-synonyms";
 import { nearestWord } from "./ward-help-typo";
 import type { TourDevice, TourTarget } from "./ward-tour-steps";
@@ -1001,7 +1002,7 @@ const JOBS: readonly HowTo[] = [
 ];
 
 /** The desks' jobs, the jobs added with the walk-rounds, the desk jobs added later, then the walks round each screen. */
-export const HOW_TOS: readonly HowTo[] = [...JOBS, ...MORE_JOBS, ...DESK_JOBS, ...SCREEN_TOURS];
+export const HOW_TOS: readonly HowTo[] = [...JOBS, ...MORE_JOBS, ...DESK_JOBS, ...CRAWL_JOBS, ...SCREEN_TOURS];
 
 /* Matching ----------------------------------------------------------------------------------- */
 
