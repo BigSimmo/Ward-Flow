@@ -20,18 +20,6 @@ import { useBedMeetingRecord } from "@/components/ward-management/bed-meeting/us
 
 import styles from "./referral-page.module.css";
 
-/** What the wards have said so far: nothing yet, or how many declined and how many are left. */
-function offerStatus(movement: Movement): { text: string; tone: "warning" | "neutral" } {
-  const asked = movement.referredUnitIds.length;
-  const declined = movement.declines.filter((decline) => movement.referredUnitIds.includes(decline.unitId)).length;
-  if (declined === 0) return { text: asked === 1 ? "Awaiting answer" : `Awaiting ${asked} answers`, tone: "neutral" };
-  const left = asked - declined;
-  return {
-    text: left > 0 ? `${declined} declined · ${left} to answer` : `All ${declined} declined`,
-    tone: "warning",
-  };
-}
-
 /**
  * The ward offers sent straight from Home, as a table instead of loose lines: patient, the ward
  * asked, how long it has waited and what the wards have answered. Each row opens the movement,
@@ -118,7 +106,6 @@ export function WardOffersTable({
         <tbody>
           {offers.map((movement) => {
             const who = resolveSubjectPatient(movement, resolverState);
-            const status = offerStatus(movement);
             const declined = new Set(movement.declines.map((decline) => decline.unitId));
             const toAnswer = movement.referredUnitIds.find((unitId) => !declined.has(unitId));
             const chased = openMeetingAction(movement.meetingActions, "chase_ward");
@@ -147,7 +134,6 @@ export function WardOffersTable({
                       );
                     })}
                   </span>
-                  <span className="sr-only">{status.text}</span>
                 </td>
                 <td className={styles.offerWait}>
                   <span className={styles.mono}>{durMinutes(waited)}</span>
