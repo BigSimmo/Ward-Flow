@@ -35,14 +35,13 @@
     gap: 4pt 12pt;
     margin-bottom: 6pt;
     padding-bottom: 4pt;
-    border-bottom: 2pt solid #1f4d7a;
+    border-bottom: 2pt solid currentColor;
   }
 
   .title {
     margin: 0;
     font-size: 13pt;
     font-weight: 700;
-    color: #1f4d7a !important;
   }
 
   .meta {
@@ -95,30 +94,11 @@
     width: 16%;
   }
 
-  /* Colour (Josh, 8 Nov 2026): a navy head row and pale blue alternate beds, the Ward Flow palette. */
+  /* Colour (Josh, 8 Nov 2026) lives in src/app/ward-flow-print.css, with the other printed documents. */
   .table thead th {
-    border-bottom: 0;
-    background: #245a8c !important;
-    color: #fff !important;
+    border-bottom: 1pt solid currentColor;
     font-size: 8pt;
     font-weight: 700;
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-  }
-
-  .table tbody tr:nth-child(even) > * {
-    background: #f4f7fb !important;
-    print-color-adjust: exact;
-    -webkit-print-color-adjust: exact;
-  }
-
-  .table tbody tr:nth-child(even) > * * {
-    background: transparent !important;
-  }
-
-  .table tbody th,
-  .table tbody td {
-    border-bottom-color: #cfdae6;
   }
 
   .table tbody th {
