@@ -449,7 +449,12 @@ export function renderNotABedPanel({
       </div>
       {/* B4 (review 12 Oct 2026): the note and the withdraw disclosure sit outside the pinned
             decision bar so the bar holds only Decline and Accept (or Confirm and Cancel). */}
-      <p className={styles.v10AskNote}>Decline needs a reason first. Accept records the decision only.</p>
+      {/* Live audit, 8 Nov 2026: the note explains the Decline and Accept buttons, so it goes with them
+            once the decision is recorded instead of staying under a panel with no buttons. */}
+      {(edAddressing && edAddressing.state === "queued") ||
+      (communityAddressing && communityAddressing.state === "queued" && !hideCommunityDecision) ? (
+        <p className={styles.v10AskNote}>Decline needs a reason first. Accept records the decision only.</p>
+      ) : null}
       {wholeWithdrawControl}
 
       {lastRejection ? (

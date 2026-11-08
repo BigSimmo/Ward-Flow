@@ -50,6 +50,7 @@ import {
   withheldBar,
   type StatisticsCount,
 } from "./statistics-small-numbers";
+import { SMALL_NUMBER_NOT_SHOWN } from "../ward-access-scope";
 import type { HealthService } from "../ward-model";
 
 /** "Royal Perth Hospital Emergency Department" reads "Royal Perth"; the site code leads the row. */
@@ -371,7 +372,11 @@ function EdsIndexView({
         </HeroTool>
       }
       phone={{
-        title: `${shown(waiting)} open ED movements`,
+        // Live audit, 8 Nov 2026: a withheld count read "not shown open ED movements".
+        title:
+          shown(waiting) === SMALL_NUMBER_NOT_SHOWN
+            ? "Open ED movements not shown"
+            : `${shown(waiting)} open ED movements`,
         sub: `Longest ${waitText(longestRow?.longest ?? null)} · median ${waitText(networkMedian)}`,
         stats: (
           <>
