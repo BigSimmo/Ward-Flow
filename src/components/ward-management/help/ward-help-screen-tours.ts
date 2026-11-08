@@ -328,7 +328,7 @@ const AROUND: readonly Around[] = [
         body: "Act now, flagged urgent and due before the handover. Read Act now first.",
       },
       {
-        target: id("ward-handover-open-promises"),
+        target: [id("ward-handover-open-promises"), id("ward-handover-promises-toggle")],
         title: "Ward promises to chase",
         body: "Times a ward said it would ring back. Chase the overdue ones first.",
       },

@@ -110,7 +110,7 @@ import * as desk from "./handover-desk";
 import { HandoverBeds } from "./handover-beds";
 import { LongStaySummary } from "./long-stay-summary";
 // Closing-the-loop package A (24 Oct 2026): open promises and callbacks carried over.
-import { HandoverOpenPromises } from "./handover-open-promises";
+import { HandoverOpenPromises, promisesHeroNext } from "./handover-open-promises";
 import { HandoverGlance, HandoverHeroCounts, HandoverShiftMenu } from "./handover-glance";
 import { screenColumnsFor } from "./handover-screen-columns";
 import { DEFAULT_PRINT_OPTIONS, HandoverPrintSheet } from "./handover-print-sheet";
@@ -262,6 +262,7 @@ export function HandoverPage() {
   /* view state */
   const [tab, setTab] = useState<HandoverTab>("pts");
   const [sheetOpen, setSheetOpen] = useState(false);
+  const [promisesOpen, setPromisesOpen] = useState(false); // Note 12: hero strip opens the promises card
   const [grouping, setGrouping] = useState<HandoverGrouping>("meet");
   const [sort, setSort] = useState<HandoverSort>("wait");
   const [density, setDensity] = useState<HandoverDensity>("std");
@@ -1016,9 +1017,11 @@ export function HandoverPage() {
     .filter((item) => item.value > 0)
     .map((item) => `${item.value} ${item.word.replace(" on the sheet", "")}`)
     .join(" · ");
+  const promisesNext = promisesHeroNext(referrals, now, promisesOpen, () => setPromisesOpen((open) => !open));
   const hero = (
     <Hero
       level={1}
+      next={promisesNext}
       testId="ward-handover-hero"
       eyebrow="Handover"
       // H-0887: the page heading names the page, not only the count.
@@ -1471,9 +1474,11 @@ export function HandoverPage() {
       data-ward-design="v6"
     >
       {hero}
+      {sheetOpen || !promisesOpen ? null : (
+        <HandoverOpenPromises referrals={referrals} units={units} now={now} layout="page" />
+      )}
       {pastBanner}
       {sheetOpen || tab !== "pts" ? null : siteSignOff}
-      {sheetOpen ? null : <HandoverOpenPromises referrals={referrals} units={units} now={now} layout="page" />}
       {sheetOpen ? null : toolbar}
       {body}
       {flowPanel}

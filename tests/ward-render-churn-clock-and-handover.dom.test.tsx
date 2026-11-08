@@ -59,6 +59,8 @@ describe("Task 6: Background render-churn elimination & HandoverPage timer isola
     );
 
     // 1 Nov 2026 redesign: the Since card became one header line; Ward promises to chase is the h2.
+    // Note 12: the card opens from the hero's promises strip.
+    fireEvent.click(screen.getByTestId("ward-handover-promises-toggle"));
     const promisesHeading = screen.getByRole("heading", { name: /Ward promises to chase/i });
     expect(promisesHeading.tagName).toBe("H2");
 
