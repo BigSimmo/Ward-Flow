@@ -536,25 +536,18 @@ export function MovementsScreen() {
 
   // Movements overhaul (9 Oct 2026): search and the hero highlights MARK rows, they never hide one
   // ("filters highlight, never hide"). A marked row stays on screen past its group's short list.
-  // Search audit, 8 Nov 2026: each movement's search text is built once per data change rather than
-  // several times per row on every keystroke, and the marking reads a deferred copy of the words.
-  const deferredSearch = useDeferredValue(search);
-  const searchTerm = deferredSearch.trim().toLowerCase();
+  // Search audit (8 Nov 2026): each row's text is built once per data change, and marking reads a
+  // deferred copy of the words. Every word, folded, in any order ("OQuinn", "UM 100001").
+  const searchTerm = useDeferredValue(search).trim().toLowerCase();
   const searchTextById = useMemo(
     () => new Map(movements.map((movement) => [movement.id, movementSearchText(movement, patients, referrals)])),
     [movements, patients, referrals],
   );
-  const matchesSearch = useMemo(
-    () =>
-      searchTerm === ""
-        ? null
-        : // Every word, folded, in any order: "OQuinn" finds O'Quinn and "UM 100001" the UMRN.
-          (movement: Movement) =>
-            fieldsMatchEveryWord(searchTerm, [
-              searchTextById.get(movement.id) ?? movementSearchText(movement, patients, referrals),
-            ]),
-    [searchTerm, searchTextById, patients, referrals],
-  );
+  const matchesSearch = useMemo(() => {
+    if (searchTerm === "") return null;
+    const textOf = (m: Movement) => searchTextById.get(m.id) ?? movementSearchText(m, patients, referrals);
+    return (movement: Movement) => fieldsMatchEveryWord(searchTerm, [textOf(movement)]);
+  }, [searchTerm, searchTextById, patients, referrals]);
   const highlightOptions = heroHighlights(now, accessTarget);
   const showFigure = (option: (typeof highlightOptions)[number]) =>
     setPeopleList({
