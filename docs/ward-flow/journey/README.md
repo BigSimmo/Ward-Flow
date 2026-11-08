@@ -204,3 +204,7 @@ These are display-label honesty fixes. They do not change EVENT_ROLE handlers or
 ## Source review — 8 Nov 2026 (documentation history move)
 
 Source digests for `ward-change-reasons.ts`, `ward-flow-referral-answer-events.ts` and `ward-model-referral-parts.ts` were re-reviewed after comment-only edits: five comments now cite `docs/history/` paths for moved decision files. No code, event handler, role or cited line changed.
+
+## Source review — 8 Nov 2026 (repo review fixes, PR #1523)
+
+Source digests for `ward-flow-reducer.ts`, `ward-flow-placement-events.ts`, `ward-flow-transport-events.ts`, `ward-derivations.ts` and `movement-workflow-actions.tsx` were re-reviewed after these edits: a departure from a locked bed now caps free locked beds at the ward's locked beds; `PULL_PATIENT` resolves the patient once (referral, then movement, then event) for both the already-in-a-bed check and the new stay; arrival lateness ignores closed movements. Event names, roles, guards described in the notes and graph edges are unchanged.
