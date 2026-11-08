@@ -1017,7 +1017,7 @@ export function HandoverPage() {
     .filter((item) => item.value > 0)
     .map((item) => `${item.value} ${item.word.replace(" on the sheet", "")}`)
     .join(" · ");
-  const promisesNext = promisesHeroNext(referrals, now, promisesOpen, () => setPromisesOpen((open) => !open));
+  const promisesNext = sheetOpen ? undefined : promisesHeroNext(referrals, now, promisesOpen, setPromisesOpen);
   const hero = (
     <Hero
       level={1}

@@ -65,13 +65,13 @@ export function openPromiseCounts(referrals: readonly Referral[], now: Instant):
 /**
  * The Handover hero's promises strip (Josh, Note 12, 8 Nov 2026): like Home's next step, one line
  * with the count and overdue count, and a button that opens the card at the top of the page.
- * Nothing when there are no open promises.
+ * Nothing when there are no open promises. The page leaves it out while print preview is open.
  */
 export function promisesHeroNext(
   referrals: readonly Referral[],
   now: Instant,
   open: boolean,
-  onToggle: () => void,
+  onOpenChange: (open: boolean) => void,
 ): HeroNextStep | undefined {
   const { total, overdue } = openPromiseCounts(referrals, now);
   if (total === 0) return undefined;
@@ -92,7 +92,7 @@ export function promisesHeroNext(
       label: open ? "Hide promises" : "Show promises",
       pressed: open,
       testId: "ward-handover-promises-toggle",
-      onClick: onToggle,
+      onClick: () => onOpenChange(!open),
     },
   };
 }
