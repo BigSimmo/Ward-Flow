@@ -1696,8 +1696,9 @@
     box-shadow: none;
   }
 
-  /* Multi-pick chip rows (the kit's chip group with the phone sliding row on it) wrap the same way. */
-  .form.form [role="group"]:has(> [aria-pressed]) {
+  /* Multi-pick chip rows (the kit's chip group with the phone sliding row on it, including the risk
+     factor chips that sit in a wrapper each) wrap the same way. */
+  .form.form [role="group"]:has([aria-pressed]) {
     flex-wrap: wrap;
     row-gap: var(--wf-s-2);
     padding-block: 4px;
@@ -1707,15 +1708,23 @@
     mask-image: none;
   }
 
-  .form.form [role="group"]:has(> [aria-pressed])::after {
+  .form.form [role="group"]:has([aria-pressed])::after {
     content: none;
   }
 
-  .form.form [role="group"]:has(> [aria-pressed]) > [aria-pressed] {
+  .form.form [role="group"]:has([aria-pressed]) [aria-pressed] {
     max-width: 100%;
     white-space: normal;
     line-height: 1.25;
     text-align: left;
+  }
+
+  /* Typed boxes and More lists run the full width of the form, so every field lines up in one
+     column instead of stopping at different widths. */
+  .form .rowControl > div:has(> input:not([type="checkbox"], [type="radio"])),
+  .form .pickMore {
+    align-self: stretch;
+    width: 100%;
   }
 
   /* The step chips still slide (they are navigation), but snap so a swipe stops on a whole chip. */
