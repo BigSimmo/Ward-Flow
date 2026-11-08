@@ -102,6 +102,12 @@ const MAX_OPEN_REQUESTS_PER_PLACE = 50;
  * block new staff for good. It stays listed, newest first, until an access admin answers it.
  */
 const REQUEST_LAPSE_MS = 14 * 24 * 60 * 60_000;
+/**
+ * Lapsed requests stay open, so more than MAX_OPEN_REQUESTS can wait across the workspace. The
+ * admin list reads this many (newest first) before filtering to the admin's place, so a place's
+ * own requests are not crowded out by other places' (about 140 days of a sustained flood).
+ */
+const REQUEST_SCAN_LIMIT = 5_000;
 /** The most a whole workspace may hold, as before migration 10 split it into rows. */
 const MAX_WORLD_BYTES = 8_388_608;
 /** Past this a save logs a warning, well before the limit refuses every save (config.mjs). */
@@ -2257,7 +2263,7 @@ export function createWorkspaceStore(
           ? (
               await pool.query(
                 "SELECT * FROM ward_flow.access_requests WHERE workspace_id=$1 AND decision IS NULL ORDER BY requested_at DESC, id LIMIT $2",
-                [workspaceId, MAX_OPEN_REQUESTS],
+                [workspaceId, REQUEST_SCAN_LIMIT],
               )
             ).rows
           : [];
@@ -2267,7 +2273,10 @@ export function createWorkspaceStore(
           memberships: memberships.map((row) =>
             needsGrant(row) ? { ...presentMembership(row, at), needsGrantAgain: true } : presentMembership(row, at),
           ),
-          requests: requests.filter(inside).map((row) => presentRequest(row, at)),
+          requests: requests
+            .filter(inside)
+            .slice(0, MAX_OPEN_REQUESTS)
+            .map((row) => presentRequest(row, at)),
           complete: page.complete,
           nextCursor: page.nextCursor,
         },
