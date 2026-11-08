@@ -83,11 +83,10 @@ export function reduceReferralSendEvent(
     overrideSignOffField,
     referralReferrer,
     reject,
-    releasePulledBedAndAdmission,
     replaceMovement,
     replaceReferral,
-    withdrawAllLiveRequestsForReferrer,
-    withoutReferralBedHold,
+    endedBedSearch,
+    releaseMovementBed,
   } = helpers;
   switch (event.type) {
     case "RAISE_REFERRAL": {
@@ -508,10 +507,7 @@ export function reduceReferralSendEvent(
           `movement ${movement.id} is on a legal form; a conclusive examination outcome must be recorded before referring to a community team`,
         );
       }
-      const withoutPulledBed = withoutReferralBedHold(
-        releasePulledBedAndAdmission(state, movement, event.now),
-        movement,
-      );
+      const withoutPulledBed = releaseMovementBed(state, movement, event.now);
       const linkedReferral = withoutPulledBed.referrals.find((r) => r.id === movement.referralId);
       const originEd = scenarioEmergencyDepartments(state.scenario).find((d) => d.id === movement.originEdId);
       const originSite = originEd ? scenarioSite(state.scenario, originEd.siteCode) : undefined;
@@ -593,37 +589,16 @@ export function reduceReferralSendEvent(
       // P1-4: captured before `updated` overwrites it, so the officer can be told the journey
       // ended.
       const hadLiveTransportJob = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
-      // Truthful cause: the department recorded an outcome that ends the bed search, not the
-      // referrer withdrawing (`WithdrawalReason.ed_outcome_recorded`, `ward-change-reasons.ts`).
-      const withdrawnLiveRequests = movement.referredUnitIds.map((unitId) => ({
-        unitId,
-        at: event.now,
-        reason: "ed_outcome_recorded" as const,
-      }));
       const updated: Movement = {
         ...movement,
-        admissionId: undefined,
-        acceptedUnitId: undefined,
-        heldBedNumber: undefined,
-        referredUnitIds: [],
-        withdrawnReferrals: [...movement.withdrawnReferrals, ...withdrawnLiveRequests],
-        referralAnswerHistory: [
-          ...(movement.referralAnswerHistory ?? []),
-          ...withdrawnLiveRequests.map((referral) => ({ ...referral, answer: "withdrawn" as const })),
-        ],
-        edOutcome: "for_community_follow_up",
-        communityPurpose: purpose,
-        transport:
-          movement.transport && movement.transport.cancelledAt === undefined
-            ? { ...movement.transport, cancelledAt: event.now }
-            : movement.transport,
-        closure: {
-          at: event.now,
-          outcome: "did_not_proceed",
+        // TASK-L3-06: the shared close step. Truthful cause: the department recorded an outcome that
+        // ends the bed search, not the referrer withdrawing (`ed_outcome_recorded`).
+        ...endedBedSearch(movement, event.now, "ed_outcome_recorded", {
           reason: event.reason ?? `Referred to community mental health team: ${event.team}`,
           referralId,
-        },
-        blocker: STAGE_TRANSITION_BLOCKERS.didNotProceed,
+        }),
+        edOutcome: "for_community_follow_up",
+        communityPurpose: purpose,
       };
 
       const withMovement = replaceMovement(withoutPulledBed, movement.id, updated);
@@ -997,35 +972,21 @@ export function reduceReferralSendEvent(
 
         // Gives back a pulled bed and its admission, or does nothing if none was pulled. Shared
         // with `RELEASE_PULL`.
-        const withoutPulledBed = withoutReferralBedHold(
-          releasePulledBedAndAdmission(state, movement, event.now),
-          movement,
-        );
+        const withoutPulledBed = releaseMovementBed(state, movement, event.now);
         const revokedByCoordinator = event.role === "coordinator";
         const acceptingUnitId = movement.acceptedUnitId;
-        const liveTransport =
-          movement.transport && movement.transport.cancelledAt === undefined ? movement.transport : undefined;
-        const hadLiveTransport = liveTransport !== undefined;
+        const hadLiveTransport = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
+        // TASK-L3-06: the shared close step. A revoked acceptance holds no ward, so no board reads
+        // a closed movement as still going to it; a booked, uncollected job is cancelled
+        // (`orphanedTransport` assumes no live job outlives a closure); and nothing is left
+        // blocking, which also clears WLQ-4's `examinationRevokedAwaitingRelease`.
         const revoked: Movement = {
           ...movement,
-          admissionId: undefined,
-          // A revoked acceptance holds no ward: cleared here, as RECORD_ED_OUTCOME and
-          // REFER_TO_COMMUNITY_TEAM do, so no board reads a closed movement as still going to it.
-          acceptedUnitId: undefined,
-          heldBedNumber: undefined,
-          // A booked-but-uncollected job is cancelled in the same update that closes the movement;
-          // `orphanedTransport` assumes no live job outlives a closure.
-          transport: liveTransport ? { ...liveTransport, cancelledAt: event.now } : movement.transport,
-          closure: {
-            at: event.now,
-            outcome: "did_not_proceed",
+          ...endedBedSearch(movement, event.now, revokedByCoordinator ? "coordinator_withdrew" : "referrer_withdrew", {
             reason: revokedByCoordinator
               ? "The coordinator revoked the accepted referral"
               : "The referrer revoked the accepted referral",
-          },
-          // Nothing blocks a movement that is over; this also clears WLQ-4's
-          // `examinationRevokedAwaitingRelease`.
-          blocker: STAGE_TRANSITION_BLOCKERS.didNotProceed,
+          }),
         };
         const next = replaceMovement(withoutPulledBed, movement.id, revoked);
         // Addendum §1.3, extended by WLQ-38: a ward that believed it was getting this patient is
@@ -1060,28 +1021,22 @@ export function reduceReferralSendEvent(
         return reject(state, event, `movement ${movement.id} holds no live referral to withdraw`);
       }
 
-      const liveTransport =
-        movement.transport && movement.transport.cancelledAt === undefined ? movement.transport : undefined;
-      const hadLiveTransport = liveTransport !== undefined;
+      const hadLiveTransport = movement.transport !== undefined && movement.transport.cancelledAt === undefined;
+      // TASK-L3-06: the shared close step. Nothing is left blocking a movement that is over; left
+      // saying "Awaiting destination response" it would keep a withdrawn patient looking live.
       const updated: Movement = {
         ...movement,
-        ...withdrawAllLiveRequestsForReferrer(
+        ...endedBedSearch(
           movement,
           event.now,
           event.role === "coordinator" ? "coordinator_withdrew" : "referrer_withdrew",
+          {
+            reason:
+              event.role === "coordinator"
+                ? "The coordinator withdrew the referral"
+                : "The referrer withdrew the referral",
+          },
         ),
-        transport: liveTransport ? { ...liveTransport, cancelledAt: event.now } : movement.transport,
-        closure: {
-          at: event.now,
-          outcome: "did_not_proceed",
-          reason:
-            event.role === "coordinator"
-              ? "The coordinator withdrew the referral"
-              : "The referrer withdrew the referral",
-        },
-        // Nothing is blocking a movement that is over. Left saying "Awaiting destination response"
-        // it would keep a withdrawn patient looking like a live obstruction.
-        blocker: STAGE_TRANSITION_BLOCKERS.didNotProceed,
       };
       const next = replaceMovement(state, movement.id, updated);
       let noticeCount = state.notices.length;
