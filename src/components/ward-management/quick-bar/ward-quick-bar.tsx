@@ -12,7 +12,7 @@ import {
   PhoneOutgoing,
   Plus,
   SearchCheck,
-  BedDouble,
+  BedSingle,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -34,7 +34,7 @@ const ICONS: Partial<Record<ToolsSheetToolId, LucideIcon>> = {
   "bed-finder": SearchCheck,
   "call-log": PhoneOutgoing,
   messages: MessageSquareText,
-  "update-bed": BedDouble,
+  "update-bed": BedSingle,
   remind: BellRing,
   "leave-due": CalendarClock,
   "form-times": Clock4,
