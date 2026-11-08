@@ -2,7 +2,7 @@
 
 _Updated 2026-10-24 - CI section names every workflow and the two unlisted `ward-ci-public` scripts; Documentation owns._
 
-Curated map of `scripts/` (158 files) and the `package.json` script surface (87 entries),
+Curated map of `scripts/` (159 files) and the `package.json` script surface (87 entries),
 grouped by what each part protects. `package.json` is the command surface; this page says why
 each group exists. `npm run docs:check-inventory` compares the two counts above exactly,
 and `npm run docs:check-scripts` checks that every `npm run` named in maintained docs
@@ -65,7 +65,8 @@ The other workflows need no script here: `release-tag.yml` tags each CI-passed m
 10 minutes, signs in as the synthetic monitor account to load `/v1/workspace`, and opens an issue
 for the owner when either stays down. `ward-flow-nightly-browsers.yml` runs the nightly image
 baselines and the 834px tablet checks through `run-playwright.mjs` (front-end audit TE-01, TE-02),
-and a manual run with "update baselines" writes new baselines to commit. CI also runs
+and a manual run with "update baselines" writes new baselines to commit; a failed scheduled run opens
+or refreshes one issue through `ward-ci-public/nightly-browsers-issue.mjs`. CI also runs
 `check-script-budget.mjs` (phone first-load script budgets in `script-budget.json`),
 `check-knip-baseline.mjs` (`npm run check:knip`), `ward-flow/related-tests.mjs`,
 `ward-flow/gate-tsc.mjs` and `ward-flow/selected-baseline-verdict.mjs`. Beside the knip ratchet,

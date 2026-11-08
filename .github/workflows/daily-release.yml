@@ -160,12 +160,27 @@ jobs:
           fi
 
           # Collect merged PR numbers from merge commits ("Merge pull request #N") and squash commits ("(#N)").
-          gh api "repos/$REPOSITORY/compare/$current...$target" --jq '.commits[].commit.message | split("\n")[0]' \
-            | grep -oE '^Merge pull request #[0-9]+|\(#[0-9]+\)$' | grep -oE '[0-9]+' | sort -un > prs.txt || true
+          # Release notes never block the release; a gap in them is a warning on the run instead.
+          : > prs.txt
+          if gh api "repos/$REPOSITORY/compare/$current...$target" > compare.json 2>/dev/null; then
+            # The compare API lists at most 250 commits, so PRs merged after that are not in the notes.
+            counts="$(jq -r '"\(.total_commits // 0) \(.commits // [] | length)"' compare.json 2>/dev/null)" || counts="0 0"
+            read -r total listed <<< "$counts"
+            if [[ "$total" =~ ^[0-9]+$ && "$listed" =~ ^[0-9]+$ ]] && [ "$total" -gt "$listed" ]; then
+              echo "::warning::Release notes read only $listed of $total commits since live; later PRs are missing from them."
+            fi
+            jq -r '.commits[].commit.message | split("\n")[0]' compare.json 2>/dev/null \
+              | grep -oE '^Merge pull request #[0-9]+|\(#[0-9]+\)$' | grep -oE '[0-9]+' | sort -un > prs.txt || true
+          else
+            echo "::warning::Could not read the commits since live; the release notes list no PRs."
+          fi
           : > new.txt; : > fixed.txt; : > other.txt
           while read -r number; do
             # A commit title can end in an issue number, such as "(#789)"; skip numbers that are not pull requests.
-            title="$(gh api "repos/$REPOSITORY/pulls/$number" --jq .title 2>/dev/null)" || continue
+            title="$(gh api "repos/$REPOSITORY/pulls/$number" --jq .title 2>/dev/null)" || {
+              echo "::warning::#$number is left out of the release notes: it is not a pull request or its lookup failed."
+              continue
+            }
             line="- $title (#$number)"
             case "$(printf '%s' "$title" | tr '[:upper:]' '[:lower:]')" in
               fix* | *": fix"* | "fix("*) echo "$line" >> fixed.txt ;;

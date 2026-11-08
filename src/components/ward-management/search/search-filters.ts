@@ -55,8 +55,17 @@ function indexActiveSites(): void {
   }
 }
 
+/**
+ * How long a movement has waited, in hours. The one definition the search filters, the Show facets
+ * (`patient-search-model.ts`) and the record preview share. A finished wait stops where it ended:
+ * at `closure.at`, or at the recorded arrival for an arrived movement with no closure, so a closed
+ * or arrived journey does not keep counting up and drift into the over-24-hours band.
+ */
 export function waitedHours(movement: Movement, now: number): number {
-  return minutesUntil(now, movement.openedAt) / 60;
+  const arrivedAt =
+    movement.stage === "arrived" ? movement.stageChanges.findLast((change) => change.to === "arrived")?.at : undefined;
+  const endedAt = movement.closure?.at ?? arrivedAt ?? now;
+  return minutesUntil(endedAt, movement.openedAt) / 60;
 }
 
 export function matchesService(result: PatientSearchResult, service: string): boolean {

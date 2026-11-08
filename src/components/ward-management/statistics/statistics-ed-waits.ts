@@ -101,8 +101,9 @@ function edPopulationFigures(
 
   /*
    * `Math.max(..., 0)` reproduces the screen's own guard: a movement whose `openedAt` sits after
-   * `now` would otherwise read as a NEGATIVE wait. ⚠️ It is reachable rather than theoretical —
-   * ADVANCE_CLOCK can wind the prototype's clock backwards.
+   * `now` would otherwise read as a NEGATIVE wait. ADVANCE_CLOCK refuses negative minutes, so the
+   * prototype's clock does not wind backwards; this is a defensive guard for an `openedAt` recorded
+   * after the `now` these figures are read at.
    */
   const waitingMovements = departmentMovements
     .map((movement) => ({ movement, waitMinutes: Math.max(now - movement.openedAt, 0) }))

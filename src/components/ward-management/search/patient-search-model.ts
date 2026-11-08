@@ -2,12 +2,12 @@
 // presence the page and its sections share. Moved out of `patient-search.tsx` for the line cap.
 import type { Movement, Referral } from "@/components/ward-management/ward-model";
 import { isOpen, type PatientSearchResult } from "@/components/ward-management/ward-derivations";
-import { minutesUntil } from "@/components/ward-management/ward-clock";
 import { type Patient } from "@/components/ward-management/ward-patients";
 import { LONG_WAIT_MINUTES, WAIT_FILTER_SHORT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { referralState } from "@/components/ward-management/ward-referrals";
 import { CENSUS_HIGHLIGHTS, type CensusGroup, type CensusHighlight, type CensusRow } from "./patient-census";
 import { isCommunityReferral } from "./community-referral";
+import { waitedHours } from "./search-filters";
 
 /** The wait bands, in hours, from Josh's named defaults (D-22, D-24): under 6, 6 to 24, over 24. */
 export const SHORT_WAIT_HOURS = WAIT_FILTER_SHORT_MINUTES / 60;
@@ -24,9 +24,7 @@ export type ShowFacet = {
   test: (movement: Movement, now: number) => boolean;
 };
 
-export function waitedHours(movement: Movement, now: number): number {
-  return minutesUntil(now, movement.openedAt) / 60;
-}
+export { waitedHours };
 
 export const SHOW_FACETS: readonly ShowFacet[] = [
   { key: "all", label: "Everything", empty: "", test: () => true },

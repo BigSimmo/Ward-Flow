@@ -1210,7 +1210,12 @@ export function reduceTransportEvent(
       };
 
       if (
-        isArrivalLate(event.estimatedArrivalAt, updatedMovement.stage, event.now) &&
+        isArrivalLate(
+          event.estimatedArrivalAt,
+          updatedMovement.stage,
+          event.now,
+          updatedMovement.closure !== undefined,
+        ) &&
         updatedMovement.arrivalLateNotifiedAt === undefined
       ) {
         updatedMovement = { ...updatedMovement, arrivalLateNotifiedAt: event.now };
@@ -1251,7 +1256,14 @@ export function reduceTransportEvent(
       if (!movement) return reject(state, event, `no movement found for id ${event.movementId}`);
       if (movement.closure) return reject(state, event, "This movement is closed.");
       if (movement.arrivalLateNotifiedAt !== undefined) return state;
-      if (!isArrivalLate(movement.arrivalDetails?.estimatedArrivalAt, movement.stage, event.now)) {
+      if (
+        !isArrivalLate(
+          movement.arrivalDetails?.estimatedArrivalAt,
+          movement.stage,
+          event.now,
+          movement.closure !== undefined,
+        )
+      ) {
         return state;
       }
       const updated: Movement = { ...movement, arrivalLateNotifiedAt: event.now };

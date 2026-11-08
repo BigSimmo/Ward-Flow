@@ -35,10 +35,10 @@ These identifiers are resource references, not credentials. Check the exact targ
 
 Railway service settings hold the build and start commands. Railpack installs the locked dependencies using its default installer; a custom install command caused a missing `/opt/corepack` packaging error and was removed.
 
-- Builder: Railpack, Node `24.19.0`; npm version comes from `packageManager`.
+- Builder: Railpack, Node from `RAILPACK_NODE_VERSION`, which must sit in the supported range (<!-- fact:node-engine -->>=24.22.1 <25<!-- /fact -->; `.nvmrc` pins the exact release). npm version comes from `packageManager`.
 - Build setting: `node --max-old-space-size=8192 node_modules/next/dist/bin/next build --webpack` (includes Next.js type checking).
 - Start setting: `node node_modules/next/dist/bin/next start --hostname 0.0.0.0 --port $PORT`.
-- Variables: `NODE_ENV=production`, `PORT=8080`, `NEXT_PUBLIC_MOCKUPS_ENABLED=true`, `NEXT_PUBLIC_SITE_URL=https://ward-flow-production.up.railway.app`, `RAILPACK_NODE_VERSION=24.19.0`.
+- Variables: `NODE_ENV=production`, `PORT=8080`, `NEXT_PUBLIC_MOCKUPS_ENABLED=true`, `NEXT_PUBLIC_SITE_URL=https://ward-flow-production.up.railway.app`, `RAILPACK_NODE_VERSION` (matching `.nvmrc`). A read-only check on 8 November 2026 found this variable set on all three services and their latest `live` builds succeeding; its value was not read.
 - The setup record reported no Supabase, OpenAI or other database/provider credentials for this service. Current settings were not inspected.
 - Code, assets, scripts and runtime/build configuration are included in deployment watch paths; documentation-only changes are excluded.
 - The setup record reported GitHub Actions disabled and Railway's GitHub integration as the deployment mechanism. A read-only GitHub check on 2 October 2026 found Actions enabled and the dedicated Ward Flow CI workflow active. Current-head outcomes and deployment remain separate evidence.

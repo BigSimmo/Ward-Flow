@@ -684,6 +684,18 @@ export function scopeWithin(world: SharedWorld, inner: WardAccessScope, outer: W
   return scopeWithinScope(inner, outer, accessPlaces(world));
 }
 
+/**
+ * The health service an access request is for, or "statewide" when it spans services. Open
+ * requests are capped per service, so a flood of requests for one place cannot block the others.
+ */
+export function requestPlace(world: SharedWorld, scope: WardAccessScope): string {
+  if (scope.kind === "service") return scope.service;
+  const service = HEALTH_SERVICES.find((candidate) =>
+    scopeWithin(world, scope, { kind: "service", service: candidate }),
+  );
+  return service ?? "statewide";
+}
+
 /** Granting access, cover or breaking glass needs a sign-in this recent (synthetic). */
 export const STEP_UP_MINUTES = STEP_UP_RULE_MINUTES;
 /** A role not worked as for this long stops working by itself (synthetic). */

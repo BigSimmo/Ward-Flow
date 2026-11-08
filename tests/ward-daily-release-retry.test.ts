@@ -23,6 +23,9 @@ type State = {
   lostPublishAck: number;
   listFailures: number;
   compare: string;
+  compareFailures?: number;
+  compareTotal?: number;
+  commitTitles?: string[];
   tagLookupFailures: number;
   acceptance?: string;
   acceptanceAnswers?: string[];
@@ -81,7 +84,14 @@ if (route.startsWith('actions/workflows/')) {
   } else finish(state.target);
 }
 else if (route === 'git/ref/heads/live') finish(state.current);
-else if (route.startsWith('compare/')) finish(args.includes('.status') ? state.compare : 'Merge pull request #42');
+else if (route.startsWith('compare/')) {
+  if (args.includes('.status')) finish(state.compare);
+  else {
+    inject('compareFailures');
+    const titles = state.commitTitles || ['Merge pull request #42'];
+    finish({ total_commits: state.compareTotal ?? titles.length, commits: titles.map(message => ({ commit: { message } })) });
+  }
+}
 else if (route === 'pulls/42') finish('fix: Synthetic release entry');
 else if (route.startsWith('contents/')) finish('[]');
 else if (route.startsWith('git/ref/tags/')) {
@@ -468,5 +478,41 @@ describe("daily release record and live-ref recovery", () => {
     const h2 = harness({ current: previous, target });
     expect(h2.run("BigSimmo/Ward-Flow", { RELEASE_PAUSED: "", EVENT_NAME: "schedule" }).status).toBe(0);
     expect(h2.read().current).toBe(target);
+  });
+
+  // Release notes are best effort: a gap in them warns on the run and never blocks the release.
+  it("releases with full notes and no warning when every commit and PR is read", () => {
+    const h = harness();
+    const result = h.run();
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).not.toContain("::warning::");
+    expect(h.read().records.at(-1)?.body).toContain("- fix: Synthetic release entry (#42)");
+  });
+
+  it("warns when the compare API truncated the commit list, and still releases", () => {
+    const h = harness({ compareTotal: 400 });
+    const result = h.run();
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain("::warning::Release notes read only 1 of 400 commits since live");
+    expect(h.read().current).toBe(target);
+    expect(h.read().records.at(-1)?.body).toContain("(#42)");
+  });
+
+  it("warns for a PR number whose lookup fails, keeps the rest, and still releases", () => {
+    const h = harness({ commitTitles: ["Merge pull request #42", "Synthetic tidy (#43)"] });
+    const result = h.run();
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain("::warning::#43 is left out of the release notes");
+    expect(result.stdout).not.toContain("::warning::#42");
+    expect(h.read().current).toBe(target);
+    expect(h.read().records.at(-1)?.body).toContain("(#42)");
+  });
+
+  it("warns when the commit list cannot be read, and still releases", () => {
+    const h = harness({ compareFailures: 1 });
+    const result = h.run();
+    expect(result.status, result.stderr).toBe(0);
+    expect(result.stdout).toContain("::warning::Could not read the commits since live");
+    expect(h.read().current).toBe(target);
   });
 });
