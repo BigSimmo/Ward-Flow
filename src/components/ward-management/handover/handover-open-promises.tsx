@@ -14,7 +14,7 @@ import type { Referral, Unit } from "@/components/ward-management/ward-model";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { usePatientNameDisplay } from "@/components/ward-management/settings/discreet-names";
 import { ChevronRight, PhoneCall } from "lucide-react";
-import { FormalName, Icon, StatusGlyph } from "@/components/wf";
+import { FormalName, Icon, StatusGlyph, type HeroNextStep } from "@/components/wf";
 
 import styles from "./handover-open-promises.module.css";
 
@@ -47,6 +47,53 @@ export function promiseChaseTimes(
     sortAt,
     shownAt,
     isCallback: !overdue && callback !== undefined && callback === sortAt,
+  };
+}
+
+/**
+ * How many open ward promises there are, and how many are overdue. Feeds the Handover hero's
+ * strip (Josh, Note 12, 8 Nov 2026), which opens the card below it. Same items as the card.
+ */
+function openPromiseCounts(referrals: readonly Referral[], now: Instant): { total: number; overdue: number } {
+  const items = commitmentsDueBy(referrals, Number.POSITIVE_INFINITY);
+  return {
+    total: items.length,
+    overdue: items.filter((item) => promiseOverdue(item.status, now)).length,
+  };
+}
+
+/**
+ * The Handover hero's promises strip (Josh, Note 12, 8 Nov 2026): like Home's next step, one line
+ * with the count and overdue count, and a button that opens the card at the top of the page.
+ * Nothing when there are no open promises. The page leaves it out while print preview is open.
+ */
+export function promisesHeroNext(
+  referrals: readonly Referral[],
+  now: Instant,
+  open: boolean,
+  onOpenChange: (open: boolean) => void,
+): HeroNextStep | undefined {
+  const { total, overdue } = openPromiseCounts(referrals, now);
+  if (total === 0) return undefined;
+  return {
+    answer: (
+      <>
+        {total} ward {total === 1 ? "reply" : "replies"} due
+        {overdue > 0 ? (
+          <span className={styles.heroOverdue}>
+            <span>·</span>
+            <StatusGlyph tone="danger" size={8} />
+            {overdue} overdue
+          </span>
+        ) : null}
+      </>
+    ),
+    action: {
+      label: open ? "Hide replies" : "Show replies",
+      pressed: open,
+      testId: "ward-handover-promises-toggle",
+      onClick: () => onOpenChange(!open),
+    },
   };
 }
 
@@ -107,7 +154,7 @@ export function HandoverOpenPromises({
     >
       <h2 id={`${baseId}-heading`} className={styles.heading}>
         <Icon icon={PhoneCall} size={16} className={styles.headIcon} />
-        Ward promises to chase
+        Ward replies due
         <span className={styles.count}>{rows.length}</span>
         {overdueCount > 0 ? (
           <span className={styles.overdueCount}>
