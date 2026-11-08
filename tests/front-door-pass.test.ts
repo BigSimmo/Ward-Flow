@@ -188,6 +188,20 @@ describe("proxy front door", () => {
     expect(await frontDoorVerdict(page("/ward-flow-sign-in"), ON)).toBeNull();
   });
 
+  it("opens the signed-in (shared) site with an account pass only, never a demo pass", async () => {
+    const SHARED = { ...ON, NEXT_PUBLIC_WARD_SHARED_ENABLED: "true" };
+    const demo = (await issuePass(SECRET, { kind: "demo", hours: 8 })).value;
+    const account = (await issuePass(SECRET, { kind: "account", subject: "synthetic-id", hours: 12 })).value;
+    const refused = await frontDoorVerdict(page("/ward-flow/capacity", demo), SHARED);
+    expect(refused?.status).toBe(307);
+    expect(new URL(refused!.headers.get("location")!).pathname).toBe("/sign-in");
+    expect((await frontDoorVerdict(page("/api/workspace", demo), SHARED))?.status).toBe(401);
+    expect(await frontDoorVerdict(page("/ward-flow/capacity", account), SHARED)).toBeNull();
+    expect(await frontDoorVerdict(page("/sign-in", demo), SHARED)).toBeNull();
+    // The public demo still opens with a demo pass.
+    expect(await frontDoorVerdict(page("/ward-flow/capacity", demo), ON)).toBeNull();
+  });
+
   it("fails closed without a signing secret", async () => {
     const { value } = await issuePass(SECRET, { kind: "account", hours: 12 });
     const answer = await frontDoorVerdict(page("/ward-flow", value), { WARD_FRONT_DOOR: "required" });

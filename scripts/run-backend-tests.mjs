@@ -9,6 +9,7 @@ import { runOwnedChild } from "./owned-child.mjs";
 
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const loopback = new Set(["localhost", "127.0.0.1", "[::1]"]);
+export const BACKEND_COVERAGE_FLOORS = Object.freeze({ lines: 96, branches: 92, functions: 92 });
 
 export function parseBackendTestArguments(args) {
   for (const argument of args)
@@ -78,6 +79,15 @@ export function backendTestPlan({
       "--test-reporter-destination=stdout",
       "--test-reporter=lcov",
       `--test-reporter-destination=${path.join(reportDirectory, "lcov.info")}`,
+    );
+  // Review, 8 Nov 2026 (Josh approved): with the real-database suite, coverage may not fall below
+  // these floors, set a little under the measured 97.1% lines, 93.0% branches, 93.4% functions.
+  // A unit-only run covers far less, so it reports coverage without a floor.
+  if (coverage && databaseUrl)
+    args.push(
+      `--test-coverage-lines=${BACKEND_COVERAGE_FLOORS.lines}`,
+      `--test-coverage-branches=${BACKEND_COVERAGE_FLOORS.branches}`,
+      `--test-coverage-functions=${BACKEND_COVERAGE_FLOORS.functions}`,
     );
   args.push("--", ...files.map((file) => path.join(cwd, file)));
   return {

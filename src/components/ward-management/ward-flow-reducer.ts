@@ -1220,7 +1220,7 @@ export function departAdmission(
     releaseAlreadyIncremented || arrivalAwaitingCapacity
       ? {
           ...unit,
-          allocatableLocked: unit.allocatableLocked + restoreLocked,
+          allocatableLocked: Math.min(unit.lockedBeds, unit.allocatableLocked + restoreLocked),
           sexMix: adjustSexMix(unit.sexMix, leaverSex, -1),
           ...(remainingArrivalConflicts === undefined ? {} : { arrivalCapacityConflicts: remainingArrivalConflicts }),
         }
@@ -1231,7 +1231,7 @@ export function departAdmission(
             ...unit.allocatable,
             value: Math.min(unit.beds, unit.allocatable.value + 1),
           },
-          allocatableLocked: unit.allocatableLocked + restoreLocked,
+          allocatableLocked: Math.min(unit.lockedBeds, unit.allocatableLocked + restoreLocked),
           sexMix: adjustSexMix(unit.sexMix, leaverSex, -1),
           ...(remainingArrivalConflicts === undefined ? {} : { arrivalCapacityConflicts: remainingArrivalConflicts }),
         };

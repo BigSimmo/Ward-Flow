@@ -9,7 +9,8 @@ name: Ward Flow nightly browsers
 # machines. A manual run with "update_baselines" ticked writes fresh baselines and uploads them as
 # the ward-visual-baselines artifact; a person downloads it and commits tests/visual-baselines/ in a
 # pull request. It compares nothing and pushes nothing. Synthetic data only, local production
-# server, no provider calls.
+# server. Its only GitHub call: a failed scheduled run opens or refreshes one issue
+# (scripts/ward-ci-public/nightly-browsers-issue.mjs), so a failure is seen before the 6 am release.
 on:
   # 19:30 UTC is 3:30 am in Perth, after the main CI nightly (18:00 UTC) and before the 6 am release.
   schedule:
@@ -36,6 +37,11 @@ jobs:
     name: Ward Flow nightly browsers
     runs-on: ubuntu-24.04
     timeout-minutes: 60
+    # issues: write only for the last step, which opens or refreshes one issue when a scheduled run
+    # fails, because nothing else reads this nightly (the 6 am release does not).
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -104,3 +110,10 @@ jobs:
           path: test-results/
           if-no-files-found: warn
           retention-days: 7
+      - name: Open or refresh the nightly failure issue
+        if: ${{ failure() && github.event_name == 'schedule' }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WARD_RUN_SHA: ${{ github.sha }}
+          WARD_RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node scripts/ward-ci-public/nightly-browsers-issue.mjs
