@@ -813,6 +813,20 @@ describe("the urgency change reason starts unchosen", () => {
   });
 });
 
+/** #1418: a row form that opens on a list picker puts the cursor in that picker, its first field. */
+describe("a row form opens with its first field focused", () => {
+  it("focuses the urgency tier picker, not a later field, when Change urgency opens", () => {
+    renderEd();
+    const toggles = screen.getAllByTestId(/^ward-change-urgency-toggle-/);
+    expect(toggles.length, "no urgency toggle rendered — this test is asserting over nothing").toBeGreaterThan(0);
+    const id = toggles[0].getAttribute("data-testid")!.replace("ward-change-urgency-toggle-", "");
+    fireEvent.click(toggles[0]);
+    const tier = within(screen.getByTestId(`ward-change-urgency-${id}`)).getAllByRole("combobox")[0]!;
+    expect(tier).toHaveAccessibleName(/Urgency tier/u);
+    expect(document.activeElement).toBe(tier);
+  });
+});
+
 /**
  * ⚠️ OWNER RULING 1 FALSIFIED THIS FIELD'S OWN JUSTIFYING COMMENT. An unticked checkbox cannot
  * distinguish "not required" from "not yet answered" — its unticked state is both. That was

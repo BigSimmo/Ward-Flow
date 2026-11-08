@@ -80,8 +80,14 @@ export const GLOSSARY_LINK_TEXT = "Help glossary";
  */
 export const ROAD_DISTANCE_SHORT_CAVEAT = "Road distance only, not a clinical travel time.";
 
-export function capacityLine(unit: Unit, bedReleases: BedRelease[], admissions: readonly Admission[]) {
-  const states = bedStates(unit, admissions, bedReleases, []);
+export function capacityLine(
+  unit: Unit,
+  bedReleases: BedRelease[],
+  admissions: readonly Admission[],
+  reservations: Parameters<typeof bedStates>[4] = [],
+) {
+  // WF-FIG-017: the same named holds as the ward detail, so a row never shows more Ready than it.
+  const states = bedStates(unit, admissions, bedReleases, [], reservations);
   const pendingPreparation = states.beingMadeReady;
   /*
    * 🔴 THE READY FIGURE IS CORRECT AND MUST NOT CHANGE. Nothing is subtracted from it for a

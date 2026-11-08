@@ -64,7 +64,7 @@ export function useReferralPatientSelection({
       contextRef.current = null;
     };
   }, [context]);
-  const { movements, patients, referrals, dayZero } = record;
+  const { movements, patients, referrals, dayZero, admissions, units } = record;
   // Match like header search: every folded word, with commas separating names, never near spellings.
   const filteredPatients = useMemo(() => {
     const query = searchQuery.replace(/,/g, " ").trim();
@@ -74,7 +74,7 @@ export function useReferralPatientSelection({
       fieldsMatchEveryWord(query, [patient.name, patient.umrn, patient.dob, patient.origin]),
     );
     const shown = new Set(visible.map((patient) => patient.umrn));
-    const records = { movements, patients, referrals, dayZero };
+    const records = { movements, patients, referrals, dayZero, admissions, units };
     const more = patients
       .filter(
         (patient) =>
@@ -84,7 +84,7 @@ export function useReferralPatientSelection({
       .slice(0, 8)
       .map((patient) => sampleProfile(patientKeyFor(patient.id, records) ?? "custom", records, now));
     return rankByNameStart([...matches, ...more], query);
-  }, [searchQuery, profiles, movements, patients, referrals, dayZero, now]);
+  }, [searchQuery, profiles, movements, patients, referrals, dayZero, admissions, units, now]);
 
   function handleSelectPatient(key: string, addedInForm = false) {
     // Retire an earlier registration before awaiting confirmation, so its late result cannot select.

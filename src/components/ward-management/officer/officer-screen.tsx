@@ -53,7 +53,7 @@ import { transportEtaRemainingLabel } from "@/components/ward-management/ward-bo
 import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { TRANSPORT_PROVIDERS, type Movement, type Unit } from "@/components/ward-management/ward-model";
 import { wardLabel } from "@/components/ward-management/ward-absence-labels";
-import { movementOriginLabel, originSiteCode } from "@/components/ward-management/ward-movement-origin";
+import { movementOriginLabel, originSiteCode, sourceWardName } from "@/components/ward-management/ward-movement-origin";
 import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { changeReasonLabels } from "@/components/ward-management/ward-change-reasons";
 
@@ -212,11 +212,15 @@ export function OfficerScreen() {
     movement.acceptedUnitId
       ? wardLabel(movement.acceptedUnitId, unitFor(movement)?.name)
       : "No accepted destination recorded";
+  // WF-J03: a ward-to-ward journey is collected from the sending ward, as Handover shows it.
   const originLabelFor = (movement: Movement) => {
+    const sendingWard = sourceWardName(movement, admissions, units);
+    if (sendingWard !== undefined) return sendingWard;
     const originEd = edById(movement.originEdId);
     return movementOriginLabel(movement, originEd && `${originEd.name} (${originEd.siteCode})`);
   };
-  const originShortFor = (movement: Movement) => originSiteCode(movement) ?? originLabelFor(movement);
+  const originShortFor = (movement: Movement) =>
+    sourceWardName(movement, admissions, units) ?? originSiteCode(movement) ?? originLabelFor(movement);
 
   // Highlights (Josh, 9 Oct 2026, page A): a pill, chip, provider or search lights rows up. Nothing
   // here hides a job, so the officer never loses a job behind a filter they forgot was on.

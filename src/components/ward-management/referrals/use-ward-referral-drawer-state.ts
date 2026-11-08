@@ -253,10 +253,10 @@ export function useWardReferralDrawerState({
       Object.fromEntries(
         [...new Set([...Object.keys(SAMPLE_PATIENTS), ...extraPatientKeys, activePatientKey])].map((key) => [
           key,
-          sampleProfile(key, { movements, patients, referrals, dayZero }, now),
+          sampleProfile(key, { movements, patients, referrals, dayZero, admissions, units }, now),
         ]),
       ) as Record<string, MockPatientProfile>,
-    [movements, patients, referrals, dayZero, now, extraPatientKeys, activePatientKey],
+    [movements, patients, referrals, dayZero, admissions, units, now, extraPatientKeys, activePatientKey],
   );
   const defaultPatient = sampleProfiles[initialPatientKey]!;
   const [arrivalPlanOpen, setArrivalPlanOpen] = useState(false);
@@ -595,12 +595,12 @@ export function useWardReferralDrawerState({
     !rawCurrentPatient.gender && referralSex !== "Not recorded"
       ? { ...rawCurrentPatient, gender: referralSex.charAt(0).toUpperCase() }
       : rawCurrentPatient;
-
+  const profileRecord = { movements, patients, referrals, dayZero, admissions, units };
   const { filteredPatients, handleSelectPatient } = useReferralPatientSelection({
     activePatientKey,
     searchQuery,
     profiles: sampleProfiles,
-    record: { movements, patients, referrals, dayZero },
+    record: profileRecord,
     now,
     dirty,
     revision: JSON.stringify([draftJson, worldGeneration, sendPending, sentReferralId, access]),
@@ -613,7 +613,7 @@ export function useWardReferralDrawerState({
 
   function selectPatient(key: string, addedInForm: boolean) {
     resetNewPatient();
-    const p = sampleProfiles[key] ?? sampleProfile(key, { movements, patients, referrals, dayZero }, now);
+    const p = sampleProfiles[key] ?? sampleProfile(key, profileRecord, now);
     if (!sampleProfiles[key]) setExtraPatientKeys((keys) => [...keys, key]);
     setActivePatientKey(key);
     setAddedInFormKey(addedInForm ? key : null);

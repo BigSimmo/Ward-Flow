@@ -7,6 +7,7 @@ import { useWardFlow, WardFlowProvider } from "@/components/ward-management/ward
 import { bedReleases } from "@/components/ward-management/ward-movements";
 import { NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { wardAdmissions } from "@/components/ward-management/ward-admissions-seed";
+import type { Referral } from "@/components/ward-management/ward-model";
 
 /**
  * The ward detail block (task C, Command mockup parity): the mockup's `wardDetailHtml()` shows
@@ -38,8 +39,28 @@ function todayCount(unitId: string, state: "confirmed" | "expected"): number {
 }
 const TARGET_MOVEMENT_ID = "WF-308";
 
-function ShortlistHarness({ selectedUnitId }: { selectedUnitId: string }) {
-  const { movements, units, bedReleases, leaveBeds, referrals, now, dispatch, configuration } = useWardFlow();
+function ShortlistHarness({
+  selectedUnitId,
+  holdBedAt,
+}: {
+  selectedUnitId: string;
+  /** WF-FIG-017: add one synthetic referral holding this numbered bed at the selected ward. */
+  holdBedAt?: number;
+}) {
+  const {
+    movements,
+    units,
+    bedReleases,
+    leaveBeds,
+    referrals: liveReferrals,
+    now,
+    dispatch,
+    configuration,
+  } = useWardFlow();
+  const referrals =
+    holdBedAt === undefined
+      ? liveReferrals
+      : [...liveReferrals, heldReferral(liveReferrals, selectedUnitId, holdBedAt)];
   const movement = movements.find((candidate) => candidate.id === TARGET_MOVEMENT_ID);
   return (
     <ShortlistPanel
@@ -87,10 +108,32 @@ function PrepareDischargedRelease({ unitId }: { unitId: string }) {
   );
 }
 
-function renderWardDetail(selectedUnitId: string) {
+/** A synthetic referral whose accepted arm holds `bedNumber` at `unitId` by name. */
+function heldReferral(referrals: readonly Referral[], unitId: string, bedNumber: number): Referral {
+  const template = referrals.find((referral) =>
+    referral.destinations.some((arm) => arm.destination.kind === "psychiatric_ward"),
+  )!;
+  const arm = template.destinations.find((candidate) => candidate.destination.kind === "psychiatric_ward")!;
+  return {
+    ...template,
+    id: "RF-SYNTH-HOLD",
+    destinations: [
+      {
+        ...arm,
+        state: "accepted",
+        withdrawnAt: undefined,
+        destination: { ...arm.destination, unitId } as typeof arm.destination,
+        acceptedUnitId: unitId,
+        heldBedNumber: bedNumber,
+      },
+    ],
+  };
+}
+
+function renderWardDetail(selectedUnitId: string, holdBedAt?: number) {
   return render(
     <WardFlowProvider initialNow={NOW_ANCHOR}>
-      <ShortlistHarness selectedUnitId={selectedUnitId} />
+      <ShortlistHarness selectedUnitId={selectedUnitId} holdBedAt={holdBedAt} />
     </WardFlowProvider>,
   );
 }
@@ -169,6 +212,20 @@ describe("ShortlistPanel's ward detail block", () => {
     // No release on this unit is flagged `preparing: true` — the note must be absent, not "0
     // being made ready".
     expect(screen.queryByTestId("ward-shortlist-ward-detail-pending-rph-adult-secure")).not.toBeInTheDocument();
+  });
+
+  it("shows a bed held by name as Pulled, not Ready (WF-FIG-017)", () => {
+    // Moodjar's seeded stays fill numbered beds; the first number none of them holds is empty.
+    const taken = new Set(wardAdmissions.filter((a) => a.unitId === "arm-adult-open").map((a) => a.bedNumber));
+    const emptyBed = Array.from({ length: 19 }, (_, i) => i + 1).find((bed) => !taken.has(bed))!;
+    renderWardDetail("arm-adult-open", emptyBed);
+
+    const detail = screen.getByTestId("ward-shortlist-ward-detail-arm-adult-open");
+    // The first test's Ready 2 / Pulled 1, with one Ready bed now held for a named patient.
+    expect(within(detail).getByText("Ready 1")).toBeInTheDocument();
+    expect(within(detail).getByText("Pulled 2")).toBeInTheDocument();
+    expect(within(detail).getByText("Closed 1")).toBeInTheDocument();
+    expect(within(detail).getByText("Occupied 15")).toBeInTheDocument();
   });
 
   it("renders no ward detail block at all when no ward can be resolved", () => {

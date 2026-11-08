@@ -113,4 +113,12 @@ describe("consolidated audit verification boundaries", () => {
       files: ["tests/ui-ward-a.spec.ts", "tests/ui-ward-b.spec.ts"],
     });
   });
+
+  it("keeps --tsconfig and --add-reporter values out of the spec filters (WF-TEST-07/R3)", () => {
+    const options = ["--tsconfig", "x.json", "--add-reporter", "dot"];
+    expect(splitPlaywrightArguments([...options, "tests/ui-ward-a.spec.ts"])).toEqual({
+      options,
+      files: ["tests/ui-ward-a.spec.ts"],
+    });
+  });
 });

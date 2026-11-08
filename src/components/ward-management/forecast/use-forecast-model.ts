@@ -81,11 +81,14 @@ function computeForecastParts(
   now: Instant,
   dayZero: Date,
   edAccessTargetMinutes: Parameters<typeof edAccessRisk>[5],
+  referrals: NonNullable<Parameters<typeof forecastByKind>[7]>,
 ) {
   const horizons = forecastHorizonDays(now, dayZero);
   return {
     horizons,
-    byDays: horizons.map((days) => forecastByKind(units, bedReleases, admissions, movements, now, days, planned)),
+    byDays: horizons.map((days) =>
+      forecastByKind(units, bedReleases, admissions, movements, now, days, planned, referrals),
+    ),
     levers: forecastLevers(units, bedReleases, admissions, now),
     blockers: blockerGroups(units, admissions),
     notCounted: notYetCounted(units, leaveBeds, repatriations, admissions),
@@ -116,6 +119,7 @@ export function useForecastModel(now: Instant) {
     repatriations,
     configuration,
     dayZero: recordedDayZero,
+    referrals,
   } = useWardFlowSelect(
     "units",
     "bedReleases",
@@ -126,6 +130,7 @@ export function useForecastModel(now: Instant) {
     "repatriations",
     "configuration",
     "dayZero",
+    "referrals",
   );
   const planned = useMemo(() => plannedAdmissions ?? NO_PLANNED, [plannedAdmissions]);
   // A test or preview world may carry no day 0; fall back the way the search previews do.
@@ -143,6 +148,7 @@ export function useForecastModel(now: Instant) {
         now,
         dayZero,
         configuration.edAccessTargetMinutes,
+        referrals,
       ),
     [
       units,
@@ -155,6 +161,7 @@ export function useForecastModel(now: Instant) {
       now,
       dayZero,
       configuration.edAccessTargetMinutes,
+      referrals,
     ],
   );
   const thresholds: ForecastAlertThresholds = useMemo(
