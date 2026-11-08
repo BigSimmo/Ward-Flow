@@ -7,6 +7,7 @@ import { useWardFlowClock, useWardFlowSelect } from "@/components/ward-managemen
 import { dayOf, formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import { shiftConfirmations } from "@/components/ward-management/capacity/shift-confirmations";
+import { currentShiftStartInstant } from "@/components/ward-management/ward-board-time-features";
 import {
   Button,
   ChipGroup,
@@ -60,19 +61,16 @@ export function ToolCallLog({ onNavigate }: { onNavigate: () => void }) {
 
   const names = useMemo(() => wardNames(units), [units]);
   // Wards not confirmed this shift first (oldest first), then the rest by name.
-  const wards = useMemo(() => {
-    const waiting = shiftConfirmations(units, now).waiting;
-    const first = new Set(waiting.map((unit) => unit.id));
-    return [
+  // Keyed on the shift's start, so a minute tick does not reshuffle it but a new shift does.
+  const shiftStart = currentShiftStartInstant(now);
+  const waiting = useMemo(() => shiftConfirmations(units, shiftStart).waiting, [units, shiftStart]);
+  const unconfirmed = useMemo(() => new Set(waiting.map((unit) => unit.id)), [waiting]);
+  const wards = useMemo(
+    () => [
       ...waiting,
-      ...[...units].filter((unit) => !first.has(unit.id)).sort((a, b) => a.name.localeCompare(b.name)),
-    ];
-    // The order settles per shift; a minute tick need not reshuffle it.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [units]);
-  const unconfirmed = useMemo(
-    () => new Set(shiftConfirmations(units, now).waiting.map((unit) => unit.id)),
-    [units, now],
+      ...[...units].filter((unit) => !unconfirmed.has(unit.id)).sort((a, b) => a.name.localeCompare(b.name)),
+    ],
+    [units, waiting, unconfirmed],
   );
 
   const ward = wards.find((unit) => unit.id === wardId);

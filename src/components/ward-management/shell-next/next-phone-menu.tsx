@@ -4,7 +4,7 @@
 
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   useCallback,
   useEffect,
@@ -612,7 +612,27 @@ preloadWhenIdle(loadMenuTop);
 // Capacity at a glance (Josh, 8 Nov 2026): the coordinator's Capacity tab opens this sheet. Its own
 // chunk, fetched once the browser is idle, so the dock's first load stays small.
 const loadCapacityGlance = () => import("@/components/ward-management/shell-next/next-capacity-glance");
-const NextCapacityGlance = dynamic(() => loadCapacityGlance().then((m) => m.NextCapacityGlance), { ssr: false });
+type CapacityGlanceProps = ComponentProps<(typeof import("./next-capacity-glance"))["NextCapacityGlance"]>;
+// A failed load (offline before the code arrived) still leaves the Capacity tab working: it goes
+// to the full Capacity page instead of the pop-up.
+const NextCapacityGlance = dynamic(
+  () =>
+    loadCapacityGlance().then(
+      (m) => m.NextCapacityGlance,
+      () => CapacityGlanceUnavailable,
+    ),
+  { ssr: false },
+);
+
+function CapacityGlanceUnavailable({ open, onClose }: CapacityGlanceProps) {
+  const router = useRouter();
+  useEffect(() => {
+    if (!open) return;
+    onClose();
+    router.push("/ward-flow/capacity");
+  }, [open, onClose, router]);
+  return null;
+}
 preloadWhenIdle(loadCapacityGlance);
 
 function PhoneMenuSheetsRetry(props: PhoneMenuSheetsProps) {

@@ -1110,8 +1110,15 @@ function ToolsSheetView({
                     )}
                   </>
                 );
+                const label = `${item.title}, ${item.n}, ${item.detail}`;
                 return item.href ? (
-                  <Link key={item.key} href={item.href} className={styles.row} onClick={onNavigate}>
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    className={styles.row}
+                    onClick={onNavigate}
+                    aria-label={`${label}, opens its page`}
+                  >
                     {face}
                   </Link>
                 ) : (
@@ -1120,6 +1127,7 @@ function ToolsSheetView({
                     type="button"
                     className={styles.row}
                     onClick={() => openTool(item.tool!)}
+                    aria-label={label}
                     data-testid={`ward-tools-suggest-${item.key}`}
                   >
                     {face}

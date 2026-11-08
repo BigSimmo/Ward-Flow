@@ -68,8 +68,17 @@ function set(next: readonly CallLogEntry[]) {
   for (const listener of listeners) listener();
 }
 
-onWardSessionEnd(() => {
-  if (typeof window !== "undefined") set(EMPTY);
+onWardSessionEnd((scope) => {
+  if (typeof window === "undefined") return;
+  // The log lives in local storage, which another tab still signed in on this browser shares: a
+  // tab's own sign-out forgets only what this tab holds, as the My wards pins do.
+  if (scope === "tab") {
+    entries = EMPTY;
+    loaded = false;
+    for (const listener of listeners) listener();
+    return;
+  }
+  set(EMPTY);
 });
 
 function subscribe(onChange: () => void) {

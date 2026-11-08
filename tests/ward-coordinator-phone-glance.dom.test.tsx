@@ -64,4 +64,26 @@ describe("Capacity at a glance", () => {
     expect(within(sheet).getByRole("heading", { name: /Freeing up today/u })).toBeInTheDocument();
     expect(screen.getByTestId("ward-phone-capacity-open")).toHaveAttribute("href", "/ward-flow/capacity");
   });
+
+  it("opens a short bed type's planned discharges, with the ward's own note, and goes back", () => {
+    installMatchMediaStub(true);
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <NextCapacityGlance open onClose={() => {}} returnFocusRef={{ current: null }} />
+      </WardFlowProvider>,
+    );
+    const link = screen.getAllByTestId(/^ward-phone-capacity-plan-/u)[0];
+    expect(link).toHaveTextContent(/planned discharges? could free one/u);
+    fireEvent.click(link);
+    const plan = screen.getByTestId("ward-phone-capacity-plan");
+    expect(within(plan).getByRole("heading", { level: 2 })).toHaveTextContent(
+      /^Planned discharges that could free an? .+ bed today$/u,
+    );
+    expect(within(plan).getAllByRole("listitem").length).toBeGreaterThan(0);
+    expect(within(plan).getAllByRole("button", { name: /^Call and log, /u }).length).toBeGreaterThan(0);
+    expect(plan).toHaveTextContent("Only the ward decides when a patient leaves.");
+    fireEvent.click(within(plan).getByRole("button", { name: "Capacity" }));
+    expect(screen.queryByTestId("ward-phone-capacity-plan")).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: /Place someone now/u })).toBeInTheDocument();
+  });
 });

@@ -764,9 +764,9 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 4px 10px;
+  gap: 0 10px;
   margin: 0;
-  padding: 2px 0 4px;
+  padding: 0;
   font-size: var(--wf-fs-13);
   color: var(--wf-ink-3);
 }
@@ -774,7 +774,7 @@
 .createMore a {
   display: inline-flex;
   align-items: center;
-  min-height: 40px;
+  min-height: 48px;
   color: var(--wf-accent-ink);
   font-weight: 600;
   text-decoration: none;
