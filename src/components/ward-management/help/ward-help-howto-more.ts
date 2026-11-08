@@ -454,6 +454,7 @@ export const CRAWL_JOBS: readonly HowTo[] = [
     acts: ["RAISE_EXPECT_FLAG", "CLEAR_EXPECT_FLAG"],
     go: ["movements", "home"],
     showMe: [
+      { target: MOVEMENT_ROW, title: "Open the movement", body: "Choose it in the list. Its page holds these tools." },
       { target: WORKFLOW_CONTROLS, title: "Additional workflow controls", body: "On the movement's page." },
       {
         target: [button("Raise expectation review flag"), button("Clear expectation review flag")],
@@ -538,6 +539,7 @@ export const CRAWL_JOBS: readonly HowTo[] = [
     acts: ["RECORD_ACCEPTANCE_CONDITION", "MARK_ACCEPTANCE_CONDITION_MET"],
     go: ["movements", "home"],
     showMe: [
+      { target: MOVEMENT_ROW, title: "Open the movement", body: "Choose it in the list. Its page holds these tools." },
       {
         target: { sel: '[data-testid="acceptance-condition-add"]' },
         title: "Add a condition",
@@ -687,6 +689,7 @@ export const CRAWL_JOBS: readonly HowTo[] = [
     acts: ["RECORD_MOVEMENT_BLOCKER", "CLEAR_MOVEMENT_BLOCKER"],
     go: ["movements", "home"],
     showMe: [
+      { target: MOVEMENT_ROW, title: "Open the movement", body: "Choose it in the list. Its page holds these tools." },
       {
         target: { sel: '[data-testid="ward-console-blocker-input"]' },
         title: "What is holding this up",
@@ -729,6 +732,7 @@ export const CRAWL_JOBS: readonly HowTo[] = [
     acts: ["STEP_BACK_STAGE"],
     go: "movements",
     showMe: [
+      { target: MOVEMENT_ROW, title: "Open the movement", body: "Choose it in the list. Its page holds these tools." },
       {
         target: { sel: '[data-testid="ward-console-step-back-stage"]' },
         title: "Correct the recorded stage",
@@ -747,6 +751,7 @@ export const CRAWL_JOBS: readonly HowTo[] = [
     acts: ["STOP_TRANSPORT"],
     go: ["movements", "ed"],
     showMe: [
+      { target: MOVEMENT_ROW, title: "Open the movement", body: "Choose it in the list. Its page holds these tools." },
       {
         target: { sel: '[data-testid="ward-console-stop-transport"]' },
         title: "Stop transport",
@@ -765,6 +770,7 @@ export const CRAWL_JOBS: readonly HowTo[] = [
     acts: ["RECORD_SUPPORT_NOTIFICATION"],
     go: ["movements", "legal-forms", "home"],
     showMe: [
+      { target: MOVEMENT_ROW, title: "Open the movement", body: "Choose it in the list. Its page holds these tools." },
       {
         target: { sel: '[data-testid="ward-support-notifications"]' },
         title: "Carer, PSP and MHAS",
@@ -827,6 +833,7 @@ export const CRAWL_JOBS: readonly HowTo[] = [
     acts: ["FLAG_LEGAL_MISMATCH"],
     go: ["movements", "home"],
     showMe: [
+      { target: MOVEMENT_ROW, title: "Open the movement", body: "Choose it in the list. Its page holds these tools." },
       { target: WORKFLOW_CONTROLS, title: "Additional workflow controls", body: "The less used tools." },
       {
         target: button("Flag current legal placement mismatch"),
