@@ -95,13 +95,19 @@ export function movementRefuses3C(
   return form3CRefusedAfter3D(movement?.legalForm?.code ?? movement?.legalClock?.code);
 }
 
+/**
+ * Late when an arrival plan exists, now is past it by more than the grace period, and the journey
+ * is still open: not marked arrived and not closed (`closed` is `movement.closure !== undefined`,
+ * so a withdrawn or cancelled movement is never late).
+ */
 export function isArrivalLate(
   estimatedArrivalAt: Instant | undefined,
   stage: string | undefined,
   now: Instant,
+  closed = false,
 ): boolean {
   if (estimatedArrivalAt === undefined) return false;
-  if (stage === "arrived") return false;
+  if (stage === "arrived" || closed) return false;
   return now > estimatedArrivalAt + ARRIVAL_LATE_AFTER_MINUTES;
 }
 
