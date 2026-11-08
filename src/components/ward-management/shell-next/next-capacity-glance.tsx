@@ -131,12 +131,16 @@ function GlanceBody({ onClose }: { onClose: () => void }) {
   // the planned-discharges heading, and back to that bed type's link on Capacity.
   const planTitleRef = useRef<HTMLHeadingElement>(null);
   const lastPlanRef = useRef<BedKindId | null>(null);
+  const mainTitleRef = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     const previous = lastPlanRef.current;
     lastPlanRef.current = plan;
     if (plan) planTitleRef.current?.focus();
-    else if (previous)
-      document.querySelector<HTMLElement>(`[data-testid="ward-phone-capacity-plan-${previous}"]`)?.focus();
+    else if (previous) {
+      // The link may be gone (the shortage cleared meanwhile): the Capacity heading takes focus instead.
+      const link = document.querySelector<HTMLElement>(`[data-testid="ward-phone-capacity-plan-${previous}"]`);
+      (link ?? mainTitleRef.current)?.focus();
+    }
   }, [plan]);
   const freeingFor = (kind: BedKindId) => dischargesThatFree(kind, bedReleases, units, admissions, now);
 
@@ -217,7 +221,7 @@ function GlanceBody({ onClose }: { onClose: () => void }) {
             <X aria-hidden="true" strokeWidth={2} />
           </button>
         </div>
-        <h2 className={styles.title}>
+        <h2 className={styles.title} ref={mainTitleRef} tabIndex={-1}>
           <span className={styles.mono}>{totals.bedsThatFit}</span> beds ready{" "}
           <small>
             for <span className={styles.mono}>{totals.waiting}</span> waiting

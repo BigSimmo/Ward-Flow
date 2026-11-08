@@ -516,7 +516,10 @@ function CreateSheet({
         ...CREATE_LINKS.filter((item) => item.id !== "delays" && ids.includes(item.id)).map((item) => ({
           key: item.id,
           label: item.label,
-          href: item.href ?? byId.get(item.id)?.href,
+          href:
+            item.id === "wards" && currentUnitId !== undefined
+              ? unitHref(decodeURIComponent(currentUnitId))
+              : (item.href ?? byId.get(item.id)?.href),
         })),
       ].filter((link): link is { key: string; label: string; href: string } => link.href !== undefined)
     : [];
