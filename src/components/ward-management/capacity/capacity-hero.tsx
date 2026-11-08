@@ -29,7 +29,7 @@ import { isConfirmationFresh } from "./capacity-gap-words";
 import type { CapacityModel } from "./capacity-model";
 import { gapWords } from "./capacity-range-line";
 import { waitingHref } from "../delays/waiting-href";
-import { HELD_UP_HREF, HELD_UP_LINK_LABEL } from "./capacity-held-up";
+import { HELD_UP_HREF } from "./capacity-held-up";
 import type { SiteEdWaiting } from "./capacity-site-ed";
 import styles from "./capacity-page.module.css";
 
@@ -166,7 +166,6 @@ export function CapacityHero({
               label={heldUp.total === 1 ? "Held-up discharge" : "Held-up discharges"}
               tone={heldUp.total > 0 ? "warning" : undefined}
               href={canOpen(HELD_UP_HREF) ? HELD_UP_HREF : undefined}
-              linkLabel={`${heldUp.total} held-up ${heldUp.total === 1 ? "discharge" : "discharges"}: ${HELD_UP_LINK_LABEL.toLowerCase()}`}
               testId="capacity-hero-held-up"
             />
             <section aria-label="Bed counts confirmed" className={`${styles.heroShift} ${styles.heroJump}`}>
