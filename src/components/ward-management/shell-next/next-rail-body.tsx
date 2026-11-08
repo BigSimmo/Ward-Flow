@@ -9,11 +9,11 @@ import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import {
   ArrowRight,
   ChevronDown,
-  ChevronLeft,
   ChevronRight,
   ClipboardList,
   LayoutGrid,
   Menu,
+  PanelLeftClose,
   PanelLeftOpen,
   SunMoon,
 } from "lucide-react";
@@ -83,9 +83,10 @@ import {
   capacityRowsOver,
   capacityRowsSpoken,
   cardScopeNote,
-  compactPipText,
+  compactPipPlace,
   overLineLabel,
   RailLiveClock,
+  RailOccupancyRing,
   RailReadyLine,
   usePinnedPages,
 } from "@/components/ward-management/shell-next/next-rail-parts";
@@ -809,33 +810,6 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
           <Menu aria-hidden="true" size={18} strokeWidth={1.75} />
           Menu
         </button>
-        <button
-          type="button"
-          ref={toggleRef}
-          className={styles.railToggle}
-          // UX audit (21 Oct 2026): "Close" alone named no object for a screen reader.
-          aria-label={open ? "Collapse menu" : "Expand menu"}
-          data-testid="ward-rail-toggle"
-          onClick={() => setOpen(!open)}
-          title={
-            open
-              ? "Collapse the menu to icons. The bracket key [ does the same."
-              : "Expand the menu. The bracket key [ does the same."
-          }
-        >
-          {open ? (
-            <ChevronLeft aria-hidden="true" className={styles.toggleIcon} strokeWidth={1.75} />
-          ) : (
-            <PanelLeftOpen aria-hidden="true" className={styles.toggleIcon} strokeWidth={1.75} />
-          )}
-          <span className={styles.toggleText}>
-            {open ? "Collapse" : "Expand"}
-            <span aria-hidden="true"> menu</span>
-          </span>
-          <kbd aria-hidden="true" className={styles.toggleKey}>
-            [
-          </kbd>
-        </button>
       </div>
 
       {service ? (
@@ -928,8 +902,10 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
                 if (nextOpen) announceToWardShell(`Bed alerts: ${overLine.label}.`);
               }}
             >
-              {overLine.over > 0 ? <Dot tone="warning" /> : null}
-              <span className={styles.compactAlertVal}>{compactPipText(firstRow)}</span>
+              {/* Note 3 (Josh, 8 Nov 2026): a small ring with the figure inside, never cut-off words.
+                  It fills to the occupancy and turns amber at or over the line; the place sits underneath. */}
+              <RailOccupancyRing percent={firstRow?.percent ?? null} alert={overLine.over > 0} />
+              <span className={railParts.compactAlertCaption}>{compactPipPlace(firstRow)}</span>
             </button>
           </Tooltip>
 
@@ -1235,6 +1211,35 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
             />
           ) : null}
         </div>
+        {/* Note 3 (Josh, 8 Nov 2026): collapse and expand live at the foot in both shapes, on the
+            same line as the person, so the control is always where it was last seen. */}
+        <button
+          type="button"
+          ref={toggleRef}
+          className={styles.railToggle}
+          // UX audit (21 Oct 2026): "Close" alone named no object for a screen reader.
+          aria-label={open ? "Collapse menu" : "Expand menu"}
+          data-testid="ward-rail-toggle"
+          onClick={() => setOpen(!open)}
+          title={
+            open
+              ? "Collapse the menu to icons. The bracket key [ does the same."
+              : "Expand the menu. The bracket key [ does the same."
+          }
+        >
+          {open ? (
+            <PanelLeftClose aria-hidden="true" className={styles.toggleIcon} strokeWidth={1.75} />
+          ) : (
+            <PanelLeftOpen aria-hidden="true" className={styles.toggleIcon} strokeWidth={1.75} />
+          )}
+          <span className={styles.toggleText}>
+            {open ? "Collapse" : "Expand"}
+            <span aria-hidden="true"> menu</span>
+          </span>
+          <kbd aria-hidden="true" className={styles.toggleKey}>
+            [
+          </kbd>
+        </button>
       </div>
       <Sheet
         id="preview-rail-more-pages"

@@ -3,20 +3,32 @@ import "@testing-library/jest-dom/vitest";
 import { render } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 
-import { compactPipText, RailReadyLine } from "@/components/ward-management/shell-next/next-rail-parts";
+import {
+  compactPipPlace,
+  RailOccupancyRing,
+  RailReadyLine,
+} from "@/components/ward-management/shell-next/next-rail-parts";
 
 /**
  * WF-44 (5 Nov 2026): the live rail's closed tile names its place, and the open card puts Metro on
  * its own line above the ready count, so "Metro 74.6%" never paints over the row above it.
  */
 describe("WF-44 live rail occupancy labels", () => {
-  it("names the place before the percent on the closed tile, never a bare figure", () => {
-    expect(compactPipText({ name: "East Metro", percent: 74.4 })).toBe("East 74%");
-    expect(compactPipText({ name: "Metro", percent: 85.9 })).toBe("Metro 86%");
-    expect(compactPipText({ name: "RPH", percent: 81 })).toBe("RPH 81%");
-    expect(compactPipText({ name: "RPH", percent: null })).toBe("—");
-    expect(compactPipText(undefined)).toBe("—");
-    expect(compactPipText({ name: "North Metro", percent: 60 })).not.toMatch(/^\d/u);
+  it("names the place under the closed ring, never a bare figure (Note 3: never cut off)", () => {
+    expect(compactPipPlace({ name: "East Metro" })).toBe("East");
+    expect(compactPipPlace({ name: "Metro" })).toBe("Metro");
+    expect(compactPipPlace({ name: "RPH" })).toBe("RPH");
+    expect(compactPipPlace(undefined)).toBe("Beds");
+  });
+
+  it("draws the ring's figure, filled to the percent, amber only when a place is over the line", () => {
+    const { container, rerender } = render(<RailOccupancyRing percent={85.9} alert />);
+    const svg = container.querySelector("svg")!;
+    expect(svg).toHaveTextContent("86");
+    expect(svg).toHaveAttribute("data-alert", "true");
+    rerender(<RailOccupancyRing percent={null} alert={false} />);
+    expect(container.querySelector("svg")).toHaveTextContent("—");
+    expect(container.querySelector("svg")).not.toHaveAttribute("data-alert");
   });
 
   it("puts Metro and the ready count on separate lines inside one stack", () => {
