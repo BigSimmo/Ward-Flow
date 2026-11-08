@@ -294,12 +294,17 @@
   color: var(--wf-accent-ink);
 }
 
-/* Same press feel as the shared Button. */
-.chip:active,
-.segItem:active,
-.ptItem:active {
-  transform: scale(0.97);
-  transition-duration: 60ms;
+/* Same press feel as the shared Button, on a mouse or trackpad only (8 Nov 2026). On a touch
+ * screen these options sit in rows that slide sideways, so a swipe that starts on one pressed it
+ * and the whole row twitched as it shrank and grew back; iOS can also leave it shrunk after the
+ * swipe, which put that option a pixel out of line with its neighbours. */
+@media (hover: hover) and (pointer: fine) {
+  .chip:active,
+  .segItem:active,
+  .ptItem:active {
+    transform: scale(0.97);
+    transition-duration: 60ms;
+  }
 }
 
 /* No width jump: the label reserves its bold width, so a row stays still when one is pressed. */

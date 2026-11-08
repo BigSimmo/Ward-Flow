@@ -6,7 +6,7 @@
  * answer shows no option chosen, and a second press on the chosen option clears it.
  */
 import { BookOpen, ChevronDown } from "lucide-react";
-import { useId, useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode, type RefObject } from "react";
 
 import {
   Button,
@@ -17,10 +17,12 @@ import {
   FilterChip,
   ListPicker,
   Segmented,
+  Sheet,
   SrOnly,
   StatusGlyph,
   TextInput,
   phoneRows,
+  useIsPhone,
   type ListPickerOption,
 } from "@/components/wf";
 
@@ -422,38 +424,74 @@ export function useDisclosure(initial = false) {
   return {
     open,
     toggle: () => setOpen((value) => !value),
+    close: () => setOpen(false),
     buttonProps: { "aria-expanded": open, "aria-controls": id },
     panelId: id,
   };
 }
 
-/** "What to cover": the toggle with its count, and the panel of headings that adds one when tapped. */
+/**
+ * "What to cover": the toggle with its count, and the headings that add one when tapped. On a
+ * tablet or desktop the headings open in place under the toggle; on a phone (Josh, 8 Nov 2026) they
+ * open in a bottom sheet, so the long list never pushes the note down the page. Tapping a heading
+ * there adds it, closes the sheet and puts the cursor under the new heading.
+ */
 export function GuideBox({
   groups,
   text,
   onHeading,
   columns = 3,
   extra,
+  textRef,
 }: {
   groups: readonly GuideGroup[];
   text: string;
   onHeading: (heading: string) => void;
   columns?: 2 | 3;
   extra?: ReactNode;
+  /** The note the headings go into: focus lands there when the phone sheet closes. */
+  textRef?: RefObject<HTMLTextAreaElement | null>;
 }) {
   const guide = useDisclosure(false);
+  const isPhone = useIsPhone();
   const all = guideHeadings(groups);
   const covered = all.filter((h) => headingFilled(text, h)).length;
+  const list = (
+    <div id={guide.panelId} className={styles.guidePanel} data-columns={isPhone ? 1 : columns}>
+      {groups.map(([title, items]) => (
+        <div key={title}>
+          <h3 className={styles.guideHead}>{title}</h3>
+          {items.map(([heading, cover]) => (
+            <button
+              key={heading}
+              type="button"
+              className={styles.guideItem}
+              onClick={() => {
+                if (isPhone) guide.close();
+                onHeading(heading);
+              }}
+            >
+              <StatusGlyph tone={headingFilled(text, heading) ? "success" : "neutral"} size={10} />
+              <span>
+                <span className={styles.guideTitle}>{heading}</span>
+                <span className={styles.guideText}>{cover}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      ))}
+    </div>
+  );
   return (
     <>
       <div className={styles.guideBar}>
         <Button
           size="sm"
           icon={BookOpen}
-          iconEnd={ChevronDown}
+          iconEnd={isPhone ? undefined : ChevronDown}
           className={phoneRows.chip}
           onClick={guide.toggle}
-          {...guide.buttonProps}
+          {...(isPhone ? { "aria-haspopup": "dialog" as const, "aria-expanded": guide.open } : guide.buttonProps)}
         >
           What to cover{" "}
           <span className={styles.mono}>
@@ -462,23 +500,20 @@ export function GuideBox({
         </Button>
         {extra}
       </div>
-      {guide.open ? (
-        <div id={guide.panelId} className={styles.guidePanel} data-columns={columns}>
-          {groups.map(([title, items]) => (
-            <div key={title}>
-              <h3 className={styles.guideHead}>{title}</h3>
-              {items.map(([heading, cover]) => (
-                <button key={heading} type="button" className={styles.guideItem} onClick={() => onHeading(heading)}>
-                  <StatusGlyph tone={headingFilled(text, heading) ? "success" : "neutral"} size={10} />
-                  <span>
-                    <span className={styles.guideTitle}>{heading}</span>
-                    <span className={styles.guideText}>{cover}</span>
-                  </span>
-                </button>
-              ))}
-            </div>
-          ))}
-        </div>
+      {isPhone ? (
+        <Sheet
+          open={guide.open}
+          onClose={guide.close}
+          title="What to cover"
+          description={`${covered} of ${all.length} covered. Tap a heading to add it to the note.`}
+          mobileSize="content"
+          returnFocusRef={textRef}
+          testId="triage-guide-sheet"
+        >
+          {list}
+        </Sheet>
+      ) : guide.open ? (
+        list
       ) : null}
     </>
   );
