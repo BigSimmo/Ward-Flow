@@ -213,4 +213,23 @@ describe("front-door admission under a fake-token flood (review 8 Nov 2026)", ()
     for (let attempt = 0; attempt < 300; attempt += 1) await verify(forSubject(`synthetic-later-fake-${attempt}`));
     expect(await verify(forSubject("synthetic-staff"))).toBe("rate-limited");
   });
+  it("refuses an anonymous account and never remembers it as a known account", async () => {
+    let now = 10_000;
+    const send = vi.fn(async (_input: RequestInfo | URL, init?: RequestInit) => {
+      const authorization = String((init?.headers as Record<string, string>).authorization);
+      if (authorization.includes(part({ sub: "synthetic-guest" })))
+        return Response.json({ id: "synthetic-guest", is_anonymous: true });
+      if (authorization.includes(part({ sub: "synthetic-staff" })))
+        return Response.json({ id: "synthetic-staff", is_anonymous: false });
+      return new Response(null, { status: 401 });
+    });
+    const verify = createFrontDoorVerifier({ fetch: send, now: () => now });
+    expect(await verify(forSubject("synthetic-guest"))).toBe("refused");
+    expect(await verify(forSubject("synthetic-staff"))).toEqual({ id: "synthetic-staff" });
+    now += 60_000;
+    for (let attempt = 0; attempt < 300; attempt += 1)
+      expect(await verify(forSubject(`synthetic-fake-${attempt}`))).toBe("refused");
+    expect(await verify(forSubject("synthetic-guest"))).toBe("rate-limited");
+    expect(await verify(forSubject("synthetic-staff"))).toEqual({ id: "synthetic-staff" });
+  });
 });

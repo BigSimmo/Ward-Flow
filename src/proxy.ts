@@ -8,6 +8,7 @@ import {
   frontDoorRequired,
   frontDoorSecret,
   isFrontDoorOpenPath,
+  passOpensSite,
   safeNextPath,
   verifyPass,
 } from "@/lib/front-door-pass";
@@ -198,7 +199,8 @@ export function hasMalformedWardFlowEncoding(pathname: string): boolean {
 /**
  * The front door: null lets the request through, otherwise the response that stops it. Off unless
  * `WARD_FRONT_DOOR=required`. Without a valid pass a page goes to /sign-in, carrying where the
- * visitor was going, and an API call gets 401. A missing signing secret fails closed.
+ * visitor was going, and an API call gets 401. A missing signing secret fails closed. On the
+ * signed-in (shared) site a demo pass does not count: only an account pass opens it.
  */
 export async function frontDoorVerdict(
   request: NextRequest,
@@ -207,7 +209,12 @@ export async function frontDoorVerdict(
   const { pathname, search } = request.nextUrl;
   if (!frontDoorRequired(environment) || isFrontDoorOpenPath(pathname)) return null;
   const pass = await verifyPass(frontDoorSecret(environment), request.cookies.get(FRONT_DOOR_PASS_COOKIE)?.value);
-  if (pass) return null;
+  // The literal read is inlined at build time, as in POST /api/session; the environment read covers
+  // a runtime value and tests.
+  const shared =
+    (environment.NEXT_PUBLIC_WARD_SHARED_ENABLED ??
+      (environment === process.env ? process.env.NEXT_PUBLIC_WARD_SHARED_ENABLED : undefined)) === "true";
+  if (pass && passOpensSite(pass, shared)) return null;
   if (pathname === "/api" || pathname.startsWith("/api/"))
     return NextResponse.json({ error: "Sign in first.", code: "front_door" }, { status: 401 });
   const url = request.nextUrl.clone();

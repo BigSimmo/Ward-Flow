@@ -136,8 +136,9 @@ export function createFrontDoorVerifier(dependencies: { fetch?: typeof fetch; no
         });
         if (response.status === 401 || response.status === 403) return "refused";
         if (!response.ok) return "unavailable";
-        const user = (await response.json()) as { id?: unknown } | null;
-        if (typeof user?.id !== "string" || !user.id) return "refused";
+        const user = (await response.json()) as { id?: unknown; is_anonymous?: unknown } | null;
+        // An anonymous Supabase account is not a staff sign-in: refused, and never remembered.
+        if (typeof user?.id !== "string" || !user.id || user.is_anonymous === true) return "refused";
         if (user.id === subject) rememberAccount(user.id, now());
         return { id: user.id };
       } catch {

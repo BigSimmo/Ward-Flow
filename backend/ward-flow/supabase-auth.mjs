@@ -297,6 +297,8 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
       if (!response.ok) throw new VerifierUnavailableError("Token verifier unavailable");
       const user = await response.json();
       if (!UUID.test(user?.id ?? "")) throw new VerifierUnavailableError("Token verifier unavailable");
+      // An anonymous account is refused even when its token omitted the claim.
+      if (user.is_anonymous === true) return null;
       return user.id.toLowerCase();
     });
   }
@@ -358,8 +360,14 @@ export function createSupabaseAuthenticator(config, dependencies = {}) {
     const claims = jwt?.claims;
     const subject = typeof claims?.sub === "string" ? claims.sub.toLowerCase() : "";
     // Free checks first: nothing below runs, and nothing leaves this server, for a token that is
-    // malformed, expired or from another project.
-    if (!jwt || !validTokenTimes(claims, now()) || claims.iss !== ISSUER || !UUID.test(subject))
+    // malformed, expired, from another project or from an anonymous (guest) Supabase account.
+    if (
+      !jwt ||
+      !validTokenTimes(claims, now()) ||
+      claims.iss !== ISSUER ||
+      !UUID.test(subject) ||
+      claims.is_anonymous === true
+    )
       throw new InvalidCredentialError("Unauthorised");
     const algorithm = ALGORITHMS[jwt.header.alg];
     if (Object.hasOwn(ALGORITHMS, jwt.header.alg) && typeof jwt.header.kid === "string") {

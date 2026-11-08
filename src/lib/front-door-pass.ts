@@ -168,6 +168,15 @@ export async function verifyPass(
   }
 }
 
+/**
+ * Whether a verified pass opens this site. The signed-in (shared) site opens only with an account
+ * pass, as `POST /api/session` already refuses a demo code there; a demo pass left over from the
+ * public demo, or from before the switch, is sent back to sign in.
+ */
+export function passOpensSite(pass: FrontDoorPass, sharedEnabled: boolean): boolean {
+  return pass.kind === "account" || !sharedEnabled;
+}
+
 /** The demo code's own form: capitals, with spaces and dashes ignored, so "ward 7q4k" still opens. */
 function normaliseDemoCode(code: string): string {
   return code.toUpperCase().replace(/[\s-]+/g, "");
