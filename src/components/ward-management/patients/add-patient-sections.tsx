@@ -33,7 +33,7 @@ import styles from "./add-patient.module.css";
  */
 
 /** The optional typed details. A blank one is sent as absent, never stored as "". */
-export const EXTRA_FIELDS = [
+const EXTRA_FIELDS = [
   "suburb",
   "preferredName",
   "address",
