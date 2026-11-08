@@ -90,7 +90,7 @@ const KEYS: readonly (readonly [key: string, where: string, does: string])[] = [
 
 const EVIDENCE: readonly (readonly [source: string, why: string])[] = [
   ["WA MP 0155/21", "Standard mental health documentation: the triage (SMHMR900) and RAMP (SMHMR905) content."],
-  ["WA MP 0181/24", "Safety planning with the person, in place of a risk rating."],
+  ["WA MP 0181/24", "Safety planning with the person, rather than a rating or score of their risk."],
   [
     "NICE NG225 (2022)",
     "Do not use risk tools or scales to predict suicide or allocate care; assess needs and make a safety plan.",
