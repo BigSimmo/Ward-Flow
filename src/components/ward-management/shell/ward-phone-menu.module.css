@@ -473,7 +473,7 @@
 
 /* The taller dock (48px row + 8px): the page's last rows and any bar seated on the dock follow it.
    The keyboard-open rule (ward-phone-page-dock.module.css) still outranks this. */
-@media (max-width: 46.4375rem), (pointer: coarse) and (max-height: 500px) {
+@media (max-width: 46.4375rem) {
   /* Notices clear of the dock (Josh, 31 Oct 2026): the shared toast rests this far above the dock's
      top (--wf-dock-clear) instead of 12px, which put it against the + hump. Read by the toast region
      in src/components/wf/overlay.module.css once its one-line change lands. */
