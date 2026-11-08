@@ -43,7 +43,16 @@ export function useCapacityModel() {
     admissions,
     leaveBeds,
     plannedAdmissions,
-  } = useWardFlowSelect("movements", "units", "bedReleases", "admissions", "leaveBeds", "plannedAdmissions");
+    referrals,
+  } = useWardFlowSelect(
+    "movements",
+    "units",
+    "bedReleases",
+    "admissions",
+    "leaveBeds",
+    "plannedAdmissions",
+    "referrals",
+  );
   const live = usePageLive();
   const { now } = live;
   const planned = plannedAdmissions ?? NO_PLANNED;
@@ -57,19 +66,24 @@ export function useCapacityModel() {
     [siteCode, access, everyUnit],
   );
 
-  const gapRows = useMemo(() => bedKindGaps(movements, units, now, admissions), [movements, units, now, admissions]);
+  // WF-FIG-017 (Josh, 7 Nov 2026): a bed held by name is held, not free, on every figure here.
+  const reservations = useMemo(() => [...movements, ...referrals], [movements, referrals]);
+  const gapRows = useMemo(
+    () => bedKindGaps(movements, units, now, admissions, referrals),
+    [movements, units, now, admissions, referrals],
+  );
   const gapTotals = useMemo(() => bedKindTotals(gapRows), [gapRows]);
   const tomorrowByKind = useMemo(
     () => forecastByKind(units, bedReleases, admissions, movements, now, 1, planned),
     [units, bedReleases, admissions, movements, now, planned],
   );
   const forecast = useMemo(
-    () => bedsForecast(units, bedReleases, admissions, movements, now, planned),
-    [units, bedReleases, admissions, movements, now, planned],
+    () => bedsForecast(units, bedReleases, admissions, movements, now, planned, referrals),
+    [units, bedReleases, admissions, movements, now, planned, referrals],
   );
   const networkRows = useMemo(
-    () => networkWardRows(units, now, bedReleases, admissions, leaveBeds),
-    [units, now, bedReleases, admissions, leaveBeds],
+    () => networkWardRows(units, now, bedReleases, admissions, leaveBeds, reservations),
+    [units, now, bedReleases, admissions, leaveBeds, reservations],
   );
   const totals = useMemo(() => networkTotals(networkRows), [networkRows]);
   const occupancy = useMemo(
@@ -105,8 +119,9 @@ export function useCapacityModel() {
             bedReleases,
             admissions,
             leaveBeds,
+            reservations,
           ),
-    [siteCode, everyUnit, now, bedReleases, admissions, leaveBeds],
+    [siteCode, everyUnit, now, bedReleases, admissions, leaveBeds, reservations],
   );
   const otherSiteGroups = useMemo(
     () =>
@@ -118,14 +133,15 @@ export function useCapacityModel() {
               [...bedReleases],
               admissions,
               leaveBeds,
+              reservations,
             ),
           ),
-    [siteCode, everyUnit, bedReleases, admissions, leaveBeds],
+    [siteCode, everyUnit, bedReleases, admissions, leaveBeds, reservations],
   );
 
   const mapGroups = useMemo(
-    () => groupBedMapWardsByService(bedMapWards(units, [...bedReleases], admissions, leaveBeds)),
-    [units, bedReleases, admissions, leaveBeds],
+    () => groupBedMapWardsByService(bedMapWards(units, [...bedReleases], admissions, leaveBeds, reservations)),
+    [units, bedReleases, admissions, leaveBeds, reservations],
   );
 
   const networkForecastModel = useForecastModel(now);

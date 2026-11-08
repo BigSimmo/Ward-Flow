@@ -11,7 +11,7 @@
 //
 // Aggregate only, like the rest of the Capacity screen: nothing here ranks a ward for a person.
 // A pure function with no React, so the morning bed-meeting sheet can print the same figures.
-import { bedStates } from "@/components/ward-management/ward-bed-states";
+import { bedStates, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { bedIsOccupied, type Admission, type PlannedAdmission } from "@/components/ward-management/ward-admissions";
 import { dayOf, MINUTES_PER_DAY, type Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -102,11 +102,15 @@ export function bedsForecast(
   movements: Movement[],
   now: Instant,
   plannedAdmissions: readonly PlannedAdmission[] = [],
+  referrals: readonly ReservationReferral[] = [],
 ): BedsForecast {
   // Clinical owner ruling, 14 Oct 2026: main's capacity rule stands, and a closed unit counts as
   // zero capacity, now or projected.
   const openUnits = units.filter((unit) => !unit.isClosed);
-  const readyNow = openUnits.reduce((sum, unit) => sum + bedStates(unit, admissions, [], []).ready, 0);
+  // WF-FIG-017 (Josh, 7 Nov 2026): a bed held by name is not free, so the journeys and referrals
+  // go in as the reservations `bedStates` takes off Ready.
+  const reservations = [...movements, ...referrals];
+  const readyNow = openUnits.reduce((sum, unit) => sum + bedStates(unit, admissions, [], [], reservations).ready, 0);
   const openUnitIds = new Set(openUnits.map((unit) => unit.id));
   const unitIds = new Set(units.map((unit) => unit.id));
   const admissionsById = new Map(admissions.map((admission) => [admission.id, admission]));
@@ -118,8 +122,10 @@ export function bedsForecast(
   );
   // Clinical owner ruling, 14 Oct 2026: a movement already pulled into a bed (an admission or an
   // allocated bed) is left out of the bed-wait count, and so out of `bedsNeeded` too.
+  // A journey holding a named bed is out of Ready already, so it is not counted as waiting too.
   const waitingForBed = waitingMovements.filter(
-    (movement) => movement.admissionId === undefined && movement.allocatedBed === undefined,
+    (movement) =>
+      movement.admissionId === undefined && movement.allocatedBed === undefined && movement.heldBedNumber === undefined,
   ).length;
 
   const horizons = BEDS_FORECAST_HORIZON_DAYS.map((days): BedsForecastHorizon => {

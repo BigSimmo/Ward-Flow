@@ -19,7 +19,7 @@ import {
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedIsOccupied, remainingSpeciallingCapacity } from "@/components/ward-management/ward-admissions";
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
-import { bedStates } from "@/components/ward-management/ward-bed-states";
+import { bedStates, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import { isOpen, unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import type {
@@ -117,6 +117,8 @@ function waitsForBed(movement: Movement): boolean {
     isOpen(movement) &&
     movement.admissionId === undefined &&
     movement.allocatedBed === undefined &&
+    // A journey holding a named bed has that bed already taken off Ready (WF-FIG-017).
+    movement.heldBedNumber === undefined &&
     (movement.stage === "placement_requested" ||
       movement.stage === "destination_review" ||
       movement.stage === "accepted_awaiting_bed")
@@ -127,8 +129,13 @@ function waitsForBed(movement: Movement): boolean {
  * Each ward's ready beds, reconciled once per ward as the network table and map do. This leaves the
  * recorded observation untouched when a later confirmation includes an already-pulled bed.
  */
-function readySupply(units: Unit[], admissions: readonly Admission[]): { unit: Unit; ready: number }[] {
-  return units.map((unit) => ({ unit, ready: bedStates(unit, admissions, [], []).ready }));
+function readySupply(
+  units: Unit[],
+  admissions: readonly Admission[],
+  reservations: readonly ReservationReferral[],
+): { unit: Unit; ready: number }[] {
+  // WF-FIG-017 (Josh, 7 Nov 2026): a bed held by name is not Ready.
+  return units.map((unit) => ({ unit, ready: bedStates(unit, admissions, [], [], reservations).ready }));
 }
 
 /** One row per bed kind, in the locked order above. */
@@ -137,6 +144,7 @@ export function bedKindGaps(
   units: Unit[],
   now: Instant,
   admissions: readonly Admission[] = [],
+  referrals: readonly ReservationReferral[] = [],
 ): BedKindGap[] {
   // `now` is accepted for parity with every other Ward Flow derivation and because a caller
   // computing `movements`/`units` upstream typically already has it — `isOpen` itself does not
@@ -146,7 +154,7 @@ export function bedKindGaps(
   // A pulled bed is already removed from allocatable supply. Counting its journey as demand
   // again would show a shortfall for a person who already holds that bed (as in the forecast).
   const waitingForBed = movements.filter(waitsForBed);
-  const supply = readySupply(units, admissions);
+  const supply = readySupply(units, admissions, [...movements, ...referrals]);
 
   return ROWS.map(({ id, need, who }) => {
     const waiting = waitingForBed.filter(
@@ -167,11 +175,12 @@ export function bedKindBreakdown(
   movements: Movement[],
   units: Unit[],
   admissions: readonly Admission[] = [],
+  referrals: readonly ReservationReferral[] = [],
 ): { waiting: Movement[]; wards: { unit: Unit; beds: number }[] } {
   const waiting = movements
     .filter((movement) => waitsForBed(movement) && bedKindOfMovement(movement.cohort, movement.security) === kind)
     .sort((x, y) => x.openedAt - y.openedAt);
-  const wards = readySupply(units, admissions)
+  const wards = readySupply(units, admissions, [...movements, ...referrals])
     .map(({ unit, ready }) => ({ unit, beds: bedsOfKindAtUnit(unit, kind, ready) }))
     .filter((entry) => entry.beds > 0)
     .sort((x, y) => y.beds - x.beds || x.unit.name.localeCompare(y.unit.name));
@@ -393,8 +402,9 @@ export function networkWardRows(
   releases?: BedRelease[],
   admissions?: Admission[],
   leave?: LeaveBed[],
+  reservations: readonly ReservationReferral[] = [],
 ): NetworkWardRow[] {
-  const inputs = { now, releases, admissions, leave, freeingByUnit: releasesFreeingToday(releases, now) };
+  const inputs = { now, releases, admissions, leave, reservations, freeingByUnit: releasesFreeingToday(releases, now) };
   return units.map((unit) => networkWardRow(unit, inputs));
 }
 type NetworkWardInputs = {
@@ -402,6 +412,8 @@ type NetworkWardInputs = {
   releases?: BedRelease[];
   admissions?: Admission[];
   leave?: LeaveBed[];
+  /** Named holds (WF-FIG-017): journeys and referrals whose numbered bed is held, never Ready. */
+  reservations: readonly ReservationReferral[];
   freeingByUnit: Map<string, number>;
 };
 /** WF-16 shared source: release plans due today (not the forecast next-24h discharge count). */
@@ -469,10 +481,10 @@ function staffableSpecialling(unit: Unit): number {
   return Number.isFinite(unit.speciallingCapacity) ? Math.max(0, Math.floor(unit.speciallingCapacity)) : 0;
 }
 function networkWardRow(unit: Unit, inputs: NetworkWardInputs): NetworkWardRow {
-  const { now, releases, admissions, leave, freeingByUnit } = inputs;
+  const { now, releases, admissions, leave, reservations, freeingByUnit } = inputs;
 
   const cap = unitCapacity(unit, []);
-  const states = bedStates(unit, admissions ?? [], releases ?? [], leave ?? []);
+  const states = bedStates(unit, admissions ?? [], releases ?? [], leave ?? [], reservations);
   return {
     unit,
     ready: states.ready,

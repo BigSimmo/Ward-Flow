@@ -47,12 +47,12 @@ export function MismatchPopup({
   /** The same wards the card's figures count, so the ready-bed list adds up to "Ready that fit". */
   units: readonly Unit[];
 }) {
-  const { movements, admissions } = useWardFlowSelect("movements", "admissions");
+  const { movements, admissions, referrals } = useWardFlowSelect("movements", "admissions", "referrals");
   const patientOf = usePatientOf();
   const canOpen = useCanOpenHref();
   const detail = useMemo(
-    () => (row ? bedKindBreakdown(row.id, movements, [...units], admissions) : null),
-    [row, movements, units, admissions],
+    () => (row ? bedKindBreakdown(row.id, movements, [...units], admissions, referrals) : null),
+    [row, movements, units, admissions, referrals],
   );
   const short = (row?.gap ?? 0) < 0;
   return (
