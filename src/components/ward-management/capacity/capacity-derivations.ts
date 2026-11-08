@@ -20,6 +20,10 @@ import type { Admission } from "@/components/ward-management/ward-admissions";
 import { bedIsOccupied, remainingSpeciallingCapacity } from "@/components/ward-management/ward-admissions";
 import { lockedBedsFree, openBedsFree } from "@/components/ward-management/ward-bed-designation";
 import { bedStates, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
+import {
+  numberedReservationBeds,
+  type ReservationReferral as BaseReservationReferral,
+} from "@/components/ward-management/ward-movement-bed-hold";
 import { isOpen, unitCapacity, wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import type {
@@ -79,23 +83,25 @@ function bedKindOfMovement(cohort: Cohort, security: Security): BedKindId {
  * `tests/ward-locked-not-authorised.test.ts`) and merging them here would make a shortfall
  * disappear behind a bed nobody may actually place a detained patient in.
  */
-function bedsOfKindAtUnit(unit: Unit, kind: BedKindId, available: number): number {
+function bedsOfKindAtUnit(unit: Unit, kind: BedKindId, available: number, held: HeldByKind): number {
   // A closed or zero-bed ward supplies no bed of any kind (R-B-09, owner ruling 13 Oct 2026).
   // Kind supply never exceeds the ward's bounded Ready (qodo, 13 Oct): a feed reporting more
   // allocatable beds than are empty or physically present cannot show more fitting beds than Ready.
   if (available === 0) return 0;
+  // A bed held by name comes off its own kind (WF-FIG-017, Codex review on #1506), as the pull
+  // gate does (`ward-flow-placement-events.ts`), so reserving a locked bed never shrinks open supply.
+  const lockedFree = Math.max(0, lockedBedsFree(unit) - held.locked);
+  const openFree = Math.max(0, openBedsFree(unit) - held.open);
   switch (kind) {
     case "locked_adult":
-      return unit.cohort === "Adult" ? Math.min(lockedBedsFree(unit), available) : 0;
+      return unit.cohort === "Adult" ? Math.min(lockedFree, available) : 0;
     case "open_adult":
       // Locked beds take their share of Ready first, so locked + open never exceed it.
-      return unit.cohort === "Adult"
-        ? Math.min(openBedsFree(unit), available - Math.min(lockedBedsFree(unit), available))
-        : 0;
+      return unit.cohort === "Adult" ? Math.min(openFree, available - Math.min(lockedFree, available)) : 0;
     case "older_adult":
-      return unit.cohort === "Older adult" ? Math.min(lockedBedsFree(unit) + openBedsFree(unit), available) : 0;
+      return unit.cohort === "Older adult" ? Math.min(lockedFree + openFree, available) : 0;
     case "youth":
-      return unit.cohort === "Youth" ? Math.min(lockedBedsFree(unit) + openBedsFree(unit), available) : 0;
+      return unit.cohort === "Youth" ? Math.min(lockedFree + openFree, available) : 0;
   }
 }
 
@@ -129,13 +135,25 @@ function waitsForBed(movement: Movement): boolean {
  * Each ward's ready beds, reconciled once per ward as the network table and map do. This leaves the
  * recorded observation untouched when a later confirmation includes an already-pulled bed.
  */
+type HeldByKind = { locked: number; open: number };
+
 function readySupply(
   units: Unit[],
   admissions: readonly Admission[],
   reservations: readonly ReservationReferral[],
-): { unit: Unit; ready: number }[] {
+): { unit: Unit; ready: number; held: HeldByKind }[] {
+  const movements = reservations.filter((row): row is Movement => "stage" in row);
+  const others = reservations.filter((row): row is BaseReservationReferral => !("stage" in row));
   // WF-FIG-017 (Josh, 7 Nov 2026): a bed held by name is not Ready.
-  return units.map((unit) => ({ unit, ready: bedStates(unit, admissions, [], [], reservations).ready }));
+  return units.map((unit) => {
+    const kinds = [...numberedReservationBeds(unit, admissions, movements, others).values()];
+    const locked = kinds.filter((kind) => kind === "locked").length;
+    return {
+      unit,
+      ready: bedStates(unit, admissions, [], [], reservations).ready,
+      held: { locked, open: kinds.length - locked },
+    };
+  });
 }
 
 /** One row per bed kind, in the locked order above. */
@@ -160,7 +178,10 @@ export function bedKindGaps(
     const waiting = waitingForBed.filter(
       (movement) => bedKindOfMovement(movement.cohort, movement.security) === id,
     ).length;
-    const bedsThatFit = supply.reduce((total, { unit, ready }) => total + bedsOfKindAtUnit(unit, id, ready), 0);
+    const bedsThatFit = supply.reduce(
+      (total, { unit, ready, held }) => total + bedsOfKindAtUnit(unit, id, ready, held),
+      0,
+    );
     return { id, need, who, waiting, bedsThatFit, gap: bedsThatFit - waiting };
   });
 }
@@ -181,7 +202,7 @@ export function bedKindBreakdown(
     .filter((movement) => waitsForBed(movement) && bedKindOfMovement(movement.cohort, movement.security) === kind)
     .sort((x, y) => x.openedAt - y.openedAt);
   const wards = readySupply(units, admissions, [...movements, ...referrals])
-    .map(({ unit, ready }) => ({ unit, beds: bedsOfKindAtUnit(unit, kind, ready) }))
+    .map(({ unit, ready, held }) => ({ unit, beds: bedsOfKindAtUnit(unit, kind, ready, held) }))
     .filter((entry) => entry.beds > 0)
     .sort((x, y) => y.beds - x.beds || x.unit.name.localeCompare(y.unit.name));
   return { waiting, wards };

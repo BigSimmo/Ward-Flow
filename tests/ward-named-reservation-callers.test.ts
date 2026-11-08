@@ -8,6 +8,7 @@ import {
   bedKindTotals,
   networkWardRows,
 } from "@/components/ward-management/capacity/capacity-derivations";
+import { numberedBedKind } from "@/components/ward-management/ward-bed-designation";
 import { bedStates } from "@/components/ward-management/ward-bed-states";
 import type { Movement, Unit } from "@/components/ward-management/ward-model";
 import { wardMovements } from "@/components/ward-management/ward-movements";
@@ -72,5 +73,25 @@ describe("named reservations on Capacity (WF-FIG-017)", () => {
     const breakdown = bedKindBreakdown(without.id, [holding], [unit]);
     expect(breakdown.waiting).toEqual([]);
     expect(breakdown.wards.reduce((sum, ward) => sum + ward.beds, 0)).toBe(withHold.bedsThatFit);
+  });
+
+  it("a held locked bed comes off locked supply, not open (Codex review on #1506)", () => {
+    const fits = (gaps: ReturnType<typeof bedKindGaps>, id: string) => gaps.find((row) => row.id === id)!.bedsThatFit;
+    const mixed = allUnits().find((candidate) => {
+      const gaps = bedKindGaps([], [candidate], NOW);
+      return (
+        !candidate.isClosed &&
+        candidate.cohort === "Adult" &&
+        numberedBedKind(candidate, 1) === "locked" &&
+        fits(gaps, "locked_adult") > 0 &&
+        fits(gaps, "open_adult") > 0
+      );
+    })!;
+    expect(mixed).toBeDefined();
+    const holdLocked: Movement = { ...holding, acceptedUnitId: mixed.id, heldBedNumber: 1 };
+    const before = bedKindGaps([], [mixed], NOW);
+    const after = bedKindGaps([holdLocked], [mixed], NOW);
+    expect(fits(after, "locked_adult")).toBe(fits(before, "locked_adult") - 1);
+    expect(fits(after, "open_adult")).toBe(fits(before, "open_adult"));
   });
 });
