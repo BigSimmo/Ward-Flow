@@ -16,6 +16,7 @@ import {
   type RefObject,
 } from "react";
 import {
+  Activity,
   BedSingle,
   CircleHelp,
   ClipboardList,
@@ -247,10 +248,13 @@ function MoreSection({
   onDrawer,
   onClose,
   onSwitch,
+  activityRow = false,
 }: {
   onDrawer: (id: DrawerId) => void;
   onClose: () => void;
   onSwitch: () => void;
+  /** Josh, 8 Nov 2026: Activity gets a row here when the desk's dock does not carry it. */
+  activityRow?: boolean;
 }) {
   return (
     <section aria-label="More" className={styles.section}>
@@ -267,6 +271,19 @@ function MoreSection({
             <Chevron />
           </button>
         </li>
+        {activityRow ? (
+          <li>
+            <button
+              type="button"
+              className={styles.row}
+              data-testid="ward-phone-menu-activity-row"
+              onClick={() => onDrawer("activity")}
+            >
+              <RowBody icon={Activity} label="Activity" />
+              <Chevron />
+            </button>
+          </li>
+        ) : null}
         <li>
           <Link href={settingsHref()} className={styles.row} onClick={onClose}>
             <RowBody icon={Settings} label="Settings" />
@@ -581,8 +598,10 @@ function MenuPages({
   onDrawer,
   onClose,
   onSwitch,
+  activityRow,
 }: {
   onSwitch: () => void;
+  activityRow?: boolean;
   query: string;
   entries: RailEntry[];
   /** Act-now and overdue rows only (device audit option A). */
@@ -614,7 +633,7 @@ function MenuPages({
         </Section>
       ))}
       <WardMyWards variant="sheet" onNavigate={onClose} />
-      <MoreSection onDrawer={onDrawer} onClose={onClose} onSwitch={onSwitch} />
+      <MoreSection onDrawer={onDrawer} onClose={onClose} onSwitch={onSwitch} activityRow={activityRow} />
     </>
   );
 }
@@ -645,9 +664,12 @@ export function PhoneMenuSheets({
   onCloseCreate,
   onNewReferral,
   top,
+  activityRow,
 }: {
   /** shell-next: drawn under the search box while nothing is typed. */
   top?: ReactNode;
+  /** Activity gets a Menu row when the dock does not carry it (Josh, 8 Nov 2026). */
+  activityRow?: boolean;
   open: boolean;
   onClose: () => void;
   query: string;
@@ -713,6 +735,7 @@ export function PhoneMenuSheets({
             onClose();
           }}
           onDrawer={onDrawer}
+          activityRow={activityRow}
           onClose={onClose}
           onSwitch={onSwitch}
         />

@@ -400,11 +400,12 @@ describe("the phone bar follows the desk (C2)", () => {
     expect(screen.queryByTestId("ward-phone-menu-activity")).toBeNull();
   });
 
-  it("keeps the coordinator's Tasks and Activity as two separate controls", () => {
+  // Josh, 8 Nov 2026: the coordinator's dock reads Home, Capacity, +, Alerts, Tools.
+  it("gives the coordinator Capacity beside Home and Tools after Alerts", () => {
     renderDock();
     expect(screen.getByTestId("ward-phone-menu-tasks")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-phone-menu-activity")).toBeInTheDocument();
-    expect(screen.getByTestId("ward-phone-menu-tasks")).not.toBe(screen.getByTestId("ward-phone-menu-activity"));
+    expect(screen.getByTestId("ward-phone-dock-tools")).toHaveTextContent("Tools");
+    expect(screen.queryByTestId("ward-phone-menu-activity")).toBeNull();
   });
 });
 

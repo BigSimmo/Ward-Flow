@@ -105,12 +105,12 @@ describe("Create sheet items match the + button's name (shell-5)", () => {
 });
 
 describe("each person keeps their own dock (Q162, Josh 1 Nov 2026)", () => {
-  it("keeps the coordinator's Home and Referrals on Transport", () => {
+  it("keeps the coordinator's Home and Capacity on Transport", () => {
     route.pathname = "/ward-flow/transport/officer";
     openMenu();
     const dock = within(screen.getByTestId("ward-phone-dock"));
     expect(dock.getByText("Home")).toBeInTheDocument();
-    expect(dock.getByText("Referrals")).toBeInTheDocument();
+    expect(dock.getByText("Capacity")).toBeInTheDocument();
     expect(dock.queryByText("My jobs")).toBeNull();
   });
 });

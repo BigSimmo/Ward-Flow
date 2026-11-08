@@ -59,16 +59,18 @@ afterEach(() => {
 
 describe("phone dock names (F-19)", () => {
   // The bed coordinator's dock carries Alerts (D-61; Q268, 2 Nov 2026).
-  it("starts Alerts and Activity with their word, then the badge", () => {
+  // Josh, 8 Nov 2026: Tools replaces Activity on the coordinator's dock.
+  it("starts Alerts with its word, then the badge, and names Tools", () => {
     renderDock(12, 3);
     expect(screen.getByTestId("ward-phone-menu-tasks")).toHaveAccessibleName("Alerts, 12 outstanding");
-    expect(screen.getByTestId("ward-phone-menu-activity")).toHaveAccessibleName("Activity, 3 unread");
+    expect(screen.getByTestId("ward-phone-dock-tools")).toHaveAccessibleName("Tools");
+    expect(screen.queryByTestId("ward-phone-menu-activity")).toBeNull();
   });
 
   it("keeps the plain word when there is no badge", () => {
     renderDock(0, 0);
     expect(screen.getByTestId("ward-phone-menu-tasks")).toHaveAccessibleName("Alerts, 0 outstanding");
-    expect(screen.getByTestId("ward-phone-menu-activity")).toHaveAccessibleName("Activity");
+    expect(screen.getByTestId("ward-phone-dock-tools")).toHaveAccessibleName("Tools");
   });
 
   it("starts every dock link's name with what the link shows", () => {

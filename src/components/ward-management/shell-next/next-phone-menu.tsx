@@ -15,7 +15,7 @@ import {
   type ComponentType,
   type RefObject,
 } from "react";
-import { Activity, BedSingle, Bell, House, Plus } from "lucide-react";
+import { Activity, BedSingle, Bell, House, Plus, Wrench } from "lucide-react";
 
 import { useMobileKeyboard } from "@/components/ward-management/shell/use-mobile-keyboard";
 import { useFitDockLabels } from "@/components/ward-management/shell/use-fit-dock-labels";
@@ -81,7 +81,8 @@ type DockSlot =
   | { readonly kind: "queue" }
   | { readonly kind: "alerts" }
   | { readonly kind: "activity" }
-  | { readonly kind: "bed-finder"; readonly label: string };
+  | { readonly kind: "bed-finder"; readonly label: string }
+  | { readonly kind: "tools" };
 
 const page = (id: string, label: string): DockPage => ({ kind: "page", id, label });
 
@@ -96,8 +97,11 @@ export type ResolvedDockSlot =
 const DOCK: Record<WardChromeRole, { readonly left: readonly DockPage[]; readonly right: readonly DockSlot[] }> = {
   // The bed coordinator's dock is the perfected one (Josh, 31 Oct 2026): unchanged.
   coordinator: {
-    left: [page("command", "Home"), page("referrals", "Referrals")],
-    right: [{ kind: "queue" }, { kind: "activity" }],
+    // Josh, 8 Nov 2026: Home already lists the people to move (Flow, To decide), so the slot beside
+    // it shows the beds (Capacity). Tools, the coordinator's controls, replaces Activity, which
+    // Home's changes chip and the Menu's Activity row still open. Referrals stays in the Menu.
+    left: [page("command", "Home"), page("capacity", "Capacity")],
+    right: [{ kind: "queue" }, { kind: "tools" }],
   },
   // shell-next (Josh, 31 Oct 2026: "decide what is the most useful, specific to the role"). Alerts
   // sits straight after the + on every desk that has one.
@@ -445,6 +449,20 @@ function PhoneDock({
               count={activityUnread}
               tail={dockTail("Activity", activityUnread, "unread", "Activity")}
             />
+          </button>
+        );
+      case "tools":
+        // Josh, 8 Nov 2026: the coordinator's Tools sheet, one tap from every phone page.
+        return (
+          <button
+            key="tools"
+            type="button"
+            className={DOCK_ITEM}
+            aria-haspopup="dialog"
+            data-testid="ward-phone-dock-tools"
+            onClick={(event) => onDrawer("tools", event.currentTarget)}
+          >
+            <DockFace icon={Wrench} label="Tools" count={undefined} tail="" />
           </button>
         );
       case "bed-finder":
@@ -811,6 +829,7 @@ export function NextPhoneMenu({
           onCloseCreate={closeCreate}
           onNewReferral={onNewReferral}
           top={<NextPhoneMenuTop onGo={close} />}
+          activityRow={!dockRight.some((slot) => slot.kind === "activity")}
         />
       ) : null}
 
