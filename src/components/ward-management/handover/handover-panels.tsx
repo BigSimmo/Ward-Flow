@@ -29,6 +29,7 @@ import type { WardFlowRole } from "@/components/ward-management/ward-flow-roles"
 import { rowTone, type ColumnContext } from "./handover-columns";
 import { bedHold } from "@/components/ward-management/ward-bed-hold";
 import { noFormWords } from "@/components/ward-management/ward-legal-status";
+import { deliveredAwaitingWard } from "@/components/ward-management/ward-stage-copy";
 import {
   isbarLines,
   isCollected,
@@ -155,7 +156,9 @@ export function HandoverFlowPanel({
           ? "No pull time recorded"
           : "None"
         : isCollected(row)
-          ? `Pulled while the patient is in transit (until ${formatInstantWithDay(row.pullExpiresAt, now)})`
+          ? deliveredAwaitingWard(row.movement)
+            ? `Pulled; the patient has arrived at the ward (until ${formatInstantWithDay(row.pullExpiresAt, now)})`
+            : `Pulled while the patient is in transit (until ${formatInstantWithDay(row.pullExpiresAt, now)})`
           : hold !== null && pullHasLapsed(row, now)
             ? `${bedHold(row.pullExpiresAt, now)!.label}, at ${formatInstantWithDay(row.pullExpiresAt, now)}`
             : `Until ${formatInstantWithDay(row.pullExpiresAt, now)}, ${bedHold(row.pullExpiresAt, now)!.short}`,

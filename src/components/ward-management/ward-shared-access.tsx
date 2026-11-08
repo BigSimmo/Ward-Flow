@@ -86,10 +86,14 @@ const WardAskForAccess = dynamic(() => import("./ward-shared-role-gate").then((m
 });
 
 /** The shared workspace's access calls, through the signed-in connection. Reject when not connected. */
-/** P056: `readActivityAudit` rides on the shell's access context for the Activity feed (`ward-desk-audit.ts`). */
+/**
+ * P056: the audit readers ride on the shell's access context for the Activity feed
+ * (`ward-desk-audit.ts`). API-04: the paged reader keeps "more to load" instead of a single page
+ * that the feed would otherwise have to treat as complete.
+ */
 export type WardSharedAccessApi = SharedAccessApi &
   Pick<SharedWorkspaceClient, "ownRequest" | "requestAccess"> &
-  Partial<Pick<SharedWorkspaceClient, "readActivityAudit">>;
+  Partial<Pick<SharedWorkspaceClient, "readActivityAudit" | "readActivityAuditPage">>;
 
 export type WardSharedConnection = SharedView & {
   /** Reports may freeze a new snapshot only after this exact server state has been adopted. */
@@ -215,6 +219,7 @@ export function useWardShared(enabled: boolean): WardSharedConnection {
       breakGlass: async (patientId, reason) => connected().breakGlass(patientId, reason),
       readRecordAccess: async () => connected().readRecordAccess(),
       readActivityAudit: async () => connected().readActivityAudit(),
+      readActivityAuditPage: async (before) => connected().readActivityAuditPage(before),
       readOwnCommand: async (commandId) => connected().readOwnCommand(commandId),
       forecastHistory: async (body) => connected().forecastHistory(body),
       preferences: async (body) => connected().preferences(body),

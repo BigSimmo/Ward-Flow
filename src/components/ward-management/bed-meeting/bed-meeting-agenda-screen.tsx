@@ -187,6 +187,8 @@ function BedMeetingAgenda() {
       nameOf: (movement) => patientOf(movement).formalName,
       referrals,
       referralLimitMinutes: configuration.referralDecisionTargetMinutes,
+      // WF-FIG-017: named holds from the whole lists, so a group filter never frees a held bed.
+      namedHolds: [...movements, ...referrals],
       // B1 extended (Josh, 4 Nov 2026): the printout matches the room. Bed figures stay whole.
       ...(grouped
         ? {

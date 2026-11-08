@@ -359,7 +359,7 @@ export function ShortlistPanel({
   const isPhone = useIsPhone();
   // S-8: "Accept for this ward" offers Undo on the toast, like the ward's own acceptance. Read
   // through the context, not `useWardFlow()`, so a direct render without a provider still works.
-  const flowContext = useOptionalWardFlowSelect("rejections", "setFocusMovementId", "worldGeneration");
+  const flowContext = useOptionalWardFlowSelect("rejections", "setFocusMovementId", "worldGeneration", "movements");
   const flowRejections = flowContext?.rejections ?? NO_REJECTIONS;
   const flowSetFocusMovementId = flowContext?.setFocusMovementId;
   const [outcomeMessage, setOutcomeMessage] = useState<string | null>(null);
@@ -456,9 +456,12 @@ export function ShortlistPanel({
    * `unit.beds`, and are never summed into the four bed states — the same
    * ruling `coordinator.module.css`'s `.diagramBedChip[data-state="confirmed"]` comment records.
    */
+  // WF-FIG-017 (Josh, 7 Nov 2026): a bed held by name shows as held, never Ready.
+  const flowMovements = flowContext?.movements;
+  const namedHolds = useMemo(() => [...(flowMovements ?? []), ...referrals], [flowMovements, referrals]);
   const activeCapacity = useMemo(
-    () => (activeUnit ? bedStates(activeUnit, admissions, bedReleases, leaveBeds) : undefined),
-    [activeUnit, admissions, bedReleases, leaveBeds],
+    () => (activeUnit ? bedStates(activeUnit, admissions, bedReleases, leaveBeds, namedHolds) : undefined),
+    [activeUnit, admissions, bedReleases, leaveBeds, namedHolds],
   );
   const activeBreakdown = useMemo(
     () => (activeUnit ? capacityBreakdown(activeUnit, bedReleases, leaveBeds, now) : undefined),
@@ -1191,7 +1194,7 @@ export function ShortlistPanel({
             </span>
           </span>
           <span className={`${styles.shortlistCandidateCapacity} ${shortlistStyles.tabularNum}`}>
-            {capacityLine(candidate.unit, bedReleases, admissions)}
+            {capacityLine(candidate.unit, bedReleases, admissions, namedHolds)}
           </span>
           {/* "Eligible now" repeats the group heading, so the card no longer shows it; it stays for
           assistive technology. A reason for review is always on screen. */}
@@ -1250,7 +1253,7 @@ export function ShortlistPanel({
             )}
           </span>
           <span className={`${styles.shortlistCandidateCapacity} ${shortlistStyles.tabularNum}`}>
-            {capacityLine(candidate.unit, bedReleases, admissions)}
+            {capacityLine(candidate.unit, bedReleases, admissions, namedHolds)}
           </span>
           <span
             className={`${styles.shortlistCandidateReasonBad} ${kind === "no-bed" ? shortlistStyles.quietReason : ""}`}

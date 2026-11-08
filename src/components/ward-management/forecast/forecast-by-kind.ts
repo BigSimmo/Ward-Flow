@@ -108,9 +108,11 @@ export function forecastByKind(
   now: Instant,
   days: number,
   plannedAdmissions: readonly PlannedAdmission[] = [],
+  /** Referrals holding a named bed (WF-FIG-017); journeys' holds come from `movements`. */
+  referrals: Parameters<typeof bedKindGaps>[4] = [],
 ): ForecastByKind {
   const until = now + days * MINUTES_PER_DAY;
-  const gaps = bedKindGaps([...movements], [...units], now, admissions);
+  const gaps = bedKindGaps([...movements], [...units], now, admissions, referrals);
   const openUnits = new Map(units.filter((unit) => !unit.isClosed).map((unit) => [unit.id, unit]));
   const admissionById = new Map(admissions.map((admission) => [admission.id, admission]));
   const expectedAt = (release: BedRelease) => forecastReleaseAt(release, admissionById.get(release.admissionId));

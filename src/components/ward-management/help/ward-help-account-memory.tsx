@@ -15,6 +15,7 @@ import { useContext, useEffect } from "react";
 import { HELP_HINTS_CHANGED_EVENT, HELP_HINTS_KEY, parseHelpHints } from "../help-content/ward-help-hints";
 import { HELP_TIPS_CHANGED_EVENT, helpTipsChoice, setHelpTipsOff } from "../help-content/ward-help-tips-off";
 import { SharedAccessContext } from "../shell/ward-shared-access-context";
+import { markHelpAccountReady } from "./ward-help-account-ready";
 import { markTourSeen, parseTourSeen, TOUR_SEEN_CHANGE_EVENT, TOUR_SEEN_STORAGE_KEY } from "./ward-help-store";
 import { markWhatsNewSeen, WHATS_NEW_SEEN_EVENT, WHATS_NEW_STORAGE_KEY, whatsNewSeenIds } from "./ward-whats-new";
 
@@ -22,6 +23,12 @@ import { markWhatsNewSeen, WHATS_NEW_SEEN_EVENT, WHATS_NEW_STORAGE_KEY, whatsNew
 const TOUR_AUTO_DONE_STORAGE_KEY = "ward_flow_choice_tour_auto_done";
 /** Marks made close together go in one save. */
 const SEND_AFTER_MS = 1_000;
+/**
+ * N36: marks made for an account that it has not confirmed yet, by account id, so a failed save is
+ * retried after a reconnect or remount instead of being read as made before sign-in. No
+ * `ward_flow_choice_` prefix, so sign-out clears it.
+ */
+const UNSENT_KEY = "ward_flow_help_unsent";
 
 type Lists = { tours: string[]; tips: string[]; whatsNew: string[] };
 export type AccountHelpMemory = Lists & { tipsOff: boolean | null };
@@ -45,6 +52,36 @@ export function deviceHelpMemory(): Lists {
 
 const strings = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+
+const lists = (value?: Partial<Record<keyof Lists, unknown>> | null): Lists => ({
+  tours: strings(value?.tours),
+  tips: strings(value?.tips),
+  whatsNew: strings(value?.whatsNew),
+});
+
+function readUnsent(): Record<string, Partial<Lists>> {
+  try {
+    const value: unknown = JSON.parse(read(UNSENT_KEY) ?? "{}");
+    return typeof value === "object" && value !== null && !Array.isArray(value)
+      ? (value as Record<string, Partial<Lists>>)
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Records what this account still lacks of the marks made for it on this device. */
+function keepUnsent(actorId: string, missing: Partial<Lists> | null): void {
+  const all = readUnsent();
+  if (missing) all[actorId] = missing;
+  else delete all[actorId];
+  try {
+    if (Object.keys(all).length > 0) window.localStorage.setItem(UNSENT_KEY, JSON.stringify(all));
+    else window.localStorage.removeItem(UNSENT_KEY);
+  } catch {
+    // Without storage, unsaved marks are retried only during this account session.
+  }
+}
 
 /** The account's reply, or null when Help is not remembered by account (before migration 17). */
 export function accountHelpReply(value: unknown): AccountHelpMemory | null {
@@ -106,42 +143,54 @@ export function WardHelpAccountMemory() {
   useEffect(() => {
     if (!call || !actorId) return;
     let live = true;
-    // Existing marks have no account provenance; never import them into a signed-in account.
-    const beforeSignIn = deviceHelpMemory();
+    // Existing marks have no account provenance; never import them into a signed-in account. Marks
+    // this account made here whose save has not succeeded are its own, so they stay to be sent.
+    const beforeSignIn = lists(missingFromAccount(deviceHelpMemory(), lists(readUnsent()[actorId])));
     // What the account is known to hold, so a save sends only what is new to it.
     let account: AccountHelpMemory | null = null;
     let applying = false;
     let tipsChanged = false;
     let timer: number | undefined;
+    // N36: stored when the mark is made, so a teardown before the debounced save cannot lose it.
+    const recordUnsent = () => {
+      const missing = missingFromAccount(
+        lists(missingFromAccount(deviceHelpMemory(), beforeSignIn)),
+        account ?? lists(),
+      );
+      keepUnsent(actorId, missing);
+      return missing;
+    };
     const send = () => {
       timer = undefined;
-      if (!live || !account) return;
-      const madeHere = missingFromAccount(deviceHelpMemory(), beforeSignIn);
-      const body: Record<string, unknown> = {
-        ...missingFromAccount(
-          { tours: madeHere?.tours ?? [], tips: madeHere?.tips ?? [], whatsNew: madeHere?.whatsNew ?? [] },
-          account,
-        ),
-      };
+      if (!live) return;
+      const missing = recordUnsent();
+      if (!account) return;
+      const body: Record<string, unknown> = { ...missing };
       if (tipsChanged) {
         const choice = helpTipsChoice();
         if (choice !== null && choice !== account.tipsOff) body.tipsOff = choice;
         tipsChanged = false;
       }
       if (Object.keys(body).length === 0) return;
+      // #1426: a tips choice whose save fails goes again with the next save.
+      const tipsSent = "tipsOff" in body;
       call(body).then(
         (reply) => {
           const held = accountHelpReply(reply);
-          if (live && held) account = held;
+          if (!held) return;
+          keepUnsent(actorId, missingFromAccount(lists(readUnsent()[actorId]), held));
+          if (live) account = held;
         },
         () => {
           // The device keeps its copy; another mark during this account session retries the save.
+          if (tipsSent) tipsChanged = true;
         },
       );
     };
     const later = (event: Event) => {
       if (applying || fromAccount(event)) return;
       if (event.type === HELP_TIPS_CHANGED_EVENT) tipsChanged = true;
+      recordUnsent();
       if (timer === undefined) timer = window.setTimeout(send, SEND_AFTER_MS);
     };
     const events = [TOUR_SEEN_CHANGE_EVENT, HELP_HINTS_CHANGED_EVENT, HELP_TIPS_CHANGED_EVENT, WHATS_NEW_SEEN_EVENT];
@@ -149,18 +198,22 @@ export function WardHelpAccountMemory() {
     call().then(
       (reply) => {
         const held = accountHelpReply(reply);
-        if (!live || !held) return;
-        applying = true;
-        try {
-          applyAccountHelpMemory(held);
-        } finally {
-          applying = false;
+        if (!live) return;
+        if (held) {
+          applying = true;
+          try {
+            applyAccountHelpMemory(held);
+          } finally {
+            applying = false;
+          }
+          account = held;
         }
-        account = held;
-        send();
+        markHelpAccountReady(actorId);
+        if (held) send();
       },
       () => {
         // Not reachable: this device's memory stands.
+        if (live) markHelpAccountReady(actorId);
       },
     );
     return () => {
