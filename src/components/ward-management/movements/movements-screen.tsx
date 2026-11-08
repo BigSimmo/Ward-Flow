@@ -84,7 +84,7 @@ import { ShapeOfTheDay } from "./movements-shape-of-day";
 import { MovementPeopleSheet, corridorPeople, type MovementPeopleList } from "./movement-people-sheet";
 import { TransportFeed, TransportTiles } from "./movements-transport-now";
 import { HighlightStat, PhoneGroupHeading, StageRow } from "./movements-stage-row";
-import { CommunityNoJourneys, StagePipeline } from "./movements-lazy-parts";
+import { CommunityNoJourneys, MovementCheckInDrawer, StagePipeline } from "./movements-lazy-parts";
 import {
   CAUSES,
   GROUP_CAP,
@@ -174,6 +174,8 @@ export function MovementsScreen() {
    * that does not hold, with every gate green.
    */
   const [detailId, setDetailId] = useState<string | null>(null);
+  // Josh's Note 7 (8 Nov 2026): Check in on a transport leg opens its drawer here, not Transport.
+  const [checkInId, setCheckInId] = useState<string | null>(null);
 
   const openDetail = useCallback((id: string) => {
     setDetailId(id);
@@ -770,6 +772,7 @@ export function MovementsScreen() {
       // Josh's Note 7 (8 Nov 2026): opening a patient's drawer keeps the page where it is. It no
       // longer scrolls the worklist row into view, which threw the reader back to the top.
       onOpen={openDetail}
+      onCheckIn={setCheckInId}
     />
   );
   // Phone: the stage highlight chips under the band, one row that slides sideways with Home's soft
@@ -1487,6 +1490,9 @@ export function MovementsScreen() {
           onClose={closeDetail}
           onFocusMovement={setFocusMovementId}
         />
+        {checkInId ? (
+          <MovementCheckInDrawer key={checkInId} movementId={checkInId} now={now} onClose={() => setCheckInId(null)} />
+        ) : null}
       </main>
     </div>
   );

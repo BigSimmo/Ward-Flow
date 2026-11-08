@@ -1150,16 +1150,20 @@ describe("M3: the worklist leads and check in lives on Transport (3 Nov 2026)", 
     expect(window.localStorage.getItem("ward-flow-movements-timeline")).toBe("on");
   });
 
-  it("links each leg still to be recorded to that job on the Transport page, with no pop-up here", () => {
+  it("opens the Check in drawer here for each leg still to be recorded, with a link on to Transport (Note 7)", async () => {
     renderScreen();
     const feed = screen.getByRole("region", { name: "Active transport legs" });
-    const links = within(feed).getAllByRole("link", { name: /^Check in .+ on Transport, next: / });
-    expect(links.length).toBeGreaterThan(0);
-    for (const link of links) {
-      expect(link.getAttribute("href")).toMatch(/^\/ward-flow\/transport\/officer\?job=/u);
-    }
-    expect(within(feed).queryByRole("button", { name: /^Check in / })).toBeNull();
-    expect(screen.queryByTestId("transport-check-in")).toBeNull();
+    const buttons = within(feed).getAllByRole("button", { name: /^Check in .+, next: / });
+    expect(buttons.length).toBeGreaterThan(0);
+    expect(within(feed).queryByRole("link", { name: /^Check in / })).toBeNull();
+    fireEvent.click(buttons[0]!);
+    const drawer = await screen.findByTestId("movement-check-in-drawer");
+    expect(within(drawer).getByRole("list", { name: "Transport steps" })).toBeInTheDocument();
+    expect(within(drawer).getByRole("region", { name: "Next step" })).toBeInTheDocument();
+    expect(within(drawer).getByRole("link", { name: /Open full job on Transport/u })).toHaveAttribute(
+      "href",
+      expect.stringMatching(/^\/ward-flow\/transport\/officer\?job=/u),
+    );
   });
 });
 

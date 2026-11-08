@@ -1,187 +1,47 @@
-/* Movements: the stage pipeline under the hero on a tablet or laptop (redesign, 31 Oct 2026). */
+/* Movements: the stage pipeline under the hero on a tablet or laptop (redesign, 31 Oct 2026;
+   Josh's Note 7 mock-up, approved 8 Nov 2026: a summary header and numbered, connected cards). */
 .pipeline {
+  display: grid;
+  gap: var(--wf-s-3);
   margin-top: var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-lg);
   background: var(--wf-surface);
   box-shadow: var(--wf-e1);
 }
-.pipeline ol {
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  margin: 0;
-  padding: var(--wf-s-1);
-  list-style: none;
-}
-.pipeline li {
-  position: relative;
-  display: flex;
-  align-items: center;
-  min-width: 0;
-}
-.stage {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  min-width: 0;
-  min-height: var(--wf-row-touch);
-  padding: var(--wf-s-2) var(--wf-s-3);
-  border: 1px solid transparent;
-  border-radius: var(--wf-r-md);
-  background: none;
-  font: inherit;
-  color: var(--wf-ink-1);
-  text-align: start;
-  cursor: pointer;
-}
-.stage:hover {
-  background: var(--wf-hover);
-}
-.stage[data-highlighted="true"] {
-  border-color: var(--wf-accent);
-  background: var(--wf-accent-tint);
-}
-.stage:focus-visible {
-  outline: 2px solid var(--wf-focus-ring);
-  outline-offset: 2px;
-}
-.stageName {
-  font-size: var(--wf-fs-12);
-  font-weight: 650;
-  letter-spacing: var(--wf-tr-caps);
-  text-transform: uppercase;
-  color: var(--wf-ink-3);
-}
-.stageCount {
-  font-family: var(--wf-mono);
-  font-size: var(--wf-fs-20);
-  line-height: var(--wf-lh-20);
-  font-weight: 600;
-}
-.stageWait {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--wf-s-1);
-  font-size: var(--wf-fs-12);
-  color: var(--wf-ink-2);
-}
-.stageArrow {
-  flex: none;
-  color: var(--wf-ink-3);
-}
 
-@media (max-width: 75rem) {
-  .pipeline ol {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .stageArrow {
-    display: none;
-  }
-}
-
-/* ---------- Movements redesign (1 Nov 2026): Waiting's tiles ---------- */
-.pipeline {
-  margin-top: var(--wf-s-3);
-  overflow: hidden;
-}
-
-.pipeline ol {
-  padding: 0;
-  gap: 0;
-}
-
-.pipeline li + li {
-  border-left: 1px solid var(--wf-line);
-}
-
-.stage.stage {
-  gap: var(--wf-s-2);
-  align-items: stretch;
-  padding: var(--wf-s-3) var(--wf-s-4);
-  border: 0;
-  border-radius: 0;
-}
-
-.stage[data-highlighted="true"] {
-  box-shadow: inset 0 -2px 0 var(--wf-accent);
-}
-
-.stageTop {
-  display: flex;
-  align-items: baseline;
-  gap: var(--wf-s-2);
-  min-width: 0;
-}
-
-.stageTop .stageName {
-  color: var(--wf-ink-1);
-  font-size: var(--wf-fs-13);
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.stageBar.stageBar {
-  width: 100%;
-}
-
-.stageWait b {
-  font-family: var(--wf-mono);
-  font-weight: 600;
-  color: var(--wf-ink-1);
-}
-
-.stage.stage {
-  justify-content: flex-start;
-}
-
-.stageWait.stageWait {
-  white-space: nowrap;
-}
-
-.stagePast {
-  color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
-}
-
-.stagePast[data-past="true"] {
-  color: var(--wf-danger-ink, var(--wf-ink-1));
-  font-weight: 600;
-}
-
-.stageArrow.stageArrow {
-  position: absolute;
-  top: 50%;
-  right: -8px;
-  z-index: 1;
-  width: 16px;
-  height: 16px;
-  padding: 1px;
-  border-radius: 50%;
-  background: var(--wf-surface);
-  transform: translateY(-50%);
-}
-
-.key {
+.head {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--wf-s-2) var(--wf-s-4);
+}
+
+.title {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 2px var(--wf-s-3);
   margin: 0;
-  padding: var(--wf-s-2) var(--wf-s-4);
-  border-top: 1px solid var(--wf-line);
+  color: var(--wf-ink-1);
+  font: 650 var(--wf-fs-14) / var(--wf-lh-14) var(--wf-font);
+}
+
+.summary {
   color: var(--wf-ink-3);
-  font-size: var(--wf-fs-12);
-  line-height: var(--wf-lh-12);
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
 }
 
 .keyBands {
   display: flex;
   flex-wrap: wrap;
   gap: var(--wf-s-3);
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
 }
 
 .keyBands > span {
@@ -192,7 +52,193 @@
 
 .keyBands i {
   display: inline-block;
-  width: 12px;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+}
+
+.flow {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--wf-s-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  position: relative;
+  display: flex;
+  min-width: 0;
+}
+
+/* A short joining line with an arrowhead between neighbouring cards: the journey reads left to right. */
+.item + .item::before {
+  content: "";
+  position: absolute;
+  top: 26px;
+  left: calc(-1 * var(--wf-s-3));
+  width: var(--wf-s-3);
+  height: 1px;
+  background: var(--wf-line-3, var(--wf-line));
+}
+
+.item + .item::after {
+  content: "";
+  position: absolute;
+  top: 23px;
+  left: -5px;
+  border: 3.5px solid transparent;
+  border-left: 4px solid var(--wf-ink-3);
+}
+
+.stage {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+  min-width: 0;
+  min-height: var(--wf-row-touch);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface);
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .stage:hover {
+    background: var(--wf-hover);
+  }
+}
+
+.stage[data-highlighted="true"] {
+  border-color: var(--wf-accent);
+  background: var(--wf-accent-tint);
+}
+
+.stage:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
+
+.stageName {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--wf-ink-2);
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+}
+
+.step {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--wf-line);
+  border-radius: 50%;
+  background: var(--wf-surface-2);
+  color: var(--wf-ink-3);
+  font: 600 11px / 16px var(--wf-mono);
+  text-align: center;
+}
+
+.worst {
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wf-danger) 12%, transparent);
+  color: var(--wf-danger-ink, var(--wf-ink-1));
+  font-size: var(--wf-fs-12);
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.stageTop {
+  display: flex;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  min-width: 0;
+}
+
+.stageCount {
+  font: 600 var(--wf-fs-20) / 1 var(--wf-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+.share {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+.stageBar.stageBar {
+  width: 100%;
   height: 8px;
-  border-radius: 2px;
+}
+
+.foot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 20px;
+  align-items: center;
+}
+
+.stageWait {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  color: var(--wf-ink-2);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  white-space: nowrap;
+}
+
+.stageWait b {
+  color: var(--wf-ink-1);
+  font-family: var(--wf-mono);
+  font-weight: 600;
+}
+
+.stagePast {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+  white-space: nowrap;
+}
+
+.stagePast[data-past="true"] {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--wf-danger) 12%, transparent);
+  color: var(--wf-danger-ink, var(--wf-ink-1));
+  font-weight: 600;
+}
+
+.key {
+  margin: 0;
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+  line-height: var(--wf-lh-12);
+}
+
+@media (max-width: 75rem) {
+  .flow {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .item:nth-child(3n + 1)::before,
+  .item:nth-child(3n + 1)::after {
+    display: none;
+  }
 }
