@@ -13,6 +13,7 @@ import { patientKeyFor, sampleProfile } from "@/components/ward-management/refer
 import { recordExtrasFor } from "@/components/ward-management/patients/patient-record-extras";
 import { encodeRecordAddress } from "@/components/ward-management/shell/ward-record-address";
 import type { Referral } from "@/components/ward-management/ward-model";
+import { formatSheetMoment, type Instant } from "@/components/ward-management/ward-clock";
 
 import type { TriagePerson, TriageReferral } from "./triage-risk-data";
 import { previousTriageFrom, triagePersonFromWorld } from "./triage-risk-people";
@@ -54,12 +55,24 @@ const awaitingTriage = (referral: Referral, triages: readonly TriageSignedRecord
   !((triagesFor(triages, referral.patientId)[0]?.at ?? -Infinity) >= referral.raisedAt);
 
 /**
- * Every synthetic person this desk is sent, as the banner reads them; the referrals awaiting triage;
- * and the people by record id. A person with a signed triage on the workspace carries it as `last`.
+ * A referral awaiting triage on the Start a triage queue (9 Nov 2026): the person with that referral,
+ * when it was raised on the board's synthetic clock, and how long it has waited since.
+ */
+export type AwaitingTriage = TriagePerson & {
+  referral: TriageReferral;
+  raisedAt: Instant;
+  /** Minutes since the referral was raised, against the board's synthetic now. Never below 0. */
+  waitedMinutes: number;
+};
+
+/**
+ * Every synthetic person this desk is sent, as the banner reads them; the referrals awaiting triage,
+ * oldest first; and the people by record id. A person with a signed triage on the workspace carries
+ * it as `last`.
  */
 export function useTriagePeople(): {
   people: TriagePerson[];
-  awaiting: TriagePerson[];
+  awaiting: AwaitingTriage[];
   byId: ReadonlyMap<string, TriagePerson>;
 } {
   const { patients, movements, referrals, triages, now, dayZero, admissions, units } = useWardFlowSelect(
@@ -83,7 +96,7 @@ export function useTriagePeople(): {
       const key = patientKeyFor(patient.id, record) ?? `patient:${patient.id}`;
       const profile = sampleProfile(key, record, now);
       const open = openReferral.get(patient.id);
-      const lastSigned = triagesFor(triages, patient.id)[0];
+      const previous = triagesFor(triages, patient.id).map((signed) => previousTriageFrom(signed, dayZero));
       const person = triagePersonFromWorld({
         patientId: patient.id,
         name: profile.name,
@@ -95,19 +108,31 @@ export function useTriagePeople(): {
         legalStatus: profile.legalStatus,
         recordAddress: encodeRecordAddress(key.startsWith("WF-") ? key : patient.id),
         openReferral: open ? asReferral(open) : null,
-        last: lastSigned ? previousTriageFrom(lastSigned, dayZero) : null,
+        last: previous[0] ?? null,
+        previous,
         alerts: recordExtrasFor(patient.id)?.alerts,
       });
       byId.set(patient.id, person);
       return person;
     });
+    // The whole queue, oldest first: the start desk folds a long one behind Show all.
     const awaiting = referrals
       .filter((referral) => referral.patientId && awaitingTriage(referral, triages))
-      .flatMap((referral) => {
+      .flatMap((referral): AwaitingTriage[] => {
         const person = byId.get(referral.patientId!);
-        return person ? [{ ...person, referral: asReferral(referral) }] : [];
+        if (!person) return [];
+        // Received is the referral's own raised time on the synthetic clock, for the queue only.
+        const received = formatSheetMoment(referral.raisedAt, dayZero);
+        return [
+          {
+            ...person,
+            referral: { ...asReferral(referral), received },
+            raisedAt: referral.raisedAt,
+            waitedMinutes: Math.max(0, now - referral.raisedAt),
+          },
+        ];
       })
-      .slice(0, 5);
+      .sort((a, b) => a.raisedAt - b.raisedAt);
     return { people, awaiting, byId };
   }, [patients, movements, referrals, triages, now, dayZero, admissions, units]);
 }
