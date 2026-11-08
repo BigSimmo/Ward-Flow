@@ -4276,7 +4276,7 @@
       "control": "Request update"
     },
     "review": {
-      "reviewedOn": "2026-11-07",
+      "reviewedOn": "2026-11-08",
       "sources": [
         {
           "path": "src/components/ward-management/ward-flow-event-roles.ts",
@@ -4300,8 +4300,8 @@
         },
         {
           "path": "src/components/ward-management/capacity/capacity-screen.tsx",
-          "line": 173,
-          "sha256": "a9a9bda9107b06a7f2920fbcd5a2fe536e960f43d87cbffd78032c03d6f8362b"
+          "line": 171,
+          "sha256": "754572c7a5bd434a7e3ca238a5b0e6842173e34e1f7aabe10d97cd06e9211eff"
         },
         {
           "path": "src/components/ward-management/ward-flow-bed-events.ts",
