@@ -107,7 +107,24 @@ function Value({ value }: { value: DocValue }) {
 
 function Block({ block }: { block: DocBlock }) {
   if (block.kind === "facts")
-    return <Facts rows={block.rows.map(([label, value]) => [label, <Value key={label} value={value} />] as const)} />;
+    return (
+      <Facts
+        rows={block.rows.map(
+          ([label, value]) =>
+            [
+              label,
+              // A value with nothing recorded is marked so the printed copy can grey the whole line.
+              value.every((bit) => typeof bit !== "string") ? (
+                <span key={label} data-wf-print-blank="">
+                  <Value value={value} />
+                </span>
+              ) : (
+                <Value key={label} value={value} />
+              ),
+            ] as const,
+        )}
+      />
+    );
   if (block.kind === "missing") return <p className={styles.missing}>{block.text}</p>;
   if (block.kind === "tags")
     return (

@@ -561,3 +561,82 @@
     font-weight: 700 !important;
   }
 }
+
+/* =========================================================================
+ * Polish pass (Josh, 8 Nov 2026: "adaptive to the content and page constraints").
+ * Page numbers in the margin, headings that never sit alone at a page foot, blank fields greyed
+ * so recorded facts stand out, and tighter title blocks.
+ * ========================================================================= */
+@page {
+  @bottom-right {
+    content: "Page " counter(page) " of " counter(pages);
+    font: 7pt / 1 sans-serif;
+    color: #5b6573;
+  }
+}
+
+@page shared-clinical-output {
+  @bottom-left {
+    content: "Ward Flow · synthetic prototype · not a medical record";
+    font: 7pt / 1 sans-serif;
+    color: #5b6573;
+  }
+  @bottom-right {
+    content: "Page " counter(page) " of " counter(pages);
+    font: 7pt / 1 sans-serif;
+    color: #5b6573;
+  }
+}
+
+@media print {
+  [data-wf-print-doc] p,
+  [data-testid="ward-discharge-board"] p,
+  [data-testid="ward-downtime-pack"] p {
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* ----- Triage: wider labels (no "Appearance and / behaviour" wraps), blank lines greyed ----- */
+  [data-wf-print-doc="triage"] > section dl {
+    grid-template-columns: 33mm minmax(0, 1fr) 33mm minmax(0, 1fr);
+  }
+
+  [data-wf-print-doc="triage"] > section dd:has(> [data-wf-print-blank]),
+  [data-wf-print-doc="triage"] > section dt:has(+ dd > [data-wf-print-blank]) {
+    color: #8a94a0 !important;
+    font-weight: 400;
+  }
+
+  [data-wf-print-doc="triage"] > section dd:has(> [data-wf-print-blank]) * {
+    color: inherit !important;
+  }
+
+  [data-wf-print-doc="triage"] > section dd:not(:has(> [data-wf-print-blank])) {
+    font-weight: 600;
+  }
+
+  /* ----- Discharges: one tight title block; a group heading stays with its first rows ----- */
+  [data-testid="ward-discharge-board"] main > section:first-of-type {
+    display: block !important;
+  }
+
+  [data-testid="ward-discharge-board"] main > section:first-of-type > div + div {
+    margin-top: 1mm !important;
+  }
+
+  [data-testid="ward-discharge-board"] table tbody > tr:first-child {
+    break-after: avoid;
+  }
+
+  /* ----- Downtime pack: quiet notes under the title ----- */
+  [data-testid="ward-downtime-pack"] > main > p,
+  [data-testid="ward-downtime-pack"] [data-testid="ward-downtime-print-provenance"] {
+    margin: 0.8mm 0 !important;
+    font-size: 7.5pt !important;
+    color: #5b6573 !important;
+  }
+
+  [data-testid="ward-downtime-pack"] tbody tr {
+    break-inside: avoid;
+  }
+}
