@@ -736,10 +736,6 @@
  * (hub-screen.tsx). Review point 21: each row is the place's two lines, with a stale count's
  * "Stale 5h" on the right of them (round 2). Desktop is unchanged. */
 @media (max-width: 46.4375rem) {
-  .glanceAnchor {
-    display: none;
-  }
-
   .controlsRow + .controlsRow > :first-child,
   .controlsRow + .controlsRow > :nth-child(2) {
     display: none;
@@ -1337,4 +1333,11 @@
 /* Order and Reset stay together at the right end of the controls row. */
 .orderLabel ~ .controlsEnd {
   margin-left: 0;
+}
+
+/* Phone: the glance stays off the compact band. After .glanceAnchor so it wins at equal specificity. */
+@media (max-width: 46.4375rem) {
+  .glanceAnchor {
+    display: none;
+  }
 }
