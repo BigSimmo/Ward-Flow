@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { expectSays } from "./helpers/ward-caption";
+import { ADMIN_DETAIL_FIELDS } from "@/components/ward-management/ward-patients";
 
 // Same reason as `ward-patient-page.dom.test.tsx`: `AddPatientForm` navigates via `useRouter()`
 // after a successful add, and jsdom has no App Router context to resolve it against.
@@ -105,6 +106,16 @@ function LastPatientExtras() {
   return <span data-testid="last-patient-extras">{JSON.stringify(shown)}</span>;
 }
 
+/** Note 3: echoes the most-recently-added patient's administrative details that are present. */
+function LastPatientAdmin() {
+  const { patients } = useWardFlow();
+  const last = patients[patients.length - 1];
+  const shown = Object.fromEntries(
+    ADMIN_DETAIL_FIELDS.filter((key) => last && key in last).map((key) => [key, last?.[key]]),
+  );
+  return <span data-testid="last-patient-admin">{JSON.stringify(shown)}</span>;
+}
+
 /** Echoes the live referral count — the "stays two acts" catcher: `ADD_PATIENT` must never create
  *  a `Referral`, however this screen's fields grow in the future. */
 function ReferralCount() {
@@ -120,6 +131,7 @@ function renderForm() {
       <LastPatientGender />
       <LastPatientIndigenousStatus />
       <LastPatientExtras />
+      <LastPatientAdmin />
       <ReferralCount />
     </WardFlowProvider>,
   );
@@ -828,9 +840,16 @@ describe("AddPatientForm safety regressions", () => {
       "Suburb",
       "Preferred name",
       "Street address",
-      "GP",
-      "Catchment community team",
-      "Interpreter / preferred language",
+      "GP and practice",
+      "Community mental health team",
+      "Preferred language",
+      // Note 3 (Josh, 8 Nov 2026): the clerk's administrative details, each optional.
+      "Mobile",
+      "Email",
+      "Next of kin",
+      "Medicare number",
+      "Marital status",
+      "Advance health directive",
     ]) {
       expect(screen.getByLabelText(optional)).not.toBeRequired();
       expect(screen.getByLabelText(optional)).not.toHaveAttribute("aria-required");
@@ -845,14 +864,31 @@ describe("AddPatientForm safety regressions", () => {
     fillDraft();
     fireEvent.change(screen.getByLabelText("Suburb"), { target: { value: " Fictionvale " } });
     fireEvent.change(screen.getByLabelText("Preferred name"), { target: { value: "Ari" } });
-    fireEvent.change(screen.getByLabelText("GP"), { target: { value: "Dr Sample" } });
-    expect(screen.getByTestId("ward-add-patient-fold-contact-summary")).toHaveTextContent("Added: preferred name");
-    expect(screen.getByTestId("ward-add-patient-fold-care-summary")).toHaveTextContent("Added: GP");
-    expect(screen.getByTestId("ward-add-patient-fold-culture-summary")).toHaveTextContent("Optional");
+    fireEvent.change(screen.getByLabelText("GP and practice"), { target: { value: "Dr Sample" } });
+    // Note 3: each fold says how many of its details are in, and nothing for an empty one.
+    expect(screen.getByTestId("ward-add-patient-fold-contact-count")).toHaveTextContent("2 added");
+    expect(screen.getByTestId("ward-add-patient-fold-care-count")).toHaveTextContent("1 added");
+    expect(screen.queryByTestId("ward-add-patient-fold-culture-count")).toBeNull();
     fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
     await waitFor(() => expect(Number(screen.getByTestId("patient-count").textContent)).toBe(before + 1));
     expect(screen.getByTestId("last-patient-extras")).toHaveTextContent(
       JSON.stringify({ suburb: "Fictionvale", preferredName: "Ari", generalPractitioner: "Dr Sample" }),
+    );
+  });
+
+  // Note 3 (Josh, 8 Nov 2026): the clerk's administrative details reach the record, typed or chosen.
+  it("saves Note 3's administrative details, typed and chosen, and leaves blank ones out", async () => {
+    renderForm();
+    const before = Number(screen.getByTestId("patient-count").textContent);
+    fillDraft();
+    fireEvent.change(screen.getByLabelText("Mobile"), { target: { value: " 0400 000 000 " } });
+    fireEvent.change(screen.getByLabelText("Next of kin"), { target: { value: "Alex Sample" } });
+    fireEvent.change(screen.getByLabelText("Marital status"), { target: { value: "Widowed" } });
+    expect(screen.getByTestId("ward-add-patient-fold-kin-count")).toHaveTextContent("1 added");
+    fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
+    await waitFor(() => expect(Number(screen.getByTestId("patient-count").textContent)).toBe(before + 1));
+    expect(screen.getByTestId("last-patient-admin")).toHaveTextContent(
+      JSON.stringify({ mobilePhone: "0400 000 000", nextOfKinName: "Alex Sample", maritalStatus: "Widowed" }),
     );
   });
 

@@ -220,6 +220,10 @@ export function PatientDetailsTab({
       (placement.gender && patient.gender && placement.gender !== patient.gender)),
   );
 
+  // Note 3 (Josh, 8 Nov 2026): an administrative detail shows only once it is recorded.
+  const recorded = (label: string, value: string | undefined, more: Partial<Fact> = {}): Fact[] =>
+    value?.trim() ? [{ label, value, ...more }] : [];
+
   // ── Identity ───────────────────────────────────────────────────────────────────────────────
   const identity: Fact[] = [
     { label: "Name", value: displayName },
@@ -237,13 +241,38 @@ export function PatientDetailsTab({
       value: patient?.aboriginalOrTorresStraitIslanderStatus,
       wide: true,
     },
+    ...recorded("Country of birth", patient?.countryOfBirth),
+    ...recorded("Marital status", patient?.maritalStatus),
   ];
 
   // ── Contact ────────────────────────────────────────────────────────────────────────────────
   const contact: Fact[] = [
     ...(extras?.phone ? [{ label: "Phone", value: extras.phone, mono: true }] : []),
-    { label: "Address", value: addressLine(patient) },
+    ...recorded("Mobile", patient?.mobilePhone, { mono: true }),
+    ...recorded("Other phone", patient?.otherPhone, { mono: true }),
+    ...recorded("Email", patient?.email),
+    { label: "Address", value: addressLine(patient), aside: patient?.postcode },
     { label: "Interpreter / preferred language", value: patient?.interpreterLanguage, wide: true },
+    ...recorded("Interpreter needed", patient?.interpreterRequired),
+  ];
+  const kin: Fact[] = [
+    ...recorded("Next of kin", patient?.nextOfKinName, { aside: patient?.nextOfKinRelationship }),
+    ...recorded("Next of kin phone", patient?.nextOfKinPhone, { mono: true }),
+    ...recorded(patient?.supportPersonRole?.trim() || "Support person", patient?.supportPersonName),
+    ...recorded("Support person phone", patient?.supportPersonPhone, { mono: true }),
+  ];
+  const funding: Fact[] = [
+    ...recorded("Medicare", patient?.medicareNumber, {
+      mono: true,
+      aside: [patient?.medicareReference && `IRN ${patient.medicareReference}`, patient?.medicareExpiry]
+        .filter(Boolean)
+        .join(" · "),
+    }),
+    ...recorded("Funding", patient?.healthFund),
+    ...recorded("DVA file number", patient?.dvaFileNumber, { mono: true }),
+    ...recorded("Pension or concession card", patient?.concessionCard, { mono: true }),
+    ...recorded("Advance health directive", patient?.advanceHealthDirective),
+    ...recorded("Enduring guardian", patient?.enduringGuardian),
   ];
 
   // ── Support people (MHA 2014 WA roles) ─────────────────────────────────────────────────────
@@ -270,6 +299,7 @@ export function PatientDetailsTab({
   };
   const care: Fact[] = [
     { label: "GP", value: patient?.generalPractitioner },
+    ...recorded("Practice phone", patient?.gpPhone, { mono: true }),
     ...(activeEpisode && !confirmedHere
       ? [
           {
@@ -372,6 +402,18 @@ export function PatientDetailsTab({
         <Section title="Contact">
           <FactGrid facts={contact} />
         </Section>
+
+        {kin.length > 0 ? (
+          <Section title="Next of kin and carer">
+            <FactGrid facts={kin} />
+          </Section>
+        ) : null}
+
+        {funding.length > 0 ? (
+          <Section title="Funding and planning">
+            <FactGrid facts={funding} />
+          </Section>
+        ) : null}
 
         {supports.length > 0 || noNominatedPerson ? (
           <Section title="Support people">

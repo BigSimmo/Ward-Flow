@@ -61,6 +61,7 @@ import {
   AddPatientMoreDetails,
   EMPTY_EXTRAS,
   extrasEntered,
+  FOLD_IDS,
   filledExtras,
   INDIGENOUS_STATUS_UNANSWERED,
   type IndigenousStatusChoice,
@@ -259,6 +260,9 @@ export function AddPatientForm() {
   const [sexChoice, setSexChoice] = useState<SexChoice>(SEX_UNCHOSEN);
   // RF7: suburb and the folded sections' typed details, all optional.
   const [extras, setExtras] = useState<PatientExtras>(EMPTY_EXTRAS);
+  // Note 3: which optional folds are open. All start closed, so the page opens on the four fields.
+  const [openFolds, setOpenFolds] = useState<ReadonlySet<string>>(() => new Set());
+  const allFoldsOpen = FOLD_IDS.every((id) => openFolds.has(id));
   // A reset also clears a half-typed birth date, which the draft (YYYY-MM-DD or "") cannot see.
   const [dateBoxGeneration, setDateBoxGeneration] = useState(0);
 
@@ -739,14 +743,14 @@ export function AddPatientForm() {
     {
       key: "identity",
       on: identityChanged,
-      label: "Core details",
+      label: "Required details",
       meta: "Names, birth date, UMRN, sex, gender, suburb",
     },
     {
       key: "more",
       on: moreChanged,
-      label: "More details",
-      meta: "Contact, care links, culture and language",
+      label: "Optional details",
+      meta: "Contact, next of kin, Medicare, GP, culture, planning",
     },
   ];
 
@@ -864,7 +868,7 @@ export function AddPatientForm() {
             // F-08 (phone review, Oct 2026): the standard Demo pill, so a typed record reads as invented.
             chip={<LiveChip state="live" onHero />}
             title="Add patient"
-            sub="Core details first, more below"
+            sub="Four details to add. The rest is optional."
             actions={
               <Link
                 className={buttonClass({ variant: "onHero", size: "sm" })}
@@ -976,7 +980,7 @@ export function AddPatientForm() {
                 id="apIdH"
                 className={styles.idHead}
                 icon={UserRound}
-                title="Core details"
+                title="Required to add"
                 aside={
                   <Badge size="sm" tone={answered ? "success" : "neutral"}>
                     {answeredCount} of {REQUIRED_FIELDS.length} required
@@ -1067,56 +1071,6 @@ export function AddPatientForm() {
                     onChange={(event) => setDraftField("umrn")(event.target.value.replace(/\s+/g, "").toUpperCase())}
                   />
                 </Field>
-
-                <div className={cx(styles.span2, styles.choiceField)}>
-                  <div className={styles.choiceLabelRow}>
-                    <span className={styles.choiceLabel}>Sex</span>
-                    <span className={styles.choiceHint}>optional, as recorded</span>
-                  </div>
-                  <div data-testid="ward-add-patient-sex">
-                    <Segmented
-                      label="Sex"
-                      items={SEX_ITEMS}
-                      value={sexChoice}
-                      onChange={setSexChoice}
-                      className={cx(styles.segmented, styles.segmentedWrap)}
-                    />
-                  </div>
-                </div>
-                <div className={cx(styles.span2, styles.choiceField)}>
-                  <div className={styles.choiceLabelRow}>
-                    <span className={styles.choiceLabel} id="apGenderL">
-                      Gender
-                    </span>
-                    <span className={styles.choiceHint}>optional, bed matching</span>
-                  </div>
-                  <div data-testid="ward-add-patient-gender">
-                    <Segmented
-                      label="Gender"
-                      items={GENDER_ITEMS}
-                      value={genderChoice}
-                      onChange={setGenderChoice}
-                      className={cx(styles.segmented, styles.segmentedWrap)}
-                    />
-                  </div>
-                </div>
-                <Field
-                  label="Suburb"
-                  id="ward-add-patient-suburb"
-                  className={styles.span2}
-                  help={longTextWarning(extras.suburb, "suburb")}
-                >
-                  <TextInput
-                    data-testid="ward-add-patient-suburb"
-                    autoComplete="off"
-                    autoCorrect="off"
-                    autoCapitalize="words"
-                    spellCheck={false}
-                    enterKeyHint="done"
-                    value={extras.suburb}
-                    onChange={(event) => setExtra("suburb")(event.target.value)}
-                  />
-                </Field>
               </CardBody>
               {/* Redesign: the duplicate check runs under the identity fields as they are typed. */}
               {duplicateCheck}
@@ -1126,14 +1080,72 @@ export function AddPatientForm() {
               <CardHead
                 id="apMoreH"
                 icon={ListPlus}
-                title="More details"
-                aside={<span className={styles.muted}>Optional · never needed to add</span>}
+                title="Optional details"
+                aside={
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    data-testid="ward-add-patient-open-all"
+                    aria-expanded={allFoldsOpen}
+                    onClick={() => setOpenFolds(allFoldsOpen ? new Set() : new Set(FOLD_IDS))}
+                  >
+                    {allFoldsOpen ? "Close all" : "Open all"}
+                  </Button>
+                }
               />
               <AddPatientMoreDetails
                 extras={extras}
                 onExtra={setExtra}
                 indigenousStatus={indigenousStatus}
                 onIndigenousStatus={setIndigenousStatus}
+                aboutAdded={(sexChoice !== SEX_UNCHOSEN ? 1 : 0) + (genderChoice !== GENDER_UNCHOSEN ? 1 : 0)}
+                suburbHelp={longTextWarning(extras.suburb, "suburb")}
+                openFolds={openFolds}
+                onFold={(id, open) =>
+                  setOpenFolds((current) => {
+                    if (current.has(id) === open) return current;
+                    const next = new Set(current);
+                    if (open) next.add(id);
+                    else next.delete(id);
+                    return next;
+                  })
+                }
+                aboutPerson={
+                  <>
+                    <div className={styles.choiceField}>
+                      <div className={styles.choiceLabelRow}>
+                        <span className={styles.choiceLabel}>Sex</span>
+                        <span className={styles.choiceHint}>As recorded</span>
+                      </div>
+                      <div data-testid="ward-add-patient-sex">
+                        <Segmented
+                          label="Sex"
+                          items={SEX_ITEMS}
+                          value={sexChoice}
+                          onChange={setSexChoice}
+                          className={cx(styles.segmented, styles.segmentedWrap)}
+                        />
+                      </div>
+                    </div>
+                    <div className={styles.choiceField}>
+                      <div className={styles.choiceLabelRow}>
+                        <span className={styles.choiceLabel} id="apGenderL">
+                          Gender
+                        </span>
+                        <span className={styles.choiceHint}>For bed matching</span>
+                      </div>
+                      <div data-testid="ward-add-patient-gender">
+                        <Segmented
+                          label="Gender"
+                          items={GENDER_ITEMS}
+                          value={genderChoice}
+                          onChange={setGenderChoice}
+                          className={cx(styles.segmented, styles.segmentedWrap)}
+                        />
+                      </div>
+                    </div>
+                  </>
+                }
               />
             </Card>
 
