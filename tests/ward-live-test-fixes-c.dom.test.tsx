@@ -6,7 +6,7 @@ import {
   pastWardEta,
 } from "@/components/ward-management/officer/officer-screen-helpers";
 import { createdEvent, historyLeadTitle } from "@/components/ward-management/patients/patient-history-tab";
-import { clockTime, savedAtToast } from "@/components/ward-management/ward-saved-at-toast";
+import { savedAtToast } from "@/components/ward-management/ward-saved-at-toast";
 
 describe("WF-09 arrivals axis", () => {
   it("clamps to now +/-48h and bounds the tick count", () => {
@@ -60,16 +60,15 @@ describe("overdue arrival follows a ward ETA only", () => {
 });
 
 describe("WF-47 saved-at toast", () => {
-  it("says what was saved and the HH:MM", () => {
+  it("says what was saved and the HH:MM on the board's clock", () => {
     const push = vi.fn();
-    const at = new Date(2026, 10, 5, 9, 7);
-    savedAtToast({ push } as never, "Hold-up saved: Awaiting pharmacy", at);
+    // 09:07 on the board, whatever the device clock says (two-sign-in test, 8 Nov 2026).
+    savedAtToast({ push } as never, "Hold-up saved: Awaiting pharmacy", 9 * 60 + 7);
     expect(push).toHaveBeenCalledWith({
       tone: "success",
       title: "Hold-up saved: Awaiting pharmacy",
-      body: `Saved at ${clockTime(at)}`,
+      body: "Saved at 09:07",
     });
-    expect(clockTime(at)).toMatch(/^09:07$/);
   });
 });
 
