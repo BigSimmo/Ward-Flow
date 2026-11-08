@@ -23,6 +23,11 @@ describe("role-led search group order", () => {
     expect(searchGroupOrder("place", "graylands ward", "community").slice(0, 2)).toEqual(["teams", "suburbs"]);
   });
 
+  it("keeps Help first for a how-to question about a place", () => {
+    const order = searchGroupOrder("place", "how do I find a ward", "ed");
+    expect(order.slice(0, 2)).toEqual(["help", "eds"]);
+  });
+
   it("never moves people ahead of a person query, whatever the role", () => {
     for (const role of ["ed", "community", "ward", "bed_manager", "coordinator", "officer"]) {
       expect(searchGroupOrder("person", "smith", role)[0]).toBe("people");
@@ -42,6 +47,7 @@ describe("ward finder matching", () => {
     expect(wardMatchesQuery("RPH", { name: "Ward 1", siteCode: "RPH" })).toBe(true);
     expect(wardMatchesQuery("1 ward", { name: "Ward 1", siteCode: "RPH" })).toBe(true);
     expect(wardMatchesQuery("", { name: "Ward 1", siteCode: "RPH" })).toBe(true);
+    expect(wardMatchesQuery("-", { name: "Ward 1", siteCode: "RPH" })).toBe(true);
     expect(wardMatchesQuery("graylands", { name: "Ward 1", siteCode: "RPH" })).toBe(false);
   });
 

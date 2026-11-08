@@ -636,6 +636,8 @@ function roleLeadingGroups(
 ): readonly SearchGroupKey[] {
   const places = role === undefined ? undefined : ROLE_PLACE_ORDER[role];
   if (!places) return front;
+  // A question ("how do I find a ward?") keeps Help first; the desk's places follow it.
+  if (front[0] === "help") return intent === "place" ? ["help", ...places] : front;
   if (intent === "place") return places;
   // A query with no clear intent: the desk's own kind of place leads, after anything already leading.
   if (intent === "general" && front.length === 0) return [places[0]];
