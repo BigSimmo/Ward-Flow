@@ -113,6 +113,8 @@ export type WardSharedConnection = SharedView & {
   /** What the sign-in screen says after a deliberate sign-out, such as the shared computer reminder. */
   farewell?: string | null;
   retry: () => void | Promise<void>;
+  /** Why the saved sign-in check is still waiting, while it retries by itself. */
+  restoreNotice?: string | null;
   /** P172: clears the outcome of an uncertain save once read. Not offered while the receipt is being checked. */
   dismissRecovery?: (shown?: string) => void;
   dispatch: WardCommandDispatch;
@@ -638,9 +640,10 @@ function WardSharedWorkspaceContent({
         title="Opening Ward Flow"
         testId="ward-shared-connecting"
         status={
-          connection.signedIn
+          connection.restoreNotice ??
+          (connection.signedIn
             ? "Signed in. Connecting to the shared workspace. This can take up to 15 seconds."
-            : "Checking your sign-in. This usually takes a few seconds."
+            : "Checking your sign-in. This usually takes a few seconds.")
         }
       >
         {stalled && (
