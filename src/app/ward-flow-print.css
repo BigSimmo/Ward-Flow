@@ -240,8 +240,10 @@
   [data-testid="ward-discharge-board"] main section:has(> div > table) > div:not(:has(table)),
   [data-testid="ward-discharge-board"] main > section:first-of-type > div:last-child:not(:first-child),
   [data-testid="ward-discharge-board"] table tr:has(> td[colspan] > button),
-  [data-testid="ward-discharge-board"] table thead th:last-child:not(:first-child),
-  [data-testid="ward-discharge-board"] table td:last-child:not(:first-child) {
+  /* Only the action column (its heading is screen-reader text); the records table's last column,
+     7 day follow-up, is data and prints. */
+  [data-testid="ward-discharge-board"] table thead th:last-child:not(:first-child):has(> .sr-only),
+  [data-testid="ward-discharge-board"] table:has(thead th:last-child > .sr-only) td:last-child:not(:first-child) {
     display: none !important;
   }
 
