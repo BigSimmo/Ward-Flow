@@ -629,6 +629,8 @@ export function useWardSupabaseShared(
           retry: () =>
             run(async () => {
               manualRetryTook = true;
+              // The boot loop returns without clearing its notice once a manual retry takes over.
+              setRestoreNotice(null);
               if (connection.current) {
                 await connection.current.retry();
                 return;
