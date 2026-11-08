@@ -34,6 +34,8 @@
     align-items: baseline;
     gap: 4pt 12pt;
     margin-bottom: 6pt;
+    padding-bottom: 4pt;
+    border-bottom: 1.5pt solid currentColor;
   }
 
   .title {
@@ -64,6 +66,32 @@
 
   .table thead {
     display: table-header-group;
+  }
+
+  /* Column widths (8 Nov 2026): a name and a date each keep one line; the bed and days columns
+     only need a few characters. Bed, Patient, State, Days, Legal status, Form end, Observations,
+     Expected out. */
+  .table thead th:nth-child(1) {
+    width: 7%;
+  }
+  .table thead th:nth-child(2) {
+    width: 21%;
+  }
+  .table thead th:nth-child(3) {
+    width: 14%;
+  }
+  .table thead th:nth-child(4) {
+    width: 6%;
+  }
+  .table thead th:nth-child(5),
+  .table thead th:nth-child(7) {
+    width: 13%;
+  }
+  .table thead th:nth-child(6) {
+    width: 10%;
+  }
+  .table thead th:nth-child(8) {
+    width: 16%;
   }
 
   .table thead th {

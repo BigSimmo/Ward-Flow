@@ -200,6 +200,8 @@ export function SummaryDocument({
         data-capped={full ? undefined : ""}
         aria-labelledby="triage-doc-title"
         data-testid="triage-summary-document"
+        data-print-output
+        data-wf-print-doc="triage"
       >
         <div className={styles.docTop}>
           <div className={styles.grow}>

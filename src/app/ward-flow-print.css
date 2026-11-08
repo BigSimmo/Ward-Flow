@@ -1,0 +1,371 @@
+/* =========================================================================
+ * Ward Flow printed documents (8 Nov 2026, "Tidy printed document layouts").
+ * Paper only: nothing here changes the screen. Each document opts in with
+ * `data-wf-print-doc="<name>"`; the shared `[data-print-output]` isolation in
+ * globals.css already prints that element alone on A4 with 14 mm margins.
+ * Plain selectors on the document's own structure, so the screen modules and
+ * their hashed class names stay untouched.
+ * ========================================================================= */
+
+@media print {
+  /* ---------- Shared paper type for every opted-in document ---------- */
+  [data-wf-print-doc] {
+    font-size: 9.5pt;
+    line-height: 1.35;
+    color: #000;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Print the document alone: every branch beside its ancestor line is taken out of the flow (no
+     blank trailing pages), and the ancestors lose the drawer's fixed position, transform and scroll
+     so the paper starts at the page's top left at full width. */
+  body:has([data-wf-print-doc]) > :not(:has([data-wf-print-doc]), [data-wf-print-doc]),
+  body:has([data-wf-print-doc]) :has([data-wf-print-doc]) > :not(:has([data-wf-print-doc]), [data-wf-print-doc]) {
+    display: none !important;
+  }
+
+  body:has([data-wf-print-doc]) :has([data-wf-print-doc]) {
+    position: static !important;
+    inset: auto !important;
+    transform: none !important;
+    width: auto !important;
+    max-width: none !important;
+    height: auto !important;
+    max-height: none !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    background: none !important;
+    contain: none !important;
+    display: block !important;
+  }
+
+  body:has([data-wf-print-doc]) [data-wf-print-doc] {
+    position: static !important;
+  }
+
+  /* ---------- Triage and risk record (SMHMR900 / SMHMR905) ---------- */
+  [data-wf-print-doc="triage"] {
+    display: block !important;
+    padding: 0 !important;
+  }
+
+  /* Title block: kicker, name with UMRN and age, key line, then a firm rule. */
+  [data-wf-print-doc="triage"] > div:first-child {
+    display: block;
+    padding: 0 0 2.5mm;
+    margin-bottom: 1mm;
+    border-bottom: 1.5pt solid #000;
+  }
+
+  [data-wf-print-doc="triage"] > div:first-child > div > div:first-child {
+    font-size: 7.5pt;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #444;
+  }
+
+  [data-wf-print-doc="triage"] #triage-doc-title {
+    margin: 1mm 0 0.5mm;
+    font-size: 15pt;
+    line-height: 1.2;
+    font-weight: 700;
+  }
+
+  [data-wf-print-doc="triage"] #triage-doc-title span {
+    margin-left: 2mm;
+    font-size: 9.5pt;
+    font-weight: 500;
+    color: #333;
+  }
+
+  [data-wf-print-doc="triage"] [data-testid="triage-doc-key"] {
+    margin: 0;
+    font-size: 9.5pt;
+    font-weight: 600;
+    color: #000;
+  }
+
+  /* Each part: a grey band heading, then its facts in two label and value pairs a line. */
+  [data-wf-print-doc="triage"] > section {
+    display: block;
+    padding: 0;
+    margin: 2.5mm 0 0;
+    border: 0;
+    break-inside: avoid;
+  }
+
+  [data-wf-print-doc="triage"] > section > div:first-child {
+    display: block;
+    min-height: 0;
+    margin: 0 0 1.2mm;
+    padding: 0.8mm 1.5mm;
+    background: #ececec !important;
+    break-after: avoid;
+  }
+
+  [data-wf-print-doc="triage"] > section > div:first-child > :not(h3) {
+    display: none !important;
+  }
+
+  [data-wf-print-doc="triage"] > section h3 {
+    background: none !important;
+    display: block;
+    margin: 0;
+    font-size: 8pt;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: #000;
+  }
+
+  [data-wf-print-doc="triage"] > section h3 span {
+    margin-right: 1.5mm;
+  }
+
+  [data-wf-print-doc="triage"] > section dl {
+    display: grid;
+    grid-template-columns: 30mm minmax(0, 1fr) 30mm minmax(0, 1fr);
+    gap: 0.6mm 3mm;
+    margin: 0;
+    padding: 0 1.5mm;
+  }
+
+  [data-wf-print-doc="triage"] > section dt,
+  [data-wf-print-doc="triage"] > section dd {
+    font-size: 9pt;
+    line-height: 1.35;
+  }
+
+  [data-wf-print-doc="triage"] > section dt {
+    color: #555;
+  }
+
+  [data-wf-print-doc="triage"] > section dd {
+    display: block;
+    margin: 0;
+    color: #000;
+  }
+
+  [data-wf-print-doc="triage"] > section > p,
+  [data-wf-print-doc="triage"] > section > ul {
+    margin: 0.8mm 0 0;
+    padding: 0 1.5mm;
+    font-size: 9pt;
+    color: #000;
+  }
+
+  [data-wf-print-doc="triage"] > section > ul {
+    display: block;
+    list-style: none;
+  }
+
+  [data-wf-print-doc="triage"] > section > ul li {
+    display: inline;
+    padding: 0;
+    background: none;
+    font-size: 9pt;
+    color: #000;
+  }
+
+  [data-wf-print-doc="triage"] > section > ul li + li::before {
+    content: " · ";
+  }
+
+  /* Sign-off: a ruled box with room for a wet signature, kept whole. */
+  [data-wf-print-doc="triage"] > section[aria-label="Signature"] {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 55mm;
+    gap: 0.5mm 4mm;
+    margin-top: 4mm;
+    padding: 2.5mm 3mm;
+    border: 0.75pt solid #000;
+  }
+
+  [data-wf-print-doc="triage"] > section[aria-label="Signature"] p {
+    grid-column: 1;
+    margin: 0;
+    font-size: 9pt;
+  }
+
+  [data-wf-print-doc="triage"] > section[aria-label="Signature"]::after {
+    content: "Signature";
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    align-self: end;
+    padding-top: 1mm;
+    border-top: 0.75pt solid #000;
+    font-size: 7.5pt;
+    color: #555;
+  }
+
+  [data-wf-print-doc="triage"] > p:last-child {
+    margin: 2.5mm 0 0;
+    padding-top: 1.5mm;
+    border-top: 0.5pt solid #999;
+    font-size: 7.5pt;
+    color: #555;
+  }
+}
+
+/* ---------- Discharges list (Print list) ----------
+   One line a person: name, UMRN and ward run together; dates and the hold-up sit on one line each.
+   Empty screen panels (charts, weekend prep, side bars) and the action column are left off. */
+@media print {
+  [data-testid="ward-discharge-board"] main {
+    gap: 2mm !important;
+    padding: 0 !important;
+  }
+
+  [data-testid="ward-discharge-board"] main > section:first-of-type {
+    padding: 0 0 2mm !important;
+    border: 0 !important;
+    border-bottom: 1.5pt solid #000 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    min-height: 0 !important;
+  }
+
+  [data-testid="ward-discharge-board"] main > section:first-of-type > div:empty,
+  [data-testid="ward-discharge-board"] main > section:first-of-type > div:has(> div:empty:only-child),
+  [data-testid="ward-discharge-weekend-prep"],
+  [data-testid="ward-discharge-barrier-bars"],
+  [data-testid="ward-discharge-day-chart"],
+  [data-testid="ward-discharge-board"] main section > div:empty,
+  [data-testid="ward-discharge-board"] main section:has(> div > table) > div:not(:has(table)),
+  [data-testid="ward-discharge-board"] main > section:first-of-type > div:last-child:not(:first-child),
+  [data-testid="ward-discharge-board"] table tr:has(> td[colspan] > button),
+  [data-testid="ward-discharge-board"] table thead th:last-child:not(:first-child),
+  [data-testid="ward-discharge-board"] table td:last-child:not(:first-child) {
+    display: none !important;
+  }
+
+  [data-testid="ward-discharge-chase"] {
+    padding: 0 !important;
+    border: 0 !important;
+    min-height: 0 !important;
+  }
+
+  [data-testid="ward-discharge-board"] main section:has(> div > table) {
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  [data-testid="ward-discharge-board"] table {
+    width: 100% !important;
+    table-layout: auto !important;
+    border-collapse: collapse !important;
+    font-size: 8.5pt !important;
+  }
+
+  [data-testid="ward-discharge-board"] table th,
+  [data-testid="ward-discharge-board"] table td {
+    height: auto !important;
+    padding: 0.7mm 1.5mm !important;
+    vertical-align: baseline !important;
+    border-bottom: 0.5pt solid #bbb !important;
+    line-height: 1.3 !important;
+  }
+
+  [data-testid="ward-discharge-board"] table col {
+    width: auto !important;
+  }
+
+  [data-testid="ward-discharge-board"] main > section:first-of-type > div {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    min-height: 0 !important;
+  }
+
+  [data-testid="ward-discharge-board"] table thead th {
+    font-size: 7pt !important;
+    border-bottom: 1pt solid #000 !important;
+  }
+
+  [data-testid="ward-discharge-board"] table tbody > tr:first-child > th {
+    padding-top: 2.5mm !important;
+    border-bottom: 1pt solid #000 !important;
+  }
+
+  [data-testid="ward-discharge-board"] table tbody > tr:first-child h3 {
+    font-size: 9pt !important;
+  }
+
+  [data-testid="ward-discharge-board"] table td > *,
+  [data-testid="ward-discharge-board"] table td > span > * {
+    display: inline !important;
+    margin: 0 1.5mm 0 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: none !important;
+    font-size: inherit !important;
+    min-height: 0 !important;
+  }
+
+  [data-testid="ward-discharge-board"] table td > button {
+    font-weight: 600 !important;
+  }
+}
+
+/* ---------- Downtime pack ----------
+   Printed landscape (the pack sets its own page) so each patient row reads on one line; portrait
+   wrapped names, EDs and stages over four or five lines. Smaller paper type, tight cells, and the title band drawn as a rule. */
+@media print {
+  [data-testid="ward-downtime-pack"] {
+    font-size: 8.5pt;
+  }
+
+  [data-testid="ward-downtime-pack"] section,
+  [data-testid="ward-downtime-pack"] [data-testid="ward-downtime-beds"],
+  [data-testid="ward-downtime-pack"] [data-testid="ward-downtime-ed"],
+  [data-testid="ward-downtime-pack"] [data-testid="ward-downtime-moves"],
+  [data-testid="ward-downtime-pack"] [data-testid="ward-downtime-legal"] {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  [data-testid="ward-downtime-pack"] > main > :first-child {
+    min-height: 0 !important;
+    padding: 0 0 2mm !important;
+    border: 0 !important;
+    border-bottom: 1.5pt solid #000 !important;
+    border-radius: 0 !important;
+  }
+
+  [data-testid="ward-downtime-pack"] table {
+    font-size: 8pt !important;
+    line-height: 1.25 !important;
+  }
+
+  [data-testid="ward-downtime-pack"] table th,
+  [data-testid="ward-downtime-pack"] table td {
+    padding: 0.6mm 1.5mm !important;
+    height: auto !important;
+  }
+
+  [data-testid="ward-downtime-pack"] table thead th {
+    font-size: 7pt !important;
+    border-bottom: 1pt solid #000 !important;
+  }
+
+  [data-testid="ward-downtime-pack"] table tbody th,
+  [data-testid="ward-downtime-pack"] table tbody td {
+    font-size: 8pt !important;
+    line-height: 1.25 !important;
+    white-space: nowrap !important;
+  }
+
+  /* Each table starts on a fresh sheet only when it would not fit; headings stay with their rows. */
+  [data-testid="ward-downtime-pack"] h2,
+  [data-testid="ward-downtime-pack"] h3 {
+    break-after: avoid;
+  }
+}
