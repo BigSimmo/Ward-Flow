@@ -99,7 +99,9 @@ function barNotesIn(scroller: HTMLElement): HTMLElement | null {
 function barHeightIn(scroller: HTMLElement): number {
   const bar = scroller.querySelector<HTMLElement>("[data-wf-bar]");
   const notes = barNotesIn(scroller);
-  return (bar ? bar.offsetHeight : 0) + (notes ? notes.offsetHeight : 0);
+  // The desk's Quick bar (Josh, 8 Nov 2026) sits on the band under the header, so it counts too.
+  const quick = scroller.querySelector<HTMLElement>("[data-wf-quick-bar]");
+  return (bar ? bar.offsetHeight : 0) + (notes ? notes.offsetHeight : 0) + (quick ? quick.offsetHeight : 0);
 }
 
 function sameBleed(a: Bleed, b: Bleed) {

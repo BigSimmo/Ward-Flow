@@ -1,0 +1,116 @@
+/*
+ * Quick bar (Josh, 8 Nov 2026). Sits on the deep slate under the top bar, so it reads as part of the
+ * page's header band. One row that scrolls sideways on narrow screens; never wraps into a second row.
+ */
+.bar {
+  --wf-focus-ring: var(--wf-hero-ink);
+  --wf-focus-gap: var(--wf-hero-1);
+  background: var(--wf-hero-1);
+  color: var(--wf-hero-ink);
+  padding: var(--wf-s-2) var(--wf-s-4) var(--wf-s-3);
+  min-width: 0;
+}
+
+.list {
+  display: flex;
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+
+.list::-webkit-scrollbar {
+  display: none;
+}
+
+.list > li {
+  flex: 0 0 auto;
+}
+
+.control {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-2);
+  min-height: 44px;
+  padding: 6px 12px 6px 8px;
+  border: 1px solid color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
+  border-radius: var(--wf-r-lg);
+  background: color-mix(in srgb, var(--wf-hero-ink) 7%, transparent);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.control:hover {
+  background: color-mix(in srgb, var(--wf-hero-ink) 13%, transparent);
+  border-color: color-mix(in srgb, var(--wf-hero-ink) 30%, transparent);
+}
+
+.icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--wf-r-md);
+  background: color-mix(in srgb, var(--wf-hero-ink) 10%, transparent);
+}
+
+.icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.words {
+  display: grid;
+  line-height: 1.2;
+}
+
+.words strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font: 600 var(--wf-fs-13) / 1.2 var(--wf-font);
+  white-space: nowrap;
+}
+
+.words em {
+  font: 400 var(--wf-fs-12, 12px) / 1.2 var(--wf-font);
+  font-style: normal;
+  color: var(--wf-hero-ink-2);
+  white-space: nowrap;
+}
+
+.count {
+  padding: 0 6px;
+  border-radius: 6px;
+  background: var(--wf-hero-warning);
+  color: var(--wf-hero-1);
+  font: 600 12px / 18px var(--font-mono);
+}
+
+/* Phone: chips without the second line, so five fit across before the row scrolls. */
+@media (max-width: 46.4375rem) {
+  .bar {
+    padding: 0 var(--wf-s-3) var(--wf-s-2);
+  }
+
+  .control {
+    min-height: 40px;
+    padding: 4px 12px 4px 6px;
+    border-radius: var(--wf-r-pill);
+  }
+
+  .icon {
+    width: 24px;
+    height: 24px;
+    border-radius: var(--wf-r-pill);
+  }
+
+  .words em {
+    display: none;
+  }
+}
