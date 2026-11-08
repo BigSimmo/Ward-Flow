@@ -687,7 +687,10 @@ export function AllFactorsDrawer({ form, open, onClose }: { form: FormApi; open:
               {(["bg", "now"] as const).map((kind) => (
                 <div key={kind} className={styles.stack}>
                   <span className={styles.miniLabel}>{kind === "bg" ? "Background" : "Now"}</span>
-                  <ChipGroup label={`${area.name}: ${kind === "bg" ? "background" : "now"}`}>
+                  <ChipGroup
+                    label={`${area.name}: ${kind === "bg" ? "background" : "now"}`}
+                    className={styles.factorList}
+                  >
                     {area[kind].map(([id]) => (
                       <FactorRow key={id} form={form} flag={`${area.id}.${kind}.${id}`} />
                     ))}

@@ -652,9 +652,8 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
           eyebrow={`Triage and risk · Synthetic · ${signed ? "Signed" : left ? `${left} left before signing` : "Ready to sign"}`}
           title={<FormalName name={person.name} />}
           titleMeta={person.meta}
-          // 7 Nov 2026: one quiet on-hero action. Start a new triage moved into How to (and New, then
-          // Triage, in the app bar); on a phone How to joins the record row so the banner keeps one row.
-          aside={isPhone ? undefined : howToButton}
+          // 9 Nov 2026 (Josh): How to joins the record row at every width, so the banner's actions sit
+          // together in one evenly spaced row instead of How to floating above them.
           stats={
             isPhone ? undefined : (
               <>
@@ -722,7 +721,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
             </div>
           }
           barAside={
-            <div className={phoneRows.heroPills}>
+            <div className={`${phoneRows.heroPills} ${styles.heroLinks}`}>
               {bannerLink(
                 "Alerts",
                 "Alerts",
@@ -736,7 +735,8 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                 ) : undefined,
               )}
               {bannerLink("Patient profile", "Profile", BookUser, () => openSummary("profile"))}
-              {isPhone ? howToButton : bannerLink("Referral", "Referral", Inbox, () => openSummary("ref"))}
+              {isPhone ? null : bannerLink("Referral", "Referral", Inbox, () => openSummary("ref"))}
+              {howToButton}
             </div>
           }
           condensed={`${person.name} · ${person.umrn} · ${signed ? "Signed" : left ? `${left} left before signing` : "Ready to sign"}`}
