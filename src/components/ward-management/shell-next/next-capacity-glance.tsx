@@ -82,8 +82,10 @@ function GlanceBody({ onClose }: { onClose: () => void }) {
   const patientOf = usePatientOf();
   const canOpen = useCanOpenHref();
 
-  const rows = useMemo(() => bedKindGaps(movements, [...units], now, admissions, referrals),
-    [movements, units, now, admissions, referrals]);
+  const rows = useMemo(
+    () => bedKindGaps(movements, [...units], now, admissions, referrals),
+    [movements, units, now, admissions, referrals],
+  );
   const totals = bedKindTotals(rows);
   const short = rows.reduce((sum, row) => sum + Math.max(0, -row.gap), 0);
   const freeing = bedsFreeingTodayTotal(bedReleases, now) ?? 0;
