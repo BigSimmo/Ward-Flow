@@ -37,6 +37,18 @@ export function useEscalationDiscard({
   useEffect(() => {
     dirtyEscalationRef.current = hasUnsavedEscalation;
   }, [hasUnsavedEscalation]);
+  // WF-RUN-01 hardening: the answer arrives later, so it is checked against the drawer as it is then.
+  const pendingRef = useRef(pending);
+  useEffect(() => {
+    pendingRef.current = pending;
+  }, [pending]);
+  const liveRef = useRef(true);
+  useEffect(() => {
+    liveRef.current = true;
+    return () => {
+      liveRef.current = false;
+    };
+  }, []);
 
   const discardEscalation = useCallback<DismissalGuard>(
     (retry) => {
@@ -54,7 +66,8 @@ export function useEscalationDiscard({
           confirmLabel: "Discard",
           cancelLabel: "Keep editing",
         }).then((confirmed) => {
-          if (!confirmed) return;
+          // A save that started, or a drawer that closed, while the question was open wins.
+          if (!confirmed || !liveRef.current || pendingRef.current) return;
           clear();
           retry?.();
         });

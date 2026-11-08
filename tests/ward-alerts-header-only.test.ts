@@ -25,22 +25,21 @@ describe("P115: tour copy does not mention an alerts chip", () => {
   });
 });
 
-describe("P115 tour wording (Josh, 28 Oct 2026, 12:23 AM AWST)", () => {
+describe("P115 tour wording, updated to the redesigned Home (Josh, 8 Nov 2026)", () => {
+  // Josh's 28 Oct wording named four chips beside the title. The redesigned Home replaced them
+  // with a next-step line and its button, and Josh asked for the tour to follow (8 Nov 2026).
   const facts = { readyBeds: 26, openMovements: 70, referralsWaiting: 7 };
-  const chips = "The chips beside it count Act now, Referrals to decide, Overdue waits and Tier 1 patients.";
 
-  it("the desktop ring step names the four Home chips", () => {
+  it("the desktop hero step names the next step and what the chips count", () => {
     const step = tourSteps("coordinator", "desk", facts).find((s) => s.id === "pressure");
-    expect(step?.body).toContain(chips);
+    expect(step?.body).toContain("The line under it says what needs you first, and its button shows just those.");
+    expect(step?.body).toContain("referrals to decide, waits past target, Tier 1 patients");
   });
 
-  it("the phone chips step names the four Home chips", () => {
+  it("the phone step names the next-step line, not chips the phone no longer shows", () => {
     const step = tourSteps("coordinator", "phone", facts).find((s) => s.id === "chips");
-    // On the phone the second Home chip is labelled "To decide", so the tour says that.
-    expect(step?.body).toContain(
-      "The chips beside it count Act now, To decide, Overdue waits and Tier 1 patients. The figures update as the network changes.",
-    );
-    expect(step?.body).not.toContain("Referrals to decide");
+    expect(step?.body).toContain("This line says what needs you first");
+    expect(step?.body).not.toContain("The chips beside it");
   });
 });
 

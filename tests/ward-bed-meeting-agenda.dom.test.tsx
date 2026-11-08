@@ -291,3 +291,55 @@ describe("bed meeting agenda group filter (B1 extended, 4 Nov 2026)", () => {
     expect(rows()).toBe(before);
   });
 });
+
+/**
+ * WF-J03-COUNT: with a group filter applied, each list's hero figure is the number of people that
+ * list then shows, never the unfiltered total.
+ */
+describe("bed meeting agenda filtered headline counts", () => {
+  const HERO_LISTS = [
+    ["ed-waits", "ED waits"],
+    ["holds", "Pulled beds"],
+    ["stranded", "Stranded"],
+    ["out-of-area", "Out of area"],
+  ] as const;
+
+  /** The hero figure printed above `label`, read from the hero band only. */
+  function heroFigure(label: string): number {
+    const hero = screen.getByRole("heading", { level: 1, name: /Agenda/u }).closest("section, header")!;
+    const labelNode = within(hero as HTMLElement).getByText(label, { exact: true });
+    const stat = labelNode.parentElement!;
+    return Number(stat.firstElementChild!.textContent!.trim());
+  }
+
+  /** Every row the list's card shows once it is unfolded. */
+  function listedRows(id: string): number {
+    const card = screen.getByTestId(`bed-meeting-agenda-${id}`);
+    const more = within(card).queryByRole("button", { name: /^Show \d+ more$/u });
+    if (more) fireEvent.click(more);
+    return card.querySelector("ul")?.children.length ?? 0;
+  }
+
+  it("prints each list's filtered total as the number of people that list shows", () => {
+    render(
+      <WardFlowProvider initialNow={NOW_ANCHOR}>
+        <BedMeetingAgendaScreen />
+      </WardFlowProvider>,
+    );
+    const unfiltered = Object.fromEntries(HERO_LISTS.map(([, label]) => [label, heroFigure(label)]));
+    fireEvent.click(screen.getByTestId("bed-meeting-agenda-groups"));
+    const panel = screen.getByTestId("bed-meeting-agenda-groups-panel");
+    fireEvent.click(within(panel).getByRole("button", { name: /^Tier 1/u }));
+    fireEvent.click(within(panel).getByRole("button", { name: "Done" }));
+    expect(screen.getByTestId("bed-meeting-agenda-groups-applied")).toHaveTextContent("Tier 1");
+
+    let narrowed = false;
+    for (const [id, label] of HERO_LISTS) {
+      const figure = heroFigure(label);
+      expect(figure, label).toBe(listedRows(id));
+      if (figure < unfiltered[label]!) narrowed = true;
+    }
+    // The filter must actually narrow a list, or the equality above proves nothing about filtering.
+    expect(narrowed).toBe(true);
+  });
+});

@@ -71,17 +71,19 @@ export function NextCapacityGlance({
 }
 
 function GlanceBody({ onClose }: { onClose: () => void }) {
-  const { movements, units, admissions, bedReleases } = useWardFlowSelect(
+  const { movements, units, admissions, bedReleases, referrals } = useWardFlowSelect(
     "movements",
     "units",
     "admissions",
+    "referrals",
     "bedReleases",
   );
   const now = useWardFlowClock();
   const patientOf = usePatientOf();
   const canOpen = useCanOpenHref();
 
-  const rows = useMemo(() => bedKindGaps(movements, [...units], now, admissions), [movements, units, now, admissions]);
+  const rows = useMemo(() => bedKindGaps(movements, [...units], now, admissions, referrals),
+    [movements, units, now, admissions, referrals]);
   const totals = bedKindTotals(rows);
   const short = rows.reduce((sum, row) => sum + Math.max(0, -row.gap), 0);
   const freeing = bedsFreeingTodayTotal(bedReleases, now) ?? 0;
@@ -225,7 +227,7 @@ function GlanceBody({ onClose }: { onClose: () => void }) {
             <p className={styles.empty}>Nobody is waiting for a bed.</p>
           ) : (
             placing.map((row) => {
-              const next = bedKindBreakdown(row.id, movements, [...units], admissions).waiting[0];
+              const next = bedKindBreakdown(row.id, movements, [...units], admissions, referrals).waiting[0];
               const who = next ? patientOf(next) : undefined;
               const href = who?.patient ? patientHref(who.patient.id) : null;
               const fill = Math.round((Math.min(row.bedsThatFit, row.waiting) / row.waiting) * 100);

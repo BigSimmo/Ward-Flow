@@ -465,7 +465,7 @@ export function AssessmentBody({ form }: { form: FormApi }) {
   return (
     <>
       {/* A signed triage keeps codes only, so there is no earlier history text to insert. */}
-      <GuideBox groups={GUIDES.note} text={state.text.note} onHeading={box.onHeading} />
+      <GuideBox groups={GUIDES.note} text={state.text.note} onHeading={box.onHeading} textRef={noteRef} />
       <Textarea
         ref={noteRef}
         aria-label="Assessment"

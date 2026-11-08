@@ -244,10 +244,15 @@
 }
 
 .phItemText strong {
+  /* A long form or item name ("Form 6A · To record: inpatient treatment order") takes a second
+     line on a small phone instead of an ellipsis, so the reader sees what the form is. */
+  display: -webkit-box;
   overflow: hidden;
   font: 600 var(--wf-fs-14) / 20px var(--wf-font);
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow-wrap: break-word;
 }
 
 .phItemText span {

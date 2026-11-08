@@ -49,12 +49,17 @@ export function MismatchPopup({
   /** The same wards the card's figures count, so the ready-bed list adds up to "Ready that fit". */
   units: readonly Unit[];
 }) {
-  const { movements, admissions, bedReleases } = useWardFlowSelect("movements", "admissions", "bedReleases");
+  const { movements, admissions, referrals, bedReleases } = useWardFlowSelect(
+    "movements",
+    "admissions",
+    "referrals",
+    "bedReleases",
+  );
   const patientOf = usePatientOf();
   const canOpen = useCanOpenHref();
   const detail = useMemo(
-    () => (row ? bedKindBreakdown(row.id, movements, [...units], admissions) : null),
-    [row, movements, units, admissions],
+    () => (row ? bedKindBreakdown(row.id, movements, [...units], admissions, referrals) : null),
+    [row, movements, units, admissions, referrals],
   );
   const short = (row?.gap ?? 0) < 0;
   // Free the right bed (Josh, 8 Nov 2026): a short type lists today's discharges that free one.

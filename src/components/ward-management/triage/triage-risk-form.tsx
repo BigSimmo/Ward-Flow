@@ -488,6 +488,21 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
     return () => observer.disconnect();
   }, []);
 
+  // Phone (8 Nov 2026): the step chips are one sliding row, so the chip for the section in view is
+  // slid into sight inside the row. Only the row scrolls; the page itself never moves.
+  const indexRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const row = indexRef.current;
+    if (!isPhone || !row) return;
+    const link = row.querySelector<HTMLElement>('[aria-current="location"]');
+    if (!link) return;
+    const left = link.offsetLeft - row.offsetLeft;
+    const right = left + link.offsetWidth;
+    const pad = 16;
+    if (left - pad >= row.scrollLeft && right + pad <= row.scrollLeft + row.clientWidth) return;
+    row.scrollTo({ left: Math.max(0, left - pad), behavior: reducedMotion() ? "auto" : "smooth" });
+  }, [active, isPhone]);
+
   // S opens the summary, outside a field and with no slide-out open.
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -684,7 +699,13 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
                   />
                 ) : null}
                 {person.alert ? <HeroChip value="Alert" tone="warning" label={person.alert} /> : null}
-                <HeroChip value="Allergies" label={person.allergies} />
+                <HeroChip
+                  value="Allergies"
+                  // A recorded allergy carries the amber mark, as the alert chip does; none reads plain.
+                  // (Chips never take the triangle: tests/wf-triangle-guard.test.ts.)
+                  tone={person.allergies === "Not recorded" ? undefined : "warning"}
+                  label={person.allergies}
+                />
                 {person.legal ? (
                   <HeroChip value={<LegalName name={person.legal} />} label={person.legalTag} />
                 ) : (
@@ -752,7 +773,7 @@ function TriageForm({ initial, onStartNew }: { initial: TriageState; onStartNew:
         ) : null}
 
         <div className={styles.layout}>
-          <nav className={styles.index} aria-label="Sections">
+          <nav ref={indexRef} className={styles.index} aria-label="Sections">
             {indexGroup("triage", "Triage", "SMHMR900")}
             {indexGroup("risk", "Risk", "SMHMR905")}
             {/* 7 Nov 2026: the live checklist, the Now box and the Summary button replace Go to next

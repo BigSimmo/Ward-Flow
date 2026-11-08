@@ -24,7 +24,7 @@
 // the ward's latest offered count includes a bed already reserved for someone.
 import { wardServiceOrder } from "@/components/ward-management/ward-derivations";
 import { bedsPendingPreparation } from "@/components/ward-management/ward-bed-availability";
-import { bedStates } from "@/components/ward-management/ward-bed-states";
+import { bedStates, type ReservationReferral } from "@/components/ward-management/ward-bed-states";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import { siteByCode } from "@/components/ward-management/ward-sites";
 import type { BedRelease, HealthService, LeaveBed, Unit } from "@/components/ward-management/ward-model";
@@ -75,9 +75,11 @@ export function bedMapWards(
   bedReleases: BedRelease[],
   admissions: readonly Admission[] = [],
   leaveBeds: readonly LeaveBed[] = [],
+  reservations: readonly ReservationReferral[] = [],
 ): BedMapWard[] {
   return units.map((unit) => {
-    const states = bedStates(unit, admissions, bedReleases, leaveBeds);
+    // WF-FIG-017 (Josh, 7 Nov 2026): a bed held by name is drawn as held, never free.
+    const states = bedStates(unit, admissions, bedReleases, leaveBeds, reservations);
     const pendingPreparation = bedsPendingPreparation(unit.id, bedReleases);
     return {
       unit,

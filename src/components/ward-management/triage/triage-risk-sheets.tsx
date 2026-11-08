@@ -11,9 +11,9 @@
  *
  * Synthetic data only.
  */
-import { Copy, FilePlus2 } from "lucide-react";
+import { ArrowUpRight, Copy, FilePlus2, History, Inbox, type LucideIcon } from "lucide-react";
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 
 import {
   Badge,
@@ -25,6 +25,7 @@ import {
   buttonClass,
   tableClasses,
   phoneRows,
+  type WfTone,
 } from "@/components/wf";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
@@ -76,9 +77,9 @@ function copyText(text: string, done: string, refused: string, say: (message: st
   );
 }
 
-function Facts({ rows }: { rows: readonly (readonly [string, ReactNode])[] }) {
+function Facts({ rows, className }: { rows: readonly (readonly [string, ReactNode])[]; className?: string }) {
   return (
-    <dl className={styles.facts}>
+    <dl className={className ? `${styles.facts} ${className}` : styles.facts}>
       {rows.map(([label, value]) => (
         <div key={label} className={styles.fact}>
           <dt>{label}</dt>
@@ -290,22 +291,122 @@ function BeforeYouSign({ reqs, jump }: { reqs: readonly Requirement[]; jump: Jum
   );
 }
 
-/** A record tab: what the synthetic record holds. */
+/** A record tab: what the synthetic record holds, as one card of label and value rows. */
 function RecordPane({
   title,
+  badge,
   rows,
   note,
 }: {
   title: string;
+  /** A status beside the heading (the last triage's urgency). */
+  badge?: ReactNode;
   rows: readonly (readonly [string, ReactNode])[];
   note?: string;
 }) {
   return (
     <>
-      <h3 className={styles.paneHead}>{title}</h3>
-      <Facts rows={rows} />
+      <h3 className={styles.paneHead}>
+        {title}
+        {badge ? <span className={styles.pushEnd}>{badge}</span> : null}
+      </h3>
+      <Facts rows={rows} className={styles.recordCard} />
       {note ? <p className={styles.quiet}>{note}</p> : null}
     </>
+  );
+}
+
+/** One group on the Alerts tab: a quiet heading with its count, then one row per item. */
+function FlagGroup({
+  title,
+  items,
+  tone,
+  empty,
+  tag,
+}: {
+  title: string;
+  items: readonly string[];
+  tone: WfTone;
+  empty: string;
+  tag?: string;
+}) {
+  const id = useId();
+  return (
+    <section className={styles.recordGroup} aria-labelledby={id}>
+      <h3 className={styles.paneHead} id={id}>
+        {title}
+        {items.length > 1 ? <span className={`${styles.mono} ${styles.pushEnd}`}>{items.length}</span> : null}
+      </h3>
+      <ul className={styles.recordList}>
+        {items.length ? (
+          items.map((item) => (
+            <li key={item} className={styles.recordItem} data-tone={tone}>
+              <StatusGlyph tone={tone} size={12} />
+              <span className={styles.grow}>{item}</span>
+              {tag ? (
+                <Badge size="sm" className={styles.noShrink}>
+                  {tag}
+                </Badge>
+              ) : null}
+            </li>
+          ))
+        ) : (
+          <li className={styles.recordItem} data-tone="none">
+            <StatusGlyph tone="neutral" size={12} />
+            <span className={styles.missing}>{empty}</span>
+          </li>
+        )}
+      </ul>
+    </section>
+  );
+}
+
+/**
+ * Alerts, allergies and legal status, as the banner shows them, each as its own card of rows so a
+ * glance reads what is there and what is not. Read-only: they are corrected on the patient record.
+ */
+function AlertsPane({ person }: { person: TriagePerson }) {
+  const alerts = person.alerts?.length ? person.alerts : person.alert ? [person.alert] : [];
+  const allergies = person.allergies === "Not recorded" ? [] : person.allergies.split(" · ");
+  return (
+    <>
+      <FlagGroup title="Alerts" items={alerts} tone="warning" empty="No alerts recorded" />
+      <FlagGroup title="Allergies" items={allergies} tone="danger" empty="Not recorded" />
+      <FlagGroup
+        title="Legal status"
+        items={person.legal ? [person.legal] : []}
+        tone="info"
+        tag="Not legally checked"
+        empty="Not recorded. Not legally checked."
+      />
+      <RecordLink person={person} note="These come from the patient record. Correct them there." />
+    </>
+  );
+}
+
+/** Where the record's details are corrected: a quiet line and the way to the record. */
+function RecordLink({ person, note }: { person: TriagePerson; note: string }) {
+  return (
+    <div className={styles.recordFoot}>
+      <p className={`${styles.quiet} ${styles.grow}`}>{note}</p>
+      <Link href={person.recordHref} className={buttonClass({ className: styles.noShrink })}>
+        <ArrowUpRight size={14} aria-hidden="true" />
+        Open patient record
+      </Link>
+    </div>
+  );
+}
+
+/** A record tab with nothing to show: one calm card that says so and what it means for this triage. */
+function EmptyPane({ icon: IconShape, title, text }: { icon: LucideIcon; title: string; text: string }) {
+  return (
+    <div className={styles.emptyCard}>
+      <span className={styles.emptyIcon} aria-hidden="true">
+        <IconShape size={18} />
+      </span>
+      <h3 className={styles.emptyTitle}>{title}</h3>
+      <p className={styles.emptyText}>{text}</p>
+    </div>
   );
 }
 
@@ -338,7 +439,7 @@ export function SummaryDrawer({
       open={open}
       onClose={onClose}
       title={person.name}
-      subtitle="This triage, the referral and the record. Synthetic."
+      subtitle="Record, referral and triage · Synthetic"
       tag={
         <Badge tone={left ? "neutral" : "success"} className={styles.noShrink}>
           {signed ? "Signed" : left ? `${left} needed` : "Ready to sign"}
@@ -349,11 +450,16 @@ export function SummaryDrawer({
       onTabChange={onTab}
       tabsLabel="Slide-out"
       className={styles.wideDrawer}
+      bodyClassName={styles.sheetBody}
       testId="triage-summary-sheet"
       foot={
         <>
           <span className={styles.footText}>
-            {signed ? `Signed ${signed.at} by ${signed.by}` : left ? `${left} needed before signing` : "Ready to sign"}
+            {signed
+              ? `Signed ${signed.at} by ${signed.by}`
+              : left
+                ? `Signing unlocks once all ${left} are done.`
+                : "Everything needed is done. Ready to sign."}
           </span>
           <DrawerFootRow>
             <Button onClick={onClose}>Back to form</Button>
@@ -370,32 +476,37 @@ export function SummaryDrawer({
           </>
         ) : null}
         {tab === "ref" ? (
-          <RecordPane
-            // D-39: record numbers stay off screens; the referral is named by where it came from.
-            title={person.referral ? `Referral from ${person.referral.from}` : "No open referral"}
-            rows={
-              person.referral
-                ? [
-                    ["From", person.referral.from],
-                    ["Urgency asked", person.referral.urgency ?? "No triage urgency asked"],
-                    ["Legal", legalWords(person)],
-                    ["Now at", person.nowAt],
-                  ]
-                : [["Referral", "This triage starts without a referral."]]
-            }
-          />
+          person.referral ? (
+            <RecordPane
+              // D-39: record numbers stay off screens; the referral is named by where it came from.
+              title={`Referral from ${person.referral.from}`}
+              rows={[
+                ["From", person.referral.from],
+                ["Urgency asked", person.referral.urgency ?? "No triage urgency asked"],
+                ["Legal", legalWords(person)],
+                ["Now at", person.nowAt],
+              ]}
+            />
+          ) : (
+            <EmptyPane
+              icon={Inbox}
+              title="No open referral"
+              text="This triage starts without one. Record who asked for it in Review details."
+            />
+          )
         ) : null}
         {tab === "last" && !person.last ? (
-          <RecordPane
+          <EmptyPane
+            icon={History}
             title="No previous triage on record"
-            rows={[["Past risk", "Answered fresh today. Nothing is carried forward."]]}
+            text="Past risk is answered fresh today. Nothing is carried forward."
           />
         ) : null}
         {tab === "last" && person.last ? (
           <RecordPane
             title={person.last.label}
+            badge={<Badge size="sm">{person.last.urgencyText}</Badge>}
             rows={[
-              ["Urgency", person.last.urgencyText],
               ["Outcome", person.last.outcome],
               ["Legal", `${person.last.legal} (as chosen then). Not legally checked.`],
               ["Review risk by", person.last.review],
@@ -408,24 +519,14 @@ export function SummaryDrawer({
             note="A signed triage keeps its codes only. Its typed assessment, formulation and plan are not carried."
           />
         ) : null}
-        {tab === "alerts" ? (
-          <RecordPane
-            title="Alerts"
-            rows={[
-              [
-                "Alerts",
-                person.alerts?.length ? person.alerts.join(" · ") : (person.alert ?? "None on the synthetic record"),
-              ],
-              ["Allergies", person.allergies],
-            ]}
-          />
-        ) : null}
+        {tab === "alerts" ? <AlertsPane person={person} /> : null}
         {tab === "profile" ? (
           <>
             <RecordPane
               title="Identity"
               rows={[
-                ["Name", `${person.name} · ${person.meta}`],
+                ["Name", person.name],
+                ["Sex and age", person.meta],
                 [
                   "UMRN",
                   <span key="u" className={styles.mono}>
@@ -441,11 +542,8 @@ export function SummaryDrawer({
                 ["Now at", person.nowAt],
                 ["Legal", legalWords(person)],
               ]}
-              note="Contacts and care details are on the patient record."
             />
-            <Link href={person.recordHref} className={buttonClass({ className: styles.startSelf })}>
-              Open patient record
-            </Link>
+            <RecordLink person={person} note="Contacts and care details are on the patient record." />
           </>
         ) : null}
       </div>
@@ -470,6 +568,7 @@ export function HowToDrawer({
       title="How to complete a triage"
       subtitle="Patient details come from the record. You fill in the assessment only, top to bottom."
       className={styles.wideDrawer}
+      bodyClassName={styles.sheetBody}
       testId="triage-how-sheet"
     >
       <div className={styles.pane}>
@@ -551,6 +650,7 @@ export function AllFactorsDrawer({ form, open, onClose }: { form: FormApi; open:
       title="All RAMP factors"
       subtitle="The flags are the same factors. Unmarked history takes your Rest of history answer; unmarked current factors take Rest of current risk."
       testId="triage-factors-sheet"
+      bodyClassName={styles.sheetBody}
       foot={
         <>
           <span className={styles.footText}>Rest of current risk</span>

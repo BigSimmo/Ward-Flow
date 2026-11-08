@@ -52,6 +52,8 @@ const SLICE_PATHS = [
   "ward-flow-undo-events.ts",
   // 22 Oct 2026: the protected record path (discharge records, audit reviews) moved out unchanged.
   "ward-flow-protected-record-events.ts",
+  // TASK-L3-06 (8 Nov 2026): the shared close step, which every bed-search closure now uses.
+  "ward-flow-movement-close.ts",
 ].map((file) => fileURLToPath(new URL(`../src/components/ward-management/${file}`, import.meta.url)));
 const ACCEPTING_UNIT = "fre-adult-open";
 const OTHER_UNIT = "rph-adult-secure";
@@ -268,13 +270,20 @@ describe("a withdrawal reason cannot name the ward that won", () => {
      *
      * 7 to 8 by RECORD_EXAMINATION (Option S1-5) which un-assigns referred units and records
      * their withdrawal when closing with did_not_proceed, reusing ed_outcome_recorded.
+     *
+     * 8 to 5 by TASK-L3-06 (8 Nov 2026): the closures that end a bed search (RECORD_ED_OUTCOME,
+     * RECORD_EXAMINATION, REFER_TO_COMMUNITY_TEAM, WITHDRAW_REFERRAL and the
+     * RECORD_REFERRER_WITHDRAWAL cascade) now share one writer, `withdrawAllLiveRequestsForReferrer`
+     * in `ward-flow-movement-close.ts`, and each call names its own cause. No cause was merged: the
+     * three code checks below still find every one. The five writes are two empty initialisations,
+     * ACCEPT_IN_PRINCIPLE, WITHDRAW_WARD_REQUEST and that shared writer.
      */
     expect(
       writes.length,
       "a new write to withdrawnReferrals appeared. If it records a DIFFERENT cause then the existing " +
         "reason codes are no longer true of every entry: add a member to WITHDRAWAL_REASONS for it " +
         "rather than reusing one, and update this count.",
-    ).toBe(8);
+    ).toBe(5);
     expect(stripped, "one of the six writes is the empty initialisation, which records no cause").toContain(
       "withdrawnReferrals: []",
     );

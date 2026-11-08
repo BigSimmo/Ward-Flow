@@ -912,6 +912,178 @@
   width: min(44rem, 100%);
 }
 
+/* The slide-outs' scroll area (Josh, 8 Nov 2026): the kit drawer leaves the body unpadded, so each
+ * pane sat hard against the sheet's edges. The same inset as the head and tabs above it. */
+.sheetBody {
+  padding: var(--wf-s-4);
+}
+
+/* Phone: the sheet keeps one tall height on every tab, so it no longer jumps as tabs change and
+ * leaves no empty band of page between a short pane and the pinned foot. Sized from the backdrop
+ * (not 100dvh, which iOS resolves stale as the toolbar collapses). */
+@media (max-width: 39.9375rem) {
+  .wideDrawer.wideDrawer {
+    height: calc(100% - 2rem);
+  }
+}
+
+/* The banner chips (allergies, legal status, alert) wrap onto a second line instead of running off
+ * the screen edge, and read in the body font: the kit's mono value face is for numbers. */
+.bannerTags.bannerTags {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.bannerTags > * {
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+
+.bannerTags > * > :first-child {
+  font-family: var(--wf-font);
+  font-variant-numeric: normal;
+}
+
+/* Record tabs (Referral, Last triage, Profile): one card, a row per fact with a hairline between,
+ * label left and value right; on a phone the label sits over its value. */
+.facts.recordCard {
+  display: block;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+.recordCard .fact {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: 2px var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.recordCard .fact + .fact {
+  border-top: 1px solid var(--wf-line);
+}
+
+.recordCard .fact dt,
+.recordCard .fact dd {
+  margin: 0;
+}
+
+.recordCard .fact dd {
+  font-weight: 500;
+}
+
+@media (max-width: 46.4375rem) {
+  .recordCard .fact {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Alerts tab: alerts, allergies and legal status, each a card of rows with its tone's glyph. */
+.recordGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+.pane > .recordGroup:first-child > .paneHead {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.recordList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+.recordItem {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 48px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.recordItem + .recordItem {
+  border-top: 1px solid var(--wf-line);
+}
+
+.recordItem > svg {
+  flex: none;
+}
+
+/* A record tab with nothing to show: a calm dashed card, centred, with a soft icon tile. */
+.emptyCard {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--wf-s-1);
+  padding: var(--wf-s-6, 32px) var(--wf-s-4);
+  border: 1px dashed var(--wf-line-2);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  text-align: center;
+}
+
+.emptyIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: var(--wf-s-1);
+  border-radius: 999px;
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+}
+
+.emptyTitle {
+  margin: 0;
+  font-size: var(--wf-fs-15);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.emptyText {
+  max-width: 28rem;
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  line-height: 1.45;
+  color: var(--wf-ink-2);
+}
+
+/* The way to the record, under a record tab: the note beside the button, stacked on a phone. */
+.recordFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  margin-top: var(--wf-s-1);
+}
+
+.recordFoot > p {
+  margin: 0;
+  min-width: 12rem;
+}
+
+@media (max-width: 46.4375rem) {
+  .recordFoot > a {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
+
 .footText {
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
@@ -1308,7 +1480,13 @@
     gap: 0;
   }
   .fact dt {
-    margin-top: var(--wf-s-1);
+    margin-top: var(--wf-s-3);
+  }
+  .fact:first-child dt {
+    margin-top: 0;
+  }
+  .fact dd {
+    margin-top: 2px;
   }
   .idLine {
     font-size: var(--wf-fs-12);
@@ -1637,4 +1815,127 @@
 .programChoice {
   flex-basis: 100%;
   min-width: 0;
+}
+
+/* ── Phone choices (Josh, 8 Nov 2026) ───────────────────────────────────────────────────────────────
+ * On a phone the form's choices wrap onto as many lines as they need instead of sliding sideways.
+ * A sideways row hid options off the edge ("Psychiatric…", "Mental health…"), made a clinical
+ * choice depend on knowing to swipe, and fought the page's own up-and-down scroll. Every option now
+ * shows as its own 40px pill with a 48px tap area (Q225, Q295), so all answers are in view at once.
+ * Pick-one options keep the V4 accent fill and edge when chosen; multi-pick chips keep the kit's
+ * pressed look. Tablet and desktop are unchanged. Nothing here applies above 46.4375rem. */
+@media (max-width: 46.4375rem) {
+  .form .choice {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: stretch;
+    gap: var(--wf-s-2);
+    height: auto;
+    padding: 4px 0;
+    margin-block: -4px;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+    animation: none;
+  }
+
+  .form .choice > [role="radio"] {
+    flex: 0 1 auto;
+    justify-content: center;
+    max-width: 100%;
+    min-height: 40px;
+    padding: 0 14px;
+    border: 1px solid var(--wf-line-2);
+    border-radius: var(--wf-r-ctl);
+    background: var(--wf-surface);
+    color: var(--wf-ink-2);
+    font-size: var(--wf-fs-13);
+    font-weight: 600;
+    line-height: 1.25;
+    white-space: normal;
+    text-align: center;
+    box-shadow: none;
+  }
+
+  .form .choice > [role="radio"][aria-checked="true"] {
+    border-color: var(--wf-accent);
+    background: var(--wf-accent-tint);
+    color: var(--wf-accent-ink);
+    box-shadow: inset 0 0 0 0.5px var(--wf-accent);
+  }
+
+  .form .choice > [role="radio"]:focus-visible {
+    outline: 2px solid var(--wf-focus-ring);
+    outline-offset: 2px;
+    box-shadow: none;
+  }
+
+  /* Multi-pick chip rows (the kit's chip group with the phone sliding row on it, including the risk
+     factor chips that sit in a wrapper each) wrap the same way. */
+  .form.form [role="group"]:has([aria-pressed]) {
+    flex-wrap: wrap;
+    row-gap: var(--wf-s-2);
+    padding-block: 4px;
+    margin-block: -4px;
+    overflow: visible;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .form.form [role="group"]:has([aria-pressed])::after {
+    content: none;
+  }
+
+  .form.form [role="group"]:has([aria-pressed]) [aria-pressed] {
+    max-width: 100%;
+    white-space: normal;
+    line-height: 1.25;
+    text-align: left;
+  }
+
+  /* Typed boxes and More lists run the full width of the form, so every field lines up in one
+     column instead of stopping at different widths. */
+  .form .rowControl > div:has(> input:not([type="checkbox"], [type="radio"])),
+  .form .pickMore {
+    align-self: stretch;
+    width: 100%;
+  }
+
+  /* The step chips still slide (they are navigation), but snap so a swipe stops on a whole chip. */
+  .index {
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: var(--wf-s-4);
+    overscroll-behavior-x: contain;
+  }
+
+  .indexLink {
+    scroll-snap-align: start;
+  }
+}
+
+/* "What to cover" in its phone sheet: one column, no inner box, full-width rows to tap. */
+.guidePanel[data-columns="1"] {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--wf-s-4);
+  padding: 0;
+  border: 0;
+  background: none;
+}
+
+.guidePanel[data-columns="1"] .guideItem {
+  min-height: 48px;
+  padding: 8px 6px;
+}
+
+/* Phone and installed app (8 Nov 2026): while the on-screen keyboard is up (`useMobileKeyboard`
+   sets the attribute), the "left before signing" bar steps away, so the note being typed gets the
+   room instead of a bar resting on the keyboard. It comes back when the keyboard closes. */
+@media (max-width: 46.4375rem) {
+  :global(html[data-wf-keyboard="open"]) .phoneBar {
+    display: none;
+  }
 }

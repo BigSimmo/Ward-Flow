@@ -83,14 +83,14 @@ A 2px `--wf-focus-ring` with a 2px gap, never clipped, light on the hero. Escape
 
 ## 3. Breakpoints and the shell
 
-| Range               | Width                  | Shell                                                                                          |
-| ------------------- | ---------------------- | ---------------------------------------------------------------------------------------------- |
-| Phone               | up to 743px            | Top bar, phone dock, sheets. Its own design.                                                   |
-| Short touch screens | under about 500px tall | Treated as phone for control size and dock (Q289). Drawer headers scroll with the body (Q288). |
-| Tablet portrait     | 744 to 1000px          | No rail beside the work. iPads at 744 and 768 get this layout (Q292).                          |
-| Tablet landscape    | 1001 to 1200px         | Icon rail.                                                                                     |
-| Desktop             | 1201px and up          | Full master sidebar.                                                                           |
-| Content stack       | below about 900px      | Not a shell change: two crowded side-by-side cards stack (Q291).                               |
+| Range               | Width                  | Shell                                                                                                                                                                        |
+| ------------------- | ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Phone               | up to 743px            | Top bar, phone dock, sheets. Its own design.                                                                                                                                 |
+| Short touch screens | under about 500px tall | Treated as phone for control size (Q289). Over 743px wide they keep the full top bar and draw no bottom dock (Josh, 8 Nov 2026). Drawer headers scroll with the body (Q288). |
+| Tablet portrait     | 744 to 1000px          | No rail beside the work. iPads at 744 and 768 get this layout (Q292).                                                                                                        |
+| Tablet landscape    | 1001 to 1200px         | Icon rail.                                                                                                                                                                   |
+| Desktop             | 1201px and up          | Full master sidebar.                                                                                                                                                         |
+| Content stack       | below about 900px      | Not a shell change: two crowded side-by-side cards stack (Q291).                                                                                                             |
 
 The queries live in `src/components/wf/use-is-phone.ts`; CSS repeats them as `(max-width: 46.4375rem)` and `(min-width: 46.5rem)`. Use these values for every phone, tablet and desktop switch. A content-fit point (a table's measured width, the 900px stack) is allowed only with a comment saying what it measures. Older `40rem` (640px) phone switches are being moved onto the phone value.
 
