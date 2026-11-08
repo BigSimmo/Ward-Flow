@@ -166,6 +166,8 @@ export function WardHelpAccountMemory() {
         tipsChanged = false;
       }
       if (Object.keys(body).length === 0) return;
+      // #1426: a tips choice whose save fails goes again with the next save.
+      const tipsSent = "tipsOff" in body;
       call(body).then(
         (reply) => {
           const held = accountHelpReply(reply);
@@ -175,6 +177,7 @@ export function WardHelpAccountMemory() {
         },
         () => {
           // The device keeps its copy; another mark during this account session retries the save.
+          if (tipsSent) tipsChanged = true;
         },
       );
     };

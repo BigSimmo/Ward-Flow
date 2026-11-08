@@ -150,6 +150,29 @@ describe("Help remembered by account", () => {
     expect(working.mock.calls[1]?.[0]).toEqual({ tours: ["ed"] });
   });
 
+  it("#1426: retries a tips choice whose save failed with the next mark", async () => {
+    let fail = true;
+    const call = vi.fn(async (body?: Record<string, unknown>) => {
+      if (body && fail) throw new Error("Saved history could not be saved");
+      return account();
+    });
+    mount(call);
+    await waitFor(() => expect(call).toHaveBeenCalledTimes(1));
+    vi.useFakeTimers();
+    act(() => setHelpTipsOff(true));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(call.mock.calls[1]?.[0]).toEqual({ tipsOff: true });
+    fail = false;
+    act(() => markTourSeen("ed"));
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1_000);
+    });
+    expect(call).toHaveBeenCalledTimes(3);
+    expect(call.mock.calls[2]?.[0]).toEqual({ tours: ["ed"], tipsOff: true });
+  });
+
   it("does not upload a device tips choice made before sign-in", async () => {
     setHelpTipsOff(true);
     const call = vi.fn(async () => account());
