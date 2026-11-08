@@ -1601,14 +1601,14 @@ function WardOverviewScreen({ unitId, presentation = "overview", departurePlanni
       warnToast(`Enter a whole number from 0 to ${unit.beds} beds.`);
       return;
     }
-    // say on screen that the beds were saved, and when.
+    const submittedAt = nowRef.current; // the board time the command carries, for "Saved at"
     completeCommand(
       "capacity-rollup",
       () => submitCapacity(),
       (outcome) => {
         const failure = wardCommandFailure(outcome);
         if (failure) warnToast(failure);
-        else savedAtToast(toast, `Beds confirmed: ${parsed} of ${unit.beds}`, nowRef.current);
+        else savedAtToast(toast, `Beds confirmed: ${parsed} of ${unit.beds}`, submittedAt);
       },
     );
   }

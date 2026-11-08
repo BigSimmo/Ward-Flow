@@ -28,15 +28,17 @@ export function useBlockerSave(
   const now = useWardFlowClock();
   const submit =
     onUpdateBlocker && admissionId
-      ? (blocker: BedReleaseBlocker | null) =>
-          save.submit(
+      ? (blocker: BedReleaseBlocker | null) => {
+          const submittedAt = now;
+          return save.submit(
             () => onUpdateBlocker(admissionId, blocker),
             () => {
               setOpen(false);
               // a clear on-screen confirmation with the time of the save.
-              savedAtToast(toast, blocker ? `Hold-up saved: ${blocker}` : "Hold-up cleared", now);
+              savedAtToast(toast, blocker ? `Hold-up saved: ${blocker}` : "Hold-up cleared", submittedAt);
             },
-          )
+          );
+        }
       : undefined;
   return {
     submit,
