@@ -274,7 +274,11 @@ const AROUND: readonly Around[] = [
         body: "Narrow the list to the movements you are looking for.",
       },
       {
-        target: [{ sel: '#main-content a[href^="/ward-flow/movements/"]' }, starts("movements-group-toggle-")],
+        // The row's own Review link, then its row, so the step never lights a row's Ask wards button.
+        target: [
+          { sel: '#main-content a[href^="/ward-flow/movements/"]:not([href*="?"])', up: 1 },
+          starts("movements-group-toggle-"),
+        ],
         title: "Open a movement",
         body: "Movements are listed by stage. Open one to see its bed, transport and legal form in one place.",
       },
@@ -424,7 +428,7 @@ const AROUND: readonly Around[] = [
       {
         target: { sel: '#main-content [role="radiogroup"][aria-label="View"]' },
         title: "On a form, Checklist and History",
-        body: "On a form lists everyone with a form now. Checklist shows what each form still needs. History holds closed moves.",
+        body: "On a form lists everyone with a form now. Checklist shows what each form still needs. History holds closed moves. Seclusion and restraint, for the desks that see it, shows the seclusion and restraint forms.",
       },
       {
         target: id("ward-legal-forms-groups"),
@@ -474,9 +478,9 @@ const AROUND: readonly Around[] = [
     keywords: "away from home repatriation return plan",
     steps: [
       {
-        target: id("ward-out-of-area-count-people"),
+        target: HERO,
         title: "Away from home",
-        body: "People in a bed outside their home health service.",
+        body: "How many people are in a bed outside their home health service, split by days away. Checking counts discharge dates passed and missing return plans.",
       },
       {
         target: [starts("ward-out-of-area-highlight-"), PHONE_FIGURES],
@@ -719,7 +723,8 @@ const AROUND: readonly Around[] = [
         body: "Opens the bed board to place a patient in a bed or move one.",
       },
       {
-        target: id("ward-find-input"),
+        // The field, or on a phone the search button that opens it.
+        target: [id("ward-find-input"), id("ward-find-open")],
         title: "Find on this ward",
         body: "Find a bed or a person on this ward.",
       },
@@ -727,7 +732,7 @@ const AROUND: readonly Around[] = [
         device: "desk",
         target: id("ward-open-tv"),
         title: "The toolbar",
-        body: "On TV opens a read only screen for the ward's TV. Handover and More sit beside it.",
+        body: "On TV opens a read only screen for the ward's TV. More, beside it, holds Notices, Shift brief and Ward handover.",
       },
       {
         device: "desk",

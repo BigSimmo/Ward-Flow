@@ -53,6 +53,9 @@ const dockLink = (path: string): TourTarget => ({ sel: `[data-testid="ward-phone
 const SEARCH = id("ward-global-search");
 const ALERTS = id("ward-bar-tasks-trigger");
 const ACTIVITY = id("ward-bar-activity-trigger");
+const PHONE_ACTIVITY = id("ward-phone-menu-activity");
+/** Handover in the shift card at the top of the desktop menu, which counts down to the end of the shift. */
+const RAIL_HANDOVER: TourTarget = { sel: '[data-testid="ward-rail"] a[aria-label^="Handover"]' };
 const SERVICE = id("ward-bar-service-trigger");
 const BOARD_TIME = id("ward-bar-demo-clock");
 const RAIL_HELP = id("ward-rail-help");
@@ -447,9 +450,10 @@ export const MAX_GO_FURTHER = 8;
 
 /**
  * Where a screen sits on a desktop: in the desk's own menu (by the end of its address), under More,
- * in the account menu (the person at the foot of the menu) or in the header.
+ * in the account menu (the person at the foot of the menu), in the header, or as Handover in the shift
+ * card at the top of the menu.
  */
-type DeskPlace = { readonly menu: string } | "more" | "account" | "header";
+type DeskPlace = { readonly menu: string } | "more" | "account" | "header" | "shift";
 
 type Further = {
   readonly id: string;
@@ -512,7 +516,7 @@ const ACTIVITY_FURTHER: Further = {
   id: "activity",
   desk: "header",
   title: "What has changed",
-  body: () => "Activity, in the header, lists the events recorded in this demo session, newest first.",
+  body: (where) => `Activity, ${where}, lists the events recorded in this demo session, newest first.`,
 };
 const SETTINGS: Further = {
   id: "settings",
@@ -587,7 +591,7 @@ const FURTHER: Readonly<Record<TourRole, readonly Further[]>> = {
       body: (where) =>
         `Referrals to answer, ${where}, lists the referrals sent to your ward. Accept, or decline with a reason.`,
     },
-    handover({ menu: "/handover" }),
+    handover("shift"),
     {
       id: "discharges",
       screen: "discharges",
@@ -652,7 +656,7 @@ const FURTHER: Readonly<Record<TourRole, readonly Further[]>> = {
       body: (where) =>
         `Referrals, ${where}, shows the referrals coming to your site's wards. It is read only: each ward answers its own.`,
     },
-    handover({ menu: "/handover" }),
+    handover("shift"),
     {
       id: "patients",
       screen: "search",
@@ -678,7 +682,12 @@ const FURTHER: Readonly<Record<TourRole, readonly Further[]>> = {
 
 /** Where the step lights, and the words for where that is, on this kind of screen. */
 function placeOf(each: Further, device: TourDevice): { target: TourTarget; where: string } {
-  if (each.desk === "header") return { target: ACTIVITY, where: "in the header" };
+  // A phone has no header Activity button: Activity is in its tab bar.
+  if (each.desk === "header") {
+    return device === "phone"
+      ? { target: PHONE_ACTIVITY, where: "in the tab bar" }
+      : { target: ACTIVITY, where: "in the header" };
+  }
   if (device === "phone" && each.dock) return { target: dockLink(each.dock), where: "in the tab bar" };
   // The phone's Menu, and the tablet's, which opens the side menu and its More together.
   if (device !== "desk") {
@@ -686,6 +695,7 @@ function placeOf(each: Further, device: TourDevice): { target: TourTarget; where
   }
   if (each.desk === "account") return { target: RAIL_SETTINGS, where: "in your account menu" };
   if (each.desk === "more") return { target: ANY_MORE, where: "under More" };
+  if (each.desk === "shift") return { target: RAIL_HANDOVER, where: "at the top of your menu" };
   return { target: railLink(each.desk.menu), where: "in your menu" };
 }
 

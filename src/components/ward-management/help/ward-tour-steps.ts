@@ -85,7 +85,10 @@ const PHONE_MENU: TourTarget = { sel: '[data-testid="ward-bar-phone-menu"]' };
 const ED_PRESSURE: TourTarget = { sel: '[data-testid="ward-home-ed-pressure"]' };
 /** Placement before anyone is chosen (the prompt card), or once someone is (the side panel). */
 const PLACEMENT: TourTarget = { sel: '[data-testid="home-placement-prompt"], [data-testid="ward-home-placement"]' };
-const MY_LIST: TourTarget = { sel: '[data-testid="home-my-list"]' };
+/** Home's next step: one line on what needs the coordinator first, with a button that shows just those. */
+const HERO_NEXT: TourTarget = { sel: "#main-content [data-wf-hero-next]" };
+/** Home's list row: Needs you, Flow and, on a phone, Later today. */
+const HOME_LISTS: TourTarget = { sel: '[data-testid="home-lists"]' };
 const UNIT_CARD: TourTarget = { sel: '[data-testid^="ward-unit-card-"]' };
 const CONFIRM: TourTarget = { sel: '[data-testid^="ward-unit-card-"] button', text: "Confirm numbers" };
 const ED_CARD: TourTarget = { sel: '[data-testid^="ward-ed-card-"]' };
@@ -195,14 +198,14 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "menu",
           ROLE_MENU,
           "Your screens",
-          `Needs you is where you start.${menuFigures.length ? ` ${joinAnd(menuFigures)}.` : ""} The numbers update as the network changes.`,
+          `Home is where you start.${menuFigures.length ? ` ${joinAnd(menuFigures)}.` : ""} The numbers update as the network changes.`,
         ),
         step(
           "Your daily work",
           "pressure",
-          { sel: '[data-testid="ward-home-occupancy-link"]' },
-          "How full the network is",
-          "This figure is how many network beds are in use, and it says At risk once it passes the line. Open it for Capacity. The chips beside it count Act now, Referrals to decide, Overdue waits and Tier 1 patients.",
+          HERO,
+          "Your network now",
+          "The title counts open ED movements and beds ready. The share of beds in use says At risk once it passes the line, and opens Capacity. The line under it says what needs you first, and its button shows just those. The chips count the rest, such as referrals to decide, waits past target, Tier 1 patients and bed counts to check.",
         ),
         step(
           "Your daily work",
@@ -226,8 +229,8 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "Your daily work",
           "new-referral",
           PRIMARY,
-          "Start a referral",
-          "New referral opens the referral form from any screen. The arrow beside it has the other things you can start.",
+          "Start a triage or referral",
+          "New, at the top, opens from any screen. Choose Triage to start a triage and risk form, or Referral to open the referral form.",
         ),
         step(
           "Finding your way",
@@ -276,7 +279,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "you",
           PERSONA,
           "You and your shift",
-          "Your name and role show here. Handover above counts down to the end of the shift.",
+          "Your name and role show here. Handover, at the top of the menu, counts down to the end of the shift.",
         ),
         step(
           "Your desk",
@@ -340,7 +343,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "brief",
           { sel: '[aria-label="More ward actions"]' },
           "Shift brief",
-          "Shift brief, under More, sums up the ward for the start of a shift. Handover beside More is the sheet you pass to the next nurse in charge.",
+          "Shift brief, under More, sums up the ward for the start of a shift. Ward handover, also under More, is the sheet you pass to the next nurse in charge.",
         ),
         step(
           "Finding your way",
@@ -374,9 +377,9 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           ED_CARD,
           "Your board at a glance",
           ed
-            ? `${count(ed.waiting, "person is", "people are")} on your board.${
+            ? `${count(ed.waiting, "person is", "people are")} waiting in your ED.${
                 ed.longest ? ` The longest wait is ${ed.longest} against a ${ed.targetHours}h access target.` : ""
-              } The card also counts who has no bed yet and who is under a form.`
+              } The card also counts everyone on the board, who has no bed yet and who is under a form.`
             : "Who is waiting, who has no bed yet, who is under a form and the longest wait against the access target.",
         ),
         step(
@@ -390,10 +393,13 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your daily work",
           "form",
-          // The visible expiry chip: the screen-reader text's parent, beside the time drawn as typed.
-          { sel: '[aria-hidden="true"] + [data-testid^="ward-ed-form-expiry-"]', up: 1 },
+          // The Form column's chip on a desktop, which names the recorded form and opens the list to
+          // change it; a tablet's rows have no Form column, so there it is the expiry drawn as typed.
+          {
+            sel: '[data-testid^="ward-ed-form-pick-"], span:has(> [aria-hidden="true"] + [data-testid^="ward-ed-form-expiry-"])',
+          },
           "The legal form",
-          "The Form column shows the form recorded for each person. In the row's menu, Mark Form 1A received and Record expiry from the form let the receiving ward and transport see it. The time is as typed from the paper form.",
+          "The Form column shows the form recorded for each person. Choose it to change the form. In the row's menu, Mark Form 1A received and Record expiry from the form let the receiving ward and transport see it. The time is as typed from the paper form.",
         ),
         step(
           "Your daily work",
@@ -406,8 +412,8 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "Your daily work",
           "raise",
           PRIMARY,
-          "New referral",
-          "New referral, at the top, starts a referral for someone on your board, to a ward or a community team.",
+          "New triage or referral",
+          "New, at the top, starts a triage and risk form, or a referral for someone on your board to a ward or a community team.",
         ),
         step(
           "Finding your way",
@@ -440,7 +446,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "hero",
           HERO,
           "Your caseload",
-          "The people on your team's caseload. The chips open Referrals and In hospital, and the tabs below split the page into Team home, Caseload, In hospital, Referrals and Clinicians.",
+          "How many people are on your team's caseload and how many are in hospital. The chips count Act now, referrals to answer and people leaving hospital in the next 7 days, and each opens its list. The tabs below split the page into Team home, Caseload, In hospital, Referrals and Clinicians.",
           "Open the In hospital tab, then go back to Team home.",
         ),
         step(
@@ -453,9 +459,9 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your daily work",
           "admitted",
-          { sel: '[data-testid="ward-community-admitted"]' },
+          { sel: '[aria-label="Team sections"] [role="tab"]', text: "In hospital" },
           "People in a bed",
-          "Everyone your team referred who is in a bed or has one pulled, with the unit, legal status and days in.",
+          "In hospital lists everyone your team referred who is in a bed or has one pulled, with the unit, legal status and days in.",
         ),
         step(
           "Your daily work",
@@ -475,15 +481,15 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "Finding your way",
           "raise",
           PRIMARY,
-          "New referral",
-          "New referral, at the top, starts a referral to a ward from any screen.",
+          "New triage or referral",
+          "New, at the top, starts a triage and risk form, or a referral to a ward, from any screen.",
         ),
         step(
           "Finding your way",
           "menu",
           ROLE_MENU,
           "Your menu",
-          "My team, Referrals and New referral. More has the other screens your desk can open.",
+          "My team and Referrals. More has the other screens your desk can open.",
         ),
       ];
     case "officer":
@@ -507,7 +513,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "summary",
           HERO,
           "Your jobs at a glance",
-          `${f.activeJobs === undefined ? "" : `${count(f.activeJobs, "job is", "jobs are")} still on the road. `}The chips count jobs to accept, crews to send, crews en route, jobs past the ward's ETA and jobs that still need forms.`,
+          `${f.activeJobs === undefined ? "" : `${count(f.activeJobs, "job is", "jobs are")} still on the road. `}The chips count jobs to accept, crews to send, crews en route, patients collected, jobs past the ward's ETA and jobs that still need forms.`,
         ),
         step(
           "Your daily work",
@@ -575,16 +581,16 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "menu",
           ROLE_MENU,
           "Your menu",
-          `Capacity, Wards, Movements${f.openMovements === undefined ? "" : ` with ${f.openMovements} still open`} and Waiting${
+          `Capacity, Wards, Movements${f.openMovements === undefined ? "" : ` with ${f.openMovements} still open`}, Waiting${
             f.waitingInEd === undefined ? "" : ` with ${f.waitingInEd} waiting in ED`
-          }.`,
+          } and Referrals.`,
         ),
         step(
           "Your daily work",
           "hero",
           HERO,
           "Beds ready",
-          "How many beds are ready, with locked beds counted within the total. Beds pulled and discharges due today sit beside them. A figure you can select opens the list behind it.",
+          "How many beds are ready and how full your site is, with locked beds counted within the total. The chips split ready beds into locked and open, then count beds pulled, beds freeing today, the oldest bed count, people waiting in your ED and beds ready at other sites. A figure you can select opens the list behind it.",
         ),
         step(
           "Your daily work",
@@ -598,7 +604,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "meeting",
           { sel: '[data-testid="capacity-bed-meeting"]' },
           "The bed meeting",
-          "Bed meeting prints the meeting sheet and opens the agenda. Open on TV puts it on the meeting room screen.",
+          "Bed meeting opens a short menu: Print the meeting sheet, Open on TV for the meeting room screen, and Open the meeting agenda.",
         ),
         step(
           "Your daily work",
@@ -638,7 +644,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "menu",
           ROLE_MENU,
           "Your menu",
-          "Statistics is your home. Capacity sits beside it. Both show counts, never patient names.",
+          "Statistics is your home. Capacity sits below it. Both show counts, never patient names.",
         ),
         step(
           "Your desk",
@@ -691,7 +697,7 @@ function deskSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "review",
           HERO,
           "What is waiting for review",
-          "Overrides, refused or stale actions, record access and follow-ups. The ring beside it counts how many are reviewed.",
+          "How many events wait for review. When there are some, the chips count overrides, refused or stale actions, record access, patterns and follow-ups, and the ring counts how many are reviewed.",
         ),
         step(
           "Your daily work",
@@ -751,9 +757,9 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your desk",
           "chips",
-          { sel: `${HERO_SEL} button`, up: 2 },
-          "What needs you",
-          "The chips beside it count Act now, To decide, Overdue waits and Tier 1 patients. The figures update as the network changes.",
+          HERO_NEXT,
+          "What needs you first",
+          "This line says what needs you first, such as how many need a person now. Its button shows just those in the list below. Checking, under it, names any stale bed count or ward not reporting.",
         ),
         step(
           "Your daily work",
@@ -768,15 +774,15 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
         step(
           "Your daily work",
           "queue",
-          MY_LIST,
-          "What needs you",
-          `Needs you holds Act now, Referrals to decide and Waiting on others, oldest first.${
+          HOME_LISTS,
+          "Your lists",
+          `Needs you holds Act now, then referrals to decide and what you are waiting on others for.${
             f.referralsWaiting === undefined
               ? ""
               : ` ${count(f.referralsWaiting, "referral is", "referrals are")} waiting for a decision.`
-          } Everyone waiting above it shows the whole queue, longest wait first.`,
+          } Flow lists every open movement, and Later today what is planned for the rest of the shift.`,
         ),
-        phoneCreate("New referral, Log a delay, Update a bed and Add patient"),
+        phoneCreate("New referral, New triage, Log a delay, Update a bed and Add patient"),
         phoneDock(
           `Home, Referrals${f.referralsWaiting === undefined ? "" : ` with ${f.referralsWaiting} awaiting a decision`}, Alerts and Activity.`,
         ),
@@ -806,8 +812,8 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           UNIT_CARD,
           place ? `${place} right now` : "Your ward right now",
           ward
-            ? `${ward.beds} beds and ${ward.occupied} occupied. ${count(ward.ready, "bed is", "beds are")} ready now. The card also shows tasks due now and beds ready later today.`
-            : "Beds ready now, beds occupied, tasks due now and beds ready later today.",
+            ? `${count(ward.ready, "bed is", "beds are")} ready now. The card also counts tasks due now and beds ready later in the shift, with Confirm numbers under them.`
+            : "Beds ready now, tasks due now and beds ready later in the shift, with Confirm numbers under them.",
         ),
         step(
           "Your daily work",
@@ -821,8 +827,8 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "tabs",
           { sel: "#mainTabList" },
           "Three views",
-          "Ward home is today's summary. Decisions has the calls due today and Bed board shows every bed.",
-          "Tap Bed board, then go back to Ward home.",
+          "Ward home is today's summary. Referrals holds the referrals sent to your ward, and Decisions the calls due today.",
+          "Tap Decisions, then go back to Ward home.",
         ),
         step(
           "Your daily work",
@@ -831,9 +837,9 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "Referrals to answer",
           `Referrals sent to ${place ?? "your ward"} wait here for your answer.`,
         ),
-        phoneCreate("New referral, Log a delay, Update a bed and Add patient"),
+        phoneCreate("New referral, New triage, Log a delay, Update a bed and Add patient"),
         phoneDock(
-          "My ward, Referrals, Alerts and Handover. Handover is the sheet you pass to the next nurse in charge.",
+          "My ward, Referrals, Alerts and Coming and going. Handover, the sheet you pass to the next nurse in charge, is in the menu.",
         ),
         step(
           "Finding your way",
@@ -855,9 +861,9 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           ED_CARD,
           "Your board at a glance",
           ed
-            ? `${count(ed.waiting, "person is", "people are")} on the psychiatry board.${
+            ? `${count(ed.waiting, "person is", "people are")} waiting in your ED.${
                 ed.longest ? ` The longest wait is ${ed.longest} against a ${ed.targetHours}h target.` : ""
-              }`
+              } The card also counts who has no bed yet and who is under a form.`
             : "Who is waiting, who has no bed yet, who is under a form and the longest wait against the target.",
         ),
         step(
@@ -868,7 +874,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "Tier, bay, time in ED and the next step.",
           "Tap a row to see that person's details.",
         ),
-        phoneCreate("New referral, Log a delay and Add patient"),
+        phoneCreate("New referral, New triage, Log a delay and Add patient"),
         phoneDock("My ED, Referrals, Alerts and Find a bed."),
         step(
           "Finding your way",
@@ -903,7 +909,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "tabs",
           { sel: '[aria-label="Team lists"]' },
           "Who is where",
-          "Waiting, In bed, Back and CTOs. Back counts the people expected back with the team.",
+          "Sent, Waiting, In bed, Back and Caseload. Sent holds the referrals your team sent, Back counts the people expected back with the team, and Caseload can narrow to people on a community treatment order (CTO).",
           "Tap In bed to see who is in a bed now.",
         ),
         step(
@@ -913,8 +919,8 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "One row per person",
           "The ward, legal status and days in the bed, with how long the person was with your team before.",
         ),
-        phoneCreate("New referral, Log a delay and Add patient"),
-        phoneDock("My team, Referrals, Alerts and Activity."),
+        phoneCreate("New referral, New triage, Log a delay and Add patient"),
+        phoneDock("My team, Referrals, Alerts and Movements."),
         PHONE_HELP,
       ];
     case "officer":
@@ -925,7 +931,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "hero",
           HERO,
           "Your jobs at a glance",
-          `${f.activeJobs === undefined ? "" : `${count(f.activeJobs, "job is", "jobs are")} still on the road. `}The chips count jobs to accept, late jobs and jobs that need forms. Copy handover copies the list for the next shift.`,
+          `${f.activeJobs === undefined ? "" : `${count(f.activeJobs, "job is", "jobs are")} still on the road. `}The chips count jobs to accept, jobs past the ward's ETA and jobs that need forms. Copy handover, under the job list, copies the list for the next shift.`,
         ),
         step(
           "Your daily work",
@@ -970,9 +976,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "Mismatch",
           "For each kind of bed, how many people are waiting and how many beds fit them.",
         ),
-        phoneDock(
-          `Capacity${f.readyBeds === undefined ? "" : ` with ${f.readyBeds} ready`}, Wards, Alerts and Handover.`,
-        ),
+        phoneDock("Capacity, Wards, Alerts and Waiting. Handover is in the menu."),
         PHONE_HELP,
       ];
     case "executive":
@@ -983,7 +987,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "hero",
           HERO,
           "The network now",
-          `${networkToday(f)}The card also shows how full the network is and how many stays ended today.`,
+          `${networkToday(f)}The card also shows how full the network is and how many beds are being made ready.`,
         ),
         step(
           "Your daily work",
@@ -1000,7 +1004,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "This session",
           "Hourly counts of referrals, decisions, arrivals and departures recorded since the demo started.",
         ),
-        phoneDock("Statistics, Alerts and Activity."),
+        phoneDock("Statistics, Capacity and Activity."),
         PHONE_HELP,
       ];
     case "admin":
@@ -1017,7 +1021,7 @@ function phoneSteps(role: TourRole, facts: TourFacts): TourStep[] {
           "Overrides, refused actions and record access checks. Review next opens the next item when there is one.",
         ),
         ...ACCESS_STEPS,
-        phoneDock("Alerts and Activity."),
+        phoneDock("Governance and Activity."),
         PHONE_HELP,
       ];
   }
