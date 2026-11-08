@@ -1,0 +1,98 @@
+/* Waiting drawer footer pop-ups (Note 8 issue 7, 8 Nov 2026). */
+.panel {
+  min-width: 16rem;
+  max-width: min(20rem, calc(100vw - 2 * var(--wf-s-4)));
+}
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+.title {
+  margin: 0;
+  font: 600 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-font);
+  color: var(--wf-ink-3);
+}
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-1);
+}
+.action {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--wf-s-2);
+  width: 100%;
+  min-height: 44px;
+  padding: var(--wf-s-2);
+  border: 0;
+  border-radius: var(--wf-r-md);
+  background: transparent;
+  color: var(--wf-ink-1);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.action:hover {
+  background: var(--wf-surface-2);
+}
+.action:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 1px;
+}
+.action > svg {
+  flex: none;
+  margin-top: 2px;
+  color: var(--wf-ink-2);
+}
+.action span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.action small {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+.figures {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+  margin: 0;
+}
+.figures div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.figures dt {
+  color: var(--wf-ink-3);
+  font-size: var(--wf-fs-12);
+}
+.figures dd {
+  margin: 0;
+  font: 600 var(--wf-fs-16) / 1.2 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+.note {
+  margin: 0;
+  color: var(--wf-ink-3);
+}
+.pageLink {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--wf-s-1);
+  min-height: 44px;
+  padding-top: var(--wf-s-1);
+  border-top: 1px solid var(--wf-line);
+  color: var(--wf-accent-ink, var(--wf-ink-1));
+  font-weight: 600;
+  text-decoration: none;
+}
+.pageLink:hover {
+  text-decoration: underline;
+}
+.pageLink:focus-visible {
+  outline: 2px solid var(--wf-focus-ring);
+  outline-offset: 2px;
+}
