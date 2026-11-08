@@ -309,6 +309,9 @@
    it at the edge). A class on the cell, so a new column never moves the rule onto the wrong one. */
 .jobsTable > thead th.nextCol {
   width: 9.5rem;
+  /* Table polish (Nov 2026): the heading sits over its right-aligned buttons. Scoped, as the shared
+     `.table th { text-align: left }` beats the bare `num` class. */
+  text-align: right;
 }
 
 /* With the job panel open beside it the table narrows: the forms column keeps its dots only. */
