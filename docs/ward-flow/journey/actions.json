@@ -101,7 +101,7 @@
         {
           "path": "src/components/ward-management/referrals/use-ward-referral-drawer-state.ts",
           "line": 998,
-          "sha256": "f7c14a3f82577a00b0d6087377ad7edb47932f69d7ba53547488be00f02226ea"
+          "sha256": "e1e90b5e7abd6e9ad036df3d0096aa2eaacb4ddf2b0f77cd02788ffc8d570f30"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-answer-events.ts",
@@ -948,8 +948,8 @@
         },
         {
           "path": "src/components/ward-management/coordinator/shortlist-panel.tsx",
-          "line": 836,
-          "sha256": "cc8fa704ba5163ad593cf691259ad3e92ab39a5eac0d0d323bcc4d36c745eeb3"
+          "line": 841,
+          "sha256": "124b6fb2e250f47f4dfeca83b8ea9eb68d75df3c039cdd30257141d50cadacb3"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
@@ -1205,8 +1205,8 @@
         },
         {
           "path": "src/components/ward-management/coordinator/shortlist-panel.tsx",
-          "line": 878,
-          "sha256": "cc8fa704ba5163ad593cf691259ad3e92ab39a5eac0d0d323bcc4d36c745eeb3"
+          "line": 883,
+          "sha256": "124b6fb2e250f47f4dfeca83b8ea9eb68d75df3c039cdd30257141d50cadacb3"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
@@ -1462,8 +1462,8 @@
         },
         {
           "path": "src/components/ward-management/ed/ed-screen-row-forms.tsx",
-          "line": 688,
-          "sha256": "08b8fbc0b5c729bc46ba5fe90f1295033d79b07999513008d9551b8104a59804"
+          "line": 693,
+          "sha256": "092ace45298789630ea1548b50896070d092ccf6e1e2ff5efa2be02b089f0dfd"
         },
         {
           "path": "src/components/ward-management/ward-flow-referral-send-events.ts",
@@ -1544,8 +1544,8 @@
         },
         {
           "path": "src/components/ward-management/ed/ed-screen-row-forms.tsx",
-          "line": 293,
-          "sha256": "08b8fbc0b5c729bc46ba5fe90f1295033d79b07999513008d9551b8104a59804"
+          "line": 298,
+          "sha256": "092ace45298789630ea1548b50896070d092ccf6e1e2ff5efa2be02b089f0dfd"
         },
         {
           "path": "src/components/ward-management/ward-flow-record-events.ts",
@@ -2388,8 +2388,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 494,
-          "sha256": "7e034ad72e47bb4dab7b7200e6d23daa1b8e16416f69fbe8e00c9f4f8cb61199"
+          "line": 498,
+          "sha256": "5cb073f8bba5d4f367f847e2119695b0eedf5801eb64087ddff31fe63cc8a06e"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2457,8 +2457,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 501,
-          "sha256": "7e034ad72e47bb4dab7b7200e6d23daa1b8e16416f69fbe8e00c9f4f8cb61199"
+          "line": 505,
+          "sha256": "5cb073f8bba5d4f367f847e2119695b0eedf5801eb64087ddff31fe63cc8a06e"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2534,8 +2534,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 517,
-          "sha256": "7e034ad72e47bb4dab7b7200e6d23daa1b8e16416f69fbe8e00c9f4f8cb61199"
+          "line": 521,
+          "sha256": "5cb073f8bba5d4f367f847e2119695b0eedf5801eb64087ddff31fe63cc8a06e"
         },
         {
           "path": "src/components/ward-management/patients/patient-transit-operations.tsx",
@@ -2611,8 +2611,8 @@
         },
         {
           "path": "src/components/ward-management/officer/officer-screen.tsx",
-          "line": 536,
-          "sha256": "7e034ad72e47bb4dab7b7200e6d23daa1b8e16416f69fbe8e00c9f4f8cb61199"
+          "line": 540,
+          "sha256": "5cb073f8bba5d4f367f847e2119695b0eedf5801eb64087ddff31fe63cc8a06e"
         },
         {
           "path": "src/components/ward-management/tools/ward-tool-feed.tsx",
