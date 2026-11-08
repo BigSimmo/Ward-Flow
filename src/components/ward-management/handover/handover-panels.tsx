@@ -9,7 +9,7 @@ import Link from "next/link";
 import { movementHref } from "../shell/ward-facade";
 import dynamic from "next/dynamic";
 import { useId } from "react";
-import { Check, ClipboardCopy, Route, Ambulance, UserRound } from "lucide-react";
+import { Ambulance, Check, ChevronLeft, ChevronRight, ClipboardCopy, Route, UserRound } from "lucide-react";
 import {
   Button,
   Card,
@@ -125,6 +125,8 @@ export function HandoverFlowPanel({
   openPatientHref,
   onClose,
   onCopyIsbar,
+  onStep,
+  position,
 }: {
   open: boolean;
   row: HandoverRow;
@@ -134,6 +136,10 @@ export function HandoverFlowPanel({
   openPatientHref?: string;
   onClose: () => void;
   onCopyIsbar: (row: HandoverRow) => void;
+  /** Note 12: previous and next patient in the visible order, the same steps as J and K. */
+  onStep?: (direction: 1 | -1) => void;
+  /** Where this patient sits in the visible order, for the step buttons. */
+  position?: { index: number; total: number };
 }) {
   const { now } = ctx;
   const step = nextStep(row, now, ctx.cutoff, ctx.readyBeds);
@@ -196,7 +202,38 @@ export function HandoverFlowPanel({
           waiting
         </>
       }
-      tag={<StatusPill tone={rowTone(row, ctx)}>Tier {row.tier}</StatusPill>}
+      tag={
+        <span className={styles.flowHeadTag}>
+          <StatusPill tone={rowTone(row, ctx)}>Tier {row.tier}</StatusPill>
+          {onStep && position && position.total > 1 ? (
+            <span className={styles.flowSteps}>
+              <Button
+                variant="ghost"
+                size="sm"
+                iconOnly
+                icon={ChevronLeft}
+                aria-label="Previous patient"
+                reasonDisplay="tooltip"
+                disabledReason={position.index <= 0 ? "First patient in the list" : undefined}
+                onClick={() => onStep(-1)}
+              />
+              <span className={styles.flowStepCount} aria-live="polite">
+                {position.index + 1} of {position.total}
+              </span>
+              <Button
+                variant="ghost"
+                size="sm"
+                iconOnly
+                icon={ChevronRight}
+                aria-label="Next patient"
+                reasonDisplay="tooltip"
+                disabledReason={position.index >= position.total - 1 ? "Last patient in the list" : undefined}
+                onClick={() => onStep(1)}
+              />
+            </span>
+          ) : null}
+        </span>
+      }
       closeLabel="Close patient"
       bodyLabel={`Patient flow, ${row.name}`}
       testId="ward-handover-flow-panel"

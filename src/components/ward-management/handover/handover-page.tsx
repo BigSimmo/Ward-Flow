@@ -732,6 +732,8 @@ export function HandoverPage() {
         setDrawerOpen(false);
       }}
       onCopyIsbar={copyIsbar}
+      onStep={step}
+      position={{ index: visibleOrder.findIndex((row) => row.id === selected.id), total: visibleOrder.length }}
     />
   ) : null;
 

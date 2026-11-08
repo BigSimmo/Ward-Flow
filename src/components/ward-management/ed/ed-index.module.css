@@ -763,21 +763,141 @@
   gap: var(--wf-s-2);
 }
 
-.previewTrend {
+/* Note 9: one summary card. Waiting leads with its 12 hour trend; the other counts are toned tiles. */
+.previewSummary {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: var(--wf-s-1);
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-md);
+  background: var(--wf-surface-2);
+}
+.previewHero {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-4);
   min-width: 0;
 }
-
-.previewTrend > .meta {
+.previewBig {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  margin: 0;
+}
+.previewBig > span {
+  margin-top: 2px;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+.previewBigNum {
+  font-size: 2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--wf-ink-1);
+}
+.previewTrend {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.previewSpark {
+  display: block;
+  width: 100%;
+  height: 40px;
+  overflow: visible;
+}
+.previewSparkArea {
+  fill: color-mix(in srgb, var(--wf-info) 16%, transparent);
+}
+.previewSparkLine {
+  fill: none;
+  stroke: var(--wf-info);
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+.previewAxis {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--wf-s-2);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+.previewDelta {
+  padding: 1px 7px;
+  border-radius: var(--wf-r-pill);
+  font-weight: 600;
+  background: color-mix(in srgb, var(--wf-neutral) 14%, transparent);
+  color: var(--wf-ink-2);
+}
+.previewDelta[data-tone="up"] {
+  background: color-mix(in srgb, var(--wf-danger) 14%, transparent);
+  color: var(--wf-danger-ink);
+}
+.previewDelta[data-tone="down"] {
+  background: color-mix(in srgb, var(--wf-success) 14%, transparent);
+  color: var(--wf-success-ink);
+}
+.previewTiles {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--wf-s-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.previewTile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: var(--wf-s-2) 10px;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
+}
+.previewTile > b {
+  font-size: var(--wf-fs-20);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  color: var(--wf-ink-1);
+}
+.previewTile > span {
   overflow: hidden;
-  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-2);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
+.previewTile[data-tone="danger"] {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--wf-danger) 13%, var(--wf-surface));
+}
+.previewTile[data-tone="warning"] {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--wf-warning) 13%, var(--wf-surface));
+}
+.previewTile[data-tone="info"] {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--wf-info) 13%, var(--wf-surface));
+}
+.previewTile[data-tone="danger"] > * {
+  color: var(--wf-danger-ink);
+}
+.previewTile[data-tone="warning"] > * {
+  color: var(--wf-warning-ink);
+}
+.previewTile[data-tone="info"] > * {
+  color: var(--wf-info-ink);
+}
 .previewList {
   display: flex;
   flex-direction: column;
@@ -788,16 +908,93 @@
 }
 
 .previewPerson {
+  position: relative;
   display: grid;
-  grid-template-columns: 14px minmax(0, 1fr) auto;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--wf-s-2);
-  min-height: 44px;
-  padding: var(--wf-s-1) var(--wf-s-2);
+  gap: 10px;
+  min-height: 48px;
+  overflow: hidden;
+  padding: 6px 10px 8px;
   border: 1px solid var(--wf-line);
   border-radius: var(--wf-r-sm);
+  background: var(--wf-surface);
 }
-
+.previewPerson[data-clock="past"] {
+  border-color: color-mix(in srgb, var(--wf-danger) 35%, var(--wf-line));
+}
+/* Note 9 badges: the same one-shape-per-tone glyph, larger, on a matching tint. */
+.previewBadge {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--wf-neutral) 14%, transparent);
+}
+[data-clock="past"] > .previewBadge {
+  background: color-mix(in srgb, var(--wf-danger) 14%, transparent);
+}
+[data-clock="severe"] > .previewBadge {
+  background: color-mix(in srgb, var(--wf-warning) 16%, transparent);
+}
+.previewWait {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+.previewWaitNum {
+  font-size: var(--wf-fs-15);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+  color: var(--wf-ink-1);
+  white-space: nowrap;
+}
+[data-clock="past"] .previewWaitNum {
+  color: var(--wf-danger-ink);
+}
+[data-clock="severe"] .previewWaitNum {
+  color: var(--wf-warning-ink);
+}
+.previewWaitLabel {
+  font-size: 11px;
+  color: var(--wf-ink-3);
+  white-space: nowrap;
+}
+/* The wait against the access target, filling from the left as the popout opens. */
+.previewMeter {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  border-radius: 0 3px 3px 0;
+  background: color-mix(in srgb, var(--wf-neutral) 55%, transparent);
+  transform-origin: left;
+  animation: previewMeterGrow 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+[data-clock="past"] > .previewMeter {
+  background: var(--wf-danger);
+}
+[data-clock="severe"] > .previewMeter {
+  background: var(--wf-warning);
+}
+@keyframes previewMeterGrow {
+  from {
+    transform: scaleX(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .previewMeter {
+    animation: none;
+  }
+}
+@media (forced-colors: active) {
+  .previewMeter {
+    background: CanvasText;
+  }
+}
 .previewText {
   display: flex;
   flex-direction: column;
@@ -824,8 +1021,13 @@
   text-decoration: underline;
 }
 
-[data-dim="true"] .previewName {
+[data-dim="true"] .previewName,
+[data-dim="true"] .previewWaitNum {
   color: var(--wf-dim);
+}
+
+[data-dim="true"] > .previewMeter {
+  opacity: 0.35;
 }
 
 .previewEmpty {
@@ -1035,6 +1237,10 @@
     border-top: 1px solid var(--wf-line);
   }
 
+  .previewList[data-phone="true"] .previewPerson[data-clock="past"] {
+    border-color: var(--wf-line);
+  }
+
   .previewUmrn {
     font-family: var(--wf-mono);
     font-variant-numeric: tabular-nums;
@@ -1047,12 +1253,8 @@
 }
 
 @media (max-width: 46.4375rem) {
-  .previewList[data-phone="true"] .num {
-    font-size: var(--wf-fs-13);
-  }
-
-  .previewTrend > .meta {
-    font-family: var(--wf-font);
+  .previewList[data-phone="true"] .previewWaitNum {
+    font-size: var(--wf-fs-14);
   }
 }
 
