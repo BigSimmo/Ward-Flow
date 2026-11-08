@@ -26,6 +26,7 @@ import {
   RotateCcw,
   Search,
   Star,
+  X,
 } from "lucide-react";
 
 import {
@@ -834,9 +835,19 @@ export function HubScreen() {
             <h2 className={styles.glanceTitle} id="hub-glance-title">
               At a glance
             </h2>
-            <p className={styles.asAt}>
-              As at <b className={styles.asAtTime}>{formatInstant(now)}</b>
-            </p>
+            <div className={styles.glanceHeadEnd}>
+              <p className={styles.asAt}>
+                As at <b className={styles.asAtTime}>{formatInstant(now)}</b>
+              </p>
+              <button
+                type="button"
+                className={cx(buttonClass({ variant: "ghost", size: "sm" }), styles.glanceClose)}
+                aria-label="Close At a glance"
+                onClick={() => closeGlance()}
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
+            </div>
           </div>
           {/* Drawer review (6 Nov 2026): the summary sits above the list and never scrolls on its own. */}
           <div className={styles.overviewBody}>
