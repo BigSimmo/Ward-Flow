@@ -667,8 +667,12 @@ const SHARED_SNAPSHOT = {
   },
 };
 
+/** Every full request URL the last `sharedServer` saw, for checks on query parameters. */
+let requestedUrls: URL[] = [];
+
 function sharedServer(hang: string | null = null) {
   const calls: { path: string; body: unknown }[] = [];
+  requestedUrls = [];
   const user = { id: "12345678-1234-1234-1234-123456789abc" };
   const answers: Record<string, unknown> = {
     "/auth/v1/user": user,
@@ -700,6 +704,7 @@ function sharedServer(hang: string | null = null) {
     "fetch",
     vi.fn(async (url: string, options?: RequestInit) => {
       const path = new URL(url).pathname;
+      requestedUrls.push(new URL(url));
       calls.push({ path, body: options?.body ? JSON.parse(String(options.body)) : null });
       if (path === hang) return new Promise<Response>(() => {});
       if (path === "/auth/v1/logout") return new Response(null, { status: 204 });
@@ -755,6 +760,9 @@ describe("shared connection phone alerts", () => {
     expect(await accessApi.readActivityAuditPage!()).toEqual({ events: [], complete: false, nextCursor: "7" });
     await accessApi.readActivityAuditPage!("7");
     expect(calls.filter((call) => call.path === "/v1/workspace/audit")).toHaveLength(2);
+    const audits = requestedUrls.filter((url) => url.pathname === "/v1/workspace/audit");
+    expect(audits[0]!.searchParams.has("before")).toBe(false);
+    expect(audits[1]!.searchParams.get("before")).toBe("7");
     unmount();
     await expect(accessApi.readActivityAuditPage!()).rejects.toThrow("not connected");
   });

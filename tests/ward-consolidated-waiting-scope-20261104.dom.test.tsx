@@ -93,11 +93,14 @@ describe("own ED Capacity figure on desktop", () => {
         <CapacityScreen />
       </WardFlowProvider>,
     );
-    const link = screen.getByTestId("capacity-hero-ed-waiting-link");
-    expect(link.tagName).toBe("A");
-    expect(link.getAttribute("href")).toBe(phoneHref);
-    expect(new URL(link.getAttribute("href")!, window.location.origin).searchParams.get("ed")).toBe(edId);
-    expect(link).toHaveAccessibleName(phoneName!);
-    phone.value = true;
+    try {
+      const link = screen.getByTestId("capacity-hero-ed-waiting-link");
+      expect(link.tagName).toBe("A");
+      expect(link.getAttribute("href")).toBe(phoneHref);
+      expect(new URL(link.getAttribute("href")!, window.location.origin).searchParams.get("ed")).toBe(edId);
+      expect(link).toHaveAccessibleName(phoneName!);
+    } finally {
+      phone.value = true;
+    }
   });
 });

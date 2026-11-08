@@ -37,11 +37,21 @@ export function WardIndexDrawer({
   onClose: () => void;
   profile: ReactNode;
 }) {
-  const { bedReleases, admissions, leaveBeds } = useWardFlowSelect("bedReleases", "admissions", "leaveBeds");
+  const { bedReleases, admissions, leaveBeds, movements, referrals } = useWardFlowSelect(
+    "bedReleases",
+    "admissions",
+    "leaveBeds",
+    "movements",
+    "referrals",
+  );
   const canOpen = useCanOpenHref();
+  // WF-FIG-017: a bed held by name is held, not Ready, as on the Capacity network table.
   const row = useMemo(
-    () => (unit ? networkWardRows([unit], now, bedReleases, admissions, leaveBeds)[0] : undefined),
-    [unit, now, bedReleases, admissions, leaveBeds],
+    () =>
+      unit
+        ? networkWardRows([unit], now, bedReleases, admissions, leaveBeds, [...movements, ...referrals])[0]
+        : undefined,
+    [unit, now, bedReleases, admissions, leaveBeds, movements, referrals],
   );
   const wardHref = unit ? `/ward-flow/ward/${unit.id}` : "";
   const boardHref = unit ? `/ward-flow/board/${unit.id}` : "";

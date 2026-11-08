@@ -151,14 +151,19 @@ export function WardHelpAccountMemory() {
     let applying = false;
     let tipsChanged = false;
     let timer: number | undefined;
-    const send = () => {
-      timer = undefined;
-      if (!live) return;
+    // N36: stored when the mark is made, so a teardown before the debounced save cannot lose it.
+    const recordUnsent = () => {
       const missing = missingFromAccount(
         lists(missingFromAccount(deviceHelpMemory(), beforeSignIn)),
         account ?? lists(),
       );
       keepUnsent(actorId, missing);
+      return missing;
+    };
+    const send = () => {
+      timer = undefined;
+      if (!live) return;
+      const missing = recordUnsent();
       if (!account) return;
       const body: Record<string, unknown> = { ...missing };
       if (tipsChanged) {
@@ -185,6 +190,7 @@ export function WardHelpAccountMemory() {
     const later = (event: Event) => {
       if (applying || fromAccount(event)) return;
       if (event.type === HELP_TIPS_CHANGED_EVENT) tipsChanged = true;
+      recordUnsent();
       if (timer === undefined) timer = window.setTimeout(send, SEND_AFTER_MS);
     };
     const events = [TOUR_SEEN_CHANGE_EVENT, HELP_HINTS_CHANGED_EVENT, HELP_TIPS_CHANGED_EVENT, WHATS_NEW_SEEN_EVENT];

@@ -458,12 +458,10 @@ export function ShortlistPanel({
    */
   // WF-FIG-017 (Josh, 7 Nov 2026): a bed held by name shows as held, never Ready.
   const flowMovements = flowContext?.movements;
+  const namedHolds = useMemo(() => [...(flowMovements ?? []), ...referrals], [flowMovements, referrals]);
   const activeCapacity = useMemo(
-    () =>
-      activeUnit
-        ? bedStates(activeUnit, admissions, bedReleases, leaveBeds, [...(flowMovements ?? []), ...referrals])
-        : undefined,
-    [activeUnit, admissions, bedReleases, leaveBeds, flowMovements, referrals],
+    () => (activeUnit ? bedStates(activeUnit, admissions, bedReleases, leaveBeds, namedHolds) : undefined),
+    [activeUnit, admissions, bedReleases, leaveBeds, namedHolds],
   );
   const activeBreakdown = useMemo(
     () => (activeUnit ? capacityBreakdown(activeUnit, bedReleases, leaveBeds, now) : undefined),
@@ -1196,7 +1194,7 @@ export function ShortlistPanel({
             </span>
           </span>
           <span className={`${styles.shortlistCandidateCapacity} ${shortlistStyles.tabularNum}`}>
-            {capacityLine(candidate.unit, bedReleases, admissions)}
+            {capacityLine(candidate.unit, bedReleases, admissions, namedHolds)}
           </span>
           {/* "Eligible now" repeats the group heading, so the card no longer shows it; it stays for
           assistive technology. A reason for review is always on screen. */}
@@ -1255,7 +1253,7 @@ export function ShortlistPanel({
             )}
           </span>
           <span className={`${styles.shortlistCandidateCapacity} ${shortlistStyles.tabularNum}`}>
-            {capacityLine(candidate.unit, bedReleases, admissions)}
+            {capacityLine(candidate.unit, bedReleases, admissions, namedHolds)}
           </span>
           <span
             className={`${styles.shortlistCandidateReasonBad} ${kind === "no-bed" ? shortlistStyles.quietReason : ""}`}

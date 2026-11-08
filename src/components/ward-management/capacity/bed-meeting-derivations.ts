@@ -172,7 +172,11 @@ export function bedMeetingSheet(input: BedMeetingInput): BedMeetingSheet {
     service === null ? movements : movements.filter((movement) => movementBelongsToService(movement, service, units));
 
   // Capacity — the same rows and the same group totals the Capacity screen renders.
-  const rows = networkWardRows(scopedUnits, now, scopedReleases, admissions, leaveBeds);
+  // WF-FIG-017: named holds (journeys and referrals) are held, not Ready, as on Capacity.
+  const rows = networkWardRows(scopedUnits, now, scopedReleases, admissions, leaveBeds, [
+    ...movements,
+    ...(input.referrals ?? []),
+  ]);
   const totals = networkServiceGroupTotals(rows);
   const tracked = rows.map((row) => row.pendingPreparation).filter((value): value is number => value !== undefined);
   const capacity: BedMeetingCapacity = {

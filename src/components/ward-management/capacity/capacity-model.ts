@@ -74,8 +74,8 @@ export function useCapacityModel() {
   );
   const gapTotals = useMemo(() => bedKindTotals(gapRows), [gapRows]);
   const tomorrowByKind = useMemo(
-    () => forecastByKind(units, bedReleases, admissions, movements, now, 1, planned),
-    [units, bedReleases, admissions, movements, now, planned],
+    () => forecastByKind(units, bedReleases, admissions, movements, now, 1, planned, referrals),
+    [units, bedReleases, admissions, movements, now, planned, referrals],
   );
   const forecast = useMemo(
     () => bedsForecast(units, bedReleases, admissions, movements, now, planned, referrals),

@@ -276,7 +276,8 @@ export function edTvSheet(input: TvInputs & { edId: string; accessTargetMinutes:
 
   const service = edHealthService(edId);
   const serviceUnits = service === undefined ? [] : units.filter((unit) => unitHealthService(unit) === service);
-  const rows = networkWardRows(serviceUnits, now, bedReleases, admissions, leaveBeds);
+  // WF-FIG-017: a journey holding a named bed takes it off Ready, as on Capacity.
+  const rows = networkWardRows(serviceUnits, now, bedReleases, admissions, leaveBeds, movements);
   const withBeds = rows
     .filter((row) => row.ready > 0)
     .sort((a, b) => b.ready - a.ready || a.unit.name.localeCompare(b.unit.name))
@@ -382,6 +383,7 @@ function serviceWardRows(input: MeetingInputs, scopedUnits: Unit[]): TvWardRow[]
     bedReleases.filter((release) => unitIds.has(release.unitId)),
     admissions,
     leaveBeds,
+    movements,
   );
   const groups = groupDischarges(
     bedReleases.filter((release) => unitIds.has(release.unitId)),
