@@ -598,13 +598,18 @@
 
   /* ----- Triage: wider labels (no "Appearance and / behaviour" wraps), blank lines greyed ----- */
   [data-wf-print-doc="triage"] > section dl {
-    grid-template-columns: 33mm minmax(0, 1fr) 33mm minmax(0, 1fr);
+    grid-template-columns: 37mm minmax(0, 1fr) 37mm minmax(0, 1fr);
   }
 
   [data-wf-print-doc="triage"] > section dd:has(> [data-wf-print-blank]),
   [data-wf-print-doc="triage"] > section dt:has(+ dd > [data-wf-print-blank]) {
     color: #8a94a0 !important;
     font-weight: 400;
+  }
+
+  [data-wf-print-doc="triage"] > section > p[data-wf-print-blank] {
+    color: #8a94a0 !important;
+    font-style: italic;
   }
 
   [data-wf-print-doc="triage"] > section dd:has(> [data-wf-print-blank]) * {

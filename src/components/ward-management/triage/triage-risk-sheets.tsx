@@ -125,7 +125,12 @@ function Block({ block }: { block: DocBlock }) {
         )}
       />
     );
-  if (block.kind === "missing") return <p className={styles.missing}>{block.text}</p>;
+  if (block.kind === "missing")
+    return (
+      <p className={styles.missing} data-wf-print-blank="">
+        {block.text}
+      </p>
+    );
   if (block.kind === "tags")
     return (
       <ul className={styles.docTags} aria-label={block.label}>
