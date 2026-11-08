@@ -721,34 +721,20 @@ export const STATISTICS_SCREEN_CLAIMS: readonly ModelClaim[] = [
      * citation moves to the resolving expression itself, which still means exactly what the claim
      * says: a null records an admission whose movement carries no RESOLVED referral, never one
      * whose movement carries one.
+     *
+     * **RE-ANCHORED 2026-11-08 (PR #1523), CLAIM RE-READ AND STILL TRUE.** `PULL_PATIENT` now resolves
+     * the patient once, so the `patientId` line beside it changed. `referralId` is still
+     * `resolvedReferral?.id ?? null`, so the citation narrows to that one line (unique in the file).
      */
     sourceFile: WARD_PLACEMENT_EVENTS,
-    evidence:
-      "referralId: resolvedReferral?.id ?? null,\n" +
-      "        movementId: movement.id,\n" +
-      "        patientId: resolvedReferral?." +
-      "patientId ?? movement." +
-      "patientId ?? event." +
-      "patientId ?? null,",
+    evidence: "referralId: resolvedReferral?.id ?? null,",
     falsifiedBy: {
       change:
         "Movement-originated admissions stop writing a null referralId when their movement carries no " +
         "resolved referral, minting an id instead, so a null `referralId` stops meaning 'this admission's " +
         "movement carries no referral'. This is the edit the old doc-comment citation survived untouched.",
-      find:
-        "referralId: resolvedReferral?.id ?? null,\n" +
-        "        movementId: movement.id,\n" +
-        "        patientId: resolvedReferral?." +
-        "patientId ?? movement." +
-        "patientId ?? event." +
-        "patientId ?? null,",
-      replaceWith:
-        "referralId: resolvedReferral?.id ?? `RF-${movement.id}`,\n" +
-        "        movementId: movement.id,\n" +
-        "        patientId: resolvedReferral?." +
-        "patientId ?? movement." +
-        "patientId ?? event." +
-        "patientId ?? null,",
+      find: "referralId: resolvedReferral?.id ?? null,",
+      replaceWith: "referralId: resolvedReferral?.id ?? `RF-${movement.id}`,",
     },
   },
   {
