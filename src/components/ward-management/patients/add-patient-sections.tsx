@@ -8,7 +8,7 @@ import {
   ABORIGINAL_OR_TORRES_STRAIT_ISLANDER_STATUSES,
   type AboriginalOrTorresStraitIslanderStatus,
 } from "@/components/ward-management/ward-patient-aboriginal-status";
-import { type ChoiceItem, Field, Icon, Segmented, Select, TextInput } from "@/components/wf";
+import { type ChoiceItem, Field, Icon, Segmented, TextInput } from "@/components/wf";
 
 import styles from "./add-patient.module.css";
 
@@ -269,17 +269,19 @@ function ExtraChoice({
   value: string;
   onChange: (value: string) => void;
 }) {
+  // RF7 (Josh, 3 Nov 2026): no browser controls. Nothing starts chosen, and pressing the chosen
+  // option again clears it back to not recorded.
   return (
-    <Field label={label} id={id}>
-      <Select data-testid={id} value={value} onChange={(event) => onChange(event.target.value)}>
-        <option value="">Not recorded</option>
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </Select>
-    </Field>
+    <div className={`${styles.choiceField} ${styles.spanAll}`} data-testid={id}>
+      <span className={styles.choiceLabel}>{label}</span>
+      <Segmented
+        label={label}
+        items={options.map((option) => ({ id: option, label: option }))}
+        value={value}
+        onChange={(next) => onChange(next === value ? "" : next)}
+        className={`${styles.segmented} ${styles.segmentedWrap}`}
+      />
+    </div>
   );
 }
 

@@ -883,7 +883,11 @@ describe("AddPatientForm safety regressions", () => {
     fillDraft();
     fireEvent.change(screen.getByLabelText("Mobile"), { target: { value: " 0400 000 000 " } });
     fireEvent.change(screen.getByLabelText("Next of kin"), { target: { value: "Alex Sample" } });
-    fireEvent.change(screen.getByLabelText("Marital status"), { target: { value: "Widowed" } });
+    const marital = within(screen.getByRole("radiogroup", { name: "Marital status" }));
+    fireEvent.click(marital.getByRole("radio", { name: "Divorced" }));
+    fireEvent.click(marital.getByRole("radio", { name: "Divorced" }));
+    expect(marital.getByRole("radio", { name: "Divorced" })).toHaveAttribute("aria-checked", "false");
+    fireEvent.click(marital.getByRole("radio", { name: "Widowed" }));
     expect(screen.getByTestId("ward-add-patient-fold-kin-count")).toHaveTextContent("1 added");
     fireEvent.click(screen.getByTestId("ward-add-patient-submit"));
     await waitFor(() => expect(Number(screen.getByTestId("patient-count").textContent)).toBe(before + 1));
