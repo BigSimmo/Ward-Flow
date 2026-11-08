@@ -825,7 +825,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--wf-s-2);
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   font-variant-numeric: tabular-nums;
   color: var(--wf-ink-3);
   white-space: nowrap;
@@ -971,7 +971,7 @@
   color: var(--wf-warning-ink);
 }
 .previewWaitLabel {
-  font-size: 11px;
+  font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
   white-space: nowrap;
 }
