@@ -67,7 +67,14 @@ function openFirstRecord(worklist?: HTMLElement) {
   const name = opener.textContent ?? "";
   expect(name.length).toBeGreaterThan(0);
   fireEvent.click(opener);
+  giveOnBehalfReason();
   return name;
+}
+// D-80 item 17: the coordinator gives its "on behalf of the ward" reason before the record opens.
+function giveOnBehalfReason() {
+  const form = screen.getByTestId("ward-on-behalf-reason");
+  fireEvent.click(within(form).getByRole("radio", { name: "The ward asked for help" }));
+  fireEvent.click(within(form).getByRole("button", { name: "Open record" }));
 }
 function renderBoard() {
   render(
@@ -108,7 +115,24 @@ describe("DischargeBoard guarded detail access", () => {
     access.mode = "normal";
     expect(worklist).toBeInTheDocument();
     fireEvent.click(within(worklist).getByRole("button", { name }));
+    giveOnBehalfReason();
     expect(within(screen.getByTestId("ward-discharge-detail")).getByRole("heading", { name })).toBeInTheDocument();
+  });
+
+  it("asks the coordinator why before the ward's record opens, and opens nothing until then", () => {
+    renderBoard();
+    fireEvent.click(screen.getByRole("button", { name: /^Recorded/ }));
+    const row = within(screen.getByRole("region", { name: "Discharge worklist" }))
+      .getAllByRole("row")
+      .find((candidate) => within(candidate).queryAllByRole("button").length > 0)!;
+    const opener = within(row).getAllByRole("button")[0]!;
+    const name = opener.textContent ?? "";
+    fireEvent.click(opener);
+    const detail = screen.getByTestId("ward-discharge-detail");
+    expect(within(detail).queryByRole("heading", { name })).not.toBeInTheDocument();
+    expect(within(detail).getByRole("button", { name: "Open record" })).toBeDisabled();
+    giveOnBehalfReason();
+    expect(within(detail).getByRole("heading", { name })).toBeInTheDocument();
   });
 
   it("removes opened details when a scenario reset invalidates the receipt", () => {

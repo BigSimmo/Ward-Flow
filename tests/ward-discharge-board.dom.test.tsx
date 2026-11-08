@@ -35,6 +35,7 @@ import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 // its expectation from this same exported `bedReleases` array, using the SAME `groupDischarges`
 // the board itself calls — never a number read off the old fixture and typed in here.
 import { bedReleases as seededBedReleases } from "@/components/ward-management/ward-movements";
+import { giveOnBehalfReason } from "./helpers/ward-on-behalf-reason";
 
 function renderBoard() {
   return render(
@@ -807,6 +808,7 @@ describe("a Tasks link to one discharged stay", () => {
         <DischargeBoard initialAdmissionId="AD-LEFT-01" />
       </WardFlowProvider>,
     );
+    giveOnBehalfReason();
     const checklist = screen.getByTestId("ward-support-notifications");
     expect(within(checklist).getByText(/Discharge · Advisory/)).toBeInTheDocument();
   });

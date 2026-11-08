@@ -17,6 +17,7 @@ import { Badge } from "@/components/wf";
 import thirdEdition from "./governance-third-edition.module.css";
 import { ACCESS_ROLE_LABELS } from "./ward-role-access";
 import { PATTERN_HOURS, PATTERN_LIMIT, reasonLabel } from "./governance-access-review";
+import { onBehalfReasonLabel } from "./ward-on-behalf-reason";
 import {
   UNDONE_STEP_LABELS,
   actionLabels,
@@ -224,7 +225,15 @@ export function EventFacts({ event, units, now }: { event: AuditEvent; units: Un
       if (event.action === "BREAK_GLASS") return <BreakGlassFacts event={event} now={now} />;
       return (
         <>
-          <FactList facts={[["Open request", display(event.details.requestId)]]} />
+          <FactList
+            facts={[
+              ["Open request", display(event.details.requestId)],
+              // D-80 item 17: the coordinator's reason for opening the ward's record on its behalf.
+              ...(event.details.onBehalfReason
+                ? ([["On behalf of the ward", onBehalfReasonLabel(event.details.onBehalfReason)]] as [string, string][])
+                : []),
+            ]}
+          />
           <p className={thirdEdition.quiet}>Discharge opens captured this session.</p>
         </>
       );

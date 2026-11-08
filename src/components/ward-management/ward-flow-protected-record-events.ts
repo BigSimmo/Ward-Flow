@@ -2,6 +2,7 @@ import { pulledBedAvailability } from "./ward-ready-beds";
 import { withoutRecordNumbers } from "./ward-patient-resolver";
 import { validCareChange, careChangeRefusal, applyCareChange, emptyCareJourney } from "./ward-care-journey";
 import { PROTECTED_REFUSAL_REASONS } from "./ward-protected-refusal-reasons";
+import { ON_BEHALF_REASON_REFUSAL, isOnBehalfReason } from "./ward-on-behalf-reason";
 import { appendAudit, finiteInstant, governanceAuditEntry, reviewDecision, type AuditDecision } from "./ward-audit";
 import { undoWindowRefusal } from "./ward-undo";
 import { openRestrictivePracticeRefusal } from "./restrictive-practice/ward-restrictive-practice";
@@ -180,6 +181,10 @@ export function reduceProtectedRecordEvent(
       (event.requestNamespace !== undefined && !validDischargeRequestNamespace(event.requestNamespace))
     )
       return deny("invalid-payload");
+    // D-80 item 17: a coordinator opens a ward's clinical record on the ward's behalf, with a reason
+    // from the closed list. Any other desk opens its own record and gives none.
+    if (event.role === "coordinator" ? !isOnBehalfReason(event.onBehalfReason) : event.onBehalfReason !== undefined)
+      return deny("invalid-payload", "denied", event.role === "coordinator" ? ON_BEHALF_REASON_REFUSAL : undefined);
     const previous = state.auditEvents.find((entry) =>
       isDischargeOpenReceipt(entry, {
         generation: state.worldGeneration,
