@@ -369,3 +369,195 @@
     break-after: avoid;
   }
 }
+
+/* =========================================================================
+ * Colour on paper (Josh, 8 Nov 2026: "adding colour and make it nice to read").
+ * One navy accent from the Ward Flow palette for titles, bands and table heads, a pale blue for
+ * section bands and alternate rows, and the palette's red, green and amber only where they carry
+ * meaning (held up, confirmed, overdue). Every pairing keeps black or white text at AA contrast,
+ * and each document still reads in greyscale because the words and order carry the meaning.
+ * ========================================================================= */
+@media print {
+  :root {
+    --wfp-navy: #1f4d7a;
+    --wfp-band: #245a8c;
+    --wfp-tint: #e6eef8;
+    --wfp-zebra: #f4f7fb;
+    --wfp-rule: #cfdae6;
+    --wfp-red: #9a3424;
+    --wfp-red-tint: #fbe9e5;
+    --wfp-green: #1c6343;
+    --wfp-green-tint: #e4f2ea;
+    --wfp-amber: #7a5208;
+  }
+
+  [data-testid="ward-discharge-board"],
+  [data-testid="ward-downtime-pack"] {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* ----- Triage record ----- */
+  [data-wf-print-doc="triage"] > div:first-child {
+    border-bottom: 2pt solid var(--wfp-navy) !important;
+  }
+
+  [data-wf-print-doc="triage"] > div:first-child > div > div:first-child {
+    display: block;
+    margin: 0 0 2.5mm;
+    padding: 1.4mm 2.5mm;
+    background: var(--wfp-band) !important;
+    color: #fff !important;
+  }
+
+  [data-wf-print-doc="triage"] #triage-doc-title {
+    color: var(--wfp-navy) !important;
+  }
+
+  [data-wf-print-doc="triage"] > section > div:first-child {
+    padding: 1mm 2mm !important;
+    background: var(--wfp-tint) !important;
+    border-radius: 1mm;
+  }
+
+  [data-wf-print-doc="triage"] > section h3 {
+    color: var(--wfp-navy) !important;
+  }
+
+  [data-wf-print-doc="triage"] > section h3 span {
+    display: inline-block;
+    width: 4.4mm;
+    height: 4.4mm;
+    margin-right: 2mm;
+    border-radius: 50%;
+    background: var(--wfp-band) !important;
+    color: #fff !important;
+    font-size: 7pt;
+    line-height: 4.4mm;
+    text-align: center;
+    letter-spacing: 0;
+  }
+
+  /* A faint rule under every field so the two columns read as a tidy grid. */
+  [data-wf-print-doc="triage"] > section dt,
+  [data-wf-print-doc="triage"] > section dd {
+    padding: 0.5mm 0;
+    border-bottom: 0.4pt solid var(--wfp-rule);
+  }
+
+  [data-wf-print-doc="triage"] > section dd {
+    font-weight: 500;
+  }
+
+  [data-wf-print-doc="triage"] > section[aria-label="Signature"] {
+    border: 1pt solid var(--wfp-navy) !important;
+    border-radius: 1.5mm;
+    background: var(--wfp-zebra) !important;
+  }
+
+  [data-wf-print-doc="triage"] > section[aria-label="Signature"] p:first-child {
+    color: var(--wfp-navy) !important;
+    font-weight: 700;
+  }
+
+  [data-wf-print-doc="triage"] > section[aria-label="Signature"]::after {
+    border-top-color: var(--wfp-navy);
+  }
+
+  [data-wf-print-doc="triage"] > p:last-child {
+    border-top-color: var(--wfp-navy) !important;
+  }
+
+  /* ----- Discharges list ----- */
+  [data-testid="ward-discharge-board"] main > section:first-of-type {
+    border-bottom: 2pt solid var(--wfp-navy) !important;
+  }
+
+  [data-testid="ward-discharge-board"] main > section:first-of-type h1,
+  [data-testid="ward-discharge-board"] main > section:first-of-type h2 {
+    color: var(--wfp-navy) !important;
+  }
+
+  [data-testid="ward-discharge-board"] table thead th {
+    background: var(--wfp-band) !important;
+    color: #fff !important;
+    border-bottom: 0 !important;
+  }
+
+  [data-testid="ward-discharge-board"] table tbody > tr:first-child > th {
+    background: var(--wfp-tint) !important;
+    color: var(--wfp-navy) !important;
+    border-bottom: 0 !important;
+  }
+
+  [data-testid="ward-discharge-board"] table tbody > tr:first-child > th * {
+    color: inherit !important;
+    background: none !important;
+  }
+
+  [data-testid="ward-discharge-board"] table tbody[data-testid^="ward-discharge-group-blocked"] > tr:first-child > th {
+    background: var(--wfp-red-tint) !important;
+    color: var(--wfp-red) !important;
+  }
+
+  [data-testid="ward-discharge-board"]
+    table
+    tbody[data-testid^="ward-discharge-group-confirmed"]
+    > tr:first-child
+    > th {
+    background: var(--wfp-green-tint) !important;
+    color: var(--wfp-green) !important;
+  }
+
+  [data-testid="ward-discharge-board"] table tbody > tr:nth-child(odd):not(:first-child) > td {
+    background: var(--wfp-zebra) !important;
+  }
+
+  [data-testid="ward-discharge-board"] table td {
+    border-bottom-color: var(--wfp-rule) !important;
+  }
+
+  /* Overdue dates ("2d past") in the palette's red; the hold-up's name in amber. */
+  [data-testid="ward-discharge-board"] table td:nth-child(2) > span:first-child:has(svg) {
+    color: var(--wfp-red) !important;
+    font-weight: 700 !important;
+  }
+
+  [data-testid="ward-discharge-board"] table td:nth-child(3) > span > span:first-child {
+    color: var(--wfp-amber) !important;
+    font-weight: 700 !important;
+  }
+
+  /* ----- Downtime pack ----- */
+  [data-testid="ward-downtime-pack"] > main > :first-child {
+    border-bottom: 2pt solid var(--wfp-navy) !important;
+  }
+
+  [data-testid="ward-downtime-pack"] h1,
+  [data-testid="ward-downtime-pack"] h2,
+  [data-testid="ward-downtime-pack"] h3 {
+    color: var(--wfp-navy) !important;
+  }
+
+  [data-testid="ward-downtime-pack"] table thead th {
+    background: var(--wfp-band) !important;
+    color: #fff !important;
+    border-bottom: 0 !important;
+  }
+
+  [data-testid="ward-downtime-pack"] table tbody tr:nth-child(even) > * {
+    background: var(--wfp-zebra) !important;
+  }
+
+  [data-testid="ward-downtime-pack"] table td,
+  [data-testid="ward-downtime-pack"] table tbody th {
+    border-bottom: 0.4pt solid var(--wfp-rule) !important;
+  }
+
+  [data-testid="ward-downtime-pack"] [data-testid="ward-downtime-subtotal"] > *,
+  [data-testid="ward-downtime-pack"] tfoot tr > * {
+    background: var(--wfp-tint) !important;
+    color: var(--wfp-navy) !important;
+    font-weight: 700 !important;
+  }
+}
