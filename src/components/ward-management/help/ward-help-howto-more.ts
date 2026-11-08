@@ -127,7 +127,7 @@ export const CRAWL_JOBS: readonly HowTo[] = [
     title: "Snooze or acknowledge an alert",
     keywords: "snooze later remind defer acknowledge seen watch return now waiting callback",
     answer:
-      "Open the alert, then More actions. Snooze asks how long (30m, 1h, 4h or End of shift) and why. Acknowledge marks it Seen and leaves it on watch. Return now brings a snoozed alert back. Act now alerts can only be snoozed for a short time.",
+      "Open the alert, then More actions. Snooze asks how long and why. Acknowledge marks it Seen and leaves it on watch. Return now brings a snoozed alert back. Act now alerts can only be snoozed for a short time.",
     desks: ["coordinator"],
     acts: ["SNOOZE_INBOX_ITEM", "UNSNOOZE_INBOX_ITEM", "ACKNOWLEDGE_INBOX_ITEM"],
     go: "alerts",
@@ -447,9 +447,9 @@ export const CRAWL_JOBS: readonly HowTo[] = [
     id: "expectation-flag",
     topic: "Beds and referrals",
     title: "Raise or clear an expectation review flag",
-    keywords: "expectation review flag 48 hour 7 day voluntary involuntary raise clear",
+    keywords: "expectation review flag voluntary involuntary raise clear",
     answer:
-      "Open the movement, then Additional workflow controls. Press Raise expectation review flag; it is a 48-hour review for a voluntary patient and 7 days for an involuntary one. The same button clears it.",
+      "Open the movement, then Additional workflow controls. Press Raise expectation review flag to mark the movement for an expectation review; the review period depends on legal status. The same button clears it.",
     desks: ["coordinator", "ward", "ed", "community"],
     acts: ["RAISE_EXPECT_FLAG", "CLEAR_EXPECT_FLAG"],
     go: ["movements", "home"],
