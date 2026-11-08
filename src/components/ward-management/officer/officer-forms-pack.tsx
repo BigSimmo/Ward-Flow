@@ -3,7 +3,7 @@
 import { useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
 import { FileUp, Upload, X } from "lucide-react";
 
-import { Button, Icon, StatusGlyph } from "@/components/wf";
+import { Badge, Button, Icon, StatusGlyph } from "@/components/wf";
 import { formatInstantWithDay, type Instant } from "@/components/ward-management/ward-clock";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
 import { useWardFormSave } from "@/components/ward-management/use-ward-form-save";
@@ -316,13 +316,16 @@ export function jobIsInvoluntary(movement: Movement): boolean {
   return (movement.transport?.transportLegalStatus ?? legalNowTransportStatus(movement)) === "involuntary";
 }
 
-/** The Forms cell of a job row: dots, then only the gap that blocks the next step (deep audit, 4 Nov 2026). */
+/** The Forms cell of a job row: a tag naming only the gap that blocks the next step (deep audit, 4 Nov 2026); dots on a phone. */
 export function OfficerFormsCell({ movement }: { movement: Movement }) {
   if (!packRequired(movement)) return <span className={styles.muted}>Not needed</span>;
   const forms = packCount(movement);
   const blocksCollection =
     movement.transport?.collectedAt === undefined && collectionGaps(movement).includes("transport_order_missing");
   return (
+    // Table polish (Nov 2026): on the larger screen one small tag says the state, as it already names
+    // the form or the count. The phone card keeps its approved dots and "forms" (v10). The title keeps
+    // "N of 3 forms recorded".
     <span className={styles.formsCell} title={`${forms} of ${PACK_SLOTS.length} forms recorded`}>
       <span className={styles.formDots} aria-hidden="true">
         {PACK_SLOTS.map((slot) => (
@@ -330,11 +333,15 @@ export function OfficerFormsCell({ movement }: { movement: Movement }) {
         ))}
       </span>
       {forms === PACK_SLOTS.length ? (
-        <span data-complete="true">All forms</span>
+        <Badge tone="success" size="sm">
+          <span data-complete="true">All forms</span>
+        </Badge>
       ) : blocksCollection ? (
-        <span className={styles.formsMissing}>Form 4A needed</span>
+        <Badge tone="warning" size="sm">
+          <span className={styles.formsMissing}>Form 4A needed</span>
+        </Badge>
       ) : (
-        <span className={styles.formsQuiet}>{PACK_SLOTS.length - forms} to upload</span>
+        <Badge size="sm">{PACK_SLOTS.length - forms} to upload</Badge>
       )}
     </span>
   );

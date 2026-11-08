@@ -1028,7 +1028,7 @@ export function OutOfAreaBoard({ admissions }: { admissions?: Admission[] }) {
                         <th scope="col">Placement</th>
                         <th scope="col">Discharge</th>
                         {planVaries ? <th scope="col">Return</th> : null}
-                        <th scope="col" className={tableClasses.num}>
+                        <th scope="col" className={cx(tableClasses.num, styles.daysHead)}>
                           Days away
                         </th>
                       </tr>

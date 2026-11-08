@@ -582,11 +582,11 @@ const CensusTableRow = memo(function CensusTableRow({
       </td>
       {showTo ? (
         <td>
-          {/* Redesign: inside "No ward asked yet" the group heading already says it; a dash, not "No ward yet". */}
+          {/* Redesign: inside "No ward asked yet" the group heading already says it, so the cell stays
+              quiet. Table polish (Nov 2026): a quiet "Not asked yet", never a bare dash (MissingValue rule). */}
           {row.group === "ask" ? (
             <span className={styles.two}>
-              <b aria-hidden="true">—</b>
-              <span className="sr-only">{row.to}</span>
+              <span>Not asked yet</span>
             </span>
           ) : (
             <span className={styles.two}>

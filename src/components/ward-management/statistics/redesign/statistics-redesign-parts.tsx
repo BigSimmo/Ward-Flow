@@ -239,6 +239,8 @@ export function Bars({
 
 /** A nought, a dash or "none" reads quieter than a figure. */
 export function Z({ v }: { v: ReactNode }) {
+  // Table polish (Nov 2026): an empty cell's word ("None", "Too few") reads in quiet body type, not mono figures.
+  if (v === "None" || v === "Too few") return <span className={`${s.zero} ${s.zeroWord}`}>{v}</span>;
   return v === 0 || v === "0" || v === "none" || v === "–" || v === "—" ? (
     <span className={s.zero}>{v}</span>
   ) : (

@@ -422,16 +422,23 @@
   white-space: nowrap;
 }
 
+/* Table polish (Nov 2026): the dots show only on the phone card, where the tag is hidden. */
 .formDots {
-  display: inline-flex;
+  display: none;
   gap: 3px;
+}
+
+@media (max-width: 46.4375rem) {
+  .formDots {
+    display: inline-flex;
+  }
 }
 
 .formsCell [data-complete="true"] {
   color: var(--wf-ink-2);
 }
 
-/* Redesign: the dots, then one line that names its noun ("2 forms missing"), wrapping under them. */
+/* Redesign: one tag that names its noun ("3 to upload"); it may wrap in a narrow column. */
 .formsCell.formsCell {
   flex-wrap: wrap;
   row-gap: 0;
@@ -2257,7 +2264,8 @@
   /* Audit B1 (5 Nov 2026): the forms label ("Form 4A needed", "3 to upload") stays visible and
      wraps under the dots. Hiding it left bare dots, and a title is no help on a touch iPad. It is
      still a warning, never a block (WLQ-5). */
-  .formsCell > span:last-child {
+  .formsCell > span:last-child,
+  .formsCell > span:last-child .formsMissing {
     white-space: normal;
   }
 }
