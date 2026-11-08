@@ -309,7 +309,7 @@ export const MORE_PAGES: readonly Around[] = [
       {
         target: [id("ward-settings-section-tabs"), starts("ward-settings-phone-area-")],
         title: "Sections",
-        body: "Each desk sees its own sections, such as Rules, Alerts, Display and You.",
+        body: "Each desk sees its own sections, such as Rules, Alerts and Display.",
       },
       {
         device: "desk",
