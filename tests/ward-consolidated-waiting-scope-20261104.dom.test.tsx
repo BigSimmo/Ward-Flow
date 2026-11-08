@@ -68,3 +68,36 @@ describe("own ED Capacity figure destination", () => {
     expect(filtersFromSearch("")).toEqual(NO_FILTERS);
   });
 });
+
+/** WF-FIG-016: the desktop own-ED figure goes where the phone one does, as a named link. */
+describe("own ED Capacity figure on desktop", () => {
+  it("links the desktop own-ED chip to the same filtered Waiting view as the phone figure", () => {
+    const state = seedWardFlowState();
+    const site = siteByCode(state.units[0]!.siteCode)!;
+    const edId = site.emergencyDepartment!.id;
+    setWardFeatureFlagOnDevice("role-access", true);
+    setWardAccess({ role: "bed_manager", scope: { kind: "site", siteCode: site.code } });
+    phone.value = true;
+    const phoneView = render(
+      <WardFlowProvider initialNow={now}>
+        <CapacityScreen />
+      </WardFlowProvider>,
+    );
+    const phoneLink = screen.getByTestId("capacity-hero-ed-waiting-link");
+    const phoneHref = phoneLink.getAttribute("href");
+    const phoneName = phoneLink.getAttribute("aria-label");
+    phoneView.unmount();
+    phone.value = false;
+    render(
+      <WardFlowProvider initialNow={now}>
+        <CapacityScreen />
+      </WardFlowProvider>,
+    );
+    const link = screen.getByTestId("capacity-hero-ed-waiting-link");
+    expect(link.tagName).toBe("A");
+    expect(link.getAttribute("href")).toBe(phoneHref);
+    expect(new URL(link.getAttribute("href")!, window.location.origin).searchParams.get("ed")).toBe(edId);
+    expect(link).toHaveAccessibleName(phoneName!);
+    phone.value = true;
+  });
+});

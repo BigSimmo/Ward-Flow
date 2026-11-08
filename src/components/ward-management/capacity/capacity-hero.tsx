@@ -6,6 +6,7 @@ import {
   buttonClass,
   durMinutes,
   FigureLink,
+  figureLinkName,
   Hero,
   HeroChip,
   HeroStat,
@@ -160,8 +161,19 @@ export function CapacityHero({
               />
             ) : null}
             {/* Site bed manager: the site's ED, counts only, with the All EDs page's words. */}
+            {/* WF-FIG-016: the same Waiting destination and accessible name as the phone figure. */}
             {edWaiting ? (
-              <HeroChip value={edWaiting.waiting} label={<SpelledCodes text={`Waiting in ${edWaiting.short}`} />} />
+              <HeroChip
+                value={edWaiting.waiting}
+                label={<SpelledCodes text={`Waiting in ${edWaiting.short}`} />}
+                href={canOpen(PAGE_OWNERS.waiting.route) ? waitingHref(undefined, edWaiting.edId) : undefined}
+                linkLabel={figureLinkName({
+                  value: edWaiting.waiting,
+                  label: `waiting in ${edWaiting.short}`,
+                  owner: PAGE_OWNERS.waiting,
+                })}
+                testId="capacity-hero-ed-waiting-link"
+              />
             ) : null}
             {edWaiting && edWaiting.pastTarget > 0 ? (
               <HeroChip
