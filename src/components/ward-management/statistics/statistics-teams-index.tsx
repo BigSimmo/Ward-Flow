@@ -38,6 +38,7 @@ import index from "./statistics-index.module.css";
 
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import {
   ExecutiveStatisticsUnavailable,
   statisticsCountText,
@@ -228,10 +229,10 @@ function TeamsIndexView({
     : active;
 
   // Phone: the teams with someone in a bed (busiest first) or every team A to Z, narrowed by name.
-  const needle = phoneQuery.trim().toLowerCase();
+  const needle = phoneQuery.trim();
   const phoneTeams = (
     phoneView === "active" ? active : [...teams].sort((a, b) => a.team.name.localeCompare(b.team.name))
-  ).filter((entry) => !needle || entry.team.name.toLowerCase().includes(needle));
+  ).filter((entry) => !needle || fieldsMatchEveryWord(needle, [entry.team.name]));
   const PHONE_TEAMS_SHOWN = 12;
   const phoneShown = phoneShowAll || needle ? phoneTeams : phoneTeams.slice(0, PHONE_TEAMS_SHOWN);
 

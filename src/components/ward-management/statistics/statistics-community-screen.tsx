@@ -65,6 +65,7 @@ import detail from "./statistics-detail.module.css";
 import { useExecutiveStatistics, useExecutiveStatisticsControl } from "./executive-statistics-context";
 import { useEffectiveWardAccess } from "../shell/ward-access-store";
 import type { ExecutiveReportingFoundation } from "./executive-statistics-contract";
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 
 type CountFigure = { kind: "measured"; value: StatisticsCount } | Exclude<StatisticsFigure, { kind: "measured" }>;
 type CountFigures = Record<keyof CommunityFigures, CountFigure>;
@@ -1086,8 +1087,8 @@ function TeamComparison({
   const [sort, setSort] = useState<"highest" | "name">("highest");
   const [query, setQuery] = useState("");
   const [showAll, setShowAll] = useState(false);
-  const needle = query.trim().toLowerCase();
-  const matching = rows.filter((row) => !needle || row.team.name.toLowerCase().includes(needle));
+  const needle = query.trim();
+  const matching = rows.filter((row) => !needle || fieldsMatchEveryWord(needle, [row.team.name]));
   const measured = matching.filter((row) => row.figures[measure].kind === "measured");
   const valueOf = (row: { figures: CountFigures }) => {
     const figure = row.figures[measure];
@@ -1186,6 +1187,7 @@ function TeamComparison({
           placeholder="Find a team"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
+          onClear={() => setQuery("")}
         />
       </div>
       {view === "chart" ? (

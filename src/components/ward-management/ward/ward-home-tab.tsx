@@ -568,7 +568,9 @@ export function WardHomeTab({
         return true;
     }
   };
-  const query = bedQuery.trim().toLowerCase();
+  // Search audit, 8 Nov 2026: "bed" (or "beds") alone names no bed, so it lights nothing and dims nothing.
+  const typedBedQuery = bedQuery.trim().toLowerCase();
+  const query = /^beds?$/.test(typedBedQuery) ? "" : typedBedQuery;
   // Every word, folded, in any order: "bed 4" or a name typed without its apostrophe (31 Oct 2026).
   const matchesQuery = (row: (typeof bedRows)[number]) =>
     query === "" ||

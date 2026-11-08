@@ -1167,6 +1167,7 @@ function Roster({
           placeholder="ID or status"
           value={query}
           onChange={(event) => setQuery(event.target.value)}
+          onClear={() => setQuery("")}
         />
         <Segmented
           label="Roster filter"
