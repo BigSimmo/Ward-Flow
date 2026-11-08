@@ -115,9 +115,9 @@ const MORE_SCREENS: readonly Around[] = [
       },
       {
         device: "desk",
-        target: { sel: 'aside[aria-label="At a glance"]' },
+        target: { sel: '[data-testid="hub-glance-trigger"]' },
         title: "At a glance",
-        body: "Wards that need a bed check, wards by service, and the places you pinned or opened lately.",
+        body: "Opens wards that need a bed check, wards by service, and the places you pinned or opened lately.",
       },
     ],
   },
