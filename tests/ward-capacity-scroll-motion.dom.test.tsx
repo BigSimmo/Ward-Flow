@@ -6,6 +6,7 @@ import { WardFlowProvider } from "@/components/ward-management/ward-flow-provide
 import { allUnits, NOW_ANCHOR } from "@/components/ward-management/ward-sites";
 import { resetWardAccessStoreForTests, setWardAccess } from "@/components/ward-management/shell/ward-access-store";
 import { setWardFeatureFlagOnDevice } from "@/components/ward-management/shell/ward-feature-flag-store";
+import { WF_PHONE_QUERY } from "@/components/wf/use-is-phone";
 
 configure({ getElementError: () => new Error("Capacity motion query failed; record-bearing diagnostics suppressed.") });
 
@@ -54,7 +55,9 @@ describe("Capacity bed map reveal motion", () => {
     (mode) => {
       vi.useFakeTimers();
       vi.spyOn(window, "matchMedia").mockImplementation((query) => ({
-        matches: mode === "system" && query === "(prefers-reduced-motion: reduce)",
+        // Josh's fifth notes (8 Nov 2026): desktop's Nearest ready beds card is gone; a site desk
+        // reaches another site's ready bed by road time on the phone layout, so this case draws it.
+        matches: (mode === "system" && query === "(prefers-reduced-motion: reduce)") || query === WF_PHONE_QUERY,
         media: query,
         onchange: null,
         addEventListener: vi.fn(),

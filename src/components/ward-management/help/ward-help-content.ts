@@ -122,9 +122,9 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
           "More people waiting than beds that fit, for that kind of bed. Spare means more beds than people, and Enough means they match.",
       },
       {
-        question: "Does Nearest ready beds choose a ward for me?",
+        question: "Do drive times choose a ward for me?",
         answer:
-          "No. It lists ready beds by road distance from the place you choose. Distance only, not suitability, and a person always chooses the bed.",
+          "No. The Mismatch drawer, and Nearest ready beds on a phone, show road distance from the emergency department you choose. Distance only, not suitability, and a person always chooses the bed.",
       },
     ],
   },

@@ -232,6 +232,8 @@ const AROUND: readonly Around[] = [
         body: "Admissions booked ahead. Press Arrived when the person reaches the ward.",
       },
       {
+        // Josh's fifth notes (8 Nov 2026): desktop shows drive times in the Mismatch drawer instead.
+        device: "phone",
         target: id("capacity-road-time"),
         title: "Nearest ready beds",
         body: "Ready beds by road distance from the place you choose. Distance only, not suitability.",

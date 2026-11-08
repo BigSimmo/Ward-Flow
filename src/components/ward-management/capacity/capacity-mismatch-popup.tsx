@@ -1,26 +1,31 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 
-import { DrawerFootRow, PanelDrawer, buttonClass, durMinutes } from "@/components/wf";
-import { SpelledCodes } from "@/components/ward-management/ward-abbreviations";
+import { DrawerFootRow, Menu, PanelDrawer, buttonClass, durMinutes } from "@/components/wf";
+import { SpelledCodes, codeName } from "@/components/ward-management/ward-abbreviations";
 import { useWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
 import { usePatientOf } from "@/components/ward-management/ward-patient-name";
 import { movementOriginLabel } from "@/components/ward-management/ward-movement-origin";
 import { movementStatusLabel } from "@/components/ward-management/ward-stage-copy";
-import { edById, siteByCode } from "@/components/ward-management/ward-sites";
+import { allEmergencyDepartments, edById, siteByCode } from "@/components/ward-management/ward-sites";
+import {
+  REFERENCE_DISTANCE_CAVEAT,
+  referenceDistance,
+} from "@/components/ward-management/reference/ward-reference-distances";
 import { siteLabel } from "@/components/ward-management/ward-absence-labels";
 import { patientHref } from "@/components/ward-management/shell/ward-patient-href";
 import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import type { KindForecast } from "@/components/ward-management/forecast/forecast-by-kind";
-import type { Unit } from "@/components/ward-management/ward-model";
+import type { EmergencyDepartment, Movement, Unit } from "@/components/ward-management/ward-model";
 
 import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import { bedKindBreakdown, type BedKindGap } from "./capacity-derivations";
 import { FREE_THE_RIGHT_BED_NOTE, dischargesThatFree, freeTheRightBedTitle } from "./free-the-right-bed";
-import { gapWords } from "./capacity-range-line";
+import { HowWorkedOut } from "./capacity-how-worked-out";
+import { MismatchFigure } from "./capacity-mismatch-figure";
 import styles from "./capacity-page.module.css";
 
 const WAITING_HREF = "/ward-flow/waiting";
@@ -61,6 +66,11 @@ export function MismatchPopup({
     () => (row ? bedKindBreakdown(row.id, movements, [...units], admissions, referrals) : null),
     [row, movements, units, admissions, referrals],
   );
+  // Option B (Josh, 8 Nov 2026): drive times sit on the wards that fit, measured from the ED where
+  // most of these people wait (ties: the longest wait), until the coordinator picks another.
+  const waitingAt = useMemo(() => countByEd(detail?.waiting ?? []), [detail]);
+  const [chosenEdId, setChosenEdId] = useState<string | undefined>(undefined);
+  const fromEd = edById(chosenEdId ?? waitingAt[0]?.edId) ?? allEmergencyDepartments()[0];
   const short = (row?.gap ?? 0) < 0;
   // Free the right bed (Josh, 8 Nov 2026): a short type lists today's discharges that free one.
   const freeing = useMemo(
@@ -73,6 +83,7 @@ export function MismatchPopup({
       onClose={onClose}
       eyebrow="Mismatch"
       title={`${title} beds`}
+      subtitle={row?.who}
       testId="capacity-mismatch-popup"
       bodyClassName={styles.drawerPad}
       foot={
@@ -87,35 +98,23 @@ export function MismatchPopup({
     >
       {row && detail ? (
         <div className={styles.popBody}>
-          <p className={styles.popLead}>{row.who}</p>
-          <dl className={styles.popFigs}>
-            <div>
-              <dt>Now</dt>
-              <dd className={short ? styles.warnInk : styles.okInk}>{gapWords(row.gap)}</dd>
-            </div>
-            <div>
-              <dt>Waiting</dt>
-              <dd>{row.waiting}</dd>
-            </div>
-            <div>
-              <dt>Ready that fit</dt>
-              <dd>{row.bedsThatFit}</dd>
-            </div>
-            {tomorrow ? (
-              <div>
-                <dt>Tomorrow</dt>
-                <dd className={tomorrow.likely < 0 ? styles.warnInk : styles.okInk}>{gapWords(tomorrow.likely)}</dd>
-                <span className={styles.popFigSub}>
-                  {gapWords(tomorrow.low)} to {gapWords(tomorrow.high)}
-                </span>
-              </div>
-            ) : null}
-          </dl>
+          <MismatchFigure
+            gap={row.gap}
+            waiting={row.waiting}
+            bedsThatFit={row.bedsThatFit}
+            freeingToday={freeing.length}
+            tomorrow={tomorrow}
+          />
 
           <section aria-labelledby="mm-pop-wards" className={styles.popSection}>
-            <h3 id="mm-pop-wards" className={styles.popHead}>
-              Ready beds that fit <span className={styles.popCount}>{detail.wards.length} wards</span>
-            </h3>
+            <div className={styles.mmWardsHead}>
+              <h3 id="mm-pop-wards" className={styles.popHead}>
+                Ready beds that fit <span className={styles.popCount}>{detail.wards.length} wards</span>
+              </h3>
+              {detail.wards.length > 0 ? (
+                <DriveFromPicker edId={fromEd?.id} waitingAt={waitingAt} onChoose={setChosenEdId} />
+              ) : null}
+            </div>
             {detail.wards.length === 0 ? (
               <p className={styles.popEmpty}>No ward has a ready {title.toLowerCase()} bed now.</p>
             ) : (
@@ -132,6 +131,7 @@ export function MismatchPopup({
                           {siteLabel(unit.siteCode, site?.name)} · {site?.service ?? "Service not recorded"}
                         </span>
                       </span>
+                      <span className={styles.mmDrive}>{driveWords(fromEd, unit)}</span>
                       <span className={styles.popBeds}>
                         <b>{beds}</b> ready
                       </span>
@@ -157,6 +157,11 @@ export function MismatchPopup({
                 })}
               </ul>
             )}
+            {detail.wards.length > 0 ? (
+              <HowWorkedOut label="Drive time is distance only, not suitability">
+                <p>{REFERENCE_DISTANCE_CAVEAT}</p>
+              </HowWorkedOut>
+            ) : null}
           </section>
 
           {short ? (
@@ -240,5 +245,58 @@ export function MismatchPopup({
         </div>
       ) : null}
     </PanelDrawer>
+  );
+}
+
+/** EDs where people wait for this bed, most first; a tie keeps the ED of the longer wait first. */
+function countByEd(waiting: readonly Movement[]): { edId: string; count: number }[] {
+  const counts = new Map<string, number>();
+  for (const movement of waiting) {
+    if (movement.originEdId) counts.set(movement.originEdId, (counts.get(movement.originEdId) ?? 0) + 1);
+  }
+  return [...counts].map(([edId, count]) => ({ edId, count })).sort((a, b) => b.count - a.count);
+}
+
+/** "27 min drive", "On site" or "No route": distance only, from the reference table. */
+function driveWords(ed: EmergencyDepartment | undefined, unit: Unit): string {
+  const route = referenceDistance(ed?.referenceEdId, siteByCode(unit.siteCode)?.referenceSiteId);
+  if (route === null) return "No route";
+  return route.min === 0 ? "On site" : `${Math.round(route.min)} min`;
+}
+
+function DriveFromPicker({
+  edId,
+  waitingAt,
+  onChoose,
+}: {
+  edId: string | undefined;
+  waitingAt: readonly { edId: string; count: number }[];
+  onChoose: (edId: string) => void;
+}) {
+  const departments = allEmergencyDepartments();
+  const counts = new Map(waitingAt.map((entry) => [entry.edId, entry.count]));
+  const ed = departments.find((d) => d.id === edId);
+  const waitingHere = ed ? (counts.get(ed.id) ?? 0) : 0;
+  return (
+    <Menu
+      label="Drive time from"
+      align="end"
+      items={departments.map((d) => ({
+        id: d.id,
+        label: codeName(d.siteCode) ?? d.siteCode,
+        meta: counts.get(d.id) ? `${counts.get(d.id)} waiting` : `${d.siteCode} ED`,
+        checked: d.id === edId,
+        checkable: "radio" as const,
+        onSelect: () => onChoose(d.id),
+      }))}
+      trigger={(props) => (
+        <button type="button" {...props} className={styles.rtPicker}>
+          <span className={styles.rtPickerFrom}>From</span>
+          {ed === undefined ? "Choose ED" : <SpelledCodes text={`${ed.siteCode} ED`} />}
+          {waitingHere > 0 ? <span className={styles.rtPickerFrom}>· {waitingHere} waiting</span> : null}
+          <ChevronDown strokeWidth={1.75} size={14} aria-hidden="true" />
+        </button>
+      )}
+    />
   );
 }

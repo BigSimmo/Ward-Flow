@@ -29,6 +29,7 @@ import { isConfirmationFresh } from "./capacity-gap-words";
 import type { CapacityModel } from "./capacity-model";
 import { gapWords } from "./capacity-range-line";
 import { waitingHref } from "../delays/waiting-href";
+import { HELD_UP_HREF, HELD_UP_LINK_LABEL } from "./capacity-held-up";
 import type { SiteEdWaiting } from "./capacity-site-ed";
 import styles from "./capacity-page.module.css";
 
@@ -48,6 +49,7 @@ export function CapacityHero({
   onHighlight,
   onSheet,
   onWard,
+  onAskWard,
 }: {
   model: CapacityModel;
   isPhone: boolean;
@@ -62,6 +64,8 @@ export function CapacityHero({
   onHighlight: (highlight: Highlight) => void;
   onSheet: () => void;
   onWard: (unitId: string) => void;
+  /** The coordinator's Ask on the counts figure; absent for a desk that may not ask a ward. */
+  onAskWard?: (unitId: string) => void;
 }) {
   // Optional, so the screen also renders outside the app router (its tests, the design preview).
   const router = useOptionalRouter();
@@ -73,6 +77,9 @@ export function CapacityHero({
   const elsewhereReady = otherSiteRows.reduce((sum, row) => sum + row.ready, 0);
   const elsewhereBeds = otherSiteRows.reduce((sum, row) => sum + row.unit.beds, 0);
   const oldestStale = oldestCount ? !isConfirmationFresh(oldestCount.unit, now) : false;
+  const { confirmations, heldUp } = model;
+  const firstToConfirm = confirmations.waiting[0];
+  const countTarget = firstToConfirm?.id ?? oldestCount?.unit.id;
   return (
     <Hero
       level={1}
@@ -151,15 +158,40 @@ export function CapacityHero({
               // The Bed forecast's discharge counts are the next 24h windows — a different figure.
               label="Beds freeing today"
             />
-            {oldestCount ? (
+            {/* Josh's fifth notes (8 Nov 2026): "This shift" folded into the strip. The counts
+                confirmed this shift open the ward still to confirm (or the oldest count), with the
+                coordinator's Ask beside it; held-up discharges open Discharges' held-up list. */}
+            <HeroChip
+              value={heldUp.total}
+              label={heldUp.total === 1 ? "Held-up discharge" : "Held-up discharges"}
+              tone={heldUp.total > 0 ? "warning" : undefined}
+              href={canOpen(HELD_UP_HREF) ? HELD_UP_HREF : undefined}
+              linkLabel={`${heldUp.total} held-up ${heldUp.total === 1 ? "discharge" : "discharges"}: ${HELD_UP_LINK_LABEL.toLowerCase()}`}
+              testId="capacity-hero-held-up"
+            />
+            <section aria-label="Bed counts confirmed" className={`${styles.heroShift} ${styles.heroJump}`}>
               <HeroChip
-                value={durMinutes(Math.max(0, now - oldestCount.confirmedAt))}
-                label={`Oldest count · ${oldestCount.unit.name}`}
-                tone={oldestStale ? "warning" : undefined}
-                onPress={() => onWard(oldestCount.unit.id)}
-                className={styles.heroJump}
+                value={`${confirmations.confirmed} of ${confirmations.total}`}
+                label={
+                  firstToConfirm
+                    ? `confirmed · ${firstToConfirm.name} ${durMinutes(Math.max(0, now - firstToConfirm.allocatable.confirmedAt))} old`
+                    : "counts confirmed this shift"
+                }
+                tone={firstToConfirm || oldestStale ? "warning" : undefined}
+                onPress={countTarget ? () => onWard(countTarget) : undefined}
+                testId="capacity-hero-confirmed"
               />
-            ) : null}
+              {firstToConfirm && onAskWard ? (
+                <button
+                  type="button"
+                  className={styles.heroAsk}
+                  onClick={() => onAskWard(firstToConfirm.id)}
+                  aria-label={`Ask ${firstToConfirm.name} to confirm its beds`}
+                >
+                  Ask
+                </button>
+              ) : null}
+            </section>
             {/* Site bed manager: the site's ED, counts only, with the All EDs page's words. */}
             {/* WF-FIG-016: the same Waiting destination and accessible name as the phone figure. */}
             {edWaiting ? (
