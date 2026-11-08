@@ -1105,7 +1105,7 @@ export function CoordinatorScreen() {
 
           {/* Home flow (Q340, Q345, 3 Nov 2026): one row. Needs you and Flow lead as the raised switch; the
               stages follow, after a rule, as quieter tabs with counts (always shown; one opens Flow there). */}
-          <nav className={flowStyles.nav} aria-label="Home lists">
+          <nav className={flowStyles.nav} aria-label="Home lists" data-testid="home-lists">
             <Segmented
               className={list.viewSwitch}
               label="Home list"

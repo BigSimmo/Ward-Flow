@@ -225,6 +225,8 @@ export const MORE_PAGES: readonly Around[] = [
         body: "Suburb, A to Z, Read alike or Services. Choose one to read that list.",
       },
       {
+        // A phone shows Read alike only once it is chosen in Show, which the step before covers.
+        device: "desk",
         target: [id("community-gateway-family-panel"), id("community-index-side")],
         title: "Read alike",
         body: "Team names that look similar, side by side, so you open the right one.",
@@ -264,21 +266,33 @@ export const MORE_PAGES: readonly Around[] = [
       },
       {
         device: "desk",
-        target: id("ward-community-contact"),
+        // The contact card, or on a team with an at-a-glance line (Midland) its duty officer.
+        target: [
+          id("ward-community-contact"),
+          { sel: '[data-testid="ward-community-glance"] button', text: "Duty officer" },
+        ],
         title: "How to reach the team",
-        body: "The team's phone and address, invented for the demo.",
+        body: "The team's phone and address, or today's duty officer and extension. All invented for the demo.",
       },
       {
         device: "phone",
-        target: { sel: '#main-content [role="radiogroup"][aria-label="Team lists"]' },
+        // The list picker, or on a team with the 2026 layout (Midland) its section picker.
+        target: [
+          { sel: '#main-content [role="radiogroup"][aria-label="Team lists"]' },
+          { sel: '#main-content [role="radiogroup"][aria-label="Team sections"]' },
+        ],
         title: "Team lists",
-        body: "Choose which list to read. Each shows how many are in it.",
+        body: "Choose which list or section to read.",
       },
       {
         device: "phone",
-        target: { sel: '#main-content [role="group"][aria-label="Team tools"]' },
+        // The tools row, or on a team with the 2026 layout (Midland) its duty officer card.
+        target: [
+          { sel: '#main-content [role="group"][aria-label="Team tools"]' },
+          { sel: '#main-content section[aria-label="Duty officer"]' },
+        ],
         title: "Team tools",
-        body: "How to reach the team and who is on duty open from here, with the team's own jobs after them.",
+        body: "How to reach the team and who is on duty today.",
       },
     ],
   },
