@@ -218,7 +218,9 @@ test("Activity Undo: a desk reviews its own bed closure and waits for the server
   await expect(own).toContainText("Undone. The shared board confirmed the change.");
   await expect(own).not.toContainText("A later change replaced this one");
   await expectAccessible(page, info, "Activity reports the confirmed inverse");
-  await page.reload({ waitUntil: "domcontentloaded" });
+  // A phone went Home to reach the Menu, so it loads the ward page afresh rather than reloading Home.
+  if (phone) await page.goto("/ward-flow/ward/rph-adult-secure", { waitUntil: "domcontentloaded" });
+  else await page.reload({ waitUntil: "domcontentloaded" });
   await ready(page);
   if (phone) {
     const rows = await showPhoneBeds(page);
