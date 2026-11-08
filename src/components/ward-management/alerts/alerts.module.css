@@ -369,7 +369,9 @@ button.check[aria-pressed="true"] {
 .groupGlyph {
   display: inline-flex;
   flex: none;
-  justify-content: center;
+  /* Josh's notes 4 (8 Nov 2026): start-aligned and the rows' 10px size, so the heading's glyph
+     sits exactly over the glyphs in the rows below it instead of 3px to the right. */
+  justify-content: flex-start;
   width: 1rem;
   margin-right: var(--wf-s-1);
 }

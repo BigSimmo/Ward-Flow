@@ -404,7 +404,7 @@ export function MyListCard({
       {body}
       {pull.sheet}
       <div className={styles.needsFoot}>
-        <StatusGlyph tone="neutral" size={9} />
+        <StatusGlyph tone="neutral" />
         <span>Oldest first within each group. Snoozed items return by themselves.</span>
         {/* Design audit A26 (5 Nov 2026): the kit small button, so it keeps the 40px phone size. */}
         <Button
