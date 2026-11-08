@@ -126,6 +126,16 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
         answer:
           "No. It lists ready beds by road distance from the place you choose. Distance only, not suitability, and a person always chooses the bed.",
       },
+      {
+        question: "How do I reopen a closed ward?",
+        answer:
+          "Open the ward, press Closures, then Reopen to admissions and confirm. It is offered again straight away, and anything still pointed at it is listed to mark dealt with.",
+      },
+      {
+        question: "How do I change or cancel a planned admission?",
+        answer:
+          "Open Planned moves and choose the booking. Change booking edits it; Cancel booking needs a reason and offers Undo.",
+      },
     ],
   },
   movements: {
@@ -146,6 +156,21 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
         question: "How do I pull a bed?",
         answer:
           "Once a ward accepts, the Bed box shows Pull the bed. Choose it and pick the bed. The bed is kept for the patient until the pull time limit.",
+      },
+      {
+        question: "What does the urgent flag do?",
+        answer:
+          "A flagged patient leads the queue ahead of every tier until the flag is removed. It needs a reason, and only the coordinator and the ED can set it.",
+      },
+      {
+        question: "How do I record what is holding a movement up?",
+        answer:
+          "On the movement's page, type it under What is holding this up and press Record it. Name wards, roles and jobs only, never patient details.",
+      },
+      {
+        question: "I recorded the wrong stage. How do I fix it?",
+        answer:
+          "The coordinator opens Correct the recorded stage on the movement's page and chooses the earlier stage and a reason. The history shows both.",
       },
     ],
   },
@@ -322,6 +347,16 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
         answer:
           "From the forecast lines set in Settings: beds likely to be short tomorrow, the ED access target and a forecast that got worse.",
       },
+      {
+        question: "Can I put an alert off until later?",
+        answer:
+          "Yes. Open it, then More actions and Snooze. Choose how long and why. It comes back on its own, or press Return now. Act now alerts can only be snoozed briefly.",
+      },
+      {
+        question: "How do I extend or stand down a broadcast?",
+        answer:
+          "Coordinators and site bed managers use Extend 30m or Stand down on the banner, or under Broadcasts here. Add desks asks more desks.",
+      },
     ],
   },
   community: {
@@ -387,6 +422,15 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
         answer:
           "Open the discharge to see what is holding it up and the bed, then update the hold-up once it is sorted. The ward and the coordinator can record it.",
       },
+      {
+        question: "How do I track what a discharge still needs?",
+        answer:
+          "Open it and use Discharge arrangements: add each arrangement with who owns it, then mark it done or not needed. These never free the bed by themselves.",
+      },
+      {
+        question: "How do I record that the patient has left?",
+        answer: "Press Record discharge on the discharge. Undo shows straight after if it was a mistake.",
+      },
     ],
   },
   search: {
@@ -445,6 +489,15 @@ export const SCREEN_HELP: Readonly<Record<string, ScreenHelp>> = {
         question: "How do I record a new form?",
         answer:
           "Choose the patient, then Record next form. Type the time from the paper form and record it. Record and tell lists who to let know.",
+      },
+      {
+        question: "How do I mark a form received?",
+        answer:
+          "Choose the patient and press Mark Form received. Undo shows straight after. A receipt recorded wrongly is corrected from the ED board with a reason.",
+      },
+      {
+        question: "Where do I record that the carer, PSP or MHAS were told?",
+        answer: "In the Carer, PSP and MHAS panel. Record who was told and when. It is a reminder, not a legal check.",
       },
     ],
   },
@@ -583,6 +636,15 @@ const PAGE_HELP: readonly PageHelp[] = [
         answer:
           "After any bed change, and by the morning bed numbers time set in Settings. Confirm numbers tells the network your count is current.",
       },
+      {
+        question: "How do I record leave or a trip to an ED?",
+        answer:
+          "Open the patient and use Record a change: Start leave or Gone to ED. The bed stays with them. Record return when they are back.",
+      },
+      {
+        question: "How do I ask the referrer for more information?",
+        answer: "On Referrals, tick what you need under Need before we can decide and press Ask the referrer.",
+      },
     ],
   },
   {
@@ -679,6 +741,15 @@ const PAGE_HELP: readonly PageHelp[] = [
         question: "Does Ward Flow work out when a form expires?",
         answer:
           "No. A person types the time from the paper form, and Ward Flow keeps it as typed. It is never legally checked.",
+      },
+      {
+        question: "What if a cleared patient becomes medically unwell?",
+        answer:
+          "Open the person and press Record medical deterioration, then confirm. It releases the bed, cancels transport not yet collected and pauses placement.",
+      },
+      {
+        question: "How do I record that no transport is needed?",
+        answer: "Open the row's actions and press Record no transport needed.",
       },
     ],
   },
