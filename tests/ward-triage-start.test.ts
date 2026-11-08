@@ -9,6 +9,12 @@ import {
   triagePersonFromWorld,
   type WorldPersonInput,
 } from "@/components/ward-management/triage/triage-risk-people";
+import {
+  retriageWords,
+  sortTriageQueue,
+  triageQueueGlance,
+  triageQueueSources,
+} from "@/components/ward-management/triage/triage-risk-start";
 import { blankTriage, requirements, sinceLastText } from "@/components/ward-management/triage/triage-risk-state";
 import { summaryModel, summaryText } from "@/components/ward-management/triage/triage-risk-summary";
 
@@ -264,5 +270,49 @@ describe("webPSOLIS pick-lists on the form (7 Nov 2026)", () => {
     expect(ask([])).toMatchObject({ ok: false, blocks: false });
     expect(ask(["ref-community-mh"])?.ok).toBe(true);
     expect(requirements(blankTriage(person), Date.now()).some((r) => r.label === "Referred on: who to")).toBe(false);
+  });
+});
+
+describe("the referral queue on Start a triage", () => {
+  const row = (id: string, from: string, waitedMinutes: number, urgency: "A" | "B" | "C" | null) => ({
+    ...triagePersonFromWorld(world({ patientId: id })),
+    referral: { id: `R-${id}`, from, urgency, episode: null, referrer: null, received: "Sun 8 Nov, 09:00" },
+    raisedAt: 600 - waitedMinutes,
+    waitedMinutes,
+  });
+  const QUEUE = [row("PT-1", "GP", 30, null), row("PT-2", "Ambulance", 300, "C"), row("PT-3", "GP", 90, "A")];
+
+  it("sorts longest waiting first, or by the urgency asked with none asked last", () => {
+    expect(sortTriageQueue(QUEUE, "wait").map((r) => r.id)).toEqual(["PT-2", "PT-3", "PT-1"]);
+    expect(sortTriageQueue(QUEUE, "urgency").map((r) => r.id)).toEqual(["PT-3", "PT-2", "PT-1"]);
+  });
+
+  it("counts each source once, and reads the at-a-glance line", () => {
+    expect(triageQueueSources(QUEUE)).toEqual([
+      { from: "GP", count: 2 },
+      { from: "Ambulance", count: 1 },
+    ]);
+    expect(triageQueueGlance(QUEUE)).toBe("3 awaiting · oldest waiting 5h 00m · 1 asked B or sooner");
+    expect(triageQueueGlance([row("PT-4", "GP", 45, null)])).toBe("1 awaiting · oldest waiting 45m");
+    expect(triageQueueGlance([])).toBe("Nothing awaiting triage");
+  });
+
+  it("says first triage, or when the last one was and its tier", () => {
+    const first = triagePersonFromWorld(world({}));
+    expect(retriageWords(first)).toBe("First triage");
+    const last = previousTriageFrom(
+      {
+        patientId: "PT-900",
+        at: 60 * 10,
+        by: "ward" as const,
+        urgency: "C" as const,
+        outcome: "Accepted" as const,
+        legal: "cto" as const,
+        review: "72h" as const,
+        riskFlags: [],
+      },
+      demoDayZero(new Date("2026-11-07T04:00:00Z")),
+    );
+    expect(retriageWords({ ...first, last })).toBe(`Last triaged ${last.when} (C)`);
   });
 });
