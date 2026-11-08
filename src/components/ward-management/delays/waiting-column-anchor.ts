@@ -35,6 +35,9 @@ export function useShorterColumnAnchor(splitRef: RefObject<HTMLElement | null>, 
       }
       if (columns.length !== 2) return;
       const [a, b] = columns;
+      // Only when they sit side by side: under 64rem the CSS stacks them, and a pinned column
+      // would then cover the one below it.
+      if (Math.abs(a.offsetTop - b.offsetTop) > 1) return;
       if (Math.abs(a.offsetHeight - b.offsetHeight) < 48) return;
       const shorter = a.offsetHeight < b.offsetHeight ? a : b;
       const header = parseFloat(getComputedStyle(split).getPropertyValue("--wf-header-height")) || 0;
