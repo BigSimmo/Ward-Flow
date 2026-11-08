@@ -26,6 +26,9 @@ export function isValidSharedWardFlowState(value: unknown): value is WardFlowSta
   upgradeLegacyObservationRowsInPlace(state);
   // D-78: the same in-place read for decline reasons saved before the one decline list.
   state.movements = upgradeLegacyDeclineReasons(state).movements;
+  // Live audit, 8 Nov 2026: a stored bed release saved without `blocker` or `blockedBy` read as held
+  // up with no reason and crashed Discharges. A missing one means none recorded, read in place.
+  readMissingReleaseBlockersAsNone(state);
   const admissionIds = new Set<string>();
   for (const admission of state.admissions) {
     if (!admission || typeof admission !== "object" || typeof admission.id !== "string") return false;
@@ -150,6 +153,16 @@ export function isValidSharedWardFlowState(value: unknown): value is WardFlowSta
 }
 
 /** `upgradeLegacyObservationRows`, applied to the given parsed state's own arrays. */
+function readMissingReleaseBlockersAsNone(state: WardFlowState): void {
+  if (!Array.isArray(state.bedReleases)) return;
+  for (const release of state.bedReleases as unknown[]) {
+    if (!release || typeof release !== "object") continue;
+    const row = release as { blocker?: unknown; blockedBy?: unknown };
+    if (row.blocker === undefined) row.blocker = null;
+    if (row.blockedBy === undefined) row.blockedBy = null;
+  }
+}
+
 function upgradeLegacyObservationRowsInPlace(state: WardFlowState): void {
   const upgraded = upgradeLegacyObservationRows(state);
   if (upgraded === state) return;
