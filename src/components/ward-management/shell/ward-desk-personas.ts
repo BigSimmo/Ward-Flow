@@ -67,7 +67,7 @@ export const ACCESS_ADMIN_PERSONA: DeskPersona = {
  * with no drawn persona never reads "Demo desk" there: it keeps its role as its name and says
  * "Signed in". The public demo, with no session, is unchanged.
  */
-export function deskPersonaFor(persona: DeskPersona, signedIn: boolean): DeskPersona {
+function deskPersonaFor(persona: DeskPersona, signedIn: boolean): DeskPersona {
   return signedIn && persona.role === DEMO_DESK_ROLE ? { ...persona, role: SIGNED_IN_DESK_ROLE } : persona;
 }
 
