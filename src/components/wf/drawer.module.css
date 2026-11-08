@@ -63,18 +63,31 @@
   align-items: center;
   gap: var(--wf-s-1);
   min-width: 0;
+  flex-wrap: wrap;
   margin: 2px 0 0;
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-3);
-  white-space: nowrap;
 }
 
-/* Tabs inside the drawer, under the head and outside the scroll. */
+/* Tabs inside the drawer, under the head and outside the scroll. When they are wider than the
+ * drawer (five tabs on a 375px phone), the row slides sideways inside this band rather than pushing
+ * the whole drawer sideways off the screen (the phone pill track lets its options overflow). */
 .tabs {
   flex: none;
   padding: var(--wf-s-2) var(--wf-s-4);
   border-bottom: 1px solid var(--wf-line);
   background: var(--wf-surface);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tabs > [role="tablist"] {
+  max-width: none;
 }
 
 /* The one scroll area. */
@@ -85,6 +98,12 @@
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+/* Phone: the foot already pads for the home indicator, so the panel's own safe-area padding is
+ * dropped when a foot is present. Both together left an empty band under the actions on an iPhone. */
+.panel.panel:has(> .body > .frame > .foot) {
+  padding-bottom: 0;
 }
 
 /* The foot: a light surface band pinned under the body, the main actions always in reach. */
@@ -113,6 +132,13 @@
 }
 
 .footRow > * {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
+/* A button waiting on a reason sits inside its tooltip's wrapper: the button fills that wrapper, so
+ * it lines up with its neighbours instead of shrinking to its text. */
+.footRow > span:has(> button) > button {
   flex: 1 1 auto;
   justify-content: center;
 }
