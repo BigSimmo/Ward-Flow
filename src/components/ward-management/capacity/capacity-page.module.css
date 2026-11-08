@@ -1876,14 +1876,21 @@
   font-size: var(--wf-fs-12);
   line-height: var(--wf-lh-12);
 }
+/* Sweep (Josh, 8 Nov 2026): three grid tracks instead of space-between, so "0" sits under the
+   line's zero and a narrow line wraps "Spare that fit" rather than running it into "Short" and "0". */
 .mmAxis {
   grid-column: 2;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: start;
+  column-gap: var(--wf-s-1);
   font-size: var(--wf-fs-12);
-  line-height: 12px;
+  line-height: 14px;
   letter-spacing: 0.02em;
   color: var(--wf-ink-3);
+}
+.mmAxis > :last-child {
+  text-align: end;
 }
 .mmTileOpen {
   display: inline-flex;

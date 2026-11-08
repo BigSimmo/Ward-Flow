@@ -1,0 +1,203 @@
+/* How to complete a triage (Josh approved, 9 Nov 2026): tabbed drawer with step cards. */
+.drawer.drawer {
+  width: min(44rem, 100%);
+}
+
+.body {
+  padding: var(--wf-s-4);
+}
+
+.pane {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  min-width: 0;
+}
+
+.map {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.mapTriage,
+.mapRisk {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--wf-accent);
+}
+
+.mapRisk {
+  background: var(--wf-ink-3);
+}
+
+.mapLabels {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-11);
+  color: var(--wf-ink-3);
+}
+
+.steps {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  padding: var(--wf-s-3) 0;
+  border-bottom: 1px solid var(--wf-line);
+}
+
+.step:last-child {
+  border-bottom: 0;
+}
+
+.stepNo {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9px;
+  background: var(--wf-accent-tint);
+  color: var(--wf-accent-ink);
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-13);
+  font-weight: 600;
+}
+
+.stepBody {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.stepHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--wf-s-2);
+  margin: 0;
+  font-size: var(--wf-fs-14);
+  color: var(--wf-ink-1);
+}
+
+.time {
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-11);
+  color: var(--wf-ink-3);
+}
+
+.stepText {
+  margin: 0;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.tip {
+  margin: 2px 0 0;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: var(--wf-accent-tint);
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+.goTo.goTo {
+  align-self: flex-start;
+}
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.kbd {
+  display: inline-block;
+  padding: 1px 6px;
+  border: 1px solid var(--wf-line-2);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  font-family: var(--wf-mono);
+  font-size: var(--wf-fs-12);
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.callout {
+  padding: var(--wf-s-3);
+  border: 1px solid var(--wf-line);
+  border-radius: 10px;
+  font-size: var(--wf-fs-13);
+  color: var(--wf-ink-2);
+}
+
+.callout b {
+  color: var(--wf-ink-1);
+}
+
+.evidence {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-3);
+  margin: 0;
+}
+
+.evidence > div {
+  display: grid;
+  grid-template-columns: 9rem minmax(0, 1fr);
+  gap: var(--wf-s-3);
+  font-size: var(--wf-fs-13);
+}
+
+@media (max-width: 39.9375rem) {
+  .evidence > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}
+
+.evidence dt {
+  font-weight: 600;
+  color: var(--wf-ink-1);
+}
+
+.evidence dd {
+  margin: 0;
+  color: var(--wf-ink-2);
+}
+
+.quiet {
+  margin: 0;
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-3);
+}
+
+.footText {
+  font-size: var(--wf-fs-12);
+  color: var(--wf-ink-2);
+}
+
+/* Phone: one tall sheet on every tab, as the summary does, so it never jumps between tabs. */
+@media (max-width: 39.9375rem) {
+  .drawer.drawer {
+    height: calc(100% - 2rem);
+  }
+}
+
+/* The kit table truncates cells; here every word should read in full. */
+.tableWrap.tableWrap td {
+  --wf-cell-pad-y: var(--wf-s-2);
+  height: auto;
+  max-width: none;
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+  vertical-align: top;
+}

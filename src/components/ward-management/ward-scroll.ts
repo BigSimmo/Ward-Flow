@@ -38,3 +38,39 @@ export function scrollWardPageToTop(): void {
   if (scroller) scroller.scrollTop = 0;
   window.scrollTo({ top: 0 });
 }
+
+/**
+ * Keep a control where it is on screen while the list around it changes (Josh, Note 7, 8 Nov 2026).
+ * Opening a person can unfold groups above the control that was tapped; without this the work column
+ * lurches by the height of whatever unfolded. Measure now, then after React has painted the change,
+ * scroll the work column (or the window) by the distance the control moved.
+ */
+export function holdInPlace(control: Element | null): void {
+  if (typeof window === "undefined" || !(control instanceof HTMLElement) || control === document.body) return;
+  const before = control.getBoundingClientRect().top;
+  window.requestAnimationFrame(() =>
+    window.requestAnimationFrame(() => {
+      if (!control.isConnected) return;
+      const moved = control.getBoundingClientRect().top - before;
+      if (Math.abs(moved) < 1) return;
+      const scroller = control.closest<HTMLElement>("[data-wf-scroller]");
+      if (scroller) scroller.scrollTop += moved;
+      else window.scrollBy({ top: moved, behavior: "instant" });
+    }),
+  );
+}
+
+/**
+ * Return focus to the control that opened a panel, without scrolling to it. Falls back to `fallback`
+ * (and lets that scroll into view) only when the opener has left the page, so focus is never lost.
+ */
+export function returnFocusInPlace(opener: Element | null, fallback: () => HTMLElement | null): void {
+  if (typeof window === "undefined") return;
+  window.requestAnimationFrame(() => {
+    if (opener instanceof HTMLElement && opener !== document.body && opener.isConnected) {
+      opener.focus({ preventScroll: true });
+      return;
+    }
+    fallback()?.focus();
+  });
+}
