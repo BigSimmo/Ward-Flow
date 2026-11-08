@@ -184,12 +184,15 @@ test("Activity Undo: a desk reviews its own bed closure and waits for the server
   else await expect(page.getByTestId(bedId!)).toHaveAttribute("data-state", "closed");
   await page.getByRole("button", { name: "Close bed drawer", exact: true }).click();
   // Josh, 8 Nov 2026: the coordinator's phone dock carries Tools in Activity's place, so a phone
-  // opens Activity from the Menu's Activity row. On a ward page Back stands in the Menu's place, so
-  // the phone steps back first; Activity is one panel on every page, so the closure still shows.
+  // opens Activity from the Menu's Activity row. On a ward page Back stands in the Menu's place,
+  // and Back follows this shared desk's history from earlier tests, so the phone goes Home from the
+  // dock instead (a client-side step, so this desk's own commands stay in memory). Activity is one
+  // panel on every page, so the closure still shows there.
   if (phone) {
     const menu = page.getByTestId("ward-bar-phone-menu");
     if (!(await menu.isVisible())) {
-      await page.getByTestId("ward-bar-phone-back").click();
+      await page.getByTestId("ward-phone-dock-link").filter({ hasText: /^Home/u }).click();
+      await expect(page).toHaveURL(/\/ward-flow\/?(?:\?.*)?$/u);
       await ready(page);
     }
     await expect(menu).toBeVisible();
