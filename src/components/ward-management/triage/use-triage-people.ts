@@ -62,16 +62,18 @@ export function useTriagePeople(): {
   awaiting: TriagePerson[];
   byId: ReadonlyMap<string, TriagePerson>;
 } {
-  const { patients, movements, referrals, triages, now, dayZero } = useWardFlowSelect(
+  const { patients, movements, referrals, triages, now, dayZero, admissions, units } = useWardFlowSelect(
     "patients",
     "movements",
     "referrals",
     "triages",
     "now",
     "dayZero",
+    "admissions",
+    "units",
   );
   return useMemo(() => {
-    const record = { movements, patients, referrals, dayZero };
+    const record = { movements, patients, referrals, dayZero, admissions, units };
     const openReferral = new Map<string, Referral>();
     for (const referral of referrals)
       if (referral.patientId && !openReferral.has(referral.patientId) && referralState(referral) === "queued")
@@ -107,5 +109,5 @@ export function useTriagePeople(): {
       })
       .slice(0, 5);
     return { people, awaiting, byId };
-  }, [patients, movements, referrals, triages, now, dayZero]);
+  }, [patients, movements, referrals, triages, now, dayZero, admissions, units]);
 }

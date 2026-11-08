@@ -20,7 +20,9 @@ import {
   type Movement,
   type Referral,
   type ReferralDestination,
+  type Unit,
 } from "@/components/ward-management/ward-model";
+import type { Admission } from "@/components/ward-management/ward-admissions";
 import { resolveSubjectPatient } from "@/components/ward-management/ward-patient-resolver";
 import { patientAgeYears, type Patient } from "@/components/ward-management/ward-patients";
 import { unitHealthService } from "@/components/ward-management/ward-service-scope";
@@ -38,7 +40,7 @@ import {
   type ReferralGenderAnswer,
   type ReferralNeeds,
 } from "./referral-submission";
-import { originName } from "@/components/ward-management/ward-movement-origin";
+import { originName, sourceWardName } from "@/components/ward-management/ward-movement-origin";
 
 /**
  * The referral slide-out's constants, types and pure helpers, moved unchanged from
@@ -226,7 +228,15 @@ const NO_RISK_FLAGS: MockPatientProfile["riskFlags"] = {
 
 export function sampleProfile(
   key: string,
-  record: { movements: Movement[]; patients: Patient[]; referrals: Referral[]; dayZero: Date },
+  record: {
+    movements: Movement[];
+    patients: Patient[];
+    referrals: Referral[];
+    dayZero: Date;
+    /** WF-J03: with these, a ward-to-ward journey's origin is its sending ward. */
+    admissions?: readonly Pick<Admission, "id" | "unitId">[];
+    units?: readonly Pick<Unit, "id" | "name">[];
+  },
   now: Instant,
 ): MockPatientProfile {
   const sample = SAMPLE_PATIENTS[key] ?? SAMPLE_PATIENTS.custom!;
@@ -320,7 +330,10 @@ export function sampleProfile(
       movementSexOrGender && movementSexOrGender !== "Not recorded" ? movementSexOrGender.charAt(0).toUpperCase() : "",
     umrn: info.umrn,
     dob: patient?.dateOfBirth ?? NOT_RECORDED,
-    origin: originName(movement) ?? NOT_RECORDED,
+    origin:
+      (record.admissions && record.units ? sourceWardName(movement, record.admissions, record.units) : undefined) ??
+      originName(movement) ??
+      NOT_RECORDED,
     legalStatus: movement.legalForm ? `Form ${movement.legalForm.code}` : movement.legalStatus,
     recordedExpiry: dueAt === undefined ? "not recorded" : `${formatInstantWithDay(dueAt, now)}, clinician-entered`,
     security: movement.security,
