@@ -767,10 +767,9 @@ export function MovementsScreen() {
       referrals={referrals}
       detailId={detailId}
       onPicked={onPicked}
-      onOpen={(id) => {
-        openDetail(id);
-        revealMovement(id);
-      }}
+      // Josh's Note 7 (8 Nov 2026): opening a patient's drawer keeps the page where it is. It no
+      // longer scrolls the worklist row into view, which threw the reader back to the top.
+      onOpen={openDetail}
     />
   );
   // Phone: the stage highlight chips under the band, one row that slides sideways with Home's soft
@@ -831,7 +830,7 @@ export function MovementsScreen() {
       jumpToMovement(id);
       return;
     }
-    revealMovement(id);
+    // Note 7: the drawer opens in place; the page does not jump to the worklist row.
     openDetail(id);
   }
 
@@ -1077,10 +1076,8 @@ export function MovementsScreen() {
                 units={units}
                 now={now}
                 selectedMovementId={detailId}
-                onSelectMovement={(id) => {
-                  openDetail(id);
-                  revealMovement(id);
-                }}
+                // Note 7: the drawer opens in place; the page does not scroll to the worklist row.
+                onSelectMovement={openDetail}
                 onShowCorridor={(corridor) => setPeopleList(corridorPeople(corridor, movements, units, now))}
               />
             </MovementsTimelineSwitch>

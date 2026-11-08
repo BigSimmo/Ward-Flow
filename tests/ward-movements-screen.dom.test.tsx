@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { dayOf, DEFAULT_DUE_SOON_THRESHOLDS } from "@/components/ward-management/ward-clock";
 import { durMinutes } from "@/components/wf/format";
@@ -1136,7 +1136,7 @@ describe("movements board tab in the address", () => {
 });
 
 describe("M3: the worklist leads and check in lives on Transport (3 Nov 2026)", () => {
-  it("keeps the timeline behind a switch until it is turned on", () => {
+  it("keeps the timeline behind a switch that hides and shows it (shown by default, Note 7)", () => {
     window.localStorage.removeItem("ward-flow-movements-timeline");
     renderScreen();
     const panel = screen.getByRole("region", { name: "Today’s traffic" });
@@ -1160,6 +1160,19 @@ describe("M3: the worklist leads and check in lives on Transport (3 Nov 2026)", 
     }
     expect(within(feed).queryByRole("button", { name: /^Check in / })).toBeNull();
     expect(screen.queryByTestId("transport-check-in")).toBeNull();
+  });
+});
+
+describe("Note 7: opening a patient keeps the page where it is (8 Nov 2026)", () => {
+  it("opens the drawer from a transport leg without scrolling the worklist into view", () => {
+    renderScreen();
+    const feed = screen.getByRole("region", { name: "Active transport legs" });
+    const scroll = vi.spyOn(Element.prototype, "scrollIntoView");
+    scroll.mockClear();
+    fireEvent.click(within(feed).getAllByRole("button", { name: /^Inspect / })[0]);
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    expect(scroll).not.toHaveBeenCalled();
+    scroll.mockRestore();
   });
 });
 

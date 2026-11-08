@@ -143,8 +143,9 @@
   cursor: pointer;
 }
 
+/* Note 7 (8 Nov 2026): the hover tint covers the whole row, under "Check in" too. */
 @media (hover: hover) {
-  .rowMain:hover {
+  .row:not([data-selected="true"]):has(> .rowMain:hover) {
     background: var(--wf-hover);
   }
 }
