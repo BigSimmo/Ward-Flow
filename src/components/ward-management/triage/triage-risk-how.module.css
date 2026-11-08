@@ -104,7 +104,6 @@
 .tip {
   margin: 2px 0 0;
   padding: 4px 8px;
-  border-left: 3px solid var(--wf-accent);
   border-radius: 0 6px 6px 0;
   background: var(--wf-accent-tint);
   font-size: var(--wf-fs-12);
