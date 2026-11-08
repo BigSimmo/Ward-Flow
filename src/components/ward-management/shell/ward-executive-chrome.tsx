@@ -83,6 +83,7 @@ import { publishLiveClock } from "@/components/wf";
 import { areCharacterShortcutsEnabled } from "./ward-character-shortcuts";
 import bar from "./ward-bar.module.css";
 import rail from "./ward-rail.module.css";
+import railParts from "../shell-next/next-rail.module.css";
 import phone from "./ward-phone-menu.module.css";
 import { useFitDockLabels } from "./use-fit-dock-labels";
 import pageDock from "./ward-phone-page-dock.module.css";
@@ -314,7 +315,7 @@ function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }
       </button>
       <button
         type="button"
-        className={`${rail.capacityPulseStrip} ${rail.capacityCard}`}
+        className={`${rail.capacityPulseStrip} ${railParts.capacityCard}`}
         data-open={open ? "true" : undefined}
         data-alert={overLine.over > 0 ? "true" : undefined}
         data-testid="ward-rail-capacity-alerts-trigger"
@@ -323,7 +324,9 @@ function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }
         aria-haspopup="dialog"
         onClick={() => setOpen(!open)}
       >
-        <span className={rail.capacityHead} aria-hidden="true">
+        {/* Live audit, 8 Nov 2026: the other desks' card (D7) so a long tag wraps and the chevron
+            stays inside the card instead of over the sidebar's edge. */}
+        <span className={railParts.capacityHead} aria-hidden="true">
           <span className={rail.alertsEyebrow}>Bed alerts</span>
           <span className={rail.alertsChip} data-alert={overLine.over > 0 ? "true" : undefined}>
             {overLine.over > 0 ? <Dot tone="warning" /> : null}
