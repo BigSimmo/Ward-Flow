@@ -15,7 +15,13 @@ describe("seeBy", () => {
 
   it("names tomorrow and later days", () => {
     expect(seeBy("C", "09/11/2026 18:00", today, TIER_LONG.C)?.when).toBe("06:00 tomorrow");
-    expect(seeBy("D", "09/11/2026 10:42", today, TIER_LONG.D)?.when).toMatch(/^\w{3} 11 Nov 10:42$/);
+    expect(seeBy("D", "09/11/2026 10:42", today, TIER_LONG.D)?.when).toBe("Wed 11 Nov 10:42");
+  });
+
+  it("ignores daylight saving on the device", () => {
+    // Sydney clocks go forward on 4 Oct 2026; a Perth review window must not move with them.
+    const day = new Date(2026, 9, 4, 1, 30);
+    expect(seeBy("B", "04/10/2026 01:30", day, TIER_LONG.B)?.when).toBe("03:30 today");
   });
 
   it("says Now for A, even before a reviewed time", () => {

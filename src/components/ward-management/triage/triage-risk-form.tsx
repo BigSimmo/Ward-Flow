@@ -61,7 +61,7 @@ import { AllFactorsDrawer, SummaryDocument, SummaryDrawer } from "./triage-risk-
 import { HowToDrawer } from "./triage-risk-how";
 import { ContactsPop, TeamPop } from "./triage-risk-pops";
 import { seeBy } from "./triage-see-by";
-import { useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
+import { navigateWithDirtyGuard, useDirtyStateGuard } from "@/components/ward-management/use-dirty-state-guard";
 import { SideSummary } from "./triage-risk-side";
 import { TriageStart } from "./triage-risk-start";
 import { TRIAGE_NEW_HREF, triageHrefFor, useTriagePeople } from "./use-triage-people";
@@ -385,10 +385,13 @@ export function TriageScreen({ patientId }: { patientId: string }) {
     <TriageForm
       key={initial.person.id}
       initial={initial}
-      onStartNew={() => {
-        router.push(TRIAGE_NEW_HREF);
-        scrollPageTop();
-      }}
+      onStartNew={() =>
+        // A button, not a link, so ask before leaving typed work like every other exit.
+        navigateWithDirtyGuard(() => {
+          router.push(TRIAGE_NEW_HREF);
+          scrollPageTop();
+        })
+      }
     />
   );
 }

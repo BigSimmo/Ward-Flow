@@ -21,18 +21,24 @@ const WINDOW: Readonly<Partial<Record<Tier, number>>> = {
 
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-/** "DD/MM/YYYY HH:MM" as a wall-clock Date, or null when it is not a whole, real date and time. */
+/**
+ * "DD/MM/YYYY HH:MM" as a wall-clock time held in UTC fields, or null when it is not a whole, real
+ * date and time. UTC has no daylight saving, so the same review gives the same see-by time on every
+ * device, whatever its timezone.
+ */
 function parseStamp(text: string): Date | null {
   const match = text.trim().match(/^(\d{2})\/(\d{2})\/(\d{4}) (\d{2}):(\d{2})$/);
   if (!match) return null;
   const [day, month, year, hour, minute] = match.slice(1).map(Number);
-  const date = new Date(year, month - 1, day, hour, minute);
-  if (hour > 23 || minute > 59 || date.getDate() !== day || date.getMonth() !== month - 1) return null;
+  const date = new Date(Date.UTC(year, month - 1, day, hour, minute));
+  if (hour > 23 || minute > 59 || date.getUTCDate() !== day || date.getUTCMonth() !== month - 1) return null;
   return date;
 }
 
 const sameDay = (a: Date, b: Date) =>
-  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  a.getUTCFullYear() === b.getUTCFullYear() && a.getUTCMonth() === b.getUTCMonth() && a.getUTCDate() === b.getUTCDate();
+
+const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 export type SeeBy = {
   /** "12:42 today", "09:15 tomorrow", "Mon 23 Nov 10:42" or "Now". */
@@ -55,13 +61,15 @@ export function seeBy(urgency: Tier | null, reviewed: string, today: Date, long:
   if (!start) return null;
   const at = new Date(start.getTime() + window);
   const two = (n: number) => String(n).padStart(2, "0");
-  const clock = `${two(at.getHours())}:${two(at.getMinutes())}`;
-  const tomorrow = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1);
-  const day = sameDay(at, today)
+  const clock = `${two(at.getUTCHours())}:${two(at.getUTCMinutes())}`;
+  // `today` is the board's wall clock as a local Date; carry its fields into the same UTC frame.
+  const todayWall = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
+  const tomorrow = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate() + 1));
+  const day = sameDay(at, todayWall)
     ? `${clock} today`
     : sameDay(at, tomorrow)
       ? `${clock} tomorrow`
-      : `${at.toLocaleDateString("en-AU", { weekday: "short" })} ${at.getDate()} ${MONTHS[at.getMonth()]} ${clock}`;
-  const reviewedClock = `${two(start.getHours())}:${two(start.getMinutes())}`;
+      : `${WEEKDAYS[at.getUTCDay()]} ${at.getUTCDate()} ${MONTHS[at.getUTCMonth()]} ${clock}`;
+  const reviewedClock = `${two(start.getUTCHours())}:${two(start.getUTCMinutes())}`;
   return { when: day, basis: `${urgency}, ${long.toLowerCase()} of review at ${reviewedClock}` };
 }
