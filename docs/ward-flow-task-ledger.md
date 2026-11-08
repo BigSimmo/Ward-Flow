@@ -174,6 +174,11 @@ The following items are the prioritised open backlog as of this snapshot. This l
 - **TASK-L3-04 (A1-7)**: Ensure ward-initiated referrals are not misattributed to community teams in audit logs.
 - **TASK-L3-05 (A1-9)**: Remove `ward` and `community` roles from `RECORD_MOVEMENT_MEDICAL_CLEARANCE` permissions.
 - **TASK-L3-06 (Shared Close Helper: S1-7)**: Unify movement closure logic across remaining closure triggers to guarantee consistent referral unwinding, notice generation, and waitlist cleanup.
+  **Done 8 Nov 2026:** `endedBedSearch` and `releaseMovementBed` (`ward-flow-movement-close.ts`,
+  `ward-flow-reducer.ts`) now close RECORD_ED_OUTCOME, RECORD_EXAMINATION, REFER_TO_COMMUNITY_TEAM,
+  WITHDRAW_REFERRAL and the RECORD_REFERRER_WITHDRAWAL cascade. STOP_TRANSPORT, RELEASE_HELD_BED,
+  RELEASE_DIVERTED_BED and arrival keep their own closures by design. Notices stay per event.
+  Test: `tests/ward-shared-movement-close.test.ts`.
 - **TASK-L3-07 (Tighter Load Validator: A2-3, A2-5)**: Validate snapshot data on import to reject malformed event payloads (rendering type bugs S1-9, S1-10, S1-11 unreachable).
 
 #### Category 4: Standing Architecture & External Integration Roadmap
@@ -555,7 +560,7 @@ only `ward-movements.ts`, 3,275 lines, is still over 3,000).
 - **L3-06 shared close helper:** about nine movement-closure sites build their closure by hand;
   the diversion bed release in `ward-flow-placement-events.ts` does not clear referral fields the
   way `ward-flow-record-events.ts` does. Needs a reducer owner; that file is claimed today by the
-  Audit 24-7 thread.
+  Audit 24-7 thread. **Done 8 Nov 2026** (see TASK-L3-06 above).
 - **L1-12 / M-TOKENS:** five local `.btnPrimary` rules remain (§7.79 wrongly says Resolved). They
   already read colour tokens, so this is tidy-up only, part of the deferred buttons refactor
   (DA-18), which waits for Josh to name it.
