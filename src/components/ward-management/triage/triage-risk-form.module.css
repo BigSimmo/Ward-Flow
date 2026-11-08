@@ -912,6 +912,38 @@
   width: min(44rem, 100%);
 }
 
+/* The slide-outs' scroll area (Josh, 8 Nov 2026): the kit drawer leaves the body unpadded, so each
+ * pane sat hard against the sheet's edges. The same inset as the head and tabs above it. */
+.sheetBody {
+  padding: var(--wf-s-4);
+}
+
+/* Phone: the sheet keeps one tall height on every tab, so it no longer jumps as tabs change and
+ * leaves no empty band of page between a short pane and the pinned foot. Sized from the backdrop
+ * (not 100dvh, which iOS resolves stale as the toolbar collapses). */
+@media (max-width: 39.9375rem) {
+  .wideDrawer.wideDrawer {
+    height: calc(100% - 2rem);
+  }
+}
+
+/* The banner chips (allergies, legal status, alert) wrap onto a second line instead of running off
+ * the screen edge, and read in the body font: the kit's mono value face is for numbers. */
+.bannerTags.bannerTags {
+  flex-wrap: wrap;
+  overflow: visible;
+}
+
+.bannerTags > * {
+  flex: 0 1 auto;
+  max-width: 100%;
+}
+
+.bannerTags > * > :first-child {
+  font-family: var(--wf-font);
+  font-variant-numeric: normal;
+}
+
 .footText {
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);
@@ -1308,7 +1340,13 @@
     gap: 0;
   }
   .fact dt {
-    margin-top: var(--wf-s-1);
+    margin-top: var(--wf-s-3);
+  }
+  .fact:first-child dt {
+    margin-top: 0;
+  }
+  .fact dd {
+    margin-top: 2px;
   }
   .idLine {
     font-size: var(--wf-fs-12);

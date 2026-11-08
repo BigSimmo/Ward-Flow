@@ -296,13 +296,14 @@ function RecordPane({
   rows,
   note,
 }: {
-  title: string;
+  /** Left out where the tab already names the pane (Alerts), so the heading is not said twice. */
+  title?: string;
   rows: readonly (readonly [string, ReactNode])[];
   note?: string;
 }) {
   return (
     <>
-      <h3 className={styles.paneHead}>{title}</h3>
+      {title ? <h3 className={styles.paneHead}>{title}</h3> : null}
       <Facts rows={rows} />
       {note ? <p className={styles.quiet}>{note}</p> : null}
     </>
@@ -349,6 +350,7 @@ export function SummaryDrawer({
       onTabChange={onTab}
       tabsLabel="Slide-out"
       className={styles.wideDrawer}
+      bodyClassName={styles.sheetBody}
       testId="triage-summary-sheet"
       foot={
         <>
@@ -410,7 +412,6 @@ export function SummaryDrawer({
         ) : null}
         {tab === "alerts" ? (
           <RecordPane
-            title="Alerts"
             rows={[
               [
                 "Alerts",
@@ -470,6 +471,7 @@ export function HowToDrawer({
       title="How to complete a triage"
       subtitle="Patient details come from the record. You fill in the assessment only, top to bottom."
       className={styles.wideDrawer}
+      bodyClassName={styles.sheetBody}
       testId="triage-how-sheet"
     >
       <div className={styles.pane}>
@@ -551,6 +553,7 @@ export function AllFactorsDrawer({ form, open, onClose }: { form: FormApi; open:
       title="All RAMP factors"
       subtitle="The flags are the same factors. Unmarked history takes your Rest of history answer; unmarked current factors take Rest of current risk."
       testId="triage-factors-sheet"
+      bodyClassName={styles.sheetBody}
       foot={
         <>
           <span className={styles.footText}>Rest of current risk</span>
