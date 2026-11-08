@@ -20,12 +20,12 @@ type Extras = NonNullable<ReturnType<typeof recordExtrasFor>>;
 type Engagement = NonNullable<Extras["community"]>[number];
 
 /** The person's community team: an active one first, else the most recent ended one. */
-export function communityFor(patientId: string): Engagement | null {
+function communityFor(patientId: string): Engagement | null {
   const community = recordExtrasFor(patientId)?.community ?? [];
   return community.find((c) => c.status === "active") ?? community[community.length - 1] ?? null;
 }
 
-export function contactsFor(patientId: string): Extras["supports"] {
+function contactsFor(patientId: string): Extras["supports"] {
   return recordExtrasFor(patientId)?.supports ?? [];
 }
 
