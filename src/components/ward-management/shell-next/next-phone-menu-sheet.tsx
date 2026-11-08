@@ -581,7 +581,7 @@ function CreateSheet({
             {coordLinks.map((link, index) => (
               <Fragment key={link.key}>
                 {index > 0 ? <span className={styles.createMoreDot} aria-hidden="true" /> : null}
-                <Link href={link.href} onClick={onClose}>
+                <Link href={link.href} onClick={onClose} data-testid={`ward-phone-create-${link.key}`}>
                   {link.label}
                 </Link>
               </Fragment>

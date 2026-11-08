@@ -58,7 +58,13 @@ export function NextCapacityGlance({
       contentClassName={styles.sheet}
       bodyClassName={styles.body}
       footer={
-        <Link href={CAPACITY_HREF} className={styles.open} onClick={onClose} data-testid="ward-phone-capacity-open">
+        <Link
+          href={CAPACITY_HREF}
+          prefetch={true}
+          className={styles.open}
+          onClick={onClose}
+          data-testid="ward-phone-capacity-open"
+        >
           Open full Capacity
           <ArrowUpRight aria-hidden="true" strokeWidth={2} />
         </Link>

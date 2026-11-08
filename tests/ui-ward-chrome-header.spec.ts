@@ -237,9 +237,10 @@ test.describe("@mockup phone navigation preparation", () => {
   });
   for (const destination of [
     // Josh, 8 Nov 2026: Referrals left the coordinator's dock for the Menu, and the dock's Capacity
-    // tab now opens Capacity at a glance, so both pages are reached from the Menu here.
+    // tab now opens Capacity at a glance, so Referrals is reached from the Menu and Capacity from the
+    // glance's "Open full Capacity" link.
     { from: "menu", path: "/ward-flow/referrals", heading: /^Referrals$/ },
-    { from: "menu", path: "/ward-flow/capacity", heading: /^Capacity,/ },
+    { from: "glance", path: "/ward-flow/capacity", heading: /^Capacity,/ },
   ] as const) {
     test(`phone ${destination.from} prepares ${destination.path} before the tap`, async ({ page, request }) => {
       const identity = await request.get("/api/local-project-id");
@@ -257,6 +258,10 @@ test.describe("@mockup phone navigation preparation", () => {
       if (destination.from === "menu") {
         await page.getByTestId("ward-bar-phone-menu").tap();
         await expect(page.getByTestId("ward-phone-menu")).toBeVisible();
+      }
+      if (destination.from === "glance") {
+        await page.getByTestId("ward-phone-dock-capacity").tap();
+        await expect(page.getByTestId("ward-phone-capacity-open")).toBeVisible();
       }
       await expect
         .poll(() => pageCodeRequested, {
