@@ -85,7 +85,7 @@ function GlanceBody({ onClose }: { onClose: () => void }) {
   const totals = bedKindTotals(rows);
   const short = rows.reduce((sum, row) => sum + Math.max(0, -row.gap), 0);
   const freeing = bedsFreeingTodayTotal(bedReleases, now) ?? 0;
-  const confirm = shiftConfirmations(units, now);
+  const confirm = useMemo(() => shiftConfirmations(units, now), [units, now]);
 
   // Planned discharges today, grouped by the hour they are expected: the wards and bed types freeing.
   const timeline = useMemo(() => {
@@ -229,6 +229,7 @@ function GlanceBody({ onClose }: { onClose: () => void }) {
               const who = next ? patientOf(next) : undefined;
               const href = who?.patient ? patientHref(who.patient.id) : null;
               const fill = Math.round((Math.min(row.bedsThatFit, row.waiting) / row.waiting) * 100);
+              const planCount = row.gap < 0 ? freeingFor(row.id).length : 0;
               return (
                 <div key={row.id} className={styles.kind}>
                   <div className={styles.kindText}>
@@ -248,22 +249,17 @@ function GlanceBody({ onClose }: { onClose: () => void }) {
                         <span className={styles.mono}>{durMinutes(Math.max(0, now - next.openedAt))}</span> waiting
                       </span>
                     ) : null}
-                    {(() => {
-                      if (row.gap >= 0) return null;
-                      const count = freeingFor(row.id).length;
-                      if (count === 0) return null;
-                      return (
-                        <button
-                          type="button"
-                          className={styles.planLink}
-                          onClick={() => setPlan(row.id)}
-                          data-testid={`ward-phone-capacity-plan-${row.id}`}
-                        >
-                          {count} planned {count === 1 ? "discharge" : "discharges"} could free one
-                          <ChevronRight aria-hidden="true" strokeWidth={2} />
-                        </button>
-                      );
-                    })()}
+                    {planCount > 0 ? (
+                      <button
+                        type="button"
+                        className={styles.planLink}
+                        onClick={() => setPlan(row.id)}
+                        data-testid={`ward-phone-capacity-plan-${row.id}`}
+                      >
+                        {planCount} planned {planCount === 1 ? "discharge" : "discharges"} could free one
+                        <ChevronRight aria-hidden="true" strokeWidth={2} />
+                      </button>
+                    ) : null}
                   </div>
                   {href && canOpen(href) && who ? (
                     <Link

@@ -25,7 +25,7 @@ describe("Call and log", () => {
   it("logs a picked ward and outcome, sets the ring-back, and stores no typed text", () => {
     render(
       <WardFlowProvider initialNow={NOW_ANCHOR}>
-        <ToolCallLog onNavigate={() => {}} />
+        <ToolCallLog />
       </WardFlowProvider>,
     );
     const save = screen.getByRole("button", { name: /Save call/u });

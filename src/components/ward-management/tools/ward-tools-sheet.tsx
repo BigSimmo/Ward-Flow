@@ -328,6 +328,17 @@ type Entry = {
 };
 
 /** WF-29 (live test, 4 Nov 2026): every Tools row carries its own accessible name. */
+
+type Suggestion = {
+  key: string;
+  title: string;
+  detail: string;
+  n: number;
+  tone: "danger" | "warning" | "info";
+  tool?: ToolsSheetToolId;
+  href?: string;
+};
+
 function rowName(entry: Entry, end: string): string {
   const count = entry.count && entry.count.n > 0 ? `, ${entry.count.n} ${entry.count.label}` : "";
   return `${entry.name}, ${entry.detail}${count}${end}`;
@@ -659,7 +670,7 @@ function ToolsSheetView({
             icon: PhoneOutgoing,
             name: "Call and log",
             detail: "What a ward told you",
-            body: <ToolCallLog onNavigate={onNavigate} />,
+            body: <ToolCallLog />,
           }
         : null,
     // QA 2 Nov: Book transport opens the Transport desk, so it is a link row, like Log a delay.
@@ -932,15 +943,6 @@ function ToolsSheetView({
 
   const paneEntry = shown && matches > 0 ? (shown === "demo" ? demoEntry : usable(shown)) : null;
 
-  type Suggestion = {
-    key: string;
-    title: string;
-    detail: string;
-    n: number;
-    tone: "danger" | "warning" | "info";
-    tool?: ToolsSheetToolId;
-    href?: string;
-  };
   const suggestions: Suggestion[] = executive
     ? []
     : [

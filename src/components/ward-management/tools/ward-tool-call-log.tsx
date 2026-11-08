@@ -46,8 +46,7 @@ function laterAt(step: LaterStep, now: number): number {
  * three taps, and can set a ring-back. Wards not confirmed this shift come first. Kept in this
  * browser only; it never changes a ward's figures, which only the ward confirms.
  */
-export function ToolCallLog({ onNavigate }: { onNavigate: () => void }) {
-  void onNavigate;
+export function ToolCallLog() {
   const { units, admissions, bedReleases } = useWardFlowSelect("units", "admissions", "bedReleases");
   const now = useWardFlowClock();
   const log = useCallLog();
