@@ -41,12 +41,26 @@ export function clearanceNeeded(draft: DocumentationDraft): number {
 export function communityTeamsMatching(teams: readonly string[], search: string): readonly string[] {
   const query = normaliseSuburbKey(search);
   if (!query) return teams;
-  const bySuburb = new Set(
-    S2015_CATCHMENT_ROWS.filter((row) => normaliseSuburbKey(row.suburb).includes(query)).flatMap((row) =>
-      parseFollowUpClinicSet(row.followUpClinicVerbatim).map(communityTeamKey),
-    ),
-  );
+  const bySuburb = teamKeysForSuburbQuery(query);
   return teams.filter((team) => team.toLowerCase().includes(query) || bySuburb.has(communityTeamKey(team)));
+}
+
+/*
+ * Search audit, 8 Nov 2026: the catchment table is fixed, so each suburb's team keys are parsed once
+ * and the last query's answer is kept. Typing in the referral drawer no longer re-parses every
+ * catchment row on each keystroke and each re-render.
+ */
+let suburbTeamKeys: readonly { readonly suburb: string; readonly teams: readonly string[] }[] | null = null;
+let lastSuburbQuery: { readonly query: string; readonly keys: ReadonlySet<string> } | null = null;
+function teamKeysForSuburbQuery(query: string): ReadonlySet<string> {
+  if (lastSuburbQuery?.query === query) return lastSuburbQuery.keys;
+  suburbTeamKeys ??= S2015_CATCHMENT_ROWS.map((row) => ({
+    suburb: normaliseSuburbKey(row.suburb),
+    teams: parseFollowUpClinicSet(row.followUpClinicVerbatim).map(communityTeamKey),
+  }));
+  const keys = new Set(suburbTeamKeys.filter((row) => row.suburb.includes(query)).flatMap((row) => row.teams));
+  lastSuburbQuery = { query, keys };
+  return keys;
 }
 
 /** The Ready to send row for the purpose, which the short form asks on its Referral step. */

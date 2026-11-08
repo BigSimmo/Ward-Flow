@@ -609,10 +609,37 @@ export function searchIntentLabel(intent: SearchIntent, query = ""): SearchInten
   }
 }
 
-/** Header palette group order. The matching intent's groups lead; everything else keeps the fixed order. */
-export function searchGroupOrder(intent: SearchIntent, query: string): readonly SearchGroupKey[] {
-  const front = leadingGroups(intent, query);
+/**
+ * Header palette group order. The matching intent's groups lead; everything else keeps the fixed order.
+ *
+ * Search audit, 8 Nov 2026: `role` (the desk's role, optional) only reorders places, and only when the
+ * text names a place or reads as nothing in particular: an ED desk sees EDs first, a community team
+ * its teams and suburbs, a ward or bed desk its beds. It never adds or removes a result; what a desk
+ * may see is decided by the scoped workspace before search runs.
+ */
+export function searchGroupOrder(intent: SearchIntent, query: string, role?: string): readonly SearchGroupKey[] {
+  const front = roleLeadingGroups(leadingGroups(intent, query), intent, role);
   return [...front, ...SEARCH_GROUP_ORDER.filter((key) => !front.includes(key))];
+}
+
+const ROLE_PLACE_ORDER: Readonly<Record<string, readonly SearchGroupKey[]>> = {
+  ed: ["eds", "wards", "beds", "teams", "suburbs"],
+  community: ["teams", "suburbs", "wards", "beds", "eds"],
+  ward: ["beds", "wards", "eds", "teams", "suburbs"],
+  bed_manager: ["beds", "wards", "eds", "teams", "suburbs"],
+};
+
+function roleLeadingGroups(
+  front: readonly SearchGroupKey[],
+  intent: SearchIntent,
+  role: string | undefined,
+): readonly SearchGroupKey[] {
+  const places = role === undefined ? undefined : ROLE_PLACE_ORDER[role];
+  if (!places) return front;
+  if (intent === "place") return places;
+  // A query with no clear intent: the desk's own kind of place leads, after anything already leading.
+  if (intent === "general" && front.length === 0) return [places[0]];
+  return front;
 }
 
 function leadingGroups(intent: SearchIntent, query: string): readonly SearchGroupKey[] {

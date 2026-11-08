@@ -114,6 +114,7 @@ import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard
 import { hasOpenSheet } from "@/components/wf/sheet-focus";
 import { useWardShellPublic } from "@/components/ward-management/shell/ward-shell-public-context";
 import { replaceSearchParams, useLocationSearch } from "@/components/ward-management/ward-url-state";
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 export {
   acceptedBlockedReason,
   enRouteBlockedReason,
@@ -256,7 +257,8 @@ export function OfficerScreen() {
     const originEd = edById(movement.originEdId);
     // Shown surname first, but found by either order: "Jane Smith" and "Smith, Jane" both match.
     const subject = resolveSubjectPatient(movement, { patients, referrals, movements });
-    const haystack = [
+    // Search audit, 8 Nov 2026: every word in any order ("Smith Jane", "UM 100001", "Jane SCGH").
+    return fieldsMatchEveryWord(query, [
       officerPatientName(movement),
       subject.patient ? subject.displayName : "",
       umrnFor(movement),
@@ -264,10 +266,7 @@ export function OfficerScreen() {
       unitFor(movement)?.name ?? "",
       transport?.provider ?? "",
       transport?.cadNumber ?? "",
-    ]
-      .join(" ")
-      .toLowerCase();
-    return haystack.includes(query);
+    ]);
   };
   const isHighlighted = (movement: Movement) =>
     (pill !== null && matchesPill(movement, pill)) ||
@@ -1065,6 +1064,8 @@ export function OfficerScreen() {
                 <div className={styles.toolbar} role="search" aria-label="Find transport jobs">
                   <TextInput
                     ref={searchInputRef}
+                    type="search"
+                    enterKeyHint="search"
                     icon={Search}
                     boxClassName={styles.searchBox}
                     id="officer-transfer-search"

@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useEffectEvent, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
+import { siteByCode } from "@/components/ward-management/ward-sites";
 import {
   ArrowUpRight,
   ChartColumn,
@@ -372,10 +374,13 @@ function UpdateBedWards({ onNavigate }: { onNavigate: () => void }) {
   const { units } = useWardFlowSelect("units");
   const canOpen = useCanOpenHref();
   const [query, setQuery] = useState("");
-  const words = query.trim().toLowerCase();
+  const words = query.trim();
+  // Search audit, 8 Nov 2026: every word, folded, across the ward, its hospital and its site code.
   const wards = units
     .filter((unit) => canOpen(`${root}/ward/${unit.id}`))
-    .filter((unit) => !words || unit.name.toLowerCase().includes(words));
+    .filter(
+      (unit) => !words || fieldsMatchEveryWord(words, [unit.name, siteByCode(unit.siteCode)?.name, unit.siteCode]),
+    );
   return (
     <div className={styles.toolBody}>
       <SearchField label="Find a ward" placeholder="Find a ward" value={query} onValueChange={setQuery} />
@@ -390,6 +395,7 @@ function UpdateBedWards({ onNavigate }: { onNavigate: () => void }) {
         ))}
       </ul>
       {wards.length > 8 ? <p className={styles.quiet}>Type to find the other {wards.length - 8} wards.</p> : null}
+      {words && wards.length === 0 ? <p className={styles.quiet}>No ward matches that search.</p> : null}
     </div>
   );
 }
@@ -885,7 +891,7 @@ function ToolsSheetView({
     };
   }
 
-  const words = query.trim().toLowerCase();
+  const words = query.trim();
   const order = ROLE_ORDER[role] ?? ROLE_ORDER.coordinator;
   const usable = (key: EntryKey): Entry | null => {
     const entry = all[key];
@@ -898,7 +904,7 @@ function ToolsSheetView({
     entries: order[group.id]
       .map(usable)
       .filter((entry): entry is Entry => entry !== null)
-      .filter((entry) => !words || `${entry.name} ${entry.detail}`.toLowerCase().includes(words)),
+      .filter((entry) => !words || fieldsMatchEveryWord(words, [entry.name, entry.detail])),
   })).filter((group) => group.entries.length > 0);
   // On wide desktops a group folds after five rows unless searching, opened, short, or holding the open tool
   // (a Recent chip can open a tool whose row sits under Show more).

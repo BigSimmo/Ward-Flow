@@ -22,7 +22,7 @@ import {
   registerWfBandHero,
 } from "@/components/wf";
 import { perthWeekdayTime } from "@/components/ward-management/ward-clock";
-import { foldPatientSearchHaystack, foldPatientSearchText } from "@/components/ward-management/ward-patients";
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import phone from "../community-team-phone.module.css";
 import type { CommunityTeamSection } from "../community-screen-hero";
 import { DEMO_FIGURES, SENT, STAFF as AUTHORED_STAFF, TODAY, staffName } from "./midland-demo";
@@ -384,7 +384,8 @@ function CaseloadSection() {
     if (filter !== "all" && !(c.flags ?? []).includes(filter)) return false;
     if (cm === "psych" && !c.psychOnly) return false;
     if (cm && cm !== "psych" && c.cm !== cm) return false;
-    return !find.trim() || foldPatientSearchHaystack(c.n).includes(foldPatientSearchText(find));
+    // Search audit, 8 Nov 2026: every word in any order, so "Smith Jane" finds "Jane Smith".
+    return !find.trim() || fieldsMatchEveryWord(find, [c.n]);
   });
   const chips: { id: CaseFilter; label: string; n: number }[] = [
     { id: "all", label: "All", n: f.caseload },
@@ -433,7 +434,9 @@ function CaseloadSection() {
       <Card>
         <GroupHead
           title="Surname A to Z"
-          hint={filter === "all" && !cm && !find ? `${f.caseload} clients` : `${rows.length} shown in this sample`}
+          hint={
+            filter === "all" && !cm && !find.trim() ? `${f.caseload} clients` : `${rows.length} shown in this sample`
+          }
         />
         <ul className={p.rows}>
           {(all ? rows : rows.slice(0, SHOWN)).map((c) => {

@@ -27,6 +27,7 @@ import { useId, useState, type ReactNode } from "react";
 import { cx, SearchField, ShowMoreRow, StatusGlyph } from "@/components/wf";
 import type { Unit } from "@/components/ward-management/ward-model";
 import { siteByCode } from "@/components/ward-management/ward-sites";
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import ph from "./referral-match-phone.module.css";
 
 import styles from "./find-a-ward.module.css";
@@ -67,10 +68,9 @@ const byName = (a: FindAWardRow, b: FindAWardRow) => a.unit.name.localeCompare(b
 
 /** Every typed word is found in the ward name or its hospital. A host filters its own asked rows with it. */
 export function wardMatchesQuery(query: string, unit: Pick<Unit, "name" | "siteCode">): boolean {
-  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  if (words.length === 0) return true;
-  const text = `${unit.name} ${siteByCode(unit.siteCode)?.name ?? ""}`.toLowerCase();
-  return words.every((word) => text.includes(word));
+  if (query.trim() === "") return true;
+  // Search audit, 8 Nov 2026: folded like every other search, and the site code ("SCGH") counts too.
+  return fieldsMatchEveryWord(query, [unit.name, siteByCode(unit.siteCode)?.name, unit.siteCode]);
 }
 
 export function FindAWard({

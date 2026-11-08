@@ -28,7 +28,8 @@ import {
 } from "@/components/ward-management/referrals/arrival-time-modal";
 import type { EdNeedsItem } from "./ed-needs-you";
 import { resolveSubjectPatient, UMRN_NOT_RECORDED } from "@/components/ward-management/ward-patient-resolver";
-import { foldPatientSearchHaystack, foldPatientSearchText } from "@/components/ward-management/ward-patients";
+import { foldPatientSearchText } from "@/components/ward-management/ward-patients";
+import { fieldsMatchEveryWord } from "@/components/ward-management/search/search-text";
 import { activeTaskItems, inboxItemsForRole } from "@/components/ward-management/ward-act-now-items";
 import {
   ANSWERED_VISIBLE_CAP,
@@ -336,11 +337,13 @@ export function deriveEdScreen({
   };
   // Audit 24-7 (CT-20): both sides fold the way the header search does, so "OQuinn" finds O'Quinn and
   // accents and hyphens match. It only dims rows; the sort below is untouched.
+  // Search audit, 8 Nov 2026: every typed word in any order, so "Smith John", "Smith, John" and
+  // "smith 1234" find the person as the header search does.
   const foldedQuery = foldPatientSearchText(patientQuery);
   const matchesPatientQuery = (movement: Movement) => {
     if (!foldedQuery) return true;
     const person = resolveSubjectPatient(movement, resolveState);
-    return foldPatientSearchHaystack(`${person.displayName} ${person.umrn}`).includes(foldedQuery);
+    return fieldsMatchEveryWord(patientQuery, [person.displayName, person.formalName, person.umrn]);
   };
   const heroHighlightMatch: Record<string, (m: Movement) => boolean> = {
     past: (m) => isWaitingInEd(m) && now - m.openedAt >= accessTarget,
