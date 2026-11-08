@@ -108,8 +108,21 @@
     gap: 6px;
   }
 
+  /* A long kept source (a legal form's note) wraps under the value instead of squeezing the value
+     to one letter per line; the chip rounds less once it holds two lines. */
   .tile {
+    flex-wrap: wrap;
+    row-gap: 2px;
     padding: 4px 10px 5px;
+    border-radius: 14px;
+  }
+
+  .value {
+    min-width: min(100%, 6rem);
+  }
+
+  .sub {
+    white-space: normal;
   }
 
   .sub:not([data-keep]) {

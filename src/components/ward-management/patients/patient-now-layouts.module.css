@@ -207,6 +207,20 @@
   align-items: center;
 }
 
+/* Phone: the number stays the same size but its tap area grows to the 40px phone control height, so
+   a thumb reaches it without opening the row around it. */
+@media (max-width: 46.4375rem) {
+  .tel {
+    position: relative;
+  }
+
+  .tel::after {
+    content: "";
+    position: absolute;
+    inset: -8px -4px;
+  }
+}
+
 .tel:hover {
   text-decoration: underline;
 }

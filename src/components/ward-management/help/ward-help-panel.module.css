@@ -140,6 +140,15 @@
   font-feature-settings: normal;
 }
 
+/* Phone: 16px text, or iPhone Safari zooms the page when the field is tapped. The faint suggestion
+   follows the input's size so it stays lined up with the typed letters. */
+@media (max-width: 46.4375rem), (pointer: coarse) and (max-height: 500px) {
+  .field input,
+  .field .ghost {
+    font-size: 16px;
+  }
+}
+
 /* The suggestions block, between the field and the answers: in the flow, so nothing jumps. */
 .suggest {
   min-width: 0;
