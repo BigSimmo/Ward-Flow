@@ -244,7 +244,7 @@
   margin: 8px 0 7px;
   overflow: hidden;
   border-radius: 3px;
-  background: var(--wf-track, #e6ebf0);
+  background: var(--wf-track);
 }
 
 .meter > span {
