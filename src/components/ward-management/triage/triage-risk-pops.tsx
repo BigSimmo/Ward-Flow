@@ -83,8 +83,8 @@ export function ContactsPop({ patientId, recordHref }: { patientId: string; reco
         <Panel title="Contacts" recordHref={recordHref}>
           {contacts.length ? (
             <ul className={styles.popList}>
-              {contacts.map((c) => (
-                <li key={`${c.name}-${c.role}`} className={styles.popItem}>
+              {contacts.map((c, index) => (
+                <li key={`${index}-${c.name}-${c.role}`} className={styles.popItem}>
                   <span>
                     <b>{c.name}</b> · {c.role}
                     {c.relationship ? `, ${c.relationship.toLowerCase()}` : ""}

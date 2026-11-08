@@ -140,7 +140,7 @@ function Shortcuts() {
   return (
     <div className={styles.pane}>
       <div className={styles.tableWrap}>
-        <table className={tableClasses.table}>
+        <table className={tableClasses.table} aria-label="Keyboard shortcuts">
           <thead>
             <tr>
               <th className={tableClasses.th} scope="col">
@@ -209,7 +209,7 @@ function PsolisMap() {
         count={words ? { shown: rows.length, total: PSOLIS_FIELD_MAP.length, noun: "fields" } : undefined}
       />
       <div className={styles.tableWrap}>
-        <table className={tableClasses.table}>
+        <table className={tableClasses.table} aria-label="PSOLIS field map">
           <thead>
             <tr>
               <th className={tableClasses.th} scope="col">

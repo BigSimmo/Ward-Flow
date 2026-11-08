@@ -38,6 +38,7 @@ describe("isbarText", () => {
       outcome: "Accepted",
       legal: "cto",
       review: "72h",
+      actions: ["police"],
       f: {
         "violence.bg.prev": "y",
         "violence.now.intent": "y",
@@ -64,7 +65,7 @@ describe("isbarText", () => {
       /^A Assessment: Current risk [^·]+ · Protective: Engaged with CMHT; mother supportive\.$/,
     );
     expect(line(text, "A ")).not.toMatch(/Agitat/i);
-    expect(line(text, "R ")).toBe("R Recommendation: Actions – · Review risk by 72 hours");
+    expect(line(text, "R ")).toBe("R Recommendation: Actions POLICE NOTIFIED · Review risk by 72 hours");
   });
 
   it("keeps the UMRN off the clipboard", () => {

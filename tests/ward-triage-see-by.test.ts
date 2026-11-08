@@ -18,6 +18,13 @@ describe("seeBy", () => {
     expect(seeBy("D", "09/11/2026 10:42", today, TIER_LONG.D)?.when).toBe("Wed 11 Nov 10:42");
   });
 
+  it("counts tier E in days", () => {
+    expect(seeBy("E", "09/11/2026 10:42", today, TIER_LONG.E)).toEqual({
+      when: "Mon 23 Nov 10:42",
+      basis: `E, ${TIER_LONG.E.toLowerCase()} of review at 10:42`,
+    });
+  });
+
   it("ignores daylight saving on the device", () => {
     // Sydney clocks go forward on 4 Oct 2026; a Perth review window must not move with them.
     const day = new Date(2026, 9, 4, 1, 30);
