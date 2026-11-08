@@ -435,12 +435,6 @@
 }
 
 /* The allowed range, in words, under the rule's own line. */
-.rangeWords {
-  font: 400 var(--wf-fs-12) / var(--wf-lh-12) var(--wf-mono);
-  color: var(--wf-ink-2);
-  white-space: nowrap;
-}
-
 /* A rule whose draft differs from its saved value says so in a word, not a tint. */
 .changedTag {
   align-self: center;
@@ -1024,6 +1018,12 @@
 
 .phoneSheetBody .ruleRow .rowTitle {
   white-space: normal;
+}
+
+/* Simplify Settings (Josh, 8 Nov 2026): a phone rule reads its name, its line, the value and what it
+ * reaches now; "Shown on …" stays on a computer, where it has its own column. */
+.phoneSheetBody .ruleRow .usedBy {
+  display: none;
 }
 
 .phoneSheetBody .ruleStepper > span:first-child {

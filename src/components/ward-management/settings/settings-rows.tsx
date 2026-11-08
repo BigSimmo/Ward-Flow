@@ -85,7 +85,7 @@ export type RuleRange = {
 };
 
 /**
- * One coordination rule: words, the allowed range in words ("Range 12h to 36h"), a reset to the
+ * One coordination rule: words and the allowed range on one line ("Per referral · 1 ward to 3 wards"), a reset to the
  * saved value when changed, one stepper, and its effect and readers on the right.
  *
  * v10: one control per value. The stepper is the only control; the slider that once sat under it
@@ -152,12 +152,18 @@ export function RuleRow({
     >
       <span className={styles.rowText}>
         <span className={styles.rowTitle}>{title}</span>
-        <span className={styles.rowSub} data-testid={subTestId}>
-          {sub}
-        </span>
-        <span className={styles.rangeWords} data-testid={range.id ? `${range.id}-range` : undefined}>
-          Range {range.minLabel} to {range.maxLabel}
-          {!atDefault && defaultDisplay ? <span className={rx.defaultMark}> · Default {defaultDisplay}</span> : null}
+        {/* Simplify Settings (Josh, 8 Nov 2026): the short line and the allowed range share one line,
+            "Access measure only · 12h to 36h", so each rule reads in three lines, not five. */}
+        <span className={rx.ruleSubLine}>
+          <span className={styles.rowSub} data-testid={subTestId}>
+            {sub}
+          </span>
+          {" · "}
+          <span className={rx.rangeInline} data-testid={range.id ? `${range.id}-range` : undefined}>
+            <SrOnly>Range </SrOnly>
+            {range.minLabel} to {range.maxLabel}
+            {!atDefault && defaultDisplay ? <span className={rx.defaultMark}> · Default {defaultDisplay}</span> : null}
+          </span>
         </span>
       </span>
       <span className={styles.resetCell}>

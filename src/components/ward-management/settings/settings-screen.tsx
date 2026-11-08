@@ -38,7 +38,6 @@ import {
   setAudioBuzzPreference,
   useAudioBuzzPreference,
 } from "@/components/ward-management/shell/ward-sound-store";
-import { formatInstantWithDay } from "@/components/ward-management/ward-clock";
 import {
   defaultWardConfiguration,
   mergeConfiguration,
@@ -105,6 +104,7 @@ import { publishedThresholds } from "@/components/ward-management/settings/setti
 import styles from "@/components/ward-management/settings/settings.module.css";
 import rx from "./settings-layout.module.css";
 import { SettingsDraftsCard } from "./settings-drafts-card";
+import { SettingsFold } from "./settings-fold";
 import { SettingsProfileCard } from "./settings-profile-card";
 import { SettingsSaveBar } from "./settings-save-bar";
 import {
@@ -390,7 +390,6 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
 
   // Recent rule saves, newest first, from the audit trail every save writes to.
   const ruleChanges = operational?.ruleChanges ?? null;
-  const lastAccepted = ruleChanges?.find((change) => change.outcome === "accepted" && change.at !== null);
 
   const setRule = (patch: Partial<WardConfiguration>) => {
     if (configurationGate.allowed && !savingRef.current) setDraft((current) => ({ ...current, ...patch }));
@@ -741,6 +740,9 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     if (!highlight) return;
     const frame = window.requestAnimationFrame(() => {
       const element = document.querySelector<HTMLElement>(`[data-setting="${highlight}"]`);
+      // A row inside a closed fold (the rules file, the reference tables) opens the fold first.
+      const fold = element?.closest("details");
+      if (fold && !fold.open) fold.open = true;
       element?.classList.add(styles.hit);
       element?.scrollIntoView?.({ block: "center", behavior: wardScrollBehavior() });
       const control = element?.matches("button, a, input")
@@ -881,12 +883,18 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
         blockReason={configurationBlockReason}
         readOnlyWords={readOnlyWords}
       />
-      <SettingsRulesFileCard
-        onDownload={handleExport}
-        onLoad={handleImport}
-        loadUnavailable={configurationBlockReason}
-      />
-      <SettingsReferenceCard reference={reference} onReferenceChange={setReference} thresholds={thresholds} />
+      <SettingsFold
+        title="Rules file and reference tables"
+        sub="Save or load the rules as a file, and the fixed figures behind them"
+        testId="ward-settings-rules-more"
+      >
+        <SettingsRulesFileCard
+          onDownload={handleExport}
+          onLoad={handleImport}
+          loadUnavailable={configurationBlockReason}
+        />
+        <SettingsReferenceCard reference={reference} onReferenceChange={setReference} thresholds={thresholds} />
+      </SettingsFold>
     </>
   ) : null;
 
@@ -1007,30 +1015,21 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
     </>
   ) : null;
 
-  // The rule editor's save bar always shows, so where Save lives never moves. A desk that cannot
-  // change the rules has no save bar, unless it lost that right with a draft open: then the bar stays,
-  // Save greyed with the reason, so the draft can still be discarded.
-  const saveBar =
-    // ST1 (3 Nov 2026): with the page split into sections, the bar shows while the rule editor is the
-    // section in view or a draft is open, never over the save-at-once Display or Alerts.
-    editsRules && (hasUnsavedRules || (readOnlyWords === null && shownSection === "rules")) ? (
-      <SettingsSaveBar
-        diffs={diffs}
-        onRulesTab
-        onReview={() => showSection("rules")}
-        lastSave={
-          ruleChanges === null
-            ? "Rule-save history unavailable"
-            : lastAccepted?.at != null
-              ? `Last save ${formatInstantWithDay(lastAccepted.at, now)}`
-              : "No saves yet"
-        }
-        saving={saving}
-        blockReason={configurationBlockReason}
-        onDiscard={handleDiscard}
-        onSave={() => setReview("draft")}
-      />
-    ) : null;
+  // Simplify Settings (Josh, 8 Nov 2026): the save bar shows only while a rule is unsaved, on any
+  // section, so Save is never a greyed button on a page with nothing to save. A desk that lost the
+  // right to change the rules with a draft open still sees it, Save greyed with the reason, so the
+  // draft can be discarded.
+  const saveBar = editsRules ? (
+    <SettingsSaveBar
+      diffs={diffs}
+      onRulesTab
+      onReview={() => showSection("rules")}
+      saving={saving}
+      blockReason={configurationBlockReason}
+      onDiscard={handleDiscard}
+      onSave={() => setReview("draft")}
+    />
+  ) : null;
 
   const overlays = (
     <>
@@ -1082,9 +1081,10 @@ function SettingsWorkspace({ source }: { source: SettingsSource }) {
      its foot. */
   if (isPhone) {
     const areaSummary: Record<SettingsSection, string> = {
-      rules: readOnlyWords === null ? "ED and placement, form warnings, reply targets" : "Read only",
-      alerts: `Alerts on this device ${actNowNotifications || phonePushRow(phonePush).checked ? "on" : "off"} · buzz ${audioBuzz ? "on" : "off"}`,
-      display: `Theme, density, motion ${reducedMotion ? "reduced" : "on"}, contrast ${highContrast ? "high" : "standard"}`,
+      // Simplify Settings (Josh, 8 Nov 2026): each line says what is inside, in plain words.
+      rules: readOnlyWords === null ? "ED targets, form warnings and reply targets" : "Read only",
+      alerts: `Alerts ${actNowNotifications || phonePushRow(phonePush).checked ? "on" : "off"} · Buzz sound ${audioBuzz ? "on" : "off"}`,
+      display: "Motion, contrast, page tips and restore defaults",
       access: "Roles, approvals and requests",
       data: "Rules file, bug report copy, reference tables",
       you: `${deskProfile.role} · ${deskProfile.location}`,

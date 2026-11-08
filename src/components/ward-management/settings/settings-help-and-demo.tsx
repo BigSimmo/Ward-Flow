@@ -15,6 +15,7 @@ import { FeatureFlagsCard } from "@/components/ward-management/settings/feature-
 import { Button, Card, CardHead, buttonClass } from "@/components/wf";
 
 import styles from "@/components/ward-management/settings/settings.module.css";
+import { SettingsFold } from "./settings-fold";
 import { SettingRow } from "./settings-rows";
 
 /** The saved rules as a file. Load sits only with the rule editor, where a loaded file lands in review. */
@@ -219,9 +220,16 @@ export function SettingsDemoTools({
           </div>
         ) : null}
       </div>
-      <div data-setting="feature-flags">
-        <FeatureFlagsCard />
-      </div>
+      {/* Simplify Settings (Josh, 8 Nov 2026): the switches for unfinished features sit closed. */}
+      <SettingsFold
+        title="Feature switches"
+        sub="Turn unfinished features on or off on this device"
+        testId="ward-settings-feature-switches"
+      >
+        <div data-setting="feature-flags">
+          <FeatureFlagsCard />
+        </div>
+      </SettingsFold>
     </div>
   );
 }
