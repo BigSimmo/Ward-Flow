@@ -217,7 +217,7 @@ export function HandoverFlowPanel({
                 disabledReason={position.index <= 0 ? "First patient in the list" : undefined}
                 onClick={() => onStep(-1)}
               />
-              <span className={styles.flowStepCount} aria-live="polite">
+              <span className={styles.flowStepCount}>
                 {position.index + 1} of {position.total}
               </span>
               <Button
