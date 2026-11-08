@@ -184,9 +184,16 @@ test("Activity Undo: a desk reviews its own bed closure and waits for the server
   else await expect(page.getByTestId(bedId!)).toHaveAttribute("data-state", "closed");
   await page.getByRole("button", { name: "Close bed drawer", exact: true }).click();
   // Josh, 8 Nov 2026: the coordinator's phone dock carries Tools in Activity's place, so a phone
-  // opens Activity from the Menu's Activity row.
+  // opens Activity from the Menu's Activity row. On a ward page Back stands in the Menu's place, so
+  // the phone steps back first; Activity is one panel on every page, so the closure still shows.
   if (phone) {
-    await page.getByRole("button", { name: "Menu", exact: true }).filter({ visible: true }).first().click();
+    const menu = page.getByTestId("ward-bar-phone-menu");
+    if (!(await menu.isVisible())) {
+      await page.getByTestId("ward-bar-phone-back").click();
+      await ready(page);
+    }
+    await expect(menu).toBeVisible();
+    await menu.click();
     await page.getByTestId("ward-phone-menu-activity-row").click();
   } else {
     await page

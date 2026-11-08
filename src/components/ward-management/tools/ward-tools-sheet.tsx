@@ -62,7 +62,7 @@ import { WARD_REFERRAL_INTAKE_HREF } from "@/components/ward-management/ward-nav
 import { useExecutiveStatisticsControl } from "@/components/ward-management/statistics/executive-statistics-context";
 // D-91: the one suburb lookup card, shared with Community and the ward's Discharges tab.
 import { SuburbLookupCard } from "@/components/ward-management/community/community-suburb-lookup-card";
-import { buttonClass, Count, SearchField } from "@/components/wf";
+import { buttonClass, Count, SearchField, SrOnly } from "@/components/wf";
 
 import { ToolFeed, ReceiveNextFeedMessage, useFeedWaitingCount } from "./ward-tool-feed";
 import { ToolFigures } from "./ward-tool-figures";
@@ -1105,6 +1105,7 @@ function ToolsSheetView({
                     <span className={styles.suggestValue} data-tone={item.tone}>
                       {item.n}
                     </span>
+                    {item.href ? <SrOnly>, opens its page</SrOnly> : null}
                     {item.href ? (
                       <ArrowUpRight className={styles.rowEnd} aria-hidden="true" strokeWidth={1.75} />
                     ) : (
@@ -1112,15 +1113,8 @@ function ToolsSheetView({
                     )}
                   </>
                 );
-                const label = `${item.title}, ${item.n}, ${item.detail}`;
                 return item.href ? (
-                  <Link
-                    key={item.key}
-                    href={item.href}
-                    className={styles.row}
-                    onClick={onNavigate}
-                    aria-label={`${label}, opens its page`}
-                  >
+                  <Link key={item.key} href={item.href} className={styles.row} onClick={onNavigate}>
                     {face}
                   </Link>
                 ) : (
@@ -1129,7 +1123,6 @@ function ToolsSheetView({
                     type="button"
                     className={styles.row}
                     onClick={() => openTool(item.tool!)}
-                    aria-label={label}
                     data-testid={`ward-tools-suggest-${item.key}`}
                   >
                     {face}
