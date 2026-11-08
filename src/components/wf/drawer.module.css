@@ -69,12 +69,25 @@
   color: var(--wf-ink-3);
 }
 
-/* Tabs inside the drawer, under the head and outside the scroll. */
+/* Tabs inside the drawer, under the head and outside the scroll. When they are wider than the
+ * drawer (five tabs on a 375px phone), the row slides sideways inside this band rather than pushing
+ * the whole drawer sideways off the screen (the phone pill track lets its options overflow). */
 .tabs {
   flex: none;
   padding: var(--wf-s-2) var(--wf-s-4);
   border-bottom: 1px solid var(--wf-line);
   background: var(--wf-surface);
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tabs > [role="tablist"] {
+  max-width: none;
 }
 
 /* The one scroll area. */

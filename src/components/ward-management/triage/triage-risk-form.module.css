@@ -944,6 +944,106 @@
   font-variant-numeric: normal;
 }
 
+/* Record tabs (Referral, Last triage, Profile): one card, a row per fact with a hairline between,
+ * label left and value right; on a phone the label sits over its value. */
+.facts.recordCard {
+  display: block;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+.recordCard .fact {
+  display: grid;
+  grid-template-columns: 8.5rem minmax(0, 1fr);
+  gap: 2px var(--wf-s-3);
+  padding: var(--wf-s-3) var(--wf-s-4);
+}
+
+.recordCard .fact + .fact {
+  border-top: 1px solid var(--wf-line);
+}
+
+.recordCard .fact dt,
+.recordCard .fact dd {
+  margin: 0;
+}
+
+.recordCard .fact dd {
+  font-weight: 500;
+}
+
+@media (max-width: 46.4375rem) {
+  .recordCard .fact {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Alerts tab: alerts, allergies and legal status, each a card of rows with its tone's glyph. */
+.recordGroup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--wf-s-2);
+}
+
+.pane > .recordGroup:first-child > .paneHead {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.recordList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--wf-line);
+  border-radius: var(--wf-r-lg);
+  background: var(--wf-surface);
+  overflow: hidden;
+}
+
+.recordItem {
+  display: flex;
+  align-items: center;
+  gap: var(--wf-s-3);
+  min-height: 48px;
+  padding: var(--wf-s-2) var(--wf-s-4);
+  font-size: var(--wf-fs-13);
+  font-weight: 500;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.recordItem + .recordItem {
+  border-top: 1px solid var(--wf-line);
+}
+
+.recordItem > svg {
+  flex: none;
+}
+
+/* The way to the record, under a record tab: the note beside the button, stacked on a phone. */
+.recordFoot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--wf-s-2) var(--wf-s-3);
+  margin-top: var(--wf-s-1);
+}
+
+.recordFoot > p {
+  margin: 0;
+  min-width: 12rem;
+}
+
+@media (max-width: 46.4375rem) {
+  .recordFoot > a {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
+
 .footText {
   font-size: var(--wf-fs-12);
   color: var(--wf-ink-2);

@@ -11,9 +11,9 @@
  *
  * Synthetic data only.
  */
-import { Copy, FilePlus2 } from "lucide-react";
+import { ArrowUpRight, Copy, FilePlus2 } from "lucide-react";
 import Link from "next/link";
-import { useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 
 import {
   Badge,
@@ -25,6 +25,7 @@ import {
   buttonClass,
   tableClasses,
   phoneRows,
+  type WfTone,
 } from "@/components/wf";
 import { copyTextToClipboard } from "@/components/ward-management/ward-clipboard";
 
@@ -76,9 +77,9 @@ function copyText(text: string, done: string, refused: string, say: (message: st
   );
 }
 
-function Facts({ rows }: { rows: readonly (readonly [string, ReactNode])[] }) {
+function Facts({ rows, className }: { rows: readonly (readonly [string, ReactNode])[]; className?: string }) {
   return (
-    <dl className={styles.facts}>
+    <dl className={className ? `${styles.facts} ${className}` : styles.facts}>
       {rows.map(([label, value]) => (
         <div key={label} className={styles.fact}>
           <dt>{label}</dt>
@@ -290,23 +291,109 @@ function BeforeYouSign({ reqs, jump }: { reqs: readonly Requirement[]; jump: Jum
   );
 }
 
-/** A record tab: what the synthetic record holds. */
+/** A record tab: what the synthetic record holds, as one card of label and value rows. */
 function RecordPane({
   title,
+  badge,
   rows,
   note,
 }: {
-  /** Left out where the tab already names the pane (Alerts), so the heading is not said twice. */
-  title?: string;
+  title: string;
+  /** A status beside the heading (the last triage's urgency). */
+  badge?: ReactNode;
   rows: readonly (readonly [string, ReactNode])[];
   note?: string;
 }) {
   return (
     <>
-      {title ? <h3 className={styles.paneHead}>{title}</h3> : null}
-      <Facts rows={rows} />
+      <h3 className={styles.paneHead}>
+        {title}
+        {badge ? <span className={styles.pushEnd}>{badge}</span> : null}
+      </h3>
+      <Facts rows={rows} className={styles.recordCard} />
       {note ? <p className={styles.quiet}>{note}</p> : null}
     </>
+  );
+}
+
+/** One group on the Alerts tab: a quiet heading with its count, then one row per item. */
+function FlagGroup({
+  title,
+  items,
+  tone,
+  empty,
+  tag,
+}: {
+  title: string;
+  items: readonly string[];
+  tone: WfTone;
+  empty: string;
+  tag?: string;
+}) {
+  const id = useId();
+  return (
+    <section className={styles.recordGroup} aria-labelledby={id}>
+      <h3 className={styles.paneHead} id={id}>
+        {title}
+        {items.length > 1 ? <span className={`${styles.mono} ${styles.pushEnd}`}>{items.length}</span> : null}
+      </h3>
+      <ul className={styles.recordList}>
+        {items.length ? (
+          items.map((item) => (
+            <li key={item} className={styles.recordItem} data-tone={tone}>
+              <StatusGlyph tone={tone} size={12} />
+              <span className={styles.grow}>{item}</span>
+              {tag ? (
+                <Badge size="sm" className={styles.noShrink}>
+                  {tag}
+                </Badge>
+              ) : null}
+            </li>
+          ))
+        ) : (
+          <li className={styles.recordItem} data-tone="none">
+            <StatusGlyph tone="neutral" size={12} />
+            <span className={styles.missing}>{empty}</span>
+          </li>
+        )}
+      </ul>
+    </section>
+  );
+}
+
+/**
+ * Alerts, allergies and legal status, as the banner shows them, each as its own card of rows so a
+ * glance reads what is there and what is not. Read-only: they are corrected on the patient record.
+ */
+function AlertsPane({ person }: { person: TriagePerson }) {
+  const alerts = person.alerts?.length ? person.alerts : person.alert ? [person.alert] : [];
+  const allergies = person.allergies === "Not recorded" ? [] : person.allergies.split(" · ");
+  return (
+    <>
+      <FlagGroup title="Alerts" items={alerts} tone="warning" empty="None on the synthetic record" />
+      <FlagGroup title="Allergies" items={allergies} tone="danger" empty="Not recorded" />
+      <FlagGroup
+        title="Legal status"
+        items={person.legal ? [person.legal] : []}
+        tone="info"
+        tag="Not legally checked"
+        empty="Not recorded. Not legally checked."
+      />
+      <RecordLink person={person} note="From the record. Correct them on the patient record." />
+    </>
+  );
+}
+
+/** Where the record's details are corrected: a quiet line and the way to the record. */
+function RecordLink({ person, note }: { person: TriagePerson; note: string }) {
+  return (
+    <div className={styles.recordFoot}>
+      <p className={`${styles.quiet} ${styles.grow}`}>{note}</p>
+      <Link href={person.recordHref} className={buttonClass({ className: styles.noShrink })}>
+        <ArrowUpRight size={14} aria-hidden="true" />
+        Open patient record
+      </Link>
+    </div>
   );
 }
 
@@ -396,6 +483,7 @@ export function SummaryDrawer({
         {tab === "last" && person.last ? (
           <RecordPane
             title={person.last.label}
+            badge={<Badge size="sm">{person.last.urgencyText}</Badge>}
             rows={[
               ["Urgency", person.last.urgencyText],
               ["Outcome", person.last.outcome],
@@ -410,17 +498,7 @@ export function SummaryDrawer({
             note="A signed triage keeps its codes only. Its typed assessment, formulation and plan are not carried."
           />
         ) : null}
-        {tab === "alerts" ? (
-          <RecordPane
-            rows={[
-              [
-                "Alerts",
-                person.alerts?.length ? person.alerts.join(" · ") : (person.alert ?? "None on the synthetic record"),
-              ],
-              ["Allergies", person.allergies],
-            ]}
-          />
-        ) : null}
+        {tab === "alerts" ? <AlertsPane person={person} /> : null}
         {tab === "profile" ? (
           <>
             <RecordPane
@@ -442,11 +520,8 @@ export function SummaryDrawer({
                 ["Now at", person.nowAt],
                 ["Legal", legalWords(person)],
               ]}
-              note="Contacts and care details are on the patient record."
             />
-            <Link href={person.recordHref} className={buttonClass({ className: styles.startSelf })}>
-              Open patient record
-            </Link>
+            <RecordLink person={person} note="Contacts and care details are on the patient record." />
           </>
         ) : null}
       </div>
