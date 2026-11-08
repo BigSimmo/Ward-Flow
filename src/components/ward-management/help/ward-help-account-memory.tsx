@@ -15,6 +15,7 @@ import { useContext, useEffect } from "react";
 import { HELP_HINTS_CHANGED_EVENT, HELP_HINTS_KEY, parseHelpHints } from "../help-content/ward-help-hints";
 import { HELP_TIPS_CHANGED_EVENT, helpTipsChoice, setHelpTipsOff } from "../help-content/ward-help-tips-off";
 import { SharedAccessContext } from "../shell/ward-shared-access-context";
+import { markHelpAccountReady } from "./ward-help-account-ready";
 import { markTourSeen, parseTourSeen, TOUR_SEEN_CHANGE_EVENT, TOUR_SEEN_STORAGE_KEY } from "./ward-help-store";
 import { markWhatsNewSeen, WHATS_NEW_SEEN_EVENT, WHATS_NEW_STORAGE_KEY, whatsNewSeenIds } from "./ward-whats-new";
 
@@ -191,18 +192,22 @@ export function WardHelpAccountMemory() {
     call().then(
       (reply) => {
         const held = accountHelpReply(reply);
-        if (!live || !held) return;
-        applying = true;
-        try {
-          applyAccountHelpMemory(held);
-        } finally {
-          applying = false;
+        if (!live) return;
+        if (held) {
+          applying = true;
+          try {
+            applyAccountHelpMemory(held);
+          } finally {
+            applying = false;
+          }
+          account = held;
         }
-        account = held;
-        send();
+        markHelpAccountReady(actorId);
+        if (held) send();
       },
       () => {
         // Not reachable: this device's memory stands.
+        if (live) markHelpAccountReady(actorId);
       },
     );
     return () => {

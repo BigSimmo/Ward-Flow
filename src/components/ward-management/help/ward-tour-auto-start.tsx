@@ -2,8 +2,10 @@
 
 import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 
+import { SharedAccessContext } from "../shell/ward-shared-access-context";
+import { HELP_ACCOUNT_READY_EVENT, helpAccountReady } from "./ward-help-account-ready";
 import { parseTourSeen, useTourRole, useTourSeen, type WardTourRole } from "./ward-help-store";
 import { useTourFacts } from "./ward-tour-facts";
 
@@ -64,6 +66,26 @@ function markTourAutoDone(role: WardTourRole): boolean {
 }
 
 /**
+ * #1427: a signed-in account's Help memory (`ward-help-account-memory.tsx`) can say the tour was
+ * already offered on another device, so the offer waits until it has loaded or failed.
+ */
+function useAccountMemoryLoaded(): boolean {
+  const shared = useContext(SharedAccessContext);
+  const actorId = shared?.api.preferences ? shared.actorId : null;
+  const [loaded, setLoaded] = useState<string | null>(null);
+  useEffect(() => {
+    if (!actorId) return;
+    const check = () => {
+      if (helpAccountReady(actorId)) setLoaded(actorId);
+    };
+    check();
+    window.addEventListener(HELP_ACCOUNT_READY_EVENT, check);
+    return () => window.removeEventListener(HELP_ACCOUNT_READY_EVENT, check);
+  }, [actorId]);
+  return !actorId || loaded === actorId;
+}
+
+/**
  * How long the desk, its home and the page must hold still before the tour starts. The first
  * render reads the whole-network coordinator until the stored or shared desk applies, and a desk
  * switch changes the role before it reaches the new home, so the tour waits for both to settle.
@@ -88,12 +110,14 @@ export function WardTourAutoStart({ onStart }: { onStart: () => void }) {
   const seen = useTourSeen(role);
   const { home, deskHome } = useTourFacts(role);
   const pathname = usePathname() ?? "";
+  const memoryLoaded = useAccountMemoryLoaded();
   const started = useRef<WardTourRole | null>(null);
   // The offer remembers the desk and page it was raised on, so a desk switch cannot leave a card
   // open that would start another desk's tour.
   const [offered, setOffered] = useState<{ readonly role: WardTourRole; readonly pathname: string } | null>(null);
   useEffect(() => {
-    if (started.current === role || seen || !home || (pathname !== home && pathname !== deskHome)) return;
+    if (!memoryLoaded || started.current === role || seen || !home || (pathname !== home && pathname !== deskHome))
+      return;
     const timer = window.setTimeout(() => {
       started.current = role;
       if (readTourAutoDone() || !markTourAutoDone(role)) return;
@@ -102,7 +126,7 @@ export function WardTourAutoStart({ onStart }: { onStart: () => void }) {
       setOffered({ role, pathname });
     }, TOUR_SETTLE_MS);
     return () => window.clearTimeout(timer);
-  }, [deskHome, home, pathname, role, seen]);
+  }, [deskHome, home, memoryLoaded, pathname, role, seen]);
   const showing = Boolean(offered && offered.role === role && offered.pathname === pathname);
   if (!showing) return null;
   // Escape is "Not now" (the welcome's own modal contract).
