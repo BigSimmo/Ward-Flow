@@ -19,15 +19,19 @@ describe("WF-44 live rail occupancy labels", () => {
     expect(compactPipPlace({ name: "Metro" })).toBe("Metro");
     expect(compactPipPlace({ name: "RPH" })).toBe("RPH");
     expect(compactPipPlace(undefined)).toBe("Beds");
+    expect(compactPipPlace({ name: "Synthetic Adult Ward" })).toBe("Beds");
   });
 
   it("draws the ring's figure, filled to the percent, amber only when a place is over the line", () => {
-    const { container, rerender } = render(<RailOccupancyRing percent={85.9} alert />);
+    const { container, rerender } = render(<RailOccupancyRing percent={85.9} />);
     const svg = container.querySelector("svg")!;
     expect(svg).toHaveTextContent("86");
     expect(svg).toHaveAttribute("data-alert", "true");
-    rerender(<RailOccupancyRing percent={null} alert={false} />);
+    rerender(<RailOccupancyRing percent={null} />);
     expect(container.querySelector("svg")).toHaveTextContent("—");
+    expect(container.querySelector("svg")).not.toHaveAttribute("data-alert");
+    // The ring's colour follows its own figure, not another place's alert.
+    rerender(<RailOccupancyRing percent={70} />);
     expect(container.querySelector("svg")).not.toHaveAttribute("data-alert");
   });
 

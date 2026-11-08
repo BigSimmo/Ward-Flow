@@ -904,7 +904,7 @@ export function NextRailBody({ onOpenOperatorModal }: WardRailProps = {}) {
             >
               {/* Note 3 (Josh, 8 Nov 2026): a small ring with the figure inside, never cut-off words.
                   It fills to the occupancy and turns amber at or over the line; the place sits underneath. */}
-              <RailOccupancyRing percent={firstRow?.percent ?? null} alert={overLine.over > 0} />
+              <RailOccupancyRing percent={firstRow?.percent ?? null} />
               <span className={railParts.compactAlertCaption}>{compactPipPlace(firstRow)}</span>
             </button>
           </Tooltip>

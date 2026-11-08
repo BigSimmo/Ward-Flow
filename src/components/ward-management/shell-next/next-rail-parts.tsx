@@ -136,11 +136,14 @@ export function capacityRowsOver(rows: readonly CapacityRow[]): string {
  * a small ring that holds the figure. "East Metro" shortens to "East"; "Metro" stays.
  */
 export function compactPipPlace(row: Pick<CapacityRow, "name"> | undefined): string {
-  return row?.name.replace(/\s+Metro$/u, "").trim() || "Beds";
+  // A name too long for the 44px strip (a full ward name) reads "Beds"; the button's title names it.
+  const place = row?.name.replace(/\s+Metro$/u, "").trim() ?? "";
+  return place && place.length <= 6 ? place : "Beds";
 }
 
-/** The closed rail's occupancy ring: it fills to the figure, amber when a place is at or over the line. */
-export function RailOccupancyRing({ percent, alert }: { percent: number | null; alert: boolean }) {
+/** The closed rail's occupancy ring: it fills to the figure, amber when that figure is at or over the line. */
+export function RailOccupancyRing({ percent }: { percent: number | null }) {
+  const alert = percent !== null && isBedAlert(percent);
   const circumference = 2 * Math.PI * 15;
   const filled = percent === null ? 0 : (Math.min(Math.max(percent, 0), 100) / 100) * circumference;
   return (

@@ -309,7 +309,7 @@ function ExecutiveBedAlerts({ report }: { report: ExecutiveReportingFoundation }
         aria-haspopup="dialog"
         onClick={() => setOpen(!open)}
       >
-        <RailOccupancyRing percent={firstRow?.percent ?? null} alert={overLine.over > 0} />
+        <RailOccupancyRing percent={firstRow?.percent ?? null} />
         <span className={railParts.compactAlertCaption}>{compactPipPlace(firstRow)}</span>
       </button>
       <button

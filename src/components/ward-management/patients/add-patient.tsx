@@ -61,6 +61,7 @@ import {
   AddPatientMoreDetails,
   EMPTY_EXTRAS,
   extrasEntered,
+  ADD_PATIENT_FOLDS_ID,
   FOLD_IDS,
   filledExtras,
   INDIGENOUS_STATUS_UNANSWERED,
@@ -1087,6 +1088,7 @@ export function AddPatientForm() {
                     variant="ghost"
                     data-testid="ward-add-patient-open-all"
                     aria-expanded={allFoldsOpen}
+                    aria-controls={ADD_PATIENT_FOLDS_ID}
                     onClick={() => setOpenFolds(allFoldsOpen ? new Set() : new Set(FOLD_IDS))}
                   >
                     {allFoldsOpen ? "Close all" : "Open all"}

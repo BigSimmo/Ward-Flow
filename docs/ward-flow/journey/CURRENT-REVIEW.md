@@ -116,7 +116,7 @@ two readers on Home were changed with it), `ward-global-search.tsx`, `ward-tasks
 
 ## 8 November 2026 — Note 3 optional administrative details (PR #1541)
 
-Four reviewed source files changed, compared line by line with main `f2f66f9c`. `ward-flow-events.ts` only widens
+Four of the PR's changed files are cited review sources here, compared line by line with main `f2f66f9c`. `ward-flow-events.ts` only widens
 the ADD_PATIENT payload type with the 22 optional `ADMIN_DETAIL_FIELDS` (ruling NOTE3-2026-11-08); no other event's
 type, role or handler changed. `ward-patient-registration-reducer.ts` trims those fields into the new record on the
 same terms as the existing optional typed details; its guards (UMRN, names, date of birth, sex, gender, status,
@@ -126,4 +126,4 @@ registration-only record that holds them can still be archived as erroneous; car
 fields; it still raises one ADD_PATIENT with the same required payload. The ADD_PATIENT "needs" and ARCHIVE_PATIENT
 guard prose were updated, and the whole-file digests for these four files refreshed in `actions.json`,
 `event-dispositions.json` and `machines.json`. Evidence: `tests/ward-add-patient.dom.test.tsx` and
-`tests/ward-patient-model.test.ts`, run locally.
+`tests/ward-patient-model.test.ts`, run locally. A later review fix only adds `aria-controls` to Add patient's Open all button (and its import); its digest was refreshed again.

@@ -255,7 +255,7 @@ function ExtraText({
   );
 }
 
-/** A listed answer, as a compact drop-down. "Not recorded" sends nothing. */
+/** A listed answer, as chips. Nothing chosen sends nothing. */
 function ExtraChoice({
   id,
   label,
@@ -324,7 +324,7 @@ export function AddPatientMoreDetails({
     testId: `ward-add-patient-fold-${id}`,
   });
   return (
-    <div className={styles.folds} data-testid="ward-add-patient-more-details">
+    <div id={ADD_PATIENT_FOLDS_ID} className={styles.folds} data-testid="ward-add-patient-more-details">
       <AddPatientFold
         title="Sex and gender"
         holds="Gender is used for bed matching"
@@ -381,4 +381,7 @@ export function AddPatientMoreDetails({
 }
 
 /** The folds' ids, in order, for "Open all". */
+/** The folds' wrapper, which the Open all button controls. */
+export const ADD_PATIENT_FOLDS_ID = "ward-add-patient-folds";
+
 export const FOLD_IDS = ["about", ...FOLDS.map((fold) => fold.id)] as const;
