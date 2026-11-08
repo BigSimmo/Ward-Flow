@@ -1103,3 +1103,12 @@ is inferred.
   3. A click or tap outside a drawer, sheet or pop-up closes it. Inline panels beside a list (Waiting, Delays, Referrals) stay open until closed or switched, and a confirmation that needs a choice ("Close without sending?") and the idle lock stay until answered.
 - **How:** a hand-built drawer whose backdrop sits beside its panel marks it `data-sheet-scrim` (`src/components/wf/sheet-focus.ts`), so the shared focus trap leaves that backdrop live.
 - **Boundary:** approves no merge or release.
+
+## D-96. A named bed is held, and its patient is not also waiting (8 November 2026)
+
+- **Date:** 8 November 2026 (`2026-11-08`), 10:53 AM AWST (02:53 UTC). **Decided by:** Josh, in the Ward Flow project, answering "Go ahead with all recommendations" after being asked to confirm this rule.
+- **Decision:**
+  1. A bed named for a referral or journey (WF-FIG-017, 7 November 2026) counts as held, not free, on every screen that counts beds: Find a bed, the forecast, Mismatch cards, the bed map, the network table, the ward drawer, the TVs, the bed meeting sheet and the shortlist.
+  2. A journey that holds a named bed is not also counted as waiting for a bed, so one patient is never counted twice.
+- **How:** `numberedReservationBeds` (`src/components/ward-management/ward-movement-bed-hold.ts`), built in PR #1506.
+- **Boundary:** a prototype rule on synthetic data; approves no merge or release.
