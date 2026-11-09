@@ -2331,12 +2331,17 @@ const MORE_BUILDERS: readonly (readonly [weight: number, builder: Builder])[] = 
     })),
   ],
   // Staff needed (feature 10, 9 Nov 2026): one builder, so the sweep's list grows by one only. Closes
-  // an open request half the time, else a ward asks for staff.
+  // a request half the time (a missing one when none is open), else a ward asks for staff.
   [
     0.6,
     (state, random) => {
       const open = (state.staffRequests ?? []).filter((record) => record.outcome === undefined);
-      const request = chance(random, 0.5) ? pick(random, open) : undefined;
+      const closing = chance(random, 0.5);
+      // With nothing open it still sends, naming a missing request (refused), so a sweep step
+      // always covers the close however the sweep lands (PR #1563 shifted it).
+      const request = closing
+        ? (pick(random, open) ?? { id: MISSING_ID, unitId: id(pick(random, state.units)) })
+        : undefined;
       if (request)
         return {
           type: "CLOSE_WARD_STAFF_REQUEST",
