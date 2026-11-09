@@ -29,12 +29,22 @@ test.describe("@mockup seclusion and restraint record", () => {
     await page.goto(SECLUSION, { waitUntil: "load" });
     const view = page.getByTestId("seclusion-forms-view");
     await expect(view).toBeVisible({ timeout: 20_000 });
+    // The server HTML shows the Start button before React owns it, and a press then does nothing
+    // (seen in CI on 8 and 9 Nov 2026). Wait until React has attached to the button before reading
+    // the page or pressing anything, as the roles journey does.
+    await page.waitForFunction(
+      () => {
+        const button = document.querySelector('[data-testid="seclusion-start-open"]');
+        return button?.isConnected === true && Object.keys(button).some((key) => key.startsWith("__reactProps$"));
+      },
+      undefined,
+      { timeout: 30_000 },
+    );
     const liveRows = page.getByTestId("seclusion-live-row");
     const before = await liveRows.count();
 
     const start = page.getByTestId("seclusion-start-dialog");
-    // The first press can land before React hydrates the page (seen in CI on 9 Nov 2026), so press
-    // again until the dialog opens, as the statistics journey does.
+    // Belt and braces: press again if the dialog still has not opened.
     await expect(async () => {
       if (!(await start.isVisible())) await page.getByTestId("seclusion-start-open").click();
       await expect(start).toBeVisible({ timeout: 3_000 });
@@ -66,8 +76,10 @@ test.describe("@mockup seclusion and restraint record", () => {
     await start.getByRole("radio", { name: "Seclusion" }).click();
     await expect(record).toHaveAttribute("aria-disabled", "true");
     await pressNow(start, "Started at");
-    const startedAt = await start.getByTestId("seclusion-start-time").inputValue();
-    expect(startedAt).toMatch(/^\d{2}:\d{2}$/);
+    // Wait for Now to fill the box before reading it; an immediate read can still see it empty.
+    const startTime = start.getByTestId("seclusion-start-time");
+    await expect(startTime).toHaveValue(/^\d{2}:\d{2}$/);
+    const startedAt = await startTime.inputValue();
     await expect(record).not.toHaveAttribute("aria-disabled", "true");
     await record.click();
     await expect(start).toBeHidden();
