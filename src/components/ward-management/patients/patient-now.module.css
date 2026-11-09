@@ -3210,3 +3210,56 @@
 .formChipName {
   font-weight: 600;
 }
+
+/* Note 5 (Josh, 9 Nov 2026: "make the dark part more condensed ... the boxes too large"): the
+ * phone band's figures sit in one short row (value then words on one line) instead of tall
+ * 44px cells, and the band's gaps tighten. Desktop is untouched. */
+@media (max-width: 46.4375rem) {
+  .v6HeroBar.v6HeroBar {
+    gap: var(--wf-s-2);
+  }
+
+  .v6HeroFacts.v6HeroFacts {
+    display: flex;
+    flex-wrap: wrap;
+    column-gap: var(--wf-s-3);
+    row-gap: 2px;
+    padding: 2px 0 0;
+  }
+
+  .v6HeroFacts .v6HeroFact.v6HeroFact {
+    flex: 0 1 auto;
+    flex-wrap: nowrap;
+  }
+
+  .v6HeroFacts .v6HeroFact.v6HeroFact + .v6HeroFact {
+    padding-left: var(--wf-s-3);
+  }
+
+  .v6HeroFacts .v6HeroFact.v6HeroFact {
+    min-height: 0;
+    padding-block: 2px;
+    row-gap: 0;
+  }
+
+  .v6HeroFacts .v6HeroFact strong,
+  .v6HeroFacts .v6HeroFact .v6HeroWait {
+    flex-basis: auto;
+    font-size: var(--wf-fs-14);
+    line-height: 18px;
+  }
+}
+
+/* Note 5 (approved mock-up): the selected record tab is a filled navy pill, matching the header. */
+.v6HeroTabsRow .v6Tab[aria-selected="true"],
+.v6HeroTabsRow .v6Tab[aria-selected="true"]:hover {
+  background: var(--wf-hero-1);
+  box-shadow: none;
+  color: var(--wf-hero-ink);
+}
+
+.v6HeroTabsRow .v6Tab[aria-selected="true"] .v6TabCount {
+  background: color-mix(in srgb, var(--wf-hero-ink) 16%, transparent);
+  box-shadow: none;
+  color: var(--wf-hero-ink);
+}
