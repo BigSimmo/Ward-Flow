@@ -1,4 +1,4 @@
-# 9 Nov 2026, Capacity loads its ward drawer and pop-ups on first open
+# 9 Nov 2026, Capacity loads its ward drawer and pop-ups on first open (PR #1557)
 
 Lowered Capacity 667.5 to 645.0 (22.5 KB). Raised bed meeting 571.0 to 572.0 (1.0 KB).
 
