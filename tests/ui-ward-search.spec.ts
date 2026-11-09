@@ -367,8 +367,12 @@ test.describe("@mockup Ward patient search", () => {
     expect(chipCount, "the phone census shows its highlight chips").toBeGreaterThan(0);
     for (let i = 0; i < chipCount; i += 1) controls.push([chips.nth(i), `highlight chip ${i + 1}`]);
     // PS1 (3 Nov 2026): the six group pills became the register's state switch (Everyone and
-    // five states), so each of its options is measured instead.
-    const groups = console_.getByRole("radiogroup", { name: "Where people are now" }).getByRole("radio");
+    // five states), so each of its options is measured instead. Page tops (Josh, 9 Nov 2026): the
+    // switch is the page's folder tabs under the hero, outside the results console.
+    const groups = page
+      .getByTestId("ward-patient-states")
+      .getByRole("radiogroup", { name: "Where people are now" })
+      .getByRole("radio");
     await expect(groups, "the phone census shows the six-option state switch").toHaveCount(6);
     for (let i = 0; i < 6; i += 1) controls.push([groups.nth(i), `state option ${i + 1}`]);
 

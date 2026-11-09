@@ -137,12 +137,12 @@ test("Community referral: a community team refers from its own desk, the ward it
   await expectAccessible(page, testInfo, "community team desk");
 
   // --- The team refers from its own desk. The slide-out opens over the team page. ---
-  // On the Midland phone page (Q155) Refer from team is the Referrals section's hero action.
-  if (isPhoneLayout(page))
-    await page
-      .getByTestId("ward-community-screen")
-      .getByRole("radio", { name: /^Referrals/u })
-      .click();
+  // On the Midland phone page (Q155) Refer from team is the Referrals section's hero action. Page
+  // tops (Josh, 9 Nov 2026): a phone keeps Referrals under More team sections.
+  if (isPhoneLayout(page)) {
+    await page.getByTestId("ward-community-screen").getByRole("button", { name: "More team sections" }).click();
+    await page.getByRole("menuitem", { name: /^Referrals/u }).click();
+  }
   await page.getByRole("button", { name: "Refer from team", exact: true }).click();
   const sheet = page.getByTestId("ward-bar-referral-sheet");
   await expect(sheet).toBeVisible({ timeout: 15_000 });

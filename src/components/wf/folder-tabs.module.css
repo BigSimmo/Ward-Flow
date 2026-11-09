@@ -311,11 +311,13 @@
 
   /* Each tab hugs its label with the same space either side, so the chosen folder is symmetrical. */
   .switch.switch.switch.switch > * {
+    position: relative;
     flex: 0 0 auto;
     padding: 0 12px;
   }
 
-  /* The visible tab is 40px; an invisible cover keeps each tap area 48px tall. */
+  /* The visible tab is 40px; an invisible cover keeps each tap area 48px tall. Each tab anchors its
+     own cover, or the last tab's would lie over the whole row and take every press. */
   .switch.switch.switch.switch > *::after {
     content: "";
     display: block;
@@ -328,6 +330,15 @@
     .switch.switch.switch.switch
     > :not([aria-checked="true"], [aria-selected="true"], [aria-current="page"], [aria-current="true"]) {
     color: var(--wf-hero-ink-2);
+  }
+
+  /* A More button is drawn 40px square at least, whatever kit size it carries (phone house rule). */
+  .more.more.more.more {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    min-height: 40px;
   }
 }
 

@@ -1741,7 +1741,8 @@ button.gl:hover .glValue {
 
 /* Phone: the since line is a button that opens what changed, drawn as the plain line. */
 button.sinceLine {
-  padding: 0;
+  padding: 11px 0;
+  margin: -11px 0;
   border: 0;
   background: none;
   text-align: start;

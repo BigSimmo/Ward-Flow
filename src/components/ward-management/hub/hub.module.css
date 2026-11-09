@@ -1358,6 +1358,18 @@
   inset: -4px;
 }
 
+/* Phone: drawn 40px tall (house rule) through padding its negative margin takes back. */
+@media (max-width: 46.4375rem) {
+  .glanceFigure {
+    padding: 12px 8px;
+    margin: -12px -8px;
+  }
+
+  .glanceFigure::after {
+    content: none;
+  }
+}
+
 .glanceFigure:focus-visible {
   outline: 2px solid var(--wf-hero-ink);
   outline-offset: 2px;

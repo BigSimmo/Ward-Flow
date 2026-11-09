@@ -530,10 +530,45 @@ a.cellBody {
     scroll-snap-align: start;
   }
 
+  /* The house rule (Q295, Q377): every phone control is drawn at least 40px. Chips, the act button
+     and band cells grow to 40px; a linked label keeps its 16px line and reaches 40px through padding
+     its negative margin takes back, so nothing around it moves. */
+  .chip {
+    height: 40px;
+  }
+
   .chip::after {
     content: "";
     position: absolute;
-    inset: -6px 0;
+    inset: -4px 0;
+  }
+
+  .act {
+    padding-block: 4px;
+  }
+
+  .actButton.actButton {
+    min-height: 40px;
+    height: 40px;
+  }
+
+  button.cellBody,
+  a.cellBody {
+    justify-content: center;
+    min-height: 40px;
+  }
+
+  a.figLink,
+  .figButton,
+  .bandAsideLink,
+  .pillAction {
+    padding: 12px 8px;
+    margin: -12px -8px;
+  }
+
+  a.figLink::after,
+  .figButton::after {
+    content: none;
   }
 }
 
