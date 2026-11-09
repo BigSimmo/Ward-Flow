@@ -21,6 +21,29 @@ export type EdWaitStep = {
   fromMinutes: number;
   /** "Step 2, over 8 hours". */
   label: string;
+  /** The suggested next step for this wait (Josh's sign-off, 9 Nov 2026). A prompt for a person, never an automatic action. */
+  nextStep: string;
+  /** The same step in two or three words, for the narrow wait column. */
+  nextStepShort: string;
+};
+
+/**
+ * Suggested next step per wait step. Josh signed off these defaults on 9 Nov 2026 (six features
+ * thread, "Go ahead with all your recommendations"). They are prototype wording, not WA Health
+ * escalation policy. No ward is suggested and the queue order does not change (D-71).
+ */
+export const ED_WAIT_NEXT_STEPS: Readonly<Record<EdWaitStep["step"], string>> = {
+  1: "Ask wards with a free bed",
+  2: "Call the site bed manager",
+  3: "Consider an out-of-area bed and add to the bed meeting",
+  4: "Tell the executive on call",
+};
+
+const ED_WAIT_NEXT_STEPS_SHORT: Readonly<Record<EdWaitStep["step"], string>> = {
+  1: "Ask wards",
+  2: "Call bed manager",
+  3: "Consider out of area",
+  4: "Tell executive",
 };
 
 const STEP_THRESHOLDS: readonly { step: EdWaitStep["step"]; fromMinutes: number }[] = [
@@ -40,5 +63,10 @@ export function edWaitStep(minutesInDepartment: number): EdWaitStep | undefined 
   if (!Number.isFinite(minutesInDepartment)) return undefined;
   const match = STEP_THRESHOLDS.find((threshold) => minutesInDepartment >= threshold.fromMinutes);
   if (!match) return undefined;
-  return { ...match, label: `Step ${match.step}, ${hoursWords(match.fromMinutes)}` };
+  return {
+    ...match,
+    label: `Step ${match.step}, ${hoursWords(match.fromMinutes)}`,
+    nextStep: ED_WAIT_NEXT_STEPS[match.step],
+    nextStepShort: ED_WAIT_NEXT_STEPS_SHORT[match.step],
+  };
 }
