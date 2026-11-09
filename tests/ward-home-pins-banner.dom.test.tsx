@@ -116,6 +116,19 @@ describe("pinnedRows", () => {
     const hidden = pinnedRows({ wards: [a.id], patients: [] }, world, NOW, { ...hrefs, canOpen: () => false });
     expect(hidden.wards).toEqual([]);
   });
+
+  it("shows an inpatient transfer at its sending ward, not the ED it first came from", () => {
+    const stay = seed.admissions.find((admission) => admission.state !== "departed")!;
+    const ward = seed.units.find((unit) => unit.id === stay.unitId)!;
+    const transfer = { ...waitingMovement, sourceAdmissionId: stay.id, transport: undefined };
+    const rows = pinnedRows(
+      { wards: [], patients: [waitingPatientId] },
+      { ...world, movements: [transfer] },
+      NOW,
+      hrefs,
+    );
+    expect(rows.patients[0].where).toBe(ward.name);
+  });
 });
 
 describe("Home Pinned card", () => {

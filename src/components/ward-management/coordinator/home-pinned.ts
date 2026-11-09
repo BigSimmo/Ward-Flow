@@ -1,5 +1,6 @@
 import { durMinutes } from "@/components/wf/format";
 import type { Admission } from "@/components/ward-management/ward-admissions";
+import { sourceWardName } from "@/components/ward-management/ward-movement-origin";
 import { readyBedsNow } from "@/components/ward-management/ward-bed-states";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import { isOpen } from "@/components/ward-management/ward-derivations";
@@ -113,7 +114,11 @@ export function pinnedRows(
         kind: "patient",
         id,
         href,
-        where: stage === "moving" ? "In transit" : ed ? `${ed.siteCode} ED` : "Community",
+        // A ward-to-ward or inpatient transfer starts at the sending ward, not the first ED (WF-J03).
+        where:
+          stage === "moving"
+            ? "In transit"
+            : (sourceWardName(movement, world.admissions, world.units) ?? (ed ? `${ed.siteCode} ED` : "Community")),
         step: STEP_LABEL.get(stage) ?? "Not recorded",
         wait: durMinutes(waitedMinutes),
         waitedMinutes,
