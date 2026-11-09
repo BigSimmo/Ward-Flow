@@ -2,7 +2,6 @@ import type { BedMeetingActionKind, BedMeetingActionOwner, BedMeetingSubject } f
 import type { CareChange } from "./ward-care-journey";
 import type { OnBehalfReasonId } from "./ward-on-behalf-reason";
 import type {
-  DischargeBarrier,
   LeavingDestination,
   FollowUpState,
   PlannedAdmissionCancelReason,
@@ -10,6 +9,7 @@ import type {
 } from "@/components/ward-management/ward-admissions";
 import type { AdminDetailField, Gender, PatientId } from "@/components/ward-management/ward-patients";
 import type { ArchivePatientEvent } from "./ward-patient-archive";
+import type { DischargeReasonEvent } from "./ward-delayed-discharge";
 import type { InboxWardFlowEvent } from "./ward-inbox-events";
 import type { Instant } from "@/components/ward-management/ward-clock";
 import type { EdPresentation } from "./ed/ed-presentation";
@@ -2100,14 +2100,8 @@ export type WardFlowEvent =
       admissionId: string;
       stepDownCandidate: boolean;
     }
-  | {
-      type: "SET_DISCHARGE_BARRIER";
-      role: WardFlowRole;
-      now: Instant;
-      actingUnitId?: string;
-      admissionId: string;
-      barrier: DischargeBarrier | "None" | null;
-    }
+  // SET_DISCHARGE_BARRIER and SET_CLINICALLY_READY, moved out to keep this file under its line cap.
+  | DischargeReasonEvent
   | {
       /** D-60: sets, ticks or clears a voluntary patient's discharge criteria. */
       type: "SET_DISCHARGE_CRITERIA";

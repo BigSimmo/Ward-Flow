@@ -470,6 +470,7 @@ describe("who may raise which event", () => {
     RECORD_WARD_DIAGNOSIS: ["ward", "coordinator"],
     MARK_WEEKEND_DISCHARGE_REVIEWED: ["ward", "coordinator"],
     SET_DISCHARGE_BARRIER: ["ward", "coordinator"],
+    SET_CLINICALLY_READY: ["ward", "coordinator"],
     SET_DISCHARGE_CRITERIA: ["ward", "coordinator"],
     RECORD_ED_MEDICAL_DETERIORATION: ["ed", "coordinator"],
     RECORD_MOVEMENT_MEDICAL_CLEARANCE: ["ed", "coordinator"],

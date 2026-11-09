@@ -87,6 +87,8 @@ function anAdmission(overrides: Partial<Admission> = {}): Admission {
     followUp: null,
     careJourney: { contacts: [], plan: {}, documents: {}, episodes: [] },
     dischargeBarrier: null,
+    clinicallyReadySince: null,
+    delayedDischargeReason: null,
     dischargeCriteria: null,
     stepDownCandidate: false,
     // Smart features idea 5 (19 Oct 2026): bed meeting actions, so the built fixture carries every field.
@@ -589,6 +591,10 @@ describe("Admission privacy — structural", () => {
     // put this stay in. Never a fact about the person; no `AUTHORISED_PERSON_FACTS` entry.
     "bedNumber",
     "dischargeBarrier",
+    // WIDENED ON PURPOSE, 9 Nov 2026 — Josh, item 5: the ward's clinically ready day and the one
+    // listed reason the stay has not ended. Chosen, never typed.
+    "clinicallyReadySince",
+    "delayedDischargeReason",
     "dischargeCriteria",
     "stepDownCandidate",
     "state",
@@ -682,6 +688,8 @@ describe("Admission privacy — structural", () => {
       followUp: { state: "arranged", recordedAt: 10 * 60, recordedBy: "Ward manager" },
       careJourney: { contacts: [], plan: {}, documents: {}, episodes: [] },
       dischargeBarrier: "Accommodation / Housing",
+      clinicallyReadySince: DAY_ZERO + 25 * MINUTES_PER_DAY,
+      delayedDischargeReason: "Accommodation / Housing",
       dischargeCriteria: { setAt: DAY_ZERO, items: [{ criterion: "Accommodation confirmed", metAt: null }] },
       stepDownCandidate: true,
       meetingActions: [{ kind: "review_step_down", owner: "coordinator", dueAt: 600, recordedAt: 360 }],

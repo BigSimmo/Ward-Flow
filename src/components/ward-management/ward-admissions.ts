@@ -283,6 +283,40 @@ export function isDischargeBarrier(value: unknown): value is DischargeBarrier {
 }
 
 /**
+ * WHY A PATIENT WHO IS CLINICALLY READY HAS NOT GONE (item 5, delayed discharge reasons).
+ *
+ * OWNER-APPROVED ruling, Josh, 9 Nov 2026 ("Approve as proposed"): the ward may record "Clinically
+ * ready for discharge since [date]" on an inpatient's stay. Once that date is set, the ward picks ONE
+ * reason from the long-stay list `DISCHARGE_BARRIERS` EXCLUDING "Clinical / Treatment" (a patient
+ * held for clinical reasons is not clinically ready). Delayed bed days count from the ready-since
+ * date and are broken down by this reason. Chosen, never typed; `tests/ward-delayed-discharge.test.ts`
+ * pins this list to `DISCHARGE_BARRIERS` less that one entry.
+ */
+export const DELAYED_DISCHARGE_REASONS = [
+  "Accommodation / Housing",
+  "NDIS",
+  "SAT / Public Guardian",
+  "RACF / Aged Care",
+  "Social / Family",
+  "Several",
+] as const satisfies readonly Exclude<DischargeBarrier, "Clinical / Treatment">[];
+export type DelayedDischargeReason = (typeof DELAYED_DISCHARGE_REASONS)[number];
+
+export function isDelayedDischargeReason(value: unknown): value is DelayedDischargeReason {
+  return typeof value === "string" && (DELAYED_DISCHARGE_REASONS as readonly string[]).includes(value);
+}
+
+/** The short word for a board line or a table row: "Ready since 4 Nov · Housing · 5 days". */
+export const DELAYED_DISCHARGE_REASON_SHORT: Record<DelayedDischargeReason, string> = {
+  "Accommodation / Housing": "Housing",
+  NDIS: "NDIS",
+  "SAT / Public Guardian": "SAT / Guardian",
+  "RACF / Aged Care": "Aged care",
+  "Social / Family": "Social / family",
+  Several: "Several",
+};
+
+/**
  * Why a pull was released — the bed given back before the person ever reached it.
  *
  * Chosen never typed, like every fixed list in `ward-change-reasons.ts`, and about THE NETWORK OR
@@ -733,6 +767,14 @@ export type Admission = {
    * Chosen from DISCHARGE_BARRIERS fixed vocabulary, never typed or free text.
    */
   dischargeBarrier?: DischargeBarrier | null;
+  /**
+   * Item 5 (Josh, 9 Nov 2026): the Perth midnight of the day the ward recorded this person as
+   * clinically ready for discharge. Set and cleared together with `delayedDischargeReason` by
+   * `SET_CLINICALLY_READY`; absent or null when not recorded.
+   */
+  clinicallyReadySince?: Instant | null;
+  /** Why a clinically ready person has not gone, from `DELAYED_DISCHARGE_REASONS`. */
+  delayedDischargeReason?: DelayedDischargeReason | null;
   /** Criteria led discharge (D-60): set by the treating psychiatrist for a voluntary patient only. */
   dischargeCriteria?: DischargeCriteriaRecord | null;
   /**
@@ -770,6 +812,8 @@ const ADMISSION_FIELD_PRESENCE: Record<keyof Admission, true> = {
   bedKind: true,
   bedNumber: true,
   dischargeBarrier: true,
+  clinicallyReadySince: true,
+  delayedDischargeReason: true,
   dischargeCriteria: true,
   stepDownCandidate: true,
   state: true,

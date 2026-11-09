@@ -11,6 +11,8 @@ import { edById, edShortName } from "@/components/ward-management/ward-sites";
 import { VERY_LONG_WAIT_MINUTES } from "@/components/ward-management/ward-operational-defaults";
 import { ShortLabel } from "@/components/ward-management/statistics/redesign/statistics-redesign-parts";
 import { WeeklyBody } from "@/components/ward-management/statistics/redesign/statistics-redesign-weekly";
+import { DelayedReasonsCard } from "@/components/ward-management/statistics/redesign/statistics-redesign-delayed-reasons";
+import { delayedBedDaysByReason } from "@/components/ward-management/ward-delayed-discharge";
 import { dateOf } from "../statistics/statistics-dates";
 import { StatisticsHero, useStatisticsLive } from "../statistics/statistics-hero";
 
@@ -197,6 +199,16 @@ function OperationalWeeklyReport({ offset, setOffset }: WeekPicker) {
       week,
     ],
   );
+  // Item 5: delayed bed days by reason, the desk's own wards, over the counted week.
+  const delayedReasons = useMemo(
+    () =>
+      delayedBedDaysByReason(
+        admissions,
+        units.map((unit) => unit.id),
+        { from: week.start, to: week.countedEnd },
+      ),
+    [admissions, units, week],
+  );
 
   // Feature 29 (Josh, 9 Nov 2026): stays arriving in the week that carry the 28 day readmission flag.
   const readmissions = useMemo(
@@ -238,6 +250,12 @@ function OperationalWeeklyReport({ offset, setOffset }: WeekPicker) {
         admissions.find((admission) => admission.movementId === movementId)?.id ?? "Not yet admitted"
       }
       pilot={pilot}
+      delayedReasons={
+        <DelayedReasonsCard
+          data={delayedReasons}
+          wardName={(unitId) => units.find((unit) => unit.id === unitId)?.name ?? unitId}
+        />
+      }
     />
   );
 }
@@ -256,7 +274,9 @@ function WeeklyReportView({
   scopeLabel,
   readmissions,
   heatmap,
+  delayedReasons,
 }: WeekPicker & {
+  delayedReasons?: ReactNode;
   week: ReportWeek;
   report: WeeklyViewReport;
   pilot: WeeklyPilot;
@@ -486,6 +506,7 @@ function WeeklyReportView({
           printLines={printLines}
           readmissions={readmissions}
           heatmap={heatmap?.(isPhone)}
+          delayedReasons={delayedReasons}
         />
         <WardPrototypeFooter testId="ward-weekly-footer" note="Synthetic data" />
       </main>

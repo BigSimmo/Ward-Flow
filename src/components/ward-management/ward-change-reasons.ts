@@ -715,22 +715,9 @@ export const wardIntakeConstraintLabels: Record<WardIntakeConstraint, string> = 
 };
 
 /**
- * Statutory and systemic discharge barrier reasons for SAT hearings, Public Guardian delays,
- * NDIS/SIL funding, accommodation, and T-24h operational discharge preparation (#5).
- * Maintained in an isolated taxonomy to preserve strict test pins on BED_RELEASE_BLOCKERS (length 9)
- * and changeReasonLabels (18 entries).
+ * Why a discharge blocker was cleared. (An unused `DISCHARGE_DELAY_REASONS` list stood above this
+ * until 9 Nov 2026; delayed discharge reasons are `DELAYED_DISCHARGE_REASONS` in `ward-admissions.ts`.)
  */
-export const DISCHARGE_DELAY_REASONS = [
-  "accommodation",
-  "ndis_support",
-  "community_follow_up",
-  "medication_supply",
-  "transport",
-  "family_carer",
-  "sat_hearing",
-  "public_guardian",
-] as const;
-
 export const DISCHARGE_DELAY_CLEAR_REASONS = [
   "resolved_clinically",
   "package_confirmed",

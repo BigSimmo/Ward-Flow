@@ -618,6 +618,15 @@ function candidatesForMovements(
         actingUnitId: admission.unitId,
         barrier: "Accommodation / Housing",
       }));
+    case "SET_CLINICALLY_READY":
+      return state.admissions.map((admission) => ({
+        type,
+        role,
+        now,
+        admissionId: admission.id,
+        actingUnitId: admission.unitId,
+        ready: { since: admission.arrivedAt ?? now, reason: "Accommodation / Housing" },
+      }));
     case "SET_DISCHARGE_CRITERIA":
       return state.admissions.map((admission) => ({
         type,

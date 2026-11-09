@@ -10,6 +10,7 @@ import type { ResolvedPatientInfo } from "@/components/ward-management/ward-pati
 import { patientAgeYears } from "@/components/ward-management/ward-patients";
 import { calendarDateOf } from "@/components/ward-management/ward-clock";
 import { useOptionalWardFlowSelect } from "@/components/ward-management/ward-flow-provider";
+import { clinicallyReadyText } from "@/components/ward-management/ward-delayed-discharge";
 import styles from "./board.module.css";
 import redesign from "./ward-board-panels.module.css";
 import { expectedPhrase, movesPhrase, type Occupant } from "./ward-board-model";
@@ -97,6 +98,11 @@ export function PersonEntry({
             </span>
           </p>
         )}
+        {occupant.clinicallyReady !== null && (
+          <p className={styles.personLine} data-testid={`${idPrefix}-${occupant.key}-ready`}>
+            {clinicallyReadyText(occupant.clinicallyReady, clock?.dayZero ?? null)}
+          </p>
+        )}
         {occupant.awayAtEdHours !== null && (
           <p className={styles.personAway} data-testid="ward-board-person-away">
             {occupant.awayAtEdHours === 0
@@ -179,6 +185,11 @@ export function PersonEntry({
       <section className={redesign.recordSection}>
         <h3 className={redesign.recordHeading}>What is happening today</h3>
         <p className={styles.personExpected}>{expectedPhrase(occupant.expectedDays)}</p>
+        {occupant.clinicallyReady !== null && (
+          <p className={styles.personLine} data-testid={`${idPrefix}-${occupant.key}-ready`}>
+            {clinicallyReadyText(occupant.clinicallyReady, clock?.dayZero ?? null)}
+          </p>
+        )}
         {occupant.expectedDays !== null && (
           <p className={styles.personLine}>
             {occupant.dischargeDateSetBy !== null ? `Date set by ${occupant.dischargeDateSetBy}` : "Date set"}

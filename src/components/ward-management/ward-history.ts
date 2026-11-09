@@ -63,6 +63,7 @@ export const EVENT_HISTORY_TABLE: Record<WardFlowEvent["type"], EventTypeHistory
   RECORD_WARD_DIAGNOSIS: { category: "patient", plainWording: "Ward's tentative diagnosis recorded" },
   MARK_WEEKEND_DISCHARGE_REVIEWED: { category: "patient", plainWording: "Weekend discharge reviewed" },
   SET_DISCHARGE_BARRIER: { category: "patient", plainWording: "Discharge hold-up recorded" },
+  SET_CLINICALLY_READY: { category: "patient", plainWording: "Clinically ready date recorded" },
   SET_DISCHARGE_CRITERIA: { category: "patient", plainWording: "Discharge criteria updated" },
   RECORD_REPATRIATION: { category: "patient", plainWording: "Repatriation transfer arrangements logged" },
   // Closing-the-loop (package E).

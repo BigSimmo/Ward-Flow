@@ -90,6 +90,8 @@ export const INSTANT_FIELDS: ReadonlySet<string> = new Set([
    * it. Adding it now costs nothing and closes that before it can open.
    */
   "readAt",
+  // Item 5 (9 Nov 2026): the day a stay was recorded clinically ready for discharge.
+  "clinicallyReadySince",
   "confirmedAt",
   "decidedAt",
   "dueAt",
