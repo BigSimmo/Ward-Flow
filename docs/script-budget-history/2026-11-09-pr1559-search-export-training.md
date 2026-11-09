@@ -6,4 +6,4 @@ Raised three phone limits after the build merged with main e26f0f4c7 measured th
 shared shell code every page now loads: the training-mode store and connection in the provider, the
 G-then-letter go-to keys in the rail, and the export button on list screens. The training banner was
 already split so only a small gate loads on every page, and the report picture library loads only
-when a report is sent. Each raise is well under the 5 KB a PR may add per screen.
+when someone makes a report picture. Each raise is well under the 5 KB a PR may add per screen.
