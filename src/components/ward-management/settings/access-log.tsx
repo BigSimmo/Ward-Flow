@@ -79,7 +79,7 @@ function demoOpenings(now: Instant): RecordOpening[] {
       surface: "patient",
     },
   ];
-  // Made-up record ids that name no record in the demo: no patient is joined to anyone (D-14).
+  // Made-up record ids that name no record in the demo: no patient is joined to anyone (archived D-14).
   const ids = ["PT-DEMO-1", "PT-DEMO-2", "PT-DEMO-3"];
   return [12, 47, 95, 180, 410, 1500].map((minutesAgo, index) => ({
     ...desks[index % desks.length],

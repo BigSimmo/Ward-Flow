@@ -7,7 +7,7 @@ import { describe, expect, it } from "vitest";
  * 🔴 **THIS GATE WAS WRITTEN AND INVOKED BY NOTHING.**
  *
  * `scripts/ward-flow/check-errata-freshness.mjs` re-measures every factual claim in
- * `docs/ward-flow/plans/2026-09-10-master-plan-errata.md` against the current tree, so a lane never
+ * `docs/history/plans-2026-09/2026-09-10-master-plan-errata.md` against the current tree, so a lane never
  * acts on a claim that has since gone stale. No `npm run` script, test, or CI job called it. This
  * file is the caller, the same shape as `tests/ward-text-size-ratchet.test.ts` for its sibling gate.
  *

@@ -98,7 +98,9 @@ Track aggregate usage against the approved maximum and stop before exceeding it.
 
 ## Project scope and host safeguards
 
-_Updated 2026-10-31 — cloud reminder fires once per session when Supermemory tools are absent; per-turn reminders, task, privacy and recall bounds retained; Documentation owns._
+_Updated 2026-11-09 — Ward Flow namespaces and decisions-first memory written in (D-107); cloud reminder fires once per session when Supermemory tools are absent; Documentation owns._
+
+**Ward Flow scope (Josh, 9 Nov 2026, D-107).** Ward Flow uses two Supermemory namespaces only: `wardflow_design` for project facts and `josh_preferences` for Josh's own preferences. The shared block's `curated-save-only` adapter and `codex_continuity` namespace are cross-project defaults; they do not apply in Ward Flow cloud threads. Every new owner ruling goes into [decisions.md](../ward-flow/decisions.md) first, and a memory note names its D-number with a one-line summary of the decision, its reason and source, so the note is findable but decisions.md stays the record.
 
 Basic Memory and former local SQLite checkpoint hooks are retired. Use Git and the approved task receipts for engineering continuity; they are separate from Supermemory. Never expose a local service or upload existing notes implicitly.
 

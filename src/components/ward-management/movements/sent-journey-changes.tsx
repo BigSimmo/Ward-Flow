@@ -44,7 +44,7 @@ import styles from "./sent-journey-changes.module.css";
 
 /**
  * The open journey a ward sent for the person in one of its beds: the one leaving this stay (a
- * return journey). Matched on the stay alone, never on the person: the D-14 guard keeps the patient
+ * return journey). Matched on the stay alone, never on the person: the archived D-14 guard keeps the patient
  * link out of this module (`tests/ward-patient-link-default-deny.test.ts`).
  */
 export function openJourneyFromStay(

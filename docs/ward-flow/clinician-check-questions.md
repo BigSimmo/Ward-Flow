@@ -2,7 +2,7 @@
 
 > **SUPERSEDED — Historical Archive**
 > This document is preserved as a historical post-mortem or pre-split archive. Do not treat its scripts, paths, worktree topology, or design tokens as active rules.
-> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](README.md), [`docs/ward-flow/STATUS.md`](STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md). Active open questions are tracked in [`docs/ward-flow/OPEN-QUESTIONS.md`](OPEN-QUESTIONS.md) and answered owner rulings are recorded in [`docs/ward-flow/decisions.md`](decisions.md).
+> For current authority, see [`AGENTS.md`](../../AGENTS.md), [`docs/ward-flow/README.md`](README.md), [`docs/ward-flow/STATUS.md`](STATUS.md), and [`design/v9/design-system-v9.md`](../../design/v9/design-system-v9.md). Work is in the [backlog](backlog.md), questions for Josh are in [STATUS "Waiting on Josh"](STATUS.md#waiting-on-josh), and answered owner rulings are in [`decisions.md`](decisions.md).
 
 <!-- docs-script-refs:historical-start -->
 

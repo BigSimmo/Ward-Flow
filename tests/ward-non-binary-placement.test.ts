@@ -15,7 +15,7 @@ import {
 import type { Movement } from "../src/components/ward-management/ward-model";
 
 /**
- * T12 (`docs/ward-flow/plans/2026-09-17-build-plan-legal-clinical.md`, item 9, owner answer 9,
+ * T12 (`docs/history/plans-2026-09/2026-09-17-build-plan-legal-clinical.md`, item 9, owner answer 9,
  * 17 September 2026): *"Non-binary patient: coordinator places with a recorded reason after
  * checking with the ward, preferring a single room."*
  *

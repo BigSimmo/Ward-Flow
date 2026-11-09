@@ -8,7 +8,7 @@ type ReferralPointer = Pick<Referral, "id" | "patientId">;
 
 /** A boolean consistency check for one already-linked episode record. It exposes no patient
  * identity, other referral destinations, history, place or count. Keep identity reads inside
- * this existing D-14-authorised resolver rather than adding new patient-link readers. */
+ * this existing archived D-14-authorised resolver rather than adding new patient-link readers. */
 export function movementPatientIdentityMatchesRecord(movement: Movement, record: Admission | Referral): boolean {
   return movement.patientId === undefined || movement.patientId === record.patientId;
 }
@@ -365,7 +365,7 @@ function formatResolvedPatient(
  * on shift identifies a patient by UMRN. Screens print `movementUmrn(...)` where they once printed
  * the movement id, and engine prose that quotes a movement id passes through
  * `withUmrnInPlaceOfMovementIds` before it is shown. Both read identity only through this resolver,
- * and an unlinked or ambiguous movement shows "UMRN not recorded" rather than a guess (D-14).
+ * and an unlinked or ambiguous movement shows "UMRN not recorded" rather than a guess (archived D-14).
  */
 export function movementUmrn(
   movement: Movement | MovementIdOnly | string | null | undefined,

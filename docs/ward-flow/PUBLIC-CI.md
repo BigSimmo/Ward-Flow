@@ -1,11 +1,12 @@
 # Public Ward Flow PR checks
 
-_Updated 2026-11-05 - atomic hosted shards, independent reuse and measured-main deduplication; Documentation owns._
+_Updated 2026-11-09 - no merge queue is in use; the merge_group triggers are dormant (D-107); Documentation owns._
 
 The `Ward Flow CI` workflow in `.github/workflows/ward-flow.yml` checks the public
 `BigSimmo/Ward-Flow` repository with pinned actions, locked dependencies, a read-only token and
-synthetic fixtures. It runs on pull requests to `main`, main pushes, merge groups, manual dispatch
-and the nightly schedule. It does not deploy the application. This describes the implemented
+synthetic fixtures. It runs on pull requests to `main`, main pushes, manual dispatch and the nightly
+schedule. Its `merge_group` trigger is dormant: no merge queue is in use
+([git-publication](../agents/git-publication.md#integration-thread-and-the-five-pr-cap)). It does not deploy the application. This describes the implemented
 contracts; hosted runtime and savings need measurements from runs of this topology.
 
 ## Layout
@@ -193,7 +194,7 @@ prove physical-device, hosted-provider or deployment acceptance.
 
 ## Phone script budget on a moving main
 
-Main has no merge queue and does not require branches to be up to date, so PRs that each fit the
+Main has no merge queue (the workflows' `merge_group` triggers are dormant) and does not require branches to be up to date, so PRs that each fit the
 phone script budget can land together over it. Before 4 November 2026 that turned every open PR's
 required production build red until someone raised the limit by hand. Three parts now handle it:
 
