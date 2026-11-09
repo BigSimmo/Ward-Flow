@@ -532,7 +532,12 @@ function WardHelpSheetView({
             type="button"
             className={s.footButton}
             aria-current={view === "report" ? "true" : undefined}
-            onClick={() => onView(view === "report" ? "tasks" : "report")}
+            onClick={() => {
+              // Clear any search so the report form, not the results, shows.
+              setQuery("");
+              setFocused(false);
+              onView(view === "report" ? "tasks" : "report");
+            }}
             // A phone's foot has room for one short word beside Your desk and the synthetic note.
             aria-label={phone ? "Report a problem" : undefined}
             data-testid="ward-help-report-open"

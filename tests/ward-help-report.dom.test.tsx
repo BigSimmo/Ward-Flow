@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
+import { useState } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { HelpReport } from "@/components/ward-management/help/ward-help-report-view";
@@ -51,6 +52,21 @@ describe("Report a problem", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: "Report a problem" }));
     expect(onView).toHaveBeenLastCalledWith("report");
+  });
+
+  it("clears a Help search so the report form shows", () => {
+    function Harness() {
+      const [view, setView] = useState<Parameters<typeof WardHelpSheet>[0]["view"]>("tasks");
+      return (
+        <WardHelpSheet view={view} onView={setView} onClose={vi.fn()} onTour={vi.fn()} onShowMe={vi.fn()} showMeOn />
+      );
+    }
+    render(<Harness />);
+    const search = screen.getByRole("combobox", { name: "Search Help" }) as HTMLInputElement;
+    fireEvent.change(search, { target: { value: "zzzz no match" } });
+    fireEvent.click(screen.getByRole("button", { name: "Report a problem" }));
+    expect(search.value).toBe("");
+    expect(screen.getByRole("textbox", { name: "What happened?" })).toBeTruthy();
   });
 
   it("shows the view inside Help with the reminder, a labelled box and focus on its heading", () => {
