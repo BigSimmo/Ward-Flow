@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { Button, DateField, Field } from "@/components/wf";
+import { Button, DateField, Field, isoDateAsTyped, parseTypedDate } from "@/components/wf";
 import { DELAYED_DISCHARGE_REASONS, type DelayedDischargeReason } from "@/components/ward-management/ward-admissions";
 import {
   dayOf,
@@ -54,12 +54,31 @@ export function ClinicallyReadyControl({
   nameFor: (admissionId: string) => string;
 }) {
   const recorded = occupant.clinicallyReady;
-  const [day, setDay] = useState(recorded ? perthIsoDay(calendarDateOf(recorded.since, dayZero)) : "");
+  const recordedDay = recorded ? perthIsoDay(calendarDateOf(recorded.since, dayZero)) : "";
+  const [day, setDay] = useState(recordedDay);
+  const [typed, setTyped] = useState(isoDateAsTyped(recordedDay));
   const [reason, setReason] = useState<DelayedDischargeReason | "">(recorded?.reason ?? "");
+  // The fields follow the saved record once the store holds it, so a refused Clear leaves them
+  // showing what is still recorded (PR #1583 review).
+  const recordedKey = recorded ? `${recorded.since}|${recorded.reason}` : "";
+  const [shownKey, setShownKey] = useState(recordedKey);
+  if (recordedKey !== shownKey) {
+    setShownKey(recordedKey);
+    setDay(recordedDay);
+    setTyped(isoDateAsTyped(recordedDay));
+    setReason(recorded?.reason ?? "");
+  }
   const since = day === "" ? null : dayInstant(day, dayZero);
+  const notADay = typed.replace(/\D/gu, "").length >= 8 && parseTypedDate(typed) === null;
   const tooLate = since !== null && dayOf(since) > dayOf(now);
   const tooEarly = since !== null && arrivedAt !== null && dayOf(since) < dayOf(arrivedAt);
-  const error = tooLate ? "Choose today or an earlier day." : tooEarly ? "Choose a day on or after arrival." : null;
+  const error = notADay
+    ? "Type a real date."
+    : tooLate
+      ? "Choose today or an earlier day."
+      : tooEarly
+        ? "Choose a day on or after arrival."
+        : null;
   const unchanged = recorded !== null && since === recorded.since && reason === recorded.reason;
   const canRecord = since !== null && reason !== "" && error === null && !unchanged;
   const name = nameFor(occupant.key);
@@ -83,7 +102,13 @@ export function ClinicallyReadyControl({
       }}
     >
       <Field label="Clinically ready since" hint="DD/MM/YYYY" id="ward-board-ready-since" error={error}>
-        <DateField data-testid="ward-board-ready-since" value={day} onValueChange={setDay} />
+        <DateField
+          data-testid="ward-board-ready-since"
+          value={day}
+          onValueChange={setDay}
+          rawText={typed}
+          onRawTextChange={setTyped}
+        />
       </Field>
       <div>
         <span className={styles.readyReasonLabel}>Why not gone</span>
@@ -104,8 +129,6 @@ export function ClinicallyReadyControl({
           variant="ghost"
           data-testid="ward-board-ready-clear"
           onClick={() => {
-            setDay("");
-            setReason("");
             dispatchAndReport(
               () => raise("SET_CLINICALLY_READY", { actingUnitId: unitId, admissionId: occupant.key, ready: null }),
               `${name}: clinically ready date cleared.`,

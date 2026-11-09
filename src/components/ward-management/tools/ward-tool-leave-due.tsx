@@ -8,6 +8,7 @@ import { formatInstantWithDay, type Instant } from "@/components/ward-management
 import { leaveBedLabels, leaveDueToday } from "@/components/ward-management/leave/leave-tracker";
 import { WARD_LEAVE_HREF } from "@/components/ward-management/ward-nav";
 import { useEffectiveWardAccess } from "@/components/ward-management/shell/ward-access-store";
+import { useCanOpenHref } from "@/components/ward-management/shell/ward-access";
 import { EmptyState, StatusGlyph } from "@/components/wf";
 import { wardNames } from "./ward-tool-remind-store";
 import styles from "./ward-tool-leave-due.module.css";
@@ -65,6 +66,8 @@ export function useLeaveDueCount(): number {
 export function ToolLeaveDue({ onNavigate }: { onNavigate: () => void }) {
   const { wards, absent } = useLeaveDue();
   const now = useWardFlowClock();
+  // An ED desk has this panel but not the Leave page, so it is not offered a link that would refuse it.
+  const canOpenHref = useCanOpenHref();
   // Feature 23: the full Leave page, everyone on leave with their status. Polish (9 Nov 2026): the
   // page also lists anyone absent without leave, so the panel says why its count is smaller.
   const seeAll = (
@@ -74,9 +77,11 @@ export function ToolLeaveDue({ onNavigate }: { onNavigate: () => void }) {
           {absent} absent without leave, not counted here.
         </p>
       ) : null}
-      <Link href={WARD_LEAVE_HREF} className={styles.seeAll} onClick={onNavigate}>
-        See all leave
-      </Link>
+      {canOpenHref(WARD_LEAVE_HREF) ? (
+        <Link href={WARD_LEAVE_HREF} className={styles.seeAll} onClick={onNavigate}>
+          See all leave
+        </Link>
+      ) : null}
     </>
   );
   if (wards.length === 0)

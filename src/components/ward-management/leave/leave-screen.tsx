@@ -64,13 +64,14 @@ export function LeaveScreen() {
   const needsAction = rows.filter((row) => row.status === "absent" || row.status === "overdue");
   const shown = needsActionOnly ? needsAction : rows;
   const dueToday = rows.filter((row) => row.status === "due_today").length;
+  // Someone absent without leave is not "on leave"; they are counted under "overdue or absent".
+  const onLeave = rows.filter((row) => row.status !== "absent").length;
   return (
     <main id="main-content" className={styles.main} data-testid="ward-leave-screen">
       <h1 className={styles.title}>Leave</h1>
       <p className={styles.summary}>
-        <span className={styles.figure}>{rows.length}</span> on leave ·{" "}
-        <span className={styles.figure}>{dueToday}</span> due back today ·{" "}
-        <span className={styles.figure}>{needsAction.length}</span> overdue or absent
+        <span className={styles.figure}>{onLeave}</span> on leave · <span className={styles.figure}>{dueToday}</span>{" "}
+        due back today · <span className={styles.figure}>{needsAction.length}</span> overdue or absent
       </p>
       <Card aria-labelledby="ward-leave-list">
         <CardHead
@@ -108,7 +109,9 @@ export function LeaveScreen() {
                         key={row.id}
                         data-testid={`ward-leave-row-${row.id}`}
                         data-status={row.status}
-                        className={row.status === "absent" ? tableClasses.actNow : undefined}
+                        className={
+                          row.status === "absent" || row.status === "overdue" ? tableClasses.actNow : undefined
+                        }
                       >
                         <th scope="row" className={styles.person}>
                           {patientId ? <Link href={patientHref(patientId)}>{name}</Link> : name}

@@ -629,7 +629,7 @@ export function WardBedDossierDrawer({
     >
       {confirmStep === "leave" && outstandingChecks.length > 0 ? (
         <p className={styles.meta} role="note" data-testid="ward-drawer-confirm-checklist">
-          Not yet ticked: {outstandingChecks.join(", ")}. You can still record the discharge.
+          Still outstanding: {outstandingChecks.join(", ")}. You can still record the discharge.
         </p>
       ) : null}
       <p className={styles.meta} data-testid="ward-drawer-confirm-identity">

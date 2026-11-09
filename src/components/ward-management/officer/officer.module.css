@@ -1521,6 +1521,11 @@
     flex-wrap: nowrap;
   }
 
+  /* Feature 25: the Delayed tag still takes its own line under the stage on a phone. */
+  .stageCell:has(.stageDelayed) {
+    flex-wrap: wrap;
+  }
+
   .stageFor {
     flex-basis: auto;
   }

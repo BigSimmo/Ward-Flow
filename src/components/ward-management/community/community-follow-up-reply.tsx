@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useWardRaise } from "@/components/ward-management/ward-flow-raise";
+import { confirmedWardCommand } from "@/components/ward-management/ward-command-completion";
+import { SAVE_NOT_CONFIRMED } from "@/components/ward-management/ward-save-failure";
 import type { ActionToast } from "@/components/ward-management/ward-action-toast";
 import type { Admission } from "@/components/ward-management/ward-admissions";
 import {
@@ -34,19 +36,25 @@ export function CommunityFollowUpReply({
   const shown: FollowUpReplyState | "" = declining ? "declined" : (recorded?.state ?? "");
   const send = (reply: FollowUpReplyState, declineReason?: FollowUpDeclineReason) => {
     void Promise.resolve(
-      raise("RECORD_FOLLOW_UP_REPLY", {
-        actingTeamId: teamId,
-        admissionId: admission.id,
-        reply,
-        ...(declineReason ? { declineReason } : {}),
-      }),
-    ).then((outcome) => {
-      if (outcome?.status === "refused") onMessage({ warning: `Reply not recorded. ${outcome.message ?? ""}`.trim() });
-      else {
-        setDeclining(false);
-        onMessage("Follow-up reply recorded. The ward sees it on the discharge board.");
-      }
-    });
+      confirmedWardCommand(
+        raise("RECORD_FOLLOW_UP_REPLY", {
+          actingTeamId: teamId,
+          admissionId: admission.id,
+          reply,
+          ...(declineReason ? { declineReason } : {}),
+        }),
+      ),
+    )
+      .then((outcome) => {
+        // Only a confirmed save is called recorded; anything short of a refusal may still save on Retry.
+        if (outcome.status === "accepted") {
+          setDeclining(false);
+          onMessage("Follow-up reply recorded. The ward sees it on the discharge board.");
+        } else if (outcome.status === "refused")
+          onMessage({ warning: `Reply not recorded. ${outcome.message ?? ""}`.trim() });
+        else onMessage({ warning: outcome.message ?? SAVE_NOT_CONFIRMED });
+      })
+      .catch(() => onMessage({ warning: SAVE_NOT_CONFIRMED }));
   };
   return (
     <div className={styles.followUpReply} data-testid={`ward-community-follow-up-reply-${admission.id}`}>

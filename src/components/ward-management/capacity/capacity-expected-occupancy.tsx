@@ -27,12 +27,15 @@ export function ExpectedOccupancyTable({
   bedReleases,
   now,
   stacked = false,
+  totalName = "Network",
 }: {
   /** The wards the forecast covers (a site bed manager's own site). */
   units: readonly Unit[];
   bedReleases: readonly BedRelease[];
   now: Instant;
   stacked?: boolean;
+  /** The total row's name: the network, or a site bed manager's own site. */
+  totalName?: string;
 }) {
   const { admissions, plannedAdmissions, movements, referrals } = useWardFlowSelect(
     "admissions",
@@ -61,7 +64,7 @@ export function ExpectedOccupancyTable({
         Expected occupancy
       </h3>
       <div className={styles.scroll} role="region" aria-labelledby={titleId} tabIndex={0}>
-        <table className={styles.table} id={tableId}>
+        <table className={styles.table} id={tableId} aria-labelledby={titleId}>
           <thead>
             <tr>
               <th scope="col">Ward</th>
@@ -81,7 +84,7 @@ export function ExpectedOccupancyTable({
             ))}
           </tbody>
           <tfoot>
-            <Row row={occupancy.total} total />
+            <Row row={{ ...occupancy.total, name: totalName }} total />
           </tfoot>
         </table>
       </div>

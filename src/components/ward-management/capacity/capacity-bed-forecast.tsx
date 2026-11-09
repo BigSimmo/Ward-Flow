@@ -210,7 +210,13 @@ export function BedForecast({
           )}
         </div>
       </div>
-      <ExpectedOccupancyTable units={model.gapUnits} bedReleases={model.bedReleases} now={now} stacked={stacked} />
+      <ExpectedOccupancyTable
+        units={model.gapUnits}
+        bedReleases={model.bedReleases}
+        now={now}
+        stacked={stacked}
+        totalName={siteName}
+      />
       <LeverPopup
         item={openItem}
         now={now}
@@ -241,10 +247,7 @@ export function BedForecast({
             and subtracts the people already waiting and the admissions already booked. Held-up and overdue discharges
             only widen the range.
           </p>
-          <p>
-            Days after tomorrow are hatched because dates that far out often move. On Fridays and before WA public
-            holidays the forecast adds a third day.
-          </p>
+          <p>Days after tomorrow are hatched because dates that far out often move.</p>
           {BEDS_FORECAST_LIMITS.map((line) => (
             <p key={line}>{line}</p>
           ))}

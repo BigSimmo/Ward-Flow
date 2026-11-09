@@ -65,8 +65,14 @@ export function reduceDischargeCheckEvent(
   const admission = state.admissions.find((candidate) => candidate.id === event.admissionId);
   if (!admission) return reject(state, event, `no admission found for id ${event.admissionId}`);
   if (admission.state === "waitlisted") return reject(state, event, `${event.type} needs a stay with a bed`);
+  // Both records store the event's time, which must be a real instant (PR #1583 review).
+  if (!Number.isFinite(event.now)) return reject(state, event, `${event.type} time is invalid`);
 
   if (event.type === "RECORD_DISCHARGE_CHECK") {
+    // The checklist is for the stay before it ends; a follow-up reply may still come after.
+    if (admission.state === "departed") {
+      return reject(state, event, "RECORD_DISCHARGE_CHECK: the stay has already ended");
+    }
     // Claim, not proof, as RECORD_WARD_DIAGNOSIS: a ward ticks only its own stay.
     if (event.role === "ward" && event.actingUnitId !== admission.unitId) {
       return reject(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { CalendarDays, Printer } from "lucide-react";
 
 import { Button, HeroStat, Menu, SrOnly, buttonClass, useIsPhone } from "@/components/wf";
@@ -28,7 +28,7 @@ import {
 import { useOperationalPilot, usePilotFigures, type WeeklyPilot } from "./pilot-measures-section";
 import { reportWeek, weeklyOperationsReport, type WeeklyReport, type ReportWeek } from "./weekly-report";
 import { useOwnUnits } from "./use-own-units";
-import { WeeklyDelayHeatmap } from "./weekly-delay-heatmap-lazy";
+import { WeeklyDelayHeatmap, preloadWeeklyDelayHeatmap } from "./weekly-delay-heatmap-lazy";
 import { createReadmissionIndex, readmissionsArrivedIn } from "@/components/ward-management/ward-readmission";
 import styles from "./reports.module.css";
 import weekly from "./weekly-report.module.css";
@@ -155,6 +155,7 @@ function OperationalWeeklyReport({ offset, setOffset }: WeekPicker) {
   const { movements, referrals, admissions, patients, bedReleases, leaveBeds, configuration, dayZero } = state;
   // Beds are the desk's own wards only (issue #628), so its occupancy is its stays over its beds.
   const units = useOwnUnits(state.units);
+  useEffect(preloadWeeklyDelayHeatmap, []);
 
   const week = useMemo(() => reportWeek(offset, now, dayZero), [offset, now, dayZero]);
   const pilot = useOperationalPilot(
@@ -244,7 +245,9 @@ function OperationalWeeklyReport({ offset, setOffset }: WeekPicker) {
           now={now}
           dayZero={dayZero}
           isPhone={isPhone}
-          pressureBedDays={report.delayedDischarge.bedDays}
+          // Pressure this week counts every stay in view, so it is compared only when the grid's
+          // wards are all of them; a scoped desk's grid covers its own wards alone.
+          pressureBedDays={units.length === state.units.length ? report.delayedDischarge.bedDays : undefined}
         />
       )}
       admissionLabel={(movementId) =>

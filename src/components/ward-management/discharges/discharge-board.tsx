@@ -856,6 +856,11 @@ function DischargeWorkspace({ initialAdmissionId }: { initialAdmissionId?: strin
                 (candidate) => candidate.admissionId === admissionId && candidate.state !== "discharged",
               );
               if (release) openReleaseOn(release.id, opener, "milestones");
+              else {
+                // No bed release flagged yet: the row still opens, on the stay's discharge record.
+                const record = visibleRecords.find((candidate) => candidate.admissionId === admissionId);
+                if (record) openRecord(record, opener);
+              }
             }}
           />
         ) : null}

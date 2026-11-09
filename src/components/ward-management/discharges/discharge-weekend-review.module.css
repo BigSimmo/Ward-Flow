@@ -73,7 +73,7 @@
 }
 
 /* Phone: the time drops under the name and the tick stays on the right. */
-@media (max-width: 640px) {
+@media (max-width: 46.4375rem) {
   .row {
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:

@@ -79,7 +79,7 @@ export function WeeklyDelayHeatmap({
   );
   const legend = (
     <div className={styles.legend} aria-hidden="true">
-      <span>Bed days a day</span>
+      <span>Bed days per day</span>
       {[1, 2, 3, 4].map((step) => (
         <i key={step} className={styles.swatch} data-step={step} />
       ))}

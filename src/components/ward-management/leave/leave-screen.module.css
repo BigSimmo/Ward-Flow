@@ -47,6 +47,9 @@
 }
 
 .table td.ward {
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
   white-space: normal;
 }
 
